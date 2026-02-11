@@ -67,12 +67,17 @@ export function shouldTranspileTypeScript(attrs: string): boolean {
  */
 export function transpileTypeScript(code: string): string {
   try {
+    // Strip .stx component imports before transpiling - these are handled by STX component resolution
+    let processedCode = code.replace(/^\s*import\s+\w+\s+from\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
+    // Also strip side-effect .stx imports
+    processedCode = processedCode.replace(/^\s*import\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
+
     // Use Bun's transpiler directly for inline code
     const transpiler = new Bun.Transpiler({
       loader: 'ts',
       target: 'browser',
     })
-    return transpiler.transformSync(code)
+    return transpiler.transformSync(processedCode)
   }
   catch (e) {
     console.warn('[STX] TypeScript transpilation error:', e)

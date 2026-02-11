@@ -1,32 +1,49 @@
 /**
  * Variable Extraction
  *
- * Extracts and processes variables from <script> tags in stx templates.
+ * Extracts and processes variables from <script server> tags in stx templates.
  * Converts ES module syntax to CommonJS for execution in isolated contexts.
+ *
+ * SUPPORTED:
+ *
+ * 1. ASYNC/AWAIT
+ *    Top-level await is supported in <script server> tags.
+ *    Scripts are wrapped in an async IIFE and variables are re-synced after execution.
+ *    Example: const res = await fetch('/api/data')
+ *
+ * 2. EXPORT KEYWORD IS OPTIONAL
+ *    Both exported and non-exported variables are made available to templates.
  *
  * KNOWN LIMITATIONS:
  *
- * 1. NO ASYNC/AWAIT SUPPORT
- *    Top-level await is NOT supported in <script> tags.
- *    Workaround: Use synchronous data or pass async data via context.
+ * 1. NO IMPORT STATEMENTS
+ *    ES module imports are stripped from <script server> tags.
+ *    Data should be fetched via API calls using await fetch().
  *
- * 2. NO IMPORT STATEMENTS
- *    ES module imports are not supported in <script> tags.
- *    Workaround: Import in server code and pass via context.
- *
- * 3. COMPLEX DESTRUCTURING MAY FAIL
+ * 2. COMPLEX DESTRUCTURING MAY FAIL
  *    Deeply nested destructuring patterns may not parse correctly.
  *    The system creates __destructured_ temporary variables as a workaround.
  *
- * 4. TEMPLATE LITERALS WITH EXPRESSIONS
+ * 3. TEMPLATE LITERALS WITH EXPRESSIONS
  *    Complex template literals with nested expressions may not parse correctly.
- *
- * 5. EXPORT KEYWORD IS OPTIONAL
- *    Both exported and non-exported variables are made available to templates.
  */
 
 // Import from tokenizer to avoid circular dependency
 import { findMatchingDelimiter } from './parser/tokenizer'
+
+/**
+ * Extract declared variable names from converted CommonJS script
+ * Used to re-sync variables after async operations
+ */
+function extractDeclaredVariableNames(script: string): string[] {
+  const names: string[] = []
+  const regex = /(?:const|let|var)\s+(\w+)\s*=/g
+  let match
+  while ((match = regex.exec(script)) !== null) {
+    names.push(match[1])
+  }
+  return [...new Set(names)] // Remove duplicates
+}
 
 /**
  * Result of parsing a variable declaration
@@ -307,7 +324,7 @@ export async function extractVariables(
       removeItem: () => {},
       clear: () => {},
     },
-    fetch: async () => new Response('{}'),
+    fetch: globalThis.fetch, // Use real fetch for server-side data fetching
     addEventListener: () => {},
     removeEventListener: () => {},
     setTimeout: () => 0,
@@ -353,14 +370,8 @@ export async function extractVariables(
     removeEventListener: () => {},
   }
 
-  // Mock console for scripts that use it
-  const mockConsole = {
-    log: () => {},
-    warn: () => {},
-    error: () => {},
-    info: () => {},
-    debug: () => {},
-  }
+  // Use real console for server-side scripts so we can see debug output
+  const mockConsole = console
 
   try {
     // Parse and convert the script content
@@ -373,6 +384,10 @@ export async function extractVariables(
     const filteredContextKeys = Object.keys(context).filter(key => !propsKeys.has(key) && key !== 'props')
     const filteredContextValues = filteredContextKeys.map(key => context[key])
 
+    // Extract variable names that need to be re-synced after async operations
+    const varNames = extractDeclaredVariableNames(convertedScript)
+    const reSyncCode = varNames.map(name => `module.exports.${name} = typeof ${name} !== 'undefined' ? ${name} : module.exports.${name};`).join('\n        ')
+
     // eslint-disable-next-line no-new-func
     const scriptFn = new Function(
       'module', 'exports', 'require', '$props', 'defineProps', 'withDefaults',
@@ -380,8 +395,10 @@ export async function extractVariables(
       'window', 'document', 'console', 'confirm', 'alert', 'fetch',
       ...filteredContextKeys,
       // Wrap in async IIFE to support top-level await
+      // Re-sync variables at end to capture any async reassignments
       `return (async () => {
         ${convertedScript}
+        ${reSyncCode}
         return module.exports
       })()`
     )

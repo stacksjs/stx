@@ -198,10 +198,13 @@ export async function serve(options: ServeOptions): Promise<void> {
     const path = await import('node:path')
     const content = await Bun.file(filePath).text()
 
-    const inlineScriptMatch = content.match(/<script(?!\s[^>]*src=)\b[^>]*>([\s\S]*?)<\/script>/i)
-    const scriptContent = inlineScriptMatch ? inlineScriptMatch[1] : ''
-    const templateContent = inlineScriptMatch
-      ? content.replace(/<script(?!\s[^>]*src=)\b[^>]*>[\s\S]*?<\/script>/i, '')
+    // Extract server-side script specifically (marked with 'server' attribute)
+    const serverScriptMatch = content.match(/<script\s+server\b[^>]*>([\s\S]*?)<\/script>/i)
+    const scriptContent = serverScriptMatch ? serverScriptMatch[1] : ''
+
+    // Remove only the server script from template content
+    const templateContent = serverScriptMatch
+      ? content.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>/gi, '')
       : content
 
     const context: Record<string, any> = {
@@ -415,10 +418,12 @@ export async function serve(options: ServeOptions): Promise<void> {
     const path = await import('node:path')
     const content = await Bun.file(filePath).text()
 
-    const inlineScriptMatch = content.match(/<script(?!\s[^>]*src=)\b[^>]*>([\s\S]*?)<\/script>/i)
-    const scriptContent = inlineScriptMatch ? inlineScriptMatch[1] : ''
-    const templateContent = inlineScriptMatch
-      ? content.replace(/<script(?!\s[^>]*src=)\b[^>]*>[\s\S]*?<\/script>/i, '')
+    // Extract server-side script specifically (marked with 'server' attribute)
+    const serverScriptMatch = content.match(/<script\s+server\b[^>]*>([\s\S]*?)<\/script>/i)
+    const scriptContent = serverScriptMatch ? serverScriptMatch[1] : ''
+    // Remove only the server script from template content
+    const templateContent = serverScriptMatch
+      ? content.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>/gi, '')
       : content
 
     // Build context with dynamic params
