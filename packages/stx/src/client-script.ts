@@ -381,9 +381,9 @@ export function processClientScript(
   const eventCode = generateInlineEventBindings(options.eventBindings || [])
 
   // 4. Wrap in scoped IIFE with auto-imports at the top
-  return `<script>
+  return `<script data-stx-scoped>
 ;(function() {
-  'use strict'
+  'use strict';
 ${autoImportCode}${code}
 ${eventCode}
 })()</script>`
