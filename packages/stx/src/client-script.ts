@@ -52,8 +52,13 @@ const STX_AUTO_IMPORTS = [
   'onBeforeMount', 'onMounted', 'onBeforeUpdate', 'onUpdated', 'onBeforeUnmount', 'onUnmounted',
   // Component definition
   'defineProps', 'withDefaults', 'defineEmits', 'defineExpose',
+  // Composition API (Vue-compatible)
+  'provide', 'inject', 'nextTick', 'getCurrentInstance',
+  'onErrorCaptured', 'useSlots', 'useAttrs',
   // Store/state management
   'createStore', 'defineStore', 'action', 'createSelector',
+  // JSX
+  'h', 'Fragment',
 ]
 
 /**

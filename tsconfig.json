@@ -17,6 +17,8 @@
       "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
       "bun-plugin-stx/client": ["./packages/bun-plugin/src/client.ts"]
     },
+    "jsx": "react-jsx",
+    "jsxImportSource": "@stacksjs/stx",
     "resolveJsonModule": true,
     "types": ["bun"],
     "allowImportingTsExtensions": true,

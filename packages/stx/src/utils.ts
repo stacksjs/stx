@@ -686,18 +686,19 @@ export async function resolveTemplatePath(
     return directPath
   }
 
-  // 3. Add .stx extension if not present
-  if (!templatePath.endsWith('.stx')) {
-    const pathWithExt = `${directPath}.stx`
-    if (await fileExists(pathWithExt)) {
-      if (options.debug) {
-        console.log(`Found direct path with extension: ${pathWithExt}`)
+  // 3. Add .stx extension if not present, also try .jsx/.tsx
+  if (!templatePath.endsWith('.stx') && !templatePath.endsWith('.jsx') && !templatePath.endsWith('.tsx')) {
+    for (const ext of ['.stx', '.tsx', '.jsx']) {
+      const pathWithExt = `${directPath}${ext}`
+      if (await fileExists(pathWithExt)) {
+        if (options.debug) {
+          console.log(`Found direct path with extension: ${pathWithExt}`)
+        }
+        if (dependencies) {
+          dependencies.add(pathWithExt)
+        }
+        return pathWithExt
       }
-      // Track dependency
-      if (dependencies) {
-        dependencies.add(pathWithExt)
-      }
-      return pathWithExt
     }
   }
 

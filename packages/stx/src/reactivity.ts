@@ -164,14 +164,15 @@ export function createScope(): ReactiveScope {
  */
 export function ref<T>(initialValue: T): Ref<T> {
   const subscribers = new Set<(value: T, oldValue: T) => void>()
+  const effectSubscribers = new Set<() => void>()
   let value = initialValue
   const id = Symbol('ref')
 
   const refObj: Ref<T> = {
     get value() {
-      // Track dependency if we're in an effect
+      // Track dependency if we're in an effect (computed / watchEffect)
       if (currentEffect) {
-        // This would be used for watchEffect auto-tracking
+        effectSubscribers.add(currentEffect)
       }
       return value
     },
@@ -182,6 +183,10 @@ export function ref<T>(initialValue: T): Ref<T> {
         // Notify subscribers
         for (const callback of subscribers) {
           callback(newValue, oldValue)
+        }
+        // Notify effect subscribers (computed invalidation, watchEffect re-run)
+        for (const effect of effectSubscribers) {
+          effect()
         }
       }
     },
@@ -201,6 +206,9 @@ export function ref<T>(initialValue: T): Ref<T> {
   return refObj
 }
 
+/** WeakMap cache: target object -> reactive proxy (prevents duplicate proxies) */
+const reactiveMap = new WeakMap<object, any>()
+
 /**
  * Create a reactive object (proxy-based).
  *
@@ -212,12 +220,16 @@ export function ref<T>(initialValue: T): Ref<T> {
  * ```
  */
 export function reactive<T extends object>(target: T): T {
+  // Return cached proxy if already created
+  const existing = reactiveMap.get(target)
+  if (existing) return existing
+
   const subscribers = new Map<string | symbol, Set<() => void>>()
 
   const notify = (key: string | symbol) => {
     const subs = subscribers.get(key)
     if (subs) {
-      for (const callback of subs) {
+      for (const callback of [...subs]) {
         callback()
       }
     }
@@ -242,9 +254,13 @@ export function reactive<T extends object>(target: T): T {
         subscribe(prop, currentEffect)
       }
 
-      // Recursively make nested objects reactive
+      // Recursively make nested plain objects reactive
+      // Skip non-plain objects (Date, RegExp, Map, Set, etc.)
       if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-        return reactive(value)
+        const proto = Object.getPrototypeOf(value)
+        if (proto === Object.prototype || proto === null) {
+          return reactive(value)
+        }
       }
 
       return value
@@ -266,6 +282,9 @@ export function reactive<T extends object>(target: T): T {
     },
   })
 
+  // Cache the proxy
+  reactiveMap.set(target, proxy)
+
   return proxy
 }
 
@@ -285,17 +304,33 @@ export function computed<T>(getter: () => T): Ref<T> {
   let cachedValue: T
   let dirty = true
   const subscribers = new Set<(value: T, oldValue: T) => void>()
+  const effectSubscribers = new Set<() => void>()
+
+  // The effect function that marks this computed dirty and re-evaluates
+  const markDirty = () => {
+    dirty = true
+    update()
+  }
 
   // Track dependencies by running the getter in an effect context
   const update = () => {
     if (dirty) {
       const oldValue = cachedValue
+      // Re-run getter in effect context to re-track dependencies
+      // (handles conditional branches that change which deps are used)
+      const prevEffect = currentEffect
+      currentEffect = markDirty
       cachedValue = getter()
+      currentEffect = prevEffect
       dirty = false
 
       if (!Object.is(cachedValue, oldValue)) {
         for (const callback of subscribers) {
           callback(cachedValue, oldValue)
+        }
+        // Notify effect subscribers (downstream computeds, watchEffect)
+        for (const effect of effectSubscribers) {
+          effect()
         }
       }
     }
@@ -303,16 +338,17 @@ export function computed<T>(getter: () => T): Ref<T> {
 
   // Initial computation
   const prevEffect = currentEffect
-  currentEffect = () => {
-    dirty = true
-    update()
-  }
+  currentEffect = markDirty
   cachedValue = getter()
   dirty = false
   currentEffect = prevEffect
 
   return {
     get value() {
+      // Track dependency for chained computeds and watchEffect
+      if (currentEffect) {
+        effectSubscribers.add(currentEffect)
+      }
       update()
       return cachedValue
     },
@@ -490,8 +526,11 @@ export function watchMultiple<T extends readonly Ref<unknown>[]>(
  */
 export function watchEffect(effect: () => void | (() => void)): () => void {
   let cleanup: (() => void) | void
+  let stopped = false
 
   const run = () => {
+    if (stopped) return
+
     // Clean up previous effect
     if (cleanup) {
       cleanup()
@@ -509,11 +548,13 @@ export function watchEffect(effect: () => void | (() => void)): () => void {
   // Register cleanup in current instance
   if (currentInstance) {
     currentInstance.scope.cleanups.push(() => {
+      stopped = true
       if (cleanup) cleanup()
     })
   }
 
   return () => {
+    stopped = true
     if (cleanup) cleanup()
   }
 }

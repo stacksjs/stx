@@ -38,7 +38,7 @@
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile, renderToString } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -183,6 +183,34 @@ export { content as default };
 `
           return {
             contents: jsContent,
+            loader: 'js',
+          }
+        }
+      })
+
+      // Handler for .jsx and .tsx files (JSX component support)
+      build.onLoad({ filter: /\.(jsx|tsx)$/ }, async ({ path: filePath }) => {
+        try {
+          const source = await Bun.file(filePath).text()
+
+          // Use Bun's built-in transpiler with stx as the JSX import source
+          const loader = filePath.endsWith('.tsx') ? 'tsx' : 'jsx'
+          const transpiler = new Bun.Transpiler({
+            loader,
+            jsxOptimizationInline: true,
+          })
+
+          const code = transpiler.transformSync(source)
+
+          return {
+            contents: code,
+            loader: 'js',
+          }
+        }
+        catch (error: any) {
+          console.error('JSX Processing Error:', error)
+          return {
+            contents: `export default function() { return null; }`,
             loader: 'js',
           }
         }

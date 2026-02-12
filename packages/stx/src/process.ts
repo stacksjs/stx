@@ -32,6 +32,8 @@ import { transformStoreImports } from './state-management'
 import { renderComponentWithSlot, resolveTemplatePath, shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { runComposers } from './view-composers'
 import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
+import { processVueTemplate } from './vue-template'
+import { processDynamicComponents } from './dynamic-components'
 
 // =============================================================================
 // STX SIGNALS INTEGRATION
@@ -1260,6 +1262,10 @@ async function processDirectivesInternal(
     return `{{ ${content} }}`
   })
 
+  // Transform Vue template syntax (v-if, v-for, v-show, v-model, :bind, etc.)
+  // into stx directive equivalents before any directive processing
+  output = processVueTemplate(output)
+
   // Process stx-inline attributes for external JS/CSS bundling
   // This allows: <script src="./file.js" stx-inline></script>
   // and: <link href="./file.css" stx-inline />
@@ -1590,6 +1596,9 @@ async function processOtherDirectives(
 
     // Process custom element components (kebab-case and PascalCase tags)
     output = await processCustomElements(output, context, filePath, opts.componentsDir, opts, dependencies)
+
+    // Process dynamic components (<component :is="expr">)
+    output = await processDynamicComponents(output, context, filePath, opts, dependencies)
   }
 
   // Process animations and transitions
