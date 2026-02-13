@@ -108,6 +108,15 @@ export function getCurrentInstance(): StxComponentInstance | null {
   return currentInstance
 }
 
+/**
+ * Reset all component instance state.
+ * @internal - Used for testing to clear global state between tests.
+ */
+export function resetComponentState(): void {
+  currentInstance = null
+  instanceStack.length = 0
+}
+
 // =============================================================================
 // provide() / inject()
 // =============================================================================

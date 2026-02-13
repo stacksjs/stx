@@ -9,6 +9,7 @@ import {
   onErrorCaptured,
   createComponentInstance,
   setCurrentInstance,
+  resetComponentState,
   useSlots,
   useAttrs,
   createProvideContext,
@@ -145,10 +146,13 @@ describe('Composition API - nextTick', () => {
 
 describe('Composition API - getCurrentInstance', () => {
   beforeEach(() => {
-    setCurrentInstance(null)
+    // Use resetComponentState to clear both currentInstance AND instanceStack
+    // This guards against parallel tests leaving stale entries on the stack
+    resetComponentState()
   })
 
   it('should return null when no instance is set', () => {
+    resetComponentState()
     expect(getCurrentInstance()).toBeNull()
   })
 

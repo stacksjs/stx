@@ -107,6 +107,8 @@ export interface ClientScriptOptions {
   eventBindings?: ParsedEvent[]
   /** Whether to enable auto-imports (default: true) */
   autoImports?: boolean
+  /** Original script tag attributes (e.g., 'type="module"') */
+  attrs?: string
 }
 
 // =============================================================================
@@ -385,7 +387,21 @@ export function processClientScript(
   // 3. Generate event binding code
   const eventCode = generateInlineEventBindings(options.eventBindings || [])
 
-  // 4. Wrap in scoped IIFE with auto-imports at the top
+  // 4. Build the output script tag
+  const attrs = (options.attrs || '').trim()
+  const isModule = /\btype\s*=\s*["']module["']/i.test(attrs)
+
+  if (isModule) {
+    // Module scripts: preserve type="module", no IIFE wrapping
+    const extraAttrs = attrs.replace(/\btype\s*=\s*["']module["']/i, '').trim()
+    const attrStr = `type="module" data-stx-scoped${extraAttrs ? ` ${extraAttrs}` : ''}`
+    return `<script ${attrStr}>
+${autoImportCode}${code}
+${eventCode}
+</script>`
+  }
+
+  // Regular scripts: wrap in scoped IIFE
   return `<script data-stx-scoped>
 ;(function() {
   'use strict';

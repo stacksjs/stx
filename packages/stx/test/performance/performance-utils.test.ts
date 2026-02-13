@@ -410,6 +410,8 @@ describe('Performance Utils', () => {
     })
 
     it('should maintain state across calls', () => {
+      // Reset first to clear any state from prior runs
+      performanceMonitor.reset()
       performanceMonitor.recordTime('global-test', 50)
 
       const stats = performanceMonitor.getStats('global-test')

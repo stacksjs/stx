@@ -599,7 +599,7 @@ function injectSignalsRuntime(template: string, options: StxOptions): string {
   // Escape $ as $$ to prevent interpretation as replacement patterns in String.replace()
   // (e.g., $' means "text after match" in replacement strings)
   const escapedRuntime = runtime.replace(/\$/g, '$$$$')
-  const runtimeScript = `<script>${escapedRuntime}</script>`
+  const runtimeScript = `<script data-stx-scoped>${escapedRuntime}</script>`
 
   // Inject before other scripts in <head>, or before </head>
   if (template.includes('</head>')) {
@@ -1178,6 +1178,12 @@ export async function processDirectives(
     context.__stxProcessingDepth = 0
   }
   context.__stxProcessingDepth++
+
+  // Use a request-scoped @once store so the global onceStore doesn't leak state
+  // across separate processDirectives calls (e.g. between test runs or server requests)
+  if (!context.__onceStore) {
+    context.__onceStore = new Set<string>()
+  }
 
   try {
     return await performanceMonitor.timeAsync('template-processing', async () => {
@@ -1819,7 +1825,7 @@ async function processOtherDirectives(
 
   if (hasClientScripts && hasStxUsage && !alreadyHasRuntime) {
     const runtimeCode = generateLifecycleRuntime()
-    const runtimeScript = `<script>\n${runtimeCode}\n</script>`
+    const runtimeScript = `<script data-stx-scoped>\n${runtimeCode}\n</script>`
 
     // Inject in head before other scripts, or at start of body
     if (output.includes('</head>')) {
@@ -1874,7 +1880,7 @@ async function processOtherDirectives(
     // Validate client scripts for prohibited patterns
     validateClientScript(processedContent, filePath)
 
-    output = output.replace(match, processClientScript(processedContent, { eventBindings }))
+    output = output.replace(match, processClientScript(processedContent, { eventBindings, attrs }))
   }
   // Only clear event bindings if scripts were found and transformed.
   // When processing a component whose scripts were extracted separately

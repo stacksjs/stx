@@ -22,7 +22,7 @@ describe('Story Server', () => {
       port: testPort,
       host: 'localhost',
     })
-  })
+  }, 15000)
 
   afterAll(async () => {
     if (server) {

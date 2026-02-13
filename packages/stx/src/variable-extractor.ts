@@ -32,15 +32,41 @@
 import { findMatchingDelimiter } from './parser/tokenizer'
 
 /**
- * Extract declared variable names from converted CommonJS script
- * Used to re-sync variables after async operations
+ * Extract declared variable names from converted CommonJS script.
+ * Only extracts top-level declarations (brace depth 0).
+ * Used to re-sync variables after async operations.
  */
 function extractDeclaredVariableNames(script: string): string[] {
   const names: string[] = []
-  const regex = /(?:const|let|var)\s+(\w+)\s*=/g
-  let match
-  while ((match = regex.exec(script)) !== null) {
-    names.push(match[1])
+  let depth = 0
+  const lines = script.split('\n')
+
+  for (const line of lines) {
+    // Track brace depth — count braces outside of strings/comments
+    let inString: string | null = null
+    let escaped = false
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i]
+      if (escaped) { escaped = false; continue }
+      if (ch === '\\') { escaped = true; continue }
+      if (inString) {
+        if (ch === inString) inString = null
+        continue
+      }
+      if (ch === '\'' || ch === '"' || ch === '`') { inString = ch; continue }
+      // Skip line comments
+      if (ch === '/' && i + 1 < line.length && line[i + 1] === '/') break
+      if (ch === '{') depth++
+      else if (ch === '}') depth--
+    }
+
+    // Only match declarations at top level (depth 0)
+    if (depth === 0) {
+      const match = line.match(/(?:const|let|var)\s+(\w+)\s*=/)
+      if (match) {
+        names.push(match[1])
+      }
+    }
   }
   return [...new Set(names)] // Remove duplicates
 }

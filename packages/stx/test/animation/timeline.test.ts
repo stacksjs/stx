@@ -20,7 +20,7 @@ describe('createAnimationTimeline', () => {
     ]
 
     const result = createAnimationTimeline(entries)
-    expect(result).toContain('<script>')
+    expect(result).toContain('<script data-stx-scoped>')
     expect(result).toContain('const timeline =')
     expect(result).toContain('#box1')
     expect(result).toContain('runTimeline')
@@ -126,7 +126,7 @@ describe('createAnimationTimeline', () => {
 describe('generateAnimationRuntime', () => {
   it('should generate runtime script', () => {
     const result = generateAnimationRuntime()
-    expect(result).toContain('<script>')
+    expect(result).toContain('<script data-stx-scoped>')
     expect(result).toContain('window.__stxAnimation')
   })
 
