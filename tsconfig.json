@@ -49,6 +49,8 @@
     "packages/*/dist",
     "packages/*/dist/**",
     ".config/buddy-bot.config.ts",
+    "bunpress.config.ts",
+    "packages/stx/crosswind.config.ts",
     "packages/stx/src/native-build.ts",
     "packages/stx/src/interactive.ts",
     "packages/stx/bin/cli.ts",

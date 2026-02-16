@@ -200,6 +200,7 @@ export type {
   ModalButton,
   ModalOptions,
   ModalResult,
+  SidebarConfig,
   SystemTrayInstance,
   SystemTrayMenuItem,
   SystemTrayOptions,

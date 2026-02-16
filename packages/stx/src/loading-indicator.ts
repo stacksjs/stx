@@ -333,7 +333,7 @@ export function initLoadingIndicator(userOptions?: LoadingIndicatorOptions): voi
   const originalFetch = window.fetch
   let activeRequests = 0
 
-  window.fetch = async function (...args) {
+  ;(window as any).fetch = async function (...args: Parameters<typeof fetch>) {
     // Only track same-origin API requests
     const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url
     const isApi = url.includes('/api/') || url.startsWith('/api')

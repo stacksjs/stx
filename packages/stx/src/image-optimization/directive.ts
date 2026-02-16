@@ -124,7 +124,7 @@ export function createImageDirective(): CustomDirective {
         widths: options.widths || (options.width ? [options.width] : DEFAULT_WIDTHS),
         formats: options.formats || DEFAULT_FORMATS,
         quality: options.quality || DEFAULT_QUALITY,
-        placeholder: options.placeholder || 'none',
+        placeholder: (options.placeholder === 'color' ? 'dominant-color' : options.placeholder) || 'none',
       }
 
       // Check if sharp is available for full optimization
@@ -189,13 +189,13 @@ function parseImageArgs(
   const parsed = parseArguments(args)
 
   // Resolve variable references from context
-  let src = parsed[0] || ''
-  let alt = parsed[1] || ''
+  let src = (parsed[0] || '') as string
+  let alt = (parsed[1] || '') as string
   let options: ImageDirectiveOptions = {}
 
   // If src is a variable name (no quotes), try to resolve from context
   if (src && !src.startsWith('/') && !src.startsWith('.') && !src.startsWith('http')) {
-    const contextValue = context[src]
+    const contextValue = (context as Record<string, unknown>)[src]
     if (typeof contextValue === 'string') {
       src = contextValue
     }
@@ -217,7 +217,7 @@ function parseImageArgs(
     }
   }
 
-  return { src, alt, options }
+  return { src: src as string, alt: alt as string, options }
 }
 
 /**

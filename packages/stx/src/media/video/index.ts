@@ -686,7 +686,7 @@ async function renderWithTsVideos(
     props.src!,
     props,
     tsConfig,
-    props.onProcessProgress,
+    props.onProcessProgress as any,
   )
 
   if (processed.processed) {

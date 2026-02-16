@@ -158,13 +158,13 @@ export function loadElement(element: HTMLElement, options: LazyLoadOptions = {})
       loadImage(img, () => {
         if (onLoaded) onLoaded(element)
       }, (error) => {
-        if (onError) onError(element, error)
+        if (onError) onError(element, error as any)
       })
     } else if (video) {
       loadVideo(video, () => {
         if (onLoaded) onLoaded(element)
       }, (error) => {
-        if (onError) onError(element, error)
+        if (onError) onError(element, error as any)
       })
     }
 

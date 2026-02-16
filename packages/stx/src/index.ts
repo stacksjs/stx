@@ -4,6 +4,20 @@
 // items, import directly from the module (e.g., import { x } from 'stx/reactivity')
 // ============================================================
 
+// Explicit re-exports to resolve wildcard ambiguities
+export { type BuildResult } from './build-optimizer'
+export { type ComponentInstance } from './reactivity'
+export { type HydrationOptions } from './hydration'
+export { type CookieOptions } from './route-middleware'
+export { formatSize, getTotalSize } from './deploy'
+export { type ImageRenderResult, type ImageVariant, type ProcessedImage, clearImageCache, getFallbackVariant, getMimeType, groupVariantsByFormat, optimizeImage, processImage } from './image-optimization'
+export { type AnalysisResult } from './analyzer'
+export { type AnalyzeOptions, type ChunkInfo } from './production-build'
+export { generateReport } from './visual-testing'
+export { fileExists } from './utils'
+export { type StreamingConfig } from './types'
+export { type Middleware } from './ssr'
+
 // Core functionality - these are the primary modules
 export * from './reactivity'
 export * from './head'

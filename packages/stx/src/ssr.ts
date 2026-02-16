@@ -704,4 +704,4 @@ export function createApp(config: AppConfig = {}) {
 // Exports
 // =============================================================================
 
-export type { AppConfig, RequestContext, Session, SessionData, RouteHandler, Middleware }
+// Types are already exported at their declaration sites

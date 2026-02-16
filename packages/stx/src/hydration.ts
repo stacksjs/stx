@@ -346,7 +346,7 @@ export class HydrationRuntime {
     // Find all component elements
     const componentEls = this.root.querySelectorAll('[data-stx-component]')
 
-    for (const el of componentEls) {
+    for (const el of Array.from(componentEls)) {
       const id = el.getAttribute('data-stx-component')
       const name = el.getAttribute('data-stx-name') || id
       const strategyAttr = el.getAttribute('data-stx-hydrate') || 'eager'

@@ -847,7 +847,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
 
           // Render if not cached
           if (!html) {
-            html = await renderPage(route, params, props, cfg, stxConfig)
+            html = await renderPage(route, params, props, cfg, stxConfig as unknown as Record<string, unknown>)
 
             if (cfg.cache) {
               buildCache.set(url, route.filePath, [], html)
@@ -1094,7 +1094,7 @@ export function createISRHandler(options: SSGConfig = {}): {
       const stxConfig = await loadStxConfig()
 
       // Re-render the page
-      const html = await renderPage(matchedRoute, params, {}, options, stxConfig)
+      const html = await renderPage(matchedRoute, params, {}, options, stxConfig as unknown as Record<string, unknown>)
 
       // Update cache
       await cache.set(route, {

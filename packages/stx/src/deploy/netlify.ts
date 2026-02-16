@@ -128,7 +128,7 @@ export function createNetlifyClient(config: NetlifyClientConfig): NetlifyClient 
 
     if (options.rawBody) {
       headers['Content-Type'] = options.contentType || 'application/octet-stream'
-      body = options.rawBody
+      body = options.rawBody as BodyInit
     } else if (options.body) {
       headers['Content-Type'] = 'application/json'
       body = JSON.stringify(options.body)
@@ -309,7 +309,7 @@ export function createNetlifyClient(config: NetlifyClientConfig): NetlifyClient 
  * Calculate SHA1 hash of file content
  */
 export async function calculateSha1(content: ArrayBuffer | Uint8Array): Promise<string> {
-  const hashBuffer = await crypto.subtle.digest('SHA-1', content)
+  const hashBuffer = await crypto.subtle.digest('SHA-1', content as BufferSource)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }

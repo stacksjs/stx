@@ -331,7 +331,7 @@ export async function processVideo(
       if (streamConfig.format === 'hls' || streamConfig.format === undefined) {
         const hls = await generateHLSManifest(
           srcPath,
-          streamConfig.qualities || config.streaming?.defaultQualities || [],
+          (streamConfig as any).qualities || config.streaming?.defaultQualities || [],
           outputDir,
           baseUrl,
         )
@@ -343,7 +343,7 @@ export async function processVideo(
       if (streamConfig.format === 'dash') {
         const dash = await generateDASHManifest(
           srcPath,
-          streamConfig.qualities || config.streaming?.defaultQualities || [],
+          (streamConfig as any).qualities || config.streaming?.defaultQualities || [],
           outputDir,
           baseUrl,
         )
@@ -408,7 +408,7 @@ async function transcodeVideo(
     })
 
     // Run conversion with progress
-    const result = await conversion.run((progress) => {
+    const result = await conversion.run((progress: any) => {
       onProgress?.(progress.percentage / 100)
     })
 

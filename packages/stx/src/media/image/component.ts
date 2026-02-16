@@ -634,10 +634,10 @@ export function parseImgComponent(content: string): ImgProps | null {
           props.placeholder = value as ImgProps['placeholder']
           break
         case 'lazy':
-          props.lazy = value === true || value === 'true'
+          props.lazy = (value as unknown) === true || value === 'true'
           break
         case 'priority':
-          props.priority = value === true || value === 'true'
+          props.priority = (value as unknown) === true || value === 'true'
           break
         case 'class':
           props.class = String(value)
@@ -944,48 +944,4 @@ async function renderFromResponsiveVariants(
   }
 
   return renderFromProcessedResult(props, processed, context)
-}
-
-/**
- * Generate lazy load initialization script
- */
-function generateLazyLoadScript(componentId: string): string {
-  return `
-(function() {
-  const container = document.getElementById('${componentId}');
-  if (!container) return;
-
-  const img = container.querySelector('img[data-stx-lazy]') || container;
-  if (!img.dataset.src && !img.dataset.srcset) return;
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        // Load image
-        if (img.dataset.src) img.src = img.dataset.src;
-        if (img.dataset.srcset) img.srcset = img.dataset.srcset;
-
-        // Load sources
-        const sources = container.querySelectorAll('source[data-srcset]');
-        sources.forEach(source => {
-          if (source.dataset.srcset) source.srcset = source.dataset.srcset;
-          if (source.dataset.sizes) source.sizes = source.dataset.sizes;
-        });
-
-        // Handle load completion
-        img.onload = () => {
-          img.style.opacity = '1';
-          if (container.classList.contains('stx-img-placeholder')) {
-            container.classList.add('stx-img-loaded');
-          }
-        };
-
-        observer.disconnect();
-      }
-    });
-  }, { rootMargin: '50px' });
-
-  observer.observe(container);
-})();
-`.trim()
 }

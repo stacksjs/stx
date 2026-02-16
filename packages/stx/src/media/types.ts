@@ -806,6 +806,8 @@ export interface MediaImageConfig {
   enableDpr?: boolean
   /** Default DPR values */
   defaultDpr?: number[]
+  /** ts-images integration configuration */
+  tsImages?: Record<string, unknown>
 }
 
 /**
@@ -824,6 +826,8 @@ export interface MediaVideoConfig {
   defaultControls?: boolean
   /** Default Plyr options */
   defaultPlyrOptions?: Partial<PlyrOptions>
+  /** ts-videos integration configuration */
+  tsVideos?: Record<string, unknown>
 }
 
 /**
@@ -1127,6 +1131,8 @@ export interface FormatQualitySettings {
     /** Chroma subsampling */
     chromaSubsampling?: '4:4:4' | '4:2:2' | '4:2:0'
   }
+  /** Allow indexing by any format string */
+  [format: string]: Record<string, unknown> | undefined
 }
 
 /**
@@ -1154,6 +1160,8 @@ export interface TsImagesConfig {
     /** Optimization preset */
     optimizationPreset?: ImageOptimizationPreset
   }
+  /** Default placeholder strategy */
+  placeholderStrategy?: string
   /** Generate sprite sheets for icons */
   generateSprites?: boolean
   /** Sprite output directory */

@@ -352,7 +352,7 @@ export const PRESETS = {
  * Apply a preset to an image URL
  */
 export function applyPreset(src: string, preset: keyof typeof PRESETS, additionalParams?: ImageParams): string {
-  return buildImageUrl(src, mergeParams(PRESETS[preset], additionalParams))
+  return buildImageUrl(src, mergeParams(PRESETS[preset] as ImageParams, additionalParams))
 }
 
 // =============================================================================

@@ -5,7 +5,7 @@ export { default as SidebarHeader } from './SidebarHeader.stx'
 export { default as SidebarFooter } from './SidebarFooter.stx'
 
 // Types
-export interface SidebarItem {
+export interface SidebarItemData {
   id: string
   label: string
   icon?: string
@@ -15,18 +15,18 @@ export interface SidebarItem {
   disabled?: boolean
 }
 
-export interface SidebarSection {
+export interface SidebarSectionData {
   id: string
   label: string
   icon?: string
-  items: SidebarItem[]
+  items: SidebarItemData[]
   expanded?: boolean
   collapsible?: boolean
 }
 
 export interface SidebarProps {
   /** Array of sidebar sections with their items */
-  sections?: SidebarSection[]
+  sections?: SidebarSectionData[]
   /** Whether the sidebar is collapsed */
   collapsed?: boolean
   /** Whether the sidebar can be collapsed */
@@ -48,19 +48,19 @@ export interface SidebarProps {
   /** Callback when a section is toggled */
   onSectionToggle?: (sectionId: string) => void
   /** Callback when an item is clicked */
-  onItemClick?: (item: SidebarItem, event: Event) => void
+  onItemClick?: (item: SidebarItemData, event: Event) => void
 }
 
 export interface SidebarSectionProps {
   id: string
   label: string
   icon?: string
-  items: SidebarItem[]
+  items: SidebarItemData[]
   expanded?: boolean
   collapsible?: boolean
   showLabel?: boolean
   onToggle?: (id: string) => void
-  onItemClick?: (item: SidebarItem, event: Event) => void
+  onItemClick?: (item: SidebarItemData, event: Event) => void
 }
 
 export interface SidebarItemProps {

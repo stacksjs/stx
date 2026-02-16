@@ -357,7 +357,7 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
         // Native sidebar support (macOS Tahoe style)
         nativeSidebar: options.nativeSidebar ?? false,
         sidebarWidth: options.sidebarWidth ?? 260,
-        sidebarConfig: options.sidebarConfig,
+        sidebarConfig: options.sidebarConfig as Record<string, unknown> | undefined,
       },
     })
 

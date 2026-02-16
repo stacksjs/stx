@@ -144,7 +144,7 @@ export async function generateThumbnails(
     })
 
     if (result && result.length > 0) {
-      return result.map((thumb, index) => ({
+      return result.map((thumb: any, index: number) => ({
         path: thumb.path || join(outputDir, `${srcBasename}-thumb-${srcHash}-${index}.${format}`),
         url: `${baseUrl}/${srcBasename}-thumb-${srcHash}-${index}.${format}`,
         width: thumb.width || options.width || 320,
@@ -242,7 +242,7 @@ export async function generateSpriteSheet(
       const spriteHeight = rows * thumbnailHeight
 
       const sprite = await tsImages.createSprite({
-        images: thumbnails.map(t => t.path),
+        images: thumbnails.map((t: any) => t.path),
         columns,
         padding: 0,
         outputPath,

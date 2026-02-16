@@ -139,7 +139,7 @@ export async function processImage(
 
     // Optimize for each format
     for (const format of formats) {
-      const formatQuality = qualitySettings[format] || {}
+      const formatQuality = (qualitySettings as Record<string, Record<string, unknown>>)[format] || {}
       const outputFilename = `${srcBasename}-${srcHash}.${format}`
       const outputPath = join(outputDir, outputFilename)
 
