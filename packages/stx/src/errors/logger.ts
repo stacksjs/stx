@@ -19,7 +19,13 @@ import { getErrorConfig } from './types'
  * NOTE: Auto-recovery is opt-in via configuration.
  * Use configureErrorHandling({ enableAutoRecovery: true }) to enable.
  */
-export const errorRecovery = {
+export interface ErrorRecovery {
+  isEnabled(): boolean
+  fixCommonSyntaxErrors(template: string): { fixed: string, fixes: string[] }
+  createFallbackContent(sectionType: string, error: Error): string
+}
+
+export const errorRecovery: ErrorRecovery = {
   /**
    * Check if auto-recovery is enabled
    */
@@ -424,7 +430,13 @@ export const errorLogger: ErrorLogger = new ErrorLogger()
 /**
  * Development mode helpers
  */
-export const devHelpers = {
+export interface DevHelpers {
+  isDevelopment(): boolean
+  logDetailedError(error: Error, context?: unknown): void
+  createErrorReport(error: Error, context?: unknown): string
+}
+
+export const devHelpers: DevHelpers = {
   /**
    * Check if we're in development mode
    */

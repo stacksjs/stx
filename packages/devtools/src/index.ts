@@ -10,7 +10,6 @@ export { default as TemplateDetails } from './components/TemplateDetails.stx'
 export { default as MainLayout } from './layouts/MainLayout.stx'
 export { default as ConfigView } from './views/config.stx'
 export { default as DashboardView } from './views/dashboard.stx'
-export { default as HelloWorldView } from './views/hello-world.stx'
 
 // NOTE: These imports will resolve at build time with the stx plugin
 // Views
