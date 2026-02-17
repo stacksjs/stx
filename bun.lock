@@ -5,7 +5,7 @@
       "name": "stx",
       "dependencies": {
         "@stacksjs/headwind": "^0.1.3",
-        "ts-craft": "link:../craft/packages/typescript",
+        "ts-craft": "link:ts-craft",
         "very-happy-dom": "^0.0.9",
       },
       "devDependencies": {
@@ -2816,7 +2816,7 @@
 
     "trough": ["trough@2.2.0", "", {}, "sha512-tmMpK00BjZiUyVyvrBK7knerNgmgvcV/KLVyuma/SC+TQN167GrMRciANTz09+k3zW8L8t60jWO1GpfkZdjTaw=="],
 
-    "ts-craft": ["ts-craft@link:../craft/packages/typescript", { "bin": { "craft": "./bin/cli.ts" } }],
+    "ts-craft": ["ts-craft@link:ts-craft", { "bin": { "craft": "./bin/cli.ts" } }],
 
     "ts-error-handling": ["ts-error-handling@0.1.1", "", {}, "sha512-d4VqdX0bJ+jvOYNsY58isJgrEr806Q9cjef5+1UO/kIn1M/+YYSwpR6fqdRhn9XXVASJLSzNmcnBSdl0fRCjDg=="],
 
