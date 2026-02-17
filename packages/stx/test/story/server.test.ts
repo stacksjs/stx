@@ -8,7 +8,7 @@ import { createContext } from '../../src/story/context'
 import { createStoryServer, type StoryServer } from '../../src/story/server'
 
 describe('Story Server', () => {
-  const projectRoot = path.resolve(__dirname, '../../../..')
+  const projectRoot = path.resolve(__dirname, 'fixtures')
   let server: StoryServer | null = null
   const testPort = 6099
 

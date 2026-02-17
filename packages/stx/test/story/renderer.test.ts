@@ -13,7 +13,7 @@ import { createContext } from '../../src/story/context'
 import type { StoryContext } from '../../src/story/types'
 
 describe('Story Renderer', () => {
-  const projectRoot = path.resolve(__dirname, '../../../..')
+  const projectRoot = path.resolve(__dirname, 'fixtures')
 
   async function createTestContext(): Promise<StoryContext> {
     return createContext({
@@ -24,7 +24,7 @@ describe('Story Renderer', () => {
 
   test('should render a story component', async () => {
     const ctx = await createTestContext()
-    const componentPath = path.join(projectRoot, 'examples/components/button.story.stx')
+    const componentPath = path.join(projectRoot, 'components/button.story.stx')
 
     const result = await renderStoryComponent(ctx, componentPath)
 
@@ -37,7 +37,7 @@ describe('Story Renderer', () => {
 
   test('should extract CSS from component', async () => {
     const ctx = await createTestContext()
-    const componentPath = path.join(projectRoot, 'examples/components/button.story.stx')
+    const componentPath = path.join(projectRoot, 'components/button.story.stx')
 
     const result = await renderStoryComponent(ctx, componentPath)
 
@@ -47,7 +47,7 @@ describe('Story Renderer', () => {
 
   test('should interpolate variables from script tags', async () => {
     const ctx = await createTestContext()
-    const componentPath = path.join(projectRoot, 'examples/components/button.story.stx')
+    const componentPath = path.join(projectRoot, 'components/button.story.stx')
 
     const result = await renderStoryComponent(ctx, componentPath)
 
@@ -59,7 +59,7 @@ describe('Story Renderer', () => {
 
   test('should strip script and style tags from HTML output', async () => {
     const ctx = await createTestContext()
-    const componentPath = path.join(projectRoot, 'examples/components/button.story.stx')
+    const componentPath = path.join(projectRoot, 'components/button.story.stx')
 
     const result = await renderStoryComponent(ctx, componentPath)
 
@@ -70,7 +70,7 @@ describe('Story Renderer', () => {
 
   test('should apply props to component', async () => {
     const ctx = await createTestContext()
-    const componentPath = path.join(projectRoot, 'examples/components/button.story.stx')
+    const componentPath = path.join(projectRoot, 'components/button.story.stx')
 
     const result = await renderStoryComponent(ctx, componentPath, {
       props: { variant: 'danger', label: 'Delete' },
@@ -111,7 +111,7 @@ describe('Story Renderer', () => {
     clearStoryCache()
 
     const ctx = await createTestContext()
-    const componentPath = path.join(projectRoot, 'examples/components/button.story.stx')
+    const componentPath = path.join(projectRoot, 'components/button.story.stx')
 
     // First render
     const result1 = await renderStoryComponent(ctx, componentPath)
