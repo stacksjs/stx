@@ -1355,7 +1355,7 @@ async function processDirectivesInternal(
 
       if (!layoutFullPath) {
         const warning = `Layout not found: ${layoutPath} (referenced from ${filePath})`
-        console.warn(warning)
+        errorLogger.log(new Error(warning), { layoutPath, filePath }, 'warning')
 
         if (resolvedOptions.debug) {
           throw new StxRuntimeError(warning, filePath)
@@ -1451,7 +1451,7 @@ async function processDirectivesInternal(
       return output
     }
     catch (error) {
-      console.error(`Error processing layout ${layoutPath}:`, error)
+      errorLogger.log(error instanceof Error ? error : new Error(String(error)), { layoutPath, filePath }, 'error')
       return `[Error processing layout: ${error instanceof Error ? error.message : String(error)}]`
     }
   }
@@ -2297,7 +2297,7 @@ export function processJsonDirective(template: string, context: Record<string, a
       return JSON.stringify(data)
     }
     catch (error) {
-      console.error(`Error processing @json directive: ${error}`)
+      errorLogger.log(error instanceof Error ? error : new Error(String(error)), { directive: '@json' }, 'error')
       return match // Return unchanged if there's an error
     }
   })

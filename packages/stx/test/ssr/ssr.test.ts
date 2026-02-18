@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
-import { createApp, render } from '../../src/ssr'
+import type { SessionData, SessionStore } from '../../src/ssr'
+import { createApp, MemorySessionStore, render } from '../../src/ssr'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -782,5 +783,75 @@ describe('SSR - Edge cases', () => {
     await app.fetch(new Request(`http://localhost/test?long=${longValue}`))
 
     expect(query.long).toBe(longValue)
+  })
+})
+
+describe('SSR - Pluggable Session Store', () => {
+  it('MemorySessionStore should get/set/delete', async () => {
+    const store = new MemorySessionStore()
+
+    await store.set('sess1', { foo: 'bar' }, 60)
+    const data = await store.get('sess1')
+    expect(data).toEqual({ foo: 'bar' })
+
+    await store.delete('sess1')
+    const deleted = await store.get('sess1')
+    expect(deleted).toBeNull()
+  })
+
+  it('MemorySessionStore should expire entries', async () => {
+    const store = new MemorySessionStore()
+
+    // Set with 0-second TTL (already expired)
+    await store.set('sess2', { key: 'val' }, 0)
+
+    // Wait a tick to ensure expiration
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    const data = await store.get('sess2')
+    expect(data).toBeNull()
+  })
+
+  it('should accept a custom session store via AppConfig', async () => {
+    const calls: string[] = []
+    const customStore: SessionStore = {
+      async get(sessionId: string): Promise<SessionData | null> {
+        calls.push(`get:${sessionId}`)
+        return null
+      },
+      async set(sessionId: string, data: SessionData, ttlSeconds: number): Promise<void> {
+        calls.push(`set:${sessionId}`)
+      },
+      async delete(sessionId: string): Promise<void> {
+        calls.push(`delete:${sessionId}`)
+      },
+    }
+
+    const app = createApp({ sessionStore: customStore })
+
+    app.get('/test', (ctx) => {
+      ctx.session.set('key', 'value')
+      return new Response('OK')
+    })
+
+    await app.fetch(new Request('http://localhost/test'))
+
+    // The custom store should have been called
+    expect(calls.some(c => c.startsWith('get:'))).toBe(true)
+    expect(calls.some(c => c.startsWith('set:'))).toBe(true)
+  })
+
+  it('should default to MemorySessionStore when no store provided', async () => {
+    const app = createApp()
+    let sessionWorks = false
+
+    app.get('/test', (ctx) => {
+      ctx.session.set('x', 42)
+      sessionWorks = ctx.session.get('x') === 42
+      return new Response('OK')
+    })
+
+    await app.fetch(new Request('http://localhost/test'))
+    expect(sessionWorks).toBe(true)
   })
 })

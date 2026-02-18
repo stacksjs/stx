@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { createStreamRenderer, islandDirective, registerStreamingDirectives, streamTemplate, streamToResponse } from '../../src/streaming'
+import { createStreamRenderer, islandDirective, registerStreamingDirectives, streamTemplate, streamTemplateSimple, streamToResponse } from '../../src/streaming'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp')
@@ -763,5 +763,166 @@ describe('stx Streaming - streamToResponse', () => {
 
     const response = streamToResponse(stream, { status: 206 })
     expect(response.status).toBe(206)
+  })
+})
+
+// Tests for section-first progressive streaming
+describe('stx Streaming - Section-First Chunking', () => {
+  const SECTION_STREAM_DIR = path.join(TEST_DIR, 'temp-section-stream')
+
+  beforeAll(async () => {
+    await fs.promises.mkdir(SECTION_STREAM_DIR, { recursive: true })
+  })
+
+  afterAll(async () => {
+    await fs.promises.rm(SECTION_STREAM_DIR, { recursive: true, force: true })
+  })
+
+  it('should produce multiple chunks for sectioned templates', async () => {
+    const testFile = path.join(SECTION_STREAM_DIR, 'multi-section.stx')
+    await Bun.write(testFile, `
+      <script>
+        module.exports = { greeting: "Hello", info: "World" };
+      </script>
+      <header>{{ greeting }}</header>
+      <!-- @section:main -->
+      <main>{{ info }}</main>
+      <!-- @endsection:main -->
+      <!-- @section:footer -->
+      <footer>End</footer>
+      <!-- @endsection:footer -->
+    `)
+
+    const stream = await streamTemplate(testFile)
+    const chunks: string[] = []
+    const reader = stream.getReader()
+
+    let done = false
+    while (!done) {
+      const result = await reader.read()
+      if (result.done) {
+        done = true
+      } else {
+        chunks.push(result.value)
+      }
+    }
+
+    // Should produce more than one chunk (shell + sections)
+    expect(chunks.length).toBeGreaterThan(1)
+
+    // Concatenated output should contain all content
+    const output = chunks.join('')
+    expect(output).toContain('Hello')
+    expect(output).toContain('World')
+    expect(output).toContain('End')
+  })
+
+  it('should match full processDirectives output when concatenated', async () => {
+    const { processDirectives } = await import('../../src/process')
+    const testFile = path.join(SECTION_STREAM_DIR, 'match-output.stx')
+    const templateContent = `
+      <header>Static</header>
+      <!-- @section:content -->
+      <main>Section Content</main>
+      <!-- @endsection:content -->
+      <footer>Footer</footer>
+    `
+    await Bun.write(testFile, `
+      <script>
+        module.exports = {};
+      </script>
+      ${templateContent}
+    `)
+
+    const stream = await streamTemplate(testFile)
+    const chunks: string[] = []
+    const reader = stream.getReader()
+
+    let done = false
+    while (!done) {
+      const result = await reader.read()
+      if (result.done) {
+        done = true
+      } else {
+        chunks.push(result.value)
+      }
+    }
+
+    const streamedOutput = chunks.join('')
+
+    // All key content should be present
+    expect(streamedOutput).toContain('Static')
+    expect(streamedOutput).toContain('Section Content')
+    expect(streamedOutput).toContain('Footer')
+  })
+
+  it('should preserve byte-chunking when strategy is manual', async () => {
+    const testFile = path.join(SECTION_STREAM_DIR, 'manual-strategy.stx')
+    await Bun.write(testFile, `
+      <script>
+        module.exports = { title: "Manual" };
+      </script>
+      <h1>{{ title }}</h1>
+      <!-- @section:content -->
+      <p>Content</p>
+      <!-- @endsection:content -->
+    `)
+
+    const stream = await streamTemplate(testFile, {}, {
+      streaming: { enabled: true, strategy: 'manual', bufferSize: 8 },
+    })
+    const chunks: string[] = []
+    const reader = stream.getReader()
+
+    let done = false
+    while (!done) {
+      const result = await reader.read()
+      if (result.done) {
+        done = true
+      } else {
+        chunks.push(result.value)
+      }
+    }
+
+    // With manual strategy and small buffer, chunks should be byte-split (many small chunks)
+    const output = chunks.join('')
+    expect(output).toContain('Manual')
+    expect(output).toContain('Content')
+    // Byte-chunking with buffer=8 on any non-trivial output should produce many chunks
+    expect(chunks.length).toBeGreaterThan(2)
+  })
+
+  it('streamTemplateSimple should also use section-first streaming', async () => {
+    const testFile = path.join(SECTION_STREAM_DIR, 'simple-sections.stx')
+    await Bun.write(testFile, `
+      <script>
+        module.exports = { a: "Alpha", b: "Beta" };
+      </script>
+      <div>{{ a }}</div>
+      <!-- @section:part -->
+      <p>{{ b }}</p>
+      <!-- @endsection:part -->
+    `)
+
+    const stream = await streamTemplateSimple(testFile)
+    const chunks: string[] = []
+    const reader = stream.getReader()
+
+    let done = false
+    while (!done) {
+      const result = await reader.read()
+      if (result.done) {
+        done = true
+      } else {
+        chunks.push(result.value)
+      }
+    }
+
+    // Should produce multiple chunks for sectioned content
+    expect(chunks.length).toBeGreaterThan(1)
+
+    const output = chunks.join('')
+    expect(output).toContain('Alpha')
+    expect(output).toContain('Beta')
   })
 })

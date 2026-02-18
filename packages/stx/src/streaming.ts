@@ -221,16 +221,54 @@ export async function streamTemplate(
         const hasSuspense = chunks.some(c => c.type === 'suspense')
 
         if (!hasSuspense) {
-          // No suspense boundaries - fall back to chunked output
-          const output = await processDirectives(templateContent, context, templatePath, fullOptions, dependencies)
+          const strategy = fullOptions.streaming?.strategy || 'auto'
+          const sectionTestRegex = new RegExp(SECTION_PATTERN.source, 'g')
+          const hasSections = strategy !== 'manual' && sectionTestRegex.test(templateContent)
 
-          // Stream in chunks based on buffer size
-          for (let i = 0; i < output.length; i += bufferSize) {
-            const chunk = output.slice(i, i + bufferSize)
-            controller.enqueue(chunk)
+          if (!hasSections) {
+            // No sections — process entirely, byte-chunk as before
+            const output = await processDirectives(templateContent, context, templatePath, fullOptions, dependencies)
 
-            // Yield to allow other async operations
-            await new Promise(resolve => setTimeout(resolve, 0))
+            for (let i = 0; i < output.length; i += bufferSize) {
+              controller.enqueue(output.slice(i, i + bufferSize))
+              await new Promise(resolve => setTimeout(resolve, 0))
+            }
+          }
+          else {
+            // Has sections — process and flush each independently
+            const sections: { name: string, content: string, start: number, end: number }[] = []
+            const sectionRegex = new RegExp(SECTION_PATTERN.source, 'g')
+            let match
+            // eslint-disable-next-line no-cond-assign
+            while ((match = sectionRegex.exec(templateContent)) !== null) {
+              sections.push({ name: match[1], content: match[2], start: match.index, end: match.index + match[0].length })
+            }
+
+            let lastEnd = 0
+            for (const section of sections) {
+              // Flush shell content before this section
+              if (section.start > lastEnd) {
+                const shellPart = templateContent.slice(lastEnd, section.start)
+                if (shellPart.trim()) {
+                  const processed = await processDirectives(shellPart, context, templatePath, fullOptions, dependencies)
+                  controller.enqueue(processed)
+                  await new Promise(resolve => setTimeout(resolve, 0))
+                }
+              }
+              // Process and flush this section
+              const processed = await processDirectives(section.content, context, templatePath, fullOptions, dependencies)
+              controller.enqueue(processed)
+              await new Promise(resolve => setTimeout(resolve, 0))
+              lastEnd = section.end
+            }
+            // Flush remaining content after last section
+            if (lastEnd < templateContent.length) {
+              const remaining = templateContent.slice(lastEnd)
+              if (remaining.trim()) {
+                const processed = await processDirectives(remaining, context, templatePath, fullOptions, dependencies)
+                controller.enqueue(processed)
+              }
+            }
           }
         }
         else {
@@ -356,11 +394,48 @@ export async function streamTemplateSimple(
         await extractVariables(scriptContent, context, templatePath)
 
         const dependencies = new Set<string>()
-        const output = await processDirectives(templateContent, context, templatePath, fullOptions, dependencies)
+        const strategy = fullOptions.streaming?.strategy || 'auto'
+        const sectionTestRegex = new RegExp(SECTION_PATTERN.source, 'g')
+        const hasSections = strategy !== 'manual' && sectionTestRegex.test(templateContent)
 
-        // Stream output in chunks
-        for (let i = 0; i < output.length; i += bufferSize) {
-          controller.enqueue(output.slice(i, i + bufferSize))
+        if (!hasSections) {
+          // No sections — process entirely, byte-chunk as before
+          const output = await processDirectives(templateContent, context, templatePath, fullOptions, dependencies)
+
+          for (let i = 0; i < output.length; i += bufferSize) {
+            controller.enqueue(output.slice(i, i + bufferSize))
+          }
+        }
+        else {
+          // Has sections — process and flush each independently
+          const sections: { name: string, content: string, start: number, end: number }[] = []
+          const sectionRegex = new RegExp(SECTION_PATTERN.source, 'g')
+          let match
+          // eslint-disable-next-line no-cond-assign
+          while ((match = sectionRegex.exec(templateContent)) !== null) {
+            sections.push({ name: match[1], content: match[2], start: match.index, end: match.index + match[0].length })
+          }
+
+          let lastEnd = 0
+          for (const section of sections) {
+            if (section.start > lastEnd) {
+              const shellPart = templateContent.slice(lastEnd, section.start)
+              if (shellPart.trim()) {
+                const processed = await processDirectives(shellPart, context, templatePath, fullOptions, dependencies)
+                controller.enqueue(processed)
+              }
+            }
+            const processed = await processDirectives(section.content, context, templatePath, fullOptions, dependencies)
+            controller.enqueue(processed)
+            lastEnd = section.end
+          }
+          if (lastEnd < templateContent.length) {
+            const remaining = templateContent.slice(lastEnd)
+            if (remaining.trim()) {
+              const processed = await processDirectives(remaining, context, templatePath, fullOptions, dependencies)
+              controller.enqueue(processed)
+            }
+          }
         }
 
         controller.close()

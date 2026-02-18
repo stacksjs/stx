@@ -35,6 +35,7 @@ import type { StxOptions } from './types'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import { errorLogger } from './error-handling'
 import { processDirectives } from './process'
 import { extractVariables } from './utils'
 
@@ -61,6 +62,13 @@ export interface Session {
   regenerate(): void
   /** Destroy the session */
   destroy(): void
+}
+
+/** Pluggable session store interface for production-ready backends (Redis, DB, etc.) */
+export interface SessionStore {
+  get(sessionId: string): Promise<SessionData | null>
+  set(sessionId: string, data: SessionData, ttlSeconds: number): Promise<void>
+  delete(sessionId: string): Promise<void>
 }
 
 /** Request context passed to route handlers */
@@ -143,6 +151,8 @@ export interface AppConfig {
   csrfCookieName?: string
   /** Enable CSRF protection */
   csrfEnabled?: boolean
+  /** Pluggable session store (defaults to in-memory MemorySessionStore) */
+  sessionStore?: SessionStore
 }
 
 /** Route definition */
@@ -154,19 +164,39 @@ interface Route {
 }
 
 // =============================================================================
-// Session Store (In-Memory - replace with Redis/DB for production)
+// Session Store
 // =============================================================================
 
-const sessionStore = new Map<string, { data: SessionData, expires: number }>()
+/** Default in-memory session store. Use a custom SessionStore (Redis, DB) for production. */
+export class MemorySessionStore implements SessionStore {
+  private store = new Map<string, { data: SessionData, expires: number }>()
 
-function createSession(sessionId: string, ttl: number): Session {
+  async get(sessionId: string): Promise<SessionData | null> {
+    const entry = this.store.get(sessionId)
+    if (!entry || entry.expires <= Date.now()) {
+      if (entry) this.store.delete(sessionId)
+      return null
+    }
+    return { ...entry.data }
+  }
+
+  async set(sessionId: string, data: SessionData, ttlSeconds: number): Promise<void> {
+    this.store.set(sessionId, { data: { ...data }, expires: Date.now() + ttlSeconds * 1000 })
+  }
+
+  async delete(sessionId: string): Promise<void> {
+    this.store.delete(sessionId)
+  }
+}
+
+async function createSession(sessionId: string, ttl: number, store: SessionStore): Promise<Session> {
   const sessionData: SessionData = {}
   const flashData: SessionData = {}
 
   // Load existing session if present
-  const existing = sessionStore.get(sessionId)
-  if (existing && existing.expires > Date.now()) {
-    Object.assign(sessionData, existing.data)
+  const existing = await store.get(sessionId)
+  if (existing) {
+    Object.assign(sessionData, existing)
   }
 
   const session: Session = {
@@ -207,23 +237,21 @@ function createSession(sessionId: string, ttl: number): Session {
     },
 
     regenerate(): void {
-      sessionStore.delete(sessionId)
+      const oldId = sessionId
       sessionId = generateSessionId()
       session.id = sessionId
+      store.delete(oldId)
       saveSession()
     },
 
     destroy(): void {
-      sessionStore.delete(sessionId)
+      store.delete(sessionId)
       Object.keys(sessionData).forEach(key => delete sessionData[key])
     },
   }
 
   function saveSession() {
-    sessionStore.set(sessionId, {
-      data: { ...sessionData, __flash: flashData },
-      expires: Date.now() + ttl * 1000,
-    })
+    store.set(sessionId, { ...sessionData, __flash: flashData }, ttl)
   }
 
   // Initial save
@@ -421,6 +449,7 @@ export function createApp(config: AppConfig = {}) {
     csrfEnabled = true,
   } = config
 
+  const store = config.sessionStore ?? new MemorySessionStore()
   const routes: Route[] = []
   const globalMiddleware: Middleware[] = []
 
@@ -471,7 +500,7 @@ export function createApp(config: AppConfig = {}) {
         maxAge: sessionTtl,
       }))
     }
-    const session = createSession(sessionId, sessionTtl)
+    const session = await createSession(sessionId, sessionTtl, store)
 
     // Get or create CSRF token
     let csrfToken = session.get<string>('_csrf')
@@ -612,7 +641,7 @@ export function createApp(config: AppConfig = {}) {
 
       return response
     } catch (error) {
-      console.error('Request error:', error)
+      errorLogger.log(error instanceof Error ? error : new Error(String(error)), { handler: 'request' }, 'error')
       return new Response('Internal Server Error', { status: 500 })
     }
   }
