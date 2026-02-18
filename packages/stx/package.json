@@ -36,6 +36,30 @@
       "types": "./dist/jsx-runtime.d.ts",
       "import": "./dist/jsx-runtime.js"
     },
+    "./craft": {
+      "types": "./dist/craft-entry.d.ts",
+      "import": "./dist/craft.js"
+    },
+    "./database": {
+      "types": "./dist/database.d.ts",
+      "import": "./dist/database.js"
+    },
+    "./ssg": {
+      "types": "./dist/ssg.d.ts",
+      "import": "./dist/ssg.js"
+    },
+    "./pwa": {
+      "types": "./dist/pwa.d.ts",
+      "import": "./dist/pwa.js"
+    },
+    "./visual-testing": {
+      "types": "./dist/visual-testing.d.ts",
+      "import": "./dist/visual-testing.js"
+    },
+    "./bundle-analyzer": {
+      "types": "./dist/bundle-analyzer.d.ts",
+      "import": "./dist/bundle-analyzer.js"
+    },
     "./*": {
       "import": "./dist/*"
     }

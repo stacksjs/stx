@@ -13,7 +13,7 @@ export { formatSize, getTotalSize } from './deploy'
 export { type ImageRenderResult, type ImageVariant, type ProcessedImage, clearImageCache, getFallbackVariant, getMimeType, groupVariantsByFormat, optimizeImage, processImage } from './image-optimization'
 export { type AnalysisResult } from './analyzer'
 export { type AnalyzeOptions, type ChunkInfo } from './production-build'
-export { generateReport } from './visual-testing'
+// generateReport moved to stx/visual-testing
 export { fileExists } from './utils'
 export { type StreamingConfig } from './types'
 export { type Middleware } from './ssr'
@@ -26,6 +26,7 @@ export * from './runtime'
 export * from './forms'
 
 // Core modules
+export * from './env'
 export * from './a11y'
 export * from './analytics'
 export * from './analyzer'
@@ -37,14 +38,11 @@ export * from './build-optimizer'
 export * from './caching'
 export * from './components'
 export * from './config'
-export * from './craft-bridge'
-export * from './craft-compiler'
-export * from './craft-components'
-export * from './craft-ssr'
-export * from './native-build'
+// craft-bridge, craft-compiler, craft-components, craft-ssr, native-build
+// moved to stx/craft
 export * from './csp'
 export * from './custom-directives'
-export * from './database'
+// database moved to stx/database
 export * from './defer'
 export * from './deploy'
 export * from './dev-server'
@@ -88,12 +86,12 @@ export * from './reactive-bindings'
 export * from './client-script'
 export * from './component-hmr'
 export * from './hydration'
-export * from './ssg'
+// ssg moved to stx/ssg
 export * from './ssr'
-export * from './visual-testing'
+// visual-testing moved to stx/visual-testing
 export * from './image-optimization'
 export * from './media'
-export * from './bundle-analyzer'
+// bundle-analyzer moved to stx/bundle-analyzer
 export * from './build-views'
 export * from './signals'
 

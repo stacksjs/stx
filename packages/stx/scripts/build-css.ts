@@ -7,7 +7,7 @@ import process from 'node:process'
 // Skip CSS build in CI/CD environments or during npm publish
 // CSS is only for examples and not included in published package
 if (process.env.CI || process.env.npm_lifecycle_event === 'prepublishOnly') {
-  console.log('⏭️  Skipping CSS build (not needed for publish)')
+  console.log('[css] Skipping CSS build in CI (not needed for publish)')
   process.exit(0)
 }
 
@@ -16,7 +16,7 @@ const crosswindPath = resolve(process.env.HOME || '~', 'Code/Tools/crosswind/pac
 
 // Check if crosswind is available
 if (!existsSync(crosswindPath)) {
-  console.log('⏭️  Skipping CSS build (crosswind not available at ~/Code/Tools/crosswind)')
+  console.log('[css] Skipping CSS build — crosswind not found (optional dependency)')
   process.exit(0)
 }
 

@@ -7,6 +7,7 @@
  */
 
 import process from 'node:process'
+import { isDevelopment } from '../env'
 import { getErrorConfig } from './types'
 
 // =============================================================================
@@ -88,7 +89,10 @@ export const errorRecovery: ErrorRecovery = {
    * Create fallback content for failed template sections
    */
   createFallbackContent(sectionType: string, error: Error): string {
-    return `<!-- ${sectionType} failed: ${error.message} -->`
+    if (isDevelopment()) {
+      return `<!-- ${sectionType} failed: ${error.message} -->`
+    }
+    return `<!-- stx rendering error -->`
   },
 }
 
@@ -441,7 +445,7 @@ export const devHelpers: DevHelpers = {
    * Check if we're in development mode
    */
   isDevelopment(): boolean {
-    return process.env.NODE_ENV === 'development' || process.env.stx_DEBUG === 'true'
+    return isDevelopment()
   },
 
   /**

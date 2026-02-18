@@ -35,3 +35,26 @@ await Bun.build({
   plugins: [dts()],
   target: 'browser',
 })
+
+// Build optional modules as separate entry points
+const optionalModules = [
+  { entry: './src/craft-entry.ts', name: 'craft' },
+  { entry: './src/database.ts', name: 'database' },
+  { entry: './src/ssg.ts', name: 'ssg' },
+  { entry: './src/pwa.ts', name: 'pwa' },
+  { entry: './src/visual-testing.ts', name: 'visual-testing' },
+  { entry: './src/bundle-analyzer/index.ts', name: 'bundle-analyzer' },
+]
+
+await Promise.all(optionalModules.map(mod =>
+  Bun.build({
+    entrypoints: [mod.entry],
+    splitting: false,
+    outdir: './dist',
+    naming: `${mod.name}.js`,
+    plugins: [dts()],
+    target: 'bun',
+    minify: true,
+    packages: 'external',
+  }),
+))
