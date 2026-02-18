@@ -16,9 +16,9 @@ describe('Component Resolution', () => {
     // Create test component files
     await Bun.write(path.join(COMPONENTS_DIR, 'greeting.stx'), `<div class="greeting"><h1>{{ title }}</h1><p>{{ message }}</p></div>`)
     await Bun.write(path.join(COMPONENTS_DIR, 'my-button.stx'), `<button class="btn btn-{{ variant }}">{{ label }}</button>`)
-    await Bun.write(path.join(COMPONENTS_DIR, 'slot-card.stx'), `<div class="card"><div class="card-body">{{ slot }}</div></div>`)
+    await Bun.write(path.join(COMPONENTS_DIR, 'slot-card.stx'), `<div class="card"><div class="card-body"><slot /></div></div>`)
     await Bun.write(path.join(COMPONENTS_DIR, 'with-script.stx'), `<script>\nconst computed = "Hello " + name;\n</script>\n<div>{{ computed }}</div>`)
-    await Bun.write(path.join(COMPONENTS_DIR, 'wrapper.stx'), `<div class="wrapper"><h2>{{ heading }}</h2><div class="content">{{ slot }}</div></div>`)
+    await Bun.write(path.join(COMPONENTS_DIR, 'wrapper.stx'), `<div class="wrapper"><h2>{{ heading }}</h2><div class="content"><slot /></div></div>`)
     await Bun.write(path.join(COMPONENTS_DIR, 'circular-a.stx'), `<div>A: @component('circular-a')</div>`)
   })
 

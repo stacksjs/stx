@@ -116,7 +116,7 @@ export function createIslandRegistry(): IslandRegistry {
       island.hydrated = true
 
       // Dispatch hydration event
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
         window.dispatchEvent(
           new CustomEvent('stx:hydrate', {
             detail: { id, component: island.component },

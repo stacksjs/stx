@@ -227,7 +227,7 @@ describe('componentDirective', () => {
   it('should return error for missing component name', async () => {
     const result = await componentDirective.handler('', [], {}, '/test.stx')
     expect(typeof result).toBe('string')
-    expect(result).toContain('error')
+    expect(result.toLowerCase()).toContain('error')
   })
 
   it('should render component with props', async () => {

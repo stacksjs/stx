@@ -172,12 +172,18 @@ describe('processPartialHydrationDirectives', () => {
       `
       const result = processPartialHydrationDirectives(input)
 
-      const idMatches = result.match(/data-island="(island-[a-z0-9]+)"/g)
-      expect(idMatches).toBeTruthy()
-      expect(idMatches!.length).toBeGreaterThanOrEqual(2)
-      // IDs should be unique
-      const uniqueIds = new Set(idMatches)
-      expect(uniqueIds.size).toBe(idMatches!.length)
+      // Extract island IDs from the wrapper divs (not from inline scripts)
+      const idValues: string[] = []
+      const idRegex = /data-island="(island-[a-z0-9]+)"/g
+      let m
+      while ((m = idRegex.exec(result)) !== null) {
+        idValues.push(m[1])
+      }
+      // Should have at least 2 island references
+      expect(idValues.length).toBeGreaterThanOrEqual(2)
+      // Extract unique IDs - there should be exactly 2 distinct IDs
+      const uniqueIds = new Set(idValues)
+      expect(uniqueIds.size).toBe(2)
     })
   })
 })

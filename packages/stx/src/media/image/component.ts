@@ -414,7 +414,7 @@ function renderSimpleImg(props: ImgProps): ImageRenderResult {
     alt,
     width,
     height,
-    loading: priority ? undefined : loading,
+    loading: priority ? 'eager' : loading,
     decoding,
     fetchpriority: priority ? 'high' : fetchpriority,
     objectFit,
