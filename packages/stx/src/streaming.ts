@@ -588,6 +588,55 @@ export async function processSectionDirectives(
   return content
 }
 
+/**
+ * Wrap a ReadableStream<string> in a proper Response with chunked transfer encoding headers.
+ *
+ * Makes it trivial to use streaming from a Bun server handler:
+ *
+ * @example
+ * ```typescript
+ * const server = Bun.serve({
+ *   async fetch(req) {
+ *     const stream = await streamTemplate('index.stx', { title: 'Home' })
+ *     return streamToResponse(stream)
+ *   }
+ * })
+ * ```
+ *
+ * @param stream - The template ReadableStream
+ * @param init - Optional additional ResponseInit (headers, status, etc.)
+ * @returns A Response with proper streaming headers
+ */
+export function streamToResponse(
+  stream: ReadableStream<string>,
+  init: ResponseInit = {},
+): Response {
+  // Convert string stream to Uint8Array stream for Response
+  const encoder = new TextEncoder()
+  const byteStream = stream.pipeThrough(new TransformStream<string, Uint8Array>({
+    transform(chunk, controller) {
+      controller.enqueue(encoder.encode(chunk))
+    },
+  }))
+
+  const headers = new Headers(init.headers)
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'text/html; charset=utf-8')
+  }
+  if (!headers.has('Transfer-Encoding')) {
+    headers.set('Transfer-Encoding', 'chunked')
+  }
+  // Disable buffering for true streaming
+  if (!headers.has('X-Content-Type-Options')) {
+    headers.set('X-Content-Type-Options', 'nosniff')
+  }
+
+  return new Response(byteStream, {
+    ...init,
+    headers,
+  })
+}
+
 // =============================================================================
 // Client-Side Hydration Runtime
 // =============================================================================
