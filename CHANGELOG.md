@@ -3,6 +3,31 @@
 
 ### 🧹 Chores
 
+- release v0.2.4 ([ced9514](https://github.com/stacksjs/stx/commit/ced9514)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- revert package.json ([ccf8f1a](https://github.com/stacksjs/stx/commit/ccf8f1a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- release v0.2.4 ([9313038](https://github.com/stacksjs/stx/commit/9313038)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([bfaac5c](https://github.com/stacksjs/stx/commit/bfaac5c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.3...HEAD)
+
+### 🧹 Chores
+
+- revert package.json ([ccf8f1a](https://github.com/stacksjs/stx/commit/ccf8f1a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- release v0.2.4 ([9313038](https://github.com/stacksjs/stx/commit/9313038)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([bfaac5c](https://github.com/stacksjs/stx/commit/bfaac5c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.3...v0.2.4)
+
+### 🧹 Chores
+
 - release v0.2.4 ([01ecc20](https://github.com/stacksjs/stx/commit/01ecc20)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - wip ([bfaac5c](https://github.com/stacksjs/stx/commit/bfaac5c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 
