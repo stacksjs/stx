@@ -1,7 +1,7 @@
 {
   "name": "stx-native",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.2.0",
   "description": "STX Native - Compile STX templates to native iOS/Android UI",
   "type": "module",
   "main": "dist/index.js",

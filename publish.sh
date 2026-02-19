@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 for dir in packages/*/; do
   # skip collections
@@ -17,5 +16,5 @@ for dir in packages/*/; do
   fi
 
   echo "Publishing $name..."
-  (cd "$dir" && pantry npm:publish --access public)
+  (cd "$dir" && bun publish --access public) || echo "Failed to publish $name"
 done
