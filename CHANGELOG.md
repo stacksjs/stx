@@ -1,4 +1,27 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.4...v0.2.5)
+
+### 🧹 Chores
+
+- release v0.2.5 ([9816c5a](https://github.com/stacksjs/stx/commit/9816c5a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([e08a5df](https://github.com/stacksjs/stx/commit/e08a5df)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([168d0b5](https://github.com/stacksjs/stx/commit/168d0b5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.4...HEAD)
+
+### 🧹 Chores
+
+- wip ([e08a5df](https://github.com/stacksjs/stx/commit/e08a5df)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([168d0b5](https://github.com/stacksjs/stx/commit/168d0b5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.3...v0.2.4)
 
 ### 🧹 Chores
