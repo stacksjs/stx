@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/markdown",
   "type": "module",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Fast markdown parser with frontmatter support for stx",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
