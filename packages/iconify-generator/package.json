@@ -2,6 +2,7 @@
   "name": "@stacksjs/iconify-generator",
   "type": "module",
   "version": "0.2.0",
+  "private": true,
   "description": "Generator for Iconify icon packages",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",

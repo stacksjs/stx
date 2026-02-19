@@ -1,6 +1,7 @@
 {
   "publisher": "Stacks",
   "name": "vscode-stacks",
+  "private": true,
   "displayName": "Stacks",
   "version": "0.2.0",
   "description": "A modern Stacks development environment, including stx language support.",
