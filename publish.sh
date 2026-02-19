@@ -16,5 +16,5 @@ for dir in packages/*/; do
   fi
 
   echo "Publishing $name..."
-  (cd "$dir" && bun publish --access public) || echo "Failed to publish $name"
+  (cd "$dir" && npm publish --access public) || echo "Failed to publish $name"
 done
