@@ -22,19 +22,16 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
+      - name: Setup Pantry
+        uses: home-lang/pantry-setup@v1
 
       - name: Install Dependencies
         run: bun install
 
       - name: Publish
-        run: ./publish.sh
+        run: pantry npm:publish --access public --skip=collections
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         uses: stacksjs/action-releaser@v1.2.9
