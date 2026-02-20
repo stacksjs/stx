@@ -26,20 +26,21 @@ import { clearComponentCache } from './utils'
 
 // Import from modular dev-server components
 import {
-  buildHeadwindCSS,
+  buildCrosswindCSS,
   colors,
+  extractSidebarConfig,
   findAvailablePort,
   getFrontmatterHtml,
   getThemeSelectorHtml,
   getThemeSelectorScript,
   getThemeSelectorStyles,
-  injectHeadwindCSS,
+  injectCrosswindCSS,
   openNativeWindow,
-  rebuildHeadwindCSS,
+  rebuildCrosswindCSS,
   setupKeyboardShortcuts,
 } from './dev-server/index'
 
-// NOTE: Headwind CSS, theme selector, port utils, and native window functions
+// NOTE: Crosswind CSS, theme selector, port utils, and native window functions
 // have been extracted to dev-server/ modules for better organization
 
 // Define types for dev server options
@@ -361,7 +362,9 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
 
   // Open native window if requested
   if (options.native) {
-    await openNativeWindow(actualPort)
+    await openNativeWindow(actualPort, {
+      title: path.basename(absolutePath, '.md'),
+    })
   }
 
   // Set up file watching if enabled
@@ -482,9 +485,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     return false
   }
 
-  // Build Headwind CSS if config exists
+  // Build Crosswind CSS if config exists
   const cwd = path.dirname(absolutePath)
-  await buildHeadwindCSS(cwd)
+  await buildCrosswindCSS(cwd)
 
   // Find an available port (with fallback)
   let actualPort = port
@@ -518,12 +521,26 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
       // Serve the main HTML for the root path
       if (url.pathname === '/') {
-        // Inject Headwind CSS for utility classes (async)
+        // Inject Crosswind CSS for utility classes (async)
         const processedContent = async () => {
-          let content = await injectHeadwindCSS(htmlContent || '')
+          let content = await injectCrosswindCSS(htmlContent || '')
           // Inject HMR client script if hot reload is enabled
           if (hotReload) {
             content = injectHotReload(content, actualHmrPort)
+          }
+          // Inject native sidebar styles and flag when running in native mode
+          // CSS is injected to immediately hide web sidebar before any rendering
+          if (options.native) {
+            const nativeSidebarInjection = `<style>[data-stx-sidebar],.stx-sidebar{display:none!important}</style><script>window.__craftNativeSidebar=true;document.documentElement.classList.add('has-native-sidebar')</script>`
+            if (content.includes('<head>')) {
+              content = content.replace('<head>', `<head>${nativeSidebarInjection}`)
+            }
+            else if (content.includes('<html')) {
+              content = content.replace(/(<html[^>]*>)/, `$1<head>${nativeSidebarInjection}</head>`)
+            }
+            else {
+              content = `<head>${nativeSidebarInjection}</head>` + content
+            }
           }
           return content
         }
@@ -789,7 +806,15 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
   // Open native window if requested
   if (options.native) {
-    await openNativeWindow(actualPort)
+    // Read template to extract native sidebar configuration
+    const templateContent = await Bun.file(absolutePath).text()
+    const sidebarConfig = extractSidebarConfig(templateContent)
+
+    await openNativeWindow(actualPort, {
+      title: path.basename(absolutePath, '.stx'),
+      nativeSidebar: !!sidebarConfig,
+      sidebarConfig,
+    })
   }
 
   // Set up file watching if enabled
@@ -809,8 +834,8 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         clearComponentCache()
         const success = await buildFile()
 
-        // Rebuild Headwind CSS
-        await rebuildHeadwindCSS(cwd)
+        // Rebuild Crosswind CSS
+        await rebuildCrosswindCSS(cwd)
 
         // Notify connected browsers via HMR
         if (hotReload && hmrServer) {
@@ -1291,10 +1316,10 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         routeMatched = routes[`${url.pathname}/`]
       }
 
-      // If we found a matching route, serve its content with Headwind CSS injection
+      // If we found a matching route, serve its content with Crosswind CSS injection
       if (routeMatched) {
-        // Inject Headwind CSS for utility classes (async)
-        return injectHeadwindCSS(routeMatched.content).then(content => new Response(content, {
+        // Inject Crosswind CSS for utility classes (async)
+        return injectCrosswindCSS(routeMatched.content).then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
             'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -1380,7 +1405,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
       // If still no match and there's a root route, serve that as fallback (SPA mode)
       if (url.pathname !== '/' && routes['/']) {
-        return injectHeadwindCSS(routes['/'].content).then(content => new Response(content, {
+        return injectCrosswindCSS(routes['/'].content).then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
             'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -1644,8 +1669,8 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
     return false
   }
 
-  // Build Headwind CSS if config exists
-  await buildHeadwindCSS(absoluteAppDir)
+  // Build Crosswind CSS if config exists
+  await buildCrosswindCSS(absoluteAppDir)
 
   // Find available port
   let actualPort = port
@@ -1693,7 +1718,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         return serveStaticFile(publicPath)
       }
 
-      // Serve static files from dist/ (for Headwind CSS etc.)
+      // Serve static files from dist/ (for Crosswind CSS etc.)
       const distPath = path.join(absoluteAppDir, url.pathname)
       if (fs.existsSync(distPath) && fs.statSync(distPath).isFile()) {
         return serveStaticFile(distPath)
@@ -1767,12 +1792,23 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
             content = injectRouteParams(content, routeMatch.params)
           }
 
-          // Inject Headwind CSS
-          content = await injectHeadwindCSS(content)
+          // Inject Crosswind CSS
+          content = await injectCrosswindCSS(content)
 
           // Inject HMR client
           if (hotReload) {
             content = injectHotReload(content, actualHmrPort)
+          }
+
+          // Inject native sidebar styles and flag when running in native mode
+          if (options.native) {
+            const nativeSidebarInjection = `<style>[data-stx-sidebar],.stx-sidebar{display:none!important}</style><script>window.__craftNativeSidebar=true;document.documentElement.classList.add('has-native-sidebar')</script>`
+            if (content.includes('<head>')) {
+              content = content.replace('<head>', `<head>${nativeSidebarInjection}`)
+            }
+            else {
+              content = `<head>${nativeSidebarInjection}</head>` + content
+            }
           }
 
           return new Response(content, {
@@ -1790,9 +1826,19 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
       const indexPage = builtPages.get('/')
       if (indexPage) {
         let content = indexPage.content
-        content = await injectHeadwindCSS(content)
+        content = await injectCrosswindCSS(content)
         if (hotReload) {
           content = injectHotReload(content, actualHmrPort)
+        }
+        // Inject native sidebar styles and flag when running in native mode
+        if (options.native) {
+          const nativeSidebarInjection = `<style>[data-stx-sidebar],.stx-sidebar{display:none!important}</style><script>window.__craftNativeSidebar=true;document.documentElement.classList.add('has-native-sidebar')</script>`
+          if (content.includes('<head>')) {
+            content = content.replace('<head>', `<head>${nativeSidebarInjection}`)
+          }
+          else {
+            content = `<head>${nativeSidebarInjection}</head>` + content
+          }
         }
         return new Response(content, {
           headers: {
@@ -1840,7 +1886,19 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
   // Open native window if requested
   if (options.native) {
-    await openNativeWindow(actualPort)
+    // For app mode, try to find sidebar config from index page or layout
+    let sidebarConfig
+    const indexPath = path.join(pagesDir, 'index.stx')
+    if (fs.existsSync(indexPath)) {
+      const templateContent = await Bun.file(indexPath).text()
+      sidebarConfig = extractSidebarConfig(templateContent)
+    }
+
+    await openNativeWindow(actualPort, {
+      title: path.basename(absoluteAppDir) || 'stx App',
+      nativeSidebar: !!sidebarConfig,
+      sidebarConfig,
+    })
   }
 
   // File watching
@@ -1876,7 +1934,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
           partialsCache.clear()
           clearComponentCache()
           await buildAllPages()
-          await rebuildHeadwindCSS(absoluteAppDir)
+          await rebuildCrosswindCSS(absoluteAppDir)
 
           if (hotReload && hmrServer) {
             hmrServer.reload(filename)

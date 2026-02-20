@@ -472,25 +472,85 @@ export class ProductionBuild {
   }
 
   /**
+   * Resolve a path relative to the template file
+   */
+  private resolveRelativePath(from: string, to: string): string {
+    if (to.startsWith('/')) {
+      // Absolute path from project root
+      return join(dirname(from), '..', to)
+    }
+    // Relative path
+    return join(dirname(from), to)
+  }
+
+  /**
    * Process a template file
+   *
+   * Supports:
+   * - Inline scripts and styles
+   * - External files with stx-inline attribute: <script src="./file.js" stx-inline></script>
+   * - External stylesheets: <link href="./file.css" stx-inline />
    */
   private async processTemplate(content: string, filePath: string): Promise<string> {
-    // Basic template processing - in real implementation would use full stx processing
     let output = content
 
-    // Extract inline scripts and styles
+    // Collect scripts and styles
     const scripts: string[] = []
     const styles: string[] = []
 
-    // Extract scripts
-    output = output.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, (match, code) => {
+    // Process external scripts with stx-inline attribute
+    // Matches: <script src="path" stx-inline></script> or <script stx-inline src="path"></script>
+    output = output.replace(
+      /<script\b([^>]*)\bstx-inline\b([^>]*)(?:><\/script>|><\/script>|\/>)/gi,
+      (match, before, after) => {
+        const srcMatch = (before + after).match(/src=["']([^"']+)["']/)
+        if (srcMatch) {
+          const srcPath = this.resolveRelativePath(filePath, srcMatch[1])
+          if (existsSync(srcPath)) {
+            const externalContent = readFileSync(srcPath, 'utf-8')
+            scripts.push(`// Source: ${srcMatch[1]}\n${externalContent}`)
+          }
+          else {
+            this.warnings.push(`External script not found: ${srcPath}`)
+          }
+        }
+        return ''
+      },
+    )
+
+    // Process external stylesheets with stx-inline attribute
+    // Matches: <link href="path" stx-inline /> or <link stx-inline href="path" rel="stylesheet" />
+    output = output.replace(
+      /<link\b([^>]*)\bstx-inline\b([^>]*)(?:\/>|>)/gi,
+      (match, before, after) => {
+        const hrefMatch = (before + after).match(/href=["']([^"']+)["']/)
+        if (hrefMatch) {
+          const hrefPath = this.resolveRelativePath(filePath, hrefMatch[1])
+          if (existsSync(hrefPath)) {
+            const externalContent = readFileSync(hrefPath, 'utf-8')
+            styles.push(`/* Source: ${hrefMatch[1]} */\n${externalContent}`)
+          }
+          else {
+            this.warnings.push(`External stylesheet not found: ${hrefPath}`)
+          }
+        }
+        return ''
+      },
+    )
+
+    // Extract remaining inline scripts (without src attribute or with content)
+    output = output.replace(/<script\b(?![^>]*\bstx-inline\b)([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, code) => {
+      // Skip if it has a src attribute (external non-inline script)
+      if (/\bsrc=/.test(attrs)) {
+        return match
+      }
       if (code.trim()) {
         scripts.push(code)
       }
       return ''
     })
 
-    // Extract styles
+    // Extract inline styles
     output = output.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, (match, css) => {
       if (css.trim()) {
         styles.push(css)
@@ -498,9 +558,9 @@ export class ProductionBuild {
       return ''
     })
 
-    // Process and re-inject
+    // Process and re-inject scripts
     if (scripts.length > 0) {
-      const processedScript = scripts.join('\n')
+      const processedScript = scripts.join('\n\n')
       const scriptHash = this.generateHash(processedScript).slice(0, 8)
       const scriptFile = `assets/app.${scriptHash}.js`
       const scriptPath = join(this.config.outDir, scriptFile)
@@ -519,8 +579,9 @@ export class ProductionBuild {
       output = output.replace('</body>', `<script src="${this.config.publicPath}${scriptFile}"></script>\n</body>`)
     }
 
+    // Process and re-inject styles
     if (styles.length > 0) {
-      const processedStyle = styles.join('\n')
+      const processedStyle = styles.join('\n\n')
       const styleHash = this.generateHash(processedStyle).slice(0, 8)
       const styleFile = `assets/app.${styleHash}.css`
       const stylePath = join(this.config.outDir, styleFile)

@@ -4,48 +4,36 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   npm:
-    name: npm
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
 
     steps:
-      - uses: actions/checkout@v6.0.1
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2.0.2
-        # env:
-        #   BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-        with:
-          bun-version: latest
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
-      - name: Use cached node_modules
-        uses: actions/cache@v4.3.0
-        with:
-          path: node_modules
-          key: node-modules-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            node-modules-
+      - name: Setup Pantry
+        uses: home-lang/pantry-setup@v1
 
       - name: Install Dependencies
         run: bun install
 
-      - name: Publish to npm
-        run: ./scripts/publish.sh
+      - name: Publish
+        run: pantry publish --npm --access public --skip collections,iconify-core,iconify-generator,vscode
         env:
-          BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
-        uses: stacksjs/action-releaser@v1.2.6
-        with:
-          files: |
-            packages/stx/bin/stx-linux-x64.zip
-            packages/stx/bin/stx-linux-arm64.zip
-            packages/stx/bin/stx-windows-x64.zip
-            packages/stx/bin/stx-darwin-x64.zip
-            packages/stx/bin/stx-darwin-arm64.zip
+        uses: stacksjs/action-releaser@v1.2.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

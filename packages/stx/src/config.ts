@@ -8,6 +8,8 @@ import { stxRouterDirective } from './client/directive'
 // by the built-in processComponentDirectives function in process.ts
 import { heatmapDirective } from './heatmap'
 import { markdownDirectiveHandler } from './markdown'
+import { imgDirective } from './media/image/directive'
+import { videoDirective } from './media/video/directive'
 import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
 import { webComponentDirectiveHandler } from './web-components'
@@ -62,6 +64,8 @@ export const defaultConfig: StxConfig = {
     scrollAnimateDirective,
     stxRouterDirective,
     heatmapDirective,
+    imgDirective,
+    videoDirective,
     ...pwaDirectives,
   ],
   middleware: [],
@@ -252,6 +256,99 @@ export const defaultConfig: StxConfig = {
       include: [],
       exclude: ['*.map', '*.LICENSE.txt'],
       maxFileSizeKB: 500,
+    },
+  },
+
+  // ==========================================================================
+  // Media Configuration
+  // ==========================================================================
+  media: {
+    enabled: true,
+    image: {
+      enabled: true,
+      defaultWidths: [320, 480, 640, 768, 1024, 1280, 1536, 1920],
+      defaultFormats: ['avif', 'webp', 'jpeg'],
+      defaultQuality: 80,
+      placeholderStrategy: 'thumbhash',
+      lazyByDefault: true,
+      enableDpr: true,
+      defaultDpr: [1, 2, 3],
+
+      // ts-images integration configuration
+      tsImages: {
+        enabled: true,
+        outputDir: 'dist/images',
+        baseUrl: '/images',
+        // Format-specific quality settings
+        formatQuality: {
+          jpeg: { quality: 85, mozjpeg: true, progressive: true },
+          png: { compressionLevel: 9, palette: false },
+          webp: { quality: 82, effort: 5, smartSubsample: true },
+          avif: { quality: 75, effort: 4, lossless: false },
+        },
+        // Default responsive breakpoints
+        breakpoints: [320, 480, 640, 768, 1024, 1280, 1536, 1920],
+        // Batch processing options
+        batchOptions: {
+          concurrency: 4,
+          optimizationPreset: 'web',
+        },
+      },
+    },
+    video: {
+      enabled: true,
+      lazyByDefault: true,
+      defaultControls: true,
+
+      // ts-videos integration configuration
+      tsVideos: {
+        enabled: true,
+        outputDir: 'dist/videos',
+        baseUrl: '/videos',
+        // Default quality preset
+        defaultQuality: 'high',
+        // Streaming configuration
+        streaming: {
+          enabled: true,
+          format: 'hls',
+          segmentDuration: 6,
+          defaultQualities: [
+            { label: '1080p', width: 1920, height: 1080, bitrate: 5000000, audioBitrate: 192000 },
+            { label: '720p', width: 1280, height: 720, bitrate: 2500000, audioBitrate: 128000 },
+            { label: '480p', width: 854, height: 480, bitrate: 1000000, audioBitrate: 96000 },
+          ],
+        },
+        // Thumbnail generation
+        thumbnails: {
+          enabled: true,
+          count: 10,
+          format: 'webp',
+          width: 320,
+        },
+        // Transcoding defaults
+        transcoding: {
+          defaultCodec: 'h264',
+          defaultAudioCodec: 'aac',
+          speedPreset: 'medium',
+        },
+      },
+    },
+    upload: {
+      enabled: true,
+      maxSize: 10 * 1024 * 1024, // 10MB
+      allowedTypes: ['image/*', 'video/*', 'audio/*', 'application/pdf'],
+      maxConcurrent: 3,
+    },
+    protected: {
+      enabled: true,
+      expirationSeconds: 3600,
+      batchSize: 10,
+    },
+    cache: {
+      enabled: true,
+      directory: '.stx/media-cache',
+      maxAge: 30,
+      maxSize: 500,
     },
   },
 }

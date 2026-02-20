@@ -4,6 +4,20 @@
 // items, import directly from the module (e.g., import { x } from 'stx/reactivity')
 // ============================================================
 
+// Explicit re-exports to resolve wildcard ambiguities
+export { type BuildResult } from './build-optimizer'
+export { type ComponentInstance } from './reactivity'
+export { type HydrationOptions } from './hydration'
+export { type CookieOptions } from './route-middleware'
+export { formatSize, getTotalSize } from './deploy'
+export { type ImageRenderResult, type ImageVariant, type ProcessedImage, clearImageCache, getFallbackVariant, getMimeType, groupVariantsByFormat, optimizeImage, processImage } from './image-optimization'
+export { type AnalysisResult } from './analyzer'
+export { type AnalyzeOptions, type ChunkInfo } from './production-build'
+// generateReport moved to stx/visual-testing
+export { fileExists } from './utils'
+export { type StreamingConfig } from './types'
+export { type Middleware } from './ssr'
+
 // Core functionality - these are the primary modules
 export * from './reactivity'
 export * from './head'
@@ -12,6 +26,7 @@ export * from './runtime'
 export * from './forms'
 
 // Core modules
+export * from './env'
 export * from './a11y'
 export * from './analytics'
 export * from './analyzer'
@@ -23,14 +38,11 @@ export * from './build-optimizer'
 export * from './caching'
 export * from './components'
 export * from './config'
-export * from './craft-bridge'
-export * from './craft-compiler'
-export * from './craft-components'
-export * from './craft-ssr'
-export * from './native-build'
+// craft-bridge, craft-compiler, craft-components, craft-ssr, native-build
+// moved to stx/craft
 export * from './csp'
 export * from './custom-directives'
-export * from './database'
+// database moved to stx/database
 export * from './defer'
 export * from './deploy'
 export * from './dev-server'
@@ -67,20 +79,39 @@ export * from './type-checker'
 export * from './web-components'
 export * from './virtual-scrolling'
 export * from './partial-hydration'
+export * from './hydration-runtime'
 export * from './client'
+export * from './loading-indicator'
 export * from './reactive-bindings'
+export * from './client-script'
 export * from './component-hmr'
 export * from './hydration'
-export * from './ssg'
+// ssg moved to stx/ssg
 export * from './ssr'
-export * from './visual-testing'
+// visual-testing moved to stx/visual-testing
 export * from './image-optimization'
-export * from './bundle-analyzer'
+export * from './media'
+// bundle-analyzer moved to stx/bundle-analyzer
+export * from './build-views'
+export * from './signals'
+
+// Vue compatibility and JSX support
+export * from './vue-template'
+export { provide, inject, setGlobalProvide, defineEmits, defineExpose, nextTick, onErrorCaptured, handleError, useSlots, useAttrs, createProvideContext, generateCompositionRuntime } from './composition-api'
+export type { StxComponentInstance, EmitFn } from './composition-api'
+export { jsx, jsxs, jsxDEV, Fragment, renderToString, renderToStream, renderToDOM, Show, For, Portal, h } from './jsx-runtime'
+export type { VNode } from './jsx-runtime'
+export { createApp as createStxApp } from './app'
+export type { StxApp, StxAppPlugin, StxPluginInput, StxAppConfig } from './app'
+export * from './dynamic-components'
 
 // These modules are exported first to establish their types
 export * from './utils'
-export * from './testing'
 export * from './slots'
+
+// Testing module - has overlapping 'render' export with ssr
+// Import from stx/testing directly if needed
+// export * from './testing'
 
 // Server components - has overlapping exports (RenderResult, clearComponentCache)
 // Import from stx/server-components directly if needed

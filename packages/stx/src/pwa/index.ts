@@ -39,7 +39,6 @@ export {
   getServiceWorkerGenerator,
   type WorkboxConfig,
   type WorkboxModule,
-  type PrecacheEntry,
   type RuntimeCacheRule,
 } from './workbox'
 
@@ -66,7 +65,6 @@ export {
 
 export {
   generateManifest,
-  generateManifestFile,
 } from './manifest'
 
 // ============================================================================
@@ -86,7 +84,7 @@ export {
   generatePrecacheManifest,
   generatePrecacheManifestJs,
   formatSize,
-  type PrecacheManifestEntry,
+  type PrecacheEntry,
 } from './precache'
 
 // ============================================================================
@@ -102,8 +100,8 @@ export {
 // ============================================================================
 
 export {
-  injectPwaAssets,
-  generatePwaRegistrationScript,
+  injectPwaTags,
+  generateSwRegistrationScript,
 } from './inject'
 
 // ============================================================================
@@ -111,9 +109,9 @@ export {
 // ============================================================================
 
 export {
-  auditPwa,
-  type PwaAuditResult,
-  type PwaAuditCheck,
+  runPwaAudit,
+  type AuditResult,
+  type AuditCheck,
 } from './audit'
 
 // ============================================================================

@@ -184,7 +184,7 @@ describe('stx Edge Cases', () => {
   })
 
   // Test multiple script tags
-  it.skip('should handle multiple script tags', async () => {
+  it('should handle multiple script tags', async () => {
     const testFile = await createTestFile('multiple-scripts.stx', `
       <!DOCTYPE html>
       <html>
@@ -203,7 +203,7 @@ describe('stx Edge Cases', () => {
         <h1>{{ title }}</h1>
         <p>Count: {{ count }}</p>
 
-        <script>
+        <script client>
           // This is a client-side script that should remain in the output
           console.log('Client-side code');
         </script>
@@ -223,8 +223,8 @@ describe('stx Edge Cases', () => {
     expect(outputHtml).toContain('<h1>Multiple Scripts Demo</h1>')
     expect(outputHtml).toContain('<p>Count: 5</p>')
 
-    // Should preserve client-side script
-    expect(outputHtml).toContain('console.log(\'Client-side code\')')
+    // Client-side script should be preserved in the output (may be wrapped with data-stx-scoped)
+    expect(outputHtml).toContain('Client-side code')
   })
 
   // Test escaped template delimiters

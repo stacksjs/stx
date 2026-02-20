@@ -1,0 +1,126 @@
+<script server>
+/**
+ * PlatformIcon Component
+ *
+ * Displays a styled platform icon/badge for various messaging platforms.
+ */
+import { defineProps, withDefaults } from 'stx'
+
+interface PlatformIconProps {
+  platform: string
+  size?: 'small' | 'medium' | 'large'
+  showLabel?: boolean
+}
+
+const {
+  platform,
+  size = 'medium',
+  showLabel = false
+} = withDefaults(defineProps<PlatformIconProps>(), {
+  size: 'medium',
+  showLabel: false
+})
+
+// Platform configurations
+const platforms = {
+  imessage: {
+    name: 'iMessage',
+    emoji: '💬',
+    gradient: 'from-green-500 to-green-600',
+    color: '#34C759'
+  },
+  whatsapp: {
+    name: 'WhatsApp',
+    emoji: '📱',
+    gradient: 'from-green-400 to-green-500',
+    color: '#25D366'
+  },
+  slack: {
+    name: 'Slack',
+    emoji: '💼',
+    gradient: 'from-purple-900 to-purple-700',
+    color: '#4A154B'
+  },
+  discord: {
+    name: 'Discord',
+    emoji: '🎮',
+    gradient: 'from-indigo-500 to-indigo-600',
+    color: '#5865F2'
+  },
+  telegram: {
+    name: 'Telegram',
+    emoji: '✈️',
+    gradient: 'from-sky-500 to-sky-600',
+    color: '#0088cc'
+  },
+  signal: {
+    name: 'Signal',
+    emoji: '🛡️',
+    gradient: 'from-blue-500 to-blue-600',
+    color: '#3A76F0'
+  },
+  messenger: {
+    name: 'Messenger',
+    emoji: '📘',
+    gradient: 'from-blue-500 to-blue-600',
+    color: '#0084FF'
+  },
+  twitter: {
+    name: 'X/Twitter',
+    emoji: '🐦',
+    gradient: 'from-sky-400 to-sky-500',
+    color: '#1DA1F2'
+  },
+}
+
+function getPlatformConfig() {
+  return platforms[platform] || platforms.imessage
+}
+
+const config = getPlatformConfig()
+
+// Size classes
+const sizeClasses = {
+  small: { wrapper: 'w-5 h-5 text-xs', label: 'text-xs' },
+  medium: { wrapper: 'w-8 h-8 text-base', label: 'text-sm' },
+  large: { wrapper: 'w-12 h-12 text-xl', label: 'text-base' },
+}
+
+const sizeClass = sizeClasses[size] || sizeClasses.medium
+</script>
+
+<div class="platform-icon {{ showLabel ? 'platform-icon--with-label' : '' }}">
+  <div
+    class="platform-icon-badge {{ sizeClass.wrapper }} bg-gradient-to-br {{ config.gradient }}"
+    title="{{ config.name }}"
+  >
+    {{ config.emoji }}
+  </div>
+
+  @if(showLabel)
+    <span class="platform-icon-label {{ sizeClass.label }}">
+      {{ config.name }}
+    </span>
+  @endif
+</div>
+
+<style scoped>
+.platform-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.platform-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.platform-icon-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+</style>

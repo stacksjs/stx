@@ -1,6 +1,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
+import { ComponentRegistry } from '../services/ComponentRegistry'
 
 /**
  * Creates a diagnostic collection for stx files
@@ -101,6 +102,7 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
   const validateUnclosed = config.get<boolean>('validateUnclosedDirectives', true)
   const validateMismatched = config.get<boolean>('validateMismatchedDirectives', true)
   const validatePaths = config.get<boolean>('validateTemplatePaths', true)
+  const validateProps = config.get<boolean>('validateComponentProps', true)
 
   const diagnostics: vscode.Diagnostic[] = []
 
@@ -214,6 +216,11 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
     validateTemplatePaths(document, diagnostics)
   }
 
+  // Validate component props (missing required, unknown props)
+  if (validateProps) {
+    validateComponentProps(document, diagnostics)
+  }
+
   diagnosticCollection.set(document.uri, diagnostics)
 }
 
@@ -307,4 +314,100 @@ function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscod
       match = pathDirectiveRegex.exec(text)
     }
   }
+}
+
+/**
+ * Validates component props in @component directives
+ * - Warns about missing required props
+ * - Warns about unknown props
+ */
+function validateComponentProps(document: vscode.TextDocument, diagnostics: vscode.Diagnostic[]): void {
+  const registry = ComponentRegistry.getInstance()
+
+  // Regex to match @component('ComponentName', { props })
+  const componentRegex = /@component\s*\(\s*['"`]([^'"`]+)['"`](?:\s*,\s*(\{[^)]*\}))?\s*\)/g
+
+  for (let lineNum = 0; lineNum < document.lineCount; lineNum++) {
+    const line = document.lineAt(lineNum)
+    const text = line.text
+
+    let match: RegExpExecArray | null
+    componentRegex.lastIndex = 0
+    match = componentRegex.exec(text)
+
+    while (match !== null) {
+      const componentName = match[1]
+      const propsStr = match[2] || '{}'
+      const componentStart = match.index + match[0].indexOf(componentName)
+
+      // Get component info from registry
+      const componentInfo = registry.getComponent(componentName)
+
+      if (componentInfo && componentInfo.propDetails.length > 0) {
+        // Extract prop names from the props object
+        const providedProps = extractPropNames(propsStr)
+
+        // Check for missing required props
+        for (const propDetail of componentInfo.propDetails) {
+          if (propDetail.required && !providedProps.includes(propDetail.name)) {
+            const diagnostic = new vscode.Diagnostic(
+              new vscode.Range(
+                new vscode.Position(lineNum, componentStart),
+                new vscode.Position(lineNum, componentStart + componentName.length),
+              ),
+              `Missing required prop '${propDetail.name}' for component '${componentName}'`,
+              vscode.DiagnosticSeverity.Error,
+            )
+            diagnostic.code = 'missing-required-prop'
+            diagnostic.source = 'stx'
+            diagnostics.push(diagnostic)
+          }
+        }
+
+        // Check for unknown props
+        const knownPropNames = componentInfo.propDetails.map(p => p.name)
+        for (const providedProp of providedProps) {
+          if (!knownPropNames.includes(providedProp)) {
+            // Find the position of this prop in the text
+            const propPosMatch = text.match(new RegExp(`(\\b${providedProp}\\s*:)`))
+            if (propPosMatch) {
+              const propStart = text.indexOf(propPosMatch[1])
+              const diagnostic = new vscode.Diagnostic(
+                new vscode.Range(
+                  new vscode.Position(lineNum, propStart),
+                  new vscode.Position(lineNum, propStart + providedProp.length),
+                ),
+                `Unknown prop '${providedProp}' for component '${componentName}'`,
+                vscode.DiagnosticSeverity.Warning,
+              )
+              diagnostic.code = 'unknown-prop'
+              diagnostic.source = 'stx'
+              diagnostics.push(diagnostic)
+            }
+          }
+        }
+      }
+
+      match = componentRegex.exec(text)
+    }
+  }
+}
+
+/**
+ * Extract prop names from a props object string like "{ title: 'Hello', count: 5 }"
+ */
+function extractPropNames(propsStr: string): string[] {
+  const props: string[] = []
+
+  // Simple regex to extract key names from object literal
+  const propNameRegex = /(\w+)\s*:/g
+  let match: RegExpExecArray | null
+
+  match = propNameRegex.exec(propsStr)
+  while (match !== null) {
+    props.push(match[1])
+    match = propNameRegex.exec(propsStr)
+  }
+
+  return props
 }

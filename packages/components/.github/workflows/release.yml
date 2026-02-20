@@ -1,0 +1,39 @@
+name: Releaser
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Pantry
+        uses: home-lang/pantry-setup@v1
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Publish
+        run: pantry publish --npm --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: stacksjs/action-releaser@v1.2.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

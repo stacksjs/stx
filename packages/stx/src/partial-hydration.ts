@@ -23,6 +23,8 @@
  * ```
  */
 
+import { generateHydrationBootstrap, extractComponentName, extractBoundProps } from './hydration-runtime'
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -114,7 +116,7 @@ export function createIslandRegistry(): IslandRegistry {
       island.hydrated = true
 
       // Dispatch hydration event
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
         window.dispatchEvent(
           new CustomEvent('stx:hydrate', {
             detail: { id, component: island.component },
@@ -350,6 +352,10 @@ export function processPartialHydrationDirectives(
   _filePath?: string
 ): string {
   let result = template
+  let hasIslands = false
+
+  // Check if any client directives exist before processing
+  const hasClientDirectives = /@client:(load|idle|visible|media|only|hover|event)/i.test(template)
 
   // Process @client:load
   result = processClientDirective(result, 'load', context)
@@ -371,6 +377,14 @@ export function processPartialHydrationDirectives(
 
   // Process @client:event
   result = processClientDirective(result, 'event', context)
+
+  // Detect if islands were generated
+  hasIslands = hasClientDirectives && result !== template
+
+  // Inject unified hydration runtime once if islands are present
+  if (hasIslands) {
+    result += '\n' + generateHydrationBootstrap()
+  }
 
   return result
 }
@@ -414,6 +428,26 @@ function processClientDirective(
     // Generate unique island ID
     const islandId = `island-${Math.random().toString(36).substring(2, 9)}`
 
+    // Extract component name from inner content
+    const componentName = extractComponentName(content.trim())
+
+    // Extract bound props from component content
+    const boundProps = extractBoundProps(content.trim(), _context)
+
+    // Build data attributes for options
+    const dataAttrs: string[] = []
+    if (options.rootMargin) dataAttrs.push(`data-root-margin="${options.rootMargin}"`)
+    if (options.threshold !== undefined) dataAttrs.push(`data-threshold="${options.threshold}"`)
+    if (options.media) dataAttrs.push(`data-media="${options.media}"`)
+    if (options.event) dataAttrs.push(`data-event="${options.event}"`)
+    if (componentName) dataAttrs.push(`data-component="${componentName}"`)
+
+    // Serialize props into JSON script block
+    const hasProps = Object.keys(boundProps).length > 0
+    const propsBlock = hasProps
+      ? `\n  <script type="application/json" data-island-props="${islandId}">${JSON.stringify(boundProps)}</script>`
+      : ''
+
     // Generate hydration script based on strategy
     let hydrationScript = ''
     switch (strategy) {
@@ -441,9 +475,10 @@ function processClientDirective(
     return `
       <div data-island="${islandId}"
            data-strategy="${strategy}"
+           ${dataAttrs.join('\n           ')}
            class="stx-island"
            style="contents;">
-        ${content.trim()}
+        ${content.trim()}${propsBlock}
       </div>
       ${hydrationScript}
     `

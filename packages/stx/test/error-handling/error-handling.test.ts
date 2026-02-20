@@ -273,7 +273,12 @@ line 5`
         const error = new Error('Template compilation failed')
         const fallback = errorRecovery.createFallbackContent('Component', error)
 
-        expect(fallback).toContain('<!-- Component failed: Template compilation failed -->')
+        if (process.env.NODE_ENV === 'production') {
+          expect(fallback).toBe('<!-- stx rendering error -->')
+        }
+        else {
+          expect(fallback).toContain('<!-- Component failed: Template compilation failed -->')
+        }
       })
     })
   })
@@ -348,18 +353,18 @@ line 5`
     describe('isDevelopment', () => {
       it('should detect development mode', () => {
         const originalEnv = process.env.NODE_ENV
-        const originalDebug = process.env.stx_DEBUG
+        const originalDebug = process.env.STX_DEBUG
 
         // Test development detection
         process.env.NODE_ENV = 'development'
         expect(devHelpers.isDevelopment()).toBe(true)
 
         process.env.NODE_ENV = 'production'
-        process.env.stx_DEBUG = 'true'
+        process.env.STX_DEBUG = 'true'
         expect(devHelpers.isDevelopment()).toBe(true)
 
         process.env.NODE_ENV = 'production'
-        process.env.stx_DEBUG = 'false'
+        delete process.env.STX_DEBUG
         expect(devHelpers.isDevelopment()).toBe(false)
 
         // Restore original values
@@ -367,8 +372,8 @@ line 5`
           process.env.NODE_ENV = originalEnv
         else delete process.env.NODE_ENV
         if (originalDebug)
-          process.env.stx_DEBUG = originalDebug
-        else delete process.env.stx_DEBUG
+          process.env.STX_DEBUG = originalDebug
+        else delete process.env.STX_DEBUG
       })
     })
 
@@ -489,9 +494,14 @@ line 3`
       const error = new StxRuntimeError('Variable not found: user.name')
       const fallback = errorRecovery.createFallbackContent('UserProfile', error)
 
-      expect(fallback).toContain('<!-- UserProfile failed:')
-      expect(fallback).toContain('Variable not found: user.name')
-      expect(fallback).toContain('-->')
+      if (process.env.NODE_ENV === 'production') {
+        expect(fallback).toBe('<!-- stx rendering error -->')
+      }
+      else {
+        expect(fallback).toContain('<!-- UserProfile failed:')
+        expect(fallback).toContain('Variable not found: user.name')
+        expect(fallback).toContain('-->')
+      }
     })
   })
 

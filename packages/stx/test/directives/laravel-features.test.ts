@@ -147,12 +147,15 @@ describe('Laravel-like Features', () => {
       `
 
       const result = await processTemplate(template)
-      expect(result.trim()).toBe('<script>console.log(\'Production mode\')</script>')
+      // Client scripts get wrapped in scoped IIFE by the processing pipeline
+      expect(result).toContain('Production mode')
+      expect(result).not.toContain('Development mode')
 
       // Test with different environment
       process.env.NODE_ENV = 'development'
       const devResult = await processTemplate(template)
-      expect(devResult.trim()).toBe('<script>console.log(\'Development mode\')</script>')
+      expect(devResult).toContain('Development mode')
+      expect(devResult).not.toContain('Production mode')
     })
 
     test('@development directive works correctly', async () => {

@@ -5,7 +5,7 @@
  * It has been split into focused sub-modules:
  *
  * - terminal-colors.ts - ANSI color codes for terminal output
- * - headwind.ts - Headwind CSS generation
+ * - crosswind.ts - Crosswind CSS generation
  * - theme-selector.ts - Theme selector UI components
  * - port-utils.ts - Port availability checking
  * - native-window.ts - Native window handling
@@ -15,7 +15,7 @@
 
 // Re-export all sub-modules
 export * from './terminal-colors'
-export * from './headwind'
+export * from './crosswind'
 export * from './theme-selector'
 export * from './port-utils'
 export * from './native-window'

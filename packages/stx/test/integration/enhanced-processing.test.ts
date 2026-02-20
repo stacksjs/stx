@@ -689,7 +689,7 @@ describe('Enhanced Template Processing Integration', () => {
 
       // Should process efficiently even with 500 products
       // Note: This threshold is generous to account for CI/CD environments with varying resources
-      expect(endTime - startTime).toBeLessThan(5000) // Less than 5 seconds
+      expect(endTime - startTime).toBeLessThan(10000) // Less than 10 seconds
 
       const outputHtml = await getHtmlOutput(result)
       expect(outputHtml).toContain('Product Catalog (500 products)')

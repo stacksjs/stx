@@ -38,7 +38,7 @@
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives, readMarkdownFile } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile, renderToString } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -188,6 +188,34 @@ export { content as default };
         }
       })
 
+      // Handler for .jsx and .tsx files (JSX component support)
+      build.onLoad({ filter: /\.(jsx|tsx)$/ }, async ({ path: filePath }) => {
+        try {
+          const source = await Bun.file(filePath).text()
+
+          // Use Bun's built-in transpiler with stx as the JSX import source
+          const loader = filePath.endsWith('.tsx') ? 'tsx' : 'jsx'
+          const transpiler = new Bun.Transpiler({
+            loader,
+            jsxOptimizationInline: true,
+          })
+
+          const code = transpiler.transformSync(source)
+
+          return {
+            contents: code,
+            loader: 'js',
+          }
+        }
+        catch (error: any) {
+          console.error('JSX Processing Error:', error)
+          return {
+            contents: `export default function() { return null; }`,
+            loader: 'js',
+          }
+        }
+      })
+
       build.onLoad({ filter: /\.stx$/ }, async ({ path: filePath }) => {
         try {
         // Track dependencies for caching
@@ -221,7 +249,11 @@ export { content as default };
           const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
           const clientScripts: string[] = []
           const serverScripts: string[] = []
+          const signalsScripts: string[] = [] // Scripts using STX signals API
           let scriptMatch: RegExpExecArray | null
+
+          // Check if script uses STX signals API (state, derived, effect, batch)
+          const usesSignalsAPI = (content: string) => /\b(?:state|derived|effect|batch)\s*\(/.test(content)
 
           while ((scriptMatch = scriptRegex.exec(content)) !== null) {
             const attrs = scriptMatch[1]
@@ -230,8 +262,14 @@ export { content as default };
 
             // Check if it's a client-only script
             const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
+            // Check if it uses STX signals API (should be processed by signals runtime)
+            const isSignalsScript = usesSignalsAPI(scriptContent)
 
-            if (isClientScript) {
+            if (isSignalsScript) {
+              // Scripts with signals should be kept in template for processSignals to handle
+              signalsScripts.push(fullScript)
+            }
+            else if (isClientScript) {
               clientScripts.push(fullScript)
             }
             else {
@@ -239,8 +277,17 @@ export { content as default };
             }
           }
 
-          // Remove all script tags from template (use workingContent which may be from <template> tag)
-          const templateContent = workingContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+          // Remove non-signals script tags from template, keep signals scripts for processSignals
+          let templateContent = workingContent
+          // Remove server scripts and client scripts, but keep signals scripts
+          for (const script of serverScripts) {
+            const escapedScript = script.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            templateContent = templateContent.replace(new RegExp(`<script\\b[^>]*>${escapedScript}<\\/script>`, 'gi'), '')
+          }
+          for (const script of clientScripts) {
+            const escapedScript = script.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            templateContent = templateContent.replace(escapedScript, '')
+          }
 
           // Create a sandbox environment to execute the script
           const context: Record<string, any> = {
@@ -254,6 +301,10 @@ export { content as default };
             },
             // Add stx options for directives that need them (like @component)
             __stx_options: options,
+            // Enable SFC mode: events.ts will collect bindings instead of
+            // generating standalone scripts, so we can inject them into
+            // the component's <script client> scope
+            __stx_sfc_mode: true,
           }
 
           // Execute server script content to extract variables
@@ -267,17 +318,26 @@ export { content as default };
           // Process all directives
           output = await processDirectives(output, context, filePath, options, dependencies)
 
-          // Inject client scripts before </body>
+          // Transform and inject client scripts before </body>
+          // processClientScript resolves @stores imports, injects event
+          // bindings into the script scope, and auto-wraps in a scoped IIFE
           if (clientScripts.length > 0) {
-            const scriptsHtml = clientScripts.join('\n')
+            const eventBindings = (context.__stx_event_bindings || []) as any[]
+            const transformedScripts = clientScripts.map((fullScript: string) => {
+              const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
+              if (!contentMatch) return fullScript
+              return processClientScript(contentMatch[1], { eventBindings })
+            })
+            const scriptsHtml = transformedScripts.join('\n')
             const bodyEndMatch = output.match(/(<\/body>)/i)
             if (bodyEndMatch) {
               output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
             }
             else {
-              // If no </body> tag, append scripts at the end
               output += `\n${scriptsHtml}`
             }
+            // Clear event bindings after use
+            context.__stx_event_bindings = []
           }
 
           // Track dependencies for this file

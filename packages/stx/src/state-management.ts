@@ -1185,10 +1185,8 @@ export function transformStoreImports(code: string): string {
       .map(s => s.trim())
       .filter(Boolean)
 
-    // Use stx.useStore() which internally handles window access
-    return storeNames
-      .map(name => `const ${name} = stx.useStore('${name}');`)
-      .join('\n') + '\n'
+    // Destructure directly from the global store registry
+    return `const { ${storeNames.join(', ')} } = window.__STX_STORES__\n`
   })
 }
 

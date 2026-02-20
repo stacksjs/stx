@@ -1,0 +1,560 @@
+<script server>
+/**
+ * Unified Chat App
+ *
+ * A unified messaging interface similar to texts.com that connects
+ * multiple messaging platforms (iMessage, WhatsApp, Slack, Discord, etc.)
+ * through a single UI with a native macOS Tahoe-style sidebar.
+ */
+
+// SF Symbol icon mappings for native macOS sidebar
+const icons = {
+  inbox: 'tray.fill',
+  unread: 'envelope.badge.fill',
+  mentions: 'at',
+  pinned: 'pin.fill',
+  imessage: 'message.fill',
+  whatsapp: 'phone.fill',
+  slack: 'number.square.fill',
+  discord: 'gamecontroller.fill',
+  telegram: 'paperplane.fill',
+  signal: 'shield.fill',
+  channel: 'number',
+  search: 'magnifyingglass',
+  settings: 'gearshape.fill',
+}
+
+// Sidebar configuration for native macOS Tahoe-style sidebar
+// Uses SF Symbols for native rendering via Craft
+const sidebarConfig = {
+  header: {
+    title: 'Unified Chat',
+    subtitle: 'All messages, one place',
+    icon: icons.imessage
+  },
+  searchPlaceholder: 'Search messages...',
+  sections: [
+    {
+      id: 'inbox',
+      title: 'Inbox',
+      collapsible: false,
+      items: [
+        { id: 'all', label: 'All Messages', icon: icons.inbox, badge: 68, selected: true },
+        { id: 'unread', label: 'Unread', icon: icons.unread, badge: 21 },
+        { id: 'mentions', label: 'Mentions', icon: icons.mentions, badge: 3 },
+        { id: 'pinned', label: 'Pinned', icon: icons.pinned }
+      ]
+    },
+    {
+      id: 'platforms',
+      title: 'Platforms',
+      items: [
+        { id: 'imessage', label: 'iMessage', icon: icons.imessage, badge: 4, tintColor: '#34C759' },
+        { id: 'whatsapp', label: 'WhatsApp', icon: icons.whatsapp, tintColor: '#25D366' },
+        { id: 'slack', label: 'Slack', icon: icons.slack, badge: 12, tintColor: '#4A154B' },
+        { id: 'discord', label: 'Discord', icon: icons.discord, badge: 5, tintColor: '#5865F2' },
+        { id: 'telegram', label: 'Telegram', icon: icons.telegram, badge: 47, tintColor: '#0088cc' },
+        { id: 'signal', label: 'Signal', icon: icons.signal, tintColor: '#3A76F0' }
+      ]
+    },
+    {
+      id: 'channels',
+      title: 'Channels',
+      items: [
+        { id: 'design-team', label: '# Design Team', icon: icons.channel },
+        { id: 'general', label: '# General', icon: icons.channel },
+        { id: 'gaming-squad', label: '# Gaming Squad', icon: icons.channel }
+      ]
+    }
+  ],
+  minWidth: 200,
+  maxWidth: 280,
+  canCollapse: true,
+}
+
+// Footer configuration for sidebar
+const sidebarFooter = {
+  avatar: 'CB',
+  name: 'Chris B.',
+  status: 'Online',
+  showSettings: true
+}
+
+// Platform definitions with their branding
+const platforms = {
+  imessage: { name: 'iMessage', color: '#34C759', icon: 'i-hugeicons-message-01' },
+  whatsapp: { name: 'WhatsApp', color: '#25D366', icon: 'i-hugeicons-whatsapp' },
+  slack: { name: 'Slack', color: '#4A154B', icon: 'i-hugeicons-slack' },
+  discord: { name: 'Discord', color: '#5865F2', icon: 'i-hugeicons-discord' },
+  telegram: { name: 'Telegram', color: '#0088cc', icon: 'i-hugeicons-telegram' },
+  signal: { name: 'Signal', color: '#3A76F0', icon: 'i-hugeicons-shield-01' },
+  messenger: { name: 'Messenger', color: '#0084FF', icon: 'i-hugeicons-facebook-01' },
+  twitter: { name: 'X/Twitter', color: '#1DA1F2', icon: 'i-hugeicons-new-twitter' },
+}
+
+// Mock conversations data
+const conversations = [
+  {
+    id: 1,
+    name: 'Sarah Chen',
+    platform: 'imessage',
+    avatar: 'SC',
+    lastMessage: 'Did you see the new design mockups? They look amazing!',
+    timestamp: '2m ago',
+    unread: 3,
+    online: true,
+    pinned: true,
+  },
+  {
+    id: 2,
+    name: 'Design Team',
+    platform: 'slack',
+    avatar: 'DT',
+    isGroup: true,
+    lastMessage: '@you mentioned you in #general',
+    timestamp: '15m ago',
+    unread: 12,
+    online: false,
+    pinned: true,
+  },
+  {
+    id: 3,
+    name: 'Marcus Johnson',
+    platform: 'whatsapp',
+    avatar: 'MJ',
+    lastMessage: "Let's catch up this weekend!",
+    timestamp: '1h ago',
+    unread: 0,
+    online: true,
+    pinned: false,
+  },
+  {
+    id: 4,
+    name: 'Gaming Squad',
+    platform: 'discord',
+    avatar: 'GS',
+    isGroup: true,
+    lastMessage: 'Anyone up for Valorant tonight?',
+    timestamp: '2h ago',
+    unread: 5,
+    online: false,
+    pinned: false,
+  },
+  {
+    id: 5,
+    name: 'Mom',
+    platform: 'imessage',
+    avatar: 'M',
+    lastMessage: 'Call me when you get a chance, sweetie',
+    timestamp: '3h ago',
+    unread: 1,
+    online: false,
+    pinned: true,
+  },
+  {
+    id: 6,
+    name: 'Crypto News',
+    platform: 'telegram',
+    avatar: 'CN',
+    isGroup: true,
+    lastMessage: 'Breaking: Bitcoin reaches new ATH!',
+    timestamp: '4h ago',
+    unread: 47,
+    online: false,
+    pinned: false,
+  },
+  {
+    id: 7,
+    name: 'Alex Rivera',
+    platform: 'signal',
+    avatar: 'AR',
+    lastMessage: 'The documents are encrypted and sent.',
+    timestamp: '5h ago',
+    unread: 0,
+    online: true,
+    pinned: false,
+  },
+  {
+    id: 8,
+    name: 'Emily Watson',
+    platform: 'messenger',
+    avatar: 'EW',
+    lastMessage: 'Happy Birthday!',
+    timestamp: 'Yesterday',
+    unread: 0,
+    online: false,
+    pinned: false,
+  },
+]
+
+// Mock messages for the selected conversation
+const currentMessages = [
+  { id: 1, sender: 'Sarah Chen', content: 'Hey! How are you doing?', timestamp: '10:30 AM', isOwn: false },
+  { id: 2, sender: 'You', content: "Hey Sarah! I'm doing great, thanks for asking!", timestamp: '10:32 AM', isOwn: true },
+  { id: 3, sender: 'Sarah Chen', content: 'I was wondering if you had a chance to look at the project files I sent over?', timestamp: '10:33 AM', isOwn: false },
+  { id: 4, sender: 'You', content: "Yes! I went through them last night. Really impressive work on the UI components.", timestamp: '10:35 AM', isOwn: true },
+  { id: 5, sender: 'Sarah Chen', content: "Thanks! The team worked really hard on those. We're thinking of pushing the release to next week.", timestamp: '10:36 AM', isOwn: false },
+  { id: 6, sender: 'You', content: 'That sounds like a good plan. Better to have everything polished than rush it out.', timestamp: '10:38 AM', isOwn: true },
+  { id: 7, sender: 'Sarah Chen', content: 'Exactly my thoughts! Did you see the new design mockups? They look amazing!', timestamp: '10:40 AM', isOwn: false },
+]
+
+// Selected conversation state
+const selectedConversation = conversations[0]
+const selectedPlatform = platforms[selectedConversation.platform]
+
+// Use sidebarConfig.sections for the sidebar navigation
+const sidebarSections = sidebarConfig.sections
+
+// Pinned and unpinned conversations
+const pinnedConversations = conversations.filter(c => c.pinned)
+const otherConversations = conversations.filter(c => !c.pinned)
+</script>
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unified Chat - All Your Messages in One Place</title>
+  <link rel="preconnect" href="https://fonts.bunny.net">
+  <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+      color: #ffffff;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.25); }
+
+    .app-container { display: flex; height: 100vh; overflow: hidden; }
+
+    /* Conversation List */
+    .conversation-list-pane { width: 320px; min-width: 320px; height: 100%; display: flex; flex-direction: column; background: rgba(20, 20, 30, 0.6); border-right: 1px solid rgba(255, 255, 255, 0.06); position: relative; }
+    .conversation-list-header { padding: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+    .conversation-list-header h2 { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+    .conversation-list-tabs { display: flex; gap: 4px; background: rgba(255, 255, 255, 0.04); padding: 4px; border-radius: 10px; }
+    .conversation-tab { flex: 1; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, 0.6); background: transparent; border: none; cursor: pointer; }
+    .conversation-tab.active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+    .conversation-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .conversation-section-label { padding: 8px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255, 255, 255, 0.4); }
+    .conversation-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 12px; cursor: pointer; transition: all 0.15s; position: relative; }
+    .conversation-item:hover { background: rgba(255, 255, 255, 0.04); }
+    .conversation-item.active { background: rgba(139, 92, 246, 0.15); }
+    .conversation-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; position: relative; flex-shrink: 0; color: #fff; }
+    .conversation-avatar.imessage { background: linear-gradient(135deg, #34C759, #30B350); }
+    .conversation-avatar.slack { background: linear-gradient(135deg, #4A154B, #611F69); }
+    .conversation-avatar.whatsapp { background: linear-gradient(135deg, #25D366, #20C55D); }
+    .conversation-avatar.discord { background: linear-gradient(135deg, #5865F2, #4752C4); }
+    .conversation-avatar.telegram { background: linear-gradient(135deg, #0088cc, #0077b3); }
+    .conversation-avatar.signal { background: linear-gradient(135deg, #3A76F0, #2D62D0); }
+    .conversation-avatar.messenger { background: linear-gradient(135deg, #0084FF, #0073E6); }
+    .conversation-avatar.twitter { background: linear-gradient(135deg, #1DA1F2, #1991DB); }
+    .conversation-online-dot { position: absolute; bottom: 1px; right: 1px; width: 12px; height: 12px; background: #10B981; border: 2px solid rgba(20, 20, 30, 0.8); border-radius: 50%; }
+    .conversation-content { flex: 1; min-width: 0; }
+    .conversation-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .conversation-name { font-size: 14px; font-weight: 500; }
+    .conversation-timestamp { font-size: 11px; color: rgba(255, 255, 255, 0.4); }
+    .conversation-preview { font-size: 13px; color: rgba(255, 255, 255, 0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 28px; }
+    .conversation-unread { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); min-width: 20px; height: 20px; padding: 0 6px; background: linear-gradient(135deg, #8B5CF6, #3B82F6); border-radius: 10px; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+    .new-conversation-fab { position: absolute; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #8B5CF6, #3B82F6); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4); }
+
+    /* Chat Pane */
+    .chat-pane { flex: 1; display: flex; flex-direction: column; background: rgba(15, 15, 25, 0.5); min-width: 0; }
+    .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background: rgba(20, 20, 30, 0.4); }
+    .chat-header-info { display: flex; align-items: center; gap: 12px; }
+    .chat-header-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+    .chat-header-details h3 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+    .chat-header-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+    .chat-header-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #10B981; }
+    .chat-header-actions { display: flex; gap: 8px; }
+    .chat-header-btn { width: 36px; height: 36px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.7); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .chat-header-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .chat-date-separator { display: flex; align-items: center; gap: 16px; margin: 8px 0; }
+    .chat-date-separator::before, .chat-date-separator::after { content: ''; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.08); }
+    .chat-date-separator span { font-size: 11px; font-weight: 500; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; letter-spacing: 0.5px; }
+    .chat-message { display: flex; gap: 12px; max-width: 70%; }
+    .chat-message.own { flex-direction: row-reverse; margin-left: auto; }
+    .chat-message-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+    .chat-message-content { display: flex; flex-direction: column; gap: 4px; }
+    .chat-message.own .chat-message-content { align-items: flex-end; }
+    .chat-message-bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.5; }
+    .chat-message:not(.own) .chat-message-bubble { background: rgba(255, 255, 255, 0.08); border-bottom-left-radius: 4px; }
+    .chat-message.own .chat-message-bubble { background: linear-gradient(135deg, #8B5CF6, #3B82F6); border-bottom-right-radius: 4px; }
+    .chat-message-time { font-size: 11px; color: rgba(255, 255, 255, 0.4); padding: 0 4px; }
+    .chat-input-container { padding: 16px 20px; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(20, 20, 30, 0.4); }
+    .chat-input-wrapper { display: flex; align-items: flex-end; gap: 12px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 8px 8px 8px 20px; }
+    .chat-input { flex: 1; background: transparent; border: none; color: #fff; font-size: 14px; font-family: inherit; line-height: 1.5; padding: 8px 0; resize: none; outline: none; max-height: 120px; }
+    .chat-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+    .chat-input-actions { display: flex; align-items: center; gap: 4px; }
+    .chat-input-btn { width: 36px; height: 36px; border-radius: 50%; background: transparent; border: none; color: rgba(255, 255, 255, 0.5); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .chat-input-btn:hover { color: rgba(255, 255, 255, 0.8); background: rgba(255, 255, 255, 0.05); }
+    .chat-send-btn { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #8B5CF6, #3B82F6); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .chat-send-btn:hover { transform: scale(1.05); box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4); }
+    .typing-indicator { display: flex; align-items: center; gap: 8px; padding: 8px 16px; font-size: 13px; color: rgba(255, 255, 255, 0.5); }
+    .typing-dots { display: flex; gap: 4px; }
+    .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); animation: typing 1.4s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+  </style>
+</head>
+<body>
+  <div class="app-container" ref="app">
+    <!-- Sidebar - hidden by JS when native sidebar is active -->
+    <Sidebar
+      variant="tahoe"
+      :header="sidebarConfig.header"
+      :searchPlaceholder="sidebarConfig.searchPlaceholder"
+      :sections="sidebarConfig.sections"
+      :footer="sidebarFooter"
+      :width="260"
+    />
+
+    <!-- Conversation List -->
+    <div class="conversation-list-pane">
+      <div class="conversation-list-header">
+        <h2>Messages</h2>
+        <div class="conversation-list-tabs" ref="listTabs">
+          <button class="conversation-tab active">All</button>
+          <button class="conversation-tab">Unread</button>
+          <button class="conversation-tab">Groups</button>
+        </div>
+      </div>
+
+      <div class="conversation-list" ref="conversationList">
+        <div class="conversation-section-label">📌 Pinned</div>
+        @foreach(pinnedConversations as convo)
+          <div class="conversation-item {{ convo.id === selectedConversation.id ? 'active' : '' }}" data-id="{{ convo.id }}">
+            <div class="conversation-avatar {{ convo.platform }}">
+              {{ convo.avatar }}
+              @if(convo.online)<span class="conversation-online-dot"></span>@endif
+            </div>
+            <div class="conversation-content">
+              <div class="conversation-header">
+                <span class="conversation-name">{{ convo.name }}</span>
+                <span class="conversation-timestamp">{{ convo.timestamp }}</span>
+              </div>
+              <div class="conversation-preview">{{ convo.lastMessage }}</div>
+            </div>
+            @if(convo.unread > 0)<span class="conversation-unread">{{ convo.unread }}</span>@endif
+          </div>
+        @endforeach
+
+        <div class="conversation-section-label">Recent</div>
+        @foreach(otherConversations as convo)
+          <div class="conversation-item" data-id="{{ convo.id }}">
+            <div class="conversation-avatar {{ convo.platform }}">
+              {{ convo.avatar }}
+              @if(convo.online)<span class="conversation-online-dot"></span>@endif
+            </div>
+            <div class="conversation-content">
+              <div class="conversation-header">
+                <span class="conversation-name">{{ convo.name }}</span>
+                <span class="conversation-timestamp">{{ convo.timestamp }}</span>
+              </div>
+              <div class="conversation-preview">{{ convo.lastMessage }}</div>
+            </div>
+            @if(convo.unread > 0)<span class="conversation-unread">{{ convo.unread }}</span>@endif
+          </div>
+        @endforeach
+      </div>
+
+      <button class="new-conversation-fab">+</button>
+    </div>
+
+    <!-- Chat Pane -->
+    <div class="chat-pane">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-header-avatar conversation-avatar {{ selectedConversation.platform }}">{{ selectedConversation.avatar }}</div>
+          <div class="chat-header-details">
+            <h3>{{ selectedConversation.name }}</h3>
+            <div class="chat-header-status">
+              @if(selectedConversation.online)
+                <span class="chat-header-status-dot"></span><span>Online</span>
+              @else
+                <span>Last seen {{ selectedConversation.timestamp }}</span>
+              @endif
+              <span>•</span>
+              <span>via {{ selectedPlatform.name }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="chat-header-actions">
+          <button class="chat-header-btn" title="Voice Call">📞</button>
+          <button class="chat-header-btn" title="Video Call">📹</button>
+          <button class="chat-header-btn" title="Search">🔍</button>
+          <button class="chat-header-btn" title="More">⋯</button>
+        </div>
+      </div>
+
+      <div class="chat-messages" ref="messages">
+        <div class="chat-date-separator"><span>Today</span></div>
+
+        @foreach(currentMessages as message)
+          <div class="chat-message {{ message.isOwn ? 'own' : '' }}">
+            @if(!message.isOwn)
+              <div class="chat-message-avatar conversation-avatar {{ selectedConversation.platform }}">{{ selectedConversation.avatar }}</div>
+            @endif
+            <div class="chat-message-content">
+              <div class="chat-message-bubble">{{ message.content }}</div>
+              <span class="chat-message-time">{{ message.timestamp }}</span>
+            </div>
+          </div>
+        @endforeach
+
+        <div class="typing-indicator" ref="typingIndicator">
+          <span>{{ selectedConversation.name }} is typing</span>
+          <div class="typing-dots">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-container">
+        <div class="chat-input-wrapper">
+          <textarea class="chat-input" placeholder="Type a message..." rows="1" ref="chatInput"></textarea>
+          <div class="chat-input-actions">
+            <button class="chat-input-btn" title="Attach">📎</button>
+            <button class="chat-input-btn" title="Emoji">😊</button>
+            <button class="chat-input-btn" title="GIF">GIF</button>
+          </div>
+          <button class="chat-send-btn" title="Send" ref="sendBtn">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script client>
+    // Initialize Craft bridge for native sidebar
+    window.craft = window.craft || {};
+
+    // Handle native sidebar selection from Craft
+    window.craft._sidebarSelectHandler = function(event) {
+      console.log('Sidebar selection:', event.itemId, event.item);
+
+      // Handle different sidebar item selections
+      var itemId = event.itemId;
+
+      // Update web sidebar if visible (for consistency)
+      var webSidebar = document.querySelector('.stx-sidebar__nav');
+      if (webSidebar) {
+        webSidebar.querySelectorAll('.stx-sidebar__item').forEach(function(item) {
+          item.classList.remove('stx-sidebar__item--active');
+          if (item.dataset.id === itemId) {
+            item.classList.add('stx-sidebar__item--active');
+          }
+        });
+      }
+
+      // Filter conversations based on selection
+      // TODO: Implement actual filtering logic based on itemId
+      console.log('Filter by:', itemId);
+    };
+
+    // Get refs using STX API
+    var refs = STX.useRefs();
+
+    // Auto-resize textarea
+    refs.chatInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Send message function
+    function sendMessage() {
+      var message = refs.chatInput.value.trim();
+      if (!message) return;
+
+      var msgEl = STX.el('div', { class: 'chat-message own' },
+        STX.el('div', { class: 'chat-message-content' },
+          STX.el('div', { class: 'chat-message-bubble' }, message) +
+          STX.el('span', { class: 'chat-message-time' }, 'Just now')
+        )
+      );
+
+      refs.messages.insertBefore(
+        (function() {
+          var tmp = STX.el('div', {}, '');
+          tmp = refs.messages.cloneNode(false);
+          tmp.innerHTML = msgEl;
+          return tmp.firstChild;
+        })(),
+        refs.typingIndicator
+      );
+
+      refs.chatInput.value = '';
+      refs.chatInput.style.height = 'auto';
+      refs.messages.scrollTop = refs.messages.scrollHeight;
+    }
+
+    // Send button click
+    refs.sendBtn.addEventListener('click', sendMessage);
+
+    // Enter key to send
+    refs.chatInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Conversation item click
+    refs.conversationList.addEventListener('click', function(e) {
+      var item = e.target.closest('.conversation-item');
+      if (item) {
+        refs.conversationList.querySelectorAll('.conversation-item').forEach(function(i) {
+          i.classList.remove('active');
+        });
+        item.classList.add('active');
+      }
+    });
+
+    // Sidebar item click (using document selector since sidebar is a component)
+    var sidebarNav = document.querySelector('.stx-sidebar__nav');
+    if (sidebarNav) {
+      sidebarNav.addEventListener('click', function(e) {
+        var item = e.target.closest('.stx-sidebar__item');
+        if (item) {
+          e.preventDefault();
+          sidebarNav.querySelectorAll('.stx-sidebar__item').forEach(function(i) {
+            i.classList.remove('stx-sidebar__item--active');
+          });
+          item.classList.add('stx-sidebar__item--active');
+        }
+      });
+    }
+
+    // Tab click
+    refs.listTabs.addEventListener('click', function(e) {
+      var tab = e.target.closest('.conversation-tab');
+      if (tab) {
+        refs.listTabs.querySelectorAll('.conversation-tab').forEach(function(t) {
+          t.classList.remove('active');
+        });
+        tab.classList.add('active');
+      }
+    });
+
+    // Scroll messages to bottom
+    refs.messages.scrollTop = refs.messages.scrollHeight;
+
+    // Cmd+K to focus search (sidebar search input)
+    var searchInput = document.querySelector('.stx-sidebar__search-input');
+    STX.onKey('cmd+k', function() {
+      if (searchInput) searchInput.focus();
+    });
+  </script>
+</body>
+</html>

@@ -50,3 +50,6 @@ packages/desktop/.stx/output/
 
 # Test snapshots (auto-generated)
 packages/components/test/visual/__snapshots__/
+/__snapshots__
+/packages/stx/test/integration/temp-integration
+/examples/unified-chat/.stx

@@ -20,7 +20,7 @@ import {
   waitFor,
   createMockFn,
   createMockStore,
-} from 'stx'
+} from '../packages/stx/src/testing'
 
 // Extend expect with STX matchers
 expect.extend(matchers)

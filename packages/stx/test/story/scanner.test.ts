@@ -9,15 +9,12 @@ import { createContext } from '../../src/story/context'
 import type { StoryContext } from '../../src/story/types'
 
 describe('Story Scanner', () => {
-  const projectRoot = path.resolve(__dirname, '../../../..')
+  const projectRoot = path.resolve(__dirname, 'fixtures')
 
   async function createTestContext(): Promise<StoryContext> {
     return createContext({
       mode: 'dev',
       root: projectRoot,
-      config: {
-        storyPatterns: ['examples/components/**/*.story.stx'],
-      } as any,
     })
   }
 

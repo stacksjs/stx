@@ -376,7 +376,7 @@ export function extractDependencies(content: string): string[] {
 }
 
 /**
- * Extract CSS classes from template (for Headwind integration)
+ * Extract CSS classes from template (for Crosswind integration)
  */
 export function extractCssClasses(content: string): string[] {
   const classes: string[] = []

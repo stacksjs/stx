@@ -1,6 +1,6 @@
 /**
- * STX Story - Headwind CSS Integration
- * Auto-inject Headwind CSS for utility classes
+ * STX Story - Crosswind CSS Integration
+ * Auto-inject Crosswind CSS for utility classes
  */
 
 import type { StoryContext } from './types'
@@ -8,10 +8,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 /**
- * Headwind CSS options
+ * Crosswind CSS options
  */
-export interface HeadwindOptions {
-  /** Path to Headwind CSS file */
+export interface CrosswindOptions {
+  /** Path to Crosswind CSS file */
   cssPath?: string
   /** Include reset styles */
   includeReset?: boolean
@@ -20,17 +20,17 @@ export interface HeadwindOptions {
 }
 
 /**
- * Default Headwind CSS path
+ * Default Crosswind CSS path
  */
-const DEFAULT_HEADWIND_PATH = 'node_modules/@stacksjs/headwind/dist/headwind.css'
+const DEFAULT_HEADWIND_PATH = 'node_modules/@stacksjs/crosswind/dist/crosswind.css'
 
 /**
- * Check if Headwind is available
+ * Check if Crosswind is available
  */
-export async function isHeadwindAvailable(root: string): Promise<boolean> {
-  const headwindPath = path.join(root, DEFAULT_HEADWIND_PATH)
+export async function isCrosswindAvailable(root: string): Promise<boolean> {
+  const crosswindPath = path.join(root, DEFAULT_HEADWIND_PATH)
   try {
-    await fs.promises.access(headwindPath)
+    await fs.promises.access(crosswindPath)
     return true
   }
   catch {
@@ -39,11 +39,11 @@ export async function isHeadwindAvailable(root: string): Promise<boolean> {
 }
 
 /**
- * Load Headwind CSS
+ * Load Crosswind CSS
  */
-export async function loadHeadwindCSS(
+export async function loadCrosswindCSS(
   ctx: StoryContext,
-  options: HeadwindOptions = {},
+  options: CrosswindOptions = {},
 ): Promise<string> {
   const cssPath = options.cssPath || path.join(ctx.root, DEFAULT_HEADWIND_PATH)
 
@@ -52,7 +52,7 @@ export async function loadHeadwindCSS(
     return css
   }
   catch {
-    // Headwind not available, return minimal utility CSS
+    // Crosswind not available, return minimal utility CSS
     return getMinimalUtilityCSS()
   }
 }
@@ -62,7 +62,7 @@ export async function loadHeadwindCSS(
  */
 function getMinimalUtilityCSS(): string {
   return `
-/* Minimal utility classes (Headwind fallback) */
+/* Minimal utility classes (Crosswind fallback) */
 
 /* Display */
 .block { display: block; }
@@ -185,14 +185,14 @@ function getMinimalUtilityCSS(): string {
 }
 
 /**
- * Generate style tag with Headwind CSS
+ * Generate style tag with Crosswind CSS
  */
-export async function generateHeadwindStyleTag(
+export async function generateCrosswindStyleTag(
   ctx: StoryContext,
-  options: HeadwindOptions = {},
+  options: CrosswindOptions = {},
 ): Promise<string> {
-  const css = await loadHeadwindCSS(ctx, options)
-  return `<style id="headwind-css">\n${css}\n</style>`
+  const css = await loadCrosswindCSS(ctx, options)
+  return `<style id="crosswind-css">\n${css}\n</style>`
 }
 
 /**

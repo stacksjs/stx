@@ -1,0 +1,168 @@
+<script server>
+/**
+ * ChatMessage Component
+ *
+ * A reusable chat message bubble component that handles both
+ * incoming and outgoing messages with proper styling.
+ */
+import { defineProps, withDefaults } from 'stx'
+
+interface ChatMessageProps {
+  content: string
+  timestamp: string
+  sender?: string
+  isOwn?: boolean
+  avatar?: string
+  platform?: string
+  status?: 'sent' | 'delivered' | 'read'
+}
+
+const {
+  content,
+  timestamp,
+  sender = '',
+  isOwn = false,
+  avatar = '',
+  platform = 'imessage',
+  status = 'sent'
+} = withDefaults(defineProps<ChatMessageProps>(), {
+  isOwn: false,
+  platform: 'imessage',
+  status: 'sent'
+})
+
+// Platform colors for avatar
+const platformColors = {
+  imessage: 'linear-gradient(135deg, #34C759 0%, #30B350 100%)',
+  whatsapp: 'linear-gradient(135deg, #25D366 0%, #20C55D 100%)',
+  slack: 'linear-gradient(135deg, #4A154B 0%, #611F69 100%)',
+  discord: 'linear-gradient(135deg, #5865F2 0%, #4752C4 100%)',
+  telegram: 'linear-gradient(135deg, #0088cc 0%, #0077b3 100%)',
+  signal: 'linear-gradient(135deg, #3A76F0 0%, #2D62D0 100%)',
+  messenger: 'linear-gradient(135deg, #0084FF 0%, #0073E6 100%)',
+  twitter: 'linear-gradient(135deg, #1DA1F2 0%, #1991DB 100%)',
+}
+
+function getAvatarStyle() {
+  return platformColors[platform] || platformColors.imessage
+}
+
+// Status icons
+const statusIcons = {
+  sent: '✓',
+  delivered: '✓✓',
+  read: '✓✓'
+}
+</script>
+
+<div class="chat-message {{ isOwn ? 'chat-message--own' : '' }}">
+  @if(!isOwn && avatar)
+    <div class="chat-message-avatar" style="background: {{ getAvatarStyle() }}">
+      {{ avatar }}
+    </div>
+  @endif
+
+  <div class="chat-message-content">
+    @if(!isOwn && sender)
+      <span class="chat-message-sender">{{ sender }}</span>
+    @endif
+
+    <div class="chat-message-bubble">
+      {{ content }}
+    </div>
+
+    <div class="chat-message-meta">
+      <span class="chat-message-time">{{ timestamp }}</span>
+      @if(isOwn)
+        <span class="chat-message-status chat-message-status--{{ status }}">
+          {{ statusIcons[status] }}
+        </span>
+      @endif
+    </div>
+  </div>
+</div>
+
+<style scoped>
+.chat-message {
+  display: flex;
+  gap: 12px;
+  max-width: 70%;
+}
+
+.chat-message--own {
+  flex-direction: row-reverse;
+  margin-left: auto;
+}
+
+.chat-message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.chat-message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-message--own .chat-message-content {
+  align-items: flex-end;
+}
+
+.chat-message-sender {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  padding-left: 4px;
+}
+
+.chat-message-bubble {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.chat-message:not(.chat-message--own) .chat-message-bubble {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-message--own .chat-message-bubble {
+  background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-message-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.chat-message-time {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.chat-message-status {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.chat-message-status--read {
+  color: #3B82F6;
+}
+</style>

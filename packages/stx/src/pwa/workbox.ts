@@ -155,7 +155,7 @@ export function generateWorkboxConfig(options: StxOptions, outputDir?: string): 
   return {
     mode: 'generate',
     modules,
-    precacheManifest,
+    precacheManifest: precacheManifest?.entries,
     skipWaiting: swConfig.skipWaiting ?? true,
     clientsClaim: swConfig.clientsClaim ?? true,
     offlineFallback: pwa.offline?.enabled ? '/offline.html' : undefined,

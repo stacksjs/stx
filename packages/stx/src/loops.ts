@@ -7,7 +7,28 @@
  * - `@continue` - Skip to next iteration
  * - `@continue(condition)` - Skip if condition is true
  *
- * @example
+ * @foreach syntax variants:
+ * - `@foreach(items as item)` - Basic iteration
+ * - `@foreach(items as index => item)` - With index variable
+ *
+ * @example Basic iteration
+ * ```html
+ * @foreach(items as item)
+ *   {{ item.name }}
+ * @endforeach
+ * ```
+ *
+ * @example With index variable
+ * ```html
+ * @foreach(items as index => item)
+ *   {{ index }}: {{ item.name }}
+ *   @if(index === 0)
+ *     (first item)
+ *   @endif
+ * @endforeach
+ * ```
+ *
+ * @example With loop control
  * ```html
  * @foreach(items as item)
  *   @if(item.skip)
@@ -31,6 +52,68 @@ import { createSafeFunction, isExpressionSafe, isForExpressionSafe, safeEvaluate
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
 const DEFAULT_USE_ALT_LOOP_VARIABLE = false
+
+// =============================================================================
+// Dynamic Prop Binding Processing
+// =============================================================================
+
+/**
+ * Process :prop="expression" and :prop (shorthand) bindings within loop content.
+ * Evaluates expressions against the loop context and converts them to
+ * __stx_prop="serialized_json" format so components can receive the data.
+ *
+ * Shorthand syntax: :propName is equivalent to :propName="propName"
+ * This allows cleaner code when the prop name matches the variable name.
+ *
+ * @param content - The content to process
+ * @param context - The current loop iteration context
+ * @returns Content with bindings evaluated and serialized
+ */
+function processPropBindings(content: string, context: Record<string, any>): string {
+  let result = content
+
+  // First, expand shorthand :prop to :prop="prop"
+  // Match :propName that is NOT followed by = (with optional whitespace)
+  // The prop must be followed by whitespace, /> or > (end of tag attributes)
+  result = result.replace(/:([a-zA-Z_][a-zA-Z0-9_-]*)(?=\s+[^=]|\s*\/?>|\s*$)/g, (match, propName) => {
+    // Only expand if the prop name exists in context
+    if (propName in context) {
+      return `:${propName}="${propName}"`
+    }
+    // Keep original if not in context (might be processed later)
+    return match
+  })
+
+  // Now process all :prop="expression" bindings
+  result = result.replace(/:([a-zA-Z_][a-zA-Z0-9_-]*)\s*=\s*"([^"]*)"/g, (match, propName, expression) => {
+    try {
+      // Evaluate the expression in the loop context
+      const contextKeys = Object.keys(context)
+      const contextValues = Object.values(context)
+      // eslint-disable-next-line no-new-func
+      const evaluator = new Function(...contextKeys, `return ${expression}`)
+      const value = evaluator(...contextValues)
+
+      // Serialize the value to JSON and encode for safe HTML attribute storage
+      // Use a special attribute prefix __stx_ to mark it as pre-evaluated
+      const serialized = JSON.stringify(value)
+      // Escape HTML entities in the JSON string for safe attribute value
+      const escaped = serialized
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+
+      return `__stx_${propName}="${escaped}"`
+    }
+    catch (error) {
+      // If evaluation fails, keep the original binding for later processing
+      return match
+    }
+  })
+
+  return result
+}
 
 // =============================================================================
 // Loop Control Markers
@@ -352,10 +435,31 @@ export function processLoops(template: string, context: Record<string, any>, fil
         // Get loop configuration (useAltLoopVar reserved for future use when exclusively using $loop)
         const _useAltLoopVar = options?.loops?.useAltLoopVariable ?? DEFAULT_USE_ALT_LOOP_VARIABLE
 
+        // Parse itemVar to check for index syntax: "index => item" or just "item"
+        const trimmedItemVar = itemVar.trim()
+        let indexName: string | null = null
+        let itemName: string
+
+        if (trimmedItemVar.includes('=>')) {
+          // Syntax: @foreach (items as index => item)
+          const parts = trimmedItemVar.split('=>').map(p => p.trim())
+          if (parts.length === 2) {
+            indexName = parts[0]
+            itemName = parts[1]
+          }
+          else {
+            // Invalid syntax, use the whole thing as item name
+            itemName = trimmedItemVar
+          }
+        }
+        else {
+          // Syntax: @foreach (items as item)
+          itemName = trimmedItemVar
+        }
+
         let loopResult = ''
         for (let index = 0; index < array.length; index++) {
           const item = array[index]
-          const itemName = itemVar.trim()
 
           // Create loop context object
           const loopContext = {
@@ -368,11 +472,16 @@ export function processLoops(template: string, context: Record<string, any>, fil
 
           // Create a new context with loop variable for this iteration
           // Always provide both loop and $loop for maximum compatibility
-          const itemContext = {
+          const itemContext: Record<string, any> = {
             ...ctx,
             [itemName]: item,
             loop: loopContext,
             $loop: loopContext, // Alternative name to avoid conflicts with user's 'loop' variable
+          }
+
+          // Add index variable if using "index => item" syntax
+          if (indexName) {
+            itemContext[indexName] = index
           }
 
           // Step 1: Process conditional @break(condition) and @continue(condition)
@@ -418,6 +527,11 @@ export function processLoops(template: string, context: Record<string, any>, fil
 
           // Step 5: Process expressions with the item context
           processedContent = processExpressions(processedContent, itemContext, filePath)
+
+          // Step 6: Process :prop="expression" bindings
+          // This converts :prop="loopVar" to __stx_prop="serialized_data" so components
+          // can receive the data even after the loop context is gone
+          processedContent = processPropBindings(processedContent, itemContext)
 
           loopResult += processedContent
         }

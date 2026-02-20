@@ -395,7 +395,7 @@ export function parseImageComponent(content: string): ImageComponentProps | null
         props.loading = value as 'lazy' | 'eager'
         break
       case 'priority':
-        props.priority = value === true || value === 'true'
+        props.priority = (value as unknown) === true || value === 'true'
         break
       case 'quality':
         props.quality = Number(value)

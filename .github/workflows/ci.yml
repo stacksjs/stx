@@ -19,13 +19,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6.0.1
+      - uses: actions/checkout@v6.0.2
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v2.0.2
+        uses: oven-sh/setup-bun@v2.1.2
 
       - name: Use cached node_modules
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v5.0.3
         with:
           path: node_modules
           key: node-modules-${{ hashFiles('**/bun.lock') }}
@@ -45,13 +45,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6.0.1
+      - uses: actions/checkout@v6.0.2
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v2.0.2
+        uses: oven-sh/setup-bun@v2.1.2
 
       - name: Use cached node_modules
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v5.0.3
         with:
           path: node_modules
           key: node-modules-${{ hashFiles('**/bun.lock') }}
@@ -68,13 +68,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6.0.1
+      - uses: actions/checkout@v6.0.2
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v2.0.2
+        uses: oven-sh/setup-bun@v2.1.2
 
       - name: Use cached node_modules
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v5.0.3
         with:
           path: node_modules
           key: node-modules-${{ hashFiles('**/bun.lock') }}
@@ -98,13 +98,13 @@ jobs:
   publish-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.1
+      - uses: actions/checkout@v6.0.2
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v2.0.2
+        uses: oven-sh/setup-bun@v2.1.2
 
       - name: Use cached node_modules
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v5.0.3
         with:
           path: node_modules
           key: node-modules-${{ hashFiles('**/bun.lock') }}

@@ -12,11 +12,19 @@ import { createHoverProvider } from './providers/hoverProvider'
 import { createPathCompletionProvider } from './providers/pathCompletionProvider'
 import { createSemanticTokensProvider, legend } from './providers/semanticTokensProvider'
 import { VirtualTsDocumentProvider } from './providers/virtualTsDocumentProvider'
+import { ComponentRegistry } from './services/ComponentRegistry'
 
 export async function activate(context: vscode.ExtensionContext) {
   // Create virtual TypeScript files for each stx and MD file to support language features
   const virtualTsDocumentProvider = new VirtualTsDocumentProvider()
   console.log('stx Extension - Activating')
+
+  // Initialize the ComponentRegistry for prop type inference
+  const componentRegistry = ComponentRegistry.getInstance()
+  componentRegistry.scanWorkspace().then(() => {
+    console.log(`stx Extension - ComponentRegistry initialized with ${componentRegistry.getAllComponents().length} components`)
+  })
+  componentRegistry.watchWorkspace(context)
 
   // Verify snippets file exists
   const snippetsPath = path.join(context.extensionPath, 'src', 'snippets', 'stx.json')
@@ -79,6 +87,7 @@ export async function activate(context: vscode.ExtensionContext) {
     '"', // Trigger on double-quote
     '`', // Trigger on backtick
     ',', // Trigger on comma
+    '.', // Trigger on dot for props. completion
   )
 
   // Register path completion provider for @include and @component
@@ -236,5 +245,7 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+  // Clean up the ComponentRegistry
+  ComponentRegistry.resetInstance()
   console.log('stx language support deactivated')
 }

@@ -7,6 +7,7 @@
  */
 
 import process from 'node:process'
+import { isDevelopment } from '../env'
 import { getErrorConfig } from './types'
 
 // =============================================================================
@@ -19,7 +20,13 @@ import { getErrorConfig } from './types'
  * NOTE: Auto-recovery is opt-in via configuration.
  * Use configureErrorHandling({ enableAutoRecovery: true }) to enable.
  */
-export const errorRecovery = {
+export interface ErrorRecovery {
+  isEnabled(): boolean
+  fixCommonSyntaxErrors(template: string): { fixed: string, fixes: string[] }
+  createFallbackContent(sectionType: string, error: Error): string
+}
+
+export const errorRecovery: ErrorRecovery = {
   /**
    * Check if auto-recovery is enabled
    */
@@ -82,7 +89,10 @@ export const errorRecovery = {
    * Create fallback content for failed template sections
    */
   createFallbackContent(sectionType: string, error: Error): string {
-    return `<!-- ${sectionType} failed: ${error.message} -->`
+    if (isDevelopment()) {
+      return `<!-- ${sectionType} failed: ${error.message} -->`
+    }
+    return `<!-- stx rendering error -->`
   },
 }
 
@@ -424,12 +434,18 @@ export const errorLogger: ErrorLogger = new ErrorLogger()
 /**
  * Development mode helpers
  */
-export const devHelpers = {
+export interface DevHelpers {
+  isDevelopment(): boolean
+  logDetailedError(error: Error, context?: unknown): void
+  createErrorReport(error: Error, context?: unknown): string
+}
+
+export const devHelpers: DevHelpers = {
   /**
    * Check if we're in development mode
    */
   isDevelopment(): boolean {
-    return process.env.NODE_ENV === 'development' || process.env.stx_DEBUG === 'true'
+    return isDevelopment()
   },
 
   /**

@@ -16,7 +16,9 @@ import path from 'node:path'
 import process from 'node:process'
 
 // Import from expressions
+import { processClientScript } from './client-script'
 import { unescapeHtml } from './expressions'
+import { transformStoreImports } from './state-management'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
 
@@ -41,6 +43,210 @@ export {
 
 // Cache for components to avoid repeated file reads (LRU with max 500 entries)
 const componentsCache = new LRUCache<string, string>(500)
+
+/**
+ * Check if script should be treated as plain JavaScript (opt-out from TypeScript)
+ * By default ALL scripts are TypeScript. Use <script js> or <script lang="js"> to opt-out.
+ */
+export function isJavaScriptScript(attrs: string): boolean {
+  // Check for explicit JS opt-out: js attribute or lang="js"/lang="javascript"
+  return /\bjs\b/.test(attrs) || /\blang\s*=\s*["']?(js|javascript)["']?/i.test(attrs)
+}
+
+/**
+ * Check if script should be transpiled as TypeScript
+ * Default: ALL scripts are TypeScript unless explicitly marked as JS
+ */
+export function shouldTranspileTypeScript(attrs: string): boolean {
+  // Skip transpilation only if explicitly marked as JavaScript
+  return !isJavaScriptScript(attrs)
+}
+
+/**
+ * Transpile TypeScript code to JavaScript using Bun (sync version)
+ */
+export function transpileTypeScript(code: string): string {
+  try {
+    // Strip .stx component imports before transpiling - these are handled by STX component resolution
+    let processedCode = code.replace(/^\s*import\s+\w+\s+from\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
+    // Also strip side-effect .stx imports
+    processedCode = processedCode.replace(/^\s*import\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
+
+    // Use Bun's transpiler directly for inline code
+    const transpiler = new Bun.Transpiler({
+      loader: 'ts',
+      target: 'browser',
+    })
+    return transpiler.transformSync(processedCode)
+  }
+  catch (e) {
+    console.warn('[STX] TypeScript transpilation error:', e)
+    return code // Return original on error
+  }
+}
+
+/**
+ * Extract variable names from JavaScript code for scope registration
+ * Only extracts TOP-LEVEL declarations, not variables inside nested functions
+ */
+function extractVariableNames(code: string): string[] {
+  const names: string[] = []
+  const seen = new Set<string>()
+
+  // Track brace depth to only capture top-level declarations
+  let depth = 0
+  let i = 0
+  const len = code.length
+
+  // Skip string literals and track brace depth
+  const skipString = (quote: string): void => {
+    i++ // Skip opening quote
+    while (i < len) {
+      if (code[i] === '\\') {
+        i += 2 // Skip escaped character
+        continue
+      }
+      if (code[i] === quote) {
+        i++ // Skip closing quote
+        return
+      }
+      i++
+    }
+  }
+
+  // Skip template literals (backticks) with nested expressions
+  const skipTemplateLiteral = (): void => {
+    i++ // Skip opening backtick
+    while (i < len) {
+      if (code[i] === '\\') {
+        i += 2
+        continue
+      }
+      if (code[i] === '`') {
+        i++
+        return
+      }
+      if (code[i] === '$' && code[i + 1] === '{') {
+        i += 2
+        let templateDepth = 1
+        while (i < len && templateDepth > 0) {
+          if (code[i] === '{') templateDepth++
+          else if (code[i] === '}') templateDepth--
+          else if (code[i] === '\'' || code[i] === '"') skipString(code[i])
+          else if (code[i] === '`') skipTemplateLiteral()
+          else i++
+        }
+        continue
+      }
+      i++
+    }
+  }
+
+  // Skip comments
+  const skipComment = (): boolean => {
+    if (code[i] === '/' && code[i + 1] === '/') {
+      // Single-line comment
+      while (i < len && code[i] !== '\n') i++
+      return true
+    }
+    if (code[i] === '/' && code[i + 1] === '*') {
+      // Multi-line comment
+      i += 2
+      while (i < len - 1 && !(code[i] === '*' && code[i + 1] === '/')) i++
+      i += 2
+      return true
+    }
+    return false
+  }
+
+  // Check for variable declaration at current position (only at depth 0)
+  const checkDeclaration = (): void => {
+    if (depth !== 0) return
+
+    // Check for destructuring declarations: const { a, b } = or const [a, b] =
+    const destructMatch = code.slice(i).match(/^(const|let|var)\s*\{([^}]+)\}\s*=/)
+    if (destructMatch) {
+      const vars = destructMatch[2].split(',').map(v => v.trim().split(':')[0].trim())
+      for (const varName of vars) {
+        if (varName && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(varName) && !seen.has(varName)) {
+          names.push(varName)
+          seen.add(varName)
+        }
+      }
+      return
+    }
+
+    // Check for const/let/var declarations
+    const declMatch = code.slice(i).match(/^(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/)
+    if (declMatch) {
+      const varName = declMatch[2]
+      if (!seen.has(varName)) {
+        names.push(varName)
+        seen.add(varName)
+      }
+      return
+    }
+
+    // Check for function declarations
+    const funcMatch = code.slice(i).match(/^function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/)
+    if (funcMatch) {
+      const funcName = funcMatch[1]
+      if (!seen.has(funcName)) {
+        names.push(funcName)
+        seen.add(funcName)
+      }
+      return
+    }
+
+    // Check for async function declarations
+    const asyncMatch = code.slice(i).match(/^async\s+function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/)
+    if (asyncMatch) {
+      const funcName = asyncMatch[1]
+      if (!seen.has(funcName)) {
+        names.push(funcName)
+        seen.add(funcName)
+      }
+    }
+  }
+
+  while (i < len) {
+    // Skip comments
+    if (skipComment()) continue
+
+    // Skip string literals
+    if (code[i] === '\'' || code[i] === '"') {
+      skipString(code[i])
+      continue
+    }
+
+    // Skip template literals
+    if (code[i] === '`') {
+      skipTemplateLiteral()
+      continue
+    }
+
+    // Track brace depth
+    if (code[i] === '{') {
+      depth++
+      i++
+      continue
+    }
+    if (code[i] === '}') {
+      depth--
+      i++
+      continue
+    }
+
+    // Check for declarations at word boundaries (only at depth 0)
+    if (depth === 0 && /[a-z]/i.test(code[i]) && (i === 0 || /\s|[;{}()]/.test(code[i - 1]))) {
+      checkDeclaration()
+    }
+
+    i++
+  }
+
+  return names
+}
 
 // =============================================================================
 // Component Rendering
@@ -150,6 +356,35 @@ export async function renderComponentWithSlot(
             }
           }
           if (componentFilePath) break
+
+          // Also search subdirectories (one level deep)
+          if (!componentFilePath) {
+            try {
+              const fs = await import('node:fs')
+              // Check if directory exists before reading
+              const dirStat = fs.statSync(dir, { throwIfNoEntry: false })
+              if (!dirStat?.isDirectory()) continue
+
+              const entries = fs.readdirSync(dir, { withFileTypes: true })
+              for (const entry of entries) {
+                if (entry.isDirectory()) {
+                  const subDir = path.join(dir, entry.name)
+                  for (const variant of uniqueVariants) {
+                    const tryPath = path.join(subDir, variant)
+                    triedPaths.push(tryPath)
+                    if (await fileExists(tryPath)) {
+                      componentFilePath = tryPath
+                      break
+                    }
+                  }
+                  if (componentFilePath) break
+                }
+              }
+            } catch {
+              // Ignore directory read errors
+            }
+          }
+          if (componentFilePath) break
         }
       }
     }
@@ -196,7 +431,9 @@ export async function renderComponentWithSlot(
     let workingContent = componentContent
 
     // Extract <template> content if present (Vue-style SFC)
-    const templateMatch = workingContent.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+    // Only match <template> WITHOUT an id attribute - templates with id are HTML template elements
+    // that should be preserved (used for client-side JS template cloning)
+    const templateMatch = workingContent.match(/<template\b(?![^>]*\bid\s*=)[^>]*>([\s\S]*?)<\/template>/i)
     if (templateMatch) {
       workingContent = templateMatch[1].trim()
     }
@@ -209,10 +446,16 @@ export async function renderComponentWithSlot(
 
     for (const match of scriptMatches) {
       const attrs = match[1] || ''
-      const content = match[2] || ''
+      let content = match[2] || ''
 
       const isServerScript = attrs.includes('server')
       const isClientOnlyScript = attrs.includes('client') || attrs.includes('type="module"')
+      const shouldTranspile = shouldTranspileTypeScript(attrs)
+
+      // Transpile TypeScript if needed
+      if (shouldTranspile && content.trim()) {
+        content = transpileTypeScript(content)
+      }
 
       // Extract variables from server scripts (or scripts without client marker)
       if (!isClientOnlyScript && content) {
@@ -226,7 +469,11 @@ export async function renderComponentWithSlot(
 
       // Preserve client scripts (non-server scripts)
       if (!isServerScript) {
-        clientScripts.push(`<script${attrs}>${content}</script>`)
+        // Strip any existing signal destructuring - it will be added by the scope wrapper
+        let cleanContent = content.replace(/^\s*const\s*\{[^}]+\}\s*=\s*window\.stx\s*;?\s*\n?/gm, '')
+        // Remove ts/lang attributes from output since it's now JavaScript
+        const cleanAttrs = attrs.replace(/\s*\bts\b/g, '').replace(/\s*\blang\s*=\s*["']?(ts|typescript)["']?/gi, '')
+        clientScripts.push(`<script${cleanAttrs}>${cleanContent}</script>`)
       }
     }
 
@@ -274,22 +521,92 @@ export async function renderComponentWithSlot(
       }
     }
 
+    // Check if component has signal scripts - if so, skip event directive processing
+    // because the runtime will handle @click, @keydown etc. via processElement()
+    const hasSignalScripts = clientScripts.some(s => /\b(state|derived|effect)\s*\(/.test(s))
+
     // First, process any nested components in this component
     const componentOptions = {
       ...options,
       componentsDir: path.dirname(componentFilePath),
+      // Skip runtime injection for nested components - parent will inject it
+      skipSignalsRuntime: true,
+      // Skip event directive processing for signal components - runtime handles @click etc.
+      skipEventDirectives: hasSignalScripts,
     }
 
     // Process the component content recursively with the new context
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
 
-    // Append preserved style and client scripts for SFC support
+    // Generate unique scope ID for this component instance
+    const scopeId = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+
+    // Wrap component in a scope container if it has client scripts with signals
+    // (hasSignalScripts already computed above for componentOptions)
     let output = result
-    if (preservedStyle) {
-      output += '\n' + preservedStyle
-    }
-    if (clientScripts.length > 0) {
-      output += '\n' + clientScripts.join('\n')
+
+    if (hasSignalScripts) {
+      // Wrap the component output in a scoped container
+      output = `<div data-stx-scope="${scopeId}">${result}</div>`
+
+      // Modify client scripts to register variables in this scope
+      const scopedScripts = clientScripts.map(script => {
+        // Extract script content
+        const scriptMatch = script.match(/<script([^>]*)>([\s\S]*)<\/script>/i)
+        if (!scriptMatch) return script
+
+        const [, attrs, rawContent] = scriptMatch
+        // Transform store imports before IIFE wrapping (import statements can't be inside functions)
+        const content = transformStoreImports(rawContent)
+        // Wrap script content to register in scope
+        // Add data-stx-scoped attribute to prevent double-processing by processScriptSetup
+        const wrappedContent = `
+(function() {
+  const { state, derived, effect, batch } = window.stx;
+  const __scope = window.stx._scopes = window.stx._scopes || {};
+  const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
+
+  // Scope-specific lifecycle callbacks
+  __scopeVars.__mountCallbacks = __scopeVars.__mountCallbacks || [];
+  __scopeVars.__destroyCallbacks = __scopeVars.__destroyCallbacks || [];
+  const onMount = (fn) => __scopeVars.__mountCallbacks.push(fn);
+  const onDestroy = (fn) => __scopeVars.__destroyCallbacks.push(fn);
+
+${content}
+
+  // Register all defined signals and functions in this scope
+  const __localVars = {};
+  try {
+    ${extractVariableNames(content).map(v => `if (typeof ${v} !== 'undefined') __localVars['${v}'] = ${v};`).join('\n    ')}
+  } catch(e) {}
+  Object.assign(__scopeVars, __localVars);
+})();`
+        return `<script data-stx-scoped${attrs}>${wrappedContent}</script>`
+      })
+
+      // Prepend scoped scripts BEFORE HTML so scope is registered before DOMContentLoaded processes elements
+      // Append preserved style after HTML
+      output = scopedScripts.join('\n') + '\n' + output
+      if (preservedStyle) {
+        output += '\n' + preservedStyle
+      }
+    } else {
+      // No signals, transform and append style and scripts
+      if (preservedStyle) {
+        output += '\n' + preservedStyle
+      }
+      if (clientScripts.length > 0) {
+        // Use event bindings collected during template processing (from @click, @input, etc.)
+        const eventBindings = (componentContext.__stx_event_bindings || []) as any[]
+        const transformedScripts = clientScripts.map((fullScript: string) => {
+          const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
+          if (!contentMatch) return fullScript
+          return processClientScript(contentMatch[1], { eventBindings })
+        })
+        output += '\n' + transformedScripts.join('\n')
+        // Clear bindings after use
+        componentContext.__stx_event_bindings = []
+      }
     }
 
     return output
@@ -369,18 +686,19 @@ export async function resolveTemplatePath(
     return directPath
   }
 
-  // 3. Add .stx extension if not present
-  if (!templatePath.endsWith('.stx')) {
-    const pathWithExt = `${directPath}.stx`
-    if (await fileExists(pathWithExt)) {
-      if (options.debug) {
-        console.log(`Found direct path with extension: ${pathWithExt}`)
+  // 3. Add .stx extension if not present, also try .jsx/.tsx
+  if (!templatePath.endsWith('.stx') && !templatePath.endsWith('.jsx') && !templatePath.endsWith('.tsx')) {
+    for (const ext of ['.stx', '.tsx', '.jsx']) {
+      const pathWithExt = `${directPath}${ext}`
+      if (await fileExists(pathWithExt)) {
+        if (options.debug) {
+          console.log(`Found direct path with extension: ${pathWithExt}`)
+        }
+        if (dependencies) {
+          dependencies.add(pathWithExt)
+        }
+        return pathWithExt
       }
-      // Track dependency
-      if (dependencies) {
-        dependencies.add(pathWithExt)
-      }
-      return pathWithExt
     }
   }
 

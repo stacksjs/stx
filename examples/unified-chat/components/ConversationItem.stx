@@ -1,0 +1,239 @@
+<script server>
+/**
+ * ConversationItem Component
+ *
+ * A conversation list item showing avatar, name, preview, timestamp,
+ * and unread badge with platform indicator.
+ */
+import { defineProps, withDefaults } from 'stx'
+
+interface ConversationItemProps {
+  id: number | string
+  name: string
+  platform: string
+  avatar: string
+  lastMessage: string
+  timestamp: string
+  unread?: number
+  online?: boolean
+  pinned?: boolean
+  isGroup?: boolean
+  active?: boolean
+}
+
+const {
+  id,
+  name,
+  platform,
+  avatar,
+  lastMessage,
+  timestamp,
+  unread = 0,
+  online = false,
+  pinned = false,
+  isGroup = false,
+  active = false
+} = withDefaults(defineProps<ConversationItemProps>(), {
+  unread: 0,
+  online: false,
+  pinned: false,
+  isGroup: false,
+  active: false
+})
+
+// Platform styling
+const platformClasses = {
+  imessage: 'bg-gradient-to-br from-green-500 to-green-600',
+  whatsapp: 'bg-gradient-to-br from-green-400 to-green-500',
+  slack: 'bg-gradient-to-br from-purple-900 to-purple-800',
+  discord: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
+  telegram: 'bg-gradient-to-br from-sky-500 to-sky-600',
+  signal: 'bg-gradient-to-br from-blue-500 to-blue-600',
+  messenger: 'bg-gradient-to-br from-blue-500 to-blue-600',
+  twitter: 'bg-gradient-to-br from-sky-400 to-sky-500',
+}
+
+const platformEmojis = {
+  imessage: '💬',
+  whatsapp: '📱',
+  slack: '💼',
+  discord: '🎮',
+  telegram: '✈️',
+  signal: '🛡️',
+  messenger: '📘',
+  twitter: '🐦',
+}
+
+function getPlatformClass() {
+  return platformClasses[platform] || platformClasses.imessage
+}
+
+function getPlatformEmoji() {
+  return platformEmojis[platform] || '💬'
+}
+</script>
+
+<div
+  class="conversation-item {{ active ? 'conversation-item--active' : '' }}"
+  data-conversation-id="{{ id }}"
+>
+  <div class="conversation-avatar {{ getPlatformClass() }}">
+    <span class="conversation-avatar-text">{{ avatar }}</span>
+    @if(online)
+      <span class="conversation-online-indicator"></span>
+    @else
+      <span class="conversation-platform-badge {{ getPlatformClass() }}">
+        {{ getPlatformEmoji() }}
+      </span>
+    @endif
+  </div>
+
+  <div class="conversation-content">
+    <div class="conversation-header">
+      <span class="conversation-name">
+        @if(isGroup)
+          <span class="conversation-group-icon">👥</span>
+        @endif
+        {{ name }}
+      </span>
+      <span class="conversation-timestamp">{{ timestamp }}</span>
+    </div>
+    <div class="conversation-preview">{{ lastMessage }}</div>
+  </div>
+
+  @if(unread > 0)
+    <span class="conversation-unread">{{ unread > 99 ? '99+' : unread }}</span>
+  @endif
+
+  @if(pinned)
+    <span class="conversation-pinned">📌</span>
+  @endif
+</div>
+
+<style scoped>
+.conversation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.conversation-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.conversation-item--active {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+.conversation-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.conversation-avatar-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.conversation-online-indicator {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 12px;
+  height: 12px;
+  background: #10B981;
+  border: 2px solid rgba(20, 20, 30, 0.8);
+  border-radius: 50%;
+}
+
+.conversation-platform-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  border: 2px solid rgba(20, 20, 30, 0.8);
+}
+
+.conversation-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.conversation-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.conversation-group-icon {
+  font-size: 12px;
+}
+
+.conversation-timestamp {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.conversation-preview {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 32px;
+}
+
+.conversation-unread {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conversation-pinned {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  opacity: 0.5;
+}
+</style>

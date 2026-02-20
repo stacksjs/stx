@@ -3,6 +3,7 @@ import type { StxOptions } from './'
 import path from 'node:path'
 import { buildWebComponents, cacheTemplate, checkCache, extractVariables, loadStxConfig, processDirectives } from './'
 import { devHelpers, errorLogger, safeExecuteAsync, StxFileError, StxRuntimeError } from './error-handling'
+import { isDevelopment } from './env'
 import { escapeHtml } from './expressions'
 import { performanceMonitor } from './performance-utils'
 
@@ -83,8 +84,10 @@ export const plugin: BunPlugin = {
         const { scriptContent, templateContent, allScripts } = performanceMonitor.time('script-extraction', () => {
           // SFC Support: Extract <template> content if present
           // This allows Vue-style single file components with explicit <template> tags
+          // Only match <template> WITHOUT an id attribute - templates with id are HTML template elements
+          // that should be preserved (used for client-side JS template cloning)
           let workingContent = content
-          const templateTagMatch = content.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+          const templateTagMatch = content.match(/<template\b(?![^>]*\bid\s*=)[^>]*>([\s\S]*?)<\/template>/i)
           if (templateTagMatch) {
             workingContent = templateTagMatch[1].trim()
           }
@@ -218,8 +221,11 @@ export const plugin: BunPlugin = {
         const errorLine = stxError.line || null
         const errorContext = stxError.context || null
 
-        // Create a more helpful error page
-        const errorHtml = `<!DOCTYPE html>
+        // Create error page - detailed in dev, generic in production
+        const showDetails = options.debug || isDevelopment()
+
+        const errorHtml = showDetails
+          ? `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -257,7 +263,7 @@ export const plugin: BunPlugin = {
     : ''}
 
   <div class="help-section">
-    <h3>💡 Troubleshooting Tips</h3>
+    <h3>Troubleshooting Tips</h3>
     <ul>
       <li>Check the syntax of your stx directives (e.g., @if, @foreach)</li>
       <li>Verify that all variables used in the template are properly defined</li>
@@ -266,6 +272,21 @@ export const plugin: BunPlugin = {
       <li>Enable debug mode in your stx config for more detailed error messages</li>
     </ul>
   </div>
+</body>
+</html>`
+          : `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 80px auto; padding: 20px; text-align: center; color: #333; }
+  </style>
+</head>
+<body>
+  <h1>Something went wrong</h1>
+  <p>An internal error occurred. Please try again later.</p>
 </body>
 </html>`
 

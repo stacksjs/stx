@@ -2,6 +2,7 @@
 import type { JSDocInfo, PositionMapping } from '../interfaces'
 import * as vscode from 'vscode'
 import { TransitionEase, TransitionType } from '../interfaces/animation-types'
+import { PropsTypeExtractor } from '../services/PropsTypeExtractor'
 
 export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProvider {
   // Track all stx documents that have been opened
@@ -15,6 +16,9 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
 
   // Track JSDoc comments for each document
   private jsDocComments = new Map<string, JSDocInfo[]>()
+
+  // Props type extractor for component prop inference
+  private propsExtractor = new PropsTypeExtractor()
 
   // Event emitter for content changes
   private _onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()
@@ -202,6 +206,43 @@ declare const history: History;
 
 `
       tsLineCounter += 13
+
+      // Extract and inject props type declaration
+      const propsInfo = this.propsExtractor.extractPropsType(text)
+      if (propsInfo.typeAnnotation) {
+        // If we have an interface definition, include it
+        if (propsInfo.interfaceDefinition) {
+          tsContent += `// Props interface from defineProps\ninterface __ComponentProps {\n${propsInfo.interfaceDefinition}\n}\n\n`
+          tsContent += `// Component props - auto-typed from defineProps<>()\ndeclare const props: __ComponentProps;\n\n`
+          tsLineCounter += 6
+        }
+        else {
+          // Use the type annotation directly
+          const propsType = propsInfo.typeAnnotation.trim().startsWith('{')
+            ? propsInfo.typeAnnotation
+            : propsInfo.typeAnnotation
+          tsContent += `// Component props - auto-typed from defineProps<>()\ndeclare const props: ${propsType};\n\n`
+          tsLineCounter += 3
+        }
+
+        // Add prop details to jsDocComments for hover support
+        for (const prop of propsInfo.propDetails) {
+          jsDocComments.push({
+            comment: prop.description || `Prop: ${prop.name}`,
+            symbol: prop.name,
+            line: 0,
+            symbolType: 'property',
+            isProperty: true,
+            parentSymbol: 'props',
+            propertyType: prop.type,
+          })
+        }
+      }
+      else {
+        // Fallback: declare props as Record<string, unknown>
+        tsContent += `// Component props (no defineProps found)\ndeclare const props: Record<string, unknown>;\n\n`
+        tsLineCounter += 3
+      }
 
       // Extract TypeScript from @ts blocks
       const tsBlockRegex = /@ts\s+([\s\S]*?)@endts/g

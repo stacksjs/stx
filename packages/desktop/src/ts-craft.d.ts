@@ -19,6 +19,9 @@ declare module 'ts-craft' {
     hotReload?: boolean
     devTools?: boolean
     systemTray?: boolean
+    nativeSidebar?: boolean
+    sidebarWidth?: number
+    sidebarConfig?: Record<string, unknown>
     hideDockIcon?: boolean
     menubarOnly?: boolean
     minimizable?: boolean

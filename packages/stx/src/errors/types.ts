@@ -9,6 +9,7 @@
 import type { ErrorCode } from './codes'
 import path from 'node:path'
 import process from 'node:process'
+import { isDevelopment } from '../env'
 import { ErrorCodes } from './codes'
 
 // =============================================================================
@@ -31,7 +32,7 @@ export interface ErrorConfig {
 
 const defaultErrorConfig: ErrorConfig = {
   showRelativePaths: false,
-  enableAutoRecovery: process.env.NODE_ENV === 'development',
+  enableAutoRecovery: isDevelopment(),
   logRecoveryWarnings: true,
 }
 

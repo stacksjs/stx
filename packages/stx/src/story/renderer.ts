@@ -17,8 +17,8 @@ export interface StoryRenderOptions {
   slots?: Record<string, string>
   /** Include global styles */
   includeStyles?: boolean
-  /** Include Headwind CSS */
-  includeHeadwind?: boolean
+  /** Include Crosswind CSS */
+  includeCrosswind?: boolean
 }
 
 /**
@@ -403,10 +403,10 @@ export function generatePreviewDocument(
     title?: string
     theme?: 'light' | 'dark'
     background?: string
-    headwindCss?: string
+    crosswindCss?: string
   } = {},
 ): string {
-  const { title = 'Preview', theme = 'light', background = '#ffffff', headwindCss = '' } = options
+  const { title = 'Preview', theme = 'light', background = '#ffffff', crosswindCss = '' } = options
 
   return `<!DOCTYPE html>
 <html lang="en" class="${theme === 'dark' ? 'dark' : ''}">
@@ -431,7 +431,7 @@ export function generatePreviewDocument(
       font-family: monospace;
       white-space: pre-wrap;
     }
-    ${headwindCss}
+    ${crosswindCss}
     ${result.css}
   </style>
 </head>

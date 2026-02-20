@@ -16,9 +16,9 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
-    "@capacitor/app": "^6.0.0",
+    "@capacitor/app": "^8.0.0",
     "@capacitor/core": "^8.0.0",
-    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/haptics": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
     "@capacitor/keyboard": "^8.0.0",
     "@capacitor/splash-screen": "^6.0.0",

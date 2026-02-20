@@ -351,7 +351,7 @@ describe('bun-plugin-stx', () => {
         <script>
           module.exports = {
             richText: "<strong>Bold Text</strong>",
-            escapedText: "<script>alert('XSS')</script>"
+            escapedText: "<scr" + "ipt>alert('XSS')<\/scr" + "ipt>"
           };
         </script>
       </head>

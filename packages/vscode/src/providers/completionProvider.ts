@@ -1,6 +1,7 @@
 /* eslint-disable no-template-curly-in-string */
 import * as vscode from 'vscode'
 import { TransitionDirection, TransitionEase, TransitionType } from '../interfaces/animation-types'
+import { ComponentRegistry } from '../services/ComponentRegistry'
 
 /**
  * Creates a completion provider for stx animation directives
@@ -78,6 +79,22 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
       if (linePrefix.includes('@motion(')) {
         console.log(`stx Completion - Detected @motion parameters context`)
         return createBooleanCompletions()
+      }
+
+      // Check for props. property access for component prop completions
+      const propsMatch = linePrefix.match(/props\.(\w*)$/)
+      if (propsMatch) {
+        const partialProp = propsMatch[1].toLowerCase()
+        console.log(`stx Completion - Detected props. access, partial: "${partialProp}"`)
+        return createPropsCompletions(document, partialProp)
+      }
+
+      // Also check inside {{ }} expressions
+      const exprPropsMatch = linePrefix.match(/\{\{\s*props\.(\w*)$/)
+      if (exprPropsMatch) {
+        const partialProp = exprPropsMatch[1].toLowerCase()
+        console.log(`stx Completion - Detected props. in expression, partial: "${partialProp}"`)
+        return createPropsCompletions(document, partialProp)
       }
 
       return undefined
@@ -583,5 +600,59 @@ function createBooleanCompletions(): vscode.CompletionItem[] {
   falseCompletion.documentation = new vscode.MarkdownString('No animations will be shown regardless of user preferences')
   completions.push(falseCompletion)
 
+  return completions
+}
+
+/**
+ * Creates completion items for component props
+ */
+function createPropsCompletions(document: vscode.TextDocument, partialProp: string): vscode.CompletionItem[] {
+  const completions: vscode.CompletionItem[] = []
+
+  // Get the component info for this document
+  const componentInfo = ComponentRegistry.getInstance().getComponentByPath(document.uri.fsPath)
+
+  if (!componentInfo || componentInfo.propDetails.length === 0) {
+    console.log(`stx Completion - No prop details found for ${document.uri.fsPath}`)
+    return completions
+  }
+
+  // Filter props by partial input
+  const filteredProps = componentInfo.propDetails.filter(
+    prop => prop.name.toLowerCase().includes(partialProp),
+  )
+
+  for (const prop of filteredProps) {
+    const completion = new vscode.CompletionItem(prop.name, vscode.CompletionItemKind.Property)
+
+    // Set detail to show type
+    completion.detail = `(prop) ${prop.name}: ${prop.type}`
+    if (!prop.required) {
+      completion.detail += ' (optional)'
+    }
+
+    // Build documentation
+    const docParts: string[] = []
+    if (prop.description) {
+      docParts.push(prop.description)
+    }
+    docParts.push(`\n\n**Type:** \`${prop.type}\``)
+    if (prop.defaultValue) {
+      docParts.push(`\n\n**Default:** \`${prop.defaultValue}\``)
+    }
+    if (prop.required) {
+      docParts.push('\n\n**Required**')
+    }
+
+    completion.documentation = new vscode.MarkdownString(docParts.join(''))
+    completion.insertText = prop.name
+
+    // Prioritize required props
+    completion.sortText = prop.required ? `0${prop.name}` : `1${prop.name}`
+
+    completions.push(completion)
+  }
+
+  console.log(`stx Completion - Generated ${completions.length} prop completions`)
   return completions
 }

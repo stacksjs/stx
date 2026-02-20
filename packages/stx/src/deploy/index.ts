@@ -408,10 +408,9 @@ export type {
   NetlifySite,
   NetlifyDeploy,
   DeployFile,
-  NetlifyConfig,
-  ProjectConfig,
 } from './netlify'
 
 export type {
-  NetlifyConfig as NetlifyTomlConfig,
+  NetlifyConfig,
+  ProjectConfig,
 } from './config-generators'

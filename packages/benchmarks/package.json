@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/benchmarks",
   "type": "module",
-  "version": "0.2.0",
+  "version": "0.2.5",
   "private": true,
   "description": "Performance benchmarks comparing STX framework components (@stacksjs/stx, @stacksjs/ts-markdown, @stacksjs/sanitizer) against competitors",
   "main": "./src/index.ts",
@@ -22,20 +22,20 @@
     "@11ty/eleventy": "^3.1.2",
     "@stacksjs/sanitizer": "workspace:*",
     "dompurify": "^3.3.1",
-    "ejs": "^3.1.10",
+    "ejs": "^4.0.1",
     "gray-matter": "^4.0.3",
     "handlebars": "^4.7.8",
-    "isomorphic-dompurify": "^2.34.0",
+    "isomorphic-dompurify": "^2.36.0",
     "js-yaml": "^4.1.1",
     "liquidjs": "^10.24.0",
-    "markdown-it": "^14.1.0",
-    "marked": "^17.0.1",
+    "markdown-it": "^14.1.1",
+    "marked": "^17.0.3",
     "mitata": "^1.0.34",
     "nunjucks": "^3.2.4",
     "pug": "^3.0.3",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
-    "sanitize-html": "^2.17.0",
+    "sanitize-html": "^2.17.1",
     "showdown": "^2.1.0",
     "tinybench": "^6.0.0",
     "xss": "^1.0.15"
@@ -44,6 +44,6 @@
     "@types/dompurify": "^3.2.0",
     "@types/marked": "^6.0.0",
     "@types/sanitize-html": "^2.16.0",
-    "jsdom": "^27.3.0"
+    "jsdom": "^27.4.0"
   }
 }

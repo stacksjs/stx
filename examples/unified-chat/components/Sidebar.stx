@@ -1,0 +1,303 @@
+<script server>
+/**
+ * Native Sidebar Component for Unified Chat
+ *
+ * When running with `stx dev --native`, Craft renders the sidebar natively.
+ * This web component hides itself via client-side detection.
+ */
+
+// Get props with defaults
+const _variant = props.variant || 'tahoe'
+const _header = props.header || {}
+const _searchPlaceholder = props.searchPlaceholder || 'Search...'
+const _sections = props.sections || []
+const _width = props.width || 260
+const _footer = props.footer || null
+
+// Variant styles
+const _variantStyles = {
+  tahoe: 'stx-sidebar--tahoe',
+  vibrancy: 'stx-sidebar--vibrancy',
+  solid: 'stx-sidebar--solid'
+}
+</script>
+
+<!-- Sidebar with client-side native detection -->
+<aside class="stx-sidebar {{ _variantStyles[_variant] || _variantStyles.tahoe }}" style="width: {{ _width }}px; min-width: {{ _width }}px;" data-stx-sidebar>
+  @if(_header && (_header.title || _header.icon))
+  <div class="stx-sidebar__header">
+    <div class="stx-sidebar__logo">
+      @if(_header.icon)
+      <div class="stx-sidebar__logo-icon"></div>
+      @endif
+      <div class="stx-sidebar__logo-text">
+        @if(_header.title)
+        <h1>{{ _header.title }}</h1>
+        @endif
+        @if(_header.subtitle)
+        <span>{{ _header.subtitle }}</span>
+        @endif
+      </div>
+    </div>
+    <div class="stx-sidebar__search">
+      <input type="text" placeholder="{{ _searchPlaceholder }}" class="stx-sidebar__search-input" />
+    </div>
+  </div>
+  @endif
+
+  <nav class="stx-sidebar__nav">
+    @foreach(_sections as section)
+    <div class="stx-sidebar__section" data-section-id="{{ section.id }}">
+      @if(section.title)
+      <div class="stx-sidebar__section-header">{{ section.title }}</div>
+      @endif
+      @foreach(section.items as item)
+      <a href="#" class="stx-sidebar__item {{ item.selected ? 'stx-sidebar__item--active' : '' }}" data-id="{{ item.id }}" @if(item.tintColor)style="--item-tint: {{ item.tintColor }}"@endif>
+        <span class="stx-sidebar__item-icon"></span>
+        <span class="stx-sidebar__item-label">{{ item.label }}</span>
+        @if(item.badge)
+        <span class="stx-sidebar__item-badge">{{ item.badge }}</span>
+        @endif
+      </a>
+      @endforeach
+    </div>
+    @endforeach
+  </nav>
+
+  @if(_footer)
+  <div class="stx-sidebar__footer">
+    <div class="stx-sidebar__user">
+      @if(_footer.avatar)
+      <div class="stx-sidebar__user-avatar">{{ _footer.avatar }}<span class="stx-sidebar__user-status"></span></div>
+      @endif
+      <div class="stx-sidebar__user-info">
+        @if(_footer.name)
+        <div class="stx-sidebar__user-name">{{ _footer.name }}</div>
+        @endif
+        @if(_footer.status)
+        <div class="stx-sidebar__user-status-text">{{ _footer.status }}</div>
+        @endif
+      </div>
+    </div>
+  </div>
+  @endif
+</aside>
+
+<script client>
+// Hide web sidebar if Craft is rendering native sidebar
+// The flag window.__craftNativeSidebar is injected by stx dev server in native mode
+(function() {
+  if (window.__craftNativeSidebar === true) {
+    // Hide the web fallback sidebar when native sidebar is active
+    var sidebar = document.querySelector('[data-stx-sidebar]');
+    if (sidebar) {
+      sidebar.style.display = 'none';
+    }
+    document.body.classList.add('has-native-sidebar');
+  }
+})();
+</script>
+
+<style>
+  /* Hide sidebar when native sidebar is active */
+  body.has-native-sidebar [data-stx-sidebar] {
+    display: none !important;
+  }
+
+  /* Base Sidebar Styles */
+  .stx-sidebar {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Tahoe Variant */
+  .stx-sidebar--tahoe {
+    background: rgba(30, 30, 40, 0.75);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .stx-sidebar--tahoe::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.06) 0%, rgba(59, 130, 246, 0.03) 50%, rgba(139, 92, 246, 0.06) 100%);
+    pointer-events: none;
+  }
+
+  /* Header */
+  .stx-sidebar__header {
+    position: relative;
+    z-index: 1;
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .stx-sidebar__logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stx-sidebar__logo-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #8B5CF6, #3B82F6);
+  }
+
+  .stx-sidebar__logo-text h1 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: white;
+  }
+
+  .stx-sidebar__logo-text span {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Search */
+  .stx-sidebar__search {
+    margin-top: 12px;
+  }
+
+  .stx-sidebar__search-input {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .stx-sidebar__search-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Navigation */
+  .stx-sidebar__nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stx-sidebar__section {
+    margin-bottom: 20px;
+  }
+
+  .stx-sidebar__section-header {
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Items */
+  .stx-sidebar__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+
+  .stx-sidebar__item:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .stx-sidebar__item--active {
+    background: rgba(139, 92, 246, 0.2);
+    color: #fff;
+  }
+
+  .stx-sidebar__item-icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+    color: var(--item-tint, inherit);
+  }
+
+  .stx-sidebar__item-badge {
+    margin-left: auto;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, #8B5CF6, #3B82F6);
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: white;
+  }
+
+  /* Footer */
+  .stx-sidebar__footer {
+    position: relative;
+    z-index: 1;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .stx-sidebar__user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 8px;
+  }
+
+  .stx-sidebar__user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10B981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    position: relative;
+    color: white;
+  }
+
+  .stx-sidebar__user-status {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    background: #10B981;
+    border: 2px solid rgba(30, 30, 40, 0.9);
+    border-radius: 50%;
+  }
+
+  .stx-sidebar__user-info {
+    flex: 1;
+  }
+
+  .stx-sidebar__user-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: white;
+  }
+
+  .stx-sidebar__user-status-text {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+</style>

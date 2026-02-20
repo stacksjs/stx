@@ -130,7 +130,7 @@ function generateTransitionCSS(
  */
 function generateMotionPreferencesScript(): string {
   return `
-<script>
+<script data-stx-scoped>
   // Motion preferences handling
   (function() {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -184,7 +184,7 @@ function hasAnimationDirectives(template: string): boolean {
  */
 function generateIntersectionObserverScript(threshold = 0.1, rootMargin = '0px'): string {
   return `
-<script>
+<script data-stx-scoped>
   // Intersection Observer for scroll animations
   (function() {
     const initObserver = () => {
@@ -362,7 +362,7 @@ function generateAnimationGroup(
   const { staggerDelay = 50, sequence = false } = options
 
   const script = `
-<script>
+<script data-stx-scoped>
   // Animation Group: ${groupName}
   (function() {
     const elements = ${JSON.stringify(elements)};
@@ -722,7 +722,7 @@ function generateStaggerScript(
   animationClass: string,
 ): string {
   return `
-<script>
+<script data-stx-scoped>
 (function() {
   const container = document.getElementById('${containerId}');
   if (!container) return;
@@ -865,7 +865,7 @@ export function createAnimationTimeline(entries: TimelineEntry[]): string {
   const _timelineId = `stx-timeline-${Math.random().toString(36).slice(2, 9)}`
 
   const script = `
-<script>
+<script data-stx-scoped>
 (function() {
   const timeline = ${JSON.stringify(entries)};
 
@@ -983,7 +983,7 @@ export function parseAnimationShorthand(shorthand: string): KeyframeAnimationOpt
  */
 export function generateAnimationRuntime(): string {
   return `
-<script>
+<script data-stx-scoped>
 window.__stxAnimation = {
   // Registry of animations
   animations: new Map(),
