@@ -29,7 +29,7 @@ jobs:
         run: bun install
 
       - name: Publish
-        run: pantry npm:publish --access public --skip collections,iconify-core,iconify-generator,vscode
+        run: pantry publish --npm --access public --skip collections,iconify-core,iconify-generator,vscode
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
