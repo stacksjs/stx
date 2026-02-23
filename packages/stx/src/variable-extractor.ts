@@ -416,7 +416,7 @@ export async function extractVariables(
 
     // eslint-disable-next-line no-new-func
     const scriptFn = new Function(
-      'module', 'exports', 'require', '$props', 'defineProps', 'withDefaults',
+      'module', 'exports', 'require', 'props', '$props', 'defineProps', 'withDefaults',
       'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
       'window', 'document', 'console', 'confirm', 'alert', 'fetch',
       ...filteredContextKeys,
@@ -429,7 +429,7 @@ export async function extractVariables(
       })()`
     )
     const result = await scriptFn(
-      module, exports, requireFn, $props, defineProps, withDefaults,
+      module, exports, requireFn, propsObj, $props, defineProps, withDefaults,
       state, derived, effect, batch, onMount, onDestroy,
       windowProxy, mockDocument, mockConsole, mockWindow.confirm, mockWindow.alert, mockWindow.fetch,
       ...filteredContextValues

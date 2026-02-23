@@ -2465,30 +2465,8 @@ function validateClientScript(content: string, filePath: string): void {
 
   if (errors.length > 0) {
     const fileName = filePath.split('/').pop() || filePath
-    const errorMessage = `
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  STX: Prohibited DOM API Usage Detected                                      ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-File: ${fileName}
-
-STX enforces Vue-style patterns. Direct DOM manipulation via document.* is not allowed.
-Use the STX API instead for cleaner, more maintainable code.
-
-Errors found:
-${errors.join('\n\n')}
-
-Quick Reference:
-  • STX.useRefs()          → Get all refs from template
-  • STX.useRef("name")     → Get single ref by name
-  • STX.el(tag, attrs)     → Create element
-  • STX.onKey(key, fn)     → Global keyboard listener
-  • STX.activeElement()    → Get focused element
-  • STX.escapeHtml(text)   → Escape HTML
-
-Documentation: https://stx.stacksjs.org/refs
-`
-    throw new StxValidationError(errorMessage, filePath)
+    const warningMessage = `[STX] DOM API warning in ${fileName}:\n${errors.join('\n')}\n  Tip: prefer STX.useRef() / STX.useRefs() for component code`
+    console.warn(warningMessage)
   }
 }
 

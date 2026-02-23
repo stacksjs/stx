@@ -380,6 +380,7 @@ export async function render(
   // Build context with server data
   const context: Record<string, unknown> = {
     ...data,
+    props: data,
     __filename: templatePath,
     __dirname: path.dirname(templatePath),
   }
