@@ -94,6 +94,7 @@ export * from './media'
 // bundle-analyzer moved to stx/bundle-analyzer
 export * from './build-views'
 export * from './signals'
+export * from './spa-shell'
 
 // Vue compatibility and JSX support
 export * from './vue-template'

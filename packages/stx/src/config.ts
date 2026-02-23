@@ -16,6 +16,7 @@ import { webComponentDirectiveHandler } from './web-components'
 
 export const defaultConfig: StxConfig = {
   enabled: true,
+  ssr: true,
   partialsDir: 'partials',
   componentsDir: 'components',
   debug: false,

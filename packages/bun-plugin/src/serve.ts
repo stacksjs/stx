@@ -212,7 +212,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       __dirname: path.dirname(filePath),
     }
 
-    const { processDirectives, extractVariables, defaultConfig } = await import('@stacksjs/stx')
+    const { processDirectives, extractVariables, defaultConfig, generateSpaShell } = await import('@stacksjs/stx')
     await extractVariables(scriptContent, context, filePath)
 
     // Merge custom options with default config
@@ -221,6 +221,15 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
       ...(partialsDir && { partialsDir }),
+    }
+
+    // When SSR is disabled, serve a client-side SPA shell instead of processing directives
+    if (config.ssr === false || stxConfig.ssr === false) {
+      return generateSpaShell({
+        template: templateContent,
+        context,
+        title: stxConfig.defaultTitle ?? 'stx App',
+      })
     }
 
     let output = templateContent

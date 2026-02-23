@@ -409,6 +409,13 @@ export interface StxConfig {
   defaultImage?: string
 
   /**
+   * Enable server-side rendering. When false, templates are served as a client-side
+   * SPA shell without directive processing (similar to Nuxt's `ssr: false`).
+   * @default true
+   */
+  ssr?: boolean
+
+  /**
    * Enable or disable caching
    */
   cache?: boolean

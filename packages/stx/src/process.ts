@@ -538,10 +538,10 @@ function injectBrowserRuntime(template: string): string {
   }
 
   // Core browser utilities (framework-provided, not app-specific)
+  // Only include symbols that are truly unique to @stacksjs/browser
+  // and wouldn't appear in normal application code
   const coreSymbols = [
-    'auth', 'useAuth', 'formatAreaSize', 'formatDistance', 'formatElevation',
-    'formatDuration', 'getRelativeTime', 'fetchData', 'browserQuery',
-    'BrowserQueryBuilder', 'configureBrowser', 'createBrowserModel',
+    'browserQuery', 'BrowserQueryBuilder', 'configureBrowser', 'createBrowserModel',
   ]
 
   // Check for core browser utilities in CLIENT code only
@@ -551,8 +551,17 @@ function injectBrowserRuntime(template: string): string {
   })
 
   // Check for model usage in CLIENT code only (PascalCase + query methods)
+  // Exclude JS built-ins that are PascalCase (Promise.all, Object.keys, Array.from, etc.)
+  const jsBuiltins = new Set(['Promise', 'Object', 'Array', 'Map', 'Set', 'Date', 'Error', 'JSON', 'Math', 'Number', 'String', 'RegExp', 'Symbol', 'WeakMap', 'WeakSet', 'Proxy', 'Reflect', 'Intl', 'URL', 'URLSearchParams', 'FormData', 'Headers', 'Request', 'Response', 'AbortController', 'EventTarget', 'Element', 'Document', 'Node', 'Window', 'Console', 'Storage', 'Navigator', 'Blob', 'File', 'FileReader', 'HTMLElement', 'SVGElement', 'Event', 'CustomEvent', 'DOMParser', 'XMLSerializer', 'WebSocket', 'Worker', 'SharedWorker', 'IntersectionObserver', 'MutationObserver', 'ResizeObserver', 'PerformanceObserver', 'Notification', 'Bun', 'Buffer', 'Process'])
   const modelPattern = /\b([A-Z][a-zA-Z0-9]*)\s*\.\s*(all|find|first|get|where|orderBy|orderByDesc|limit|select|pluck|create|update|delete)\s*\(/g
-  const usesModels = modelPattern.test(clientCode)
+  let modelMatch: RegExpExecArray | null
+  let usesModels = false
+  while ((modelMatch = modelPattern.exec(clientCode)) !== null) {
+    if (!jsBuiltins.has(modelMatch[1])) {
+      usesModels = true
+      break
+    }
+  }
 
   if (!usesCoreSymbols && !usesModels) {
     return template
@@ -590,8 +599,10 @@ import '@stacksjs/browser'
  * The runtime provides client-side reactivity.
  */
 function injectSignalsRuntime(template: string, options: StxOptions): string {
-  // Don't inject if already present (check for the actual runtime, not just window.stx prefix)
-  if (template.includes('window.stx =') || template.includes('window.stx=') || template.includes('window.stx.state')) {
+  // Don't inject if actual signals runtime is already present
+  // Check for the runtime's unique signature (state, derived, effect assignment),
+  // not just any 'window.stx =' which could be scope registration from includes
+  if (template.includes('window.stx.state') || template.includes('STX Signals Runtime')) {
     return template
   }
 
@@ -1172,6 +1183,12 @@ export async function processDirectives(
   options: StxOptions,
   dependencies: Set<string>,
 ): Promise<string> {
+  // When SSR is disabled, skip all directive processing and return the raw template.
+  // The calling code (e.g. serve.ts) is responsible for wrapping it in an SPA shell.
+  if (options.ssr === false) {
+    return template
+  }
+
   // Track if this is the top-level call (not a recursive call from layout/include)
   const isTopLevel = !context.__stxProcessingDepth
   if (!context.__stxProcessingDepth) {

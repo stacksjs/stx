@@ -78,6 +78,21 @@ export const defaultFilters: Record<string, FilterFunction> = {
     }
   },
 
+  // Format number with locale-aware thousands separators (e.g. 1234 -> "1,234")
+  fmt: (value: any, _context: Record<string, any>, locale: string = 'en-US') => {
+    if (value === undefined || value === null)
+      return ''
+    try {
+      const numValue = Number(value)
+      if (Number.isNaN(numValue))
+        return String(value)
+      return numValue.toLocaleString(locale)
+    }
+    catch {
+      return String(value)
+    }
+  },
+
   // Array filters
   join: (value: any, _context: Record<string, any>, separator: string = ',') => {
     if (!Array.isArray(value))
