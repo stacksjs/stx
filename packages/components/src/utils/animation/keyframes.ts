@@ -32,7 +32,7 @@ export interface Keyframe {
 export interface AnimationOptions {
   /** Animation duration in milliseconds */
   duration?: number
-  /** Easing function (CSS easing string) */
+  /** Easing function, CSS easing string */
   easing?: string
   /** Delay before animation starts in milliseconds */
   delay?: number

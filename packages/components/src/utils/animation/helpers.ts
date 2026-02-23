@@ -19,7 +19,7 @@
 export interface CSSAnimationOptions {
   /** Animation duration (e.g., '300ms', '1s') */
   duration?: string
-  /** Timing function (e.g., 'ease', 'linear', 'cubic-bezier(...)') */
+  /** Timing function, e.g. 'ease', 'linear', 'cubic-bezier(...)' */
   timing?: string
   /** Delay before animation (e.g., '100ms') */
   delay?: string

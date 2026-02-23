@@ -169,7 +169,7 @@ export const PropTypes: {
     return new Validator(
       (value, propName, componentName) =>
         validators.some(v => v.validate(value, propName, componentName)),
-      (value, propName, componentName) =>
+      (_value, propName, componentName) =>
         `Invalid prop \`${propName}\` supplied to \`${componentName}\`, expected one of the specified types.`,
     )
   },
@@ -186,7 +186,7 @@ export const PropTypes: {
           return false
         return value.every((item, index) => validator.validate(item, `${propName}[${index}]`, componentName))
       },
-      (value, propName, componentName) =>
+      (_value, propName, componentName) =>
         `Invalid prop \`${propName}\` supplied to \`${componentName}\`, expected array of specified type.`,
     )
   },
@@ -213,7 +213,7 @@ export const PropTypes: {
 
         return true
       },
-      (value, propName, componentName) =>
+      (_value, propName, componentName) =>
         `Invalid prop \`${propName}\` supplied to \`${componentName}\`, expected object matching specified shape.`,
     )
   },
@@ -226,7 +226,7 @@ export const PropTypes: {
   instanceOf<T>(expectedClass: new (...args: any[]) => T): Validator<T> {
     return new Validator(
       value => value instanceof expectedClass,
-      (value, propName, componentName) =>
+      (_value, propName, componentName) =>
         `Invalid prop \`${propName}\` supplied to \`${componentName}\`, expected instance of \`${expectedClass.name}\`.`,
     )
   },
@@ -239,7 +239,7 @@ export const PropTypes: {
    */
   custom(
     validatorFn: (value: any, propName: string, componentName: string) => boolean,
-    errorMessage: string | ((value: any, propName: string, componentName: string) => string),
+    errorMessage: string | ((_value: any, _propName: string, _componentName: string) => string),
   ): Validator {
     const messageGenerator = typeof errorMessage === 'string'
       ? () => errorMessage

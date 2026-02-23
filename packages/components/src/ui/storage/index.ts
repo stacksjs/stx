@@ -7,7 +7,7 @@ export interface StorageOptions {
   compress?: boolean // Compress large objects
 }
 
-type StorageWatchCallback = (newValue: any, oldValue: any, key: string) => void
+type StorageWatchCallback = (_newValue: any, _oldValue: any, _key: string) => void
 
 export class StorageManager {
   private storage: globalThis.Storage

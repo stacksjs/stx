@@ -24,7 +24,7 @@ export type IslandHandlers = Record<string, () => Promise<any>>
 /**
  * Island hydration function type
  */
-export type HydrationFunction = (element: HTMLElement, props: any) => void | Promise<void>
+export type HydrationFunction = (_element: HTMLElement, _props: any) => void | Promise<void>
 
 // Check if we're in a browser environment
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined'

@@ -36,7 +36,7 @@ export type LocaleMessages = Record<string, Messages>
 /**
  * Pluralization rules
  */
-export type PluralRule = (count: number, locale: string) => number
+export type PluralRule = (_count: number, _locale: string) => number
 
 /**
  * I18n configuration

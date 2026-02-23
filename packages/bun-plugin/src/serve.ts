@@ -316,7 +316,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       let relativeFilePath = normalizedFilePath
       for (const pattern of patterns) {
         const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
-        if (normalizedFilePath.startsWith(normalizedPattern + '/')) {
+        if (normalizedFilePath.startsWith(`${normalizedPattern}/`)) {
           relativeFilePath = normalizedFilePath.slice(normalizedPattern.length + 1)
           break
         }
@@ -368,7 +368,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       let relativeFilePath = normalizedFilePath
       for (const pattern of patterns) {
         const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
-        if (normalizedFilePath.startsWith(normalizedPattern + '/')) {
+        if (normalizedFilePath.startsWith(`${normalizedPattern}/`)) {
           relativeFilePath = normalizedFilePath.slice(normalizedPattern.length + 1)
           break
         }
@@ -752,7 +752,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         // For absolute paths, extract relative portion from patterns
         for (const pattern of patterns) {
           const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
-          if (normalizedPath.startsWith(normalizedPattern + '/')) {
+          if (normalizedPath.startsWith(`${normalizedPattern}/`)) {
             normalizedPath = normalizedPath.slice(normalizedPattern.length + 1)
             break
           }

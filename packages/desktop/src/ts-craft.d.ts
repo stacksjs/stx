@@ -43,9 +43,9 @@ declare module 'ts-craft' {
     close(): void
   }
 
-  export function createApp(config?: AppConfig): CraftApp
-  export function show(html: string, options?: WindowOptions): Promise<void>
-  export function loadURL(url: string, options?: WindowOptions): Promise<void>
+  export function createApp(_config?: AppConfig): CraftApp
+  export function show(_html: string, _options?: WindowOptions): Promise<void>
+  export function loadURL(_url: string, _options?: WindowOptions): Promise<void>
 
   // Export types
   export type { AppConfig as default }

@@ -148,15 +148,16 @@ export function stxPlugin(userOptions?: StxOptions): BunPlugin {
       }
 
       // Handler for .md files
-      build.onLoad({ filter: /\.md$/ }, async ({ path: filePath }) => {
+      build.onLoad({ filter: /\.md$/ }, async (args) => {
+        const filePath = args.path
         try {
           // Process the markdown file with frontmatter
           const { content: htmlContent, data: frontmatter } = await readMarkdownFile(filePath, options)
 
           // Generate JavaScript module exports
           const jsContent = `// ${filePath}
-var content = ${JSON.stringify(htmlContent)};
-var data = ${JSON.stringify(frontmatter)};
+const content = ${JSON.stringify(htmlContent)};
+const data = ${JSON.stringify(frontmatter)};
 
 export { content, data };
 export { content as default };
@@ -175,8 +176,8 @@ export { content as default };
             filePath,
           )
           const jsContent = `// ${filePath}
-var content = ${JSON.stringify(errorContent)};
-var data = {};
+const content = ${JSON.stringify(errorContent)};
+const data = {};
 
 export { content, data };
 export { content as default };
@@ -189,7 +190,8 @@ export { content as default };
       })
 
       // Handler for .jsx and .tsx files (JSX component support)
-      build.onLoad({ filter: /\.(jsx|tsx)$/ }, async ({ path: filePath }) => {
+      build.onLoad({ filter: /\.(jsx|tsx)$/ }, async (args) => {
+        const filePath = args.path
         try {
           const source = await Bun.file(filePath).text()
 

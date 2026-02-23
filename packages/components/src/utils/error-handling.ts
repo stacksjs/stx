@@ -233,7 +233,7 @@ export const ErrorTypes = {
 /**
  * Global error handler
  */
-let errorHandler: ((error: Error) => void) | null = null
+let errorHandler: ((_error: Error) => void) | null = null
 
 /**
  * Set global error handler

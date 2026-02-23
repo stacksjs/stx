@@ -325,7 +325,7 @@ export async function testResponsiveSupport(
  * Generate test for all component variants
  */
 export async function testComponentVariants(
-  componentPath: string,
+  _componentPath: string,
   componentName: string,
   variants: VariantConfig[],
 ): Promise<{ name: string, matches: boolean }[]> {

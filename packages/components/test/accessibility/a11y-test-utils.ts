@@ -446,7 +446,7 @@ export function generateAuditReport(results: A11yAuditResult[]): string {
 /**
  * Quick check for basic accessibility requirements
  */
-export async function quickA11yCheck(componentPath: string): Promise<{
+export async function quickA11yCheck(_componentPath: string): Promise<{
   hasRoles: boolean
   hasAriaAttributes: boolean
   hasFocusStyles: boolean

@@ -311,7 +311,7 @@ export function lazyLoad<T = any>(
  */
 export function lazyLoadAll<T = any>(
   elements: Element[] | NodeListOf<Element>,
-  importFn: ((element: Element) => Promise<T>) | (() => Promise<T>),
+  importFn: ((_element: Element) => Promise<T>) | (() => Promise<T>),
   options: LazyLoadOptions = {},
 ): () => void {
   const cleanupFunctions: Array<() => void> = []

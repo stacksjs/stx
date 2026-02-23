@@ -238,7 +238,7 @@ const server = serve({
 })
 
 // Watch for file changes and rebuild
-const watcher = fs.watch('./src', { recursive: true }, async (eventType, filename) => {
+const watcher = fs.watch('./src', { recursive: true }, async (_eventType, filename) => {
   if (filename && filename.endsWith('.stx')) {
     console.log(`File ${filename} changed, rebuilding...`)
     await buildTemplates()

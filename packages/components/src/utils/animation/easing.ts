@@ -19,7 +19,7 @@
 /**
  * Easing function type signature
  */
-export type EasingFunction = (t: number, b: number, c: number, d: number) => number
+export type EasingFunction = (_t: number, _b: number, _c: number, _d: number) => number
 
 /**
  * Linear easing - no acceleration

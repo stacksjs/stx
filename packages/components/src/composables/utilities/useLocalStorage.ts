@@ -15,9 +15,9 @@
  * Options for useLocalStorage hook
  */
 export interface UseLocalStorageOptions<T> {
-  /** Custom serializer function (defaults to JSON.stringify) */
+  /** Custom serializer function - defaults to JSON.stringify */
   serializer?: (value: T) => string
-  /** Custom deserializer function (defaults to JSON.parse) */
+  /** Custom deserializer function - defaults to JSON.parse */
   deserializer?: (value: string) => T
   /** Error handler function */
   onError?: (error: Error) => void
@@ -37,7 +37,7 @@ export function useLocalStorage<T>(
   options: UseLocalStorageOptions<T> = {},
 ): {
     value: T
-    setValue: (newValue: T | ((prev: T) => T)) => void
+    setValue: (newValue: T | ((_prev: T) => T)) => void
     removeValue: () => void
   } {
   const {
@@ -68,7 +68,7 @@ export function useLocalStorage<T>(
   function setValue(newValue: T | ((prev: T) => T)) {
     try {
       // Allow value to be a function for same API as useState
-      const valueToStore = typeof newValue === 'function' ? (newValue as (prev: T) => T)(value) : newValue
+      const valueToStore = typeof newValue === 'function' ? (newValue as (_prev: T) => T)(value) : newValue
 
       value = valueToStore
 

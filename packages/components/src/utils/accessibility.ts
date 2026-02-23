@@ -112,7 +112,7 @@ export interface FocusTrapOptions {
   /** Click outside deactivates trap */
   clickOutsideDeactivates?: boolean
   /** Allow outside click without deactivating */
-  allowOutsideClick?: boolean | ((event: MouseEvent) => boolean)
+  allowOutsideClick?: boolean | ((_event: MouseEvent) => boolean)
   /** Callback when activated */
   onActivate?: () => void
   /** Callback when deactivated */
