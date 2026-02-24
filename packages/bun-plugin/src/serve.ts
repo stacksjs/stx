@@ -29,6 +29,8 @@ const defaultStxConfig = {
   partialsDir: 'partials',
   componentsDir: 'components',
   layoutsDir: 'layouts',
+  ssr: true as boolean | undefined,
+  defaultTitle: 'stx App' as string | undefined,
 }
 
 /**
