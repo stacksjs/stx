@@ -795,12 +795,12 @@ export function createMockResponse(data: unknown, status = 200): Response {
 /**
  * Create a temporary test directory with automatic cleanup
  */
-export async function createTestDirectory(basePath: string, subdirs: string[] = []): Promise<{
+export async function createTestDirectory(_basePath: string, subdirs: string[] = []): Promise<{
   cleanup: () => Promise<void>
   path: string
   subdirs: Record<string, string>
 }> {
-  const testDir = path.join(basePath, `test-${Date.now()}`)
+  const testDir = path.join(_basePath, `test-${Date.now()}`)
   await fs.promises.mkdir(testDir, { recursive: true })
 
   const subdirPaths: Record<string, string> = {}
