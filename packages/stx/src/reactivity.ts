@@ -849,6 +849,11 @@ export function generateClientRuntime(): string {
   var __routeParams = {};
   var __middlewareState = {};
 
+  // provide() — share values across components (like Vue's provide/inject)
+  function provide(name, value) {
+    window[name] = value;
+  }
+
   // Expose globally for <script client> blocks
   window.stx = {
     // Reactivity
@@ -862,6 +867,7 @@ export function generateClientRuntime(): string {
     onUpdated,
     onBeforeUnmount,
     onUnmounted,
+    provide,
 
     // Store access (clean API - no window.* exposure)
     useStore: function(name) { return __stores[name] || null; },
@@ -884,6 +890,7 @@ export function generateClientRuntime(): string {
     isClient: function() { return true; },
     isServer: function() { return false; }
   };
+  window.provide = provide;
 })();
 </script>`;
 }

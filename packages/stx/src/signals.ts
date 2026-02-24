@@ -2062,6 +2062,12 @@ export function generateSignalsRuntimeDev(): string {
     });
   }
 
+  // provide() — share values across components (like Vue's provide/inject)
+  // Usage: provide('Modal', Modal) — makes Modal accessible in all components
+  function provide(name, value) {
+    window[name] = value;
+  }
+
   window.stx = {
     state,
     derived,
@@ -2073,6 +2079,7 @@ export function generateSignalsRuntimeDev(): string {
     onMount,
     onDestroy,
     useFetch,
+    provide,
     $computed,
     $watch,
     helpers: globalHelpers,
@@ -2089,6 +2096,7 @@ export function generateSignalsRuntimeDev(): string {
   window.onMount = onMount;
   window.onDestroy = onDestroy;
   window.useFetch = useFetch;
+  window.provide = provide;
   window.$computed = $computed;
   window.$watch = $watch;
 

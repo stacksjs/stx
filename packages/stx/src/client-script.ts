@@ -67,15 +67,10 @@ const STX_AUTO_IMPORTS = [
  * used with query methods like .all(), .find(), .where(), etc.)
  */
 const BROWSER_CORE_IMPORTS = [
-  // Browser Query Builder
+  // Browser Query Builder - only symbols truly unique to @stacksjs/browser
   'browserQuery', 'BrowserQueryBuilder', 'BrowserQueryError',
   'browserAuth', 'configureBrowser', 'getBrowserConfig',
   'createBrowserDb', 'createBrowserModel', 'isBrowser',
-  // Auth
-  'auth', 'useAuth', 'initApi',
-  // Formatting utilities
-  'formatAreaSize', 'formatDistance', 'formatElevation', 'formatDuration',
-  'getRelativeTime', 'fetchData',
 ]
 
 /**
@@ -83,6 +78,20 @@ const BROWSER_CORE_IMPORTS = [
  * Models are PascalCase identifiers used with query methods.
  * Returns array of detected model names.
  */
+// JS built-ins that are PascalCase and could match model patterns
+// e.g., Promise.all(), Object.keys(), Array.from(), Map.get(), Set.delete()
+const JS_BUILTINS = new Set([
+  'Promise', 'Object', 'Array', 'Map', 'Set', 'Date', 'Error', 'JSON', 'Math',
+  'Number', 'String', 'RegExp', 'Symbol', 'WeakMap', 'WeakSet', 'Proxy', 'Reflect',
+  'Intl', 'URL', 'URLSearchParams', 'FormData', 'Headers', 'Request', 'Response',
+  'AbortController', 'EventTarget', 'Element', 'Document', 'Node', 'Window',
+  'Console', 'Storage', 'Navigator', 'Blob', 'File', 'FileReader', 'HTMLElement',
+  'SVGElement', 'Event', 'CustomEvent', 'DOMParser', 'XMLSerializer', 'WebSocket',
+  'Worker', 'SharedWorker', 'IntersectionObserver', 'MutationObserver',
+  'ResizeObserver', 'PerformanceObserver', 'Notification', 'Bun', 'Buffer', 'Process',
+  'Modal', 'Intl',
+])
+
 function detectModelUsage(code: string): string[] {
   const models: Set<string> = new Set()
 
@@ -92,7 +101,10 @@ function detectModelUsage(code: string): string[] {
 
   let match
   while ((match = modelPattern.exec(code)) !== null) {
-    models.add(match[1])
+    // Skip JS built-ins that happen to have matching method names
+    if (!JS_BUILTINS.has(match[1])) {
+      models.add(match[1])
+    }
   }
 
   return Array.from(models)
@@ -217,12 +229,12 @@ function generateAutoImportDestructuring(stxImports: string[], browserImports: s
   // STX symbols come from window.stx (set up by signals runtime)
   // They're also exposed directly on window (state, derived, effect, etc.)
   if (stxImports.length > 0) {
-    lines.push(`  var { ${stxImports.join(', ')} } = window.stx || window`)
+    lines.push(`  var { ${stxImports.join(', ')} } = window.stx || window;`)
   }
 
   // Browser symbols come from window.StacksBrowser (set up by @stacksjs/browser auto-init)
   if (browserImports.length > 0) {
-    lines.push(`  var { ${browserImports.join(', ')} } = window.StacksBrowser || {}`)
+    lines.push(`  var { ${browserImports.join(', ')} } = window.StacksBrowser || {};`)
   }
 
   if (lines.length > 0) {
