@@ -446,6 +446,7 @@ export function generateAuditReport(results: A11yAuditResult[]): string {
 /**
  * Quick check for basic accessibility requirements
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function quickA11yCheck(componentPath: string): Promise<{
   hasRoles: boolean
   hasAriaAttributes: boolean
