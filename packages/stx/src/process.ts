@@ -323,8 +323,9 @@ function processScriptSetup(template: string): { output: string, setupCode: stri
   const resolvedContent = transformStoreImports(signalScript.content)
 
   // Generate the setup function that provides signal APIs
+  // Mark with data-stx-scoped so the client script processing loop (line ~1885) skips it
   const setupCode = `
-<script>
+<script data-stx-scoped>
 function ${setupFnName}() {
   const { state, derived, effect, batch, onMount, onDestroy } = window.stx;
 ${resolvedContent}
@@ -1018,8 +1019,8 @@ function parseMultilineAttributes(attributesStr: string): Record<string, string>
     if (!name)
       break
 
-    // Skip @ event attributes (handled by event processing)
-    if (name.startsWith('@')) {
+    // Skip @ event attributes and : directive attributes (handled by event/directive processing)
+    if (name.startsWith('@') || name.startsWith(':')) {
       // Skip to next attribute
       while (pos < len && attributesStr[pos] !== '"' && attributesStr[pos] !== '\'') {
         pos++
@@ -1879,6 +1880,8 @@ async function processOtherDirectives(
   const eventBindings = (context.__stx_event_bindings || []) as import('./events').ParsedEvent[]
   let clientScriptsTransformed = false
   const clientScriptMatches: { match: string, attrs: string, content: string }[] = []
+  // Detect : prefix directives in the template output (for stx.mount() decision)
+  const hasColonDirectives = /\s:[a-z][\w.-]*\s*=/.test(output)
   // Match all client scripts: NOT server, NOT external src, NOT already processed (data-stx-scoped)
   output.replace(/<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
     clientScriptMatches.push({ match, attrs: attrs || '', content })
@@ -1897,7 +1900,7 @@ async function processOtherDirectives(
     // Validate client scripts for prohibited patterns
     validateClientScript(processedContent, filePath)
 
-    output = output.replace(match, processClientScript(processedContent, { eventBindings, attrs }))
+    output = output.replace(match, processClientScript(processedContent, { eventBindings, attrs, hasColonDirectives }))
   }
   // Only clear event bindings if scripts were found and transformed.
   // When processing a component whose scripts were extracted separately

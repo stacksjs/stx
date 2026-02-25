@@ -121,6 +121,8 @@ export interface ClientScriptOptions {
   autoImports?: boolean
   /** Original script tag attributes (e.g., 'type="module"') */
   attrs?: string
+  /** Whether the component template contains : prefix directives */
+  hasColonDirectives?: boolean
 }
 
 // =============================================================================
@@ -361,6 +363,46 @@ function generateInlineEventBindings(bindings: ParsedEvent[]): string {
 }
 
 // =============================================================================
+// Top-Level Declaration Extraction (for stx.mount() return statement)
+// =============================================================================
+
+/**
+ * Extract top-level variable/function declarations from script code.
+ * Used to auto-generate the return statement for stx.mount() wrappers.
+ */
+function extractTopLevelDeclarations(code: string): string[] {
+  const names: string[] = []
+  const seen = new Set<string>()
+
+  // Remove import lines (handled separately by transform)
+  const cleaned = code.replace(/^\s*import\s+.*$/gm, '')
+
+  // Simple declarations: const x = ..., let x = ..., var x = ...
+  const simpleRe = /^[ \t]*(?:const|let|var)\s+([a-zA-Z_$]\w*)\s*=/gm
+  let m
+  while ((m = simpleRe.exec(cleaned))) {
+    if (!m[1].startsWith('_') && !seen.has(m[1])) { names.push(m[1]); seen.add(m[1]) }
+  }
+
+  // Destructured: const { a, b } = ...
+  const destructRe = /^[ \t]*(?:const|let|var)\s+\{([^}]+)\}\s*=/gm
+  while ((m = destructRe.exec(cleaned))) {
+    m[1].split(',').forEach(s => {
+      const name = s.trim().split(/[\s:]/)[0].trim()
+      if (name && !name.startsWith('_') && !seen.has(name)) { names.push(name); seen.add(name) }
+    })
+  }
+
+  // Function declarations: function x() { ... }
+  const fnRe = /^[ \t]*(?:async\s+)?function\s+([a-zA-Z_$]\w*)/gm
+  while ((m = fnRe.exec(cleaned))) {
+    if (!m[1].startsWith('_') && !seen.has(m[1])) { names.push(m[1]); seen.add(m[1]) }
+  }
+
+  return names
+}
+
+// =============================================================================
 // Main Processing Function
 // =============================================================================
 
@@ -413,7 +455,29 @@ ${eventCode}
 </script>`
   }
 
-  // Regular scripts: wrap in scoped IIFE
+  // 5. Check if we should use stx.mount() wrapper
+  // Only use mount for scripts that actually use signals (state/derived/effect).
+  // : prefix directives are handled by the runtime's processElement regardless of wrapper type.
+  // Skip mount wrapping for SFC components — they already have __stx_setup scoping from utils.ts.
+  const usesSignals = /\b(state|derived|effect)\s*\(/.test(scriptContent)
+  const isSfcWrapped = /function __stx_setup_/.test(code)
+
+  if (usesSignals && !isSfcWrapped) {
+    // Extract top-level declarations from ORIGINAL code (before transforms)
+    const declarations = extractTopLevelDeclarations(scriptContent)
+    const returnStmt = declarations.length > 0
+      ? `\n  return { ${declarations.join(', ')} };`
+      : ''
+
+    return `<script data-stx-scoped>
+window.stx.mount(function() {
+  'use strict';
+${autoImportCode}${code}
+${eventCode}${returnStmt}
+})</script>`
+  }
+
+  // Fallback: legacy IIFE (for components without signals)
   return `<script data-stx-scoped>
 ;(function() {
   'use strict';

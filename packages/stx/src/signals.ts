@@ -1494,8 +1494,16 @@ export function generateSignalsRuntimeDev(): string {
                     span.textContent = fn(...Object.values(unwrapScope));
                   }
                 } catch (e) {
-                  console.warn('[STX] Expression error:', expr, e);
-                  span.textContent = '';
+                  // Auto-unwrap can break explicit signal calls like errorData().message
+                  // because it converts the signal to its value before the expression runs.
+                  // Retry without auto-unwrap so signal functions remain callable.
+                  try {
+                    const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
+                    span.textContent = fn(...Object.values(capturedScope));
+                  } catch (e2) {
+                    console.warn('[STX] Expression error:', expr, e2);
+                    span.textContent = '';
+                  }
                 }
               });
             } else if (part) {
@@ -1510,26 +1518,28 @@ export function generateSignalsRuntimeDev(): string {
 
     if (el.nodeType !== Node.ELEMENT_NODE) return;
 
-    // Handle @for first (reactive list)
-    if (el.hasAttribute('@for')) {
-      bindFor(el, scope);
+    // Handle @for / :for first (reactive list)
+    if (el.hasAttribute('@for') || el.hasAttribute(':for')) {
+      bindFor(el, scope, el.hasAttribute(':for') ? ':for' : '@for');
       return;
     }
 
-    // Handle @if (conditional rendering)
-    if (el.hasAttribute('@if')) {
-      bindIf(el, scope);
+    // Handle @if / :if (conditional rendering)
+    if (el.hasAttribute('@if') || el.hasAttribute(':if')) {
+      bindIf(el, scope, el.hasAttribute(':if') ? ':if' : '@if');
       return;
     }
 
-    // Handle @show (visibility toggle - keeps element in DOM)
-    if (el.hasAttribute('@show')) {
-      bindShow(el, el.getAttribute('@show'), scope);
+    // Handle @show / :show (visibility toggle - keeps element in DOM)
+    if (el.hasAttribute('@show') || el.hasAttribute(':show')) {
+      var showAttr = el.hasAttribute(':show') ? ':show' : '@show';
+      bindShow(el, el.getAttribute(showAttr), scope, showAttr);
     }
 
-    // Handle @model (two-way binding)
-    if (el.hasAttribute('@model')) {
-      bindModel(el, el.getAttribute('@model'), scope);
+    // Handle @model / :model (two-way binding)
+    if (el.hasAttribute('@model') || el.hasAttribute(':model')) {
+      var modelAttr = el.hasAttribute(':model') ? ':model' : '@model';
+      bindModel(el, el.getAttribute(modelAttr), scope, modelAttr);
     }
 
     // Capture scope once for all attribute bindings on this element
@@ -1552,10 +1562,22 @@ export function generateSignalsRuntimeDev(): string {
         const fn = new Function(...Object.keys(attrCapturedScope), 'return ' + expr);
         return fn(...Object.values(unwrapScope));
       } catch (e) {
-        console.warn('[STX] Attribute expression error:', expr, e);
-        return '';
+        // Auto-unwrap can break explicit signal calls like errorData().message
+        // Retry without auto-unwrap so signal functions remain callable
+        try {
+          const fn = new Function(...Object.keys(attrCapturedScope), 'return ' + expr);
+          return fn(...Object.values(attrCapturedScope));
+        } catch (e2) {
+          console.warn('[STX] Attribute expression error:', expr, e2);
+          return '';
+        }
       }
     };
+
+    // Known directive names to exclude from generic :attr binding
+    var DIRECTIVE_NAMES = {class:1, style:1, text:1, html:1, show:1, model:1, 'if':1, 'for':1, ref:1};
+    var EVENT_RE = /^(click|dblclick|mousedown|mouseup|mousemove|mouseenter|mouseleave|keydown|keyup|keypress|input|change|submit|focus|blur|scroll|resize|touchstart|touchend|touchmove|contextmenu|wheel|pointerdown|pointerup|pointermove)/;
+    var KEY_MAP = {enter:'Enter', tab:'Tab', escape:'Escape', space:' ', up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight', 'delete':'Delete', backspace:'Backspace'};
 
     // Handle attributes
     Array.from(el.attributes).forEach(attr => {
@@ -1563,7 +1585,10 @@ export function generateSignalsRuntimeDev(): string {
       const value = attr.value;
 
       // @bind:attr OR :attr shorthand (Feature #4) for dynamic attribute binding
-      if (name.startsWith('@bind:') || (name.startsWith(':') && !name.startsWith('::'))) {
+      // Only match :attr that is NOT a known directive and NOT an event name
+      if (name.startsWith('@bind:') || (name.startsWith(':') && !name.startsWith('::')
+          && !DIRECTIVE_NAMES[name.slice(1).split('.')[0]]
+          && !EVENT_RE.test(name.slice(1)))) {
         const attrName = name.startsWith('@bind:') ? name.slice(6) : name.slice(1);
         effect(() => {
           const v = evalAttrExpr(value);
@@ -1576,34 +1601,48 @@ export function generateSignalsRuntimeDev(): string {
           }
         });
         el.removeAttribute(name);
-      } else if (name === '@class') {
+      } else if (name === '@class' || name === ':class') {
         bindClass(el, value, scope);
         el.removeAttribute(name);
-      } else if (name === '@style') {
+      } else if (name === '@style' || name === ':style') {
         bindStyle(el, value, scope);
         el.removeAttribute(name);
-      } else if (name === '@text') {
+      } else if (name === '@text' || name === ':text') {
         effect(() => {
           el.textContent = evalAttrExpr(value);
         });
         el.removeAttribute(name);
-      } else if (name === '@html') {
+      } else if (name === '@html' || name === ':html') {
         effect(() => {
           el.innerHTML = evalAttrExpr(value);
         });
         el.removeAttribute(name);
-      } else if (name.startsWith('@')) {
-        // Event handlers: @click, @submit.prevent, etc.
+      } else if (name === ':ref') {
+        // Store ref in scope.$refs
+        if (scope.$refs) scope.$refs[value] = el;
+        el.removeAttribute(name);
+      } else if (name.startsWith('@') || name.startsWith(':')) {
+        // Event handlers: @click, :click, @submit.prevent, :keydown.enter, etc.
         const parts = name.slice(1).split('.');
         const eventName = parts[0];
         const modifiers = parts.slice(1);
 
         // Skip special directives (already handled above or in processElement)
-        if (['if', 'for', 'show', 'model', 'class', 'style', 'text', 'html'].includes(eventName)) {
+        if (['if', 'for', 'show', 'model', 'class', 'style', 'text', 'html', 'ref'].includes(eventName)) {
           return;
         }
 
         el.addEventListener(eventName, (event) => {
+          // System key modifiers
+          if (modifiers.includes('self') && event.target !== el) return;
+          if (modifiers.includes('ctrl') && !event.ctrlKey) return;
+          if (modifiers.includes('alt') && !event.altKey) return;
+          if (modifiers.includes('shift') && !event.shiftKey) return;
+          if (modifiers.includes('meta') && !event.metaKey) return;
+          // Key modifiers
+          for (var mi = 0; mi < modifiers.length; mi++) {
+            if (KEY_MAP[modifiers[mi]] && event.key !== KEY_MAP[modifiers[mi]]) return;
+          }
           if (modifiers.includes('prevent')) event.preventDefault();
           if (modifiers.includes('stop')) event.stopPropagation();
           executeHandler(value, event, el);
@@ -1620,7 +1659,7 @@ export function generateSignalsRuntimeDev(): string {
     Array.from(el.childNodes).forEach(child => processElement(child, scope));
   }
 
-  function bindShow(el, expr, passedScope = componentScope) {
+  function bindShow(el, expr, passedScope = componentScope, attrName = '@show') {
     const originalDisplay = el.style.display || '';
     // Capture scope at setup time - use passed scope to preserve context
     const capturedScope = { ...passedScope, ...(findElementScope(el) || {}) };
@@ -1638,10 +1677,10 @@ export function generateSignalsRuntimeDev(): string {
     effect(() => {
       el.style.display = evalExpr() ? originalDisplay : 'none';
     });
-    el.removeAttribute('@show');
+    el.removeAttribute(attrName);
   }
 
-  function bindModel(el, expr, passedScope = componentScope) {
+  function bindModel(el, expr, passedScope = componentScope, attrName = '@model') {
     const tag = el.tagName.toLowerCase();
     const type = el.type;
 
@@ -1659,7 +1698,7 @@ export function generateSignalsRuntimeDev(): string {
           fn(...Object.values(scope), val);
         }
       } catch (e) {
-        console.warn('[STX] @model set error:', expr, e);
+        console.warn('[STX] ' + attrName + ' set error:', expr, e);
       }
     };
 
@@ -1674,7 +1713,7 @@ export function generateSignalsRuntimeDev(): string {
       el.addEventListener('input', () => setValue(el.value));
     }
 
-    el.removeAttribute('@model');
+    el.removeAttribute(attrName);
   }
 
   function bindClass(el, expr, passedScope = componentScope) {
@@ -1730,12 +1769,12 @@ export function generateSignalsRuntimeDev(): string {
     });
   }
 
-  function bindFor(el, passedScope = componentScope) {
-    const expr = el.getAttribute('@for');
+  function bindFor(el, passedScope = componentScope, attrName = '@for') {
+    const expr = el.getAttribute(attrName);
     const match = expr.match(/^\\s*(\\w+)(?:\\s*,\\s*(\\w+))?\\s+(?:in|of)\\s+(.+)\\s*$/);
 
     if (!match) {
-      console.warn('[STX] Invalid @for:', expr);
+      console.warn('[STX] Invalid ' + attrName + ':', expr);
       return;
     }
 
@@ -1751,8 +1790,8 @@ export function generateSignalsRuntimeDev(): string {
     const placeholder = document.createComment('stx-for');
     const isTemplate = el.tagName === 'TEMPLATE';
 
-    // Check if element also has @if - need to handle together
-    const ifExpr = el.getAttribute('@if');
+    // Check if element also has @if / :if - need to handle together
+    const ifExpr = el.getAttribute('@if') || el.getAttribute(':if');
 
     // Feature #3: Check for @loading and @empty siblings/content
     const loadingExpr = el.getAttribute('@loading');
@@ -1795,10 +1834,11 @@ export function generateSignalsRuntimeDev(): string {
     } else {
       const wrapper = el.cloneNode(true);
       wrapper.removeAttribute('@for');
+      wrapper.removeAttribute(':for');
       wrapper.removeAttribute('@loading');
       wrapper.removeAttribute('@empty');
-      // Also remove @if - we'll handle it inline
-      if (ifExpr) wrapper.removeAttribute('@if');
+      // Also remove @if / :if - we'll handle it inline
+      if (ifExpr) { wrapper.removeAttribute('@if'); wrapper.removeAttribute(':if'); }
       templateContent = wrapper;
     }
 
@@ -1930,8 +1970,8 @@ export function generateSignalsRuntimeDev(): string {
     });
   }
 
-  function bindIf(el, passedScope = componentScope) {
-    const expr = el.getAttribute('@if');
+  function bindIf(el, passedScope = componentScope, attrName = '@if') {
+    const expr = el.getAttribute(attrName);
     const parent = el.parentNode;
 
     // Guard: if element has no parent, it's detached - skip processing
@@ -1953,7 +1993,7 @@ export function generateSignalsRuntimeDev(): string {
     const capturedComponentScope = { ...passedScope };
 
     parent.insertBefore(placeholder, el);
-    el.removeAttribute('@if');
+    el.removeAttribute(attrName);
 
     if (isTemplate) {
       // For templates, we need to handle the content fragment
@@ -2068,6 +2108,9 @@ export function generateSignalsRuntimeDev(): string {
     window[name] = value;
   }
 
+  // Component mount system
+  var mountQueue = [];
+
   window.stx = {
     state,
     derived,
@@ -2085,7 +2128,55 @@ export function generateSignalsRuntimeDev(): string {
     helpers: globalHelpers,
     _mountCallbacks: mountCallbacks,
     _destroyCallbacks: destroyCallbacks,
-    _scopes: {}  // Component-level scopes
+    _scopes: {},  // Component-level scopes
+    mount: function(setupFn) {
+      // Capture script reference synchronously (only valid during execution)
+      var scriptEl = document.currentScript;
+
+      function doMount() {
+        // Find component root: next sibling element after the script tag
+        var root = scriptEl ? scriptEl.nextElementSibling : null;
+        if (!root && scriptEl) root = scriptEl.previousElementSibling || scriptEl.parentElement;
+        if (!root) { console.warn('[stx] mount: no root element found'); return; }
+
+        // Track lifecycle hooks registered during setup
+        var startLen = mountCallbacks.length;
+
+        // Run setup function — returns scope object with declarations
+        var scope = setupFn();
+
+        // Capture mount hooks added during setup
+        var localMountHooks = mountCallbacks.splice(startLen);
+        var localDestroyHooks = [];
+
+        // Register scope
+        if (typeof scope === 'object' && scope !== null) {
+          scope.$el = root;
+          scope.$refs = scope.$refs || {};
+          Object.assign(componentScope, scope);
+        }
+
+        // Walk DOM and bind directives
+        processElement(root, scope || componentScope);
+
+        // Fire mount hooks
+        localMountHooks.forEach(function(fn) {
+          try {
+            var cleanup = fn();
+            if (typeof cleanup === 'function') localDestroyHooks.push(cleanup);
+          } catch(e) { console.error('[stx] onMount error:', e); }
+        });
+
+        // Store cleanup on element for auto-destroy
+        root.__stx_destroy = localDestroyHooks;
+      }
+
+      if (document.readyState === 'loading') {
+        mountQueue.push(doMount);
+      } else {
+        doMount();
+      }
+    }
   };
 
   // Also expose globally for convenience
@@ -2105,6 +2196,10 @@ export function generateSignalsRuntimeDev(): string {
   // ==========================================================================
 
   document.addEventListener('DOMContentLoaded', () => {
+    // Process mount queue (from stx.mount() calls during loading)
+    mountQueue.forEach(function(fn) { fn(); });
+    mountQueue = [];
+
     // Track which scoped elements have been processed
     const processedScopes = new Set();
 
@@ -2210,13 +2305,19 @@ export function generateSignalsRuntimeDev(): string {
     if (el.hasAttribute && el.hasAttribute('data-stx-scope')) return;
     // Process this element's directives without recursing into children
     // (we'll handle children manually to skip scoped ones)
-    const hasFor = el.hasAttribute && el.hasAttribute('@for');
-    const hasIf = el.hasAttribute && el.hasAttribute('@if');
-    if (hasFor) { bindFor(el); return; }
-    if (hasIf) { bindIf(el); return; }
+    const hasFor = el.hasAttribute && (el.hasAttribute('@for') || el.hasAttribute(':for'));
+    const hasIf = el.hasAttribute && (el.hasAttribute('@if') || el.hasAttribute(':if'));
+    if (hasFor) { bindFor(el, componentScope, el.hasAttribute(':for') ? ':for' : '@for'); return; }
+    if (hasIf) { bindIf(el, componentScope, el.hasAttribute(':if') ? ':if' : '@if'); return; }
     // Process other attributes...
-    if (el.hasAttribute && el.hasAttribute('@show')) bindShow(el, el.getAttribute('@show'));
-    if (el.hasAttribute && el.hasAttribute('@model')) bindModel(el, el.getAttribute('@model'));
+    if (el.hasAttribute && (el.hasAttribute('@show') || el.hasAttribute(':show'))) {
+      var sa = el.hasAttribute(':show') ? ':show' : '@show';
+      bindShow(el, el.getAttribute(sa), componentScope, sa);
+    }
+    if (el.hasAttribute && (el.hasAttribute('@model') || el.hasAttribute(':model'))) {
+      var ma = el.hasAttribute(':model') ? ':model' : '@model';
+      bindModel(el, el.getAttribute(ma), componentScope, ma);
+    }
     // Process children, skipping scoped containers
     Array.from(el.childNodes).forEach(child => processElementSkipScopes(child, processedScopes));
   }

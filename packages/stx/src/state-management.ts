@@ -1177,9 +1177,9 @@ export function generateStoreImportRuntime(): string {
  */
 export function transformStoreImports(code: string): string {
   // Match: import { store1, store2 } from '@stores' or "stx/stores" or 'stx/stores'
-  const importRegex = /import\s*\{([^}]+)\}\s*from\s*['"](@stores|stx\/stores)['"]\s*;?\n?/g
+  const storeRegex = /import\s*\{([^}]+)\}\s*from\s*['"](@stores|stx\/stores)['"]\s*;?\n?/g
 
-  return code.replace(importRegex, (_match, imports: string) => {
+  code = code.replace(storeRegex, (_match, imports: string) => {
     const storeNames = imports
       .split(',')
       .map(s => s.trim())
@@ -1188,6 +1188,20 @@ export function transformStoreImports(code: string): string {
     // Destructure directly from the global store registry
     return `const { ${storeNames.join(', ')} } = window.__STX_STORES__\n`
   })
+
+  // Match: import { useSiteApi, useFetchData } from '@composables'
+  const composablesRegex = /import\s*\{([^}]+)\}\s*from\s*['"]@composables['"]\s*;?\n?/g
+
+  code = code.replace(composablesRegex, (_match, imports: string) => {
+    const names = imports
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+
+    return `const { ${names.join(', ')} } = window.__composables\n`
+  })
+
+  return code
 }
 
 /**

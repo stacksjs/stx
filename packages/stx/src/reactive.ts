@@ -846,7 +846,7 @@ function removeReactiveAttributes(template: string): string {
     /\s*x-html\s*=\s*"[^"]*"/g,
     /\s*x-ref\s*=\s*"[^"]*"/g,
     /\s*x-bind:[a-z][a-z0-9-]*\s*=\s*"[^"]*"/g,
-    /\s*:[a-z][a-z0-9-]*\s*=\s*"[^"]*"/g,
+    /\s*:(?!click|dblclick|submit|input|change|keydown|keyup|keypress|focus|blur|mousedown|mouseup|mousemove|mouseenter|mouseleave|scroll|resize|touchstart|touchend|touchmove|contextmenu|wheel|pointerdown|pointerup|pointermove|if|for|show|model|class|text|html|ref|style)[a-z][a-z0-9-]*\s*=\s*"[^"]*"/g,
     // x-transition variants (double quotes)
     /\s*x-transition:enter\s*=\s*"[^"]*"/g,
     /\s*x-transition:enter-start\s*=\s*"[^"]*"/g,
@@ -865,7 +865,7 @@ function removeReactiveAttributes(template: string): string {
     /\s*x-html\s*=\s*'[^']*'/g,
     /\s*x-ref\s*=\s*'[^']*'/g,
     /\s*x-bind:[a-z][a-z0-9-]*\s*=\s*'[^']*'/g,
-    /\s*:[a-z][a-z0-9-]*\s*=\s*'[^']*'/g,
+    /\s*:(?!click|dblclick|submit|input|change|keydown|keyup|keypress|focus|blur|mousedown|mouseup|mousemove|mouseenter|mouseleave|scroll|resize|touchstart|touchend|touchmove|contextmenu|wheel|pointerdown|pointerup|pointermove|if|for|show|model|class|text|html|ref|style)[a-z][a-z0-9-]*\s*=\s*'[^']*'/g,
     // x-transition variants (single quotes)
     /\s*x-transition:enter\s*=\s*'[^']*'/g,
     /\s*x-transition:enter-start\s*=\s*'[^']*'/g,

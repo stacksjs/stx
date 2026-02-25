@@ -166,7 +166,11 @@ function extractVariableNames(code: string): string[] {
     // Check for destructuring declarations: const { a, b } = or const [a, b] =
     const destructMatch = code.slice(i).match(/^(const|let|var)\s*\{([^}]+)\}\s*=/)
     if (destructMatch) {
-      const vars = destructMatch[2].split(',').map(v => v.trim().split(':')[0].trim())
+      const vars = destructMatch[2].split(',').map(v => {
+        const parts = v.trim().split(':')
+        // For renamed destructuring like { siteId: _siteId }, the local binding is the LAST part
+        return parts[parts.length - 1].trim()
+      })
       for (const varName of vars) {
         if (varName && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(varName) && !seen.has(varName)) {
           names.push(varName)
@@ -336,6 +340,20 @@ export async function renderComponentWithSlot(
       ].filter(Boolean)
       if (options.componentsDir && options.componentsDir !== componentsDir) {
         searchDirs.push(options.componentsDir)
+      }
+
+      // Also search common project component directories as fallbacks
+      // This handles cases where the caller (e.g., bun-router) passes a viewsDir-relative
+      // componentsDir but actual components live at the project-level src/components
+      const projectRoot = process.cwd()
+      const fallbackDirs = [
+        path.resolve(projectRoot, 'src/components'),
+        path.resolve(projectRoot, 'components'),
+      ]
+      for (const fallback of fallbackDirs) {
+        if (!searchDirs.includes(fallback)) {
+          searchDirs.push(fallback)
+        }
       }
 
       // If path starts with ./ or ../, resolve from current template directory
