@@ -241,5 +241,170 @@ export function watchViews(
   }
 }
 
+/**
+ * Render a .stx email template to an email-ready HTML string
+ *
+ * Optimized for email rendering:
+ * - Disables SEO tag injection
+ * - Inlines utility classes as style attributes (via Crosswind)
+ * - Strips <style> and <script> blocks
+ * - Returns clean HTML + plain text suitable for email
+ *
+ * @example
+ * ```typescript
+ * const { html, text } = await renderEmail('resources/emails/welcome.stx', {
+ *   userName: 'John',
+ *   unsubscribeUrl: 'https://example.com/unsubscribe?token=abc',
+ * })
+ * ```
+ */
+export async function renderEmail(
+  templatePath: string,
+  props: Record<string, unknown> = {},
+  options: Partial<StxOptions> = {},
+): Promise<{ html: string, text: string }> {
+  // Disable SEO tags and client-side features for emails
+  const emailOptions: Partial<StxOptions> = {
+    ...options,
+    skipDefaultSeoTags: true,
+    skipSignalsRuntime: true,
+  }
+
+  let html = await renderView(templatePath, props, emailOptions)
+
+  // Inline utility classes as style attributes
+  html = await inlineCssClasses(html)
+
+  // Strip <script> tags (email should have no JS)
+  html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+
+  // Strip <style> blocks (already inlined)
+  html = html.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+
+  // Strip stx SEO comment blocks
+  html = html.replace(/<!--\s*stx SEO Tags\s*-->/gi, '')
+
+  // Clean up blank lines left behind
+  html = html.replace(/\n\s*\n\s*\n/g, '\n\n').trim()
+
+  // Generate plain text version
+  const text = htmlToPlainText(html)
+
+  return { html, text }
+}
+
+/**
+ * Inline CSS classes as style attributes for email compatibility.
+ *
+ * Generates CSS from utility classes via Crosswind, parses the rules,
+ * and applies them as inline `style` attributes on matching elements.
+ * Email clients ignore <style> blocks, so this is required.
+ */
+async function inlineCssClasses(html: string): Promise<string> {
+  try {
+    const { generateCrosswindCSS, extractClassNames } = await import('./dev-server/crosswind')
+
+    const classes = extractClassNames(html)
+    if (classes.size === 0) return html
+
+    const css = await generateCrosswindCSS(html)
+    if (!css) return html
+
+    // Parse CSS rules into a class → properties map
+    const classStyles = parseCssToMap(css)
+    if (classStyles.size === 0) return html
+
+    // Walk through HTML elements with class attributes and inline matching styles
+    return html.replace(
+      /(<[a-z][a-z0-9]*)((?:\s+[a-z][a-z0-9-]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s+)class\s*=\s*"([^"]*)"((?:\s+[a-z][a-z0-9-]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s*)(\/?>)/gi,
+      (_match, tag, beforeClass, classValue, afterClass, closing) => {
+        const classNames = classValue.split(/\s+/).filter(Boolean)
+        const inlineProps: string[] = []
+
+        for (const cls of classNames) {
+          const styles = classStyles.get(cls)
+          if (styles) {
+            inlineProps.push(styles)
+          }
+        }
+
+        if (inlineProps.length === 0) {
+          return `${tag}${beforeClass}class="${classValue}"${afterClass}${closing}`
+        }
+
+        const inlineStyle = inlineProps.join('; ')
+
+        // Check if there's already a style attribute
+        const fullAttrs = `${beforeClass}${afterClass}`
+        const existingStyleMatch = fullAttrs.match(/style\s*=\s*"([^"]*)"/)
+
+        if (existingStyleMatch) {
+          // Merge with existing style - existing styles take precedence
+          const merged = `${inlineStyle}; ${existingStyleMatch[1]}`
+          const updatedBefore = beforeClass.replace(/style\s*=\s*"[^"]*"/, `style="${merged}"`)
+          const updatedAfter = afterClass.replace(/style\s*=\s*"[^"]*"/, `style="${merged}"`)
+          return `${tag}${updatedBefore}class="${classValue}"${updatedAfter}${closing}`
+        }
+
+        return `${tag}${beforeClass}class="${classValue}" style="${inlineStyle}"${afterClass}${closing}`
+      },
+    )
+  }
+  catch {
+    // Crosswind not available, return HTML as-is
+    return html
+  }
+}
+
+/**
+ * Parse CSS text into a Map of className → inline style string.
+ * Handles simple single-class selectors like `.text-center { text-align: center; }`
+ */
+function parseCssToMap(css: string): Map<string, string> {
+  const map = new Map<string, string>()
+
+  // Match simple class selectors: .class-name { properties }
+  const ruleRegex = /\.([a-zA-Z0-9_-]+(?:\\:[a-zA-Z0-9_-]+)*)\s*\{([^}]+)\}/g
+  let match = ruleRegex.exec(css)
+
+  while (match !== null) {
+    // Unescape CSS class names (e.g. hover\:bg-blue-500 → hover:bg-blue-500)
+    const className = match[1].replace(/\\/g, '')
+    const properties = match[2]
+      .split(';')
+      .map(p => p.trim())
+      .filter(Boolean)
+      .join('; ')
+
+    if (properties) {
+      map.set(className, properties)
+    }
+    match = ruleRegex.exec(css)
+  }
+
+  return map
+}
+
+/**
+ * Convert HTML to plain text for email text/plain part
+ */
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, '\n')
+    .replace(/<\/td>/gi, '\t')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&copy;/g, '(c)')
+    .replace(/&middot;/g, '-')
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    .trim()
+}
+
 // Default export for convenience
 export default buildViews

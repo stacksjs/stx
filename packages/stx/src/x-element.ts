@@ -5,17 +5,24 @@
  * - x-data: Define reactive data scope
  * - x-model: Two-way binding for inputs
  * - x-text: Reactive text content
- * - @event: Event handling (e.g., @click, @submit)
+ * - x-show: Toggle visibility based on expression
+ * - :class: Bind CSS classes from object expression
+ * - :disabled, :href, :src, etc.: Bind any attribute
+ * - @event: Event handling (e.g., @click, @submit.prevent)
  *
  * Note: Use @if, @for, @foreach for server-side rendering.
  * x-element is only for client-side interactivity that SSR can't handle.
  *
  * @example
  * ```html
- * <div x-data="{ name: '', count: 0 }">
- *   <input x-model="name" />
- *   <p>Hello, <span x-text="name"></span>!</p>
- *   <button @click="count++">Count: <span x-text="count"></span></button>
+ * <div x-data="{ email: '', loading: false, success: false }">
+ *   <form @submit.prevent="subscribe()">
+ *     <input x-model="email" type="email" />
+ *     <button type="submit" :disabled="loading">
+ *       <span x-text="loading ? 'Sending...' : 'Subscribe'"></span>
+ *     </button>
+ *   </form>
+ *   <p x-show="success" x-text="'Thanks for subscribing!'"></p>
  * </div>
  * ```
  */
@@ -112,11 +119,23 @@ export function generateXElementRuntime(): string {
         this.watchExpression(expr, update);
       });
 
-      // Process @event (event handling)
+      // Process x-show (toggle visibility)
+      const shows = el.querySelectorAll('[x-show]');
+      shows.forEach(elem => {
+        const expr = elem.getAttribute('x-show');
+        const update = () => {
+          elem.style.display = this.evaluate(expr) ? '' : 'none';
+        };
+        update();
+        this.watchExpression(expr, update);
+      });
+
+      // Process @event and :bind attributes
       const allElements = el.querySelectorAll('*');
       allElements.forEach(elem => {
         Array.from(elem.attributes).forEach(attr => {
           if (attr.name.startsWith('@')) {
+            // Event handling
             const eventName = attr.name.slice(1);
             const expr = attr.value;
 
@@ -140,6 +159,35 @@ export function generateXElementRuntime(): string {
 
               this.execute(expr, { $event: e, $el: elem });
             });
+          } else if (attr.name.startsWith(':')) {
+            // Attribute binding (:disabled, :class, :href, :src, etc.)
+            const bindAttr = attr.name.slice(1);
+            const expr = attr.value;
+
+            const update = () => {
+              const val = this.evaluate(expr);
+              if (bindAttr === 'class') {
+                // :class supports object syntax { className: bool }
+                if (val && typeof val === 'object') {
+                  for (const [cls, active] of Object.entries(val)) {
+                    elem.classList.toggle(cls, !!active);
+                  }
+                } else if (typeof val === 'string') {
+                  elem.className = val;
+                }
+              } else if (typeof val === 'boolean') {
+                // Boolean attributes (disabled, hidden, readonly, etc.)
+                if (val) {
+                  elem.setAttribute(bindAttr, '');
+                } else {
+                  elem.removeAttribute(bindAttr);
+                }
+              } else {
+                elem.setAttribute(bindAttr, val != null ? String(val) : '');
+              }
+            };
+            update();
+            this.watchExpression(expr, update);
           }
         });
       });
@@ -217,7 +265,7 @@ export function generateXElementRuntime(): string {
  * Check if template uses x-* directives
  */
 export function hasXElementDirectives(template: string): boolean {
-  return /\bx-(data|model|text)\b/.test(template)
+  return /\bx-(data|model|text|show)\b/.test(template) || /\s:[a-z]/.test(template)
 }
 
 /**
