@@ -1433,8 +1433,10 @@ async function processDirectivesInternal(
       }
 
       // This is the final layout (doesn't extend another one)
+      // Strip comments from layout content
+      const cleanedLayout = layoutContent.replace(/\{\{--[\s\S]*?--\}\}/g, '')
       // First process pushes and stacks in the layout
-      let processedLayout = processStackPushDirectives(layoutContent, stacks)
+      let processedLayout = processStackPushDirectives(cleanedLayout, stacks)
 
       // Extract layout sections
       const layoutSections: Record<string, string> = {}

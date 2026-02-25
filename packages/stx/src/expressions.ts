@@ -551,6 +551,15 @@ export function processExpressions(template: string, context: Record<string, any
     // Only preserve for client-side if evaluation fails AND it looks like a signal
     try {
       const value = evaluateExpression(expr, context)
+
+      // For signal-based templates: if evaluation returned undefined and the expression
+      // references variables NOT in the server-side context, preserve for client-side processing.
+      // evaluateExpression() internally catches ReferenceError and returns undefined,
+      // so we must check here rather than relying on the catch block below.
+      if (value === undefined && hasSignals && !expressionUsesOnlyContextVars(trimmedExpr, context)) {
+        return match // Preserve {{ expr }} for runtime evaluation
+      }
+
       // Escape HTML for security
       return value !== undefined && value !== null ? escapeHtml(String(value)) : ''
     }
