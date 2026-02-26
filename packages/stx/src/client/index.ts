@@ -15,7 +15,8 @@ export function getRouterScript(): string {
   return `
 ;(function(){
   'use strict';
-  var o={container:'main',linkSelector:'a[href]',loadingClass:'stx-navigating',viewTransitions:!0,cache:!0,scrollToTop:!0,prefetch:!0};
+  var d={container:'main',linkSelector:'a[href]',loadingClass:'stx-navigating',viewTransitions:!0,cache:!0,scrollToTop:!0,prefetch:!0};
+  var o=Object.assign({},d,window.STX_ROUTER_OPTIONS||{});
   var c=new Map(),p=new Set(),n=!1,u=location.href;
   function init(){
     document.addEventListener('click',handleClick,!0);

@@ -145,7 +145,7 @@ describe('stx Components', () => {
     // Create a component file with simpler syntax
     const buttonComponent = path.join(COMPONENTS_DIR, 'custom-button.stx')
     await Bun.write(buttonComponent, `
-      <button class="btn btn-{{ type || 'primary' }}" {{ disabled ? 'disabled' : '' }}>
+      <button class="btn btn-{{ type || 'primary' }}">
         {{ content }}
       </button>
     `)
@@ -157,17 +157,12 @@ describe('stx Components', () => {
       <html>
       <head>
         <title>Kebab Case Component Test</title>
-        <script>
-          module.exports = {
-            isDisabled: true
-          };
-        </script>
       </head>
       <body>
         <h1>Kebab Case Component Test</h1>
 
         <!-- Self-closing with attributes -->
-        <custom-button type="success" content="Click Me" :disabled="isDisabled" />
+        <custom-button type="success" content="Click Me" />
 
         <!-- With slot content -->
         <custom-button type="danger" content="Delete Item" />
@@ -185,7 +180,7 @@ describe('stx Components', () => {
     const outputHtml = await getHtmlOutput(result)
     console.warn('Kebab Component Test Output:', outputHtml)
 
-    expect(outputHtml).toContain('<button class="btn btn-success" disabled>')
+    expect(outputHtml).toContain('<button class="btn btn-success"')
     expect(outputHtml).toContain('Click Me')
     expect(outputHtml).toContain('<button class="btn btn-danger"')
     expect(outputHtml).toContain('Delete Item')

@@ -1632,6 +1632,9 @@ export function generateSignalsRuntimeDev(): string {
           return;
         }
 
+        // Capture scope at setup time so @for loop variables are available when event fires
+        const eventCapturedScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
+
         el.addEventListener(eventName, (event) => {
           // System key modifiers
           if (modifiers.includes('self') && event.target !== el) return;
@@ -1645,7 +1648,16 @@ export function generateSignalsRuntimeDev(): string {
           }
           if (modifiers.includes('prevent')) event.preventDefault();
           if (modifiers.includes('stop')) event.stopPropagation();
-          executeHandler(value, event, el);
+          // Execute with captured scope (includes @for loop variables)
+          try {
+            if (!value || /^__[A-Z_]+__$/.test(value.trim())) return;
+            var shorthandFn = parseEventShorthand(value, eventCapturedScope);
+            if (shorthandFn) { shorthandFn(); return; }
+            var fn = new Function(...Object.keys(eventCapturedScope), '$event', value);
+            fn(...Object.values(eventCapturedScope), event);
+          } catch (e) {
+            console.warn('[STX] Handler error:', value, e);
+          }
         }, {
           capture: modifiers.includes('capture'),
           passive: modifiers.includes('passive'),
@@ -2271,6 +2283,9 @@ export function generateSignalsRuntimeDev(): string {
       } else if (el.tagName === 'META') {
         const content = el.getAttribute('content');
         if (content && content.includes('{{')) {
+          // Skip build-time placeholders like {{__TITLE__}}
+          const hasOnlyPlaceholders = !content.replace(/\{\{\s*__[A-Z_]+__\s*\}\}/g, '').includes('{{');
+          if (hasOnlyPlaceholders) return;
           effect(() => {
             try {
               let result = content;
@@ -2278,6 +2293,7 @@ export function generateSignalsRuntimeDev(): string {
               if (matches) {
                 matches.forEach(match => {
                   const expr = match.replace(/^\{\{\s*|\s*\}\}$/g, '');
+                  if (/^__[A-Z_]+__$/.test(expr.trim())) return;
                   const fn = new Function(...Object.keys(componentScope), 'return ' + expr);
                   const value = fn(...Object.values(componentScope));
                   result = result.replace(match, value != null ? value : '');
@@ -2290,6 +2306,36 @@ export function generateSignalsRuntimeDev(): string {
           });
         }
       }
+    });
+  });
+
+  // Re-initialize components after SPA content swap
+  window.addEventListener('stx:load', function() {
+    // Process mount queue (scripts in swapped content may have called stx.mount())
+    mountQueue.forEach(function(fn) { fn(); });
+    mountQueue = [];
+
+    // Re-process scoped components in new content
+    var container = document.querySelector('#main-content') || document.body;
+    container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
+      var scopeId = el.getAttribute('data-stx-scope');
+      var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
+      if (scopeVars) {
+        componentScope = Object.assign({}, componentScope, scopeVars);
+      }
+      processElement(el);
+      if (scopeVars && scopeVars.__mountCallbacks) {
+        scopeVars.__mountCallbacks.forEach(function(fn) { fn(); });
+      }
+    });
+
+    container.querySelectorAll('[data-stx]').forEach(function(el) {
+      var setupName = el.getAttribute('data-stx');
+      if (setupName && window[setupName]) {
+        var result = window[setupName]();
+        if (typeof result === 'object') Object.assign(componentScope, result);
+      }
+      processElement(el);
     });
   });
 

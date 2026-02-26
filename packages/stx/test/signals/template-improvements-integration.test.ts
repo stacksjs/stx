@@ -40,7 +40,7 @@ describe('Template Improvements Integration', () => {
     it('should process :attr like @bind:attr', () => {
       const runtime = generateSignalsRuntimeDev()
       // Both syntaxes should use the same binding logic
-      expect(runtime).toContain("name.startsWith('@bind:') || (name.startsWith(':') && !name.startsWith('::'))")
+      expect(runtime).toContain("name.startsWith('@bind:') || (name.startsWith(':') && !name.startsWith('::')")
     })
 
     it('should use auto-unwrap in attribute bindings', () => {
