@@ -87,6 +87,7 @@ export type {
   SeoFeatureConfig,
   StreamingConfig,
   StreamRenderer,
+  StrictModeConfig,
   StxConfig,
   StxOptions,
   SyntaxHighlightingConfig,

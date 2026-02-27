@@ -385,6 +385,20 @@ export interface FormConfig {
 }
 
 /**
+ * Strict mode configuration for DOM API validation.
+ * When enabled, stx warns (or errors) when client scripts use raw browser APIs
+ * instead of framework composables.
+ */
+export interface StrictModeConfig {
+  /** Enable strict mode validation */
+  enabled: boolean
+  /** Throw errors instead of warnings (default: false) */
+  failOnViolation?: boolean
+  /** Pattern strings to allow through validation (matched against message or regex source) */
+  allowPatterns?: string[]
+}
+
+/**
  * stx configuration options
  */
 export interface StxConfig {
@@ -496,6 +510,12 @@ export interface StxConfig {
   build?: Partial<BuildConfig>
   /** Media (images, video, uploads) configuration */
   media?: Partial<MediaConfig>
+  /**
+   * Strict mode for DOM API validation.
+   * When `true`, warns about raw `document.*` / `window.*` usage in client scripts.
+   * Pass a StrictModeConfig object for fine-grained control.
+   */
+  strict?: boolean | StrictModeConfig
 }
 
 /**

@@ -347,3 +347,36 @@ export {
   type EyeDropperOptions,
   type EyeDropperRef,
 } from './use-eye-dropper'
+
+// Router / Navigation
+export {
+  navigate,
+  goBack,
+  goForward,
+  useRoute,
+  useSearchParams,
+  type RouteInfo,
+  type SearchParamsRef,
+} from './use-router'
+
+// Data Fetching (Query / Mutation)
+export {
+  type UseQueryOptions,
+  type UseQueryResult,
+  type UseMutationOptions,
+  type UseMutationResult,
+} from './use-query'
+
+// Event Listener
+export {
+  useEventListener,
+  type UseEventListenerOptions,
+  type EventListenerRef,
+} from './use-event-listener'
+
+// Meta Tags
+export {
+  useMeta,
+  type UseMetaOptions,
+  type MetaRef,
+} from './use-meta'

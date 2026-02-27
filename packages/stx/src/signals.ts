@@ -1305,6 +1305,220 @@ export function generateSignalsRuntimeDev(): string {
   }
 
   // ==========================================================================
+  // Template Refs (useRef)
+  // ==========================================================================
+
+  function useRef(name) {
+    return {
+      get current() {
+        return componentScope.$refs ? componentScope.$refs[name] : null;
+      },
+      get value() {
+        return this.current;
+      }
+    };
+  }
+
+  // ==========================================================================
+  // Navigation API
+  // ==========================================================================
+
+  function navigate(url) {
+    if (window.stxRouter && typeof window.stxRouter.navigate === 'function') {
+      window.stxRouter.navigate(url);
+    } else {
+      window.location.href = url;
+    }
+  }
+
+  function goBack() { window.history.back(); }
+  function goForward() { window.history.forward(); }
+
+  function useRoute() {
+    return {
+      get path() { return window.location.pathname; },
+      get fullPath() { return window.location.pathname + window.location.search + window.location.hash; },
+      get hash() { return window.location.hash; },
+      get query() {
+        var params = {};
+        new URLSearchParams(window.location.search).forEach(function(v, k) { params[k] = v; });
+        return params;
+      },
+      get params() { return window.stxRouter && window.stxRouter.params ? window.stxRouter.params : {}; }
+    };
+  }
+
+  function useSearchParams() {
+    var params = state(Object.fromEntries(new URLSearchParams(window.location.search)));
+    var syncFromUrl = function() {
+      params.set(Object.fromEntries(new URLSearchParams(window.location.search)));
+    };
+    window.addEventListener('popstate', syncFromUrl);
+    window.addEventListener('stx:navigate', syncFromUrl);
+    return {
+      data: params,
+      get: function(key) { return params()[key]; },
+      set: function(key, value) {
+        var url = new URL(window.location.href);
+        url.searchParams.set(key, value);
+        window.history.pushState({}, '', url);
+        syncFromUrl();
+      },
+      setAll: function(obj) {
+        var url = new URL(window.location.href);
+        Object.keys(obj).forEach(function(k) { url.searchParams.set(k, obj[k]); });
+        window.history.pushState({}, '', url);
+        syncFromUrl();
+      }
+    };
+  }
+
+  // ==========================================================================
+  // Advanced Data Fetching (useQuery / useMutation)
+  // ==========================================================================
+
+  var _queryCache = {};
+
+  function useQuery(url, options) {
+    options = options || {};
+    var staleTime = options.staleTime || 0;
+    var cacheTime = options.cacheTime || 300000; // 5 min default
+    var cacheKey = options.cacheKey || (typeof url === 'function' ? null : url);
+    var data = state(options.initialData || null);
+    var loading = state(true);
+    var error = state(null);
+    var isStale = state(false);
+
+    var fetchData = async function() {
+      var resolvedUrl = typeof url === 'function' ? url() : url;
+      if (!resolvedUrl) { loading.set(false); return; }
+      var key = cacheKey || resolvedUrl;
+
+      // Check cache
+      var cached = _queryCache[key];
+      if (cached && (Date.now() - cached.timestamp < staleTime)) {
+        data.set(cached.data);
+        loading.set(false);
+        isStale.set(false);
+        if (options.onSuccess) options.onSuccess(cached.data);
+        return;
+      }
+
+      // Stale-while-revalidate
+      if (cached) {
+        data.set(cached.data);
+        isStale.set(true);
+      }
+
+      loading.set(true);
+      error.set(null);
+      try {
+        var fetchOpts = { method: 'GET', headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } };
+        var response = await fetch(resolvedUrl, fetchOpts);
+        if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+        var result = await response.json();
+        var transformed = options.transform ? options.transform(result) : result;
+        data.set(transformed);
+        isStale.set(false);
+        _queryCache[key] = { data: transformed, timestamp: Date.now() };
+        if (options.onSuccess) options.onSuccess(transformed);
+        // Schedule cache eviction
+        setTimeout(function() { delete _queryCache[key]; }, cacheTime);
+      } catch (e) {
+        error.set(e.message || 'Query failed');
+        if (options.onError) options.onError(e);
+      } finally {
+        loading.set(false);
+      }
+    };
+
+    if (options.immediate !== false) {
+      onMount(fetchData);
+    }
+
+    // refetchOnFocus
+    if (options.refetchOnFocus) {
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) fetchData();
+      });
+    }
+
+    // refetchInterval
+    if (options.refetchInterval) {
+      var intervalId = setInterval(fetchData, options.refetchInterval);
+      onDestroy(function() { clearInterval(intervalId); });
+    }
+
+    return {
+      data: data,
+      loading: loading,
+      error: error,
+      isStale: isStale,
+      refetch: fetchData,
+      invalidate: function() {
+        var key = cacheKey || (typeof url === 'function' ? url() : url);
+        delete _queryCache[key];
+        return fetchData();
+      }
+    };
+  }
+
+  function useMutation(url, options) {
+    options = options || {};
+    var data = state(null);
+    var loading = state(false);
+    var error = state(null);
+
+    var mutate = async function(body) {
+      loading.set(true);
+      error.set(null);
+      var previousData = data();
+
+      // Optimistic update
+      if (options.optimisticData) {
+        var optimistic = typeof options.optimisticData === 'function' ? options.optimisticData(body) : options.optimisticData;
+        data.set(optimistic);
+      }
+
+      try {
+        var resolvedUrl = typeof url === 'function' ? url() : url;
+        var fetchOpts = {
+          method: options.method || 'POST',
+          headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+          body: typeof body === 'string' ? body : JSON.stringify(body)
+        };
+        var response = await fetch(resolvedUrl, fetchOpts);
+        if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+        var result = await response.json();
+        var transformed = options.transform ? options.transform(result) : result;
+        data.set(transformed);
+        if (options.onSuccess) options.onSuccess(transformed);
+        // Invalidate related queries
+        if (options.invalidateQueries) {
+          options.invalidateQueries.forEach(function(key) { delete _queryCache[key]; });
+        }
+        return transformed;
+      } catch (e) {
+        error.set(e.message || 'Mutation failed');
+        // Rollback optimistic update
+        if (options.optimisticData) data.set(previousData);
+        if (options.onError) options.onError(e);
+        throw e;
+      } finally {
+        loading.set(false);
+      }
+    };
+
+    return {
+      data: data,
+      loading: loading,
+      error: error,
+      mutate: mutate,
+      reset: function() { data.set(null); error.set(null); loading.set(false); }
+    };
+  }
+
+  // ==========================================================================
   // Template Binding
   // ==========================================================================
 
@@ -1617,8 +1831,8 @@ export function generateSignalsRuntimeDev(): string {
           el.innerHTML = evalAttrExpr(value);
         });
         el.removeAttribute(name);
-      } else if (name === ':ref') {
-        // Store ref in scope.$refs
+      } else if (name === ':ref' || name === 'data-stx-ref') {
+        // Store ref in scope.$refs (from :ref directive or build-time ref="name" transform)
         if (scope.$refs) scope.$refs[value] = el;
         el.removeAttribute(name);
       } else if (name.startsWith('@') || name.startsWith(':')) {
@@ -2134,6 +2348,14 @@ export function generateSignalsRuntimeDev(): string {
     onMount,
     onDestroy,
     useFetch,
+    useRef,
+    navigate,
+    goBack,
+    goForward,
+    useRoute,
+    useSearchParams,
+    useQuery,
+    useMutation,
     provide,
     $computed,
     $watch,
@@ -2199,6 +2421,14 @@ export function generateSignalsRuntimeDev(): string {
   window.onMount = onMount;
   window.onDestroy = onDestroy;
   window.useFetch = useFetch;
+  window.useRef = useRef;
+  window.navigate = navigate;
+  window.goBack = goBack;
+  window.goForward = goForward;
+  window.useRoute = useRoute;
+  window.useSearchParams = useSearchParams;
+  window.useQuery = useQuery;
+  window.useMutation = useMutation;
   window.provide = provide;
   window.$computed = $computed;
   window.$watch = $watch;

@@ -46,6 +46,14 @@ const STX_AUTO_IMPORTS = [
   'state', 'derived', 'effect', 'batch', 'untrack', 'peek', 'isSignal', 'isDerived',
   // Lifecycle
   'onMount', 'onDestroy',
+  // Template refs
+  'useRef',
+  // Navigation
+  'navigate', 'goBack', 'goForward', 'useRoute', 'useSearchParams',
+  // Data fetching
+  'useQuery', 'useMutation',
+  // DOM utilities
+  'useEventListener', 'useMeta',
   // Vue-style reactivity (alternative API)
   'ref', 'reactive', 'computed', 'watch', 'watchEffect', 'watchMultiple',
   // Vue-style lifecycle hooks
