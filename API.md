@@ -31,6 +31,11 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
 - [Deferred Loading (@defer)](#deferred-loading-defer)
 - [Teleport (@teleport)](#teleport-teleport)
 - [Browser Composables](#browser-composables)
+- [Navigation API](#navigation-api)
+- [Event Listener Composable](#event-listener-composable)
+- [Meta Tag Management](#meta-tag-management)
+- [Strict Mode](#strict-mode)
+- [Auto-Imported APIs Summary](#auto-imported-apis-summary)
 - [Form Validation](#form-validation)
 - [Head Management](#head-management)
 - [Static Site Generation (SSG)](#static-site-generation-ssg)
@@ -101,9 +106,10 @@ const posts = await getPosts(user.id)
 ```html
 <script client>
 // Only runs in browser, never evaluated on server
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Page loaded');
-});
+// Auto-imports available: state, useRef, navigate, useQuery, etc.
+onMount(() => {
+  console.log('Page loaded')
+})
 </script>
 ```
 
@@ -931,22 +937,21 @@ Vue-inspired lifecycle hooks for managing component setup, cleanup, and updates.
 
 ### onMount
 
-Called when the component is mounted to the DOM. Perfect for DOM manipulation, event listeners, and subscriptions.
+Called when the component is mounted to the DOM. Perfect for setup, event listeners, and subscriptions.
 
 ```html
 <script client>
-import { onMount } from 'stx'
+// onMount is auto-imported — no import needed
 
 onMount(() => {
   console.log('Component mounted!')
 
-  // Set up event listener
-  const handler = () => console.log('clicked')
-  document.addEventListener('click', handler)
+  // Use useEventListener for auto-cleanup (preferred over raw addEventListener)
+  const { remove } = useEventListener('click', () => console.log('clicked'))
 
   // Return cleanup function (called on unmount)
   return () => {
-    document.removeEventListener('click', handler)
+    remove()
   }
 })
 </script>
@@ -1023,8 +1028,8 @@ onMount(() => {
 
 onUpdate(() => {
   // Scroll to bottom when new messages arrive
-  const container = document.getElementById('messages')
-  container?.scrollTo(0, container.scrollHeight)
+  const messages = useRef('messages')
+  messages.current?.scrollTo(0, messages.current.scrollHeight)
 })
 </script>
 ```
@@ -1035,40 +1040,45 @@ onUpdate(() => {
 
 Direct references to DOM elements, similar to Vue's `ref` or React's `useRef`.
 
-### Creating Refs
+### useRef() (Recommended)
+
+The `useRef()` composable is the preferred way to reference DOM elements. It is auto-imported — no import statement needed.
 
 ```html
-<script client>
-import { ref, onMount } from 'stx'
+<template>
+  <input type="text" ref="myInput" placeholder="Auto-focused" />
+  <button @click="myInput.current?.select()">Select All</button>
+</template>
 
-// Create a ref
-const inputRef = ref<HTMLInputElement>()
+<script client>
+// useRef is auto-imported — no import needed
+const myInput = useRef('myInput')
 
 onMount(() => {
-  // Access the DOM element
-  inputRef.value?.focus()
+  myInput.current?.focus()
 })
 </script>
 ```
 
 ### Binding Refs
 
-Use the `@ref` attribute to bind an element to a ref:
+Use `ref="name"`, `@ref="name"`, or `:ref="name"` to bind elements:
 
 ```html
 <template>
-  <input type="text" @ref="inputRef" placeholder="Auto-focused" />
-  <button @click="inputRef.value?.select()">Select All</button>
+  <!-- All three syntaxes work identically -->
+  <input ref="emailRef" type="email" />
+  <input @ref="passwordRef" type="password" />
+  <div :ref="containerRef">...</div>
 </template>
 
 <script client>
-import { ref, onMount } from 'stx'
-
-const inputRef = ref<HTMLInputElement>()
+const email = useRef('emailRef')
+const password = useRef('passwordRef')
+const container = useRef('containerRef')
 
 onMount(() => {
-  // Focus input on mount
-  inputRef.value?.focus()
+  email.current?.focus()
 })
 </script>
 ```
@@ -1077,36 +1087,46 @@ onMount(() => {
 
 ```html
 <template>
-  <form @ref="formRef">
-    <input @ref="emailRef" type="email" />
-    <input @ref="passwordRef" type="password" />
+  <form ref="formRef">
+    <input ref="emailRef" type="email" />
+    <input ref="passwordRef" type="password" />
     <button type="submit">Login</button>
   </form>
 </template>
 
 <script client>
-import { ref, onMount } from 'stx'
-
-const formRef = ref<HTMLFormElement>()
-const emailRef = ref<HTMLInputElement>()
-const passwordRef = ref<HTMLInputElement>()
+const form = useRef('formRef')
+const email = useRef('emailRef')
+const password = useRef('passwordRef')
 
 onMount(() => {
-  formRef.value?.addEventListener('submit', (e) => {
+  form.current?.addEventListener('submit', (e) => {
     e.preventDefault()
-    console.log('Email:', emailRef.value?.value)
-    console.log('Password:', passwordRef.value?.value)
+    console.log('Email:', email.current?.value)
+    console.log('Password:', password.current?.value)
   })
 })
 </script>
 ```
 
-### Ref API
+### useRef API
 
 | Property | Description |
 |----------|-------------|
 | `ref.value` | The DOM element (or null if not bound) |
 | `ref.current` | Alias for `ref.value` |
+
+### Legacy ref() (Still Supported)
+
+The Vue-style `ref()` function also works for creating refs:
+
+```html
+<script client>
+import { ref, onMount } from 'stx'
+const inputRef = ref<HTMLInputElement>()
+onMount(() => inputRef.value?.focus())
+</script>
+```
 
 ---
 
@@ -4559,24 +4579,115 @@ const { isFocused, focus, blur } = useFocus(inputRef)
 ### Async
 
 ```typescript
-import { useFetch, useAsync } from 'stx'
+// useFetch, useQuery, useMutation are auto-imported
 
-// Fetch with reactive state
-const { data, error, isLoading, execute, abort } = useFetch('/api/users')
+// Basic fetch with reactive state
+const { data, error, loading, refetch } = useFetch('/api/users')
 
 // With options
 const { data } = useFetch('/api/user', {
   immediate: false,  // Don't fetch immediately
   initialData: []
 })
-await execute()  // Fetch manually
+```
 
-// Generic async operations
-const { state, isLoading, error, execute } = useAsync(async () => {
-  const res = await fetch('/api/data')
-  return res.json()
+### useQuery (Advanced Data Fetching)
+
+`useQuery()` provides caching, background revalidation, and polling — ideal for read operations.
+
+```typescript
+// Auto-imported — no import needed
+
+// Basic query with caching
+const { data, loading, error, refetch, invalidate, isStale } = useQuery('/api/users', {
+  staleTime: 30000,        // Data stays fresh for 30 seconds
+  cacheTime: 300000,       // Cache kept for 5 minutes
+  refetchOnFocus: true,    // Refetch when tab regains focus
+  transform: (raw) => raw.users,
+  onSuccess: (users) => console.log('Loaded', users.length, 'users'),
+})
+
+// Polling (refetch every 10 seconds)
+const { data: liveData } = useQuery('/api/metrics', {
+  refetchInterval: 10000,
+})
+
+// Invalidate cache to force re-fetch
+await invalidate()
+```
+
+### useQuery Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `staleTime` | `number` | `0` | Time in ms before data is considered stale |
+| `cacheTime` | `number` | `300000` | Time in ms to keep data in cache |
+| `cacheKey` | `string` | URL | Custom cache key |
+| `refetchOnFocus` | `boolean` | `false` | Refetch when tab regains focus |
+| `refetchInterval` | `number` | - | Polling interval in ms |
+| `immediate` | `boolean` | `true` | Fetch on mount |
+| `transform` | `function` | - | Transform response data |
+| `headers` | `object` | - | Request headers |
+| `onSuccess` | `function` | - | Success callback |
+| `onError` | `function` | - | Error callback |
+
+### useQuery Return
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `data` | `Signal` | Reactive data signal |
+| `loading` | `Signal` | Loading state |
+| `error` | `Signal` | Error message (null if none) |
+| `isStale` | `Signal` | Whether data is stale |
+| `refetch()` | `function` | Manually re-fetch |
+| `invalidate()` | `function` | Clear cache and re-fetch |
+
+### useMutation (Write Operations)
+
+`useMutation()` is for POST/PUT/DELETE with optimistic updates and cache invalidation.
+
+```typescript
+// Auto-imported — no import needed
+
+// Basic mutation
+const { data, loading, error, mutate, reset } = useMutation('/api/users', {
+  method: 'POST',
+  onSuccess: (user) => console.log('Created:', user.name),
+  invalidateQueries: ['/api/users'],  // Bust cache on success
+})
+
+// Execute the mutation
+await mutate({ name: 'Alice', email: 'alice@example.com' })
+
+// Optimistic update (instant UI feedback, rolls back on error)
+const { mutate: updateTodo } = useMutation('/api/todos', {
+  method: 'PUT',
+  optimisticData: (body) => ({ ...body, updatedAt: new Date().toISOString() }),
+  invalidateQueries: ['/api/todos'],
 })
 ```
+
+### useMutation Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `method` | `string` | `'POST'` | HTTP method |
+| `headers` | `object` | - | Request headers |
+| `transform` | `function` | - | Transform response |
+| `optimisticData` | `T \| function` | - | Optimistic update data |
+| `invalidateQueries` | `string[]` | - | Cache keys to invalidate on success |
+| `onSuccess` | `function` | - | Success callback |
+| `onError` | `function` | - | Error callback |
+
+### useMutation Return
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `data` | `Signal` | Response data |
+| `loading` | `Signal` | Loading state |
+| `error` | `Signal` | Error message |
+| `mutate(body)` | `function` | Execute the mutation |
+| `reset()` | `function` | Reset state to initial |
 
 ---
 
@@ -4916,6 +5027,282 @@ useHead({
   <p>{{ article.description }}</p>
 </main>
 ```
+
+---
+
+## Navigation API
+
+Clean navigation functions that replace raw `window.location` and `window.history` usage. All functions are auto-imported.
+
+### navigate(url)
+
+Navigate to a URL. Uses the SPA router if available, otherwise falls back to full page navigation.
+
+```html
+<script client>
+// Auto-imported — no import needed
+
+// SPA-style navigation (uses stxRouter when available)
+navigate('/about')
+navigate('/users/123')
+
+// External URLs work too
+navigate('https://example.com')
+</script>
+
+<template>
+  <button @click="navigate('/dashboard')">Go to Dashboard</button>
+  <a @click.prevent="navigate('/settings')">Settings</a>
+</template>
+```
+
+### goBack() / goForward()
+
+Browser history navigation.
+
+```html
+<template>
+  <button @click="goBack()">Back</button>
+  <button @click="goForward()">Forward</button>
+</template>
+```
+
+### useRoute()
+
+Reactive route information — replaces `window.location` reads.
+
+```html
+<script client>
+const route = useRoute()
+</script>
+
+<template>
+  <p>Current path: {{ route.path }}</p>
+  <p>Full URL: {{ route.fullPath }}</p>
+  <p>Hash: {{ route.hash }}</p>
+  <p>Query: {{ JSON.stringify(route.query) }}</p>
+</template>
+```
+
+### useRoute() Return
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `path` | `string` | Current pathname (e.g., `/about`) |
+| `fullPath` | `string` | Full path with search and hash |
+| `hash` | `string` | URL hash (e.g., `#section`) |
+| `query` | `object` | Parsed query parameters |
+| `params` | `object` | Route params (requires stxRouter) |
+
+### useSearchParams()
+
+Reactive URL search parameters with get/set methods.
+
+```html
+<script client>
+const search = useSearchParams()
+
+// Read a param
+const page = search.get('page')  // '2'
+
+// Set a single param (pushes to history)
+search.set('page', '3')
+
+// Set multiple params at once
+search.setAll({ page: '1', sort: 'name', order: 'asc' })
+</script>
+```
+
+---
+
+## Event Listener Composable
+
+### useEventListener(event, handler, options?)
+
+Attach event listeners with automatic cleanup. Replaces raw `window.addEventListener` / `document.addEventListener`.
+
+```html
+<script client>
+// Auto-imported — no import needed
+
+// Listen on window (default target)
+useEventListener('resize', () => {
+  console.log('Window resized:', window.innerWidth)
+})
+
+// Listen on document
+useEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal()
+}, { target: document })
+
+// Listen on specific element by selector
+useEventListener('click', handleClick, { target: '#my-button' })
+
+// Manual removal
+const { remove } = useEventListener('scroll', handleScroll)
+// Later: remove()
+</script>
+```
+
+### useEventListener Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `target` | `EventTarget \| string` | `window` | Event target or CSS selector |
+| `capture` | `boolean` | `false` | Use capture phase |
+| `passive` | `boolean` | `false` | Passive listener |
+| `once` | `boolean` | `false` | Auto-remove after first call |
+
+---
+
+## Meta Tag Management
+
+### useMeta(options?)
+
+Reactive meta tag management. Replaces `document.title`, `document.querySelector('meta[...]')`.
+
+```html
+<script client>
+// Auto-imported — no import needed
+
+// Set initial meta on mount
+const meta = useMeta({
+  title: 'My Page',
+  description: 'A description of my page',
+  og: {
+    image: 'https://example.com/og.png',
+    type: 'website',
+  },
+})
+
+// Dynamic updates later
+meta.setTitle('Updated Title')
+meta.setMeta('description', 'New description')
+meta.setOgMeta('image', 'https://example.com/new-og.png')
+meta.removeMeta('robots')
+</script>
+```
+
+### useMeta Return
+
+| Method | Description |
+|--------|-------------|
+| `setMeta(name, content)` | Set a `<meta name="...">` tag |
+| `setOgMeta(property, content)` | Set an Open Graph `<meta property="og:...">` tag |
+| `removeMeta(name)` | Remove a meta tag by name |
+| `setTitle(title)` | Set `document.title` |
+
+---
+
+## Strict Mode
+
+Strict mode validates client scripts for raw browser API usage and suggests stx composable alternatives.
+
+### Configuration
+
+```typescript
+// stx.config.ts
+export default {
+  // Simple boolean: enables warnings
+  strict: true,
+
+  // Or detailed configuration:
+  strict: {
+    enabled: true,
+    failOnViolation: true,     // Throw errors instead of warnings
+    allowPatterns: ['cookie'],  // Allow specific patterns through
+  },
+}
+```
+
+### StrictModeConfig
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enabled` | `boolean` | `false` | Enable strict mode validation |
+| `failOnViolation` | `boolean` | `false` | Throw errors (true) or warnings (false) |
+| `allowPatterns` | `string[]` | `[]` | Pattern strings to allow through |
+
+### Prohibited Patterns
+
+When strict mode is enabled, these patterns trigger warnings/errors with suggested alternatives:
+
+| Pattern | Suggested Alternative |
+|---------|----------------------|
+| `document.getElementById()` | `useRef("name")` |
+| `document.querySelector()` | `useRef("name")` |
+| `document.querySelectorAll()` | `useRef("name")` |
+| `document.getElementsBy*()` | `useRef("name")` |
+| `document.createElement()` | Template directives or components |
+| `document.title = ...` | `useTitle()` |
+| `document.cookie` | `useCookie()` |
+| `document.addEventListener()` | `useEventListener()` or `@event` directives |
+| `window.location` | `navigate()` or `useRoute()` |
+| `window.history` | `navigate()`, `goBack()`, `goForward()` |
+| `window.addEventListener()` | `useEventListener()` or `@event` directives |
+| `window.localStorage` | `useLocalStorage()` |
+| `window.sessionStorage` | `useSessionStorage()` |
+| `window.scrollTo()` | `useScroll().scrollTo()` |
+| `window.alert()` / `confirm()` / `prompt()` | stx modal/dialog APIs |
+| `location.href =` / `location.assign()` / `location.replace()` | `navigate()` |
+
+### Example
+
+```html
+<!-- This will trigger a warning (or error in strict mode): -->
+<script client>
+document.getElementById('myBtn')  // ✗ Use useRef("myBtn") instead
+window.location.href = '/about'   // ✗ Use navigate('/about') instead
+</script>
+
+<!-- This is the stx way: -->
+<script client>
+const btn = useRef('myBtn')       // ✓ Clean ref access
+navigate('/about')                 // ✓ Framework navigation
+</script>
+```
+
+---
+
+## Auto-Imported APIs Summary
+
+The following APIs are auto-imported in `<script client>` blocks — no import statements needed:
+
+### Reactivity
+`state`, `derived`, `effect`, `batch`, `untrack`, `peek`, `isSignal`, `isDerived`
+
+### Lifecycle
+`onMount`, `onDestroy`
+
+### Template Refs
+`useRef`
+
+### Navigation
+`navigate`, `goBack`, `goForward`, `useRoute`, `useSearchParams`
+
+### Data Fetching
+`useFetch`, `useQuery`, `useMutation`
+
+### DOM Utilities
+`useEventListener`, `useMeta`
+
+### Vue-Style Reactivity
+`ref`, `reactive`, `computed`, `watch`, `watchEffect`, `watchMultiple`
+
+### Vue-Style Lifecycle
+`onBeforeMount`, `onMounted`, `onBeforeUpdate`, `onUpdated`, `onBeforeUnmount`, `onUnmounted`
+
+### Component Definition
+`defineProps`, `withDefaults`, `defineEmits`, `defineExpose`
+
+### Composition API
+`provide`, `inject`, `nextTick`, `getCurrentInstance`, `onErrorCaptured`, `useSlots`, `useAttrs`
+
+### State Management
+`createStore`, `defineStore`, `action`, `createSelector`
+
+### JSX
+`h`, `Fragment`
 
 ---
 

@@ -400,6 +400,62 @@ if (navigation.aborted) {
 }
 ```
 
+## Navigation Composables
+
+STX provides auto-imported navigation functions that replace raw `window.location` and `window.history` usage. These work in `<script client>` blocks without any imports.
+
+### navigate(url)
+
+Navigate to a URL. Uses the SPA router (`window.stxRouter`) when available, otherwise falls back to `window.location.href`.
+
+```ts
+// In <script client> — auto-imported
+navigate('/about')
+navigate('/users/123')
+navigate('https://external.com')
+```
+
+```html
+<template>
+  <button @click="navigate('/dashboard')">Dashboard</button>
+</template>
+```
+
+### goBack() / goForward()
+
+```html
+<template>
+  <button @click="goBack()">Back</button>
+  <button @click="goForward()">Forward</button>
+</template>
+```
+
+### useRoute()
+
+Reactive route information. Returns getters that always reflect the current URL.
+
+```ts
+const route = useRoute()
+
+route.path      // '/about'
+route.fullPath  // '/about?page=2#section'
+route.hash      // '#section'
+route.query     // { page: '2' }
+route.params    // {} (from stxRouter if available)
+```
+
+### useSearchParams()
+
+Reactive URL search parameters with get/set methods. Automatically syncs with `popstate` and `stx:navigate` events.
+
+```ts
+const search = useSearchParams()
+
+search.get('page')              // '2'
+search.set('page', '3')         // Updates URL and pushes history
+search.setAll({ page: '1', sort: 'name' })  // Set multiple params
+```
+
 ## Next Steps
 
 - Explore [Core API](/api/core)

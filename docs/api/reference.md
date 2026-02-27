@@ -35,11 +35,20 @@ Welcome to the stx API Reference. This section provides detailed documentation f
 - [Testing](/api/testing) - Testing utilities and functions
 - [Visual Testing](/api/visual-testing) - Snapshot and visual regression testing
 
+## Client-Side APIs
+
+- [Navigation API](/api/navigation) - `navigate()`, `goBack()`, `goForward()`, `useRoute()`, `useSearchParams()`
+- [Data Fetching](/api/data-fetching) - `useQuery()`, `useMutation()`, `useFetch()`
+- [Template Refs](/api/refs) - `useRef()` for DOM element references
+- [Event Listeners](/api/event-listener) - `useEventListener()` with auto-cleanup
+- [Meta Tags](/api/meta) - `useMeta()` for reactive meta tag management
+- [Strict Mode](/api/strict-mode) - Validate client scripts for raw DOM API usage
+
 ## Additional APIs
 
 - [Core API](/api/core) - Core functionality and features
 - [Plugins](/api/plugins) - Plugin system and API
-- [Router](/api/router) - File-based routing
+- [Router](/api/router) - File-based routing and navigation composables
 - [SPA Router](/api/spa-router) - Client-side SPA navigation
 - [Scaffolding](/api/scaffolding) - Project and file generators
 - [Helpers](/api/helpers) - Additional helper functions
