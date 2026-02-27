@@ -12,6 +12,7 @@ describe('STX Signals - Runtime Behavior', () => {
     // Create a minimal DOM-like environment
     const mockWindow: any = {
       stx: null,
+      addEventListener: () => {},
     }
 
     const mockDocument = {

@@ -260,6 +260,7 @@ describe('STX Signals - DOM Binding Behavior', () => {
 
     mockWindow = {
       stx: null,
+      addEventListener: () => {},
     }
 
     // Evaluate the runtime
