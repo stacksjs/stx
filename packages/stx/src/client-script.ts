@@ -54,6 +54,12 @@ const STX_AUTO_IMPORTS = [
   'useQuery', 'useMutation',
   // DOM utilities
   'useEventListener', 'useMeta',
+  // Timers
+  'useDebounce', 'useDebouncedValue', 'useThrottle', 'useInterval', 'useTimeout',
+  // Utilities
+  'useToggle', 'useCounter', 'useClickOutside', 'useFocus', 'useAsync',
+  // Color Mode
+  'useColorMode', 'useDark',
   // Vue-style reactivity (alternative API)
   'ref', 'reactive', 'computed', 'watch', 'watchEffect', 'watchMultiple',
   // Vue-style lifecycle hooks

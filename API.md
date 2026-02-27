@@ -34,6 +34,9 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
 - [Navigation API](#navigation-api)
 - [Event Listener Composable](#event-listener-composable)
 - [Meta Tag Management](#meta-tag-management)
+- [Timer Composables](#timer-composables)
+- [Utility Composables](#utility-composables)
+- [Color Mode](#color-mode)
 - [Strict Mode](#strict-mode)
 - [Auto-Imported APIs Summary](#auto-imported-apis-summary)
 - [Form Validation](#form-validation)
@@ -5194,6 +5197,190 @@ meta.removeMeta('robots')
 
 ---
 
+## Timer Composables
+
+### useDebounce(fn, delay?)
+
+Wrap a function so it only fires after `delay` ms of inactivity. Returns a debounced function with `.cancel()`, `.flush()`, and `.pending()` methods.
+
+```html
+<script client>
+const save = useDebounce(() => api.save(form), 300)
+save()          // debounced — waits 300ms
+save.cancel()   // abort pending call
+save.flush()    // fire immediately
+save.pending()  // true if a call is queued
+</script>
+```
+
+### useDebouncedValue(getter, delay?)
+
+Create a debounced read-only value that updates after `delay` ms of inactivity.
+
+```html
+<script client>
+const debouncedSearch = useDebouncedValue(() => searchInput.value, 300)
+debouncedSearch.subscribe(val => console.log('Searching:', val))
+console.log(debouncedSearch.value) // current debounced value
+</script>
+```
+
+### useThrottle(fn, limit?)
+
+Wrap a function so it fires at most once every `limit` ms. Returns a throttled function with `.cancel()`.
+
+```html
+<script client>
+const onScroll = useThrottle(() => recalcLayout(), 100)
+useEventListener('scroll', onScroll)
+</script>
+```
+
+### useInterval(interval?, options?)
+
+Reactive interval counter with pause/resume/reset controls. Auto-cleans up on destroy.
+
+```html
+<script client>
+const { counter, pause, resume, reset } = useInterval(1000)
+// counter increments every second
+// pause() / resume() / reset()
+</script>
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `immediate` | `boolean` | `false` | Fire callback immediately on start |
+
+### useTimeout(callback, delay?)
+
+One-shot timeout with start/stop control. Auto-starts and auto-cleans up.
+
+```html
+<script client>
+const { isPending, start, stop } = useTimeout(() => showToast(), 3000)
+stop()   // cancel
+start()  // restart countdown
+</script>
+```
+
+---
+
+## Utility Composables
+
+### useToggle(initial?)
+
+Boolean toggle with reactive subscription. Returns a `[ref, toggle, set]` tuple.
+
+```html
+<script client>
+const [open, toggle, setOpen] = useToggle(false)
+toggle()       // true
+setOpen(false) // false
+open.subscribe(v => console.log('open:', v))
+</script>
+```
+
+### useCounter(initial?, options?)
+
+Numeric counter with optional min/max bounds.
+
+```html
+<script client>
+const counter = useCounter(0, { min: 0, max: 10 })
+counter.inc()   // 1
+counter.dec(3)  // 0 (clamped to min)
+counter.set(5)  // 5
+counter.reset() // 0
+</script>
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `min` | `number` | `-Infinity` | Minimum allowed value |
+| `max` | `number` | `Infinity` | Maximum allowed value |
+
+### useClickOutside(target, handler)
+
+Run a handler when clicking outside a target element. Accepts a CSS selector string or Element.
+
+```html
+<script client>
+const { remove } = useClickOutside('#dropdown', () => closeDropdown())
+// Auto-cleans up on destroy, or call remove() manually
+</script>
+```
+
+### useFocus(target)
+
+Track and control focus state of an element.
+
+```html
+<script client>
+const { isFocused, focus, blur } = useFocus('#search-input')
+focus() // programmatically focus
+</script>
+```
+
+### useAsync(fn, options?)
+
+Wrap an async function with reactive loading/error/data state.
+
+```html
+<script client>
+const { data, isLoading, error, execute } = useAsync(
+  () => fetch('/api/users').then(r => r.json()),
+  { immediate: true }
+)
+// Re-execute later:
+execute()
+</script>
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `immediate` | `boolean` | `false` | Execute immediately on creation |
+
+---
+
+## Color Mode
+
+### useColorMode(options?)
+
+Full-featured color-mode manager with system detection, localStorage persistence, cross-tab sync, and `<html>` class toggling.
+
+```html
+<script client>
+const { mode, isDark, preference, toggle, set } = useColorMode()
+toggle()        // switch light ↔ dark
+set('auto')     // follow system preference
+set('dark')     // force dark
+console.log(mode)       // 'light' or 'dark' (resolved)
+console.log(preference) // 'light', 'dark', or 'auto' (user choice)
+</script>
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `storageKey` | `string` | `'stx-color-mode'` | localStorage key |
+| `initialMode` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Initial mode |
+| `darkClass` | `string` | `'dark'` | CSS class on `<html>` when dark |
+| `attribute` | `string` | — | Use data attribute instead of class (e.g. `'data-theme'`) |
+| `disableTransitions` | `boolean` | `true` | Prevent CSS transition flash during switch |
+
+### useDark(options?)
+
+Convenience wrapper around `useColorMode` — just `isDark`, `toggle`, and `set`.
+
+```html
+<script client>
+const { isDark, toggle } = useDark()
+toggle()
+</script>
+```
+
+---
+
 ## Strict Mode
 
 Strict mode validates client scripts for raw browser API usage and suggests stx composable alternatives.
@@ -5245,6 +5432,10 @@ When strict mode is enabled, these patterns trigger warnings/errors with suggest
 | `window.scrollTo()` | `useScroll().scrollTo()` |
 | `window.alert()` / `confirm()` / `prompt()` | stx modal/dialog APIs |
 | `location.href =` / `location.assign()` / `location.replace()` | `navigate()` |
+| `setTimeout()` | `useTimeout()` or `useDebounce()` |
+| `setInterval()` | `useInterval()` |
+| `clearTimeout()` | `useTimeout().stop()` or `useDebounce().cancel()` |
+| `clearInterval()` | `useInterval().pause()` |
 
 ### Example
 
@@ -5285,6 +5476,15 @@ The following APIs are auto-imported in `<script client>` blocks — no import s
 
 ### DOM Utilities
 `useEventListener`, `useMeta`
+
+### Timers
+`useDebounce`, `useDebouncedValue`, `useThrottle`, `useInterval`, `useTimeout`
+
+### Utilities
+`useToggle`, `useCounter`, `useClickOutside`, `useFocus`, `useAsync`
+
+### Color Mode
+`useColorMode`, `useDark`
 
 ### Vue-Style Reactivity
 `ref`, `reactive`, `computed`, `watch`, `watchEffect`, `watchMultiple`

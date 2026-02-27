@@ -2510,6 +2510,27 @@ const PROHIBITED_DOM_PATTERNS: Array<{
     message: 'window.prompt() is prohibited',
     suggestion: 'Use stx modal/dialog APIs instead',
   },
+  // Timer patterns
+  {
+    pattern: /(?<!\w)setTimeout\s*\(/g,
+    message: 'setTimeout() is prohibited',
+    suggestion: 'Use useTimeout() or useDebounce() from composables',
+  },
+  {
+    pattern: /(?<!\w)setInterval\s*\(/g,
+    message: 'setInterval() is prohibited',
+    suggestion: 'Use useInterval() from composables',
+  },
+  {
+    pattern: /(?<!\w)clearTimeout\s*\(/g,
+    message: 'clearTimeout() is prohibited',
+    suggestion: 'Use useTimeout().stop() or useDebounce().cancel()',
+  },
+  {
+    pattern: /(?<!\w)clearInterval\s*\(/g,
+    message: 'clearInterval() is prohibited',
+    suggestion: 'Use useInterval().pause()',
+  },
   // Bare location patterns
   {
     pattern: /(?<!\w)location\.href\s*=/g,

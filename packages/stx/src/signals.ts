@@ -2334,6 +2334,381 @@ export function generateSignalsRuntimeDev(): string {
     window[name] = value;
   }
 
+  // ==========================================================================
+  // Timer & Utility Composables
+  // ==========================================================================
+
+  function useDebounce(fn, delay) {
+    delay = delay || 250;
+    var timer = null;
+    var lastArgs = null;
+    var debounced = function() {
+      lastArgs = Array.prototype.slice.call(arguments);
+      if (timer !== null) clearTimeout(timer);
+      var args = lastArgs;
+      timer = setTimeout(function() {
+        timer = null;
+        lastArgs = null;
+        fn.apply(null, args);
+      }, delay);
+    };
+    debounced.cancel = function() {
+      if (timer !== null) { clearTimeout(timer); timer = null; lastArgs = null; }
+    };
+    debounced.flush = function() {
+      if (timer !== null && lastArgs !== null) {
+        clearTimeout(timer); timer = null;
+        var args = lastArgs; lastArgs = null;
+        fn.apply(null, args);
+      }
+    };
+    debounced.pending = function() { return timer !== null; };
+    onDestroy(debounced.cancel);
+    return debounced;
+  }
+
+  function useDebouncedValue(getter, delay) {
+    delay = delay || 250;
+    var current = getter();
+    var listeners = [];
+    var timer = null;
+    function schedule() {
+      if (timer !== null) clearTimeout(timer);
+      timer = setTimeout(function() {
+        timer = null;
+        var next = getter();
+        if (next !== current) {
+          current = next;
+          listeners.forEach(function(fn) { fn(current); });
+        }
+      }, delay);
+    }
+    schedule();
+    onDestroy(function() { if (timer !== null) clearTimeout(timer); listeners = []; });
+    return {
+      get value() { return current; },
+      subscribe: function(fn) {
+        listeners.push(fn);
+        return function() { listeners = listeners.filter(function(f) { return f !== fn; }); };
+      }
+    };
+  }
+
+  function useThrottle(fn, limit) {
+    limit = limit || 250;
+    var timer = null;
+    var lastRan = 0;
+    var throttled = function() {
+      var args = Array.prototype.slice.call(arguments);
+      var now = Date.now();
+      var remaining = limit - (now - lastRan);
+      if (remaining <= 0) {
+        if (timer !== null) { clearTimeout(timer); timer = null; }
+        lastRan = now;
+        fn.apply(null, args);
+      } else if (timer === null) {
+        timer = setTimeout(function() {
+          lastRan = Date.now();
+          timer = null;
+          fn.apply(null, args);
+        }, remaining);
+      }
+    };
+    throttled.cancel = function() {
+      if (timer !== null) { clearTimeout(timer); timer = null; }
+    };
+    onDestroy(throttled.cancel);
+    return throttled;
+  }
+
+  function useInterval(interval, options) {
+    interval = interval || 1000;
+    options = options || {};
+    var count = 0;
+    var id = null;
+    var running = false;
+    var listeners = [];
+    function tick() {
+      count++;
+      listeners.forEach(function(fn) { fn(count); });
+    }
+    function resume() {
+      if (running) return;
+      running = true;
+      id = setInterval(tick, interval);
+      if (options.immediate) tick();
+    }
+    function pause() {
+      if (!running) return;
+      running = false;
+      if (id !== null) { clearInterval(id); id = null; }
+    }
+    function reset() {
+      pause();
+      count = 0;
+      listeners.forEach(function(fn) { fn(count); });
+      resume();
+    }
+    resume();
+    onDestroy(function() { pause(); listeners = []; });
+    return {
+      get counter() { return count; },
+      pause: pause,
+      resume: resume,
+      reset: reset,
+      subscribe: function(fn) {
+        listeners.push(fn);
+        return function() { listeners = listeners.filter(function(f) { return f !== fn; }); };
+      }
+    };
+  }
+
+  function useTimeout(callback, delay) {
+    delay = delay || 1000;
+    var timer = null;
+    var pending = false;
+    var listeners = [];
+    function setPending(v) {
+      if (v !== pending) {
+        pending = v;
+        listeners.forEach(function(fn) { fn(pending); });
+      }
+    }
+    function start() {
+      stop();
+      setPending(true);
+      timer = setTimeout(function() {
+        timer = null;
+        setPending(false);
+        callback();
+      }, delay);
+    }
+    function stop() {
+      if (timer !== null) { clearTimeout(timer); timer = null; }
+      setPending(false);
+    }
+    start();
+    onDestroy(stop);
+    return {
+      get isPending() { return pending; },
+      start: start,
+      stop: stop,
+      subscribe: function(fn) {
+        listeners.push(fn);
+        return function() { listeners = listeners.filter(function(f) { return f !== fn; }); };
+      }
+    };
+  }
+
+  function useToggle(initial) {
+    var current = !!initial;
+    var listeners = [];
+    function notify() { listeners.forEach(function(fn) { fn(current); }); }
+    function toggle() { current = !current; notify(); }
+    function set(v) { v = !!v; if (v !== current) { current = v; notify(); } }
+    var ref = {
+      get value() { return current; },
+      subscribe: function(fn) {
+        listeners.push(fn);
+        return function() { listeners = listeners.filter(function(f) { return f !== fn; }); };
+      }
+    };
+    return [ref, toggle, set];
+  }
+
+  function useCounter(initial, options) {
+    initial = initial || 0;
+    options = options || {};
+    var min = options.min != null ? options.min : -Infinity;
+    var max = options.max != null ? options.max : Infinity;
+    function clamp(v) { return Math.min(max, Math.max(min, v)); }
+    var current = clamp(initial);
+    var listeners = [];
+    function notify() { listeners.forEach(function(fn) { fn(current); }); }
+    return {
+      get count() { return current; },
+      inc: function(step) { current = clamp(current + (step || 1)); notify(); },
+      dec: function(step) { current = clamp(current - (step || 1)); notify(); },
+      set: function(v) { current = clamp(v); notify(); },
+      reset: function() { current = clamp(initial); notify(); },
+      subscribe: function(fn) {
+        listeners.push(fn);
+        return function() { listeners = listeners.filter(function(f) { return f !== fn; }); };
+      }
+    };
+  }
+
+  function useClickOutside(target, handler) {
+    function listener(event) {
+      var el = typeof target === 'string' ? document.querySelector(target) : target;
+      if (!el) return;
+      if (el === event.target || el.contains(event.target)) return;
+      handler(event);
+    }
+    document.addEventListener('pointerdown', listener, true);
+    function remove() { document.removeEventListener('pointerdown', listener, true); }
+    onDestroy(remove);
+    return { remove: remove };
+  }
+
+  function useFocus(target) {
+    var focused = false;
+    var listeners = [];
+    function resolve() {
+      return typeof target === 'string' ? document.querySelector(target) : target;
+    }
+    function setFocused(v) {
+      if (v !== focused) {
+        focused = v;
+        listeners.forEach(function(fn) { fn(focused); });
+      }
+    }
+    var onFocusIn = function() { setFocused(true); };
+    var onBlurOut = function() { setFocused(false); };
+    var el = resolve();
+    if (el) {
+      el.addEventListener('focus', onFocusIn);
+      el.addEventListener('blur', onBlurOut);
+      focused = document.activeElement === el;
+    }
+    onDestroy(function() {
+      var el = resolve();
+      if (el) { el.removeEventListener('focus', onFocusIn); el.removeEventListener('blur', onBlurOut); }
+      listeners = [];
+    });
+    return {
+      get isFocused() { return focused; },
+      focus: function() { var el = resolve(); if (el && el.focus) el.focus(); },
+      blur: function() { var el = resolve(); if (el && el.blur) el.blur(); },
+      subscribe: function(fn) {
+        listeners.push(fn);
+        return function() { listeners = listeners.filter(function(f) { return f !== fn; }); };
+      }
+    };
+  }
+
+  function useAsync(fn, options) {
+    options = options || {};
+    var asyncState = 'idle';
+    var data = null;
+    var error = null;
+    var listeners = [];
+    function notify() {
+      var snap = { state: asyncState, data: data, error: error };
+      listeners.forEach(function(fn) { fn(snap); });
+    }
+    function execute() {
+      var args = Array.prototype.slice.call(arguments);
+      asyncState = 'loading'; error = null; notify();
+      return fn.apply(null, args).then(function(result) {
+        data = result; asyncState = 'success'; notify(); return data;
+      }).catch(function(e) {
+        error = e instanceof Error ? e : new Error(String(e));
+        asyncState = 'error'; notify(); return null;
+      });
+    }
+    if (options.immediate) execute();
+    return {
+      get state() { return asyncState; },
+      get isLoading() { return asyncState === 'loading'; },
+      get error() { return error; },
+      get data() { return data; },
+      execute: execute,
+      subscribe: function(fn) {
+        listeners.push(fn);
+        return function() { listeners = listeners.filter(function(f) { return f !== fn; }); };
+      }
+    };
+  }
+
+  function useColorMode(options) {
+    options = options || {};
+    var storageKey = options.storageKey || 'stx-color-mode';
+    var initialMode = options.initialMode || 'auto';
+    var darkClass = options.darkClass || 'dark';
+    var attribute = options.attribute || null;
+    var disableTransitions = options.disableTransitions !== false;
+    var preference = initialMode;
+    var resolved = 'light';
+    var listeners = [];
+    var cleanups = [];
+
+    function getSystem() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    function resolve(pref) { return pref === 'auto' ? getSystem() : pref; }
+    function applyDOM(mode) {
+      var el = document.documentElement;
+      if (disableTransitions) el.style.setProperty('transition', 'none', 'important');
+      if (attribute) { el.setAttribute(attribute, mode); }
+      else { if (mode === 'dark') el.classList.add(darkClass); else el.classList.remove(darkClass); }
+      if (disableTransitions) { el.offsetHeight; el.style.removeProperty('transition'); }
+    }
+    function persist(pref) { try { localStorage.setItem(storageKey, pref); } catch(e) {} }
+    function readPersisted() {
+      try { var v = localStorage.getItem(storageKey); if (v === 'light' || v === 'dark' || v === 'auto') return v; } catch(e) {}
+      return null;
+    }
+    function update(pref) {
+      preference = pref;
+      resolved = resolve(pref);
+      applyDOM(resolved);
+      persist(pref);
+      listeners.forEach(function(fn) { fn(resolved, preference); });
+    }
+
+    var persisted = readPersisted();
+    update(persisted || initialMode);
+
+    var mql = window.matchMedia('(prefers-color-scheme: dark)');
+    var onSystemChange = function() {
+      if (preference === 'auto') {
+        resolved = getSystem();
+        applyDOM(resolved);
+        listeners.forEach(function(fn) { fn(resolved, preference); });
+      }
+    };
+    mql.addEventListener('change', onSystemChange);
+    cleanups.push(function() { mql.removeEventListener('change', onSystemChange); });
+
+    var onStorage = function(e) {
+      if (e.key !== storageKey) return;
+      var v = e.newValue;
+      if (v === 'light' || v === 'dark' || v === 'auto') {
+        preference = v; resolved = resolve(v); applyDOM(resolved);
+        listeners.forEach(function(fn) { fn(resolved, preference); });
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    cleanups.push(function() { window.removeEventListener('storage', onStorage); });
+
+    onDestroy(function() { cleanups.forEach(function(fn) { fn(); }); listeners = []; });
+
+    return {
+      get mode() { return resolved; },
+      get preference() { return preference; },
+      get isDark() { return resolved === 'dark'; },
+      set: function(mode) { update(mode); },
+      toggle: function() { update(resolved === 'dark' ? 'light' : 'dark'); },
+      subscribe: function(fn) {
+        listeners.push(fn);
+        return function() { listeners = listeners.filter(function(f) { return f !== fn; }); };
+      }
+    };
+  }
+
+  function useDark(options) {
+    var cm = useColorMode(options);
+    return {
+      get isDark() { return cm.isDark; },
+      toggle: function() { cm.toggle(); },
+      set: function(dark) { cm.set(dark ? 'dark' : 'light'); },
+      subscribe: function(fn) {
+        return cm.subscribe(function(mode) { fn(mode === 'dark'); });
+      }
+    };
+  }
+
   // Component mount system
   var mountQueue = [];
 
@@ -2359,6 +2734,18 @@ export function generateSignalsRuntimeDev(): string {
     provide,
     $computed,
     $watch,
+    useDebounce,
+    useDebouncedValue,
+    useThrottle,
+    useInterval,
+    useTimeout,
+    useToggle,
+    useCounter,
+    useClickOutside,
+    useFocus,
+    useAsync,
+    useColorMode,
+    useDark,
     helpers: globalHelpers,
     _mountCallbacks: mountCallbacks,
     _destroyCallbacks: destroyCallbacks,
@@ -2432,6 +2819,18 @@ export function generateSignalsRuntimeDev(): string {
   window.provide = provide;
   window.$computed = $computed;
   window.$watch = $watch;
+  window.useDebounce = useDebounce;
+  window.useDebouncedValue = useDebouncedValue;
+  window.useThrottle = useThrottle;
+  window.useInterval = useInterval;
+  window.useTimeout = useTimeout;
+  window.useToggle = useToggle;
+  window.useCounter = useCounter;
+  window.useClickOutside = useClickOutside;
+  window.useFocus = useFocus;
+  window.useAsync = useAsync;
+  window.useColorMode = useColorMode;
+  window.useDark = useDark;
 
   // ==========================================================================
   // Auto-initialization

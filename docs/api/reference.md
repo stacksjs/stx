@@ -42,6 +42,9 @@ Welcome to the stx API Reference. This section provides detailed documentation f
 - [Template Refs](/api/refs) - `useRef()` for DOM element references
 - [Event Listeners](/api/event-listener) - `useEventListener()` with auto-cleanup
 - [Meta Tags](/api/meta) - `useMeta()` for reactive meta tag management
+- [Timers](/api/timers) - `useDebounce()`, `useThrottle()`, `useInterval()`, `useTimeout()`
+- [Utilities](/api/utilities-composables) - `useToggle()`, `useCounter()`, `useClickOutside()`, `useFocus()`, `useAsync()`
+- [Color Mode](/api/color-mode) - `useColorMode()`, `useDark()` for theme management
 - [Strict Mode](/api/strict-mode) - Validate client scripts for raw DOM API usage
 
 ## Additional APIs
