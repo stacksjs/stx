@@ -5204,7 +5204,7 @@ meta.removeMeta('robots')
 Wrap a function so it only fires after `delay` ms of inactivity. Returns a debounced function with `.cancel()`, `.flush()`, and `.pending()` methods.
 
 ```html
-<script client>
+<script client lang="ts">
 const save = useDebounce(() => api.save(form), 300)
 save()          // debounced — waits 300ms
 save.cancel()   // abort pending call
@@ -5218,7 +5218,7 @@ save.pending()  // true if a call is queued
 Create a debounced read-only value that updates after `delay` ms of inactivity.
 
 ```html
-<script client>
+<script client lang="ts">
 const debouncedSearch = useDebouncedValue(() => searchInput.value, 300)
 debouncedSearch.subscribe(val => console.log('Searching:', val))
 console.log(debouncedSearch.value) // current debounced value
@@ -5230,7 +5230,7 @@ console.log(debouncedSearch.value) // current debounced value
 Wrap a function so it fires at most once every `limit` ms. Returns a throttled function with `.cancel()`.
 
 ```html
-<script client>
+<script client lang="ts">
 const onScroll = useThrottle(() => recalcLayout(), 100)
 useEventListener('scroll', onScroll)
 </script>
@@ -5241,7 +5241,7 @@ useEventListener('scroll', onScroll)
 Reactive interval counter with pause/resume/reset controls. Auto-cleans up on destroy.
 
 ```html
-<script client>
+<script client lang="ts">
 const { counter, pause, resume, reset } = useInterval(1000)
 // counter increments every second
 // pause() / resume() / reset()
@@ -5257,7 +5257,7 @@ const { counter, pause, resume, reset } = useInterval(1000)
 One-shot timeout with start/stop control. Auto-starts and auto-cleans up.
 
 ```html
-<script client>
+<script client lang="ts">
 const { isPending, start, stop } = useTimeout(() => showToast(), 3000)
 stop()   // cancel
 start()  // restart countdown
@@ -5273,7 +5273,7 @@ start()  // restart countdown
 Boolean toggle with reactive subscription. Returns a `[ref, toggle, set]` tuple.
 
 ```html
-<script client>
+<script client lang="ts">
 const [open, toggle, setOpen] = useToggle(false)
 toggle()       // true
 setOpen(false) // false
@@ -5286,7 +5286,7 @@ open.subscribe(v => console.log('open:', v))
 Numeric counter with optional min/max bounds.
 
 ```html
-<script client>
+<script client lang="ts">
 const counter = useCounter(0, { min: 0, max: 10 })
 counter.inc()   // 1
 counter.dec(3)  // 0 (clamped to min)
@@ -5305,7 +5305,7 @@ counter.reset() // 0
 Run a handler when clicking outside a target element. Accepts a CSS selector string or Element.
 
 ```html
-<script client>
+<script client lang="ts">
 const { remove } = useClickOutside('#dropdown', () => closeDropdown())
 // Auto-cleans up on destroy, or call remove() manually
 </script>
@@ -5316,7 +5316,7 @@ const { remove } = useClickOutside('#dropdown', () => closeDropdown())
 Track and control focus state of an element.
 
 ```html
-<script client>
+<script client lang="ts">
 const { isFocused, focus, blur } = useFocus('#search-input')
 focus() // programmatically focus
 </script>
@@ -5327,7 +5327,7 @@ focus() // programmatically focus
 Wrap an async function with reactive loading/error/data state.
 
 ```html
-<script client>
+<script client lang="ts">
 const { data, isLoading, error, execute } = useAsync(
   () => fetch('/api/users').then(r => r.json()),
   { immediate: true }
@@ -5350,7 +5350,7 @@ execute()
 Full-featured color-mode manager with system detection, localStorage persistence, cross-tab sync, and `<html>` class toggling.
 
 ```html
-<script client>
+<script client lang="ts">
 const { mode, isDark, preference, toggle, set } = useColorMode()
 toggle()        // switch light ↔ dark
 set('auto')     // follow system preference
@@ -5373,7 +5373,7 @@ console.log(preference) // 'light', 'dark', or 'auto' (user choice)
 Convenience wrapper around `useColorMode` — just `isDark`, `toggle`, and `set`.
 
 ```html
-<script client>
+<script client lang="ts">
 const { isDark, toggle } = useDark()
 toggle()
 </script>
