@@ -4,8 +4,9 @@
  * Transforms <script client> blocks in SFC (.stx) components:
  * 1. Auto-imports from 'stx' and '@stacksjs/browser' (no import statements needed)
  * 2. Resolves `import { store } from '@stores'` to runtime store access
- * 3. Injects event binding code (from @click, @input, etc.) into the script scope
- * 4. Auto-wraps in a scoped IIFE for isolation
+ * 3. Transpiles TypeScript to JavaScript (strips type annotations, interfaces, import type)
+ * 4. Injects event binding code (from @click, @input, etc.) into the script scope
+ * 5. Auto-wraps in a scoped IIFE for isolation
  *
  * This enables clean component authoring:
  * ```stx
@@ -33,6 +34,7 @@
 
 import type { ParsedEvent, EventModifiers } from './events'
 import { transformStoreImports } from './state-management'
+import { transpileTypeScript } from './utils'
 
 // =============================================================================
 // Auto-Import Configuration
@@ -165,6 +167,14 @@ function transformAutoImports(code: string): AutoImportResult {
   const usedStxImports: Set<string> = new Set()
   const usedBrowserImports: Set<string> = new Set()
   let transformedCode = code
+
+  // Strip all `import type` statements from any source — these are type-only
+  // and will be erased during TypeScript transpilation, but we strip them early
+  // to prevent interference with auto-import detection and IIFE wrapping
+  transformedCode = transformedCode.replace(
+    /^\s*import\s+type\s+\{[^}]*\}\s+from\s+['"][^'"]+['"]\s*;?\s*$/gm,
+    '// [type import stripped]',
+  )
 
   // Track existing imports to avoid duplicates
   const existingImports = new Set<string>()
@@ -452,10 +462,13 @@ export function processClientScript(
   // 2. Transform store imports
   code = transformStoreImports(code)
 
-  // 3. Generate event binding code
+  // 3. Transpile TypeScript to JavaScript (strips type annotations, interfaces, etc.)
+  code = transpileTypeScript(code)
+
+  // 4. Generate event binding code
   const eventCode = generateInlineEventBindings(options.eventBindings || [])
 
-  // 4. Build the output script tag
+  // 5. Build the output script tag
   const attrs = (options.attrs || '').trim()
   const isModule = /\btype\s*=\s*["']module["']/i.test(attrs)
 
@@ -469,7 +482,7 @@ ${eventCode}
 </script>`
   }
 
-  // 5. Check if we should use stx.mount() wrapper
+  // 6. Check if we should use stx.mount() wrapper
   // Only use mount for scripts that actually use signals (state/derived/effect).
   // : prefix directives are handled by the runtime's processElement regardless of wrapper type.
   // Skip mount wrapping for SFC components — they already have __stx_setup scoping from utils.ts.
