@@ -13,6 +13,9 @@ A Blade-like template engine plugin for Bun, enabling simple and powerful templa
 ## Features
 
 - 🦋 Laravel Blade-like syntax
+- ⚡ Reactive bindings (`:class`, `:style`, `:text`, `@click`, `@model`)
+- 📡 Signals system (`state`, `derived`, `effect`)
+- 🧩 35+ browser composables (`useRef`, `useFetch`, `useLocalStorage`, etc.)
 - 🚀 Fast and lightweight
 - 📦 Zero config
 
@@ -294,6 +297,192 @@ Output unescaped HTML content:
 
 ```html
 {!! rawHtmlContent !!}
+```
+
+### Reactive Bindings (Signals)
+
+stx includes a built-in signals system for client-side reactivity. Define reactive state in your `<script>` block and bind it directly to your template using `:class`, `:style`, `:text`, and other directive bindings.
+
+#### State & Reactivity
+
+```html
+<script>
+  const count = state(0)
+  const doubled = derived(() => count() * 2)
+
+  effect(() => {
+    console.log('Count changed:', count())
+  })
+
+  function increment() {
+    count.set(count() + 1)
+  }
+</script>
+
+<button @click="increment()">Count: {{ count() }}</button>
+<p>Doubled: {{ doubled() }}</p>
+```
+
+- `state(initialValue)` — creates a reactive signal. Read with `signal()`, write with `signal.set(value)`
+- `derived(fn)` — creates a computed value that auto-tracks dependencies
+- `effect(fn)` — runs a side effect whenever its tracked signals change
+- `batch(fn)` — batches multiple signal updates into a single re-render
+
+#### Dynamic Class Binding (`:class`)
+
+Bind classes reactively using `:class` with object, array, or string syntax. The static `class` attribute is preserved — `:class` adds/removes classes on top of it.
+
+**Object syntax** — toggle classes based on conditions:
+
+```html
+<script>
+  const activeTab = state('home')
+</script>
+
+<button
+  class="tab-btn px-3 py-1.5 rounded text-sm font-medium"
+  :class="{ active: activeTab() === 'home' }"
+  @click="activeTab.set('home')"
+>
+  Home
+</button>
+
+<button
+  class="tab-btn px-3 py-1.5 rounded text-sm font-medium"
+  :class="{ active: activeTab() === 'settings', disabled: !isAdmin() }"
+  @click="activeTab.set('settings')"
+>
+  Settings
+</button>
+```
+
+**Array syntax** — apply a list of classes:
+
+```html
+<div :class="[baseClass(), isLarge() ? 'text-lg' : 'text-sm']">
+  Content
+</div>
+```
+
+**String syntax** — bind a dynamic class string:
+
+```html
+<div :class="isError() ? 'bg-red-500 text-white' : 'bg-zinc-800'">
+  Content
+</div>
+```
+
+All three syntaxes are reactive — when the underlying signals change, the classes update automatically.
+
+#### Dynamic Style Binding (`:style`)
+
+Bind inline styles reactively:
+
+```html
+<div :style="{ color: textColor(), fontSize: size() + 'px' }">
+  Styled content
+</div>
+```
+
+#### Dynamic Text & HTML (`:text`, `:html`)
+
+```html
+<span :text="message()"></span>
+<div :html="richContent()"></div>
+```
+
+#### Dynamic Attribute Binding (`:attr`)
+
+Bind any HTML attribute reactively:
+
+```html
+<input :disabled="isLoading()" :placeholder="hint()" />
+<a :href="linkUrl()">Dynamic link</a>
+```
+
+#### Event Handling (`@click`, `@submit`, etc.)
+
+Bind event handlers directly in the template:
+
+```html
+<button @click="count.set(count() + 1)">Increment</button>
+<form @submit.prevent="handleSubmit()">...</form>
+<input @keydown.enter="search()" />
+```
+
+Supported modifiers: `.prevent`, `.stop`, `.self`, `.once`, `.capture`, `.passive`, `.ctrl`, `.alt`, `.shift`, `.meta`, `.enter`, `.escape`, `.space`, `.tab`
+
+#### Conditional Rendering (`@if`, `@show`)
+
+```html
+<div @if="isLoggedIn()">Welcome back!</div>
+<div @show="isVisible()">Toggles display</div>
+```
+
+#### List Rendering (`@for`)
+
+```html
+<ul>
+  <li @for="item in items()">{{ item.name }}</li>
+</ul>
+```
+
+#### Two-way Binding (`@model`)
+
+```html
+<input @model="username" />
+<p>Hello, {{ username() }}</p>
+```
+
+#### Lifecycle Hooks
+
+```html
+<script>
+  onMount(() => {
+    console.log('Component mounted')
+    fetchData()
+  })
+
+  onDestroy(() => {
+    console.log('Cleaning up')
+  })
+</script>
+```
+
+#### Browser Composables
+
+stx provides 35+ utility composables for common browser tasks:
+
+```html
+<script>
+  // Refs
+  const el = useRef('my-element')
+
+  // Events
+  useEventListener('click', handler, { target: '#my-btn' })
+  useClickOutside(el, () => closeDropdown())
+
+  // Storage
+  const theme = useLocalStorage('theme', 'dark')
+
+  // Routing
+  const route = useRoute()
+  const path = route.path
+
+  // Async data
+  const { data, isLoading, error } = useFetch('/api/data')
+
+  // Timing
+  const debouncedSearch = useDebounce(search, 300)
+
+  // Responsive
+  const { width } = useWindowSize()
+  const isMobile = useMediaQuery('(max-width: 768px)')
+
+  // State utilities
+  const [isDark, toggleDark] = useToggle(false)
+  const { count, inc, dec } = useCounter(0)
+</script>
 ```
 
 #### Markdown Support
