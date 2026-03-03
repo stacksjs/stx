@@ -833,6 +833,26 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
         try {
           await cfg.hooks.onPageStart?.(url)
 
+          // Run route param validation if defined in page meta
+          const pageContent = await Bun.file(route.filePath).text()
+          const metaMatch = pageContent.match(/definePageMeta\s*\(\s*\{[\s\S]*?validate\s*:\s*((?:\([^)]*\)|[^,}])*(?:\{[\s\S]*?\})?)/m)
+          if (metaMatch) {
+            try {
+              const validateFn = new Function('route', `
+                const validate = ${metaMatch[1]};
+                return validate(route);
+              `)
+              const isValid = await validateFn({ params })
+              if (!isValid) {
+                console.warn(`Validation failed for ${url}, skipping...`)
+                return
+              }
+            }
+            catch {
+              // If we can't extract/run the validate function, continue generating
+            }
+          }
+
           // Check cache
           let html: string | null = null
           let cached = false
@@ -948,6 +968,38 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
 </html>`
         await Bun.write(path.join(cfg.outputDir, '404.html'), default404)
       }
+    }
+
+    // Generate additional error pages (500.stx, error.stx)
+    for (const errorCode of [500]) {
+      const errorPagePath = path.join(cfg.pagesDir, `${errorCode}.stx`)
+      if (fs.existsSync(errorPagePath)) {
+        const errorDeps = new Set<string>()
+        const errorOptions = { ...stxConfig, debug: false, cache: false }
+        const html = await processDirectives(
+          await Bun.file(errorPagePath).text(),
+          {},
+          errorPagePath,
+          errorOptions,
+          errorDeps
+        )
+        await Bun.write(path.join(cfg.outputDir, `${errorCode}.html`), html)
+      }
+    }
+
+    // Generate generic error page if it exists
+    const genericErrorPath = path.join(cfg.pagesDir, 'error.stx')
+    if (fs.existsSync(genericErrorPath)) {
+      const errorDeps = new Set<string>()
+      const errorOptions = { ...stxConfig, debug: false, cache: false }
+      const html = await processDirectives(
+        await Bun.file(genericErrorPath).text(),
+        {},
+        genericErrorPath,
+        errorOptions,
+        errorDeps
+      )
+      await Bun.write(path.join(cfg.outputDir, 'error.html'), html)
     }
 
     // Generate sitemap

@@ -1319,14 +1319,30 @@ async function processDirectivesInternal(
 
     let autoLayoutName: string | null = null
 
-    // Priority 1: Check for _layout.stx in the page's own directory
+    // Priority 1: Walk up from the page's directory toward pages root looking for _layout.stx
     const pageDir = path.dirname(filePath)
-    const nestedLayoutPath = path.join(pageDir, '_layout.stx')
-    try {
-      await fs.promises.access(nestedLayoutPath)
-      autoLayoutName = '_layout'
+    const pagesRoot = path.resolve(projectRoot, 'pages')
+    let searchDir = pageDir
+    while (searchDir.length >= pagesRoot.length) {
+      const nestedLayoutPath = path.join(searchDir, '_layout.stx')
+      try {
+        await fs.promises.access(nestedLayoutPath)
+        // Found nearest _layout.stx — compute relative path for layout resolution
+        if (searchDir === pageDir) {
+          autoLayoutName = '_layout'
+        }
+        else {
+          // Build a relative path from the page dir to the layout
+          const relPath = path.relative(pageDir, nestedLayoutPath).replace(/\\/g, '/')
+          autoLayoutName = relPath.replace(/\.stx$/, '')
+        }
+        break
+      }
+      catch {}
+      const parent = path.dirname(searchDir)
+      if (parent === searchDir) break
+      searchDir = parent
     }
-    catch {}
 
     // Priority 2: Fall back to global default layout
     if (!autoLayoutName && resolvedOptions.layoutsDir) {

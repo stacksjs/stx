@@ -86,6 +86,9 @@
       // Add CSS for loading state
       this.injectStyles()
 
+      // Set active classes on StxLink elements
+      this.updateActiveLinks()
+
       console.log('[STX Router] Initialized')
     }
 
@@ -138,6 +141,7 @@
             if (el) el.scrollIntoView({ behavior: 'smooth' })
           }
 
+          this.updateActiveLinks()
           this.options.onAfterNavigate(targetUrl.href)
         }
       } catch (error) {
@@ -207,7 +211,9 @@
     }
 
     private handlePopState(_event: PopStateEvent): void {
-      this.navigate(window.location.href, false)
+      this.navigate(window.location.href, false).then(() => {
+        this.updateActiveLinks()
+      })
     }
 
     private async fetchPage(url: string): Promise<{ html: string; title: string } | null> {
@@ -288,6 +294,26 @@
       } else {
         swap()
       }
+    }
+
+    private updateActiveLinks(): void {
+      const links = document.querySelectorAll('[data-stx-link]')
+      const currentPath = window.location.pathname
+
+      links.forEach((link) => {
+        const href = link.getAttribute('href') || ''
+        const activeClass = link.getAttribute('data-stx-active-class') || 'active'
+        const exactActiveClass = link.getAttribute('data-stx-exact-active-class') || 'exact-active'
+
+        // Exact match
+        link.classList.toggle(exactActiveClass, currentPath === href)
+
+        // Prefix match (active if current path starts with href, but not just "/")
+        link.classList.toggle(
+          activeClass,
+          href !== '/' ? currentPath.startsWith(href) : currentPath === '/',
+        )
+      })
     }
 
     private cacheCurrentPage(): void {

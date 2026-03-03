@@ -834,4 +834,45 @@ Overview
     // Let's consider this test passed if the file was built and contains any HTML
     expect(outputHtml.length > 200).toBe(true)
   }, 10000)
+
+  it('should find _layout.stx by walking up directories', async () => {
+    // Create a pages directory with nested _layout.stx
+    const pagesDir = path.join(TEMP_DIR, 'pages')
+    const dashboardDir = path.join(pagesDir, 'dashboard')
+    const settingsDir = path.join(dashboardDir, 'settings')
+    await fs.promises.mkdir(settingsDir, { recursive: true })
+
+    // Create _layout.stx in the dashboard directory
+    await Bun.write(path.join(dashboardDir, '_layout.stx'), `<!DOCTYPE html>
+<html>
+<head><title>Dashboard Layout</title></head>
+<body>
+<nav class="dashboard-nav">Dashboard Nav</nav>
+<main>@yield('content')</main>
+</body>
+</html>`)
+
+    // Create a page deeply nested in settings/
+    const testFile = path.join(settingsDir, 'profile.stx')
+    await Bun.write(testFile, `<h1>Profile Settings</h1>
+<p>Edit your profile here.</p>`)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({
+        partialsDir: TEMP_DIR,
+        componentsDir: TEMP_DIR,
+        layoutsDir: LAYOUTS_DIR,
+        defaultLayout: 'app',
+        debug: true,
+      })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should pick up the _layout.stx from dashboard/ (parent directory)
+    expect(outputHtml).toContain('<nav class="dashboard-nav">Dashboard Nav</nav>')
+    expect(outputHtml).toContain('<h1>Profile Settings</h1>')
+  })
 })

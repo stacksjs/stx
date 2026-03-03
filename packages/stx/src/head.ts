@@ -110,6 +110,7 @@ export interface PageMeta {
   transition?: string | { name: string; mode?: string }
   keepAlive?: boolean
   key?: string | ((route: unknown) => string)
+  validate?: (route: { params: Record<string, string> }) => boolean | Promise<boolean>
   [key: string]: unknown
 }
 

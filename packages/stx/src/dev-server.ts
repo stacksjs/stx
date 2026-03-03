@@ -1521,7 +1521,7 @@ function findCommonDir(paths: string[]): string {
 }
 
 // Import file-based router
-import { createRouter, matchRoute, formatRoutes } from './router'
+import { createRouter, matchRoute, formatRoutes, findErrorPage } from './router'
 import type { Route, RouteMatch } from './router'
 
 // Import route middleware system
@@ -1598,6 +1598,35 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
   // Built pages cache
   const builtPages: Map<string, BuiltPage> = new Map()
+
+  // Render a custom error page if it exists in the pages directory
+  const renderErrorPage = async (statusCode: number): Promise<string | null> => {
+    const errorPagePath = findErrorPage(pagesDir, statusCode)
+    if (!errorPagePath) return null
+
+    try {
+      const result = await Bun.build({
+        entrypoints: [errorPagePath],
+        outdir: outputDir,
+        plugins: [stxPlugin],
+        publicPath: '/',
+        define: {
+          'process.env.NODE_ENV': '"development"',
+        },
+        ...options.stxOptions,
+      })
+
+      if (!result.success) return null
+
+      const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
+      if (!htmlOutput) return null
+
+      return await Bun.file(htmlOutput.path).text()
+    }
+    catch {
+      return null
+    }
+  }
 
   // Build a single page file
   const buildPage = async (route: Route): Promise<BuiltPage | null> => {
@@ -1739,6 +1768,27 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
           // Get page metadata (middleware, etc.)
           const pageMeta = getPageMeta()
 
+          // Run route param validation if defined
+          if (pageMeta.validate) {
+            const isValid = await pageMeta.validate({ params: routeMatch.params })
+            if (!isValid) {
+              // Validation failed — render 404
+              const custom404 = await renderErrorPage(404)
+              if (custom404) {
+                let content = custom404
+                content = await injectCrosswindCSS(content)
+                if (hotReload) {
+                  content = injectHotReload(content, actualHmrPort)
+                }
+                return new Response(content, {
+                  status: 404,
+                  headers: { 'Content-Type': 'text/html' },
+                })
+              }
+              return new Response('Not Found', { status: 404 })
+            }
+          }
+
           // Run route middleware if defined
           if (pageMeta.middleware) {
             const toRoute = createRouteLocation(
@@ -1850,9 +1900,32 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         })
       }
 
+      // Try custom 404 error page
+      const custom404 = await renderErrorPage(404)
+      if (custom404) {
+        let content = custom404
+        content = await injectCrosswindCSS(content)
+        if (hotReload) {
+          content = injectHotReload(content, actualHmrPort)
+        }
+        return new Response(content, {
+          status: 404,
+          headers: { 'Content-Type': 'text/html' },
+        })
+      }
+
       return new Response('Not Found', { status: 404 })
     },
-    error(error) {
+    async error(error) {
+      // Try custom 500 error page
+      const custom500 = await renderErrorPage(500)
+      if (custom500) {
+        return new Response(custom500, {
+          status: 500,
+          headers: { 'Content-Type': 'text/html' },
+        })
+      }
+
       return new Response(`<pre>${error}\n${error.stack}</pre>`, {
         headers: { 'Content-Type': 'text/html' },
       })
