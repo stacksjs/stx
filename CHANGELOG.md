@@ -1,4 +1,87 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.5...v0.2.6)
+
+### 📚 Documentation
+
+- update API reference with navigation, useQuery, useRef, strict mode ([8508639](https://github.com/stacksjs/stx/commit/8508639)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.6 ([c83402a](https://github.com/stacksjs/stx/commit/c83402a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([e394030](https://github.com/stacksjs/stx/commit/e394030)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([725f45b](https://github.com/stacksjs/stx/commit/725f45b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([12fd5b0](https://github.com/stacksjs/stx/commit/12fd5b0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([42f82a3](https://github.com/stacksjs/stx/commit/42f82a3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([e0a8ea3](https://github.com/stacksjs/stx/commit/e0a8ea3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([64bfd79](https://github.com/stacksjs/stx/commit/64bfd79)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([1f17266](https://github.com/stacksjs/stx/commit/1f17266)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([dd86532](https://github.com/stacksjs/stx/commit/dd86532)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([29e8415](https://github.com/stacksjs/stx/commit/29e8415)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([793538d](https://github.com/stacksjs/stx/commit/793538d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([08a284a](https://github.com/stacksjs/stx/commit/08a284a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([109426e](https://github.com/stacksjs/stx/commit/109426e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([29b7862](https://github.com/stacksjs/stx/commit/29b7862)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([174ee44](https://github.com/stacksjs/stx/commit/174ee44)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([5b0fd1d](https://github.com/stacksjs/stx/commit/5b0fd1d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([6ba1dc8](https://github.com/stacksjs/stx/commit/6ba1dc8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d198dac](https://github.com/stacksjs/stx/commit/d198dac)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([12360f4](https://github.com/stacksjs/stx/commit/12360f4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([1950f4e](https://github.com/stacksjs/stx/commit/1950f4e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([ad5f8ca](https://github.com/stacksjs/stx/commit/ad5f8ca)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update dependency jsdom to v28 (#1587) ([8c3f8f7](https://github.com/stacksjs/stx/commit/8c3f8f7)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#1587](https://github.com/stacksjs/stx/issues/1587), [#1587](https://github.com/stacksjs/stx/issues/1587))
+- **deps**: update dependency @capacitor/keyboard to 8.0.0 (#1576) ([7eb77cc](https://github.com/stacksjs/stx/commit/7eb77cc)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1576](https://github.com/stacksjs/stx/issues/1576), [#1576](https://github.com/stacksjs/stx/issues/1576))
+- **deps**: update dependency actions/cache to v5.0.3 (#1584) ([9402a3c](https://github.com/stacksjs/stx/commit/9402a3c)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1584](https://github.com/stacksjs/stx/issues/1584), [#1584](https://github.com/stacksjs/stx/issues/1584))
+- **deps**: update all non-major dependencies (#1557) ([2729e7e](https://github.com/stacksjs/stx/commit/2729e7e)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#1557](https://github.com/stacksjs/stx/issues/1557), [#1557](https://github.com/stacksjs/stx/issues/1557))
+- wip ([24a25f4](https://github.com/stacksjs/stx/commit/24a25f4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([6ae7040](https://github.com/stacksjs/stx/commit/6ae7040)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _[renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot])_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.5...HEAD)
+
+### 📚 Documentation
+
+- update API reference with navigation, useQuery, useRef, strict mode ([8508639](https://github.com/stacksjs/stx/commit/8508639)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([e394030](https://github.com/stacksjs/stx/commit/e394030)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([725f45b](https://github.com/stacksjs/stx/commit/725f45b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([12fd5b0](https://github.com/stacksjs/stx/commit/12fd5b0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([42f82a3](https://github.com/stacksjs/stx/commit/42f82a3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([e0a8ea3](https://github.com/stacksjs/stx/commit/e0a8ea3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([64bfd79](https://github.com/stacksjs/stx/commit/64bfd79)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([1f17266](https://github.com/stacksjs/stx/commit/1f17266)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([dd86532](https://github.com/stacksjs/stx/commit/dd86532)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([29e8415](https://github.com/stacksjs/stx/commit/29e8415)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([793538d](https://github.com/stacksjs/stx/commit/793538d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([08a284a](https://github.com/stacksjs/stx/commit/08a284a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([109426e](https://github.com/stacksjs/stx/commit/109426e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([29b7862](https://github.com/stacksjs/stx/commit/29b7862)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([174ee44](https://github.com/stacksjs/stx/commit/174ee44)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([5b0fd1d](https://github.com/stacksjs/stx/commit/5b0fd1d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([6ba1dc8](https://github.com/stacksjs/stx/commit/6ba1dc8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d198dac](https://github.com/stacksjs/stx/commit/d198dac)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([12360f4](https://github.com/stacksjs/stx/commit/12360f4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([1950f4e](https://github.com/stacksjs/stx/commit/1950f4e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([ad5f8ca](https://github.com/stacksjs/stx/commit/ad5f8ca)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update dependency jsdom to v28 (#1587) ([8c3f8f7](https://github.com/stacksjs/stx/commit/8c3f8f7)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#1587](https://github.com/stacksjs/stx/issues/1587), [#1587](https://github.com/stacksjs/stx/issues/1587))
+- **deps**: update dependency @capacitor/keyboard to 8.0.0 (#1576) ([7eb77cc](https://github.com/stacksjs/stx/commit/7eb77cc)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1576](https://github.com/stacksjs/stx/issues/1576), [#1576](https://github.com/stacksjs/stx/issues/1576))
+- **deps**: update dependency actions/cache to v5.0.3 (#1584) ([9402a3c](https://github.com/stacksjs/stx/commit/9402a3c)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1584](https://github.com/stacksjs/stx/issues/1584), [#1584](https://github.com/stacksjs/stx/issues/1584))
+- **deps**: update all non-major dependencies (#1557) ([2729e7e](https://github.com/stacksjs/stx/commit/2729e7e)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#1557](https://github.com/stacksjs/stx/issues/1557), [#1557](https://github.com/stacksjs/stx/issues/1557))
+- wip ([24a25f4](https://github.com/stacksjs/stx/commit/24a25f4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([6ae7040](https://github.com/stacksjs/stx/commit/6ae7040)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _[renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot])_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.4...v0.2.5)
 
 ### 🧹 Chores

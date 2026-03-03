@@ -238,9 +238,25 @@ export async function serve(options: ServeOptions): Promise<void> {
     const dependencies = new Set<string>()
     output = await processDirectives(output, context, filePath, config, dependencies)
 
-    // Strip <template> wrapper tags FIRST - browsers don't render template content
+    // Strip plain <template> wrapper tags - browsers don't render template content
     // STX uses <template> in source but output should be renderable HTML
-    output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
+    // PRESERVE <template> tags with reactive directives (@for, @if, :for, :if) - those are
+    // client-side templates processed by the signals runtime
+    const hasDirectiveTemplates = /<template\s[^>]*(?:@for|:for|@if|:if)/.test(output)
+    if (hasDirectiveTemplates) {
+      // Only strip <template> tags that don't have directive attributes
+      output = output.replace(/<template(?:\s[^>]*)?>|<\/template>/gi, (match) => {
+        // Preserve opening tags with reactive directives
+        if (/@for|:for|@if|:if/.test(match)) return match
+        // Preserve closing tags (can't pair them, but they're harmless)
+        if (match === '</template>') return match
+        // Strip plain wrapper <template> tags
+        return ''
+      })
+    }
+    else {
+      output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
+    }
 
     // Generate and inject Crosswind CSS
     const crosswindCSS = await generateCrosswindCSS(output)

@@ -353,6 +353,7 @@ export const defaultConfig: StxConfig = {
     },
   },
 }
+
 // Lazy-load config to avoid blocking module initialization
 // This makes imports near-instant instead of taking 2-3 seconds
 let _config: StxConfig | null = null
