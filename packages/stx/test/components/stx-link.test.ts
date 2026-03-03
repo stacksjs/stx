@@ -42,7 +42,7 @@ describe('StxLink Component', () => {
   })
 
   it('should support slot for link content', () => {
-    expect(componentSource).toContain('{{ slot }}')
+    expect(componentSource).toContain('{!! slot !!}')
   })
 
   it('should support className prop', () => {

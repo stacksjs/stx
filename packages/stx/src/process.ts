@@ -1778,6 +1778,12 @@ async function processOtherDirectives(
   // Process includes (@include, @component, etc.)
   output = await processIncludes(output, context, filePath, opts, dependencies)
 
+  // Re-run custom element processing after includes, because included files
+  // may contain custom element components (e.g., <StxLink>) that need to be resolved
+  if (opts.componentsDir) {
+    output = await processCustomElements(output, context, filePath, opts.componentsDir, opts, dependencies)
+  }
+
   // For templates that use signals, convert @if/@for directive blocks to attribute-style
   // This allows the signals runtime to handle them reactively instead of build-time evaluation
   if (usesSignalsInScript(output)) {

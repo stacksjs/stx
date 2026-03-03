@@ -145,7 +145,7 @@ async function processDirectiveWithoutEndTag(
   // Keep track of replacements
   const replacements: Array<{ original: string, processed: string, startIndex: number }> = []
 
-  // Find all directive patterns
+  // Find all directive patterns with parameters
   let match = pattern.exec(output)
   while (match !== null) {
     const [fullMatch, paramString = ''] = match
@@ -182,6 +182,37 @@ async function processDirectiveWithoutEndTag(
 
     // Get the next match
     match = pattern.exec(output)
+  }
+
+  // Also handle bare directives without parameters (e.g., @stxRouter)
+  // Use negative lookahead to avoid matching directives already handled above or longer names
+  const barePattern = getCachedRegex(`@${name}(?!\\w)(?!\\s*\\()`, 'g')
+  let bareMatch = barePattern.exec(output)
+  while (bareMatch !== null) {
+    const [fullMatch] = bareMatch
+    const startIndex = bareMatch.index || 0
+
+    try {
+      const processed = await handler('', [], context, filePath)
+      replacements.push({
+        original: fullMatch,
+        processed,
+        startIndex,
+      })
+    }
+    catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (options.debug) {
+        console.error(`Error processing custom directive @${name}:`, error)
+      }
+      replacements.push({
+        original: fullMatch,
+        processed: inlineError('CustomDirective', `Error in @${name}: ${errorMessage}`, ErrorCodes.EVALUATION_ERROR),
+        startIndex,
+      })
+    }
+
+    bareMatch = barePattern.exec(output)
   }
 
   // Apply all replacements in reverse order

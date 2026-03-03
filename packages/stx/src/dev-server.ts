@@ -1639,6 +1639,10 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
           build.onResolve({ filter: /^\/(images|fonts|assets|public|dist|js|css)\// }, (args) => {
             return { path: args.path, external: true }
           })
+          // Handle asset files (images, fonts, etc.) referenced with absolute paths
+          build.onResolve({ filter: /\.(png|jpe?g|gif|svg|webp|ico|woff2?|ttf|eot|otf|mp4|webm|ogg|mp3|wav|pdf)$/ }, (args) => {
+            return { path: args.path, external: true }
+          })
           // Handle all CSS files - mark as external to prevent bundling
           build.onResolve({ filter: /\.css$/ }, (args) => {
             return { path: args.path, external: true }

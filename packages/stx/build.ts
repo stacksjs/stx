@@ -1,4 +1,6 @@
 import { dts } from 'bun-plugin-dtsx'
+import { cpSync, mkdirSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 // Build the main library
 await Bun.build({
@@ -58,3 +60,7 @@ await Promise.all(optionalModules.map(mod =>
     packages: 'external',
   }),
 ))
+
+// Copy built-in components to dist
+mkdirSync(resolve('./dist/components'), { recursive: true })
+cpSync(resolve('./src/components'), resolve('./dist/components'), { recursive: true })

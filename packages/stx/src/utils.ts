@@ -349,6 +349,8 @@ export async function renderComponentWithSlot(
       const fallbackDirs = [
         path.resolve(projectRoot, 'src/components'),
         path.resolve(projectRoot, 'components'),
+        // Built-in STX components (e.g., StxLink)
+        path.resolve(import.meta.dir, 'components'),
       ]
       for (const fallback of fallbackDirs) {
         if (!searchDirs.includes(fallback)) {

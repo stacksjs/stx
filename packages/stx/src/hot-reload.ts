@@ -319,7 +319,7 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
     }
 
     socket.onopen = function() {
-      console.log('[stx] Hot reload connected');
+      // connected silently
       wasConnected = true;
       reconnectAttempts = 0;
       hideOverlay();
@@ -346,7 +346,6 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
             break;
 
           case 'connected':
-            console.log('[stx] Server ready');
             break;
         }
       } catch (e) {
