@@ -69,6 +69,13 @@
         "title": "Headwind: Reload Configuration"
       }
     ],
+    "iconThemes": [
+      {
+        "id": "stx-icons",
+        "label": "STX File Icons",
+        "path": "./icons/stx-icon-theme.json"
+      }
+    ],
     "grammars": [
       {
         "language": "stx",
