@@ -421,6 +421,331 @@ describe('stx Layout Directives', () => {
     expect(true).toBe(true)
   }, 10000)
 
+  // ==========================================================================
+  // Auto-Layout Tests
+  // ==========================================================================
+
+  it('should auto-wrap page with default layout when no DOCTYPE and no @layout', async () => {
+    // Create a default layout file
+    const layoutFile = path.join(LAYOUTS_DIR, 'app.stx')
+    await Bun.write(layoutFile, `<!DOCTYPE html>
+<html>
+<head><title>@yield('title', 'Auto Layout')</title></head>
+<body>
+<main>@yield('content')</main>
+</body>
+</html>`)
+
+    // Create a page without DOCTYPE or @layout
+    const testFile = await createTestFile('auto-layout-basic.stx', `<h1>Hello Auto Layout</h1>
+<p>This page should be auto-wrapped.</p>`)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({
+        partialsDir: TEMP_DIR,
+        componentsDir: TEMP_DIR,
+        layoutsDir: LAYOUTS_DIR,
+        defaultLayout: 'app',
+        debug: true,
+      })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should contain the layout wrapper
+    expect(outputHtml).toContain('<!DOCTYPE html>')
+    expect(outputHtml).toContain('<main>')
+    // Should contain the page content
+    expect(outputHtml).toContain('<h1>Hello Auto Layout</h1>')
+    expect(outputHtml).toContain('<p>This page should be auto-wrapped.</p>')
+  })
+
+  it('should NOT auto-wrap page that has <!DOCTYPE html>', async () => {
+    const testFile = await createTestFile('auto-layout-doctype.stx', `<!DOCTYPE html>
+<html>
+<head><title>Has DOCTYPE</title></head>
+<body>
+<h1>Already has DOCTYPE</h1>
+</body>
+</html>`)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({
+        partialsDir: TEMP_DIR,
+        componentsDir: TEMP_DIR,
+        layoutsDir: LAYOUTS_DIR,
+        defaultLayout: 'app',
+        debug: true,
+      })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should still have DOCTYPE and its own content
+    expect(outputHtml).toContain('<!DOCTYPE html>')
+    expect(outputHtml).toContain('<title>Has DOCTYPE</title>')
+    expect(outputHtml).toContain('<h1>Already has DOCTYPE</h1>')
+    // Should NOT be double-wrapped with the layout's <main>
+    expect(outputHtml).not.toContain('<main>')
+  })
+
+  it('should NOT auto-wrap page with explicit @layout directive', async () => {
+    // Create a custom layout
+    const customLayout = path.join(LAYOUTS_DIR, 'custom.stx')
+    await Bun.write(customLayout, `<!DOCTYPE html>
+<html>
+<head><title>Custom</title></head>
+<body>
+<div class="custom-layout">@yield('content')</div>
+</body>
+</html>`)
+
+    const testFile = await createTestFile('auto-layout-explicit.stx', `@layout('layouts/custom')
+
+@section('content')
+<h1>Explicit Layout</h1>
+@endsection`)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({
+        partialsDir: TEMP_DIR,
+        componentsDir: TEMP_DIR,
+        layoutsDir: LAYOUTS_DIR,
+        defaultLayout: 'app',
+        debug: true,
+      })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should use the explicitly specified custom layout
+    expect(outputHtml).toContain('<div class="custom-layout">')
+    expect(outputHtml).toContain('<h1>Explicit Layout</h1>')
+    // Should NOT use the auto layout's <main> tag
+    expect(outputHtml).not.toContain('<main>')
+  })
+
+  it('should strip @nolayout directive and not auto-wrap', async () => {
+    const testFile = await createTestFile('auto-layout-nolayout.stx', `@nolayout
+<div>Raw content without layout</div>`)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({
+        partialsDir: TEMP_DIR,
+        componentsDir: TEMP_DIR,
+        layoutsDir: LAYOUTS_DIR,
+        defaultLayout: 'app',
+        debug: true,
+      })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should contain the raw content without layout
+    expect(outputHtml).toContain('<div>Raw content without layout</div>')
+    // Should NOT contain the layout wrapper
+    expect(outputHtml).not.toContain('<main>')
+    // Should NOT contain the @nolayout directive
+    expect(outputHtml).not.toContain('@nolayout')
+  })
+
+  it('should only prepend @layout when page has existing @section blocks', async () => {
+    // Ensure the app layout exists
+    const layoutFile = path.join(LAYOUTS_DIR, 'app.stx')
+    await Bun.write(layoutFile, `<!DOCTYPE html>
+<html>
+<head><title>@yield('title', 'Auto Layout')</title></head>
+<body>
+<main>@yield('content')</main>
+<footer>@yield('footer', 'Default Footer')</footer>
+</body>
+</html>`)
+
+    const testFile = await createTestFile('auto-layout-sections.stx', `@section('title')
+My Page Title
+@endsection
+
+@section('content')
+<h1>Page With Sections</h1>
+@endsection
+
+@section('footer')
+Custom Footer
+@endsection`)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({
+        partialsDir: TEMP_DIR,
+        componentsDir: TEMP_DIR,
+        layoutsDir: LAYOUTS_DIR,
+        defaultLayout: 'app',
+        debug: true,
+      })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should use the layout
+    expect(outputHtml).toContain('<!DOCTYPE html>')
+    expect(outputHtml).toContain('<main>')
+    // Should include the section content
+    expect(outputHtml).toContain('<h1>Page With Sections</h1>')
+    expect(outputHtml).toContain('Custom Footer')
+  })
+
+  it('should auto-wrap with blog-style app layout', async () => {
+    // Create a blog-style app layout
+    const layoutFile = path.join(LAYOUTS_DIR, 'app.stx')
+    await Bun.write(layoutFile, `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>@yield('title', 'My Blog')</title>
+</head>
+<body>
+  <header class="blog-header"><a href="/">My Blog</a></header>
+  <main class="blog-content">@yield('content')</main>
+  <footer class="blog-footer">Blog Footer</footer>
+</body>
+</html>`)
+
+    const testFile = await createTestFile('auto-layout-blog.stx', `<article>
+  <h1>My First Post</h1>
+  <p>Hello from the blog.</p>
+</article>`)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({
+        partialsDir: TEMP_DIR,
+        componentsDir: TEMP_DIR,
+        layoutsDir: LAYOUTS_DIR,
+        defaultLayout: 'app',
+        debug: true,
+      })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('<!DOCTYPE html>')
+    expect(outputHtml).toContain('<header class="blog-header">')
+    expect(outputHtml).toContain('<main class="blog-content">')
+    expect(outputHtml).toContain('<h1>My First Post</h1>')
+    expect(outputHtml).toContain('<footer class="blog-footer">Blog Footer</footer>')
+  })
+
+  it('should auto-wrap with dashboard-style app layout', async () => {
+    // Create a dashboard-style app layout
+    const layoutFile = path.join(LAYOUTS_DIR, 'app.stx')
+    await Bun.write(layoutFile, `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>@yield('title', 'Dashboard')</title>
+</head>
+<body>
+  <header class="dash-header">Dashboard</header>
+  <div class="dash-body">
+    <aside class="dash-sidebar">@yield('sidebar', 'Nav')</aside>
+    <main class="dash-content">@yield('content')</main>
+  </div>
+</body>
+</html>`)
+
+    // Page with sections for sidebar and content
+    const testFile = await createTestFile('auto-layout-dashboard.stx', `@section('title')
+Overview
+@endsection
+
+@section('sidebar')
+<nav><a href="/">Home</a><a href="/settings">Settings</a></nav>
+@endsection
+
+@section('content')
+<h1>Dashboard Overview</h1>
+<div class="stats">Stats go here</div>
+@endsection`)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({
+        partialsDir: TEMP_DIR,
+        componentsDir: TEMP_DIR,
+        layoutsDir: LAYOUTS_DIR,
+        defaultLayout: 'app',
+        debug: true,
+      })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('<!DOCTYPE html>')
+    expect(outputHtml).toContain('<header class="dash-header">')
+    expect(outputHtml).toContain('<aside class="dash-sidebar">')
+    expect(outputHtml).toContain('<main class="dash-content">')
+    expect(outputHtml).toContain('<h1>Dashboard Overview</h1>')
+    expect(outputHtml).toContain('<div class="stats">Stats go here</div>')
+    expect(outputHtml).toContain('<a href="/settings">Settings</a>')
+  })
+
+  it('should auto-wrap with landing-style app layout', async () => {
+    // Create a landing-style app layout
+    const layoutFile = path.join(LAYOUTS_DIR, 'app.stx')
+    await Bun.write(layoutFile, `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>@yield('title', 'Welcome')</title>
+</head>
+<body>
+  <header class="landing-header"><a href="/">Brand</a></header>
+  <main>@yield('content')</main>
+  <footer class="landing-footer">Landing Footer</footer>
+</body>
+</html>`)
+
+    const testFile = await createTestFile('auto-layout-landing.stx', `<section class="hero">
+  <h1>Build Something Great</h1>
+  <p>The best framework for your next project.</p>
+</section>
+<section class="features">
+  <h2>Features</h2>
+</section>`)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({
+        partialsDir: TEMP_DIR,
+        componentsDir: TEMP_DIR,
+        layoutsDir: LAYOUTS_DIR,
+        defaultLayout: 'app',
+        debug: true,
+      })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('<!DOCTYPE html>')
+    expect(outputHtml).toContain('<header class="landing-header">')
+    expect(outputHtml).toContain('<section class="hero">')
+    expect(outputHtml).toContain('<h1>Build Something Great</h1>')
+    expect(outputHtml).toContain('<section class="features">')
+    expect(outputHtml).toContain('<footer class="landing-footer">Landing Footer</footer>')
+  })
+
   it('should properly handle nested layouts', async () => {
     // Create a base layout
     const baseLayout = path.join(LAYOUTS_DIR, 'base.stx')

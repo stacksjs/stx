@@ -1,4 +1,5 @@
 import type { StxOptions, StrictModeConfig } from './types'
+import fs from 'node:fs'
 import path from 'node:path'
 import { injectCrosswindCSS } from './dev-server/crosswind'
 import { processA11yDirectives } from './a11y'
@@ -1300,6 +1301,62 @@ async function processDirectivesInternal(
 
   // Process @push and @prepend directives first
   output = processStackPushDirectives(output, stacks)
+
+  // Auto-layout: if page has no DOCTYPE and no explicit @layout/@extends,
+  // automatically wrap with the default layout (convention-based)
+  const hasDoctype = output.trim().toLowerCase().startsWith('<!doctype')
+    || output.trim().toLowerCase().startsWith('<html')
+  const hasExplicitLayout = /@(?:layout|extends)\s*\(/.test(output)
+  const hasNoLayout = /@nolayout\b/.test(output)
+
+  if (hasNoLayout) {
+    output = output.replace(/@nolayout\b/, '')
+  }
+
+  if (!hasDoctype && !hasExplicitLayout && !hasNoLayout
+    && resolvedOptions.defaultLayout
+    && context.__stxProcessingDepth === 1) {
+
+    let autoLayoutName: string | null = null
+
+    // Priority 1: Check for _layout.stx in the page's own directory
+    const pageDir = path.dirname(filePath)
+    const nestedLayoutPath = path.join(pageDir, '_layout.stx')
+    try {
+      await fs.promises.access(nestedLayoutPath)
+      autoLayoutName = '_layout'
+    }
+    catch {}
+
+    // Priority 2: Fall back to global default layout
+    if (!autoLayoutName && resolvedOptions.layoutsDir) {
+      const resolvedLayoutsDir = path.isAbsolute(resolvedOptions.layoutsDir)
+        ? resolvedOptions.layoutsDir
+        : path.resolve(projectRoot, resolvedOptions.layoutsDir)
+      const globalLayoutFile = path.join(resolvedLayoutsDir,
+        resolvedOptions.defaultLayout.endsWith('.stx')
+          ? resolvedOptions.defaultLayout
+          : `${resolvedOptions.defaultLayout}.stx`)
+      try {
+        await fs.promises.access(globalLayoutFile)
+        autoLayoutName = resolvedOptions.defaultLayout.startsWith('layouts/')
+          ? resolvedOptions.defaultLayout
+          : `layouts/${resolvedOptions.defaultLayout}`
+      }
+      catch {}
+    }
+
+    // Apply auto-layout
+    if (autoLayoutName) {
+      const hasSections = /@section\s*\(/.test(output)
+      if (hasSections) {
+        output = `@layout('${autoLayoutName}')\n${output}`
+      }
+      else {
+        output = `@layout('${autoLayoutName}')\n\n@section('content')\n${output}\n@endsection`
+      }
+    }
+  }
 
   // Process sections and yields before includes
   // Start with any sections passed in from context (e.g., from parent layout)

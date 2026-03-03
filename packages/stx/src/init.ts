@@ -131,64 +131,32 @@ function getPresetTemplate(preset: TemplatePreset): string {
  * Basic page template - simple page with script, style, and template
  */
 function getBasicTemplate(): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ title }}</title>
-  <script>
-    const title = "My stx Page"
-    const description = "A page built with stx"
-    const features = [
-      { name: "Single File Components", desc: "Script, style, and template in one .stx file" },
-      { name: "Component System", desc: "Import components with @component('name', {})" },
-      { name: "Blade Directives", desc: "@if, @foreach, @switch, @layout and more" }
-    ]
-  </script>
-  <style>
-    :root {
-      --primary: #3498db;
-      --secondary: #2ecc71;
-      --dark: #34495e;
-      --light: #ecf0f1;
-    }
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      line-height: 1.6;
-      color: var(--dark);
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-    h1 { color: var(--primary); }
-    .card {
-      background: var(--light);
-      padding: 1rem;
-      border-radius: 8px;
-      margin: 1rem 0;
-    }
-    .card h3 { color: var(--primary); margin: 0 0 0.5rem; }
-    .card p { margin: 0; color: #666; }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>{{ title }}</h1>
-    <p>{{ description }}</p>
-  </header>
+  return `<script>
+const title = "My stx Page"
+const description = "A page built with stx"
+const features = [
+  { name: "Single File Components", desc: "Script, style, and template in one .stx file" },
+  { name: "Component System", desc: "Import components with @component('name', {})" },
+  { name: "Blade Directives", desc: "@if, @foreach, @switch, @layout and more" }
+]
+</script>
 
-  <main>
-    <h2>Features</h2>
-    @foreach(features as feature)
-      <div class="card">
-        <h3>{{ feature.name }}</h3>
-        <p>{{ feature.desc }}</p>
-      </div>
-    @endforeach
-  </main>
-</body>
-</html>`
+@section('content')
+<header>
+  <h1>{{ title }}</h1>
+  <p>{{ description }}</p>
+</header>
+
+<main>
+  <h2>Features</h2>
+  @foreach(features as feature)
+    <div class="card">
+      <h3>{{ feature.name }}</h3>
+      <p>{{ feature.desc }}</p>
+    </div>
+  @endforeach
+</main>
+@endsection`
 }
 
 /**

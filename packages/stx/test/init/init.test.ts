@@ -69,8 +69,8 @@ describe('initFile function', () => {
 
       // Check the content of the file
       const content = fs.readFileSync('index.stx', 'utf-8')
-      expect(content).toContain('<!DOCTYPE html>')
-      // Template may or may not use export keyword (export is optional in stx)
+      // Basic template uses auto-layout (no DOCTYPE), has @section('content') and script vars
+      expect(content).toContain('@section(\'content\')')
       expect(content).toContain('const title = "My stx Page"')
     }
     finally {
@@ -100,8 +100,8 @@ describe('initFile function', () => {
 
       // Check the content of the file
       const content = fs.readFileSync(fileName, 'utf-8')
-      expect(content).toContain('<!DOCTYPE html>')
-      // Template may or may not use export keyword (export is optional in stx)
+      // Basic template uses auto-layout (no DOCTYPE), has @section('content') and script vars
+      expect(content).toContain('@section(\'content\')')
       expect(content).toContain('const title = "My stx Page"')
     }
     finally {
@@ -186,7 +186,7 @@ describe('initFile function', () => {
       // Check that the file content was overwritten
       const content = fs.readFileSync(fileName, 'utf-8')
       expect(content).not.toBe(originalContent)
-      expect(content).toContain('<!DOCTYPE html>')
+      expect(content).toContain('@section(\'content\')')
     }
     finally {
       // Restore the original working directory

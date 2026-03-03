@@ -289,14 +289,14 @@ function getProjectFiles(
     case 'blog':
       files['src/pages/index.stx'] = getBlogIndexPage()
       files['src/pages/[slug].stx'] = getBlogPostPage()
-      files['src/layouts/blog.stx'] = getBlogLayout()
+      files['src/layouts/app.stx'] = getBlogLayout()
       files['src/components/PostCard.stx'] = getPostCardComponent()
       break
 
     case 'dashboard':
       files['src/pages/index.stx'] = getDashboardIndexPage()
       files['src/pages/settings.stx'] = getDashboardSettingsPage()
-      files['src/layouts/dashboard.stx'] = getDashboardLayout()
+      files['src/layouts/app.stx'] = getDashboardLayout()
       files['src/components/Sidebar.stx'] = getSidebarComponent()
       files['src/components/StatsCard.stx'] = getStatsCardComponent()
       files['src/stores/dashboard.ts'] = getDashboardStore()
@@ -304,6 +304,7 @@ function getProjectFiles(
 
     case 'landing':
       files['src/pages/index.stx'] = getLandingPage()
+      files['src/layouts/app.stx'] = getLandingLayout()
       files['src/sections/Hero.stx'] = getHeroSection()
       files['src/sections/Features.stx'] = getFeaturesSection()
       files['src/sections/Pricing.stx'] = getPricingSection()
@@ -313,7 +314,7 @@ function getProjectFiles(
     case 'full':
       files['src/pages/index.stx'] = getDefaultIndexPage()
       files['src/pages/about.stx'] = getAboutPage()
-      files['src/layouts/default.stx'] = getDefaultLayout()
+      files['src/layouts/app.stx'] = getDefaultLayout()
       files['src/components/Header.stx'] = getHeaderComponent()
       files['src/components/Footer.stx'] = getFooterComponent()
       files['src/stores/app.ts'] = getAppStore()
@@ -323,7 +324,7 @@ function getProjectFiles(
 
     default:
       files['src/pages/index.stx'] = getDefaultIndexPage()
-      files['src/layouts/default.stx'] = getDefaultLayout()
+      files['src/layouts/app.stx'] = getDefaultLayout()
       files['src/components/Header.stx'] = getHeaderComponent()
       files['src/components/Footer.stx'] = getFooterComponent()
       files['src/stores/app.ts'] = getAppStore()
@@ -745,6 +746,7 @@ export default defineConfig({
   partialsDir: 'src/partials',
   componentsDir: 'src/components',
   layoutsDir: 'src/layouts',
+  defaultLayout: 'app',
 
   // Development
   debug: process.env.NODE_ENV !== 'production',
@@ -872,8 +874,6 @@ const features = [
 ]
 </script>
 
-@layout('layouts/default')
-
 @section('title')
 {{ title }}
 @endsection
@@ -901,8 +901,6 @@ function getAboutPage(): string {
   return `<script>
 const title = 'About'
 </script>
-
-@layout('layouts/default')
 
 @section('title')
 {{ title }}
@@ -1036,19 +1034,137 @@ describe('Example', () => {
 // Blog template files
 function getBlogIndexPage(): string { return '<!-- Blog index -->' }
 function getBlogPostPage(): string { return '<!-- Blog post -->' }
-function getBlogLayout(): string { return '<!-- Blog layout -->' }
+function getBlogLayout(): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@yield('title', 'My Blog')</title>
+  @yield('head')
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; color: #333; line-height: 1.8; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 1rem; }
+    .blog-header { background: #1a1a2e; color: white; padding: 1.5rem 0; }
+    .blog-header nav { display: flex; justify-content: space-between; align-items: center; }
+    .blog-header a { color: rgba(255,255,255,0.8); text-decoration: none; margin-left: 1.5rem; }
+    .blog-header a:hover { color: white; }
+    .blog-header .logo { font-weight: bold; font-size: 1.25rem; color: white; margin-left: 0; }
+    .blog-footer { background: #f8f9fa; padding: 2rem 0; margin-top: 4rem; text-align: center; color: #666; }
+  </style>
+  @yield('styles')
+</head>
+<body>
+  <header class="blog-header">
+    <nav class="container">
+      <a href="/" class="logo">My Blog</a>
+      <div>
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+      </div>
+    </nav>
+  </header>
+  <main class="container" style="padding-top: 2rem;">
+    {{ slot }}
+  </main>
+  <footer class="blog-footer">
+    <div class="container">
+      <p>&copy; {{ new Date().getFullYear() }} My Blog. All rights reserved.</p>
+    </div>
+  </footer>
+  @yield('scripts')
+</body>
+</html>`
+}
 function getPostCardComponent(): string { return '<!-- Post card -->' }
 
 // Dashboard template files
 function getDashboardIndexPage(): string { return '<!-- Dashboard index -->' }
 function getDashboardSettingsPage(): string { return '<!-- Settings -->' }
-function getDashboardLayout(): string { return '<!-- Dashboard layout -->' }
+function getDashboardLayout(): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@yield('title', 'Dashboard')</title>
+  @yield('head')
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; color: #333; min-height: 100vh; display: flex; flex-direction: column; }
+    .dash-header { background: #2c3e50; color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    .dash-header .logo { font-weight: bold; font-size: 1.25rem; color: white; text-decoration: none; }
+    .dash-header nav a { color: rgba(255,255,255,0.8); text-decoration: none; margin-left: 1.5rem; }
+    .dash-body { display: flex; flex: 1; }
+    .dash-sidebar { width: 240px; background: #34495e; color: white; padding: 1.5rem; }
+    .dash-sidebar a { color: rgba(255,255,255,0.8); text-decoration: none; display: block; padding: 0.5rem 0; }
+    .dash-sidebar a:hover { color: white; }
+    .dash-content { flex: 1; padding: 2rem; background: #f5f6fa; }
+  </style>
+  @yield('styles')
+</head>
+<body>
+  <header class="dash-header">
+    <a href="/" class="logo">Dashboard</a>
+    <nav>
+      <a href="/settings">Settings</a>
+    </nav>
+  </header>
+  <div class="dash-body">
+    @yield('sidebar')
+    <main class="dash-content">
+      {{ slot }}
+    </main>
+  </div>
+  @yield('scripts')
+</body>
+</html>`
+}
 function getSidebarComponent(): string { return '<!-- Sidebar -->' }
 function getStatsCardComponent(): string { return '<!-- Stats card -->' }
 function getDashboardStore(): string { return '// Dashboard store' }
 
 // Landing template files
 function getLandingPage(): string { return '<!-- Landing page -->' }
+function getLandingLayout(): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@yield('title', 'Welcome')</title>
+  @yield('head')
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; color: #333; line-height: 1.6; }
+    .landing-header { position: fixed; top: 0; width: 100%; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; z-index: 100; border-bottom: 1px solid #eee; }
+    .landing-header .logo { font-weight: bold; font-size: 1.25rem; color: #333; text-decoration: none; }
+    .landing-header nav a { color: #555; text-decoration: none; margin-left: 1.5rem; }
+    .landing-header nav a:hover { color: #000; }
+    .landing-footer { background: #1a1a2e; color: rgba(255,255,255,0.7); padding: 3rem 2rem; text-align: center; }
+  </style>
+  @yield('styles')
+</head>
+<body>
+  <header class="landing-header">
+    <a href="/" class="logo">Brand</a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+  <main>
+    {{ slot }}
+  </main>
+  <footer class="landing-footer">
+    <p>&copy; {{ new Date().getFullYear() }} Brand. All rights reserved.</p>
+  </footer>
+  @yield('scripts')
+</body>
+</html>`
+}
 function getHeroSection(): string { return '<!-- Hero section -->' }
 function getFeaturesSection(): string { return '<!-- Features -->' }
 function getPricingSection(): string { return '<!-- Pricing -->' }

@@ -100,8 +100,8 @@ describe('stx CLI end-to-end tests', () => {
 
     // Check the content of the file
     const content = fs.readFileSync(path.join(TEST_DIR, 'e2e-file.stx'), 'utf-8')
-    expect(content).toContain('<!DOCTYPE html>')
-    // Template may or may not use export keyword (export is optional in stx)
+    // Basic template uses auto-layout (no DOCTYPE), has @section('content') and script vars
+    expect(content).toContain('@section(\'content\')')
     expect(content).toContain('const title = "My stx Page"')
   })
 

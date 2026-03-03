@@ -78,11 +78,6 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     // Read and process file
     let content = await Bun.file(filePath).text()
 
-    // Check if this is a full HTML page or a partial that needs layout
-    const hasDoctype = content.trim().toLowerCase().startsWith('<!doctype') ||
-                       content.trim().toLowerCase().startsWith('<html')
-    const hasExtends = content.includes('@extends(') || content.includes('@layout(')
-
     // SFC Support: Extract <template> content if present
     // Only match <template> WITHOUT an id attribute - templates with id are HTML template elements
     // that should be preserved (used for client-side JS template cloning)
@@ -121,28 +116,6 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     let templateContent = workingContent
       .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
-
-    // Auto-apply default layout if page doesn't have DOCTYPE and layout is configured
-    if (!hasDoctype && !hasExtends && stxOptions.defaultLayout && stxOptions.layoutsDir) {
-      // Resolve layoutsDir relative to rootDir
-      const layoutsDir = path.isAbsolute(stxOptions.layoutsDir)
-        ? stxOptions.layoutsDir
-        : path.join(rootDir, stxOptions.layoutsDir)
-      const layoutPath = path.join(layoutsDir, stxOptions.defaultLayout)
-      const layoutFullPath = layoutPath.endsWith('.stx') ? layoutPath : `${layoutPath}.stx`
-
-      if (fs.existsSync(layoutFullPath)) {
-        // Read the layout
-        let layoutContent = await Bun.file(layoutFullPath).text()
-
-        // Replace @yield('content') or {{ slot }} with the page content
-        layoutContent = layoutContent.replace(/@yield\s*\(\s*['"]content['"]\s*\)/g, templateContent)
-        layoutContent = layoutContent.replace(/\{\{\s*slot\s*\}\}/g, templateContent)
-
-        // Use the layout as the working content
-        templateContent = layoutContent
-      }
-    }
 
     // Create context
     const context: Record<string, any> = {
