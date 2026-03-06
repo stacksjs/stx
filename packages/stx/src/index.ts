@@ -102,8 +102,8 @@ export { provide, inject, setGlobalProvide, defineEmits, defineExpose, nextTick,
 export type { StxComponentInstance, EmitFn } from './composition-api'
 export { jsx, jsxs, jsxDEV, Fragment, renderToString, renderToStream, renderToDOM, Show, For, Portal, h } from './jsx-runtime'
 export type { VNode } from './jsx-runtime'
-export { createApp as createStxApp } from './app'
-export type { StxApp, StxAppPlugin, StxPluginInput, StxAppConfig } from './app'
+export { createApp, createApp as createStxApp, defineCustomElement } from './app'
+export type { StxApp, StxApp as App, StxAppPlugin, StxPluginInput, StxAppConfig } from './app'
 export * from './dynamic-components'
 
 // These modules are exported first to establish their types

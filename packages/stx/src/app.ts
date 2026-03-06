@@ -167,3 +167,52 @@ export function createApp(_rootComponent?: any, _rootProps?: Record<string, any>
 
   return app
 }
+
+/**
+ * Define a custom element from a component definition.
+ *
+ * Wraps the component as an HTMLElement subclass suitable for
+ * `customElements.define()`.
+ *
+ * ```ts
+ * import { defineCustomElement } from '@stacksjs/stx'
+ * import MyComponent from './MyComponent.stx'
+ *
+ * const MyElement = defineCustomElement(MyComponent)
+ * customElements.define('my-component', MyElement)
+ * ```
+ */
+export function defineCustomElement(component: any): CustomElementConstructor {
+  return class extends HTMLElement {
+    private _component: any
+    private _shadow: ShadowRoot
+
+    constructor() {
+      super()
+      this._shadow = this.attachShadow({ mode: 'open' })
+      this._component = component
+    }
+
+    connectedCallback() {
+      // If the component has a render function, use it
+      if (this._component?.render) {
+        const result = this._component.render()
+        if (typeof result === 'string') {
+          this._shadow.innerHTML = result
+        }
+      }
+      // If the component has a template, use that
+      else if (this._component?.template) {
+        this._shadow.innerHTML = this._component.template
+      }
+      // If the component is a string (raw HTML), render directly
+      else if (typeof this._component === 'string') {
+        this._shadow.innerHTML = this._component
+      }
+    }
+
+    disconnectedCallback() {
+      this._shadow.innerHTML = ''
+    }
+  }
+}

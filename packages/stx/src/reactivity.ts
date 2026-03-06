@@ -57,6 +57,19 @@ export interface Ref<T> {
   subscribe: (callback: (value: T, oldValue: T) => void) => () => void
 }
 
+/** Vue-compatible component type alias */
+// eslint-disable-next-line ts/no-empty-object-type
+export type DefineComponent<Props = {}, RawBindings = {}, D = any> = {
+  new (...args: any[]): { $props: Props & Record<string, any> }
+  props?: Props
+  setup?: (props: Props) => RawBindings | void
+  render?: () => any
+  [key: string]: any
+}
+
+/** Generic component type */
+export type Component<Props = any> = DefineComponent<Props>
+
 /** Subscriber callback */
 export type WatchCallback<T> = (newValue: T, oldValue: T | undefined) => void
 
