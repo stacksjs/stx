@@ -23,6 +23,11 @@
       "@stacksjs/api": ["./packages/api/src/index.ts"],
       "@stacksjs/forms": ["./packages/forms/src/index.ts"],
       "@stacksjs/cache": ["./packages/cache/src/index.ts"],
+      "@stacksjs/email": ["./packages/email/src/index.ts"],
+      "@stacksjs/storage": ["./packages/storage/src/index.ts"],
+      "@stacksjs/testing": ["./packages/testing/src/index.ts"],
+      "@stacksjs/errors": ["./packages/errors/src/index.ts"],
+      "@stacksjs/image": ["./packages/image/src/index.ts"],
       "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
       "bun-plugin-stx/client": ["./packages/bun-plugin/src/client.ts"]
     },

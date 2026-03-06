@@ -122,45 +122,45 @@
 
 ### 10. `@stacksjs/email` — Email with STX Templates
 
-- [ ] Create `packages/email/` with standard package structure
-- [ ] Implement `sendMail()` with STX template rendering
-- [ ] Implement provider adapters (Resend, SES, SMTP)
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/email/` with standard package structure
+- [x] Implement `sendMail()` with STX template rendering
+- [x] Implement provider adapters (Resend, SES, SMTP)
+- [x] Write tests
+- [x] Add to workspace
 
 ### 11. `@stacksjs/storage` — File Storage Abstraction
 
-- [ ] Create `packages/storage/` with standard package structure
-- [ ] Implement local disk driver
-- [ ] Implement S3/R2 driver with signed URLs
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/storage/` with standard package structure
+- [x] Implement local disk driver
+- [x] Implement S3/R2 driver with signed URLs
+- [x] Write tests
+- [x] Add to workspace
 
 ### 12. `@stacksjs/testing` — Test Utilities
 
-- [ ] Create `packages/testing/` with standard package structure
-- [ ] Implement `renderTemplate()` for template testing
-- [ ] Implement `testLoader()` and `testAction()` helpers
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/testing/` with standard package structure
+- [x] Implement `renderTemplate()` for template testing
+- [x] Implement `testLoader()` and `testAction()` helpers
+- [x] Write tests
+- [x] Add to workspace
 
 ### 13. `@stacksjs/errors` — Error Boundaries & Dev Overlay
 
-- [ ] Create `packages/errors/` with standard package structure
-- [ ] Implement `defineErrorBoundary()`
-- [ ] Implement dev overlay HTML
-- [ ] Implement production fallback pages
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/errors/` with standard package structure
+- [x] Implement `defineErrorBoundary()`
+- [x] Implement dev overlay HTML
+- [x] Implement production fallback pages
+- [x] Write tests
+- [x] Add to workspace
 
 ### 14. `@stacksjs/image` — Image Optimization
 
-- [ ] Create `packages/image/` with standard package structure
-- [ ] Implement responsive image generation
-- [ ] Implement WebP/AVIF conversion
-- [ ] Implement `@img` directive
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/image/` with standard package structure
+- [x] Implement responsive image generation
+- [x] Implement WebP/AVIF conversion
+- [x] Implement `@img` directive
+- [x] Write tests
+- [x] Add to workspace
 
 ---
 

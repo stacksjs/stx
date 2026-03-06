@@ -1,0 +1,7 @@
+export type { MailAttachment, MailConfig, MailMessage, MailProvider, SendMailOptions, SendResult } from './types'
+export { configureMailer, createMailer, resetMailer, sendMail } from './mailer'
+export { renderEmailTemplate } from './template'
+export { MemoryProvider } from './providers/memory'
+export { resendProvider } from './providers/resend'
+export { sesProvider } from './providers/ses'
+export { smtpProvider } from './providers/smtp'
