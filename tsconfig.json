@@ -28,6 +28,12 @@
       "@stacksjs/testing": ["./packages/testing/src/index.ts"],
       "@stacksjs/errors": ["./packages/errors/src/index.ts"],
       "@stacksjs/image": ["./packages/image/src/index.ts"],
+      "@stacksjs/realtime": ["./packages/realtime/src/index.ts"],
+      "@stacksjs/queue": ["./packages/queue/src/index.ts"],
+      "@stacksjs/search": ["./packages/search/src/index.ts"],
+      "@stacksjs/ai": ["./packages/ai/src/index.ts"],
+      "@stacksjs/cms": ["./packages/cms/src/index.ts"],
+      "@stacksjs/analytics": ["./packages/analytics/src/index.ts"],
       "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
       "bun-plugin-stx/client": ["./packages/bun-plugin/src/client.ts"]
     },

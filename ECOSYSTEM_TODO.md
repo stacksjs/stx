@@ -168,54 +168,54 @@
 
 ### 15. `@stacksjs/realtime` — WebSocket Channels + SSE
 
-- [ ] Create `packages/realtime/` with standard package structure
-- [ ] Implement WebSocket channel management
-- [ ] Implement SSE fallback
-- [ ] Implement `useBroadcast()` composable
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/realtime/` with standard package structure
+- [x] Implement WebSocket channel management
+- [x] Implement SSE fallback
+- [x] Implement `useBroadcast()` composable
+- [x] Write tests
+- [x] Add to workspace
 
 ### 16. `@stacksjs/queue` — Background Jobs
 
-- [ ] Create `packages/queue/` with standard package structure
-- [ ] Implement SQLite-backed job queue
-- [ ] Implement `defineJob()` and `dispatch()`
-- [ ] Implement retry logic and dead letter queue
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/queue/` with standard package structure
+- [x] Implement SQLite-backed job queue
+- [x] Implement `defineJob()` and `dispatch()`
+- [x] Implement retry logic and dead letter queue
+- [x] Write tests
+- [x] Add to workspace
 
 ### 17. `@stacksjs/search` — Full-Text Search
 
-- [ ] Create `packages/search/` with standard package structure
-- [ ] Implement SQLite FTS5 driver
-- [ ] Implement `defineSearchable()` and `search()`
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/search/` with standard package structure
+- [x] Implement SQLite FTS5 driver
+- [x] Implement `defineSearchable()` and `search()`
+- [x] Write tests
+- [x] Add to workspace
 
 ### 18. `@stacksjs/ai` — LLM Integration
 
-- [ ] Create `packages/ai/` with standard package structure
-- [ ] Implement `useAI()` with provider adapters
-- [ ] Implement streaming support
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/ai/` with standard package structure
+- [x] Implement `useAI()` with provider adapters
+- [x] Implement streaming support
+- [x] Write tests
+- [x] Add to workspace
 
 ### 19. `@stacksjs/cms` — File-Based Content Collections
 
-- [ ] Create `packages/cms/` with standard package structure
-- [ ] Implement `defineCollection()` with typed schemas
-- [ ] Implement `getContent()` and collection queries
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/cms/` with standard package structure
+- [x] Implement `defineCollection()` with typed schemas
+- [x] Implement `getContent()` and collection queries
+- [x] Write tests
+- [x] Add to workspace
 
 ### 20. `@stacksjs/analytics` — Privacy-Friendly Analytics
 
-- [ ] Create `packages/analytics/` with standard package structure
-- [ ] Implement SQLite-backed page view tracking
-- [ ] Implement `@analytics` directive
-- [ ] Implement dashboard queries
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/analytics/` with standard package structure
+- [x] Implement SQLite-backed page view tracking
+- [x] Implement `@analytics` directive
+- [x] Implement dashboard queries
+- [x] Write tests
+- [x] Add to workspace
 
 ---
 
