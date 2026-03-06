@@ -60,61 +60,61 @@
 
 ### 5. `@stacksjs/db` — Database & ORM
 
-- [ ] Create `packages/db/` with standard package structure
-- [ ] Extract `QueryBuilder`, `Model`, adapters from `database.ts`
-- [ ] Implement `defineTable()` schema builder
-- [ ] Implement `TableBuilder` with all column types
-- [ ] Implement migration runner
-- [ ] Implement auto-migrate for development
-- [ ] Implement database seeder
-- [ ] Add re-export shim in core `stx` package
-- [ ] Write comprehensive tests
-- [ ] Add to `tsconfig.json` paths and workspace
+- [x] Create `packages/db/` with standard package structure
+- [x] Extract `QueryBuilder`, `Model`, adapters from `database.ts`
+- [x] Implement `defineTable()` schema builder
+- [x] Implement `TableBuilder` with all column types
+- [x] Implement migration runner
+- [x] Implement auto-migrate for development
+- [x] Implement database seeder
+- [x] Add re-export shim in core `stx` package
+- [x] Write comprehensive tests
+- [x] Add to `tsconfig.json` paths and workspace
 
 ### 6. `@stacksjs/auth` — Authentication & Authorization
 
-- [ ] Create `packages/auth/` with standard package structure
-- [ ] Implement session management (create, validate, destroy)
-- [ ] Implement password hashing (bcrypt via Bun)
-- [ ] Implement OAuth flow (GitHub, Google providers)
-- [ ] Implement auth/guest middleware
-- [ ] Implement permissions system
-- [ ] Create scaffold templates (login, register, forgot-password, reset-password)
-- [ ] Extract CSRF logic from `forms.ts`
-- [ ] Wire up `@auth`/`@guest`/`@can` directive backends
-- [ ] Write tests for all auth flows
-- [ ] Add to `tsconfig.json` paths and workspace
+- [x] Create `packages/auth/` with standard package structure
+- [x] Implement session management (create, validate, destroy)
+- [x] Implement password hashing (bcrypt via Bun)
+- [x] Implement OAuth flow (GitHub, Google providers)
+- [x] Implement auth/guest middleware
+- [x] Implement permissions system
+- [x] Create scaffold templates (login, register, forgot-password, reset-password)
+- [x] Extract CSRF logic from `forms.ts`
+- [x] Wire up `@auth`/`@guest`/`@can` directive backends
+- [x] Write tests for all auth flows
+- [x] Add to `tsconfig.json` paths and workspace
 
 ### 7. `@stacksjs/api` — File-Based API Routes + Type-Safe RPC
 
-- [ ] Create `packages/api/` with standard package structure
-- [ ] Implement `defineHandler()` with method, input validation, middleware
-- [ ] Implement file-based API route scanning
-- [ ] Implement typed RPC client generation
-- [ ] Integrate API route handling into dev-server
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/api/` with standard package structure
+- [x] Implement `defineHandler()` with method, input validation, middleware
+- [x] Implement file-based API route scanning
+- [x] Implement typed RPC client generation
+- [x] Integrate API route handling into dev-server
+- [x] Write tests
+- [x] Add to workspace
 
 ### 8. `@stacksjs/forms` — Form State + Validation + Server Actions
 
-- [ ] Create `packages/forms/` with standard package structure
-- [ ] Extract `Validator` class from `forms-validation.ts`
-- [ ] Implement `useForm()` composable
-- [ ] Implement Zod schema integration
-- [ ] Integrate with `@form` directive and server actions
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/forms/` with standard package structure
+- [x] Extract `Validator` class from `forms-validation.ts`
+- [x] Implement `useForm()` composable
+- [x] Implement Zod schema integration
+- [x] Integrate with `@form` directive and server actions
+- [x] Write tests
+- [x] Add to workspace
 
 ### 9. `@stacksjs/cache` — Multi-Driver Caching
 
-- [ ] Create `packages/cache/` with standard package structure
-- [ ] Implement memory driver (LRU)
-- [ ] Implement file driver (from existing `caching.ts`)
-- [ ] Implement SQLite driver (using `bun:sqlite`)
-- [ ] Implement `remember()` and tag-based invalidation
-- [ ] Integrate with ISR
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/cache/` with standard package structure
+- [x] Implement memory driver (LRU)
+- [x] Implement file driver (from existing `caching.ts`)
+- [x] Implement SQLite driver (using `bun:sqlite`)
+- [x] Implement `remember()` and tag-based invalidation
+- [x] Integrate with ISR
+- [x] Write tests
+- [x] Add to workspace
 
 ---
 

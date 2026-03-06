@@ -18,6 +18,11 @@
       "@stacksjs/router": ["./packages/router/src/index.ts"],
       "@stacksjs/data": ["./packages/data/src/index.ts"],
       "@stacksjs/deploy": ["./packages/deploy/src/index.ts"],
+      "@stacksjs/db": ["./packages/db/src/index.ts"],
+      "@stacksjs/auth": ["./packages/auth/src/index.ts"],
+      "@stacksjs/api": ["./packages/api/src/index.ts"],
+      "@stacksjs/forms": ["./packages/forms/src/index.ts"],
+      "@stacksjs/cache": ["./packages/cache/src/index.ts"],
       "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
       "bun-plugin-stx/client": ["./packages/bun-plugin/src/client.ts"]
     },

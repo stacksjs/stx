@@ -1,0 +1,47 @@
+{
+  "name": "@stacksjs/forms",
+  "type": "module",
+  "version": "0.2.6",
+  "description": "Form state management, validation, and server actions for stx applications.",
+  "author": "Chris Breuer <chris@stacksjs.org>",
+  "license": "MIT",
+  "homepage": "https://github.com/stacksjs/stx#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stacksjs/stx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stacksjs/stx/issues"
+  },
+  "keywords": [
+    "forms",
+    "validation",
+    "form-state",
+    "server-actions",
+    "stx",
+    "bun"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "import": "./dist/*"
+    }
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "LICENSE.md",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun --bun build.ts",
+    "prepublishOnly": "bun run build",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "bun tsc --noEmit"
+  }
+}
