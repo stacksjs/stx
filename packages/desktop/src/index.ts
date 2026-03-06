@@ -227,3 +227,80 @@ export {
 } from './window'
 
 export type { DesktopConfig } from './window'
+
+// =============================================================================
+// Power Management / Caffeinate
+// =============================================================================
+export {
+  caffeinate,
+  decaffeinate,
+  formatDuration,
+  formatRemainingTime,
+  getCaffeinateStatus,
+  isCaffeinated,
+} from './power'
+
+export type {
+  CaffeinateInstance,
+  CaffeinateOptions,
+  CaffeinateStatus,
+} from './power'
+
+// =============================================================================
+// Preferences / Settings Storage
+// =============================================================================
+export {
+  createPreferences,
+} from './preferences'
+
+export type {
+  Preferences,
+  PreferencesOptions,
+} from './preferences'
+
+// =============================================================================
+// Auto-Launch / Login Items
+// =============================================================================
+export {
+  isAutoLaunchEnabled,
+  setAutoLaunch,
+} from './autolaunch'
+
+export type {
+  AutoLaunchOptions,
+} from './autolaunch'
+
+// =============================================================================
+// Global Hotkeys
+// =============================================================================
+export {
+  formatShortcut,
+  getRegisteredHotkeys,
+  parseShortcut,
+  registerHotkey,
+  unregisterAllHotkeys,
+  unregisterHotkey,
+} from './hotkeys'
+
+export type {
+  HotkeyRegistration,
+  ParsedShortcut,
+} from './hotkeys'
+
+// =============================================================================
+// Timer / Scheduling
+// =============================================================================
+export {
+  createInterval,
+  createTimer,
+  delay,
+  formatCompact,
+  formatTime,
+} from './timer'
+
+export type {
+  Interval,
+  IntervalOptions,
+  Timer,
+  TimerOptions,
+} from './timer'

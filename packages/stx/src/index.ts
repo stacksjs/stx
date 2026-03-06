@@ -107,6 +107,7 @@ export type { StxApp, StxApp as App, StxAppPlugin, StxPluginInput, StxAppConfig 
 export * from './dynamic-components'
 
 // These modules are exported first to establish their types
+export * from './render'
 export * from './utils'
 export * from './slots'
 

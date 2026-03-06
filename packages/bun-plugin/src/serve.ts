@@ -22,6 +22,7 @@ export interface ServeOptions {
   componentsDir?: string
   layoutsDir?: string
   partialsDir?: string
+  quiet?: boolean
 }
 
 // Default STX config for serving - matches @stacksjs/stx defaults
@@ -143,7 +144,6 @@ export async function serve(options: ServeOptions): Promise<void> {
       // Try the npm package first
       const mod = await import('@cwcss/crosswind')
       crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
-      console.log('✅ Crosswind CSS engine loaded')
       return crosswindModule
     }
     catch {
@@ -153,11 +153,9 @@ export async function serve(options: ServeOptions): Promise<void> {
         const localPath = nodePath.join(process.env.HOME || '', 'Code/Tools/crosswind/packages/crosswind/src/index.ts')
         const mod = await import(localPath)
         crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
-        console.log('✅ Crosswind CSS engine loaded from local path')
         return crosswindModule
       }
       catch {
-        console.warn('⚠️ Crosswind CSS engine not available')
         return null
       }
     }
@@ -499,8 +497,8 @@ export async function serve(options: ServeOptions): Promise<void> {
   }
 
   // Start server immediately - processing happens on-demand
-  console.log(`🌐 Server running at: http://localhost:${port}`)
-  console.log(`💡 Templates will be processed on first request\n`)
+  if (!options.quiet)
+    console.log(`  ✓ Frontend running at http://localhost:${port}`)
 
   // CORS headers for cross-origin requests (needed for Craft WebView)
   const corsHeaders = {
