@@ -291,10 +291,10 @@ function convertSignalLoopsToAttributes(template: string): string {
  * ```
  */
 function processScriptSetup(template: string): { output: string, setupCode: string | null } {
-  // Find client-side scripts (not server, not src, not type=module for external, not already scoped)
-  // Scripts with data-stx-scoped are already wrapped by component processing
+  // Find client-side scripts (not server, not src, not type=module for external, not already scoped/reactive/events)
+  // Scripts with data-stx-scoped/reactive/events are already wrapped by other processing
   // Capture attributes to check for TypeScript
-  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)([^>]*)>([\s\S]*?)<\/script>/gi
+  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-(?:scoped|reactive|events)\b)([^>]*)>([\s\S]*?)<\/script>/gi
   let match: RegExpExecArray | null
   let signalScript: { fullMatch: string, attrs: string, content: string } | null = null
 
@@ -1781,6 +1781,9 @@ async function processOtherDirectives(
   // Re-run custom element processing after includes, because included files
   // may contain custom element components (e.g., <StxLink>) that need to be resolved
   if (opts.componentsDir) {
+    const stxLinkCount = (output.match(/<StxLink/gi) || []).length
+    const dataStxLinkCount = (output.match(/data-stx-link/gi) || []).length
+    console.error(`[DEBUG-INCL] raw <StxLink> count=${stxLinkCount}, rendered data-stx-link count=${dataStxLinkCount}`)
     output = await processCustomElements(output, context, filePath, opts.componentsDir, opts, dependencies)
   }
 
@@ -1957,14 +1960,14 @@ async function processOtherDirectives(
   // Transform client <script> blocks: resolve @stores imports, inject event
   // bindings into the script scope, and auto-wrap in a scoped IIFE.
   // Client scripts include: <script>, <script client>, <script type="module">, etc.
-  // Excludes: <script server>, <script src="...">, <script data-stx-scoped>
+  // Excludes: <script server>, <script src="...">, <script data-stx-scoped>, <script data-stx-reactive>, <script data-stx-events>
   const eventBindings = (context.__stx_event_bindings || []) as import('./events').ParsedEvent[]
   let clientScriptsTransformed = false
   const clientScriptMatches: { match: string, attrs: string, content: string }[] = []
   // Detect : prefix directives in the template output (for stx.mount() decision)
   const hasColonDirectives = /\s:[a-z][\w.-]*\s*=/.test(output)
-  // Match all client scripts: NOT server, NOT external src, NOT already processed (data-stx-scoped)
-  output.replace(/<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
+  // Match all client scripts: NOT server, NOT external src, NOT already processed (data-stx-scoped/reactive/events)
+  output.replace(/<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-(?:scoped|reactive|events)\b)([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
     clientScriptMatches.push({ match, attrs: attrs || '', content })
     return match
   })
@@ -1981,7 +1984,9 @@ async function processOtherDirectives(
     // Validate client scripts for prohibited patterns
     validateClientScript(processedContent, filePath, options.strict)
 
-    output = output.replace(match, processClientScript(processedContent, { eventBindings, attrs, hasColonDirectives }))
+    // Use function replacer to avoid $-pattern interpretation in replacement strings
+    const replacement = processClientScript(processedContent, { eventBindings, attrs, hasColonDirectives })
+    output = output.replace(match, () => replacement)
   }
   // Only clear event bindings if scripts were found and transformed.
   // When processing a component whose scripts were extracted separately
@@ -2247,6 +2252,13 @@ async function processCustomElements(
 
     // Find all matching component tags (pass skipTags to avoid consuming HTML tag content)
     const tags = findComponentTags(result, tagPattern, skipTags)
+    const stxLinkTags = tags.filter(t => t.tagName === 'StxLink')
+    if (stxLinkTags.length > 0) {
+      console.error(`[DEBUG-PCW] Found ${stxLinkTags.length} StxLink tags out of ${tags.length} total`)
+      for (const t of stxLinkTags) {
+        console.error(`[DEBUG-PCW]   attrs: ${t.attributes.substring(0, 100)}`)
+      }
+    }
 
     // Process from end to start to preserve indices
     for (let i = tags.length - 1; i >= 0; i--) {
@@ -2262,9 +2274,14 @@ async function processCustomElements(
 
       // Process props: evaluate {{ }} expressions and :prop="var" bindings
       const props: Record<string, unknown> = {}
+      const eventAttrs: Array<[string, unknown]> = []
+      if (tag.tagName === 'StxLink' || tag.tagName === 'stx-link') {
+        console.error(`[DEBUG-CE] StxLink rawProps keys: ${Object.keys(rawProps).join(', ')}, attrs: ${tag.attributes.substring(0, 200)}`)
+      }
       for (const [attrName, attrValue] of Object.entries(rawProps)) {
-        // Skip @ event attributes - they're processed by processEventDirectives
+        // Collect @ event attributes to forward to rendered component's root element
         if (attrName.startsWith('@')) {
+          eventAttrs.push([attrName, attrValue])
           continue
         }
 
@@ -2357,7 +2374,7 @@ async function processCustomElements(
       }
 
       // Process the component
-      const processedContent = await renderComponentWithSlot(
+      let processedContent = await renderComponentWithSlot(
         componentPath,
         props,
         tag.content,
@@ -2368,6 +2385,16 @@ async function processCustomElements(
         processedComponents,
         dependencies,
       )
+
+      // Forward @ event attributes to the rendered component's root element
+      if (eventAttrs.length > 0) {
+        const attrsStr = eventAttrs.map(([name, val]) => `${name}="${String(val).replace(/"/g, '&quot;')}"`).join(' ')
+        console.error(`[DEBUG-FWD] Forwarding ${eventAttrs.length} event attrs to rendered component: ${attrsStr}`)
+        console.error(`[DEBUG-FWD] processedContent start: ${processedContent.substring(0, 100)}`)
+        // Inject into the first opening tag of the rendered content
+        processedContent = processedContent.replace(/^(\s*<[a-z][a-z0-9-]*)(\s|>)/i, `$1 ${attrsStr}$2`)
+        console.error(`[DEBUG-FWD] After inject: ${processedContent.substring(0, 150)}`)
+      }
 
       // Replace the tag with processed content
       result = result.substring(0, tag.startIndex) + processedContent + result.substring(tag.endIndex)

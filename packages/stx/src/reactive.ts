@@ -569,13 +569,17 @@ window.__stx_reactive = (function() {
     }
   }
 
-  // Execute a statement in a given context
+  // Execute a statement in a given context, writing changes back to ctx
   function execute(stmt, ctx, $event, $el) {
     try {
-      const keys = Object.keys(ctx);
-      const values = Object.values(ctx);
-      const fn = new Function(...keys, '$event', '$el', stmt);
-      fn(...values, $event, $el);
+      var keys = Object.keys(ctx);
+      // Read values into local vars, execute statement, write non-$ keys back
+      var getVars = keys.map(function(k) { return 'var ' + k + ' = __ctx["' + k + '"]' }).join(';');
+      var stateKeys = keys.filter(function(k) { return k.charAt(0) !== '$' });
+      var setVars = stateKeys.map(function(k) { return '__ctx["' + k + '"] = ' + k }).join(';');
+      var body = getVars + ';' + stmt + ';' + setVars;
+      var fn = new Function('__ctx', '$event', '$el', body);
+      fn(ctx, $event, $el);
     } catch (e) {
       console.warn('[stx-reactive] Error executing:', stmt, e);
     }
@@ -731,9 +735,25 @@ window.__stx_reactive = (function() {
 
     // Expose execute function for event handlers
     scopeEl.__stx_execute = function(stmt, $event, $el) {
-      execute(stmt, ctx, $event, $el);
-      // Sync reactive state changes
-      Object.assign(ctx, reactiveState);
+      // Build execution context with reactive state + special vars
+      // Writing to reactiveState triggers Proxy setters which fire updates
+      var execCtx = {};
+      for (var k in state) {
+        if (Object.prototype.hasOwnProperty.call(state, k)) {
+          execCtx[k] = reactiveState[k];
+        }
+      }
+      execCtx.$refs = $refs;
+      execCtx.$el = scopeEl;
+      execute(stmt, execCtx, $event, $el);
+      // Write back changes to reactive state (triggers Proxy setters and update)
+      for (var k in state) {
+        if (Object.prototype.hasOwnProperty.call(state, k) && execCtx[k] !== reactiveState[k]) {
+          reactiveState[k] = execCtx[k];
+        }
+      }
+      // Sync ctx for expression evaluation
+      Object.assign(ctx, state);
       update();
     };
 
@@ -742,9 +762,22 @@ window.__stx_reactive = (function() {
 
     // Run x-init if present
     if (initExpr) {
-      setTimeout(() => {
-        execute(initExpr, ctx, null, scopeEl);
-        Object.assign(ctx, reactiveState);
+      setTimeout(function() {
+        var initCtx = {};
+        for (var k in state) {
+          if (Object.prototype.hasOwnProperty.call(state, k)) {
+            initCtx[k] = reactiveState[k];
+          }
+        }
+        initCtx.$refs = $refs;
+        initCtx.$el = scopeEl;
+        execute(initExpr, initCtx, null, scopeEl);
+        for (var k in state) {
+          if (Object.prototype.hasOwnProperty.call(state, k) && initCtx[k] !== reactiveState[k]) {
+            reactiveState[k] = initCtx[k];
+          }
+        }
+        Object.assign(ctx, state);
         update();
       }, 0);
     }
@@ -931,8 +964,9 @@ export function processReactiveDirectives(
   const script = generateScopeInitializers(scopes)
 
   // Inject before </body> if exists, otherwise at the end
+  // Use function replacer to avoid $-pattern interpretation in the script content
   if (output.includes('</body>')) {
-    output = output.replace('</body>', `${script}\n</body>`)
+    output = output.replace('</body>', () => `${script}\n</body>`)
   }
   else {
     output += script

@@ -340,6 +340,19 @@ function generateSingleEventBinding(binding: ParsedEvent, index: number): string
     handlerBody += `${checks}; `
   }
 
+  // Escape handler for use in string context (scope.__stx_execute calls)
+  const escapedHandler = handler.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+
+  // Helper: wrap handler to check for reactive scope (x-data) before bare execution
+  function scopeAwareHandler(h: string): string {
+    return `var scope = $el.closest('[data-stx-scope]');
+      if (scope && scope.__stx_execute) {
+        scope.__stx_execute('${escapedHandler}', $event, $el);
+      } else {
+        ${h}
+      }`
+  }
+
   // Wrap handler in debounce/throttle if specified
   if (modifiers.debounce !== null) {
     return `  ;(function() {
@@ -348,7 +361,7 @@ function generateSingleEventBinding(binding: ParsedEvent, index: number): string
     var __timer
     $el.addEventListener('${event}', function($event) {
       ${checks ? checks + '; ' : ''}clearTimeout(__timer)
-      __timer = setTimeout(function() { ${handler} }, ${modifiers.debounce})
+      __timer = setTimeout(function() { ${scopeAwareHandler(handler)} }, ${modifiers.debounce})
     }${optionsStr})
   })()`
   }
@@ -362,16 +375,21 @@ function generateSingleEventBinding(binding: ParsedEvent, index: number): string
       ${checks ? checks + '; ' : ''}var __now = Date.now()
       if (__now - __last >= ${modifiers.throttle}) {
         __last = __now
-        ${handler}
+        ${scopeAwareHandler(handler)}
       }
     }${optionsStr})
   })()`
   }
 
-  // Standard event binding
+  // Standard event binding — check for reactive scope (x-data) first
   return `  var $el = document.getElementById('${elementId}')
   if ($el) $el.addEventListener('${event}', function($event) {
-    ${handlerBody}${handler}
+    ${handlerBody}var scope = $el.closest('[data-stx-scope]');
+    if (scope && scope.__stx_execute) {
+      scope.__stx_execute('${escapedHandler}', $event, $el);
+    } else {
+      ${handler}
+    }
   }${optionsStr})`
 }
 
