@@ -1,5 +1,4 @@
 import type { StxOptions, StrictModeConfig } from './types'
-import fs from 'node:fs'
 import path from 'node:path'
 import { injectCrosswindCSS } from './dev-server/crosswind'
 import { processA11yDirectives } from './a11y'
@@ -70,6 +69,7 @@ function hasSignalsSyntax(template: string): boolean {
     /\bderived\s*\(/, // derived() signal API
     /\beffect\s*\(/, // effect() signal API
     /data-stx(?:-auto)?(?![-\w])/, // data-stx or data-stx-auto (not data-stx-ref, data-stx-id, etc.)
+    /data-stx-scoped/, // client scripts need the signals runtime
   ]
 
   return signalsPatterns.some(pattern => pattern.test(template))
@@ -291,10 +291,10 @@ function convertSignalLoopsToAttributes(template: string): string {
  * ```
  */
 function processScriptSetup(template: string): { output: string, setupCode: string | null } {
-  // Find client-side scripts (not server, not src, not type=module for external, not already scoped/reactive/events)
-  // Scripts with data-stx-scoped/reactive/events are already wrapped by other processing
+  // Find client-side scripts (not server, not src, not type=module for external, not already scoped)
+  // Scripts with data-stx-scoped are already wrapped by component processing
   // Capture attributes to check for TypeScript
-  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-(?:scoped|reactive|events)\b)([^>]*)>([\s\S]*?)<\/script>/gi
+  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)([^>]*)>([\s\S]*?)<\/script>/gi
   let match: RegExpExecArray | null
   let signalScript: { fullMatch: string, attrs: string, content: string } | null = null
 
@@ -1212,6 +1212,11 @@ export async function processDirectives(
       // This happens after all includes/layouts/components are processed
       if (isTopLevel) {
         result = await injectCrosswindCSS(result)
+
+        // Final pass: transform any remaining ref= attributes to data-stx-ref=
+        // Must run at top level after ALL processing (layouts, includes, components)
+        // because partials injected via layout resolution may bypass processOtherDirectives
+        result = processRefAttributes(result)
       }
 
       return result
@@ -1301,78 +1306,6 @@ async function processDirectivesInternal(
 
   // Process @push and @prepend directives first
   output = processStackPushDirectives(output, stacks)
-
-  // Auto-layout: if page has no DOCTYPE and no explicit @layout/@extends,
-  // automatically wrap with the default layout (convention-based)
-  const hasDoctype = output.trim().toLowerCase().startsWith('<!doctype')
-    || output.trim().toLowerCase().startsWith('<html')
-  const hasExplicitLayout = /@(?:layout|extends)\s*\(/.test(output)
-  const hasNoLayout = /@nolayout\b/.test(output)
-
-  if (hasNoLayout) {
-    output = output.replace(/@nolayout\b/, '')
-  }
-
-  if (!hasDoctype && !hasExplicitLayout && !hasNoLayout
-    && resolvedOptions.defaultLayout
-    && context.__stxProcessingDepth === 1) {
-
-    let autoLayoutName: string | null = null
-
-    // Priority 1: Walk up from the page's directory toward pages root looking for _layout.stx
-    const pageDir = path.dirname(filePath)
-    const pagesRoot = path.resolve(projectRoot, 'pages')
-    let searchDir = pageDir
-    while (searchDir.length >= pagesRoot.length) {
-      const nestedLayoutPath = path.join(searchDir, '_layout.stx')
-      try {
-        await fs.promises.access(nestedLayoutPath)
-        // Found nearest _layout.stx — compute relative path for layout resolution
-        if (searchDir === pageDir) {
-          autoLayoutName = '_layout'
-        }
-        else {
-          // Build a relative path from the page dir to the layout
-          const relPath = path.relative(pageDir, nestedLayoutPath).replace(/\\/g, '/')
-          autoLayoutName = relPath.replace(/\.stx$/, '')
-        }
-        break
-      }
-      catch {}
-      const parent = path.dirname(searchDir)
-      if (parent === searchDir) break
-      searchDir = parent
-    }
-
-    // Priority 2: Fall back to global default layout
-    if (!autoLayoutName && resolvedOptions.layoutsDir) {
-      const resolvedLayoutsDir = path.isAbsolute(resolvedOptions.layoutsDir)
-        ? resolvedOptions.layoutsDir
-        : path.resolve(projectRoot, resolvedOptions.layoutsDir)
-      const globalLayoutFile = path.join(resolvedLayoutsDir,
-        resolvedOptions.defaultLayout.endsWith('.stx')
-          ? resolvedOptions.defaultLayout
-          : `${resolvedOptions.defaultLayout}.stx`)
-      try {
-        await fs.promises.access(globalLayoutFile)
-        autoLayoutName = resolvedOptions.defaultLayout.startsWith('layouts/')
-          ? resolvedOptions.defaultLayout
-          : `layouts/${resolvedOptions.defaultLayout}`
-      }
-      catch {}
-    }
-
-    // Apply auto-layout
-    if (autoLayoutName) {
-      const hasSections = /@section\s*\(/.test(output)
-      if (hasSections) {
-        output = `@layout('${autoLayoutName}')\n${output}`
-      }
-      else {
-        output = `@layout('${autoLayoutName}')\n\n@section('content')\n${output}\n@endsection`
-      }
-    }
-  }
 
   // Process sections and yields before includes
   // Start with any sections passed in from context (e.g., from parent layout)
@@ -1760,9 +1693,6 @@ async function processOtherDirectives(
   output = processTitleDirective(output, context)
   output = processMetaDirective(output, context)
 
-  // Process @ref attributes for DOM references
-  output = processRefAttributes(output)
-
   // Process route directives
   output = processRouteDirectives(output)
 
@@ -1778,14 +1708,9 @@ async function processOtherDirectives(
   // Process includes (@include, @component, etc.)
   output = await processIncludes(output, context, filePath, opts, dependencies)
 
-  // Re-run custom element processing after includes, because included files
-  // may contain custom element components (e.g., <StxLink>) that need to be resolved
-  if (opts.componentsDir) {
-    const stxLinkCount = (output.match(/<StxLink/gi) || []).length
-    const dataStxLinkCount = (output.match(/data-stx-link/gi) || []).length
-    console.error(`[DEBUG-INCL] raw <StxLink> count=${stxLinkCount}, rendered data-stx-link count=${dataStxLinkCount}`)
-    output = await processCustomElements(output, context, filePath, opts.componentsDir, opts, dependencies)
-  }
+  // Process @ref attributes for DOM references
+  // Must run AFTER processIncludes so ref= attributes in partials/components are transformed
+  output = processRefAttributes(output)
 
   // For templates that use signals, convert @if/@for directive blocks to attribute-style
   // This allows the signals runtime to handle them reactively instead of build-time evaluation
@@ -1960,14 +1885,14 @@ async function processOtherDirectives(
   // Transform client <script> blocks: resolve @stores imports, inject event
   // bindings into the script scope, and auto-wrap in a scoped IIFE.
   // Client scripts include: <script>, <script client>, <script type="module">, etc.
-  // Excludes: <script server>, <script src="...">, <script data-stx-scoped>, <script data-stx-reactive>, <script data-stx-events>
+  // Excludes: <script server>, <script src="...">, <script data-stx-scoped>
   const eventBindings = (context.__stx_event_bindings || []) as import('./events').ParsedEvent[]
   let clientScriptsTransformed = false
   const clientScriptMatches: { match: string, attrs: string, content: string }[] = []
   // Detect : prefix directives in the template output (for stx.mount() decision)
   const hasColonDirectives = /\s:[a-z][\w.-]*\s*=/.test(output)
-  // Match all client scripts: NOT server, NOT external src, NOT already processed (data-stx-scoped/reactive/events)
-  output.replace(/<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-(?:scoped|reactive|events)\b)([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
+  // Match all client scripts: NOT server, NOT external src, NOT already processed (data-stx-scoped)
+  output.replace(/<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
     clientScriptMatches.push({ match, attrs: attrs || '', content })
     return match
   })
@@ -1984,9 +1909,7 @@ async function processOtherDirectives(
     // Validate client scripts for prohibited patterns
     validateClientScript(processedContent, filePath, options.strict)
 
-    // Use function replacer to avoid $-pattern interpretation in replacement strings
-    const replacement = processClientScript(processedContent, { eventBindings, attrs, hasColonDirectives })
-    output = output.replace(match, () => replacement)
+    output = output.replace(match, processClientScript(processedContent, { eventBindings, attrs, hasColonDirectives }))
   }
   // Only clear event bindings if scripts were found and transformed.
   // When processing a component whose scripts were extracted separately
@@ -2252,13 +2175,6 @@ async function processCustomElements(
 
     // Find all matching component tags (pass skipTags to avoid consuming HTML tag content)
     const tags = findComponentTags(result, tagPattern, skipTags)
-    const stxLinkTags = tags.filter(t => t.tagName === 'StxLink')
-    if (stxLinkTags.length > 0) {
-      console.error(`[DEBUG-PCW] Found ${stxLinkTags.length} StxLink tags out of ${tags.length} total`)
-      for (const t of stxLinkTags) {
-        console.error(`[DEBUG-PCW]   attrs: ${t.attributes.substring(0, 100)}`)
-      }
-    }
 
     // Process from end to start to preserve indices
     for (let i = tags.length - 1; i >= 0; i--) {
@@ -2274,14 +2190,9 @@ async function processCustomElements(
 
       // Process props: evaluate {{ }} expressions and :prop="var" bindings
       const props: Record<string, unknown> = {}
-      const eventAttrs: Array<[string, unknown]> = []
-      if (tag.tagName === 'StxLink' || tag.tagName === 'stx-link') {
-        console.error(`[DEBUG-CE] StxLink rawProps keys: ${Object.keys(rawProps).join(', ')}, attrs: ${tag.attributes.substring(0, 200)}`)
-      }
       for (const [attrName, attrValue] of Object.entries(rawProps)) {
-        // Collect @ event attributes to forward to rendered component's root element
+        // Skip @ event attributes - they're processed by processEventDirectives
         if (attrName.startsWith('@')) {
-          eventAttrs.push([attrName, attrValue])
           continue
         }
 
@@ -2374,7 +2285,7 @@ async function processCustomElements(
       }
 
       // Process the component
-      let processedContent = await renderComponentWithSlot(
+      const processedContent = await renderComponentWithSlot(
         componentPath,
         props,
         tag.content,
@@ -2385,16 +2296,6 @@ async function processCustomElements(
         processedComponents,
         dependencies,
       )
-
-      // Forward @ event attributes to the rendered component's root element
-      if (eventAttrs.length > 0) {
-        const attrsStr = eventAttrs.map(([name, val]) => `${name}="${String(val).replace(/"/g, '&quot;')}"`).join(' ')
-        console.error(`[DEBUG-FWD] Forwarding ${eventAttrs.length} event attrs to rendered component: ${attrsStr}`)
-        console.error(`[DEBUG-FWD] processedContent start: ${processedContent.substring(0, 100)}`)
-        // Inject into the first opening tag of the rendered content
-        processedContent = processedContent.replace(/^(\s*<[a-z][a-z0-9-]*)(\s|>)/i, `$1 ${attrsStr}$2`)
-        console.error(`[DEBUG-FWD] After inject: ${processedContent.substring(0, 150)}`)
-      }
 
       // Replace the tag with processed content
       result = result.substring(0, tag.startIndex) + processedContent + result.substring(tag.endIndex)

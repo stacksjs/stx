@@ -127,6 +127,19 @@ export function stxPlugin(userOptions?: StxOptions): BunPlugin {
       // Track all dependencies for web component building
       const allDependencies = new Set<string>()
 
+      // Auto-set root to common ancestor of entrypoints for flat output paths
+      if (!build.config.root && build.config.entrypoints?.length) {
+        const dirs = build.config.entrypoints.map(e => path.dirname(path.resolve(e)))
+        const commonRoot = dirs.reduce((a, b) => {
+          const aParts = a.split(path.sep)
+          const bParts = b.split(path.sep)
+          let i = 0
+          while (i < aParts.length && i < bParts.length && aParts[i] === bParts[i]) i++
+          return aParts.slice(0, i).join(path.sep)
+        })
+        build.config.root = commonRoot
+      }
+
       // Get web components output path
       const webComponentsPath = options.webComponents?.enabled
         ? `./${path.relative(path.dirname(build.config?.outdir || 'dist'), options.webComponents.outputDir || 'dist/web-components')}`

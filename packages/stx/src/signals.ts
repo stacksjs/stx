@@ -2738,6 +2738,13 @@ export function generateSignalsRuntimeDev(): string {
     };
   }
 
+  // Vue-compat aliases
+  var ref = state;
+  var reactive = state;
+  var computed = derived;
+  var watch = $watch;
+  var watchEffect = function(fn) { return effect(fn); };
+
   // Component mount system
   var mountQueue = [];
 
@@ -2763,6 +2770,11 @@ export function generateSignalsRuntimeDev(): string {
     provide,
     $computed,
     $watch,
+    ref,
+    reactive,
+    computed,
+    watch,
+    watchEffect,
     useDebounce,
     useDebouncedValue,
     useThrottle,
@@ -2866,6 +2878,11 @@ export function generateSignalsRuntimeDev(): string {
   window.useAsync = useAsync;
   window.useColorMode = useColorMode;
   window.useDark = useDark;
+  window.ref = state;
+  window.reactive = state;
+  window.computed = derived;
+  window.watch = $watch;
+  window.watchEffect = function(fn) { return effect(fn); };
 
   // ==========================================================================
   // Auto-initialization
