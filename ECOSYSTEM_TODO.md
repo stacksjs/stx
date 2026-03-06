@@ -9,7 +9,7 @@
 - [x] Implement `.env` file loader using `Bun.env`
 - [x] Implement `validateEnv()` with startup error reporting
 - [x] Migrate `env.ts` helpers (`isProduction`, `isDevelopment`) into this package
-- [ ] Add re-export shim in core `stx` package for backwards compat
+- [x] Add re-export shim in core `stx` package for backwards compat
 - [x] Add `@stacksjs/config` to root `tsconfig.json` paths
 - [x] Add to workspace in root `package.json`
 - [x] Write tests for all env types, defaults, required fields, validation
@@ -24,8 +24,8 @@
 - [x] Extract SPA client script from `stx/src/client/index.ts`
 - [x] Implement nested layout resolution (`_layout.stx` chain)
 - [x] Implement route type generation (`.stx/route-types.d.ts`)
-- [ ] Update `dev-server.ts` and `bun-plugin/src/serve.ts` to import from `@stacksjs/router`
-- [ ] Add re-export shims in core `stx` for backwards compat
+- [x] Update `dev-server.ts` and `bun-plugin/src/serve.ts` to import from `@stacksjs/router`
+- [x] Add re-export shims in core `stx` for backwards compat
 - [x] Write tests for: file scanning, pattern matching, dynamic params, middleware chain, layout nesting, named routes
 - [x] Add to `tsconfig.json` paths and workspace
 
@@ -37,8 +37,8 @@
 - [x] Implement `useAsyncData()` and `useFetch()` composables
 - [x] Implement loader result caching with stale-while-revalidate
 - [x] Implement safe serialization (handle Dates, BigInt, etc.)
-- [ ] Integrate loader execution into dev-server request pipeline
-- [ ] Integrate actions with `@form` directive
+- [x] Integrate loader execution into dev-server request pipeline
+- [x] Integrate actions with `@form` directive
 - [x] Write tests for loaders, actions, composables, caching, serialization
 - [x] Add to `tsconfig.json` paths and workspace
 
@@ -49,8 +49,8 @@
 - [x] Implement `bunServerAdapter` with compression, static file serving, TLS
 - [x] Implement `staticAdapter` wrapping existing SSG
 - [x] Extract platform detection from `edge-runtime.ts`
-- [ ] Integrate with production build pipeline
-- [ ] Add `stx deploy` CLI command
+- [x] Integrate with production build pipeline
+- [x] Add `stx deploy` CLI command
 - [x] Write tests for each adapter
 - [x] Add to `tsconfig.json` paths and workspace
 
