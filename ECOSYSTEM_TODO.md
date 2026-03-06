@@ -9,7 +9,7 @@
 - [x] Implement `.env` file loader using `Bun.env`
 - [x] Implement `validateEnv()` with startup error reporting
 - [x] Migrate `env.ts` helpers (`isProduction`, `isDevelopment`) into this package
-- [ ] Add re-export shim in core `stx` package for backwards compat
+- [x] Add re-export shim in core `stx` package for backwards compat
 - [x] Add `@stacksjs/config` to root `tsconfig.json` paths
 - [x] Add to workspace in root `package.json`
 - [x] Write tests for all env types, defaults, required fields, validation
@@ -24,8 +24,8 @@
 - [x] Extract SPA client script from `stx/src/client/index.ts`
 - [x] Implement nested layout resolution (`_layout.stx` chain)
 - [x] Implement route type generation (`.stx/route-types.d.ts`)
-- [ ] Update `dev-server.ts` and `bun-plugin/src/serve.ts` to import from `@stacksjs/router`
-- [ ] Add re-export shims in core `stx` for backwards compat
+- [x] Update `dev-server.ts` and `bun-plugin/src/serve.ts` to import from `@stacksjs/router`
+- [x] Add re-export shims in core `stx` for backwards compat
 - [x] Write tests for: file scanning, pattern matching, dynamic params, middleware chain, layout nesting, named routes
 - [x] Add to `tsconfig.json` paths and workspace
 
@@ -37,8 +37,8 @@
 - [x] Implement `useAsyncData()` and `useFetch()` composables
 - [x] Implement loader result caching with stale-while-revalidate
 - [x] Implement safe serialization (handle Dates, BigInt, etc.)
-- [ ] Integrate loader execution into dev-server request pipeline
-- [ ] Integrate actions with `@form` directive
+- [x] Integrate loader execution into dev-server request pipeline
+- [x] Integrate actions with `@form` directive
 - [x] Write tests for loaders, actions, composables, caching, serialization
 - [x] Add to `tsconfig.json` paths and workspace
 
@@ -49,8 +49,8 @@
 - [x] Implement `bunServerAdapter` with compression, static file serving, TLS
 - [x] Implement `staticAdapter` wrapping existing SSG
 - [x] Extract platform detection from `edge-runtime.ts`
-- [ ] Integrate with production build pipeline
-- [ ] Add `stx deploy` CLI command
+- [x] Integrate with production build pipeline
+- [x] Add `stx deploy` CLI command
 - [x] Write tests for each adapter
 - [x] Add to `tsconfig.json` paths and workspace
 
@@ -60,61 +60,61 @@
 
 ### 5. `@stacksjs/db` — Database & ORM
 
-- [ ] Create `packages/db/` with standard package structure
-- [ ] Extract `QueryBuilder`, `Model`, adapters from `database.ts`
-- [ ] Implement `defineTable()` schema builder
-- [ ] Implement `TableBuilder` with all column types
-- [ ] Implement migration runner
-- [ ] Implement auto-migrate for development
-- [ ] Implement database seeder
-- [ ] Add re-export shim in core `stx` package
-- [ ] Write comprehensive tests
-- [ ] Add to `tsconfig.json` paths and workspace
+- [x] Create `packages/db/` with standard package structure
+- [x] Extract `QueryBuilder`, `Model`, adapters from `database.ts`
+- [x] Implement `defineTable()` schema builder
+- [x] Implement `TableBuilder` with all column types
+- [x] Implement migration runner
+- [x] Implement auto-migrate for development
+- [x] Implement database seeder
+- [x] Add re-export shim in core `stx` package
+- [x] Write comprehensive tests
+- [x] Add to `tsconfig.json` paths and workspace
 
 ### 6. `@stacksjs/auth` — Authentication & Authorization
 
-- [ ] Create `packages/auth/` with standard package structure
-- [ ] Implement session management (create, validate, destroy)
-- [ ] Implement password hashing (bcrypt via Bun)
-- [ ] Implement OAuth flow (GitHub, Google providers)
-- [ ] Implement auth/guest middleware
-- [ ] Implement permissions system
-- [ ] Create scaffold templates (login, register, forgot-password, reset-password)
-- [ ] Extract CSRF logic from `forms.ts`
-- [ ] Wire up `@auth`/`@guest`/`@can` directive backends
-- [ ] Write tests for all auth flows
-- [ ] Add to `tsconfig.json` paths and workspace
+- [x] Create `packages/auth/` with standard package structure
+- [x] Implement session management (create, validate, destroy)
+- [x] Implement password hashing (bcrypt via Bun)
+- [x] Implement OAuth flow (GitHub, Google providers)
+- [x] Implement auth/guest middleware
+- [x] Implement permissions system
+- [x] Create scaffold templates (login, register, forgot-password, reset-password)
+- [x] Extract CSRF logic from `forms.ts`
+- [x] Wire up `@auth`/`@guest`/`@can` directive backends
+- [x] Write tests for all auth flows
+- [x] Add to `tsconfig.json` paths and workspace
 
 ### 7. `@stacksjs/api` — File-Based API Routes + Type-Safe RPC
 
-- [ ] Create `packages/api/` with standard package structure
-- [ ] Implement `defineHandler()` with method, input validation, middleware
-- [ ] Implement file-based API route scanning
-- [ ] Implement typed RPC client generation
-- [ ] Integrate API route handling into dev-server
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/api/` with standard package structure
+- [x] Implement `defineHandler()` with method, input validation, middleware
+- [x] Implement file-based API route scanning
+- [x] Implement typed RPC client generation
+- [x] Integrate API route handling into dev-server
+- [x] Write tests
+- [x] Add to workspace
 
 ### 8. `@stacksjs/forms` — Form State + Validation + Server Actions
 
-- [ ] Create `packages/forms/` with standard package structure
-- [ ] Extract `Validator` class from `forms-validation.ts`
-- [ ] Implement `useForm()` composable
-- [ ] Implement Zod schema integration
-- [ ] Integrate with `@form` directive and server actions
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/forms/` with standard package structure
+- [x] Extract `Validator` class from `forms-validation.ts`
+- [x] Implement `useForm()` composable
+- [x] Implement Zod schema integration
+- [x] Integrate with `@form` directive and server actions
+- [x] Write tests
+- [x] Add to workspace
 
 ### 9. `@stacksjs/cache` — Multi-Driver Caching
 
-- [ ] Create `packages/cache/` with standard package structure
-- [ ] Implement memory driver (LRU)
-- [ ] Implement file driver (from existing `caching.ts`)
-- [ ] Implement SQLite driver (using `bun:sqlite`)
-- [ ] Implement `remember()` and tag-based invalidation
-- [ ] Integrate with ISR
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/cache/` with standard package structure
+- [x] Implement memory driver (LRU)
+- [x] Implement file driver (from existing `caching.ts`)
+- [x] Implement SQLite driver (using `bun:sqlite`)
+- [x] Implement `remember()` and tag-based invalidation
+- [x] Integrate with ISR
+- [x] Write tests
+- [x] Add to workspace
 
 ---
 
@@ -122,45 +122,45 @@
 
 ### 10. `@stacksjs/email` — Email with STX Templates
 
-- [ ] Create `packages/email/` with standard package structure
-- [ ] Implement `sendMail()` with STX template rendering
-- [ ] Implement provider adapters (Resend, SES, SMTP)
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/email/` with standard package structure
+- [x] Implement `sendMail()` with STX template rendering
+- [x] Implement provider adapters (Resend, SES, SMTP)
+- [x] Write tests
+- [x] Add to workspace
 
 ### 11. `@stacksjs/storage` — File Storage Abstraction
 
-- [ ] Create `packages/storage/` with standard package structure
-- [ ] Implement local disk driver
-- [ ] Implement S3/R2 driver with signed URLs
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/storage/` with standard package structure
+- [x] Implement local disk driver
+- [x] Implement S3/R2 driver with signed URLs
+- [x] Write tests
+- [x] Add to workspace
 
 ### 12. `@stacksjs/testing` — Test Utilities
 
-- [ ] Create `packages/testing/` with standard package structure
-- [ ] Implement `renderTemplate()` for template testing
-- [ ] Implement `testLoader()` and `testAction()` helpers
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/testing/` with standard package structure
+- [x] Implement `renderTemplate()` for template testing
+- [x] Implement `testLoader()` and `testAction()` helpers
+- [x] Write tests
+- [x] Add to workspace
 
 ### 13. `@stacksjs/errors` — Error Boundaries & Dev Overlay
 
-- [ ] Create `packages/errors/` with standard package structure
-- [ ] Implement `defineErrorBoundary()`
-- [ ] Implement dev overlay HTML
-- [ ] Implement production fallback pages
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/errors/` with standard package structure
+- [x] Implement `defineErrorBoundary()`
+- [x] Implement dev overlay HTML
+- [x] Implement production fallback pages
+- [x] Write tests
+- [x] Add to workspace
 
 ### 14. `@stacksjs/image` — Image Optimization
 
-- [ ] Create `packages/image/` with standard package structure
-- [ ] Implement responsive image generation
-- [ ] Implement WebP/AVIF conversion
-- [ ] Implement `@img` directive
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/image/` with standard package structure
+- [x] Implement responsive image generation
+- [x] Implement WebP/AVIF conversion
+- [x] Implement `@img` directive
+- [x] Write tests
+- [x] Add to workspace
 
 ---
 
@@ -168,54 +168,54 @@
 
 ### 15. `@stacksjs/realtime` — WebSocket Channels + SSE
 
-- [ ] Create `packages/realtime/` with standard package structure
-- [ ] Implement WebSocket channel management
-- [ ] Implement SSE fallback
-- [ ] Implement `useBroadcast()` composable
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/realtime/` with standard package structure
+- [x] Implement WebSocket channel management
+- [x] Implement SSE fallback
+- [x] Implement `useBroadcast()` composable
+- [x] Write tests
+- [x] Add to workspace
 
 ### 16. `@stacksjs/queue` — Background Jobs
 
-- [ ] Create `packages/queue/` with standard package structure
-- [ ] Implement SQLite-backed job queue
-- [ ] Implement `defineJob()` and `dispatch()`
-- [ ] Implement retry logic and dead letter queue
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/queue/` with standard package structure
+- [x] Implement SQLite-backed job queue
+- [x] Implement `defineJob()` and `dispatch()`
+- [x] Implement retry logic and dead letter queue
+- [x] Write tests
+- [x] Add to workspace
 
 ### 17. `@stacksjs/search` — Full-Text Search
 
-- [ ] Create `packages/search/` with standard package structure
-- [ ] Implement SQLite FTS5 driver
-- [ ] Implement `defineSearchable()` and `search()`
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/search/` with standard package structure
+- [x] Implement SQLite FTS5 driver
+- [x] Implement `defineSearchable()` and `search()`
+- [x] Write tests
+- [x] Add to workspace
 
 ### 18. `@stacksjs/ai` — LLM Integration
 
-- [ ] Create `packages/ai/` with standard package structure
-- [ ] Implement `useAI()` with provider adapters
-- [ ] Implement streaming support
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/ai/` with standard package structure
+- [x] Implement `useAI()` with provider adapters
+- [x] Implement streaming support
+- [x] Write tests
+- [x] Add to workspace
 
 ### 19. `@stacksjs/cms` — File-Based Content Collections
 
-- [ ] Create `packages/cms/` with standard package structure
-- [ ] Implement `defineCollection()` with typed schemas
-- [ ] Implement `getContent()` and collection queries
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/cms/` with standard package structure
+- [x] Implement `defineCollection()` with typed schemas
+- [x] Implement `getContent()` and collection queries
+- [x] Write tests
+- [x] Add to workspace
 
 ### 20. `@stacksjs/analytics` — Privacy-Friendly Analytics
 
-- [ ] Create `packages/analytics/` with standard package structure
-- [ ] Implement SQLite-backed page view tracking
-- [ ] Implement `@analytics` directive
-- [ ] Implement dashboard queries
-- [ ] Write tests
-- [ ] Add to workspace
+- [x] Create `packages/analytics/` with standard package structure
+- [x] Implement SQLite-backed page view tracking
+- [x] Implement `@analytics` directive
+- [x] Implement dashboard queries
+- [x] Write tests
+- [x] Add to workspace
 
 ---
 
