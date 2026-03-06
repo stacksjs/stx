@@ -22,7 +22,7 @@ export function getRouterScript(): string {
     document.addEventListener('click',handleClick,!0);
     window.addEventListener('popstate',function(){navigate(location.href,!1)});
     document.addEventListener('mouseover',handleHover,!0);
-    cacheCurrentPage();
+    fetchPage(u).catch(function(){});
     injectStyles();
     updateActiveLinks();
   }
@@ -75,7 +75,7 @@ export function getRouterScript(): string {
   function swapContent(r){
     var m=document.querySelector(o.container);if(!m)return;
     var swap=function(){
-      m.innerHTML=r.h;document.title=r.i;
+      if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(m);m.innerHTML=r.h;document.title=r.i;
       m.querySelectorAll('script').forEach(function(s){
         var n=document.createElement('script');
         Array.from(s.attributes).forEach(function(a){n.setAttribute(a.name,a.value)});

@@ -63,9 +63,10 @@ class STXRouter {
     // Handle browser back/forward
     window.addEventListener('popstate', this.handlePopState.bind(this))
 
-    // Cache current page
+    // Pre-fetch current page to cache pristine server HTML
+    // (caching live DOM would lose directive attributes stripped by the signals runtime)
     if (this.options.cache) {
-      this.cacheCurrentPage()
+      this.fetchPage(this.currentUrl).catch(() => {})
     }
   }
 
@@ -227,6 +228,10 @@ class STXRouter {
     }
 
     const swap = () => {
+      // Cleanup old components before swapping
+      if ((window as any).stx && (window as any).stx._cleanupContainer) {
+        (window as any).stx._cleanupContainer(container)
+      }
       container.innerHTML = content.html
       document.title = content.title
 
@@ -243,6 +248,7 @@ class STXRouter {
 
       // Dispatch event for components to reinitialize
       window.dispatchEvent(new CustomEvent('stx:navigate', { detail: { url: this.currentUrl } }))
+      window.dispatchEvent(new CustomEvent('stx:load'))
     }
 
     // Use View Transitions API if available

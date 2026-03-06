@@ -740,6 +740,7 @@ export function generateSignalsRuntimeDev(): string {
   const effectStack = [];
   const pendingEffects = new Set();
   let isBatching = false;
+  let activeDisposers = null; // Array | null — when non-null, effects auto-register their dispose fn
   const targetMap = new WeakMap();
 
   // ==========================================================================
@@ -1169,9 +1170,34 @@ export function generateSignalsRuntimeDev(): string {
     };
 
     if (options.immediate !== false) runEffect();
-    return () => {
+    const dispose = () => {
       isDisposed = true;
       if (cleanup) cleanup();
+    };
+    // Auto-register with active tracker
+    if (activeDisposers) activeDisposers.push(dispose);
+    return dispose;
+  }
+
+  // ==========================================================================
+  // Effect Tracking
+  // ==========================================================================
+
+  function trackEffects(fn) {
+    var parentDisposers = activeDisposers;
+    var disposers = [];
+    activeDisposers = disposers;
+    try {
+      fn();
+    } finally {
+      activeDisposers = parentDisposers;
+      if (parentDisposers) {
+        disposers.forEach(function(d) { parentDisposers.push(d); });
+      }
+    }
+    return function disposeAll() {
+      disposers.forEach(function(d) { try { d(); } catch(e) { console.warn('[stx] dispose error:', e); } });
+      disposers.length = 0;
     };
   }
 
@@ -1528,9 +1554,12 @@ export function generateSignalsRuntimeDev(): string {
   let currentElement = null;
 
   function findElementScope(el) {
-    // Find the nearest ancestor with data-stx-scope
     let current = el;
     while (current && current !== document) {
+      // Check element-local scope first (from stx.mount())
+      if (current.__stx_scope) {
+        return current.__stx_scope;
+      }
       if (current.hasAttribute && current.hasAttribute('data-stx-scope')) {
         const scopeId = current.getAttribute('data-stx-scope');
         if (window.stx._scopes && window.stx._scopes[scopeId]) {
@@ -2749,6 +2778,7 @@ export function generateSignalsRuntimeDev(): string {
     helpers: globalHelpers,
     _mountCallbacks: mountCallbacks,
     _destroyCallbacks: destroyCallbacks,
+    _cleanupContainer: cleanupContainer,
     _scopes: {},  // Component-level scopes
     mount: function(setupFn) {
       // Capture script reference synchronously (only valid during execution)
@@ -2761,24 +2791,29 @@ export function generateSignalsRuntimeDev(): string {
         if (!root) { console.warn('[stx] mount: no root element found'); return; }
 
         // Track lifecycle hooks registered during setup
-        var startLen = mountCallbacks.length;
+        var mountStart = mountCallbacks.length;
+        var destroyStart = destroyCallbacks.length;
 
         // Run setup function — returns scope object with declarations
         var scope = setupFn();
 
-        // Capture mount hooks added during setup
-        var localMountHooks = mountCallbacks.splice(startLen);
-        var localDestroyHooks = [];
+        // Capture mount/destroy hooks added during setup
+        var localMountHooks = mountCallbacks.splice(mountStart);
+        var localDestroyHooks = destroyCallbacks.splice(destroyStart);
 
         // Register scope
         if (typeof scope === 'object' && scope !== null) {
           scope.$el = root;
           scope.$refs = scope.$refs || {};
-          Object.assign(componentScope, scope);
+          root.__stx_scope = scope;  // Store isolated scope on element
+          Object.assign(componentScope, scope);  // Keep for backwards compat
         }
 
-        // Walk DOM and bind directives
-        processElement(root, scope || componentScope);
+        // Walk DOM and bind directives, tracking effects for cleanup
+        var disposeEffects = trackEffects(function() {
+          processElement(root, scope || componentScope);
+        });
+        root.__stx_disposers = disposeEffects;
 
         // Fire mount hooks
         localMountHooks.forEach(function(fn) {
@@ -2853,7 +2888,8 @@ export function generateSignalsRuntimeDev(): string {
           Object.assign(componentScope, result);
         }
       }
-      processElement(el);
+      var disposeEffects = trackEffects(function() { processElement(el); });
+      el.__stx_disposers = disposeEffects;
       mountCallbacks.forEach(fn => fn());
     });
 
@@ -2870,7 +2906,8 @@ export function generateSignalsRuntimeDev(): string {
         componentScope = { ...componentScope, ...scopeVars };
       }
 
-      processElement(el);
+      var disposeEffects = trackEffects(function() { processElement(el); });
+      el.__stx_disposers = disposeEffects;
 
       // Run scope-specific mount callbacks
       if (scopeVars && scopeVars.__mountCallbacks) {
@@ -2938,8 +2975,63 @@ export function generateSignalsRuntimeDev(): string {
     });
   });
 
+  // ==========================================================================
+  // Container Cleanup (for SPA navigation)
+  // ==========================================================================
+
+  function cleanupContainer(container) {
+    if (!container) return;
+
+    // 1. Walk all child elements — fire destroy hooks and dispose effects
+    container.querySelectorAll('*').forEach(function(el) {
+      if (el.__stx_destroy && Array.isArray(el.__stx_destroy)) {
+        el.__stx_destroy.forEach(function(fn) {
+          try { fn(); } catch(e) { console.warn('[stx] destroy hook error:', e); }
+        });
+        el.__stx_destroy = null;
+      }
+      if (el.__stx_disposers && typeof el.__stx_disposers === 'function') {
+        el.__stx_disposers();
+        el.__stx_disposers = null;
+      }
+    });
+
+    // 2. Check container itself
+    if (container.__stx_destroy) {
+      container.__stx_destroy.forEach(function(fn) {
+        try { fn(); } catch(e) { console.warn('[stx] destroy hook error:', e); }
+      });
+      container.__stx_destroy = null;
+    }
+    if (container.__stx_disposers) {
+      container.__stx_disposers();
+      container.__stx_disposers = null;
+    }
+
+    // 3. Clean up scopes registered on departing components
+    container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
+      var scopeId = el.getAttribute('data-stx-scope');
+      if (scopeId && window.stx._scopes && window.stx._scopes[scopeId]) {
+        var scopeVars = window.stx._scopes[scopeId];
+        // Fire scope-level destroy callbacks
+        if (scopeVars.__destroyCallbacks && Array.isArray(scopeVars.__destroyCallbacks)) {
+          scopeVars.__destroyCallbacks.forEach(function(fn) {
+            try { fn(); } catch(e) { console.warn('[stx] scope destroy error:', e); }
+          });
+        }
+        delete window.stx._scopes[scopeId];
+      }
+    });
+  }
+
   // Re-initialize components after SPA content swap
   window.addEventListener('stx:load', function() {
+    // Run any pending destroy callbacks before re-initializing
+    destroyCallbacks.forEach(function(fn) {
+      try { fn(); } catch(e) { console.warn('[stx] destroy callback error:', e); }
+    });
+    destroyCallbacks.length = 0;
+
     // Process mount queue (scripts in swapped content may have called stx.mount())
     mountQueue.forEach(function(fn) { fn(); });
     mountQueue = [];
@@ -2952,7 +3044,8 @@ export function generateSignalsRuntimeDev(): string {
       if (scopeVars) {
         componentScope = Object.assign({}, componentScope, scopeVars);
       }
-      processElement(el);
+      var disposeEffects = trackEffects(function() { processElement(el); });
+      el.__stx_disposers = disposeEffects;
       if (scopeVars && scopeVars.__mountCallbacks) {
         scopeVars.__mountCallbacks.forEach(function(fn) { fn(); });
       }
@@ -2964,7 +3057,8 @@ export function generateSignalsRuntimeDev(): string {
         var result = window[setupName]();
         if (typeof result === 'object') Object.assign(componentScope, result);
       }
-      processElement(el);
+      var disposeEffects = trackEffects(function() { processElement(el); });
+      el.__stx_disposers = disposeEffects;
     });
   });
 

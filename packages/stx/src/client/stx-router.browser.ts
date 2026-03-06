@@ -78,9 +78,10 @@
         document.addEventListener('mouseenter', this.handleHover.bind(this), true)
       }
 
-      // Cache current page
+      // Pre-fetch current page to cache pristine server HTML
+      // (caching live DOM would lose directive attributes stripped by the signals runtime)
       if (this.options.cache) {
-        this.cacheCurrentPage()
+        this.fetchPage(this.currentUrl).catch(() => {})
       }
 
       // Add CSS for loading state
@@ -265,6 +266,10 @@
       }
 
       const swap = () => {
+        // Cleanup old components before swapping
+        if ((window as any).stx && (window as any).stx._cleanupContainer) {
+          (window as any).stx._cleanupContainer(container)
+        }
         container.innerHTML = content.html
         document.title = content.title
 

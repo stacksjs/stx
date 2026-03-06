@@ -194,14 +194,15 @@ function transformSignalScript(scriptContent: string, scopeId: string): string {
   var effect = __stx.effect || function(fn) { fn(); return function() {}; };
   var batch = __stx.batch || function(fn) { fn(); };
   var onMount = __stx.onMount || function(fn) { if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', fn); } else { fn(); } };
-  var onDestroy = __stx.onDestroy || function() {};
+  var __destroyHooks = [];
+  var onDestroy = function(fn) { if (__stx.onDestroy) __stx.onDestroy(fn); __destroyHooks.push(fn); };
 
 ${scriptContent}
 
   // Register scope variables for STX runtime
   if (!window.stx) window.stx = { _scopes: {} };
   if (!window.stx._scopes) window.stx._scopes = {};
-  window.stx._scopes['${scopeId}'] = { ${exports} };
+  window.stx._scopes['${scopeId}'] = { ${exports}, __destroyCallbacks: __destroyHooks };
 })();
 `
 }

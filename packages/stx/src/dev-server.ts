@@ -1318,15 +1318,38 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
       // If we found a matching route, serve its content with Crosswind CSS injection
       if (routeMatched) {
+        const isRouterRequest = request.headers.get('X-STX-Router') === 'true'
+
         // Inject Crosswind CSS for utility classes (async)
-        return injectCrosswindCSS(routeMatched.content).then(content => new Response(content, {
-          headers: {
-            'Content-Type': 'text/html',
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-          },
-        }))
+        return injectCrosswindCSS(routeMatched.content).then(content => {
+          // For SPA router requests, return only the <main> content to reduce bandwidth
+          if (isRouterRequest) {
+            const mainMatch = content.match(/<main[^>]*>([\s\S]*?)<\/main>/i)
+            if (mainMatch) {
+              const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+              const title = titleMatch ? titleMatch[1] : ''
+              const partialHtml = `<!DOCTYPE html><html><head><title>${title}</title></head><body><main>${mainMatch[1]}</main></body></html>`
+              return new Response(partialHtml, {
+                headers: {
+                  'Content-Type': 'text/html',
+                  'X-STX-Partial': 'true',
+                  'Cache-Control': 'no-store, no-cache, must-revalidate',
+                  'Pragma': 'no-cache',
+                  'Expires': '0',
+                },
+              })
+            }
+          }
+
+          return new Response(content, {
+            headers: {
+              'Content-Type': 'text/html',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        })
       }
 
       // Check if it's a file in the output directory (bundled assets like images, JS, CSS)
@@ -1405,14 +1428,36 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
       // If still no match and there's a root route, serve that as fallback (SPA mode)
       if (url.pathname !== '/' && routes['/']) {
-        return injectCrosswindCSS(routes['/'].content).then(content => new Response(content, {
-          headers: {
-            'Content-Type': 'text/html',
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-          },
-        }))
+        const isRouterRequest = request.headers.get('X-STX-Router') === 'true'
+
+        return injectCrosswindCSS(routes['/'].content).then(content => {
+          if (isRouterRequest) {
+            const mainMatch = content.match(/<main[^>]*>([\s\S]*?)<\/main>/i)
+            if (mainMatch) {
+              const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+              const title = titleMatch ? titleMatch[1] : ''
+              const partialHtml = `<!DOCTYPE html><html><head><title>${title}</title></head><body><main>${mainMatch[1]}</main></body></html>`
+              return new Response(partialHtml, {
+                headers: {
+                  'Content-Type': 'text/html',
+                  'X-STX-Partial': 'true',
+                  'Cache-Control': 'no-store, no-cache, must-revalidate',
+                  'Pragma': 'no-cache',
+                  'Expires': '0',
+                },
+              })
+            }
+          }
+
+          return new Response(content, {
+            headers: {
+              'Content-Type': 'text/html',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        })
       }
 
       // Fallback 404 response
