@@ -82,7 +82,8 @@ export async function processMarkdownDirectives(
 
       // Render the markdown to HTML
       const html = parseMarkdown(content.trim(), parserOptions)
-      output = output.replace(fullMatch, html)
+      // Use split/join to avoid $ replacement pattern interpretation in String.replace
+      output = output.split(fullMatch).join(html)
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -94,7 +95,7 @@ export async function processMarkdownDirectives(
         index,
         fullMatch,
       )
-      output = output.replace(fullMatch, errorHtml)
+      output = output.split(fullMatch).join(errorHtml)
     }
   }
 

@@ -88,16 +88,43 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       return cached.content
     }
 
+    // Evict stale entries for this file path (different mtime)
+    for (const key of fileCache.keys()) {
+      if (key.startsWith(`${filePath}:`) && key !== cacheKey) {
+        fileCache.delete(key)
+      }
+    }
+
     // Read and process file
     let content = await Bun.file(filePath).text()
 
     // SFC Support: Extract <template> content if present
     // Only match <template> WITHOUT an id attribute - templates with id are HTML template elements
     // that should be preserved (used for client-side JS template cloning)
+    // Uses balanced depth tracking to handle nested <template> tags
     let workingContent = content
-    const templateTagMatch = content.match(/<template\b(?![^>]*\bid\s*=)[^>]*>([\s\S]*?)<\/template>/i)
-    if (templateTagMatch) {
-      workingContent = templateTagMatch[1].trim()
+    const templateOpenMatch = content.match(/<template\b(?![^>]*\bid\s*=)[^>]*>/i)
+    if (templateOpenMatch && templateOpenMatch.index !== undefined) {
+      const contentStart = templateOpenMatch.index + templateOpenMatch[0].length
+      let depth = 1
+      let pos = contentStart
+      while (pos < content.length && depth > 0) {
+        const openIdx = content.indexOf('<template', pos)
+        const closeIdx = content.indexOf('</template>', pos)
+        if (closeIdx === -1) break
+        if (openIdx !== -1 && openIdx < closeIdx) {
+          depth++
+          pos = openIdx + '<template'.length
+        }
+        else {
+          depth--
+          if (depth === 0) {
+            workingContent = content.substring(contentStart, closeIdx).trim()
+            break
+          }
+          pos = closeIdx + '</template>'.length
+        }
+      }
     }
 
     // Extract all script tags and categorize them from the PAGE content
@@ -299,14 +326,14 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
         }
 
         const msg = error instanceof Error ? error.message : String(error)
-        const stack = error instanceof Error ? error.stack : ''
-        return new Response(
-          `<h1>Error</h1><pre>${msg}\n${stack}</pre>`,
-          {
-            status: 500,
-            headers: { 'Content-Type': 'text/html' },
-          },
-        )
+        // Only include stack traces in debug mode to avoid information disclosure
+        const body = debug
+          ? `<h1>Error</h1><pre>${msg}\n${error instanceof Error ? error.stack : ''}</pre>`
+          : `<h1>Internal Server Error</h1><p>An error occurred while processing your request.</p>`
+        return new Response(body, {
+          status: 500,
+          headers: { 'Content-Type': 'text/html' },
+        })
       }
     }
 

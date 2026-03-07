@@ -76,9 +76,13 @@ export function verifyCsrfToken(token: string): boolean {
     return false
   }
 
+  // Guard against RangeError from timingSafeEqual when lengths differ
+  const tokenBuf = Buffer.from(token)
+  const csrfBuf = Buffer.from(csrfToken)
+  if (tokenBuf.length !== csrfBuf.length) {
+    return false
+  }
+
   // Constant-time comparison to prevent timing attacks
-  return crypto.timingSafeEqual(
-    Buffer.from(token),
-    Buffer.from(csrfToken),
-  )
+  return crypto.timingSafeEqual(tokenBuf, csrfBuf)
 }

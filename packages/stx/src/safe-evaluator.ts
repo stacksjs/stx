@@ -213,6 +213,12 @@ function sanitizeObject(obj: unknown, depth = 0): unknown {
     return obj.map(item => sanitizeObject(item, depth + 1))
   }
 
+  // Pass through known safe built-in types that lose methods when shallow-copied
+  if (obj instanceof Date || obj instanceof RegExp || obj instanceof Map
+    || obj instanceof Set || obj instanceof Error) {
+    return obj
+  }
+
   const sanitized: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(obj)) {
     // Skip dangerous keys (double-underscore prefix for internal keys, not single-underscore user vars)

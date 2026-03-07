@@ -268,13 +268,22 @@ function convertLoopControlToJS(content: string): string {
   let result = content
 
   // Convert @break(condition) to JavaScript: if (condition) { break; } — balanced parens
+  // Validate conditions through safe evaluator to prevent code injection
   result = replaceWithBalancedParens(result, '@break', (condition) => {
-    return `\`; if (${condition.trim()}) { break; } result += \``
+    const trimmed = condition.trim()
+    if (!isForExpressionSafe(trimmed)) {
+      return '' // Silently skip unsafe break conditions
+    }
+    return `\`; if (${trimmed}) { break; } result += \``
   })
 
   // Convert @continue(condition) to JavaScript: if (condition) { continue; } — balanced parens
   result = replaceWithBalancedParens(result, '@continue', (condition) => {
-    return `\`; if (${condition.trim()}) { continue; } result += \``
+    const trimmed = condition.trim()
+    if (!isForExpressionSafe(trimmed)) {
+      return '' // Silently skip unsafe continue conditions
+    }
+    return `\`; if (${trimmed}) { continue; } result += \``
   })
 
   // Convert unconditional @break to JavaScript break
@@ -818,7 +827,8 @@ function processForLoops(template: string, context: Record<string, any>): string
       const loopValues = Object.values(context)
 
       // Process break/continue directives
-      let processedContent = content.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
+      // Escape backticks AND ${ to prevent template literal injection
+      let processedContent = content.replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
         return `\${${expr}}`
       })
       processedContent = convertLoopControlToJS(processedContent)
@@ -895,7 +905,8 @@ function processWhileLoops(template: string, context: Record<string, any>, maxIt
       const loopValues = Object.values(context)
 
       // Process break/continue directives
-      let processedContent = content.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
+      // Escape backticks AND ${ to prevent template literal injection
+      let processedContent = content.replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
         return `\${${expr}}`
       })
       processedContent = convertLoopControlToJS(processedContent)

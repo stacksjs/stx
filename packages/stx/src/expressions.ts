@@ -410,7 +410,7 @@ export function escapeHtml(unsafe: string): string {
  * Check if a template uses signals (state, derived, effect) in its script blocks
  * or has reactive attributes (@if, @for) with function call expressions
  */
-function usesSignalsInScript(template: string): boolean {
+export function usesSignalsInScript(template: string): boolean {
   // Check for signals in script blocks
   const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
   let match: RegExpExecArray | null

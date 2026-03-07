@@ -96,6 +96,7 @@ export class LRUCache<K, V> {
  * Only stores non-global patterns to avoid lastIndex state issues.
  */
 const REGEX_CACHE = new Map<string, RegExp>()
+const REGEX_CACHE_MAX_SIZE = 500
 
 /**
  * Get a cached regex pattern or compile and cache it.
@@ -126,6 +127,11 @@ export function getCachedRegex(pattern: string, flags?: string): RegExp {
   const key = `${pattern}:${flags || ''}`
 
   if (!REGEX_CACHE.has(key)) {
+    // Evict oldest entries when cache exceeds max size
+    if (REGEX_CACHE.size >= REGEX_CACHE_MAX_SIZE) {
+      const firstKey = REGEX_CACHE.keys().next().value
+      if (firstKey) REGEX_CACHE.delete(firstKey)
+    }
     REGEX_CACHE.set(key, new RegExp(pattern, flags))
   }
 
@@ -351,37 +357,30 @@ class ExpressionEvaluatorPool {
       return reusable.func
     }
 
-    // Create new evaluator - handle empty context keys
-
-    const evaluator = uniqueKeys.length === 0
-    // eslint-disable-next-line no-new-func
-      ? new Function(`
-        'use strict';
-        return function(expr) {
-          try {
-            return eval(expr);
-          } catch (e) {
-            if (e instanceof ReferenceError || e instanceof TypeError) {
-              return undefined;
+    // Create new evaluator using new Function with strict mode (NOT eval)
+    // Returns a factory that creates per-expression functions
+    const evaluator = (...contextValues: any[]) => {
+      return (expr: string) => {
+        try {
+          // eslint-disable-next-line no-new-func
+          const fn = new Function(...uniqueKeys, `
+            'use strict';
+            try {
+              return ${expr};
+            } catch (e) {
+              if (e instanceof ReferenceError || e instanceof TypeError) {
+                return undefined;
+              }
+              throw e;
             }
-            throw e;
-          }
+          `)
+          return fn(...contextValues)
         }
-      `)() as (...args: any[]) => any
-      // eslint-disable-next-line no-new-func
-      : new Function(...uniqueKeys, `
-        'use strict';
-        return function(expr) {
-          try {
-            return eval(expr);
-          } catch (e) {
-            if (e instanceof ReferenceError || e instanceof TypeError) {
-              return undefined;
-            }
-            throw e;
-          }
+        catch {
+          return undefined
         }
-      `) as (...args: any[]) => any
+      }
+    }
 
     // Add to pool if not full
     if (this.pool.length < this.maxPoolSize) {

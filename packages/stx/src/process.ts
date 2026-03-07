@@ -16,7 +16,7 @@ import { injectCspMetaTag, processCspDirectives } from './csp'
 import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
 import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError, StxValidationError } from './error-handling'
-import { processExpressions } from './expressions'
+import { processExpressions, usesSignalsInScript } from './expressions'
 import { processBasicFormDirectives, processErrorDirective } from './forms'
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
@@ -76,26 +76,7 @@ function hasSignalsSyntax(template: string): boolean {
   return signalsPatterns.some(pattern => pattern.test(template))
 }
 
-/**
- * Check if template uses signals in its script blocks.
- * This is used to determine if @if/@for directives should be
- * converted to runtime attributes instead of build-time evaluation.
- */
-function usesSignalsInScript(template: string): boolean {
-  // Find script blocks (not server, not src)
-  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
-  let match: RegExpExecArray | null
-
-  while ((match = scriptRegex.exec(template)) !== null) {
-    const content = match[1]
-    // Check if this script uses signal APIs
-    if (/\b(state|derived|effect)\s*\(/.test(content)) {
-      return true
-    }
-  }
-
-  return false
-}
+// usesSignalsInScript is imported from expressions.ts (single source of truth)
 
 /**
  * Convert @if(expr)...@endif directive blocks to attribute-style for signal templates.
@@ -235,7 +216,9 @@ function convertSignalLoopsToAttributes(template: string): string {
     const endTag = directive === 'for' ? '@endfor' : '@endforeach'
     let forDepth = 1
     let endIdx = afterExpr
-    const endRegex = new RegExp(`@(${directive}\\s*\\(|end${directive})`, 'g')
+    const endRegex = directive === 'for'
+      ? new RegExp(`@(for(?!each)\\s*\\(|endfor(?!each))`, 'g')
+      : new RegExp(`@(${directive}\\s*\\(|end${directive})`, 'g')
     endRegex.lastIndex = afterExpr
 
     let endMatch: RegExpExecArray | null
@@ -2328,9 +2311,17 @@ async function processCustomElements(
           // :trail becomes :trail="trail"
           const expression = attrValue === 'true' ? propName : attrValue
           try {
-            // eslint-disable-next-line no-new-func
-            const valueFn = new Function(...Object.keys(context), `return ${expression}`)
-            props[propName] = valueFn(...Object.values(context))
+            // Use safe evaluation to prevent code injection
+            if (!isExpressionSafe(expression)) {
+              if (options.debug) {
+                console.error(`Unsafe expression in :${propName} binding: ${expression}`)
+              }
+              props[propName] = attrValue
+            }
+            else {
+              const valueFn = createSafeFunction(expression, Object.keys(context))
+              props[propName] = valueFn(...Object.values(context))
+            }
           }
           catch (error) {
             if (options.debug) {
@@ -2472,9 +2463,11 @@ export function processOnceDirective(template: string): string {
 function processRefAttributes(template: string): string {
   // Match ref="name" (Vue-style) and @ref="name" attributes
   // Use data-stx-ref to avoid conflicts with native ref attribute
+  // Only match inside HTML opening tags (preceded by < tagname ... )
   let result = template.replace(/@ref="([^"]+)"/g, 'data-stx-ref="$1"')
-  // Also support Vue-style ref="name" (but not if already processed)
-  result = result.replace(/\sref="([^"]+)"/g, ' data-stx-ref="$1"')
+  // Match ref="name" only when inside an HTML tag context (preceded by whitespace after other attrs)
+  // Avoid matching ref= in text content by ensuring it follows a tag attr pattern
+  result = result.replace(/(<[a-zA-Z][a-zA-Z0-9-]*\b[^>]*?)\sref="([^"]+)"/g, '$1 data-stx-ref="$2"')
   return result
 }
 

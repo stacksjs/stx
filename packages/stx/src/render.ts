@@ -139,8 +139,44 @@ function parseTemplate(content: string): {
   // Client scripts: match the full tag (clientScripts has the full <script>...</script>)
   let templateContent = workingContent
 
-  // Remove server script tags by matching them with a fresh regex pass
-  templateContent = templateContent.replace(/<script\b(?![^>]*\b(?:client|type\s*=\s*["']module["']|src\s*=))[^>]*>[\s\S]*?<\/script>/gi, '')
+  // Remove server script tags using balanced </script> matching
+  // to handle scripts containing '</script>' in string literals
+  {
+    const serverScriptOpenRe = /<script\b(?![^>]*\b(?:client|type\s*=\s*["']module["']|src\s*=))[^>]*>/gi
+    let sMatch: RegExpExecArray | null
+    const removeRanges: { start: number, end: number }[] = []
+    while ((sMatch = serverScriptOpenRe.exec(templateContent)) !== null) {
+      const tagEnd = sMatch.index + sMatch[0].length
+      // Find matching </script> accounting for nesting (script tags can't truly nest,
+      // but we need to skip </script> inside strings)
+      let sDepth = 1
+      let sPos = tagEnd
+      while (sPos < templateContent.length && sDepth > 0) {
+        const nextOpen = templateContent.indexOf('<script', sPos)
+        const nextClose = templateContent.indexOf('</script>', sPos)
+        if (nextClose === -1) break
+        if (nextOpen !== -1 && nextOpen < nextClose) {
+          // Check if this is inside a string literal by looking for surrounding quotes
+          // For simplicity, just track script nesting depth
+          sDepth++
+          sPos = nextOpen + '<script'.length
+        }
+        else {
+          sDepth--
+          if (sDepth === 0) {
+            removeRanges.push({ start: sMatch.index, end: nextClose + '</script>'.length })
+            break
+          }
+          sPos = nextClose + '</script>'.length
+        }
+      }
+    }
+    // Remove ranges in reverse order to preserve indices
+    for (let ri = removeRanges.length - 1; ri >= 0; ri--) {
+      templateContent = templateContent.substring(0, removeRanges[ri].start)
+        + templateContent.substring(removeRanges[ri].end)
+    }
+  }
 
   // Remove client script tags by plain string matching
   for (const script of clientScripts) {

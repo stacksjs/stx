@@ -449,13 +449,23 @@ export function processAuthDirectives(template: string, context: Record<string, 
   }
 
   // Helper: find top-level @else inside balanced content
+  // Uses regex with lastIndex scanning instead of O(n²) slice
   function findTopLevelElse(content: string, startTag: string, endTag: string): number {
     let depth = 0
-    for (let i = 0; i < content.length; i++) {
-      const rem = content.slice(i)
-      if (rem.match(new RegExp(`^@${startTag}(?:\\s*\\(|\\s|$)`))) { depth++; continue }
-      if (rem.match(new RegExp(`^@${endTag}(?![a-z])`))) { depth--; continue }
-      if (depth === 0 && rem.match(/^@else(?![a-z])/)) return i
+    const openRe = new RegExp(`@${startTag}(?:\\s*\\(|\\s|$)`, 'g')
+    const closeRe = new RegExp(`@${endTag}(?![a-z])`, 'g')
+    const elseRe = /@else(?![a-z])/g
+    // Scan for all directive positions and process in order
+    const events: { pos: number, type: 'open' | 'close' | 'else' }[] = []
+    let m: RegExpExecArray | null
+    while ((m = openRe.exec(content)) !== null) events.push({ pos: m.index, type: 'open' })
+    while ((m = closeRe.exec(content)) !== null) events.push({ pos: m.index, type: 'close' })
+    while ((m = elseRe.exec(content)) !== null) events.push({ pos: m.index, type: 'else' })
+    events.sort((a, b) => a.pos - b.pos)
+    for (const ev of events) {
+      if (ev.type === 'open') depth++
+      else if (ev.type === 'close') depth--
+      else if (ev.type === 'else' && depth === 0) return ev.pos
     }
     return -1
   }
@@ -561,129 +571,156 @@ export function processAuthDirectives(template: string, context: Record<string, 
     }
   }
 
-  // Process @can/@endcan directive with all variations
-  output = output.replace(
-    /@can\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n?\s*([\s\S]*?)(?:@elsecan\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n?\s*([\s\S]*?))?(?:@else\s*\n?\s*([\s\S]*?))?@endcan/g,
-    (_, ability, type, id, content, elseAbility, elseType, elseId, elseContent, finalElseContent) => {
-      // Handle permissions with complex evaluation
-      let can = false
-
-      // Try different permission checking patterns
-      if (context.userCan && typeof context.userCan[ability] === 'boolean') {
-        can = context.userCan[ability]
+  // Process @can/@endcan and @cannot/@endcannot with balanced depth tracking
+  // Helper to check permission
+  function checkPermission(ability: string, type?: string, id?: string): boolean {
+    if (context.userCan && typeof context.userCan[ability] === 'boolean') {
+      return context.userCan[ability]
+    }
+    if (context.permissions?.check && typeof context.permissions.check === 'function') {
+      try {
+        const args: any[] = [ability]
+        if (type) args.push(type)
+        if (id) {
+          const idValue = evaluateAuthExpression(id, context)
+          args.push(idValue)
+        }
+        return context.permissions.check(...args)
       }
-      else if (context.permissions?.check && typeof context.permissions.check === 'function') {
-        try {
-          const args = [ability]
-          if (type)
-            args.push(type)
-          if (id) {
-            // Evaluate id if it's an expression
-            const idValue = evaluateAuthExpression(id, context)
-            args.push(idValue)
+      catch { return false }
+    }
+    return false
+  }
+
+  // Helper to parse @can('ability', 'type', id) params
+  function parseCanParams(afterDirective: string): { ability: string, type?: string, id?: string, paramsEnd: number } | null {
+    const m = afterDirective.match(/^\s*\(\s*'([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)/)
+    if (!m) return null
+    return { ability: m[1], type: m[2], id: m[3]?.trim(), paramsEnd: m[0].length }
+  }
+
+  // Process @can/@endcan and @cannot/@endcannot using balanced parsing
+  // Supports @elsecan/@elsecannot intermediate conditions
+  for (const directive of ['can', 'cannot'] as const) {
+    const endDirective = `end${directive}`
+    const elseDirective = directive === 'can' ? 'elsecan' : 'elsecannot'
+    let processedAny = true
+    while (processedAny) {
+      processedAny = false
+      const canMatch = output.match(new RegExp(`@${directive}\\s*\\(`))
+      if (!canMatch || canMatch.index === undefined) break
+
+      const startPos = canMatch.index
+      const afterDir = output.slice(startPos + `@${directive}`.length)
+      const parsed = parseCanParams(afterDir)
+      if (!parsed) break
+
+      const contentStart = startPos + `@${directive}`.length + parsed.paramsEnd
+      const endPos = findEndTag(output, `${directive}\\s*\\(`, endDirective, contentStart)
+      if (endPos === -1) break
+
+      const fullContent = output.slice(contentStart, endPos)
+
+      // Find top-level @elsecan/@elsecannot and @else positions using event scanning
+      const topLevelBreaks: { pos: number, type: 'elseDirective' | 'else' }[] = []
+      let dpt = 0
+      const scanOpenRe = new RegExp(`@${directive}\\s*\\(`, 'g')
+      const scanCloseRe = new RegExp(`@${endDirective}(?![a-z])`, 'g')
+      const scanElseDirRe = new RegExp(`@${elseDirective}\\s*\\(`, 'g')
+      const scanElseRe = /@else(?![a-z])/g
+      const scanEvents: { pos: number, type: 'open' | 'close' | 'elseDirective' | 'else' }[] = []
+      let sm: RegExpExecArray | null
+      while ((sm = scanOpenRe.exec(fullContent)) !== null) scanEvents.push({ pos: sm.index, type: 'open' })
+      while ((sm = scanCloseRe.exec(fullContent)) !== null) scanEvents.push({ pos: sm.index, type: 'close' })
+      while ((sm = scanElseDirRe.exec(fullContent)) !== null) scanEvents.push({ pos: sm.index, type: 'elseDirective' })
+      while ((sm = scanElseRe.exec(fullContent)) !== null) scanEvents.push({ pos: sm.index, type: 'else' })
+      scanEvents.sort((a, b) => a.pos - b.pos)
+      for (const ev of scanEvents) {
+        if (ev.type === 'open') { dpt++; continue }
+        if (ev.type === 'close') { dpt--; continue }
+        if (dpt === 0) topLevelBreaks.push(ev)
+      }
+
+      // Build segments: primary, elseDirective segments, final else
+      const segments: { content: string, ability?: string, type?: string, id?: string, isFinalElse?: boolean }[] = []
+      let segStart = 0
+      for (const brk of topLevelBreaks) {
+        segments.push({ content: fullContent.slice(segStart, brk.pos), ability: undefined })
+        if (brk.type === 'elseDirective') {
+          // Parse the elseDirective params
+          const after = fullContent.slice(brk.pos + `@${elseDirective}`.length)
+          const ep = parseCanParams(after)
+          if (ep) {
+            segments[segments.length - 1] = { content: fullContent.slice(segStart, brk.pos) }
+            segStart = brk.pos + `@${elseDirective}`.length + ep.paramsEnd
+            // Mark the NEXT segment will have these params
+            segments.push({ content: '', ability: ep.ability, type: ep.type, id: ep.id })
+            // Actually we need to continue collecting content for this segment
+            // Remove the placeholder, it will be filled on next iteration
+            segments.pop()
+            // Use a trick: remember params for the next segment boundary
+            const nextBrk = topLevelBreaks[topLevelBreaks.indexOf(brk) + 1]
+            const nextEnd = nextBrk ? nextBrk.pos : fullContent.length
+            segments.push({ content: fullContent.slice(segStart, nextEnd), ability: ep.ability, type: ep.type, id: ep.id })
+            segStart = nextEnd
           }
-          can = context.permissions.check(...args)
         }
-        catch {
-          can = false
+        else {
+          // @else — final else
+          segStart = brk.pos + '@else'.length
+        }
+      }
+      // Add remaining content as final segment
+      if (segStart < fullContent.length) {
+        const lastSeg = segments[segments.length - 1]
+        if (topLevelBreaks.length > 0 && topLevelBreaks[topLevelBreaks.length - 1].type === 'else') {
+          segments.push({ content: fullContent.slice(segStart), isFinalElse: true })
+        }
+        else if (segments.length === 0) {
+          segments.push({ content: fullContent.slice(segStart) })
         }
       }
 
-      if (can) {
-        return content
-      }
-      else if (elseAbility) {
-        // Check the elsecan condition
-        let elseCan = false
+      // Evaluate: first segment uses parsed.ability
+      const primaryPerm = checkPermission(parsed.ability, parsed.type, parsed.id)
+      const primaryResult = directive === 'can' ? primaryPerm : !primaryPerm
 
-        if (context.userCan && typeof context.userCan[elseAbility] === 'boolean') {
-          elseCan = context.userCan[elseAbility]
-        }
-        else if (context.permissions?.check && typeof context.permissions.check === 'function') {
-          try {
-            const args = [elseAbility]
-            if (elseType)
-              args.push(elseType)
-            if (elseId) {
-              const elseIdValue = evaluateAuthExpression(elseId, context)
-              args.push(elseIdValue)
-            }
-            elseCan = context.permissions.check(...args)
-          }
-          catch {
-            elseCan = false
-          }
-        }
-
-        return elseCan ? elseContent : (finalElseContent || '')
+      let replacement = ''
+      if (primaryResult) {
+        replacement = segments[0]?.content || ''
       }
       else {
-        return finalElseContent || ''
-      }
-    },
-  )
-
-  // Process @cannot/@endcannot directive with all variations
-  output = output.replace(
-    /@cannot\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n?\s*([\s\S]*?)(?:@elsecannot\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n?\s*([\s\S]*?))?(?:@else\s*\n?\s*([\s\S]*?))?@endcannot/g,
-    (_, ability, type, id, content, elseAbility, elseType, elseId, elseContent, finalElseContent) => {
-      // Handle permissions with complex evaluation
-      let cannot = true
-
-      // Try different permission checking patterns
-      if (context.userCan && typeof context.userCan[ability] === 'boolean') {
-        cannot = !context.userCan[ability]
-      }
-      else if (context.permissions?.check && typeof context.permissions.check === 'function') {
-        try {
-          const args = [ability]
-          if (type)
-            args.push(type)
-          if (id) {
-            // Evaluate id if it's an expression
-            const idValue = evaluateAuthExpression(id, context)
-            args.push(idValue)
+        // Try elseDirective segments
+        let found = false
+        for (let si = 1; si < segments.length; si++) {
+          const seg = segments[si]
+          if (seg.isFinalElse) {
+            replacement = seg.content
+            found = true
+            break
           }
-          cannot = !context.permissions.check(...args)
-        }
-        catch {
-          cannot = true
-        }
-      }
-
-      if (cannot) {
-        return content
-      }
-      else if (elseAbility) {
-        // Check the elsecannot condition
-        let elseCannot = true
-
-        if (context.userCan && typeof context.userCan[elseAbility] === 'boolean') {
-          elseCannot = !context.userCan[elseAbility]
-        }
-        else if (context.permissions?.check && typeof context.permissions.check === 'function') {
-          try {
-            const args = [elseAbility]
-            if (elseType)
-              args.push(elseType)
-            if (elseId) {
-              const elseIdValue = evaluateAuthExpression(elseId, context)
-              args.push(elseIdValue)
+          if (seg.ability) {
+            const elsePerm = checkPermission(seg.ability, seg.type, seg.id)
+            const elseResult = directive === 'can' ? elsePerm : !elsePerm
+            if (elseResult) {
+              replacement = seg.content
+              found = true
+              break
             }
-            elseCannot = !context.permissions.check(...args)
-          }
-          catch {
-            elseCannot = true
           }
         }
+        if (!found && segments.length > 0) {
+          const lastSeg = segments[segments.length - 1]
+          if (lastSeg.isFinalElse) {
+            replacement = lastSeg.content
+          }
+        }
+      }
 
-        return elseCannot ? elseContent : (finalElseContent || '')
-      }
-      else {
-        return finalElseContent || ''
-      }
-    },
-  )
+      output = output.substring(0, startPos) + replacement + output.substring(endPos + `@${endDirective}`.length)
+      processedAny = true
+    }
+  }
 
   return output
 }
