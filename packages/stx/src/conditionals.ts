@@ -148,7 +148,10 @@ export function processSwitchStatements(template: string, context: Record<string
       for (const caseItem of parsed.cases) {
         if (caseItem.type === 'default') {
           if (!foundMatch) {
-            result = caseItem.content.replace(/@break/g, '').trim()
+            // Don't strip @break globally — parseSwitchBlock already excludes
+            // depth-0 @break from case content. Remaining @break are inside
+            // nested @switch blocks and must be preserved.
+            result = caseItem.content.trim()
           }
         }
         else {
@@ -164,7 +167,7 @@ export function processSwitchStatements(template: string, context: Record<string
             }
 
             if (switchValue === caseValue) {
-              result = caseItem.content.replace(/@break/g, '').trim()
+              result = caseItem.content.trim()
               foundMatch = true
               break
             }

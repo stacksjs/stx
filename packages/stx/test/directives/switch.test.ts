@@ -155,10 +155,9 @@ describe('Switch Directive', () => {
     }
 
     const result = await processTemplate(template, context)
-    // TODO: Fix nested switch processing
     expect(result).toContain('<div class="admin">')
     expect(result).toContain('Admin Panel')
-    // expect(result).toContain('<span> - Level 2</span>') // Temporarily disabled while fixing nested switches
+    expect(result).toContain('<span> - Level 2</span>')
   })
 
   test('should handle multiline case content', async () => {

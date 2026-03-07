@@ -308,7 +308,8 @@ export function parseArguments(argsString: string): string[] {
     // Handle template expression
     if (inString === '`' && char === '$' && argsString[i + 1] === '{') {
       inTemplateExpr++
-      current += char
+      current += '${'
+      i++ // Skip the '{' to avoid double-counting
       continue
     }
     if (inTemplateExpr > 0 && char === '{') {

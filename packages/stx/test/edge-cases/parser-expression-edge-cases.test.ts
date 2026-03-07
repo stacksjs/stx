@@ -960,17 +960,11 @@ describe('parseArguments edge cases', () => {
     expect(result).toEqual(['42'])
   })
 
-  it('should handle template literal in arguments (known bug: template expr double-counts braces)', () => {
+  it('should handle template literal in arguments', () => {
     const result = parseArguments('`hello ${name}`, "world"')
-    // BUG: parseArguments handles ${} in template literals incorrectly.
-    // When it sees '$' followed by '{', it increments inTemplateExpr but does NOT
-    // advance past the '{'. The next iteration sees '{' and increments inTemplateExpr
-    // again (to 2). The single '}' only decrements to 1, so the closing backtick
-    // is never recognized as ending the template string. The comma is then consumed
-    // as part of the template string content, producing a single argument instead of two.
-    // Expected (correct): ['`hello ${name}`', '"world"']
-    // Actual (buggy): ['`hello ${name}`, "world"']
-    expect(result).toHaveLength(1) // Documents the bug; should be 2 when fixed
+    expect(result).toHaveLength(2)
+    expect(result[0]).toBe('`hello ${name}`')
+    expect(result[1]).toBe('"world"')
   })
 
   it('should handle deeply nested structures', () => {
