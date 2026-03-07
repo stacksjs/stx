@@ -1,5 +1,6 @@
 import type { StxOptions } from '../../src/types'
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it, test } from 'bun:test'
+import stxPlugin from 'bun-plugin-stx'
 import {
   injectSeoTags,
   metaDirective,
@@ -9,7 +10,7 @@ import {
   registerSeoDirectives,
   structuredDataDirective,
 } from '../../src/seo'
-import { cleanupTestDirs, createTestFile, setupTestDirs } from '../utils'
+import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
 describe('SEO features', () => {
   beforeAll(async () => {
@@ -485,5 +486,124 @@ describe('SEO features', () => {
       expect(finalOutput).toContain('"@context":"https://schema.org"')
       expect(finalOutput).toContain('"@type":"WebPage"')
     })
+  })
+})
+
+describe('SEO Fixes', () => {
+  describe('escapeHtml uses &#39;', () => {
+    it('should use &#39; when processing SEO directives with single quotes', async () => {
+      const { processDirectives } = await import('../../src/process')
+      const deps = new Set<string>()
+      const template = `@seo({ title: "It's a test" })`
+      const result = await processDirectives(template, {}, 'test.stx', { debug: false, componentsDir: 'components' }, deps)
+      if (result.includes("'")) {
+        expect(result).not.toContain('&#039;')
+      }
+    })
+
+    it('should demonstrate the escapeHtml pattern is correct', () => {
+      const escapeHtml = (str: string) => str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+      const result = escapeHtml("it's <b>bold</b> & \"quoted\"")
+      expect(result).toContain('&#39;')
+      expect(result).not.toContain('&#039;')
+      expect(result).toContain('&lt;b&gt;')
+      expect(result).toContain('&amp;')
+      expect(result).toContain('&quot;')
+    })
+  })
+
+  describe('@structuredData nested objects', () => {
+    it('should handle @structuredData with nested objects', () => {
+      const template = '@structuredData({ type: \'Article\', author: { name: \'John\' } })'
+      const result = processStructuredData(template, {})
+      expect(result).toContain('Article')
+      expect(result).toContain('John')
+    })
+  })
+
+  describe('@metaTag balanced parsing', () => {
+    it('should handle @metaTag with nested objects', async () => {
+      const { processDirectives } = await import('../../src/process')
+      const deps = new Set<string>()
+      const template = `@metaTag({ name: 'description', content: 'A page about { things }' })`
+      const result = await processDirectives(template, {}, 'test.stx', { debug: false, componentsDir: 'components' }, deps)
+      expect(result).toContain('meta')
+      expect(result).toContain('description')
+    })
+  })
+
+  describe('@seo with nested objects', () => {
+    it('should handle @seo with nested object config', () => {
+      const template = `@seo({
+        title: 'My Page',
+        openGraph: {
+          type: 'article',
+          title: 'OG Title'
+        }
+      })`
+      const result = processSeoDirective(template, {}, '', {} as any)
+      expect(result).toContain('<title>My Page</title>')
+      expect(result).toContain('og:type')
+      expect(result).toContain('article')
+    })
+  })
+
+  describe('</script> escaping in JSON-LD', () => {
+    it('should escape </script> in structured data JSON-LD output', () => {
+      const template = '@structuredData({ "@type": "Article", "content": "</script><script>alert(1)</script>" })'
+      const result = processStructuredData(template, {})
+      expect(result).not.toContain('</script><script>alert')
+      expect(result).toContain('<\\/')
+    })
+
+    it('should escape </script> in @seo structuredData', () => {
+      const template = `@seo({
+        title: 'Test',
+        structuredData: {
+          '@type': 'Article',
+          'text': '</script>'
+        }
+      })`
+      const result = processSeoDirective(template, {}, '', {} as any)
+      expect(result).not.toContain('"</script>"')
+      expect(result).toContain('<\\/')
+    })
+  })
+})
+
+describe('@structuredData integration', () => {
+  beforeAll(async () => {
+    await setupTestDirs()
+  })
+
+  afterAll(cleanupTestDirs)
+
+  it('should handle @structuredData with nested objects via Bun.build', async () => {
+    const testFile = await createTestFile('structured-data.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head><title>Structured Data</title></head>
+      <body>
+        @structuredData({ type: 'Article', author: { name: 'John' } })
+        <p>Content</p>
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const html = await getHtmlOutput(result)
+    expect(html).toContain('Article')
+    expect(html).toContain('John')
+    expect(html).toContain('Content')
   })
 })

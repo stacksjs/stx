@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
+import { escapeHtml, unescapeHtml, usesSignalsInScript, evaluateExpression } from '../../src/expressions'
 
 describe('stx Expression Evaluation', () => {
   beforeAll(setupTestDirs)
@@ -242,5 +243,157 @@ describe('stx Expression Evaluation', () => {
     expect(outputHtml).toContain('<p>Theme: Default Theme</p>')
     expect(outputHtml).toContain('<p>Deep chaining: off</p>')
     expect(outputHtml).toContain('<p>Multiple fallbacks: 1000</p>')
+  })
+})
+
+describe('Expression Utility Tests', () => {
+  describe('escapeHtml/unescapeHtml round-trip', () => {
+    it('should round-trip escapeHtml and unescapeHtml correctly', () => {
+      const original = `He said "it's <b>bold</b>" & more`
+      const escaped = escapeHtml(original)
+      expect(escaped).toContain('&lt;')
+      expect(escaped).toContain('&gt;')
+      expect(escaped).toContain('&amp;')
+      expect(escaped).toContain('&quot;')
+      expect(escaped).toContain('&#39;')
+      const unescaped = unescapeHtml(escaped)
+      expect(unescaped).toBe(original)
+    })
+
+    it('should escape single quotes as &#39;', () => {
+      const result = escapeHtml("it's a test")
+      expect(result).toBe('it&#39;s a test')
+      expect(result).not.toContain('&#039;')
+    })
+
+    it('should escape all HTML entities correctly', () => {
+      const result = escapeHtml('<div class="test" data-name=\'value\'>&amp;</div>')
+      expect(result).toContain('&lt;')
+      expect(result).toContain('&gt;')
+      expect(result).toContain('&quot;')
+      expect(result).toContain('&#39;')
+      expect(result).toContain('&amp;amp;')
+    })
+
+    it('should round-trip with unescapeHtml', () => {
+      const original = `He said "it's <b>bold</b>" & more`
+      const escaped = escapeHtml(original)
+      const unescaped = unescapeHtml(escaped)
+      expect(unescaped).toBe(original)
+    })
+  })
+
+  describe('usesSignalsInScript', () => {
+    it('should be importable from expressions module', () => {
+      expect(typeof usesSignalsInScript).toBe('function')
+    })
+
+    it('should detect state() usage in client script blocks', () => {
+      const template = '<script>const count = state(0)</script>'
+      expect(usesSignalsInScript(template)).toBe(true)
+    })
+
+    it('should detect derived() usage', () => {
+      const template = '<script>const doubled = derived(() => count.value * 2)</script>'
+      expect(usesSignalsInScript(template)).toBe(true)
+    })
+
+    it('should detect effect() usage', () => {
+      const template = '<script>effect(() => console.log(count.value))</script>'
+      expect(usesSignalsInScript(template)).toBe(true)
+    })
+
+    it('should return false for no signal usage', () => {
+      const template = '<script>console.log("hello")</script>'
+      expect(usesSignalsInScript(template)).toBe(false)
+    })
+
+    it('should not detect signals in server scripts', () => {
+      const template = '<script server>const x = state(0)</script>'
+      expect(usesSignalsInScript(template)).toBe(false)
+    })
+  })
+
+  describe('evaluateExpression', () => {
+    it('should evaluate safe expressions using createSafeFunction', () => {
+      const result = evaluateExpression('a + b', { a: 1, b: 2 })
+      expect(result).toBe(3)
+    })
+
+    it('should evaluate complex expressions safely', () => {
+      const result = evaluateExpression('items.length > 0', { items: [1, 2, 3] })
+      expect(result).toBe(true)
+    })
+
+    it('should handle ternary expressions', () => {
+      const result = evaluateExpression('x > 5 ? "big" : "small"', { x: 10 })
+      expect(result).toBe('big')
+    })
+
+    it('should handle backtick strings with interpolation in expressions', () => {
+      const result = evaluateExpression('`Hello ${name}!`', { name: 'World' })
+      expect(result).toBe('Hello World!')
+    })
+  })
+
+  describe('findMatchingDelimiter escape handling', () => {
+    it('should correctly parse expressions with backslashes', async () => {
+      const { processDirectives } = await import('../../src/process')
+      const deps = new Set<string>()
+      const result = await processDirectives('<div>{{ message }}</div>', { message: 'test\\value' }, 'test.stx', { debug: false, componentsDir: 'components' }, deps)
+      expect(result).toContain('test\\value')
+    })
+  })
+
+  describe('signal @if condition quote escaping', () => {
+    it('should escape quotes in condition to produce valid HTML attribute', () => {
+      const condition = 'name === "admin"'
+      const escaped = condition.replace(/"/g, '&quot;')
+      expect(escaped).toBe('name === &quot;admin&quot;')
+    })
+
+    it('should not affect conditions without quotes', () => {
+      const condition = 'x > 5'
+      const escaped = condition.replace(/"/g, '&quot;')
+      expect(escaped).toBe('x > 5')
+    })
+  })
+})
+
+describe('Underscore-prefixed variables integration', () => {
+  it('should allow underscore-prefixed user variables in expressions', async () => {
+    const testFile = await createTestFile('underscore-vars.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Underscore Vars</title>
+        <script>
+          module.exports = {
+            _id: 42,
+            _name: 'Test User',
+            _count: 3
+          };
+        </script>
+      </head>
+      <body>
+        <p>ID: {{ _id }}</p>
+        <p>Name: {{ _name }}</p>
+        @if (_count > 0)
+          <p>Count: {{ _count }}</p>
+        @endif
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).toContain('<p>ID: 42</p>')
+    expect(outputHtml).toContain('<p>Name: Test User</p>')
+    expect(outputHtml).toContain('<p>Count: 3</p>')
   })
 })

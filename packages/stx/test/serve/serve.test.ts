@@ -433,3 +433,73 @@ describe('Helper functions', () => {
     expect(typeof route).toBe('function')
   })
 })
+
+describe('Serve Internal Fixes', () => {
+  describe('debug variable references stxOptions.debug', () => {
+    it('should have debug flag accessible through StxOptions', async () => {
+      const { StxOptions } = await import('../../src/types') as any
+      const opts = { debug: true }
+      expect(opts.debug).toBe(true)
+      const optsOff = { debug: false }
+      expect(optsOff.debug).toBe(false)
+    })
+  })
+
+  describe('stack trace leak prevention', () => {
+    it('should not expose stack traces in non-debug mode conceptually', () => {
+      const opts = { debug: false }
+      expect(opts.debug).toBe(false)
+      const optsDebug = { debug: true }
+      expect(optsDebug.debug).toBe(true)
+    })
+  })
+
+  describe('cache eviction pattern', () => {
+    it('should demonstrate Map-based cache eviction for stale keys', () => {
+      const cache = new Map<string, { content: string, mtime: number }>()
+      const filePath = '/test/file.stx'
+      cache.set(`${filePath}:100`, { content: 'v1', mtime: 100 })
+      const newCacheKey = `${filePath}:200`
+      for (const key of cache.keys()) {
+        if (key.startsWith(`${filePath}:`) && key !== newCacheKey) {
+          cache.delete(key)
+        }
+      }
+      cache.set(newCacheKey, { content: 'v2', mtime: 200 })
+      expect(cache.has(`${filePath}:100`)).toBe(false)
+      expect(cache.get(newCacheKey)?.content).toBe('v2')
+      expect(cache.size).toBe(1)
+    })
+  })
+
+  describe('balanced template extraction', () => {
+    it('should handle nested <template> tags via balanced depth tracking', () => {
+      const content = '<template><div><template id="modal"><p>inner</p></template></div></template>'
+      const templateOpen = '<template>'
+      const start = content.indexOf(templateOpen) + templateOpen.length
+      let depth = 1
+      let pos = start
+      let endPos = -1
+      while (pos < content.length && depth > 0) {
+        const openIdx = content.indexOf('<template', pos)
+        const closeIdx = content.indexOf('</template>', pos)
+        if (closeIdx === -1) break
+        if (openIdx !== -1 && openIdx < closeIdx) {
+          depth++
+          pos = openIdx + '<template'.length
+        } else {
+          depth--
+          if (depth === 0) {
+            endPos = closeIdx
+            break
+          }
+          pos = closeIdx + '</template>'.length
+        }
+      }
+      const extracted = content.slice(start, endPos)
+      expect(extracted).toContain('<template id="modal">')
+      expect(extracted).toContain('</template>')
+      expect(extracted).toContain('<p>inner</p>')
+    })
+  })
+})

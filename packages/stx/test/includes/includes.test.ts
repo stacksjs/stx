@@ -329,3 +329,75 @@ describe('stx Include Directives', () => {
     expect(outputHtml).toContain('</body>')
   })
 })
+
+describe('Include Fixes', () => {
+  beforeAll(async () => {
+    const { setupTestDirs } = await import('../utils')
+    await setupTestDirs()
+  })
+  afterAll(async () => {
+    const { cleanupTestDirs } = await import('../utils')
+    await cleanupTestDirs()
+  })
+
+  it('should handle @include with nested object variables', async () => {
+    const { createTestFile, getHtmlOutput, OUTPUT_DIR, TEMP_DIR } = await import('../utils')
+    const path = await import('node:path')
+
+    await createTestFile('partials/card-fix.stx', `
+      <div class="card">
+        <h3>{{ title }}</h3>
+        <p>{{ description }}</p>
+      </div>
+    `)
+
+    const testFile = await createTestFile('include-nested-obj-fix.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head><title>Include Test</title></head>
+      <body>
+        @include('card-fix', { title: 'Hello', description: 'World' })
+      </body>
+      </html>
+    `)
+
+    const stxPlugin = (await import('bun-plugin-stx')).default
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({ partialsDir: path.join(TEMP_DIR, 'partials') })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).toContain('<h3>Hello</h3>')
+    expect(outputHtml).toContain('<p>World</p>')
+  })
+
+  it('should handle @includeFirst with simple parameters', async () => {
+    const { createTestFile, getHtmlOutput, OUTPUT_DIR, TEMP_DIR } = await import('../utils')
+    const path = await import('node:path')
+
+    await createTestFile('partials/fix16-card-fix.stx', '<div class="fix16-card">{{ title }}</div>')
+
+    const testFile = await createTestFile('include-first-test-fix.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head><title>Include First</title></head>
+      <body>
+        @includeFirst(['fix16-card-fix', 'fix16-fallback'], { title: 'My Card' })
+      </body>
+      </html>
+    `)
+
+    const stxPlugin = (await import('bun-plugin-stx')).default
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({ partialsDir: path.join(TEMP_DIR, 'partials') })],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).toContain('fix16-card')
+    expect(outputHtml).toContain('My Card')
+  })
+})

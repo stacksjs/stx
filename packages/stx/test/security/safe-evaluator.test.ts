@@ -1,4 +1,6 @@
+import type { StxOptions } from '../../src/types'
 import { describe, expect, it, beforeEach, afterEach } from 'bun:test'
+import { processDirectives } from '../../src/process'
 import {
   configureSafeEvaluator,
   createSafeContext,
@@ -13,6 +15,13 @@ import {
   safeEvaluateObject,
   sanitizeExpression,
 } from '../../src/safe-evaluator'
+
+const defaultOptions: StxOptions = { debug: false, componentsDir: 'components' }
+
+async function processTemplate(template: string, context: Record<string, any> = {}, filePath: string = 'test.stx', options: StxOptions = defaultOptions): Promise<string> {
+  const dependencies = new Set<string>()
+  return processDirectives(template, context, filePath, options, dependencies)
+}
 
 describe('Safe Evaluator', () => {
   beforeEach(() => {
@@ -262,5 +271,217 @@ describe('Safe Evaluator Security', () => {
 
   it('should handle nested dangerous patterns', () => {
     expect(isExpressionSafe('obj["constructor"]["prototype"]')).toBe(false)
+  })
+})
+
+describe('isForExpressionSafe Hardening', () => {
+  it('should allow safe for-loop expressions', () => {
+    expect(isForExpressionSafe('let i = 0; i < 10; i++')).toBe(true)
+    expect(isForExpressionSafe('let i = arr.length - 1; i >= 0; i--')).toBe(true)
+  })
+
+  it('should block fetch()', () => {
+    expect(isForExpressionSafe('let i = 0; fetch("http://evil.com"); i < 1; i++')).toBe(false)
+  })
+
+  it('should block Bun and Deno globals', () => {
+    expect(isForExpressionSafe('Bun.write("file", "data")')).toBe(false)
+    expect(isForExpressionSafe('Deno.readFile("secret")')).toBe(false)
+  })
+
+  it('should block console access', () => {
+    expect(isForExpressionSafe('console.log("leak")')).toBe(false)
+  })
+
+  it('should block this keyword', () => {
+    expect(isForExpressionSafe('this.constructor("evil")()')).toBe(false)
+  })
+
+  it('should block Reflect and Proxy', () => {
+    expect(isForExpressionSafe('Reflect.apply(eval, null, ["code"])')).toBe(false)
+    expect(isForExpressionSafe('new Proxy({}, {})')).toBe(false)
+  })
+
+  it('should block prototype access', () => {
+    expect(isForExpressionSafe('obj.prototype.pollute = true')).toBe(false)
+  })
+
+  it('should block bind/call/apply', () => {
+    expect(isForExpressionSafe('fn.bind(null)()')).toBe(false)
+    expect(isForExpressionSafe('fn.call(this, arg)')).toBe(false)
+    expect(isForExpressionSafe('fn.apply(null, args)')).toBe(false)
+  })
+
+  it('should block process access', () => {
+    expect(isForExpressionSafe('process.exit(1)')).toBe(false)
+  })
+
+  it('should allow safe comparison expressions', () => {
+    expect(isForExpressionSafe('i > 5')).toBe(true)
+    expect(isForExpressionSafe('i === 10')).toBe(true)
+    expect(isForExpressionSafe('x >= y')).toBe(true)
+  })
+
+  it('should block unsafe expressions in break conditions', () => {
+    expect(isForExpressionSafe('fetch("evil")')).toBe(false)
+    expect(isForExpressionSafe('process.exit()')).toBe(false)
+    expect(isForExpressionSafe('require("child_process")')).toBe(false)
+    expect(isForExpressionSafe('Bun.write("x", "y")')).toBe(false)
+  })
+})
+
+describe('sanitizeObject Built-in Type Preservation', () => {
+  it('should allow _id, _name, _count in safe context', () => {
+    const context = createSafeContext({
+      _id: 42,
+      _name: 'Test',
+      _count: 7,
+      __internal: 'hidden',
+    })
+    expect(context._id).toBe(42)
+    expect(context._name).toBe('Test')
+    expect(context._count).toBe(7)
+    expect(context.__internal).toBeUndefined()
+  })
+
+  it('should sanitize nested objects with single-underscore keys', () => {
+    const userObj: Record<string, unknown> = { _id: 1, name: 'Test' }
+    Object.defineProperty(userObj, '__internal', { value: 'hidden', enumerable: true })
+    const context = createSafeContext({ user: userObj })
+    const user = context.user as Record<string, unknown>
+    expect(user._id).toBe(1)
+    expect(user.name).toBe('Test')
+    expect(user.__internal).toBeUndefined()
+  })
+
+  it('should evaluate expressions with underscore-prefixed variables', () => {
+    const result = safeEvaluate('_id + _count', { _id: 10, _count: 5 })
+    expect(result).toBe(15)
+  })
+
+  it('should preserve Date objects', () => {
+    const date = new Date('2024-01-01')
+    const ctx = createSafeContext({ myDate: date })
+    expect(ctx.myDate).toBeInstanceOf(Date)
+    expect((ctx.myDate as Date).getFullYear()).toBe(2024)
+  })
+
+  it('should preserve RegExp objects', () => {
+    const regex = /test\d+/gi
+    const ctx = createSafeContext({ pattern: regex })
+    expect(ctx.pattern).toBeInstanceOf(RegExp)
+    expect((ctx.pattern as RegExp).test('test123')).toBe(true)
+  })
+
+  it('should preserve Map objects', () => {
+    const map = new Map([['key', 'value']])
+    const ctx = createSafeContext({ myMap: map })
+    expect(ctx.myMap).toBeInstanceOf(Map)
+    expect((ctx.myMap as Map<string, string>).get('key')).toBe('value')
+  })
+
+  it('should preserve Set objects', () => {
+    const set = new Set([1, 2, 3])
+    const ctx = createSafeContext({ mySet: set })
+    expect(ctx.mySet).toBeInstanceOf(Set)
+    expect((ctx.mySet as Set<number>).has(2)).toBe(true)
+  })
+
+  it('should preserve Error objects', () => {
+    const error = new Error('test error')
+    const ctx = createSafeContext({ err: error })
+    expect(ctx.err).toBeInstanceOf(Error)
+    expect((ctx.err as Error).message).toBe('test error')
+  })
+
+  it('should still strip dangerous __proto__ and constructor keys', () => {
+    const obj = Object.create(null)
+    obj.normal = 'ok'
+    obj.__dangerous = 'stripped'
+    obj.constructor = 'evil_constructor'
+    const ctx = createSafeContext({ data: obj })
+    const data = ctx.data as Record<string, unknown>
+    expect(data.normal).toBe('ok')
+    expect(data.__dangerous).toBeUndefined()
+    expect(data.constructor).not.toBe('evil_constructor')
+  })
+})
+
+describe('Safe Evaluation for Props and Bindings', () => {
+  it('should reject unsafe expressions in component attrs', () => {
+    expect(isExpressionSafe('constructor.constructor("return process")()')).toBe(false)
+    expect(isExpressionSafe('require("child_process")')).toBe(false)
+  })
+
+  it('should allow safe slot-style expressions', () => {
+    expect(isExpressionSafe('count + 1')).toBe(true)
+    expect(isExpressionSafe('items.length > 0')).toBe(true)
+  })
+
+  it('should reject unsafe expressions in :prop bindings', () => {
+    expect(isExpressionSafe('process.exit()')).toBe(false)
+    expect(isExpressionSafe('require("fs")')).toBe(false)
+    expect(isExpressionSafe('eval("code")')).toBe(false)
+  })
+
+  it('should accept safe expressions for :prop bindings', () => {
+    expect(isExpressionSafe('items.length')).toBe(true)
+    expect(isExpressionSafe('x + y')).toBe(true)
+    expect(isExpressionSafe('user.name')).toBe(true)
+  })
+
+  it('should safely evaluate :prop expressions via createSafeFunction', () => {
+    const fn = createSafeFunction('x * 2', ['x'])
+    expect(fn(5)).toBe(10)
+  })
+
+  it('should handle array access in safe functions', () => {
+    const fn = createSafeFunction('items[0]', ['items'])
+    expect(fn([10, 20, 30])).toBe(10)
+  })
+
+  it('should block eval in sanitizeExpression', () => {
+    expect(() => sanitizeExpression('eval("alert(1)")')).toThrow('Potentially unsafe')
+  })
+
+  it('should block Function constructor in sanitizeExpression', () => {
+    expect(() => sanitizeExpression('Function("return this")()')).toThrow('Potentially unsafe')
+  })
+
+  it('should block process access in sanitizeExpression', () => {
+    expect(() => sanitizeExpression('process.env.SECRET')).toThrow('Potentially unsafe')
+  })
+
+  it('should allow safe object expressions', () => {
+    const result = safeEvaluateObject('{ title: "Hello", count: 42 }', {})
+    expect(result.title).toBe('Hello')
+    expect(result.count).toBe(42)
+  })
+
+  it('should block dangerous expressions in createSafeFunction', () => {
+    expect(() => createSafeFunction('eval("code")', ['x'])).toThrow('Potentially unsafe')
+  })
+
+  it('should block import() in createSafeFunction', () => {
+    expect(() => createSafeFunction('import("fs")', ['x'])).toThrow('Potentially unsafe')
+  })
+
+  it('should safely evaluate simple variable paths', () => {
+    expect(isExpressionSafe('data')).toBe(true)
+    expect(isExpressionSafe('user.name')).toBe(true)
+    expect(isExpressionSafe('items[0]')).toBe(true)
+  })
+
+  it('should block dangerous @json paths', () => {
+    expect(isExpressionSafe('constructor.constructor("return process")()')).toBe(false)
+  })
+})
+
+describe('Date objects in context', () => {
+  it('should handle Date objects in context through sanitizeObject', async () => {
+    const now = new Date('2024-06-15')
+    const template = '<span>{{ myDate.getFullYear() }}</span>'
+    const result = await processTemplate(template, { myDate: now })
+    expect(result).toContain('2024')
   })
 })

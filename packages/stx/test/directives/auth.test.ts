@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
+import { processAuthDirectives } from '../../src/conditionals'
 
 describe('stx Auth Directives', () => {
   beforeAll(setupTestDirs)
@@ -303,5 +304,129 @@ describe('stx Auth Directives', () => {
     expect(outputHtml).not.toContain('<button class="moderate">Moderate Forum</button>')
     expect(outputHtml).toContain('<p class="no-moderate">No moderation privileges</p>')
     expect(true).toBe(true)
+  })
+
+  // Migrated auth unit tests
+  it('should handle @auth without requiring newline', async () => {
+    const testFile = await createTestFile('auth-singleline-fix.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head><title>Auth Test</title></head>
+      <body>
+        @auth <p>Welcome!</p> @endauth
+        @guest <p>Please log in</p> @endguest
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).not.toContain('Welcome!')
+    expect(outputHtml).toContain('Please log in')
+  })
+
+  it('should handle @auth with Windows-style line endings', async () => {
+    const content = '<!DOCTYPE html>\r\n<html>\r\n<head><title>Auth CRLF</title></head>\r\n<body>\r\n@auth\r\n<p>Logged in</p>\r\n@endauth\r\n@guest\r\n<p>Not logged in</p>\r\n@endguest\r\n</body>\r\n</html>'
+    const testFile = await createTestFile('auth-crlf-fix.stx', content)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).not.toContain('Logged in')
+    expect(outputHtml).toContain('Not logged in')
+  })
+
+  describe('@can/@cannot balanced parsing (unit)', () => {
+    it('should process basic @can with permission granted', () => {
+      const result = processAuthDirectives(
+        '@can(\'edit\')<button>Edit</button>@endcan',
+        { auth: { check: true }, userCan: { edit: true } },
+      )
+      expect(result).toContain('<button>Edit</button>')
+    })
+
+    it('should hide content when permission denied', () => {
+      const result = processAuthDirectives(
+        '@can(\'delete\')<button>Delete</button>@endcan',
+        { auth: { check: true }, userCan: { delete: false } },
+      )
+      expect(result).not.toContain('<button>Delete</button>')
+    })
+
+    it('should support @can with @else', () => {
+      const result = processAuthDirectives(
+        '@can(\'edit\')<button>Edit</button>@else<span>No access</span>@endcan',
+        { auth: { check: true }, userCan: { edit: false } },
+      )
+      expect(result).toContain('<span>No access</span>')
+      expect(result).not.toContain('<button>Edit</button>')
+    })
+
+    it('should process @cannot directive', () => {
+      const result = processAuthDirectives(
+        '@cannot(\'admin\')<p>Not admin</p>@endcannot',
+        { auth: { check: true }, userCan: { admin: false } },
+      )
+      expect(result).toContain('<p>Not admin</p>')
+    })
+
+    it('should handle @cannot with @else', () => {
+      const result = processAuthDirectives(
+        '@cannot(\'edit\')<span>Read only</span>@else<span>Can edit</span>@endcannot',
+        { auth: { check: true }, userCan: { edit: true } },
+      )
+      expect(result).toContain('<span>Can edit</span>')
+      expect(result).not.toContain('<span>Read only</span>')
+    })
+  })
+
+  describe('@auth/@guest balanced parsing (unit)', () => {
+    it('should handle @auth without newline', () => {
+      const result = processAuthDirectives(
+        '@auth\n<p>Welcome!</p>\n@endauth',
+        { auth: { check: true } },
+      )
+      expect(result).toContain('Welcome!')
+    })
+
+    it('should handle @guest when not authenticated', () => {
+      const result = processAuthDirectives(
+        '@guest\n<p>Login</p>\n@endguest',
+        {},
+      )
+      expect(result).toContain('Login')
+    })
+
+    it('should handle @auth...@else...@endauth', () => {
+      const template = '@auth\n<p>Logged in</p>\n@else\n<p>Not logged in</p>\n@endauth'
+
+      const authed = processAuthDirectives(template, { auth: { check: true } })
+      expect(authed).toContain('Logged in')
+      expect(authed).not.toContain('Not logged in')
+
+      const guest = processAuthDirectives(template, {})
+      expect(guest).not.toContain('Logged in')
+      expect(guest).toContain('Not logged in')
+    })
+
+    it('should handle nested @auth inside @guest', () => {
+      const template = `@guest
+<p>Guest mode</p>
+@auth
+<p>Should not render</p>
+@endauth
+@endguest`
+      const result = processAuthDirectives(template, {})
+      expect(result).toContain('Guest mode')
+    })
   })
 })

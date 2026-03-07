@@ -1,8 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import stxPlugin from 'bun-plugin-stx'
 import fs from 'node:fs'
 import path from 'node:path'
 import { readMarkdownFile } from '../../src/assets'
 import { config } from '../../src/config'
+import { parseMarkdown } from '../../src/internal-markdown'
+import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
 const TEMP_DIR = path.join(import.meta.dir, 'temp')
 const FIXTURES_DIR = path.join(import.meta.dir, 'fixtures')
@@ -661,5 +664,163 @@ This is text that will be highlighted as plain text.
     // Since unknown languages may not always get highlighted even when enabled,
     // we'll consider this test a success as long as the content is present
     expect(true).toBe(true)
+  })
+})
+
+describe('Markdown Parsing Fixes', () => {
+  describe('OL/UL separate markers', () => {
+    it('should correctly wrap unordered list items', () => {
+      const result = parseMarkdown('- Item A\n- Item B')
+      expect(result).toContain('<ul>')
+      expect(result).toContain('<li>Item A</li>')
+      expect(result).toContain('<li>Item B</li>')
+      expect(result).toContain('</ul>')
+    })
+
+    it('should correctly wrap ordered list items', () => {
+      const result = parseMarkdown('1. First\n2. Second')
+      expect(result).toContain('<ol>')
+      expect(result).toContain('<li>First</li>')
+      expect(result).toContain('<li>Second</li>')
+      expect(result).toContain('</ol>')
+    })
+
+    it('should not corrupt when both list types have same text', () => {
+      const result = parseMarkdown('- Apple\n- Banana\n\n1. Apple\n2. Banana')
+      expect(result).toContain('<ul>')
+      expect(result).toContain('<ol>')
+      const ulCount = (result.match(/<ul>/g) || []).length
+      const olCount = (result.match(/<ol>/g) || []).length
+      expect(ulCount).toBeGreaterThanOrEqual(1)
+      expect(olCount).toBeGreaterThanOrEqual(1)
+    })
+
+    it('should not leave data-ul or data-ol markers in output', () => {
+      const result = parseMarkdown('- Item\n\n1. Item')
+      expect(result).not.toContain('data-ul')
+      expect(result).not.toContain('data-ol')
+    })
+  })
+
+  describe('breaks option preserves code blocks', () => {
+    it('should not inject <br> inside code blocks when breaks enabled', () => {
+      const md = '```\nline1\nline2\nline3\n```'
+      const result = parseMarkdown(md, { breaks: true })
+      const codeMatch = result.match(/<code>([\s\S]*?)<\/code>/)
+      if (codeMatch) {
+        expect(codeMatch[1]).not.toContain('<br />')
+      }
+    })
+
+    it('should still convert newlines to <br> in regular text', () => {
+      const md = 'line one\nline two'
+      const result = parseMarkdown(md, { breaks: true })
+      expect(result).toContain('<br />')
+    })
+  })
+
+  describe('@markdown $ replacement pattern safety', () => {
+    it('should handle markdown content with $ signs correctly', async () => {
+      const { processDirectives } = await import('../../src/process')
+      const deps = new Set<string>()
+      const template = '@markdown\nPrice is $100 and $200\n@endmarkdown'
+      const result = await processDirectives(template, {}, 'test.stx', { debug: false, componentsDir: 'components' }, deps)
+      expect(result).toContain('$100')
+      expect(result).toContain('$200')
+    })
+
+    it('should preserve $& pattern in markdown output', async () => {
+      const { processDirectives } = await import('../../src/process')
+      const deps = new Set<string>()
+      const template = '@markdown\nUse $& for match\n@endmarkdown'
+      const result = await processDirectives(template, {}, 'test.stx', { debug: false, componentsDir: 'components' }, deps)
+      expect(result).toContain('$&')
+      expect(result).toContain('<p>')
+    })
+  })
+
+  describe('empty code spans', () => {
+    it('should handle empty code spans', () => {
+      const result = parseMarkdown('Use `` for empty code')
+      expect(result).toContain('<code></code>')
+    })
+
+    it('should still handle non-empty code spans', () => {
+      const result = parseMarkdown('Use `console.log` for logging')
+      expect(result).toContain('<code>console.log</code>')
+    })
+  })
+
+  describe('underscore in identifiers', () => {
+    it('should not treat underscores in identifiers as italic', () => {
+      const result = parseMarkdown('Use my_variable_name in code')
+      expect(result).not.toContain('<em>variable</em>')
+      expect(result).toContain('my_variable_name')
+    })
+
+    it('should still support proper underscore emphasis', () => {
+      const result = parseMarkdown('This is _emphasized_ text')
+      expect(result).toContain('<em>emphasized</em>')
+    })
+
+    it('should handle double underscore for bold', () => {
+      const result = parseMarkdown('This is __bold__ text')
+      expect(result).toContain('<strong>bold</strong>')
+    })
+  })
+
+  describe('markdown integration with both list types', () => {
+    it('should process markdown with both list types correctly', () => {
+      const md = `# Title
+
+- Bullet 1
+- Bullet 2
+
+1. Number 1
+2. Number 2
+
+\`\`\`
+code line 1
+code line 2
+\`\`\``
+      const result = parseMarkdown(md)
+      expect(result).toContain('<h1>')
+      expect(result).toContain('<ul>')
+      expect(result).toContain('<ol>')
+      expect(result).toContain('<pre><code>')
+      expect(result).not.toContain('data-ul')
+      expect(result).not.toContain('data-ol')
+    })
+  })
+})
+
+describe('@markdown balanced parsing integration', () => {
+  beforeAll(setupTestDirs)
+  afterAll(cleanupTestDirs)
+
+  it('should handle @markdown with nested directives', async () => {
+    const testFile = await createTestFile('markdown-test.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head><title>Markdown Test</title></head>
+      <body>
+        @markdown
+        # Hello World
+
+        This is **bold** text.
+        @endmarkdown
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const html = await getHtmlOutput(result)
+    expect(html).toContain('Hello World')
+    expect(html).toContain('bold')
   })
 })

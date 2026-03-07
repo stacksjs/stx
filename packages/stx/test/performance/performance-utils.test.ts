@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
 import {
+  clearRegexCache,
   debounce,
   expressionEvaluatorPool,
   getCachedRegex,
@@ -729,6 +730,85 @@ describe('Performance Utils', () => {
 
       // Should still cache after clear
       expect(newEvaluator1).toBe(newEvaluator2)
+    })
+  })
+})
+
+describe('Performance Utils Fixes', () => {
+  describe('ExpressionEvaluatorPool caching', () => {
+    it('should return same result for repeated expressions', () => {
+      const factory = expressionEvaluatorPool.getEvaluator(['x'])
+      const evaluator = factory(10)
+      const result1 = evaluator('x * 2')
+      const result2 = evaluator('x * 2')
+      expect(result1).toBe(20)
+      expect(result2).toBe(20)
+    })
+
+    it('should handle different expressions with same context', () => {
+      const factory = expressionEvaluatorPool.getEvaluator(['a', 'b'])
+      const evaluator = factory(5, 3)
+      expect(evaluator('a + b')).toBe(8)
+      expect(evaluator('a * b')).toBe(15)
+      expect(evaluator('a - b')).toBe(2)
+    })
+
+    it('should clear cache when pool is cleared', () => {
+      expressionEvaluatorPool.clear()
+      const factory = expressionEvaluatorPool.getEvaluator(['val'])
+      const evaluator = factory(42)
+      expect(evaluator('val')).toBe(42)
+    })
+  })
+
+  describe('ExpressionEvaluatorPool uses new Function', () => {
+    it('should evaluate simple expressions', () => {
+      const factory = expressionEvaluatorPool.getEvaluator(['x', 'y'])
+      const evaluator = factory(10, 20)
+      expect(evaluator('x + y')).toBe(30)
+    })
+
+    it('should evaluate property access', () => {
+      const factory = expressionEvaluatorPool.getEvaluator(['user'])
+      const evaluator = factory({ name: 'Alice' })
+      expect(evaluator('user.name')).toBe('Alice')
+    })
+
+    it('should return undefined for reference errors', () => {
+      const factory = expressionEvaluatorPool.getEvaluator(['x'])
+      const evaluator = factory(1)
+      expect(evaluator('nonexistent')).toBeUndefined()
+    })
+
+    it('should handle ternary expressions', () => {
+      const factory = expressionEvaluatorPool.getEvaluator(['active'])
+      const evaluator = factory(true)
+      expect(evaluator('active ? "yes" : "no"')).toBe('yes')
+    })
+  })
+
+  describe('REGEX_CACHE bounded size', () => {
+    beforeEach(() => {
+      clearRegexCache()
+    })
+
+    it('should cache non-global regex patterns', () => {
+      const r1 = getCachedRegex('test\\d+', 'i')
+      const r2 = getCachedRegex('test\\d+', 'i')
+      expect(r1).toBe(r2)
+    })
+
+    it('should always return new instance for global regex', () => {
+      const r1 = getCachedRegex('test\\d+', 'g')
+      const r2 = getCachedRegex('test\\d+', 'g')
+      expect(r1).not.toBe(r2)
+    })
+
+    it('should not crash when adding many entries (eviction works)', () => {
+      for (let i = 0; i < 510; i++) {
+        getCachedRegex(`pattern-${i}`, 'i')
+      }
+      expect(() => getCachedRegex('final-pattern', 'i')).not.toThrow()
     })
   })
 })

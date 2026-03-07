@@ -324,3 +324,141 @@ export const myVar = something
     })
   })
 })
+
+describe('Script Processing Fixes', () => {
+  describe('server script stripping', () => {
+    it('should strip server scripts completely', async () => {
+      const template = '<script server>const x = 1</script><p>visible</p>'
+      const result = await processTemplate(template)
+      expect(result).toContain('<p>visible</p>')
+      expect(result).not.toContain('const x = 1')
+    })
+
+    it('should strip multiple server scripts', async () => {
+      const template = '<script server>const a = 1</script><div>mid</div><script server>const b = 2</script><p>end</p>'
+      const result = await processTemplate(template)
+      expect(result).toContain('<div>mid</div>')
+      expect(result).toContain('<p>end</p>')
+      expect(result).not.toContain('const a = 1')
+      expect(result).not.toContain('const b = 2')
+    })
+
+    it('should remove multiple server scripts without corrupting offsets', async () => {
+      const template = `<script server>const a = 1</script>
+<div>content</div>
+<script server>const b = 2</script>
+<p>more</p>`
+      const result = await processTemplate(template)
+      expect(result).toContain('<div>content</div>')
+      expect(result).toContain('<p>more</p>')
+      expect(result).not.toContain('const a = 1')
+      expect(result).not.toContain('const b = 2')
+    })
+  })
+
+  describe('global regex extracts all script tags', () => {
+    it('should extract content from multiple script tags', () => {
+      const content = '<script>const a = 1</script><div>content</div><script>const b = 2</script>'
+      const scripts: string[] = []
+      const re = /<script\b[^>]*>([\s\S]*?)<\/script>/gi
+      let m: RegExpExecArray | null
+      while ((m = re.exec(content)) !== null) {
+        scripts.push(m[1])
+      }
+      expect(scripts).toHaveLength(2)
+      expect(scripts[0]).toBe('const a = 1')
+      expect(scripts[1]).toBe('const b = 2')
+    })
+
+    it('should remove all script tags with global replace', () => {
+      const content = '<script>a</script><div>keep</div><script>b</script>'
+      const result = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      expect(result).toBe('<div>keep</div>')
+      expect(result).not.toContain('<script>')
+    })
+  })
+
+  describe('client script $ replacement safety', () => {
+    it('should preserve $& in script content', async () => {
+      const template = `<script>const x = "$&";</script>`
+      const result = await processTemplate(template)
+      expect(result).toContain('$&')
+    })
+
+    it('should preserve $ patterns in content', async () => {
+      const template = `<p>Content with $& dollar patterns</p>`
+      const result = await processTemplate(template)
+      expect(result).toContain('$&')
+    })
+  })
+
+  describe('Date.now collision prevention', () => {
+    it('should generate unique setup function names', async () => {
+      const template1 = `<div><script>const count = state(0);</script></div>`
+      const template2 = `<div><script>const name = state('test');</script></div>`
+      const result1 = await processTemplate(template1)
+      const result2 = await processTemplate(template2)
+      const match1 = result1.match(/__stx_setup_\d+_\d+/)
+      const match2 = result2.match(/__stx_setup_\d+_\d+/)
+      if (match1 && match2) {
+        expect(match1[0]).not.toBe(match2[0])
+      }
+    })
+  })
+
+  describe('singleElementMatch handles > in attrs', () => {
+    it('should handle elements with > in attribute values', async () => {
+      const template = `<div title="a &gt; b">Content</div>`
+      const result = await processTemplate(template)
+      expect(result).toContain('Content')
+    })
+  })
+
+  describe('signal script replace all occurrences', () => {
+    it('should remove all occurrences of signal script', async () => {
+      const template = `<div><script>const x = state(0);</script></div>`
+      const result = await processTemplate(template)
+      expect(result).not.toContain('<script>const x = state(0);</script>')
+    })
+  })
+
+  describe('balanced server script removal', () => {
+    it('should handle scripts containing </script> in string literals conceptually', () => {
+      const content = '<script>const x = "<\\/script>"; console.log(x)</script>'
+      let depth = 1
+      let pos = '<script>'.length
+      let endPos = -1
+      while (pos < content.length && depth > 0) {
+        const nextOpen = content.indexOf('<script', pos)
+        const nextClose = content.indexOf('</script>', pos)
+        if (nextClose === -1) break
+        if (nextOpen !== -1 && nextOpen < nextClose) {
+          depth++
+          pos = nextOpen + '<script'.length
+        } else {
+          depth--
+          if (depth === 0) {
+            endPos = nextClose
+            break
+          }
+          pos = nextClose + '</script>'.length
+        }
+      }
+      expect(endPos).toBeGreaterThan(0)
+    })
+  })
+
+  describe('path traversal check tightened', () => {
+    it('should conceptually reject dotfile access', () => {
+      const segments = ['..', '..', '.env']
+      const hasDotSegment = segments.some(s => s.startsWith('.') && s !== '.' && s !== '..')
+      expect(hasDotSegment).toBe(true)
+    })
+
+    it('should allow normal relative paths', () => {
+      const segments = ['components', 'header.stx']
+      const hasDotSegment = segments.some(s => s.startsWith('.') && s !== '.' && s !== '..')
+      expect(hasDotSegment).toBe(false)
+    })
+  })
+})

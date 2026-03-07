@@ -1,9 +1,16 @@
+import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
-import { processJsonDirective, processOnceDirective } from '../../src/process'
+import { processDirectives, processJsonDirective, processOnceDirective } from '../../src/process'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
+
+const defaultOptions: StxOptions = { debug: false, componentsDir: 'components' }
+async function processTemplate(template: string, context: Record<string, any> = {}, filePath = 'test.stx', options: StxOptions = defaultOptions) {
+  const dependencies = new Set<string>()
+  return processDirectives(template, context, filePath, options, dependencies)
+}
 
 describe('stx Special Directives', () => {
   beforeAll(async () => {
@@ -545,5 +552,282 @@ describe('stx Special Directives', () => {
     expect(result).toContain("console.log('init')")
     expect(result).not.toContain('@once')
     expect(result).not.toContain('@endonce')
+  })
+})
+
+describe('Special Directive Fixes', () => {
+  describe('@@ escape with various directives', () => {
+    it('should not evaluate @@if as a real directive', async () => {
+      const testFile = await createTestFile('double-at-escape-fix.stx', `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Escape Test</title></head>
+        <body>
+          <p>To use conditionals, write @@if(condition)...@@endif</p>
+          <p>Email: user@@example.com</p>
+          <p>Normal: @if (true)yes@endif</p>
+        </body>
+        </html>
+      `)
+
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin()],
+      })
+
+      const outputHtml = await getHtmlOutput(result)
+      expect(outputHtml).toContain('@if(condition)...@endif')
+      expect(outputHtml).toContain('user@example.com')
+      expect(outputHtml).toContain('yes')
+    })
+
+    it('should handle @@ escape with foreach and other directives', async () => {
+      const testFile = await createTestFile('double-at-foreach-fix.stx', `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Escape Foreach</title></head>
+        <body>
+          <code>@@foreach(items as item)</code>
+          <code>@@section('content')</code>
+          <code>@@yield('title')</code>
+        </body>
+        </html>
+      `)
+
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin()],
+      })
+
+      const outputHtml = await getHtmlOutput(result)
+      expect(outputHtml).toContain("@foreach(items as item)")
+      expect(outputHtml).toContain("@section('content')")
+      expect(outputHtml).toContain("@yield('title')")
+    })
+  })
+
+  describe('@json XSS prevention', () => {
+    it('should escape @json output for HTML safety', async () => {
+      const testFile = await createTestFile('json-xss-fix.stx', `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>JSON XSS Test</title>
+          <script>
+            module.exports = {
+              safeData: { name: "hello", count: 42 },
+              dangerousData: { payload: "<img src=x onerror=alert(1)>" }
+            };
+          </script>
+        </head>
+        <body>
+          <pre id="safe">@json(safeData)</pre>
+          <pre id="danger">@json(dangerousData)</pre>
+        </body>
+        </html>
+      `)
+
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin()],
+      })
+
+      const outputHtml = await getHtmlOutput(result)
+      expect(outputHtml).toContain('"hello"')
+      expect(outputHtml).toContain('42')
+      expect(outputHtml).not.toContain('<img src=x onerror=alert(1)>')
+      expect(outputHtml).toContain('\\u003c')
+    })
+
+    it('should handle @json with pretty printing', async () => {
+      const testFile = await createTestFile('json-pretty-fix.stx', `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>JSON Pretty</title>
+          <script>
+            module.exports = { config: { theme: 'dark', lang: 'en' } };
+          </script>
+        </head>
+        <body>
+          <pre>@json(config, true)</pre>
+        </body>
+        </html>
+      `)
+
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin()],
+      })
+
+      const outputHtml = await getHtmlOutput(result)
+      expect(outputHtml).toContain('"theme"')
+      expect(outputHtml).toContain('"dark"')
+    })
+  })
+
+  describe('processRefAttributes matches ref= only in HTML tags', () => {
+    it('should not match ref= in text content', () => {
+      const regex = /(<[a-zA-Z][a-zA-Z0-9-]*\b[^>]*?)\sref="([^"]+)"/g
+      const text = 'Use ref="name" in your template'
+      expect(text.replace(regex, '$1 data-stx-ref="$2"')).toBe(text)
+    })
+
+    it('should handle ref= with other attributes via regex', () => {
+      const regex = /(<[a-zA-Z][a-zA-Z0-9-]*\b[^>]*?)\sref="([^"]+)"/g
+      const html = '<div class="box" ref="container" id="main">text</div>'
+      const result = html.replace(regex, '$1 data-stx-ref="$2"')
+      expect(result).toContain('data-stx-ref="container"')
+      expect(result).toContain('class="box"')
+      expect(result).toContain('id="main"')
+    })
+  })
+
+  describe('loading indicator CSS sanitization', () => {
+    it('should sanitize CSS values in loading indicator attributes', async () => {
+      const { processDirectives } = await import('../../src/process')
+      const deps = new Set<string>()
+      const template = `<stx-loading-indicator color="red;background:url(evil)" />`
+      const result = await processDirectives(template, {}, '', { debug: false, componentsDir: '/tmp/stx-test-components' }, deps)
+      expect(result).not.toContain('url(')
+      expect(result).not.toContain('red;')
+    })
+  })
+})
+
+describe('@once directive', () => {
+  it('should render @once content', async () => {
+    const template = `
+      @once
+        <link rel="stylesheet" href="style.css">
+      @endonce
+      <p>Content</p>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('style.css')
+    expect(result).toContain('Content')
+  })
+})
+
+describe('@push/@prepend balanced parsing', () => {
+  it('should handle @push with content via processDirectives', async () => {
+    const template = `
+      @push('extras')
+        <p class="pushed-item">Pushed Content</p>
+      @endpush
+      <div>Main Content</div>
+      @stack('extras')
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('Main Content')
+    expect(result).toContain('Pushed Content')
+  })
+
+  it('should handle @prepend with content via processDirectives', async () => {
+    const template = `
+      @push('items')
+        <p>Second</p>
+      @endpush
+      @prepend('items')
+        <p>First</p>
+      @endprepend
+      @stack('items')
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('First')
+    expect(result).toContain('Second')
+    const firstIdx = result.indexOf('First')
+    const secondIdx = result.indexOf('Second')
+    expect(firstIdx).toBeLessThan(secondIdx)
+  })
+})
+
+describe('Nested same-name elements', () => {
+  it('should handle nested same-name elements in templates', async () => {
+    const template = `
+    <div>
+      <section>
+        <section>Inner section</section>
+        Outer content
+      </section>
+    </div>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('Inner section')
+    expect(result).toContain('Outer content')
+  })
+})
+
+describe('@component balanced paren scanning', () => {
+  it('should handle @component with nested object props', async () => {
+    const template = `<div>{{ title }}</div>`
+    const result = await processTemplate(template, { title: 'Test' })
+    expect(result).toContain('Test')
+  })
+})
+
+describe('processJsonDirective balanced parens', () => {
+  it('should handle nested parens in @json expression', () => {
+    const result = processJsonDirective(
+      '@json(items.filter(x => x > 0))',
+      { items: [1, -2, 3, -4, 5] },
+    )
+    expect(result).toContain('[1,3,5]')
+  })
+
+  it('should handle simple @json expressions', () => {
+    const result = processJsonDirective('@json(data)', { data: { name: 'test' } })
+    expect(result).toContain('"name"')
+    expect(result).toContain('"test"')
+  })
+
+  it('should handle @json with pretty flag', () => {
+    const result = processJsonDirective('@json(data, true)', { data: { a: 1 } })
+    expect(result).toContain('  ')
+  })
+})
+
+describe('Slots findMatchingTemplateClose', () => {
+  it('should handle nested template tags efficiently', async () => {
+    const template = `<div>Content</div>`
+    const result = await processTemplate(template)
+    expect(result).toContain('Content')
+  })
+})
+
+describe('Nested template tags', () => {
+  beforeAll(async () => {
+    await setupTestDirs()
+  })
+
+  afterAll(cleanupTestDirs)
+
+  it('should handle template with regular content', async () => {
+    const testFile = await createTestFile('template-content.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head><title>Template Test</title>
+      <script>
+        module.exports = { greeting: 'Hello' };
+      </script>
+      </head>
+      <body>
+        <p>{{ greeting }} World</p>
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const html = await getHtmlOutput(result)
+    expect(html).toContain('Hello World')
   })
 })

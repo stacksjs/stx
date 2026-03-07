@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
+import type { StxOptions } from '../../src/types'
+import { processDirectives } from '../../src/process'
 
 describe('stx Expression Filters', () => {
   beforeAll(setupTestDirs)
@@ -232,5 +234,69 @@ describe('stx Expression Filters', () => {
     expect(outputHtml).toContain('Filter not found: nonExistentFilter')
     // Still processes valid filters
     expect(outputHtml).toContain('Valid: HELLO WORLD')
+  })
+})
+
+describe('Filter Fixes', () => {
+  const defaultOpts: StxOptions = { debug: false, componentsDir: 'components' }
+
+  async function renderTemplate(template: string, context: Record<string, any> = {}): Promise<string> {
+    const deps = new Set<string>()
+    return processDirectives(template, context, 'test.stx', defaultOpts, deps)
+  }
+
+  describe('replace filter regex escape', () => {
+    it('should treat regex special chars as literals in replace filter', async () => {
+      const template = `{{ text | replace('a.b', 'X') }}`
+      const result = await renderTemplate(template, { text: 'a.b acb' })
+      expect(result).toContain('X')
+      expect(result).toContain('acb')
+    })
+
+    it('should handle regex special chars in replace filter', async () => {
+      const template = `{{ text | replace('(test)', 'X') }}`
+      const result = await renderTemplate(template, { text: 'before (test) after' })
+      expect(result).toContain('before X after')
+    })
+
+    it('should handle brackets in replace filter', async () => {
+      const template = `{{ text | replace('[1]', 'X') }}`
+      const result = await renderTemplate(template, { text: 'item[1] and item[2]' })
+      expect(result).toContain('itemX')
+      expect(result).toContain('item[2]')
+    })
+  })
+
+  describe('findFilterPipeIndex escape toggle', () => {
+    it('should handle consecutive backslashes correctly in expressions', async () => {
+      const template = `{{ text | uppercase }}`
+      const result = await renderTemplate(template, { text: 'hello' })
+      expect(result).toContain('HELLO')
+    })
+
+    it('should handle pipes in filter chains', async () => {
+      const template = `{{ text | uppercase | capitalize }}`
+      const result = await renderTemplate(template, { text: 'hello world' })
+      expect(result).toContain('HELLO WORLD')
+    })
+  })
+
+  describe('applyFilters smart comma split', () => {
+    it('should handle filter params with nested commas in strings', async () => {
+      const result = await renderTemplate(`{{ name | replace('hello, world', 'hi') }}`, { name: 'hello, world' })
+      expect(result).toContain('hi')
+    })
+
+    it('should handle simple filter params correctly', async () => {
+      const result = await renderTemplate(`{{ price | number(2) }}`, { price: 42.567 })
+      expect(result).toContain('42.57')
+    })
+  })
+
+  describe('findFilterPipeIndex backtick handling', () => {
+    it('should not treat pipe inside template literal as filter pipe', async () => {
+      const result = await renderTemplate('{{ `a${x}b` }}', { x: '|test' })
+      expect(result).toContain('a|testb')
+    })
   })
 })

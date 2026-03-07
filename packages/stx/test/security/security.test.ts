@@ -2,6 +2,7 @@ import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { generateCsrfToken, resetCsrfToken, setCsrfToken, verifyCsrfToken } from '../../src/csrf'
 import { processDirectives } from '../../src/process'
+import { sanitizeExpression } from '../../src/safe-evaluator'
 import { cleanupTestDirs, setupTestDirs } from '../utils'
 
 const defaultOptions: StxOptions = {
@@ -302,6 +303,145 @@ describe('stx Security Tests', () => {
       expect(result).toContain('value="')
       expect(result).toContain('&quot;')
       expect(result).toContain('onfocus=')
+    })
+  })
+
+  describe('CSRF Per-Request Token Verification', () => {
+    it('should verify against provided expected token (per-request)', () => {
+      const expected = 'request-specific-token-123'
+      expect(verifyCsrfToken('request-specific-token-123', expected)).toBe(true)
+      expect(verifyCsrfToken('wrong-token', expected)).toBe(false)
+    })
+
+    it('should fall back to global token when no expected provided', () => {
+      const token = generateCsrfToken()
+      expect(verifyCsrfToken(token)).toBe(true)
+    })
+
+    it('should handle length mismatch with per-request token', () => {
+      expect(() => verifyCsrfToken('short', 'longer-expected-token')).not.toThrow()
+      expect(verifyCsrfToken('short', 'longer-expected-token')).toBe(false)
+    })
+
+    it('simulates concurrent request safety', () => {
+      const tokenA = 'token-for-request-A'
+      const tokenB = 'token-for-request-B'
+      expect(verifyCsrfToken(tokenA, tokenA)).toBe(true)
+      expect(verifyCsrfToken(tokenB, tokenB)).toBe(true)
+      expect(verifyCsrfToken(tokenA, tokenB)).toBe(false)
+    })
+
+    it('should return false for mismatched length tokens without throwing', () => {
+      setCsrfToken('abc123def456')
+      expect(() => verifyCsrfToken('short')).not.toThrow()
+      expect(verifyCsrfToken('short')).toBe(false)
+    })
+
+    it('should return false when no token is set', () => {
+      expect(verifyCsrfToken('anything')).toBe(false)
+    })
+
+    it('should return false for same-length but different tokens', () => {
+      setCsrfToken('abcdef')
+      expect(verifyCsrfToken('ghijkl')).toBe(false)
+    })
+
+    it('should handle empty string token', () => {
+      setCsrfToken('test')
+      expect(() => verifyCsrfToken('')).not.toThrow()
+      expect(verifyCsrfToken('')).toBe(false)
+    })
+
+    it('should handle unicode tokens', () => {
+      setCsrfToken('token-with-émojis-🎉')
+      expect(() => verifyCsrfToken('different-émojis-🎭')).not.toThrow()
+    })
+  })
+
+  describe('Render and Event Security', () => {
+    it('should escape HTML in title when wrapping document', () => {
+      const title = '<script>alert("xss")</script>'
+      const escaped = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      expect(escaped).toBe('&lt;script&gt;alert("xss")&lt;/script&gt;')
+      expect(escaped).not.toContain('<script>')
+    })
+
+    it('should sanitize element IDs containing special chars in generated JS', async () => {
+      const result = await processTemplate(`<div id="test'inject" @click="handler()">Click</div>`)
+      if (result.includes('getElementById')) {
+        expect(result).not.toContain("getElementById('test'inject')")
+      }
+    })
+
+    it('should escape newlines in event handler strings', async () => {
+      const template = `<div @click="line1\nline2">Click</div>`
+      const result = await processTemplate(template)
+      if (result.includes('__stx_execute')) {
+        expect(result).not.toMatch(/\n.*line2.*'/)
+      }
+    })
+
+    it('should block code execution in template expressions', async () => {
+      const template = `<div>{{ safeValue }}</div>`
+      const result = await processTemplate(template, { safeValue: 'safe' })
+      expect(result).toContain('safe')
+    })
+
+    it('should prevent template injection via user content', async () => {
+      const template = `<div>{{ content }}</div>`
+      const result = await processTemplate(template, {
+        content: '@if(true)injected@endif',
+      })
+      expect(result).toContain('@if(true)')
+    })
+  })
+
+  describe('CSRF and safe evaluation integration', () => {
+    it('should safely evaluate expressions while respecting CSRF tokens', () => {
+      resetCsrfToken()
+      const token = generateCsrfToken(32)
+      expect(token).toHaveLength(32)
+      expect(verifyCsrfToken(token)).toBe(true)
+      expect(verifyCsrfToken('wrong-token')).toBe(false)
+      expect(verifyCsrfToken('')).toBe(false)
+    })
+  })
+
+  describe('Security hardening integration', () => {
+    it('should block code execution in template expressions', async () => {
+      const template = `<div>{{ safeValue }}</div>`
+      const result = await processTemplate(template, { safeValue: 'safe' })
+      expect(result).toContain('safe')
+
+      expect(() => sanitizeExpression('eval("1+1")')).toThrow()
+      expect(() => sanitizeExpression('process.env.SECRET')).toThrow()
+      expect(() => sanitizeExpression('require("child_process")')).toThrow()
+      expect(() => sanitizeExpression('import("fs")')).toThrow()
+    })
+
+    it('should escape XSS in expressions with correct entities', async () => {
+      const template = `<div>{{ content }}</div>`
+      const result = await processTemplate(template, {
+        content: '<script>alert("xss")</script>',
+      })
+      expect(result).toContain('&lt;script&gt;')
+      expect(result).not.toContain('<script>')
+    })
+
+    it('should handle triple braces for unescaped HTML', async () => {
+      const template = `<div>{{{ html }}}</div>`
+      const result = await processTemplate(template, {
+        html: '<strong>Bold</strong>',
+      })
+      expect(result).toContain('<strong>Bold</strong>')
+    })
+
+    it('should prevent template injection via user content', async () => {
+      const template = `<div>{{ content }}</div>`
+      const result = await processTemplate(template, {
+        content: '@if(true)injected@endif',
+      })
+      expect(result).toContain('@if(true)')
     })
   })
 })

@@ -589,3 +589,125 @@ Unclosed code block
     }
   })
 })
+
+describe('Form XSS Prevention', () => {
+  it('should escape double quotes in input value attribute', () => {
+    const template = '@input(\'name\')'
+    const result = processFormInputDirectives(template, {
+      old: { name: '" onfocus="alert(1)" autofocus="' },
+    })
+    expect(result).toContain('value="&quot; onfocus=&quot;alert(1)&quot; autofocus=&quot;"')
+    expect(result).not.toContain('onfocus="alert(1)"')
+  })
+
+  it('should escape < and > in input value', () => {
+    const template = '@input(\'bio\')'
+    const result = processFormInputDirectives(template, {
+      old: { bio: '<script>alert(1)</script>' },
+    })
+    expect(result).toContain('&lt;script&gt;')
+    expect(result).not.toContain('<script>')
+  })
+
+  it('should escape ampersands in input value', () => {
+    const template = '@input(\'company\')'
+    const result = processFormInputDirectives(template, {
+      old: { company: 'A&B' },
+    })
+    expect(result).toContain('value="A&amp;B"')
+  })
+
+  it('should preserve normal values unchanged', () => {
+    const template = '@input(\'email\')'
+    const result = processFormInputDirectives(template, {
+      old: { email: 'user@example.com' },
+    })
+    expect(result).toContain('value="user@example.com"')
+  })
+
+  it('should escape HTML in textarea content', () => {
+    const template = '@textarea(\'comment\')default@endtextarea'
+    const result = processFormInputDirectives(template, {
+      old: { comment: '</textarea><script>alert(1)</script>' },
+    })
+    expect(result).toContain('&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(result).not.toContain('</textarea><script>')
+  })
+
+  it('should escape name attribute in textarea', () => {
+    const template = '@textarea(\'comment\')hello@endtextarea'
+    const result = processFormInputDirectives(template, {})
+    expect(result).toContain('name="comment"')
+  })
+
+  it('should escape malicious CSRF token values', () => {
+    const template = '@csrf'
+    const result = processBasicFormDirectives(template, {
+      csrf: { token: '" onclick="steal()"' },
+    })
+    expect(result).toContain('value="&quot; onclick=&quot;steal()&quot;"')
+    expect(result).not.toContain('onclick="steal()"')
+  })
+
+  it('should escape quotes in form action', () => {
+    const template = '@form(\'POST\', \'/submit?a=1&b=2\')@endform'
+    const result = processFormInputDirectives(template, {})
+    expect(result).toContain('action="/submit?a=1&amp;b=2"')
+  })
+
+  it('should produce valid checkbox HTML with escaped values', () => {
+    const template = '@checkbox(\'newsletter\')'
+    const result = processFormInputDirectives(template, {})
+    expect(result).toContain('type="checkbox"')
+    expect(result).toContain('name="newsletter"')
+  })
+
+  it('should escape checkbox value attribute', () => {
+    const template = '@checkbox(\'color\', \'red&blue\')'
+    const result = processFormInputDirectives(template, {})
+    expect(result).toContain('value="red&amp;blue"')
+  })
+
+  it('should escape radio value attribute', () => {
+    const template = '@radio(\'size\', \'large&tall\')'
+    const result = processFormInputDirectives(template, {})
+    expect(result).toContain('value="large&amp;tall"')
+  })
+
+  it('should escape special characters in @select name attribute', () => {
+    const result = processFormInputDirectives(
+      '@select(\'field&name<test\')@endselect',
+      {},
+    )
+    expect(result).toContain('name="field&amp;name&lt;test"')
+  })
+
+  it('should escape special characters in @label for attribute', () => {
+    const result = processFormInputDirectives(
+      '@label(\'field&name<test\')Label@endlabel',
+      {},
+    )
+    expect(result).toContain('for="field&amp;name&lt;test"')
+  })
+
+  it('should escape special characters in @file name attribute', () => {
+    const result = processFormInputDirectives(
+      '@file(\'upload&name<test\')',
+      {},
+    )
+    expect(result).toContain('name="upload&amp;name&lt;test"')
+  })
+
+  it('should safely render form with escaped values', () => {
+    const template = '@input(\'username\')@textarea(\'bio\')default@endtextarea'
+    const result = processFormInputDirectives(template, {
+      old: {
+        username: '<script>alert("xss")</script>',
+        bio: 'Hello & goodbye <world>',
+      },
+    })
+    expect(result).toContain('value="&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;"')
+    expect(result).toContain('Hello &amp; goodbye &lt;world&gt;')
+    expect(result).not.toContain('<script>alert')
+  })
+})

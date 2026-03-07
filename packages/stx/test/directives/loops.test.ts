@@ -1,6 +1,21 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
-import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
+import { processDirectives } from '../../src/process'
+import type { StxOptions } from '../../src/types'
+import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
+
+const defaultOptions: StxOptions = { debug: false, componentsDir: 'components' }
+
+async function processTemplate(
+  template: string,
+  context: Record<string, any> = {},
+  filePath: string = 'test.stx',
+  options: StxOptions = defaultOptions,
+): Promise<string> {
+  const dependencies = new Set<string>()
+  return processDirectives(template, context, filePath, options, dependencies)
+}
 
 describe('stx Loop Directives', () => {
   beforeAll(setupTestDirs)
@@ -572,5 +587,419 @@ describe('stx Loop Directives', () => {
     expect(outputHtml).toContain('<li>Wed: 3 sessions</li>')
     expect(outputHtml).toContain('<li>Thu: 6 sessions</li>')
     expect(outputHtml).toContain('<li>Fri: 4 sessions</li>')
+  })
+
+  it('should handle @forelse with simple arrays', async () => {
+    const testFile = await createTestFile('forelse-basic-fix.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Forelse Basic</title>
+        <script>
+          module.exports = {
+            items: ['apple', 'banana', 'cherry'],
+            emptyList: []
+          };
+        </script>
+      </head>
+      <body>
+        <ul>
+        @forelse (items as item)
+          <li>{{ item }}</li>
+        @empty
+          <li>No items</li>
+        @endforelse
+        </ul>
+
+        <div id="empty">
+        @forelse (emptyList as item)
+          <span>{{ item }}</span>
+        @empty
+          <p>Empty list</p>
+        @endforelse
+        </div>
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).toContain('<li>apple</li>')
+    expect(outputHtml).toContain('<li>banana</li>')
+    expect(outputHtml).toContain('<li>cherry</li>')
+    expect(outputHtml).not.toContain('No items')
+    expect(outputHtml).toContain('<p>Empty list</p>')
+  })
+
+  it('should handle nested @forelse blocks', async () => {
+    const testFile = await createTestFile('forelse-nested-fix.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Nested Forelse</title>
+        <script>
+          module.exports = {
+            groups: [
+              { name: 'A', members: ['x', 'y'] },
+              { name: 'B', members: [] }
+            ]
+          };
+        </script>
+      </head>
+      <body>
+        @forelse (groups as group)
+          <div class="group">{{ group.name }}:
+            @forelse (group.members as member)
+              <span class="member">{{ member }}</span>
+            @empty
+              <span class="empty">No members</span>
+            @endforelse
+          </div>
+        @empty
+          <p>No groups</p>
+        @endforelse
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).toContain('A:')
+    expect(outputHtml).toContain('<span class="member">x</span>')
+    expect(outputHtml).toContain('<span class="member">y</span>')
+    expect(outputHtml).toContain('B:')
+    expect(outputHtml).toContain('<span class="empty">No members</span>')
+    expect(outputHtml).not.toContain('No groups')
+  })
+
+  it('should handle @forelse with complex expressions containing parentheses', async () => {
+    const testFile = await createTestFile('forelse-parens-fix.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Forelse Parens</title>
+        <script>
+          module.exports = {
+            items: [
+              { name: 'alpha', active: true },
+              { name: 'beta', active: false },
+              { name: 'gamma', active: true }
+            ]
+          };
+        </script>
+      </head>
+      <body>
+        @forelse (items.filter(i => i.active) as item)
+          <p class="active">{{ item.name }}</p>
+        @empty
+          <p>None active</p>
+        @endforelse
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).toContain('<p class="active">alpha</p>')
+    expect(outputHtml).toContain('<p class="active">gamma</p>')
+    expect(outputHtml).not.toContain('beta')
+    expect(outputHtml).not.toContain('None active')
+  })
+
+  it('should show @empty content when @forelse array is empty', async () => {
+    const testFile = await createTestFile('forelse-empty-fix.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Forelse Empty</title>
+        <script>
+          module.exports = { results: [] };
+        </script>
+      </head>
+      <body>
+        @forelse (results as result)
+          <p>{{ result }}</p>
+        @empty
+          <p class="no-results">No results found.</p>
+        @endforelse
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).toContain('<p class="no-results">No results found.</p>')
+  })
+
+  it('should handle @forelse nested inside @if', async () => {
+    const testFile = await createTestFile('forelse-in-if-fix.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Forelse in If</title>
+        <script>
+          module.exports = { showList: true, items: ['one', 'two'] };
+        </script>
+      </head>
+      <body>
+        @if (showList)
+          @forelse (items as item)
+            <p>{{ item }}</p>
+          @empty
+            <p>Empty</p>
+          @endforelse
+        @else
+          <p>Hidden</p>
+        @endif
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).toContain('<p>one</p>')
+    expect(outputHtml).toContain('<p>two</p>')
+    expect(outputHtml).not.toContain('Empty')
+    expect(outputHtml).not.toContain('Hidden')
+  })
+
+  it('should handle multiple @forelse blocks efficiently', async () => {
+    const testFile = await createTestFile('forelse-perf-fix.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head><title>Forelse Perf</title>
+      <script>
+        module.exports = { list1: ['a', 'b'], list2: [], list3: ['x'] };
+      </script>
+      </head>
+      <body>
+        @forelse (list1 as item)
+          <p class="l1">{{ item }}</p>
+        @empty
+          <p>Empty 1</p>
+        @endforelse
+        @forelse (list2 as item)
+          <p class="l2">{{ item }}</p>
+        @empty
+          <p class="e2">Empty 2</p>
+        @endforelse
+        @forelse (list3 as item)
+          <p class="l3">{{ item }}</p>
+        @empty
+          <p>Empty 3</p>
+        @endforelse
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const html = await getHtmlOutput(result)
+    expect(html).toContain('<p class="l1">a</p>')
+    expect(html).toContain('<p class="l1">b</p>')
+    expect(html).not.toContain('Empty 1')
+    expect(html).toContain('<p class="e2">Empty 2</p>')
+    expect(html).toContain('<p class="l3">x</p>')
+    expect(html).not.toContain('Empty 3')
+  })
+
+  it('should handle nested @foreach inside @forelse', async () => {
+    const testFile = await createTestFile('forelse-foreach-nested-fix.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head><title>Nested Foreach</title>
+      <script>
+        module.exports = {
+          groups: [
+            { name: 'G1', items: ['a', 'b'] },
+            { name: 'G2', items: [] }
+          ]
+        };
+      </script>
+      </head>
+      <body>
+        @forelse (groups as group)
+          <div>{{ group.name }}
+            @foreach(group.items as item)
+              <span>{{ item }}</span>
+            @endforeach
+          </div>
+        @empty
+          <p>No groups</p>
+        @endforelse
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const html = await getHtmlOutput(result)
+    expect(html).toContain('G1')
+    expect(html).toContain('<span>a</span>')
+    expect(html).toContain('<span>b</span>')
+    expect(html).toContain('G2')
+    expect(html).not.toContain('No groups')
+  })
+
+  it('should handle @for with @can inside loop body', async () => {
+    const template = `@for(let i = 0; i < 2; i++)
+@can('view')<span>visible-{{ i }}</span>@endcan
+@endfor`
+    const result = await processTemplate(template, {
+      auth: { check: true },
+      userCan: { view: true },
+    })
+    expect(result).toContain('visible-0')
+    expect(result).toContain('visible-1')
+  })
+
+  it('should handle @foreach with safe expressions and conditionals', async () => {
+    const template = `@foreach(items as item)
+@if(item.active)
+<div>{{ item.name }}</div>
+@endif
+@endforeach`
+    const result = await processTemplate(template, {
+      items: [
+        { name: 'Alice', active: true },
+        { name: 'Bob', active: false },
+        { name: 'Carol', active: true },
+      ],
+    })
+    expect(result).toContain('Alice')
+    expect(result).not.toContain('Bob')
+    expect(result).toContain('Carol')
+  })
+
+  describe('@break/@continue with balanced parentheses', () => {
+    it('should handle @break with nested parentheses', async () => {
+      const testFile = await createTestFile('break-nested-parens.stx', `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Break Test</title>
+        <script>
+          module.exports = { items: [1, 2, 3, 4, 5] };
+        </script>
+        </head>
+        <body>
+          @foreach(items as item)
+            @break(item > 3)
+            <p>{{ item }}</p>
+          @endforeach
+        </body>
+        </html>
+      `)
+
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin()],
+      })
+
+      const html = await getHtmlOutput(result)
+      expect(html).toContain('<p>1</p>')
+      expect(html).toContain('<p>2</p>')
+      expect(html).toContain('<p>3</p>')
+      expect(html).not.toContain('<p>4</p>')
+      expect(html).not.toContain('<p>5</p>')
+    })
+
+    it('should handle @continue with condition', async () => {
+      const testFile = await createTestFile('continue-condition.stx', `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Continue Test</title>
+        <script>
+          module.exports = { items: [1, 2, 3, 4, 5] };
+        </script>
+        </head>
+        <body>
+          @foreach(items as item)
+            @continue(item === 3)
+            <p>{{ item }}</p>
+          @endforeach
+        </body>
+        </html>
+      `)
+
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin()],
+      })
+
+      const html = await getHtmlOutput(result)
+      expect(html).toContain('<p>1</p>')
+      expect(html).toContain('<p>2</p>')
+      expect(html).not.toContain('<p>3</p>')
+      expect(html).toContain('<p>4</p>')
+      expect(html).toContain('<p>5</p>')
+    })
+  })
+
+  describe('@each directive', () => {
+    it('should render @each with items', async () => {
+      await createTestFile('partials/list-item.stx', '<li>{{ item }}</li>')
+
+      const testFile = await createTestFile('each-test.stx', `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Each Test</title>
+        <script>
+          module.exports = { fruits: ['apple', 'banana', 'cherry'] };
+        </script>
+        </head>
+        <body>
+          <ul>
+            @each('list-item', fruits, 'item')
+          </ul>
+        </body>
+        </html>
+      `)
+
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin({ partialsDir: path.join(TEMP_DIR, 'partials') })],
+      })
+
+      const html = await getHtmlOutput(result)
+      expect(html).toContain('<li>apple</li>')
+      expect(html).toContain('<li>banana</li>')
+      expect(html).toContain('<li>cherry</li>')
+    })
   })
 })

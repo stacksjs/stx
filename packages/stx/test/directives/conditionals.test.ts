@@ -1,6 +1,21 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
+import type { StxOptions } from '../../src/types'
+import { processDirectives } from '../../src/process'
+import { processIssetEmptyDirectives, processEnvDirective, processSwitchStatements } from '../../src/conditionals'
+
+const defaultTestOptions: StxOptions = { debug: false, componentsDir: 'components' }
+
+async function processTemplate(
+  template: string,
+  context: Record<string, any> = {},
+  filePath: string = 'test.stx',
+  options: StxOptions = defaultTestOptions,
+): Promise<string> {
+  const dependencies = new Set<string>()
+  return processDirectives(template, context, filePath, options, dependencies)
+}
 
 describe('stx Conditional Directives', () => {
   beforeAll(setupTestDirs)
@@ -502,5 +517,247 @@ describe('stx Conditional Directives', () => {
     expect(outputHtml).not.toContain('Error!')
     expect(outputHtml).not.toContain('All clear')
     expect(outputHtml).not.toContain('Panel hidden')
+  })
+
+  describe('@unless directive (unit)', () => {
+    it('should process basic @unless correctly', async () => {
+      const template = '@unless(hidden)<p>Visible</p>@endunless'
+      const result = await processTemplate(template, { hidden: false })
+      expect(result).toContain('<p>Visible</p>')
+    })
+
+    it('should hide content when condition is true', async () => {
+      const template = '@unless(hidden)<p>Content</p>@endunless'
+      const result = await processTemplate(template, { hidden: true })
+      expect(result).not.toContain('<p>Content</p>')
+    })
+
+    it('should handle @unless with @else', async () => {
+      const template = '@unless(admin)<p>Regular user</p>@else<p>Admin</p>@endunless'
+      const result = await processTemplate(template, { admin: true })
+      expect(result).toContain('<p>Admin</p>')
+      expect(result).not.toContain('<p>Regular user</p>')
+    })
+
+    it('should handle nested @unless/@if correctly', async () => {
+      const template = '@unless(hidden)@if(show)<span>inner</span>@else<span>other</span>@endif@endunless'
+      const result = await processTemplate(template, { hidden: false, show: true })
+      expect(result).toContain('<span>inner</span>')
+    })
+  })
+
+  describe('findTopLevelElse performance (unit)', () => {
+    it('should find top-level @else in @if/@endif blocks', async () => {
+      const template = '@if(show)<p>Yes</p>@else<p>No</p>@endif'
+      const result = await processTemplate(template, { show: false })
+      expect(result).toContain('<p>No</p>')
+      expect(result).not.toContain('<p>Yes</p>')
+    })
+
+    it('should handle nested conditionals when finding top-level @else', async () => {
+      const template = '@if(outer)@if(inner)<span>both</span>@else<span>outer-only</span>@endif@else<span>neither</span>@endif'
+      const result = await processTemplate(template, { outer: false, inner: true })
+      expect(result).toContain('<span>neither</span>')
+    })
+
+    it('should not confuse nested @else with top-level @else', async () => {
+      const template = '@if(a)@if(b)B@else notB@endif@else notA@endif'
+      const result = await processTemplate(template, { a: true, b: false })
+      expect(result).toContain('notB')
+      expect(result).not.toContain('notA')
+    })
+  })
+
+  describe('@switch nested depth (unit)', () => {
+    it('should handle simple @switch correctly', async () => {
+      const template = `
+        @switch(color)
+          @case('red')
+            <p>Red</p>
+            @break
+          @case('blue')
+            <p>Blue</p>
+            @break
+          @default
+            <p>Unknown</p>
+        @endswitch
+      `
+      const result = await processTemplate(template, { color: 'blue' })
+      expect(result).toContain('Blue')
+      expect(result).not.toContain('Red')
+      expect(result).not.toContain('Unknown')
+    })
+  })
+
+  describe('@env balanced parsing (unit)', () => {
+    it('should handle @production directive', () => {
+      const origEnv = process.env.NODE_ENV
+      process.env.NODE_ENV = 'production'
+      try {
+        const result = processEnvDirective(
+          '@production\n<p>Prod only</p>\n@endproduction',
+          {},
+        )
+        expect(result).toContain('Prod only')
+      } finally {
+        process.env.NODE_ENV = origEnv
+      }
+    })
+
+    it('should hide @production content in development', () => {
+      const origEnv = process.env.NODE_ENV
+      process.env.NODE_ENV = 'development'
+      try {
+        const result = processEnvDirective(
+          '@production\n<p>Prod only</p>\n@endproduction',
+          {},
+        )
+        expect(result).not.toContain('Prod only')
+      } finally {
+        process.env.NODE_ENV = origEnv
+      }
+    })
+
+    it('should handle @env with specific environment', () => {
+      const origEnv = process.env.NODE_ENV
+      process.env.NODE_ENV = 'staging'
+      try {
+        const result = processEnvDirective(
+          "@env('staging')\n<p>Staging info</p>\n@endenv",
+          {},
+        )
+        expect(result).toContain('Staging info')
+      } finally {
+        process.env.NODE_ENV = origEnv
+      }
+    })
+  })
+
+  describe('@isset/@empty performance (unit)', () => {
+    it('should handle @isset with large content efficiently', () => {
+      const largeContent = 'x'.repeat(10000)
+      const template = `@isset(value)${largeContent}@endisset`
+      const result = processIssetEmptyDirectives(template, { value: 'exists' }, '')
+      expect(result.length).toBe(10000)
+    })
+
+    it('should handle nested @isset/@else correctly', () => {
+      const template = `@isset(a)A@isset(b)B@endisset@else NoA @endisset`
+      const result = processIssetEmptyDirectives(template, { a: 'yes', b: 'yes' }, '')
+      expect(result).toContain('A')
+      expect(result).toContain('B')
+      expect(result).not.toContain('NoA')
+    })
+  })
+
+  describe('@env block performance (unit)', () => {
+    it('should process @env directive efficiently with large content', () => {
+      const largeContent = 'y'.repeat(10000)
+      const template = `@env('test')${largeContent}@endenv`
+      const origEnv = process.env.NODE_ENV
+      process.env.NODE_ENV = 'test'
+      const result = processEnvDirective(template, {})
+      process.env.NODE_ENV = origEnv
+      expect(result.length).toBe(10000)
+    })
+  })
+
+  describe('parseConditionalBlock performance (unit)', () => {
+    it('should parse @if/@elseif/@else with large content efficiently', async () => {
+      const content = 'x'.repeat(5000)
+      const template = `@if(a)${content}@elseif(b)Second@else Third@endif`
+      const result = await processTemplate(template, { a: false, b: true })
+      expect(result).toContain('Second')
+      expect(result).not.toContain(content)
+    })
+  })
+
+  describe('Nested @switch integration', () => {
+    it('should handle nested @switch blocks', async () => {
+      const testFile = await createTestFile('nested-switch.stx', `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Nested Switch</title>
+        <script>
+          module.exports = { outer: 'A', inner: 'X' };
+        </script>
+        </head>
+        <body>
+          @switch(outer)
+            @case('A')
+              <p>Outer A</p>
+              @switch(inner)
+                @case('X')
+                  <p>Inner X</p>
+                  @break
+                @case('Y')
+                  <p>Inner Y</p>
+                  @break
+              @endswitch
+              @break
+            @case('B')
+              <p>Outer B</p>
+              @break
+          @endswitch
+        </body>
+        </html>
+      `)
+
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin()],
+      })
+
+      const html = await getHtmlOutput(result)
+      expect(html).toContain('Outer A')
+      expect(html).toContain('Inner X')
+      expect(html).not.toContain('Outer B')
+      expect(html).not.toContain('Inner Y')
+    })
+  })
+
+  describe('Balanced parsing robustness', () => {
+    it('should handle deeply nested structures', async () => {
+      const testFile = await createTestFile('deeply-nested.stx', `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Deeply Nested</title>
+        <script>
+          module.exports = {
+            show: true,
+            items: ['one', 'two'],
+            color: 'red'
+          };
+        </script>
+        </head>
+        <body>
+          @if(show)
+            @foreach(items as item)
+              @switch(color)
+                @case('red')
+                  <p class="red">{{ item }}</p>
+                  @break
+                @case('blue')
+                  <p class="blue">{{ item }}</p>
+                  @break
+              @endswitch
+            @endforeach
+          @endif
+        </body>
+        </html>
+      `)
+
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin()],
+      })
+
+      const html = await getHtmlOutput(result)
+      expect(html).toContain('<p class="red">one</p>')
+      expect(html).toContain('<p class="red">two</p>')
+      expect(html).not.toContain('blue')
+    })
   })
 })

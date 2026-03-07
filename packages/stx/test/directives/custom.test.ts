@@ -398,3 +398,30 @@ describe('stx Custom Directives', () => {
     expect(outputHtml).toContain(TEMP_DIR)
   })
 })
+
+describe('Custom Directive Fixes', () => {
+  it('should handle block directives with params including nested parens', async () => {
+    const { processCustomDirectives } = await import('../../src/custom-directives')
+    const opts = {
+      debug: false,
+      componentsDir: 'components',
+      customDirectives: [
+        {
+          name: 'uppercase',
+          hasEndTag: true,
+          handler: async (content: string, params: string[]) => {
+            return content.toUpperCase() + ':' + (params[0] || 'none')
+          },
+        },
+      ],
+    }
+    const result = await processCustomDirectives(
+      '@uppercase(fn(a))Content@enduppercase',
+      {},
+      '',
+      opts as any,
+    )
+    expect(result).toContain('CONTENT')
+    expect(result).toContain('fn(a)')
+  })
+})
