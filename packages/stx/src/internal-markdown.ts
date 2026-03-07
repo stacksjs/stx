@@ -103,7 +103,8 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
   })
 
   // Inline code
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
+  // Handle inline code (including empty code spans like ``)
+  html = html.replace(/`([^`]*)`/g, '<code>$1</code>')
 
   // Headers
   html = html.replace(/^######\s+(.*)$/gm, '<h6>$1</h6>')
@@ -119,7 +120,8 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
   html = html.replace(/__(.+?)__/g, '<strong>$1</strong>')
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>')
-  html = html.replace(/_(.+?)_/g, '<em>$1</em>')
+  // Require non-word char or start/end around _ to avoid matching identifiers like my_var_name
+  html = html.replace(/(?<![a-zA-Z0-9])_(.+?)_(?![a-zA-Z0-9])/g, '<em>$1</em>')
 
   // Strikethrough (GFM)
   if (gfm) {
@@ -140,25 +142,19 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
   // Merge adjacent blockquotes
   html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n')
 
-  // Unordered lists
-  html = html.replace(/^[*\-+]\s+(.*)$/gm, '<li>$1</li>')
-  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+  // Unordered lists — use a unique marker to distinguish from ordered list items
+  html = html.replace(/^[*\-+]\s+(.*)$/gm, '<li data-ul>$1</li>')
+  html = html.replace(/(<li data-ul>.*<\/li>\n?)+/g, '<ul>$&</ul>')
   html = html.replace(/<\/ul>\n<ul>/g, '')
 
-  // Ordered lists
-  html = html.replace(/^\d+\.\s+(.*)$/gm, '<li>$1</li>')
-  // Only wrap consecutive li items in ol if they follow numbered pattern
-  const olPattern = /(<li>.*<\/li>\n?)+/g
-  const matches = html.match(olPattern)
-  if (matches) {
-    for (const match of matches) {
-      if (!html.includes(`<ul>${match}</ul>`)) {
-        // Only wrap in ol if not already in ul
-        const wrapped = `<ol>${match}</ol>`
-        html = html.replace(match, wrapped)
-      }
-    }
-  }
+  // Ordered lists — use a different marker
+  html = html.replace(/^\d+\.\s+(.*)$/gm, '<li data-ol>$1</li>')
+  html = html.replace(/(<li data-ol>.*<\/li>\n?)+/g, '<ol>$&</ol>')
+  html = html.replace(/<\/ol>\n<ol>/g, '')
+
+  // Remove the markers now that wrapping is done
+  html = html.replace(/<li data-ul>/g, '<li>')
+  html = html.replace(/<li data-ol>/g, '<li>')
 
   // Tables (GFM)
   if (gfm) {
@@ -217,14 +213,15 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
 
   html = processedLines.join('\n')
 
-  // Restore code blocks
-  for (let i = 0; i < codeBlocks.length; i++) {
-    html = html.replace(`\x00CODEBLOCK${i}\x00`, codeBlocks[i])
-  }
-
-  // Line breaks (if breaks option is enabled)
+  // Line breaks (if breaks option is enabled) — BEFORE restoring code blocks
+  // so that newlines inside <pre><code> blocks are not converted to <br>
   if (breaks) {
     html = html.replace(/\n/g, '<br />\n')
+  }
+
+  // Restore code blocks (after breaks processing to preserve preformatted content)
+  for (let i = 0; i < codeBlocks.length; i++) {
+    html = html.replace(`\x00CODEBLOCK${i}\x00`, codeBlocks[i])
   }
 
   // Clean up empty paragraphs

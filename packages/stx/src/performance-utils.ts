@@ -345,6 +345,10 @@ export function optimizedReplace(
 class ExpressionEvaluatorPool {
   private pool: Array<{ func: (...args: any[]) => any, context: string[] }> = []
   private maxPoolSize = 10
+  // Cache compiled Function objects per expression signature to avoid
+  // recompiling the same expression string on every evaluation
+  private fnCache = new Map<string, Function>()
+  private fnCacheMaxSize = 200
 
   getEvaluator(contextKeys: string[]): (...args: any[]) => any {
     // Deduplicate keys to avoid "duplicate parameter name" errors in strict mode
@@ -357,23 +361,37 @@ class ExpressionEvaluatorPool {
       return reusable.func
     }
 
+    const fnCache = this.fnCache
+    const fnCacheMaxSize = this.fnCacheMaxSize
+
     // Create new evaluator using new Function with strict mode (NOT eval)
     // Returns a factory that creates per-expression functions
     const evaluator = (...contextValues: any[]) => {
       return (expr: string) => {
         try {
-          // eslint-disable-next-line no-new-func
-          const fn = new Function(...uniqueKeys, `
-            'use strict';
-            try {
-              return ${expr};
-            } catch (e) {
-              if (e instanceof ReferenceError || e instanceof TypeError) {
-                return undefined;
-              }
-              throw e;
+          // Cache compiled functions by expression + context signature
+          const cacheKey = `${contextSignature}:${expr}`
+          let fn = fnCache.get(cacheKey) as Function | undefined
+          if (!fn) {
+            // Evict oldest entry if cache is full
+            if (fnCache.size >= fnCacheMaxSize) {
+              const firstKey = fnCache.keys().next().value
+              if (firstKey) fnCache.delete(firstKey)
             }
-          `)
+            // eslint-disable-next-line no-new-func
+            fn = new Function(...uniqueKeys, `
+              'use strict';
+              try {
+                return ${expr};
+              } catch (e) {
+                if (e instanceof ReferenceError || e instanceof TypeError) {
+                  return undefined;
+                }
+                throw e;
+              }
+            `)
+            fnCache.set(cacheKey, fn)
+          }
           return fn(...contextValues)
         }
         catch {
@@ -395,6 +413,7 @@ class ExpressionEvaluatorPool {
 
   clear(): void {
     this.pool.length = 0
+    this.fnCache.clear()
   }
 }
 

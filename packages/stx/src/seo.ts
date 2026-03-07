@@ -193,7 +193,9 @@ export function processStructuredData(
         const data = safeEvaluateObject(dataObject, context) as StructuredData
         if (!data) return ''
         if (!data['@context']) data['@context'] = 'https://schema.org'
-        return `<script type="application/ld+json">${JSON.stringify(data)}</script>`
+        // Escape </script> sequences to prevent breaking out of the JSON-LD block
+        const jsonStr = JSON.stringify(data).replace(/<\//g, '<\\/')
+        return `<script type="application/ld+json">${jsonStr}</script>`
       }
       catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
@@ -224,11 +226,38 @@ export function processSeoDirective(
 ): string {
   let output = template
 
-  // Process @seo directive using safe evaluation
-  output = output.replace(/@seo\(\s*(\{[\s\S]*?\})\s*\)/g, (_, seoConfig) => {
+  // Process @seo directive using balanced brace matching for nested objects
+  const seoPat = /@seo\s*\(\s*\{/g
+  let seoMatch: RegExpExecArray | null
+  while ((seoMatch = seoPat.exec(output)) !== null) {
+    const braceStart = output.indexOf('{', seoMatch.index + '@seo'.length)
+    let depth = 1
+    let pos = braceStart + 1
+    let inStr: string | null = null
+    let esc = false
+    while (pos < output.length && depth > 0) {
+      const c = output[pos]
+      if (esc) { esc = false; pos++; continue }
+      if (c === '\\' && inStr) { esc = true; pos++; continue }
+      if (inStr) { if (c === inStr) inStr = null; pos++; continue }
+      if (c === '"' || c === '\'' || c === '`') { inStr = c; pos++; continue }
+      if (c === '{') depth++
+      else if (c === '}') depth--
+      pos++
+    }
+    if (depth !== 0) break
+    // pos is now one past the closing brace
+    // Find the closing paren after the brace
+    const afterBrace = output.substring(pos).match(/^\s*\)/)
+    if (!afterBrace) break
+    const fullEnd = pos + afterBrace[0].length
+    const seoConfig = output.substring(braceStart, pos)
+    const fullMatch = output.substring(seoMatch.index, fullEnd)
+
+    const replacement = ((cfg: string) => {
     try {
       // Parse the SEO configuration object using safe evaluation
-      const config = safeEvaluateObject(seoConfig, context) as Partial<SeoConfig>
+      const config = safeEvaluateObject(cfg, context) as Partial<SeoConfig>
 
       if (!config)
         return ''
@@ -333,7 +362,9 @@ export function processSeoDirective(
 
       // Structured data
       if (config.structuredData) {
-        metaTags += `<script type="application/ld+json">${JSON.stringify(config.structuredData)}</script>\n`
+        // Escape </script> sequences to prevent breaking out of the JSON-LD block
+        const jsonStr = JSON.stringify(config.structuredData).replace(/<\//g, '<\\/')
+        metaTags += `<script type="application/ld+json">${jsonStr}</script>\n`
       }
 
       return metaTags.trim()
@@ -342,7 +373,11 @@ export function processSeoDirective(
       const errorMessage = error instanceof Error ? error.message : String(error)
       return inlineError('SEO', `Error processing @seo directive: ${errorMessage}`, ErrorCodes.EVALUATION_ERROR)
     }
-  })
+  })(seoConfig)
+
+    output = output.substring(0, seoMatch.index) + replacement + output.substring(fullEnd)
+    seoPat.lastIndex = seoMatch.index + replacement.length
+  }
 
   return output
 }

@@ -227,14 +227,24 @@ export function processConditionals(template: string, context: Record<string, an
       const content = output.slice(contentStart, endPos)
       const condition = exprResult.expression
 
-      // Find top-level @else (skip @else inside nested @if/@unless blocks)
+      // Find top-level @else using event scanning (O(n) instead of O(n²) slicing)
       let elsePos = -1
-      let depth = 0
-      for (let i = 0; i < content.length; i++) {
-        const rem = content.slice(i)
-        if (rem.match(/^@(?:if|unless)\s*\(/)) { depth++; continue }
-        if (rem.match(/^@(?:endif|endunless)(?![a-z])/)) { depth--; continue }
-        if (depth === 0 && rem.match(/^@else(?![a-z])/)) { elsePos = i; break }
+      {
+        let depth = 0
+        const openRe = /@(?:if|unless)\s*\(/g
+        const closeRe = /@(?:endif|endunless)(?![a-z])/g
+        const elseRe = /@else(?![a-z])/g
+        const events: { pos: number, type: 'open' | 'close' | 'else' }[] = []
+        let em: RegExpExecArray | null
+        while ((em = openRe.exec(content)) !== null) events.push({ pos: em.index, type: 'open' })
+        while ((em = closeRe.exec(content)) !== null) events.push({ pos: em.index, type: 'close' })
+        while ((em = elseRe.exec(content)) !== null) events.push({ pos: em.index, type: 'else' })
+        events.sort((a, b) => a.pos - b.pos)
+        for (const ev of events) {
+          if (ev.type === 'open') depth++
+          else if (ev.type === 'close') depth--
+          else if (ev.type === 'else' && depth === 0) { elsePos = ev.pos; break }
+        }
       }
 
       let replacement: string
@@ -757,14 +767,18 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
       const fullContent = output.slice(contentStart, endPos)
       const variable = exprResult.expression
 
-      // Find top-level @else
+      // Find top-level @else without O(n²) slicing — use indexOf to jump to @ positions
       let elsePos = -1
       let depth = 0
-      for (let i = 0; i < fullContent.length; i++) {
-        const rem = fullContent.slice(i)
-        if (rem.match(/^@(?:if|unless|isset|empty)\s*\(/)) { depth++; continue }
-        if (rem.match(/^@(?:endif|endunless|endisset|endempty)(?![a-z])/)) { depth--; continue }
-        if (depth === 0 && rem.match(/^@else(?![a-z])/)) { elsePos = i; break }
+      let searchIdx = 0
+      while (searchIdx < fullContent.length) {
+        const atIdx = fullContent.indexOf('@', searchIdx)
+        if (atIdx === -1) break
+        const rem = fullContent.substring(atIdx)
+        if (/^@(?:if|unless|isset|empty)\s*\(/.test(rem)) { depth++; searchIdx = atIdx + 1; continue }
+        if (/^@(?:endif|endunless|endisset|endempty)(?![a-z])/.test(rem)) { depth--; searchIdx = atIdx + 1; continue }
+        if (depth === 0 && /^@else(?![a-z])/.test(rem)) { elsePos = atIdx; break }
+        searchIdx = atIdx + 1
       }
 
       try {
@@ -817,57 +831,69 @@ export function processEnvDirective(template: string, _context: Record<string, a
 
   // Helper: process a simple env directive with balanced @else support
   function processEnvBlock(src: string, directiveName: string, endDirectiveName: string, condition: boolean): string {
+    // Pre-compile regexes outside the loop to avoid re-creation
+    const openTagRe = new RegExp(`@${directiveName}(?![a-z])`, 'g')
+    const endTagRe = new RegExp(`@${endDirectiveName}(?![a-z])`, 'g')
+    const openTagTest = new RegExp(`^@${directiveName}(?![a-z])`)
+    const endTagTest = new RegExp(`^@${endDirectiveName}(?![a-z])`)
+
     let result = src
     let processedAny = true
     while (processedAny) {
       processedAny = false
-      const match = result.match(new RegExp(`@${directiveName}(?![a-z])`))
-      if (!match || match.index === undefined) break
+      openTagRe.lastIndex = 0
+      const match = openTagRe.exec(result)
+      if (!match) break
 
       const startPos = match.index
       let contentStart = startPos + match[0].length
 
       // For @env, extract the env name from parens
       if (directiveName === 'env') {
-        const envParenMatch = result.slice(contentStart).match(/^\s*\(\s*(['"])([^'"]+)\1\s*\)/)
+        const envParenMatch = result.substring(contentStart).match(/^\s*\(\s*(['"])([^'"]+)\1\s*\)/)
         if (!envParenMatch) break
         contentStart += envParenMatch[0].length
         condition = currentEnv === envParenMatch[2]
       }
 
-      // Find matching end tag using balanced depth
-      const endTagRe = new RegExp(`@${endDirectiveName}(?![a-z])`)
-      const openTagRe = new RegExp(`@${directiveName}(?![a-z])`)
+      // Find matching end tag using balanced depth — use exec with lastIndex instead of slice
       let depth = 1
       let searchPos = contentStart
       let endPos = -1
+
       while (depth > 0 && searchPos < result.length) {
-        const remainingSlice = result.slice(searchPos)
-        const nextOpenMatch = remainingSlice.match(openTagRe)
-        const nextCloseMatch = remainingSlice.match(endTagRe)
-        const nextOpen = nextOpenMatch ? searchPos + nextOpenMatch.index! : Infinity
-        const nextClose = nextCloseMatch ? searchPos + nextCloseMatch.index! : Infinity
+        // Find next open or close tag from searchPos
+        openTagRe.lastIndex = searchPos
+        endTagRe.lastIndex = searchPos
+        const nextOpenMatch = openTagRe.exec(result)
+        const nextCloseMatch = endTagRe.exec(result)
+        const nextOpen = nextOpenMatch ? nextOpenMatch.index : Infinity
+        const nextClose = nextCloseMatch ? nextCloseMatch.index : Infinity
         if (nextOpen < nextClose) {
           depth++
-          searchPos = nextOpen + (nextOpenMatch![0].length || 1)
+          searchPos = nextOpen + nextOpenMatch![0].length
         } else if (nextClose < Infinity) {
           depth--
           if (depth === 0) { endPos = nextClose; break }
-          searchPos = nextClose + (nextCloseMatch![0].length || 1)
+          searchPos = nextClose + nextCloseMatch![0].length
         } else break
       }
       if (endPos === -1) break
 
-      const fullContent = result.slice(contentStart, endPos)
+      const fullContent = result.substring(contentStart, endPos)
 
-      // Find top-level @else
+      // Find top-level @else — use indexOf to jump to @ positions instead of O(n²) slice
       let elseIdx = -1
       let nestedDepth = 0
-      for (let i = 0; i < fullContent.length; i++) {
-        const rem = fullContent.slice(i)
-        if (rem.match(new RegExp(`^@${directiveName}(?![a-z])`))) { nestedDepth++; continue }
-        if (rem.match(new RegExp(`^@${endDirectiveName}(?![a-z])`))) { nestedDepth--; continue }
-        if (nestedDepth === 0 && rem.match(/^@else(?![a-z])/)) { elseIdx = i; break }
+      let si = 0
+      while (si < fullContent.length) {
+        const atPos = fullContent.indexOf('@', si)
+        if (atPos === -1) break
+        const rem = fullContent.substring(atPos)
+        if (openTagTest.test(rem)) { nestedDepth++; si = atPos + 1; continue }
+        if (endTagTest.test(rem)) { nestedDepth--; si = atPos + 1; continue }
+        if (nestedDepth === 0 && /^@else(?![a-z])/.test(rem)) { elseIdx = atPos; break }
+        si = atPos + 1
       }
 
       let replacement: string

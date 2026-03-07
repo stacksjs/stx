@@ -71,9 +71,19 @@ function replaceWithBalancedParens(
     const openParen = start + match[0].length - 1
     let depth = 1
     let pos = openParen + 1
+    let inStr: string | null = null
+    let esc = false
     while (pos < result.length && depth > 0) {
-      if (result[pos] === '(') depth++
-      else if (result[pos] === ')') { depth--; if (depth === 0) break }
+      const c = result[pos]
+      if (esc) { esc = false; pos++; continue }
+      if (c === '\\' && inStr) { esc = true; pos++; continue }
+      if (inStr) {
+        if (c === inStr) inStr = null
+        pos++; continue
+      }
+      if (c === '"' || c === '\'' || c === '`') { inStr = c; pos++; continue }
+      if (c === '(') depth++
+      else if (c === ')') { depth--; if (depth === 0) break }
       pos++
     }
     if (depth !== 0) break
@@ -400,20 +410,28 @@ function findOutermostForelse(template: string): {
   const fullContent = template.substring(contentStart, endForelsePos)
   const fullEnd = endForelsePos + '@endforelse'.length
 
-  // Find @empty at the top level (not inside nested @forelse)
+  // Find @empty at the top level — use indexOf to jump to @ positions instead of O(n²) per-char
   let emptyPos = -1
   let nestedDepth = 0
-  for (let i = 0; i < fullContent.length; i++) {
-    const remaining = fullContent.substring(i)
-    if (remaining.match(/^@forelse\s*\(/)) {
+  let searchI = 0
+  while (searchI < fullContent.length) {
+    const atPos = fullContent.indexOf('@', searchI)
+    if (atPos === -1) break
+    const remaining = fullContent.substring(atPos)
+    if (/^@forelse\s*\(/.test(remaining)) {
       nestedDepth++
+      searchI = atPos + 1
     } else if (remaining.startsWith('@endforelse')) {
       nestedDepth--
+      searchI = atPos + '@endforelse'.length
     } else if (nestedDepth === 0 && remaining.startsWith('@empty')) {
-      if (fullContent.length <= i + 6 || !/[a-z]/i.test(fullContent[i + 6])) {
-        emptyPos = i
+      if (fullContent.length <= atPos + 6 || !/[a-z]/i.test(fullContent[atPos + 6])) {
+        emptyPos = atPos
         break
       }
+      searchI = atPos + 1
+    } else {
+      searchI = atPos + 1
     }
   }
 

@@ -327,7 +327,8 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
 
         const msg = error instanceof Error ? error.message : String(error)
         // Only include stack traces in debug mode to avoid information disclosure
-        const body = debug
+        const isDebug = stxOptions?.debug === true
+        const body = isDebug
           ? `<h1>Error</h1><pre>${msg}\n${error instanceof Error ? error.stack : ''}</pre>`
           : `<h1>Internal Server Error</h1><p>An error occurred while processing your request.</p>`
         return new Response(body, {
@@ -411,9 +412,15 @@ export async function serveFile(
         }
         else {
           const fileContent = await Bun.file(absolutePath).text()
-          const scriptMatch = fileContent.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-          const scriptContent = scriptMatch ? scriptMatch[1] : ''
-          const templateContent = fileContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+          // Extract ALL script contents (not just the first) using global regex
+          const scriptContents: string[] = []
+          const scriptRe = /<script\b[^>]*>([\s\S]*?)<\/script>/gi
+          let scriptM: RegExpExecArray | null
+          while ((scriptM = scriptRe.exec(fileContent)) !== null) {
+            scriptContents.push(scriptM[1])
+          }
+          const scriptContent = scriptContents.join('\n')
+          const templateContent = fileContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
           const context: Record<string, any> = {}
           await extractVariables(scriptContent, context, absolutePath)

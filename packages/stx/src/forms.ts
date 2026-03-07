@@ -58,6 +58,17 @@ import type { StxOptions } from './types'
 import crypto from 'node:crypto'
 import { isExpressionSafe, safeEvaluate } from './safe-evaluator'
 
+/** Escape HTML special characters in attribute values and content */
+function escapeAttr(str: unknown): string {
+  const s = String(str ?? '')
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 // =============================================================================
 // Configuration
 // =============================================================================
@@ -189,7 +200,7 @@ export function processBasicFormDirectives(template: string, context: Record<str
 
     // Use token if available
     if (context.csrf.token) {
-      return `<input type="hidden" name="_token" value="${context.csrf.token}">`
+      return `<input type="hidden" name="_token" value="${escapeAttr(context.csrf.token)}">`
     }
 
     // Default fallback with empty token
@@ -236,7 +247,7 @@ export function processFormInputDirectives(
       const methodStr = method.toUpperCase()
       const htmlMethod = ['GET', 'POST'].includes(methodStr) ? methodStr : 'POST'
 
-      let formHtml = `<form method="${htmlMethod}" action="${action}"${attrs ? ` ${attrs}` : ''}>`
+      let formHtml = `<form method="${escapeAttr(htmlMethod)}" action="${escapeAttr(action)}"${attrs ? ` ${attrs}` : ''}>`
 
       // Add CSRF token for all forms
       formHtml += `\n  ${processBasicFormDirectives('@csrf', context)}`
@@ -276,7 +287,7 @@ export function processFormInputDirectives(
       let attrsWithoutClassAndType = attrs.replace(/class=['"][^'"]+['"]/i, '')
       attrsWithoutClassAndType = attrsWithoutClassAndType.replace(/type=['"][^'"]+['"]/i, '')
 
-      return `<input type="${type}" name="${name}" value="${oldValue}" class="${className}"${attrsWithoutClassAndType ? ` ${attrsWithoutClassAndType}` : ''}>`
+      return `<input type="${escapeAttr(type)}" name="${escapeAttr(name)}" value="${escapeAttr(oldValue)}" class="${className}"${attrsWithoutClassAndType ? ` ${attrsWithoutClassAndType}` : ''}>`
     },
   )
 
@@ -295,7 +306,7 @@ export function processFormInputDirectives(
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
 
-      return `<textarea name="${name}" class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${oldValue}</textarea>`
+      return `<textarea name="${escapeAttr(name)}" class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${escapeAttr(oldValue)}</textarea>`
     },
   )
 
@@ -333,7 +344,7 @@ export function processFormInputDirectives(
         )
       }
 
-      return `<select name="${name}" class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${processedContent}</select>`
+      return `<select name="${escapeAttr(name)}" class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${processedContent}</select>`
     },
   )
 
@@ -358,7 +369,7 @@ export function processFormInputDirectives(
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
 
-      return `<input type="checkbox" name="${name}" value="${value}" class="${className}"${isChecked ? ' checked' : ''}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>`
+      return `<input type="checkbox" name="${escapeAttr(name)}" value="${escapeAttr(value)}" class="${className}"${isChecked ? ' checked' : ''}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>`
     },
   )
 
@@ -379,7 +390,7 @@ export function processFormInputDirectives(
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
 
-      return `<input type="radio" name="${name}" value="${value}" class="${className}"${isChecked ? ' checked' : ''}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>`
+      return `<input type="radio" name="${escapeAttr(name)}" value="${escapeAttr(value)}" class="${className}"${isChecked ? ' checked' : ''}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>`
     },
   )
 
@@ -410,7 +421,7 @@ export function processFormInputDirectives(
 
       // Build the file input element
       const parts = [
-        `<input type="file" name="${name}"`,
+        `<input type="file" name="${escapeAttr(name)}"`,
         `class="${className}"`,
       ]
 
@@ -443,7 +454,7 @@ export function processFormInputDirectives(
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
 
-      return `<label for="${forAttr}" class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${content}</label>`
+      return `<label for="${escapeAttr(forAttr)}" class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${content}</label>`
     },
   )
 

@@ -6,6 +6,10 @@ import { Buffer } from 'node:buffer'
  * Similar to Laravel's CSRF protection, this module provides:
  * - CSRF token generation
  * - A @csrf directive for easy token insertion in forms
+ *
+ * For concurrent server usage, use `generateCsrfToken()` and
+ * `verifyCsrfToken(submitted, expected)` per-request instead of
+ * relying on the module-global token.
  */
 
 import crypto from 'node:crypto'
@@ -14,7 +18,7 @@ import crypto from 'node:crypto'
 const DEFAULT_TOKEN_LENGTH = 40
 const DEFAULT_INPUT_NAME = '_token'
 
-// Token storage
+// Token storage (module-global for single-request / CLI usage)
 let csrfToken: string | null = null
 
 /**
@@ -69,16 +73,27 @@ export function processCsrfDirectives(template: string): string {
 }
 
 /**
- * Middleware-like function to verify CSRF token
+ * Verify a CSRF token.
+ *
+ * When called with one argument, compares against the module-global token.
+ * When called with two arguments, compares submitted vs expected (for per-request usage).
+ *
+ * Per-request usage avoids the global state race condition under concurrent requests:
+ * ```typescript
+ * const expected = req.session.csrfToken
+ * const submitted = req.body._token
+ * if (!verifyCsrfToken(submitted, expected)) { ... }
+ * ```
  */
-export function verifyCsrfToken(token: string): boolean {
-  if (!csrfToken) {
+export function verifyCsrfToken(token: string, expectedToken?: string): boolean {
+  const expected = expectedToken ?? csrfToken
+  if (!expected) {
     return false
   }
 
   // Guard against RangeError from timingSafeEqual when lengths differ
   const tokenBuf = Buffer.from(token)
-  const csrfBuf = Buffer.from(csrfToken)
+  const csrfBuf = Buffer.from(expected)
   if (tokenBuf.length !== csrfBuf.length) {
     return false
   }

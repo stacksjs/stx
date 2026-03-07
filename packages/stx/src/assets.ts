@@ -356,7 +356,8 @@ async function replaceAsync(
   // Create a new string with all replacements
   let result = str
   for (const { match, replacement } of results) {
-    result = result.replace(match, replacement)
+    // Use callback form to avoid $ pattern interpretation in replacement strings
+    result = result.replace(match, () => replacement)
   }
 
   return result

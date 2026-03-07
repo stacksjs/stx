@@ -497,8 +497,8 @@ export function createSafeLoopFunction(
     throw new Error(`Unsafe expression in @${loopType}: ${expression}`)
   }
 
-  // Process the body to escape template literals
-  const processedBody = body.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
+  // Process the body to escape template literals and prevent injection via ${} sequences
+  const processedBody = body.replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
     return `\${${expr}}`
   })
 

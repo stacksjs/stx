@@ -65,6 +65,7 @@
 
 import type { StxOptions } from './types'
 import { escapeHtml } from './expressions'
+import { isExpressionSafe, createSafeFunction } from './safe-evaluator'
 
 // =============================================================================
 // Types
@@ -101,25 +102,34 @@ export interface ParsedSlots {
 function findMatchingTemplateClose(content: string, startIndex: number): number {
   let depth = 1
   let i = startIndex
+  const openTag = '<template'
+  const closeTag = '</template'
 
   while (i < content.length && depth > 0) {
-    // Look for opening <template tags
-    const openMatch = content.slice(i).match(/^<template\b/)
-    if (openMatch) {
+    // Use indexOf to jump to next '<' instead of checking every character
+    const nextLt = content.indexOf('<', i)
+    if (nextLt === -1) break
+    i = nextLt
+
+    // Check for opening <template tags
+    if (content.startsWith(openTag, i) && (i + openTag.length >= content.length || /[\s>\/]/.test(content[i + openTag.length]))) {
       depth++
-      i += openMatch[0].length
+      i += openTag.length
       continue
     }
 
-    // Look for closing </template> tags
-    const closeMatch = content.slice(i).match(/^<\/template\s*>/)
-    if (closeMatch) {
-      depth--
-      if (depth === 0) {
-        return i + closeMatch[0].length
+    // Check for closing </template> tags
+    if (content.startsWith(closeTag, i)) {
+      // Find the closing >
+      const closeEnd = content.indexOf('>', i + closeTag.length)
+      if (closeEnd !== -1) {
+        depth--
+        if (depth === 0) {
+          return closeEnd + 1
+        }
+        i = closeEnd + 1
+        continue
       }
-      i += closeMatch[0].length
-      continue
     }
 
     i++
@@ -348,12 +358,13 @@ function evaluateSimpleExpression(
     }
   }
 
-  // For more complex expressions, use Function (carefully)
+  // For more complex expressions, use safe evaluation
   try {
-    const keys = Object.keys(context)
-    const values = Object.values(context)
-    const fn = new Function(...keys, `return ${expr}`)
-    return fn(...values)
+    if (!isExpressionSafe(expr)) {
+      return undefined
+    }
+    const fn = createSafeFunction(expr, Object.keys(context))
+    return fn(...Object.values(context))
   } catch {
     return undefined
   }

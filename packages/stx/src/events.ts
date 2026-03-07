@@ -359,7 +359,9 @@ function wrapHandler(handler: string, modifiers: EventModifiers): string {
  * Generate the event listener code for a single event
  */
 function generateEventListener(event: ParsedEvent): string {
-  const { elementId, modifiers } = event
+  const { modifiers } = event
+  // Sanitize element ID for safe injection into JS string literals
+  const elementId = event.elementId.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
   const checks = generateModifierChecks(event)
   const handler = wrapHandler(event.handler, modifiers)
 
@@ -370,7 +372,7 @@ function generateEventListener(event: ParsedEvent): string {
   const optionsStr = options.length > 0 ? `, { ${options.join(', ')} }` : ''
 
   // Escape the handler for use in string
-  const escapedHandler = handler.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+  const escapedHandler = handler.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
 
   // Handle lifecycle events specially
   if (event.event === 'mounted') {

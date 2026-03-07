@@ -70,7 +70,9 @@ async function processDirectiveWithEndTag(
   // Create a regex pattern that handles optional parameters
   // Matches patterns like @uppercase, @uppercase(param1), @uppercase(param1, param2), etc.
   // Ensure we capture all content between the start and end tags
-  const pattern = getCachedRegex(`${startTag}(?:\\s*\\(([^)]+)\\))?([\\s\\S]*?)${endTag}`, 'g')
+  // Use balanced parenthesis matching to handle nested parens in params
+  // [^()]* matches non-paren chars, (?:\([^)]*\)[^()]*)* handles one level of nesting
+  const pattern = getCachedRegex(`${startTag}(?:\\s*\\(([^()]*(?:\\([^)]*\\)[^()]*)*)\\))?([\\s\\S]*?)${endTag}`, 'g')
 
   // Keep track of replacements to handle nested directives properly
   const replacements: Array<{ original: string, processed: string, startIndex: number }> = []
@@ -140,7 +142,8 @@ async function processDirectiveWithoutEndTag(
 
   // Create a pattern that matches directives with parameters
   // e.g., @uppercase(text) or @uppercase('text')
-  const pattern = getCachedRegex(`@${name}\\s*\\(([^)]+)\\)`, 'g')
+  // Use balanced parenthesis matching for nested parens in params
+  const pattern = getCachedRegex(`@${name}\\s*\\(([^()]*(?:\\([^)]*\\)[^()]*)*)\\)`, 'g')
 
   // Keep track of replacements
   const replacements: Array<{ original: string, processed: string, startIndex: number }> = []

@@ -165,32 +165,35 @@ export function parseConditionalBlock(source: string, startPos: number): ParsedC
   let branchStart = 0
   let nestedDepth = 0
 
+  // Use indexOf to jump to @ positions instead of checking every character
   while (currentPos < fullContent.length) {
-    const remaining = fullContent.slice(currentPos)
+    const atIdx = fullContent.indexOf('@', currentPos)
+    if (atIdx === -1) break
+    currentPos = atIdx
+    const remaining = fullContent.substring(atIdx)
 
     // Track nested @if depth
-    if (remaining.match(/^@if\s*\(/)) {
+    if (/^@if\s*\(/.test(remaining)) {
       nestedDepth++
       currentPos++
       continue
     }
-    if (remaining.match(/^@endif(?![a-z])/)) {
+    if (/^@endif(?![a-z])/.test(remaining)) {
       nestedDepth--
-      currentPos++
+      currentPos += '@endif'.length
       continue
     }
 
     // Only match @elseif/@else at top level (depth 0)
     if (nestedDepth === 0) {
       const elseifMatch = remaining.match(/^@elseif\s*/)
-      const elseMatch = remaining.match(/^@else(?![a-z])/)
 
-      if (elseifMatch && remaining.startsWith('@elseif')) {
+      if (elseifMatch) {
         // Save current branch
         branches.push({
           type: currentType,
           condition: currentCondition,
-          content: fullContent.slice(branchStart, currentPos),
+          content: fullContent.substring(branchStart, currentPos),
           start: contentStart + branchStart,
           end: contentStart + currentPos,
         })
@@ -210,19 +213,19 @@ export function parseConditionalBlock(source: string, startPos: number): ParsedC
         branchStart = currentPos
         continue
       }
-      else if (elseMatch && remaining.startsWith('@else')) {
+      else if (/^@else(?![a-z])/.test(remaining)) {
         // Save current branch
         branches.push({
           type: currentType,
           condition: currentCondition,
-          content: fullContent.slice(branchStart, currentPos),
+          content: fullContent.substring(branchStart, currentPos),
           start: contentStart + branchStart,
           end: contentStart + currentPos,
         })
 
         currentType = 'else'
         currentCondition = undefined
-        currentPos += elseMatch[0].length
+        currentPos += '@else'.length
         branchStart = currentPos
         continue
       }

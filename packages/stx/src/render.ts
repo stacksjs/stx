@@ -187,12 +187,14 @@ function parseTemplate(content: string): {
 }
 
 function wrapInHtmlDocument(html: string, title?: string): string {
+  // Escape title to prevent XSS via HTML injection in <title> tag
+  const safeTitle = (title || 'stx').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title || 'stx'}</title>
+  <title>${safeTitle}</title>
 </head>
 <body>
 ${html}

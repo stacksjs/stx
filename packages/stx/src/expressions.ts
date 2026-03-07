@@ -31,7 +31,7 @@
  * i18n: translate, pluralize, date
  */
 
-import { isExpressionSafe, safeEvaluate } from './safe-evaluator'
+import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
 import { createDetailedErrorMessage } from './utils'
 
 /**
@@ -444,10 +444,26 @@ function expressionUsesOnlyContextVars(expr: string, context: Record<string, any
 
   // Extract all identifiers from the expression (words that aren't numbers or inside strings)
   // This is a simplified check - remove strings first, then find identifiers
+  // Remove strings/template literals, handling nested ${} in backticks
   let exprWithoutStrings = expr
     .replace(/'[^']*'/g, '') // Remove single-quoted strings
     .replace(/"[^"]*"/g, '') // Remove double-quoted strings
-    .replace(/`[^`]*`/g, '') // Remove template literals
+  // Remove template literals with balanced ${} handling
+  let tplResult = ''
+  let inTpl = false
+  let tplDepth = 0
+  for (let ti = 0; ti < exprWithoutStrings.length; ti++) {
+    const ch = exprWithoutStrings[ti]
+    if (!inTpl && ch === '`') { inTpl = true; tplDepth = 0; continue }
+    if (inTpl) {
+      if (ch === '`' && tplDepth === 0) { inTpl = false; continue }
+      if (ch === '$' && exprWithoutStrings[ti + 1] === '{') { tplDepth++; ti++; continue }
+      if (ch === '}' && tplDepth > 0) { tplDepth--; continue }
+      continue
+    }
+    tplResult += ch
+  }
+  exprWithoutStrings = tplResult
 
   // Find all identifiers (variable names at the start of property access chains)
   const identifierRegex = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\b/g
@@ -673,8 +689,39 @@ export function applyFilters(value: any, filterExpression: string, context: Reco
               params = [paramObj]
             }
             else {
-              // Split by commas and parse each parameter
-              params = paramsString.split(',').map((p) => {
+              // Split by commas respecting strings and nested parens/brackets
+              const paramParts: string[] = []
+              let current = ''
+              let inStr: string | null = null
+              let pDepth = 0
+              let bDepth = 0
+              let brDepth = 0
+              let esc = false
+              for (let ci = 0; ci < paramsString.length; ci++) {
+                const ch = paramsString[ci]
+                if (esc) { current += ch; esc = false; continue }
+                if (ch === '\\') { current += ch; esc = true; continue }
+                if (inStr) {
+                  current += ch
+                  if (ch === inStr) inStr = null
+                  continue
+                }
+                if (ch === '"' || ch === '\'' || ch === '`') { inStr = ch; current += ch; continue }
+                if (ch === '(') pDepth++
+                else if (ch === ')') pDepth--
+                else if (ch === '[') bDepth++
+                else if (ch === ']') bDepth--
+                else if (ch === '{') brDepth++
+                else if (ch === '}') brDepth--
+                if (ch === ',' && pDepth === 0 && bDepth === 0 && brDepth === 0) {
+                  paramParts.push(current)
+                  current = ''
+                  continue
+                }
+                current += ch
+              }
+              if (current) paramParts.push(current)
+              params = paramParts.map((p) => {
                 const trimmed = p.trim()
                 return evaluateExpression(trimmed, context, true)
               })
@@ -767,6 +814,18 @@ function findFilterPipeIndex(expr: string): number {
       continue
     }
 
+    // Handle ${} inside template literals — skip the interpolated expression
+    if (inString && stringChar === '`' && char === '$' && nextChar === '{') {
+      let tplDepth = 1
+      i += 2 // skip ${
+      while (i < expr.length && tplDepth > 0) {
+        if (expr[i] === '{') tplDepth++
+        else if (expr[i] === '}') tplDepth--
+        if (tplDepth > 0) i++
+      }
+      continue
+    }
+
     // Skip characters inside strings
     if (inString) {
       continue
@@ -849,24 +908,12 @@ export function evaluateExpression(expression: string, context: Record<string, a
       return safeEvaluate(trimmedExpr, context)
     }
 
-    // For safe expressions, evaluate directly (memoization with functions is complex)
-    // Create a function that evaluates the expression in the context
+    // For safe expressions, evaluate using createSafeFunction for consistent safety
     try {
       const keys = Object.keys(context)
       const values = Object.values(context)
 
-      // eslint-disable-next-line no-new-func
-      const exprFn = new Function(...keys, `
-        try {
-          return ${trimmedExpr};
-        } catch (e) {
-          if (e instanceof ReferenceError || e instanceof TypeError) {
-            return undefined;
-          }
-          throw e;
-        }
-      `)
-
+      const exprFn = createSafeFunction(trimmedExpr, keys)
       return exprFn(...values)
     }
     catch {

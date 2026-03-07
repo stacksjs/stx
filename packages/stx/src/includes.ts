@@ -596,20 +596,18 @@ export async function processIncludes(
       const errorMessage = error instanceof Error ? error.message : String(error)
           // In production, use fallback; in debug mode, show error
           if (options.debug) {
-            output = output.replace(
-              fullMatch,
-              createDetailedErrorMessage(
+            const errMsg = createDetailedErrorMessage(
                 'Include',
                 `Error parsing includeFirst variables: ${errorMessage}`,
                 filePath,
                 template,
                 matchOffset,
                 fullMatch,
-              ),
-            )
+              )
+            output = output.replace(fullMatch, () => errMsg)
           }
           else {
-            output = output.replace(fullMatch, fallbackContent || '')
+            output = output.replace(fullMatch, () => fallbackContent || '')
           }
           continue
         }
@@ -628,7 +626,8 @@ export async function processIncludes(
         if (await fileExists(includeFilePath)) {
           // Process the include with our helper function
           const processed = await processIncludeHelper(includePath, localVars, template, matchOffset)
-          output = output.replace(fullMatch, processed)
+          // Use callback to avoid $ pattern interpretation in replacement
+          output = output.replace(fullMatch, () => processed)
           foundValidPath = true
           break
         }
@@ -637,22 +636,20 @@ export async function processIncludes(
       // No valid include found - use fallback or show error based on debug mode
       if (!foundValidPath) {
         if (fallbackContent !== undefined) {
-          // Use provided fallback content
-          output = output.replace(fullMatch, fallbackContent)
+          // Use provided fallback content (callback to avoid $ pattern interpretation)
+          output = output.replace(fullMatch, () => fallbackContent!)
         }
         else if (options.debug) {
           // Show detailed error in debug mode
-          output = output.replace(
-            fullMatch,
-            createDetailedErrorMessage(
+          const debugMsg = createDetailedErrorMessage(
               'Include',
               `None of the includeFirst paths exist: ${pathArrayString}`,
               filePath,
               template,
               matchOffset,
               fullMatch,
-            ),
-          )
+            )
+          output = output.replace(fullMatch, () => debugMsg)
         }
         else {
           // In production without fallback, silently remove the directive
@@ -663,17 +660,15 @@ export async function processIncludes(
     }
     catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      output = output.replace(
-        fullMatch,
-        createDetailedErrorMessage(
+      const errMsg = createDetailedErrorMessage(
           'Include',
           `Error processing @includeFirst: ${errorMessage}`,
           filePath,
           template,
           matchOffset,
           fullMatch,
-        ),
-      )
+        )
+      output = output.replace(fullMatch, () => errMsg)
     }
 
     // Reset regex to start from beginning since we've modified the string
@@ -720,14 +715,17 @@ export async function processIncludes(
       const isWithinTemplateDir = normalizedResolvedPath.startsWith(templateDir + path.sep)
         || normalizedResolvedPath === templateDir
 
-      // Check if within sibling directories (up to 3 levels up)
+      // Check if within sibling directories (up to 1 level up from template dir)
+      // Tightened from 3 levels to prevent reaching project root (.env, configs, etc.)
       let isWithinProjectScope = false
-      let parentDir = templateDir
-      for (let i = 0; i < 3; i++) {
-        parentDir = path.dirname(parentDir)
-        if (normalizedResolvedPath.startsWith(parentDir + path.sep)) {
+      const projectDir = path.dirname(templateDir)
+      if (normalizedResolvedPath.startsWith(projectDir + path.sep)) {
+        // Additional safety: reject paths to dotfiles and common sensitive files
+        const relPath = path.relative(projectDir, normalizedResolvedPath)
+        const segments = relPath.split(path.sep)
+        const hasDotSegment = segments.some(s => s.startsWith('.') && s !== '.' && s !== '..')
+        if (!hasDotSegment) {
           isWithinProjectScope = true
-          break
         }
       }
 

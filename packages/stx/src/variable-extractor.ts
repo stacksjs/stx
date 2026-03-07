@@ -716,6 +716,18 @@ function parseVariableDeclaration(lines: string[], startIndex: number): Variable
     currentIndex = startIndex + 1
   }
 
+  // Handle method chaining continuation lines (e.g., .map().filter().sort())
+  while (currentIndex < lines.length) {
+    const nextLine = lines[currentIndex].trim()
+    if (nextLine.startsWith('.') || nextLine.startsWith('?.')) {
+      value += `\n${lines[currentIndex]}`
+      currentIndex++
+    }
+    else {
+      break
+    }
+  }
+
   value = value.trim().replace(/;$/, '')
 
   return {
@@ -879,6 +891,18 @@ function readMultilineValue(lines: string[], startIndex: number, initialValue: s
     const nextLine = lines[i]
     value += `\n${nextLine}`
     i++
+  }
+
+  // Continue reading method chaining continuation lines (e.g., .map().filter().sort())
+  while (i < lines.length) {
+    const nextLine = lines[i].trim()
+    if (nextLine.startsWith('.') || nextLine.startsWith('?.')) {
+      value += `\n${lines[i]}`
+      i++
+    }
+    else {
+      break
+    }
   }
 
   return { value, nextIndex: i }

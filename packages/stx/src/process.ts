@@ -36,6 +36,9 @@ import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
 import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 
+// Counter for unique signal setup function names (avoids Date.now() collisions)
+let signalSetupCounter = 0
+
 // =============================================================================
 // STX SIGNALS INTEGRATION
 // =============================================================================
@@ -148,16 +151,20 @@ function convertSignalDirectivesToAttributes(template: string): string {
     const content = output.substring(afterCondition, endIdx - '@endif'.length).trim()
 
     // Check if content is a single element or needs wrapper
-    const singleElementMatch = content.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>([\s\S]*)<\/\1>$/s)
+    // Handle > in attribute values by matching quoted attrs properly
+    const singleElementMatch = content.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s*)>([\s\S]*)<\/\1>$/s)
 
     let replacement: string
     if (singleElementMatch) {
       // Single root element - add @if attribute directly
       const [, tag, attrs, innerContent] = singleElementMatch
-      replacement = `<${tag}${attrs} @if="${condition}">${innerContent}</${tag}>`
+      // Escape double quotes in condition to avoid breaking the attribute
+      const escapedCondition = condition.replace(/"/g, '&quot;')
+      replacement = `<${tag}${attrs} @if="${escapedCondition}">${innerContent}</${tag}>`
     } else {
       // Multiple elements or text - wrap in template
-      replacement = `<template @if="${condition}">${content}</template>`
+      const escapedCondition = condition.replace(/"/g, '&quot;')
+      replacement = `<template @if="${escapedCondition}">${content}</template>`
     }
 
     replacements.push({ start: startIdx, end: endIdx, replacement })
@@ -239,7 +246,8 @@ function convertSignalLoopsToAttributes(template: string): string {
     const content = output.substring(afterExpr, endIdx - endTag.length).trim()
 
     // Check for single root element
-    const singleElementMatch = content.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>([\s\S]*)<\/\1>$/s)
+    // Handle > in attribute values by matching quoted attrs properly
+    const singleElementMatch = content.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s*)>([\s\S]*)<\/\1>$/s)
 
     let replacement: string
     if (singleElementMatch) {
@@ -302,7 +310,7 @@ function processScriptSetup(template: string): { output: string, setupCode: stri
     return { output: template, setupCode: null }
   }
 
-  const setupFnName = `__stx_setup_${Date.now()}`
+  const setupFnName = `__stx_setup_${Date.now()}_${signalSetupCounter++}`
 
   // Transform store imports before wrapping in function (import statements can't be inside functions)
   const resolvedContent = transformStoreImports(signalScript.content)
@@ -319,7 +327,8 @@ ${resolvedContent}
 </script>`
 
   // Remove the original script and add data-stx attribute to the root element
-  let output = template.replace(signalScript.fullMatch, '')
+  // Use split/join to replace ALL occurrences, not just the first
+  let output = template.split(signalScript.fullMatch).join('')
 
   // Try to add data-stx to body or first content element
   if (output.includes('<body')) {
@@ -1580,10 +1589,12 @@ async function processBuiltInComponents(
       const throttleMatch = attrs.match(/throttle=["']([^"']+)["']/i)
       const zIndexMatch = attrs.match(/z-index=["']([^"']+)["']/i)
 
+      // Sanitize CSS values to prevent injection (strip semicolons, braces, url())
+      const sanitizeCss = (v: string): string => v.replace(/[;{}()]/g, '').replace(/url/gi, '')
       const options = {
-        color: colorMatch?.[1] || '#6366f1',
-        initialColor: initialColorMatch?.[1] || '',
-        height: heightMatch?.[1] || '3px',
+        color: sanitizeCss(colorMatch?.[1] || '#6366f1'),
+        initialColor: sanitizeCss(initialColorMatch?.[1] || ''),
+        height: sanitizeCss(heightMatch?.[1] || '3px'),
         duration: durationMatch ? Number.parseInt(durationMatch[1]) : 2000,
         throttle: throttleMatch ? Number.parseInt(throttleMatch[1]) : 200,
         zIndex: zIndexMatch ? Number.parseInt(zIndexMatch[1]) : 999999,
@@ -1951,7 +1962,41 @@ async function processOtherDirectives(
 
   // Strip server-only scripts (marked with 'server' attribute)
   // These are used for SSR variable extraction and shouldn't appear in client output
-  output = output.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>\s*/gi, '')
+  // Use balanced </script> matching to handle scripts containing </script> in string literals
+  {
+    const serverScriptRe = /<script\s+server\b[^>]*>/gi
+    let serverMatch: RegExpExecArray | null
+    const serverRemoveRanges: { start: number, end: number }[] = []
+    while ((serverMatch = serverScriptRe.exec(output)) !== null) {
+      const tagEnd = serverMatch.index + serverMatch[0].length
+      let sDepth = 1
+      let sPos = tagEnd
+      while (sPos < output.length && sDepth > 0) {
+        const nextOpen = output.indexOf('<script', sPos)
+        const nextClose = output.indexOf('</script>', sPos)
+        if (nextClose === -1) break
+        if (nextOpen !== -1 && nextOpen < nextClose) {
+          sDepth++
+          sPos = nextOpen + '<script'.length
+        } else {
+          sDepth--
+          if (sDepth === 0) {
+            let rangeEnd = nextClose + '</script>'.length
+            // Also consume trailing whitespace
+            while (rangeEnd < output.length && /\s/.test(output[rangeEnd])) rangeEnd++
+            serverRemoveRanges.push({ start: serverMatch.index, end: rangeEnd })
+            break
+          }
+          sPos = nextClose + '</script>'.length
+        }
+      }
+    }
+    // Remove in reverse order to preserve indices
+    for (let ri = serverRemoveRanges.length - 1; ri >= 0; ri--) {
+      const { start, end } = serverRemoveRanges[ri]
+      output = output.substring(0, start) + output.substring(end)
+    }
+  }
 
   // Transform client <script> blocks: resolve @stores imports, inject event
   // bindings into the script scope, and auto-wrap in a scoped IIFE.
@@ -1980,7 +2025,9 @@ async function processOtherDirectives(
     // Validate client scripts for prohibited patterns
     validateClientScript(processedContent, filePath, options.strict)
 
-    output = output.replace(match, processClientScript(processedContent, { eventBindings, attrs, hasColonDirectives }))
+    // Use callback form of replace to avoid $ pattern interpretation in replacement string
+    const scriptResult = processClientScript(processedContent, { eventBindings, attrs, hasColonDirectives })
+    output = output.replace(match, () => scriptResult)
   }
   // Only clear event bindings if scripts were found and transformed.
   // When processing a component whose scripts were extracted separately
@@ -2339,9 +2386,17 @@ async function processCustomElements(
           if (singleExprMatch) {
             // Single expression - evaluate and use the result directly
             try {
-              // eslint-disable-next-line no-new-func
-              const valueFn = new Function(...Object.keys(context), `return ${singleExprMatch[1]}`)
-              props[attrName] = valueFn(...Object.values(context))
+              const expression = singleExprMatch[1]
+              if (!isExpressionSafe(expression)) {
+                if (options.debug) {
+                  console.error(`Unsafe expression in ${attrName}: ${expression}`)
+                }
+                props[attrName] = attrValue
+              }
+              else {
+                const valueFn = createSafeFunction(expression, Object.keys(context))
+                props[attrName] = valueFn(...Object.values(context))
+              }
             }
             catch (error) {
               if (options.debug) {
@@ -2357,8 +2412,14 @@ async function processCustomElements(
             let match
             while ((match = exprPattern.exec(attrValue)) !== null) {
               try {
-                // eslint-disable-next-line no-new-func
-                const valueFn = new Function(...Object.keys(context), `return ${match[1]}`)
+                const expression = match[1]
+                if (!isExpressionSafe(expression)) {
+                  if (options.debug) {
+                    console.error(`Unsafe expression in ${attrName}: ${expression}`)
+                  }
+                  continue
+                }
+                const valueFn = createSafeFunction(expression, Object.keys(context))
                 const evaluated = valueFn(...Object.values(context))
                 result = result.replace(match[0], String(evaluated ?? ''))
               }
@@ -2403,40 +2464,84 @@ async function processCustomElements(
  * Process @json directive to output JSON
  */
 export function processJsonDirective(template: string, context: Record<string, any>): string {
-  // Handle @json(data) and @json(data, pretty) directives
-  return template.replace(/@json\(\s*([^,)]+)(?:,\s*(true|false))?\)/g, (match, dataPath, pretty) => {
+  // Handle @json(data) and @json(data, pretty) directives using balanced paren matching
+  let result = template
+  const jsonPat = /@json\s*\(/g
+  let jsonMatch: RegExpExecArray | null
+
+  while ((jsonMatch = jsonPat.exec(result)) !== null) {
+    const start = jsonMatch.index
+    const openParen = start + jsonMatch[0].length - 1
+    // Find balanced closing paren
+    let depth = 1
+    let pos = openParen + 1
+    let inStr: string | null = null
+    let esc = false
+    while (pos < result.length && depth > 0) {
+      const c = result[pos]
+      if (esc) { esc = false; pos++; continue }
+      if (c === '\\' && inStr) { esc = true; pos++; continue }
+      if (inStr) { if (c === inStr) inStr = null; pos++; continue }
+      if (c === '"' || c === '\'' || c === '`') { inStr = c; pos++; continue }
+      if (c === '(') depth++
+      else if (c === ')') { depth--; if (depth === 0) break }
+      pos++
+    }
+    if (depth !== 0) break
+
+    const innerArgs = result.substring(openParen + 1, pos).trim()
+    const fullMatch = result.substring(start, pos + 1)
+
+    // Split args: find top-level comma separating data from pretty flag
+    let commaIdx = -1
+    let argDepth = 0
+    let argStr: string | null = null
+    let argEsc = false
+    for (let ai = 0; ai < innerArgs.length; ai++) {
+      const ac = innerArgs[ai]
+      if (argEsc) { argEsc = false; continue }
+      if (ac === '\\' && argStr) { argEsc = true; continue }
+      if (argStr) { if (ac === argStr) argStr = null; continue }
+      if (ac === '"' || ac === '\'' || ac === '`') { argStr = ac; continue }
+      if (ac === '(' || ac === '[' || ac === '{') argDepth++
+      else if (ac === ')' || ac === ']' || ac === '}') argDepth--
+      if (ac === ',' && argDepth === 0) { commaIdx = ai; break }
+    }
+
+    const dataPath = commaIdx >= 0 ? innerArgs.substring(0, commaIdx).trim() : innerArgs
+    const pretty = commaIdx >= 0 ? innerArgs.substring(commaIdx + 1).trim() : undefined
+
     try {
-      // Safe expression evaluation to prevent code injection
       const trimmedPath = dataPath.trim()
       let data: unknown
       if (isExpressionSafe(trimmedPath)) {
         const evalFn = createSafeFunction(trimmedPath, Object.keys(context))
         data = evalFn(...Object.values(context))
-      }
-      else {
+      } else {
         data = undefined
       }
 
       let json: string
       if (pretty === 'true') {
         json = JSON.stringify(data, null, 2)
-      }
-      else {
+      } else {
         json = JSON.stringify(data)
       }
       // Escape sequences that could break out of script tags or HTML context
-      return json
+      const escaped = json
         .replace(/</g, '\\u003c')
         .replace(/>/g, '\\u003e')
         .replace(/&/g, '\\u0026')
         .replace(/\u2028/g, '\\u2028')
         .replace(/\u2029/g, '\\u2029')
-    }
-    catch (error) {
+      result = result.substring(0, start) + escaped + result.substring(pos + 1)
+      jsonPat.lastIndex = start + escaped.length
+    } catch (error) {
       errorLogger.log(error instanceof Error ? error : new Error(String(error)), { directive: '@json' }, 'error')
-      return match // Return unchanged if there's an error
+      jsonPat.lastIndex = start + fullMatch.length
     }
-  })
+  }
+  return result
 }
 
 /**
