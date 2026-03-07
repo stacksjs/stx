@@ -256,6 +256,173 @@ function convertLoopControlToJS(content: string): string {
 }
 
 // =============================================================================
+// Forelse Processing (balanced parsing)
+// =============================================================================
+
+/**
+ * Find the next outermost @forelse block using balanced parsing.
+ * Returns null if no (outermost) @forelse found.
+ */
+function findOutermostForelse(template: string): {
+  start: number
+  end: number
+  arrayExpr: string
+  itemVar: string
+  foreachContent: string
+  emptyContent: string
+} | null {
+  const forelseRegex = /@forelse\s*\(/g
+  let match
+
+  while ((match = forelseRegex.exec(template)) !== null) {
+    // Check if this @forelse is inside an unclosed @foreach block
+    // by counting @foreach and @endforeach before this position
+    const before = template.substring(0, match.index)
+    let foreachDepth = 0
+    const foreachOpenRe = /@foreach\s*\(/g
+    const foreachCloseRe = /@endforeach/g
+    let m
+    const events: { pos: number, type: string }[] = []
+    while ((m = foreachOpenRe.exec(before)) !== null) events.push({ pos: m.index, type: 'open' })
+    while ((m = foreachCloseRe.exec(before)) !== null) events.push({ pos: m.index, type: 'close' })
+    events.sort((a, b) => a.pos - b.pos)
+    for (const e of events) {
+      if (e.type === 'open') foreachDepth++
+      else foreachDepth--
+    }
+    if (foreachDepth > 0) {
+      // This @forelse is inside a @foreach — skip it, let foreach iteration handle it
+      continue
+    }
+
+  const forelseStart = match.index
+  const openParen = match.index + match[0].length - 1
+
+  // Find balanced closing paren
+  let parenDepth = 1
+  let pos = openParen + 1
+  let closeParen = -1
+  while (pos < template.length && parenDepth > 0) {
+    if (template[pos] === '(') parenDepth++
+    else if (template[pos] === ')') {
+      parenDepth--
+      if (parenDepth === 0) { closeParen = pos; break }
+    }
+    pos++
+  }
+  if (closeParen === -1) continue
+
+  const params = template.substring(openParen + 1, closeParen)
+  const asIndex = params.indexOf(' as ')
+  if (asIndex === -1) continue
+
+  const arrayExpr = params.substring(0, asIndex).trim()
+  const itemVar = params.substring(asIndex + 4).trim()
+  const contentStart = closeParen + 1
+
+  // Find matching @endforelse using depth tracking
+  let depth = 1
+  let searchPos = contentStart
+  const nestedForelseRegex = /@forelse\s*\(/g
+  const endForelseRegex = /@endforelse/g
+  let endForelsePos = -1
+
+  while (depth > 0 && searchPos < template.length) {
+    nestedForelseRegex.lastIndex = searchPos
+    endForelseRegex.lastIndex = searchPos
+    const nextOpen = nestedForelseRegex.exec(template)
+    const nextClose = endForelseRegex.exec(template)
+    if (!nextClose) break
+    if (nextOpen && nextOpen.index < nextClose.index) {
+      depth++
+      searchPos = nextOpen.index + nextOpen[0].length
+    } else {
+      depth--
+      if (depth === 0) { endForelsePos = nextClose.index; break }
+      searchPos = nextClose.index + '@endforelse'.length
+    }
+  }
+  if (endForelsePos === -1) continue
+
+  const fullContent = template.substring(contentStart, endForelsePos)
+  const fullEnd = endForelsePos + '@endforelse'.length
+
+  // Find @empty at the top level (not inside nested @forelse)
+  let emptyPos = -1
+  let nestedDepth = 0
+  for (let i = 0; i < fullContent.length; i++) {
+    const remaining = fullContent.substring(i)
+    if (remaining.match(/^@forelse\s*\(/)) {
+      nestedDepth++
+    } else if (remaining.startsWith('@endforelse')) {
+      nestedDepth--
+    } else if (nestedDepth === 0 && remaining.startsWith('@empty')) {
+      if (fullContent.length <= i + 6 || !/[a-z]/i.test(fullContent[i + 6])) {
+        emptyPos = i
+        break
+      }
+    }
+  }
+
+  if (emptyPos === -1) {
+    // No @empty found, skip to next @forelse
+    continue
+  }
+
+  return {
+    start: forelseStart,
+    end: fullEnd,
+    arrayExpr,
+    itemVar,
+    foreachContent: fullContent.substring(0, emptyPos),
+    emptyContent: fullContent.substring(emptyPos + '@empty'.length),
+  }
+  } // end while loop over forelseRegex matches
+
+  return null
+}
+
+/**
+ * Process only outermost @forelse blocks.
+ * Inner @forelse blocks are left for the @foreach processor to handle during iteration.
+ */
+function processForelse(template: string, context: Record<string, any>): string {
+  let output = template
+
+  while (true) {
+    const found = findOutermostForelse(output)
+    if (!found) break
+
+    const { start, end, arrayExpr, itemVar, foreachContent, emptyContent } = found
+
+    try {
+      let array: unknown
+      if (isExpressionSafe(arrayExpr)) {
+        const arrayFn = createSafeFunction(arrayExpr, Object.keys(context))
+        array = arrayFn(...Object.values(context))
+      } else {
+        array = safeEvaluate(arrayExpr, context)
+      }
+
+      let replacement: string
+      if (!Array.isArray(array) || array.length === 0) {
+        replacement = emptyContent
+      } else {
+        replacement = `@foreach (${arrayExpr} as ${itemVar})${foreachContent}@endforeach`
+      }
+
+      output = output.substring(0, start) + replacement + output.substring(end)
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error)
+      const replacement = inlineError('Forelse', `Error in @forelse(${arrayExpr} as ${itemVar}): ${errMsg}`, ErrorCodes.EVALUATION_ERROR)
+      output = output.substring(0, start) + replacement + output.substring(end)
+    }
+  }
+
+  return output
+}
+
+// =============================================================================
 // Loop Processing
 // =============================================================================
 
@@ -285,29 +452,8 @@ function convertLoopControlToJS(content: string): string {
 export function processLoops(template: string, context: Record<string, any>, filePath: string, options?: StxOptions): string {
   let output = template
 
-  // Process @forelse loops (combine foreach with an empty check) using safe evaluation
-  output = output.replace(/@forelse\s*\(([^)]+)as([^)]+)\)([\s\S]*?)@empty([\s\S]*?)@endforelse/g, (_match, arrayExpr, itemVar, content, emptyContent, _offset) => {
-    try {
-      const trimmedExpr = arrayExpr.trim()
-      let array: unknown
-      if (isExpressionSafe(trimmedExpr)) {
-        const arrayFn = createSafeFunction(trimmedExpr, Object.keys(context))
-        array = arrayFn(...Object.values(context))
-      }
-      else {
-        array = safeEvaluate(trimmedExpr, context)
-      }
-
-      if (!Array.isArray(array) || array.length === 0) {
-        return emptyContent
-      }
-
-      return `@foreach (${trimmedExpr} as ${itemVar.trim()})${content}@endforeach`
-    }
-    catch (error: unknown) {
-      return inlineError('Forelse', `Error in @forelse(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
-    }
-  })
+  // Process @forelse loops using balanced parsing (handles nested parens and nested @forelse)
+  output = processForelse(output, context)
 
   // Helper to find matching @foreach/@endforeach pairs using a stack
   function findMatchingForeach(template: string): { start: number, end: number, arrayExpr: string, itemVar: string, content: string } | null {
@@ -502,7 +648,10 @@ export function processLoops(template: string, context: Record<string, any>, fil
             break
           }
 
-          // Step 2: Recursively process nested loops with the new context
+          // Step 2a: Process any nested @forelse blocks with the iteration context
+          processedContent = processForelse(processedContent, itemContext)
+
+          // Step 2b: Recursively process nested loops with the new context
           processedContent = processForeachWithContext(processedContent, itemContext)
 
           // Step 3: Process conditionals with the item context

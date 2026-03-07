@@ -1219,6 +1219,9 @@ export async function processDirectives(
         result = processRefAttributes(result)
       }
 
+      // Restore @@ escape placeholders to literal @ AFTER all directive processing
+      result = result.replace(/\x00STX_ESCAPED_AT\x00/g, '@')
+
       return result
     })
   }
@@ -1284,8 +1287,11 @@ async function processDirectivesInternal(
   // First, remove all comments
   output = output.replace(/\{\{--[\s\S]*?--\}\}/g, '')
 
-  // Process escaped @@ directives (convert @@ to @)
-  output = output.replace(/@@/g, '@')
+  // Replace @@ with a unique placeholder BEFORE directive processing,
+  // so @@if(true) doesn't get evaluated as a real @if directive.
+  // The placeholder is restored to a literal @ after all processing.
+  const ESCAPED_AT_PLACEHOLDER = '\x00STX_ESCAPED_AT\x00'
+  output = output.replace(/@@/g, ESCAPED_AT_PLACEHOLDER)
 
   // Process escaped @{{ }} expressions before other directives
   output = output.replace(/@\{\{([\s\S]*?)\}\}/g, (_, content) => {
@@ -2374,10 +2380,20 @@ export function processJsonDirective(template: string, context: Record<string, a
       `)
       const data = evalFn(...Object.values(context))
 
+      let json: string
       if (pretty === 'true') {
-        return JSON.stringify(data, null, 2)
+        json = JSON.stringify(data, null, 2)
       }
-      return JSON.stringify(data)
+      else {
+        json = JSON.stringify(data)
+      }
+      // Escape sequences that could break out of script tags or HTML context
+      return json
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029')
     }
     catch (error) {
       errorLogger.log(error instanceof Error ? error : new Error(String(error)), { directive: '@json' }, 'error')

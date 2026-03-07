@@ -76,6 +76,69 @@ import { transformStoreImports } from './state-management'
 import { createDetailedErrorMessage, fileExists, shouldTranspileTypeScript, transpileTypeScript } from './utils'
 
 // =============================================================================
+// Balanced Parsing Helpers
+// =============================================================================
+
+/**
+ * Find the end of a balanced brace expression starting at `{`.
+ * Returns the index after the closing `}`, or -1 if unbalanced.
+ */
+function findBalancedBraces(str: string, start: number): number {
+  if (str[start] !== '{') return -1
+  let depth = 1
+  let pos = start + 1
+  while (pos < str.length && depth > 0) {
+    if (str[pos] === '{') depth++
+    else if (str[pos] === '}') depth--
+    pos++
+  }
+  return depth === 0 ? pos : -1
+}
+
+/**
+ * Find the next comma at the top level (not inside parens/brackets/braces),
+ * starting from the given position within a parenthesized directive.
+ */
+function findTopLevelComma(str: string, start: number): number {
+  let depth = 0
+  for (let i = start; i < str.length; i++) {
+    const ch = str[i]
+    if (ch === '(' || ch === '[' || ch === '{') depth++
+    else if (ch === ')' || ch === ']' || ch === '}') depth--
+    else if (ch === ',' && depth === 0) return i
+  }
+  return -1
+}
+
+/**
+ * Replace @directive(...) with @newName(...) using balanced paren matching.
+ * This handles nested objects and expressions inside the parentheses.
+ */
+function replaceDirectiveBalanced(template: string, directive: string, newName: string): string {
+  let result = template
+  const pattern = new RegExp(`${directive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\(`, 'g')
+  let match = pattern.exec(result)
+  while (match) {
+    const start = match.index
+    const openParen = start + match[0].length - 1
+    let depth = 1
+    let pos = openParen + 1
+    while (pos < result.length && depth > 0) {
+      if (result[pos] === '(') depth++
+      else if (result[pos] === ')') depth--
+      pos++
+    }
+    if (depth !== 0) break
+    const inner = result.substring(openParen + 1, pos - 1)
+    const replacement = `${newName}(${inner})`
+    result = result.substring(0, start) + replacement + result.substring(pos)
+    pattern.lastIndex = start + replacement.length
+    match = pattern.exec(result)
+  }
+  return result
+}
+
+// =============================================================================
 // Signal Script Processing for Included Components
 // =============================================================================
 
@@ -322,8 +385,8 @@ export async function processIncludes(
     partialsDir = path.resolve(configDir, partialsDir)
   }
 
-  // First handle partial alias (replace @partial with @include)
-  let output = template.replace(/@partial\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (_, includePath, varsString) => `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`)
+  // First handle partial alias (replace @partial with @include) using balanced parsing
+  let output = replaceDirectiveBalanced(template, '@partial', '@include')
 
   // Process @once directive - content that should only be included once per request
   // Uses request-scoped store if available (context.__onceStore), otherwise falls back to global
@@ -345,90 +408,89 @@ export async function processIncludes(
   })
 
   // Process special include directives first
-  // Process @includeIf directive
-  output = output.replace(/@includeIf\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (_, includePath, varsString) => {
-    const includeFilePath = resolvePath(includePath, partialsDir, filePath)
-    if (includeFilePath && fs.existsSync(includeFilePath)) {
-      // Track dependency
-      dependencies.add(includeFilePath)
-      return `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`
+  // Process @includeIf directive — rewrite to @include if file exists (balanced parsing)
+  {
+    const pat = /@includeIf\s*\(/g
+    let m: RegExpExecArray | null
+    while ((m = pat.exec(output)) !== null) {
+      const start = m.index
+      const oP = start + m[0].length - 1
+      let d = 1, p = oP + 1
+      while (p < output.length && d > 0) { if (output[p] === '(') d++; else if (output[p] === ')') d--; p++ }
+      if (d !== 0) break
+      const inner = output.substring(oP + 1, p - 1)
+      const pm = inner.match(/^\s*['"]([^'"]+)['"]/)
+      if (!pm) { pat.lastIndex = p; continue }
+      const incPath = pm[1]
+      const incFile = resolvePath(incPath, partialsDir, filePath)
+      let replacement = ''
+      if (incFile && fs.existsSync(incFile)) {
+        dependencies.add(incFile)
+        replacement = `@include(${inner})`
+      }
+      output = output.substring(0, start) + replacement + output.substring(p)
+      pat.lastIndex = 0
     }
-    return ''
-  })
+  }
 
-  // Process @includeWhen directive using safe evaluation
-  output = output.replace(/@includeWhen\s*\(([^,]+),\s*['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (match, condition, includePath, varsString, offset) => {
-    try {
-      // Evaluate the condition using safe evaluation
-      const condExpr = `Boolean(${condition})`
-      let shouldInclude: boolean
-      if (isExpressionSafe(condExpr)) {
-        const conditionFn = createSafeFunction(condExpr, Object.keys(context))
-        shouldInclude = Boolean(conditionFn(...Object.values(context)))
-      }
-      else {
-        shouldInclude = Boolean(safeEvaluate(condExpr, context))
+  // Process @includeWhen/@includeUnless using balanced parsing
+  // Handles conditions with commas (e.g., items.slice(0, 5).length > 0)
+  for (const [directive, invert] of [['@includeWhen', false], ['@includeUnless', true]] as const) {
+    const pat = new RegExp(`${directive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\(`, 'g')
+    let m: RegExpExecArray | null
+    while ((m = pat.exec(output)) !== null) {
+      const start = m.index
+      const oP = start + m[0].length - 1
+      // Find balanced closing paren
+      let d = 1, p = oP + 1
+      while (p < output.length && d > 0) { if (output[p] === '(') d++; else if (output[p] === ')') d--; p++ }
+      if (d !== 0) break
+      const inner = output.substring(oP + 1, p - 1)
+
+      // Find the first top-level comma that separates condition from path
+      const commaIdx = findTopLevelComma(inner, 0)
+      if (commaIdx === -1) { pat.lastIndex = p; continue }
+
+      const condition = inner.substring(0, commaIdx).trim()
+      const rest = inner.substring(commaIdx + 1).trim()
+      const pathMatch = rest.match(/^\s*['"]([^'"]+)['"]/)
+      if (!pathMatch) { pat.lastIndex = p; continue }
+
+      const includePath = pathMatch[1]
+      const afterPath = rest.substring(pathMatch[0].length)
+      let varsString: string | undefined
+      const varsComma = findTopLevelComma(afterPath, 0)
+      if (varsComma !== -1) {
+        varsString = afterPath.substring(varsComma + 1).trim()
       }
 
-      if (shouldInclude) {
-        // Track dependency if condition is true
-        const includeFilePath = resolvePath(includePath, partialsDir, filePath)
-        if (includeFilePath && fs.existsSync(includeFilePath)) {
-          dependencies.add(includeFilePath)
+      try {
+        const condExpr = `Boolean(${condition})`
+        let condResult: boolean
+        if (isExpressionSafe(condExpr)) {
+          const condFn = createSafeFunction(condExpr, Object.keys(context))
+          condResult = Boolean(condFn(...Object.values(context)))
+        } else {
+          condResult = Boolean(safeEvaluate(condExpr, context))
         }
-        return `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`
-      }
-      return ''
-    }
-    catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return createDetailedErrorMessage(
-        'Include',
-        `Error evaluating @includeWhen condition: ${errorMessage}`,
-        filePath,
-        template,
-        offset,
-        match,
-      )
-    }
-  })
 
-  // Process @includeUnless directive using safe evaluation
-  output = output.replace(/@includeUnless\s*\(([^,]+),\s*['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (match, condition, includePath, varsString, offset) => {
-    try {
-      // Evaluate the condition using safe evaluation
-      const condExpr = `Boolean(${condition})`
-      let conditionResult: boolean
-      if (isExpressionSafe(condExpr)) {
-        const conditionFn = createSafeFunction(condExpr, Object.keys(context))
-        conditionResult = Boolean(conditionFn(...Object.values(context)))
-      }
-      else {
-        conditionResult = Boolean(safeEvaluate(condExpr, context))
-      }
-
-      if (!conditionResult) {
-        // Track dependency if condition is false
-        const includeFilePath = resolvePath(includePath, partialsDir, filePath)
-        if (includeFilePath && fs.existsSync(includeFilePath)) {
-          dependencies.add(includeFilePath)
+        const shouldInclude = invert ? !condResult : condResult
+        let replacement = ''
+        if (shouldInclude) {
+          const incFile = resolvePath(includePath, partialsDir, filePath)
+          if (incFile && fs.existsSync(incFile)) dependencies.add(incFile)
+          replacement = `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`
         }
-        return `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`
+        output = output.substring(0, start) + replacement + output.substring(p)
+        pat.lastIndex = 0
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        const errHtml = createDetailedErrorMessage('Include', `Error evaluating ${directive} condition: ${errorMessage}`, filePath, template, start)
+        output = output.substring(0, start) + errHtml + output.substring(p)
+        pat.lastIndex = 0
       }
-      return ''
     }
-    catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return createDetailedErrorMessage(
-        'Include',
-        `Error evaluating @includeUnless condition: ${errorMessage}`,
-        filePath,
-        template,
-        offset,
-        match,
-      )
-    }
-  })
+  }
 
   // Process @includeFirst directive
   // This tries multiple includes and uses the first one that exists
@@ -803,24 +865,51 @@ export async function processIncludes(
     }
   }
 
-  // Find all includes in the template
-  const includeRegex = /@include\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g
-  let match
+  // Find all includes using balanced parsing (handles nested objects in variables)
+  const includePattern = /@include\s*\(/g
+  let includeMatch: RegExpExecArray | null
 
-  // We need to be careful with the regex to avoid an infinite loop
-  // eslint-disable-next-line no-cond-assign
-  while (match = includeRegex.exec(output)) {
-    const [fullMatch, includePath, varsString] = match
-    const matchOffset = match.index
+  while ((includeMatch = includePattern.exec(output)) !== null) {
+    const matchStart = includeMatch.index
+    const openParen = matchStart + includeMatch[0].length - 1
+
+    // Find balanced closing paren
+    let depth = 1
+    let pos = openParen + 1
+    while (pos < output.length && depth > 0) {
+      if (output[pos] === '(') depth++
+      else if (output[pos] === ')') depth--
+      pos++
+    }
+    if (depth !== 0) break
+
+    const fullMatch = output.substring(matchStart, pos)
+    const inner = output.substring(openParen + 1, pos - 1)
+
+    // Parse: 'path' or "path" optionally followed by , { vars }
+    const pathMatch = inner.match(/^\s*['"]([^'"]+)['"]/)
+    if (!pathMatch) {
+      includePattern.lastIndex = pos
+      continue
+    }
+
+    const includePath = pathMatch[1]
+    let varsString: string | undefined
+
+    // Check for comma + vars after path
+    const afterPath = inner.substring(pathMatch[0].length)
+    const commaIdx = findTopLevelComma(afterPath, 0)
+    if (commaIdx !== -1) {
+      varsString = afterPath.substring(commaIdx + 1).trim()
+    }
+
     let localVars: Record<string, unknown> = {}
-
-    // Parse local variables if provided using safe evaluation
     if (varsString) {
       try {
         localVars = safeEvaluateObject(varsString, context)
       }
       catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+        const errorMessage = error instanceof Error ? error.message : String(error)
         output = output.replace(
           fullMatch,
           createDetailedErrorMessage(
@@ -828,22 +917,17 @@ export async function processIncludes(
             `Error parsing include variables for ${includePath}: ${errorMessage}`,
             filePath,
             template,
-            matchOffset,
+            matchStart,
           ),
         )
+        includePattern.lastIndex = 0
         continue
       }
     }
 
-    // Process the include
-    const processedContent = await processIncludeHelper(includePath, localVars, template, matchOffset)
-
-    // Replace in the output
-    output = output.replace(fullMatch, processedContent)
-
-    // Reset regex index to start from the beginning
-    // since we've modified the string
-    includeRegex.lastIndex = 0
+    const processedContent = await processIncludeHelper(includePath, localVars, template, matchStart)
+    output = output.substring(0, matchStart) + processedContent + output.substring(pos)
+    includePattern.lastIndex = 0
   }
 
   return output

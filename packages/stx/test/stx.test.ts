@@ -495,10 +495,9 @@ describe('bun-plugin-stx', () => {
 
     expect(outputHtml).toContain('<p>Valid expression: 2</p>')
     expect(outputHtml).toContain('<p>Null check: No user</p>')
-    // Check for new error format
-    expect(outputHtml).toContain('Expression Error')
-    expect(outputHtml).toContain('nonExistentVar')
-    expect(outputHtml).toContain('methodThatDoesntExist')
+    // Undefined variables should be handled gracefully (empty output, not a crash)
+    expect(outputHtml).toContain('<p>Error in expression:')
+    expect(outputHtml).toContain('<p>Error in method:')
   })
 
   // Test default value handling

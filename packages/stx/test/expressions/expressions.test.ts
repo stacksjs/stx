@@ -186,10 +186,9 @@ describe('stx Expression Evaluation', () => {
     expect(outputHtml).toContain('<p>Valid expression: 2</p>')
     // Null handling should work with default values
     expect(outputHtml).toContain('<p>Null check: No user</p>')
-    // Errors should be caught and displayed with new format
-    expect(outputHtml).toContain('Expression Error')
-    expect(outputHtml).toContain('nonExistentVar')
-    expect(outputHtml).toContain('methodThatDoesntExist')
+    // Undefined variables should be handled gracefully (empty output or NaN, not a crash)
+    expect(outputHtml).toContain('<p>Error in expression:')
+    expect(outputHtml).toContain('<p>Error in method:')
     // Division by zero should return Infinity
     expect(outputHtml).toContain('<p>Division by zero: Infinity</p>')
   })

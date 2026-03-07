@@ -424,8 +424,11 @@ export function processAuthDirectives(template: string, context: Record<string, 
 
   // Process @auth/@endauth directive
   output = output.replace(
-    /@auth\s*(?:\((.*?)\)\s*)?\n([\s\S]*?)(?:@else\s*\n([\s\S]*?))?@endauth/g,
+    /@auth\s*(?:\((.*?)\)\s*)?\s*\n?\s*([\s\S]*?)(?:@else\s*\n?\s*([\s\S]*?))?@endauth/g,
     (_, guard, content, elseContent) => {
+      // If no auth context exists, user is not authenticated
+      if (!context.auth) return elseContent || ''
+
       const isAuthenticated = guard
         ? evaluateAuthExpression(`auth?.check && auth?.user?.[${guard}]`, context)
         : evaluateAuthExpression('auth?.check', context)
@@ -438,8 +441,11 @@ export function processAuthDirectives(template: string, context: Record<string, 
 
   // Process @guest/@endguest directive
   output = output.replace(
-    /@guest\s*(?:\((.*?)\)\s*)?\n([\s\S]*?)(?:@else\s*\n([\s\S]*?))?@endguest/g,
+    /@guest\s*(?:\((.*?)\)\s*)?\s*\n?\s*([\s\S]*?)(?:@else\s*\n?\s*([\s\S]*?))?@endguest/g,
     (_, guard, content, elseContent) => {
+      // If no auth context exists, user IS a guest
+      if (!context.auth) return content
+
       const isGuest = guard
         ? evaluateAuthExpression(`!auth?.check || !auth?.user?.[${guard}]`, context)
         : evaluateAuthExpression('!auth?.check', context)
@@ -452,7 +458,7 @@ export function processAuthDirectives(template: string, context: Record<string, 
 
   // Process @can/@endcan directive with all variations
   output = output.replace(
-    /@can\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n([\s\S]*?)(?:@elsecan\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n([\s\S]*?))?(?:@else\s*\n([\s\S]*?))?@endcan/g,
+    /@can\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n?\s*([\s\S]*?)(?:@elsecan\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n?\s*([\s\S]*?))?(?:@else\s*\n?\s*([\s\S]*?))?@endcan/g,
     (_, ability, type, id, content, elseAbility, elseType, elseId, elseContent, finalElseContent) => {
       // Handle permissions with complex evaluation
       let can = false
@@ -514,7 +520,7 @@ export function processAuthDirectives(template: string, context: Record<string, 
 
   // Process @cannot/@endcannot directive with all variations
   output = output.replace(
-    /@cannot\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n([\s\S]*?)(?:@elsecannot\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n([\s\S]*?))?(?:@else\s*\n([\s\S]*?))?@endcannot/g,
+    /@cannot\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n?\s*([\s\S]*?)(?:@elsecannot\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n?\s*([\s\S]*?))?(?:@else\s*\n?\s*([\s\S]*?))?@endcannot/g,
     (_, ability, type, id, content, elseAbility, elseType, elseId, elseContent, finalElseContent) => {
       // Handle permissions with complex evaluation
       let cannot = true

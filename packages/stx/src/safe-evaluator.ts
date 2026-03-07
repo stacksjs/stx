@@ -177,8 +177,9 @@ export function createSafeContext(context: Record<string, unknown>): Record<stri
 
   // Add user context, but sanitize values
   for (const [key, value] of Object.entries(context)) {
-    // Skip dangerous keys
-    if (key.startsWith('_') || DANGEROUS_PATTERNS.some(p => p.test(key))) {
+    // Skip internal stx keys (double underscore) and dangerous keys.
+    // Single underscore keys like _id, _name are user variables and should be kept.
+    if (key.startsWith('__') || DANGEROUS_PATTERNS.some(p => p.test(key))) {
       continue
     }
 

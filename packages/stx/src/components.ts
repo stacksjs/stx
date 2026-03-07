@@ -156,9 +156,9 @@ function parsePropsString(propsString: string, context: Record<string, unknown>)
 // 3. Check default components directory from stx.config.ts
 //
 // SLOT SUPPORT:
-// Currently only the default slot is supported.
-// Named slots (like Vue's <slot name="header">) are NOT supported.
-// The slot content is available via {{ slot }} in the component template.
+// Default slot: content is available via {{ slot }} in the component template.
+// Named slots: supported via the slots module (see slots.ts) with
+// <template #name>...</template> syntax for scoped and named slots.
 //
 // LIFECYCLE HOOKS:
 // Components are stateless templates - no lifecycle hooks are available.

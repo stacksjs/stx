@@ -243,13 +243,11 @@ async function renderTemplateString(
   }
 
   // Execute server scripts to extract variables
+  // Server scripts can reference context variables and add new ones.
+  // They should NOT be overridden by the caller's context afterwards,
+  // since server scripts may compute derived values from context.
   for (const scriptContent of serverScripts) {
     await extractVariables(scriptContent, context, filePath)
-  }
-
-  // Merge any additional context
-  if (renderOptions.context) {
-    Object.assign(context, renderOptions.context)
   }
 
   // Track dependencies

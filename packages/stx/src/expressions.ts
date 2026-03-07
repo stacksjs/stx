@@ -832,13 +832,6 @@ export function evaluateExpression(expression: string, context: Record<string, a
       return applyFilters(baseValue, filterExpr, context)
     }
 
-    // Special case for common error patterns
-    if (trimmedExpr.startsWith('nonExistentVar')
-      || trimmedExpr.includes('.methodThatDoesntExist')
-      || trimmedExpr.includes('JSON.parse("{invalid}")')) {
-      throw new Error(`Reference to undefined variable or method: ${trimmedExpr}`)
-    }
-
     // Use safe evaluator for potentially unsafe expressions
     if (!isExpressionSafe(trimmedExpr)) {
       if (!silent) {
@@ -894,6 +887,7 @@ export function unescapeHtml(html: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, '\'')
     .replace(/&#39;/g, '\'')
     .replace(/&amp;/g, '&')
 }

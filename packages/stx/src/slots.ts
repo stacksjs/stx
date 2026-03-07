@@ -64,6 +64,7 @@
  */
 
 import type { StxOptions } from './types'
+import { escapeHtml } from './expressions'
 
 // =============================================================================
 // Types
@@ -301,7 +302,7 @@ function processSlotExpressions(
 
       // Handle simple property access (item.name, index + 1, etc.)
       const result = evaluateSimpleExpression(trimmedExpr, context)
-      return String(result ?? '')
+      return escapeHtml(String(result ?? ''))
     } catch {
       // If evaluation fails, return the original expression
       return `{{ ${expr} }}`
