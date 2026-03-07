@@ -47,11 +47,42 @@ import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
 import { processExpressions } from './expressions'
 import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
-import { createSafeFunction, isExpressionSafe, isForExpressionSafe, safeEvaluate } from './safe-evaluator'
+import { createSafeFunction, isExpressionSafe, isForExpressionSafe, sanitizeExpression, safeEvaluate } from './safe-evaluator'
 
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
 const DEFAULT_USE_ALT_LOOP_VARIABLE = false
+
+/**
+ * Replace directive calls with balanced parenthesis matching.
+ * Handles expressions with nested parens like @break(items.find(x => x.done)).
+ */
+function replaceWithBalancedParens(
+  template: string,
+  directive: string,
+  callback: (expr: string) => string,
+): string {
+  let result = template
+  const pattern = new RegExp(`${directive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\(`)
+  let match: RegExpExecArray | null
+
+  while ((match = pattern.exec(result)) !== null) {
+    const start = match.index
+    const openParen = start + match[0].length - 1
+    let depth = 1
+    let pos = openParen + 1
+    while (pos < result.length && depth > 0) {
+      if (result[pos] === '(') depth++
+      else if (result[pos] === ')') { depth--; if (depth === 0) break }
+      pos++
+    }
+    if (depth !== 0) break
+    const expr = result.substring(openParen + 1, pos)
+    const replacement = callback(expr)
+    result = result.substring(0, start) + replacement + result.substring(pos + 1)
+  }
+  return result
+}
 
 // =============================================================================
 // Dynamic Prop Binding Processing
@@ -87,11 +118,11 @@ function processPropBindings(content: string, context: Record<string, any>): str
   // Now process all :prop="expression" bindings
   result = result.replace(/:([a-zA-Z_][a-zA-Z0-9_-]*)\s*=\s*"([^"]*)"/g, (match, propName, expression) => {
     try {
-      // Evaluate the expression in the loop context
+      // Evaluate the expression in the loop context using safe evaluation
       const contextKeys = Object.keys(context)
       const contextValues = Object.values(context)
-      // eslint-disable-next-line no-new-func
-      const evaluator = new Function(...contextKeys, `return ${expression}`)
+      sanitizeExpression(expression)
+      const evaluator = createSafeFunction(expression, contextKeys)
       const value = evaluator(...contextValues)
 
       // Serialize the value to JSON and encode for safe HTML attribute storage
@@ -139,8 +170,8 @@ function processConditionalLoopControl(
 ): string {
   let result = content
 
-  // Process @break(condition) - conditional break using safe evaluation
-  result = result.replace(/@break\(([^)]+)\)/g, (_match, condition) => {
+  // Process @break(condition) - conditional break using safe evaluation (balanced parens)
+  result = replaceWithBalancedParens(result, '@break', (condition) => {
     try {
       const conditionTrimmed = condition.trim()
       const boolExpr = `!!(${conditionTrimmed})`
@@ -159,8 +190,8 @@ function processConditionalLoopControl(
     }
   })
 
-  // Process @continue(condition) - conditional continue using safe evaluation
-  result = result.replace(/@continue\(([^)]+)\)/g, (_match, condition) => {
+  // Process @continue(condition) - conditional continue using safe evaluation (balanced parens)
+  result = replaceWithBalancedParens(result, '@continue', (condition) => {
     try {
       const conditionTrimmed = condition.trim()
       const boolExpr = `!!(${conditionTrimmed})`
@@ -236,13 +267,13 @@ function checkAndCleanContinue(content: string): { hasContinue: boolean, content
 function convertLoopControlToJS(content: string): string {
   let result = content
 
-  // Convert @break(condition) to JavaScript: if (condition) { break; }
-  result = result.replace(/@break\(([^)]+)\)/g, (_match, condition) => {
+  // Convert @break(condition) to JavaScript: if (condition) { break; } — balanced parens
+  result = replaceWithBalancedParens(result, '@break', (condition) => {
     return `\`; if (${condition.trim()}) { break; } result += \``
   })
 
-  // Convert @continue(condition) to JavaScript: if (condition) { continue; }
-  result = result.replace(/@continue\(([^)]+)\)/g, (_match, condition) => {
+  // Convert @continue(condition) to JavaScript: if (condition) { continue; } — balanced parens
+  result = replaceWithBalancedParens(result, '@continue', (condition) => {
     return `\`; if (${condition.trim()}) { continue; } result += \``
   })
 
@@ -274,23 +305,36 @@ function findOutermostForelse(template: string): {
   const forelseRegex = /@forelse\s*\(/g
   let match
 
-  while ((match = forelseRegex.exec(template)) !== null) {
-    // Check if this @forelse is inside an unclosed @foreach block
-    // by counting @foreach and @endforeach before this position
-    const before = template.substring(0, match.index)
-    let foreachDepth = 0
-    const foreachOpenRe = /@foreach\s*\(/g
-    const foreachCloseRe = /@endforeach/g
-    let m
-    const events: { pos: number, type: string }[] = []
-    while ((m = foreachOpenRe.exec(before)) !== null) events.push({ pos: m.index, type: 'open' })
-    while ((m = foreachCloseRe.exec(before)) !== null) events.push({ pos: m.index, type: 'close' })
-    events.sort((a, b) => a.pos - b.pos)
-    for (const e of events) {
-      if (e.type === 'open') foreachDepth++
-      else foreachDepth--
+  // Pre-compute foreach depth at each position for O(n) performance
+  // Build sorted event list once, then binary search for depth at any position
+  const foreachEvents: { pos: number, delta: number }[] = []
+  const foreachOpenScan = /@foreach\s*\(/g
+  const foreachCloseScan = /@endforeach/g
+  let scanM: RegExpExecArray | null
+  while ((scanM = foreachOpenScan.exec(template)) !== null) foreachEvents.push({ pos: scanM.index, delta: 1 })
+  while ((scanM = foreachCloseScan.exec(template)) !== null) foreachEvents.push({ pos: scanM.index, delta: -1 })
+  foreachEvents.sort((a, b) => a.pos - b.pos)
+  // Build prefix depth array
+  const depthAtEvent: { pos: number, depth: number }[] = []
+  let runningDepth = 0
+  for (const ev of foreachEvents) {
+    runningDepth += ev.delta
+    depthAtEvent.push({ pos: ev.pos, depth: runningDepth })
+  }
+  function getForeachDepthAt(position: number): number {
+    // Binary search for largest event pos <= position
+    let lo = 0, hi = depthAtEvent.length - 1, result = 0
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      if (depthAtEvent[mid].pos <= position) { result = depthAtEvent[mid].depth; lo = mid + 1 }
+      else hi = mid - 1
     }
-    if (foreachDepth > 0) {
+    return result
+  }
+
+  while ((match = forelseRegex.exec(template)) !== null) {
+    // Check if this @forelse is inside an unclosed @foreach block (O(log n) lookup)
+    if (getForeachDepthAt(match.index) > 0) {
       // This @forelse is inside a @foreach — skip it, let foreach iteration handle it
       continue
     }

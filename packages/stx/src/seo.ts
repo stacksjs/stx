@@ -120,34 +120,38 @@ export function processMetaDirectives(
       : ''
   })
 
-  // Process extended meta directive with attributes object using safe evaluation
-  output = output.replace(/@metaTag\(\s*(\{[^}]+\})\s*\)/g, (_, attrObject) => {
-    try {
-      // Parse the attribute object using safe evaluation
-      const attrs = safeEvaluateObject(attrObject, context) as unknown as MetaTag
+  // Process extended meta directive with balanced paren/brace matching
+  const metaTagPat = /@metaTag\s*\(/g
+  let metaMatch: RegExpExecArray | null
+  while ((metaMatch = metaTagPat.exec(output)) !== null) {
+    const mtStart = metaMatch.index
+    const openP = mtStart + metaMatch[0].length - 1
+    let d = 1, p = openP + 1
+    while (p < output.length && d > 0) { if (output[p] === '(') d++; else if (output[p] === ')') { d--; if (d === 0) break } p++ }
+    if (d !== 0) break
+    const attrObject = output.substring(openP + 1, p).trim()
+    const fullEnd = p + 1
+    const mtReplacement = (() => {
+      try {
+        const attrs = safeEvaluateObject(attrObject, context) as unknown as MetaTag
+        if (!attrs) return ''
+        let tag = '<meta'
+        if (attrs.name) tag += ` name="${escapeHtml(String(attrs.name))}"`
+        if (attrs.property) tag += ` property="${escapeHtml(String(attrs.property))}"`
+        if (attrs.httpEquiv) tag += ` http-equiv="${escapeHtml(String(attrs.httpEquiv))}"`
+        if (attrs.content) tag += ` content="${escapeHtml(String(attrs.content))}"`
+        tag += '>'
+        return tag
+      }
+      catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        return inlineError('MetaTag', errorMessage, ErrorCodes.EVALUATION_ERROR)
+      }
+    })()
 
-      if (!attrs)
-        return ''
-
-      // Build meta tag based on provided attributes
-      let tag = '<meta'
-      if (attrs.name)
-        tag += ` name="${escapeHtml(String(attrs.name))}"`
-      if (attrs.property)
-        tag += ` property="${escapeHtml(String(attrs.property))}"`
-      if (attrs.httpEquiv)
-        tag += ` http-equiv="${escapeHtml(String(attrs.httpEquiv))}"`
-      if (attrs.content)
-        tag += ` content="${escapeHtml(String(attrs.content))}"`
-      tag += '>'
-
-      return tag
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return inlineError('MetaTag', errorMessage, ErrorCodes.EVALUATION_ERROR)
-    }
-  })
+    output = output.substring(0, mtStart) + mtReplacement + output.substring(fullEnd)
+    metaTagPat.lastIndex = 0
+  }
 
   return output
 }
@@ -167,28 +171,39 @@ export function processStructuredData(
 ): string {
   let output = template
 
-  // Process @structuredData directive using safe evaluation
-  output = output.replace(/@structuredData\(\s*(\{[\s\S]*?\})\s*\)/g, (_, dataObject) => {
-    try {
-      // Parse the data object using safe evaluation
-      const data = safeEvaluateObject(dataObject, context) as StructuredData
+  // Process @structuredData directive with balanced paren/brace matching
+  const structuredDataPattern = /@structuredData\s*\(/g
+  let sdMatch: RegExpExecArray | null
+  while ((sdMatch = structuredDataPattern.exec(output)) !== null) {
+    const sdStart = sdMatch.index
+    const openParen = sdStart + sdMatch[0].length - 1
+    let depth = 1
+    let pos = openParen + 1
+    while (pos < output.length && depth > 0) {
+      if (output[pos] === '(') depth++
+      else if (output[pos] === ')') { depth--; if (depth === 0) break }
+      pos++
+    }
+    if (depth !== 0) break
+    const dataObject = output.substring(openParen + 1, pos).trim()
+    const fullEnd = pos + 1
 
-      if (!data)
-        return ''
-
-      // If @context isn't set, add schema.org as default
-      if (!data['@context']) {
-        data['@context'] = 'https://schema.org'
+    const replacement = (() => {
+      try {
+        const data = safeEvaluateObject(dataObject, context) as StructuredData
+        if (!data) return ''
+        if (!data['@context']) data['@context'] = 'https://schema.org'
+        return `<script type="application/ld+json">${JSON.stringify(data)}</script>`
       }
+      catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        return inlineError('StructuredData', errorMessage, ErrorCodes.EVALUATION_ERROR)
+      }
+    })()
 
-      // Convert to JSON-LD script tag
-      return `<script type="application/ld+json">${JSON.stringify(data)}</script>`
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return inlineError('StructuredData', errorMessage, ErrorCodes.EVALUATION_ERROR)
-    }
-  })
+    output = output.substring(0, sdStart) + replacement + output.substring(fullEnd)
+    structuredDataPattern.lastIndex = 0
+  }
 
   return output
 }

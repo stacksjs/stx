@@ -387,16 +387,43 @@ export function parseSwitchBlock(source: string, startPos: number): ParsedSwitch
   const content = source.slice(contentStart, endPos)
   const cases: SwitchCase[] = []
 
-  // Parse @case and @default within content
+  // Parse @case and @default within content, tracking nested @switch depth
   let currentPos = 0
   let currentCase: SwitchCase | null = null
+  let nestedSwitchDepth = 0
 
   while (currentPos < content.length) {
-    const caseMatch = content.slice(currentPos).match(/^@case\s*/)
-    const defaultMatch = content.slice(currentPos).match(/^@default(?![a-z])/)
-    const breakMatch = content.slice(currentPos).match(/^@break(?![a-z])/)
+    const remaining = content.slice(currentPos)
 
-    if (caseMatch && content.slice(currentPos).startsWith('@case')) {
+    // Track nested @switch/@endswitch to avoid treating inner @case as outer
+    const nestedSwitchMatch = remaining.match(/^@switch\s*\(/)
+    const nestedEndSwitchMatch = remaining.match(/^@endswitch(?![a-z])/)
+
+    if (nestedSwitchMatch) {
+      nestedSwitchDepth++
+      if (currentCase) currentCase.content += nestedSwitchMatch[0]
+      currentPos += nestedSwitchMatch[0].length
+      continue
+    }
+    if (nestedEndSwitchMatch) {
+      nestedSwitchDepth--
+      if (currentCase) currentCase.content += nestedEndSwitchMatch[0]
+      currentPos += nestedEndSwitchMatch[0].length
+      continue
+    }
+
+    // Only process @case/@default/@break at the top level (not inside nested @switch)
+    if (nestedSwitchDepth > 0) {
+      if (currentCase) currentCase.content += content[currentPos]
+      currentPos++
+      continue
+    }
+
+    const caseMatch = remaining.match(/^@case\s*/)
+    const defaultMatch = remaining.match(/^@default(?![a-z])/)
+    const breakMatch = remaining.match(/^@break(?![a-z])/)
+
+    if (caseMatch && remaining.startsWith('@case')) {
       // Save previous case
       if (currentCase) {
         cases.push(currentCase)
@@ -417,7 +444,7 @@ export function parseSwitchBlock(source: string, startPos: number): ParsedSwitch
       }
       currentPos = caseExpr.endPos
     }
-    else if (defaultMatch && content.slice(currentPos).startsWith('@default')) {
+    else if (defaultMatch && remaining.startsWith('@default')) {
       // Save previous case
       if (currentCase) {
         cases.push(currentCase)
@@ -429,7 +456,7 @@ export function parseSwitchBlock(source: string, startPos: number): ParsedSwitch
       }
       currentPos += defaultMatch[0].length
     }
-    else if (breakMatch && content.slice(currentPos).startsWith('@break')) {
+    else if (breakMatch && remaining.startsWith('@break')) {
       // End current case content
       currentPos += breakMatch[0].length
     }

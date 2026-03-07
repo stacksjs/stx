@@ -293,11 +293,13 @@ export const defaultFilters: Record<string, FilterFunction> = {
     return value
   },
 
-  // Replace text
+  // Replace text (escapes search string to prevent regex injection)
   replace: (value: any, _context: Record<string, any>, search: string, replacement: string = '') => {
     if (value === undefined || value === null)
       return ''
-    return String(value).replace(new RegExp(search, 'g'), replacement)
+    // Escape special regex characters to treat search as a literal string
+    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return String(value).replace(new RegExp(escapedSearch, 'g'), replacement)
   },
 
   // Strip HTML tags
@@ -401,7 +403,7 @@ export function escapeHtml(unsafe: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
+    .replace(/'/g, '&#39;')
 }
 
 /**
@@ -735,18 +737,25 @@ function findFilterPipeIndex(expr: string): number {
   let bracketDepth = 0
   let braceDepth = 0
 
+  let escaped = false
+
   for (let i = 0; i < expr.length; i++) {
     const char = expr[i]
     const nextChar = expr[i + 1]
-    const prevChar = expr[i - 1]
 
-    // Handle escape sequences in strings
-    if (inString && prevChar === '\\') {
+    // Handle escape sequences in strings — track toggle state for consecutive backslashes
+    if (inString && escaped) {
+      escaped = false
       continue
     }
+    if (inString && char === '\\') {
+      escaped = true
+      continue
+    }
+    escaped = false
 
     // Handle string start/end
-    if ((char === '"' || char === '\'' || char === '`') && prevChar !== '\\') {
+    if ((char === '"' || char === '\'' || char === '`') && !escaped) {
       if (!inString) {
         inString = true
         stringChar = char

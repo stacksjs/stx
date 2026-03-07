@@ -53,3 +53,4 @@ packages/components/test/visual/__snapshots__/
 /__snapshots__
 /packages/stx/test/integration/temp-integration
 /examples/unified-chat/.stx
+/packages/stx/test/cli/temp-cli

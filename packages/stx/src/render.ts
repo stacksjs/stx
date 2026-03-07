@@ -77,11 +77,33 @@ function parseTemplate(content: string): {
   clientScripts: string[]
   signalsScripts: string[]
 } {
-  // SFC Support: Extract <template> content if present
+  // SFC Support: Extract <template> content if present (balanced matching for nested <template>)
   let workingContent = content
-  const templateTagMatch = content.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
-  if (templateTagMatch) {
-    workingContent = templateTagMatch[1].trim()
+  const templateOpenMatch = content.match(/<template\b[^>]*>/i)
+  if (templateOpenMatch && templateOpenMatch.index !== undefined) {
+    const openEnd = templateOpenMatch.index + templateOpenMatch[0].length
+    let depth = 1
+    let pos = openEnd
+    while (depth > 0 && pos < content.length) {
+      const nextOpen = content.indexOf('<template', pos)
+      const nextClose = content.indexOf('</template>', pos)
+      if (nextClose === -1) break
+      if (nextOpen !== -1 && nextOpen < nextClose) {
+        // Check it's actually a tag (not text)
+        const after = content[nextOpen + '<template'.length]
+        if (after === '>' || after === ' ' || after === '\n' || after === '\t') {
+          depth++
+        }
+        pos = nextOpen + '<template'.length
+      } else {
+        depth--
+        if (depth === 0) {
+          workingContent = content.slice(openEnd, nextClose).trim()
+          break
+        }
+        pos = nextClose + '</template>'.length
+      }
+    }
   }
 
   // Extract all script tags and categorize them

@@ -29,6 +29,7 @@ import { performanceMonitor } from './performance-utils'
 import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { transformStoreImports } from './state-management'
+import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
 import { fileExists, renderComponentWithSlot, resolveTemplatePath, shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { runComposers } from './view-composers'
 import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
@@ -960,12 +961,39 @@ function findComponentTags(html: string, tagPattern: RegExp, skipTags?: Set<stri
       pos = tagEnd
     }
     else {
-      // Find the closing tag
+      // Find the matching closing tag using balanced depth tracking
+      const openingTag = `<${tagName}`
       const closingTag = `</${tagName}>`
-      let contentEnd = html.indexOf(closingTag, tagEnd)
+      let depth = 1
+      let searchPos = tagEnd
+      let contentEnd = -1
+
+      while (depth > 0 && searchPos < html.length) {
+        const nextOpen = html.indexOf(openingTag, searchPos)
+        const nextClose = html.indexOf(closingTag, searchPos)
+
+        if (nextClose === -1) break
+
+        if (nextOpen !== -1 && nextOpen < nextClose) {
+          // Check it's a real tag (followed by space, >, or /)
+          const charAfter = html[nextOpen + openingTag.length]
+          if (charAfter === ' ' || charAfter === '>' || charAfter === '/' || charAfter === '\n' || charAfter === '\t') {
+            depth++
+          }
+          searchPos = nextOpen + openingTag.length
+        }
+        else {
+          depth--
+          if (depth === 0) {
+            contentEnd = nextClose
+            break
+          }
+          searchPos = nextClose + closingTag.length
+        }
+      }
 
       if (contentEnd === -1) {
-        // No closing tag found, treat as self-closing or skip
+        // No matching closing tag found, skip
         pos = tagEnd
         continue
       }
@@ -2109,21 +2137,35 @@ async function processComponentDirectives(
   }
   const processedComponents = context.__processedComponents as Set<string>
 
-  // Find all component directives in the template
-  const componentRegex = /@component\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g
-  let match
+  // Find all component directives with balanced paren matching for nested objects
+  const componentPat = /@component\s*\(/g
+  let match: RegExpExecArray | null
 
-  // eslint-disable-next-line no-cond-assign
-  while (match = componentRegex.exec(output)) {
-    const [fullMatch, componentPath, propsString] = match
+  while ((match = componentPat.exec(output)) !== null) {
+    const cStart = match.index
+    const openP = cStart + match[0].length - 1
+    let d = 1, p = openP + 1
+    while (p < output.length && d > 0) { if (output[p] === '(') d++; else if (output[p] === ')') { d--; if (d === 0) break } p++ }
+    if (d !== 0) break
+    const innerArgs = output.substring(openP + 1, p)
+    const fullMatch = output.substring(cStart, p + 1)
+
+    // Parse: 'componentPath', optional { props }
+    const pathMatch = innerArgs.match(/^\s*['"]([^'"]+)['"]/)
+    if (!pathMatch) { componentPat.lastIndex = 0; continue }
+    const componentPath = pathMatch[1]
+    let propsString: string | undefined
+    const afterPath = innerArgs.slice(pathMatch[0].length)
+    const propsMatch = afterPath.match(/^\s*,\s*/)
+    if (propsMatch) {
+      propsString = afterPath.slice(propsMatch[0].length).trim()
+    }
     let props = {}
 
-    // Parse props if provided
+    // Parse props if provided — use safe evaluation to prevent code injection
     if (propsString) {
       try {
-        // eslint-disable-next-line no-new-func
-        const propsFn = new Function(...Object.keys(context), `return ${propsString}`)
-        props = propsFn(...Object.values(context))
+        props = safeEvaluateObject(propsString, context)
       }
       catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error)
@@ -2149,7 +2191,7 @@ async function processComponentDirectives(
     output = output.replace(fullMatch, processedContent)
 
     // Reset regex index to start from the beginning
-    componentRegex.lastIndex = 0
+    componentPat.lastIndex = 0
   }
 
   return output
@@ -2373,12 +2415,16 @@ export function processJsonDirective(template: string, context: Record<string, a
   // Handle @json(data) and @json(data, pretty) directives
   return template.replace(/@json\(\s*([^,)]+)(?:,\s*(true|false))?\)/g, (match, dataPath, pretty) => {
     try {
-      // Simple expression evaluation
-      // eslint-disable-next-line no-new-func
-      const evalFn = new Function(...Object.keys(context), `
-        try { return ${dataPath.trim()}; } catch (e) { return undefined; }
-      `)
-      const data = evalFn(...Object.values(context))
+      // Safe expression evaluation to prevent code injection
+      const trimmedPath = dataPath.trim()
+      let data: unknown
+      if (isExpressionSafe(trimmedPath)) {
+        const evalFn = createSafeFunction(trimmedPath, Object.keys(context))
+        data = evalFn(...Object.values(context))
+      }
+      else {
+        data = undefined
+      }
 
       let json: string
       if (pretty === 'true') {
@@ -2403,66 +2449,12 @@ export function processJsonDirective(template: string, context: Record<string, a
 }
 
 /**
- * Process @once directive blocks
+ * Process @once directive blocks.
+ * Primary deduplication is handled by processIncludes (context.__onceStore).
+ * This function only strips remaining @once/@endonce tags, keeping content.
  */
 export function processOnceDirective(template: string): string {
-  // Use an ordered map to keep track of the first occurrence of each content
-  const onceBlocks: Map<string, { content: string, index: number }> = new Map()
-
-  // Find all @once/@endonce blocks with their positions
-  const onceMatches: Array<{ match: string, content: string, start: number, end: number }> = []
-
-  const regex = /@once\s*([\s\S]*?)@endonce/g
-  let match = regex.exec(template)
-  while (match !== null) {
-    const fullMatch = match[0]
-    const content = match[1]
-    const start = match.index
-    const end = start + fullMatch.length
-
-    onceMatches.push({
-      match: fullMatch,
-      content: content.trim(), // Normalize content
-      start,
-      end,
-    })
-
-    match = regex.exec(template)
-  }
-
-  // Keep track of which blocks to keep (first occurrence) and which to remove
-  const blocksToRemove: Set<number> = new Set()
-
-  // Group blocks by their content
-  for (let i = 0; i < onceMatches.length; i++) {
-    const { content } = onceMatches[i]
-
-    if (onceBlocks.has(content)) {
-      // This is a duplicate, mark for removal
-      blocksToRemove.add(i)
-    }
-    else {
-      // This is the first occurrence, keep it
-      onceBlocks.set(content, { content, index: i })
-    }
-  }
-
-  // Build the result by removing duplicate blocks
-  let result = template
-  // Process in reverse order to not affect positions of earlier blocks
-  const sortedMatchesToRemove = Array.from(blocksToRemove)
-    .map(index => onceMatches[index])
-    .sort((a, b) => b.start - a.start) // Sort in reverse order
-
-  for (const { start, end } of sortedMatchesToRemove) {
-    // Replace the block with empty string
-    result = result.substring(0, start) + result.substring(end)
-  }
-
-  // Finally, remove all @once/@endonce tags, keeping the content
-  result = result.replace(/@once\s*([\s\S]*?)@endonce/g, '$1')
-
-  return result
+  return template.replace(/@once\s*([\s\S]*?)@endonce/g, '$1')
 }
 
 /**

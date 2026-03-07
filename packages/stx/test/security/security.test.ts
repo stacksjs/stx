@@ -54,7 +54,7 @@ describe('stx Security Tests', () => {
 
       // The attribute should be properly HTML escaped (may still contain the attack vector but escaped)
       expect(result).toContain('&quot;') // Escaped quotes
-      expect(result).toContain('&#039;') // Escaped single quotes
+      expect(result).toContain('&#39;') // Escaped single quotes
       // The resulting HTML should not be executable JS
       expect(result).not.toContain('" onmouseover="alert(\'XSS\')" "')
     })

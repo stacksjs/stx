@@ -492,16 +492,95 @@ export async function processIncludes(
     }
   }
 
-  // Process @includeFirst directive
+  // Process @each directive: @each('partial', items, 'itemVar', 'emptyPartial')
+  // Renders a partial for each item, or empty partial if array is empty
+  {
+    const eachPat = /@each\s*\(/g
+    let eachMatch: RegExpExecArray | null
+    while ((eachMatch = eachPat.exec(output)) !== null) {
+      const eStart = eachMatch.index
+      const openP = eStart + eachMatch[0].length - 1
+      let d = 1, ep = openP + 1
+      while (ep < output.length && d > 0) { if (output[ep] === '(') d++; else if (output[ep] === ')') { d--; if (d === 0) break } ep++ }
+      if (d !== 0) break
+      const innerArgs = output.substring(openP + 1, ep)
+      const fullMatch = output.substring(eStart, ep + 1)
+
+      // Parse args: 'partial', arrayExpr, 'itemVar', optional 'emptyPartial'
+      const argsMatch = innerArgs.match(/^\s*['"]([^'"]+)['"]\s*,\s*([^,]+)\s*,\s*['"]([^'"]+)['"](?:\s*,\s*['"]([^'"]+)['"])?\s*$/)
+      if (!argsMatch) { eachPat.lastIndex = 0; output = output.replace(fullMatch, ''); continue }
+
+      const [, partialName, arrayExpr, itemVar, emptyPartial] = argsMatch
+
+      try {
+        // Evaluate the array expression
+        let array: unknown
+        const trimmedExpr = arrayExpr.trim()
+        if (isExpressionSafe(trimmedExpr)) {
+          const fn = createSafeFunction(trimmedExpr, Object.keys(context))
+          array = fn(...Object.values(context))
+        } else {
+          array = safeEvaluate(trimmedExpr, context)
+        }
+
+        let replacement = ''
+        if (Array.isArray(array) && array.length > 0) {
+          for (const item of array) {
+            const itemContext = { ...context, [itemVar]: item }
+            const processed = await processIncludeHelper(partialName, { [itemVar]: item }, template, eStart)
+            replacement += processed
+          }
+        } else if (emptyPartial) {
+          replacement = await processIncludeHelper(emptyPartial, {}, template, eStart)
+        }
+
+        output = output.substring(0, eStart) + replacement + output.substring(ep + 1)
+        eachPat.lastIndex = 0
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        output = output.substring(0, eStart) + createDetailedErrorMessage('Each', `Error in @each: ${errorMessage}`, filePath, template, eStart) + output.substring(ep + 1)
+        eachPat.lastIndex = 0
+      }
+    }
+  }
+
+  // Process @includeFirst directive with balanced parenthesis matching
   // This tries multiple includes and uses the first one that exists
   // Supports optional fallback: @includeFirst(['a', 'b'], {}, 'fallback content')
-  const includeFirstRegex = /@includeFirst\s*\(\s*(\[[^\]]+\])\s*(?:,\s*(\{[^}]*\})\s*)?(?:,\s*['"]([^'"]*)['"]\s*)?\)/g
-  let includeFirstMatch
+  {
+  const includeFirstPat = /@includeFirst\s*\(/g
+  let includeFirstMatch: RegExpExecArray | null
 
-  // eslint-disable-next-line no-cond-assign
-  while (includeFirstMatch = includeFirstRegex.exec(output)) {
-    const [fullMatch, pathArrayString, varsString, fallbackContent] = includeFirstMatch
+  while ((includeFirstMatch = includeFirstPat.exec(output)) !== null) {
     const matchOffset = includeFirstMatch.index
+    const openP = matchOffset + includeFirstMatch[0].length - 1
+    let d = 1, p = openP + 1
+    while (p < output.length && d > 0) { if (output[p] === '(') d++; else if (output[p] === ')') { d--; if (d === 0) break } p++ }
+    if (d !== 0) break
+    const innerArgs = output.substring(openP + 1, p)
+    const fullMatch = output.substring(matchOffset, p + 1)
+
+    // Parse: arrayString, optional varsString, optional fallbackString
+    const arrMatch = innerArgs.match(/^\s*(\[[^\]]+\])/)
+    if (!arrMatch) { includeFirstPat.lastIndex = 0; output = output.replace(fullMatch, ''); continue }
+    const pathArrayString = arrMatch[1]
+    let remaining = innerArgs.slice(arrMatch[0].length)
+
+    // Extract vars object using balanced braces
+    let varsString: string | undefined
+    const varsMatch = remaining.match(/^\s*,\s*\{/)
+    if (varsMatch) {
+      remaining = remaining.slice(varsMatch[0].length - 1) // keep the {
+      let bd = 1, bi = 1
+      while (bi < remaining.length && bd > 0) { if (remaining[bi] === '{') bd++; else if (remaining[bi] === '}') { bd--; if (bd === 0) break } bi++ }
+      varsString = remaining.substring(0, bi + 1)
+      remaining = remaining.slice(bi + 1)
+    }
+
+    // Extract fallback
+    let fallbackContent: string | undefined
+    const fbMatch = remaining.match(/^\s*,\s*['"]([^'"]*)['"]\s*$/)
+    if (fbMatch) fallbackContent = fbMatch[1]
 
     try {
       // Parse the array of paths
@@ -598,7 +677,8 @@ export async function processIncludes(
     }
 
     // Reset regex to start from beginning since we've modified the string
-    includeFirstRegex.lastIndex = 0
+    includeFirstPat.lastIndex = 0
+  }
   }
 
   // Helper function to resolve paths with path traversal protection
@@ -963,31 +1043,53 @@ export async function processIncludes(
 export function processStackPushDirectives(template: string, stacks: Record<string, string[]>): string {
   let result = template
 
-  // Process @push directives
-  result = result.replace(/@push\(['"]([^'"]+)['"]\)([\s\S]*?)@endpush/g, (match, name, content) => {
-    if (!stacks[name]) {
-      stacks[name] = []
+  // Process @push directives with balanced parsing
+  function processStackDirective(src: string, directive: string, endDirective: string, prepend: boolean): string {
+    let out = src
+    let processedAny = true
+    while (processedAny) {
+      processedAny = false
+      const pat = new RegExp(`@${directive}\\(['"]([^'"]+)['"]\\)`)
+      const m = out.match(pat)
+      if (!m || m.index === undefined) break
+      const startPos = m.index
+      const name = m[1]
+      const contentStart = startPos + m[0].length
+
+      // Find matching end tag using balanced depth
+      const openRe = new RegExp(`@${directive}\\(`)
+      const closeRe = new RegExp(`@${endDirective}(?![a-z])`)
+      let depth = 1
+      let searchPos = contentStart
+      let endPos = -1
+      while (depth > 0 && searchPos < out.length) {
+        const rem = out.slice(searchPos)
+        const nextOpenMatch = rem.match(openRe)
+        const nextCloseMatch = rem.match(closeRe)
+        const nextOpen = nextOpenMatch ? searchPos + nextOpenMatch.index! : Infinity
+        const nextClose = nextCloseMatch ? searchPos + nextCloseMatch.index! : Infinity
+        if (nextOpen < nextClose) { depth++; searchPos = nextOpen + (nextOpenMatch![0].length || 1) }
+        else if (nextClose < Infinity) {
+          depth--
+          if (depth === 0) { endPos = nextClose; break }
+          searchPos = nextClose + endDirective.length + 1
+        } else break
+      }
+      if (endPos === -1) break
+
+      const content = out.slice(contentStart, endPos)
+      if (!stacks[name]) stacks[name] = []
+      if (prepend) stacks[name].unshift(content)
+      else stacks[name].push(content)
+
+      out = out.substring(0, startPos) + out.substring(endPos + `@${endDirective}`.length)
+      processedAny = true
     }
+    return out
+  }
 
-    // Add content to the end of the stack
-    stacks[name].push(content)
-
-    // Remove the directive from the output
-    return ''
-  })
-
-  // Process @prepend directives
-  result = result.replace(/@prepend\(['"]([^'"]+)['"]\)([\s\S]*?)@endprepend/g, (match, name, content) => {
-    if (!stacks[name]) {
-      stacks[name] = []
-    }
-
-    // Add content to the beginning of the stack
-    stacks[name].unshift(content)
-
-    // Remove the directive from the output
-    return ''
-  })
+  result = processStackDirective(result, 'push', 'endpush', false)
+  result = processStackDirective(result, 'prepend', 'endprepend', true)
 
   return result
 }

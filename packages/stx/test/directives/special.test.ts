@@ -523,33 +523,27 @@ describe('stx Special Directives', () => {
   })
 
   // Direct test of @once directive processor
+  // processOnceDirective strips @once/@endonce tags; deduplication is handled by processIncludes
   it('should directly process @once directive', () => {
     const template = `
       @once
         <style>.box { color: red; }</style>
       @endonce
 
-      @once
-        <style>.box { color: red; }</style>
-      @endonce
+      <p>Regular content</p>
 
       @once
-        <script>console.log('Same content');</script>
-      @endonce
-
-      @once
-        <script>console.log('Same content');</script>
+        <script>console.log('init');</script>
       @endonce
     `
 
     const result = processOnceDirective(template)
 
-    // Should keep only one occurrence of each unique content
-    const styleCount = (result.match(/<style>/g) || []).length
-    expect(styleCount).toBe(1)
-
-    // Should keep only one script with the same content
-    const scriptCount = (result.match(/<script>/g) || []).length
-    expect(scriptCount).toBe(1)
+    // Tags should be stripped, content preserved
+    expect(result).toContain('<style>.box { color: red; }</style>')
+    expect(result).toContain('<p>Regular content</p>')
+    expect(result).toContain("console.log('init')")
+    expect(result).not.toContain('@once')
+    expect(result).not.toContain('@endonce')
   })
 })

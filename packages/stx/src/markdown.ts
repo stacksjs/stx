@@ -11,9 +11,8 @@ export async function processMarkdownDirectives(
   filePath: string = '',
 ): Promise<string> {
   let output = template
-  const regex = /@markdown(?:\(([^)]*)\))?([\s\S]*?)@endmarkdown/g
 
-  // Process @markdown directive with closing tag @endmarkdown
+  // Process @markdown directive with balanced @markdown/@endmarkdown matching
   const matches: Array<{
     fullMatch: string
     options: string
@@ -21,16 +20,43 @@ export async function processMarkdownDirectives(
     index: number
   }> = []
 
-  // First collect all matches to avoid regex issues
-  let match
-  // eslint-disable-next-line no-cond-assign
-  while ((match = regex.exec(template)) !== null) {
-    matches.push({
-      fullMatch: match[0],
-      options: match[1] || '',
-      content: match[2] || '',
-      index: match.index,
-    })
+  // Find @markdown blocks using balanced depth tracking
+  const mdOpenRe = /@markdown(?:\([^)]*\))?/g
+  let mdMatch: RegExpExecArray | null
+  while ((mdMatch = mdOpenRe.exec(template)) !== null) {
+    const startIdx = mdMatch.index
+    const optMatch = mdMatch[0].match(/@markdown\(([^)]*)\)/)
+    const options = optMatch ? optMatch[1] : ''
+    const contentStart = startIdx + mdMatch[0].length
+
+    // Find matching @endmarkdown using depth tracking
+    let depth = 1
+    let searchPos = contentStart
+    let endPos = -1
+    while (depth > 0 && searchPos < template.length) {
+      const nextOpen = template.indexOf('@markdown', searchPos)
+      const nextClose = template.indexOf('@endmarkdown', searchPos)
+      if (nextClose === -1) break
+      if (nextOpen !== -1 && nextOpen < nextClose && nextOpen !== startIdx) {
+        // Check it's actually a directive (not text)
+        const charAfter = template[nextOpen + '@markdown'.length]
+        if (charAfter === '(' || charAfter === '\n' || charAfter === '\r' || charAfter === ' ' || charAfter === undefined) {
+          depth++
+        }
+        searchPos = nextOpen + '@markdown'.length
+      } else {
+        depth--
+        if (depth === 0) { endPos = nextClose; break }
+        searchPos = nextClose + '@endmarkdown'.length
+      }
+    }
+    if (endPos === -1) continue
+
+    const content = template.slice(contentStart, endPos)
+    const fullMatch = template.slice(startIdx, endPos + '@endmarkdown'.length)
+
+    matches.push({ fullMatch, options, content, index: startIdx })
+    mdOpenRe.lastIndex = endPos + '@endmarkdown'.length
   }
 
   // Process each match

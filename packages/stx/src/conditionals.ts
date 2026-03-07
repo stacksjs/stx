@@ -422,39 +422,144 @@ export function processConditionals(template: string, context: Record<string, an
 export function processAuthDirectives(template: string, context: Record<string, any>): string {
   let output = template
 
-  // Process @auth/@endauth directive
-  output = output.replace(
-    /@auth\s*(?:\((.*?)\)\s*)?\s*\n?\s*([\s\S]*?)(?:@else\s*\n?\s*([\s\S]*?))?@endauth/g,
-    (_, guard, content, elseContent) => {
-      // If no auth context exists, user is not authenticated
-      if (!context.auth) return elseContent || ''
+  // Helper: find matching end tag for directives that may or may not have parens
+  // (e.g., @auth, @auth('admin'), @guest, @guest('web'))
+  function findEndTag(src: string, startTag: string, endTag: string, from: number): number {
+    let depth = 1
+    let pos = from
+    const openRe = new RegExp(`@${startTag}(?:\\s*\\(|\\s|$)`, 'g')
+    const closeRe = new RegExp(`@${endTag}(?![a-z])`, 'g')
+    while (pos < src.length && depth > 0) {
+      openRe.lastIndex = pos
+      closeRe.lastIndex = pos
+      const openMatch = openRe.exec(src)
+      const closeMatch = closeRe.exec(src)
+      const nextOpen = openMatch ? openMatch.index : Infinity
+      const nextClose = closeMatch ? closeMatch.index : Infinity
+      if (nextOpen < nextClose) {
+        depth++
+        pos = nextOpen + openMatch![0].length
+      } else if (nextClose < Infinity) {
+        depth--
+        if (depth === 0) return nextClose
+        pos = nextClose + closeMatch![0].length
+      } else break
+    }
+    return -1
+  }
 
-      const isAuthenticated = guard
-        ? evaluateAuthExpression(`auth?.check && auth?.user?.[${guard}]`, context)
-        : evaluateAuthExpression('auth?.check', context)
+  // Helper: find top-level @else inside balanced content
+  function findTopLevelElse(content: string, startTag: string, endTag: string): number {
+    let depth = 0
+    for (let i = 0; i < content.length; i++) {
+      const rem = content.slice(i)
+      if (rem.match(new RegExp(`^@${startTag}(?:\\s*\\(|\\s|$)`))) { depth++; continue }
+      if (rem.match(new RegExp(`^@${endTag}(?![a-z])`))) { depth--; continue }
+      if (depth === 0 && rem.match(/^@else(?![a-z])/)) return i
+    }
+    return -1
+  }
 
-      return isAuthenticated
-        ? content
-        : (elseContent || '')
-    },
-  )
+  // Process @auth/@endauth using balanced parsing
+  {
+    let processedAny = true
+    while (processedAny) {
+      processedAny = false
+      const authMatch = output.match(/@auth(?:\s*\(|\s|(?=\n))/)
+      if (!authMatch || authMatch.index === undefined) break
 
-  // Process @guest/@endguest directive
-  output = output.replace(
-    /@guest\s*(?:\((.*?)\)\s*)?\s*\n?\s*([\s\S]*?)(?:@else\s*\n?\s*([\s\S]*?))?@endguest/g,
-    (_, guard, content, elseContent) => {
-      // If no auth context exists, user IS a guest
-      if (!context.auth) return content
+      const startPos = authMatch.index
+      // Extract optional guard parameter
+      let guard: string | undefined
+      let contentStart: number
 
-      const isGuest = guard
-        ? evaluateAuthExpression(`!auth?.check || !auth?.user?.[${guard}]`, context)
-        : evaluateAuthExpression('!auth?.check', context)
+      const afterAuth = output.slice(startPos + '@auth'.length)
+      const guardMatch = afterAuth.match(/^\s*\(\s*(['"])(.*?)\1\s*\)/)
+      if (guardMatch) {
+        guard = guardMatch[2]
+        contentStart = startPos + '@auth'.length + guardMatch[0].length
+      } else {
+        contentStart = startPos + '@auth'.length
+      }
 
-      return isGuest
-        ? content
-        : (elseContent || '')
-    },
-  )
+      const endPos = findEndTag(output, 'auth', 'endauth', contentStart)
+      if (endPos === -1) break
+
+      const fullContent = output.slice(contentStart, endPos)
+      const elsePos = findTopLevelElse(fullContent, 'auth', 'endauth')
+
+      let isAuthenticated: boolean
+      if (!context.auth) {
+        isAuthenticated = false
+      } else {
+        isAuthenticated = guard
+          ? evaluateAuthExpression(`auth?.check && auth?.user?.[${guard}]`, context)
+          : evaluateAuthExpression('auth?.check', context)
+      }
+
+      let replacement: string
+      if (elsePos !== -1) {
+        const trueContent = fullContent.slice(0, elsePos)
+        const falseContent = fullContent.slice(elsePos + '@else'.length)
+        replacement = isAuthenticated ? trueContent : falseContent
+      } else {
+        replacement = isAuthenticated ? fullContent : ''
+      }
+
+      output = output.substring(0, startPos) + replacement + output.substring(endPos + '@endauth'.length)
+      processedAny = true
+    }
+  }
+
+  // Process @guest/@endguest using balanced parsing
+  {
+    let processedAny = true
+    while (processedAny) {
+      processedAny = false
+      const guestMatch = output.match(/@guest(?:\s*\(|\s|(?=\n))/)
+      if (!guestMatch || guestMatch.index === undefined) break
+
+      const startPos = guestMatch.index
+      let guard: string | undefined
+      let contentStart: number
+
+      const afterGuest = output.slice(startPos + '@guest'.length)
+      const guardMatch = afterGuest.match(/^\s*\(\s*(['"])(.*?)\1\s*\)/)
+      if (guardMatch) {
+        guard = guardMatch[2]
+        contentStart = startPos + '@guest'.length + guardMatch[0].length
+      } else {
+        contentStart = startPos + '@guest'.length
+      }
+
+      const endPos = findEndTag(output, 'guest', 'endguest', contentStart)
+      if (endPos === -1) break
+
+      const fullContent = output.slice(contentStart, endPos)
+      const elsePos = findTopLevelElse(fullContent, 'guest', 'endguest')
+
+      let isGuest: boolean
+      if (!context.auth) {
+        isGuest = true
+      } else {
+        isGuest = guard
+          ? evaluateAuthExpression(`!auth?.check || !auth?.user?.[${guard}]`, context)
+          : evaluateAuthExpression('!auth?.check', context)
+      }
+
+      let replacement: string
+      if (elsePos !== -1) {
+        const trueContent = fullContent.slice(0, elsePos)
+        const falseContent = fullContent.slice(elsePos + '@else'.length)
+        replacement = isGuest ? trueContent : falseContent
+      } else {
+        replacement = isGuest ? fullContent : ''
+      }
+
+      output = output.substring(0, startPos) + replacement + output.substring(endPos + '@endguest'.length)
+      processedAny = true
+    }
+  }
 
   // Process @can/@endcan directive with all variations
   output = output.replace(
@@ -671,51 +776,84 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
  */
 export function processEnvDirective(template: string, _context: Record<string, any>, _filePath?: string): string {
   let output = template
+  const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
 
-  // General @env directive
-  output = output.replace(
-    /@env\s*\(\s*(['"])([^'"]+)\1\s*\)([\s\S]*?)(?:@else([\s\S]*?))?@endenv/g,
-    (_, quote, env, content, elseContent = '') => {
-      const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
-      return currentEnv === env ? content : elseContent
-    },
-  )
+  // Helper: process a simple env directive with balanced @else support
+  function processEnvBlock(src: string, directiveName: string, endDirectiveName: string, condition: boolean): string {
+    let result = src
+    let processedAny = true
+    while (processedAny) {
+      processedAny = false
+      const match = result.match(new RegExp(`@${directiveName}(?![a-z])`))
+      if (!match || match.index === undefined) break
 
-  // @production directive - renders content only in production environment
-  output = output.replace(
-    /@production([\s\S]*?)(?:@else([\s\S]*?))?@endproduction/g,
-    (_, content, elseContent = '') => {
-      const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
-      return currentEnv === 'production' ? content : elseContent
-    },
-  )
+      const startPos = match.index
+      let contentStart = startPos + match[0].length
 
-  // @development directive - renders content only in development environment
-  output = output.replace(
-    /@development([\s\S]*?)(?:@else([\s\S]*?))?@enddevelopment/g,
-    (_, content, elseContent = '') => {
-      const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
-      return currentEnv === 'development' ? content : elseContent
-    },
-  )
+      // For @env, extract the env name from parens
+      if (directiveName === 'env') {
+        const envParenMatch = result.slice(contentStart).match(/^\s*\(\s*(['"])([^'"]+)\1\s*\)/)
+        if (!envParenMatch) break
+        contentStart += envParenMatch[0].length
+        condition = currentEnv === envParenMatch[2]
+      }
 
-  // @staging directive - renders content only in staging environment
-  output = output.replace(
-    /@staging([\s\S]*?)(?:@else([\s\S]*?))?@endstaging/g,
-    (_, content, elseContent = '') => {
-      const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
-      return currentEnv === 'staging' ? content : elseContent
-    },
-  )
+      // Find matching end tag using balanced depth
+      const endTagRe = new RegExp(`@${endDirectiveName}(?![a-z])`)
+      const openTagRe = new RegExp(`@${directiveName}(?![a-z])`)
+      let depth = 1
+      let searchPos = contentStart
+      let endPos = -1
+      while (depth > 0 && searchPos < result.length) {
+        const remainingSlice = result.slice(searchPos)
+        const nextOpenMatch = remainingSlice.match(openTagRe)
+        const nextCloseMatch = remainingSlice.match(endTagRe)
+        const nextOpen = nextOpenMatch ? searchPos + nextOpenMatch.index! : Infinity
+        const nextClose = nextCloseMatch ? searchPos + nextCloseMatch.index! : Infinity
+        if (nextOpen < nextClose) {
+          depth++
+          searchPos = nextOpen + (nextOpenMatch![0].length || 1)
+        } else if (nextClose < Infinity) {
+          depth--
+          if (depth === 0) { endPos = nextClose; break }
+          searchPos = nextClose + (nextCloseMatch![0].length || 1)
+        } else break
+      }
+      if (endPos === -1) break
 
-  // @testing directive - renders content only in testing environment
-  output = output.replace(
-    /@testing([\s\S]*?)(?:@else([\s\S]*?))?@endtesting/g,
-    (_, content, elseContent = '') => {
-      const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
-      return currentEnv === 'testing' ? content : elseContent
-    },
-  )
+      const fullContent = result.slice(contentStart, endPos)
+
+      // Find top-level @else
+      let elseIdx = -1
+      let nestedDepth = 0
+      for (let i = 0; i < fullContent.length; i++) {
+        const rem = fullContent.slice(i)
+        if (rem.match(new RegExp(`^@${directiveName}(?![a-z])`))) { nestedDepth++; continue }
+        if (rem.match(new RegExp(`^@${endDirectiveName}(?![a-z])`))) { nestedDepth--; continue }
+        if (nestedDepth === 0 && rem.match(/^@else(?![a-z])/)) { elseIdx = i; break }
+      }
+
+      let replacement: string
+      if (elseIdx !== -1) {
+        const trueContent = fullContent.slice(0, elseIdx)
+        const falseContent = fullContent.slice(elseIdx + '@else'.length)
+        replacement = condition ? trueContent : falseContent
+      } else {
+        replacement = condition ? fullContent : ''
+      }
+
+      const endTagLength = `@${endDirectiveName}`.length
+      result = result.substring(0, startPos) + replacement + result.substring(endPos + endTagLength)
+      processedAny = true
+    }
+    return result
+  }
+
+  output = processEnvBlock(output, 'env', 'endenv', false) // condition set per-match
+  output = processEnvBlock(output, 'production', 'endproduction', currentEnv === 'production')
+  output = processEnvBlock(output, 'development', 'enddevelopment', currentEnv === 'development')
+  output = processEnvBlock(output, 'staging', 'endstaging', currentEnv === 'staging')
+  output = processEnvBlock(output, 'testing', 'endtesting', currentEnv === 'testing')
 
   return output
 }

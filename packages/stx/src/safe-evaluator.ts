@@ -215,11 +215,10 @@ function sanitizeObject(obj: unknown, depth = 0): unknown {
 
   const sanitized: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(obj)) {
-    // Skip dangerous keys
-    if (key.startsWith('_')
+    // Skip dangerous keys (double-underscore prefix for internal keys, not single-underscore user vars)
+    if (key.startsWith('__')
       || key === 'constructor'
-      || key === 'prototype'
-      || key === '__proto__') {
+      || key === 'prototype') {
       continue
     }
 
@@ -444,12 +443,21 @@ export function isForExpressionSafe(expression: string): boolean {
     /\bFunction\s*\(/i,
     /\bimport\s*\(/i,
     /\brequire\s*\(/i,
-    /\bprocess\./i,
+    /\bprocess\b/i,
     /\b__proto__\b/i,
-    /\bconstructor\s*\./i,
+    /\bconstructor\s*[.(]/i,
     /\bglobalThis\b/i,
     /\bwindow\b/i,
     /\bdocument\b/i,
+    /\bfetch\s*\(/i,
+    /\bBun\b/i,
+    /\bDeno\b/i,
+    /\bconsole\b/i,
+    /\bthis\b/i,
+    /\bReflect\b/i,
+    /\bProxy\b/i,
+    /\bprototype\b/i,
+    /\.(bind|call|apply)\s*\(/i,
   ]
 
   for (const pattern of forDangerousPatterns) {

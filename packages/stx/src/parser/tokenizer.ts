@@ -486,15 +486,23 @@ export function findMatchingDelimiter(
   let inString: string | null = null
   let inTemplateExpr = 0
 
+  let isEscaped = false
+
   while (pos < source.length) {
     const char = source[pos]
-    const prevChar = pos > 0 ? source[pos - 1] : ''
 
-    // Handle escape sequences
-    if (prevChar === '\\' && inString) {
+    // Handle escape sequences — proper toggle for consecutive backslashes
+    if (inString && isEscaped) {
+      isEscaped = false
       pos++
       continue
     }
+    if (inString && char === '\\') {
+      isEscaped = true
+      pos++
+      continue
+    }
+    isEscaped = false
 
     // Handle string entry/exit
     if ((char === '"' || char === '\'' || char === '`') && !inString) {
