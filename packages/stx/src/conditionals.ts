@@ -26,7 +26,7 @@
 import process from 'node:process'
 import { evaluateAuthExpression } from './auth'
 import { ErrorCodes, inlineError } from './error-handling'
-import { findIfBlocks, parseSwitchBlock } from './parser'
+import { extractParenthesizedExpression, findIfBlocks, findMatchingEndTag, parseSwitchBlock } from './parser'
 import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
 
 // =============================================================================
@@ -208,22 +208,49 @@ export function processConditionals(template: string, context: Record<string, an
   // Process @unless directives with @else support
   // @unless is the inverse of @if - renders content when condition is FALSE
   // Supports @else for content when condition is TRUE
-  output = output.replace(/@unless\s*\(([^)]+)\)([\s\S]*?)@endunless/g, (_match, condition, content) => {
-    // Check if there's an @else within the @unless block
-    const elseMatch = content.match(/^([\s\S]*?)@else([\s\S]*)$/)
+  // Uses balanced parsing to handle nested @unless blocks
+  {
+    let processedAny = true
+    while (processedAny) {
+      processedAny = false
+      const unlessMatch = output.match(/@unless\s*\(/)
+      if (!unlessMatch || unlessMatch.index === undefined) break
 
-    if (elseMatch) {
-      // Has @else - convert to @if with swapped content
-      // @unless(cond) A @else B @endunless -> @if(cond) B @else A @endif
-      const unlessContent = elseMatch[1]
-      const elseContent = elseMatch[2]
-      return `@if (${condition})${elseContent}@else${unlessContent}@endif`
+      const startPos = unlessMatch.index
+      const exprResult = extractParenthesizedExpression(output, startPos + '@unless'.length)
+      if (!exprResult) break
+
+      const contentStart = exprResult.endPos
+      const endPos = findMatchingEndTag(output, 'unless', 'endunless', contentStart)
+      if (endPos === -1) break
+
+      const content = output.slice(contentStart, endPos)
+      const condition = exprResult.expression
+
+      // Find top-level @else (skip @else inside nested @if/@unless blocks)
+      let elsePos = -1
+      let depth = 0
+      for (let i = 0; i < content.length; i++) {
+        const rem = content.slice(i)
+        if (rem.match(/^@(?:if|unless)\s*\(/)) { depth++; continue }
+        if (rem.match(/^@(?:endif|endunless)(?![a-z])/)) { depth--; continue }
+        if (depth === 0 && rem.match(/^@else(?![a-z])/)) { elsePos = i; break }
+      }
+
+      let replacement: string
+      if (elsePos !== -1) {
+        const unlessContent = content.slice(0, elsePos)
+        const elseContent = content.slice(elsePos + '@else'.length)
+        replacement = `@if (${condition})${elseContent}@else${unlessContent}@endif`
+      }
+      else {
+        replacement = `@if (!(${condition}))${content}@endif`
+      }
+
+      output = output.substring(0, startPos) + replacement + output.substring(endPos + '@endunless'.length)
+      processedAny = true
     }
-    else {
-      // No @else - simple negation
-      return `@if (!(${condition}))${content}@endif`
-    }
-  })
+  }
 
   // Process @isset and @empty directives separately
   output = processIssetEmptyDirectives(output, context, filePath)
@@ -556,47 +583,79 @@ export function processAuthDirectives(template: string, context: Record<string, 
 export function processIssetEmptyDirectives(template: string, context: Record<string, any>, _filePath?: string): string {
   let result = template
 
-  // Process @isset directive
-  result = result.replace(/@isset\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endisset/g, (_match, variable, content, elseContent, _offset) => {
-    try {
-      // Evaluate the variable path (silently handle undefined variables)
-      const value = evaluateAuthExpression(variable.trim(), context)
+  // Helper: process a balanced @directive(expr)...@else...@enddirective block
+  function processBalancedDirective(
+    output: string,
+    directiveName: string,
+    endDirectiveName: string,
+    evaluator: (variable: string) => boolean,
+    errorLabel: string,
+  ): string {
+    let processedAny = true
+    while (processedAny) {
+      processedAny = false
+      const pattern = new RegExp(`@${directiveName}\\s*\\(`)
+      const match = output.match(pattern)
+      if (!match || match.index === undefined) break
 
-      // Check if it's defined and not null
-      if (value !== undefined && value !== null) {
-        return content
+      const startPos = match.index
+      const exprResult = extractParenthesizedExpression(output, startPos + `@${directiveName}`.length)
+      if (!exprResult) break
+
+      const contentStart = exprResult.endPos
+      const endPos = findMatchingEndTag(output, directiveName, endDirectiveName, contentStart)
+      if (endPos === -1) break
+
+      const fullContent = output.slice(contentStart, endPos)
+      const variable = exprResult.expression
+
+      // Find top-level @else
+      let elsePos = -1
+      let depth = 0
+      for (let i = 0; i < fullContent.length; i++) {
+        const rem = fullContent.slice(i)
+        if (rem.match(/^@(?:if|unless|isset|empty)\s*\(/)) { depth++; continue }
+        if (rem.match(/^@(?:endif|endunless|endisset|endempty)(?![a-z])/)) { depth--; continue }
+        if (depth === 0 && rem.match(/^@else(?![a-z])/)) { elsePos = i; break }
       }
 
-      return elseContent || ''
-    }
-    catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      return inlineError('Isset', `Error processing @isset directive: ${msg}`, ErrorCodes.EVALUATION_ERROR)
-    }
-  })
-
-  // Process @empty directive
-  result = result.replace(/@empty\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endempty/g, (_match, variable, content, elseContent, _offset) => {
-    try {
-      // Evaluate the variable path (silently handle undefined variables)
-      const value = evaluateAuthExpression(variable.trim(), context)
-
-      // Check if it's empty
-      const isEmpty = value === undefined || value === null || value === ''
-        || (Array.isArray(value) && value.length === 0)
-        || (typeof value === 'object' && value !== null && Object.keys(value).length === 0)
-
-      if (isEmpty) {
-        return content
+      try {
+        const conditionResult = evaluator(variable.trim())
+        let replacement: string
+        if (elsePos !== -1) {
+          const trueContent = fullContent.slice(0, elsePos)
+          const falseContent = fullContent.slice(elsePos + '@else'.length)
+          replacement = conditionResult ? trueContent : falseContent
+        }
+        else {
+          replacement = conditionResult ? fullContent : ''
+        }
+        output = output.substring(0, startPos) + replacement + output.substring(endPos + `@${endDirectiveName}`.length)
+        processedAny = true
       }
+      catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error)
+        const errorMessage = inlineError(errorLabel, `Error processing @${directiveName} directive: ${msg}`, ErrorCodes.EVALUATION_ERROR)
+        output = output.substring(0, startPos) + errorMessage + output.substring(endPos + `@${endDirectiveName}`.length)
+        break
+      }
+    }
+    return output
+  }
 
-      return elseContent || ''
-    }
-    catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      return inlineError('Empty', `Error processing @empty directive: ${msg}`, ErrorCodes.EVALUATION_ERROR)
-    }
-  })
+  // Process @isset directive with balanced parsing
+  result = processBalancedDirective(result, 'isset', 'endisset', (variable) => {
+    const value = evaluateAuthExpression(variable, context)
+    return value !== undefined && value !== null
+  }, 'Isset')
+
+  // Process @empty directive with balanced parsing
+  result = processBalancedDirective(result, 'empty', 'endempty', (variable) => {
+    const value = evaluateAuthExpression(variable, context)
+    return value === undefined || value === null || value === ''
+      || (Array.isArray(value) && value.length === 0)
+      || (typeof value === 'object' && value !== null && Object.keys(value).length === 0)
+  }, 'Empty')
 
   return result
 }

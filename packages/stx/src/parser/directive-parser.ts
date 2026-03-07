@@ -157,58 +157,78 @@ export function parseConditionalBlock(source: string, startPos: number): ParsedC
   const branches: ConditionalBranch[] = []
 
   // Parse branches within the content
+  // Track nesting depth so we only match @elseif/@else at the top level
+  // (not inside nested @if blocks)
   let currentPos = 0
   let currentType: 'if' | 'elseif' | 'else' = 'if'
   let currentCondition: string | undefined = exprResult.expression
   let branchStart = 0
+  let nestedDepth = 0
 
   while (currentPos < fullContent.length) {
-    // Look for @elseif or @else
-    const elseifMatch = fullContent.slice(currentPos).match(/^@elseif\s*/)
-    const elseMatch = fullContent.slice(currentPos).match(/^@else(?![a-z])/)
+    const remaining = fullContent.slice(currentPos)
 
-    if (elseifMatch && fullContent.slice(currentPos).startsWith('@elseif')) {
-      // Save current branch
-      branches.push({
-        type: currentType,
-        condition: currentCondition,
-        content: fullContent.slice(branchStart, currentPos),
-        start: contentStart + branchStart,
-        end: contentStart + currentPos,
-      })
+    // Track nested @if depth
+    if (remaining.match(/^@if\s*\(/)) {
+      nestedDepth++
+      currentPos++
+      continue
+    }
+    if (remaining.match(/^@endif(?![a-z])/)) {
+      nestedDepth--
+      currentPos++
+      continue
+    }
 
-      // Parse elseif condition
-      const elseifExprStart = currentPos + elseifMatch[0].length
-      const elseifExpr = extractParenthesizedExpression(fullContent, elseifExprStart)
-      if (!elseifExpr) {
-        // Malformed @elseif, skip
-        currentPos++
+    // Only match @elseif/@else at top level (depth 0)
+    if (nestedDepth === 0) {
+      const elseifMatch = remaining.match(/^@elseif\s*/)
+      const elseMatch = remaining.match(/^@else(?![a-z])/)
+
+      if (elseifMatch && remaining.startsWith('@elseif')) {
+        // Save current branch
+        branches.push({
+          type: currentType,
+          condition: currentCondition,
+          content: fullContent.slice(branchStart, currentPos),
+          start: contentStart + branchStart,
+          end: contentStart + currentPos,
+        })
+
+        // Parse elseif condition
+        const elseifExprStart = currentPos + elseifMatch[0].length
+        const elseifExpr = extractParenthesizedExpression(fullContent, elseifExprStart)
+        if (!elseifExpr) {
+          // Malformed @elseif, skip
+          currentPos++
+          continue
+        }
+
+        currentType = 'elseif'
+        currentCondition = elseifExpr.expression
+        currentPos = elseifExpr.endPos
+        branchStart = currentPos
         continue
       }
+      else if (elseMatch && remaining.startsWith('@else')) {
+        // Save current branch
+        branches.push({
+          type: currentType,
+          condition: currentCondition,
+          content: fullContent.slice(branchStart, currentPos),
+          start: contentStart + branchStart,
+          end: contentStart + currentPos,
+        })
 
-      currentType = 'elseif'
-      currentCondition = elseifExpr.expression
-      currentPos = elseifExpr.endPos
-      branchStart = currentPos
+        currentType = 'else'
+        currentCondition = undefined
+        currentPos += elseMatch[0].length
+        branchStart = currentPos
+        continue
+      }
     }
-    else if (elseMatch && fullContent.slice(currentPos).startsWith('@else')) {
-      // Save current branch
-      branches.push({
-        type: currentType,
-        condition: currentCondition,
-        content: fullContent.slice(branchStart, currentPos),
-        start: contentStart + branchStart,
-        end: contentStart + currentPos,
-      })
 
-      currentType = 'else'
-      currentCondition = undefined
-      currentPos += elseMatch[0].length
-      branchStart = currentPos
-    }
-    else {
-      currentPos++
-    }
+    currentPos++
   }
 
   // Save the last branch

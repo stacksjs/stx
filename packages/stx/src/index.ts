@@ -108,6 +108,7 @@ export * from './dynamic-components'
 
 // These modules are exported first to establish their types
 export * from './render'
+export { generateCrosswindCSS, injectCrosswindCSS, extractClassNames } from './dev-server/crosswind'
 export * from './utils'
 export * from './slots'
 

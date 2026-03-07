@@ -41,6 +41,19 @@ export interface ServeResult {
 }
 
 /**
+ * Create an HTML response helper
+ */
+export function htmlResponse(html: string, status = 200, headers: Record<string, string> = {}): Response {
+  return new Response(html, {
+    status,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      ...headers,
+    },
+  })
+}
+
+/**
  * Serve a directory of stx templates and markdown files
  * This is the main function for programmatic usage
  */

@@ -205,6 +205,58 @@ describe('stx Conditional Directives', () => {
     expect(outputHtml).toContain('Your access status: Awaiting access')
   })
 
+  // Test deeply nested @if/@else/@endif inside @if
+  it('should handle @if/@else/@endif nested inside @if', async () => {
+    const testFile = await createTestFile('deeply-nested-ifs.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Deeply Nested If Test</title>
+        <script>
+          module.exports = {
+            showSection: true,
+            count: 5,
+            items: ['a', 'b', 'c']
+          };
+        </script>
+      </head>
+      <body>
+        @if (showSection)
+          <div class="section">
+            @if (count === 1)
+              <p>One item</p>
+            @else
+              <p>Multiple items: {{ count }}</p>
+            @endif
+            <ul>
+              @foreach (items as item)
+                <li>{{ item }}</li>
+              @endforeach
+            </ul>
+          </div>
+        @else
+          <p>Section hidden</p>
+        @endif
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('Multiple items: 5')
+    expect(outputHtml).not.toContain('One item')
+    expect(outputHtml).not.toContain('Section hidden')
+    expect(outputHtml).toContain('<li>a</li>')
+    expect(outputHtml).toContain('<li>b</li>')
+    expect(outputHtml).toContain('<li>c</li>')
+  })
+
   // Test with logical operators in conditions
   it('should handle logical operators in conditions', async () => {
     const testFile = await createTestFile('logical-operators.stx', `
@@ -267,5 +319,188 @@ describe('stx Conditional Directives', () => {
 
     // Complex condition
     expect(outputHtml).toContain('<p class="pass">You pass the requirements</p>')
+  })
+
+  // Test @if/@else/@endif nested inside @if with @foreach
+  it('should handle @if/@else nested inside @if with @foreach sibling', async () => {
+    const testFile = await createTestFile('nested-if-else-foreach.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Nested Test</title>
+        <script>
+          module.exports = {
+            hasResults: true,
+            count: 3,
+            items: [{name: 'alpha'}, {name: 'beta'}, {name: 'gamma'}]
+          };
+        </script>
+      </head>
+      <body>
+        @if (hasResults)
+          @if (count === 1)
+            <p>Found 1 item</p>
+          @else
+            <p>Found {{ count }} items</p>
+          @endif
+          <ul>
+            @foreach (items as item)
+              <li>{{ item.name }}</li>
+            @endforeach
+          </ul>
+        @else
+          <p>No results</p>
+        @endif
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('Found 3 items')
+    expect(outputHtml).not.toContain('Found 1 item')
+    expect(outputHtml).not.toContain('No results')
+    expect(outputHtml).toContain('<li>alpha</li>')
+    expect(outputHtml).toContain('<li>beta</li>')
+    expect(outputHtml).toContain('<li>gamma</li>')
+  })
+
+  // Test false outer @if with nested @if/@else
+  it('should skip nested @if/@else when outer @if is false', async () => {
+    const testFile = await createTestFile('nested-false-outer.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>False Outer Test</title>
+        <script>
+          module.exports = {
+            showSection: false,
+            count: 5
+          };
+        </script>
+      </head>
+      <body>
+        @if (showSection)
+          <div class="section">
+            @if (count > 3)
+              <p>Many items</p>
+            @else
+              <p>Few items</p>
+            @endif
+          </div>
+        @else
+          <p>Section hidden</p>
+        @endif
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('Section hidden')
+    expect(outputHtml).not.toContain('Many items')
+    expect(outputHtml).not.toContain('Few items')
+    expect(outputHtml).not.toContain('class="section"')
+  })
+
+  // Test triple nesting: @if inside @if inside @if
+  it('should handle triple-nested @if blocks', async () => {
+    const testFile = await createTestFile('triple-nested-ifs.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Triple Nested Test</title>
+        <script>
+          module.exports = {
+            a: true,
+            b: true,
+            c: false
+          };
+        </script>
+      </head>
+      <body>
+        @if (a)
+          <p>Level 1</p>
+          @if (b)
+            <p>Level 2</p>
+            @if (c)
+              <p>Level 3 true</p>
+            @else
+              <p>Level 3 false</p>
+            @endif
+          @endif
+        @endif
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('Level 1')
+    expect(outputHtml).toContain('Level 2')
+    expect(outputHtml).toContain('Level 3 false')
+    expect(outputHtml).not.toContain('Level 3 true')
+  })
+
+  // Test @if with @elseif nested inside another @if
+  it('should handle @elseif nested inside @if', async () => {
+    const testFile = await createTestFile('nested-elseif.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Nested Elseif Test</title>
+        <script>
+          module.exports = {
+            showPanel: true,
+            status: 'warning'
+          };
+        </script>
+      </head>
+      <body>
+        @if (showPanel)
+          @if (status === 'error')
+            <p class="error">Error!</p>
+          @elseif (status === 'warning')
+            <p class="warning">Warning!</p>
+          @else
+            <p class="ok">All clear</p>
+          @endif
+        @else
+          <p>Panel hidden</p>
+        @endif
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('class="warning">Warning!</p>')
+    expect(outputHtml).not.toContain('Error!')
+    expect(outputHtml).not.toContain('All clear')
+    expect(outputHtml).not.toContain('Panel hidden')
   })
 })

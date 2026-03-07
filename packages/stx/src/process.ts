@@ -29,7 +29,7 @@ import { performanceMonitor } from './performance-utils'
 import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { transformStoreImports } from './state-management'
-import { renderComponentWithSlot, resolveTemplatePath, shouldTranspileTypeScript, transpileTypeScript } from './utils'
+import { fileExists, renderComponentWithSlot, resolveTemplatePath, shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { runComposers } from './view-composers'
 import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
 import { processVueTemplate } from './vue-template'
@@ -1312,12 +1312,63 @@ async function processDirectivesInternal(
   const sections: Record<string, string> = { ...(context.__sections || {}) }
   let layoutPath = ''
 
+  // Handle @nolayout directive — strip it and skip auto-layout
+  const hasNoLayout = /@nolayout\b/.test(output)
+  if (hasNoLayout) {
+    output = output.replace(/@nolayout\b\s*/g, '')
+  }
+
   // Extract layout if used (@layout or @extends)
   const layoutMatch = output.match(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/)
   if (layoutMatch) {
     layoutPath = layoutMatch[1]
     // Remove the @layout/@extends directive from the template
     output = output.replace(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/, '')
+  }
+
+  // Auto-layout: if no explicit layout and no @nolayout, auto-detect layout
+  if (!layoutPath && !hasNoLayout && opts.defaultLayout) {
+    const hasDoctype = /<!DOCTYPE\s/i.test(output)
+    const hasSections = /@section\s*\(/.test(output)
+
+    if (!hasDoctype || hasSections) {
+      // Try to find _layout.stx by walking up directories from the file
+      let autoLayoutPath = ''
+
+      // Walk up directories to find _layout.stx
+      let searchDir = path.dirname(filePath)
+      const rootDir = opts.layoutsDir ? path.dirname(opts.layoutsDir) : process.cwd()
+      for (let i = 0; i < 20; i++) {
+        const candidate = path.join(searchDir, '_layout.stx')
+        if (await fileExists(candidate)) {
+          autoLayoutPath = candidate
+          break
+        }
+        const parent = path.dirname(searchDir)
+        if (parent === searchDir || parent.length < rootDir.length) break
+        searchDir = parent
+      }
+
+      if (autoLayoutPath) {
+        // Use the discovered _layout.stx directly as an absolute path
+        layoutPath = autoLayoutPath
+      }
+      else if (opts.layoutsDir) {
+        // Fall back to defaultLayout in layoutsDir
+        const resolvedLayoutsDir = path.isAbsolute(opts.layoutsDir)
+          ? opts.layoutsDir
+          : path.resolve(process.cwd(), opts.layoutsDir)
+        const defaultLayoutFile = path.join(resolvedLayoutsDir, `${opts.defaultLayout}.stx`)
+        if (await fileExists(defaultLayoutFile)) {
+          layoutPath = defaultLayoutFile
+        }
+      }
+
+      // If auto-layout found and page has no sections, wrap content as 'content' section
+      if (layoutPath && !hasSections) {
+        output = `@section('content')\n${output.trim()}\n@endsection`
+      }
+    }
   }
 
   // Extract sections
@@ -1363,19 +1414,22 @@ async function processDirectivesInternal(
         console.log(`Processing layout: ${layoutPath} for file ${filePath}`)
       }
 
-      const layoutFullPath = await safeExecuteAsync(
-        () => resolveTemplatePath(layoutPath, filePath, resolvedOptions, dependencies),
-        null,
-        () => {
-          throw new StxRuntimeError(
-            `Failed to resolve layout path: ${layoutPath}`,
-            filePath,
-            undefined,
-            undefined,
-            `Layout referenced from ${filePath}`,
+      // If layoutPath is already absolute (from auto-layout), use it directly
+      const layoutFullPath = path.isAbsolute(layoutPath)
+        ? layoutPath
+        : await safeExecuteAsync(
+            () => resolveTemplatePath(layoutPath, filePath, resolvedOptions, dependencies),
+            null,
+            () => {
+              throw new StxRuntimeError(
+                `Failed to resolve layout path: ${layoutPath}`,
+                filePath,
+                undefined,
+                undefined,
+                `Layout referenced from ${filePath}`,
+              )
+            },
           )
-        },
-      )
 
       if (!layoutFullPath) {
         const warning = `Layout not found: ${layoutPath} (referenced from ${filePath})`

@@ -48,6 +48,23 @@ export interface RenderOptions {
   wrapInDocument?: boolean
   /** Document title (used when wrapInDocument is true) */
   title?: string
+  /** Whether to auto-inject Crosswind CSS from Tailwind classes. Default: false */
+  injectCSS?: boolean
+  /**
+   * Layout template file path. When set, the page content is rendered first,
+   * then injected as `content` into the layout template. All context variables
+   * are forwarded to the layout.
+   *
+   * @example
+   * ```ts
+   * await renderTemplate('pages/index.stx', {
+   *   context: { title: 'Home', packages: [...] },
+   *   layout: 'pages/layout.stx',
+   *   injectCSS: true,
+   * })
+   * ```
+   */
+  layout?: string
 }
 
 // ============================================================================
@@ -154,6 +171,32 @@ export async function renderTemplate(
   }
 
   const content = readFileSync(resolvedPath, 'utf-8')
+
+  // If layout is specified, render page first, then wrap in layout
+  if (renderOptions.layout) {
+    const layoutPath = resolve(renderOptions.layout)
+    if (!existsSync(layoutPath)) {
+      throw new Error(`Layout template not found: ${layoutPath}`)
+    }
+
+    // Render page content (without layout, without CSS injection yet)
+    const { layout, injectCSS, ...pageOptions } = renderOptions
+    const pageHtml = await renderTemplateString(content, resolvedPath, { ...pageOptions, injectCSS: false })
+
+    // Render layout with page content injected as `content`
+    const layoutContent = readFileSync(layoutPath, 'utf-8')
+    const layoutContext = {
+      ...(renderOptions.context || {}),
+      content: pageHtml,
+    }
+    const layoutOptions: RenderOptions = {
+      ...pageOptions,
+      context: layoutContext,
+      injectCSS,
+    }
+    return renderTemplateString(layoutContent, layoutPath, layoutOptions)
+  }
+
   return renderTemplateString(content, resolvedPath, renderOptions)
 }
 
@@ -240,6 +283,17 @@ async function renderTemplateString(
     // Only wrap if not already a full document
     if (!output.trim().toLowerCase().startsWith('<!doctype') && !output.trim().toLowerCase().startsWith('<html')) {
       output = wrapInHtmlDocument(output, renderOptions.title)
+    }
+  }
+
+  // Optionally inject Crosswind CSS from Tailwind utility classes
+  if (renderOptions.injectCSS) {
+    try {
+      const { injectCrosswindCSS } = await import('./dev-server/crosswind')
+      output = await injectCrosswindCSS(output)
+    }
+    catch {
+      // Crosswind not available, skip CSS injection
     }
   }
 
