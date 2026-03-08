@@ -27,7 +27,7 @@
     "handlebars": "^4.7.8",
     "isomorphic-dompurify": "^3.0.0",
     "js-yaml": "^4.1.1",
-    "liquidjs": "^10.24.0",
+    "liquidjs": "^10.25.0",
     "markdown-it": "^14.1.1",
     "marked": "^17.0.4",
     "mitata": "^1.0.34",
@@ -43,7 +43,7 @@
   "devDependencies": {
     "@types/dompurify": "^3.2.0",
     "@types/marked": "^6.0.0",
-    "@types/sanitize-html": "^2.16.0",
+    "@types/sanitize-html": "^2.16.1",
     "jsdom": "^28.1.0"
   }
 }
