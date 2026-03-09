@@ -504,7 +504,7 @@ ${eventCode}
   // Only use mount for scripts that actually use signals (state/derived/effect).
   // : prefix directives are handled by the runtime's processElement regardless of wrapper type.
   // Skip mount wrapping for SFC components — they already have __stx_setup scoping from utils.ts.
-  const usesSignals = /\b(state|derived|effect)\s*\(/.test(scriptContent)
+  const usesSignals = /\b(state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(scriptContent)
   const isSfcWrapped = /function __stx_setup_/.test(code)
 
   if (usesSignals && !isSfcWrapped) {

@@ -268,7 +268,7 @@ export { content as default };
           let scriptMatch: RegExpExecArray | null
 
           // Check if script uses STX signals API (state, derived, effect, batch)
-          const usesSignalsAPI = (content: string) => /\b(?:state|derived|effect|batch)\s*\(/.test(content)
+          const usesSignalsAPI = (content: string) => /\b(?:state|derived|effect|batch|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)
 
           while ((scriptMatch = scriptRegex.exec(content)) !== null) {
             const attrs = scriptMatch[1]
