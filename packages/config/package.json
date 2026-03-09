@@ -1,5 +1,5 @@
 {
-  "name": "@stacksjs/config",
+  "name": "@stx/config",
   "type": "module",
   "version": "0.2.6",
   "description": "Type-safe environment variables with build-time validation for STX applications.",

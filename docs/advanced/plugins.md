@@ -141,7 +141,6 @@ test('plugin installs correctly', () => {
 - `@stacksjs/router` - Client-side routing
 - `@stacksjs/state` - State management
 - `@stacksjs/i18n` - Internationalization
-- `@stacksjs/analytics` - Analytics integration
 - `@stacksjs/auth` - Authentication
 
 ### Community Guidelines

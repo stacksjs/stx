@@ -34,31 +34,31 @@ console.log('='.repeat(60))
 
 console.log('\n── Phase 1 — Foundation ──')
 
-// ─── @stacksjs/config ────────────────────────────────────────
-section('@stacksjs/config')
+// ─── @stx/config ────────────────────────────────────────
+section('@stx/config')
 
-await test('@stacksjs/config', 'defineEnv with string default', async () => {
-  const { defineEnv } = await import('@stacksjs/config')
+await test('@stx/config', 'defineEnv with string default', async () => {
+  const { defineEnv } = await import('@stx/config')
   const env = defineEnv({ APP_NAME: { type: 'string', default: 'STX' } })
   if (env.APP_NAME !== 'STX') throw new Error(`got ${env.APP_NAME}`)
 })
 
-await test('@stacksjs/config', 'defineEnv with number coercion', async () => {
-  const { defineEnv } = await import('@stacksjs/config')
+await test('@stx/config', 'defineEnv with number coercion', async () => {
+  const { defineEnv } = await import('@stx/config')
   const env = defineEnv({ PORT: { type: 'number', default: 3000 } })
   if (env.PORT !== 3000) throw new Error(`got ${env.PORT}`)
   if (typeof env.PORT !== 'number') throw new Error(`type=${typeof env.PORT}`)
 })
 
-await test('@stacksjs/config', 'defineEnv with boolean coercion', async () => {
-  const { defineEnv } = await import('@stacksjs/config')
+await test('@stx/config', 'defineEnv with boolean coercion', async () => {
+  const { defineEnv } = await import('@stx/config')
   const env = defineEnv({ DEBUG: { type: 'boolean', default: false } })
   if (env.DEBUG !== false) throw new Error(`got ${env.DEBUG}`)
   if (typeof env.DEBUG !== 'boolean') throw new Error(`type=${typeof env.DEBUG}`)
 })
 
-await test('@stacksjs/config', 'isProduction/isDevelopment/isTest helpers', async () => {
-  const { isProduction, isDevelopment, isTest } = await import('@stacksjs/config')
+await test('@stx/config', 'isProduction/isDevelopment/isTest helpers', async () => {
+  const { isProduction, isDevelopment, isTest } = await import('@stx/config')
   if (typeof isProduction !== 'function') throw new Error('isProduction not exported')
   if (typeof isDevelopment !== 'function') throw new Error('isDevelopment not exported')
   if (typeof isTest !== 'function') throw new Error('isTest not exported')
@@ -66,8 +66,8 @@ await test('@stacksjs/config', 'isProduction/isDevelopment/isTest helpers', asyn
   if (isProduction()) throw new Error('should not be production in test')
 })
 
-await test('@stacksjs/config', 'defineEnv with multiple vars', async () => {
-  const { defineEnv } = await import('@stacksjs/config')
+await test('@stx/config', 'defineEnv with multiple vars', async () => {
+  const { defineEnv } = await import('@stx/config')
   const env = defineEnv({
     DB_HOST: { type: 'string', default: 'localhost' },
     DB_PORT: { type: 'number', default: 5432 },
@@ -193,44 +193,44 @@ await test('@stacksjs/data', 'serialize/deserialize Map roundtrip', async () => 
   if (restored.meta.get('key') !== 'value') throw new Error(`val=${restored.meta.get('key')}`)
 })
 
-// ─── @stacksjs/deploy ───────────────────────────────────────
-section('@stacksjs/deploy')
+// ─── @stx/deploy ───────────────────────────────────────
+section('@stx/deploy')
 
-await test('@stacksjs/deploy', 'detectRuntime identifies Bun', async () => {
-  const { detectRuntime } = await import('@stacksjs/deploy')
+await test('@stx/deploy', 'detectRuntime identifies Bun', async () => {
+  const { detectRuntime } = await import('@stx/deploy')
   const runtime = detectRuntime()
   if (runtime.platform !== 'bun') throw new Error(`platform=${runtime.platform}`)
   if (!runtime.version) throw new Error('version missing')
 })
 
-await test('@stacksjs/deploy', 'detectRuntime capabilities include sqlite', async () => {
-  const { detectRuntime } = await import('@stacksjs/deploy')
+await test('@stx/deploy', 'detectRuntime capabilities include sqlite', async () => {
+  const { detectRuntime } = await import('@stx/deploy')
   const runtime = detectRuntime()
   if (!runtime.capabilities.includes('sqlite')) throw new Error(`caps=${runtime.capabilities}`)
 })
 
-await test('@stacksjs/deploy', 'bunServerAdapter creates named adapter', async () => {
-  const { bunServerAdapter } = await import('@stacksjs/deploy')
+await test('@stx/deploy', 'bunServerAdapter creates named adapter', async () => {
+  const { bunServerAdapter } = await import('@stx/deploy')
   const adapter = bunServerAdapter({ port: 4000 })
   if (adapter.name !== 'bun-server') throw new Error(`name=${adapter.name}`)
   if (typeof adapter.build !== 'function') throw new Error('build not a function')
 })
 
-await test('@stacksjs/deploy', 'staticAdapter creates named adapter', async () => {
-  const { staticAdapter } = await import('@stacksjs/deploy')
+await test('@stx/deploy', 'staticAdapter creates named adapter', async () => {
+  const { staticAdapter } = await import('@stx/deploy')
   const adapter = staticAdapter()
   if (adapter.name !== 'static') throw new Error(`name=${adapter.name}`)
   if (typeof adapter.build !== 'function') throw new Error('build not a function')
 })
 
-await test('@stacksjs/deploy', 'defineAdapter creates custom adapter', async () => {
-  const { defineAdapter } = await import('@stacksjs/deploy')
+await test('@stx/deploy', 'defineAdapter creates custom adapter', async () => {
+  const { defineAdapter } = await import('@stx/deploy')
   const adapter = defineAdapter({ name: 'custom', build: async () => ({ outputDir: './dist', files: [] }) })
   if (adapter.name !== 'custom') throw new Error(`name=${adapter.name}`)
 })
 
-await test('@stacksjs/deploy', 'isEdgeRuntime returns false for Bun', async () => {
-  const { isEdgeRuntime } = await import('@stacksjs/deploy')
+await test('@stx/deploy', 'isEdgeRuntime returns false for Bun', async () => {
+  const { isEdgeRuntime } = await import('@stx/deploy')
   if (isEdgeRuntime()) throw new Error('Bun should not be edge runtime')
 })
 
@@ -239,236 +239,6 @@ await test('@stacksjs/deploy', 'isEdgeRuntime returns false for Bun', async () =
 // ═══════════════════════════════════════════════════════════════
 
 console.log('\n── Phase 2 — Full-Stack ──')
-
-// ─── @stacksjs/db ────────────────────────────────────────────
-section('@stacksjs/db')
-
-await test('@stacksjs/db', 'db() convenience creates QueryBuilder', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql } = db('users').toSQL()
-  if (sql !== 'SELECT * FROM users') throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder select with columns', async () => {
-  const { QueryBuilder } = await import('@stacksjs/db')
-  const { sql } = new QueryBuilder('users').select('id', 'name').toSQL()
-  if (sql !== 'SELECT id, name FROM users') throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder where clause', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql, bindings } = db('users').where('active', true).toSQL()
-  if (!sql.includes('WHERE active = ?')) throw new Error(`sql=${sql}`)
-  if (bindings[0] !== true) throw new Error(`binding=${bindings[0]}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder where with operator', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql, bindings } = db('users').where('age', '>=', 18).toSQL()
-  if (!sql.includes('age >= ?')) throw new Error(`sql=${sql}`)
-  if (bindings[0] !== 18) throw new Error(`binding=${bindings[0]}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder multiple where (AND)', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql, bindings } = db('users').where('active', true).where('role', 'admin').toSQL()
-  if (!sql.includes('AND role = ?')) throw new Error(`sql=${sql}`)
-  if (bindings.length !== 2) throw new Error(`bindings=${bindings.length}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder orWhere', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql } = db('users').where('role', 'admin').orWhere('role', 'super').toSQL()
-  if (!sql.includes('OR role = ?')) throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder whereNull', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql } = db('users').whereNull('deleted_at').toSQL()
-  if (!sql.includes('deleted_at IS NULL')) throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder whereIn', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql, bindings } = db('users').whereIn('id', [1, 2, 3]).toSQL()
-  if (!sql.includes('IN (?, ?, ?)')) throw new Error(`sql=${sql}`)
-  if (bindings.length !== 3) throw new Error(`bindings=${bindings.length}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder whereBetween', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql, bindings } = db('users').whereBetween('age', [18, 65]).toSQL()
-  if (!sql.includes('BETWEEN ? AND ?')) throw new Error(`sql=${sql}`)
-  if (bindings.length !== 2) throw new Error(`bindings=${bindings.length}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder orderBy/limit/offset', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql } = db('users').orderBy('name').limit(10).offset(20).toSQL()
-  if (!sql.includes('ORDER BY name ASC')) throw new Error('orderBy missing')
-  if (!sql.includes('LIMIT 10')) throw new Error('limit missing')
-  if (!sql.includes('OFFSET 20')) throw new Error('offset missing')
-})
-
-await test('@stacksjs/db', 'QueryBuilder orderBy desc', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql } = db('users').orderBy('created_at', 'desc').toSQL()
-  if (!sql.includes('ORDER BY created_at DESC')) throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder distinct', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql } = db('users').distinct().toSQL()
-  if (!sql.includes('SELECT DISTINCT')) throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder groupBy', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql } = db('orders').groupBy('status').toSQL()
-  if (!sql.includes('GROUP BY status')) throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder join', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql } = db('users').join('posts', 'users.id', '=', 'posts.user_id').toSQL()
-  if (!sql.includes('INNER JOIN posts ON users.id = posts.user_id')) throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder leftJoin', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql } = db('users').leftJoin('posts', 'users.id', '=', 'posts.user_id').toSQL()
-  if (!sql.includes('LEFT JOIN posts')) throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder toInsertSQL', async () => {
-  const { QueryBuilder } = await import('@stacksjs/db')
-  const { sql, bindings } = new QueryBuilder('users').toInsertSQL({ name: 'Alice', email: 'a@t.com' })
-  if (!sql.includes('INSERT INTO users')) throw new Error(`sql=${sql}`)
-  if (!sql.includes('VALUES (?, ?)')) throw new Error('values missing')
-  if (bindings.length !== 2) throw new Error(`bindings=${bindings.length}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder toUpdateSQL', async () => {
-  const { QueryBuilder } = await import('@stacksjs/db')
-  const { sql, bindings } = new QueryBuilder('users').where('id', 1).toUpdateSQL({ name: 'Bob' })
-  if (!sql.includes('UPDATE users SET name = ?')) throw new Error(`sql=${sql}`)
-  if (!sql.includes('WHERE id = ?')) throw new Error('where missing')
-  if (bindings.length !== 2) throw new Error(`bindings=${bindings.length}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder toDeleteSQL', async () => {
-  const { QueryBuilder } = await import('@stacksjs/db')
-  const { sql, bindings } = new QueryBuilder('users').where('id', 1).toDeleteSQL()
-  if (!sql.includes('DELETE FROM users')) throw new Error(`sql=${sql}`)
-  if (bindings[0] !== 1) throw new Error(`binding=${bindings[0]}`)
-})
-
-await test('@stacksjs/db', 'QueryBuilder toCountSQL', async () => {
-  const { db } = await import('@stacksjs/db')
-  const { sql } = db('users').where('active', true).toCountSQL()
-  if (!sql.includes('SELECT COUNT(*)')) throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'raw expression', async () => {
-  const { raw } = await import('@stacksjs/db')
-  const expr = raw('NOW()')
-  if (!expr.__raw) throw new Error('__raw missing')
-  if (expr.sql !== 'NOW()') throw new Error(`sql=${expr.sql}`)
-})
-
-await test('@stacksjs/db', 'defineTable with all column types', async () => {
-  const { defineTable } = await import('@stacksjs/db')
-  const schema = defineTable('posts', (t) => {
-    t.id()
-    t.string('title')
-    t.text('body').nullable()
-    t.integer('user_id').references('users')
-    t.boolean('published').default(false)
-    t.timestamps()
-    t.softDeletes()
-  })
-  if (schema.name !== 'posts') throw new Error(`name=${schema.name}`)
-  if (schema.columns.length < 7) throw new Error(`cols=${schema.columns.length}`)
-})
-
-await test('@stacksjs/db', 'tableSchemaToSQL generates CREATE TABLE', async () => {
-  const { defineTable, tableSchemaToSQL } = await import('@stacksjs/db')
-  const schema = defineTable('test_table', (t) => {
-    t.id()
-    t.string('name')
-    t.string('email').unique()
-    t.integer('age')
-    t.boolean('active').default(true)
-  })
-  const sql = tableSchemaToSQL(schema)
-  if (!sql.includes('CREATE TABLE')) throw new Error('CREATE TABLE missing')
-  if (!sql.includes('PRIMARY KEY')) throw new Error('PRIMARY KEY missing')
-  if (!sql.includes('UNIQUE')) throw new Error('UNIQUE missing')
-})
-
-await test('@stacksjs/db', 'tableSchemaToSQL generates FOREIGN KEY', async () => {
-  const { defineTable, tableSchemaToSQL } = await import('@stacksjs/db')
-  const schema = defineTable('comments', (t) => {
-    t.id()
-    t.integer('post_id').references('posts')
-  })
-  const sql = tableSchemaToSQL(schema)
-  if (!sql.includes('FOREIGN KEY (post_id) REFERENCES posts(id)')) throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'defineModel creates model with query()', async () => {
-  const { defineModel } = await import('@stacksjs/db')
-  const Post = defineModel('Post', { table: 'posts', primaryKey: 'id' })
-  if (Post.name !== 'Post') throw new Error(`name=${Post.name}`)
-  const qb = Post.query()
-  if (typeof qb.where !== 'function') throw new Error('query() missing where')
-})
-
-await test('@stacksjs/db', 'defineModel where() shortcut', async () => {
-  const { defineModel } = await import('@stacksjs/db')
-  const User = defineModel('UserWhere', { table: 'users', primaryKey: 'id' })
-  const { sql } = User.where('active', true).toSQL()
-  if (!sql.includes('WHERE active = ?')) throw new Error(`sql=${sql}`)
-})
-
-await test('@stacksjs/db', 'createModelInstance get/set/isDirty', async () => {
-  const { createModelInstance } = await import('@stacksjs/db')
-  const inst = createModelInstance({ id: 1, name: 'Alice', email: 'alice@test.com' })
-  if (inst.get('name') !== 'Alice') throw new Error('get failed')
-  if (!inst.exists) throw new Error('exists should be true')
-  if (inst.isDirty()) throw new Error('should not be dirty initially')
-  inst.set('name', 'Bob')
-  if (!inst.isDirty('name')) throw new Error('should be dirty after set')
-  if (!inst.isDirty()) throw new Error('global isDirty should be true')
-})
-
-await test('@stacksjs/db', 'createModelInstance toJSON', async () => {
-  const { createModelInstance } = await import('@stacksjs/db')
-  const inst = createModelInstance({ id: 1, name: 'Alice' })
-  const json = inst.toJSON()
-  if (json.name !== 'Alice') throw new Error('toJSON failed')
-  json.name = 'MODIFIED'
-  if (inst.get('name') === 'MODIFIED') throw new Error('toJSON should return copy')
-})
-
-await test('@stacksjs/db', 'getModel and hasModel', async () => {
-  const { defineModel, getModel, hasModel } = await import('@stacksjs/db')
-  defineModel('Comment', { table: 'comments', primaryKey: 'id' })
-  if (!hasModel('Comment')) throw new Error('hasModel should be true')
-  const m = getModel('Comment')
-  if (m.name !== 'Comment') throw new Error(`name=${m.name}`)
-})
-
-await test('@stacksjs/db', 'configureDatabase and resetDatabaseConfig', async () => {
-  const { configureDatabase, getDatabaseConfig, resetDatabaseConfig } = await import('@stacksjs/db')
-  configureDatabase({ default: 'postgres', logging: true })
-  const config = getDatabaseConfig()
-  if (config.default !== 'postgres') throw new Error(`default=${config.default}`)
-  if (config.logging !== true) throw new Error('logging not set')
-  resetDatabaseConfig()
-  const reset = getDatabaseConfig()
-  if (reset.default !== 'sqlite') throw new Error('reset failed')
-})
 
 // ─── @stacksjs/auth ─────────────────────────────────────────
 section('@stacksjs/auth')
@@ -567,150 +337,6 @@ await test('@stacksjs/api', 'defineHandler without method defaults', async () =>
   const { defineHandler } = await import('@stacksjs/api')
   const h = defineHandler({ handler: async () => ({ ok: true }) })
   if (typeof h.handler !== 'function') throw new Error('handler missing')
-})
-
-// ─── @stacksjs/forms ────────────────────────────────────────
-section('@stacksjs/forms')
-
-await test('@stacksjs/forms', 'Validator required passes for valid input', async () => {
-  const { Validator } = await import('@stacksjs/forms')
-  const errors = await new Validator().required().validate('hello')
-  if (errors.length > 0) throw new Error(`errors=${errors}`)
-})
-
-await test('@stacksjs/forms', 'Validator required fails for empty', async () => {
-  const { Validator } = await import('@stacksjs/forms')
-  const errors = await new Validator().required().validate('')
-  if (errors.length === 0) throw new Error('should fail for empty')
-})
-
-await test('@stacksjs/forms', 'Validator required fails for null', async () => {
-  const { Validator } = await import('@stacksjs/forms')
-  const errors = await new Validator().required().validate(null)
-  if (errors.length === 0) throw new Error('should fail for null')
-})
-
-await test('@stacksjs/forms', 'Validator email passes valid email', async () => {
-  const { Validator } = await import('@stacksjs/forms')
-  const errors = await new Validator().required().email().validate('test@example.com')
-  if (errors.length > 0) throw new Error(`errors=${errors}`)
-})
-
-await test('@stacksjs/forms', 'Validator email rejects invalid email', async () => {
-  const { Validator } = await import('@stacksjs/forms')
-  const errors = await new Validator().required().email().validate('not-an-email')
-  if (errors.length === 0) throw new Error('should reject invalid email')
-})
-
-await test('@stacksjs/forms', 'Validator min length', async () => {
-  const { Validator } = await import('@stacksjs/forms')
-  const errors = await new Validator().required().min(5).validate('hi')
-  if (errors.length === 0) throw new Error('should reject short string')
-})
-
-await test('@stacksjs/forms', 'Validator max length', async () => {
-  const { Validator } = await import('@stacksjs/forms')
-  const errors = await new Validator().required().max(3).validate('hello')
-  if (errors.length === 0) throw new Error('should reject long string')
-})
-
-await test('@stacksjs/forms', 'Validator chaining required+email+min', async () => {
-  const { Validator } = await import('@stacksjs/forms')
-  const v = new Validator().required().email().min(10)
-  const passErrors = await v.validate('user@example.com')
-  if (passErrors.length > 0) throw new Error(`should pass: ${passErrors}`)
-  const failErrors = await v.validate('a@b.c')
-  if (failErrors.length === 0) throw new Error('should fail min length')
-})
-
-await test('@stacksjs/forms', 'Validator url', async () => {
-  const { Validator } = await import('@stacksjs/forms')
-  const errors = await new Validator().url().validate('https://example.com')
-  if (errors.length > 0) throw new Error(`errors=${errors}`)
-  const bad = await new Validator().url().validate('not-a-url')
-  if (bad.length === 0) throw new Error('should reject bad url')
-})
-
-await test('@stacksjs/forms', 'v shortcut is a Validator', async () => {
-  const { v, Validator } = await import('@stacksjs/forms')
-  if (!(v instanceof Validator)) throw new Error('v is not Validator')
-})
-
-await test('@stacksjs/forms', 'useForm creates form with values and reset', async () => {
-  const { useForm } = await import('@stacksjs/forms')
-  const form = useForm({ initial: { name: 'Alice', email: '' } })
-  if (form.values.name !== 'Alice') throw new Error(`name=${form.values.name}`)
-  if (typeof form.reset !== 'function') throw new Error('reset missing')
-  if (typeof form.submit !== 'function') throw new Error('submit missing')
-})
-
-// ─── @stacksjs/cache ────────────────────────────────────────
-section('@stacksjs/cache')
-
-await test('@stacksjs/cache', 'createCache with memory driver', async () => {
-  const { createCache } = await import('@stacksjs/cache')
-  const cache = createCache({ driver: 'memory' })
-  if (typeof cache.get !== 'function') throw new Error('get missing')
-  if (typeof cache.set !== 'function') throw new Error('set missing')
-})
-
-await test('@stacksjs/cache', 'set and get', async () => {
-  const { createCache } = await import('@stacksjs/cache')
-  const cache = createCache({ driver: 'memory' })
-  await cache.set('key', 'value')
-  const val = await cache.get('key')
-  if (val !== 'value') throw new Error(`val=${val}`)
-})
-
-await test('@stacksjs/cache', 'has returns true for existing key', async () => {
-  const { createCache } = await import('@stacksjs/cache')
-  const cache = createCache({ driver: 'memory' })
-  await cache.set('exists', true)
-  if (!await cache.has('exists')) throw new Error('has should be true')
-})
-
-await test('@stacksjs/cache', 'has returns false for missing key', async () => {
-  const { createCache } = await import('@stacksjs/cache')
-  const cache = createCache({ driver: 'memory' })
-  if (await cache.has('missing')) throw new Error('has should be false')
-})
-
-await test('@stacksjs/cache', 'delete removes key', async () => {
-  const { createCache } = await import('@stacksjs/cache')
-  const cache = createCache({ driver: 'memory' })
-  await cache.set('del', 'me')
-  await cache.delete('del')
-  if (await cache.has('del')) throw new Error('key should be deleted')
-})
-
-await test('@stacksjs/cache', 'remember caches factory result', async () => {
-  const { createCache } = await import('@stacksjs/cache')
-  const cache = createCache({ driver: 'memory' })
-  let calls = 0
-  await cache.remember('r', 60, async () => { calls++; return 'val' })
-  await cache.remember('r', 60, async () => { calls++; return 'other' })
-  if (calls !== 1) throw new Error(`factory called ${calls} times`)
-  const val = await cache.get('r')
-  if (val !== 'val') throw new Error(`val=${val}`)
-})
-
-await test('@stacksjs/cache', 'flush clears all keys', async () => {
-  const { createCache } = await import('@stacksjs/cache')
-  const cache = createCache({ driver: 'memory' })
-  await cache.set('a', 1)
-  await cache.set('b', 2)
-  await cache.flush()
-  if (await cache.has('a') || await cache.has('b')) throw new Error('flush failed')
-})
-
-await test('@stacksjs/cache', 'set with complex objects', async () => {
-  const { createCache } = await import('@stacksjs/cache')
-  const cache = createCache({ driver: 'memory' })
-  await cache.set('obj', { users: [{ id: 1, name: 'Alice' }], count: 42 })
-  const val = await cache.get<{ users: any[]; count: number }>('obj')
-  if (!val) throw new Error('obj is null')
-  if (val.count !== 42) throw new Error(`count=${val.count}`)
-  if (val.users[0].name !== 'Alice') throw new Error(`name=${val.users[0].name}`)
 })
 
 // ═══════════════════════════════════════════════════════════════
@@ -823,69 +449,6 @@ await test('@stacksjs/storage', 'useStorage with configured disks', async () => 
   resetStorage()
 })
 
-// ─── @stacksjs/testing ──────────────────────────────────────
-section('@stacksjs/testing')
-
-await test('@stacksjs/testing', 'renderTemplate interpolates variables', async () => {
-  const { renderTemplate } = await import('@stacksjs/testing')
-  const r = renderTemplate('<h1>{{ title }}</h1>', { title: 'Hello' })
-  if (!r.html.includes('Hello')) throw new Error('interpolation failed')
-})
-
-await test('@stacksjs/testing', 'renderTemplate contains()', async () => {
-  const { renderTemplate } = await import('@stacksjs/testing')
-  const r = renderTemplate('<p>Hello World</p>')
-  if (!r.contains('Hello World')) throw new Error('contains failed')
-  if (r.contains('Goodbye')) throw new Error('false positive')
-})
-
-await test('@stacksjs/testing', 'renderTemplate hasElement()', async () => {
-  const { renderTemplate } = await import('@stacksjs/testing')
-  const r = renderTemplate('<div><span>x</span></div>')
-  if (!r.hasElement('span')) throw new Error('should have span')
-  if (r.hasElement('table')) throw new Error('should not have table')
-})
-
-await test('@stacksjs/testing', 'createTestRequest defaults', async () => {
-  const { createTestRequest } = await import('@stacksjs/testing')
-  const req = createTestRequest()
-  if (req.method !== 'GET') throw new Error(`method=${req.method}`)
-  if (!req.url) throw new Error('url missing')
-})
-
-await test('@stacksjs/testing', 'createTestRequest overrides', async () => {
-  const { createTestRequest } = await import('@stacksjs/testing')
-  const req = createTestRequest({ method: 'POST', url: '/api/users' })
-  if (req.method !== 'POST') throw new Error(`method=${req.method}`)
-  if (req.url !== '/api/users') throw new Error(`url=${req.url}`)
-})
-
-await test('@stacksjs/testing', 'createTestResponse isOk()', async () => {
-  const { createTestResponse } = await import('@stacksjs/testing')
-  if (!createTestResponse({ status: 200 }).isOk()) throw new Error('200 should be ok')
-  if (!createTestResponse({ status: 201 }).isOk()) throw new Error('201 should be ok')
-  if (createTestResponse({ status: 404 }).isOk()) throw new Error('404 should not be ok')
-})
-
-await test('@stacksjs/testing', 'testLoader with params', async () => {
-  const { testLoader } = await import('@stacksjs/testing')
-  const data = await testLoader(
-    { handler: async (ctx: any) => ({ id: ctx.params?.id }) },
-    { params: { id: '99' } },
-  )
-  if (data.id !== '99') throw new Error(`id=${data.id}`)
-})
-
-await test('@stacksjs/testing', 'assertContains passes for match', async () => {
-  const { assertContains } = await import('@stacksjs/testing')
-  assertContains('<p>hello world</p>', 'hello') // should not throw
-})
-
-await test('@stacksjs/testing', 'assertHasElement passes for match', async () => {
-  const { assertHasElement } = await import('@stacksjs/testing')
-  assertHasElement('<div><img src="x" /></div>', 'img') // should not throw
-})
-
 // ─── @stacksjs/errors ───────────────────────────────────────
 section('@stacksjs/errors')
 
@@ -956,256 +519,11 @@ await test('@stacksjs/errors', 'formatError returns string', async () => {
   if (!str.includes('test error')) throw new Error(`formatted=${str}`)
 })
 
-// ─── @stacksjs/image ────────────────────────────────────────
-section('@stacksjs/image')
-
-await test('@stacksjs/image', 'generateImageTag basic', async () => {
-  const { generateImageTag } = await import('@stacksjs/image')
-  const img = generateImageTag({ src: '/hero.jpg', alt: 'Hero' })
-  if (!img.includes('<img')) throw new Error('no img tag')
-  if (!img.includes('src="/hero.jpg"')) throw new Error('src missing')
-  if (!img.includes('alt="Hero"')) throw new Error('alt missing')
-})
-
-await test('@stacksjs/image', 'generateImageTag with lazy loading', async () => {
-  const { generateImageTag } = await import('@stacksjs/image')
-  const img = generateImageTag({ src: '/hero.jpg', alt: 'Hero', lazy: true })
-  if (!img.includes('loading="lazy"')) throw new Error('lazy missing')
-})
-
-await test('@stacksjs/image', 'generateImageTag with class', async () => {
-  const { generateImageTag } = await import('@stacksjs/image')
-  const img = generateImageTag({ src: '/hero.jpg', alt: 'Hero', class: 'rounded' })
-  if (!img.includes('class="rounded"')) throw new Error('class missing')
-})
-
-await test('@stacksjs/image', 'generatePictureTag with formats', async () => {
-  const { generatePictureTag } = await import('@stacksjs/image')
-  const pic = generatePictureTag({ src: '/hero.jpg', alt: 'Hero', formats: ['webp', 'avif'] })
-  if (!pic.includes('<picture')) throw new Error('no picture tag')
-  if (!pic.includes('<source')) throw new Error('no source tag')
-  if (!pic.includes('<img')) throw new Error('no fallback img')
-})
-
-await test('@stacksjs/image', 'buildSrcSet', async () => {
-  const { buildSrcSet } = await import('@stacksjs/image')
-  const srcset = buildSrcSet([
-    { path: '/img-640.webp', width: 640 },
-    { path: '/img-1024.webp', width: 1024 },
-  ])
-  if (!srcset.includes('640w')) throw new Error('640w missing')
-  if (!srcset.includes('1024w')) throw new Error('1024w missing')
-})
-
-await test('@stacksjs/image', 'buildSizes', async () => {
-  const { buildSizes } = await import('@stacksjs/image')
-  const sizes = buildSizes([{ width: 640 }, { width: 1024 }])
-  if (!sizes.includes('640px')) throw new Error('640px missing')
-})
-
-await test('@stacksjs/image', 'generateBlurDataUrl returns data URI', async () => {
-  const { generateBlurDataUrl } = await import('@stacksjs/image')
-  const blur = generateBlurDataUrl()
-  if (!blur.startsWith('data:')) throw new Error('not a data URL')
-})
-
-await test('@stacksjs/image', 'processImageDirective replaces @img', async () => {
-  const { processImageDirective } = await import('@stacksjs/image')
-  const html = processImageDirective('<div>@img(\'photo.jpg\', { alt: \'Photo\' })</div>')
-  if (html.includes('@img')) throw new Error('directive not replaced')
-  if (!html.includes('<img') && !html.includes('<picture')) throw new Error('no output tag')
-})
-
-await test('@stacksjs/image', 'getImageMetadata detects PNG', async () => {
-  const { getImageMetadata } = await import('@stacksjs/image')
-  const png = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, ...new Array(50).fill(0)])
-  const meta = getImageMetadata(png)
-  if (meta.format !== 'png') throw new Error(`format=${meta.format}`)
-})
-
-await test('@stacksjs/image', 'getImageMetadata detects JPEG', async () => {
-  const { getImageMetadata } = await import('@stacksjs/image')
-  const jpg = Buffer.from([0xFF, 0xD8, 0xFF, ...new Array(50).fill(0)])
-  const meta = getImageMetadata(jpg)
-  if (meta.format !== 'jpg' && meta.format !== 'jpeg') throw new Error(`format=${meta.format}`)
-})
-
 // ═══════════════════════════════════════════════════════════════
 // Phase 4: Ecosystem
 // ═══════════════════════════════════════════════════════════════
 
 console.log('\n── Phase 4 — Ecosystem ──')
-
-// ─── @stacksjs/realtime ─────────────────────────────────────
-section('@stacksjs/realtime')
-
-await test('@stacksjs/realtime', 'Channel on/emit', async () => {
-  const { createChannel } = await import('@stacksjs/realtime')
-  const ch = createChannel('test')
-  const msgs: string[] = []
-  ch.on<string>('msg', (m) => msgs.push(m.data))
-  ch.emit('msg', 'hello')
-  ch.emit('msg', 'world')
-  if (msgs.length !== 2) throw new Error(`msgs=${msgs.length}`)
-  ch.destroy()
-})
-
-await test('@stacksjs/realtime', 'Channel unsubscribe', async () => {
-  const { createChannel } = await import('@stacksjs/realtime')
-  const ch = createChannel('unsub-test')
-  let count = 0
-  const unsub = ch.on('tick', () => { count++ })
-  ch.emit('tick', null)
-  unsub()
-  ch.emit('tick', null)
-  if (count !== 1) throw new Error(`count=${count}`)
-  ch.destroy()
-})
-
-await test('@stacksjs/realtime', 'Channel once fires only once', async () => {
-  const { createChannel } = await import('@stacksjs/realtime')
-  const ch = createChannel('once-test')
-  let count = 0
-  ch.once('ping', () => { count++ })
-  ch.emit('ping', null)
-  ch.emit('ping', null)
-  ch.emit('ping', null)
-  if (count !== 1) throw new Error(`count=${count}`)
-  ch.destroy()
-})
-
-await test('@stacksjs/realtime', 'Channel listenerCount', async () => {
-  const { createChannel } = await import('@stacksjs/realtime')
-  const ch = createChannel('count-test')
-  ch.on('a', () => {})
-  ch.on('a', () => {})
-  ch.on('b', () => {})
-  if (ch.listenerCount('a') !== 2) throw new Error(`a=${ch.listenerCount('a')}`)
-  if (ch.listenerCount('b') !== 1) throw new Error(`b=${ch.listenerCount('b')}`)
-  ch.destroy()
-})
-
-await test('@stacksjs/realtime', 'Channel removeAllListeners', async () => {
-  const { createChannel } = await import('@stacksjs/realtime')
-  const ch = createChannel('remove-test')
-  ch.on('x', () => {})
-  ch.on('x', () => {})
-  ch.removeAllListeners('x')
-  if (ch.listenerCount('x') !== 0) throw new Error('listeners not removed')
-  ch.destroy()
-})
-
-await test('@stacksjs/realtime', 'BroadcastManager manages channels', async () => {
-  const { BroadcastManager } = await import('@stacksjs/realtime')
-  const bm = new BroadcastManager()
-  bm.channel('room1')
-  bm.channel('room2')
-  bm.channel('room1') // reuse
-  if (bm.getChannels().length !== 2) throw new Error(`count=${bm.getChannels().length}`)
-  bm.disconnect()
-})
-
-await test('@stacksjs/realtime', 'PresenceChannel join/leave/count', async () => {
-  const { PresenceChannel } = await import('@stacksjs/realtime')
-  const p = new PresenceChannel({ name: 'lobby', presence: true })
-  p.join('u1', { name: 'Alice' })
-  p.join('u2', { name: 'Bob' })
-  p.join('u3', { name: 'Charlie' })
-  if (p.count() !== 3) throw new Error(`count=${p.count()}`)
-  p.leave('u2')
-  if (p.count() !== 2) throw new Error(`after leave=${p.count()}`)
-  if (!p.isMember('u1')) throw new Error('u1 should be member')
-  if (p.isMember('u2')) throw new Error('u2 should not be member')
-  p.destroy()
-})
-
-await test('@stacksjs/realtime', 'PresenceChannel getMembers', async () => {
-  const { PresenceChannel } = await import('@stacksjs/realtime')
-  const p = new PresenceChannel({ name: 'room', presence: true })
-  p.join('u1', { role: 'admin' })
-  p.join('u2', { role: 'user' })
-  const members = p.getMembers()
-  if (members.length !== 2) throw new Error(`members=${members.length}`)
-  p.destroy()
-})
-
-await test('@stacksjs/realtime', 'SSEStream send and toResponse', async () => {
-  const { createSSEStream } = await import('@stacksjs/realtime')
-  const sse = createSSEStream()
-  sse.send('update', { count: 1 })
-  sse.send('update', { count: 2 })
-  sse.close()
-  // Just verify it doesn't throw
-})
-
-// ─── @stacksjs/queue ────────────────────────────────────────
-section('@stacksjs/queue')
-
-await test('@stacksjs/queue', 'defineJob with defaults', async () => {
-  const { defineJob } = await import('@stacksjs/queue')
-  const job = defineJob({ name: 'test-job', handle: async () => {} })
-  if (job.name !== 'test-job') throw new Error(`name=${job.name}`)
-  if (job.retries !== 3) throw new Error(`retries=${job.retries}`)
-})
-
-await test('@stacksjs/queue', 'defineJob with custom config', async () => {
-  const { defineJob } = await import('@stacksjs/queue')
-  const job = defineJob({ name: 'custom', handle: async () => {}, retries: 5, backoff: 2000, timeout: 60000 })
-  if (job.retries !== 5) throw new Error(`retries=${job.retries}`)
-  if (job.backoff !== 2000) throw new Error(`backoff=${job.backoff}`)
-})
-
-await test('@stacksjs/queue', 'dispatch and count', async () => {
-  const { defineJob, createQueue } = await import('@stacksjs/queue')
-  const job = defineJob({ name: 'count-test', handle: async () => {} })
-  const queue = createQueue()
-  queue.register(job)
-  await queue.dispatch(job, { x: 1 })
-  await queue.dispatch(job, { x: 2 })
-  const count = await queue.count()
-  if (count !== 2) throw new Error(`count=${count}`)
-  await queue.clear()
-})
-
-await test('@stacksjs/queue', 'Worker processNext runs job', async () => {
-  const { defineJob, createQueue, Worker } = await import('@stacksjs/queue')
-  const results: number[] = []
-  const job = defineJob({ name: 'worker-test', handle: async (d: any) => { results.push(d.n) } })
-  const queue = createQueue()
-  queue.register(job)
-  await queue.dispatch(job, { n: 1 })
-  await queue.dispatch(job, { n: 2 })
-  const worker = new Worker(queue)
-  await worker.processNext()
-  await worker.processNext()
-  if (results.length !== 2) throw new Error(`results=${results.length}`)
-  if (worker.getStats().processed !== 2) throw new Error(`processed=${worker.getStats().processed}`)
-  await queue.clear()
-})
-
-await test('@stacksjs/queue', 'Worker handles job failure', async () => {
-  const { defineJob, createQueue, Worker } = await import('@stacksjs/queue')
-  const job = defineJob({ name: 'fail-test', handle: async () => { throw new Error('boom') }, retries: 1 })
-  const queue = createQueue()
-  queue.register(job)
-  await queue.dispatch(job, {})
-  const worker = new Worker(queue)
-  await worker.processNext()
-  if (worker.getStats().failed !== 1) throw new Error(`failed=${worker.getStats().failed}`)
-  await queue.clear()
-})
-
-await test('@stacksjs/queue', 'getJob retrieves dispatched job', async () => {
-  const { defineJob, createQueue } = await import('@stacksjs/queue')
-  const job = defineJob({ name: 'get-test', handle: async () => {} })
-  const queue = createQueue()
-  queue.register(job)
-  const id = await queue.dispatch(job, { key: 'value' })
-  const retrieved = await queue.getJob(id)
-  if (!retrieved) throw new Error('job not found')
-  if (retrieved.name !== 'get-test') throw new Error(`name=${retrieved.name}`)
-  await queue.clear()
-})
 
 // ─── @stacksjs/search ───────────────────────────────────────
 section('@stacksjs/search')
@@ -1460,77 +778,6 @@ await test('@stacksjs/cms', 'Content registry register/get/getAll', async () => 
   const all = await getAllContent('pages')
   if (all.length !== 2) throw new Error(`all=${all.length}`)
   resetCollections()
-})
-
-// ─── @stacksjs/analytics ────────────────────────────────────
-section('@stacksjs/analytics')
-
-await test('@stacksjs/analytics', 'trackPageView creates page view', async () => {
-  const { configureAnalytics, trackPageView, MemoryAnalyticsStorage, resetAnalytics } = await import('@stacksjs/analytics')
-  const storage = new MemoryAnalyticsStorage()
-  configureAnalytics({ storage })
-  const pv = await trackPageView({ path: '/home', sessionId: 's1' })
-  if (!pv.id) throw new Error('id missing')
-  if (pv.path !== '/home') throw new Error(`path=${pv.path}`)
-  resetAnalytics()
-})
-
-await test('@stacksjs/analytics', 'trackEvent creates event', async () => {
-  const { configureAnalytics, trackEvent, MemoryAnalyticsStorage, resetAnalytics } = await import('@stacksjs/analytics')
-  const storage = new MemoryAnalyticsStorage()
-  configureAnalytics({ storage })
-  const ev = await trackEvent('signup', { plan: 'pro' })
-  if (!ev.id) throw new Error('id missing')
-  if (ev.name !== 'signup') throw new Error(`name=${ev.name}`)
-  resetAnalytics()
-})
-
-await test('@stacksjs/analytics', 'getAnalytics computes stats', async () => {
-  const { configureAnalytics, trackPageView, trackEvent, getAnalytics, MemoryAnalyticsStorage, resetAnalytics } = await import('@stacksjs/analytics')
-  const storage = new MemoryAnalyticsStorage()
-  configureAnalytics({ storage })
-  await trackPageView({ path: '/', sessionId: 's1' })
-  await trackPageView({ path: '/about', sessionId: 's1' })
-  await trackPageView({ path: '/', sessionId: 's2' })
-  await trackEvent('click', { target: 'cta' })
-  const stats = await getAnalytics()
-  if (stats.totalPageViews !== 3) throw new Error(`views=${stats.totalPageViews}`)
-  if (stats.uniqueVisitors < 2) throw new Error(`visitors=${stats.uniqueVisitors}`)
-  if (stats.topPages.length < 2) throw new Error(`topPages=${stats.topPages.length}`)
-  resetAnalytics()
-})
-
-await test('@stacksjs/analytics', 'shouldTrack respects ignorePaths', async () => {
-  const { shouldTrack, MemoryAnalyticsStorage } = await import('@stacksjs/analytics')
-  const config = { storage: new MemoryAnalyticsStorage(), ignorePaths: ['/health', '/api/*'] } as any
-  if (!shouldTrack('/blog', config)) throw new Error('/blog should track')
-  if (shouldTrack('/health', config)) throw new Error('/health should not track')
-  if (shouldTrack('/api/users', config)) throw new Error('/api/* should not track')
-})
-
-await test('@stacksjs/analytics', 'processAnalyticsDirective', async () => {
-  const { processAnalyticsDirective } = await import('@stacksjs/analytics')
-  const html = processAnalyticsDirective('<body>@analytics</body>')
-  if (html.includes('@analytics')) throw new Error('not replaced')
-  if (!html.includes('<script')) throw new Error('no script')
-})
-
-await test('@stacksjs/analytics', 'generateTrackingScript', async () => {
-  const { generateTrackingScript } = await import('@stacksjs/analytics')
-  const script = generateTrackingScript()
-  if (!script.includes('script')) throw new Error('no script tag')
-})
-
-await test('@stacksjs/analytics', 'MemoryAnalyticsStorage clear and count', async () => {
-  const { configureAnalytics, trackPageView, MemoryAnalyticsStorage, resetAnalytics } = await import('@stacksjs/analytics')
-  const storage = new MemoryAnalyticsStorage()
-  configureAnalytics({ storage })
-  await trackPageView({ path: '/' })
-  await trackPageView({ path: '/about' })
-  if (await storage.count() !== 2) throw new Error(`count=${await storage.count()}`)
-  await storage.clear()
-  if (await storage.count() !== 0) throw new Error('clear failed')
-  resetAnalytics()
 })
 
 // ═══════════════════════════════════════════════════════════════

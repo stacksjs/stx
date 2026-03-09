@@ -29,7 +29,6 @@ As mentioned before, the whole core of the Stacks Framework is built using `dtsx
 - [`@stacksjs/actions`](https://github.com/stacksjs/stacks/tree/main/storage/framework/core/actions)
 - [`@stacksjs/ai`](https://github.com/stacksjs/stacks/tree/main/storage/framework/core/ai)
 - [`@stacksjs/alias`](https://github.com/stacksjs/stacks/tree/main/storage/framework/core/alias)
-- [`@stacksjs/analytics`](https://github.com/stacksjs/stacks/tree/main/storage/framework/core/analytics)
 - [`@stacksjs/api`](https://github.com/stacksjs/stacks/tree/main/storage/framework/core/api)
 - [`@stacksjs/arrays`](https://github.com/stacksjs/stacks/tree/main/storage/framework/core/arrays)
 - [`@stacksjs/auth`](https://github.com/stacksjs/stacks/tree/main/storage/framework/core/auth)
