@@ -92,53 +92,21 @@ Compared against: **Next.js**, **Nuxt**, **SvelteKit**, **Astro**, **Laravel/Liv
 - CSRF protection (has directive, needs full implementation)
 - Rate limiting
 
-#### 4. `@stacksjs/orm` or `@stacksjs/db` — Database Layer
-**Gap**: Has a `database.ts` file (~2,400 lines) but unclear if it's a full ORM.
-**Competitors**: Prisma, Drizzle, Laravel Eloquent, Kysely
-**What's needed**:
-- Schema definition / migrations
-- Query builder
-- Relations (one-to-many, many-to-many, etc.)
-- Type-safe queries (auto-generated from schema)
-- Database seeding
-- Multi-database support (SQLite, Postgres, MySQL)
-- Edge-compatible (D1, Turso, PlanetScale)
+#### 4. Database & ORM — Use [`bun-query-builder`](https://github.com/stacksjs/bun-query-builder)
+**Resolved**: Use `bun-query-builder` from the Stacks ecosystem (4 DB drivers, full ORM, migrations, seeders, caching, transactions).
 
-#### 5. `@stacksjs/deploy` — Deployment Adapters
-**Gap**: No deployment story.
-**Competitors**: Vercel (Next.js), Netlify, Cloudflare Pages, Laravel Forge/Vapor
-**What's needed**:
-- Build adapters (Node, Bun, static, serverless, edge)
-- Platform presets (Vercel, Netlify, Cloudflare Workers, AWS Lambda, Fly.io)
-- Docker support / Dockerfile generation
-- Preview deployments
-- Environment variable management
+#### 5. `@stx/deploy` — Deployment Adapters (wraps [`ts-cloud`](https://github.com/stacksjs/ts-cloud))
+**Status**: Package renamed to `@stx/deploy`. Wraps ts-cloud for deployment infrastructure.
 
-#### 6. `@stacksjs/testing` — Testing Utilities
-**Gap**: Tests exist but no dedicated testing utilities package for users.
-**Competitors**: @testing-library/react, @vue/test-utils, Playwright, Vitest
-**What's needed**:
-- Component testing utilities (render, query, interact)
-- Template assertion helpers
-- Mock server / MSW integration
-- Snapshot testing helpers
-- E2E testing integration (Playwright adapter)
-- Visual regression testing utilities
+#### 6. Testing — Use [`very-happy-dom`](https://github.com/stacksjs/very-happy-dom) + Bun test runner
+**Resolved**: Use `very-happy-dom` for DOM environment and Bun's built-in test runner. Already configured as preload.
 
 ---
 
 ### Medium Priority — Differentiators & Developer Experience
 
-#### 7. `@stacksjs/forms` — Form Handling
-**Gap**: Has form directives but no full form library.
-**Competitors**: React Hook Form, Formik, VeeValidate, Laravel form requests
-**What's needed**:
-- Form state management
-- Field-level validation (Zod/Valibot integration)
-- Multi-step forms
-- File uploads with progress
-- Form persistence (draft saving)
-- Server-side validation with error propagation
+#### 7. Forms — Use `@stacksjs/validation` + `storage/framework/requests/` convention
+**Resolved**: Use existing Stacks validation layer for server-side form validation.
 
 #### 8. `@stacksjs/api` — API Routes / Server Functions
 **Gap**: Dev server has basic API route support but no structured API layer.
@@ -152,15 +120,8 @@ Compared against: **Next.js**, **Nuxt**, **SvelteKit**, **Astro**, **Laravel/Liv
 - Rate limiting
 - WebSocket support
 
-#### 9. `@stacksjs/cache` — Caching Layer
-**Gap**: Template caching exists but no application-level caching.
-**Competitors**: Laravel Cache, Vercel ISR, Nuxt cache
-**What's needed**:
-- Page-level caching (ISR — Incremental Static Regeneration)
-- Data caching with TTL
-- Cache invalidation (tags, paths)
-- Multiple drivers (memory, Redis, filesystem)
-- Edge caching headers
+#### 9. Caching — Use [`ts-cache`](https://github.com/stacksjs/ts-cache)
+**Resolved**: Use `ts-cache` from the Stacks ecosystem (memory, LRU, Redis drivers; 11+ caching patterns; compression; distributed locking; CLI).
 
 #### 10. `@stacksjs/email` — Email Sending
 **Gap**: None.
@@ -172,15 +133,8 @@ Compared against: **Next.js**, **Nuxt**, **SvelteKit**, **Astro**, **Laravel/Liv
 - Queued sending
 - Template testing
 
-#### 11. `@stacksjs/queue` — Background Jobs
-**Gap**: None.
-**Competitors**: Laravel Queue, BullMQ, Inngest
-**What's needed**:
-- Job dispatching and processing
-- Multiple drivers (Redis, database, in-memory)
-- Retry strategies
-- Scheduled/cron jobs
-- Job monitoring in devtools
+#### 11. Background Jobs — Use [`bun-queue`](https://github.com/stacksjs/bun-queue)
+**Resolved**: Use `bun-queue` from the Stacks ecosystem (Redis-backed, priority queues, cron scheduling, batch processing, distributed locks, middleware, horizontal scaling).
 
 #### 12. `@stacksjs/storage` — File Storage
 **Gap**: None.
@@ -191,14 +145,8 @@ Compared against: **Next.js**, **Nuxt**, **SvelteKit**, **Astro**, **Laravel/Liv
 - Image optimization / transformation
 - CDN integration
 
-#### 13. `@stacksjs/config` — Environment & Config Management
-**Gap**: Has `stx.config.ts` but no env management package.
-**Competitors**: dotenv, Nuxt runtimeConfig, t3-env
-**What's needed**:
-- Type-safe environment variables (validated at build time)
-- Runtime config vs build-time config separation
-- Secret management
-- Per-environment overrides
+#### 13. `@stx/config` — Environment & Config Management (uses [`bunfig`](https://github.com/stacksjs/bunfig))
+**Resolved**: Uses `bunfig` for config loading + env variable resolution. Package renamed to `@stx/config`.
 
 #### 14. `@stacksjs/error` — Error Handling & Reporting
 **Gap**: Has error handling module but no user-facing error pages/boundaries.
@@ -210,32 +158,19 @@ Compared against: **Next.js**, **Nuxt**, **SvelteKit**, **Astro**, **Laravel/Liv
 - Development error overlay (like Next.js or Vite)
 - Source map support for production errors
 
-#### 15. `@stacksjs/image` — Image Optimization
-**Gap**: Has image optimization tests but no standalone package.
-**Competitors**: Next.js Image, Nuxt Image, sharp, Cloudinary
-**What's needed**:
-- `<Image>` component with automatic optimization
-- Responsive images (srcset generation)
-- Lazy loading with blur placeholder
-- Format conversion (WebP, AVIF)
-- CDN integration
-- Build-time optimization
+#### 15. Image Optimization — Use [`ts-images`](https://github.com/stacksjs/ts-images)
+**Resolved**: Use `ts-images` (imgx) from the Stacks ecosystem (sharp pipeline, format optimization, app icon generation, sprite sheets, CLI).
 
 ---
 
 ### Lower Priority — Nice to Have / Emerging Patterns
 
-#### 16. `@stacksjs/analytics` — Analytics Integration
-**Competitors**: Vercel Analytics, Plausible, PostHog
-**What's needed**: Privacy-friendly analytics, Web Vitals tracking, custom events
-
-#### 17. `@stacksjs/ai` — AI Integration
+#### 16. `@stacksjs/ai` — AI Integration
 **Competitors**: Vercel AI SDK, LangChain
 **What's needed**: LLM streaming helpers, AI-powered components (chat, autocomplete), RAG utilities
 
-#### 18. `@stacksjs/realtime` — Real-time Features
-**Competitors**: Laravel Echo, Socket.io, Pusher, PartyKit
-**What's needed**: WebSocket abstraction, server-sent events, presence channels, broadcasting
+#### 18. Realtime — Use [`ts-broadcasting`](https://github.com/stacksjs/ts-broadcasting)
+**Resolved**: Use `ts-broadcasting` from the Stacks ecosystem (6 drivers, channel auth, encryption, Redis scaling, client SDK).
 
 #### 19. `@stacksjs/payments` — Payment Processing
 **Competitors**: Laravel Cashier, Stripe.js
@@ -300,31 +235,29 @@ Compared against: **Next.js**, **Nuxt**, **SvelteKit**, **Astro**, **Laravel/Liv
 ### Phase 1 — Foundation (make it shippable)
 1. `@stacksjs/router` — Standalone router with typed params
 2. `@stacksjs/data` — Data loading + server actions
-3. `@stacksjs/deploy` — At least static + Bun server adapters
-4. `@stacksjs/config` — Type-safe env vars
+3. `@stx/deploy` — Wraps `ts-cloud` + Bun server/static adapters
+4. `@stx/config` — Uses `bunfig` for type-safe env vars
 
 ### Phase 2 — Full-Stack (compete with Next/Nuxt/Laravel)
 5. `@stacksjs/auth` — Session + OAuth
-6. `@stacksjs/db` — ORM with migrations
-7. `@stacksjs/api` — API routes + type-safe RPC
-8. `@stacksjs/forms` — Validation + server actions
-9. `@stacksjs/cache` — ISR + data caching
+6. `@stacksjs/api` — API routes + type-safe RPC
+7. Use `bun-query-builder` for database/ORM
+8. Use `@stacksjs/validation` for forms
+9. Use `ts-cache` for caching/ISR
 
 ### Phase 3 — Production Ready (enterprise adoption)
 10. `@stacksjs/email` — STX email templates
 11. `@stacksjs/storage` — File storage abstraction
-12. `@stacksjs/testing` — Component + E2E testing utils
-13. `@stacksjs/error` — Error boundaries + reporting
-14. `@stacksjs/image` — Optimized image component
+12. Use `very-happy-dom` + Bun test runner for testing
+13. `@stacksjs/errors` — Error boundaries + reporting
+14. Use `ts-images` for image optimization
 
 ### Phase 4 — Ecosystem (moat building)
-15. `@stacksjs/realtime` — WebSockets + SSE
-16. `@stacksjs/queue` — Background jobs
+15. Use `ts-broadcasting` for realtime
+16. Use `bun-queue` for background jobs
 17. `@stacksjs/search` — Full-text search
 18. `@stacksjs/ai` — LLM integration
 19. `@stacksjs/cms` — File-based content system
-20. `@stacksjs/analytics` — Web Vitals + custom events
-
 ---
 
 ## What STX Already Does Better Than Most

@@ -2,7 +2,7 @@
 
 ## Phase 1 — Foundation
 
-### 1. `@stacksjs/config` — Type-Safe Environment Variables
+### 1. `@stx/config` — Type-Safe Environment Variables (uses [`bunfig`](https://github.com/stacksjs/bunfig))
 
 - [x] Create `packages/config/` with standard package structure
 - [x] Implement `defineEnv()` with TypeScript generic inference
@@ -10,7 +10,7 @@
 - [x] Implement `validateEnv()` with startup error reporting
 - [x] Migrate `env.ts` helpers (`isProduction`, `isDevelopment`) into this package
 - [x] Add re-export shim in core `stx` package for backwards compat
-- [x] Add `@stacksjs/config` to root `tsconfig.json` paths
+- [x] Add `@stx/config` to root `tsconfig.json` paths
 - [x] Add to workspace in root `package.json`
 - [x] Write tests for all env types, defaults, required fields, validation
 - [x] Test edge-runtime compatibility (Bun, Node, Deno env access)
@@ -42,7 +42,7 @@
 - [x] Write tests for loaders, actions, composables, caching, serialization
 - [x] Add to `tsconfig.json` paths and workspace
 
-### 4. `@stacksjs/deploy` — Deployment Adapters
+### 4. `@stx/deploy` — Deployment Adapters (wraps [`ts-cloud`](https://github.com/stacksjs/ts-cloud))
 
 - [x] Create `packages/deploy/` with standard package structure
 - [x] Define `DeployAdapter` interface
@@ -58,18 +58,9 @@
 
 ## Phase 2 — Full-Stack
 
-### 5. `@stacksjs/db` — Database & ORM
+### 5. Database & ORM — Use [`bun-query-builder`](https://github.com/stacksjs/bun-query-builder)
 
-- [x] Create `packages/db/` with standard package structure
-- [x] Extract `QueryBuilder`, `Model`, adapters from `database.ts`
-- [x] Implement `defineTable()` schema builder
-- [x] Implement `TableBuilder` with all column types
-- [x] Implement migration runner
-- [x] Implement auto-migrate for development
-- [x] Implement database seeder
-- [x] Add re-export shim in core `stx` package
-- [x] Write comprehensive tests
-- [x] Add to `tsconfig.json` paths and workspace
+- [x] ~~Removed redundant `packages/db/`~~ — replaced by `bun-query-builder`
 
 ### 6. `@stacksjs/auth` — Authentication & Authorization
 
@@ -95,26 +86,13 @@
 - [x] Write tests
 - [x] Add to workspace
 
-### 8. `@stacksjs/forms` — Form State + Validation + Server Actions
+### 8. Forms — Use `@stacksjs/validation` + `storage/framework/requests/` convention
 
-- [x] Create `packages/forms/` with standard package structure
-- [x] Extract `Validator` class from `forms-validation.ts`
-- [x] Implement `useForm()` composable
-- [x] Implement Zod schema integration
-- [x] Integrate with `@form` directive and server actions
-- [x] Write tests
-- [x] Add to workspace
+- [x] ~~Removed redundant `packages/forms/`~~ — replaced by existing Stacks validation layer
 
-### 9. `@stacksjs/cache` — Multi-Driver Caching
+### 9. Caching — Use [`ts-cache`](https://github.com/stacksjs/ts-cache)
 
-- [x] Create `packages/cache/` with standard package structure
-- [x] Implement memory driver (LRU)
-- [x] Implement file driver (from existing `caching.ts`)
-- [x] Implement SQLite driver (using `bun:sqlite`)
-- [x] Implement `remember()` and tag-based invalidation
-- [x] Integrate with ISR
-- [x] Write tests
-- [x] Add to workspace
+- [x] ~~Removed redundant `packages/cache/`~~ — replaced by `ts-cache`
 
 ---
 
@@ -136,13 +114,9 @@
 - [x] Write tests
 - [x] Add to workspace
 
-### 12. `@stacksjs/testing` — Test Utilities
+### 12. Testing — Use [`very-happy-dom`](https://github.com/stacksjs/very-happy-dom) + Bun test runner
 
-- [x] Create `packages/testing/` with standard package structure
-- [x] Implement `renderTemplate()` for template testing
-- [x] Implement `testLoader()` and `testAction()` helpers
-- [x] Write tests
-- [x] Add to workspace
+- [x] ~~Removed redundant `packages/testing/`~~ — replaced by `very-happy-dom` + Bun's built-in test runner
 
 ### 13. `@stacksjs/errors` — Error Boundaries & Dev Overlay
 
@@ -153,36 +127,21 @@
 - [x] Write tests
 - [x] Add to workspace
 
-### 14. `@stacksjs/image` — Image Optimization
+### 14. Image Optimization — Use [`ts-images`](https://github.com/stacksjs/ts-images)
 
-- [x] Create `packages/image/` with standard package structure
-- [x] Implement responsive image generation
-- [x] Implement WebP/AVIF conversion
-- [x] Implement `@img` directive
-- [x] Write tests
-- [x] Add to workspace
+- [x] ~~Removed redundant `packages/image/`~~ — replaced by `ts-images` (imgx)
 
 ---
 
 ## Phase 4 — Ecosystem
 
-### 15. `@stacksjs/realtime` — WebSocket Channels + SSE
+### 15. Realtime — Use [`ts-broadcasting`](https://github.com/stacksjs/ts-broadcasting)
 
-- [x] Create `packages/realtime/` with standard package structure
-- [x] Implement WebSocket channel management
-- [x] Implement SSE fallback
-- [x] Implement `useBroadcast()` composable
-- [x] Write tests
-- [x] Add to workspace
+- [x] ~~Removed redundant `packages/realtime/`~~ — replaced by `ts-broadcasting`
 
-### 16. `@stacksjs/queue` — Background Jobs
+### 16. Background Jobs — Use [`bun-queue`](https://github.com/stacksjs/bun-queue)
 
-- [x] Create `packages/queue/` with standard package structure
-- [x] Implement SQLite-backed job queue
-- [x] Implement `defineJob()` and `dispatch()`
-- [x] Implement retry logic and dead letter queue
-- [x] Write tests
-- [x] Add to workspace
+- [x] ~~Removed redundant `packages/queue/`~~ — replaced by `bun-queue`
 
 ### 17. `@stacksjs/search` — Full-Text Search
 
@@ -208,14 +167,9 @@
 - [x] Write tests
 - [x] Add to workspace
 
-### 20. `@stacksjs/analytics` — Privacy-Friendly Analytics
+### 20. Analytics — Use `@stacksjs/ts-analytics` (https://github.com/stacksjs/ts-analytics)
 
-- [x] Create `packages/analytics/` with standard package structure
-- [x] Implement SQLite-backed page view tracking
-- [x] Implement `@analytics` directive
-- [x] Implement dashboard queries
-- [x] Write tests
-- [x] Add to workspace
+- [x] ~~Removed redundant `packages/analytics/`~~ — replaced by `@stacksjs/ts-analytics`
 
 ---
 
@@ -226,8 +180,6 @@
 ```
 config ← (all packages depend on config for env vars)
 router ← data (loaders are route-scoped)
-db ← auth (user/session tables)
-data ← forms (server actions)
 ```
 
 ### Verification Per Package
