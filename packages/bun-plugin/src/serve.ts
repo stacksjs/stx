@@ -23,6 +23,10 @@ export interface ServeOptions {
   layoutsDir?: string
   partialsDir?: string
   quiet?: boolean
+  /** Custom route handlers — checked before page routes */
+  routes?: Record<string, (req: Request) => Response | Promise<Response>>
+  /** Custom request handler — called for every request, return Response to short-circuit, or null/undefined to continue */
+  onRequest?: (req: Request) => Response | Promise<Response> | null | undefined
 }
 
 // Default STX config for serving - matches @stacksjs/stx defaults
@@ -516,6 +520,20 @@ export async function serve(options: ServeOptions): Promise<void> {
       // Handle CORS preflight
       if (req.method === 'OPTIONS') {
         return new Response(null, { headers: corsHeaders })
+      }
+
+      // Custom onRequest handler — short-circuits if a Response is returned
+      if (options.onRequest) {
+        const customResponse = await options.onRequest(req)
+        if (customResponse) return customResponse
+      }
+
+      // Custom route handlers — matched by exact path
+      if (options.routes) {
+        const routeHandler = options.routes[path]
+        if (routeHandler) {
+          return routeHandler(req)
+        }
       }
 
       // Handle API routes for data operations
