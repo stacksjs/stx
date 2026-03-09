@@ -14,7 +14,6 @@
       "@stacksjs/sanitizer": ["./packages/sanitizer/src/index.ts"],
       "@stacksjs/iconify-core": ["./packages/iconify-core/src/index.ts"],
       "@stacksjs/iconify-generator": ["./packages/iconify-generator/src/index.ts"],
-      "@stx/config": ["./packages/config/src/index.ts"],
       "@stacksjs/router": ["./packages/router/src/index.ts"],
       "@stacksjs/data": ["./packages/data/src/index.ts"],
       "@stx/deploy": ["./packages/deploy/src/index.ts"],

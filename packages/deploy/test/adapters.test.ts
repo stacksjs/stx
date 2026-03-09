@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { bunServerAdapter } from '../src/adapters/bun-server'
+import { cloudAdapter } from '../src/adapters/cloud'
 import { staticAdapter } from '../src/adapters/static'
 import { defineAdapter } from '../src/adapter'
 
@@ -68,6 +69,40 @@ describe('staticAdapter', () => {
     await adapter.generateConfig!(TEST_DIR)
 
     expect(existsSync(join(TEST_DIR, '_redirects'))).toBe(true)
+  })
+})
+
+describe('cloudAdapter', () => {
+  afterEach(() => {
+    if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true })
+  })
+
+  test('creates adapter with name', () => {
+    const adapter = cloudAdapter({ siteName: 'test-site' })
+    expect(adapter.name).toBe('cloud')
+  })
+
+  test('has build and deploy methods', () => {
+    const adapter = cloudAdapter({ siteName: 'test-site' })
+    expect(typeof adapter.build).toBe('function')
+    expect(typeof adapter.deploy).toBe('function')
+  })
+
+  test('build collects files from output directory', async () => {
+    mkdirSync(TEST_DIR, { recursive: true })
+    writeFileSync(join(TEST_DIR, 'index.html'), '<h1>Hello</h1>')
+    writeFileSync(join(TEST_DIR, 'style.css'), 'body {}')
+
+    const adapter = cloudAdapter({ siteName: 'test-site' })
+    const result = await adapter.build({
+      entry: 'index.html',
+      outDir: TEST_DIR,
+      production: true,
+    })
+
+    expect(result.outputDir).toBe(TEST_DIR)
+    expect(result.files).toContain('index.html')
+    expect(result.files).toContain('style.css')
   })
 })
 

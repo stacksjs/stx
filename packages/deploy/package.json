@@ -37,6 +37,9 @@
     "README.md",
     "dist"
   ],
+  "dependencies": {
+    "ts-cloud": "latest"
+  },
   "scripts": {
     "build": "bun --bun build.ts",
     "prepublishOnly": "bun run build",

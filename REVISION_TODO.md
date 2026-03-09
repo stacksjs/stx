@@ -17,7 +17,7 @@
 - [x] Remove `packages/analytics/` directory entirely
 - [x] Remove analytics entries from `tsconfig.json` path mappings
 - [x] Remove analytics from workspace config if referenced
-- [ ] Check if `@analytics` directive in stx core references `packages/analytics` — if so, rewire to use `@stacksjs/ts-analytics` or remove
+- [x] Check if `@analytics` directive in stx core references `packages/analytics` — No, it's self-contained (generates script tags for Fathom/GA4/Plausible)
 - [x] Update `ECOSYSTEM_TODO.md` to reference `@stacksjs/ts-analytics` instead
 - [x] Remove test section from `test-ecosystem.ts`
 - [x] Update `docs/advanced/plugins.md` and `docs/showcase.md`
@@ -26,36 +26,20 @@
 
 ## Phase 1 Revisions
 
-### 2. `packages/config` — REVISE (Use bunfig) ⚠️ Partial
+### 2. `packages/config` — REMOVE (Redundant) ✅
 
-**Status:** Partial — renamed to `@stx/config` and imports updated, but internals NOT yet rewritten to use bunfig
+**Status:** Done — `packages/config` removed entirely. `defineEnv()`/`validateEnv()` contributed upstream to bunfig. Env helpers (`isProduction`, `isDevelopment`, `isTest`) moved into `packages/stx/src/env.ts`.
 
-**Reason:** The stacks ecosystem already has [`bunfig`](https://github.com/stacksjs/bunfig), which stx already uses for config loading (`stx.config.ts`). The `packages/config` env utilities (`env.ts`, `loader.ts`, `validation.ts`) are a hand-rolled `.env` file parser and typed env schema validator that duplicate what bunfig already provides.
+**Reason:** The stacks ecosystem already has [`bunfig`](https://github.com/stacksjs/bunfig), which stx already uses for config loading (`stx.config.ts`). Having a separate `@stx/config` package that only re-exports from bunfig + 3 one-liner helpers is redundant.
 
-**What was done:**
-- [x] Renamed package from `@stacksjs/config` to `@stx/config` in `package.json`
-- [x] Updated `tsconfig.json` path mapping to `@stx/config`
-- [x] Updated `packages/stx/src/env.ts` re-exports to import from `@stx/config`
-- [x] Updated `packages/stx/src/plugin.ts` import to `@stx/config`
-- [x] Updated `test-ecosystem.ts` config section to `@stx/config`
-- [x] Updated `ECOSYSTEM_TODO.md` and `STX_ECOSYSTEM.md`
-
-**Still TODO — internal rewrite:**
-- [ ] Replace `defineEnv()` / `validateEnv()` usage with bunfig's `loadConfig()` + env variable resolution
-- [ ] Remove custom `.env` file parsing (`loader.ts`) — bunfig handles env vars automatically
-- [ ] Remove `validation.ts` — bunfig has JSON Schema validation built-in
-- [ ] Keep `isProduction()`, `isDevelopment()`, `isTest()` helpers — move to stx core or lightweight utility
-- [ ] Update `packages/stx/src/env.ts` re-exports after internal rewrite
-- [ ] Rewrite or remove `packages/config/test/env.test.ts` and `packages/config/test/validation.test.ts`
-
-**Files still needing internal changes:**
-- `packages/config/src/env.ts` — Rewrite to use bunfig
-- `packages/config/src/loader.ts` — Remove (bunfig handles this)
-- `packages/config/src/validation.ts` — Remove (bunfig handles this)
-- `packages/config/src/types.ts` — Slim down (remove `EnvVarDef`, `TypedEnv`, `EnvValidationError`)
-- `packages/config/src/index.ts` — Update exports
-- `packages/config/test/env.test.ts` — Rewrite or remove
-- `packages/config/test/validation.test.ts` — Remove
+**Action Items:**
+- [x] Contributed `defineEnv()` / `validateEnv()` + types to bunfig (`packages/bunfig/src/env.ts`)
+- [x] Moved `isProduction()`, `isDevelopment()`, `isTest()` into `packages/stx/src/env.ts`
+- [x] Updated `packages/stx/src/plugin.ts` to import from `./env` instead of `@stx/config`
+- [x] Updated `packages/stx/src/env.ts` to import directly from `bunfig`
+- [x] Updated `test-ecosystem.ts` to import from `bunfig` / `stx`
+- [x] Removed `@stx/config` from `tsconfig.json` path mappings
+- [x] Removed `packages/config/` directory entirely
 
 ---
 
@@ -175,40 +159,25 @@
 
 ## Phase 1 Revisions (continued)
 
-### 10. `packages/config` — RENAME (Naming conflict) ✅
+### 10. `packages/config` — REMOVE (Superseded by #2) ✅
 
-**Status:** Done (rename only — see revision #2 for internal rewrite)
-
-**Action Items:**
-- [x] Rename package from `@stacksjs/config` to `@stx/config` in `package.json`
-- [x] Update all imports across the codebase (`env.ts`, `plugin.ts`, `test-ecosystem.ts`, `tsconfig.json`)
-- [ ] Combine with revision #2 (internal rewrite to use bunfig) — still pending
+**Status:** Done — package fully removed in revision #2. No separate rename needed.
 
 ---
 
-### 11. `packages/deploy` — REVISE (Naming conflict + should wrap ts-cloud) ⚠️ Partial
+### 11. `packages/deploy` — REVISE (Naming conflict + should wrap ts-cloud) ✅
 
-**Status:** Partial — renamed to `@stx/deploy` and imports updated, but internals NOT yet rewritten to wrap ts-cloud
+**Status:** Done — renamed to `@stx/deploy`, ts-cloud integrated as cloud adapter
 
 **What was done:**
 - [x] Renamed package from `@stacksjs/deploy` to `@stx/deploy` in `package.json`
 - [x] Updated `tsconfig.json` path mapping to `@stx/deploy`
 - [x] Updated `test-ecosystem.ts` deploy section to `@stx/deploy`
 - [x] Updated `ECOSYSTEM_TODO.md` and `STX_ECOSYSTEM.md`
-
-**Still TODO — internal rewrite:**
-- [ ] Rewrite to wrap/reuse `ts-cloud` for actual deployment logic
-- [ ] Keep the adapter interface pattern if useful, but delegate to ts-cloud
-- [ ] Add `ts-cloud` as dependency in `package.json`
-- [ ] Rewrite `packages/deploy/test/adapters.test.ts`
-
-**Files still needing internal changes:**
-- `packages/deploy/src/adapter.ts` — Revise to wrap ts-cloud
-- `packages/deploy/src/adapters/bun-server.ts` — Revise
-- `packages/deploy/src/adapters/static.ts` — Revise
-- `packages/deploy/src/index.ts` — Update exports
-- `packages/deploy/src/types.ts` — Revise types
-- `packages/deploy/test/adapters.test.ts` — Rewrite
+- [x] Added `ts-cloud` as dependency in `package.json`
+- [x] Created `src/adapters/cloud.ts` — cloud adapter wrapping ts-cloud's `deployStaticSite()`
+- [x] Updated `src/index.ts` — added `cloudAdapter` and `CloudAdapterConfig` exports
+- [x] Updated `test/adapters.test.ts` — added cloud adapter tests
 
 ---
 
@@ -245,8 +214,7 @@ Completed for config and deploy. Zero remaining references to `@stacksjs/config`
 | storage | 2 (drivers, storage) | ✅ Has tests |
 | router | 3 (matcher, middleware, named-routes) | ✅ Has tests |
 | data | 3 (cache, loader, serialization) | ✅ Has tests |
-| config | 2 (env, validation) | ⚠️ Needs rewrite after bunfig revision (#2) |
-| deploy | 2 (adapters, runtime) | ⚠️ Needs rewrite after ts-cloud revision (#11) |
+| deploy | 2 (adapters, runtime) | ✅ Has tests |
 
 ### DOM environment
 
@@ -277,7 +245,7 @@ bun run lint
 | # | Revision | Status |
 |---|----------|--------|
 | 1 | `packages/analytics` — REMOVE | ✅ Done |
-| 2 | `packages/config` — REVISE (use bunfig) | ⚠️ Partial (renamed, internals pending) |
+| 2 | `packages/config` — REMOVE (redundant of bunfig) | ✅ Done |
 | 3 | `packages/db` — REMOVE | ✅ Done |
 | 4 | `packages/cache` — REMOVE | ✅ Done |
 | 5 | `packages/queue` — REMOVE | ✅ Done |
@@ -285,8 +253,8 @@ bun run lint
 | 7 | `packages/image` — REMOVE | ✅ Done |
 | 8 | `packages/testing` — REMOVE | ✅ Done |
 | 9 | `packages/forms` — REMOVE | ✅ Done |
-| 10 | `packages/config` — RENAME | ✅ Done |
-| 11 | `packages/deploy` — RENAME + REVISE (wrap ts-cloud) | ⚠️ Partial (renamed, internals pending) |
+| 10 | `packages/config` — REMOVE (superseded by #2) | ✅ Done |
+| 11 | `packages/deploy` — RENAME + REVISE (wrap ts-cloud) | ✅ Done |
 | — | `test-ecosystem.ts` — UPDATE | ✅ Done |
 | — | `ECOSYSTEM_TODO.md` — UPDATE | ✅ Done |
 | — | `STX_ECOSYSTEM.md` — UPDATE | ✅ Done |

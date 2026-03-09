@@ -34,48 +34,16 @@ console.log('='.repeat(60))
 
 console.log('\n── Phase 1 — Foundation ──')
 
-// ─── @stx/config ────────────────────────────────────────
-section('@stx/config')
+// ─── stx env helpers ────────────────────────────────────────
+section('stx env helpers')
 
-await test('@stx/config', 'defineEnv with string default', async () => {
-  const { defineEnv } = await import('@stx/config')
-  const env = defineEnv({ APP_NAME: { type: 'string', default: 'STX' } })
-  if (env.APP_NAME !== 'STX') throw new Error(`got ${env.APP_NAME}`)
-})
-
-await test('@stx/config', 'defineEnv with number coercion', async () => {
-  const { defineEnv } = await import('@stx/config')
-  const env = defineEnv({ PORT: { type: 'number', default: 3000 } })
-  if (env.PORT !== 3000) throw new Error(`got ${env.PORT}`)
-  if (typeof env.PORT !== 'number') throw new Error(`type=${typeof env.PORT}`)
-})
-
-await test('@stx/config', 'defineEnv with boolean coercion', async () => {
-  const { defineEnv } = await import('@stx/config')
-  const env = defineEnv({ DEBUG: { type: 'boolean', default: false } })
-  if (env.DEBUG !== false) throw new Error(`got ${env.DEBUG}`)
-  if (typeof env.DEBUG !== 'boolean') throw new Error(`type=${typeof env.DEBUG}`)
-})
-
-await test('@stx/config', 'isProduction/isDevelopment/isTest helpers', async () => {
-  const { isProduction, isDevelopment, isTest } = await import('@stx/config')
+await test('stx', 'isProduction/isDevelopment/isTest helpers', async () => {
+  const { isProduction, isDevelopment, isTest } = await import('stx')
   if (typeof isProduction !== 'function') throw new Error('isProduction not exported')
   if (typeof isDevelopment !== 'function') throw new Error('isDevelopment not exported')
   if (typeof isTest !== 'function') throw new Error('isTest not exported')
   // In test context, isTest() should return true or isProduction() false
   if (isProduction()) throw new Error('should not be production in test')
-})
-
-await test('@stx/config', 'defineEnv with multiple vars', async () => {
-  const { defineEnv } = await import('@stx/config')
-  const env = defineEnv({
-    DB_HOST: { type: 'string', default: 'localhost' },
-    DB_PORT: { type: 'number', default: 5432 },
-    DB_SSL: { type: 'boolean', default: true },
-  })
-  if (env.DB_HOST !== 'localhost') throw new Error(`host=${env.DB_HOST}`)
-  if (env.DB_PORT !== 5432) throw new Error(`port=${env.DB_PORT}`)
-  if (env.DB_SSL !== true) throw new Error(`ssl=${env.DB_SSL}`)
 })
 
 // ─── @stacksjs/router ───────────────────────────────────────

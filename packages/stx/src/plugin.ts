@@ -3,7 +3,7 @@ import type { StxOptions } from './'
 import path from 'node:path'
 import { buildWebComponents, cacheTemplate, checkCache, extractVariables, loadStxConfig, processDirectives } from './'
 import { devHelpers, errorLogger, safeExecuteAsync, StxFileError, StxRuntimeError } from './error-handling'
-import { isDevelopment } from '@stx/config'
+import { isDevelopment } from './env'
 import { escapeHtml } from './expressions'
 import { performanceMonitor } from './performance-utils'
 

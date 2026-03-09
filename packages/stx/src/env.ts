@@ -1,3 +1,13 @@
-// Re-export from @stx/config
-export { defineEnv, isDevelopment, isProduction, isTest, loadEnvFile, validateEnv } from '@stx/config'
-export type { EnvAccessor, EnvType, EnvValidationError, EnvVarDef, TypedEnv } from '@stx/config'
+import process from 'node:process'
+
+export function isProduction(): boolean {
+  return process.env.NODE_ENV === 'production'
+}
+
+export function isDevelopment(): boolean {
+  return !isProduction() || process.env.STX_DEBUG === 'true'
+}
+
+export function isTest(): boolean {
+  return process.env.NODE_ENV === 'test'
+}
