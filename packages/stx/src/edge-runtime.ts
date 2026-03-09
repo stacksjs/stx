@@ -110,7 +110,7 @@ export interface EdgeContext {
   /** Cache interface */
   cache?: EdgeCache
   /** Environment variables */
-  env: EnvAccessor
+  env: EdgeEnvAccessor
 }
 
 /** Geographic information */
@@ -200,8 +200,8 @@ export interface EdgeCache {
   delete: (request: Request) => Promise<boolean>
 }
 
-/** Environment variable accessor */
-export interface EnvAccessor {
+/** Environment variable accessor for edge runtime */
+export interface EdgeEnvAccessor {
   get: (key: string) => string | undefined
   getOrThrow: (key: string) => string
   has: (key: string) => boolean
@@ -338,7 +338,7 @@ export function isServerEnvironment(): boolean {
 /**
  * Create a platform-agnostic environment accessor.
  */
-export function createEnvAccessor(platformEnv?: Record<string, unknown>): EnvAccessor {
+export function createEnvAccessor(platformEnv?: Record<string, unknown>): EdgeEnvAccessor {
   return {
     get(key: string): string | undefined {
       // Check platform-specific env first

@@ -69,9 +69,14 @@ function hasSignalsSyntax(template: string): boolean {
     /@bind:/, // @bind:attr="value"
     /@class\s*=/, // @class="{ active: isActive }"
     /@style\s*=/, // @style="{ color: textColor }"
-    /\bstate\s*\(/, // state() signal API
-    /\bderived\s*\(/, // derived() signal API
-    /\beffect\s*\(/, // effect() signal API
+    /\bstate\s*(?:<[^>]*>)?\s*\(/, // state() signal API
+    /\bderived\s*(?:<[^>]*>)?\s*\(/, // derived() signal API
+    /\beffect\s*(?:<[^>]*>)?\s*\(/, // effect() signal API
+    /\bref\s*(?:<[^>]*>)?\s*\(/, // ref() Vue-compat alias
+    /\bcomputed\s*(?:<[^>]*>)?\s*\(/, // computed() Vue-compat alias
+    /\breactive\s*(?:<[^>]*>)?\s*\(/, // reactive() Vue-compat alias
+    /\bwatch\s*(?:<[^>]*>)?\s*\(/, // watch() Vue-compat alias
+    /\bwatchEffect\s*(?:<[^>]*>)?\s*\(/, // watchEffect() Vue-compat alias
     /data-stx(?:-auto)?(?![-\w])/, // data-stx or data-stx-auto (not data-stx-ref, data-stx-id, etc.)
     /data-stx-scoped/, // client scripts need the signals runtime
   ]
@@ -300,7 +305,7 @@ function processScriptSetup(template: string): { output: string, setupCode: stri
     }
 
     // Check if this script uses signal APIs
-    if (/\b(state|derived|effect)\s*\(/.test(content)) {
+    if (/\b(state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
       signalScript = { fullMatch: match[0], attrs, content }
       break
     }
@@ -607,22 +612,19 @@ function injectSignalsRuntime(template: string, options: StxOptions): string {
   const escapedRuntime = runtime.replace(/\$/g, '$$$$')
   const runtimeScript = `<script data-stx-scoped>${escapedRuntime}</script>`
 
-  // Inject before other scripts in <head>, or before </head>
-  if (template.includes('</head>')) {
-    const headEndPos = template.indexOf('</head>')
-    const headSection = template.slice(0, headEndPos)
-    const firstScriptPos = headSection.indexOf('<script')
+  // Inject before the first <script in the ENTIRE document, not just <head>.
+  // Layout scripts (e.g. <script client>) may appear before <head>.
+  const firstScriptInDoc = template.indexOf('<script')
+  if (firstScriptInDoc !== -1) {
+    return template.slice(0, firstScriptInDoc) + runtimeScript + '\n' + template.slice(firstScriptInDoc)
+  }
 
-    if (firstScriptPos !== -1) {
-      // Insert runtime before first script in head
-      return template.slice(0, firstScriptPos) + runtimeScript + '\n' + template.slice(firstScriptPos)
-    }
-    // No scripts in head, insert before </head>
+  // Fallback: no scripts in document
+  if (template.includes('</head>')) {
     return template.replace('</head>', `${runtimeScript}\n</head>`)
   }
 
   if (template.includes('<body')) {
-    // Insert at start of body
     return template.replace(/<body([^>]*)>/, `<body$1>\n${runtimeScript}`)
   }
 

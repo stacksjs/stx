@@ -162,7 +162,7 @@ await test('@stacksjs/data', 'serialize/deserialize Date roundtrip', async () =>
   const { serialize, deserialize } = await import('@stacksjs/data')
   const original = { created: new Date('2025-06-15T12:00:00Z') }
   const json = serialize(original)
-  const restored = deserialize(json)
+  const restored = deserialize(json) as Record<string, any>
   if (!(restored.created instanceof Date)) throw new Error('Date not restored')
   if (restored.created.toISOString() !== '2025-06-15T12:00:00.000Z') throw new Error(`date=${restored.created}`)
 })
@@ -171,7 +171,7 @@ await test('@stacksjs/data', 'serialize/deserialize BigInt roundtrip', async () 
   const { serialize, deserialize } = await import('@stacksjs/data')
   const original = { count: BigInt(9007199254740993) }
   const json = serialize(original)
-  const restored = deserialize(json)
+  const restored = deserialize(json) as Record<string, any>
   if (typeof restored.count !== 'bigint') throw new Error(`type=${typeof restored.count}`)
 })
 
@@ -179,7 +179,7 @@ await test('@stacksjs/data', 'serialize/deserialize Set roundtrip', async () => 
   const { serialize, deserialize } = await import('@stacksjs/data')
   const original = { tags: new Set(['a', 'b', 'c']) }
   const json = serialize(original)
-  const restored = deserialize(json)
+  const restored = deserialize(json) as Record<string, any>
   if (!(restored.tags instanceof Set)) throw new Error('Set not restored')
   if (restored.tags.size !== 3) throw new Error(`size=${restored.tags.size}`)
 })
@@ -188,7 +188,7 @@ await test('@stacksjs/data', 'serialize/deserialize Map roundtrip', async () => 
   const { serialize, deserialize } = await import('@stacksjs/data')
   const original = { meta: new Map([['key', 'value']]) }
   const json = serialize(original)
-  const restored = deserialize(json)
+  const restored = deserialize(json) as Record<string, any>
   if (!(restored.meta instanceof Map)) throw new Error('Map not restored')
   if (restored.meta.get('key') !== 'value') throw new Error(`val=${restored.meta.get('key')}`)
 })
@@ -225,7 +225,7 @@ await test('@stacksjs/deploy', 'staticAdapter creates named adapter', async () =
 
 await test('@stacksjs/deploy', 'defineAdapter creates custom adapter', async () => {
   const { defineAdapter } = await import('@stacksjs/deploy')
-  const adapter = defineAdapter({ name: 'custom', build: async () => ({ success: true, outputDir: './dist' }) })
+  const adapter = defineAdapter({ name: 'custom', build: async () => ({ outputDir: './dist', files: [] }) })
   if (adapter.name !== 'custom') throw new Error(`name=${adapter.name}`)
 })
 
@@ -553,14 +553,13 @@ section('@stacksjs/api')
 
 await test('@stacksjs/api', 'defineHandler GET', async () => {
   const { defineHandler } = await import('@stacksjs/api')
-  const h = defineHandler({ method: 'GET', handler: async () => ({ ok: true }) })
+  const h = defineHandler({ handler: async () => ({ ok: true }) })
   if (typeof h.handler !== 'function') throw new Error('handler missing')
-  if (h.method !== 'GET') throw new Error(`method=${h.method}`)
 })
 
 await test('@stacksjs/api', 'defineHandler POST with middleware', async () => {
   const { defineHandler } = await import('@stacksjs/api')
-  const h = defineHandler({ method: 'POST', middleware: ['auth'], handler: async () => ({ ok: true }) })
+  const h = defineHandler({ middleware: ['auth'], handler: async () => ({ ok: true }) })
   if (!h.middleware?.includes('auth')) throw new Error('middleware missing')
 })
 

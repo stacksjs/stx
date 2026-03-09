@@ -1910,8 +1910,10 @@ export function generateSignalsRuntimeDev(): string {
       }
     });
 
-    // Process children
-    Array.from(el.childNodes).forEach(child => processElement(child, scope));
+    // Process children (skip script/style elements — their text content is not template markup)
+    if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
+      Array.from(el.childNodes).forEach(child => processElement(child, scope));
+    }
   }
 
   function bindShow(el, expr, passedScope = componentScope, attrName = '@show') {
@@ -2999,6 +3001,9 @@ export function generateSignalsRuntimeDev(): string {
   function cleanupContainer(container) {
     if (!container) return;
 
+    // Clear pending mount callbacks from the departing page
+    mountCallbacks.length = 0;
+
     // 1. Walk all child elements — fire destroy hooks and dispose effects
     container.querySelectorAll('*').forEach(function(el) {
       if (el.__stx_destroy && Array.isArray(el.__stx_destroy)) {
@@ -3077,6 +3082,12 @@ export function generateSignalsRuntimeDev(): string {
       var disposeEffects = trackEffects(function() { processElement(el); });
       el.__stx_disposers = disposeEffects;
     });
+
+    // Flush global mountCallbacks (from scripts re-executed after SPA content swap)
+    mountCallbacks.forEach(function(fn) {
+      try { fn(); } catch(e) { console.warn('[stx] mount callback error:', e); }
+    });
+    mountCallbacks.length = 0;
   });
 
   // Helper to process elements while skipping already-processed scoped containers
@@ -3104,8 +3115,10 @@ export function generateSignalsRuntimeDev(): string {
       var ma = el.hasAttribute(':model') ? ':model' : '@model';
       bindModel(el, el.getAttribute(ma), componentScope, ma);
     }
-    // Process children, skipping scoped containers
-    Array.from(el.childNodes).forEach(child => processElementSkipScopes(child, processedScopes));
+    // Process children, skipping scoped containers and script/style elements
+    if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
+      Array.from(el.childNodes).forEach(child => processElementSkipScopes(child, processedScopes));
+    }
   }
 })();
 `

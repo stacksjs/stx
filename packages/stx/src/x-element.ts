@@ -32,7 +32,7 @@
  * This is injected once per page that uses x-* directives
  */
 export function generateXElementRuntime(): string {
-  return `<script>
+  return `<script data-stx-scoped>
 (function() {
   'use strict';
 

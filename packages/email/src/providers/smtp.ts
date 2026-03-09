@@ -134,8 +134,7 @@ function sendSmtp(
       allRecipients.push(...bccList)
     }
 
-    const connectFn = config.secure ? tlsConnect : connect
-    const socket = connectFn(config.port, config.host, () => {
+    const onConnect = () => {
       const commands: string[] = []
 
       commands.push(`EHLO ${config.host}`)
@@ -171,7 +170,11 @@ function sendSmtp(
       socket.on('data', () => {
         sendNext()
       })
-    })
+    }
+
+    const socket = config.secure
+      ? tlsConnect({ port: config.port, host: config.host }, onConnect)
+      : connect(config.port, config.host, onConnect)
 
     socket.on('error', (err: Error) => {
       reject(err)

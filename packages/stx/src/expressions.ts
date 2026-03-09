@@ -416,7 +416,7 @@ export function usesSignalsInScript(template: string): boolean {
   let match: RegExpExecArray | null
   while ((match = scriptRegex.exec(template)) !== null) {
     const content = match[1]
-    if (/\b(state|derived|effect)\s*\(/.test(content)) {
+    if (/\b(state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
       return true
     }
   }

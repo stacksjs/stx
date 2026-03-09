@@ -419,26 +419,93 @@ function extractTopLevelDeclarations(code: string): string[] {
   // Remove import lines (handled separately by transform)
   const cleaned = code.replace(/^\s*import\s+.*$/gm, '')
 
-  // Simple declarations: const x = ..., let x = ..., var x = ...
-  const simpleRe = /^[ \t]*(?:const|let|var)\s+([a-zA-Z_$]\w*)\s*=/gm
-  let m
-  while ((m = simpleRe.exec(cleaned))) {
-    if (!m[1].startsWith('_') && !seen.has(m[1])) { names.push(m[1]); seen.add(m[1]) }
-  }
+  // Track brace/paren depth to only capture top-level declarations
+  let depth = 0
+  const len = cleaned.length
+  let i = 0
 
-  // Destructured: const { a, b } = ...
-  const destructRe = /^[ \t]*(?:const|let|var)\s+\{([^}]+)\}\s*=/gm
-  while ((m = destructRe.exec(cleaned))) {
-    m[1].split(',').forEach(s => {
-      const name = s.trim().split(/[\s:]/)[0].trim()
-      if (name && !name.startsWith('_') && !seen.has(name)) { names.push(name); seen.add(name) }
-    })
-  }
+  while (i < len) {
+    const ch = cleaned[i]
 
-  // Function declarations: function x() { ... }
-  const fnRe = /^[ \t]*(?:async\s+)?function\s+([a-zA-Z_$]\w*)/gm
-  while ((m = fnRe.exec(cleaned))) {
-    if (!m[1].startsWith('_') && !seen.has(m[1])) { names.push(m[1]); seen.add(m[1]) }
+    // Skip string literals
+    if (ch === '\'' || ch === '"' || ch === '`') {
+      const quote = ch
+      i++
+      if (quote === '`') {
+        // Template literal with nested expressions
+        let tplDepth = 0
+        while (i < len) {
+          if (cleaned[i] === '\\') { i += 2; continue }
+          if (cleaned[i] === '`' && tplDepth === 0) { i++; break }
+          if (cleaned[i] === '$' && cleaned[i + 1] === '{') { tplDepth++; i += 2; continue }
+          if (cleaned[i] === '}' && tplDepth > 0) { tplDepth--; i++; continue }
+          i++
+        }
+      }
+      else {
+        while (i < len) {
+          if (cleaned[i] === '\\') { i += 2; continue }
+          if (cleaned[i] === quote) { i++; break }
+          i++
+        }
+      }
+      continue
+    }
+
+    // Skip comments
+    if (ch === '/' && cleaned[i + 1] === '/') {
+      while (i < len && cleaned[i] !== '\n') i++
+      continue
+    }
+    if (ch === '/' && cleaned[i + 1] === '*') {
+      i += 2
+      while (i < len - 1 && !(cleaned[i] === '*' && cleaned[i + 1] === '/')) i++
+      i += 2
+      continue
+    }
+
+    // Track brace depth
+    if (ch === '{') { depth++; i++; continue }
+    if (ch === '}') { depth--; i++; continue }
+
+    // Only extract declarations at depth 0
+    if (depth === 0) {
+      const rest = cleaned.slice(i)
+
+      // Simple declarations: const x = ..., let x = ..., var x = ...
+      const simpleMatch = rest.match(/^(?:const|let|var)\s+([a-zA-Z_$]\w*)\s*(?::[^=]*)?=/)
+      if (simpleMatch) {
+        const name = simpleMatch[1]
+        if (!name.startsWith('_') && !seen.has(name)) { names.push(name); seen.add(name) }
+        i += simpleMatch[0].length
+        continue
+      }
+
+      // Destructured: const { a, b: alias } = ...
+      const destructMatch = rest.match(/^(?:const|let|var)\s+\{([^}]+)\}\s*=/)
+      if (destructMatch) {
+        destructMatch[1].split(',').forEach(s => {
+          const trimmed = s.trim()
+          // Handle rename: "data: stats" -> use "stats", "loading" -> use "loading"
+          const colonIdx = trimmed.indexOf(':')
+          const name = colonIdx >= 0 ? trimmed.slice(colonIdx + 1).trim().split(/[\s=]/)[0] : trimmed.split(/[\s=]/)[0]
+          if (name && !name.startsWith('_') && !seen.has(name)) { names.push(name); seen.add(name) }
+        })
+        i += destructMatch[0].length
+        continue
+      }
+
+      // Function declarations: function x() { ... }
+      const fnMatch = rest.match(/^(?:async\s+)?function\s+([a-zA-Z_$]\w*)/)
+      if (fnMatch) {
+        const name = fnMatch[1]
+        if (!name.startsWith('_') && !seen.has(name)) { names.push(name); seen.add(name) }
+        i += fnMatch[0].length
+        continue
+      }
+    }
+
+    i++
   }
 
   return names

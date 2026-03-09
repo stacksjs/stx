@@ -651,7 +651,7 @@ export function processAuthDirectives(template: string, context: Record<string, 
       for (const ev of scanEvents) {
         if (ev.type === 'open') { dpt++; continue }
         if (ev.type === 'close') { dpt--; continue }
-        if (dpt === 0) topLevelBreaks.push(ev)
+        if (dpt === 0) topLevelBreaks.push(ev as { pos: number, type: 'elseDirective' | 'else' })
       }
 
       // Build segments: primary, elseDirective segments, final else

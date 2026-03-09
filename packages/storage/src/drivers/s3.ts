@@ -59,7 +59,7 @@ export function s3Driver(config: S3DriverConfig): StorageDriver {
       const response = await fetch(url, {
         method: 'PUT',
         headers,
-        body: content,
+        body: typeof content === 'string' ? content : new Uint8Array(content),
       })
 
       if (!response.ok) {
