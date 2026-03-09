@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>try{var t=localStorage.getItem("stx-theme");if(t)document.documentElement.setAttribute("data-theme",t);else if(!window.matchMedia("(prefers-color-scheme:light)").matches)document.documentElement.setAttribute("data-theme","dark");else document.documentElement.setAttribute("data-theme","light")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ companyName }} — {{ activePage }}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    select { padding-right: 2rem !important; }
+
+    [data-theme="dark"] {
+      --bg-body: linear-gradient(to bottom right, #020617, #0f172a, #020617);
+      --bg-nav: rgba(2, 6, 23, 0.8);
+      --bg-glass: rgba(255,255,255,0.03); --bg-glass-hover: rgba(255,255,255,0.06);
+      --bg-glass-border: rgba(255,255,255,0.06); --bg-glass-border-hover: rgba(255,255,255,0.12);
+      --bg-subtle: rgba(255,255,255,0.05); --bg-subtle-hover: rgba(255,255,255,0.1);
+      --bg-input: rgba(255,255,255,0.05); --border-input: rgba(255,255,255,0.1);
+      --border-main: rgba(255,255,255,0.05); --border-nav-sep: rgba(255,255,255,0.1);
+      --text-primary: #fff; --text-secondary: #e2e8f0; --text-tertiary: #94a3b8;
+      --text-muted: #64748b; --text-nav: #94a3b8; --text-nav-hover: #fff;
+      --nav-active-bg: rgba(255,255,255,0.1);
+      --text-accent: #60a5fa; --text-accent-hover: #93bbfd;
+      --text-success: #34d399; --text-revenue: #34d399;
+      --bar-track: rgba(255,255,255,0.05); --rank-bg: rgba(255,255,255,0.05);
+      --repair-icon-bg: rgba(59,130,246,0.1); --repair-icon-text: #60a5fa;
+      --row-hover: rgba(255,255,255,0.02); --row-border: rgba(255,255,255,0.03);
+      --scroll-thumb: rgba(255,255,255,0.1);
+      --orb-blue: rgba(37,99,235,0.05); --orb-violet: rgba(124,58,237,0.05); --orb-emerald: rgba(5,150,105,0.05);
+      --glow-blue: rgba(59,130,246,0.15); --glow-emerald: rgba(16,185,129,0.15);
+      --glow-violet: rgba(139,92,246,0.15); --glow-amber: rgba(245,158,11,0.15);
+      --badge-emerald-bg: rgba(16,185,129,0.2); --badge-emerald-text: #34d399;
+      --badge-blue-bg: rgba(59,130,246,0.2); --badge-blue-text: #60a5fa;
+      --badge-amber-bg: rgba(245,158,11,0.2); --badge-amber-text: #fbbf24;
+      --badge-slate-bg: rgba(100,116,139,0.2); --badge-slate-text: #94a3b8;
+      --badge-red-bg: rgba(239,68,68,0.2); --badge-red-text: #f87171;
+      --sev-light-bg: rgba(34,197,94,0.2); --sev-light-text: #4ade80; --sev-light-border: rgba(34,197,94,0.3);
+      --sev-mod-bg: rgba(234,179,8,0.2); --sev-mod-text: #facc15; --sev-mod-border: rgba(234,179,8,0.3);
+      --sev-heavy-bg: rgba(239,68,68,0.2); --sev-heavy-text: #f87171; --sev-heavy-border: rgba(239,68,68,0.3);
+      --alert-warn-bg: rgba(245,158,11,0.08); --alert-warn-border: rgba(245,158,11,0.3); --alert-warn-text: #fcd34d; --alert-warn-icon: #f59e0b;
+      --alert-info-bg: rgba(59,130,246,0.08); --alert-info-border: rgba(59,130,246,0.3); --alert-info-text: #93bbfd; --alert-info-icon: #3b82f6;
+      --alert-ok-bg: rgba(16,185,129,0.08); --alert-ok-border: rgba(16,185,129,0.3); --alert-ok-text: #6ee7b7; --alert-ok-icon: #10b981;
+      --bar-emerald: #10b981; --bar-blue: #3b82f6; --bar-amber: #f59e0b; --bar-slate: #94a3b8; --bar-red: #ef4444;
+      --btn-primary-bg: #2563eb; --btn-primary-hover: #3b82f6;
+      --btn-action-bg: rgba(37,99,235,0.1); --btn-action-border: rgba(59,130,246,0.2); --btn-action-text: #60a5fa;
+    }
+
+    [data-theme="light"] {
+      --bg-body: linear-gradient(to bottom right, #f8fafc, #f1f5f9, #f8fafc);
+      --bg-nav: rgba(255,255,255,0.85);
+      --bg-glass: rgba(255,255,255,0.7); --bg-glass-hover: rgba(255,255,255,0.9);
+      --bg-glass-border: rgba(0,0,0,0.08); --bg-glass-border-hover: rgba(0,0,0,0.14);
+      --bg-subtle: rgba(0,0,0,0.04); --bg-subtle-hover: rgba(0,0,0,0.08);
+      --bg-input: rgba(0,0,0,0.04); --border-input: rgba(0,0,0,0.12);
+      --border-main: rgba(0,0,0,0.08); --border-nav-sep: rgba(0,0,0,0.1);
+      --text-primary: #0f172a; --text-secondary: #1e293b; --text-tertiary: #475569;
+      --text-muted: #94a3b8; --text-nav: #64748b; --text-nav-hover: #0f172a;
+      --nav-active-bg: rgba(0,0,0,0.06);
+      --text-accent: #2563eb; --text-accent-hover: #1d4ed8;
+      --text-success: #059669; --text-revenue: #059669;
+      --bar-track: rgba(0,0,0,0.06); --rank-bg: rgba(0,0,0,0.04);
+      --repair-icon-bg: rgba(37,99,235,0.08); --repair-icon-text: #2563eb;
+      --row-hover: rgba(0,0,0,0.02); --row-border: rgba(0,0,0,0.05);
+      --scroll-thumb: rgba(0,0,0,0.12);
+      --orb-blue: rgba(37,99,235,0.04); --orb-violet: rgba(124,58,237,0.04); --orb-emerald: rgba(5,150,105,0.04);
+      --glow-blue: rgba(59,130,246,0.1); --glow-emerald: rgba(16,185,129,0.1);
+      --glow-violet: rgba(139,92,246,0.1); --glow-amber: rgba(245,158,11,0.1);
+      --badge-emerald-bg: rgba(16,185,129,0.12); --badge-emerald-text: #059669;
+      --badge-blue-bg: rgba(59,130,246,0.12); --badge-blue-text: #2563eb;
+      --badge-amber-bg: rgba(245,158,11,0.12); --badge-amber-text: #d97706;
+      --badge-slate-bg: rgba(100,116,139,0.12); --badge-slate-text: #475569;
+      --badge-red-bg: rgba(239,68,68,0.12); --badge-red-text: #dc2626;
+      --sev-light-bg: rgba(34,197,94,0.1); --sev-light-text: #16a34a; --sev-light-border: rgba(34,197,94,0.3);
+      --sev-mod-bg: rgba(234,179,8,0.1); --sev-mod-text: #ca8a04; --sev-mod-border: rgba(234,179,8,0.3);
+      --sev-heavy-bg: rgba(239,68,68,0.1); --sev-heavy-text: #dc2626; --sev-heavy-border: rgba(239,68,68,0.3);
+      --alert-warn-bg: rgba(245,158,11,0.06); --alert-warn-border: rgba(245,158,11,0.25); --alert-warn-text: #92400e; --alert-warn-icon: #d97706;
+      --alert-info-bg: rgba(59,130,246,0.06); --alert-info-border: rgba(59,130,246,0.25); --alert-info-text: #1e40af; --alert-info-icon: #2563eb;
+      --alert-ok-bg: rgba(16,185,129,0.06); --alert-ok-border: rgba(16,185,129,0.25); --alert-ok-text: #065f46; --alert-ok-icon: #059669;
+      --bar-emerald: #10b981; --bar-blue: #3b82f6; --bar-amber: #f59e0b; --bar-slate: #94a3b8; --bar-red: #ef4444;
+      --btn-primary-bg: #2563eb; --btn-primary-hover: #1d4ed8;
+      --btn-action-bg: rgba(37,99,235,0.06); --btn-action-border: rgba(59,130,246,0.25); --btn-action-text: #2563eb;
+    }
+
+    body { background: var(--bg-body); color: var(--text-primary); }
+    .glass { background: var(--bg-glass); backdrop-filter: blur(12px); border: 1px solid var(--bg-glass-border); }
+    .glass-card:hover { background: var(--bg-glass-hover); border-color: var(--bg-glass-border-hover); transform: translateY(-1px); }
+    .bar-animate { animation: barGrow 1s ease-out forwards; transform-origin: left; }
+    @keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    .fade-in { animation: fadeIn 0.6s ease-out forwards; opacity: 0; }
+    @keyframes fadeIn { to { opacity: 1; } }
+    .glow-blue { box-shadow: 0 0 20px var(--glow-blue); }
+    .glow-emerald { box-shadow: 0 0 20px var(--glow-emerald); }
+    .glow-violet { box-shadow: 0 0 20px var(--glow-violet); }
+    .glow-amber { box-shadow: 0 0 20px var(--glow-amber); }
+    .badge-emerald { background: var(--badge-emerald-bg); color: var(--badge-emerald-text); }
+    .badge-blue { background: var(--badge-blue-bg); color: var(--badge-blue-text); }
+    .badge-amber { background: var(--badge-amber-bg); color: var(--badge-amber-text); }
+    .badge-slate { background: var(--badge-slate-bg); color: var(--badge-slate-text); }
+    .badge-red { background: var(--badge-red-bg); color: var(--badge-red-text); }
+    .severity-light { background: var(--sev-light-bg); color: var(--sev-light-text); border-color: var(--sev-light-border); }
+    .severity-moderate { background: var(--sev-mod-bg); color: var(--sev-mod-text); border-color: var(--sev-mod-border); }
+    .severity-heavy { background: var(--sev-heavy-bg); color: var(--sev-heavy-text); border-color: var(--sev-heavy-border); }
+    .alert-warning { background: var(--alert-warn-bg); border-color: var(--alert-warn-border); color: var(--alert-warn-text); }
+    .alert-warning .alert-icon { color: var(--alert-warn-icon); }
+    .alert-info { background: var(--alert-info-bg); border-color: var(--alert-info-border); color: var(--alert-info-text); }
+    .alert-info .alert-icon { color: var(--alert-info-icon); }
+    .alert-success { background: var(--alert-ok-bg); border-color: var(--alert-ok-border); color: var(--alert-ok-text); }
+    .alert-success .alert-icon { color: var(--alert-ok-icon); }
+    .bar-emerald { background: var(--bar-emerald); } .bar-blue { background: var(--bar-blue); }
+    .bar-amber { background: var(--bar-amber); } .bar-slate { background: var(--bar-slate); } .bar-red { background: var(--bar-red); }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+    .theme-toggle { position: relative; z-index: 10; width: 44px; height: 24px; border-radius: 9999px; cursor: pointer; border: none; padding: 0; background: transparent; }
+    .theme-toggle .toggle-track { width: 100%; height: 100%; border-radius: 9999px; background: var(--bg-subtle); border: 1px solid var(--border-input); display: flex; align-items: center; padding: 0 3px; }
+    .theme-toggle .toggle-knob { width: 18px; height: 18px; border-radius: 9999px; background: var(--text-accent); transition: transform 0.3s ease; display: flex; align-items: center; justify-content: center; }
+    [data-theme="dark"] .theme-toggle .toggle-knob { transform: translateX(20px); }
+    [data-theme="light"] .theme-toggle .toggle-knob { transform: translateX(0); }
+    .theme-toggle svg { width: 11px; height: 11px; color: white; }
+
+    /* Slide-over */
+    .slide-over-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .slide-over-backdrop.active { opacity: 1; pointer-events: auto; }
+    .slide-over-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 680px; max-width: 94vw; z-index: 70; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.16,1,0.3,1); overflow-y: auto; border-left: 1px solid var(--bg-glass-border); }
+    .slide-over-panel.active { transform: translateX(0); }
+    [data-theme="dark"] .slide-over-panel { background: #0f172a; }
+    [data-theme="light"] .slide-over-panel { background: #ffffff; }
+
+    /* Toast */
+    .toast-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200; display: flex; flex-direction: column-reverse; gap: 0.5rem; pointer-events: none; }
+    .toast-wrap > * { pointer-events: auto; }
+    .toast { padding: 0.75rem 1.25rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 500; display: flex; align-items: center; gap: 0.75rem; border: 1px solid; animation: toastSlideIn 0.35s cubic-bezier(0.16,1,0.3,1); box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
+    .toast-success { background: var(--alert-ok-bg); border-color: var(--alert-ok-border); color: var(--alert-ok-text); }
+    .toast-info { background: var(--alert-info-bg); border-color: var(--alert-info-border); color: var(--alert-info-text); }
+    .toast-warn { background: var(--alert-warn-bg); border-color: var(--alert-warn-border); color: var(--alert-warn-text); }
+    @keyframes toastSlideIn { from { opacity: 0; transform: translateY(0.75rem) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes toastSlideOut { to { opacity: 0; transform: translateY(0.75rem) scale(0.95); } }
+
+    /* Mobile nav */
+    .mobile-backdrop { display: none; position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,0.5); }
+    .mobile-backdrop.active { display: block; }
+    .mobile-nav { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; z-index: 56; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.16,1,0.3,1); padding: 1.25rem; border-right: 1px solid var(--bg-glass-border); }
+    [data-theme="dark"] .mobile-nav { background: #0f172a; }
+    [data-theme="light"] .mobile-nav { background: #ffffff; }
+    .mobile-nav.active { transform: translateX(0); }
+
+    /* Detail sections in slide-over */
+    .detail-section { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main); }
+    .detail-section:last-child { border-bottom: none; }
+    .detail-label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 0.375rem 0; }
+    .detail-row-label { font-size: 0.875rem; color: var(--text-tertiary); }
+    .detail-row-value { font-size: 0.875rem; font-weight: 500; color: var(--text-primary); }
+
+    /* Better focus */
+    :focus-visible { outline: 2px solid var(--text-accent); outline-offset: 2px; }
+    a:focus-visible, button:focus-visible { border-radius: 0.375rem; }
+
+    /* Clickable table row */
+    tr.clickable { cursor: pointer; }
+    tr.clickable:active { opacity: 0.8; }
+
+    @yield('styles')
+  </style>
+</head>
+<body class="min-h-screen antialiased">
+
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 right-1/4 w-[600px] h-[600px] rounded-full blur-3xl" style="background: var(--orb-blue)"></div>
+    <div class="absolute bottom-1/4 left-0 w-[400px] h-[400px] rounded-full blur-3xl" style="background: var(--orb-violet)"></div>
+    <div class="absolute top-1/2 right-0 w-[300px] h-[300px] rounded-full blur-3xl" style="background: var(--orb-emerald)"></div>
+  </div>
+
+  <div class="relative">
+
+    <nav class="border-b backdrop-blur-xl sticky top-0 z-50" style="border-color: var(--border-main); background: var(--bg-nav)">
+      <div class="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-8">
+          <a href="/" class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-sm font-bold text-white">A</div>
+            <span class="text-lg font-semibold tracking-tight" style="color: var(--text-primary)">{{ companyName }}</span>
+          </a>
+          <select id="shopSwitcher" class="rounded-lg py-1.5 text-xs focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem" onchange="switchShop(this)">
+            <option value="Main Shop — Austin, TX" selected>Main Shop — Austin, TX</option>
+            <option value="North Branch — Round Rock, TX">North Branch — Round Rock, TX</option>
+            <option value="South Location — San Marcos, TX">South Location — San Marcos, TX</option>
+          </select>
+          <button class="md:hidden p-2 -ml-2 rounded-lg" style="color: var(--text-nav)" onclick="openMobileMenu()" aria-label="Open menu">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+          </button>
+          <div class="hidden md:flex items-center gap-1">
+            @foreach (navLinks as link)
+              @if (link.label === activePage)
+                <a href="{{ link.href }}" class="px-3 py-1.5 rounded-lg text-sm font-medium" style="background: var(--nav-active-bg); color: var(--text-primary)">{{ link.label }}</a>
+              @else
+                <a href="{{ link.href }}" class="px-3 py-1.5 rounded-lg text-sm" style="color: var(--text-nav)">{{ link.label }}</a>
+              @endif
+            @endforeach
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+            <div class="toggle-track"><div class="toggle-knob">
+              <svg class="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              <svg class="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            </div></div>
+          </button>
+          <div class="relative">
+            <button onclick="toggleNotifications()" class="relative p-2 rounded-lg" style="color: var(--text-nav)">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+              <span id="notifBadge" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+            <div id="notifDropdown" class="absolute right-0 top-12 w-80 rounded-xl overflow-hidden shadow-lg z-50" style="display: none; border: 1px solid var(--bg-glass-border);">
+              <div class="px-4 py-3 flex items-center justify-between" style="background: var(--bg-nav); border-bottom: 1px solid var(--border-main)">
+                <span class="text-sm font-semibold" style="color: var(--text-primary)">Notifications</span>
+                <button onclick="clearNotifications()" class="text-xs" style="color: var(--text-accent); background: none; border: none; cursor: pointer">Mark all read</button>
+              </div>
+              <div style="background: var(--bg-nav); max-height: 320px; overflow-y: auto;">
+                <div class="px-4 py-3" style="border-bottom: 1px solid var(--border-main)">
+                  <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-blue)"></div>
+                    <div>
+                      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">EST-4820</span> submitted to Progressive for review</p>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">2 minutes ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-3" style="border-bottom: 1px solid var(--border-main)">
+                  <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-emerald)"></div>
+                    <div>
+                      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">EST-4818</span> approved by Allstate — ready for repair</p>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">15 minutes ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-3" style="border-bottom: 1px solid var(--border-main)">
+                  <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-amber)"></div>
+                    <div>
+                      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">Parts delay</span>: Headlamp for EST-4807 backordered — ETA 3 days</p>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">1 hour ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-3" style="border-bottom: 1px solid var(--border-main)">
+                  <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-red)"></div>
+                    <div>
+                      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">AI Alert</span>: EST-4816 (Rivian R1S) approaching total loss threshold</p>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">2 hours ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-3">
+                  <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-emerald)"></div>
+                    <div>
+                      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">New assignment</span>: State Farm — 2024 Chevrolet Equinox</p>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">3 hours ago</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="px-4 py-2.5 text-center" style="background: var(--bg-nav); border-top: 1px solid var(--border-main)">
+                <a href="/reports" class="text-xs font-medium" style="color: var(--text-accent)">View all notifications</a>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 pl-4 border-l" style="border-color: var(--border-nav-sep)">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center text-xs font-semibold text-white">SM</div>
+            <div class="hidden sm:block">
+              <p class="text-sm font-medium leading-none" style="color: var(--text-primary)">{{ currentUser }}</p>
+              <p class="text-xs mt-0.5" style="color: var(--text-muted)">{{ currentRole }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main id="app-content" class="max-w-[1600px] mx-auto px-6 py-8">
+      @yield('content')
+
+      <footer class="mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs pb-8" style="border-top: 1px solid var(--border-main); color: var(--text-muted)">
+        <p>{{ companyName }} v2.4.1 — Built with stx</p>
+        <p>Last synced: {{ new Date().toLocaleString() }}</p>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Slide-over -->
+  <div id="slideOverBackdrop" class="slide-over-backdrop" onclick="closeSlideOver()"></div>
+  <div id="slideOverPanel" class="slide-over-panel"></div>
+
+  <!-- Toast container -->
+  <div id="toastWrap" class="toast-wrap"></div>
+
+  <!-- Mobile menu -->
+  <div id="mobileBackdrop" class="mobile-backdrop" onclick="closeMobileMenu()"></div>
+  <nav id="mobileNav" class="mobile-nav">
+    <div class="flex items-center gap-3 mb-6 pb-4" style="border-bottom: 1px solid var(--border-main)">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-sm font-bold text-white">A</div>
+      <span class="font-semibold" style="color: var(--text-primary)">{{ companyName }}</span>
+    </div>
+    <div class="space-y-1">
+      @foreach (navLinks as link)
+        @if (link.label === activePage)
+          <a href="{{ link.href }}" onclick="closeMobileMenu()" class="block w-full px-3 py-2.5 rounded-lg text-sm font-medium" style="background: var(--nav-active-bg); color: var(--text-primary)">{{ link.label }}</a>
+        @else
+          <a href="{{ link.href }}" onclick="closeMobileMenu()" class="block w-full px-3 py-2.5 rounded-lg text-sm" style="color: var(--text-nav)">{{ link.label }}</a>
+        @endif
+      @endforeach
+    </div>
+  </nav>
+
+  <script client>
+    // ── Reactive State (STX Signals) ──
+    var notifOpen = state(false)
+    var notifCount = state(5)
+    var slideOpen = state(false)
+    var slideContent = state('')
+
+    // Notification dropdown effect
+    effect(function() {
+      var dd = document.getElementById('notifDropdown')
+      if (dd) dd.style.display = notifOpen() ? 'block' : 'none'
+    })
+
+    // Notification badge effect
+    effect(function() {
+      var badge = document.getElementById('notifBadge')
+      if (badge) badge.style.display = notifCount() > 0 ? '' : 'none'
+    })
+
+    // Slide-over effect
+    effect(function() {
+      var backdrop = document.getElementById('slideOverBackdrop')
+      var panel = document.getElementById('slideOverPanel')
+      if (!backdrop || !panel) return
+      if (slideOpen()) {
+        panel.innerHTML = slideContent()
+        backdrop.classList.add('active')
+        panel.classList.add('active')
+        document.body.style.overflow = 'hidden'
+      } else {
+        backdrop.classList.remove('active')
+        panel.classList.remove('active')
+        document.body.style.overflow = ''
+      }
+    })
+
+    // ── Theme ──
+    function toggleTheme() {
+      var html = document.documentElement
+      var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+      html.setAttribute('data-theme', next)
+      localStorage.setItem('stx-theme', next)
+      updateToggleIcons(next)
+    }
+    function updateToggleIcons(theme) {
+      var sun = document.querySelector('.sun-icon')
+      var moon = document.querySelector('.moon-icon')
+      if (sun && moon) { sun.style.display = theme === 'light' ? 'block' : 'none'; moon.style.display = theme === 'dark' ? 'block' : 'none'; }
+    }
+    updateToggleIcons(document.documentElement.getAttribute('data-theme') || 'dark')
+
+    // ── Slide-over (signal-based) ──
+    function openSlideOver(html) {
+      batch(function() {
+        slideContent.set(html)
+        slideOpen.set(true)
+      })
+    }
+    function closeSlideOver() {
+      slideOpen.set(false)
+    }
+
+    // ── Toast ──
+    function showToast(msg, type) {
+      type = type || 'info'
+      var wrap = document.getElementById('toastWrap')
+      var t = document.createElement('div')
+      t.className = 'toast toast-' + type
+      t.innerHTML = msg
+      wrap.appendChild(t)
+      setTimeout(function() { t.style.animation = 'toastSlideOut 0.3s forwards'; setTimeout(function() { t.remove() }, 300) }, 3500)
+    }
+
+    // ── Mobile Menu ──
+    function openMobileMenu() {
+      document.getElementById('mobileBackdrop').classList.add('active')
+      document.getElementById('mobileNav').classList.add('active')
+      document.body.style.overflow = 'hidden'
+    }
+    function closeMobileMenu() {
+      document.getElementById('mobileBackdrop').classList.remove('active')
+      document.getElementById('mobileNav').classList.remove('active')
+      document.body.style.overflow = ''
+    }
+
+    // ── Notifications (signal-based) ──
+    function toggleNotifications() {
+      notifOpen.update(function(v) { return !v })
+    }
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+      if (notifOpen() && !e.target.closest('#notifDropdown') && !e.target.closest('[onclick*="toggleNotifications"]')) {
+        notifOpen.set(false)
+      }
+    })
+    function clearNotifications() {
+      notifCount.set(0)
+      showToast('All notifications marked as read', 'success')
+      var dots = document.querySelectorAll('#notifDropdown .w-2.h-2')
+      dots.forEach(function(d) { d.style.background = 'var(--bar-track)' })
+    }
+
+    // ── Shop Switcher ──
+    function switchShop(el) {
+      showToast('Switched to ' + el.value, 'success')
+    }
+
+    // ── Keyboard shortcuts ──
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        if (slideOpen()) closeSlideOver()
+        closeMobileMenu()
+        notifOpen.set(false)
+      }
+    })
+  </script>
+</body>
+</html>

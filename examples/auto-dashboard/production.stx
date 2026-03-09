@@ -1,0 +1,581 @@
+<script>
+const companyName = 'AutoEstimate Pro'
+const currentUser = 'Sarah Mitchell'
+const currentRole = 'Senior Estimator'
+const activePage = 'Production'
+
+const navLinks = [
+  { label: 'Dashboard', href: '/' },
+  { label: 'Estimates', href: '/estimates' },
+  { label: 'Production', href: '/production' },
+  { label: 'Vehicles', href: '/vehicles' },
+  { label: 'Parts', href: '/parts' },
+  { label: 'Insurers', href: '/insurers' },
+  { label: 'Customers', href: '/customers' },
+  { label: 'Reports', href: '/reports' },
+  { label: 'Schedule', href: '/schedule' },
+]
+
+const technicians = ['Mike Torres', 'Kevin Park', 'James Wilson', 'Ana Reyes', 'Chris Webb', 'Derek Hall']
+
+const stages = [
+  { id: 'checkin', label: 'Check-in', color: 'blue' },
+  { id: 'teardown', label: 'Teardown', color: 'violet' },
+  { id: 'bodywork', label: 'Body Work', color: 'amber' },
+  { id: 'paint', label: 'Paint', color: 'emerald' },
+  { id: 'reassembly', label: 'Reassembly', color: 'blue' },
+  { id: 'qc', label: 'QC / Detail', color: 'violet' },
+  { id: 'ready', label: 'Ready for Pickup', color: 'emerald' },
+]
+
+const vehicles = [
+  { id: 1, year: 2024, make: 'Tesla', model: 'Model Y', estimate: 'EST-4821', owner: 'James Rodriguez', insurer: 'State Farm', tech: 'Mike Torres', days: 1, priority: 'Rush', stage: 'checkin' },
+  { id: 2, year: 2023, make: 'BMW', model: 'X5', estimate: 'EST-4815', owner: 'Lisa Chen', insurer: 'Progressive', tech: 'Kevin Park', days: 0, priority: 'Normal', stage: 'checkin' },
+  { id: 3, year: 2024, make: 'Ford', model: 'F-150', estimate: 'EST-4790', owner: 'Diana Watts', insurer: 'GEICO', tech: 'James Wilson', days: 2, priority: 'Normal', stage: 'checkin' },
+
+  { id: 4, year: 2022, make: 'Honda', model: 'Civic', estimate: 'EST-4798', owner: 'Mark Thompson', insurer: 'Allstate', tech: 'Ana Reyes', days: 3, priority: 'Normal', stage: 'teardown' },
+  { id: 5, year: 2023, make: 'Toyota', model: 'Camry', estimate: 'EST-4782', owner: 'Robert Kim', insurer: 'USAA', tech: 'Chris Webb', days: 1, priority: 'Low', stage: 'teardown' },
+
+  { id: 6, year: 2025, make: 'Chevrolet', model: 'Silverado', estimate: 'EST-4776', owner: 'Angela Brooks', insurer: 'Farmers', tech: 'Derek Hall', days: 5, priority: 'Rush', stage: 'bodywork' },
+  { id: 7, year: 2022, make: 'Hyundai', model: 'Tucson', estimate: 'EST-4769', owner: 'Kevin Patel', insurer: 'State Farm', tech: 'Mike Torres', days: 3, priority: 'Normal', stage: 'bodywork' },
+  { id: 8, year: 2024, make: 'Toyota', model: 'RAV4', estimate: 'EST-4755', owner: 'Sarah Jensen', insurer: 'Progressive', tech: 'Kevin Park', days: 2, priority: 'Normal', stage: 'bodywork' },
+  { id: 9, year: 2021, make: 'BMW', model: '330i', estimate: 'EST-4720', owner: 'Michelle Wu', insurer: 'Liberty Mutual', tech: 'James Wilson', days: 6, priority: 'Rush', stage: 'bodywork' },
+
+  { id: 10, year: 2023, make: 'Nissan', model: 'Altima', estimate: 'EST-4742', owner: 'David Martinez', insurer: 'Allstate', tech: 'Ana Reyes', days: 2, priority: 'Normal', stage: 'paint' },
+  { id: 11, year: 2024, make: 'Honda', model: 'CR-V', estimate: 'EST-4708', owner: 'Thomas Green', insurer: 'GEICO', tech: 'Chris Webb', days: 4, priority: 'Low', stage: 'paint' },
+  { id: 12, year: 2023, make: 'Ford', model: 'Mustang Mach-E', estimate: 'EST-4690', owner: 'Jennifer Liu', insurer: 'USAA', tech: 'Derek Hall', days: 1, priority: 'Normal', stage: 'paint' },
+
+  { id: 13, year: 2024, make: 'Kia', model: 'Telluride', estimate: 'EST-4685', owner: 'Brandon Scott', insurer: 'Farmers', tech: 'Mike Torres', days: 2, priority: 'Normal', stage: 'reassembly' },
+  { id: 14, year: 2023, make: 'Subaru', model: 'Outback', estimate: 'EST-4672', owner: 'Rachel Adams', insurer: 'State Farm', tech: 'Kevin Park', days: 3, priority: 'Rush', stage: 'reassembly' },
+
+  { id: 15, year: 2022, make: 'Mazda', model: 'CX-5', estimate: 'EST-4660', owner: 'Tyler Nguyen', insurer: 'Progressive', tech: 'James Wilson', days: 1, priority: 'Normal', stage: 'qc' },
+  { id: 16, year: 2024, make: 'Volkswagen', model: 'Tiguan', estimate: 'EST-4648', owner: 'Amanda Foster', insurer: 'Liberty Mutual', tech: 'Ana Reyes', days: 0, priority: 'Low', stage: 'qc' },
+
+  { id: 17, year: 2023, make: 'Toyota', model: 'Tacoma', estimate: 'EST-4635', owner: 'Carlos Mendez', insurer: 'GEICO', tech: 'Chris Webb', days: 0, priority: 'Normal', stage: 'ready' },
+  { id: 18, year: 2024, make: 'Audi', model: 'Q5', estimate: 'EST-4620', owner: 'Natalie Cooper', insurer: 'Allstate', tech: 'Derek Hall', days: 1, priority: 'Normal', stage: 'ready' },
+  { id: 19, year: 2022, make: 'Jeep', model: 'Grand Cherokee', estimate: 'EST-4610', owner: 'Greg Lawson', insurer: 'USAA', tech: 'Mike Torres', days: 0, priority: 'Low', stage: 'ready' },
+]
+
+const summaryStats = [
+  { label: 'Total In-Shop', value: '19', icon: '🏭', color: 'blue' },
+  { label: 'Avg Cycle Time', value: '4.2 days', icon: '⏱', color: 'amber' },
+  { label: 'On-Time Rate', value: '87%', icon: '✅', color: 'emerald' },
+  { label: 'Bottlenecks', value: '2', icon: '⚠️', color: 'red' },
+]
+
+const insurers = ['State Farm', 'Progressive', 'GEICO', 'Allstate', 'USAA', 'Farmers', 'Liberty Mutual']
+
+function daysColor(days) {
+  if (days < 2) return 'badge-emerald'
+  if (days <= 4) return 'badge-amber'
+  return 'badge-red'
+}
+
+function priorityColor(priority) {
+  if (priority === 'Rush') return 'badge-red'
+  if (priority === 'Low') return 'badge-slate'
+  return 'badge-blue'
+}
+
+function stageIndex(stageId) {
+  return stages.findIndex(function(s) { return s.id === stageId })
+}
+</script>
+
+@extends('layouts/dashboard.stx')
+
+@section('styles')
+    .glow-red { box-shadow: 0 0 20px rgba(239,68,68,0.15); }
+    .bar-violet { background: var(--bar-violet); }
+    ::-webkit-scrollbar { height: 6px; }
+
+    {{-- Kanban-specific styles --}}
+    .kanban-scroll { overflow-x: auto; padding-bottom: 1rem; }
+    .kanban-board { display: flex; gap: 1rem; min-width: max-content; }
+    .kanban-column { width: 280px; min-width: 280px; flex-shrink: 0; }
+    .kanban-column-header { padding: 0.75rem 1rem; border-radius: 0.75rem 0.75rem 0 0; display: flex; align-items: center; justify-content: space-between; }
+    .kanban-column-body { padding: 0.5rem; border-radius: 0 0 0.75rem 0.75rem; min-height: 120px; display: flex; flex-direction: column; gap: 0.5rem; }
+    [data-theme="light"] .kanban-column-body { background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.06); border-top: none; }
+    [data-theme="dark"] .kanban-column-body { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-top: none; }
+    .kanban-card { padding: 0.875rem; border-radius: 0.625rem; cursor: grab; transition: all 0.2s ease; border: 1px solid var(--bg-glass-border); }
+    [data-theme="light"] .kanban-card { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    [data-theme="dark"] .kanban-card { background: var(--bg-glass); }
+    .kanban-card:hover { border-color: var(--bg-glass-border-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+    [data-theme="light"] .kanban-card:hover { background: #fff; }
+    [data-theme="dark"] .kanban-card:hover { background: var(--bg-glass-hover); }
+    .kanban-card:active { cursor: grabbing; opacity: 0.9; }
+    .progress-dots { display: flex; gap: 3px; }
+    .progress-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .progress-dot.completed { background: var(--text-accent); }
+    .progress-dot.current { background: var(--bar-amber); box-shadow: 0 0 6px var(--bar-amber); }
+    .progress-dot.pending { background: var(--bar-track); }
+    .view-toggle-btn { padding: 0.375rem 0.75rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s ease; }
+    .view-toggle-btn.active { background: var(--btn-primary-bg); color: #fff; }
+    .view-toggle-btn:not(.active) { background: var(--bg-subtle); color: var(--text-tertiary); }
+    .view-toggle-btn:not(.active):hover { background: var(--bg-subtle-hover); color: var(--text-primary); }
+    .list-view-table { width: 100%; text-align: left; font-size: 0.875rem; }
+    .list-view-table th { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-main); }
+    .list-view-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--row-border); }
+    .list-view-table tr:hover td { background: var(--row-hover); }
+    .list-view-table tr { cursor: pointer; }
+@endsection
+
+@section('content')
+      {{-- Page Header --}}
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">Production Board</h1>
+          <p class="text-sm mt-1" style="color: var(--text-muted)">Kanban workflow tracker — vehicle repair stages</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1 p-0.5 rounded-lg" style="background: var(--bg-subtle)">
+            <button id="btnBoardView" class="view-toggle-btn active" onclick="setView('board')">Board</button>
+            <button id="btnListView" class="view-toggle-btn" onclick="setView('list')">List</button>
+          </div>
+        </div>
+      </div>
+
+      {{-- Summary Stats --}}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        @foreach (summaryStats as stat)
+          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ stat.color }} fade-in">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ stat.label }}</span>
+              <span class="text-lg">{{ stat.icon }}</span>
+            </div>
+            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ stat.value }}</div>
+          </div>
+        @endforeach
+      </div>
+
+      {{-- Filters --}}
+      <div class="glass rounded-xl p-4 mb-8 fade-in">
+        <div class="flex flex-col md:flex-row gap-3">
+          <select id="filterTech" onchange="applyFilters()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
+            <option value="">All Technicians</option>
+            @foreach (technicians as tech)
+              <option value="{{ tech }}">{{ tech }}</option>
+            @endforeach
+          </select>
+          <select id="filterPriority" onchange="applyFilters()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
+            <option value="">All Priorities</option>
+            <option value="Rush">Rush</option>
+            <option value="Normal">Normal</option>
+            <option value="Low">Low</option>
+          </select>
+          <select id="filterInsurer" onchange="applyFilters()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
+            <option value="">All Insurers</option>
+            @foreach (insurers as ins)
+              <option value="{{ ins }}">{{ ins }}</option>
+            @endforeach
+          </select>
+          <button onclick="clearFilters()" class="px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            Clear
+          </button>
+        </div>
+      </div>
+
+      {{-- Board View --}}
+      <div id="boardView" class="fade-in">
+        <div class="kanban-scroll">
+          <div class="kanban-board" id="kanbanBoard">
+            @foreach (stages as stage)
+              <div class="kanban-column" data-stage="{{ stage.id }}">
+                <div class="kanban-column-header" style="background: linear-gradient(135deg, var(--bar-{{ stage.color }}), var(--bar-{{ stage.color }}))">
+                  <span class="text-sm font-semibold text-white">{{ stage.label }}</span>
+                  <span class="text-xs font-bold text-white px-2 py-0.5 rounded-full" style="background: rgba(255,255,255,0.25)" data-count="{{ stage.id }}">{{ vehicles.filter(function(v) { return v.stage === stage.id }).length }}</span>
+                </div>
+                <div class="kanban-column-body glass" data-column="{{ stage.id }}">
+                  @foreach (vehicles as v)
+                    @if (v.stage === stage.id)
+                      <div class="kanban-card" data-vehicle-id="{{ v.id }}" data-tech="{{ v.tech }}" data-priority="{{ v.priority }}" data-insurer="{{ v.insurer }}" onclick="openVehicleDetail({{ v.id }})">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                          <span class="text-sm font-semibold leading-tight" style="color: var(--text-primary)">{{ v.year }} {{ v.make }} {{ v.model }}</span>
+                          <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 {{ priorityColor(v.priority) }}">{{ v.priority }}</span>
+                        </div>
+                        <div class="text-xs mb-1.5" style="color: var(--text-muted)">
+                          <span class="font-mono" style="color: var(--text-accent)">{{ v.estimate }}</span>
+                        </div>
+                        <div class="text-xs mb-1" style="color: var(--text-tertiary)">{{ v.owner }}</div>
+                        <div class="text-xs mb-2" style="color: var(--text-muted)">{{ v.insurer }}</div>
+                        <div class="flex items-center justify-between mb-2">
+                          <span class="text-xs" style="color: var(--text-muted)">{{ v.tech }}</span>
+                          <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold {{ daysColor(v.days) }}">{{ v.days }}d</span>
+                        </div>
+                        <div class="progress-dots">
+                          @foreach (stages as si => s)
+                            @if (stageIndex(v.stage) > si)
+                              <div class="progress-dot completed"></div>
+                            @elseif (stageIndex(v.stage) === si)
+                              <div class="progress-dot current"></div>
+                            @else
+                              <div class="progress-dot pending"></div>
+                            @endif
+                          @endforeach
+                        </div>
+                      </div>
+                    @endif
+                  @endforeach
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+      </div>
+
+      {{-- List View --}}
+      <div id="listView" class="fade-in glass rounded-xl overflow-hidden" style="display: none">
+        <div class="px-5 py-4 flex items-center justify-between" style="border-bottom: 1px solid var(--border-main)">
+          <h2 class="text-base font-semibold" style="color: var(--text-primary)">All Vehicles in Production</h2>
+          <span id="listCount" class="text-xs" style="color: var(--text-muted)">19 vehicles</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="list-view-table" id="listTable">
+            <thead>
+              <tr>
+                <th>Vehicle</th>
+                <th>Estimate</th>
+                <th>Owner</th>
+                <th>Insurer</th>
+                <th>Technician</th>
+                <th>Stage</th>
+                <th>Days</th>
+                <th>Priority</th>
+              </tr>
+            </thead>
+            <tbody id="listTableBody">
+              @foreach (vehicles as v)
+                <tr data-vehicle-id="{{ v.id }}" data-tech="{{ v.tech }}" data-priority="{{ v.priority }}" data-insurer="{{ v.insurer }}" onclick="openVehicleDetail({{ v.id }})">
+                  <td>
+                    <span class="font-medium" style="color: var(--text-secondary)">{{ v.year }} {{ v.make }} {{ v.model }}</span>
+                  </td>
+                  <td>
+                    <span class="font-mono text-xs" style="color: var(--text-accent)">{{ v.estimate }}</span>
+                  </td>
+                  <td style="color: var(--text-tertiary)">{{ v.owner }}</td>
+                  <td style="color: var(--text-muted)">{{ v.insurer }}</td>
+                  <td style="color: var(--text-tertiary)">{{ v.tech }}</td>
+                  <td>
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium badge-{{ stages.find(function(s) { return s.id === v.stage }).color }}">{{ stages.find(function(s) { return s.id === v.stage }).label }}</span>
+                  </td>
+                  <td>
+                    <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold {{ daysColor(v.days) }}">{{ v.days }}d</span>
+                  </td>
+                  <td>
+                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ priorityColor(v.priority) }}">{{ v.priority }}</span>
+                  </td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+@endsection
+
+<script client>
+    // Vehicle data for client-side operations
+    var stageOrder = ['checkin', 'teardown', 'bodywork', 'paint', 'reassembly', 'qc', 'ready']
+    var stageLabels = {
+      checkin: 'Check-in',
+      teardown: 'Teardown',
+      bodywork: 'Body Work',
+      paint: 'Paint',
+      reassembly: 'Reassembly',
+      qc: 'QC / Detail',
+      ready: 'Ready for Pickup'
+    }
+    var stageColors = {
+      checkin: 'blue',
+      teardown: 'violet',
+      bodywork: 'amber',
+      paint: 'emerald',
+      reassembly: 'blue',
+      qc: 'violet',
+      ready: 'emerald'
+    }
+
+    var vehicleData = [
+      { id: 1, year: 2024, make: 'Tesla', model: 'Model Y', estimate: 'EST-4821', owner: 'James Rodriguez', insurer: 'State Farm', tech: 'Mike Torres', days: 1, priority: 'Rush', stage: 'checkin', vin: '7SAYGKEE9PA012847', color: 'Pearl White Multi-Coat', phone: '(512) 555-0174', damage: 'Front-end collision — bumper, hood, headlight assembly', notes: 'Customer requesting OEM parts only. Rush due to rental coverage expiring.' },
+      { id: 2, year: 2023, make: 'BMW', model: 'X5', estimate: 'EST-4815', owner: 'Lisa Chen', insurer: 'Progressive', tech: 'Kevin Park', days: 0, priority: 'Normal', stage: 'checkin', vin: '5UX23EP00P9L78234', color: 'Carbon Black Metallic', phone: '(415) 555-0298', damage: 'Side impact — driver door and quarter panel', notes: 'Awaiting supplement approval from Progressive.' },
+      { id: 3, year: 2024, make: 'Ford', model: 'F-150', estimate: 'EST-4790', owner: 'Diana Watts', insurer: 'GEICO', tech: 'James Wilson', days: 2, priority: 'Normal', stage: 'checkin', vin: '1FTFW1E80NKD45632', color: 'Iconic Silver Metallic', phone: '(214) 555-0387', damage: 'Bed-side panel dent and tailgate damage', notes: 'Parts ordered, ETA 2 days.' },
+      { id: 4, year: 2022, make: 'Honda', model: 'Civic', estimate: 'EST-4798', owner: 'Mark Thompson', insurer: 'Allstate', tech: 'Ana Reyes', days: 3, priority: 'Normal', stage: 'teardown', vin: '2HGFE2F59NH534821', color: 'Sonic Gray Pearl', phone: '(614) 555-0132', damage: 'Rear bumper, trunk lid, tail lights', notes: 'Hidden damage found during teardown. Supplement submitted.' },
+      { id: 5, year: 2023, make: 'Toyota', model: 'Camry', estimate: 'EST-4782', owner: 'Robert Kim', insurer: 'USAA', tech: 'Chris Webb', days: 1, priority: 'Low', stage: 'teardown', vin: '4T1G11AK8PU284930', color: 'Celestial Silver Metallic', phone: '(310) 555-0421', damage: 'Rear quarter panel dent — minor', notes: 'Low priority, customer not in a rush. PDR possible.' },
+      { id: 6, year: 2025, make: 'Chevrolet', model: 'Silverado', estimate: 'EST-4776', owner: 'Angela Brooks', insurer: 'Farmers', tech: 'Derek Hall', days: 5, priority: 'Rush', stage: 'bodywork', vin: '3GCUYGED1RG178452', color: 'Summit White', phone: '(713) 555-0245', damage: 'Front-end collision — frame pull required', notes: 'Frame damage confirmed. Extended repair. Customer escalation.' },
+      { id: 7, year: 2022, make: 'Hyundai', model: 'Tucson', estimate: 'EST-4769', owner: 'Kevin Patel', insurer: 'State Farm', tech: 'Mike Torres', days: 3, priority: 'Normal', stage: 'bodywork', vin: 'KM8JBCA19NU652387', color: 'Amazon Gray', phone: '(404) 555-0189', damage: 'Liftgate dent and rear bumper', notes: 'Aftermarket parts approved by insurer.' },
+      { id: 8, year: 2024, make: 'Toyota', model: 'RAV4', estimate: 'EST-4755', owner: 'Sarah Jensen', insurer: 'Progressive', tech: 'Kevin Park', days: 2, priority: 'Normal', stage: 'bodywork', vin: '2T3P1RFV5RC913478', color: 'Blueprint', phone: '(503) 555-0356', damage: 'Rear-end collision — bumper, liftgate', notes: 'On track. Paint scheduled for tomorrow.' },
+      { id: 9, year: 2021, make: 'BMW', model: '330i', estimate: 'EST-4720', owner: 'Michelle Wu', insurer: 'Liberty Mutual', tech: 'James Wilson', days: 6, priority: 'Rush', stage: 'bodywork', vin: '3MW5R7J05M8B34591', color: 'Alpine White', phone: '(212) 555-0443', damage: 'Front-end collision — major structural', notes: 'BOTTLENECK: Waiting on BMW OEM fender. Backordered 3 days.' },
+      { id: 10, year: 2023, make: 'Nissan', model: 'Altima', estimate: 'EST-4742', owner: 'David Martinez', insurer: 'Allstate', tech: 'Ana Reyes', days: 2, priority: 'Normal', stage: 'paint', vin: '1N4BL4CV2PN587124', color: 'Gun Metallic', phone: '(602) 555-0278', damage: 'Front bumper and hood repair', notes: 'In paint booth. Basecoat applied, clearcoat tomorrow.' },
+      { id: 11, year: 2024, make: 'Honda', model: 'CR-V', estimate: 'EST-4708', owner: 'Thomas Green', insurer: 'GEICO', tech: 'Chris Webb', days: 4, priority: 'Low', stage: 'paint', vin: '7FARW2H93RE482130', color: 'Radiant Red Metallic II', phone: '(303) 555-0165', damage: 'Rear quarter panel dent and scratch', notes: 'BOTTLENECK: Color match issue — re-tinting required.' },
+      { id: 12, year: 2023, make: 'Ford', model: 'Mustang Mach-E', estimate: 'EST-4690', owner: 'Jennifer Liu', insurer: 'USAA', tech: 'Derek Hall', days: 1, priority: 'Normal', stage: 'paint', vin: '3FMTK3SU4PMA76218', color: 'Grabber Blue Metallic', phone: '(206) 555-0512', damage: 'Front-end collision repair', notes: 'Special order tri-coat paint. Proceeding on schedule.' },
+      { id: 13, year: 2024, make: 'Kia', model: 'Telluride', estimate: 'EST-4685', owner: 'Brandon Scott', insurer: 'Farmers', tech: 'Mike Torres', days: 2, priority: 'Normal', stage: 'reassembly', vin: '5XYP6DHC5RG234567', color: 'Wolf Gray', phone: '(704) 555-0331', damage: 'Front bumper, grille, headlight housing', notes: 'Reassembly in progress. All parts accounted for.' },
+      { id: 14, year: 2023, make: 'Subaru', model: 'Outback', estimate: 'EST-4672', owner: 'Rachel Adams', insurer: 'State Farm', tech: 'Kevin Park', days: 3, priority: 'Rush', stage: 'reassembly', vin: '4S4BTAPC5P3345678', color: 'Autumn Green Metallic', phone: '(720) 555-0214', damage: 'Side impact — both passenger doors', notes: 'Rush — customer needs vehicle for work travel next week.' },
+      { id: 15, year: 2022, make: 'Mazda', model: 'CX-5', estimate: 'EST-4660', owner: 'Tyler Nguyen', insurer: 'Progressive', tech: 'James Wilson', days: 1, priority: 'Normal', stage: 'qc', vin: 'JM3KFBCM5N1234567', color: 'Soul Red Crystal Metallic', phone: '(949) 555-0176', damage: 'Rear bumper replacement', notes: 'QC inspection in progress. Minor touch-up needed on clear.' },
+      { id: 16, year: 2024, make: 'Volkswagen', model: 'Tiguan', estimate: 'EST-4648', owner: 'Amanda Foster', insurer: 'Liberty Mutual', tech: 'Ana Reyes', days: 0, priority: 'Low', stage: 'qc', vin: '3VV3B7AX5RM456789', color: 'Pure White', phone: '(813) 555-0298', damage: 'Door ding repair — PDR and touch-up', notes: 'Detail and final wash scheduled today.' },
+      { id: 17, year: 2023, make: 'Toyota', model: 'Tacoma', estimate: 'EST-4635', owner: 'Carlos Mendez', insurer: 'GEICO', tech: 'Chris Webb', days: 0, priority: 'Normal', stage: 'ready', vin: '3TMCZ5AN5PM567890', color: 'Magnetic Gray Metallic', phone: '(520) 555-0443', damage: 'Front bumper and fender repair', notes: 'Ready. Customer notified, pickup scheduled for tomorrow 10am.' },
+      { id: 18, year: 2024, make: 'Audi', model: 'Q5', estimate: 'EST-4620', owner: 'Natalie Cooper', insurer: 'Allstate', tech: 'Derek Hall', days: 1, priority: 'Normal', stage: 'ready', vin: 'WA1BNAFY5R2678901', color: 'Navarra Blue Metallic', phone: '(612) 555-0187', damage: 'Hail damage — full PDR and paint correction', notes: 'Complete. Awaiting customer pickup. Insurance check ready.' },
+      { id: 19, year: 2022, make: 'Jeep', model: 'Grand Cherokee', estimate: 'EST-4610', owner: 'Greg Lawson', insurer: 'USAA', tech: 'Mike Torres', days: 0, priority: 'Low', stage: 'ready', vin: '1C4RJKBG5N8789012', color: 'Sting-Gray', phone: '(480) 555-0356', damage: 'Rear-end minor — bumper and tailgate', notes: 'Complete. Customer picking up this afternoon.' }
+    ]
+
+    // View toggle (signal)
+    var currentView = state('board')
+    effect(function() {
+      var v = currentView()
+      var boardEl = document.getElementById('boardView')
+      var listEl = document.getElementById('listView')
+      var btnBoard = document.getElementById('btnBoardView')
+      var btnList = document.getElementById('btnListView')
+      if (!boardEl || !listEl) return
+      if (v === 'board') {
+        boardEl.style.display = ''
+        listEl.style.display = 'none'
+        if (btnBoard) btnBoard.classList.add('active')
+        if (btnList) btnList.classList.remove('active')
+      } else {
+        boardEl.style.display = 'none'
+        listEl.style.display = ''
+        if (btnBoard) btnBoard.classList.remove('active')
+        if (btnList) btnList.classList.add('active')
+      }
+    })
+    function setView(view) { currentView.set(view) }
+
+    // Filtering
+    function applyFilters() {
+      var tech = document.getElementById('filterTech').value
+      var priority = document.getElementById('filterPriority').value
+      var insurer = document.getElementById('filterInsurer').value
+
+      // Filter board cards
+      var cards = document.querySelectorAll('.kanban-card')
+      cards.forEach(function(card) {
+        var matchTech = !tech || card.getAttribute('data-tech') === tech
+        var matchPriority = !priority || card.getAttribute('data-priority') === priority
+        var matchInsurer = !insurer || card.getAttribute('data-insurer') === insurer
+        card.style.display = (matchTech && matchPriority && matchInsurer) ? '' : 'none'
+      })
+
+      // Filter list rows
+      var rows = document.querySelectorAll('#listTableBody tr')
+      var visibleCount = 0
+      rows.forEach(function(row) {
+        var matchTech = !tech || row.getAttribute('data-tech') === tech
+        var matchPriority = !priority || row.getAttribute('data-priority') === priority
+        var matchInsurer = !insurer || row.getAttribute('data-insurer') === insurer
+        var visible = matchTech && matchPriority && matchInsurer
+        row.style.display = visible ? '' : 'none'
+        if (visible) visibleCount++
+      })
+
+      // Update column counts
+      stageOrder.forEach(function(stageId) {
+        var col = document.querySelector('[data-column="' + stageId + '"]')
+        if (col) {
+          var visibleCards = col.querySelectorAll('.kanban-card:not([style*="display: none"])')
+          var countEl = document.querySelector('[data-count="' + stageId + '"]')
+          if (countEl) countEl.textContent = visibleCards.length
+        }
+      })
+
+      document.getElementById('listCount').textContent = visibleCount + ' vehicles'
+    }
+
+    function clearFilters() {
+      document.getElementById('filterTech').value = ''
+      document.getElementById('filterPriority').value = ''
+      document.getElementById('filterInsurer').value = ''
+      applyFilters()
+      showToast('Filters cleared', 'info')
+    }
+
+    // Vehicle detail slide-over
+    function openVehicleDetail(id) {
+      var v = null
+      for (var i = 0; i < vehicleData.length; i++) {
+        if (vehicleData[i].id === id) { v = vehicleData[i]; break; }
+      }
+      if (!v) return
+
+      var currentIdx = stageOrder.indexOf(v.stage)
+      var isLastStage = currentIdx === stageOrder.length - 1
+
+      // Build progress timeline
+      var timeline = ''
+      stageOrder.forEach(function(sid, idx) {
+        var isCurrent = sid === v.stage
+        var isCompleted = idx < currentIdx
+        var dotStyle = ''
+        var labelStyle = ''
+        if (isCompleted) {
+          dotStyle = 'background: var(--text-accent);'
+          labelStyle = 'color: var(--text-accent);'
+        } else if (isCurrent) {
+          dotStyle = 'background: var(--bar-amber); box-shadow: 0 0 8px var(--bar-amber);'
+          labelStyle = 'color: var(--text-primary); font-weight: 600;'
+        } else {
+          dotStyle = 'background: var(--bar-track);'
+          labelStyle = 'color: var(--text-muted);'
+        }
+        var lineColor = isCompleted ? 'var(--text-accent)' : 'var(--bar-track)'
+        timeline += '<div style="display: flex; align-items: center; gap: 0.5rem;">'
+        timeline += '<div style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; ' + dotStyle + '"></div>'
+        timeline += '<span style="font-size: 0.8125rem; ' + labelStyle + '">' + stageLabels[sid] + '</span>'
+        timeline += '</div>'
+        if (idx < stageOrder.length - 1) {
+          timeline += '<div style="width: 2px; height: 16px; margin-left: 5px; background: ' + lineColor + ';"></div>'
+        }
+      })
+
+      // Days badge
+      var daysBadge = 'badge-emerald'
+      if (v.days >= 2 && v.days <= 4) daysBadge = 'badge-amber'
+      if (v.days > 4) daysBadge = 'badge-red'
+
+      var priorityBadge = 'badge-blue'
+      if (v.priority === 'Rush') priorityBadge = 'badge-red'
+      if (v.priority === 'Low') priorityBadge = 'badge-slate'
+
+      var nextStageLabel = isLastStage ? '' : stageLabels[stageOrder[currentIdx + 1]]
+
+      var html = ''
+        + '<div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main);">'
+        + '<div>'
+        + '<h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">' + v.year + ' ' + v.make + ' ' + v.model + '</h2>'
+        + '<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">'
+        + '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + priorityBadge + '">' + v.priority + '</span>'
+        + '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium badge-' + stageColors[v.stage] + '">' + stageLabels[v.stage] + '</span>'
+        + '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + daysBadge + '">' + v.days + ' day' + (v.days !== 1 ? 's' : '') + ' in stage</span>'
+        + '</div>'
+        + '</div>'
+        + '<button onclick="closeSlideOver()" style="padding: 0.5rem; border-radius: 0.5rem; color: var(--text-muted); background: none; border: none; cursor: pointer;" aria-label="Close">'
+        + '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>'
+
+        // Vehicle info
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Vehicle Information</div>'
+        + '<div class="detail-row"><span class="detail-row-label">VIN</span><span class="detail-row-value" style="font-family: monospace; font-size: 0.8125rem;">' + v.vin + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Color</span><span class="detail-row-value">' + v.color + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Estimate</span><span class="detail-row-value" style="color: var(--text-accent);">' + v.estimate + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Damage</span><span class="detail-row-value" style="max-width: 320px; text-align: right;">' + v.damage + '</span></div>'
+        + '</div>'
+
+        // Owner & insurer
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Owner & Insurer</div>'
+        + '<div class="detail-row"><span class="detail-row-label">Owner</span><span class="detail-row-value">' + v.owner + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">' + v.phone + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Insurer</span><span class="detail-row-value">' + v.insurer + '</span></div>'
+        + '</div>'
+
+        // Assigned tech
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Assignment</div>'
+        + '<div class="detail-row"><span class="detail-row-label">Technician</span><span class="detail-row-value">' + v.tech + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Priority</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold ' + priorityBadge + '">' + v.priority + '</span></span></div>'
+        + '</div>'
+
+        // Repair timeline
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Repair Timeline</div>'
+        + '<div style="display: flex; flex-direction: column; gap: 2px; padding: 0.5rem 0;">'
+        + timeline
+        + '</div>'
+        + '</div>'
+
+        // Notes
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Notes</div>'
+        + '<p style="font-size: 0.875rem; color: var(--text-tertiary); line-height: 1.6;">' + v.notes + '</p>'
+        + '</div>'
+
+        // Action buttons
+        + '<div class="detail-section" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">'
+        + (isLastStage
+          ? '<button onclick="markDelivered(' + v.id + ')" class="px-4 py-2.5 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--bar-emerald);"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Mark Delivered</button>'
+          : '<button onclick="moveToNextStage(' + v.id + ')" class="px-4 py-2.5 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--btn-primary-bg);"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>Move to ' + nextStageLabel + '</button>')
+        + '<button onclick="closeSlideOver(); showToast(\'Estimate ' + v.estimate + ' opened\', \'info\')" class="px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text);"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>View Estimate</button>'
+        + '</div>'
+
+      openSlideOver(html)
+    }
+
+    // Move vehicle to next stage
+    function moveToNextStage(id) {
+      var v = null
+      var vIdx = -1
+      for (var i = 0; i < vehicleData.length; i++) {
+        if (vehicleData[i].id === id) { v = vehicleData[i]; vIdx = i; break; }
+      }
+      if (!v) return
+
+      var currentIdx = stageOrder.indexOf(v.stage)
+      if (currentIdx >= stageOrder.length - 1) return
+
+      var nextStage = stageOrder[currentIdx + 1]
+      var oldStage = v.stage
+
+      // Update data
+      vehicleData[vIdx].stage = nextStage
+      vehicleData[vIdx].days = 0
+
+      // Move card in the DOM
+      var card = document.querySelector('.kanban-card[data-vehicle-id="' + id + '"]')
+      var targetColumn = document.querySelector('[data-column="' + nextStage + '"]')
+      if (card && targetColumn) {
+        card.remove()
+        targetColumn.appendChild(card)
+      }
+
+      // Also update the list view row stage badge
+      var row = document.querySelector('#listTableBody tr[data-vehicle-id="' + id + '"]')
+      if (row) {
+        var stageTd = row.querySelectorAll('td')[5]
+        if (stageTd) {
+          stageTd.innerHTML = '<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium badge-' + stageColors[nextStage] + '">' + stageLabels[nextStage] + '</span>'
+        }
+        var daysTd = row.querySelectorAll('td')[6]
+        if (daysTd) {
+          daysTd.innerHTML = '<span class="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold badge-emerald">0d</span>'
+        }
+      }
+
+      // Update column counts
+      updateColumnCounts()
+
+      closeSlideOver()
+      showToast(v.year + ' ' + v.make + ' ' + v.model + ' moved to ' + stageLabels[nextStage], 'success')
+    }
+
+    function markDelivered(id) {
+      var v = null
+      for (var i = 0; i < vehicleData.length; i++) {
+        if (vehicleData[i].id === id) { v = vehicleData[i]; break; }
+      }
+      if (!v) return
+
+      // Remove from board
+      var card = document.querySelector('.kanban-card[data-vehicle-id="' + id + '"]')
+      if (card) card.remove()
+
+      // Remove from list
+      var row = document.querySelector('#listTableBody tr[data-vehicle-id="' + id + '"]')
+      if (row) row.remove()
+
+      updateColumnCounts()
+      closeSlideOver()
+      showToast(v.year + ' ' + v.make + ' ' + v.model + ' marked as delivered!', 'success')
+    }
+
+    function updateColumnCounts() {
+      stageOrder.forEach(function(stageId) {
+        var col = document.querySelector('[data-column="' + stageId + '"]')
+        if (col) {
+          var visibleCards = col.querySelectorAll('.kanban-card:not([style*="display: none"])')
+          var countEl = document.querySelector('[data-count="' + stageId + '"]')
+          if (countEl) countEl.textContent = visibleCards.length
+        }
+      })
+    }
+</script>

@@ -1,0 +1,752 @@
+<script>
+const companyName = 'AutoEstimate Pro'
+const currentUser = 'Sarah Mitchell'
+const currentRole = 'Senior Estimator'
+const activePage = 'Reports'
+
+const navLinks = [
+  { label: 'Dashboard', href: '/' },
+  { label: 'Estimates', href: '/estimates' },
+  { label: 'Production', href: '/production' },
+  { label: 'Vehicles', href: '/vehicles' },
+  { label: 'Parts', href: '/parts' },
+  { label: 'Insurers', href: '/insurers' },
+  { label: 'Customers', href: '/customers' },
+  { label: 'Reports', href: '/reports' },
+  { label: 'Schedule', href: '/schedule' },
+]
+
+const revenueData = [
+  { month: 'Oct 2025', value: 342100, display: '$342,100' },
+  { month: 'Nov 2025', value: 398500, display: '$398,500' },
+  { month: 'Dec 2025', value: 312800, display: '$312,800' },
+  { month: 'Jan 2026', value: 425300, display: '$425,300' },
+  { month: 'Feb 2026', value: 456200, display: '$456,200' },
+  { month: 'Mar 2026', value: 482630, display: '$482,630' },
+]
+
+const maxRevenue = 482630
+
+const cycleTimeData = [
+  { month: 'Oct 2025', days: 3.8 },
+  { month: 'Nov 2025', days: 3.6 },
+  { month: 'Dec 2025', days: 3.5 },
+  { month: 'Jan 2026', days: 3.4 },
+  { month: 'Feb 2026', days: 3.3 },
+  { month: 'Mar 2026', days: 3.2 },
+]
+
+const maxCycleDays = 3.8
+
+const supplementData = [
+  { insurer: 'State Farm', rate: 15.2, color: 'amber' },
+  { insurer: 'Progressive', rate: 18.5, color: 'amber' },
+  { insurer: 'GEICO', rate: 21.3, color: 'red' },
+  { insurer: 'Allstate', rate: 16.8, color: 'amber' },
+  { insurer: 'USAA', rate: 12.4, color: 'green' },
+  { insurer: 'Liberty Mutual', rate: 24.1, color: 'red' },
+]
+
+const technicians = [
+  { name: 'Mike Torres', completed: 142, accuracy: 97.2, cycleTime: 2.8, rating: 4.9, certs: 'I-CAR Gold, ASE, Tesla' },
+  { name: 'Sarah Johnson', completed: 128, accuracy: 96.8, cycleTime: 3.1, rating: 4.8, certs: 'I-CAR Gold, BMW OEM' },
+  { name: 'Carlos Rivera', completed: 119, accuracy: 95.4, cycleTime: 3.2, rating: 4.7, certs: 'I-CAR Gold, ASE' },
+  { name: 'Jennifer Lee', completed: 108, accuracy: 98.1, cycleTime: 2.6, rating: 4.9, certs: 'I-CAR Gold, Tesla, ASE' },
+  { name: 'David Kim', completed: 96, accuracy: 94.7, cycleTime: 3.5, rating: 4.6, certs: 'I-CAR Gold, BMW OEM' },
+  { name: 'Amanda Chen', completed: 87, accuracy: 96.3, cycleTime: 3.0, rating: 4.8, certs: 'I-CAR Gold, ASE, Tesla' },
+]
+
+const keyMetrics = [
+  { label: 'Total Revenue YTD', value: '$2,417,530', change: '+12.4%', positive: true },
+  { label: 'Avg Estimate Value', value: '$5,840', change: '+3.2%', positive: true },
+  { label: 'Customer Satisfaction', value: '4.78/5.0', change: '+0.8%', positive: true },
+  { label: 'First-Time Fix Rate', value: '87.3%', change: '-1.2%', positive: false },
+  { label: 'Touch Time Efficiency', value: '72.4%', change: '+2.1%', positive: true },
+  { label: 'Parts-to-Labor Ratio', value: '1.42', change: '-0.05', positive: false },
+]
+
+const recentReports = [
+  { name: 'March 2026 Monthly Summary', date: '2026-03-08', format: 'PDF', size: '2.4 MB' },
+  { name: 'Q1 DRP Performance Review', date: '2026-03-05', format: 'PDF', size: '5.1 MB' },
+  { name: 'Supplement Rate Analysis', date: '2026-03-03', format: 'Excel', size: '1.8 MB' },
+  { name: 'Technician Scorecard — Feb', date: '2026-02-28', format: 'PDF', size: '3.2 MB' },
+  { name: 'Annual Revenue Comparison', date: '2026-02-25', format: 'CSV', size: '890 KB' },
+]
+
+function supplementBarColor(color) {
+  if (color === 'green') return 'var(--bar-emerald)'
+  if (color === 'amber') return 'var(--bar-amber)'
+  return 'var(--bar-red)'
+}
+
+function formatBadgeClass(format) {
+  if (format === 'PDF') return 'badge-red'
+  if (format === 'CSV') return 'badge-emerald'
+  return 'badge-blue'
+}
+</script>
+
+@extends('layouts/dashboard.stx')
+
+@section('styles')
+    .metric-card { cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .metric-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .metric-card:active { transform: translateY(0); }
+    .spec-pill { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; margin: 0.25rem; }
+@endsection
+
+@section('content')
+      {{-- Page Header --}}
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">Reports & Analytics</h1>
+          <p class="text-sm mt-1" style="color: var(--text-muted)">Revenue trends, cycle time analysis, and performance metrics</p>
+        </div>
+        <div class="flex items-center gap-3 flex-wrap">
+          <select id="dateRangeSelect" class="rounded-lg py-2 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem" onchange="handleDateRangeChange(this)">
+            <option>Last 6 Months</option>
+            <option>Last 3 Months</option>
+            <option>This Quarter</option>
+            <option>Year to Date</option>
+          </select>
+          <button class="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--btn-primary-bg)" onclick="openGenerateReport()">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            Generate Report
+          </button>
+          <button class="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--btn-primary-bg)" onclick="showToast('Generating PDF report...', 'info')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+            Export PDF
+          </button>
+          <button class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 border" style="background: var(--bg-subtle); border-color: var(--border-input); color: var(--text-tertiary)" onclick="showToast('Exporting CSV data...', 'info')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      {{-- Section 1: Revenue Trend (full width) --}}
+      <div class="glass rounded-xl p-5 mb-6 fade-in">
+        <h2 class="text-base font-semibold mb-5" style="color: var(--text-primary)">Revenue Trend</h2>
+        <div class="space-y-3">
+          @foreach (revenueData as item)
+            <div class="flex items-center gap-4 cursor-pointer" onclick="showToast('{{ item.month }}: {{ item.display }} revenue — {{ Math.round((item.value / maxRevenue) * 100) }}% of peak', 'info')" title="{{ item.month }}: {{ item.display }}">
+              <span class="text-sm w-20 flex-shrink-0 tabular-nums" style="color: var(--text-tertiary)">{{ item.month }}</span>
+              <div class="flex-1 h-7 rounded overflow-hidden" style="background: var(--bar-track)">
+                <div class="h-full rounded bar-animate" style="width: {{ Math.round((item.value / maxRevenue) * 100) }}%; background: var(--bar-blue)"></div>
+              </div>
+              <span class="text-sm font-medium w-24 text-right tabular-nums" style="color: var(--text-primary)">{{ item.display }}</span>
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      {{-- AI Predictions --}}
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+        <div class="glass rounded-xl p-5 fade-in">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-lg">&#9650;</span>
+            <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-muted)">Revenue Forecast</span>
+          </div>
+          <p class="text-xl font-bold" style="color: var(--text-primary)">$487K</p>
+          <p class="text-sm mt-1" style="color: var(--text-success)">Next month projected (+8% vs current)</p>
+          <p class="text-xs mt-2" style="color: var(--text-muted)">Based on pipeline volume and seasonal trends</p>
+        </div>
+        <div class="glass rounded-xl p-5 fade-in">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-lg">&#9660;</span>
+            <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-muted)">Supplement Rate</span>
+          </div>
+          <p class="text-xl font-bold" style="color: var(--text-primary)">38%</p>
+          <p class="text-sm mt-1" style="color: var(--text-success)">Trending down from 42%</p>
+          <p class="text-xs mt-2" style="color: var(--text-muted)">AI review catching 12% more items upfront</p>
+        </div>
+        <div class="glass rounded-xl p-5 fade-in">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-lg">&#9650;</span>
+            <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-muted)">Cycle Time</span>
+          </div>
+          <p class="text-xl font-bold" style="color: var(--text-primary)">-0.3 days</p>
+          <p class="text-sm mt-1" style="color: var(--text-success)">Predicted improvement</p>
+          <p class="text-xs mt-2" style="color: var(--text-muted)">New paint booth schedule optimizing throughput</p>
+        </div>
+      </div>
+
+      {{-- Section 2: Cycle Time + Supplement Analysis (two columns) --}}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+        {{-- Cycle Time Trend --}}
+        <div class="glass rounded-xl p-5 fade-in">
+          <h3 class="text-base font-semibold mb-5" style="color: var(--text-primary)">Cycle Time Trend</h3>
+          <div class="space-y-3">
+            @foreach (cycleTimeData as item)
+              <div class="flex items-center gap-4" title="{{ item.month }}: {{ item.days }} days average cycle time">
+                <span class="text-sm w-20 flex-shrink-0 tabular-nums" style="color: var(--text-tertiary)">{{ item.month }}</span>
+                <div class="flex-1 h-6 rounded overflow-hidden" style="background: var(--bar-track)">
+                  <div class="h-full rounded bar-animate" style="width: {{ Math.round((item.days / maxCycleDays) * 100) }}%; background: var(--bar-emerald)"></div>
+                </div>
+                <span class="text-sm font-medium w-16 text-right tabular-nums" style="color: var(--text-primary)">{{ item.days }} days</span>
+              </div>
+            @endforeach
+          </div>
+        </div>
+
+        {{-- Supplement Analysis --}}
+        <div class="glass rounded-xl p-5 fade-in">
+          <h3 class="text-base font-semibold mb-5" style="color: var(--text-primary)">Supplement Analysis</h3>
+          <div class="space-y-3">
+            @foreach (supplementData as item)
+              <div class="flex items-center gap-4 cursor-pointer" onclick="showToast('{{ item.insurer }}: {{ item.rate }}% supplement rate — {{ item.rate > 20 ? 'Above target, review needed' : item.rate < 15 ? 'Below target, excellent' : 'Within acceptable range' }}', '{{ item.color === 'red' ? 'warn' : item.color === 'green' ? 'success' : 'info' }}')" title="{{ item.insurer }}: {{ item.rate }}% supplement rate">
+                <span class="text-sm w-28 flex-shrink-0" style="color: var(--text-tertiary)">{{ item.insurer }}</span>
+                <div class="flex-1 h-6 rounded overflow-hidden" style="background: var(--bar-track)">
+                  <div class="h-full rounded bar-animate" style="width: {{ Math.round((item.rate / 30) * 100) }}%; background: {{ supplementBarColor(item.color) }}"></div>
+                </div>
+                <span class="text-sm font-medium w-14 text-right tabular-nums" style="color: var(--text-primary)">{{ item.rate }}%</span>
+              </div>
+            @endforeach
+          </div>
+          <div class="flex items-center gap-4 mt-4 pt-4 text-xs" style="border-top: 1px solid var(--border-main); color: var(--text-muted)">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background: var(--bar-emerald)"></span> &lt; 15%</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background: var(--bar-amber)"></span> 15–20%</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background: var(--bar-red)"></span> &gt; 20%</span>
+          </div>
+        </div>
+      </div>
+
+      {{-- Section 3: Technician Performance + Key Metrics (two columns) --}}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+        {{-- Technician Performance --}}
+        <div class="lg:col-span-2 glass rounded-xl overflow-hidden fade-in">
+          <div class="px-5 py-4" style="border-bottom: 1px solid var(--border-main)">
+            <h3 class="text-base font-semibold" style="color: var(--text-primary)">Technician Performance</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs uppercase tracking-wider" style="color: var(--text-muted); border-bottom: 1px solid var(--border-main)">
+                  <th class="px-5 py-3 font-medium">Name</th>
+                  <th class="px-5 py-3 font-medium text-right">Estimates</th>
+                  <th class="px-5 py-3 font-medium text-right">Accuracy</th>
+                  <th class="px-5 py-3 font-medium text-right">Cycle Time</th>
+                  <th class="px-5 py-3 font-medium text-right">Rating</th>
+                  <th class="px-5 py-3 font-medium">Certifications</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach (technicians as idx => tech)
+                  <tr class="clickable" style="border-bottom: 1px solid var(--row-border)" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='transparent'" onclick="openTechDetail('{{ tech.name }}')">
+                    <td class="px-5 py-3.5 font-medium" style="color: var(--text-secondary)">
+                      <span class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold" style="background: var(--rank-bg); color: var(--text-muted)">{{ idx + 1 }}</span>
+                        {{ tech.name }}
+                      </span>
+                    </td>
+                    <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-tertiary)">{{ tech.completed }}</td>
+                    <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-success)">{{ tech.accuracy }}%</td>
+                    <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-tertiary)">{{ tech.cycleTime }}d</td>
+                    <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--badge-amber-text)">{{ tech.rating }}/5</td>
+                    <td class="px-5 py-3.5">
+                      <span class="text-xs" style="color: var(--text-tertiary)">{{ tech.certs }}</span>
+                    </td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {{-- Key Metrics Summary --}}
+        <div class="glass rounded-xl p-5 fade-in">
+          <h3 class="text-base font-semibold mb-5" style="color: var(--text-primary)">Key Metrics Summary</h3>
+          <div class="grid grid-cols-2 gap-4">
+            @foreach (keyMetrics as metric)
+              <div class="rounded-lg p-3 metric-card" style="background: var(--bg-subtle)" onclick="showToast('{{ metric.label }}: {{ metric.value }} ({{ metric.change }} vs last month)', '{{ metric.positive ? 'success' : 'warn' }}')">
+                <p class="text-xs mb-1.5" style="color: var(--text-muted)">{{ metric.label }}</p>
+                <p class="text-lg font-bold tabular-nums" style="color: var(--text-primary)">{{ metric.value }}</p>
+                <p class="text-xs mt-1 font-medium" style="color: {{ metric.positive ? 'var(--text-success)' : 'var(--bar-red)' }}">
+                  @if (metric.positive)
+                    <span>&#9650;</span>
+                  @else
+                    <span>&#9660;</span>
+                  @endif
+                  {{ metric.change }} vs last month
+                </p>
+              </div>
+            @endforeach
+          </div>
+        </div>
+      </div>
+
+      {{-- Industry Benchmarks --}}
+      <div class="glass rounded-xl p-5 mb-6 fade-in">
+        <h2 class="text-base font-semibold mb-5" style="color: var(--text-primary)">Industry Benchmarks</h2>
+        <div class="space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-sm" style="color: var(--text-tertiary)">Cycle Time</span>
+              <span class="text-sm font-medium" style="color: var(--text-success)">Ours: 4.2 days vs Industry: 6.1 days</span>
+            </div>
+            <div class="flex gap-2 items-center">
+              <div class="flex-1 h-4 rounded overflow-hidden" style="background: var(--bar-track)">
+                <div class="h-full rounded bar-animate" style="width: 69%; background: var(--bar-emerald)"></div>
+              </div>
+              <span class="text-xs font-medium w-10 text-right" style="color: var(--text-success)">4.2d</span>
+            </div>
+            <div class="flex gap-2 items-center mt-1">
+              <div class="flex-1 h-4 rounded overflow-hidden" style="background: var(--bar-track)">
+                <div class="h-full rounded bar-animate" style="width: 100%; background: var(--bar-slate); opacity: 0.5"></div>
+              </div>
+              <span class="text-xs font-medium w-10 text-right" style="color: var(--text-muted)">6.1d</span>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-sm" style="color: var(--text-tertiary)">Touch Time</span>
+              <span class="text-sm font-medium" style="color: var(--text-success)">Ours: 62% vs Industry: 48%</span>
+            </div>
+            <div class="flex gap-2 items-center">
+              <div class="flex-1 h-4 rounded overflow-hidden" style="background: var(--bar-track)">
+                <div class="h-full rounded bar-animate" style="width: 62%; background: var(--bar-emerald)"></div>
+              </div>
+              <span class="text-xs font-medium w-10 text-right" style="color: var(--text-success)">62%</span>
+            </div>
+            <div class="flex gap-2 items-center mt-1">
+              <div class="flex-1 h-4 rounded overflow-hidden" style="background: var(--bar-track)">
+                <div class="h-full rounded bar-animate" style="width: 48%; background: var(--bar-slate); opacity: 0.5"></div>
+              </div>
+              <span class="text-xs font-medium w-10 text-right" style="color: var(--text-muted)">48%</span>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-sm" style="color: var(--text-tertiary)">Supplement Rate</span>
+              <span class="text-sm font-medium" style="color: var(--badge-amber-text)">Ours: 42% vs Industry: 38%</span>
+            </div>
+            <div class="flex gap-2 items-center">
+              <div class="flex-1 h-4 rounded overflow-hidden" style="background: var(--bar-track)">
+                <div class="h-full rounded bar-animate" style="width: 42%; background: var(--bar-amber)"></div>
+              </div>
+              <span class="text-xs font-medium w-10 text-right" style="color: var(--badge-amber-text)">42%</span>
+            </div>
+            <div class="flex gap-2 items-center mt-1">
+              <div class="flex-1 h-4 rounded overflow-hidden" style="background: var(--bar-track)">
+                <div class="h-full rounded bar-animate" style="width: 38%; background: var(--bar-slate); opacity: 0.5"></div>
+              </div>
+              <span class="text-xs font-medium w-10 text-right" style="color: var(--text-muted)">38%</span>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-sm" style="color: var(--text-tertiary)">CSI Score</span>
+              <span class="text-sm font-medium" style="color: var(--text-success)">Ours: 4.7 vs Industry: 4.2</span>
+            </div>
+            <div class="flex gap-2 items-center">
+              <div class="flex-1 h-4 rounded overflow-hidden" style="background: var(--bar-track)">
+                <div class="h-full rounded bar-animate" style="width: 94%; background: var(--bar-emerald)"></div>
+              </div>
+              <span class="text-xs font-medium w-10 text-right" style="color: var(--text-success)">4.7</span>
+            </div>
+            <div class="flex gap-2 items-center mt-1">
+              <div class="flex-1 h-4 rounded overflow-hidden" style="background: var(--bar-track)">
+                <div class="h-full rounded bar-animate" style="width: 84%; background: var(--bar-slate); opacity: 0.5"></div>
+              </div>
+              <span class="text-xs font-medium w-10 text-right" style="color: var(--text-muted)">4.2</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 mt-4 pt-4 text-xs" style="border-top: 1px solid var(--border-main); color: var(--text-muted)">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background: var(--bar-emerald)"></span> Our Shop</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background: var(--bar-slate); opacity: 0.5"></span> Industry Average</span>
+        </div>
+      </div>
+
+      {{-- Section 4: Recent Reports (full width) --}}
+      <div class="glass rounded-xl overflow-hidden fade-in mb-6">
+        <div class="px-5 py-4 flex items-center justify-between" style="border-bottom: 1px solid var(--border-main)">
+          <h2 class="text-base font-semibold" style="color: var(--text-primary)">Recent Reports</h2>
+          <span class="text-xs" style="color: var(--text-muted)">{{ recentReports.length }} reports</span>
+        </div>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs uppercase tracking-wider" style="color: var(--text-muted); border-bottom: 1px solid var(--border-main)">
+              <th class="px-5 py-3 font-medium">Report Name</th>
+              <th class="px-5 py-3 font-medium">Date Generated</th>
+              <th class="px-5 py-3 font-medium">Format</th>
+              <th class="px-5 py-3 font-medium text-right">Size</th>
+              <th class="px-5 py-3 font-medium text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (recentReports as report)
+              <tr style="border-bottom: 1px solid var(--row-border)" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='transparent'">
+                <td class="px-5 py-3.5">
+                  <span class="font-medium" style="color: var(--text-secondary)">{{ report.name }}</span>
+                </td>
+                <td class="px-5 py-3.5 tabular-nums" style="color: var(--text-tertiary)">{{ report.date }}</td>
+                <td class="px-5 py-3.5">
+                  <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ formatBadgeClass(report.format) }}">{{ report.format }}</span>
+                </td>
+                <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-muted)">{{ report.size }}</td>
+                <td class="px-5 py-3.5 text-right">
+                  <a href="#" class="text-sm font-medium" style="color: var(--text-accent)" onclick="event.preventDefault(); showToast('Downloading {{ report.name }}...', 'success')">Download</a>
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+        </table>
+      </div>
+@endsection
+
+<script client>
+    // Generate Report slide-over
+    function openGenerateReport() {
+      var html = ''
+        + '<div class="detail-section" style="display: flex; align-items: center; justify-content: space-between;">'
+        + '<div>'
+        + '<h2 class="text-xl font-bold" style="color: var(--text-primary)">Generate Report</h2>'
+        + '<p class="text-sm mt-0.5" style="color: var(--text-muted)">Configure and generate a new report</p>'
+        + '</div>'
+        + '<button onclick="closeSlideOver()" class="p-2 rounded-lg" style="color: var(--text-muted); background: var(--bg-subtle)" aria-label="Close panel">'
+        + '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>'
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Report Type</div>'
+        + '<select class="w-full rounded-lg py-2 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding-left: 0.75rem; padding-right: 2rem">'
+        + '<option>Monthly Summary</option>'
+        + '<option>Quarterly Review</option>'
+        + '<option>DRP Performance</option>'
+        + '<option>Technician Scorecard</option>'
+        + '<option>Revenue Analysis</option>'
+        + '</select>'
+        + '</div>'
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Date Range</div>'
+        + '<div class="flex gap-3">'
+        + '<div class="flex-1">'
+        + '<label class="text-xs block mb-1" style="color: var(--text-muted)">From</label>'
+        + '<input type="date" value="2026-01-01" class="w-full rounded-lg px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary)">'
+        + '</div>'
+        + '<div class="flex-1">'
+        + '<label class="text-xs block mb-1" style="color: var(--text-muted)">To</label>'
+        + '<input type="date" value="2026-03-09" class="w-full rounded-lg px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary)">'
+        + '</div>'
+        + '</div>'
+        + '</div>'
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Output Format</div>'
+        + '<div class="flex gap-3">'
+        + '<label class="flex items-center gap-2 cursor-pointer text-sm" style="color: var(--text-secondary)"><input type="radio" name="reportFormat" value="pdf" checked style="accent-color: var(--text-accent)"> PDF</label>'
+        + '<label class="flex items-center gap-2 cursor-pointer text-sm" style="color: var(--text-secondary)"><input type="radio" name="reportFormat" value="csv" style="accent-color: var(--text-accent)"> CSV</label>'
+        + '<label class="flex items-center gap-2 cursor-pointer text-sm" style="color: var(--text-secondary)"><input type="radio" name="reportFormat" value="excel" style="accent-color: var(--text-accent)"> Excel</label>'
+        + '</div>'
+        + '</div>'
+        + '<div class="detail-section">'
+        + '<button class="w-full px-4 py-2.5 rounded-lg text-sm font-medium text-white" style="background: var(--btn-primary-bg)" onclick="showToast(\'Report queued for generation...\', \'success\'); closeSlideOver()">Generate Report</button>'
+        + '</div>'
+
+      openSlideOver(html)
+    }
+
+    // Date range change
+    function handleDateRangeChange(sel) {
+      showToast('Report data updated to ' + sel.value, 'info')
+    }
+
+    // Technician detail data
+    const technicianDetails = {
+      'Mike Torres': {
+        role: 'Senior Estimator',
+        estimates: 142,
+        accuracy: 97.2,
+        cycleTime: 2.8,
+        rating: 4.9,
+        revenue: '$832,400',
+        supplementRate: '14.2%',
+        certifications: [
+          { name: 'I-CAR Gold Class', status: 'Active', expires: '2027-01-15' },
+          { name: 'ASE Structural', status: 'Active', expires: '2026-09-20' },
+          { name: 'Tesla Certified', status: 'Active', expires: '2026-12-01' }
+        ],
+        monthly: [
+          { month: 'Jan 2026', estimates: 48, accuracy: 97.0, cycle: 2.9, rating: 4.9 },
+          { month: 'Feb 2026', estimates: 46, accuracy: 97.5, cycle: 2.8, rating: 4.8 },
+          { month: 'Mar 2026', estimates: 48, accuracy: 97.1, cycle: 2.7, rating: 4.9 }
+        ],
+        specializations: ['Aluminum Repair', 'ADAS Calibration', 'Tesla Certified', 'I-CAR Gold'],
+        recentWork: [
+          { id: 'EST-2847', vehicle: '2024 Tesla Model Y', date: '2026-03-08', total: '$8,240' },
+          { id: 'EST-2839', vehicle: '2023 BMW X5', date: '2026-03-07', total: '$6,120' },
+          { id: 'EST-2831', vehicle: '2025 Ford Mustang Mach-E', date: '2026-03-06', total: '$4,890' },
+          { id: 'EST-2824', vehicle: '2024 Mercedes GLE', date: '2026-03-05', total: '$7,350' },
+          { id: 'EST-2818', vehicle: '2023 Audi Q7', date: '2026-03-04', total: '$5,670' }
+        ]
+      },
+      'Sarah Johnson': {
+        role: 'Senior Estimator',
+        estimates: 128,
+        accuracy: 96.8,
+        cycleTime: 3.1,
+        rating: 4.8,
+        revenue: '$748,200',
+        supplementRate: '15.8%',
+        certifications: [
+          { name: 'I-CAR Gold Class', status: 'Active', expires: '2026-11-10' },
+          { name: 'BMW OEM Certified', status: 'Active', expires: '2027-03-15' }
+        ],
+        monthly: [
+          { month: 'Jan 2026', estimates: 42, accuracy: 96.5, cycle: 3.2, rating: 4.8 },
+          { month: 'Feb 2026', estimates: 44, accuracy: 97.0, cycle: 3.1, rating: 4.7 },
+          { month: 'Mar 2026', estimates: 42, accuracy: 96.9, cycle: 3.0, rating: 4.9 }
+        ],
+        specializations: ['BMW Certified', 'Structural Repair', 'Refinish Expert', 'I-CAR Gold'],
+        recentWork: [
+          { id: 'EST-2845', vehicle: '2024 BMW 5 Series', date: '2026-03-08', total: '$6,780' },
+          { id: 'EST-2837', vehicle: '2023 Honda Accord', date: '2026-03-07', total: '$3,450' },
+          { id: 'EST-2828', vehicle: '2025 Toyota Camry', date: '2026-03-06', total: '$4,120' },
+          { id: 'EST-2820', vehicle: '2024 Lexus RX', date: '2026-03-05', total: '$7,890' },
+          { id: 'EST-2813', vehicle: '2023 Subaru Outback', date: '2026-03-04', total: '$3,960' }
+        ]
+      },
+      'Carlos Rivera': {
+        role: 'Estimator',
+        estimates: 119,
+        accuracy: 95.4,
+        cycleTime: 3.2,
+        rating: 4.7,
+        revenue: '$694,800',
+        supplementRate: '17.3%',
+        certifications: [
+          { name: 'I-CAR Gold Class', status: 'Active', expires: '2026-08-22' },
+          { name: 'ASE Collision Repair', status: 'Active', expires: '2026-06-30' }
+        ],
+        monthly: [
+          { month: 'Jan 2026', estimates: 40, accuracy: 95.2, cycle: 3.3, rating: 4.7 },
+          { month: 'Feb 2026', estimates: 39, accuracy: 95.6, cycle: 3.2, rating: 4.6 },
+          { month: 'Mar 2026', estimates: 40, accuracy: 95.4, cycle: 3.1, rating: 4.8 }
+        ],
+        specializations: ['ADAS Calibration', 'Structural Repair', 'I-CAR Gold'],
+        recentWork: [
+          { id: 'EST-2844', vehicle: '2024 Chevrolet Silverado', date: '2026-03-08', total: '$5,340' },
+          { id: 'EST-2836', vehicle: '2023 Ford F-150', date: '2026-03-07', total: '$6,780' },
+          { id: 'EST-2829', vehicle: '2025 Ram 1500', date: '2026-03-06', total: '$5,120' },
+          { id: 'EST-2821', vehicle: '2024 GMC Sierra', date: '2026-03-05', total: '$7,240' },
+          { id: 'EST-2814', vehicle: '2023 Toyota Tundra', date: '2026-03-03', total: '$4,560' }
+        ]
+      },
+      'Jennifer Lee': {
+        role: 'Lead Technician',
+        estimates: 108,
+        accuracy: 98.1,
+        cycleTime: 2.6,
+        rating: 4.9,
+        revenue: '$631,200',
+        supplementRate: '11.5%',
+        certifications: [
+          { name: 'I-CAR Gold Class', status: 'Active', expires: '2027-02-28' },
+          { name: 'Tesla Certified', status: 'Active', expires: '2026-10-15' },
+          { name: 'ASE Master', status: 'Active', expires: '2027-04-01' }
+        ],
+        monthly: [
+          { month: 'Jan 2026', estimates: 36, accuracy: 98.0, cycle: 2.7, rating: 4.9 },
+          { month: 'Feb 2026', estimates: 35, accuracy: 98.2, cycle: 2.6, rating: 4.9 },
+          { month: 'Mar 2026', estimates: 37, accuracy: 98.1, cycle: 2.5, rating: 5.0 }
+        ],
+        specializations: ['Tesla Certified', 'Aluminum Repair', 'ADAS Calibration', 'Refinish Expert'],
+        recentWork: [
+          { id: 'EST-2846', vehicle: '2025 Tesla Model 3', date: '2026-03-08', total: '$5,890' },
+          { id: 'EST-2838', vehicle: '2024 Rivian R1S', date: '2026-03-07', total: '$8,340' },
+          { id: 'EST-2830', vehicle: '2023 Tesla Model X', date: '2026-03-06', total: '$6,120' },
+          { id: 'EST-2822', vehicle: '2024 Porsche Taycan', date: '2026-03-05', total: '$9,450' },
+          { id: 'EST-2815', vehicle: '2025 BMW iX', date: '2026-03-04', total: '$7,230' }
+        ]
+      },
+      'David Kim': {
+        role: 'Estimator',
+        estimates: 96,
+        accuracy: 94.7,
+        cycleTime: 3.5,
+        rating: 4.6,
+        revenue: '$560,400',
+        supplementRate: '19.1%',
+        certifications: [
+          { name: 'I-CAR Gold Class', status: 'Active', expires: '2026-07-18' },
+          { name: 'BMW OEM Certified', status: 'Renewal Due', expires: '2026-04-01' }
+        ],
+        monthly: [
+          { month: 'Jan 2026', estimates: 32, accuracy: 94.5, cycle: 3.6, rating: 4.6 },
+          { month: 'Feb 2026', estimates: 31, accuracy: 94.8, cycle: 3.5, rating: 4.5 },
+          { month: 'Mar 2026', estimates: 33, accuracy: 94.8, cycle: 3.4, rating: 4.7 }
+        ],
+        specializations: ['Structural Repair', 'BMW Certified', 'I-CAR Gold'],
+        recentWork: [
+          { id: 'EST-2843', vehicle: '2024 Hyundai Tucson', date: '2026-03-08', total: '$4,120' },
+          { id: 'EST-2835', vehicle: '2023 Kia Sorento', date: '2026-03-07', total: '$3,890' },
+          { id: 'EST-2827', vehicle: '2025 Mazda CX-5', date: '2026-03-06', total: '$4,560' },
+          { id: 'EST-2819', vehicle: '2024 Nissan Rogue', date: '2026-03-04', total: '$3,670' }
+        ]
+      },
+      'Amanda Chen': {
+        role: 'Estimator',
+        estimates: 87,
+        accuracy: 96.3,
+        cycleTime: 3.0,
+        rating: 4.8,
+        revenue: '$508,200',
+        supplementRate: '13.8%',
+        certifications: [
+          { name: 'I-CAR Gold Class', status: 'Active', expires: '2026-12-20' },
+          { name: 'ASE Refinish', status: 'Active', expires: '2026-09-15' },
+          { name: 'Tesla Certified', status: 'Active', expires: '2027-01-30' }
+        ],
+        monthly: [
+          { month: 'Jan 2026', estimates: 28, accuracy: 96.1, cycle: 3.1, rating: 4.8 },
+          { month: 'Feb 2026', estimates: 29, accuracy: 96.4, cycle: 3.0, rating: 4.7 },
+          { month: 'Mar 2026', estimates: 30, accuracy: 96.4, cycle: 2.9, rating: 4.9 }
+        ],
+        specializations: ['Refinish Expert', 'ADAS Calibration', 'Tesla Certified', 'Aluminum Repair'],
+        recentWork: [
+          { id: 'EST-2842', vehicle: '2024 Volvo XC90', date: '2026-03-08', total: '$6,340' },
+          { id: 'EST-2834', vehicle: '2023 Acura MDX', date: '2026-03-07', total: '$5,120' },
+          { id: 'EST-2826', vehicle: '2025 Genesis GV80', date: '2026-03-06', total: '$7,890' },
+          { id: 'EST-2817', vehicle: '2024 Infiniti QX60', date: '2026-03-04', total: '$4,780' },
+          { id: 'EST-2811', vehicle: '2023 Lincoln Aviator', date: '2026-03-03', total: '$5,560' }
+        ]
+      }
+    }
+
+    // Render stars
+    function renderStars(rating) {
+      var full = Math.floor(rating)
+      var half = rating - full >= 0.5
+      var html = ''
+      for (var i = 0; i < 5; i++) {
+        if (i < full) {
+          html += '<span style="color: var(--badge-amber-text)">&#9733;</span>'
+        } else if (i === full && half) {
+          html += '<span style="color: var(--badge-amber-text)">&#9733;</span>'
+        } else {
+          html += '<span style="color: var(--text-muted)">&#9734;</span>'
+        }
+      }
+      return html
+    }
+
+    // Open technician detail
+    function openTechDetail(name) {
+      var tech = technicianDetails[name]
+      if (!tech) return
+
+      // Monthly table
+      var monthlyHtml = ''
+      tech.monthly.forEach(function(m) {
+        monthlyHtml += '<tr style="border-bottom: 1px solid var(--row-border)">'
+        monthlyHtml += '<td class="py-2 text-left" style="color: var(--text-tertiary)">' + m.month + '</td>'
+        monthlyHtml += '<td class="py-2 text-right tabular-nums" style="color: var(--text-primary)">' + m.estimates + '</td>'
+        monthlyHtml += '<td class="py-2 text-right tabular-nums" style="color: var(--text-success)">' + m.accuracy + '%</td>'
+        monthlyHtml += '<td class="py-2 text-right tabular-nums" style="color: var(--text-tertiary)">' + m.cycle + 'd</td>'
+        monthlyHtml += '<td class="py-2 text-right tabular-nums" style="color: var(--badge-amber-text)">' + m.rating + '</td>'
+        monthlyHtml += '</tr>'
+      })
+
+      // Specializations
+      var specHtml = ''
+      tech.specializations.forEach(function(s) {
+        specHtml += '<span class="spec-pill badge-blue">' + s + '</span>'
+      })
+
+      // Certifications
+      var certHtml = ''
+      if (tech.certifications) {
+        tech.certifications.forEach(function(c) {
+          var badgeClass = c.status === 'Active' ? 'badge-emerald' : 'badge-amber'
+          certHtml += '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--row-border);">'
+          certHtml += '<div style="display: flex; align-items: center; gap: 0.5rem;">'
+          certHtml += '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--text-accent); flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>'
+          certHtml += '<span style="font-size: 0.875rem; font-weight: 500; color: var(--text-primary);">' + c.name + '</span>'
+          certHtml += '</div>'
+          certHtml += '<div style="display: flex; align-items: center; gap: 0.75rem;">'
+          certHtml += '<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + badgeClass + '">' + c.status + '</span>'
+          certHtml += '<span style="font-size: 0.75rem; color: var(--text-muted);">Expires: ' + c.expires + '</span>'
+          certHtml += '</div></div>'
+        })
+      }
+
+      // Recent work
+      var workHtml = ''
+      tech.recentWork.forEach(function(w) {
+        workHtml += '<tr style="border-bottom: 1px solid var(--row-border)">'
+        workHtml += '<td class="py-2 text-left" style="color: var(--text-accent)">' + w.id + '</td>'
+        workHtml += '<td class="py-2 text-left" style="color: var(--text-secondary)">' + w.vehicle + '</td>'
+        workHtml += '<td class="py-2 text-right tabular-nums" style="color: var(--text-tertiary)">' + w.date + '</td>'
+        workHtml += '<td class="py-2 text-right tabular-nums font-medium" style="color: var(--text-primary)">' + w.total + '</td>'
+        workHtml += '</tr>'
+      })
+
+      var html = ''
+        + '<div class="detail-section" style="display: flex; align-items: center; justify-content: space-between;">'
+        + '<div>'
+        + '<h2 class="text-xl font-bold" style="color: var(--text-primary)">' + name + '</h2>'
+        + '<p class="text-sm mt-0.5" style="color: var(--text-muted)">' + tech.role + '</p>'
+        + '</div>'
+        + '<button onclick="closeSlideOver()" class="p-2 rounded-lg" style="color: var(--text-muted); background: var(--bg-subtle)" aria-label="Close panel">'
+        + '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Performance Overview</div>'
+        + '<div class="detail-row"><span class="detail-row-label">Estimates completed</span><span class="detail-row-value">' + tech.estimates + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Accuracy rate</span><span class="detail-row-value" style="color: var(--text-success)">' + tech.accuracy + '%</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Average cycle time</span><span class="detail-row-value">' + tech.cycleTime + ' days</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Customer rating</span><span class="detail-row-value">' + tech.rating + '/5.0 ' + renderStars(tech.rating) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Revenue generated</span><span class="detail-row-value" style="color: var(--text-revenue)">' + tech.revenue + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Supplement rate</span><span class="detail-row-value">' + tech.supplementRate + '</span></div>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Monthly Performance</div>'
+        + '<table class="w-full text-sm">'
+        + '<thead><tr class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">'
+        + '<th class="text-left py-2 font-medium">Month</th>'
+        + '<th class="text-right py-2 font-medium">Estimates</th>'
+        + '<th class="text-right py-2 font-medium">Accuracy</th>'
+        + '<th class="text-right py-2 font-medium">Cycle</th>'
+        + '<th class="text-right py-2 font-medium">Rating</th>'
+        + '</tr></thead>'
+        + '<tbody>' + monthlyHtml + '</tbody>'
+        + '</table>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Specializations</div>'
+        + '<div class="flex flex-wrap gap-1">' + specHtml + '</div>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Certifications & Training</div>'
+        + certHtml
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Recent Work</div>'
+        + '<table class="w-full text-sm">'
+        + '<thead><tr class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">'
+        + '<th class="text-left py-2 font-medium">ID</th>'
+        + '<th class="text-left py-2 font-medium">Vehicle</th>'
+        + '<th class="text-right py-2 font-medium">Date</th>'
+        + '<th class="text-right py-2 font-medium">Total</th>'
+        + '</tr></thead>'
+        + '<tbody>' + workHtml + '</tbody>'
+        + '</table>'
+        + '</div>'
+
+        + '<div class="detail-section" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">'
+        + '<button class="px-4 py-2 rounded-lg text-sm font-medium text-white" style="background: var(--btn-primary-bg)" onclick="showToast(\'Opening full profile...\', \'info\'); closeSlideOver()">View Full Profile</button>'
+        + '<button class="px-4 py-2 rounded-lg text-sm font-medium border" style="background: var(--btn-action-bg); border-color: var(--btn-action-border); color: var(--btn-action-text)" onclick="showToast(\'Assign estimate panel opening...\', \'info\'); closeSlideOver()">Assign Estimate</button>'
+        + '<button class="px-4 py-2 rounded-lg text-sm font-medium border" style="background: var(--bg-subtle); border-color: var(--border-input); color: var(--text-tertiary)" onclick="showToast(\'Generating performance report...\', \'info\'); closeSlideOver()">Performance Report</button>'
+        + '</div>'
+
+      openSlideOver(html)
+    }
+</script>

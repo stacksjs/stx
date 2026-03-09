@@ -1,0 +1,735 @@
+<script>
+const companyName = 'AutoEstimate Pro'
+const currentUser = 'Sarah Mitchell'
+const currentRole = 'Senior Estimator'
+const activePage = 'Vehicles'
+
+const navLinks = [
+  { label: 'Dashboard', href: '/' },
+  { label: 'Estimates', href: '/estimates' },
+  { label: 'Production', href: '/production' },
+  { label: 'Vehicles', href: '/vehicles' },
+  { label: 'Parts', href: '/parts' },
+  { label: 'Insurers', href: '/insurers' },
+  { label: 'Customers', href: '/customers' },
+  { label: 'Reports', href: '/reports' },
+  { label: 'Schedule', href: '/schedule' },
+]
+
+const summaryStats = [
+  { label: 'Total Vehicles', value: '892', icon: '🚗', color: 'blue' },
+  { label: 'Active Repairs', value: '156', icon: '🔧', color: 'amber' },
+  { label: 'Avg Estimates/Vehicle', value: '12', icon: '📋', color: 'violet' },
+  { label: 'Avg Repair Cost', value: '$4,230', icon: '💰', color: 'emerald' },
+]
+
+const vehicles = [
+  { year: 2024, make: 'Tesla', model: 'Model Y', owner: 'James Rodriguez', vin: '7SAY1E9P', estimates: 8, lastRepair: '2026-03-09', totalSpent: '$18,420', status: 'Active Repair', adas: true },
+  { year: 2023, make: 'BMW', model: 'X5', owner: 'Lisa Chen', vin: '5UX23EP0', estimates: 14, lastRepair: '2026-03-08', totalSpent: '$42,380', status: 'Active Repair', adas: true },
+  { year: 2022, make: 'Honda', model: 'Civic', owner: 'Mark Thompson', vin: '2HGFE2F5', estimates: 6, lastRepair: '2026-03-07', totalSpent: '$8,215', status: 'Complete', adas: false },
+  { year: 2024, make: 'Ford', model: 'F-150', owner: 'Diana Watts', vin: '1FTFW1E8', estimates: 11, lastRepair: '2026-03-06', totalSpent: '$31,670', status: 'Pending', adas: true },
+  { year: 2023, make: 'Toyota', model: 'Camry', owner: 'Robert Kim', vin: '4T1G11AK', estimates: 9, lastRepair: '2026-03-05', totalSpent: '$12,450', status: 'Complete', adas: false },
+  { year: 2025, make: 'Chevrolet', model: 'Silverado', owner: 'Angela Brooks', vin: '3GCUYGED', estimates: 3, lastRepair: '2026-03-04', totalSpent: '$9,870', status: 'Active Repair', adas: true },
+  { year: 2022, make: 'Hyundai', model: 'Tucson', owner: 'Kevin Patel', vin: 'KM8JBCA1', estimates: 17, lastRepair: '2026-03-03', totalSpent: '$24,590', status: 'Complete', adas: false },
+  { year: 2024, make: 'Toyota', model: 'RAV4', owner: 'Sarah Jensen', vin: '2T3P1RFV', estimates: 5, lastRepair: '2026-03-02', totalSpent: '$7,320', status: 'Pending', adas: true },
+  { year: 2023, make: 'Nissan', model: 'Altima', owner: 'David Martinez', vin: '1N4BL4CV', estimates: 12, lastRepair: '2026-02-28', totalSpent: '$19,840', status: 'Complete', adas: false },
+  { year: 2021, make: 'BMW', model: '330i', owner: 'Michelle Wu', vin: '3MW5R7J0', estimates: 20, lastRepair: '2026-02-25', totalSpent: '$56,210', status: 'Active Repair', adas: true },
+  { year: 2024, make: 'Honda', model: 'CR-V', owner: 'Thomas Green', vin: '7FARW2H9', estimates: 7, lastRepair: '2026-02-22', totalSpent: '$11,680', status: 'Pending', adas: false },
+  { year: 2023, make: 'Ford', model: 'Mustang Mach-E', owner: 'Jennifer Liu', vin: '3FMTK3SU', estimates: 15, lastRepair: '2026-02-18', totalSpent: '$38,940', status: 'Complete', adas: true },
+]
+
+const topMakes = [
+  { name: 'Toyota', count: 142 },
+  { name: 'Honda', count: 128 },
+  { name: 'Ford', count: 119 },
+  { name: 'Chevrolet', count: 98 },
+  { name: 'BMW', count: 87 },
+  { name: 'Tesla', count: 76 },
+  { name: 'Hyundai', count: 64 },
+  { name: 'Nissan', count: 58 },
+]
+
+const repairCategories = [
+  { category: 'Front-end collision', percent: 34 },
+  { category: 'Rear-end collision', percent: 28 },
+  { category: 'Side impact', percent: 18 },
+  { category: 'Hail damage', percent: 12 },
+  { category: 'Other', percent: 8 },
+]
+
+function statusColor(status) {
+  const colors = { 'Active Repair': 'badge-amber', 'Complete': 'badge-emerald', 'Pending': 'badge-blue' }
+  return colors[status] || 'badge-slate'
+}
+</script>
+
+@extends('layouts/dashboard.stx')
+
+@section('styles')
+    .empty-state { text-align: center; padding: 3rem 1.5rem; }
+@endsection
+
+@section('content')
+      {{-- Page Header --}}
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">Vehicles</h1>
+          <p class="text-sm mt-1" style="color: var(--text-muted)">Vehicle database and repair history</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="openAddVehicleForm()" class="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--btn-primary-bg)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Vehicle
+          </button>
+        </div>
+      </div>
+
+      {{-- Search & Filters --}}
+      <div class="glass rounded-xl p-4 mb-8 fade-in">
+        <div class="flex flex-col md:flex-row gap-3">
+          <div class="flex-1">
+            <input id="vinSearch" type="text" placeholder="Search by VIN number..." oninput="filterVehicles()" class="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary)" />
+          </div>
+          <select id="makeFilter" onchange="filterVehicles()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
+            <option value="">All Makes</option>
+            <option value="Toyota">Toyota</option>
+            <option value="Honda">Honda</option>
+            <option value="Ford">Ford</option>
+            <option value="Chevrolet">Chevrolet</option>
+            <option value="BMW">BMW</option>
+            <option value="Tesla">Tesla</option>
+            <option value="Hyundai">Hyundai</option>
+            <option value="Nissan">Nissan</option>
+          </select>
+          <select id="modelFilter" onchange="filterVehicles()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
+            <option value="">All Models</option>
+            <option value="Camry">Camry</option>
+            <option value="Civic">Civic</option>
+            <option value="F-150">F-150</option>
+            <option value="Model Y">Model Y</option>
+            <option value="X5">X5</option>
+            <option value="Silverado">Silverado</option>
+            <option value="Tucson">Tucson</option>
+            <option value="RAV4">RAV4</option>
+            <option value="Altima">Altima</option>
+            <option value="330i">330i</option>
+            <option value="CR-V">CR-V</option>
+            <option value="Mustang Mach-E">Mustang Mach-E</option>
+          </select>
+          <button onclick="filterVehicles()" class="px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            Search
+          </button>
+        </div>
+      </div>
+
+      {{-- Summary Stats --}}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        @foreach (summaryStats as stat)
+          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ stat.color }} fade-in">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ stat.label }}</span>
+              <span class="text-lg">{{ stat.icon }}</span>
+            </div>
+            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ stat.value }}</div>
+          </div>
+        @endforeach
+      </div>
+
+      {{-- Main Grid: Table + Sidebar --}}
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+
+        {{-- Vehicle Table (2/3 width) --}}
+        <div class="xl:col-span-2 glass rounded-xl overflow-hidden fade-in">
+          <div class="px-5 py-4 flex items-center justify-between" style="border-bottom: 1px solid var(--border-main)">
+            <h2 class="text-base font-semibold" style="color: var(--text-primary)">Vehicle Database</h2>
+            <span id="vehicleShowingLabel" class="text-xs" style="color: var(--text-muted)"></span>
+          </div>
+          <div class="overflow-x-auto">
+            <table id="vehicleTable" class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs uppercase tracking-wider" style="color: var(--text-muted); border-bottom: 1px solid var(--border-main)">
+                  <th class="px-5 py-3 font-medium">Vehicle</th>
+                  <th class="px-5 py-3 font-medium">Owner</th>
+                  <th class="px-5 py-3 font-medium">VIN (Last 8)</th>
+                  <th class="px-5 py-3 font-medium text-right">Estimates</th>
+                  <th class="px-5 py-3 font-medium">Last Repair</th>
+                  <th class="px-5 py-3 font-medium text-right">Total Spent</th>
+                  <th class="px-5 py-3 font-medium">Status</th>
+                  <th class="px-5 py-3 font-medium">ADAS</th>
+                </tr>
+              </thead>
+              <tbody id="vehicleTableBody">
+                @foreach (vehicles as idx => vehicle)
+                  <tr class="clickable" data-vin="{{ vehicle.vin }}" data-make="{{ vehicle.make }}" data-model="{{ vehicle.model }}" style="border-bottom: 1px solid var(--row-border)" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='transparent'" onclick="openVehicleDetail({{ idx }})">
+                    <td class="px-5 py-3.5">
+                      <span class="font-medium" style="color: var(--text-secondary)">{{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}</span>
+                    </td>
+                    <td class="px-5 py-3.5" style="color: var(--text-tertiary)">{{ vehicle.owner }}</td>
+                    <td class="px-5 py-3.5">
+                      <span class="font-mono text-xs px-2 py-1 rounded" style="background: var(--bg-subtle); color: var(--text-muted)">{{ vehicle.vin }}</span>
+                    </td>
+                    <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-tertiary)">{{ vehicle.estimates }}</td>
+                    <td class="px-5 py-3.5" style="color: var(--text-muted)">{{ vehicle.lastRepair }}</td>
+                    <td class="px-5 py-3.5 text-right tabular-nums font-medium" style="color: var(--text-primary)">{{ vehicle.totalSpent }}</td>
+                    <td class="px-5 py-3.5">
+                      <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ statusColor(vehicle.status) }}">{{ vehicle.status }}</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                      @if (vehicle.adas)
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium badge-blue">
+                          <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+                          ADAS
+                        </span>
+                      @endif
+                    </td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+          {{-- Empty state --}}
+          <div id="emptyState" class="empty-state" style="display: none;">
+            <svg class="w-12 h-12 mx-auto mb-3" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            <p class="text-sm font-medium" style="color: var(--text-tertiary)">No vehicles match your filters</p>
+            <p class="text-xs mt-1" style="color: var(--text-muted)">Try adjusting your search or filter criteria</p>
+            <button onclick="clearFilters()" class="mt-3 px-4 py-2 rounded-lg text-xs font-medium" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text)">Clear Filters</button>
+          </div>
+          {{-- Pagination --}}
+          <div id="paginationBar" class="px-5 py-3 flex items-center justify-between" style="border-top: 1px solid var(--border-main)">
+            <span id="vPagLabel" class="text-xs" style="color: var(--text-muted)"></span>
+            <div id="vPagButtons" class="flex items-center gap-1"></div>
+          </div>
+        </div>
+
+        {{-- Sidebar (1/3 width) --}}
+        <div class="space-y-6">
+
+          {{-- Top Makes --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Top Makes</h3>
+            <div class="space-y-3">
+              @foreach (topMakes as make)
+                <div class="cursor-pointer" onclick="filterByMake('{{ make.name }}')">
+                  <div class="flex items-center justify-between text-sm mb-1.5">
+                    <span style="color: var(--text-tertiary)">{{ make.name }}</span>
+                    <span class="tabular-nums" style="color: var(--text-muted)">{{ make.count }}</span>
+                  </div>
+                  <div class="h-2 rounded-full overflow-hidden" style="background: var(--bar-track)">
+                    <div class="bar-blue h-full rounded-full bar-animate" style="width: {{ Math.round((make.count / 142) * 100) }}%"></div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          {{-- Common Repairs by Category --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Common Repairs by Category</h3>
+            <div class="space-y-3">
+              @foreach (repairCategories as cat)
+                <div class="cursor-pointer" onclick="showToast('Filtering by {{ cat.category }}...', 'info')">
+                  <div class="flex items-center justify-between text-sm mb-1.5">
+                    <span style="color: var(--text-tertiary)">{{ cat.category }}</span>
+                    <span class="tabular-nums" style="color: var(--text-muted)">{{ cat.percent }}%</span>
+                  </div>
+                  <div class="h-2 rounded-full overflow-hidden" style="background: var(--bar-track)">
+                    <div class="bar-amber h-full rounded-full bar-animate" style="width: {{ cat.percent }}%"></div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+        </div>
+      </div>
+@endsection
+
+<script client>
+    // Vehicle detail data
+    const vehicleDetails = {
+      0: {
+        year: 2024, make: 'Tesla', model: 'Model Y', status: 'Active Repair',
+        vin: '7SAYGKEE9PA012847', color: 'Pearl White Multi-Coat', mileage: '12,340',
+        plate: 'EVC-4821', body: 'SUV',
+        owner: { name: 'James Rodriguez', phone: '(512) 555-0174', email: 'j.rodriguez@email.com', address: 'Austin, TX' },
+        repairs: [
+          { date: '2026-03-09', estimate: 'EST-4821', desc: 'Front-end collision repair', cost: '$8,420', status: 'In Progress' },
+          { date: '2025-11-14', estimate: 'EST-3290', desc: 'Quarter panel dent — PDR', cost: '$1,850', status: 'Completed' },
+          { date: '2025-06-22', estimate: 'EST-2104', desc: 'Rear bumper replacement', cost: '$4,320', status: 'Completed' },
+          { date: '2025-02-08', estimate: 'EST-1455', desc: 'Windshield replacement', cost: '$3,830', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 8, totalSpent: '$18,420', avgRepair: '$2,303', claims: 3 },
+        adas: { required: true, preScan: 'Completed', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor', 'Parking Sensors'], estCost: '$450–$1,200' }
+      },
+      1: {
+        year: 2023, make: 'BMW', model: 'X5', status: 'Active Repair',
+        vin: '5UX23EP00P9L78234', color: 'Carbon Black Metallic', mileage: '28,760',
+        plate: 'LUX-7734', body: 'SUV',
+        owner: { name: 'Lisa Chen', phone: '(415) 555-0298', email: 'lisa.chen@email.com', address: 'San Francisco, CA' },
+        repairs: [
+          { date: '2026-03-08', estimate: 'EST-4815', desc: 'Side impact door repair', cost: '$12,640', status: 'In Progress' },
+          { date: '2025-09-30', estimate: 'EST-3012', desc: 'Front bumper and grille replacement', cost: '$9,870', status: 'Completed' },
+          { date: '2025-04-17', estimate: 'EST-1987', desc: 'Hail damage — full PDR', cost: '$11,420', status: 'Completed' },
+          { date: '2024-12-05', estimate: 'EST-1340', desc: 'Rear-end collision repair', cost: '$8,450', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 14, totalSpent: '$42,380', avgRepair: '$3,027', claims: 6 },
+        adas: { required: true, preScan: 'Completed', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor'], estCost: '$650–$1,100' }
+      },
+      2: {
+        year: 2022, make: 'Honda', model: 'Civic', status: 'Complete',
+        vin: '2HGFE2F59NH534821', color: 'Sonic Gray Pearl', mileage: '41,220',
+        plate: 'HND-2098', body: 'Sedan',
+        owner: { name: 'Mark Thompson', phone: '(614) 555-0132', email: 'm.thompson@email.com', address: 'Columbus, OH' },
+        repairs: [
+          { date: '2026-03-07', estimate: 'EST-4798', desc: 'Rear bumper scuff repair', cost: '$1,215', status: 'Completed' },
+          { date: '2025-08-19', estimate: 'EST-2876', desc: 'Front fender replacement', cost: '$3,890', status: 'Completed' },
+          { date: '2025-01-11', estimate: 'EST-1402', desc: 'Door ding — PDR', cost: '$3,110', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 6, totalSpent: '$8,215', avgRepair: '$1,369', claims: 2 },
+        adas: null
+      },
+      3: {
+        year: 2024, make: 'Ford', model: 'F-150', status: 'Pending',
+        vin: '1FTFW1E80NKD45632', color: 'Iconic Silver Metallic', mileage: '18,450',
+        plate: 'TRK-5543', body: 'Truck',
+        owner: { name: 'Diana Watts', phone: '(214) 555-0387', email: 'diana.watts@email.com', address: 'Dallas, TX' },
+        repairs: [
+          { date: '2026-03-06', estimate: 'EST-4790', desc: 'Bed-side panel dent repair', cost: '$6,230', status: 'Pending' },
+          { date: '2025-10-22', estimate: 'EST-3145', desc: 'Front-end collision repair', cost: '$14,870', status: 'Completed' },
+          { date: '2025-05-09', estimate: 'EST-2230', desc: 'Tailgate replacement', cost: '$7,340', status: 'Completed' },
+          { date: '2024-11-18', estimate: 'EST-1198', desc: 'Running board damage', cost: '$3,230', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 11, totalSpent: '$31,670', avgRepair: '$2,879', claims: 5 },
+        adas: { required: true, preScan: 'Required', postScan: 'Pending', calibrations: ['Forward Camera', 'Parking Sensors'], estCost: '$500–$900' }
+      },
+      4: {
+        year: 2023, make: 'Toyota', model: 'Camry', status: 'Complete',
+        vin: '4T1G11AK8PU284930', color: 'Celestial Silver Metallic', mileage: '34,870',
+        plate: 'TYT-8812', body: 'Sedan',
+        owner: { name: 'Robert Kim', phone: '(310) 555-0421', email: 'r.kim@email.com', address: 'Los Angeles, CA' },
+        repairs: [
+          { date: '2026-03-05', estimate: 'EST-4782', desc: 'Rear quarter panel repair', cost: '$3,450', status: 'Completed' },
+          { date: '2025-07-14', estimate: 'EST-2654', desc: 'Front bumper replacement', cost: '$4,120', status: 'Completed' },
+          { date: '2025-02-28', estimate: 'EST-1678', desc: 'Side mirror replacement', cost: '$4,880', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 9, totalSpent: '$12,450', avgRepair: '$1,383', claims: 4 },
+        adas: null
+      },
+      5: {
+        year: 2025, make: 'Chevrolet', model: 'Silverado', status: 'Active Repair',
+        vin: '3GCUYGED1RG178452', color: 'Summit White', mileage: '8,120',
+        plate: 'SLV-3309', body: 'Truck',
+        owner: { name: 'Angela Brooks', phone: '(713) 555-0245', email: 'a.brooks@email.com', address: 'Houston, TX' },
+        repairs: [
+          { date: '2026-03-04', estimate: 'EST-4776', desc: 'Front-end collision repair', cost: '$5,870', status: 'In Progress' },
+          { date: '2025-12-10', estimate: 'EST-3580', desc: 'Scratches and paint correction', cost: '$2,100', status: 'Completed' },
+          { date: '2025-09-01', estimate: 'EST-2940', desc: 'Bed liner repair', cost: '$1,900', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 3, totalSpent: '$9,870', avgRepair: '$3,290', claims: 1 },
+        adas: { required: true, preScan: 'Completed', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor', 'Parking Sensors'], estCost: '$550–$1,200' }
+      },
+      6: {
+        year: 2022, make: 'Hyundai', model: 'Tucson', status: 'Complete',
+        vin: 'KM8JBCA19NU652387', color: 'Amazon Gray', mileage: '52,340',
+        plate: 'HYN-6670', body: 'SUV',
+        owner: { name: 'Kevin Patel', phone: '(404) 555-0189', email: 'k.patel@email.com', address: 'Atlanta, GA' },
+        repairs: [
+          { date: '2026-03-03', estimate: 'EST-4769', desc: 'Liftgate dent repair', cost: '$2,890', status: 'Completed' },
+          { date: '2025-11-05', estimate: 'EST-3420', desc: 'Hail damage — PDR', cost: '$8,450', status: 'Completed' },
+          { date: '2025-06-18', estimate: 'EST-2398', desc: 'Front-end collision repair', cost: '$7,650', status: 'Completed' },
+          { date: '2025-01-25', estimate: 'EST-1510', desc: 'Rear bumper replacement', cost: '$5,600', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 17, totalSpent: '$24,590', avgRepair: '$1,447', claims: 7 },
+        adas: null
+      },
+      7: {
+        year: 2024, make: 'Toyota', model: 'RAV4', status: 'Pending',
+        vin: '2T3P1RFV5RC913478', color: 'Blueprint', mileage: '15,690',
+        plate: 'RAV-1124', body: 'SUV',
+        owner: { name: 'Sarah Jensen', phone: '(503) 555-0356', email: 's.jensen@email.com', address: 'Portland, OR' },
+        repairs: [
+          { date: '2026-03-02', estimate: 'EST-4755', desc: 'Rear-end collision repair', cost: '$4,120', status: 'Pending' },
+          { date: '2025-08-30', estimate: 'EST-2912', desc: 'Side panel scratch repair', cost: '$1,650', status: 'Completed' },
+          { date: '2025-04-05', estimate: 'EST-1920', desc: 'Windshield chip repair', cost: '$1,550', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 5, totalSpent: '$7,320', avgRepair: '$1,464', claims: 2 },
+        adas: { required: true, preScan: 'Required', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor'], estCost: '$450–$950' }
+      },
+      8: {
+        year: 2023, make: 'Nissan', model: 'Altima', status: 'Complete',
+        vin: '1N4BL4CV2PN587124', color: 'Gun Metallic', mileage: '38,410',
+        plate: 'NSN-4456', body: 'Sedan',
+        owner: { name: 'David Martinez', phone: '(602) 555-0278', email: 'd.martinez@email.com', address: 'Phoenix, AZ' },
+        repairs: [
+          { date: '2026-02-28', estimate: 'EST-4742', desc: 'Front bumper and hood repair', cost: '$6,240', status: 'Completed' },
+          { date: '2025-10-12', estimate: 'EST-3198', desc: 'Rear-end collision repair', cost: '$5,890', status: 'Completed' },
+          { date: '2025-05-26', estimate: 'EST-2287', desc: 'Door panel replacement', cost: '$4,320', status: 'Completed' },
+          { date: '2024-12-19', estimate: 'EST-1385', desc: 'Fender bender — front left', cost: '$3,390', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 12, totalSpent: '$19,840', avgRepair: '$1,653', claims: 5 },
+        adas: null
+      },
+      9: {
+        year: 2021, make: 'BMW', model: '330i', status: 'Active Repair',
+        vin: '3MW5R7J05M8B34591', color: 'Alpine White', mileage: '67,890',
+        plate: 'BMW-9981', body: 'Sedan',
+        owner: { name: 'Michelle Wu', phone: '(212) 555-0443', email: 'm.wu@email.com', address: 'New York, NY' },
+        repairs: [
+          { date: '2026-02-25', estimate: 'EST-4720', desc: 'Front-end collision — major', cost: '$18,340', status: 'In Progress' },
+          { date: '2025-09-14', estimate: 'EST-3054', desc: 'Side impact door repair', cost: '$12,870', status: 'Completed' },
+          { date: '2025-03-22', estimate: 'EST-1812', desc: 'Rear bumper and trunk repair', cost: '$14,200', status: 'Completed' },
+          { date: '2024-10-08', estimate: 'EST-1120', desc: 'Hail damage — full PDR', cost: '$10,800', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 20, totalSpent: '$56,210', avgRepair: '$2,811', claims: 9 },
+        adas: { required: true, preScan: 'Completed', postScan: 'Completed', calibrations: ['Forward Camera', 'Blind Spot Monitor'], estCost: '$650–$1,100' }
+      },
+      10: {
+        year: 2024, make: 'Honda', model: 'CR-V', status: 'Pending',
+        vin: '7FARW2H93RE482130', color: 'Radiant Red Metallic II', mileage: '21,350',
+        plate: 'CRV-7712', body: 'SUV',
+        owner: { name: 'Thomas Green', phone: '(303) 555-0165', email: 't.green@email.com', address: 'Denver, CO' },
+        repairs: [
+          { date: '2026-02-22', estimate: 'EST-4708', desc: 'Rear quarter panel dent', cost: '$3,680', status: 'Pending' },
+          { date: '2025-11-28', estimate: 'EST-3498', desc: 'Front bumper scuff repair', cost: '$2,450', status: 'Completed' },
+          { date: '2025-07-04', estimate: 'EST-2590', desc: 'Side mirror and door handle', cost: '$5,550', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 7, totalSpent: '$11,680', avgRepair: '$1,669', claims: 3 },
+        adas: null
+      },
+      11: {
+        year: 2023, make: 'Ford', model: 'Mustang Mach-E', status: 'Complete',
+        vin: '3FMTK3SU4PMA76218', color: 'Grabber Blue Metallic', mileage: '29,870',
+        plate: 'MCE-2245', body: 'SUV',
+        owner: { name: 'Jennifer Liu', phone: '(206) 555-0512', email: 'j.liu@email.com', address: 'Seattle, WA' },
+        repairs: [
+          { date: '2026-02-18', estimate: 'EST-4690', desc: 'Front-end collision repair', cost: '$14,230', status: 'Completed' },
+          { date: '2025-10-01', estimate: 'EST-3156', desc: 'Charging port surround repair', cost: '$3,870', status: 'Completed' },
+          { date: '2025-05-15', estimate: 'EST-2245', desc: 'Hail damage — PDR', cost: '$9,640', status: 'Completed' },
+          { date: '2024-11-30', estimate: 'EST-1256', desc: 'Rear bumper replacement', cost: '$11,200', status: 'Completed' }
+        ],
+        financial: { totalEstimates: 15, totalSpent: '$38,940', avgRepair: '$2,596', claims: 6 },
+        adas: { required: true, preScan: 'Completed', postScan: 'Completed', calibrations: ['Forward Camera', 'Blind Spot Monitor', 'Parking Sensors'], estCost: '$550–$1,200' }
+      }
+    }
+
+    function openVehicleDetail(idx) {
+      const v = vehicleDetails[idx]
+      if (!v) return
+
+      const statusBadgeClass = v.status === 'Active Repair' ? 'badge-amber' : v.status === 'Complete' ? 'badge-emerald' : 'badge-blue'
+
+      let repairTimeline = ''
+      v.repairs.forEach(function(r, i) {
+        const isLast = i === v.repairs.length - 1
+        repairTimeline += '<div style="display: flex; gap: 0.75rem;">'
+        repairTimeline += '<div style="display: flex; flex-direction: column; align-items: center;">'
+        repairTimeline += '<div style="width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--text-accent); margin-top: 4px;"></div>'
+        if (!isLast) {
+          repairTimeline += '<div style="width: 2px; flex: 1; background: var(--border-main); margin: 4px 0;"></div>'
+        }
+        repairTimeline += '</div>'
+        repairTimeline += '<div style="flex: 1; padding-bottom: ' + (isLast ? '0' : '1rem') + ';">'
+        repairTimeline += '<div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">'
+        repairTimeline += '<span style="font-size: 0.875rem; font-weight: 500; color: var(--text-primary);">' + r.desc + '</span>'
+        repairTimeline += '<span style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">' + r.cost + '</span>'
+        repairTimeline += '</div>'
+        repairTimeline += '<div style="display: flex; gap: 1rem; margin-top: 0.25rem;">'
+        repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-muted);">' + r.date + '</span>'
+        repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-muted);">' + r.estimate + '</span>'
+        repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-success);">' + r.status + '</span>'
+        repairTimeline += '</div>'
+        repairTimeline += '</div></div>'
+      })
+
+      const html = ''
+        + '<div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main);">'
+        + '<div>'
+        + '<h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">' + v.year + ' ' + v.make + ' ' + v.model + '</h2>'
+        + '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + statusBadgeClass + '" style="margin-top: 0.5rem;">' + v.status + '</span>'
+        + '</div>'
+        + '<button onclick="closeSlideOver()" style="padding: 0.5rem; border-radius: 0.5rem; color: var(--text-muted); background: none; border: none; cursor: pointer;" aria-label="Close">'
+        + '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Vehicle Information</div>'
+        + '<div class="detail-row"><span class="detail-row-label">VIN</span><span class="detail-row-value" style="font-family: monospace; font-size: 0.8125rem;">' + v.vin + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Color</span><span class="detail-row-value">' + v.color + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Year</span><span class="detail-row-value">' + v.year + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Make</span><span class="detail-row-value">' + v.make + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Model</span><span class="detail-row-value">' + v.model + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Mileage</span><span class="detail-row-value">' + v.mileage + ' mi</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">License Plate</span><span class="detail-row-value">' + v.plate + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Body Style</span><span class="detail-row-value">' + v.body + '</span></div>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Owner</div>'
+        + '<div class="detail-row"><span class="detail-row-label">Name</span><span class="detail-row-value">' + v.owner.name + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">' + v.owner.phone + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value" style="color: var(--text-accent);">' + v.owner.email + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Location</span><span class="detail-row-value">' + v.owner.address + '</span></div>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Repair History</div>'
+        + repairTimeline
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Financial Summary</div>'
+        + '<div class="detail-row"><span class="detail-row-label">Total Estimates</span><span class="detail-row-value">' + v.financial.totalEstimates + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Total Spent</span><span class="detail-row-value" style="color: var(--text-revenue);">' + v.financial.totalSpent + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Average Repair</span><span class="detail-row-value">' + v.financial.avgRepair + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Insurance Claims</span><span class="detail-row-value">' + v.financial.claims + '</span></div>'
+        + '</div>'
+
+      // ADAS & Calibration section
+      if (v.adas) {
+        html += '<div class="detail-section">'
+        html += '<div class="detail-label">ADAS & Calibration</div>'
+        html += '<div class="detail-row"><span class="detail-row-label">Pre-scan status</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + (v.adas.preScan === 'Completed' ? 'badge-emerald' : 'badge-amber') + '">' + v.adas.preScan + '</span></span></div>'
+        html += '<div class="detail-row"><span class="detail-row-label">Post-scan status</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + (v.adas.postScan === 'Completed' ? 'badge-emerald' : 'badge-amber') + '">' + v.adas.postScan + '</span></span></div>'
+        html += '<div class="detail-row"><span class="detail-row-label">Calibrations needed</span><span class="detail-row-value" style="text-align: right; max-width: 60%;">' + v.adas.calibrations.join(', ') + '</span></div>'
+        html += '<div class="detail-row"><span class="detail-row-label">Est. calibration cost</span><span class="detail-row-value" style="color: var(--text-revenue);">' + v.adas.estCost + '</span></div>'
+        html += '</div>'
+      }
+
+      html += '<div class="detail-section" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">'
+        + '<button onclick="showToast(\'Creating estimate for ' + v.year + ' ' + v.make + ' ' + v.model + '...\', \'success\'); closeSlideOver();" style="flex: 1; min-width: 140px; padding: 0.625rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #fff; background: var(--btn-primary-bg); border: none; cursor: pointer;">Create Estimate</button>'
+        + '<button onclick="showToast(\'Printing repair history...\', \'info\'); closeSlideOver();" style="flex: 1; min-width: 140px; padding: 0.625rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--btn-action-text); background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); cursor: pointer;">Print History</button>'
+        + '<button onclick="showToast(\'Opening vehicle editor...\', \'info\'); closeSlideOver();" style="flex: 1; min-width: 140px; padding: 0.625rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--btn-action-text); background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); cursor: pointer;">Edit Vehicle</button>'
+        + '</div>'
+
+      openSlideOver(html)
+    }
+
+    // Pagination state
+    var vPage = 1
+    var vPerPage = 8
+    var vFilteredRows = []
+
+    function getVehicleFilteredRows() {
+      var vinQuery = document.getElementById('vinSearch').value.toUpperCase().trim()
+      var makeVal = document.getElementById('makeFilter').value
+      var modelVal = document.getElementById('modelFilter').value
+      var rows = document.querySelectorAll('#vehicleTableBody tr')
+      var matched = []
+      rows.forEach(function(row) {
+        var vin = (row.getAttribute('data-vin') || '').toUpperCase()
+        var make = row.getAttribute('data-make') || ''
+        var model = row.getAttribute('data-model') || ''
+        row.style.display = 'none'
+        var show = true
+        if (vinQuery && vin.indexOf(vinQuery) === -1) show = false
+        if (makeVal && make !== makeVal) show = false
+        if (modelVal && model !== modelVal) show = false
+        if (show) matched.push(row)
+      })
+      return matched
+    }
+
+    function filterVehicles() {
+      vPage = 1
+      applyVehiclePagination()
+    }
+
+    function applyVehiclePagination() {
+      vFilteredRows = getVehicleFilteredRows()
+      var total = vFilteredRows.length
+      var totalPages = Math.max(1, Math.ceil(total / vPerPage))
+      if (vPage > totalPages) vPage = totalPages
+      var start = (vPage - 1) * vPerPage
+      var end = Math.min(start + vPerPage, total)
+      for (var i = 0; i < vFilteredRows.length; i++) {
+        vFilteredRows[i].style.display = (i >= start && i < end) ? '' : 'none'
+      }
+      var label = total === 0 ? 'No results' : 'Showing ' + (start + 1) + '–' + end + ' of ' + total
+      document.getElementById('vPagLabel').textContent = label
+      document.getElementById('vehicleShowingLabel').textContent = label
+      document.getElementById('emptyState').style.display = total === 0 ? '' : 'none'
+      document.getElementById('paginationBar').style.display = total === 0 ? 'none' : ''
+      renderVPagButtons(totalPages)
+    }
+
+    function renderVPagButtons(totalPages) {
+      var wrap = document.getElementById('vPagButtons')
+      var h = ''
+      var btnBase = 'px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer '
+      h += '<button onclick="vGoToPage(' + (vPage - 1) + ')"' + (vPage === 1 ? ' disabled' : '') + ' class="' + btnBase + '" style="background:var(--bg-subtle);border:1px solid var(--border-input);color:' + (vPage === 1 ? 'var(--text-muted)' : 'var(--text-primary)') + ';opacity:' + (vPage === 1 ? '0.5' : '1') + '">Previous</button>'
+      var pages = vGetPageNums(vPage, totalPages)
+      for (var i = 0; i < pages.length; i++) {
+        var p = pages[i]
+        if (p === '...') {
+          h += '<span class="px-2 text-xs" style="color:var(--text-muted)">…</span>'
+        } else if (p === vPage) {
+          h += '<button class="w-8 h-8 rounded-lg text-xs font-medium" style="background:var(--btn-primary-bg);color:#fff">' + p + '</button>'
+        } else {
+          h += '<button onclick="vGoToPage(' + p + ')" class="w-8 h-8 rounded-lg text-xs cursor-pointer" style="background:var(--bg-subtle);color:var(--text-tertiary)">' + p + '</button>'
+        }
+      }
+      h += '<button onclick="vGoToPage(' + (vPage + 1) + ')"' + (vPage === totalPages ? ' disabled' : '') + ' class="' + btnBase + '" style="background:var(--bg-subtle);border:1px solid var(--border-input);color:' + (vPage === totalPages ? 'var(--text-muted)' : 'var(--text-primary)') + ';opacity:' + (vPage === totalPages ? '0.5' : '1') + '">Next</button>'
+      wrap.innerHTML = h
+    }
+
+    function vGetPageNums(current, total) {
+      if (total <= 7) { var arr = []; for (var i = 1; i <= total; i++) arr.push(i); return arr; }
+      var pages = [1]
+      if (current > 3) pages.push('...')
+      for (var j = Math.max(2, current - 1); j <= Math.min(total - 1, current + 1); j++) pages.push(j)
+      if (current < total - 2) pages.push('...')
+      pages.push(total)
+      return pages
+    }
+
+    function vGoToPage(page) {
+      var totalPages = Math.max(1, Math.ceil(vFilteredRows.length / vPerPage))
+      if (page < 1 || page > totalPages) return
+      vPage = page
+      applyVehiclePagination()
+      document.getElementById('vehicleTable').scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
+    function filterByMake(makeName) {
+      document.getElementById('makeFilter').value = makeName
+      document.getElementById('modelFilter').value = ''
+      document.getElementById('vinSearch').value = ''
+      filterVehicles()
+      showToast('Filtering by ' + makeName, 'info')
+    }
+
+    function clearFilters() {
+      document.getElementById('vinSearch').value = ''
+      document.getElementById('makeFilter').value = ''
+      document.getElementById('modelFilter').value = ''
+      filterVehicles()
+    }
+
+    // Initialize pagination on load
+    applyVehiclePagination()
+
+    function openAddVehicleForm() {
+      var h = '';
+      h += '<div class="detail-section" style="display:flex;align-items:center;justify-content:space-between">';
+      h += '<h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">Add Vehicle</h2>';
+      h += '<button onclick="closeSlideOver()" style="color:var(--text-muted);font-size:1.5rem;background:none;border:none;cursor:pointer;line-height:1">&times;</button></div>';
+      // VIN
+      h += '<div class="detail-section"><div class="detail-label">Vehicle Identification</div>';
+      h += '<div style="display:flex;gap:0.75rem;align-items:flex-end">';
+      h += '<div style="flex:1">' + vField('VIN', 'addVin', 'text', '5YJ3E1EA8RF109186') + '</div>';
+      h += '<button onclick="decodeVin()" id="decodeVinBtn" style="margin-bottom:0.75rem;padding:0.5rem 1rem;border-radius:0.5rem;font-size:0.8125rem;font-weight:500;color:var(--btn-action-text);background:var(--btn-action-bg);border:1px solid var(--btn-action-border);cursor:pointer;white-space:nowrap">Decode VIN</button>';
+      h += '</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">';
+      h += vField('Year', 'addYear', 'number', '2024');
+      h += vField('Make', 'addMake', 'text', 'Tesla');
+      h += vField('Model', 'addModel', 'text', 'Model Y');
+      h += '</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">';
+      h += vField('Trim / Package', 'addTrim', 'text', 'Long Range AWD');
+      h += vField('Color', 'addColor', 'text', 'Pearl White Multi-Coat');
+      h += '</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">';
+      h += vSelect('Body Type', 'addBodyType', ['Select...','Sedan','SUV','Truck','Coupe','Hatchback','Van/Minivan','Wagon','Convertible','Crossover']);
+      h += vField('Paint Code', 'addPaintCode', 'text', 'e.g. 070, LY9T');
+      h += vField('Engine', 'addEngine', 'text', 'e.g. 2.5L I4, Electric');
+      h += '</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">';
+      h += vSelect('Drivetrain', 'addDrivetrain', ['Select...','FWD','RWD','AWD','4WD']);
+      h += vSelect('Transmission', 'addTransmission', ['Select...','Automatic','Manual','CVT','DCT','Single-Speed (EV)']);
+      h += vSelect('Fuel Type', 'addFuel', ['Select...','Gasoline','Diesel','Electric','Hybrid','Plug-in Hybrid']);
+      h += '</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">';
+      h += vField('Mileage', 'addMileage', 'text', '12,480');
+      h += vField('License Plate', 'addPlate', 'text', 'ABC-1234');
+      h += '</div></div>';
+      // ADAS & Safety
+      h += '<div class="detail-section"><div class="detail-label">ADAS & Safety Features</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">';
+      var adasOpts = ['Forward Collision Warning','Auto Emergency Braking','Blind Spot Monitoring','Lane Departure Warning','Adaptive Cruise Control','Parking Sensors','360 Camera System','Rear Cross-Traffic Alert'];
+      for (var a = 0; a < adasOpts.length; a++) {
+        h += '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8125rem;color:var(--text-tertiary);cursor:pointer"><input type="checkbox" style="accent-color:var(--text-accent)" /> ' + adasOpts[a] + '</label>';
+      }
+      h += '</div>';
+      h += '<p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem">ADAS features affect calibration requirements and repair costs</p></div>';
+      // Owner
+      h += '<div class="detail-section"><div class="detail-label">Owner Information</div>';
+      h += vField('Owner Name', 'addOwner', 'text', 'James Rodriguez');
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">';
+      h += vField('Phone', 'addPhone', 'tel', '(512) 555-0147');
+      h += vField('Email', 'addEmail', 'email', 'owner@email.com');
+      h += '</div>';
+      h += vField('Address', 'addAddr', 'text', '123 Main St, Austin, TX 78701');
+      h += '</div>';
+      // Insurance
+      h += '<div class="detail-section"><div class="detail-label">Insurance</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">';
+      h += vSelect('Insurance Company', 'addInsurer', ['Select...','State Farm','Progressive','GEICO','Allstate','USAA','Liberty Mutual','Farmers','Nationwide','Other']);
+      h += vField('Policy #', 'addPolicy', 'text', 'SF-9847362');
+      h += '</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">';
+      h += vField('Claim #', 'addClaim', 'text', 'CLM-2026-XXXXX');
+      h += vField('Deductible', 'addDeductible', 'text', '$500');
+      h += '</div></div>';
+      // Pre-existing Conditions
+      h += '<div class="detail-section"><div class="detail-label">Pre-existing Conditions & Notes</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">';
+      h += vSelect('Condition', 'addCondition', ['Select...','Excellent','Good','Fair','Poor','Salvage Title']);
+      h += vSelect('Prior Repairs', 'addPriorRepairs', ['None Known','Minor Cosmetic','Major Structural','Multiple Incidents']);
+      h += '</div>';
+      h += '<textarea id="addNotes" rows="3" placeholder="Pre-existing damage, scratches, dents, aftermarket modifications, special considerations..." style="width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--border-input);background:var(--bg-subtle);color:var(--text-primary);font-size:0.875rem;resize:vertical;font-family:inherit"></textarea></div>';
+      // Actions
+      h += '<div class="detail-section" style="display:flex;gap:0.75rem">';
+      h += '<button onclick="closeSlideOver()" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Cancel</button>';
+      h += '<button onclick="submitAddVehicle()" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);border:none;cursor:pointer">Add Vehicle</button>';
+      h += '</div>';
+      openSlideOver(h);
+    }
+
+    function vField(label, id, type, placeholder) {
+      return '<div style="margin-bottom:0.75rem"><label style="display:block;font-size:0.75rem;font-weight:500;color:var(--text-muted);margin-bottom:0.25rem">' + label + '</label><input id="' + id + '" type="' + type + '" placeholder="' + placeholder + '" style="width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--border-input);background:var(--bg-subtle);color:var(--text-primary);font-size:0.875rem" /></div>';
+    }
+    function vSelect(label, id, options) {
+      var h = '<div style="margin-bottom:0.75rem"><label style="display:block;font-size:0.75rem;font-weight:500;color:var(--text-muted);margin-bottom:0.25rem">' + label + '</label><select id="' + id + '" style="width:100%;padding:0.5rem 2rem 0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--border-input);background:var(--bg-subtle);color:var(--text-primary);font-size:0.875rem">';
+      for (var i = 0; i < options.length; i++) h += '<option>' + options[i] + '</option>';
+      return h + '</select></div>';
+    }
+
+    function decodeVin() {
+      var vinEl = document.getElementById('addVin')
+      if (!vinEl || !vinEl.value.trim()) {
+        showToast('Please enter a VIN first', 'warn')
+        return
+      }
+      var btn = document.getElementById('decodeVinBtn')
+      if (btn) { btn.textContent = 'Decoding...'; btn.disabled = true }
+      setTimeout(function() {
+        var yearEl = document.getElementById('addYear')
+        var makeEl = document.getElementById('addMake')
+        var modelEl = document.getElementById('addModel')
+        var colorEl = document.getElementById('addColor')
+        var trimEl = document.getElementById('addTrim')
+        if (yearEl) yearEl.value = '2024'
+        if (makeEl) makeEl.value = 'Tesla'
+        if (modelEl) modelEl.value = 'Model Y'
+        if (colorEl) colorEl.value = 'Pearl White Multi-Coat'
+        if (trimEl) trimEl.value = 'Long Range AWD'
+        if (btn) { btn.textContent = 'Decode VIN'; btn.disabled = false }
+        showToast('VIN decoded successfully — fields auto-filled', 'success')
+      }, 1000)
+    }
+
+    function submitAddVehicle() {
+      var vin = document.getElementById('addVin');
+      var make = document.getElementById('addMake');
+      var model = document.getElementById('addModel');
+      if (!vin || !vin.value || !make || !make.value || !model || !model.value) {
+        showToast('Please fill in VIN, Make, and Model', 'warn');
+        return;
+      }
+      var year = document.getElementById('addYear').value || '2024';
+      showToast(year + ' ' + make.value + ' ' + model.value + ' added to database', 'success');
+      closeSlideOver();
+    }
+</script>

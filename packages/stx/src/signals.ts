@@ -2887,6 +2887,187 @@ export function generateSignalsRuntimeDev(): string {
   window.watchEffect = function(fn) { return effect(fn); };
 
   // ==========================================================================
+  // View Transitions CSS (auto-injected)
+  // ==========================================================================
+
+  (function injectViewTransitionCSS() {
+    if (document.getElementById('stx-view-transitions')) return;
+    var style = document.createElement('style');
+    style.id = 'stx-view-transitions';
+    style.textContent = [
+      '::view-transition-old(root) { animation: stx-fade-out 0.15s ease-in; }',
+      '::view-transition-new(root) { animation: stx-fade-in 0.2s ease-out; }',
+      '@keyframes stx-fade-out { to { opacity: 0; } }',
+      '@keyframes stx-fade-in { from { opacity: 0; } }',
+      '#app-content, [data-stx-content] { view-transition-name: stx-content; }',
+      '::view-transition-old(stx-content) { animation: stx-slide-out 0.2s ease-in; }',
+      '::view-transition-new(stx-content) { animation: stx-slide-in 0.25s ease-out; }',
+      '@keyframes stx-slide-out { to { opacity: 0; transform: translateY(-8px); } }',
+      '@keyframes stx-slide-in { from { opacity: 0; transform: translateY(8px); } }',
+    ].join('\\n');
+    (document.head || document.documentElement).appendChild(style);
+  })();
+
+  // ==========================================================================
+  // SPA Router (built-in, auto-initialized)
+  // ==========================================================================
+
+  (function initSPARouter() {
+    if (window.__stxRouter) return;
+
+    var config = window.__stxRouterConfig || {};
+    var containerSel = config.container || '#app-content';
+    var prefetchEnabled = config.prefetch !== false;
+    var cacheEnabled = config.cache !== false;
+    var scrollTop = config.scrollToTop !== false;
+    var viewTransitions = config.viewTransitions !== false;
+
+    var cache = {};
+    var prefetching = {};
+
+    function getContainer() {
+      return document.querySelector(containerSel) || document.querySelector('[data-stx-content]') || document.querySelector('main');
+    }
+
+    function navigateTo(url, isPopState) {
+      if (!isPopState) history.pushState({}, '', url);
+      if (cacheEnabled && cache[url]) {
+        swap(cache[url], url);
+      } else {
+        fetch(url).then(function(r) { return r.text(); }).then(function(html) {
+          if (cacheEnabled) cache[url] = html;
+          swap(html, url);
+        }).catch(function() { location.href = url; });
+      }
+    }
+
+    function swap(html, url) {
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(html, 'text/html');
+      var newContent = doc.querySelector(containerSel) || doc.querySelector('[data-stx-content]') || doc.querySelector('main');
+      var currentContent = getContainer();
+      if (!newContent || !currentContent) { location.href = url; return; }
+
+      // Clean up existing signals/effects in departing content
+      if (window.stx && window.stx._cleanupContainer) {
+        window.stx._cleanupContainer(currentContent);
+      }
+
+      function doSwap() {
+        currentContent.innerHTML = newContent.innerHTML;
+
+        // Re-execute page scripts (skip the runtime itself)
+        doc.querySelectorAll('script[data-stx-scoped]').forEach(function(s) {
+          if (s.textContent.indexOf('let activeEffect') !== -1) return;
+          if (s.textContent.indexOf('initSPARouter') !== -1) return;
+          var ns = document.createElement('script');
+          ns.textContent = s.textContent;
+          ns.setAttribute('data-stx-scoped', '');
+          document.body.appendChild(ns);
+        });
+
+        // Update active nav links
+        updateNav(url);
+
+        // Scroll to top
+        if (scrollTop) window.scrollTo({ top: 0, behavior: 'instant' });
+
+        // Update document title from fetched page
+        var newTitle = doc.querySelector('title');
+        if (newTitle) document.title = newTitle.textContent;
+
+        // Dispatch navigation event for stx:load handler
+        window.dispatchEvent(new CustomEvent('stx:navigate', { detail: { url: url } }));
+        window.dispatchEvent(new Event('stx:load'));
+      }
+
+      if (viewTransitions && document.startViewTransition) {
+        document.startViewTransition(doSwap);
+      } else {
+        doSwap();
+      }
+    }
+
+    function updateNav(url) {
+      document.querySelectorAll('nav a[href], #mobileNav a[href], [data-stx-nav] a[href]').forEach(function(a) {
+        var href = a.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('http')) return;
+        var isActive = (href === url) || (href === '/' && url === '/');
+        a.style.background = isActive ? 'var(--nav-active-bg, rgba(0,0,0,0.06))' : '';
+        a.style.color = isActive ? 'var(--text-primary, inherit)' : 'var(--text-nav, inherit)';
+        a.style.fontWeight = isActive ? '500' : '';
+        // Update data-stx-link active classes
+        if (a.hasAttribute('data-stx-link')) {
+          var activeClass = a.getAttribute('data-stx-active-class') || 'active';
+          if (isActive) a.classList.add(activeClass);
+          else a.classList.remove(activeClass);
+        }
+      });
+    }
+
+    function shouldIntercept(link) {
+      if (!link) return false;
+      var href = link.getAttribute('href');
+      if (!href) return false;
+      if (href.startsWith('http') || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) return false;
+      if (link.target === '_blank') return false;
+      if (link.hasAttribute('data-no-router') || link.hasAttribute('download')) return false;
+      if (href === location.pathname) return false;
+      // Only intercept if there's a container to swap into
+      if (!getContainer()) return false;
+      return true;
+    }
+
+    // Intercept link clicks
+    document.addEventListener('click', function(e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var link = e.target.closest('a[href]');
+      if (!shouldIntercept(link)) return;
+      e.preventDefault();
+      navigateTo(link.getAttribute('href'));
+    });
+
+    // Handle back/forward
+    window.addEventListener('popstate', function() {
+      navigateTo(location.pathname, true);
+    });
+
+    // Prefetch on hover
+    if (prefetchEnabled) {
+      document.addEventListener('mouseover', function(e) {
+        var link = e.target.closest('a[href]');
+        if (!shouldIntercept(link)) return;
+        var href = link.getAttribute('href');
+        if (cache[href] || prefetching[href]) return;
+        prefetching[href] = true;
+        fetch(href).then(function(r) { return r.text(); }).then(function(html) {
+          if (cacheEnabled) cache[href] = html;
+        }).catch(function() {}).finally(function() { delete prefetching[href]; });
+      });
+    }
+
+    // Public API
+    window.__stxRouter = {
+      cache: cache,
+      navigateTo: navigateTo,
+      swap: swap,
+      updateNav: updateNav,
+      prefetch: function(url) {
+        if (!cache[url]) {
+          fetch(url).then(function(r) { return r.text(); }).then(function(html) { cache[url] = html; }).catch(function() {});
+        }
+      },
+      clearCache: function() { for (var k in cache) delete cache[k]; }
+    };
+    window.stxRouter = window.__stxRouter;
+
+    // Expose navigate function via stx
+    if (window.stx) {
+      window.stx.router = window.__stxRouter;
+    }
+  })();
+
+  // ==========================================================================
   // Auto-initialization
   // ==========================================================================
 

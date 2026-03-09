@@ -106,6 +106,23 @@ export const defaultConfig: StxConfig = {
     autoMarkers: true,
     preload: 'lazy',
   },
+  router: {
+    enabled: true,
+    container: '#app-content',
+    linkSelector: 'a[href]',
+    viewTransitions: true,
+    scrollToTop: true,
+    prefetch: true,
+    cache: true,
+    cacheTTL: 5 * 60 * 1000, // 5 minutes
+    skipSelectors: '[data-no-router], [target="_blank"]',
+    viewTransitionCSS: {
+      oldRoot: 'fade-out 0.15s ease-in',
+      newRoot: 'fade-in 0.2s ease-out',
+      oldContent: 'slide-out 0.2s ease-in',
+      newContent: 'slide-in 0.25s ease-out',
+    },
+  },
   a11y: {
     enabled: true,
     addSrOnlyStyles: true,

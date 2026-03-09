@@ -1,0 +1,834 @@
+<script>
+const companyName = 'AutoEstimate Pro'
+const currentUser = 'Sarah Mitchell'
+const currentRole = 'Senior Estimator'
+const activePage = 'Parts'
+
+const navLinks = [
+  { label: 'Dashboard', href: '/' },
+  { label: 'Estimates', href: '/estimates' },
+  { label: 'Production', href: '/production' },
+  { label: 'Vehicles', href: '/vehicles' },
+  { label: 'Parts', href: '/parts' },
+  { label: 'Insurers', href: '/insurers' },
+  { label: 'Customers', href: '/customers' },
+  { label: 'Reports', href: '/reports' },
+  { label: 'Schedule', href: '/schedule' },
+]
+
+const summaryStats = [
+  { label: 'Total Parts Inventory', value: '12,450', icon: '🔩', color: 'blue' },
+  { label: 'Suppliers Connected', value: '847', icon: '🏭', color: 'violet' },
+  { label: 'Avg Delivery', value: '2.3 days', icon: '🚚', color: 'amber' },
+  { label: 'Cost Savings YTD', value: '$124K', icon: '💰', color: 'emerald' },
+]
+
+const parts = [
+  { name: 'Front Bumper Cover', oem: '52119-0R110', vehicles: '2022-2024 Toyota RAV4', type: 'OEM', oemPrice: '$485', afterPrice: '$218', recycledPrice: '$145', supplier: 'Toyota Direct Parts', delivery: '2-3 days', availability: 'In Stock', category: 'Body Panels', make: 'Toyota' },
+  { name: 'Headlamp Assembly LH', oem: '81150-0E250', vehicles: '2023-2025 Toyota Highlander', type: 'Aftermarket', oemPrice: '$892', afterPrice: '$367', recycledPrice: '$225', supplier: 'TYC Lighting', delivery: '1-2 days', availability: 'In Stock', category: 'Lighting', make: 'Toyota' },
+  { name: 'Hood Panel', oem: '53301-06180', vehicles: '2022-2024 Toyota Camry', type: 'OEM', oemPrice: '$624', afterPrice: '$289', recycledPrice: '$195', supplier: 'Toyota Direct Parts', delivery: '3-5 days', availability: 'Ships in 2 days', category: 'Body Panels', make: 'Toyota' },
+  { name: 'Front Fender RH', oem: '16-0R120', vehicles: '2021-2024 Honda CR-V', type: 'Recycled', oemPrice: '$412', afterPrice: '$195', recycledPrice: '$120', supplier: 'Green Auto Recyclers', delivery: '1-2 days', availability: 'In Stock', category: 'Body Panels', make: 'Honda' },
+  { name: 'Door Shell LH Front', oem: '67002-F4080', vehicles: '2023-2025 Hyundai Tucson', type: 'OEM', oemPrice: '$1,245', afterPrice: '$580', recycledPrice: '$385', supplier: 'Hyundai Wholesale', delivery: '4-6 days', availability: 'Ships in 2 days', category: 'Body Panels', make: 'Hyundai' },
+  { name: 'Side Mirror Assembly RH', oem: '76200-TLA-A31', vehicles: '2022-2024 Honda Civic', type: 'Aftermarket', oemPrice: '$348', afterPrice: '$142', recycledPrice: '$89', supplier: 'Kool Vue Parts', delivery: '1-2 days', availability: 'In Stock', category: 'Body Panels', make: 'Honda' },
+  { name: 'Radiator Assembly', oem: '68050-06210', vehicles: '2022-2024 Toyota Camry', type: 'Aftermarket', oemPrice: '$538', afterPrice: '$215', recycledPrice: '$155', supplier: 'Denso Aftermarket', delivery: '2-3 days', availability: 'In Stock', category: 'Mechanical', make: 'Toyota' },
+  { name: 'A/C Condenser', oem: '80110-TBA-A01', vehicles: '2022-2025 Honda Civic', type: 'Reman', oemPrice: '$462', afterPrice: '$198', recycledPrice: '$135', supplier: 'UAC Climate Control', delivery: '2-4 days', availability: 'In Stock', category: 'Mechanical', make: 'Honda' },
+  { name: 'Windshield Glass', oem: 'FW04683GBN', vehicles: '2023-2025 Ford F-150', type: 'OEM', oemPrice: '$685', afterPrice: '$320', recycledPrice: null, supplier: 'Pilkington Glass', delivery: '3-5 days', availability: 'Ships in 2 days', category: 'Glass', make: 'Ford' },
+  { name: 'Tail Lamp Assembly RH', oem: '81550-06730', vehicles: '2022-2024 Toyota Camry', type: 'Aftermarket', oemPrice: '$365', afterPrice: '$148', recycledPrice: '$95', supplier: 'Depo Auto Parts', delivery: '1-2 days', availability: 'In Stock', category: 'Lighting', make: 'Toyota' },
+  { name: 'Rear Bumper Cover', oem: '52159-12960', vehicles: '2023-2025 Toyota Corolla', type: 'Recycled', oemPrice: '$398', afterPrice: '$185', recycledPrice: '$110', supplier: 'LKQ Corporation', delivery: '2-3 days', availability: 'In Stock', category: 'Body Panels', make: 'Toyota' },
+  { name: 'Instrument Panel Assembly', oem: '55300-47110', vehicles: '2023-2024 Toyota Prius', type: 'OEM', oemPrice: '$1,850', afterPrice: null, recycledPrice: '$680', supplier: 'Toyota Direct Parts', delivery: '5-7 days', availability: 'Backordered', category: 'Interior', make: 'Toyota' },
+]
+
+const suppliers = [
+  { name: 'Toyota Direct Parts', rating: 4.9, parts: 3420, avgDelivery: '2.1 days', onTime: '98%' },
+  { name: 'LKQ Corporation', rating: 4.7, parts: 8940, avgDelivery: '2.4 days', onTime: '95%' },
+  { name: 'Denso Aftermarket', rating: 4.8, parts: 2150, avgDelivery: '1.8 days', onTime: '97%' },
+  { name: 'Green Auto Recyclers', rating: 4.5, parts: 5620, avgDelivery: '1.5 days', onTime: '93%' },
+  { name: 'Pilkington Glass', rating: 4.6, parts: 890, avgDelivery: '3.2 days', onTime: '94%' },
+  { name: 'Kool Vue Parts', rating: 4.4, parts: 3180, avgDelivery: '1.9 days', onTime: '92%' },
+  { name: 'Hyundai Wholesale', rating: 4.7, parts: 1840, avgDelivery: '3.5 days', onTime: '96%' },
+  { name: 'UAC Climate Control', rating: 4.3, parts: 1250, avgDelivery: '2.8 days', onTime: '91%' },
+]
+
+const recentOrders = [
+  { part: 'Front Bumper Cover', orderNum: 'PO-8842', date: '2026-03-08', supplier: 'Toyota Direct Parts', status: 'Shipped' },
+  { part: 'Headlamp Assembly LH', orderNum: 'PO-8839', date: '2026-03-07', supplier: 'TYC Lighting', status: 'Delivered' },
+  { part: 'Door Shell LH Front', orderNum: 'PO-8835', date: '2026-03-06', supplier: 'Hyundai Wholesale', status: 'Processing' },
+  { part: 'Radiator Assembly', orderNum: 'PO-8831', date: '2026-03-05', supplier: 'Denso Aftermarket', status: 'Delivered' },
+  { part: 'Windshield Glass', orderNum: 'PO-8828', date: '2026-03-04', supplier: 'Pilkington Glass', status: 'Shipped' },
+]
+
+function typeBadge(type) {
+  const colors = { 'OEM': 'badge-blue', 'Aftermarket': 'badge-amber', 'Recycled': 'badge-emerald', 'Reman': 'badge-slate' }
+  return colors[type] || 'badge-slate'
+}
+
+function availabilityColor(avail) {
+  if (avail === 'In Stock') return 'color: var(--text-success)'
+  if (avail === 'Backordered') return 'color: var(--badge-red-text)'
+  return 'color: var(--badge-amber-text)'
+}
+
+function orderStatusBadge(status) {
+  const colors = { 'Delivered': 'badge-emerald', 'Shipped': 'badge-blue', 'Processing': 'badge-amber' }
+  return colors[status] || 'badge-slate'
+}
+</script>
+
+@extends('layouts/dashboard.stx')
+
+@section('styles')
+    .empty-state { text-align: center; padding: 3rem 1.5rem; }
+
+    {{-- Part card styles --}}
+    .part-card { cursor: pointer; transition: all 0.2s ease; }
+    .part-card:hover { transform: translateY(-2px); }
+    .price-compare { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .price-tag { font-size: 0.6875rem; padding: 0.25rem 0.5rem; border-radius: 0.375rem; }
+    .star-filled { color: var(--badge-amber-text); }
+    .star-empty { color: var(--text-muted); opacity: 0.3; }
+@endsection
+
+@section('content')
+      {{-- Page Header --}}
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">Parts Search & Sourcing</h1>
+          <p class="text-sm mt-1" style="color: var(--text-muted)">Search, compare, and source parts from 847 connected suppliers</p>
+        </div>
+      </div>
+
+      {{-- Summary Stats --}}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        @foreach (summaryStats as stat)
+          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ stat.color }} fade-in">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ stat.label }}</span>
+              <span class="text-lg">{{ stat.icon }}</span>
+            </div>
+            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ stat.value }}</div>
+          </div>
+        @endforeach
+      </div>
+
+      {{-- Search & Filters --}}
+      <div class="glass rounded-xl p-4 mb-8 fade-in">
+        <div class="flex flex-col gap-3">
+          <div class="flex flex-col md:flex-row gap-3">
+            <div class="flex-1">
+              <input id="partSearch" type="text" placeholder="Search by part name, OEM number, or description..." oninput="filterParts()" class="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary)" />
+            </div>
+            <button onclick="filterParts()" class="px-5 py-2.5 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--btn-primary-bg)">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+              Search
+            </button>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <select id="typeFilter" onchange="filterParts()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
+              <option value="">All Part Types</option>
+              <option value="OEM">OEM</option>
+              <option value="Aftermarket">Aftermarket</option>
+              <option value="Recycled">Recycled</option>
+              <option value="Reman">Remanufactured</option>
+            </select>
+            <select id="makeFilter" onchange="filterParts()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
+              <option value="">All Makes</option>
+              <option value="Toyota">Toyota</option>
+              <option value="Honda">Honda</option>
+              <option value="Ford">Ford</option>
+              <option value="Hyundai">Hyundai</option>
+              <option value="BMW">BMW</option>
+              <option value="Chevrolet">Chevrolet</option>
+              <option value="Nissan">Nissan</option>
+            </select>
+            <select id="categoryFilter" onchange="filterParts()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
+              <option value="">All Categories</option>
+              <option value="Body Panels">Body Panels</option>
+              <option value="Lighting">Lighting</option>
+              <option value="Mechanical">Mechanical</option>
+              <option value="Glass">Glass</option>
+              <option value="Interior">Interior</option>
+              <option value="Electrical">Electrical</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {{-- Main Grid: Parts + Sidebar --}}
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+
+        {{-- Parts Grid (2/3 width) --}}
+        <div class="xl:col-span-2">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-semibold" style="color: var(--text-primary)">Featured Parts</h2>
+            <span id="partsShowingLabel" class="text-xs" style="color: var(--text-muted)"></span>
+          </div>
+          <div id="partsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @foreach (parts as idx => part)
+              <div class="part-card glass rounded-xl p-5 glass-card fade-in" data-idx="{{ idx }}" data-name="{{ part.name }}" data-oem="{{ part.oem }}" data-type="{{ part.type }}" data-make="{{ part.make }}" data-category="{{ part.category }}" onclick="openPartDetail({{ idx }})">
+                <div class="flex items-start justify-between mb-2">
+                  <h3 class="text-sm font-semibold" style="color: var(--text-primary)">{{ part.name }}</h3>
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ typeBadge(part.type) }}" style="white-space: nowrap">{{ part.type }}</span>
+                </div>
+                <p class="text-xs font-mono mb-1" style="color: var(--text-muted)">OEM# {{ part.oem }}</p>
+                <p class="text-xs mb-3" style="color: var(--text-tertiary)">{{ part.vehicles }}</p>
+
+                <div class="price-compare">
+                  <span class="price-tag" style="background: var(--badge-blue-bg); color: var(--badge-blue-text)">OEM {{ part.oemPrice }}</span>
+                  @if (part.afterPrice)
+                    <span class="price-tag" style="background: var(--badge-amber-bg); color: var(--badge-amber-text)">After {{ part.afterPrice }}</span>
+                  @endif
+                  @if (part.recycledPrice)
+                    <span class="price-tag" style="background: var(--badge-emerald-bg); color: var(--badge-emerald-text)">Recycled {{ part.recycledPrice }}</span>
+                  @endif
+                </div>
+
+                <div class="flex items-center justify-between mt-3 pt-3" style="border-top: 1px solid var(--border-main)">
+                  <div>
+                    <p class="text-xs" style="color: var(--text-tertiary)">{{ part.supplier }}</p>
+                    <p class="text-xs" style="color: var(--text-muted)">{{ part.delivery }}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xs font-medium" style="{{ availabilityColor(part.availability) }}">{{ part.availability }}</p>
+                  </div>
+                </div>
+
+                <button onclick="event.stopPropagation(); addToEstimate('{{ part.name }}', '{{ part.oem }}')" class="w-full mt-3 px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text)">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Add to Estimate
+                </button>
+              </div>
+            @endforeach
+          </div>
+
+          {{-- Empty state --}}
+          <div id="emptyState" class="glass rounded-xl empty-state" style="display: none;">
+            <svg class="w-12 h-12 mx-auto mb-3" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            <p class="text-sm font-medium" style="color: var(--text-tertiary)">No parts match your search</p>
+            <p class="text-xs mt-1" style="color: var(--text-muted)">Try adjusting your search terms or filter criteria</p>
+            <button onclick="clearFilters()" class="mt-3 px-4 py-2 rounded-lg text-xs font-medium" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text)">Clear Filters</button>
+          </div>
+        </div>
+
+        {{-- Sidebar (1/3 width) --}}
+        <div class="space-y-6">
+
+          {{-- Top Suppliers --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Top Suppliers</h3>
+            <div class="space-y-3">
+              @foreach (suppliers as sIdx => supplier)
+                <div class="p-3 rounded-lg cursor-pointer transition-colors" style="background: var(--bg-subtle)" onmouseover="this.style.background='var(--bg-subtle-hover)'" onmouseout="this.style.background='var(--bg-subtle)'" onclick="openSupplierDetail({{ sIdx }})">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm font-medium" style="color: var(--text-secondary)">{{ supplier.name }}</span>
+                    <div class="flex items-center gap-0.5">
+                      @for (let s = 1; s <= 5; s++)
+                        @if (s <= Math.floor(supplier.rating))
+                          <svg class="w-3 h-3 star-filled" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        @else
+                          <svg class="w-3 h-3 star-empty" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        @endif
+                      @endfor
+                      <span class="text-xs ml-1 tabular-nums" style="color: var(--text-muted)">{{ supplier.rating }}</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between text-xs" style="color: var(--text-muted)">
+                    <span>{{ supplier.parts.toLocaleString() }} parts</span>
+                    <span>{{ supplier.avgDelivery }} avg</span>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          {{-- Recent Orders --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Recent Orders</h3>
+            <div class="space-y-3">
+              @foreach (recentOrders as order)
+                <div class="flex items-start justify-between gap-2 pb-3" style="border-bottom: 1px solid var(--border-main)">
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium truncate" style="color: var(--text-secondary)">{{ order.part }}</p>
+                    <p class="text-xs" style="color: var(--text-muted)">{{ order.orderNum }} — {{ order.date }}</p>
+                    <p class="text-xs" style="color: var(--text-tertiary)">{{ order.supplier }}</p>
+                  </div>
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 {{ orderStatusBadge(order.status) }}">{{ order.status }}</span>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+        </div>
+      </div>
+@endsection
+
+<script client>
+    // Parts data for slide-over details
+    var partsData = [
+      {
+        name: 'Front Bumper Cover', oem: '52119-0R110', vehicles: '2022-2024 Toyota RAV4', type: 'OEM', category: 'Body Panels', make: 'Toyota',
+        oemPrice: 485, afterPrice: 218, recycledPrice: 145,
+        supplier: 'Toyota Direct Parts', delivery: '2-3 days', availability: 'In Stock',
+        weight: '8.2 lbs', material: 'Polypropylene (PP)', color: 'Unpainted / Primed',
+        allSuppliers: [
+          { name: 'Toyota Direct Parts', type: 'OEM', price: '$485', delivery: '2-3 days', stock: 'In Stock' },
+          { name: 'PartsTrader Network', type: 'OEM', price: '$472', delivery: '3-4 days', stock: 'In Stock' },
+          { name: 'Keystone Automotive', type: 'Aftermarket', price: '$218', delivery: '1-2 days', stock: 'In Stock' },
+          { name: 'LKQ Corporation', type: 'Recycled', price: '$145', delivery: '2-3 days', stock: '3 available' },
+          { name: 'Green Auto Recyclers', type: 'Recycled', price: '$158', delivery: '1-2 days', stock: '1 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$485', after: '$218' },
+          { date: 'Feb 2026', oem: '$485', after: '$225' },
+          { date: 'Jan 2026', oem: '$478', after: '$225' },
+          { date: 'Dec 2025', oem: '$478', after: '$232' }
+        ],
+        orderHistory: [
+          { date: '2026-02-14', order: 'PO-8710', qty: 2, total: '$970' },
+          { date: '2025-12-03', order: 'PO-8422', qty: 1, total: '$485' }
+        ]
+      },
+      {
+        name: 'Headlamp Assembly LH', oem: '81150-0E250', vehicles: '2023-2025 Toyota Highlander', type: 'Aftermarket', category: 'Lighting', make: 'Toyota',
+        oemPrice: 892, afterPrice: 367, recycledPrice: 225,
+        supplier: 'TYC Lighting', delivery: '1-2 days', availability: 'In Stock',
+        weight: '5.4 lbs', material: 'Polycarbonate lens / ABS housing', color: 'Chrome / Clear',
+        allSuppliers: [
+          { name: 'Toyota Direct Parts', type: 'OEM', price: '$892', delivery: '3-5 days', stock: 'In Stock' },
+          { name: 'TYC Lighting', type: 'Aftermarket', price: '$367', delivery: '1-2 days', stock: 'In Stock' },
+          { name: 'Depo Auto Parts', type: 'Aftermarket', price: '$385', delivery: '2-3 days', stock: 'In Stock' },
+          { name: 'LKQ Corporation', type: 'Recycled', price: '$225', delivery: '2-4 days', stock: '2 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$892', after: '$367' },
+          { date: 'Feb 2026', oem: '$892', after: '$372' },
+          { date: 'Jan 2026', oem: '$885', after: '$372' },
+          { date: 'Dec 2025', oem: '$885', after: '$380' }
+        ],
+        orderHistory: [
+          { date: '2026-01-22', order: 'PO-8630', qty: 1, total: '$367' }
+        ]
+      },
+      {
+        name: 'Hood Panel', oem: '53301-06180', vehicles: '2022-2024 Toyota Camry', type: 'OEM', category: 'Body Panels', make: 'Toyota',
+        oemPrice: 624, afterPrice: 289, recycledPrice: 195,
+        supplier: 'Toyota Direct Parts', delivery: '3-5 days', availability: 'Ships in 2 days',
+        weight: '22.5 lbs', material: 'Aluminum', color: 'Unpainted',
+        allSuppliers: [
+          { name: 'Toyota Direct Parts', type: 'OEM', price: '$624', delivery: '3-5 days', stock: 'Ships in 2 days' },
+          { name: 'Keystone Automotive', type: 'Aftermarket', price: '$289', delivery: '2-3 days', stock: 'In Stock' },
+          { name: 'LKQ Corporation', type: 'Recycled', price: '$195', delivery: '1-3 days', stock: '5 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$624', after: '$289' },
+          { date: 'Feb 2026', oem: '$618', after: '$289' },
+          { date: 'Jan 2026', oem: '$618', after: '$295' },
+          { date: 'Dec 2025', oem: '$612', after: '$295' }
+        ],
+        orderHistory: [
+          { date: '2026-03-01', order: 'PO-8795', qty: 1, total: '$624' },
+          { date: '2025-11-18', order: 'PO-8380', qty: 1, total: '$289' }
+        ]
+      },
+      {
+        name: 'Front Fender RH', oem: '16-0R120', vehicles: '2021-2024 Honda CR-V', type: 'Recycled', category: 'Body Panels', make: 'Honda',
+        oemPrice: 412, afterPrice: 195, recycledPrice: 120,
+        supplier: 'Green Auto Recyclers', delivery: '1-2 days', availability: 'In Stock',
+        weight: '6.8 lbs', material: 'Steel', color: 'Various — needs refinish',
+        allSuppliers: [
+          { name: 'Honda Parts Wholesale', type: 'OEM', price: '$412', delivery: '3-5 days', stock: 'In Stock' },
+          { name: 'Keystone Automotive', type: 'Aftermarket', price: '$195', delivery: '1-2 days', stock: 'In Stock' },
+          { name: 'Green Auto Recyclers', type: 'Recycled', price: '$120', delivery: '1-2 days', stock: '4 available' },
+          { name: 'LKQ Corporation', type: 'Recycled', price: '$135', delivery: '2-3 days', stock: '2 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$412', after: '$195' },
+          { date: 'Feb 2026', oem: '$412', after: '$195' },
+          { date: 'Jan 2026', oem: '$405', after: '$189' },
+          { date: 'Dec 2025', oem: '$405', after: '$189' }
+        ],
+        orderHistory: [
+          { date: '2026-02-20', order: 'PO-8745', qty: 1, total: '$120' }
+        ]
+      },
+      {
+        name: 'Door Shell LH Front', oem: '67002-F4080', vehicles: '2023-2025 Hyundai Tucson', type: 'OEM', category: 'Body Panels', make: 'Hyundai',
+        oemPrice: 1245, afterPrice: 580, recycledPrice: 385,
+        supplier: 'Hyundai Wholesale', delivery: '4-6 days', availability: 'Ships in 2 days',
+        weight: '28.3 lbs', material: 'Steel', color: 'E-coated / Primed',
+        allSuppliers: [
+          { name: 'Hyundai Wholesale', type: 'OEM', price: '$1,245', delivery: '4-6 days', stock: 'Ships in 2 days' },
+          { name: 'Keystone Automotive', type: 'Aftermarket', price: '$580', delivery: '3-5 days', stock: 'In Stock' },
+          { name: 'LKQ Corporation', type: 'Recycled', price: '$385', delivery: '3-4 days', stock: '1 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$1,245', after: '$580' },
+          { date: 'Feb 2026', oem: '$1,245', after: '$595' },
+          { date: 'Jan 2026', oem: '$1,230', after: '$595' },
+          { date: 'Dec 2025', oem: '$1,230', after: '$610' }
+        ],
+        orderHistory: [
+          { date: '2026-03-06', order: 'PO-8835', qty: 1, total: '$1,245' }
+        ]
+      },
+      {
+        name: 'Side Mirror Assembly RH', oem: '76200-TLA-A31', vehicles: '2022-2024 Honda Civic', type: 'Aftermarket', category: 'Body Panels', make: 'Honda',
+        oemPrice: 348, afterPrice: 142, recycledPrice: 89,
+        supplier: 'Kool Vue Parts', delivery: '1-2 days', availability: 'In Stock',
+        weight: '3.1 lbs', material: 'ABS plastic / Glass', color: 'Paintable',
+        allSuppliers: [
+          { name: 'Honda Parts Wholesale', type: 'OEM', price: '$348', delivery: '3-4 days', stock: 'In Stock' },
+          { name: 'Kool Vue Parts', type: 'Aftermarket', price: '$142', delivery: '1-2 days', stock: 'In Stock' },
+          { name: 'Depo Auto Parts', type: 'Aftermarket', price: '$155', delivery: '2-3 days', stock: 'In Stock' },
+          { name: 'Green Auto Recyclers', type: 'Recycled', price: '$89', delivery: '1-2 days', stock: '6 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$348', after: '$142' },
+          { date: 'Feb 2026', oem: '$348', after: '$148' },
+          { date: 'Jan 2026', oem: '$342', after: '$148' },
+          { date: 'Dec 2025', oem: '$342', after: '$152' }
+        ],
+        orderHistory: [
+          { date: '2026-02-08', order: 'PO-8690', qty: 2, total: '$284' },
+          { date: '2025-12-15', order: 'PO-8445', qty: 1, total: '$142' }
+        ]
+      },
+      {
+        name: 'Radiator Assembly', oem: '68050-06210', vehicles: '2022-2024 Toyota Camry', type: 'Aftermarket', category: 'Mechanical', make: 'Toyota',
+        oemPrice: 538, afterPrice: 215, recycledPrice: 155,
+        supplier: 'Denso Aftermarket', delivery: '2-3 days', availability: 'In Stock',
+        weight: '12.4 lbs', material: 'Aluminum core / Plastic tanks', color: 'N/A',
+        allSuppliers: [
+          { name: 'Toyota Direct Parts', type: 'OEM', price: '$538', delivery: '3-5 days', stock: 'In Stock' },
+          { name: 'Denso Aftermarket', type: 'Aftermarket', price: '$215', delivery: '2-3 days', stock: 'In Stock' },
+          { name: 'Spectra Premium', type: 'Aftermarket', price: '$228', delivery: '2-4 days', stock: 'In Stock' },
+          { name: 'LKQ Corporation', type: 'Recycled', price: '$155', delivery: '2-3 days', stock: '3 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$538', after: '$215' },
+          { date: 'Feb 2026', oem: '$538', after: '$218' },
+          { date: 'Jan 2026', oem: '$530', after: '$218' },
+          { date: 'Dec 2025', oem: '$530', after: '$222' }
+        ],
+        orderHistory: [
+          { date: '2026-03-05', order: 'PO-8831', qty: 1, total: '$215' },
+          { date: '2025-10-28', order: 'PO-8290', qty: 1, total: '$538' }
+        ]
+      },
+      {
+        name: 'A/C Condenser', oem: '80110-TBA-A01', vehicles: '2022-2025 Honda Civic', type: 'Reman', category: 'Mechanical', make: 'Honda',
+        oemPrice: 462, afterPrice: 198, recycledPrice: 135,
+        supplier: 'UAC Climate Control', delivery: '2-4 days', availability: 'In Stock',
+        weight: '9.6 lbs', material: 'Aluminum', color: 'N/A',
+        allSuppliers: [
+          { name: 'Honda Parts Wholesale', type: 'OEM', price: '$462', delivery: '3-5 days', stock: 'In Stock' },
+          { name: 'UAC Climate Control', type: 'Reman', price: '$198', delivery: '2-4 days', stock: 'In Stock' },
+          { name: 'Denso Aftermarket', type: 'Aftermarket', price: '$210', delivery: '2-3 days', stock: 'In Stock' },
+          { name: 'LKQ Corporation', type: 'Recycled', price: '$135', delivery: '2-4 days', stock: '2 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$462', after: '$198' },
+          { date: 'Feb 2026', oem: '$462', after: '$205' },
+          { date: 'Jan 2026', oem: '$455', after: '$205' },
+          { date: 'Dec 2025', oem: '$455', after: '$210' }
+        ],
+        orderHistory: [
+          { date: '2026-01-14', order: 'PO-8578', qty: 1, total: '$198' }
+        ]
+      },
+      {
+        name: 'Windshield Glass', oem: 'FW04683GBN', vehicles: '2023-2025 Ford F-150', type: 'OEM', category: 'Glass', make: 'Ford',
+        oemPrice: 685, afterPrice: 320, recycledPrice: null,
+        supplier: 'Pilkington Glass', delivery: '3-5 days', availability: 'Ships in 2 days',
+        weight: '35.0 lbs', material: 'Laminated safety glass', color: 'Clear / Green tint',
+        allSuppliers: [
+          { name: 'Pilkington Glass', type: 'OEM', price: '$685', delivery: '3-5 days', stock: 'Ships in 2 days' },
+          { name: 'Safelite Solutions', type: 'OEM', price: '$695', delivery: '2-3 days', stock: 'In Stock' },
+          { name: 'PGW Auto Glass', type: 'Aftermarket', price: '$320', delivery: '2-4 days', stock: 'In Stock' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$685', after: '$320' },
+          { date: 'Feb 2026', oem: '$685', after: '$328' },
+          { date: 'Jan 2026', oem: '$675', after: '$328' },
+          { date: 'Dec 2025', oem: '$675', after: '$335' }
+        ],
+        orderHistory: [
+          { date: '2026-03-04', order: 'PO-8828', qty: 1, total: '$685' }
+        ]
+      },
+      {
+        name: 'Tail Lamp Assembly RH', oem: '81550-06730', vehicles: '2022-2024 Toyota Camry', type: 'Aftermarket', category: 'Lighting', make: 'Toyota',
+        oemPrice: 365, afterPrice: 148, recycledPrice: 95,
+        supplier: 'Depo Auto Parts', delivery: '1-2 days', availability: 'In Stock',
+        weight: '3.8 lbs', material: 'Polycarbonate / ABS', color: 'Red / Clear',
+        allSuppliers: [
+          { name: 'Toyota Direct Parts', type: 'OEM', price: '$365', delivery: '3-5 days', stock: 'In Stock' },
+          { name: 'Depo Auto Parts', type: 'Aftermarket', price: '$148', delivery: '1-2 days', stock: 'In Stock' },
+          { name: 'TYC Lighting', type: 'Aftermarket', price: '$155', delivery: '1-2 days', stock: 'In Stock' },
+          { name: 'Green Auto Recyclers', type: 'Recycled', price: '$95', delivery: '1-2 days', stock: '5 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$365', after: '$148' },
+          { date: 'Feb 2026', oem: '$365', after: '$152' },
+          { date: 'Jan 2026', oem: '$358', after: '$152' },
+          { date: 'Dec 2025', oem: '$358', after: '$158' }
+        ],
+        orderHistory: [
+          { date: '2026-02-25', order: 'PO-8762', qty: 2, total: '$296' }
+        ]
+      },
+      {
+        name: 'Rear Bumper Cover', oem: '52159-12960', vehicles: '2023-2025 Toyota Corolla', type: 'Recycled', category: 'Body Panels', make: 'Toyota',
+        oemPrice: 398, afterPrice: 185, recycledPrice: 110,
+        supplier: 'LKQ Corporation', delivery: '2-3 days', availability: 'In Stock',
+        weight: '7.5 lbs', material: 'Polypropylene (PP)', color: 'Various — needs refinish',
+        allSuppliers: [
+          { name: 'Toyota Direct Parts', type: 'OEM', price: '$398', delivery: '3-5 days', stock: 'In Stock' },
+          { name: 'Keystone Automotive', type: 'Aftermarket', price: '$185', delivery: '1-2 days', stock: 'In Stock' },
+          { name: 'LKQ Corporation', type: 'Recycled', price: '$110', delivery: '2-3 days', stock: '7 available' },
+          { name: 'Green Auto Recyclers', type: 'Recycled', price: '$125', delivery: '1-2 days', stock: '3 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$398', after: '$185' },
+          { date: 'Feb 2026', oem: '$398', after: '$185' },
+          { date: 'Jan 2026', oem: '$392', after: '$178' },
+          { date: 'Dec 2025', oem: '$392', after: '$178' }
+        ],
+        orderHistory: [
+          { date: '2026-01-30', order: 'PO-8650', qty: 1, total: '$110' },
+          { date: '2025-11-05', order: 'PO-8355', qty: 1, total: '$185' }
+        ]
+      },
+      {
+        name: 'Instrument Panel Assembly', oem: '55300-47110', vehicles: '2023-2024 Toyota Prius', type: 'OEM', category: 'Interior', make: 'Toyota',
+        oemPrice: 1850, afterPrice: null, recycledPrice: 680,
+        supplier: 'Toyota Direct Parts', delivery: '5-7 days', availability: 'Backordered',
+        weight: '18.2 lbs', material: 'ABS / Soft-touch polymer', color: 'Black',
+        allSuppliers: [
+          { name: 'Toyota Direct Parts', type: 'OEM', price: '$1,850', delivery: '5-7 days', stock: 'Backordered — ETA 2 weeks' },
+          { name: 'LKQ Corporation', type: 'Recycled', price: '$680', delivery: '3-5 days', stock: '1 available' }
+        ],
+        priceHistory: [
+          { date: 'Mar 2026', oem: '$1,850', after: 'N/A' },
+          { date: 'Feb 2026', oem: '$1,850', after: 'N/A' },
+          { date: 'Jan 2026', oem: '$1,820', after: 'N/A' },
+          { date: 'Dec 2025', oem: '$1,820', after: 'N/A' }
+        ],
+        orderHistory: []
+      }
+    ]
+
+    // Supplier detail data
+    var suppliersData = [
+      {
+        name: 'Toyota Direct Parts', rating: 4.9, parts: 3420, avgDelivery: '2.1 days', onTime: '98%',
+        contact: { phone: '(800) 555-8629', email: 'orders@toyotadirectparts.com', rep: 'Michael Torres', address: 'Torrance, CA 90501' },
+        metrics: { ordersThisMonth: 48, totalOrders: 1240, returnRate: '0.8%', avgResponseTime: '1.2 hrs' },
+        topCategories: ['Body Panels', 'Lighting', 'Mechanical', 'Interior'],
+        recentOrders: [
+          { date: '2026-03-08', order: 'PO-8842', part: 'Front Bumper Cover', total: '$485', status: 'Shipped' },
+          { date: '2026-03-01', order: 'PO-8795', part: 'Hood Panel', total: '$624', status: 'Delivered' },
+          { date: '2026-02-14', order: 'PO-8710', part: 'Front Bumper Cover', total: '$970', status: 'Delivered' }
+        ]
+      },
+      {
+        name: 'LKQ Corporation', rating: 4.7, parts: 8940, avgDelivery: '2.4 days', onTime: '95%',
+        contact: { phone: '(800) 555-4532', email: 'sales@lkqcorp.com', rep: 'Amanda Foster', address: 'Nashville, TN 37210' },
+        metrics: { ordersThisMonth: 92, totalOrders: 3480, returnRate: '2.1%', avgResponseTime: '0.8 hrs' },
+        topCategories: ['Body Panels', 'Mechanical', 'Lighting', 'Glass'],
+        recentOrders: [
+          { date: '2026-03-05', order: 'PO-8830', part: 'Rear Quarter Panel', total: '$245', status: 'Delivered' },
+          { date: '2026-02-28', order: 'PO-8780', part: 'Radiator Support', total: '$185', status: 'Delivered' }
+        ]
+      },
+      {
+        name: 'Denso Aftermarket', rating: 4.8, parts: 2150, avgDelivery: '1.8 days', onTime: '97%',
+        contact: { phone: '(800) 555-7120', email: 'parts@densoaftermarket.com', rep: 'Kevin Nakamura', address: 'Southfield, MI 48033' },
+        metrics: { ordersThisMonth: 35, totalOrders: 890, returnRate: '0.5%', avgResponseTime: '1.5 hrs' },
+        topCategories: ['Mechanical', 'Electrical', 'Lighting'],
+        recentOrders: [
+          { date: '2026-03-05', order: 'PO-8831', part: 'Radiator Assembly', total: '$215', status: 'Delivered' },
+          { date: '2026-02-18', order: 'PO-8720', part: 'A/C Compressor', total: '$348', status: 'Delivered' }
+        ]
+      },
+      {
+        name: 'Green Auto Recyclers', rating: 4.5, parts: 5620, avgDelivery: '1.5 days', onTime: '93%',
+        contact: { phone: '(800) 555-3298', email: 'orders@greenautorecyclers.com', rep: 'Carlos Mendez', address: 'Houston, TX 77032' },
+        metrics: { ordersThisMonth: 67, totalOrders: 2150, returnRate: '3.2%', avgResponseTime: '0.6 hrs' },
+        topCategories: ['Body Panels', 'Lighting', 'Interior', 'Mechanical'],
+        recentOrders: [
+          { date: '2026-02-20', order: 'PO-8745', part: 'Front Fender RH', total: '$120', status: 'Delivered' },
+          { date: '2026-02-10', order: 'PO-8698', part: 'Door Shell', total: '$340', status: 'Delivered' }
+        ]
+      },
+      {
+        name: 'Pilkington Glass', rating: 4.6, parts: 890, avgDelivery: '3.2 days', onTime: '94%',
+        contact: { phone: '(800) 555-6543', email: 'autoglass@pilkington.com', rep: 'Sarah Bennett', address: 'Toledo, OH 43604' },
+        metrics: { ordersThisMonth: 18, totalOrders: 520, returnRate: '0.4%', avgResponseTime: '2.0 hrs' },
+        topCategories: ['Glass'],
+        recentOrders: [
+          { date: '2026-03-04', order: 'PO-8828', part: 'Windshield Glass', total: '$685', status: 'Shipped' },
+          { date: '2026-02-22', order: 'PO-8750', part: 'Rear Window', total: '$420', status: 'Delivered' }
+        ]
+      },
+      {
+        name: 'Kool Vue Parts', rating: 4.4, parts: 3180, avgDelivery: '1.9 days', onTime: '92%',
+        contact: { phone: '(800) 555-9871', email: 'sales@koolvue.com', rep: 'Jason Park', address: 'City of Industry, CA 91745' },
+        metrics: { ordersThisMonth: 41, totalOrders: 1560, returnRate: '2.8%', avgResponseTime: '1.0 hrs' },
+        topCategories: ['Body Panels', 'Lighting', 'Mechanical'],
+        recentOrders: [
+          { date: '2026-02-08', order: 'PO-8690', part: 'Side Mirror Assembly', total: '$284', status: 'Delivered' },
+          { date: '2026-01-25', order: 'PO-8620', part: 'Headlamp Assembly', total: '$155', status: 'Delivered' }
+        ]
+      },
+      {
+        name: 'Hyundai Wholesale', rating: 4.7, parts: 1840, avgDelivery: '3.5 days', onTime: '96%',
+        contact: { phone: '(800) 555-2487', email: 'wholesale@hyundaiparts.com', rep: 'Lisa Choi', address: 'Fountain Valley, CA 92708' },
+        metrics: { ordersThisMonth: 22, totalOrders: 680, returnRate: '0.9%', avgResponseTime: '1.8 hrs' },
+        topCategories: ['Body Panels', 'Mechanical', 'Interior', 'Electrical'],
+        recentOrders: [
+          { date: '2026-03-06', order: 'PO-8835', part: 'Door Shell LH Front', total: '$1,245', status: 'Processing' },
+          { date: '2026-02-15', order: 'PO-8715', part: 'Front Bumper Cover', total: '$580', status: 'Delivered' }
+        ]
+      },
+      {
+        name: 'UAC Climate Control', rating: 4.3, parts: 1250, avgDelivery: '2.8 days', onTime: '91%',
+        contact: { phone: '(800) 555-5190', email: 'orders@uacclimate.com', rep: 'Brian Walsh', address: 'San Antonio, TX 78216' },
+        metrics: { ordersThisMonth: 15, totalOrders: 420, returnRate: '1.5%', avgResponseTime: '2.2 hrs' },
+        topCategories: ['Mechanical', 'Electrical'],
+        recentOrders: [
+          { date: '2026-01-14', order: 'PO-8578', part: 'A/C Condenser', total: '$198', status: 'Delivered' },
+          { date: '2025-12-20', order: 'PO-8460', part: 'Heater Core', total: '$165', status: 'Delivered' }
+        ]
+      }
+    ]
+
+    // Filter parts
+    function filterParts() {
+      var query = document.getElementById('partSearch').value.toLowerCase().trim()
+      var typeVal = document.getElementById('typeFilter').value
+      var makeVal = document.getElementById('makeFilter').value
+      var catVal = document.getElementById('categoryFilter').value
+      var cards = document.querySelectorAll('#partsGrid .part-card')
+      var visible = 0
+
+      cards.forEach(function(card) {
+        var name = (card.getAttribute('data-name') || '').toLowerCase()
+        var oem = (card.getAttribute('data-oem') || '').toLowerCase()
+        var type = card.getAttribute('data-type') || ''
+        var make = card.getAttribute('data-make') || ''
+        var category = card.getAttribute('data-category') || ''
+        var show = true
+
+        if (query && name.indexOf(query) === -1 && oem.indexOf(query) === -1) show = false
+        if (typeVal && type !== typeVal) show = false
+        if (makeVal && make !== makeVal) show = false
+        if (catVal && category !== catVal) show = false
+
+        card.style.display = show ? '' : 'none'
+        if (show) visible++
+      })
+
+      var label = visible === 0 ? 'No results' : 'Showing ' + visible + ' parts'
+      document.getElementById('partsShowingLabel').textContent = label
+      document.getElementById('emptyState').style.display = visible === 0 ? '' : 'none'
+    }
+
+    function clearFilters() {
+      document.getElementById('partSearch').value = ''
+      document.getElementById('typeFilter').value = ''
+      document.getElementById('makeFilter').value = ''
+      document.getElementById('categoryFilter').value = ''
+      filterParts()
+    }
+
+    // Add to estimate
+    function addToEstimate(name, oem) {
+      showToast(name + ' (' + oem + ') added to estimate', 'success')
+    }
+
+    // Open part detail slide-over
+    function openPartDetail(idx) {
+      var p = partsData[idx]
+      if (!p) return
+
+      var typeBadge = p.type === 'OEM' ? 'badge-blue' : p.type === 'Aftermarket' ? 'badge-amber' : p.type === 'Recycled' ? 'badge-emerald' : 'badge-slate'
+
+      // Build suppliers table
+      var suppliersHtml = ''
+      p.allSuppliers.forEach(function(s) {
+        var sBadge = s.type === 'OEM' ? 'badge-blue' : s.type === 'Aftermarket' ? 'badge-amber' : s.type === 'Recycled' ? 'badge-emerald' : 'badge-slate'
+        suppliersHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--row-border)">'
+        suppliersHtml += '<div>'
+        suppliersHtml += '<span style="font-size:0.875rem;font-weight:500;color:var(--text-primary)">' + s.name + '</span>'
+        suppliersHtml += '<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + sBadge + '" style="margin-left:0.5rem">' + s.type + '</span>'
+        suppliersHtml += '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.125rem">' + s.delivery + ' — ' + s.stock + '</div>'
+        suppliersHtml += '</div>'
+        suppliersHtml += '<span style="font-size:0.875rem;font-weight:600;color:var(--text-primary)">' + s.price + '</span>'
+        suppliersHtml += '</div>'
+      })
+
+      // Build price history
+      var priceHtml = ''
+      p.priceHistory.forEach(function(ph) {
+        priceHtml += '<div style="display:flex;justify-content:space-between;padding:0.375rem 0">'
+        priceHtml += '<span style="font-size:0.8125rem;color:var(--text-tertiary)">' + ph.date + '</span>'
+        priceHtml += '<div style="display:flex;gap:1rem">'
+        priceHtml += '<span style="font-size:0.8125rem;color:var(--badge-blue-text)">' + ph.oem + '</span>'
+        priceHtml += '<span style="font-size:0.8125rem;color:var(--badge-amber-text)">' + ph.after + '</span>'
+        priceHtml += '</div></div>'
+      })
+
+      // Build order history
+      var orderHtml = ''
+      if (p.orderHistory.length === 0) {
+        orderHtml = '<p style="font-size:0.8125rem;color:var(--text-muted);text-align:center;padding:0.5rem 0">No previous orders</p>'
+      } else {
+        p.orderHistory.forEach(function(o) {
+          orderHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.375rem 0">'
+          orderHtml += '<div>'
+          orderHtml += '<span style="font-size:0.8125rem;font-weight:500;color:var(--text-primary)">' + o.order + '</span>'
+          orderHtml += '<span style="font-size:0.75rem;color:var(--text-muted);margin-left:0.75rem">' + o.date + '</span>'
+          orderHtml += '</div>'
+          orderHtml += '<div style="text-align:right">'
+          orderHtml += '<span style="font-size:0.8125rem;color:var(--text-muted)">Qty ' + o.qty + '</span>'
+          orderHtml += '<span style="font-size:0.8125rem;font-weight:500;color:var(--text-primary);margin-left:0.75rem">' + o.total + '</span>'
+          orderHtml += '</div></div>'
+        })
+      }
+
+      var html = ''
+        + '<div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-main)">'
+        + '<div>'
+        + '<h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">' + p.name + '</h2>'
+        + '<div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem">'
+        + '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + typeBadge + '">' + p.type + '</span>'
+        + '<span style="font-size:0.75rem;font-family:monospace;color:var(--text-muted)">OEM# ' + p.oem + '</span>'
+        + '</div>'
+        + '</div>'
+        + '<button onclick="closeSlideOver()" style="padding:0.5rem;border-radius:0.5rem;color:var(--text-muted);background:none;border:none;cursor:pointer" aria-label="Close">'
+        + '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Part Information</div>'
+        + '<div class="detail-row"><span class="detail-row-label">Category</span><span class="detail-row-value">' + p.category + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Compatible Vehicles</span><span class="detail-row-value">' + p.vehicles + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Weight</span><span class="detail-row-value">' + p.weight + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Material</span><span class="detail-row-value">' + p.material + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Color / Finish</span><span class="detail-row-value">' + p.color + '</span></div>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Available Suppliers</div>'
+        + suppliersHtml
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Price History <span style="font-size:0.625rem;font-weight:400;text-transform:none;letter-spacing:0">(OEM vs Aftermarket)</span></div>'
+        + priceHtml
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Order History</div>'
+        + orderHtml
+        + '</div>'
+
+        + '<div class="detail-section" style="display:flex;gap:0.75rem;flex-wrap:wrap">'
+        + '<button onclick="addToEstimate(\'' + p.name.replace(/'/g, "\\'") + '\', \'' + p.oem + '\'); closeSlideOver();" style="flex:1;min-width:140px;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);border:none;cursor:pointer">Add to Estimate</button>'
+        + '<button onclick="showToast(\'Ordering ' + p.name.replace(/'/g, "\\'") + ' from ' + p.supplier.replace(/'/g, "\\'") + '...\', \'info\'); closeSlideOver();" style="flex:1;min-width:140px;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:var(--btn-action-text);background:var(--btn-action-bg);border:1px solid var(--btn-action-border);cursor:pointer">Order Part</button>'
+        + '</div>'
+
+      openSlideOver(html)
+    }
+
+    // Open supplier detail slide-over
+    function openSupplierDetail(idx) {
+      var s = suppliersData[idx]
+      if (!s) return
+
+      // Stars
+      var starsHtml = ''
+      for (var i = 1; i <= 5; i++) {
+        if (i <= Math.floor(s.rating)) {
+          starsHtml += '<svg width="14" height="14" style="color:var(--badge-amber-text)" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>'
+        } else {
+          starsHtml += '<svg width="14" height="14" style="color:var(--text-muted);opacity:0.3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>'
+        }
+      }
+
+      // Categories
+      var catsHtml = ''
+      s.topCategories.forEach(function(c) {
+        catsHtml += '<span style="display:inline-flex;padding:0.25rem 0.625rem;border-radius:9999px;font-size:0.75rem;font-weight:500;background:var(--bg-subtle);color:var(--text-tertiary);margin-right:0.375rem;margin-bottom:0.375rem">' + c + '</span>'
+      })
+
+      // Recent orders
+      var ordersHtml = ''
+      s.recentOrders.forEach(function(o) {
+        var oBadge = o.status === 'Delivered' ? 'badge-emerald' : o.status === 'Shipped' ? 'badge-blue' : 'badge-amber'
+        ordersHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--row-border)">'
+        ordersHtml += '<div>'
+        ordersHtml += '<span style="font-size:0.8125rem;font-weight:500;color:var(--text-primary)">' + o.part + '</span>'
+        ordersHtml += '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.125rem">' + o.order + ' — ' + o.date + '</div>'
+        ordersHtml += '</div>'
+        ordersHtml += '<div style="text-align:right">'
+        ordersHtml += '<span style="font-size:0.8125rem;font-weight:500;color:var(--text-primary)">' + o.total + '</span>'
+        ordersHtml += '<div><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + oBadge + '">' + o.status + '</span></div>'
+        ordersHtml += '</div></div>'
+      })
+
+      var html = ''
+        + '<div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-main)">'
+        + '<div>'
+        + '<h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">' + s.name + '</h2>'
+        + '<div style="display:flex;align-items:center;gap:0.375rem;margin-top:0.5rem">'
+        + starsHtml
+        + '<span style="font-size:0.875rem;font-weight:500;color:var(--text-primary);margin-left:0.25rem">' + s.rating + '</span>'
+        + '</div>'
+        + '</div>'
+        + '<button onclick="closeSlideOver()" style="padding:0.5rem;border-radius:0.5rem;color:var(--text-muted);background:none;border:none;cursor:pointer" aria-label="Close">'
+        + '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Contact Information</div>'
+        + '<div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">' + s.contact.phone + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value" style="color:var(--text-accent)">' + s.contact.email + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Account Rep</span><span class="detail-row-value">' + s.contact.rep + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Location</span><span class="detail-row-value">' + s.contact.address + '</span></div>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Performance Metrics</div>'
+        + '<div class="detail-row"><span class="detail-row-label">Parts Catalog</span><span class="detail-row-value">' + s.parts.toLocaleString() + ' parts</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Avg Delivery</span><span class="detail-row-value">' + s.avgDelivery + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">On-Time Delivery</span><span class="detail-row-value" style="color:var(--text-success)">' + s.onTime + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Orders This Month</span><span class="detail-row-value">' + s.metrics.ordersThisMonth + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Total Orders</span><span class="detail-row-value">' + s.metrics.totalOrders.toLocaleString() + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Return Rate</span><span class="detail-row-value">' + s.metrics.returnRate + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Avg Response Time</span><span class="detail-row-value">' + s.metrics.avgResponseTime + '</span></div>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Top Categories</div>'
+        + '<div style="display:flex;flex-wrap:wrap">' + catsHtml + '</div>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Recent Orders</div>'
+        + ordersHtml
+        + '</div>'
+
+        + '<div class="detail-section" style="display:flex;gap:0.75rem;flex-wrap:wrap">'
+        + '<button onclick="showToast(\'Opening order form for ' + s.name.replace(/'/g, "\\'") + '...\', \'info\'); closeSlideOver();" style="flex:1;min-width:140px;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);border:none;cursor:pointer">Place Order</button>'
+        + '<button onclick="showToast(\'Contacting ' + s.contact.rep.replace(/'/g, "\\'") + '...\', \'info\'); closeSlideOver();" style="flex:1;min-width:140px;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:var(--btn-action-text);background:var(--btn-action-bg);border:1px solid var(--btn-action-border);cursor:pointer">Contact Rep</button>'
+        + '</div>'
+
+      openSlideOver(html)
+    }
+
+    // Initialize showing label
+    filterParts()
+</script>

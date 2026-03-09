@@ -1,0 +1,771 @@
+<script>
+const companyName = 'AutoEstimate Pro'
+const currentUser = 'Sarah Mitchell'
+const currentRole = 'Senior Estimator'
+const activePage = 'Schedule'
+
+const navLinks = [
+  { label: 'Dashboard', href: '/' },
+  { label: 'Estimates', href: '/estimates' },
+  { label: 'Production', href: '/production' },
+  { label: 'Vehicles', href: '/vehicles' },
+  { label: 'Parts', href: '/parts' },
+  { label: 'Insurers', href: '/insurers' },
+  { label: 'Customers', href: '/customers' },
+  { label: 'Reports', href: '/reports' },
+  { label: 'Schedule', href: '/schedule' },
+]
+
+const summaryStats = [
+  { label: "Today's Appointments", value: '8', icon: '📅', color: 'blue' },
+  { label: 'This Week', value: '34', icon: '📋', color: 'amber' },
+  { label: 'Available Slots', value: '12', icon: '🕐', color: 'emerald' },
+  { label: 'Utilization', value: '78%', icon: '📊', color: 'violet' },
+]
+
+const staffMembers = [
+  { name: 'Mike Torres', role: 'Lead Estimator', initials: 'MT' },
+  { name: 'Sarah Mitchell', role: 'Senior Estimator', initials: 'SM' },
+  { name: 'Jake Wilson', role: 'Technician', initials: 'JW' },
+  { name: 'Amy Nguyen', role: 'Service Advisor', initials: 'AN' },
+  { name: 'Carlos Reyes', role: 'Detailer', initials: 'CR' },
+]
+
+const weekDays = ['Mon 3/9', 'Tue 3/10', 'Wed 3/11', 'Thu 3/12', 'Fri 3/13', 'Sat 3/14', 'Sun 3/15']
+const weekDaysFull = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const timeSlots = ['7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM']
+
+const capacityByDay = [
+  { day: 'Mon', percent: 88 },
+  { day: 'Tue', percent: 75 },
+  { day: 'Wed', percent: 82 },
+  { day: 'Thu', percent: 70 },
+  { day: 'Fri', percent: 65 },
+  { day: 'Sat', percent: 45 },
+  { day: 'Sun', percent: 0 },
+]
+
+const upcomingPickups = [
+  { customer: 'Mark Thompson', vehicle: '2022 Honda Civic', date: 'Tue 3/10', time: '4:00 PM' },
+  { customer: 'Robert Kim', vehicle: '2023 Toyota Camry', date: 'Wed 3/11', time: '2:00 PM' },
+  { customer: 'David Martinez', vehicle: '2023 Nissan Altima', date: 'Fri 3/13', time: '11:00 AM' },
+]
+
+const monthDays = []
+// Generate March 2026 calendar data
+// March 2026 starts on Sunday (day 0)
+// Fill in 35 cells (5 weeks) starting from Sunday March 1
+for (var d = 1; d <= 31; d++) {
+  monthDays.push({ day: d, appointments: 0 })
+}
+// Set appointment counts for specific days
+const apptCounts = { 9: 8, 10: 6, 11: 7, 12: 5, 13: 4, 14: 2, 15: 1, 16: 7, 17: 5, 18: 6, 19: 4, 20: 3, 21: 1, 22: 0, 23: 6, 24: 5, 25: 7, 26: 4, 27: 3, 28: 2, 2: 5, 3: 6, 4: 4, 5: 7, 6: 3, 7: 2 }
+monthDays.forEach(function(md) { if (apptCounts[md.day]) md.appointments = apptCounts[md.day] })
+
+const monthDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+const monthApptSamples = {
+  2: ['Drop-off: Rivera', 'Estimate: Park'],
+  3: ['Drop-off: Adams', 'Estimate: Bell', 'Follow-up: Scott'],
+  4: ['Estimate: Young', 'Insurance: Allstate'],
+  5: ['Drop-off: Harris', 'Pickup: Turner', 'Estimate: White'],
+  6: ['Follow-up: Clark', 'Drop-off: Lewis'],
+  7: ['Estimate: Walker', 'Pickup: Hall'],
+  9: ['Drop-off: Watts', 'Estimate: Chen', 'Insurance: StateFarm'],
+  10: ['Drop-off: Thompson', 'Estimate: Liu', 'Insurance: GEICO'],
+  11: ['Drop-off: Wu', 'Estimate: Mendoza', 'Pickup: Kim'],
+  12: ['Drop-off: Owens', 'Estimate: Reed', 'Insurance: Progressive'],
+  13: ['Drop-off: Tran', 'Pickup: Martinez', 'Estimate: Foster'],
+  14: ['Drop-off: Kowalski', 'Estimate: Park'],
+  15: ['Follow-up: Rodriguez'],
+  16: ['Drop-off: Nguyen', 'Estimate: Baker', 'Insurance: USAA'],
+  17: ['Drop-off: Garcia', 'Estimate: Moore'],
+  18: ['Estimate: Taylor', 'Pickup: Anderson', 'Follow-up: Thomas'],
+  19: ['Drop-off: Jackson', 'Estimate: White'],
+  20: ['Pickup: Harris', 'Follow-up: Clark'],
+  21: ['Estimate: King'],
+  23: ['Drop-off: Wright', 'Estimate: Lopez', 'Insurance: Farmers'],
+  24: ['Drop-off: Hill', 'Estimate: Scott'],
+  25: ['Estimate: Green', 'Pickup: Adams', 'Follow-up: Bell'],
+  26: ['Drop-off: Nelson', 'Insurance: Liberty'],
+  27: ['Estimate: Carter', 'Follow-up: Mitchell'],
+  28: ['Pickup: Perez', 'Drop-off: Roberts']
+}
+</script>
+
+@extends('layouts/dashboard.stx')
+
+@section('styles')
+    {{-- Calendar-specific styles --}}
+    .cal-grid { display: grid; grid-template-columns: 64px repeat(7, 1fr); border: 1px solid var(--bg-glass-border); border-radius: 0.75rem; overflow: hidden; }
+    .cal-header-cell { padding: 0.75rem 0.5rem; text-align: center; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--bg-glass-border); background: var(--bg-subtle); }
+    .cal-header-cell.today { color: var(--text-accent); }
+    .cal-time-label { padding: 0.25rem 0.5rem; font-size: 0.6875rem; font-weight: 500; color: var(--text-muted); text-align: right; border-right: 1px solid var(--bg-glass-border); border-bottom: 1px solid var(--bg-glass-border); height: 60px; display: flex; align-items: flex-start; justify-content: flex-end; }
+    .cal-cell { position: relative; border-right: 1px solid var(--bg-glass-border); border-bottom: 1px solid var(--bg-glass-border); height: 60px; cursor: pointer; transition: background 0.15s; }
+    .cal-cell:hover { background: var(--row-hover); }
+    .cal-cell:last-child { border-right: none; }
+    .cal-appt { position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 3px 6px; font-size: 0.6875rem; line-height: 1.3; overflow: hidden; cursor: pointer; z-index: 2; transition: opacity 0.15s, transform 0.15s; }
+    .cal-appt:hover { opacity: 0.9; transform: scale(1.02); z-index: 3; }
+    .cal-appt-blue { background: var(--badge-blue-bg); color: var(--badge-blue-text); border-left: 3px solid var(--bar-blue); }
+    .cal-appt-amber { background: var(--badge-amber-bg); color: var(--badge-amber-text); border-left: 3px solid var(--bar-amber); }
+    .cal-appt-emerald { background: var(--badge-emerald-bg); color: var(--badge-emerald-text); border-left: 3px solid var(--bar-emerald); }
+    .cal-appt-violet { background: var(--badge-violet-bg); color: var(--badge-violet-text); border-left: 3px solid var(--bar-violet); }
+    .cal-appt-red { background: var(--badge-red-bg); color: var(--badge-red-text); border-left: 3px solid var(--bar-red); }
+    .cal-now-line { position: absolute; left: 0; right: 0; height: 2px; background: var(--bar-red); z-index: 4; pointer-events: none; }
+    .cal-now-line::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--bar-red); }
+    .view-toggle-btn { padding: 0.375rem 0.875rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 500; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; }
+    .view-toggle-btn.active { background: var(--btn-primary-bg); color: #fff; border-color: var(--btn-primary-bg); }
+    .view-toggle-btn:not(.active) { background: var(--bg-subtle); color: var(--text-tertiary); border-color: var(--border-input); }
+    .view-toggle-btn:not(.active):hover { color: var(--text-primary); background: var(--bg-subtle-hover); }
+
+    {{-- Day view styles --}}
+    .day-grid { display: grid; grid-template-columns: 64px 1fr; border: 1px solid var(--bg-glass-border); border-radius: 0.75rem; overflow: hidden; }
+    .day-time-label { padding: 0.125rem 0.5rem; font-size: 0.6875rem; font-weight: 500; color: var(--text-muted); text-align: right; border-right: 1px solid var(--bg-glass-border); border-bottom: 1px solid var(--bg-glass-border); height: 36px; display: flex; align-items: flex-start; justify-content: flex-end; }
+    .day-cell { position: relative; border-bottom: 1px solid var(--bg-glass-border); height: 36px; cursor: pointer; transition: background 0.15s; }
+    .day-cell:hover { background: var(--row-hover); }
+    .day-appt { position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; line-height: 1.3; overflow: hidden; cursor: pointer; z-index: 2; display: flex; align-items: center; gap: 0.5rem; }
+    .day-appt:hover { opacity: 0.9; }
+
+    .staff-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .staff-available { background: var(--bar-emerald); }
+    .staff-busy { background: var(--bar-amber); }
+    .staff-off { background: var(--bar-slate); }
+
+    {{-- Month view styles --}}
+    .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--bg-glass-border); border-radius: 0.75rem; overflow: hidden; }
+    .month-header-cell { padding: 0.625rem 0.5rem; text-align: center; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--bg-glass-border); background: var(--bg-subtle); }
+    .month-day-cell { min-height: 100px; padding: 0.5rem; border-right: 1px solid var(--bg-glass-border); border-bottom: 1px solid var(--bg-glass-border); cursor: pointer; transition: background 0.15s; position: relative; }
+    .month-day-cell:nth-child(7n) { border-right: none; }
+    .month-day-cell:hover { background: var(--row-hover); }
+    .month-day-cell.month-today { border: 2px solid var(--text-accent); border-radius: 2px; }
+    .month-day-cell.month-weekend { background: var(--bg-subtle); }
+    .month-day-cell.month-weekend:hover { background: var(--bg-subtle-hover); }
+    .month-day-cell.month-empty { background: var(--bg-subtle); opacity: 0.4; cursor: default; }
+    .month-day-num { font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.375rem; display: flex; align-items: center; gap: 0.375rem; }
+    .month-appt-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; border-radius: 9px; font-size: 0.625rem; font-weight: 600; padding: 0 4px; }
+    .month-appt-item { font-size: 0.625rem; line-height: 1.3; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .month-appt-item.type-drop { background: var(--badge-blue-bg); color: var(--badge-blue-text); }
+    .month-appt-item.type-estimate { background: var(--badge-amber-bg); color: var(--badge-amber-text); }
+    .month-appt-item.type-pickup { background: var(--badge-emerald-bg); color: var(--badge-emerald-text); }
+    .month-appt-item.type-follow { background: var(--badge-violet-bg); color: var(--badge-violet-text); }
+    .month-appt-item.type-insurance { background: var(--badge-red-bg); color: var(--badge-red-text); }
+    .month-more { font-size: 0.625rem; color: var(--text-muted); padding-top: 1px; }
+@endsection
+
+@section('content')
+      {{-- Page Header --}}
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">Schedule</h1>
+          <p class="text-sm mt-1" style="color: var(--text-muted)">Manage appointments and shop calendar</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1 p-1 rounded-lg" style="background: var(--bg-subtle); border: 1px solid var(--border-input)">
+            <button id="btnDay" class="view-toggle-btn" onclick="switchView('day')">Day</button>
+            <button id="btnWeek" class="view-toggle-btn active" onclick="switchView('week')">Week</button>
+            <button id="btnMonth" class="view-toggle-btn" onclick="switchView('month')">Month</button>
+          </div>
+          <button onclick="openNewAppointmentForm()" class="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--btn-primary-bg)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            New Appointment
+          </button>
+        </div>
+      </div>
+
+      {{-- Summary Stats --}}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        @foreach (summaryStats as stat)
+          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ stat.color }} fade-in">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ stat.label }}</span>
+              <span class="text-lg">{{ stat.icon }}</span>
+            </div>
+            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ stat.value }}</div>
+          </div>
+        @endforeach
+      </div>
+
+      {{-- Week Navigation --}}
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <button onclick="navigateWeek(-1)" class="p-2 rounded-lg" style="background: var(--bg-subtle); border: 1px solid var(--border-input); color: var(--text-tertiary); cursor: pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <h2 class="text-base font-semibold" style="color: var(--text-primary)">March 9 – 15, 2026</h2>
+          <button onclick="navigateWeek(1)" class="p-2 rounded-lg" style="background: var(--bg-subtle); border: 1px solid var(--border-input); color: var(--text-tertiary); cursor: pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+          <button onclick="showToast('Jumped to today', 'info')" class="px-3 py-1.5 rounded-lg text-xs font-medium" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text); cursor: pointer">Today</button>
+        </div>
+        <div class="hidden md:flex items-center gap-4 text-xs" style="color: var(--text-muted)">
+          <span class="flex items-center gap-1.5"><span class="w-3 h-2 rounded-sm" style="background: var(--badge-blue-bg); border-left: 2px solid var(--bar-blue)"></span> Drop-off</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-2 rounded-sm" style="background: var(--badge-amber-bg); border-left: 2px solid var(--bar-amber)"></span> Estimate</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-2 rounded-sm" style="background: var(--badge-emerald-bg); border-left: 2px solid var(--bar-emerald)"></span> Pickup</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-2 rounded-sm" style="background: var(--badge-violet-bg); border-left: 2px solid var(--bar-violet)"></span> Follow-up</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-2 rounded-sm" style="background: var(--badge-red-bg); border-left: 2px solid var(--bar-red)"></span> Insurance</span>
+        </div>
+      </div>
+
+      {{-- Main Grid: Calendar + Sidebar --}}
+      <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
+
+        {{-- Week Calendar View (3/4 width) --}}
+        <div id="weekView" class="xl:col-span-3 glass rounded-xl overflow-hidden fade-in">
+          <div class="overflow-x-auto">
+            <div class="cal-grid" style="min-width: 700px">
+              {{-- Header row --}}
+              <div class="cal-header-cell" style="border-right: 1px solid var(--bg-glass-border)"></div>
+              @foreach (weekDays as idx => day)
+                <div class="cal-header-cell{{ idx === 0 ? ' today' : '' }}">{{ day }}</div>
+              @endforeach
+
+              {{-- Time rows - rendered via JS for appointment placement --}}
+              @foreach (timeSlots as tIdx => time)
+                <div class="cal-time-label">{{ time }}</div>
+                @foreach (weekDays as dIdx => day)
+                  <div class="cal-cell" data-day="{{ dIdx }}" data-hour="{{ tIdx + 7 }}" onclick="onCellClick({{ dIdx }}, {{ tIdx + 7 }})"></div>
+                @endforeach
+              @endforeach
+            </div>
+          </div>
+        </div>
+
+        {{-- Day View (hidden by default) --}}
+        <div id="dayView" class="xl:col-span-3 glass rounded-xl overflow-hidden fade-in" style="display: none">
+          <div class="px-5 py-4 flex items-center justify-between" style="border-bottom: 1px solid var(--border-main)">
+            <h2 class="text-base font-semibold" style="color: var(--text-primary)">Monday, March 9, 2026</h2>
+            <span class="text-xs" style="color: var(--text-muted)">8 appointments</span>
+          </div>
+          <div class="overflow-x-auto">
+            <div id="dayGrid" class="day-grid" style="min-width: 400px">
+            </div>
+          </div>
+        </div>
+
+        {{-- Month View (hidden by default) --}}
+        <div id="monthView" class="xl:col-span-3 glass rounded-xl overflow-hidden fade-in" style="display: none">
+          <div class="px-5 py-4 flex items-center justify-between" style="border-bottom: 1px solid var(--border-main)">
+            <h2 class="text-base font-semibold" style="color: var(--text-primary)">March 2026</h2>
+            <span class="text-xs" style="color: var(--text-muted)">31 days</span>
+          </div>
+          <div class="overflow-x-auto">
+            <div class="month-grid" style="min-width: 700px">
+              @foreach (monthDayNames as dayName)
+                <div class="month-header-cell">{{ dayName }}</div>
+              @endforeach
+              @foreach (monthDays as md)
+                <div class="month-day-cell{{ md.day === 9 ? ' month-today' : '' }}{{ md.day % 7 === 1 || md.day % 7 === 0 ? ' month-weekend' : '' }}" onclick="onMonthDayClick({{ md.day }})">
+                  <div class="month-day-num">
+                    {{ md.day }}
+                    @if (md.appointments > 0)
+                      <span class="month-appt-count" style="background: var(--badge-blue-bg); color: var(--badge-blue-text)">{{ md.appointments }}</span>
+                    @endif
+                  </div>
+                  <div id="monthDayAppts{{ md.day }}" class="month-appt-list"></div>
+                </div>
+              @endforeach
+              <div class="month-day-cell month-empty"></div>
+              <div class="month-day-cell month-empty"></div>
+              <div class="month-day-cell month-empty"></div>
+              <div class="month-day-cell month-empty"></div>
+            </div>
+          </div>
+        </div>
+
+        {{-- Right Sidebar (1/4 width) --}}
+        <div class="space-y-6">
+
+          {{-- Today's Schedule --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Today's Schedule</h3>
+            <div id="todayScheduleList" class="space-y-2"></div>
+          </div>
+
+          {{-- Upcoming Pickups --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Upcoming Pickups</h3>
+            <div class="space-y-3">
+              @foreach (upcomingPickups as pickup)
+                <div class="flex items-start gap-3 p-2.5 rounded-lg" style="background: var(--bg-subtle)">
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--badge-emerald-bg)">
+                    <svg class="w-4 h-4" style="color: var(--badge-emerald-text)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate" style="color: var(--text-primary)">{{ pickup.customer }}</p>
+                    <p class="text-xs" style="color: var(--text-muted)">{{ pickup.vehicle }}</p>
+                    <p class="text-xs mt-0.5" style="color: var(--text-tertiary)">{{ pickup.date }} at {{ pickup.time }}</p>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          {{-- Capacity Overview --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Capacity Overview</h3>
+            <div class="space-y-3">
+              @foreach (capacityByDay as cap)
+                <div>
+                  <div class="flex items-center justify-between text-sm mb-1.5">
+                    <span style="color: var(--text-tertiary)">{{ cap.day }}</span>
+                    <span class="tabular-nums" style="color: var(--text-muted)">{{ cap.percent }}%</span>
+                  </div>
+                  <div class="h-2 rounded-full overflow-hidden" style="background: var(--bar-track)">
+                    <div class="h-full rounded-full bar-animate {{ cap.percent >= 80 ? 'bar-amber' : cap.percent >= 50 ? 'bar-blue' : cap.percent > 0 ? 'bar-emerald' : 'bar-slate' }}" style="width: {{ cap.percent }}%"></div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          {{-- Staff Availability --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Staff Availability</h3>
+            <div id="staffList" class="space-y-2.5"></div>
+          </div>
+
+        </div>
+      </div>
+@endsection
+
+<script client>
+    // Appointment data
+    var appointments = [
+      { id: 1, day: 0, startHour: 9, duration: 1, type: 'Drop-off', color: 'blue', customer: 'James Rodriguez', vehicle: '2024 Tesla Model Y', staff: 'Amy Nguyen', notes: 'Front-end collision damage. Customer dropping off before work.', phone: '(512) 555-0174', email: 'j.rodriguez@email.com', estimate: 'EST-4821' },
+      { id: 2, day: 0, startHour: 10, duration: 1, type: 'Estimate Appointment', color: 'amber', customer: 'Lisa Chen', vehicle: '2023 BMW X5', staff: 'Sarah Mitchell', notes: 'Side impact damage assessment. Insurance pre-approval needed.', phone: '(415) 555-0298', email: 'lisa.chen@email.com', estimate: 'EST-4815' },
+      { id: 3, day: 0, startHour: 14, duration: 1, type: 'Insurance Inspection', color: 'red', customer: 'State Farm — Adj. Williams', vehicle: 'RE: EST-4818', staff: 'Mike Torres', notes: 'State Farm adjuster reviewing estimate for 2022 Subaru Outback.', phone: '(800) 555-1234', email: 'adj.williams@statefarm.com', estimate: 'EST-4818' },
+      { id: 4, day: 0, startHour: 11, duration: 1, type: 'Follow-up', color: 'violet', customer: 'Kevin Patel', vehicle: '2022 Hyundai Tucson', staff: 'Jake Wilson', notes: 'Post-repair quality check. Liftgate alignment verification.', phone: '(404) 555-0189', email: 'k.patel@email.com', estimate: 'EST-4769' },
+      { id: 5, day: 0, startHour: 8, duration: 1, type: 'Drop-off', color: 'blue', customer: 'Diana Watts', vehicle: '2024 Ford F-150', staff: 'Amy Nguyen', notes: 'Bed-side panel dent repair drop-off.', phone: '(214) 555-0387', email: 'diana.watts@email.com', estimate: 'EST-4790' },
+      { id: 6, day: 0, startHour: 13, duration: 1, type: 'Estimate Appointment', color: 'amber', customer: 'Thomas Green', vehicle: '2024 Honda CR-V', staff: 'Sarah Mitchell', notes: 'Rear quarter panel dent. First visit.', phone: '(303) 555-0165', email: 't.green@email.com', estimate: 'EST-4708' },
+      { id: 7, day: 0, startHour: 15, duration: 1, type: 'Pickup', color: 'emerald', customer: 'Angela Brooks', vehicle: '2025 Chevrolet Silverado', staff: 'Carlos Reyes', notes: 'Detail complete. Final walk-around with customer.', phone: '(713) 555-0245', email: 'a.brooks@email.com', estimate: 'EST-4776' },
+      { id: 8, day: 0, startHour: 16, duration: 1, type: 'Follow-up', color: 'violet', customer: 'Robert Kim', vehicle: '2023 Toyota Camry', staff: 'Jake Wilson', notes: 'Discuss supplemental repair needs for quarter panel.', phone: '(310) 555-0421', email: 'r.kim@email.com', estimate: 'EST-4782' },
+
+      { id: 9, day: 1, startHour: 8, duration: 1, type: 'Drop-off', color: 'blue', customer: 'Mark Thompson', vehicle: '2022 Honda Civic', staff: 'Amy Nguyen', notes: 'Rear bumper scuff repair. Quick turnaround expected.', phone: '(614) 555-0132', email: 'm.thompson@email.com', estimate: 'EST-4798' },
+      { id: 10, day: 1, startHour: 10, duration: 1, type: 'Estimate Appointment', color: 'amber', customer: 'Jennifer Liu', vehicle: '2023 Ford Mustang Mach-E', staff: 'Mike Torres', notes: 'Charging port surround damage. Needs EV-certified assessment.', phone: '(206) 555-0512', email: 'j.liu@email.com', estimate: 'EST-4830' },
+      { id: 11, day: 1, startHour: 13, duration: 1, type: 'Insurance Inspection', color: 'red', customer: 'GEICO — Adj. Park', vehicle: 'RE: EST-4825', staff: 'Mike Torres', notes: 'GEICO re-inspection for supplemental on 2021 BMW 330i.', phone: '(800) 555-4357', email: 'adj.park@geico.com', estimate: 'EST-4825' },
+      { id: 12, day: 1, startHour: 15, duration: 1, type: 'Follow-up', color: 'violet', customer: 'Sarah Jensen', vehicle: '2024 Toyota RAV4', staff: 'Jake Wilson', notes: 'Parts arrival update. Rear-end repair scheduling.', phone: '(503) 555-0356', email: 's.jensen@email.com', estimate: 'EST-4755' },
+      { id: 13, day: 1, startHour: 16, duration: 1, type: 'Pickup', color: 'emerald', customer: 'Mark Thompson', vehicle: '2022 Honda Civic', staff: 'Carlos Reyes', notes: 'Same-day completion. Final QC and delivery.', phone: '(614) 555-0132', email: 'm.thompson@email.com', estimate: 'EST-4798' },
+
+      { id: 14, day: 2, startHour: 9, duration: 1, type: 'Drop-off', color: 'blue', customer: 'Michelle Wu', vehicle: '2021 BMW 330i', staff: 'Amy Nguyen', notes: 'Front-end collision major. Tow-in scheduled.', phone: '(212) 555-0443', email: 'm.wu@email.com', estimate: 'EST-4720' },
+      { id: 15, day: 2, startHour: 11, duration: 1, type: 'Estimate Appointment', color: 'amber', customer: 'Carlos Mendoza', vehicle: '2023 Mazda CX-5', staff: 'Sarah Mitchell', notes: 'Hail damage assessment. Full vehicle inspection needed.', phone: '(469) 555-0298', email: 'c.mendoza@email.com', estimate: 'EST-4835' },
+      { id: 16, day: 2, startHour: 14, duration: 1, type: 'Pickup', color: 'emerald', customer: 'Robert Kim', vehicle: '2023 Toyota Camry', staff: 'Carlos Reyes', notes: 'Rear quarter panel complete. Paint match verified.', phone: '(310) 555-0421', email: 'r.kim@email.com', estimate: 'EST-4782' },
+      { id: 17, day: 2, startHour: 15, duration: 1, type: 'Follow-up', color: 'violet', customer: 'Lisa Chen', vehicle: '2023 BMW X5', staff: 'Mike Torres', notes: 'Insurance supplement discussion. Additional damage found.', phone: '(415) 555-0298', email: 'lisa.chen@email.com', estimate: 'EST-4815' },
+
+      { id: 18, day: 3, startHour: 8, duration: 1, type: 'Drop-off', color: 'blue', customer: 'Patricia Owens', vehicle: '2024 Kia Sportage', staff: 'Amy Nguyen', notes: 'Parking lot door ding. Minor dent on passenger side.', phone: '(919) 555-0187', email: 'p.owens@email.com', estimate: 'EST-4840' },
+      { id: 19, day: 3, startHour: 10, duration: 1, type: 'Estimate Appointment', color: 'amber', customer: 'Nathan Reed', vehicle: '2022 Audi Q5', staff: 'Mike Torres', notes: 'Rear-end collision. Potential frame damage.', phone: '(617) 555-0334', email: 'n.reed@email.com', estimate: 'EST-4842' },
+      { id: 20, day: 3, startHour: 14, duration: 1, type: 'Insurance Inspection', color: 'red', customer: 'Progressive — Adj. Davis', vehicle: 'RE: EST-4838', staff: 'Sarah Mitchell', notes: 'Progressive initial inspection for 2023 Hyundai Sonata.', phone: '(800) 555-7246', email: 'adj.davis@progressive.com', estimate: 'EST-4838' },
+
+      { id: 21, day: 4, startHour: 9, duration: 1, type: 'Drop-off', color: 'blue', customer: 'Emily Tran', vehicle: '2024 Subaru Outback', staff: 'Amy Nguyen', notes: 'Deer strike front-end. Airbags did not deploy.', phone: '(802) 555-0412', email: 'e.tran@email.com', estimate: 'EST-4845' },
+      { id: 22, day: 4, startHour: 11, duration: 1, type: 'Pickup', color: 'emerald', customer: 'David Martinez', vehicle: '2023 Nissan Altima', staff: 'Carlos Reyes', notes: 'Front bumper and hood repair complete. Ready for pickup.', phone: '(602) 555-0278', email: 'd.martinez@email.com', estimate: 'EST-4742' },
+      { id: 23, day: 4, startHour: 13, duration: 1, type: 'Estimate Appointment', color: 'amber', customer: 'Rachel Foster', vehicle: '2025 Volvo XC60', staff: 'Sarah Mitchell', notes: 'Side swipe damage on driver side. Premium paint match required.', phone: '(312) 555-0189', email: 'r.foster@email.com', estimate: 'EST-4848' },
+      { id: 24, day: 4, startHour: 15, duration: 1, type: 'Follow-up', color: 'violet', customer: 'James Rodriguez', vehicle: '2024 Tesla Model Y', staff: 'Jake Wilson', notes: 'Mid-repair update call. Parts ETA discussion.', phone: '(512) 555-0174', email: 'j.rodriguez@email.com', estimate: 'EST-4821' },
+
+      { id: 25, day: 5, startHour: 9, duration: 1, type: 'Drop-off', color: 'blue', customer: 'Brian Kowalski', vehicle: '2023 GMC Sierra', staff: 'Amy Nguyen', notes: 'Tailgate damage from backing incident.', phone: '(414) 555-0276', email: 'b.kowalski@email.com', estimate: 'EST-4850' },
+      { id: 26, day: 5, startHour: 11, duration: 1, type: 'Estimate Appointment', color: 'amber', customer: 'Linda Park', vehicle: '2022 Lexus RX 350', staff: 'Mike Torres', notes: 'Bumper and grille damage. Walk-in estimate.', phone: '(408) 555-0321', email: 'l.park@email.com', estimate: 'EST-4852' },
+    ]
+
+    // Staff schedule data
+    var staffSchedule = [
+      { name: 'Mike Torres', initials: 'MT', role: 'Lead Estimator', status: 'busy', note: 'In estimate — until 11 AM' },
+      { name: 'Sarah Mitchell', initials: 'SM', role: 'Senior Estimator', status: 'available', note: 'Available' },
+      { name: 'Jake Wilson', initials: 'JW', role: 'Technician', status: 'busy', note: 'Follow-up calls — until 12 PM' },
+      { name: 'Amy Nguyen', initials: 'AN', role: 'Service Advisor', status: 'available', note: 'Available' },
+      { name: 'Carlos Reyes', initials: 'CR', role: 'Detailer', status: 'busy', note: 'Vehicle prep — until 2 PM' },
+    ]
+
+    // Render appointments on the week calendar
+    function renderWeekCalendar() {
+      // Clear existing appointments
+      var cells = document.querySelectorAll('.cal-cell')
+      cells.forEach(function(cell) {
+        var existing = cell.querySelectorAll('.cal-appt')
+        existing.forEach(function(a) { a.remove() })
+      })
+
+      appointments.forEach(function(appt) {
+        var cell = document.querySelector('.cal-cell[data-day="' + appt.day + '"][data-hour="' + appt.startHour + '"]')
+        if (!cell) return
+        var el = document.createElement('div')
+        el.className = 'cal-appt cal-appt-' + appt.color
+        el.style.top = '1px'
+        el.style.height = (appt.duration * 60 - 4) + 'px'
+        el.innerHTML = '<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + appt.customer.split(' ')[0] + '</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0.8">' + appt.type + '</div>'
+        el.onclick = function(e) {
+          e.stopPropagation()
+          openAppointmentDetail(appt)
+        }
+        cell.appendChild(el)
+      })
+    }
+
+    // Render today's schedule sidebar
+    function renderTodaySchedule() {
+      var list = document.getElementById('todayScheduleList')
+      var todayAppts = appointments.filter(function(a) { return a.day === 0 })
+      todayAppts.sort(function(a, b) { return a.startHour - b.startHour })
+      var html = ''
+      todayAppts.forEach(function(appt) {
+        var timeStr = formatHour(appt.startHour) + ' – ' + formatHour(appt.startHour + appt.duration)
+        html += '<div class="flex items-center gap-3 p-2 rounded-lg cursor-pointer" style="background: var(--bg-subtle)" onclick="openAppointmentDetail(appointments.find(function(a){return a.id===' + appt.id + '}))">'
+        html += '<div class="w-1 h-8 rounded-full" style="background: var(--bar-' + appt.color + ')"></div>'
+        html += '<div class="flex-1 min-w-0">'
+        html += '<p class="text-xs font-medium truncate" style="color: var(--text-primary)">' + appt.customer + '</p>'
+        html += '<p class="text-xs" style="color: var(--text-muted)">' + timeStr + ' — ' + appt.type + '</p>'
+        html += '</div></div>'
+      })
+      list.innerHTML = html
+    }
+
+    // Render staff availability sidebar
+    function renderStaffList() {
+      var list = document.getElementById('staffList')
+      var html = ''
+      staffSchedule.forEach(function(s) {
+        var dotClass = s.status === 'available' ? 'staff-available' : s.status === 'busy' ? 'staff-busy' : 'staff-off'
+        html += '<div class="flex items-center gap-3">'
+        html += '<div class="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center text-[10px] font-semibold text-white flex-shrink-0">' + s.initials + '</div>'
+        html += '<div class="flex-1 min-w-0">'
+        html += '<p class="text-sm font-medium truncate" style="color: var(--text-primary)">' + s.name + '</p>'
+        html += '<p class="text-xs" style="color: var(--text-muted)">' + s.note + '</p>'
+        html += '</div>'
+        html += '<div class="staff-dot ' + dotClass + '"></div>'
+        html += '</div>'
+      })
+      list.innerHTML = html
+    }
+
+    // Render the day view (30-minute granularity)
+    function renderDayView() {
+      var grid = document.getElementById('dayGrid')
+      var html = ''
+      var todayAppts = appointments.filter(function(a) { return a.day === 0 })
+
+      // Header
+      html += '<div class="cal-header-cell" style="border-right: 1px solid var(--bg-glass-border)">Time</div>'
+      html += '<div class="cal-header-cell today">Monday, March 9</div>'
+
+      // 30-minute slots from 7:00 AM to 6:00 PM
+      for (var h = 7; h <= 18; h++) {
+        for (var m = 0; m < 2; m++) {
+          var minutes = m * 30
+          var label = (m === 0) ? formatHour(h) : ''
+          html += '<div class="day-time-label" style="' + (m === 1 ? 'border-bottom-style:dashed;' : '') + '">' + label + '</div>'
+          html += '<div class="day-cell" data-day-hour="' + h + '" data-day-min="' + minutes + '" onclick="onDayCellClick(' + h + ',' + minutes + ')" style="' + (m === 1 ? 'border-bottom-style:dashed;' : '') + '">'
+
+          // Check if an appointment starts at this slot
+          if (m === 0) {
+            var appt = todayAppts.find(function(a) { return a.startHour === h })
+            if (appt) {
+              html += '<div class="day-appt cal-appt-' + appt.color + '" style="height:' + (appt.duration * 72 - 4) + 'px;z-index:2" onclick="event.stopPropagation();openAppointmentDetail(appointments.find(function(a){return a.id===' + appt.id + '}))">'
+              html += '<div class="w-1 h-full rounded-full flex-shrink-0" style="background: var(--bar-' + appt.color + ')"></div>'
+              html += '<div class="flex-1 min-w-0">'
+              html += '<span class="font-semibold">' + appt.customer + '</span>'
+              html += '<span style="opacity:0.7;margin-left:0.5rem">' + formatHour(appt.startHour) + ' – ' + formatHour(appt.startHour + appt.duration) + '</span>'
+              html += '<span style="opacity:0.7;margin-left:0.5rem">' + appt.vehicle + '</span>'
+              html += '</div></div>'
+            }
+          }
+          html += '</div>'
+        }
+      }
+      grid.innerHTML = html
+    }
+
+    // Format hour number to display string
+    function formatHour(h) {
+      if (h === 0 || h === 24) return '12:00 AM'
+      if (h === 12) return '12:00 PM'
+      if (h < 12) return h + ':00 AM'
+      return (h - 12) + ':00 PM'
+    }
+
+    // View switching (signal)
+    var currentView = state('week')
+    effect(function() {
+      var view = currentView()
+      document.getElementById('btnDay').classList.toggle('active', view === 'day')
+      document.getElementById('btnWeek').classList.toggle('active', view === 'week')
+      document.getElementById('btnMonth').classList.toggle('active', view === 'month')
+      document.getElementById('weekView').style.display = view === 'week' ? '' : 'none'
+      document.getElementById('dayView').style.display = view === 'day' ? '' : 'none'
+      document.getElementById('monthView').style.display = view === 'month' ? '' : 'none'
+      if (view === 'month') {
+        renderMonthApptSamples()
+      }
+    })
+    function switchView(view) {
+      currentView.set(view)
+    }
+
+    // Week navigation
+    function navigateWeek(dir) {
+      if (dir === -1) {
+        showToast('Showing previous week: Mar 2 – 8, 2026', 'info')
+      } else {
+        showToast('Showing next week: Mar 16 – 22, 2026', 'info')
+      }
+    }
+
+    // Cell click handlers
+    function onCellClick(day, hour) {
+      openNewAppointmentForm(day, hour)
+    }
+    function onDayCellClick(hour, minutes) {
+      openNewAppointmentForm(0, hour)
+    }
+
+    // Open appointment detail slide-over
+    function openAppointmentDetail(appt) {
+      if (!appt) return
+      var dayNames = ['Monday, Mar 9', 'Tuesday, Mar 10', 'Wednesday, Mar 11', 'Thursday, Mar 12', 'Friday, Mar 13', 'Saturday, Mar 14', 'Sunday, Mar 15']
+      var timeStr = formatHour(appt.startHour) + ' – ' + formatHour(appt.startHour + appt.duration)
+      var badgeClass = 'badge-' + appt.color
+
+      var html = ''
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-main)">'
+      html += '<div>'
+      html += '<h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">' + appt.customer + '</h2>'
+      html += '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + badgeClass + '" style="margin-top:0.5rem">' + appt.type + '</span>'
+      html += '</div>'
+      html += '<button onclick="closeSlideOver()" style="padding:0.5rem;border-radius:0.5rem;color:var(--text-muted);background:none;border:none;cursor:pointer" aria-label="Close">'
+      html += '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+      html += '</button></div>'
+
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">Appointment Details</div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Date</span><span class="detail-row-value">' + dayNames[appt.day] + ', 2026</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Time</span><span class="detail-row-value">' + timeStr + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Type</span><span class="detail-row-value">' + appt.type + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Assigned To</span><span class="detail-row-value">' + appt.staff + '</span></div>'
+      html += '</div>'
+
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">Vehicle</div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Vehicle</span><span class="detail-row-value">' + appt.vehicle + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Estimate</span><span class="detail-row-value" style="color:var(--text-accent)">' + appt.estimate + '</span></div>'
+      html += '</div>'
+
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">Customer Contact</div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">' + appt.phone + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value" style="color:var(--text-accent)">' + appt.email + '</span></div>'
+      html += '</div>'
+
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">Notes</div>'
+      html += '<p style="font-size:0.875rem;color:var(--text-secondary);line-height:1.6">' + appt.notes + '</p>'
+      html += '</div>'
+
+      html += '<div class="detail-section" style="display:flex;gap:0.75rem;flex-wrap:wrap">'
+      html += '<button onclick="showToast(\'Opening estimate ' + appt.estimate + '...\', \'success\'); closeSlideOver();" style="flex:1;min-width:140px;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);border:none;cursor:pointer">View Estimate</button>'
+      html += '<button onclick="showToast(\'Sending reminder to ' + appt.customer + '...\', \'info\'); closeSlideOver();" style="flex:1;min-width:140px;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:var(--btn-action-text);background:var(--btn-action-bg);border:1px solid var(--btn-action-border);cursor:pointer">Send Reminder</button>'
+      html += '<button onclick="showToast(\'Appointment cancelled\', \'warn\'); closeSlideOver();" style="flex:1;min-width:140px;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:var(--badge-red-text);background:var(--badge-red-bg);border:1px solid rgba(239,68,68,0.3);cursor:pointer">Cancel</button>'
+      html += '</div>'
+
+      openSlideOver(html)
+    }
+
+    // New appointment form
+    function openNewAppointmentForm(day, hour) {
+      var dayNames = ['Monday, Mar 9', 'Tuesday, Mar 10', 'Wednesday, Mar 11', 'Thursday, Mar 12', 'Friday, Mar 13', 'Saturday, Mar 14', 'Sunday, Mar 15']
+      var preDay = (typeof day === 'number') ? day : ''
+      var preHour = (typeof hour === 'number') ? hour : ''
+
+      var html = ''
+      html += '<div class="detail-section" style="display:flex;align-items:center;justify-content:space-between">'
+      html += '<h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">New Appointment</h2>'
+      html += '<button onclick="closeSlideOver()" style="color:var(--text-muted);font-size:1.5rem;background:none;border:none;cursor:pointer;line-height:1">&times;</button></div>'
+
+      // Customer
+      html += '<div class="detail-section"><div class="detail-label">Customer</div>'
+      html += apptField('Customer Name', 'apptCustomer', 'text', 'Search customer...')
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">'
+      html += apptField('Phone', 'apptPhone', 'tel', '(555) 555-0000')
+      html += apptField('Email', 'apptEmail', 'email', 'customer@email.com')
+      html += '</div></div>'
+
+      // Vehicle
+      html += '<div class="detail-section"><div class="detail-label">Vehicle</div>'
+      html += apptField('Vehicle', 'apptVehicle', 'text', '2024 Tesla Model Y')
+      html += apptField('Estimate #', 'apptEstimate', 'text', 'EST-XXXX (optional)')
+      html += '</div>'
+
+      // Scheduling
+      html += '<div class="detail-section"><div class="detail-label">Scheduling</div>'
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">'
+      html += '<div style="margin-bottom:0.75rem"><label style="display:block;font-size:0.75rem;font-weight:500;color:var(--text-muted);margin-bottom:0.25rem">Date</label>'
+      html += '<select id="apptDay" style="width:100%;padding:0.5rem;padding-left:0.75rem;padding-right:2rem;border-radius:0.5rem;border:1px solid var(--border-input);background:var(--bg-subtle);color:var(--text-primary);font-size:0.875rem">'
+      for (var i = 0; i < dayNames.length; i++) {
+        html += '<option value="' + i + '"' + (i === preDay ? ' selected' : '') + '>' + dayNames[i] + '</option>'
+      }
+      html += '</select></div>'
+
+      html += '<div style="margin-bottom:0.75rem"><label style="display:block;font-size:0.75rem;font-weight:500;color:var(--text-muted);margin-bottom:0.25rem">Time</label>'
+      html += '<select id="apptHour" style="width:100%;padding:0.5rem;padding-left:0.75rem;padding-right:2rem;border-radius:0.5rem;border:1px solid var(--border-input);background:var(--bg-subtle);color:var(--text-primary);font-size:0.875rem">'
+      for (var t = 7; t <= 17; t++) {
+        html += '<option value="' + t + '"' + (t === preHour ? ' selected' : '') + '>' + formatHour(t) + '</option>'
+      }
+      html += '</select></div>'
+      html += '</div>'
+
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">'
+      html += '<div style="margin-bottom:0.75rem"><label style="display:block;font-size:0.75rem;font-weight:500;color:var(--text-muted);margin-bottom:0.25rem">Type</label>'
+      html += '<select id="apptType" style="width:100%;padding:0.5rem;padding-left:0.75rem;padding-right:2rem;border-radius:0.5rem;border:1px solid var(--border-input);background:var(--bg-subtle);color:var(--text-primary);font-size:0.875rem">'
+      html += '<option value="Drop-off">Drop-off</option>'
+      html += '<option value="Estimate Appointment">Estimate Appointment</option>'
+      html += '<option value="Pickup">Pickup</option>'
+      html += '<option value="Follow-up">Follow-up</option>'
+      html += '<option value="Insurance Inspection">Insurance Inspection</option>'
+      html += '</select></div>'
+
+      html += '<div style="margin-bottom:0.75rem"><label style="display:block;font-size:0.75rem;font-weight:500;color:var(--text-muted);margin-bottom:0.25rem">Assigned Staff</label>'
+      html += '<select id="apptStaff" style="width:100%;padding:0.5rem;padding-left:0.75rem;padding-right:2rem;border-radius:0.5rem;border:1px solid var(--border-input);background:var(--bg-subtle);color:var(--text-primary);font-size:0.875rem">'
+      html += '<option value="Mike Torres">Mike Torres</option>'
+      html += '<option value="Sarah Mitchell">Sarah Mitchell</option>'
+      html += '<option value="Jake Wilson">Jake Wilson</option>'
+      html += '<option value="Amy Nguyen">Amy Nguyen</option>'
+      html += '<option value="Carlos Reyes">Carlos Reyes</option>'
+      html += '</select></div>'
+      html += '</div></div>'
+
+      // Notes
+      html += '<div class="detail-section"><div class="detail-label">Notes</div>'
+      html += '<textarea id="apptNotes" rows="3" placeholder="Additional details..." style="width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--border-input);background:var(--bg-subtle);color:var(--text-primary);font-size:0.875rem;resize:vertical;font-family:inherit"></textarea></div>'
+
+      // Actions
+      html += '<div class="detail-section" style="display:flex;gap:0.75rem">'
+      html += '<button onclick="closeSlideOver()" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Cancel</button>'
+      html += '<button onclick="submitNewAppointment()" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);border:none;cursor:pointer">Create Appointment</button>'
+      html += '</div>'
+
+      openSlideOver(html)
+    }
+
+    function apptField(label, id, type, placeholder) {
+      return '<div style="margin-bottom:0.75rem"><label style="display:block;font-size:0.75rem;font-weight:500;color:var(--text-muted);margin-bottom:0.25rem">' + label + '</label><input id="' + id + '" type="' + type + '" placeholder="' + placeholder + '" style="width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--border-input);background:var(--bg-subtle);color:var(--text-primary);font-size:0.875rem" /></div>'
+    }
+
+    function submitNewAppointment() {
+      var customer = document.getElementById('apptCustomer')
+      var vehicle = document.getElementById('apptVehicle')
+      if (!customer || !customer.value || !vehicle || !vehicle.value) {
+        showToast('Please fill in customer name and vehicle', 'warn')
+        return
+      }
+      var typeEl = document.getElementById('apptType')
+      var hourEl = document.getElementById('apptHour')
+      var dayEl = document.getElementById('apptDay')
+      var staffEl = document.getElementById('apptStaff')
+      var typeColors = { 'Drop-off': 'blue', 'Estimate Appointment': 'amber', 'Pickup': 'emerald', 'Follow-up': 'violet', 'Insurance Inspection': 'red' }
+      var newAppt = {
+        id: appointments.length + 1,
+        day: parseInt(dayEl.value),
+        startHour: parseInt(hourEl.value),
+        duration: 1,
+        type: typeEl.value,
+        color: typeColors[typeEl.value] || 'blue',
+        customer: customer.value,
+        vehicle: vehicle.value,
+        staff: staffEl.value,
+        notes: document.getElementById('apptNotes').value || '',
+        phone: document.getElementById('apptPhone').value || '',
+        email: document.getElementById('apptEmail').value || '',
+        estimate: document.getElementById('apptEstimate').value || 'N/A'
+      }
+      appointments.push(newAppt)
+      renderWeekCalendar()
+      renderTodaySchedule()
+      renderDayView()
+      showToast('Appointment created for ' + customer.value, 'success')
+      closeSlideOver()
+    }
+
+    // Month view: render appointment samples into day cells
+    var monthApptSamples = {
+      2: ['Drop-off: Rivera', 'Estimate: Park'],
+      3: ['Drop-off: Adams', 'Estimate: Bell', 'Follow-up: Scott'],
+      4: ['Estimate: Young', 'Insurance: Allstate'],
+      5: ['Drop-off: Harris', 'Pickup: Turner', 'Estimate: White'],
+      6: ['Follow-up: Clark', 'Drop-off: Lewis'],
+      7: ['Estimate: Walker', 'Pickup: Hall'],
+      9: ['Drop-off: Watts', 'Estimate: Chen', 'Insurance: StateFarm'],
+      10: ['Drop-off: Thompson', 'Estimate: Liu', 'Insurance: GEICO'],
+      11: ['Drop-off: Wu', 'Estimate: Mendoza', 'Pickup: Kim'],
+      12: ['Drop-off: Owens', 'Estimate: Reed', 'Insurance: Progressive'],
+      13: ['Drop-off: Tran', 'Pickup: Martinez', 'Estimate: Foster'],
+      14: ['Drop-off: Kowalski', 'Estimate: Park'],
+      15: ['Follow-up: Rodriguez'],
+      16: ['Drop-off: Nguyen', 'Estimate: Baker', 'Insurance: USAA'],
+      17: ['Drop-off: Garcia', 'Estimate: Moore'],
+      18: ['Estimate: Taylor', 'Pickup: Anderson', 'Follow-up: Thomas'],
+      19: ['Drop-off: Jackson', 'Estimate: White'],
+      20: ['Pickup: Harris', 'Follow-up: Clark'],
+      21: ['Estimate: King'],
+      23: ['Drop-off: Wright', 'Estimate: Lopez', 'Insurance: Farmers'],
+      24: ['Drop-off: Hill', 'Estimate: Scott'],
+      25: ['Estimate: Green', 'Pickup: Adams', 'Follow-up: Bell'],
+      26: ['Drop-off: Nelson', 'Insurance: Liberty'],
+      27: ['Estimate: Carter', 'Follow-up: Mitchell'],
+      28: ['Pickup: Perez', 'Drop-off: Roberts']
+    }
+
+    function getApptTypeClass(label) {
+      if (label.indexOf('Drop-off') === 0) return 'type-drop'
+      if (label.indexOf('Estimate') === 0) return 'type-estimate'
+      if (label.indexOf('Pickup') === 0) return 'type-pickup'
+      if (label.indexOf('Follow-up') === 0) return 'type-follow'
+      if (label.indexOf('Insurance') === 0) return 'type-insurance'
+      return 'type-drop'
+    }
+
+    function renderMonthApptSamples() {
+      for (var day = 1; day <= 31; day++) {
+        var container = document.getElementById('monthDayAppts' + day)
+        if (!container) continue
+        var samples = monthApptSamples[day]
+        if (!samples || samples.length === 0) {
+          container.innerHTML = ''
+          continue
+        }
+        var html = ''
+        var show = Math.min(samples.length, 2)
+        for (var i = 0; i < show; i++) {
+          html += '<div class="month-appt-item ' + getApptTypeClass(samples[i]) + '">' + samples[i] + '</div>'
+        }
+        if (samples.length > 2) {
+          html += '<div class="month-more">+' + (samples.length - 2) + ' more</div>'
+        }
+        container.innerHTML = html
+      }
+    }
+
+    // Month day click handler
+    function onMonthDayClick(day) {
+      // For days 9-15 (the current week), switch to day view
+      if (day >= 9 && day <= 15) {
+        // Map month day to weekday index (9=Mon=0, 10=Tue=1, etc.)
+        var dayIndex = day - 9
+        switchView('day')
+        // Update the day view header to show the selected day
+        var dayViewHeader = document.querySelector('#dayView h2')
+        var dayFullNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        if (dayViewHeader) {
+          dayViewHeader.textContent = dayFullNames[dayIndex] + ', March ' + day + ', 2026'
+        }
+        showToast('Showing appointments for March ' + day, 'info')
+      } else {
+        var samples = monthApptSamples[day]
+        if (samples && samples.length > 0) {
+          showToast('March ' + day + ': ' + samples.length + ' appointment' + (samples.length > 1 ? 's' : ''), 'info')
+        } else {
+          showToast('No appointments on March ' + day, 'info')
+        }
+      }
+    }
+
+    // Initialize all views
+    renderWeekCalendar()
+    renderTodaySchedule()
+    renderStaffList()
+    renderDayView()
+</script>

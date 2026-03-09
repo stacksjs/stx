@@ -1,0 +1,454 @@
+<script>
+const companyName = 'AutoEstimate Pro'
+const currentUser = 'Sarah Mitchell'
+const currentRole = 'Senior Estimator'
+const activePage = 'Dashboard'
+
+const kpis = [
+  { label: 'Total Estimates', value: '1,247', change: '+12.5%', trend: 'up', icon: '📋', color: 'blue', trendVsLastMonth: '↑ 12%' },
+  { label: 'Revenue (MTD)', value: '$482,630', change: '+8.3%', trend: 'up', icon: '💰', color: 'emerald', trendVsLastMonth: '↑ 8%' },
+  { label: 'Avg Cycle Time', value: '3.2 days', change: '-0.4 days', trend: 'up', icon: '⏱️', color: 'violet', trendVsLastMonth: '↓ 5%' },
+  { label: 'Supplement Rate', value: '18.7%', change: '-2.1%', trend: 'up', icon: '📊', color: 'amber', trendVsLastMonth: '↓ 11%' },
+  { label: 'AI Savings', value: '$12,840', change: 'prevented', trend: 'up', icon: '🤖', color: 'violet', trendVsLastMonth: '↑ 22%' },
+]
+
+const recentEstimates = [
+  { id: 'EST-4821', vehicle: '2024 Tesla Model Y', owner: 'James Rodriguez', insurance: 'State Farm', status: 'Approved', total: '$6,842.50', date: '2026-03-09', severity: 'moderate' },
+  { id: 'EST-4820', vehicle: '2023 BMW X5', owner: 'Lisa Chen', insurance: 'Progressive', status: 'In Review', total: '$12,390.00', date: '2026-03-09', severity: 'heavy' },
+  { id: 'EST-4819', vehicle: '2022 Honda Civic', owner: 'Mark Thompson', insurance: 'GEICO', status: 'Supplement', total: '$3,215.75', date: '2026-03-08', severity: 'light' },
+  { id: 'EST-4818', vehicle: '2024 Ford F-150', owner: 'Diana Watts', insurance: 'Allstate', status: 'Approved', total: '$8,967.00', date: '2026-03-08', severity: 'moderate' },
+  { id: 'EST-4817', vehicle: '2023 Toyota Camry', owner: 'Robert Kim', insurance: 'USAA', status: 'Draft', total: '$2,450.00', date: '2026-03-08', severity: 'light' },
+  { id: 'EST-4816', vehicle: '2025 Rivian R1S', owner: 'Angela Brooks', insurance: 'Liberty Mutual', status: 'In Review', total: '$18,230.00', date: '2026-03-07', severity: 'heavy' },
+  { id: 'EST-4815', vehicle: '2022 Chevrolet Tahoe', owner: 'Kevin Patel', insurance: 'Farmers', status: 'Approved', total: '$5,120.50', date: '2026-03-07', severity: 'moderate' },
+]
+
+const statusBreakdown = [
+  { label: 'Approved', count: 487, percent: 39, color: 'bar-emerald' },
+  { label: 'In Review', count: 312, percent: 25, color: 'bar-blue' },
+  { label: 'Supplement', count: 198, percent: 16, color: 'bar-amber' },
+  { label: 'Draft', count: 156, percent: 12.5, color: 'bar-slate' },
+  { label: 'Rejected', count: 94, percent: 7.5, color: 'bar-red' },
+]
+
+const topInsurers = [
+  { name: 'State Farm', estimates: 312, revenue: '$148,200', avgDays: 2.8 },
+  { name: 'Progressive', estimates: 245, revenue: '$132,400', avgDays: 3.1 },
+  { name: 'GEICO', estimates: 198, revenue: '$95,600', avgDays: 3.4 },
+  { name: 'Allstate', estimates: 167, revenue: '$78,900', avgDays: 3.0 },
+  { name: 'USAA', estimates: 134, revenue: '$72,100', avgDays: 2.5 },
+]
+
+const repairCategories = [
+  { category: 'Body & Frame', percent: 34, amount: '$164,094' },
+  { category: 'Paint & Refinish', percent: 26, amount: '$125,484' },
+  { category: 'Mechanical', percent: 18, amount: '$86,873' },
+  { category: 'Glass', percent: 12, amount: '$57,916' },
+  { category: 'Electrical / ADAS', percent: 10, amount: '$48,263' },
+]
+
+const alerts = [
+  { type: 'warning', icon: '⚠', message: 'EST-4820: BMW X5 supplement pending adjuster review', action: 'View' },
+  { type: 'info', icon: 'ℹ', message: '3 estimates approaching SLA deadline (48hr)', action: 'Review' },
+  { type: 'success', icon: '✓', message: 'DRP audit score: 97.2% — exceeds target', action: 'Details' },
+]
+
+function statusColor(status) {
+  const colors = { 'Approved': 'badge-emerald', 'In Review': 'badge-blue', 'Supplement': 'badge-amber', 'Draft': 'badge-slate', 'Rejected': 'badge-red' }
+  return colors[status] || 'badge-slate'
+}
+
+function severityBadge(severity) {
+  const badges = { 'light': 'severity-light', 'moderate': 'severity-moderate', 'heavy': 'severity-heavy' }
+  return badges[severity] || ''
+}
+
+function alertClass(type) {
+  const styles = { 'warning': 'alert-warning', 'info': 'alert-info', 'success': 'alert-success' }
+  return styles[type] || ''
+}
+
+const navLinks = [
+  { label: 'Dashboard', href: '/' },
+  { label: 'Estimates', href: '/estimates' },
+  { label: 'Production', href: '/production' },
+  { label: 'Vehicles', href: '/vehicles' },
+  { label: 'Parts', href: '/parts' },
+  { label: 'Insurers', href: '/insurers' },
+  { label: 'Customers', href: '/customers' },
+  { label: 'Reports', href: '/reports' },
+  { label: 'Schedule', href: '/schedule' },
+]
+
+const aiInsights = [
+  { icon: '🔮', border: 'var(--bar-blue)', title: 'Supplement Prediction', desc: 'EST-4820 (BMW X5) has 89% probability of supplement. Estimated additional: $2,400', actionLabel: 'Review', actionType: 'button' },
+  { icon: '🚨', border: 'var(--bar-red)', title: 'Total Loss Alert', desc: 'EST-4816 (Rivian R1S) repair cost approaching 70% of vehicle value ($18,230 / $26,000)', actionLabel: 'Flag', actionType: 'button' },
+  { icon: '⏳', border: 'var(--bar-amber)', title: 'Cycle Time Warning', desc: '3 vehicles in Body Work stage >4 days. Shop average trending up 12% this month.', actionLabel: 'View Production', actionType: 'link', actionHref: '/production' },
+  { icon: '📦', border: 'var(--bar-emerald)', title: 'Parts Delay', desc: 'Backordered headlamp for EST-4807 (Dodge Charger). Alternative supplier found — saves 3 days.', actionLabel: 'View Parts', actionType: 'link', actionHref: '/parts' },
+]
+
+const assignmentQueue = [
+  { insurer: 'State Farm', vehicle: '2024 Chevrolet Equinox', damage: 'Front collision', time: '2 hrs ago' },
+  { insurer: 'Progressive', vehicle: '2023 Honda Accord', damage: 'Rear-end', time: '4 hrs ago' },
+  { insurer: 'GEICO', vehicle: '2025 Hyundai Ioniq 5', damage: 'Side impact', time: '6 hrs ago' },
+  { insurer: 'Allstate', vehicle: '2022 Toyota Highlander', damage: 'Hail damage', time: '1 day ago' },
+]
+
+const productionStages = [
+  { name: 'Check-in', count: 3 },
+  { name: 'Teardown', count: 2 },
+  { name: 'Body', count: 4 },
+  { name: 'Paint', count: 3 },
+  { name: 'Assembly', count: 2 },
+  { name: 'QC', count: 2 },
+  { name: 'Ready', count: 3 },
+]
+
+const todaySchedule = [
+  { time: '9:00 AM', customer: 'James Rodriguez', type: 'Drop-off' },
+  { time: '10:30 AM', customer: 'Sarah Kim', type: 'Estimate' },
+  { time: '1:00 PM', customer: 'Kevin Patel', type: 'Pickup' },
+  { time: '3:30 PM', customer: 'Maria Santos', type: 'Estimate' },
+]
+
+function scheduleTypeBadge(type) {
+  const badges = { 'Drop-off': 'badge-blue', 'Estimate': 'badge-amber', 'Pickup': 'badge-emerald' }
+  return badges[type] || 'badge-slate'
+}
+</script>
+
+@extends('layouts/dashboard.stx')
+
+@section('content')
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">Dashboard</h1>
+          <p class="text-sm mt-1" style="color: var(--text-muted)">March 2026 — Performance overview and estimate tracking</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <select id="dateRangeSelect" class="rounded-lg py-2 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem" onchange="showToast('Filter updated to ' + this.value, 'info')">
+            <option>Last 30 Days</option>
+            <option>Last 7 Days</option>
+            <option>This Quarter</option>
+            <option>Year to Date</option>
+          </select>
+          <a href="/estimates" class="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--btn-primary-bg)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            New Estimate
+          </a>
+        </div>
+      </div>
+
+      {{-- Alerts — grid on large screens so they don't stretch full width --}}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-8">
+        @foreach (alerts as idx => alert)
+          <div class="flex items-start gap-3 px-4 py-3 rounded-xl border {{ alertClass(alert.type) }} fade-in">
+            <span class="alert-icon text-base leading-none mt-0.5 flex-shrink-0">{{ alert.icon }}</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm leading-snug">{{ alert.message }}</p>
+              @if (idx === 0)
+                <a href="#" onclick="openEstimateDetail('EST-4820'); return false;" class="text-xs font-medium mt-1.5 inline-block opacity-70 hover:opacity-100">{{ alert.action }} →</a>
+              @elseif (idx === 1)
+                <a href="#" onclick="showToast('Opening SLA review queue...', 'info'); return false;" class="text-xs font-medium mt-1.5 inline-block opacity-70 hover:opacity-100">{{ alert.action }} →</a>
+              @else
+                <a href="#" onclick="showToast('DRP audit report opened', 'success'); return false;" class="text-xs font-medium mt-1.5 inline-block opacity-70 hover:opacity-100">{{ alert.action }} →</a>
+              @endif
+            </div>
+          </div>
+        @endforeach
+      </div>
+
+      {{-- KPI Cards --}}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        @foreach (kpis as kpi)
+          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ kpi.color }} fade-in">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ kpi.label }}</span>
+              <span class="text-lg">{{ kpi.icon }}</span>
+            </div>
+            <div class="text-2xl font-bold tracking-tight mb-1" style="color: var(--text-primary)">{{ kpi.value }}</div>
+            <div class="flex items-center gap-1.5">
+              @if (kpi.trend === 'up')
+                <svg class="w-3.5 h-3.5" style="color: var(--text-success)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"/></svg>
+              @else
+                <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.5 4.5l15 15m0 0V8.25m0 11.25H8.25"/></svg>
+              @endif
+              <span class="text-xs font-medium" style="color: var(--text-success)">{{ kpi.change }}</span>
+              <span class="text-xs" style="color: var(--text-muted)">vs last month</span>
+            </div>
+            @if (kpi.label === 'AI Savings')
+              <p class="text-[11px] mt-1.5" style="color: var(--text-muted)">Prevented via AI review this month</p>
+            @endif
+            <div class="mt-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold" style="background: var(--bg-subtle); color: var(--text-tertiary)">{{ kpi.trendVsLastMonth }} vs prior month</div>
+          </div>
+        @endforeach
+      </div>
+
+      {{-- AI Insights --}}
+      <div class="glass rounded-xl p-5 mb-8 fade-in">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="text-lg">&#10024;</span>
+          <h2 class="text-base font-semibold" style="color: var(--text-primary)">AI Insights</h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          @foreach (aiInsights as insight)
+            <div class="rounded-lg p-4 flex flex-col gap-2" style="background: var(--bg-subtle); border-left: 3px solid {{ insight.border }}">
+              <div class="flex items-center gap-2">
+                <span class="text-base">{{ insight.icon }}</span>
+                <span class="text-sm font-semibold" style="color: var(--text-primary)">{{ insight.title }}</span>
+              </div>
+              <p class="text-xs leading-relaxed" style="color: var(--text-tertiary)">{{ insight.desc }}</p>
+              @if (insight.actionType === 'button')
+                <button onclick="showToast('{{ insight.title }}: Action taken', 'success')" class="mt-auto self-start px-3 py-1.5 rounded-lg text-xs font-medium" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text); cursor: pointer">{{ insight.actionLabel }}</button>
+              @else
+                <a href="{{ insight.actionHref }}" class="mt-auto self-start px-3 py-1.5 rounded-lg text-xs font-medium" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text); text-decoration: none">{{ insight.actionLabel }} &#8594;</a>
+              @endif
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      {{-- Insurance Assignments --}}
+      <div class="glass rounded-xl p-5 mb-8 fade-in">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <h2 class="text-base font-semibold" style="color: var(--text-primary)">Insurance Assignments</h2>
+            <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-semibold" style="background: var(--badge-blue-bg); color: var(--badge-blue-text)">{{ assignmentQueue.length }}</span>
+          </div>
+          <a href="/estimates" class="text-xs" style="color: var(--text-accent)">View All Assignments &#8594;</a>
+        </div>
+        <div class="space-y-3">
+          @foreach (assignmentQueue as idx => assignment)
+            <div class="flex items-center justify-between gap-4 px-4 py-3 rounded-lg" style="background: var(--bg-subtle); border: 1px solid var(--border-main)">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium" style="color: var(--text-primary)">{{ assignment.insurer }} — {{ assignment.vehicle }}</p>
+                <p class="text-xs mt-0.5" style="color: var(--text-muted)">{{ assignment.damage }} — Assigned {{ assignment.time }}</p>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <button onclick="acceptAssignment({{ idx }})" class="px-3 py-1.5 rounded-lg text-xs font-medium text-white" style="background: var(--bar-emerald); cursor: pointer; border: none">Accept</button>
+                <button onclick="declineAssignment({{ idx }})" class="px-3 py-1.5 rounded-lg text-xs font-medium" style="background: var(--bg-subtle); border: 1px solid var(--border-input); color: var(--text-tertiary); cursor: pointer">Decline</button>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      {{-- Production Summary --}}
+      <div class="glass rounded-xl p-5 mb-8 fade-in">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-base font-semibold" style="color: var(--text-primary)">Production Pipeline</h2>
+            <p class="text-xs mt-0.5" style="color: var(--text-muted)">19 vehicles in shop</p>
+          </div>
+          <a href="/production" class="text-xs" style="color: var(--text-accent)">View Production &#8594;</a>
+        </div>
+        <div class="flex items-center gap-1 flex-wrap">
+          @foreach (productionStages as idx => stage)
+            <a href="/production" class="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium" style="background: var(--bg-subtle); border: 1px solid var(--border-main); color: var(--text-secondary); text-decoration: none">
+              {{ stage.name }}
+              <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold" style="background: var(--badge-blue-bg); color: var(--badge-blue-text)">{{ stage.count }}</span>
+            </a>
+            @if (idx < productionStages.length - 1)
+              <span class="text-xs" style="color: var(--text-muted)">&#8594;</span>
+            @endif
+          @endforeach
+        </div>
+      </div>
+
+      {{-- Main Grid --}}
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+        <div class="xl:col-span-2 glass rounded-xl overflow-hidden fade-in">
+          <div class="px-5 py-4 flex items-center justify-between" style="border-bottom: 1px solid var(--border-main)">
+            <h2 class="text-base font-semibold" style="color: var(--text-primary)">Recent Estimates</h2>
+            <a href="/estimates" class="text-xs" style="color: var(--text-accent)">View All →</a>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs uppercase tracking-wider" style="color: var(--text-muted); border-bottom: 1px solid var(--border-main)">
+                  <th class="px-5 py-3 font-medium">Estimate</th>
+                  <th class="px-5 py-3 font-medium">Vehicle</th>
+                  <th class="px-5 py-3 font-medium">Insurer</th>
+                  <th class="px-5 py-3 font-medium">Severity</th>
+                  <th class="px-5 py-3 font-medium">Status</th>
+                  <th class="px-5 py-3 font-medium text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach (recentEstimates as estimate)
+                  <tr class="clickable" style="border-bottom: 1px solid var(--row-border)" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='transparent'" onclick="openEstimateDetail('{{ estimate.id }}')">
+                    <td class="px-5 py-3.5">
+                      <a href="#" onclick="openEstimateDetail('{{ estimate.id }}'); return false;" class="font-medium" style="color: var(--text-accent)" title="{{ estimate.id }}">{{ estimate.id }}</a>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">{{ estimate.date }}</p>
+                    </td>
+                    <td class="px-5 py-3.5">
+                      <a href="/vehicles" onclick="event.stopPropagation()" style="color: var(--text-secondary); text-decoration: none;" title="{{ estimate.vehicle }}">{{ estimate.vehicle }}</a>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)" title="{{ estimate.owner }}">{{ estimate.owner }}</p>
+                    </td>
+                    <td class="px-5 py-3.5">
+                      <a href="/insurers" onclick="event.stopPropagation()" style="color: var(--text-tertiary); text-decoration: none;" title="{{ estimate.insurance }}">{{ estimate.insurance }}</a>
+                    </td>
+                    <td class="px-5 py-3.5">
+                      <span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border capitalize {{ severityBadge(estimate.severity) }}">{{ estimate.severity }}</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                      <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ statusColor(estimate.status) }}">{{ estimate.status }}</span>
+                    </td>
+                    <td class="px-5 py-3.5 text-right font-medium tabular-nums" style="color: var(--text-primary)">{{ estimate.total }}</td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Estimate Status</h3>
+            <div class="space-y-3">
+              @foreach (statusBreakdown as status)
+                <div>
+                  <div class="flex items-center justify-between text-sm mb-1.5">
+                    <span style="color: var(--text-tertiary)">{{ status.label }}</span>
+                    <span class="tabular-nums" style="color: var(--text-muted)">{{ status.count }}</span>
+                  </div>
+                  <div class="h-2 rounded-full overflow-hidden" style="background: var(--bar-track)">
+                    <div class="{{ status.color }} h-full rounded-full bar-animate" style="width: {{ status.percent }}%"></div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+            <div class="mt-4 pt-4 flex items-center justify-between" style="border-top: 1px solid var(--border-main)">
+              <span class="text-xs" style="color: var(--text-muted)">Total</span>
+              <span class="text-sm font-semibold tabular-nums" style="color: var(--text-primary)">1,247</span>
+            </div>
+          </div>
+
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Repair Breakdown</h3>
+            <div class="space-y-3">
+              @foreach (repairCategories as cat)
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style="background: var(--repair-icon-bg); color: var(--repair-icon-text)">{{ cat.percent }}%</div>
+                    <span class="text-sm" style="color: var(--text-tertiary)">{{ cat.category }}</span>
+                  </div>
+                  <span class="text-sm tabular-nums" style="color: var(--text-muted)">{{ cat.amount }}</span>
+                </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{-- Bottom Row --}}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 glass rounded-xl overflow-hidden fade-in">
+          <div class="px-5 py-4 flex items-center justify-between" style="border-bottom: 1px solid var(--border-main)">
+            <h2 class="text-base font-semibold" style="color: var(--text-primary)">Top Insurance Partners</h2>
+            <a href="/insurers" class="text-xs" style="color: var(--text-accent)">View All →</a>
+          </div>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs uppercase tracking-wider" style="color: var(--text-muted); border-bottom: 1px solid var(--border-main)">
+                <th class="px-5 py-3 font-medium">#</th>
+                <th class="px-5 py-3 font-medium">Insurance Company</th>
+                <th class="px-5 py-3 font-medium text-right">Estimates</th>
+                <th class="px-5 py-3 font-medium text-right">Revenue</th>
+                <th class="px-5 py-3 font-medium text-right">Avg Cycle</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach (topInsurers as idx => insurer)
+                <tr class="clickable" style="border-bottom: 1px solid var(--row-border)" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='transparent'">
+                  <td class="px-5 py-3.5"><span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium" style="background: var(--rank-bg); color: var(--text-muted)">{{ idx + 1 }}</span></td>
+                  <td class="px-5 py-3.5 font-medium"><a href="/insurers" style="color: var(--text-secondary)" title="{{ insurer.name }}">{{ insurer.name }}</a></td>
+                  <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-tertiary)">{{ insurer.estimates }}</td>
+                  <td class="px-5 py-3.5 text-right tabular-nums font-medium" style="color: var(--text-revenue)">{{ insurer.revenue }}</td>
+                  <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-muted)">{{ insurer.avgDays }} days</td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+
+        <div class="glass rounded-xl p-5 fade-in">
+          <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Quick Actions</h3>
+          <div class="space-y-2">
+            <a href="/estimates" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-sm font-medium" style="background: var(--btn-action-bg); border-color: var(--btn-action-border); color: var(--btn-action-text)">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Create New Estimate
+            </a>
+            <a href="/estimates" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-sm" style="background: var(--bg-subtle); border-color: var(--border-input); color: var(--text-tertiary)">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+              Search Estimates
+            </a>
+            <a href="#" onclick="showToast('Generating March 2026 report...', 'info'); return false;" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-sm" style="background: var(--bg-subtle); border-color: var(--border-input); color: var(--text-tertiary)">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+              Export Monthly Report
+            </a>
+            <a href="/vehicles" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-sm" style="background: var(--bg-subtle); border-color: var(--border-input); color: var(--text-tertiary)">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0H6.375m11.25 0h3.375a1.125 1.125 0 001.125-1.125v-2.25M3 7.5l2.474 4.117a1.125 1.125 0 001.036.633h12.49a1.125 1.125 0 001.036-.633L22.5 7.5"/></svg>
+              Vehicle Database
+            </a>
+            <a href="/insurers" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-sm" style="background: var(--bg-subtle); border-color: var(--border-input); color: var(--text-tertiary)">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>
+              Insurer Directory
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {{-- Today's Schedule Preview --}}
+      <div class="glass rounded-xl overflow-hidden fade-in mt-6">
+        <div class="px-5 py-4 flex items-center justify-between" style="border-bottom: 1px solid var(--border-main)">
+          <h2 class="text-base font-semibold" style="color: var(--text-primary)">Today's Schedule</h2>
+          <a href="/schedule" class="text-xs" style="color: var(--text-accent)">View Full Schedule &#8594;</a>
+        </div>
+        <div>
+          @foreach (todaySchedule as appt)
+            <div class="flex items-center justify-between px-5 py-3.5" style="border-bottom: 1px solid var(--border-main)">
+              <div class="flex items-center gap-4">
+                <span class="text-sm font-medium tabular-nums" style="color: var(--text-accent); min-width: 5rem">{{ appt.time }}</span>
+                <span class="text-sm" style="color: var(--text-secondary)">{{ appt.customer }}</span>
+              </div>
+              <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ scheduleTypeBadge(appt.type) }}">{{ appt.type }}</span>
+            </div>
+          @endforeach
+        </div>
+      </div>
+@endsection
+
+<script client>
+    // ── Assignment Queue ──
+    function acceptAssignment(idx) {
+      showToast('Assignment accepted!', 'success')
+    }
+    function declineAssignment(idx) {
+      if (confirm('Are you sure you want to decline this assignment?')) {
+        showToast('Assignment declined', 'warn')
+      }
+    }
+
+    // Estimate detail data
+    var estimateDetails = {
+      'EST-4821': '<div class="detail-section" style="display:flex;align-items:center;justify-content:space-between"><div><h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">EST-4821</h2><p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">March 9, 2026</p></div><div style="display:flex;align-items:center;gap:0.75rem"><span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium badge-emerald">Approved</span><button onclick="closeSlideOver()" style="color:var(--text-muted);font-size:1.5rem;background:none;border:none;cursor:pointer;line-height:1" aria-label="Close">&times;</button></div></div><div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-row"><span class="detail-row-label">Year / Make / Model</span><span class="detail-row-value">2024 Tesla Model Y</span></div><div class="detail-row"><span class="detail-row-label">VIN</span><span class="detail-row-value">5YJ3E1EA8RF...3456</span></div><div class="detail-row"><span class="detail-row-label">Color</span><span class="detail-row-value">Pearl White Multi-Coat</span></div><div class="detail-row"><span class="detail-row-label">Mileage</span><span class="detail-row-value">12,480 mi</span></div></div><div class="detail-section"><div class="detail-label">Owner</div><div class="detail-row"><span class="detail-row-label">Name</span><span class="detail-row-value">James Rodriguez</span></div><div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">(512) 555-0147</span></div><div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">j.rodriguez@email.com</span></div></div><div class="detail-section"><div class="detail-label">Insurance</div><div class="detail-row"><span class="detail-row-label">Company</span><span class="detail-row-value">State Farm</span></div><div class="detail-row"><span class="detail-row-label">Policy #</span><span class="detail-row-value">SF-9847362</span></div><div class="detail-row"><span class="detail-row-label">Claim #</span><span class="detail-row-value">CLM-2026-08421</span></div><div class="detail-row"><span class="detail-row-label">Adjuster</span><span class="detail-row-value">Patricia Holloway</span></div></div><div class="detail-section"><div class="detail-label">Damage Assessment</div><div class="detail-row"><span class="detail-row-label">Point of Impact</span><span class="detail-row-value">Rear Left Quarter</span></div><div class="detail-row"><span class="detail-row-label">Severity</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border severity-moderate">Moderate</span></span></div><div class="detail-row"><span class="detail-row-label">Driveable</span><span class="detail-row-value">Yes</span></div></div><div class="detail-section"><div class="detail-label">Cost Summary</div><div class="detail-row"><span class="detail-row-label">Labor</span><span class="detail-row-value">$2,840.00</span></div><div class="detail-row"><span class="detail-row-label">Parts</span><span class="detail-row-value">$3,125.00</span></div><div class="detail-row"><span class="detail-row-label">Paint &amp; Materials</span><span class="detail-row-value">$877.50</span></div><div class="detail-row" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-main)"><span class="detail-row-label" style="font-weight:600;color:var(--text-primary)">Grand Total</span><span class="detail-row-value" style="font-size:1rem;color:var(--text-accent)">$6,842.50</span></div></div><div class="detail-section" style="display:flex;gap:0.75rem;flex-wrap:wrap"><a href="/estimates" style="flex:1;text-align:center;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);text-decoration:none">View Full Details</a><button onclick="showToast(\'Printing EST-4821...\', \'info\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Print</button><button onclick="showToast(\'Supplement created for EST-4821\', \'success\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Create Supplement</button></div>',
+
+      'EST-4820': '<div class="detail-section" style="display:flex;align-items:center;justify-content:space-between"><div><h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">EST-4820</h2><p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">March 9, 2026</p></div><div style="display:flex;align-items:center;gap:0.75rem"><span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium badge-blue">In Review</span><button onclick="closeSlideOver()" style="color:var(--text-muted);font-size:1.5rem;background:none;border:none;cursor:pointer;line-height:1" aria-label="Close">&times;</button></div></div><div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-row"><span class="detail-row-label">Year / Make / Model</span><span class="detail-row-value">2023 BMW X5</span></div><div class="detail-row"><span class="detail-row-label">VIN</span><span class="detail-row-value">5UXCR6C05P...9871</span></div><div class="detail-row"><span class="detail-row-label">Color</span><span class="detail-row-value">Alpine White</span></div><div class="detail-row"><span class="detail-row-label">Mileage</span><span class="detail-row-value">28,340 mi</span></div></div><div class="detail-section"><div class="detail-label">Owner</div><div class="detail-row"><span class="detail-row-label">Name</span><span class="detail-row-value">Lisa Chen</span></div><div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">(415) 555-0293</span></div><div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">lisa.chen@email.com</span></div></div><div class="detail-section"><div class="detail-label">Insurance</div><div class="detail-row"><span class="detail-row-label">Company</span><span class="detail-row-value">Progressive</span></div><div class="detail-row"><span class="detail-row-label">Policy #</span><span class="detail-row-value">PRG-5528410</span></div><div class="detail-row"><span class="detail-row-label">Claim #</span><span class="detail-row-value">CLM-2026-08390</span></div><div class="detail-row"><span class="detail-row-label">Adjuster</span><span class="detail-row-value">Michael Torres</span></div></div><div class="detail-section"><div class="detail-label">Damage Assessment</div><div class="detail-row"><span class="detail-row-label">Point of Impact</span><span class="detail-row-value">Front End</span></div><div class="detail-row"><span class="detail-row-label">Severity</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border severity-heavy">Heavy</span></span></div><div class="detail-row"><span class="detail-row-label">Driveable</span><span class="detail-row-value">No</span></div></div><div class="detail-section"><div class="detail-label">Cost Summary</div><div class="detail-row"><span class="detail-row-label">Labor</span><span class="detail-row-value">$4,960.00</span></div><div class="detail-row"><span class="detail-row-label">Parts</span><span class="detail-row-value">$5,890.00</span></div><div class="detail-row"><span class="detail-row-label">Paint &amp; Materials</span><span class="detail-row-value">$1,540.00</span></div><div class="detail-row" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-main)"><span class="detail-row-label" style="font-weight:600;color:var(--text-primary)">Grand Total</span><span class="detail-row-value" style="font-size:1rem;color:var(--text-accent)">$12,390.00</span></div></div><div class="detail-section" style="display:flex;gap:0.75rem;flex-wrap:wrap"><a href="/estimates" style="flex:1;text-align:center;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);text-decoration:none">View Full Details</a><button onclick="showToast(\'Printing EST-4820...\', \'info\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Print</button><button onclick="showToast(\'Supplement created for EST-4820\', \'success\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Create Supplement</button></div>',
+
+      'EST-4819': '<div class="detail-section" style="display:flex;align-items:center;justify-content:space-between"><div><h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">EST-4819</h2><p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">March 8, 2026</p></div><div style="display:flex;align-items:center;gap:0.75rem"><span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium badge-amber">Supplement</span><button onclick="closeSlideOver()" style="color:var(--text-muted);font-size:1.5rem;background:none;border:none;cursor:pointer;line-height:1" aria-label="Close">&times;</button></div></div><div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-row"><span class="detail-row-label">Year / Make / Model</span><span class="detail-row-value">2022 Honda Civic</span></div><div class="detail-row"><span class="detail-row-label">VIN</span><span class="detail-row-value">2HGFE2F59N...7823</span></div><div class="detail-row"><span class="detail-row-label">Color</span><span class="detail-row-value">Sonic Gray Pearl</span></div><div class="detail-row"><span class="detail-row-label">Mileage</span><span class="detail-row-value">34,210 mi</span></div></div><div class="detail-section"><div class="detail-label">Owner</div><div class="detail-row"><span class="detail-row-label">Name</span><span class="detail-row-value">Mark Thompson</span></div><div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">(713) 555-0461</span></div><div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">m.thompson@email.com</span></div></div><div class="detail-section"><div class="detail-label">Insurance</div><div class="detail-row"><span class="detail-row-label">Company</span><span class="detail-row-value">GEICO</span></div><div class="detail-row"><span class="detail-row-label">Policy #</span><span class="detail-row-value">GEI-3371948</span></div><div class="detail-row"><span class="detail-row-label">Claim #</span><span class="detail-row-value">CLM-2026-08355</span></div><div class="detail-row"><span class="detail-row-label">Adjuster</span><span class="detail-row-value">Sandra Williams</span></div></div><div class="detail-section"><div class="detail-label">Damage Assessment</div><div class="detail-row"><span class="detail-row-label">Point of Impact</span><span class="detail-row-value">Passenger Side Door</span></div><div class="detail-row"><span class="detail-row-label">Severity</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border severity-light">Light</span></span></div><div class="detail-row"><span class="detail-row-label">Driveable</span><span class="detail-row-value">Yes</span></div></div><div class="detail-section"><div class="detail-label">Cost Summary</div><div class="detail-row"><span class="detail-row-label">Labor</span><span class="detail-row-value">$1,280.00</span></div><div class="detail-row"><span class="detail-row-label">Parts</span><span class="detail-row-value">$1,410.75</span></div><div class="detail-row"><span class="detail-row-label">Paint &amp; Materials</span><span class="detail-row-value">$525.00</span></div><div class="detail-row" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-main)"><span class="detail-row-label" style="font-weight:600;color:var(--text-primary)">Grand Total</span><span class="detail-row-value" style="font-size:1rem;color:var(--text-accent)">$3,215.75</span></div></div><div class="detail-section" style="display:flex;gap:0.75rem;flex-wrap:wrap"><a href="/estimates" style="flex:1;text-align:center;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);text-decoration:none">View Full Details</a><button onclick="showToast(\'Printing EST-4819...\', \'info\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Print</button><button onclick="showToast(\'Supplement created for EST-4819\', \'success\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Create Supplement</button></div>',
+
+      'EST-4818': '<div class="detail-section" style="display:flex;align-items:center;justify-content:space-between"><div><h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">EST-4818</h2><p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">March 8, 2026</p></div><div style="display:flex;align-items:center;gap:0.75rem"><span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium badge-emerald">Approved</span><button onclick="closeSlideOver()" style="color:var(--text-muted);font-size:1.5rem;background:none;border:none;cursor:pointer;line-height:1" aria-label="Close">&times;</button></div></div><div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-row"><span class="detail-row-label">Year / Make / Model</span><span class="detail-row-value">2024 Ford F-150</span></div><div class="detail-row"><span class="detail-row-label">VIN</span><span class="detail-row-value">1FTFW1E87R...5214</span></div><div class="detail-row"><span class="detail-row-label">Color</span><span class="detail-row-value">Iconic Silver Metallic</span></div><div class="detail-row"><span class="detail-row-label">Mileage</span><span class="detail-row-value">8,720 mi</span></div></div><div class="detail-section"><div class="detail-label">Owner</div><div class="detail-row"><span class="detail-row-label">Name</span><span class="detail-row-value">Diana Watts</span></div><div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">(214) 555-0832</span></div><div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">d.watts@email.com</span></div></div><div class="detail-section"><div class="detail-label">Insurance</div><div class="detail-row"><span class="detail-row-label">Company</span><span class="detail-row-value">Allstate</span></div><div class="detail-row"><span class="detail-row-label">Policy #</span><span class="detail-row-value">ALL-7792315</span></div><div class="detail-row"><span class="detail-row-label">Claim #</span><span class="detail-row-value">CLM-2026-08312</span></div><div class="detail-row"><span class="detail-row-label">Adjuster</span><span class="detail-row-value">Brian Nakamura</span></div></div><div class="detail-section"><div class="detail-label">Damage Assessment</div><div class="detail-row"><span class="detail-row-label">Point of Impact</span><span class="detail-row-value">Rear Bumper &amp; Tailgate</span></div><div class="detail-row"><span class="detail-row-label">Severity</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border severity-moderate">Moderate</span></span></div><div class="detail-row"><span class="detail-row-label">Driveable</span><span class="detail-row-value">Yes</span></div></div><div class="detail-section"><div class="detail-label">Cost Summary</div><div class="detail-row"><span class="detail-row-label">Labor</span><span class="detail-row-value">$3,420.00</span></div><div class="detail-row"><span class="detail-row-label">Parts</span><span class="detail-row-value">$4,215.00</span></div><div class="detail-row"><span class="detail-row-label">Paint &amp; Materials</span><span class="detail-row-value">$1,332.00</span></div><div class="detail-row" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-main)"><span class="detail-row-label" style="font-weight:600;color:var(--text-primary)">Grand Total</span><span class="detail-row-value" style="font-size:1rem;color:var(--text-accent)">$8,967.00</span></div></div><div class="detail-section" style="display:flex;gap:0.75rem;flex-wrap:wrap"><a href="/estimates" style="flex:1;text-align:center;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);text-decoration:none">View Full Details</a><button onclick="showToast(\'Printing EST-4818...\', \'info\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Print</button><button onclick="showToast(\'Supplement created for EST-4818\', \'success\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Create Supplement</button></div>',
+
+      'EST-4817': '<div class="detail-section" style="display:flex;align-items:center;justify-content:space-between"><div><h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">EST-4817</h2><p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">March 8, 2026</p></div><div style="display:flex;align-items:center;gap:0.75rem"><span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium badge-slate">Draft</span><button onclick="closeSlideOver()" style="color:var(--text-muted);font-size:1.5rem;background:none;border:none;cursor:pointer;line-height:1" aria-label="Close">&times;</button></div></div><div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-row"><span class="detail-row-label">Year / Make / Model</span><span class="detail-row-value">2023 Toyota Camry</span></div><div class="detail-row"><span class="detail-row-label">VIN</span><span class="detail-row-value">4T1G11AK8P...6390</span></div><div class="detail-row"><span class="detail-row-label">Color</span><span class="detail-row-value">Midnight Black Metallic</span></div><div class="detail-row"><span class="detail-row-label">Mileage</span><span class="detail-row-value">19,540 mi</span></div></div><div class="detail-section"><div class="detail-label">Owner</div><div class="detail-row"><span class="detail-row-label">Name</span><span class="detail-row-value">Robert Kim</span></div><div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">(303) 555-0178</span></div><div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">r.kim@email.com</span></div></div><div class="detail-section"><div class="detail-label">Insurance</div><div class="detail-row"><span class="detail-row-label">Company</span><span class="detail-row-value">USAA</span></div><div class="detail-row"><span class="detail-row-label">Policy #</span><span class="detail-row-value">USAA-4418723</span></div><div class="detail-row"><span class="detail-row-label">Claim #</span><span class="detail-row-value">CLM-2026-08298</span></div><div class="detail-row"><span class="detail-row-label">Adjuster</span><span class="detail-row-value">Col. David Reeves</span></div></div><div class="detail-section"><div class="detail-label">Damage Assessment</div><div class="detail-row"><span class="detail-row-label">Point of Impact</span><span class="detail-row-value">Driver Side Fender</span></div><div class="detail-row"><span class="detail-row-label">Severity</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border severity-light">Light</span></span></div><div class="detail-row"><span class="detail-row-label">Driveable</span><span class="detail-row-value">Yes</span></div></div><div class="detail-section"><div class="detail-label">Cost Summary</div><div class="detail-row"><span class="detail-row-label">Labor</span><span class="detail-row-value">$980.00</span></div><div class="detail-row"><span class="detail-row-label">Parts</span><span class="detail-row-value">$1,085.00</span></div><div class="detail-row"><span class="detail-row-label">Paint &amp; Materials</span><span class="detail-row-value">$385.00</span></div><div class="detail-row" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-main)"><span class="detail-row-label" style="font-weight:600;color:var(--text-primary)">Grand Total</span><span class="detail-row-value" style="font-size:1rem;color:var(--text-accent)">$2,450.00</span></div></div><div class="detail-section" style="display:flex;gap:0.75rem;flex-wrap:wrap"><a href="/estimates" style="flex:1;text-align:center;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);text-decoration:none">View Full Details</a><button onclick="showToast(\'Printing EST-4817...\', \'info\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Print</button><button onclick="showToast(\'Supplement created for EST-4817\', \'success\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Create Supplement</button></div>',
+
+      'EST-4816': '<div class="detail-section" style="display:flex;align-items:center;justify-content:space-between"><div><h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">EST-4816</h2><p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">March 7, 2026</p></div><div style="display:flex;align-items:center;gap:0.75rem"><span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium badge-blue">In Review</span><button onclick="closeSlideOver()" style="color:var(--text-muted);font-size:1.5rem;background:none;border:none;cursor:pointer;line-height:1" aria-label="Close">&times;</button></div></div><div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-row"><span class="detail-row-label">Year / Make / Model</span><span class="detail-row-value">2025 Rivian R1S</span></div><div class="detail-row"><span class="detail-row-label">VIN</span><span class="detail-row-value">7FCTGAAL1R...0482</span></div><div class="detail-row"><span class="detail-row-label">Color</span><span class="detail-row-value">El Cap Granite</span></div><div class="detail-row"><span class="detail-row-label">Mileage</span><span class="detail-row-value">4,130 mi</span></div></div><div class="detail-section"><div class="detail-label">Owner</div><div class="detail-row"><span class="detail-row-label">Name</span><span class="detail-row-value">Angela Brooks</span></div><div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">(206) 555-0519</span></div><div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">a.brooks@email.com</span></div></div><div class="detail-section"><div class="detail-label">Insurance</div><div class="detail-row"><span class="detail-row-label">Company</span><span class="detail-row-value">Liberty Mutual</span></div><div class="detail-row"><span class="detail-row-label">Policy #</span><span class="detail-row-value">LM-6653901</span></div><div class="detail-row"><span class="detail-row-label">Claim #</span><span class="detail-row-value">CLM-2026-08274</span></div><div class="detail-row"><span class="detail-row-label">Adjuster</span><span class="detail-row-value">Karen O\'Malley</span></div></div><div class="detail-section"><div class="detail-label">Damage Assessment</div><div class="detail-row"><span class="detail-row-label">Point of Impact</span><span class="detail-row-value">Front &amp; Driver Side</span></div><div class="detail-row"><span class="detail-row-label">Severity</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border severity-heavy">Heavy</span></span></div><div class="detail-row"><span class="detail-row-label">Driveable</span><span class="detail-row-value">No</span></div></div><div class="detail-section"><div class="detail-label">Cost Summary</div><div class="detail-row"><span class="detail-row-label">Labor</span><span class="detail-row-value">$6,840.00</span></div><div class="detail-row"><span class="detail-row-label">Parts</span><span class="detail-row-value">$8,920.00</span></div><div class="detail-row"><span class="detail-row-label">Paint &amp; Materials</span><span class="detail-row-value">$2,470.00</span></div><div class="detail-row" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-main)"><span class="detail-row-label" style="font-weight:600;color:var(--text-primary)">Grand Total</span><span class="detail-row-value" style="font-size:1rem;color:var(--text-accent)">$18,230.00</span></div></div><div class="detail-section" style="display:flex;gap:0.75rem;flex-wrap:wrap"><a href="/estimates" style="flex:1;text-align:center;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);text-decoration:none">View Full Details</a><button onclick="showToast(\'Printing EST-4816...\', \'info\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Print</button><button onclick="showToast(\'Supplement created for EST-4816\', \'success\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Create Supplement</button></div>',
+
+      'EST-4815': '<div class="detail-section" style="display:flex;align-items:center;justify-content:space-between"><div><h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">EST-4815</h2><p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">March 7, 2026</p></div><div style="display:flex;align-items:center;gap:0.75rem"><span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium badge-emerald">Approved</span><button onclick="closeSlideOver()" style="color:var(--text-muted);font-size:1.5rem;background:none;border:none;cursor:pointer;line-height:1" aria-label="Close">&times;</button></div></div><div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-row"><span class="detail-row-label">Year / Make / Model</span><span class="detail-row-value">2022 Chevrolet Tahoe</span></div><div class="detail-row"><span class="detail-row-label">VIN</span><span class="detail-row-value">1GNSKCKD2N...8157</span></div><div class="detail-row"><span class="detail-row-label">Color</span><span class="detail-row-value">Shadow Gray Metallic</span></div><div class="detail-row"><span class="detail-row-label">Mileage</span><span class="detail-row-value">41,870 mi</span></div></div><div class="detail-section"><div class="detail-label">Owner</div><div class="detail-row"><span class="detail-row-label">Name</span><span class="detail-row-value">Kevin Patel</span></div><div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">(480) 555-0642</span></div><div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">k.patel@email.com</span></div></div><div class="detail-section"><div class="detail-label">Insurance</div><div class="detail-row"><span class="detail-row-label">Company</span><span class="detail-row-value">Farmers</span></div><div class="detail-row"><span class="detail-row-label">Policy #</span><span class="detail-row-value">FRM-8819456</span></div><div class="detail-row"><span class="detail-row-label">Claim #</span><span class="detail-row-value">CLM-2026-08251</span></div><div class="detail-row"><span class="detail-row-label">Adjuster</span><span class="detail-row-value">Jennifer Lawson</span></div></div><div class="detail-section"><div class="detail-label">Damage Assessment</div><div class="detail-row"><span class="detail-row-label">Point of Impact</span><span class="detail-row-value">Rear Right Quarter</span></div><div class="detail-row"><span class="detail-row-label">Severity</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border severity-moderate">Moderate</span></span></div><div class="detail-row"><span class="detail-row-label">Driveable</span><span class="detail-row-value">Yes</span></div></div><div class="detail-section"><div class="detail-label">Cost Summary</div><div class="detail-row"><span class="detail-row-label">Labor</span><span class="detail-row-value">$2,010.00</span></div><div class="detail-row"><span class="detail-row-label">Parts</span><span class="detail-row-value">$2,340.50</span></div><div class="detail-row"><span class="detail-row-label">Paint &amp; Materials</span><span class="detail-row-value">$770.00</span></div><div class="detail-row" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-main)"><span class="detail-row-label" style="font-weight:600;color:var(--text-primary)">Grand Total</span><span class="detail-row-value" style="font-size:1rem;color:var(--text-accent)">$5,120.50</span></div></div><div class="detail-section" style="display:flex;gap:0.75rem;flex-wrap:wrap"><a href="/estimates" style="flex:1;text-align:center;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);text-decoration:none">View Full Details</a><button onclick="showToast(\'Printing EST-4815...\', \'info\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Print</button><button onclick="showToast(\'Supplement created for EST-4815\', \'success\'); closeSlideOver();" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">Create Supplement</button></div>'
+    };
+
+    function openEstimateDetail(id) {
+      if (estimateDetails[id]) {
+        openSlideOver(estimateDetails[id]);
+      }
+    }
+</script>

@@ -1,0 +1,614 @@
+<script>
+const companyName = 'AutoEstimate Pro'
+const currentUser = 'Sarah Mitchell'
+const currentRole = 'Senior Estimator'
+const activePage = 'Insurers'
+
+const navLinks = [
+  { label: 'Dashboard', href: '/' },
+  { label: 'Estimates', href: '/estimates' },
+  { label: 'Production', href: '/production' },
+  { label: 'Vehicles', href: '/vehicles' },
+  { label: 'Parts', href: '/parts' },
+  { label: 'Insurers', href: '/insurers' },
+  { label: 'Customers', href: '/customers' },
+  { label: 'Reports', href: '/reports' },
+  { label: 'Schedule', href: '/schedule' },
+]
+
+const summaryKpis = [
+  { label: 'Active Partners', value: '12', icon: '🏢', color: 'blue' },
+  { label: 'Total Revenue', value: '$482,630', icon: '💰', color: 'emerald' },
+  { label: 'Avg Cycle Time', value: '3.2 days', icon: '⏱️', color: 'violet' },
+  { label: 'Satisfaction Score', value: '94.8%', icon: '⭐', color: 'amber' },
+]
+
+const insurers = [
+  { name: 'State Farm', drpStatus: 'Active DRP', contact: 'John Martinez', phone: '(555) 234-5678', estimates: 312, revenue: '$148,200', avgCycle: '2.8', supplementRate: '15.2', csi: 96 },
+  { name: 'Progressive', drpStatus: 'Active DRP', contact: 'Sarah Kim', phone: '(555) 345-6789', estimates: 245, revenue: '$132,400', avgCycle: '3.1', supplementRate: '18.5', csi: 94 },
+  { name: 'GEICO', drpStatus: 'Preferred', contact: 'Mike Johnson', phone: '(555) 456-7890', estimates: 198, revenue: '$95,600', avgCycle: '3.4', supplementRate: '21.3', csi: 91 },
+  { name: 'Allstate', drpStatus: 'Active DRP', contact: 'Lisa Chen', phone: '(555) 567-8901', estimates: 167, revenue: '$78,900', avgCycle: '3.0', supplementRate: '16.8', csi: 95 },
+  { name: 'USAA', drpStatus: 'Preferred', contact: 'David Park', phone: '(555) 678-9012', estimates: 134, revenue: '$72,100', avgCycle: '2.5', supplementRate: '12.4', csi: 98 },
+  { name: 'Liberty Mutual', drpStatus: 'Standard', contact: 'Amy Walsh', phone: '(555) 789-0123', estimates: 89, revenue: '$52,300', avgCycle: '3.8', supplementRate: '24.1', csi: 88 },
+  { name: 'Farmers', drpStatus: 'Active DRP', contact: 'Robert Lee', phone: '(555) 890-1234', estimates: 67, revenue: '$38,700', avgCycle: '3.2', supplementRate: '19.7', csi: 92 },
+  { name: 'Nationwide', drpStatus: 'Standard', contact: 'Karen Brown', phone: '(555) 901-2345', estimates: 35, revenue: '$18,400', avgCycle: '4.1', supplementRate: '26.5', csi: 85 },
+]
+
+function drpBadgeClass(status) {
+  const classes = { 'Active DRP': 'badge-emerald', 'Preferred': 'badge-blue', 'Standard': 'badge-slate' }
+  return classes[status] || 'badge-slate'
+}
+
+function csiBarColor(csi) {
+  if (csi >= 95) return 'var(--bar-emerald)'
+  if (csi >= 90) return 'var(--bar-blue)'
+  if (csi >= 85) return 'var(--bar-amber)'
+  return 'var(--bar-red)'
+}
+</script>
+
+@extends('layouts/dashboard.stx')
+
+@section('styles')
+    {{-- Page-specific: insurer card hover --}}
+    .insurer-card { transition: all 0.3s cubic-bezier(0.16,1,0.3,1); cursor: pointer; }
+    .insurer-card:hover { transform: translateY(-3px) scale(1.015); }
+    .kpi-card { cursor: pointer; transition: all 0.3s cubic-bezier(0.16,1,0.3,1); }
+    .kpi-card:hover { transform: translateY(-2px) scale(1.02); }
+    .contact-card { border-radius: 0.75rem; padding: 0.75rem; border: 1px solid var(--border-main); transition: background 0.2s ease; }
+    .contact-card:hover { background: var(--bg-subtle-hover); }
+    .initials-avatar { width: 36px; height: 36px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .estimate-table { width: 100%; font-size: 0.8125rem; }
+    .estimate-table th { text-align: left; font-weight: 600; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-main); }
+    .estimate-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-main); color: var(--text-secondary); }
+    .estimate-table tr:last-child td { border-bottom: none; }
+    .detail-action-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 500; border: 1px solid; cursor: pointer; transition: all 0.2s ease; }
+    .detail-action-btn:hover { transform: translateY(-1px); }
+    .detail-action-primary { background: var(--btn-primary-bg); border-color: var(--btn-primary-bg); color: #fff; }
+    .detail-action-primary:hover { background: var(--btn-primary-hover); }
+    .detail-action-secondary { background: var(--btn-action-bg); border-color: var(--btn-action-border); color: var(--btn-action-text); }
+    .search-input { width: 100%; padding: 0.625rem 1rem 0.625rem 2.5rem; border-radius: 0.75rem; font-size: 0.875rem; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+    .search-input:focus { border-color: var(--text-accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .search-input::placeholder { color: var(--text-muted); }
+    .sort-select { padding: 0.5rem 2rem 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.8125rem; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); outline: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.5rem center; cursor: pointer; }
+    .trend-up { color: var(--badge-emerald-text); }
+    .trend-down { color: var(--badge-red-text); }
+    .csi-bar-wrapper .bar-animate { animation-delay: 0.3s; }
+@endsection
+
+@section('content')
+      {{-- Page Header --}}
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">Insurance Partners</h1>
+          <p class="text-sm mt-1" style="color: var(--text-muted)">DRP relationships, performance metrics, and contact directory</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <select class="rounded-lg py-2 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem" id="statusFilter" onchange="filterCards()">
+            <option value="all">All Partners</option>
+            <option value="Active DRP">Active DRP</option>
+            <option value="Preferred">Preferred</option>
+            <option value="Standard">Standard</option>
+          </select>
+          <button onclick="showToast('Add Partner form coming soon', 'info')" class="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--btn-primary-bg)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Partner
+          </button>
+        </div>
+      </div>
+
+      {{-- Summary KPIs --}}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        @foreach (summaryKpis as kpi)
+          <div class="glass rounded-xl p-5 kpi-card transition-all duration-300 glow-{{ kpi.color }} fade-in" role="button" tabindex="0" onclick="showToast('{{ kpi.label }}: {{ kpi.value }}', 'info')">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ kpi.label }}</span>
+              <span class="text-lg">{{ kpi.icon }}</span>
+            </div>
+            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ kpi.value }}</div>
+          </div>
+        @endforeach
+      </div>
+
+      {{-- Search and Sort Bar --}}
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
+        <div class="relative flex-1">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search insurers by name..." oninput="filterCards()" />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium whitespace-nowrap" style="color: var(--text-muted)">Sort by:</span>
+          <select id="sortSelect" class="sort-select" onchange="sortCards()">
+            <option value="name">Name</option>
+            <option value="estimates">Estimates</option>
+            <option value="revenue">Revenue</option>
+            <option value="cycle">Cycle Time</option>
+            <option value="csi">CSI Score</option>
+          </select>
+        </div>
+      </div>
+
+      {{-- Insurer Cards Grid --}}
+      <div id="insurerGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
+        @foreach (insurers as insurer)
+          <div class="glass rounded-xl p-5 insurer-card transition-all duration-300 fade-in" data-name="{{ insurer.name }}" data-status="{{ insurer.drpStatus }}" data-estimates="{{ insurer.estimates }}" data-revenue="{{ insurer.revenue }}" data-cycle="{{ insurer.avgCycle }}" data-csi="{{ insurer.csi }}">
+
+            {{-- Card Header: Name + DRP Badge --}}
+            <div class="flex items-start justify-between mb-4">
+              <h3 class="text-lg font-semibold" style="color: var(--text-primary)">{{ insurer.name }}</h3>
+              <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ drpBadgeClass(insurer.drpStatus) }}">{{ insurer.drpStatus }}</span>
+            </div>
+
+            {{-- Contact Info --}}
+            <div class="flex items-center gap-2 mb-4">
+              <svg class="w-4 h-4 flex-shrink-0" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+              <div>
+                <span class="text-sm" style="color: var(--text-secondary)">{{ insurer.contact }}</span>
+                <span class="text-xs ml-2" style="color: var(--text-muted)">{{ insurer.phone }}</span>
+              </div>
+            </div>
+
+            {{-- Stats 2x2 Grid --}}
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div class="rounded-lg p-3" style="background: var(--bg-subtle)">
+                <p class="text-[11px] uppercase tracking-wider mb-1" style="color: var(--text-muted)">Estimates</p>
+                <p class="text-sm font-semibold tabular-nums" style="color: var(--text-primary)">{{ insurer.estimates }}</p>
+              </div>
+              <div class="rounded-lg p-3" style="background: var(--bg-subtle)">
+                <p class="text-[11px] uppercase tracking-wider mb-1" style="color: var(--text-muted)">Revenue</p>
+                <p class="text-sm font-semibold tabular-nums" style="color: var(--text-revenue)">{{ insurer.revenue }}</p>
+              </div>
+              <div class="rounded-lg p-3" style="background: var(--bg-subtle)">
+                <p class="text-[11px] uppercase tracking-wider mb-1" style="color: var(--text-muted)">Avg Cycle</p>
+                <p class="text-sm font-semibold tabular-nums" style="color: var(--text-primary)">{{ insurer.avgCycle }} days</p>
+              </div>
+              <div class="rounded-lg p-3" style="background: var(--bg-subtle)">
+                <p class="text-[11px] uppercase tracking-wider mb-1" style="color: var(--text-muted)">Supplement Rate</p>
+                <p class="text-sm font-semibold tabular-nums" style="color: var(--text-primary)">{{ insurer.supplementRate }}%</p>
+              </div>
+            </div>
+
+            {{-- CSI Score Bar --}}
+            <div class="mb-4 csi-bar-wrapper">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-medium" style="color: var(--text-tertiary)">CSI Score</span>
+                <span class="text-xs font-semibold tabular-nums" style="color: var(--text-primary)">{{ insurer.csi }}%</span>
+              </div>
+              <div class="h-2 rounded-full overflow-hidden" style="background: var(--bar-track)">
+                <div class="h-full rounded-full bar-animate" style="width: {{ insurer.csi }}%; background: {{ csiBarColor(insurer.csi) }}"></div>
+              </div>
+            </div>
+
+            {{-- View Details Link + Manage DRP --}}
+            <div class="flex items-center gap-3">
+              <button onclick="openInsurerDetail('{{ insurer.name }}')" class="text-xs font-medium inline-flex items-center gap-1 bg-transparent border-none cursor-pointer p-0" style="color: var(--text-accent)">View Details <span>&rarr;</span></button>
+              @if (insurer.drpStatus === 'Active DRP')
+                <button onclick="event.stopPropagation(); openDrpManagement('{{ insurer.name }}')" class="text-xs font-medium inline-flex items-center gap-1 px-2.5 py-1 rounded-lg cursor-pointer" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text)">Manage DRP</button>
+              @endif
+            </div>
+          </div>
+        @endforeach
+      </div>
+
+      {{-- No Results Message --}}
+      <div id="noResults" class="hidden text-center py-12">
+        <svg class="w-12 h-12 mx-auto mb-3" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+        <p class="text-sm font-medium" style="color: var(--text-tertiary)">No insurers match your search</p>
+        <p class="text-xs mt-1" style="color: var(--text-muted)">Try a different search term or filter</p>
+      </div>
+@endsection
+
+<script client>
+    // Insurer detail data
+    const insurerDetails = {
+      'State Farm': {
+        since: 2018, drpTier: 'Gold', region: 'Nationwide', manager: 'Tom Bradley',
+        contacts: [
+          { name: 'John Martinez', title: 'Primary Adjuster', phone: '(555) 234-5678', email: 'jmartinez@statefarm.com', color: 'from-emerald-400 to-teal-500' },
+          { name: 'Rebecca Stone', title: 'Regional Manager', phone: '(555) 234-5680', email: 'rstone@statefarm.com', color: 'from-blue-400 to-indigo-500' },
+          { name: 'Carlos Vega', title: 'Claims Supervisor', phone: '(555) 234-5682', email: '', color: 'from-violet-400 to-purple-500' }
+        ],
+        metrics: { estimates: 312, revenue: '$148,200', cycle: '2.8', supplement: '15.2', approval: 94, csi: 96, estTrend: '+8%', revTrend: '+12%', cycleTrend: '-0.3' },
+        agreement: { labor: '$52/hr', paint: '$56/hr', parts: 'OEM Preferred', photos: '12 minimum', suppThreshold: '$500', payment: 'Net 30' },
+        recentEstimates: [
+          { id: 'EST-4821', vehicle: '2023 Toyota Camry', date: 'Mar 5, 2026', total: '$4,280', status: 'Approved' },
+          { id: 'EST-4815', vehicle: '2022 Honda Accord', date: 'Mar 4, 2026', total: '$6,150', status: 'In Review' },
+          { id: 'EST-4802', vehicle: '2024 Ford F-150', date: 'Mar 2, 2026', total: '$8,920', status: 'Approved' },
+          { id: 'EST-4791', vehicle: '2021 Chevy Malibu', date: 'Feb 28, 2026', total: '$3,410', status: 'Supplement' }
+        ]
+      },
+      'Progressive': {
+        since: 2019, drpTier: 'Gold', region: 'West Coast', manager: 'Tom Bradley',
+        contacts: [
+          { name: 'Sarah Kim', title: 'Primary Adjuster', phone: '(555) 345-6789', email: 'skim@progressive.com', color: 'from-blue-400 to-cyan-500' },
+          { name: 'Derek Huang', title: 'Regional Manager', phone: '(555) 345-6791', email: 'dhuang@progressive.com', color: 'from-emerald-400 to-green-500' }
+        ],
+        metrics: { estimates: 245, revenue: '$132,400', cycle: '3.1', supplement: '18.5', approval: 91, csi: 94, estTrend: '+5%', revTrend: '+9%', cycleTrend: '-0.2' },
+        agreement: { labor: '$50/hr', paint: '$54/hr', parts: 'Aftermarket Allowed', photos: '8 minimum', suppThreshold: '$750', payment: 'Net 30' },
+        recentEstimates: [
+          { id: 'EST-4818', vehicle: '2023 BMW 330i', date: 'Mar 5, 2026', total: '$7,640', status: 'Approved' },
+          { id: 'EST-4809', vehicle: '2022 Nissan Altima', date: 'Mar 3, 2026', total: '$3,890', status: 'Approved' },
+          { id: 'EST-4798', vehicle: '2024 Tesla Model 3', date: 'Mar 1, 2026', total: '$11,250', status: 'In Review' }
+        ]
+      },
+      'GEICO': {
+        since: 2020, drpTier: 'Silver', region: 'Southwest', manager: 'Lisa Navarro',
+        contacts: [
+          { name: 'Mike Johnson', title: 'Primary Adjuster', phone: '(555) 456-7890', email: 'mjohnson@geico.com', color: 'from-amber-400 to-orange-500' },
+          { name: 'Patricia Wells', title: 'Regional Manager', phone: '(555) 456-7892', email: 'pwells@geico.com', color: 'from-pink-400 to-rose-500' }
+        ],
+        metrics: { estimates: 198, revenue: '$95,600', cycle: '3.4', supplement: '21.3', approval: 87, csi: 91, estTrend: '+3%', revTrend: '+6%', cycleTrend: '+0.1' },
+        agreement: { labor: '$48/hr', paint: '$52/hr', parts: 'Aftermarket Allowed', photos: '8 minimum', suppThreshold: '$500', payment: 'Net 30' },
+        recentEstimates: [
+          { id: 'EST-4819', vehicle: '2023 Hyundai Tucson', date: 'Mar 5, 2026', total: '$5,370', status: 'Approved' },
+          { id: 'EST-4806', vehicle: '2021 Kia Sorento', date: 'Mar 3, 2026', total: '$4,120', status: 'Supplement' },
+          { id: 'EST-4795', vehicle: '2022 Subaru Outback', date: 'Feb 28, 2026', total: '$6,780', status: 'Approved' }
+        ]
+      },
+      'Allstate': {
+        since: 2019, drpTier: 'Gold', region: 'Nationwide', manager: 'Tom Bradley',
+        contacts: [
+          { name: 'Lisa Chen', title: 'Primary Adjuster', phone: '(555) 567-8901', email: 'lchen@allstate.com', color: 'from-indigo-400 to-blue-500' },
+          { name: 'Marcus Grant', title: 'Regional Manager', phone: '(555) 567-8903', email: 'mgrant@allstate.com', color: 'from-teal-400 to-emerald-500' },
+          { name: 'Natalie Ross', title: 'Claims Supervisor', phone: '(555) 567-8905', email: '', color: 'from-violet-400 to-indigo-500' }
+        ],
+        metrics: { estimates: 167, revenue: '$78,900', cycle: '3.0', supplement: '16.8', approval: 92, csi: 95, estTrend: '+6%', revTrend: '+8%', cycleTrend: '-0.4' },
+        agreement: { labor: '$50/hr', paint: '$54/hr', parts: 'OEM Preferred', photos: '12 minimum', suppThreshold: '$500', payment: 'Net 15' },
+        recentEstimates: [
+          { id: 'EST-4816', vehicle: '2024 Mazda CX-5', date: 'Mar 4, 2026', total: '$5,190', status: 'Approved' },
+          { id: 'EST-4807', vehicle: '2022 Dodge Ram 1500', date: 'Mar 3, 2026', total: '$9,430', status: 'In Review' },
+          { id: 'EST-4793', vehicle: '2023 VW Jetta', date: 'Feb 27, 2026', total: '$3,670', status: 'Approved' }
+        ]
+      },
+      'USAA': {
+        since: 2020, drpTier: 'Gold', region: 'Southwest', manager: 'Lisa Navarro',
+        contacts: [
+          { name: 'David Park', title: 'Primary Adjuster', phone: '(555) 678-9012', email: 'dpark@usaa.com', color: 'from-sky-400 to-blue-500' },
+          { name: 'Jennifer Walsh', title: 'Regional Manager', phone: '(555) 678-9014', email: 'jwalsh@usaa.com', color: 'from-rose-400 to-pink-500' }
+        ],
+        metrics: { estimates: 134, revenue: '$72,100', cycle: '2.5', supplement: '12.4', approval: 96, csi: 98, estTrend: '+11%', revTrend: '+14%', cycleTrend: '-0.5' },
+        agreement: { labor: '$54/hr', paint: '$58/hr', parts: 'OEM Required', photos: '12 minimum', suppThreshold: '$750', payment: 'Net 15' },
+        recentEstimates: [
+          { id: 'EST-4820', vehicle: '2024 Lexus RX 350', date: 'Mar 5, 2026', total: '$8,940', status: 'Approved' },
+          { id: 'EST-4811', vehicle: '2023 Acura TLX', date: 'Mar 4, 2026', total: '$5,670', status: 'Approved' },
+          { id: 'EST-4799', vehicle: '2022 Toyota 4Runner', date: 'Mar 1, 2026', total: '$7,210', status: 'Approved' }
+        ]
+      },
+      'Liberty Mutual': {
+        since: 2021, drpTier: 'Bronze', region: 'West Coast', manager: 'Lisa Navarro',
+        contacts: [
+          { name: 'Amy Walsh', title: 'Primary Adjuster', phone: '(555) 789-0123', email: 'awalsh@libertymutual.com', color: 'from-orange-400 to-red-500' },
+          { name: 'Brian Foster', title: 'Regional Manager', phone: '(555) 789-0125', email: 'bfoster@libertymutual.com', color: 'from-cyan-400 to-blue-500' }
+        ],
+        metrics: { estimates: 89, revenue: '$52,300', cycle: '3.8', supplement: '24.1', approval: 82, csi: 88, estTrend: '-2%', revTrend: '+1%', cycleTrend: '+0.3' },
+        agreement: { labor: '$46/hr', paint: '$50/hr', parts: 'Aftermarket Allowed', photos: '8 minimum', suppThreshold: '$500', payment: 'Net 30' },
+        recentEstimates: [
+          { id: 'EST-4812', vehicle: '2022 Ford Escape', date: 'Mar 4, 2026', total: '$4,560', status: 'In Review' },
+          { id: 'EST-4800', vehicle: '2021 Chevy Equinox', date: 'Mar 1, 2026', total: '$5,890', status: 'Supplement' },
+          { id: 'EST-4788', vehicle: '2023 GMC Sierra', date: 'Feb 26, 2026', total: '$10,340', status: 'Approved' }
+        ]
+      },
+      'Farmers': {
+        since: 2022, drpTier: 'Silver', region: 'Southwest', manager: 'Tom Bradley',
+        contacts: [
+          { name: 'Robert Lee', title: 'Primary Adjuster', phone: '(555) 890-1234', email: 'rlee@farmers.com', color: 'from-green-400 to-emerald-500' },
+          { name: 'Diane Mitchell', title: 'Regional Manager', phone: '(555) 890-1236', email: 'dmitchell@farmers.com', color: 'from-purple-400 to-violet-500' }
+        ],
+        metrics: { estimates: 67, revenue: '$38,700', cycle: '3.2', supplement: '19.7', approval: 89, csi: 92, estTrend: '+4%', revTrend: '+7%', cycleTrend: '-0.1' },
+        agreement: { labor: '$48/hr', paint: '$52/hr', parts: 'OEM Preferred', photos: '8 minimum', suppThreshold: '$750', payment: 'Net 30' },
+        recentEstimates: [
+          { id: 'EST-4813', vehicle: '2023 Honda CR-V', date: 'Mar 4, 2026', total: '$5,120', status: 'Approved' },
+          { id: 'EST-4796', vehicle: '2022 Toyota Tacoma', date: 'Feb 28, 2026', total: '$7,650', status: 'Approved' },
+          { id: 'EST-4783', vehicle: '2021 Nissan Rogue', date: 'Feb 24, 2026', total: '$4,280', status: 'Supplement' }
+        ]
+      },
+      'Nationwide': {
+        since: 2023, drpTier: 'Bronze', region: 'Nationwide', manager: 'Lisa Navarro',
+        contacts: [
+          { name: 'Karen Brown', title: 'Primary Adjuster', phone: '(555) 901-2345', email: 'kbrown@nationwide.com', color: 'from-slate-400 to-gray-500' },
+          { name: 'Steven Clark', title: 'Regional Manager', phone: '(555) 901-2347', email: 'sclark@nationwide.com', color: 'from-amber-400 to-yellow-500' }
+        ],
+        metrics: { estimates: 35, revenue: '$18,400', cycle: '4.1', supplement: '26.5', approval: 78, csi: 85, estTrend: '+1%', revTrend: '+3%', cycleTrend: '+0.2' },
+        agreement: { labor: '$44/hr', paint: '$48/hr', parts: 'Aftermarket Allowed', photos: '8 minimum', suppThreshold: '$500', payment: 'Net 30' },
+        recentEstimates: [
+          { id: 'EST-4808', vehicle: '2022 Hyundai Sonata', date: 'Mar 3, 2026', total: '$3,940', status: 'In Review' },
+          { id: 'EST-4790', vehicle: '2021 Kia Sportage', date: 'Feb 27, 2026', total: '$5,210', status: 'Approved' },
+          { id: 'EST-4778', vehicle: '2023 Subaru Forester', date: 'Feb 22, 2026', total: '$4,680', status: 'Supplement' }
+        ]
+      }
+    }
+
+    function getInitials(name) {
+      return name.split(' ').map(function(w) { return w[0] }).join('').toUpperCase()
+    }
+
+    function csiBarColorClient(csi) {
+      if (csi >= 95) return 'var(--bar-emerald)'
+      if (csi >= 90) return 'var(--bar-blue)'
+      if (csi >= 85) return 'var(--bar-amber)'
+      return 'var(--bar-red)'
+    }
+
+    function drpBadgeClassClient(status) {
+      var classes = { 'Active DRP': 'badge-emerald', 'Preferred': 'badge-blue', 'Standard': 'badge-slate' }
+      return classes[status] || 'badge-slate'
+    }
+
+    function statusBadgeClass(status) {
+      var classes = { 'Approved': 'badge-emerald', 'In Review': 'badge-amber', 'Supplement': 'badge-blue', 'Denied': 'badge-red' }
+      return classes[status] || 'badge-slate'
+    }
+
+    function trendClass(val) {
+      if (!val) return ''
+      return val.indexOf('-') === 0 && val.indexOf('days') === -1
+        ? (val.indexOf('+') === -1 ? 'trend-down' : 'trend-up')
+        : (val.indexOf('+') === 0 ? 'trend-up' : 'trend-down')
+    }
+
+    function trendIcon(val) {
+      if (!val) return ''
+      var isUp = val.indexOf('+') === 0 || (val.indexOf('-') === 0 && val.indexOf('days') !== -1)
+      // For cycle time, negative is good
+      if (isUp) return '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>'
+      return '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>'
+    }
+
+    function openInsurerDetail(name) {
+      var d = insurerDetails[name]
+      if (!d) return
+
+      // Find base insurer data for drpStatus
+      var drpStatusMap = {
+        'State Farm': 'Active DRP', 'Progressive': 'Active DRP', 'GEICO': 'Preferred',
+        'Allstate': 'Active DRP', 'USAA': 'Preferred', 'Liberty Mutual': 'Standard',
+        'Farmers': 'Active DRP', 'Nationwide': 'Standard'
+      }
+      var drpStatus = drpStatusMap[name] || 'Standard'
+
+      var html = ''
+
+      // Header
+      html += '<div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main); display: flex; align-items: center; justify-content: space-between;">'
+      html += '<div>'
+      html += '<h2 id="slideOverTitle" style="font-size: 1.375rem; font-weight: 700; color: var(--text-primary); margin: 0;">' + name + '</h2>'
+      html += '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + drpBadgeClassClient(drpStatus) + '" style="margin-top: 0.5rem; display: inline-flex;">' + drpStatus + '</span>'
+      html += '</div>'
+      html += '<button onclick="closeSlideOver()" style="padding: 0.5rem; border-radius: 0.5rem; border: none; cursor: pointer; background: var(--bg-subtle); color: var(--text-tertiary);" aria-label="Close panel">'
+      html += '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+      html += '</button>'
+      html += '</div>'
+
+      // Overview section
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">OVERVIEW</div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Relationship since</span><span class="detail-row-value">' + d.since + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">DRP tier</span><span class="detail-row-value">' + d.drpTier + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Region</span><span class="detail-row-value">' + d.region + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Account manager</span><span class="detail-row-value">' + d.manager + '</span></div>'
+      html += '</div>'
+
+      // Contacts section
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">CONTACTS</div>'
+      html += '<div style="display: flex; flex-direction: column; gap: 0.625rem;">'
+      for (var i = 0; i < d.contacts.length; i++) {
+        var c = d.contacts[i]
+        html += '<div class="contact-card" style="background: var(--bg-subtle); display: flex; align-items: center; gap: 0.75rem;">'
+        html += '<div class="initials-avatar bg-gradient-to-br ' + c.color + '">' + getInitials(c.name) + '</div>'
+        html += '<div style="flex: 1; min-width: 0;">'
+        html += '<div style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">' + c.name + '</div>'
+        html += '<div style="font-size: 0.75rem; color: var(--text-muted);">' + c.title + '</div>'
+        html += '<div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.25rem;">' + c.phone
+        if (c.email) html += ' &middot; ' + c.email
+        html += '</div>'
+        html += '</div>'
+        html += '</div>'
+      }
+      html += '</div>'
+      html += '</div>'
+
+      // Performance metrics
+      var m = d.metrics
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">PERFORMANCE METRICS</div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Estimates this month</span><span class="detail-row-value">' + m.estimates + ' <span class="' + trendClass(m.estTrend) + '" style="font-size: 0.75rem; margin-left: 0.25rem; display: inline-flex; align-items: center; gap: 2px;">' + trendIcon(m.estTrend) + ' ' + m.estTrend + '</span></span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Revenue MTD</span><span class="detail-row-value">' + m.revenue + ' <span class="' + trendClass(m.revTrend) + '" style="font-size: 0.75rem; margin-left: 0.25rem; display: inline-flex; align-items: center; gap: 2px;">' + trendIcon(m.revTrend) + ' ' + m.revTrend + '</span></span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Average cycle time</span><span class="detail-row-value">' + m.cycle + ' days <span class="' + (m.cycleTrend.indexOf('-') === 0 ? 'trend-up' : 'trend-down') + '" style="font-size: 0.75rem; margin-left: 0.25rem; display: inline-flex; align-items: center; gap: 2px;">' + m.cycleTrend + ' days</span></span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Supplement rate</span><span class="detail-row-value">' + m.supplement + '%</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">First-time approval rate</span><span class="detail-row-value">' + m.approval + '%</span></div>'
+
+      // CSI with colored bar
+      html += '<div style="margin-top: 0.75rem;">'
+      html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.375rem;">'
+      html += '<span class="detail-row-label">CSI score</span>'
+      html += '<span class="detail-row-value">' + m.csi + '%</span>'
+      html += '</div>'
+      html += '<div style="height: 8px; border-radius: 9999px; overflow: hidden; background: var(--bar-track);">'
+      html += '<div style="height: 100%; border-radius: 9999px; width: ' + m.csi + '%; background: ' + csiBarColorClient(m.csi) + '; transition: width 0.8s ease;"></div>'
+      html += '</div>'
+      html += '</div>'
+      html += '</div>'
+
+      // DRP agreement
+      var a = d.agreement
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">DRP AGREEMENT</div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Labor rate</span><span class="detail-row-value">' + a.labor + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Paint rate</span><span class="detail-row-value">' + a.paint + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Parts sourcing</span><span class="detail-row-value">' + a.parts + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Photo requirements</span><span class="detail-row-value">' + a.photos + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Supplement threshold</span><span class="detail-row-value">' + a.suppThreshold + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Payment terms</span><span class="detail-row-value">' + a.payment + '</span></div>'
+      html += '</div>'
+
+      // Recent estimates table
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">RECENT ESTIMATES</div>'
+      html += '<div style="overflow-x: auto;">'
+      html += '<table class="estimate-table"><thead><tr><th>ID</th><th>Vehicle</th><th>Date</th><th>Total</th><th>Status</th></tr></thead><tbody>'
+      for (var j = 0; j < d.recentEstimates.length; j++) {
+        var e = d.recentEstimates[j]
+        html += '<tr>'
+        html += '<td style="font-weight: 500; color: var(--text-accent);">' + e.id + '</td>'
+        html += '<td>' + e.vehicle + '</td>'
+        html += '<td style="color: var(--text-muted); font-size: 0.75rem;">' + e.date + '</td>'
+        html += '<td style="font-weight: 600; color: var(--text-primary);">' + e.total + '</td>'
+        html += '<td><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + statusBadgeClass(e.status) + '">' + e.status + '</span></td>'
+        html += '</tr>'
+      }
+      html += '</tbody></table>'
+      html += '</div>'
+      html += '</div>'
+
+      // Guidelines & Compliance section
+      var guidelinesData = {
+        'State Farm': { maxLabor: '$52/hr body, $56/hr frame, $48/hr paint', partsPolicy: 'OEM required for vehicles <3 years, aftermarket acceptable for older', reqDocs: '4+ photos required, pre/post scan mandatory', payTerms: 'Net 30, direct deposit available', suppProcess: 'Submit via portal, 24hr approval SLA', compliance: 94 },
+        'Progressive': { maxLabor: '$50/hr body, $54/hr frame, $46/hr paint', partsPolicy: 'Aftermarket allowed for all; OEM upon request with justification', reqDocs: '4+ photos required, pre/post scan for ADAS vehicles', payTerms: 'Net 30, ACH or check', suppProcess: 'Submit via Mitchell, 48hr approval SLA', compliance: 91 },
+        'GEICO': { maxLabor: '$48/hr body, $52/hr frame, $44/hr paint', partsPolicy: 'Aftermarket preferred; OEM for structural only', reqDocs: '6+ photos required, damage overview mandatory', payTerms: 'Net 30, check only', suppProcess: 'Submit via CCC ONE, 72hr approval SLA', compliance: 87 },
+        'Allstate': { maxLabor: '$50/hr body, $54/hr frame, $46/hr paint', partsPolicy: 'OEM preferred for vehicles <5 years, aftermarket for older', reqDocs: '4+ photos required, pre/post scan mandatory', payTerms: 'Net 15, direct deposit available', suppProcess: 'Submit via portal, 24hr approval SLA', compliance: 95 },
+        'USAA': { maxLabor: '$54/hr body, $58/hr frame, $50/hr paint', partsPolicy: 'OEM required for all repairs', reqDocs: '4+ photos required, pre/post scan mandatory, line notes detailed', payTerms: 'Net 15, direct deposit available', suppProcess: 'Submit via portal, 12hr approval SLA', compliance: 98 },
+        'Liberty Mutual': { maxLabor: '$46/hr body, $50/hr frame, $42/hr paint', partsPolicy: 'Aftermarket required when available; OEM with prior approval', reqDocs: '8+ photos required, supplement photos mandatory', payTerms: 'Net 30, check only', suppProcess: 'Email submission, 72hr approval SLA', compliance: 82 },
+        'Farmers': { maxLabor: '$48/hr body, $52/hr frame, $44/hr paint', partsPolicy: 'OEM preferred, aftermarket with customer consent', reqDocs: '4+ photos required, pre-scan recommended', payTerms: 'Net 30, ACH available', suppProcess: 'Submit via portal, 48hr approval SLA', compliance: 89 },
+        'Nationwide': { maxLabor: '$44/hr body, $48/hr frame, $40/hr paint', partsPolicy: 'Aftermarket preferred for all; OEM with written justification', reqDocs: '8+ photos required, detailed damage notes', payTerms: 'Net 30, check only', suppProcess: 'Email submission, 96hr approval SLA', compliance: 78 }
+      }
+      var g = guidelinesData[name]
+      if (g) {
+        html += '<div class="detail-section">'
+        html += '<div class="detail-label">GUIDELINES & COMPLIANCE</div>'
+        html += '<div class="detail-row"><span class="detail-row-label">Max labor rate</span><span class="detail-row-value" style="text-align: right; max-width: 55%; font-size: 0.8125rem;">' + g.maxLabor + '</span></div>'
+        html += '<div class="detail-row"><span class="detail-row-label">Parts preference</span><span class="detail-row-value" style="text-align: right; max-width: 55%; font-size: 0.8125rem;">' + g.partsPolicy + '</span></div>'
+        html += '<div class="detail-row"><span class="detail-row-label">Required documentation</span><span class="detail-row-value" style="text-align: right; max-width: 55%; font-size: 0.8125rem;">' + g.reqDocs + '</span></div>'
+        html += '<div class="detail-row"><span class="detail-row-label">Payment terms</span><span class="detail-row-value" style="font-size: 0.8125rem;">' + g.payTerms + '</span></div>'
+        html += '<div class="detail-row"><span class="detail-row-label">Supplement process</span><span class="detail-row-value" style="text-align: right; max-width: 55%; font-size: 0.8125rem;">' + g.suppProcess + '</span></div>'
+        html += '<div style="margin-top: 0.75rem;">'
+        html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.375rem;">'
+        html += '<span class="detail-row-label">Compliance this quarter</span>'
+        html += '<span class="detail-row-value">' + g.compliance + '%</span>'
+        html += '</div>'
+        html += '<div style="height: 8px; border-radius: 9999px; overflow: hidden; background: var(--bar-track);">'
+        html += '<div style="height: 100%; border-radius: 9999px; width: ' + g.compliance + '%; background: ' + (g.compliance >= 90 ? 'var(--bar-emerald)' : g.compliance >= 80 ? 'var(--bar-amber)' : 'var(--bar-red)') + '; transition: width 0.8s ease;"></div>'
+        html += '</div>'
+        html += '</div>'
+        html += '</div>'
+      }
+
+      // Action buttons
+      html += '<div class="detail-section" style="display: flex; flex-wrap: wrap; gap: 0.625rem;">'
+      html += '<button class="detail-action-btn detail-action-primary" onclick="showToast(\'Message sent to ' + name + '\', \'success\'); closeSlideOver();">'
+      html += '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>'
+      html += 'Send Message</button>'
+      html += '<button class="detail-action-btn detail-action-secondary" onclick="showToast(\'Exporting ' + name + ' performance report...\', \'info\'); closeSlideOver();">'
+      html += '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>'
+      html += 'Export Report</button>'
+      html += '<button class="detail-action-btn detail-action-secondary" onclick="showToast(\'Opening agreement editor for ' + name + '\', \'info\'); closeSlideOver();">'
+      html += '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>'
+      html += 'Edit Agreement</button>'
+      html += '<a href="/estimates" class="detail-action-btn detail-action-secondary" style="text-decoration: none;">'
+      html += '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>'
+      html += 'View All Estimates</a>'
+      html += '</div>'
+
+      openSlideOver(html)
+    }
+
+    // DRP Agreement Management
+    function openDrpManagement(name) {
+      var drpData = {
+        'State Farm': { tier: 'Gold', renewed: '2025-06-15', expires: '2026-06-15', volumeReq: '25+ estimates/month', cycleReq: '<3.0 days avg cycle time', csiReq: '95%+ CSI score', suppReq: '<18% supplement rate', penalties: 'Tier downgrade after 2 consecutive quarters below targets', benefits: 'Priority assignment, higher labor rates, dedicated adjuster' },
+        'Progressive': { tier: 'Gold', renewed: '2025-09-01', expires: '2026-09-01', volumeReq: '20+ estimates/month', cycleReq: '<3.5 days avg cycle time', csiReq: '92%+ CSI score', suppReq: '<20% supplement rate', penalties: 'Volume reduction after 1 quarter below targets', benefits: 'West Coast preferred shop, marketing co-op, quarterly bonuses' },
+        'Allstate': { tier: 'Gold', renewed: '2025-04-01', expires: '2026-04-01', volumeReq: '15+ estimates/month', cycleReq: '<3.2 days avg cycle time', csiReq: '93%+ CSI score', suppReq: '<18% supplement rate', penalties: 'Agreement review after missed targets', benefits: 'Faster payment terms (Net 15), OEM parts approval, dedicated team' },
+        'Farmers': { tier: 'Silver', renewed: '2025-11-01', expires: '2026-11-01', volumeReq: '10+ estimates/month', cycleReq: '<3.5 days avg cycle time', csiReq: '90%+ CSI score', suppReq: '<22% supplement rate', penalties: 'Standard tier revert after 2 missed quarters', benefits: 'Preferred referrals, streamlined supplement process' }
+      }
+      var dd = drpData[name]
+      if (!dd) { showToast('No DRP agreement data for ' + name, 'warn'); return }
+
+      var html = ''
+      html += '<div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main); display: flex; align-items: center; justify-content: space-between;">'
+      html += '<div>'
+      html += '<h2 style="font-size: 1.375rem; font-weight: 700; color: var(--text-primary); margin: 0;">DRP Agreement — ' + name + '</h2>'
+      html += '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium badge-emerald" style="margin-top: 0.5rem; display: inline-flex;">' + dd.tier + ' Tier</span>'
+      html += '</div>'
+      html += '<button onclick="closeSlideOver()" style="padding: 0.5rem; border-radius: 0.5rem; border: none; cursor: pointer; background: var(--bg-subtle); color: var(--text-tertiary);" aria-label="Close panel">'
+      html += '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+      html += '</button></div>'
+
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">AGREEMENT TERMS</div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Last renewed</span><span class="detail-row-value">' + dd.renewed + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Expires</span><span class="detail-row-value">' + dd.expires + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Benefits</span><span class="detail-row-value" style="text-align: right; max-width: 55%; font-size: 0.8125rem;">' + dd.benefits + '</span></div>'
+      html += '</div>'
+
+      html += '<div class="detail-section">'
+      html += '<div class="detail-label">PERFORMANCE REQUIREMENTS</div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Volume requirement</span><span class="detail-row-value">' + dd.volumeReq + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Cycle time target</span><span class="detail-row-value">' + dd.cycleReq + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">CSI requirement</span><span class="detail-row-value">' + dd.csiReq + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Supplement target</span><span class="detail-row-value">' + dd.suppReq + '</span></div>'
+      html += '<div class="detail-row"><span class="detail-row-label">Non-compliance</span><span class="detail-row-value" style="text-align: right; max-width: 55%; font-size: 0.8125rem;">' + dd.penalties + '</span></div>'
+      html += '</div>'
+
+      html += '<div class="detail-section" style="display: flex; flex-wrap: wrap; gap: 0.625rem;">'
+      html += '<button class="detail-action-btn detail-action-primary" onclick="showToast(\'Initiating DRP renewal for ' + name + '...\', \'success\'); closeSlideOver();">Renew Agreement</button>'
+      html += '<button class="detail-action-btn detail-action-secondary" onclick="showToast(\'Exporting DRP terms for ' + name + '...\', \'info\'); closeSlideOver();">Export Terms</button>'
+      html += '</div>'
+
+      openSlideOver(html)
+    }
+
+    // Search and filter
+    function filterCards() {
+      var query = (document.getElementById('searchInput').value || '').toLowerCase()
+      var statusFilter = document.getElementById('statusFilter').value
+      var cards = document.querySelectorAll('#insurerGrid .insurer-card')
+      var visibleCount = 0
+
+      for (var i = 0; i < cards.length; i++) {
+        var name = (cards[i].getAttribute('data-name') || '').toLowerCase()
+        var status = cards[i].getAttribute('data-status') || ''
+        var matchesSearch = !query || name.indexOf(query) !== -1
+        var matchesStatus = statusFilter === 'all' || status === statusFilter
+        if (matchesSearch && matchesStatus) {
+          cards[i].style.display = ''
+          visibleCount++
+        } else {
+          cards[i].style.display = 'none'
+        }
+      }
+
+      document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none'
+    }
+
+    // Sort cards
+    function sortCards() {
+      var sortBy = document.getElementById('sortSelect').value
+      var grid = document.getElementById('insurerGrid')
+      var cards = Array.prototype.slice.call(grid.querySelectorAll('.insurer-card'))
+
+      cards.sort(function(a, b) {
+        if (sortBy === 'name') {
+          return (a.getAttribute('data-name') || '').localeCompare(b.getAttribute('data-name') || '')
+        }
+        if (sortBy === 'estimates') {
+          return parseInt(b.getAttribute('data-estimates') || 0) - parseInt(a.getAttribute('data-estimates') || 0)
+        }
+        if (sortBy === 'revenue') {
+          var ra = parseInt((a.getAttribute('data-revenue') || '').replace(/[$,]/g, '')) || 0
+          var rb = parseInt((b.getAttribute('data-revenue') || '').replace(/[$,]/g, '')) || 0
+          return rb - ra
+        }
+        if (sortBy === 'cycle') {
+          return parseFloat(a.getAttribute('data-cycle') || 0) - parseFloat(b.getAttribute('data-cycle') || 0)
+        }
+        if (sortBy === 'csi') {
+          return parseInt(b.getAttribute('data-csi') || 0) - parseInt(a.getAttribute('data-csi') || 0)
+        }
+        return 0
+      })
+
+      for (var i = 0; i < cards.length; i++) {
+        grid.appendChild(cards[i])
+      }
+    }
+</script>

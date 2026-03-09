@@ -1,0 +1,949 @@
+<script>
+const companyName = 'AutoEstimate Pro'
+const currentUser = 'Sarah Mitchell'
+const currentRole = 'Senior Estimator'
+const activePage = 'Customers'
+
+const navLinks = [
+  { label: 'Dashboard', href: '/' },
+  { label: 'Estimates', href: '/estimates' },
+  { label: 'Production', href: '/production' },
+  { label: 'Vehicles', href: '/vehicles' },
+  { label: 'Parts', href: '/parts' },
+  { label: 'Insurers', href: '/insurers' },
+  { label: 'Customers', href: '/customers' },
+  { label: 'Reports', href: '/reports' },
+  { label: 'Schedule', href: '/schedule' },
+]
+
+const summaryStats = [
+  { label: 'Total Customers', value: '2,847', icon: '👥', color: 'blue' },
+  { label: 'Active Repairs', value: '156', icon: '🔧', color: 'amber' },
+  { label: 'Satisfaction Score', value: '4.7/5.0', icon: '⭐', color: 'emerald' },
+  { label: 'Repeat Customers', value: '34%', icon: '🔄', color: 'violet' },
+]
+
+const customers = [
+  { id: 1, name: 'James Rodriguez', email: 'j.rodriguez@email.com', phone: '(512) 555-0174', vehicles: 2, totalSpent: '$26,840', lastVisit: '2026-03-09', status: 'Active Repair', rating: 5 },
+  { id: 2, name: 'Lisa Chen', email: 'lisa.chen@email.com', phone: '(415) 555-0298', vehicles: 3, totalSpent: '$54,210', lastVisit: '2026-03-08', status: 'Active Repair', rating: 4 },
+  { id: 3, name: 'Mark Thompson', email: 'm.thompson@email.com', phone: '(614) 555-0132', vehicles: 1, totalSpent: '$8,215', lastVisit: '2026-03-07', status: 'Completed', rating: 5 },
+  { id: 4, name: 'Diana Watts', email: 'diana.watts@email.com', phone: '(214) 555-0387', vehicles: 2, totalSpent: '$38,920', lastVisit: '2026-03-06', status: 'Pending Pickup', rating: 4 },
+  { id: 5, name: 'Robert Kim', email: 'r.kim@email.com', phone: '(310) 555-0421', vehicles: 1, totalSpent: '$12,450', lastVisit: '2026-03-05', status: 'Completed', rating: 5 },
+  { id: 6, name: 'Angela Brooks', email: 'a.brooks@email.com', phone: '(713) 555-0245', vehicles: 2, totalSpent: '$15,340', lastVisit: '2026-03-04', status: 'Active Repair', rating: 4 },
+  { id: 7, name: 'Kevin Patel', email: 'k.patel@email.com', phone: '(404) 555-0189', vehicles: 3, totalSpent: '$31,760', lastVisit: '2026-03-03', status: 'Completed', rating: 5 },
+  { id: 8, name: 'Sarah Jensen', email: 's.jensen@email.com', phone: '(503) 555-0356', vehicles: 1, totalSpent: '$7,320', lastVisit: '2026-03-02', status: 'Pending Pickup', rating: 4 },
+  { id: 9, name: 'David Martinez', email: 'd.martinez@email.com', phone: '(602) 555-0278', vehicles: 2, totalSpent: '$22,640', lastVisit: '2026-02-28', status: 'Completed', rating: 3 },
+  { id: 10, name: 'Michelle Wu', email: 'm.wu@email.com', phone: '(212) 555-0443', vehicles: 1, totalSpent: '$56,210', lastVisit: '2026-02-25', status: 'Active Repair', rating: 5 },
+  { id: 11, name: 'Thomas Green', email: 't.green@email.com', phone: '(303) 555-0165', vehicles: 2, totalSpent: '$14,890', lastVisit: '2026-02-22', status: 'New', rating: 4 },
+  { id: 12, name: 'Jennifer Liu', email: 'j.liu@email.com', phone: '(206) 555-0512', vehicles: 1, totalSpent: '$38,940', lastVisit: '2026-02-18', status: 'Completed', rating: 5 },
+  { id: 13, name: 'Carlos Gutierrez', email: 'c.gutierrez@email.com', phone: '(305) 555-0634', vehicles: 3, totalSpent: '$47,120', lastVisit: '2026-02-15', status: 'Completed', rating: 4 },
+  { id: 14, name: 'Priya Sharma', email: 'p.sharma@email.com', phone: '(408) 555-0791', vehicles: 1, totalSpent: '$5,680', lastVisit: '2026-02-10', status: 'New', rating: 5 },
+  { id: 15, name: 'William Okafor', email: 'w.okafor@email.com', phone: '(773) 555-0823', vehicles: 2, totalSpent: '$19,350', lastVisit: '2026-02-05', status: 'Pending Pickup', rating: 4 },
+]
+
+const recentComms = [
+  { customer: 'James Rodriguez', type: 'SMS', message: 'Your vehicle repair is in progress. ETA: March 12.', time: '2 hours ago' },
+  { customer: 'Diana Watts', type: 'Email', message: 'Your 2024 Ford F-150 is ready for pickup.', time: '5 hours ago' },
+  { customer: 'Lisa Chen', type: 'SMS', message: 'Estimate EST-4815 has been approved by your insurer.', time: '1 day ago' },
+  { customer: 'Sarah Jensen', type: 'Email', message: 'Your vehicle is ready for pickup at our facility.', time: '2 days ago' },
+  { customer: 'William Okafor', type: 'SMS', message: 'Reminder: Your vehicle is ready for pickup.', time: '3 days ago' },
+]
+
+const satisfactionData = [
+  { month: 'Oct', score: 4.3 },
+  { month: 'Nov', score: 4.5 },
+  { month: 'Dec', score: 4.4 },
+  { month: 'Jan', score: 4.6 },
+  { month: 'Feb', score: 4.7 },
+  { month: 'Mar', score: 4.7 },
+]
+
+const topCustomers = [
+  { name: 'Michelle Wu', revenue: '$56,210' },
+  { name: 'Lisa Chen', revenue: '$54,210' },
+  { name: 'Carlos Gutierrez', revenue: '$47,120' },
+  { name: 'Diana Watts', revenue: '$38,920' },
+  { name: 'Jennifer Liu', revenue: '$38,940' },
+]
+
+function statusColor(status) {
+  const colors = { 'Active Repair': 'badge-amber', 'Completed': 'badge-emerald', 'Pending Pickup': 'badge-blue', 'New': 'badge-slate' }
+  return colors[status] || 'badge-slate'
+}
+
+function starsHtml(rating) {
+  let html = ''
+  for (let i = 0; i < 5; i++) {
+    if (i < rating) {
+      html += '<span style="color: #f59e0b;">&#9733;</span>'
+    } else {
+      html += '<span style="color: var(--text-muted);">&#9733;</span>'
+    }
+  }
+  return html
+}
+</script>
+
+@extends('layouts/dashboard.stx')
+
+@section('styles')
+    .empty-state { text-align: center; padding: 3rem 1.5rem; }
+    .comm-type-sms { background: var(--badge-emerald-bg); color: var(--badge-emerald-text); }
+    .comm-type-email { background: var(--badge-blue-bg); color: var(--badge-blue-text); }
+    .toggle-switch { position: relative; width: 36px; height: 20px; border-radius: 9999px; cursor: pointer; border: none; padding: 0; transition: background 0.2s; }
+    .toggle-switch.on { background: var(--bar-emerald); }
+    .toggle-switch.off { background: var(--bg-subtle); border: 1px solid var(--border-input); }
+    .toggle-switch .toggle-dot { position: absolute; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: white; transition: left 0.2s; }
+    .toggle-switch.on .toggle-dot { left: 18px; }
+    .toggle-switch.off .toggle-dot { left: 2px; }
+@endsection
+
+@section('content')
+      {{-- Page Header --}}
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">Customers</h1>
+          <p class="text-sm mt-1" style="color: var(--text-muted)">Customer relationship management and communications</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="openAddCustomerForm()" class="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--btn-primary-bg)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Customer
+          </button>
+        </div>
+      </div>
+
+      {{-- Summary Stats --}}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        @foreach (summaryStats as stat)
+          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ stat.color }} fade-in">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ stat.label }}</span>
+              <span class="text-lg">{{ stat.icon }}</span>
+            </div>
+            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ stat.value }}</div>
+          </div>
+        @endforeach
+      </div>
+
+      {{-- Search & Filters --}}
+      <div class="glass rounded-xl p-4 mb-8 fade-in">
+        <div class="flex flex-col md:flex-row gap-3">
+          <div class="flex-1">
+            <input id="customerSearch" type="text" placeholder="Search by name, email, or phone..." oninput="filterCustomers()" class="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary)" />
+          </div>
+          <select id="statusFilter" onchange="filterCustomers()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
+            <option value="">All Statuses</option>
+            <option value="Active Repair">Active Repair</option>
+            <option value="Pending Pickup">Pending Pickup</option>
+            <option value="Completed">Completed</option>
+            <option value="New">New</option>
+          </select>
+          <select id="sortFilter" onchange="filterCustomers()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
+            <option value="recent">Sort: Recent</option>
+            <option value="name">Sort: Name</option>
+            <option value="vehicles">Sort: Vehicles</option>
+          </select>
+          <button onclick="filterCustomers()" class="px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            Search
+          </button>
+        </div>
+      </div>
+
+      {{-- Main Grid: Table + Sidebar --}}
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+
+        {{-- Customer Table (2/3 width) --}}
+        <div class="xl:col-span-2 glass rounded-xl overflow-hidden fade-in">
+          <div class="px-5 py-4 flex items-center justify-between" style="border-bottom: 1px solid var(--border-main)">
+            <h2 class="text-base font-semibold" style="color: var(--text-primary)">Customer Directory</h2>
+            <span id="customerShowingLabel" class="text-xs" style="color: var(--text-muted)"></span>
+          </div>
+          <div class="overflow-x-auto">
+            <table id="customerTable" class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs uppercase tracking-wider" style="color: var(--text-muted); border-bottom: 1px solid var(--border-main)">
+                  <th class="px-5 py-3 font-medium">Customer</th>
+                  <th class="px-5 py-3 font-medium">Phone</th>
+                  <th class="px-5 py-3 font-medium text-right">Vehicles</th>
+                  <th class="px-5 py-3 font-medium text-right">Total Spent</th>
+                  <th class="px-5 py-3 font-medium">Last Visit</th>
+                  <th class="px-5 py-3 font-medium">Status</th>
+                  <th class="px-5 py-3 font-medium">Rating</th>
+                  <th class="px-5 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customerTableBody">
+                @foreach (customers as idx => customer)
+                  <tr class="clickable customer-row" data-name="{{ customer.name.toLowerCase() }}" data-email="{{ customer.email }}" data-phone="{{ customer.phone }}" data-status="{{ customer.status }}" data-vehicles="{{ customer.vehicles }}" data-lastvisit="{{ customer.lastVisit }}" style="border-bottom: 1px solid var(--row-border)" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='transparent'" onclick="openCustomerDetail({{ idx }})">
+                    <td class="px-5 py-3.5">
+                      <div>
+                        <span class="font-medium" style="color: var(--text-secondary)">{{ customer.name }}</span>
+                        <div class="text-xs mt-0.5" style="color: var(--text-muted)">{{ customer.email }}</div>
+                      </div>
+                    </td>
+                    <td class="px-5 py-3.5" style="color: var(--text-tertiary)">{{ customer.phone }}</td>
+                    <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-tertiary)">{{ customer.vehicles }}</td>
+                    <td class="px-5 py-3.5 text-right tabular-nums font-medium" style="color: var(--text-primary)">{{ customer.totalSpent }}</td>
+                    <td class="px-5 py-3.5" style="color: var(--text-muted)">{{ customer.lastVisit }}</td>
+                    <td class="px-5 py-3.5">
+                      <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ statusColor(customer.status) }}">{{ customer.status }}</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                      <span class="text-xs">{!! starsHtml(customer.rating) !!}</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                      <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                        <button onclick="openCustomerDetail({{ idx }})" class="px-2.5 py-1 rounded-md text-xs font-medium" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text)">View</button>
+                        <button onclick="openSendMessage({{ idx }})" class="px-2.5 py-1 rounded-md text-xs font-medium" style="background: var(--badge-emerald-bg); color: var(--badge-emerald-text); border: 1px solid transparent;">Message</button>
+                      </div>
+                    </td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+          {{-- Empty state --}}
+          <div id="emptyState" class="empty-state" style="display: none;">
+            <svg class="w-12 h-12 mx-auto mb-3" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            <p class="text-sm font-medium" style="color: var(--text-tertiary)">No customers match your filters</p>
+            <p class="text-xs mt-1" style="color: var(--text-muted)">Try adjusting your search or filter criteria</p>
+            <button onclick="clearFilters()" class="mt-3 px-4 py-2 rounded-lg text-xs font-medium" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text)">Clear Filters</button>
+          </div>
+          {{-- Pagination --}}
+          <div id="paginationBar" class="px-5 py-3 flex items-center justify-between" style="border-top: 1px solid var(--border-main)">
+            <span class="text-xs" style="color: var(--text-muted)">Showing 15 of 2,847 customers</span>
+            <div class="flex items-center gap-1">
+              <button class="px-3 py-1.5 rounded-md text-xs font-medium" style="background: var(--nav-active-bg); color: var(--text-primary)">1</button>
+              <button class="px-3 py-1.5 rounded-md text-xs" style="color: var(--text-muted)">2</button>
+              <button class="px-3 py-1.5 rounded-md text-xs" style="color: var(--text-muted)">3</button>
+              <span class="px-2 text-xs" style="color: var(--text-muted)">...</span>
+              <button class="px-3 py-1.5 rounded-md text-xs" style="color: var(--text-muted)">190</button>
+            </div>
+          </div>
+        </div>
+
+        {{-- Sidebar (1/3 width) --}}
+        <div class="space-y-6">
+
+          {{-- Recent Communications --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Recent Communications</h3>
+            <div class="space-y-3">
+              @foreach (recentComms as comm)
+                <div class="p-3 rounded-lg" style="background: var(--bg-subtle)">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-sm font-medium" style="color: var(--text-secondary)">{{ comm.customer }}</span>
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium comm-type-{{ comm.type.toLowerCase() }}">{{ comm.type }}</span>
+                  </div>
+                  <p class="text-xs" style="color: var(--text-tertiary)">{{ comm.message }}</p>
+                  <p class="text-xs mt-1" style="color: var(--text-muted)">{{ comm.time }}</p>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          {{-- Customer Satisfaction Trend --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Satisfaction Trend</h3>
+            <div class="space-y-3">
+              @foreach (satisfactionData as data)
+                <div>
+                  <div class="flex items-center justify-between text-sm mb-1.5">
+                    <span style="color: var(--text-tertiary)">{{ data.month }}</span>
+                    <span class="tabular-nums" style="color: var(--text-muted)">{{ data.score }}/5.0</span>
+                  </div>
+                  <div class="h-2 rounded-full overflow-hidden" style="background: var(--bar-track)">
+                    <div class="bar-emerald h-full rounded-full bar-animate" style="width: {{ Math.round((data.score / 5) * 100) }}%"></div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          {{-- Top Customers by Revenue --}}
+          <div class="glass rounded-xl p-5 fade-in">
+            <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Top Customers by Revenue</h3>
+            <div class="space-y-3">
+              @foreach (topCustomers as idx => top)
+                <div class="flex items-center justify-between p-2.5 rounded-lg" style="background: var(--rank-bg)">
+                  <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style="background: var(--bg-subtle); color: var(--text-muted)">{{ idx + 1 }}</span>
+                    <span class="text-sm font-medium" style="color: var(--text-secondary)">{{ top.name }}</span>
+                  </div>
+                  <span class="text-sm font-semibold tabular-nums" style="color: var(--text-revenue)">{{ top.revenue }}</span>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+        </div>
+      </div>
+@endsection
+
+<script client>
+    // Customer detail data
+    var customerDetails = {
+      0: {
+        name: 'James Rodriguez', email: 'j.rodriguez@email.com', phone: '(512) 555-0174',
+        address: '1247 Elm Street, Austin, TX 78701', status: 'Active Repair',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2024, make: 'Tesla', model: 'Model Y', status: 'Active Repair' },
+          { year: 2021, make: 'Honda', model: 'Accord', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-03-09', desc: 'Front-end collision repair — Tesla Model Y', cost: '$8,420', status: 'In Progress' },
+          { date: '2025-11-14', desc: 'Quarter panel dent — PDR', cost: '$1,850', status: 'Completed' },
+          { date: '2025-06-22', desc: 'Rear bumper replacement', cost: '$4,320', status: 'Completed' },
+          { date: '2025-02-08', desc: 'Windshield replacement', cost: '$3,830', status: 'Completed' },
+          { date: '2024-09-15', desc: 'Paint correction — Honda Accord', cost: '$8,420', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$26,840', avgRepair: '$5,368', outstanding: '$8,420' },
+        notes: 'Loyal customer since 2024. Prefers SMS updates. Has two vehicles on file.',
+        commLog: [
+          { date: '2026-03-09', channel: 'SMS', message: 'Your vehicle repair is in progress. ETA: March 12.' },
+          { date: '2026-03-07', channel: 'Email', message: 'Estimate EST-4821 approved by insurer.' },
+          { date: '2026-03-05', channel: 'SMS', message: 'Vehicle received at our facility.' },
+          { date: '2025-11-14', channel: 'Email', message: 'Invoice #INV-3290 — $1,850. Thank you!' },
+          { date: '2025-11-10', channel: 'SMS', message: 'Your vehicle is ready for pickup.' }
+        ]
+      },
+      1: {
+        name: 'Lisa Chen', email: 'lisa.chen@email.com', phone: '(415) 555-0298',
+        address: '582 Pacific Ave, San Francisco, CA 94133', status: 'Active Repair',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2023, make: 'BMW', model: 'X5', status: 'Active Repair' },
+          { year: 2022, make: 'Toyota', model: 'Prius', status: 'No Active Repair' },
+          { year: 2020, make: 'Audi', model: 'Q5', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-03-08', desc: 'Side impact door repair — BMW X5', cost: '$12,640', status: 'In Progress' },
+          { date: '2025-09-30', desc: 'Front bumper and grille replacement', cost: '$9,870', status: 'Completed' },
+          { date: '2025-04-17', desc: 'Hail damage — full PDR', cost: '$11,420', status: 'Completed' },
+          { date: '2024-12-05', desc: 'Rear-end collision repair', cost: '$8,450', status: 'Completed' },
+          { date: '2024-06-20', desc: 'Paint correction — Audi Q5', cost: '$11,830', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$54,210', avgRepair: '$10,842', outstanding: '$12,640' },
+        notes: 'High-value customer. Owns three vehicles. Very responsive via email.',
+        commLog: [
+          { date: '2026-03-08', channel: 'SMS', message: 'Estimate EST-4815 approved by your insurer.' },
+          { date: '2026-03-06', channel: 'Email', message: 'Vehicle received — repair timeline: 7-10 days.' },
+          { date: '2025-09-30', channel: 'SMS', message: 'Your BMW X5 is ready for pickup.' },
+          { date: '2025-09-25', channel: 'Email', message: 'Repair update: bumper replacement in progress.' },
+          { date: '2025-04-17', channel: 'SMS', message: 'PDR complete. Vehicle ready for pickup.' }
+        ]
+      },
+      2: {
+        name: 'Mark Thompson', email: 'm.thompson@email.com', phone: '(614) 555-0132',
+        address: '890 High St, Columbus, OH 43215', status: 'Completed',
+        smsEnabled: false, emailEnabled: true,
+        vehicles: [
+          { year: 2022, make: 'Honda', model: 'Civic', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-03-07', desc: 'Rear bumper scuff repair', cost: '$1,215', status: 'Completed' },
+          { date: '2025-08-19', desc: 'Front fender replacement', cost: '$3,890', status: 'Completed' },
+          { date: '2025-01-11', desc: 'Door ding — PDR', cost: '$3,110', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$8,215', avgRepair: '$2,738', outstanding: '$0' },
+        notes: 'Prefers email communication only. Single vehicle owner.',
+        commLog: [
+          { date: '2026-03-07', channel: 'Email', message: 'Your vehicle repair is complete. Ready for pickup.' },
+          { date: '2026-03-04', channel: 'Email', message: 'Repair in progress — ETA 3 days.' },
+          { date: '2025-08-19', channel: 'Email', message: 'Invoice #INV-2876 — $3,890. Thank you!' },
+          { date: '2025-08-15', channel: 'Email', message: 'Your Honda Civic is ready for pickup.' },
+          { date: '2025-01-11', channel: 'Email', message: 'PDR complete. Vehicle ready for pickup.' }
+        ]
+      },
+      3: {
+        name: 'Diana Watts', email: 'diana.watts@email.com', phone: '(214) 555-0387',
+        address: '3401 Oak Lawn Ave, Dallas, TX 75219', status: 'Pending Pickup',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2024, make: 'Ford', model: 'F-150', status: 'Pending Pickup' },
+          { year: 2021, make: 'Chevrolet', model: 'Equinox', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-03-06', desc: 'Bed-side panel dent repair — F-150', cost: '$6,230', status: 'Pending Pickup' },
+          { date: '2025-10-22', desc: 'Front-end collision repair', cost: '$14,870', status: 'Completed' },
+          { date: '2025-05-09', desc: 'Tailgate replacement', cost: '$7,340', status: 'Completed' },
+          { date: '2024-11-18', desc: 'Running board damage', cost: '$3,230', status: 'Completed' },
+          { date: '2024-07-02', desc: 'Paint touch-up — Equinox', cost: '$7,250', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$38,920', avgRepair: '$7,784', outstanding: '$6,230' },
+        notes: 'Repeat customer. Two vehicles on file. Responsive to both SMS and email.',
+        commLog: [
+          { date: '2026-03-06', channel: 'SMS', message: 'Your 2024 Ford F-150 is ready for pickup.' },
+          { date: '2026-03-04', channel: 'Email', message: 'Repair complete — please schedule pickup.' },
+          { date: '2025-10-22', channel: 'SMS', message: 'Your F-150 is ready for pickup.' },
+          { date: '2025-10-18', channel: 'Email', message: 'Repair update: front-end work in progress.' },
+          { date: '2025-05-09', channel: 'SMS', message: 'Tailgate replacement complete.' }
+        ]
+      },
+      4: {
+        name: 'Robert Kim', email: 'r.kim@email.com', phone: '(310) 555-0421',
+        address: '7720 Sunset Blvd, Los Angeles, CA 90046', status: 'Completed',
+        smsEnabled: true, emailEnabled: false,
+        vehicles: [
+          { year: 2023, make: 'Toyota', model: 'Camry', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-03-05', desc: 'Rear quarter panel repair', cost: '$3,450', status: 'Completed' },
+          { date: '2025-07-14', desc: 'Front bumper replacement', cost: '$4,120', status: 'Completed' },
+          { date: '2025-02-28', desc: 'Side mirror replacement', cost: '$4,880', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$12,450', avgRepair: '$4,150', outstanding: '$0' },
+        notes: 'Prefers SMS only. Consistent customer for minor repairs.',
+        commLog: [
+          { date: '2026-03-05', channel: 'SMS', message: 'Your Camry repair is complete. Ready for pickup.' },
+          { date: '2026-03-02', channel: 'SMS', message: 'Repair in progress — ETA 3 days.' },
+          { date: '2025-07-14', channel: 'SMS', message: 'Bumper replacement done. Pick up anytime.' },
+          { date: '2025-07-10', channel: 'SMS', message: 'Parts arrived. Starting repair today.' },
+          { date: '2025-02-28', channel: 'SMS', message: 'Mirror replacement complete.' }
+        ]
+      },
+      5: {
+        name: 'Angela Brooks', email: 'a.brooks@email.com', phone: '(713) 555-0245',
+        address: '4512 Westheimer Rd, Houston, TX 77027', status: 'Active Repair',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2025, make: 'Chevrolet', model: 'Silverado', status: 'Active Repair' },
+          { year: 2022, make: 'Nissan', model: 'Rogue', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-03-04', desc: 'Front-end collision — Silverado', cost: '$5,870', status: 'In Progress' },
+          { date: '2025-12-10', desc: 'Scratches and paint correction', cost: '$2,100', status: 'Completed' },
+          { date: '2025-09-01', desc: 'Bed liner repair', cost: '$1,900', status: 'Completed' },
+          { date: '2025-04-15', desc: 'Bumper repair — Nissan Rogue', cost: '$5,470', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$15,340', avgRepair: '$3,835', outstanding: '$5,870' },
+        notes: 'Two vehicles. Recently purchased the Silverado. Good communication.',
+        commLog: [
+          { date: '2026-03-04', channel: 'SMS', message: 'Vehicle received. Starting assessment today.' },
+          { date: '2026-03-03', channel: 'Email', message: 'Estimate EST-4776 sent for approval.' },
+          { date: '2025-12-10', channel: 'SMS', message: 'Paint correction complete. Pick up anytime.' },
+          { date: '2025-09-01', channel: 'Email', message: 'Bed liner repair done. Invoice attached.' },
+          { date: '2025-04-15', channel: 'SMS', message: 'Rogue bumper repair complete.' }
+        ]
+      },
+      6: {
+        name: 'Kevin Patel', email: 'k.patel@email.com', phone: '(404) 555-0189',
+        address: '255 Peachtree St NE, Atlanta, GA 30303', status: 'Completed',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2022, make: 'Hyundai', model: 'Tucson', status: 'No Active Repair' },
+          { year: 2020, make: 'Honda', model: 'CR-V', status: 'No Active Repair' },
+          { year: 2019, make: 'Toyota', model: 'Corolla', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-03-03', desc: 'Liftgate dent repair — Tucson', cost: '$2,890', status: 'Completed' },
+          { date: '2025-11-05', desc: 'Hail damage — PDR', cost: '$8,450', status: 'Completed' },
+          { date: '2025-06-18', desc: 'Front-end collision repair', cost: '$7,650', status: 'Completed' },
+          { date: '2025-01-25', desc: 'Rear bumper replacement — CR-V', cost: '$5,600', status: 'Completed' },
+          { date: '2024-08-12', desc: 'Side panel repair — Corolla', cost: '$7,170', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$31,760', avgRepair: '$6,352', outstanding: '$0' },
+        notes: 'Family fleet — three vehicles. Always pays promptly. Great referral source.',
+        commLog: [
+          { date: '2026-03-03', channel: 'Email', message: 'Tucson repair complete. Ready for pickup.' },
+          { date: '2026-02-28', channel: 'SMS', message: 'Repair in progress — ETA 3 days.' },
+          { date: '2025-11-05', channel: 'Email', message: 'PDR complete on all panels. Vehicle ready.' },
+          { date: '2025-06-18', channel: 'SMS', message: 'Front-end repair done. Looks great!' },
+          { date: '2025-01-25', channel: 'Email', message: 'CR-V bumper replacement complete.' }
+        ]
+      },
+      7: {
+        name: 'Sarah Jensen', email: 's.jensen@email.com', phone: '(503) 555-0356',
+        address: '1820 NW Lovejoy St, Portland, OR 97209', status: 'Pending Pickup',
+        smsEnabled: false, emailEnabled: true,
+        vehicles: [
+          { year: 2024, make: 'Toyota', model: 'RAV4', status: 'Pending Pickup' }
+        ],
+        repairs: [
+          { date: '2026-03-02', desc: 'Rear-end collision repair', cost: '$4,120', status: 'Pending Pickup' },
+          { date: '2025-08-30', desc: 'Side panel scratch repair', cost: '$1,650', status: 'Completed' },
+          { date: '2025-04-05', desc: 'Windshield chip repair', cost: '$1,550', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$7,320', avgRepair: '$2,440', outstanding: '$4,120' },
+        notes: 'Email only. First-time customer in 2025. Single vehicle.',
+        commLog: [
+          { date: '2026-03-02', channel: 'Email', message: 'Your RAV4 is ready for pickup.' },
+          { date: '2026-02-27', channel: 'Email', message: 'Repair nearing completion — ETA tomorrow.' },
+          { date: '2025-08-30', channel: 'Email', message: 'Scratch repair complete. Pick up anytime.' },
+          { date: '2025-08-28', channel: 'Email', message: 'Vehicle received. Starting repair.' },
+          { date: '2025-04-05', channel: 'Email', message: 'Windshield chip repaired.' }
+        ]
+      },
+      8: {
+        name: 'David Martinez', email: 'd.martinez@email.com', phone: '(602) 555-0278',
+        address: '4402 N Central Ave, Phoenix, AZ 85012', status: 'Completed',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2023, make: 'Nissan', model: 'Altima', status: 'No Active Repair' },
+          { year: 2020, make: 'Ford', model: 'Escape', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-02-28', desc: 'Front bumper and hood repair — Altima', cost: '$6,240', status: 'Completed' },
+          { date: '2025-10-12', desc: 'Rear-end collision repair', cost: '$5,890', status: 'Completed' },
+          { date: '2025-05-26', desc: 'Door panel replacement', cost: '$4,320', status: 'Completed' },
+          { date: '2024-12-19', desc: 'Fender bender — front left', cost: '$3,390', status: 'Completed' },
+          { date: '2024-07-30', desc: 'Bumper repair — Ford Escape', cost: '$2,800', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$22,640', avgRepair: '$4,528', outstanding: '$0' },
+        notes: 'Regular customer. Two vehicles. Sometimes delayed on pickup.',
+        commLog: [
+          { date: '2026-02-28', channel: 'SMS', message: 'Altima repair complete. Ready for pickup.' },
+          { date: '2026-02-25', channel: 'Email', message: 'Repair update: hood paint curing.' },
+          { date: '2025-10-12', channel: 'SMS', message: 'Rear-end repair done. Vehicle ready.' },
+          { date: '2025-05-26', channel: 'Email', message: 'Door panel installed. Pickup available.' },
+          { date: '2024-12-19', channel: 'SMS', message: 'Fender repair complete.' }
+        ]
+      },
+      9: {
+        name: 'Michelle Wu', email: 'm.wu@email.com', phone: '(212) 555-0443',
+        address: '350 W 42nd St, New York, NY 10036', status: 'Active Repair',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2021, make: 'BMW', model: '330i', status: 'Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-02-25', desc: 'Front-end collision — major', cost: '$18,340', status: 'In Progress' },
+          { date: '2025-09-14', desc: 'Side impact door repair', cost: '$12,870', status: 'Completed' },
+          { date: '2025-03-22', desc: 'Rear bumper and trunk repair', cost: '$14,200', status: 'Completed' },
+          { date: '2024-10-08', desc: 'Hail damage — full PDR', cost: '$10,800', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$56,210', avgRepair: '$14,053', outstanding: '$18,340' },
+        notes: 'Highest lifetime value customer. BMW specialist. Very engaged.',
+        commLog: [
+          { date: '2026-02-25', channel: 'SMS', message: 'Vehicle received. Major front-end assessment underway.' },
+          { date: '2026-02-24', channel: 'Email', message: 'Estimate EST-4720 sent — $18,340.' },
+          { date: '2025-09-14', channel: 'SMS', message: 'Door repair complete. Vehicle ready.' },
+          { date: '2025-09-10', channel: 'Email', message: 'Parts ordered. ETA 3 days.' },
+          { date: '2025-03-22', channel: 'SMS', message: 'Trunk and bumper repair done.' }
+        ]
+      },
+      10: {
+        name: 'Thomas Green', email: 't.green@email.com', phone: '(303) 555-0165',
+        address: '1600 Champa St, Denver, CO 80202', status: 'New',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2024, make: 'Honda', model: 'CR-V', status: 'Pending Estimate' },
+          { year: 2019, make: 'Subaru', model: 'Outback', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-02-22', desc: 'Rear quarter panel dent — CR-V', cost: '$3,680', status: 'Pending Estimate' },
+          { date: '2026-02-10', desc: 'Side mirror replacement — Outback', cost: '$1,210', status: 'Completed' },
+          { date: '2025-12-15', desc: 'Paint scratch repair — CR-V', cost: '$5,000', status: 'Completed' },
+          { date: '2025-09-20', desc: 'Bumper scuff — Outback', cost: '$5,000', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$14,890', avgRepair: '$3,723', outstanding: '$3,680' },
+        notes: 'New customer as of late 2025. Two vehicles. Referred by Kevin Patel.',
+        commLog: [
+          { date: '2026-02-22', channel: 'Email', message: 'Welcome! Your CR-V estimate is being prepared.' },
+          { date: '2026-02-10', channel: 'SMS', message: 'Mirror replacement complete. Pick up anytime.' },
+          { date: '2025-12-15', channel: 'Email', message: 'Paint repair done. Vehicle ready for pickup.' },
+          { date: '2025-12-12', channel: 'SMS', message: 'Vehicle received. Starting repair.' },
+          { date: '2025-09-20', channel: 'Email', message: 'Welcome to AutoEstimate Pro! Estimate ready.' }
+        ]
+      },
+      11: {
+        name: 'Jennifer Liu', email: 'j.liu@email.com', phone: '(206) 555-0512',
+        address: '2201 Westlake Ave, Seattle, WA 98121', status: 'Completed',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2023, make: 'Ford', model: 'Mustang Mach-E', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-02-18', desc: 'Front-end collision repair', cost: '$14,230', status: 'Completed' },
+          { date: '2025-10-01', desc: 'Charging port surround repair', cost: '$3,870', status: 'Completed' },
+          { date: '2025-05-15', desc: 'Hail damage — PDR', cost: '$9,640', status: 'Completed' },
+          { date: '2024-11-30', desc: 'Rear bumper replacement', cost: '$11,200', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$38,940', avgRepair: '$9,735', outstanding: '$0' },
+        notes: 'EV specialist customer. Mach-E requires certified repair. Always satisfied.',
+        commLog: [
+          { date: '2026-02-18', channel: 'Email', message: 'Mach-E repair complete. Ready for pickup.' },
+          { date: '2026-02-14', channel: 'SMS', message: 'Repair in final stages. ETA Friday.' },
+          { date: '2025-10-01', channel: 'Email', message: 'Charging port repair done. All tested.' },
+          { date: '2025-05-15', channel: 'SMS', message: 'PDR complete. No paint needed!' },
+          { date: '2024-11-30', channel: 'Email', message: 'Bumper replacement complete.' }
+        ]
+      },
+      12: {
+        name: 'Carlos Gutierrez', email: 'c.gutierrez@email.com', phone: '(305) 555-0634',
+        address: '801 Brickell Ave, Miami, FL 33131', status: 'Completed',
+        smsEnabled: true, emailEnabled: false,
+        vehicles: [
+          { year: 2024, make: 'Mercedes', model: 'GLE 350', status: 'No Active Repair' },
+          { year: 2022, make: 'Lexus', model: 'RX 350', status: 'No Active Repair' },
+          { year: 2020, make: 'BMW', model: 'X3', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-02-15', desc: 'Side panel repair — GLE 350', cost: '$11,450', status: 'Completed' },
+          { date: '2025-11-20', desc: 'Rear-end collision — Lexus RX', cost: '$13,870', status: 'Completed' },
+          { date: '2025-07-08', desc: 'Hail damage — full PDR — BMW X3', cost: '$9,800', status: 'Completed' },
+          { date: '2025-02-14', desc: 'Front bumper — Mercedes GLE', cost: '$12,000', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$47,120', avgRepair: '$11,780', outstanding: '$0' },
+        notes: 'Luxury fleet owner. Three vehicles. SMS preferred. High-value repairs.',
+        commLog: [
+          { date: '2026-02-15', channel: 'SMS', message: 'GLE 350 repair complete. Ready for pickup.' },
+          { date: '2026-02-12', channel: 'SMS', message: 'Repair in progress. ETA 3 days.' },
+          { date: '2025-11-20', channel: 'SMS', message: 'Lexus RX repair done. Vehicle ready.' },
+          { date: '2025-07-08', channel: 'SMS', message: 'PDR complete on BMW X3.' },
+          { date: '2025-02-14', channel: 'SMS', message: 'Mercedes bumper replacement done.' }
+        ]
+      },
+      13: {
+        name: 'Priya Sharma', email: 'p.sharma@email.com', phone: '(408) 555-0791',
+        address: '5890 Stevens Creek Blvd, San Jose, CA 95129', status: 'New',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2025, make: 'Tesla', model: 'Model 3', status: 'Pending Estimate' }
+        ],
+        repairs: [
+          { date: '2026-02-10', desc: 'Rear bumper and sensor repair', cost: '$5,680', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$5,680', avgRepair: '$5,680', outstanding: '$0' },
+        notes: 'Brand new customer. First visit in February 2026. Tesla Model 3 owner.',
+        commLog: [
+          { date: '2026-02-10', channel: 'Email', message: 'Repair complete! Thank you for choosing us.' },
+          { date: '2026-02-08', channel: 'SMS', message: 'Repair nearing completion. ETA tomorrow.' },
+          { date: '2026-02-05', channel: 'Email', message: 'Estimate approved. Starting repair.' },
+          { date: '2026-02-03', channel: 'SMS', message: 'Vehicle received at our facility.' },
+          { date: '2026-02-01', channel: 'Email', message: 'Welcome to AutoEstimate Pro!' }
+        ]
+      },
+      14: {
+        name: 'William Okafor', email: 'w.okafor@email.com', phone: '(773) 555-0823',
+        address: '233 S Wacker Dr, Chicago, IL 60606', status: 'Pending Pickup',
+        smsEnabled: true, emailEnabled: true,
+        vehicles: [
+          { year: 2023, make: 'Kia', model: 'Telluride', status: 'Pending Pickup' },
+          { year: 2021, make: 'Hyundai', model: 'Sonata', status: 'No Active Repair' }
+        ],
+        repairs: [
+          { date: '2026-02-05', desc: 'Front-end collision — Telluride', cost: '$8,450', status: 'Pending Pickup' },
+          { date: '2025-10-28', desc: 'Door panel dent — Sonata', cost: '$2,900', status: 'Completed' },
+          { date: '2025-06-14', desc: 'Rear bumper — Telluride', cost: '$4,500', status: 'Completed' },
+          { date: '2025-01-20', desc: 'Windshield replacement — Sonata', cost: '$3,500', status: 'Completed' }
+        ],
+        financial: { totalSpent: '$19,350', avgRepair: '$4,838', outstanding: '$8,450' },
+        notes: 'Two-vehicle household. Prefers weekend pickup. Responsive to reminders.',
+        commLog: [
+          { date: '2026-02-05', channel: 'SMS', message: 'Reminder: Your Telluride is ready for pickup.' },
+          { date: '2026-02-03', channel: 'Email', message: 'Repair complete. Please schedule pickup.' },
+          { date: '2025-10-28', channel: 'SMS', message: 'Sonata dent repair done. Pick up anytime.' },
+          { date: '2025-06-14', channel: 'Email', message: 'Telluride bumper replacement complete.' },
+          { date: '2025-01-20', channel: 'SMS', message: 'Windshield installed. Vehicle ready.' }
+        ]
+      }
+    }
+
+    // Message templates
+    var messageTemplates = {
+      'vehicle-received': { subject: 'Vehicle Received', body: 'We have received your vehicle at our facility. Our team will begin the assessment process shortly. We will keep you updated on the progress.' },
+      'estimate-ready': { subject: 'Estimate Ready', body: 'Your repair estimate is ready for review. Please log in to your portal or contact us to discuss the details and approve the work.' },
+      'repair-progress': { subject: 'Repair In Progress', body: 'Your vehicle repair is currently in progress. Our technicians are working diligently to restore your vehicle. Estimated completion date will be provided soon.' },
+      'ready-pickup': { subject: 'Ready for Pickup', body: 'Great news! Your vehicle repair is complete and ready for pickup. Please visit our facility during business hours (Mon-Fri 8AM-6PM, Sat 9AM-1PM).' },
+      'followup-survey': { subject: 'How Was Your Experience?', body: 'Thank you for choosing AutoEstimate Pro. We value your feedback! Please take a moment to rate your experience and let us know how we can improve.' }
+    }
+
+    // Filter customers
+    function filterCustomers() {
+      var search = document.getElementById('customerSearch').value.toLowerCase()
+      var status = document.getElementById('statusFilter').value
+      var sort = document.getElementById('sortFilter').value
+      var rows = document.querySelectorAll('.customer-row')
+      var visible = []
+
+      rows.forEach(function(row) {
+        var name = row.getAttribute('data-name')
+        var email = row.getAttribute('data-email')
+        var phone = row.getAttribute('data-phone')
+        var rowStatus = row.getAttribute('data-status')
+        var matchSearch = !search || name.indexOf(search) !== -1 || email.indexOf(search) !== -1 || phone.indexOf(search) !== -1
+        var matchStatus = !status || rowStatus === status
+
+        if (matchSearch && matchStatus) {
+          row.style.display = ''
+          visible.push(row)
+        } else {
+          row.style.display = 'none'
+        }
+      })
+
+      // Sort
+      var tbody = document.getElementById('customerTableBody')
+      if (sort === 'name') {
+        visible.sort(function(a, b) { return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name')) })
+      } else if (sort === 'vehicles') {
+        visible.sort(function(a, b) { return parseInt(b.getAttribute('data-vehicles')) - parseInt(a.getAttribute('data-vehicles')) })
+      } else {
+        visible.sort(function(a, b) { return b.getAttribute('data-lastvisit').localeCompare(a.getAttribute('data-lastvisit')) })
+      }
+      visible.forEach(function(row) { tbody.appendChild(row) })
+
+      // Update label and empty state
+      document.getElementById('customerShowingLabel').textContent = visible.length + ' of 15 customers'
+      document.getElementById('emptyState').style.display = visible.length === 0 ? '' : 'none'
+    }
+
+    function clearFilters() {
+      document.getElementById('customerSearch').value = ''
+      document.getElementById('statusFilter').value = ''
+      document.getElementById('sortFilter').value = 'recent'
+      filterCustomers()
+    }
+
+    // Initialize
+    filterCustomers()
+
+    // Open customer detail slide-over
+    function openCustomerDetail(idx) {
+      var c = customerDetails[idx]
+      if (!c) return
+
+      var statusBadgeClass = c.status === 'Active Repair' ? 'badge-amber' : c.status === 'Completed' ? 'badge-emerald' : c.status === 'Pending Pickup' ? 'badge-blue' : 'badge-slate'
+
+      // Vehicles list
+      var vehiclesList = ''
+      c.vehicles.forEach(function(v) {
+        var vBadge = v.status === 'Active Repair' ? 'badge-amber' : v.status === 'Pending Pickup' ? 'badge-blue' : v.status === 'Pending Estimate' ? 'badge-slate' : 'badge-emerald'
+        vehiclesList += '<div class="detail-row">'
+        vehiclesList += '<span class="detail-row-label">' + v.year + ' ' + v.make + ' ' + v.model + '</span>'
+        vehiclesList += '<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + vBadge + '">' + v.status + '</span>'
+        vehiclesList += '</div>'
+      })
+
+      // Repair timeline
+      var repairTimeline = ''
+      c.repairs.forEach(function(r, i) {
+        var isLast = i === c.repairs.length - 1
+        repairTimeline += '<div style="display: flex; gap: 0.75rem;">'
+        repairTimeline += '<div style="display: flex; flex-direction: column; align-items: center;">'
+        repairTimeline += '<div style="width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--text-accent); margin-top: 4px;"></div>'
+        if (!isLast) {
+          repairTimeline += '<div style="width: 2px; flex: 1; background: var(--border-main); margin: 4px 0;"></div>'
+        }
+        repairTimeline += '</div>'
+        repairTimeline += '<div style="flex: 1; padding-bottom: ' + (isLast ? '0' : '1rem') + ';">'
+        repairTimeline += '<div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">'
+        repairTimeline += '<span style="font-size: 0.875rem; font-weight: 500; color: var(--text-primary);">' + r.desc + '</span>'
+        repairTimeline += '<span style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">' + r.cost + '</span>'
+        repairTimeline += '</div>'
+        repairTimeline += '<div style="display: flex; gap: 1rem; margin-top: 0.25rem;">'
+        repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-muted);">' + r.date + '</span>'
+        repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-success);">' + r.status + '</span>'
+        repairTimeline += '</div>'
+        repairTimeline += '</div></div>'
+      })
+
+      // Communication log
+      var commLog = ''
+      c.commLog.forEach(function(log) {
+        var channelClass = log.channel === 'SMS' ? 'comm-type-sms' : 'comm-type-email'
+        commLog += '<div style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-main);">'
+        commLog += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">'
+        commLog += '<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + channelClass + '">' + log.channel + '</span>'
+        commLog += '<span style="font-size: 0.75rem; color: var(--text-muted);">' + log.date + '</span>'
+        commLog += '</div>'
+        commLog += '<p style="font-size: 0.8125rem; color: var(--text-tertiary);">' + log.message + '</p>'
+        commLog += '</div>'
+      })
+
+      var html = ''
+        + '<div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main);">'
+        + '<div>'
+        + '<h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">' + c.name + '</h2>'
+        + '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + statusBadgeClass + '" style="margin-top: 0.5rem;">' + c.status + '</span>'
+        + '</div>'
+        + '<button onclick="closeSlideOver()" style="padding: 0.5rem; border-radius: 0.5rem; color: var(--text-muted); background: none; border: none; cursor: pointer;" aria-label="Close">'
+        + '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>'
+
+        // Contact info
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Contact Information</div>'
+        + '<div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">' + c.email + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">' + c.phone + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Address</span><span class="detail-row-value" style="text-align: right; max-width: 60%;">' + c.address + '</span></div>'
+        + '</div>'
+
+        // Communication preferences
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Communication Preferences</div>'
+        + '<div class="detail-row"><span class="detail-row-label">SMS Notifications</span><span class="detail-row-value"><button class="toggle-switch ' + (c.smsEnabled ? 'on' : 'off') + '" onclick="this.classList.toggle(\'on\');this.classList.toggle(\'off\')"><span class="toggle-dot"></span></button></span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Email Notifications</span><span class="detail-row-value"><button class="toggle-switch ' + (c.emailEnabled ? 'on' : 'off') + '" onclick="this.classList.toggle(\'on\');this.classList.toggle(\'off\')"><span class="toggle-dot"></span></button></span></div>'
+        + '</div>'
+
+        // Vehicles
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Vehicles</div>'
+        + vehiclesList
+        + '</div>'
+
+        // Repair history
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Repair History</div>'
+        + repairTimeline
+        + '</div>'
+
+        // Financial summary
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Financial Summary</div>'
+        + '<div class="detail-row"><span class="detail-row-label">Total Spent</span><span class="detail-row-value" style="color: var(--text-revenue);">' + c.financial.totalSpent + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Avg Repair Cost</span><span class="detail-row-value">' + c.financial.avgRepair + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Outstanding Balance</span><span class="detail-row-value" style="color: ' + (c.financial.outstanding !== '$0' ? 'var(--badge-amber-text)' : 'var(--text-primary)') + ';">' + c.financial.outstanding + '</span></div>'
+        + '</div>'
+
+        // Notes
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Notes</div>'
+        + '<p style="font-size: 0.875rem; color: var(--text-tertiary); line-height: 1.5;">' + c.notes + '</p>'
+        + '</div>'
+
+        // Communication log
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Communication Log</div>'
+        + commLog
+        + '</div>'
+
+        // Action buttons
+        + '<div class="detail-section" style="display: flex; gap: 0.75rem;">'
+        + '<button onclick="closeSlideOver(); setTimeout(function(){ openSendMessage(' + idx + '); }, 350);" style="flex: 1; padding: 0.625rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; color: white; background: var(--btn-primary-bg); border: none; cursor: pointer;">Send Update</button>'
+        + '<button onclick="showToast(\'Appointment scheduler coming soon\', \'info\')" style="flex: 1; padding: 0.625rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--btn-action-text); background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); cursor: pointer;">Schedule Appointment</button>'
+        + '</div>'
+
+      openSlideOver(html)
+    }
+
+    // Open send message slide-over
+    function openSendMessage(idx) {
+      var c = customerDetails[idx]
+      if (!c) return
+
+      var html = ''
+        + '<div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main);">'
+        + '<div>'
+        + '<h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Send Update</h2>'
+        + '<p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem;">To: ' + c.name + '</p>'
+        + '</div>'
+        + '<button onclick="closeSlideOver()" style="padding: 0.5rem; border-radius: 0.5rem; color: var(--text-muted); background: none; border: none; cursor: pointer;" aria-label="Close">'
+        + '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>'
+
+        // Template selection
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Message Template</div>'
+        + '<select id="msgTemplate" onchange="updateMessagePreview()" style="width: 100%; padding: 0.625rem; border-radius: 0.5rem; font-size: 0.875rem; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding-left: 0.75rem; padding-right: 2rem;">'
+        + '<option value="vehicle-received">Vehicle Received</option>'
+        + '<option value="estimate-ready">Estimate Ready</option>'
+        + '<option value="repair-progress">Repair In Progress</option>'
+        + '<option value="ready-pickup">Ready for Pickup</option>'
+        + '<option value="followup-survey">Follow-up Survey</option>'
+        + '</select>'
+        + '</div>'
+
+        // Channel selection
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Channel</div>'
+        + '<div style="display: flex; gap: 0.75rem;">'
+        + '<label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem; border-radius: 0.5rem; border: 1px solid var(--border-input); background: var(--bg-input); cursor: pointer; font-size: 0.875rem; color: var(--text-secondary);">'
+        + '<input type="radio" name="msgChannel" value="sms" checked style="accent-color: var(--text-accent);"> SMS'
+        + '</label>'
+        + '<label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem; border-radius: 0.5rem; border: 1px solid var(--border-input); background: var(--bg-input); cursor: pointer; font-size: 0.875rem; color: var(--text-secondary);">'
+        + '<input type="radio" name="msgChannel" value="email" style="accent-color: var(--text-accent);"> Email'
+        + '</label>'
+        + '<label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem; border-radius: 0.5rem; border: 1px solid var(--border-input); background: var(--bg-input); cursor: pointer; font-size: 0.875rem; color: var(--text-secondary);">'
+        + '<input type="radio" name="msgChannel" value="both" style="accent-color: var(--text-accent);"> Both'
+        + '</label>'
+        + '</div>'
+        + '</div>'
+
+        // Message preview
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Message Preview</div>'
+        + '<div id="msgPreview" style="padding: 1rem; border-radius: 0.5rem; background: var(--bg-subtle); border: 1px solid var(--border-main);">'
+        + '<p style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Vehicle Received</p>'
+        + '<p style="font-size: 0.8125rem; color: var(--text-tertiary); line-height: 1.5;">We have received your vehicle at our facility. Our team will begin the assessment process shortly. We will keep you updated on the progress.</p>'
+        + '<p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem;">— AutoEstimate Pro</p>'
+        + '</div>'
+        + '</div>'
+
+        // Send button
+        + '<div class="detail-section">'
+        + '<button onclick="sendMessage(\'' + c.name + '\')" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600; color: white; background: var(--btn-primary-bg); border: none; cursor: pointer;">Send Message</button>'
+        + '</div>'
+
+      openSlideOver(html)
+    }
+
+    // Update message preview based on template selection
+    function updateMessagePreview() {
+      var select = document.getElementById('msgTemplate')
+      var preview = document.getElementById('msgPreview')
+      if (!select || !preview) return
+      var tmpl = messageTemplates[select.value]
+      if (!tmpl) return
+      preview.innerHTML = '<p style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">' + tmpl.subject + '</p>'
+        + '<p style="font-size: 0.8125rem; color: var(--text-tertiary); line-height: 1.5;">' + tmpl.body + '</p>'
+        + '<p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem;">— AutoEstimate Pro</p>'
+    }
+
+    // Send message action
+    function sendMessage(customerName) {
+      var channel = document.querySelector('input[name="msgChannel"]:checked')
+      var channelVal = channel ? channel.value : 'sms'
+      var channelLabel = channelVal === 'both' ? 'SMS & Email' : channelVal.toUpperCase()
+      closeSlideOver()
+      showToast('Message sent to ' + customerName + ' via ' + channelLabel, 'success')
+    }
+
+    // Add customer form
+    function openAddCustomerForm() {
+      var html = ''
+        + '<div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main);">'
+        + '<h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Add Customer</h2>'
+        + '<button onclick="closeSlideOver()" style="padding: 0.5rem; border-radius: 0.5rem; color: var(--text-muted); background: none; border: none; cursor: pointer;" aria-label="Close">'
+        + '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Personal Information</div>'
+        + '<div style="display: flex; flex-direction: column; gap: 0.75rem;">'
+        + '<div><label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Full Name</label>'
+        + '<input type="text" placeholder="Enter full name" style="width: 100%; padding: 0.625rem; border-radius: 0.5rem; font-size: 0.875rem; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary);" /></div>'
+        + '<div><label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Email</label>'
+        + '<input type="email" placeholder="Enter email address" style="width: 100%; padding: 0.625rem; border-radius: 0.5rem; font-size: 0.875rem; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary);" /></div>'
+        + '<div><label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Phone</label>'
+        + '<input type="tel" placeholder="(555) 555-0000" style="width: 100%; padding: 0.625rem; border-radius: 0.5rem; font-size: 0.875rem; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary);" /></div>'
+        + '<div><label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Address</label>'
+        + '<input type="text" placeholder="Street address, City, State ZIP" style="width: 100%; padding: 0.625rem; border-radius: 0.5rem; font-size: 0.875rem; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary);" /></div>'
+        + '</div>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Communication Preferences</div>'
+        + '<div class="detail-row"><span class="detail-row-label">SMS Notifications</span><span class="detail-row-value"><button class="toggle-switch on" onclick="this.classList.toggle(\'on\');this.classList.toggle(\'off\')"><span class="toggle-dot"></span></button></span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Email Notifications</span><span class="detail-row-value"><button class="toggle-switch on" onclick="this.classList.toggle(\'on\');this.classList.toggle(\'off\')"><span class="toggle-dot"></span></button></span></div>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Notes</div>'
+        + '<textarea placeholder="Add any notes about this customer..." rows="3" style="width: 100%; padding: 0.625rem; border-radius: 0.5rem; font-size: 0.875rem; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); resize: vertical; font-family: inherit;"></textarea>'
+        + '</div>'
+
+        + '<div class="detail-section">'
+        + '<button onclick="closeSlideOver(); showToast(\'Customer added successfully\', \'success\')" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600; color: white; background: var(--btn-primary-bg); border: none; cursor: pointer;">Add Customer</button>'
+        + '</div>'
+
+      openSlideOver(html)
+    }
+</script>

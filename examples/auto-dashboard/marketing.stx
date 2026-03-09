@@ -1,0 +1,603 @@
+<script>
+const companyName = 'AutoEstimate Pro'
+
+const features = [
+  { id: 'ai', title: 'AI-Powered Estimating', desc: 'Photo analysis, voice-to-estimate, and intelligent supplement prediction reduce estimate time by 47% on average.', highlight: true },
+  { id: 'production', title: 'Production Tracking', desc: 'Kanban-style board with 7 configurable stages. Real-time visibility from check-in to delivery.' },
+  { id: 'compliance', title: 'Insurer Compliance', desc: 'Auto-validate against 15+ carrier guidelines. Labor rates, parts preferences, and documentation requirements — checked in real time.' },
+  { id: 'parts', title: 'Integrated Parts Search', desc: 'Compare OEM, aftermarket, and recycled parts across 8+ suppliers. One-click add to any estimate.' },
+  { id: 'reports', title: 'Analytics & Forecasting', desc: 'AI-driven revenue forecasts, cycle time trends, technician performance, and industry benchmark comparisons.' },
+  { id: 'crm', title: 'Customer Management', desc: 'Complete customer profiles with vehicle history, communication logs, and automated follow-up workflows.' },
+]
+
+const stats = [
+  { value: '47%', label: 'Faster Estimates' },
+  { value: '99.2%', label: 'Platform Uptime' },
+  { value: '2,400+', label: 'Shops Trust Us' },
+  { value: '$12M+', label: 'Monthly Savings' },
+]
+
+const plans = [
+  { name: 'Starter', price: '$149', period: '/mo per location', features: ['Up to 3 users', 'Estimating & invoicing', 'Basic reporting', 'Parts search', 'Email support'], cta: 'Start Free Trial', highlight: false },
+  { name: 'Professional', price: '$299', period: '/mo per location', features: ['Up to 10 users', 'Everything in Starter', 'AI Photo Estimates', 'Production board', 'Insurer compliance', 'CRM & scheduling', 'Priority support'], cta: 'Start Free Trial', highlight: true },
+  { name: 'Enterprise', price: 'Custom', period: 'tailored to you', features: ['Unlimited users', 'Everything in Professional', 'Multi-location management', 'Custom integrations', 'API access', 'Dedicated account manager', 'On-site training'], cta: 'Contact Sales', highlight: false },
+]
+
+const testimonials = [
+  { name: 'Mike Torres', role: 'Owner, Precision Collision Center', quote: 'We switched from CCC ONE and cut our estimate time in half. The AI photo analysis alone paid for the subscription in the first month.', avatar: 'MT' },
+  { name: 'Jessica Park', role: 'General Manager, Park Auto Body', quote: 'The production board transformed how we manage workflow. We reduced average cycle time by 1.3 days within the first quarter.', avatar: 'JP' },
+  { name: 'David Chen', role: 'Lead Estimator, Elite Collision Repairs', quote: 'Finally, estimating software that feels modern. The insurer compliance checker catches things I would have missed every single day.', avatar: 'DC' },
+]
+
+const trustedBy = ['State Farm', 'GEICO', 'Progressive', 'Allstate', 'USAA', 'Liberty Mutual']
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>try{var t=localStorage.getItem("stx-theme");if(t)document.documentElement.setAttribute("data-theme",t);else if(!window.matchMedia("(prefers-color-scheme:light)").matches)document.documentElement.setAttribute("data-theme","dark");else document.documentElement.setAttribute("data-theme","light")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ companyName }} — Modern Collision Estimating Platform</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    [data-theme="dark"] {
+      --bg-body: #050a18;
+      --bg-nav: rgba(5, 10, 24, 0.88);
+      --bg-glass: rgba(255,255,255,0.025); --bg-glass-hover: rgba(255,255,255,0.05);
+      --bg-glass-border: rgba(255,255,255,0.06); --bg-glass-border-hover: rgba(255,255,255,0.12);
+      --bg-subtle: rgba(255,255,255,0.04); --bg-subtle-hover: rgba(255,255,255,0.08);
+      --bg-elevated: rgba(255,255,255,0.03);
+      --text-primary: #f1f5f9; --text-secondary: #cbd5e1; --text-tertiary: #7c8db5;
+      --text-muted: #4a5578;
+      --text-accent: #6194fd; --text-accent-hover: #8bb4fe;
+      --text-success: #34d399;
+      --glow-blue: rgba(59,130,246,0.12); --glow-violet: rgba(139,92,246,0.08);
+      --badge-blue-bg: rgba(59,130,246,0.12); --badge-blue-text: #6194fd;
+      --btn-primary-bg: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+      --btn-primary-hover: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+      --btn-primary-shadow: 0 4px 24px rgba(37,99,235,0.3), 0 1px 3px rgba(0,0,0,0.2);
+      --btn-primary-shadow-hover: 0 8px 32px rgba(37,99,235,0.4), 0 2px 8px rgba(0,0,0,0.3);
+      --hero-gradient-1: rgba(37,99,235,0.08); --hero-gradient-2: rgba(99,102,241,0.05); --hero-gradient-3: rgba(16,185,129,0.03);
+      --card-glow: rgba(59,130,246,0.06);
+      --section-alt: rgba(255,255,255,0.008);
+      --section-border: rgba(255,255,255,0.04);
+      --scroll-thumb: rgba(255,255,255,0.08);
+      --footer-bg: rgba(5,10,24,0.95);
+      --avatar-bg: rgba(59,130,246,0.15); --avatar-text: #6194fd;
+      --trusted-text: rgba(255,255,255,0.2);
+      --feature-icon-bg: rgba(59,130,246,0.08); --feature-icon-color: #6194fd;
+      --stat-border: rgba(255,255,255,0.04);
+      --price-divider: rgba(255,255,255,0.06);
+      --check-color: #34d399;
+    }
+
+    [data-theme="light"] {
+      --bg-body: #fafbff;
+      --bg-nav: rgba(250,251,255,0.92);
+      --bg-glass: rgba(255,255,255,0.85); --bg-glass-hover: rgba(255,255,255,0.95);
+      --bg-glass-border: rgba(15,23,42,0.06); --bg-glass-border-hover: rgba(15,23,42,0.12);
+      --bg-subtle: rgba(15,23,42,0.03); --bg-subtle-hover: rgba(15,23,42,0.06);
+      --bg-elevated: #ffffff;
+      --text-primary: #0f172a; --text-secondary: #334155; --text-tertiary: #64748b;
+      --text-muted: #94a3b8;
+      --text-accent: #2563eb; --text-accent-hover: #1d4ed8;
+      --text-success: #059669;
+      --glow-blue: rgba(59,130,246,0.08); --glow-violet: rgba(139,92,246,0.05);
+      --badge-blue-bg: rgba(37,99,235,0.08); --badge-blue-text: #2563eb;
+      --btn-primary-bg: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+      --btn-primary-hover: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%);
+      --btn-primary-shadow: 0 4px 24px rgba(37,99,235,0.2), 0 1px 3px rgba(0,0,0,0.06);
+      --btn-primary-shadow-hover: 0 8px 32px rgba(37,99,235,0.3), 0 2px 8px rgba(0,0,0,0.08);
+      --hero-gradient-1: rgba(37,99,235,0.04); --hero-gradient-2: rgba(99,102,241,0.03); --hero-gradient-3: rgba(16,185,129,0.02);
+      --card-glow: rgba(15,23,42,0.04);
+      --section-alt: rgba(15,23,42,0.012);
+      --section-border: rgba(15,23,42,0.05);
+      --scroll-thumb: rgba(15,23,42,0.1);
+      --footer-bg: #f1f5f9;
+      --avatar-bg: rgba(37,99,235,0.08); --avatar-text: #2563eb;
+      --trusted-text: rgba(15,23,42,0.18);
+      --feature-icon-bg: rgba(37,99,235,0.06); --feature-icon-color: #2563eb;
+      --stat-border: rgba(15,23,42,0.06);
+      --price-divider: rgba(15,23,42,0.06);
+      --check-color: #059669;
+    }
+
+    body { background: var(--bg-body); color: var(--text-primary); }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+
+    /* Animations */
+    .fade-up { opacity: 0; transform: translateY(20px); transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1); }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    .delay-1 { transition-delay: 0.1s; } .delay-2 { transition-delay: 0.2s; } .delay-3 { transition-delay: 0.3s; }
+    @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes float-subtle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+    /* Nav */
+    .m-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: var(--bg-nav); backdrop-filter: blur(20px) saturate(1.2); border-bottom: 1px solid var(--bg-glass-border); }
+    .m-nav-inner { max-width: 1140px; margin: 0 auto; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .m-logo { display: flex; align-items: center; gap: 0.625rem; text-decoration: none; }
+    .m-logo-mark { width: 32px; height: 32px; border-radius: 8px; background: var(--btn-primary-bg); display: flex; align-items: center; justify-content: center; }
+    .m-logo-mark svg { width: 18px; height: 18px; color: #fff; }
+    .m-logo-text { font-size: 1rem; font-weight: 750; letter-spacing: -0.02em; color: var(--text-primary); }
+    .m-nav-links { display: flex; align-items: center; gap: 0.25rem; }
+    .m-nav-links a { font-size: 0.8125rem; font-weight: 500; color: var(--text-tertiary); text-decoration: none; padding: 0.375rem 0.75rem; border-radius: 0.375rem; transition: color 0.2s, background 0.2s; }
+    .m-nav-links a:hover { color: var(--text-primary); background: var(--bg-subtle); }
+    .m-nav-right { display: flex; align-items: center; gap: 0.75rem; }
+    .m-nav-signin { font-size: 0.8125rem; font-weight: 500; color: var(--text-tertiary); text-decoration: none; padding: 0.375rem 0.75rem; border-radius: 0.375rem; transition: color 0.2s; }
+    .m-nav-signin:hover { color: var(--text-primary); }
+    .m-nav-cta { display: inline-flex; align-items: center; padding: 0.4375rem 1rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 600; color: #fff; background: var(--btn-primary-bg); border: none; cursor: pointer; text-decoration: none; transition: all 0.2s; box-shadow: var(--btn-primary-shadow); }
+    .m-nav-cta:hover { background: var(--btn-primary-hover); box-shadow: var(--btn-primary-shadow-hover); transform: translateY(-1px); }
+
+    /* Theme toggle */
+    .m-theme-toggle { width: 36px; height: 20px; border-radius: 10px; cursor: pointer; border: none; padding: 0; background: var(--bg-subtle); border: 1px solid var(--bg-glass-border); position: relative; transition: background 0.2s; }
+    .m-theme-toggle .knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 7px; background: var(--text-accent); transition: transform 0.3s cubic-bezier(0.16,1,0.3,1); display: flex; align-items: center; justify-content: center; }
+    [data-theme="dark"] .m-theme-toggle .knob { transform: translateX(16px); }
+    .m-theme-toggle svg { width: 8px; height: 8px; color: #fff; }
+
+    /* Hero */
+    .m-hero { position: relative; padding: 11rem 2rem 4rem; text-align: center; overflow: hidden; }
+    .m-hero-bg { position: absolute; inset: 0; }
+    .m-hero-bg::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 55% at 50% 25%, var(--hero-gradient-1), transparent 70%), radial-gradient(ellipse 50% 40% at 25% 55%, var(--hero-gradient-2), transparent 60%), radial-gradient(ellipse 40% 35% at 75% 45%, var(--hero-gradient-3), transparent 60%); }
+    .m-hero-bg::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(var(--bg-glass-border) 1px, transparent 1px), linear-gradient(90deg, var(--bg-glass-border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black 20%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black 20%, transparent 70%); }
+    .m-hero-content { position: relative; max-width: 720px; margin: 0 auto; }
+    .m-hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.3125rem 0.875rem; border-radius: 9999px; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; background: var(--badge-blue-bg); color: var(--badge-blue-text); margin-bottom: 2rem; border: 1px solid rgba(59,130,246,0.08); }
+    .m-hero-badge svg { width: 12px; height: 12px; }
+    .m-hero h1 { font-size: clamp(2.25rem, 5vw, 3.75rem); font-weight: 800; line-height: 1.08; letter-spacing: -0.035em; margin: 0 0 1.25rem; }
+    .m-hero h1 .accent { background: linear-gradient(135deg, var(--text-accent) 0%, #a855f7 50%, var(--text-accent) 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: gradient-shift 6s ease infinite; }
+    .m-hero-sub { font-size: 1.125rem; line-height: 1.7; color: var(--text-tertiary); max-width: 540px; margin: 0 auto 2.5rem; font-weight: 400; }
+    .m-hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .m-btn-primary { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.75rem; border-radius: 0.625rem; font-size: 0.9375rem; font-weight: 650; color: #fff; background: var(--btn-primary-bg); border: none; cursor: pointer; text-decoration: none; transition: all 0.25s cubic-bezier(0.16,1,0.3,1); box-shadow: var(--btn-primary-shadow); }
+    .m-btn-primary:hover { background: var(--btn-primary-hover); transform: translateY(-2px); box-shadow: var(--btn-primary-shadow-hover); }
+    .m-btn-primary svg { width: 16px; height: 16px; }
+    .m-btn-ghost { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.75rem; border-radius: 0.625rem; font-size: 0.9375rem; font-weight: 550; color: var(--text-secondary); background: none; border: 1px solid var(--bg-glass-border); cursor: pointer; text-decoration: none; transition: all 0.25s; }
+    .m-btn-ghost:hover { color: var(--text-primary); border-color: var(--bg-glass-border-hover); background: var(--bg-subtle); }
+    .m-btn-ghost svg { width: 16px; height: 16px; }
+
+    /* Trusted by */
+    .m-trusted { padding: 4rem 2rem 0; text-align: center; position: relative; }
+    .m-trusted-label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1.5rem; }
+    .m-trusted-logos { display: flex; justify-content: center; align-items: center; gap: 3rem; flex-wrap: wrap; }
+    .m-trusted-logos span { font-size: 1rem; font-weight: 700; color: var(--trusted-text); letter-spacing: -0.01em; transition: color 0.3s; }
+    .m-trusted-logos span:hover { color: var(--text-muted); }
+
+    /* Dashboard preview */
+    .m-preview { position: relative; max-width: 1000px; margin: 4rem auto 0; padding: 0 2rem; }
+    .m-preview-window { border-radius: 0.75rem; overflow: hidden; border: 1px solid var(--bg-glass-border); background: var(--bg-elevated); box-shadow: 0 24px 80px -12px rgba(0,0,0,0.18), 0 0 0 1px var(--bg-glass-border); }
+    .m-preview-bar { display: flex; align-items: center; gap: 6px; padding: 0.75rem 1rem; background: var(--bg-subtle); border-bottom: 1px solid var(--bg-glass-border); }
+    .m-preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .m-preview-url { flex: 1; text-align: center; font-size: 0.6875rem; font-weight: 500; color: var(--text-muted); margin: 0 2rem; padding: 0.3125rem 0.75rem; background: var(--bg-subtle); border-radius: 0.25rem; border: 1px solid var(--bg-glass-border); }
+    .m-preview-body { padding: 1.5rem; }
+    .m-preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.875rem; margin-bottom: 1.25rem; }
+    .m-preview-stat { padding: 1.125rem; border-radius: 0.5rem; background: var(--bg-subtle); border: 1px solid var(--bg-glass-border); }
+    .m-preview-stat-label { font-size: 0.625rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.375rem; }
+    .m-preview-stat-val { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.02em; }
+    .m-preview-stat-bar { height: 3px; border-radius: 2px; margin-top: 0.625rem; opacity: 0.8; }
+    .m-preview-table { width: 100%; }
+    .m-preview-table-hdr { display: grid; grid-template-columns: 1fr 1.5fr 1fr 0.8fr; padding: 0.5rem 0.75rem; font-size: 0.5625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); border-bottom: 1px solid var(--bg-glass-border); }
+    .m-preview-table-row { display: grid; grid-template-columns: 1fr 1.5fr 1fr 0.8fr; padding: 0.5rem 0.75rem; font-size: 0.6875rem; color: var(--text-secondary); border-bottom: 1px solid var(--bg-glass-border); }
+    .m-preview-table-row:last-child { border-bottom: none; }
+    .m-preview-badge { display: inline-block; font-size: 0.5625rem; font-weight: 600; padding: 0.125rem 0.375rem; border-radius: 9999px; }
+
+    /* Stats section */
+    .m-stats { padding: 5rem 2rem; border-bottom: 1px solid var(--section-border); }
+    .m-stats-inner { max-width: 1140px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+    .m-stat { text-align: center; padding: 1.5rem 1rem; position: relative; }
+    .m-stat:not(:last-child)::after { content: ''; position: absolute; right: 0; top: 25%; bottom: 25%; width: 1px; background: var(--stat-border); }
+    .m-stat-value { font-size: 2.5rem; font-weight: 900; letter-spacing: -0.04em; color: var(--text-primary); }
+    .m-stat-label { font-size: 0.8125rem; font-weight: 500; color: var(--text-tertiary); margin-top: 0.25rem; }
+
+    /* Sections */
+    .m-section { padding: 6rem 2rem; }
+    .m-section-alt { background: var(--section-alt); border-top: 1px solid var(--section-border); border-bottom: 1px solid var(--section-border); }
+    .m-section-inner { max-width: 1140px; margin: 0 auto; }
+    .m-section-hdr { text-align: center; margin-bottom: 3.5rem; }
+    .m-section-hdr h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); font-weight: 800; letter-spacing: -0.025em; margin: 0 0 0.75rem; line-height: 1.2; }
+    .m-section-hdr p { font-size: 1rem; color: var(--text-tertiary); max-width: 520px; margin: 0 auto; line-height: 1.6; }
+
+    /* Features */
+    .m-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+    .m-feature { padding: 1.75rem; border-radius: 0.875rem; border: 1px solid var(--bg-glass-border); background: var(--bg-glass); transition: all 0.3s cubic-bezier(0.16,1,0.3,1); }
+    .m-feature:hover { border-color: var(--bg-glass-border-hover); transform: translateY(-3px); box-shadow: 0 16px 48px var(--card-glow); }
+    .m-feature.featured { border-color: rgba(59,130,246,0.15); background: var(--bg-elevated); }
+    .m-feature-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--feature-icon-bg); display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; }
+    .m-feature-icon svg { width: 20px; height: 20px; color: var(--feature-icon-color); }
+    .m-feature h3 { font-size: 0.9375rem; font-weight: 700; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
+    .m-feature p { font-size: 0.8125rem; line-height: 1.65; color: var(--text-tertiary); margin: 0; }
+
+    /* Testimonials */
+    .m-testimonials { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+    .m-testimonial { padding: 1.75rem; border-radius: 0.875rem; border: 1px solid var(--bg-glass-border); background: var(--bg-glass); }
+    .m-testimonial-stars { display: flex; gap: 2px; margin-bottom: 1rem; }
+    .m-testimonial-stars svg { width: 14px; height: 14px; color: #f59e0b; fill: #f59e0b; }
+    .m-testimonial-quote { font-size: 0.875rem; line-height: 1.7; color: var(--text-secondary); margin-bottom: 1.5rem; font-style: italic; }
+    .m-testimonial-footer { display: flex; align-items: center; gap: 0.75rem; }
+    .m-testimonial-avatar { width: 36px; height: 36px; border-radius: 9999px; background: var(--avatar-bg); color: var(--avatar-text); display: flex; align-items: center; justify-content: center; font-size: 0.6875rem; font-weight: 700; flex-shrink: 0; }
+    .m-testimonial-name { font-size: 0.8125rem; font-weight: 650; color: var(--text-primary); }
+    .m-testimonial-role { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* Pricing */
+    .m-pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; align-items: start; }
+    .m-price-card { padding: 2rem 1.75rem; border-radius: 0.875rem; border: 1px solid var(--bg-glass-border); background: var(--bg-glass); transition: all 0.3s; }
+    .m-price-card.featured { border-color: rgba(59,130,246,0.2); background: var(--bg-elevated); box-shadow: 0 12px 48px var(--glow-blue), 0 0 0 1px rgba(59,130,246,0.1); position: relative; }
+    .m-price-card.featured .m-price-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); padding: 0.1875rem 0.75rem; border-radius: 9999px; font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: var(--btn-primary-bg); color: #fff; white-space: nowrap; }
+    .m-price-name { font-size: 0.9375rem; font-weight: 650; margin-bottom: 0.75rem; color: var(--text-secondary); }
+    .m-price-amount { display: flex; align-items: baseline; gap: 0.25rem; margin-bottom: 0.25rem; }
+    .m-price-amount span:first-child { font-size: 2.25rem; font-weight: 900; letter-spacing: -0.04em; color: var(--text-primary); }
+    .m-price-period { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--price-divider); }
+    .m-price-features { list-style: none; padding: 0; margin: 0 0 1.75rem; display: flex; flex-direction: column; gap: 0.625rem; }
+    .m-price-features li { font-size: 0.8125rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.625rem; }
+    .m-price-features li svg { width: 14px; height: 14px; color: var(--check-color); flex-shrink: 0; }
+    .m-price-cta { display: block; width: 100%; padding: 0.6875rem 1.25rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 650; text-align: center; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; }
+    .m-price-card.featured .m-price-cta { background: var(--btn-primary-bg); color: #fff; box-shadow: var(--btn-primary-shadow); }
+    .m-price-card.featured .m-price-cta:hover { background: var(--btn-primary-hover); box-shadow: var(--btn-primary-shadow-hover); transform: translateY(-1px); }
+    .m-price-card:not(.featured) .m-price-cta { background: var(--bg-subtle); color: var(--text-primary); border: 1px solid var(--bg-glass-border); }
+    .m-price-card:not(.featured) .m-price-cta:hover { background: var(--bg-subtle-hover); border-color: var(--bg-glass-border-hover); }
+
+    /* CTA */
+    .m-cta { position: relative; padding: 6rem 2rem; text-align: center; overflow: hidden; }
+    .m-cta-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 55% at 50% 50%, var(--hero-gradient-1), transparent 70%); }
+    .m-cta h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); font-weight: 800; letter-spacing: -0.025em; margin: 0 0 0.75rem; position: relative; line-height: 1.2; }
+    .m-cta p { font-size: 1rem; color: var(--text-tertiary); margin: 0 auto 2rem; max-width: 440px; line-height: 1.6; position: relative; }
+    .m-cta-note { font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; position: relative; }
+
+    /* Footer */
+    .m-footer { padding: 2.5rem 2rem; border-top: 1px solid var(--section-border); background: var(--footer-bg); }
+    .m-footer-inner { max-width: 1140px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+    .m-footer-left { display: flex; align-items: center; gap: 0.5rem; }
+    .m-footer-mark { width: 24px; height: 24px; border-radius: 6px; background: var(--btn-primary-bg); display: flex; align-items: center; justify-content: center; }
+    .m-footer-mark svg { width: 13px; height: 13px; color: #fff; }
+    .m-footer-copy { font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem; }
+    .m-footer-links { display: flex; gap: 1.5rem; }
+    .m-footer-links a { font-size: 0.75rem; color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+    .m-footer-links a:hover { color: var(--text-tertiary); }
+
+    /* Toast */
+    .m-toast-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200; display: flex; flex-direction: column-reverse; gap: 0.5rem; pointer-events: none; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .m-stats-inner, .m-features, .m-testimonials, .m-pricing { grid-template-columns: 1fr; }
+      .m-stats-inner { gap: 0; }
+      .m-stat:not(:last-child)::after { display: none; }
+      .m-nav-links, .m-nav-signin { display: none; }
+      .m-hero { padding: 8rem 1.5rem 3rem; }
+      .m-preview-grid { grid-template-columns: 1fr; }
+      .m-footer-inner { flex-direction: column; gap: 1rem; text-align: center; }
+      .m-trusted-logos { gap: 1.5rem; }
+    }
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .m-features, .m-testimonials, .m-pricing { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="m-nav">
+    <div class="m-nav-inner">
+      <a href="/marketing" class="m-logo">
+        <div class="m-logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </div>
+        <span class="m-logo-text">{{ companyName }}</span>
+      </a>
+      <div class="m-nav-links">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#testimonials">Reviews</a>
+        <a href="/">Live Demo</a>
+      </div>
+      <div class="m-nav-right">
+        <button class="m-theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+          <span class="knob"><svg id="themeIcon" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0z"/></svg></span>
+        </button>
+        <a href="#" class="m-nav-signin">Sign in</a>
+        <a href="/" class="m-nav-cta">Start Free Trial</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="m-hero">
+    <div class="m-hero-bg"></div>
+    <div class="m-hero-content fade-up">
+      <div class="m-hero-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        New: AI Photo Analysis
+      </div>
+      <h1>The modern platform for<br><span class="accent">collision estimating</span></h1>
+      <p class="m-hero-sub">Write faster, more accurate estimates. Stay compliant with every insurer. Track production from check-in to delivery. All in one place.</p>
+      <div class="m-hero-actions">
+        <a href="/" class="m-btn-primary">
+          Start Free Trial
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="/" class="m-btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          View Live Demo
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trusted by -->
+  <div class="m-trusted fade-up">
+    <div class="m-trusted-label">Integrated with leading carriers</div>
+    <div class="m-trusted-logos">
+      @foreach (trustedBy as brand)
+        <span>{{ brand }}</span>
+      @endforeach
+    </div>
+  </div>
+
+  <!-- Dashboard Preview -->
+  <div class="m-preview fade-up">
+    <div class="m-preview-window">
+      <div class="m-preview-bar">
+        <div class="m-preview-dot" style="background: #ef4444"></div>
+        <div class="m-preview-dot" style="background: #f59e0b"></div>
+        <div class="m-preview-dot" style="background: #22c55e"></div>
+        <div class="m-preview-url">app.autoestimatepro.com/dashboard</div>
+      </div>
+      <div class="m-preview-body">
+        <div class="m-preview-grid">
+          <div class="m-preview-stat">
+            <div class="m-preview-stat-label">Total Estimates</div>
+            <div class="m-preview-stat-val" style="color: var(--text-accent)">1,247</div>
+            <div class="m-preview-stat-bar" style="background: linear-gradient(90deg, #2563eb, #6366f1); width: 78%"></div>
+          </div>
+          <div class="m-preview-stat">
+            <div class="m-preview-stat-label">Revenue (MTD)</div>
+            <div class="m-preview-stat-val" style="color: var(--text-success)">$482,630</div>
+            <div class="m-preview-stat-bar" style="background: linear-gradient(90deg, #059669, #34d399); width: 62%"></div>
+          </div>
+          <div class="m-preview-stat">
+            <div class="m-preview-stat-label">Avg Cycle Time</div>
+            <div class="m-preview-stat-val" style="color: #8b5cf6">3.2 days</div>
+            <div class="m-preview-stat-bar" style="background: linear-gradient(90deg, #7c3aed, #a78bfa); width: 40%"></div>
+          </div>
+        </div>
+        <div class="m-preview-table">
+          <div class="m-preview-table-hdr">
+            <span>Estimate</span><span>Vehicle</span><span>Insurer</span><span>Status</span>
+          </div>
+          <div class="m-preview-table-row">
+            <span style="color: var(--text-accent); font-weight: 600">EST-4821</span>
+            <span>2024 Tesla Model Y</span>
+            <span>State Farm</span>
+            <span><span class="m-preview-badge" style="background: rgba(16,185,129,0.15); color: var(--text-success)">Approved</span></span>
+          </div>
+          <div class="m-preview-table-row">
+            <span style="color: var(--text-accent); font-weight: 600">EST-4820</span>
+            <span>2023 BMW X5</span>
+            <span>Progressive</span>
+            <span><span class="m-preview-badge" style="background: var(--badge-blue-bg); color: var(--badge-blue-text)">In Review</span></span>
+          </div>
+          <div class="m-preview-table-row">
+            <span style="color: var(--text-accent); font-weight: 600">EST-4819</span>
+            <span>2022 Honda Civic</span>
+            <span>GEICO</span>
+            <span><span class="m-preview-badge" style="background: rgba(245,158,11,0.12); color: #d97706">Supplement</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <section class="m-stats">
+    <div class="m-stats-inner">
+      @foreach (stats as stat)
+        <div class="m-stat fade-up">
+          <div class="m-stat-value">{{ stat.value }}</div>
+          <div class="m-stat-label">{{ stat.label }}</div>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="m-section m-section-alt">
+    <div class="m-section-inner">
+      <div class="m-section-hdr fade-up">
+        <h2>Everything your shop needs.<br>Nothing it doesn't.</h2>
+        <p>Replace fragmented tools with one integrated platform built specifically for collision repair.</p>
+      </div>
+      <div class="m-features">
+        @foreach (features as feature)
+          <div class="m-feature{{ feature.highlight ? ' featured' : '' }} fade-up">
+            <div class="m-feature-icon">
+              @if (feature.id === 'ai')
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22"/><path d="M8 6a4 4 0 0 1 8 0"/><path d="M17 12.5c1.77.54 3 2.2 3 4.15 0 2.42-1.96 4.38-4.38 4.38H8.38C5.96 21.03 4 19.07 4 16.65c0-1.95 1.23-3.61 3-4.15"/></svg>
+              @endif
+              @if (feature.id === 'production')
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+              @endif
+              @if (feature.id === 'compliance')
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+              @endif
+              @if (feature.id === 'parts')
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+              @endif
+              @if (feature.id === 'reports')
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+              @endif
+              @if (feature.id === 'crm')
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              @endif
+            </div>
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.desc }}</p>
+          </div>
+        @endforeach
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section id="testimonials" class="m-section">
+    <div class="m-section-inner">
+      <div class="m-section-hdr fade-up">
+        <h2>Trusted by collision professionals</h2>
+        <p>Hear from shop owners and estimators who made the switch.</p>
+      </div>
+      <div class="m-testimonials">
+        @foreach (testimonials as t)
+          <div class="m-testimonial fade-up">
+            <div class="m-testimonial-stars">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div class="m-testimonial-quote">"{{ t.quote }}"</div>
+            <div class="m-testimonial-footer">
+              <div class="m-testimonial-avatar">{{ t.avatar }}</div>
+              <div>
+                <div class="m-testimonial-name">{{ t.name }}</div>
+                <div class="m-testimonial-role">{{ t.role }}</div>
+              </div>
+            </div>
+          </div>
+        @endforeach
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="m-section m-section-alt">
+    <div class="m-section-inner">
+      <div class="m-section-hdr fade-up">
+        <h2>Simple, transparent pricing</h2>
+        <p>Flat monthly rate per location. No per-seat fees. No surprises.</p>
+      </div>
+      <div class="m-pricing">
+        @foreach (plans as plan)
+          <div class="m-price-card{{ plan.highlight ? ' featured' : '' }} fade-up">
+            @if (plan.highlight)
+              <div class="m-price-badge">Most Popular</div>
+            @endif
+            <div class="m-price-name">{{ plan.name }}</div>
+            <div class="m-price-amount">
+              <span>{{ plan.price }}</span>
+            </div>
+            <div class="m-price-period">{{ plan.period }}</div>
+            <ul class="m-price-features">
+              @foreach (plan.features as feat)
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  {{ feat }}
+                </li>
+              @endforeach
+            </ul>
+            <button class="m-price-cta" onclick="showToast('Starting your {{ plan.name }} trial...', 'success')">{{ plan.cta }}</button>
+          </div>
+        @endforeach
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="m-cta">
+    <div class="m-cta-bg"></div>
+    <div class="fade-up" style="position: relative">
+      <h2>Ready to modernize your shop?</h2>
+      <p>Join 2,400+ collision repair professionals who chose a better way to estimate.</p>
+      <div class="m-hero-actions">
+        <a href="/" class="m-btn-primary">
+          Start Free Trial
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#pricing" class="m-btn-ghost">View Pricing</a>
+      </div>
+      <div class="m-cta-note">14-day free trial. No credit card required.</div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="m-footer">
+    <div class="m-footer-inner">
+      <div class="m-footer-left">
+        <div class="m-footer-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </div>
+        <span class="m-footer-copy">{{ companyName }} &copy; 2026</span>
+      </div>
+      <div class="m-footer-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Support</a>
+        <a href="#">API</a>
+        <a href="#">Status</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast container -->
+  <div id="toastWrap" class="m-toast-wrap"></div>
+
+<script client>
+  function toggleTheme() {
+    var html = document.documentElement
+    var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+    html.setAttribute('data-theme', next)
+    localStorage.setItem('stx-theme', next)
+    updateToggleIcon(next)
+  }
+
+  function updateToggleIcon(theme) {
+    var icon = document.getElementById('themeIcon')
+    if (!icon) return
+    if (theme === 'dark') {
+      icon.innerHTML = '<path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>'
+    } else {
+      icon.innerHTML = '<path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0z"/>'
+    }
+  }
+  updateToggleIcon(document.documentElement.getAttribute('data-theme') || 'dark')
+
+  function showToast(msg, type) {
+    var wrap = document.getElementById('toastWrap')
+    var colors = { success: 'var(--text-success)', info: 'var(--text-accent)' }
+    var bgColors = { success: 'rgba(16,185,129,0.08)', info: 'rgba(59,130,246,0.08)' }
+    var borderColors = { success: 'rgba(16,185,129,0.2)', info: 'rgba(59,130,246,0.2)' }
+    var t = document.createElement('div')
+    t.style.cssText = 'pointer-events:auto;padding:0.625rem 1.125rem;border-radius:0.5rem;font-size:0.8125rem;font-weight:500;display:flex;align-items:center;gap:0.625rem;border:1px solid ' + (borderColors[type] || borderColors.info) + ';background:' + (bgColors[type] || bgColors.info) + ';color:' + (colors[type] || colors.info) + ';box-shadow:0 8px 32px rgba(0,0,0,0.12);animation:toastIn 0.3s cubic-bezier(0.16,1,0.3,1)'
+    t.textContent = msg
+    wrap.appendChild(t)
+    setTimeout(function() { t.style.opacity = '0'; t.style.transform = 'translateY(8px)'; t.style.transition = 'all 0.25s'; }, 3000)
+    setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t) }, 3300)
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible')
+      }
+    })
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' })
+
+  document.querySelectorAll('.fade-up').forEach(function(el) {
+    observer.observe(el)
+  })
+
+  document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      var target = document.querySelector(this.getAttribute('href'))
+      if (target) {
+        e.preventDefault()
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    })
+  })
+</script>
+
+</body>
+</html>

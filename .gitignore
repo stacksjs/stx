@@ -55,3 +55,5 @@ packages/components/test/visual/__snapshots__/
 /examples/unified-chat/.stx
 /packages/stx/test/cli/temp-cli
 /packages/stx/test/out
+/pantry
+/packages/stx/.stx
