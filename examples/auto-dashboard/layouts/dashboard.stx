@@ -314,120 +314,126 @@
   </nav>
 
   <script client>
-    // ── Reactive State (STX Signals) ──
-    var notifOpen = state(false)
-    var notifCount = state(5)
-    var slideOpen = state(false)
-    var slideContent = state('')
+    // Layout shell — runs once, persists across SPA navigations
+    if (!window.__stxDashboardInit) {
+      window.__stxDashboardInit = true;
 
-    // Notification dropdown effect
-    effect(function() {
-      var dd = document.getElementById('notifDropdown')
-      if (dd) dd.style.display = notifOpen() ? 'block' : 'none'
-    })
+      // ── Reactive State (STX Signals) ──
+      window._notifOpen = state(false)
+      window._notifCount = state(5)
+      window._slideOpen = state(false)
+      window._slideContent = state('')
 
-    // Notification badge effect
-    effect(function() {
-      var badge = document.getElementById('notifBadge')
-      if (badge) badge.style.display = notifCount() > 0 ? '' : 'none'
-    })
+      // Notification dropdown effect
+      effect(function() {
+        var dd = document.getElementById('notifDropdown')
+        if (dd) dd.style.display = window._notifOpen() ? 'block' : 'none'
+      })
 
-    // Slide-over effect
-    effect(function() {
-      var backdrop = document.getElementById('slideOverBackdrop')
-      var panel = document.getElementById('slideOverPanel')
-      if (!backdrop || !panel) return
-      if (slideOpen()) {
-        panel.innerHTML = slideContent()
-        backdrop.classList.add('active')
-        panel.classList.add('active')
+      // Notification badge effect
+      effect(function() {
+        var badge = document.getElementById('notifBadge')
+        if (badge) badge.style.display = window._notifCount() > 0 ? '' : 'none'
+      })
+
+      // Slide-over effect
+      effect(function() {
+        var backdrop = document.getElementById('slideOverBackdrop')
+        var panel = document.getElementById('slideOverPanel')
+        if (!backdrop || !panel) return
+        if (window._slideOpen()) {
+          panel.innerHTML = window._slideContent()
+          backdrop.classList.add('active')
+          panel.classList.add('active')
+          document.body.style.overflow = 'hidden'
+        } else {
+          backdrop.classList.remove('active')
+          panel.classList.remove('active')
+          document.body.style.overflow = ''
+        }
+      })
+
+      // ── Theme ──
+      window.toggleTheme = function() {
+        var html = document.documentElement
+        var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+        html.setAttribute('data-theme', next)
+        localStorage.setItem('stx-theme', next)
+        window.updateToggleIcons(next)
+      }
+      window.updateToggleIcons = function(theme) {
+        var sun = document.querySelector('.sun-icon')
+        var moon = document.querySelector('.moon-icon')
+        if (sun && moon) { sun.style.display = theme === 'light' ? 'block' : 'none'; moon.style.display = theme === 'dark' ? 'block' : 'none'; }
+      }
+      window.updateToggleIcons(document.documentElement.getAttribute('data-theme') || 'dark')
+
+      // ── Slide-over (signal-based) ──
+      window.openSlideOver = function(html) {
+        batch(function() {
+          window._slideContent.set(html)
+          window._slideOpen.set(true)
+        })
+      }
+      window.closeSlideOver = function() {
+        window._slideOpen.set(false)
+      }
+
+      // ── Toast ──
+      window.showToast = function(msg, type) {
+        type = type || 'info'
+        var wrap = document.getElementById('toastWrap')
+        if (!wrap) return
+        var t = document.createElement('div')
+        t.className = 'toast toast-' + type
+        t.innerHTML = msg
+        wrap.appendChild(t)
+        setTimeout(function() { t.style.animation = 'toastSlideOut 0.3s forwards'; setTimeout(function() { t.remove() }, 300) }, 3500)
+      }
+
+      // ── Mobile Menu ──
+      window.openMobileMenu = function() {
+        document.getElementById('mobileBackdrop').classList.add('active')
+        document.getElementById('mobileNav').classList.add('active')
         document.body.style.overflow = 'hidden'
-      } else {
-        backdrop.classList.remove('active')
-        panel.classList.remove('active')
+      }
+      window.closeMobileMenu = function() {
+        document.getElementById('mobileBackdrop').classList.remove('active')
+        document.getElementById('mobileNav').classList.remove('active')
         document.body.style.overflow = ''
       }
-    })
 
-    // ── Theme ──
-    function toggleTheme() {
-      var html = document.documentElement
-      var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
-      html.setAttribute('data-theme', next)
-      localStorage.setItem('stx-theme', next)
-      updateToggleIcons(next)
-    }
-    function updateToggleIcons(theme) {
-      var sun = document.querySelector('.sun-icon')
-      var moon = document.querySelector('.moon-icon')
-      if (sun && moon) { sun.style.display = theme === 'light' ? 'block' : 'none'; moon.style.display = theme === 'dark' ? 'block' : 'none'; }
-    }
-    updateToggleIcons(document.documentElement.getAttribute('data-theme') || 'dark')
+      // ── Notifications (signal-based) ──
+      window.toggleNotifications = function() {
+        window._notifOpen.update(function(v) { return !v })
+      }
+      // Close on outside click
+      document.addEventListener('click', function(e) {
+        if (window._notifOpen() && !e.target.closest('#notifDropdown') && !e.target.closest('[onclick*="toggleNotifications"]')) {
+          window._notifOpen.set(false)
+        }
+      })
+      window.clearNotifications = function() {
+        window._notifCount.set(0)
+        window.showToast('All notifications marked as read', 'success')
+        var dots = document.querySelectorAll('#notifDropdown .w-2.h-2')
+        dots.forEach(function(d) { d.style.background = 'var(--bar-track)' })
+      }
 
-    // ── Slide-over (signal-based) ──
-    function openSlideOver(html) {
-      batch(function() {
-        slideContent.set(html)
-        slideOpen.set(true)
+      // ── Shop Switcher ──
+      window.switchShop = function(el) {
+        window.showToast('Switched to ' + el.value, 'success')
+      }
+
+      // ── Keyboard shortcuts ──
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          if (window._slideOpen()) window.closeSlideOver()
+          window.closeMobileMenu()
+          window._notifOpen.set(false)
+        }
       })
     }
-    function closeSlideOver() {
-      slideOpen.set(false)
-    }
-
-    // ── Toast ──
-    function showToast(msg, type) {
-      type = type || 'info'
-      var wrap = document.getElementById('toastWrap')
-      var t = document.createElement('div')
-      t.className = 'toast toast-' + type
-      t.innerHTML = msg
-      wrap.appendChild(t)
-      setTimeout(function() { t.style.animation = 'toastSlideOut 0.3s forwards'; setTimeout(function() { t.remove() }, 300) }, 3500)
-    }
-
-    // ── Mobile Menu ──
-    function openMobileMenu() {
-      document.getElementById('mobileBackdrop').classList.add('active')
-      document.getElementById('mobileNav').classList.add('active')
-      document.body.style.overflow = 'hidden'
-    }
-    function closeMobileMenu() {
-      document.getElementById('mobileBackdrop').classList.remove('active')
-      document.getElementById('mobileNav').classList.remove('active')
-      document.body.style.overflow = ''
-    }
-
-    // ── Notifications (signal-based) ──
-    function toggleNotifications() {
-      notifOpen.update(function(v) { return !v })
-    }
-    // Close on outside click
-    document.addEventListener('click', function(e) {
-      if (notifOpen() && !e.target.closest('#notifDropdown') && !e.target.closest('[onclick*="toggleNotifications"]')) {
-        notifOpen.set(false)
-      }
-    })
-    function clearNotifications() {
-      notifCount.set(0)
-      showToast('All notifications marked as read', 'success')
-      var dots = document.querySelectorAll('#notifDropdown .w-2.h-2')
-      dots.forEach(function(d) { d.style.background = 'var(--bar-track)' })
-    }
-
-    // ── Shop Switcher ──
-    function switchShop(el) {
-      showToast('Switched to ' + el.value, 'success')
-    }
-
-    // ── Keyboard shortcuts ──
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        if (slideOpen()) closeSlideOver()
-        closeMobileMenu()
-        notifOpen.set(false)
-      }
-    })
   </script>
 </body>
 </html>

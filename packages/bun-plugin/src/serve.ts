@@ -202,14 +202,30 @@ export async function serve(options: ServeOptions): Promise<void> {
     const path = await import('node:path')
     const content = await Bun.file(filePath).text()
 
-    // Extract server-side script specifically (marked with 'server' attribute)
-    const serverScriptMatch = content.match(/<script\s+server\b[^>]*>([\s\S]*?)<\/script>/i)
-    const scriptContent = serverScriptMatch ? serverScriptMatch[1] : ''
+    // Extract all script tags and categorize them as server or client
+    const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+    const clientScripts: string[] = []
+    const serverScripts: string[] = []
+    let scriptMatch: RegExpExecArray | null
 
-    // Remove only the server script from template content
-    const templateContent = serverScriptMatch
-      ? content.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>/gi, '')
-      : content
+    while ((scriptMatch = scriptRegex.exec(content)) !== null) {
+      const attrs = scriptMatch[1]
+      const scriptBody = scriptMatch[2]
+      const fullScript = scriptMatch[0]
+
+      // Client scripts have 'client', 'type="module"', or 'src=' attributes
+      const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
+
+      if (isClientScript) {
+        clientScripts.push(fullScript)
+      }
+      else {
+        serverScripts.push(scriptBody)
+      }
+    }
+
+    // Remove all script tags from template content (server scripts extracted, client scripts re-injected later)
+    let templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
     const context: Record<string, any> = {
       __filename: filePath,
@@ -217,7 +233,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
 
     const { processDirectives, extractVariables, defaultConfig, generateSpaShell } = await import('@stacksjs/stx')
-    await extractVariables(scriptContent, context, filePath)
+    for (const scriptBody of serverScripts) {
+      await extractVariables(scriptBody, context, filePath)
+    }
 
     // Merge custom options with default config
     const config = {
@@ -258,6 +276,17 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
     else {
       output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
+    }
+
+    // Re-inject client scripts before </body>
+    if (clientScripts.length > 0) {
+      const scriptsHtml = clientScripts.join('\n')
+      if (output.includes('</body>')) {
+        output = output.replace('</body>', `${scriptsHtml}\n</body>`)
+      }
+      else {
+        output += `\n${scriptsHtml}`
+      }
     }
 
     // Generate and inject Crosswind CSS
@@ -447,13 +476,29 @@ export async function serve(options: ServeOptions): Promise<void> {
     const path = await import('node:path')
     const content = await Bun.file(filePath).text()
 
-    // Extract server-side script specifically (marked with 'server' attribute)
-    const serverScriptMatch = content.match(/<script\s+server\b[^>]*>([\s\S]*?)<\/script>/i)
-    const scriptContent = serverScriptMatch ? serverScriptMatch[1] : ''
-    // Remove only the server script from template content
-    const templateContent = serverScriptMatch
-      ? content.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>/gi, '')
-      : content
+    // Extract all script tags and categorize them as server or client
+    const dynScriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+    const dynClientScripts: string[] = []
+    const dynServerScripts: string[] = []
+    let dynScriptMatch: RegExpExecArray | null
+
+    while ((dynScriptMatch = dynScriptRegex.exec(content)) !== null) {
+      const attrs = dynScriptMatch[1]
+      const scriptBody = dynScriptMatch[2]
+      const fullScript = dynScriptMatch[0]
+
+      const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
+
+      if (isClientScript) {
+        dynClientScripts.push(fullScript)
+      }
+      else {
+        dynServerScripts.push(scriptBody)
+      }
+    }
+
+    // Remove all script tags from template content
+    const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
     // Build context with dynamic params
     const context: Record<string, any> = {
@@ -468,7 +513,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
 
     const { processDirectives, extractVariables, defaultConfig } = await import('@stacksjs/stx')
-    await extractVariables(scriptContent, context, filePath)
+    for (const scriptBody of dynServerScripts) {
+      await extractVariables(scriptBody, context, filePath)
+    }
 
     const config = {
       ...defaultConfig,
@@ -482,6 +529,17 @@ export async function serve(options: ServeOptions): Promise<void> {
     output = await processDirectives(output, context, filePath, config, dependencies)
 
     output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
+
+    // Re-inject client scripts before </body>
+    if (dynClientScripts.length > 0) {
+      const scriptsHtml = dynClientScripts.join('\n')
+      if (output.includes('</body>')) {
+        output = output.replace('</body>', `${scriptsHtml}\n</body>`)
+      }
+      else {
+        output += `\n${scriptsHtml}`
+      }
+    }
 
     const crosswindCSS = await generateCrosswindCSS(output)
     if (crosswindCSS) {

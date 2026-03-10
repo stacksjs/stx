@@ -2895,15 +2895,19 @@ export function generateSignalsRuntimeDev(): string {
     var style = document.createElement('style');
     style.id = 'stx-view-transitions';
     style.textContent = [
-      '::view-transition-old(root) { animation: stx-fade-out 0.15s ease-in; }',
-      '::view-transition-new(root) { animation: stx-fade-in 0.2s ease-out; }',
-      '@keyframes stx-fade-out { to { opacity: 0; } }',
-      '@keyframes stx-fade-in { from { opacity: 0; } }',
+      // Disable root-level view transition (we only transition content)
+      '::view-transition-group(root) { animation: none; }',
+      '::view-transition-old(root) { animation: none; }',
+      '::view-transition-new(root) { animation: none; }',
+      // Content area fade transition
       '#app-content, [data-stx-content] { view-transition-name: stx-content; }',
-      '::view-transition-old(stx-content) { animation: stx-slide-out 0.2s ease-in; }',
-      '::view-transition-new(stx-content) { animation: stx-slide-in 0.25s ease-out; }',
-      '@keyframes stx-slide-out { to { opacity: 0; transform: translateY(-8px); } }',
-      '@keyframes stx-slide-in { from { opacity: 0; transform: translateY(8px); } }',
+      '::view-transition-old(stx-content) { animation: stx-fade-out 0.15s ease-out both; }',
+      '::view-transition-new(stx-content) { animation: stx-fade-in 0.15s ease-in 0.1s both; }',
+      '@keyframes stx-fade-out { from { opacity: 1; } to { opacity: 0; } }',
+      '@keyframes stx-fade-in { from { opacity: 0; } to { opacity: 1; } }',
+      // Prevent background flash in dark mode during transitions
+      '::view-transition { background: transparent; }',
+      '::view-transition-group(stx-content) { background: inherit; overflow: hidden; }',
     ].join('\\n');
     (document.head || document.documentElement).appendChild(style);
   })();
@@ -2954,15 +2958,62 @@ export function generateSignalsRuntimeDev(): string {
       }
 
       function doSwap() {
+        // ── Swap <head> styles ──
+        // Inject new styles FIRST, then remove old ones to prevent unstyled flash.
+        var keepIds = { 'stx-view-transitions': 1 };
+        var curStyles = document.querySelectorAll('head style');
+        var newStyles = doc.querySelectorAll('head style');
+
+        // Inject new styles before removing old ones
+        var newArr = [];
+        newStyles.forEach(function(s) {
+          if (!keepIds[s.id]) {
+            var ns = document.createElement('style');
+            ns.textContent = s.textContent;
+            ns.setAttribute('data-stx-incoming', '');
+            if (s.getAttribute('data-crosswind')) ns.setAttribute('data-crosswind', s.getAttribute('data-crosswind'));
+            document.head.appendChild(ns);
+            newArr.push(ns);
+          }
+        });
+
+        // Now remove old styles (except view-transitions and the ones we just added)
+        curStyles.forEach(function(s) {
+          if (!keepIds[s.id]) s.remove();
+        });
+
+        // Clean up the incoming marker
+        newArr.forEach(function(s) { s.removeAttribute('data-stx-incoming'); });
+
+        // ── Swap main content ──
         currentContent.innerHTML = newContent.innerHTML;
 
-        // Re-execute page scripts (skip the runtime itself)
-        doc.querySelectorAll('script[data-stx-scoped]').forEach(function(s) {
-          if (s.textContent.indexOf('let activeEffect') !== -1) return;
-          if (s.textContent.indexOf('initSPARouter') !== -1) return;
+        // ── Cleanup & re-execute scripts ──
+        // Remove previously injected page scripts
+        document.querySelectorAll('script[data-stx-page]').forEach(function(s) { s.remove(); });
+
+        // Collect all scripts from the new page that need re-execution
+        var scripts = [];
+        doc.querySelectorAll('script').forEach(function(s) {
+          var text = s.textContent || '';
+          // Skip the signals runtime
+          if (text.indexOf('let activeEffect') !== -1) return;
+          // Skip the router
+          if (text.indexOf('initSPARouter') !== -1) return;
+          // Skip layout shell scripts (they have their own init guard)
+          if (text.indexOf('__stxDashboardInit') !== -1 || text.indexOf('__stxLayoutInit') !== -1) return;
+          // Skip external scripts
+          if (s.hasAttribute('src')) return;
+          // Skip empty scripts
+          if (!text.trim()) return;
+          scripts.push(text);
+        });
+
+        // Execute collected scripts
+        scripts.forEach(function(text) {
           var ns = document.createElement('script');
-          ns.textContent = s.textContent;
-          ns.setAttribute('data-stx-scoped', '');
+          ns.textContent = text;
+          ns.setAttribute('data-stx-page', '');
           document.body.appendChild(ns);
         });
 
@@ -2984,7 +3035,14 @@ export function generateSignalsRuntimeDev(): string {
       if (viewTransitions && document.startViewTransition) {
         document.startViewTransition(doSwap);
       } else {
-        doSwap();
+        // Fallback fade for browsers without View Transitions API
+        currentContent.style.transition = 'opacity 0.12s ease-out';
+        currentContent.style.opacity = '0';
+        setTimeout(function() {
+          doSwap();
+          currentContent.style.opacity = '1';
+          setTimeout(function() { currentContent.style.transition = ''; }, 150);
+        }, 120);
       }
     }
 
