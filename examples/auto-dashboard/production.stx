@@ -3,6 +3,7 @@ const companyName = 'AutoEstimate Pro'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Production'
+const meta = { title: 'Production — AutoEstimate Pro', description: 'Track vehicle repair production workflow and kanban board' }
 
 const navLinks = [
   { label: 'Dashboard', href: '/' },
@@ -84,7 +85,8 @@ function stageIndex(stageId) {
 
 @extends('layouts/dashboard.stx')
 
-@section('styles')
+
+@push('styles')
     .glow-red { box-shadow: 0 0 20px rgba(239,68,68,0.15); }
     .bar-violet { background: var(--bar-violet); }
     ::-webkit-scrollbar { height: 6px; }
@@ -118,7 +120,7 @@ function stageIndex(stageId) {
     .list-view-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--row-border); }
     .list-view-table tr:hover td { background: var(--row-hover); }
     .list-view-table tr { cursor: pointer; }
-@endsection
+@endpush
 
 @section('content')
       {{-- Page Header --}}
@@ -138,13 +140,8 @@ function stageIndex(stageId) {
       {{-- Summary Stats --}}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         @foreach (summaryStats as stat)
-          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ stat.color }} fade-in">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ stat.label }}</span>
-              <span class="text-lg">{{ stat.icon }}</span>
-            </div>
-            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ stat.value }}</div>
-          </div>
+          @component('KpiCard', { label: stat.label, value: stat.value, icon: stat.icon, color: stat.color })
+          @endcomponent
         @endforeach
       </div>
 

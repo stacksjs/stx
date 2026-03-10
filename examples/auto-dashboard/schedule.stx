@@ -3,6 +3,7 @@ const companyName = 'AutoEstimate Pro'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Schedule'
+const meta = { title: 'Schedule — AutoEstimate Pro', description: 'Technician scheduling and capacity management' }
 
 const navLinks = [
   { label: 'Dashboard', href: '/' },
@@ -95,7 +96,7 @@ const monthApptSamples = {
 
 @extends('layouts/dashboard.stx')
 
-@section('styles')
+@push('styles')
     {{-- Calendar-specific styles --}}
     .cal-grid { display: grid; grid-template-columns: 64px repeat(7, 1fr); border: 1px solid var(--bg-glass-border); border-radius: 0.75rem; overflow: hidden; }
     .cal-header-cell { padding: 0.75rem 0.5rem; text-align: center; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--bg-glass-border); background: var(--bg-subtle); }
@@ -150,7 +151,7 @@ const monthApptSamples = {
     .month-appt-item.type-follow { background: var(--badge-violet-bg); color: var(--badge-violet-text); }
     .month-appt-item.type-insurance { background: var(--badge-red-bg); color: var(--badge-red-text); }
     .month-more { font-size: 0.625rem; color: var(--text-muted); padding-top: 1px; }
-@endsection
+@endpush
 
 @section('content')
       {{-- Page Header --}}
@@ -175,13 +176,8 @@ const monthApptSamples = {
       {{-- Summary Stats --}}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         @foreach (summaryStats as stat)
-          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ stat.color }} fade-in">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ stat.label }}</span>
-              <span class="text-lg">{{ stat.icon }}</span>
-            </div>
-            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ stat.value }}</div>
-          </div>
+          @component('KpiCard', { label: stat.label, value: stat.value, icon: stat.icon, color: stat.color })
+          @endcomponent
         @endforeach
       </div>
 
@@ -305,15 +301,8 @@ const monthApptSamples = {
             <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Capacity Overview</h3>
             <div class="space-y-3">
               @foreach (capacityByDay as cap)
-                <div>
-                  <div class="flex items-center justify-between text-sm mb-1.5">
-                    <span style="color: var(--text-tertiary)">{{ cap.day }}</span>
-                    <span class="tabular-nums" style="color: var(--text-muted)">{{ cap.percent }}%</span>
-                  </div>
-                  <div class="h-2 rounded-full overflow-hidden" style="background: var(--bar-track)">
-                    <div class="h-full rounded-full bar-animate {{ cap.percent >= 80 ? 'bar-amber' : cap.percent >= 50 ? 'bar-blue' : cap.percent > 0 ? 'bar-emerald' : 'bar-slate' }}" style="width: {{ cap.percent }}%"></div>
-                  </div>
-                </div>
+                @component('ProgressBar', { label: cap.day, value: cap.percent, color: cap.percent >= 80 ? 'amber' : cap.percent >= 50 ? 'blue' : cap.percent > 0 ? 'emerald' : 'slate' })
+                @endcomponent
               @endforeach
             </div>
           </div>

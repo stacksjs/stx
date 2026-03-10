@@ -1,0 +1,9 @@
+<div class="px-4 py-3" style="border-bottom: 1px solid var(--border-main)">
+  <div class="flex items-start gap-3">
+    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-{{ color }})"></div>
+    <div>
+      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">{{ title }}</span> {{ message }}</p>
+      <p class="text-xs mt-0.5" style="color: var(--text-muted)">{{ time }}</p>
+    </div>
+  </div>
+</div>

@@ -3,6 +3,7 @@ const companyName = 'AutoEstimate Pro'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Insurers'
+const meta = { title: 'Insurers — AutoEstimate Pro', description: 'Insurance company partnerships and DRP management' }
 
 const navLinks = [
   { label: 'Dashboard', href: '/' },
@@ -49,7 +50,7 @@ function csiBarColor(csi) {
 
 @extends('layouts/dashboard.stx')
 
-@section('styles')
+@push('styles')
     {{-- Page-specific: insurer card hover --}}
     .insurer-card { transition: all 0.3s cubic-bezier(0.16,1,0.3,1); cursor: pointer; }
     .insurer-card:hover { transform: translateY(-3px) scale(1.015); }
@@ -74,7 +75,7 @@ function csiBarColor(csi) {
     .trend-up { color: var(--badge-emerald-text); }
     .trend-down { color: var(--badge-red-text); }
     .csi-bar-wrapper .bar-animate { animation-delay: 0.3s; }
-@endsection
+@endpush
 
 @section('content')
       {{-- Page Header --}}

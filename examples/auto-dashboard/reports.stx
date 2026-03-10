@@ -3,6 +3,7 @@ const companyName = 'AutoEstimate Pro'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Reports'
+const meta = { title: 'Reports — AutoEstimate Pro', description: 'Analytics, revenue trends, and performance reports' }
 
 const navLinks = [
   { label: 'Dashboard', href: '/' },
@@ -88,12 +89,12 @@ function formatBadgeClass(format) {
 
 @extends('layouts/dashboard.stx')
 
-@section('styles')
+@push('styles')
     .metric-card { cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
     .metric-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
     .metric-card:active { transform: translateY(0); }
     .spec-pill { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; margin: 0.25rem; }
-@endsection
+@endpush
 
 @section('content')
       {{-- Page Header --}}

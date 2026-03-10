@@ -3,6 +3,7 @@ const companyName = 'AutoEstimate Pro'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Dashboard'
+const meta = { title: 'Dashboard — AutoEstimate Pro', description: 'Overview of collision repair estimates, revenue, and key metrics' }
 
 const kpis = [
   { label: 'Total Estimates', value: '1,247', change: '+12.5%', trend: 'up', icon: '📋', color: 'blue', trendVsLastMonth: '↑ 12%' },
@@ -118,6 +119,7 @@ function scheduleTypeBadge(type) {
 
 @extends('layouts/dashboard.stx')
 
+
 @section('content')
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
@@ -160,26 +162,12 @@ function scheduleTypeBadge(type) {
       {{-- KPI Cards --}}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         @foreach (kpis as kpi)
-          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ kpi.color }} fade-in">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ kpi.label }}</span>
-              <span class="text-lg">{{ kpi.icon }}</span>
-            </div>
-            <div class="text-2xl font-bold tracking-tight mb-1" style="color: var(--text-primary)">{{ kpi.value }}</div>
-            <div class="flex items-center gap-1.5">
-              @if (kpi.trend === 'up')
-                <svg class="w-3.5 h-3.5" style="color: var(--text-success)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"/></svg>
-              @else
-                <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.5 4.5l15 15m0 0V8.25m0 11.25H8.25"/></svg>
-              @endif
+          @component('KpiCard', { label: kpi.label, value: kpi.value, icon: kpi.icon, color: kpi.color })
+            <div class="flex items-center gap-1.5 mt-1">
               <span class="text-xs font-medium" style="color: var(--text-success)">{{ kpi.change }}</span>
-              <span class="text-xs" style="color: var(--text-muted)">vs last month</span>
+              <span class="text-xs" style="color: var(--text-muted)">{{ kpi.trendVsLastMonth }}</span>
             </div>
-            @if (kpi.label === 'AI Savings')
-              <p class="text-[11px] mt-1.5" style="color: var(--text-muted)">Prevented via AI review this month</p>
-            @endif
-            <div class="mt-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold" style="background: var(--bg-subtle); color: var(--text-tertiary)">{{ kpi.trendVsLastMonth }} vs prior month</div>
-          </div>
+          @endcomponent
         @endforeach
       </div>
 

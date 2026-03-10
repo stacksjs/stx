@@ -1,0 +1,9 @@
+<div>
+  <div class="flex items-center justify-between text-sm mb-1.5">
+    <span style="color: var(--text-tertiary)">{{ label }}</span>
+    <span class="tabular-nums" style="color: var(--text-muted)">{{ value }}</span>
+  </div>
+  <div class="h-2 rounded-full overflow-hidden" style="background: var(--bar-track)">
+    <div class="bar-{{ color }} h-full rounded-full bar-animate" style="width: {{ percentage }}%"></div>
+  </div>
+</div>

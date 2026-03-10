@@ -3,6 +3,7 @@ const companyName = 'AutoEstimate Pro'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Customers'
+const meta = { title: 'Customers — AutoEstimate Pro', description: 'Customer relationship management and communication history' }
 
 const navLinks = [
   { label: 'Dashboard', href: '/' },
@@ -86,8 +87,7 @@ function starsHtml(rating) {
 
 @extends('layouts/dashboard.stx')
 
-@section('styles')
-    .empty-state { text-align: center; padding: 3rem 1.5rem; }
+@push('styles')
     .comm-type-sms { background: var(--badge-emerald-bg); color: var(--badge-emerald-text); }
     .comm-type-email { background: var(--badge-blue-bg); color: var(--badge-blue-text); }
     .toggle-switch { position: relative; width: 36px; height: 20px; border-radius: 9999px; cursor: pointer; border: none; padding: 0; transition: background 0.2s; }
@@ -96,7 +96,7 @@ function starsHtml(rating) {
     .toggle-switch .toggle-dot { position: absolute; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: white; transition: left 0.2s; }
     .toggle-switch.on .toggle-dot { left: 18px; }
     .toggle-switch.off .toggle-dot { left: 2px; }
-@endsection
+@endpush
 
 @section('content')
       {{-- Page Header --}}
@@ -116,13 +116,8 @@ function starsHtml(rating) {
       {{-- Summary Stats --}}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         @foreach (summaryStats as stat)
-          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ stat.color }} fade-in">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ stat.label }}</span>
-              <span class="text-lg">{{ stat.icon }}</span>
-            </div>
-            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ stat.value }}</div>
-          </div>
+          @component('KpiCard', { label: stat.label, value: stat.value, icon: stat.icon, color: stat.color })
+          @endcomponent
         @endforeach
       </div>
 

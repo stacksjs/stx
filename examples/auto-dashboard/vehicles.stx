@@ -3,6 +3,7 @@ const companyName = 'AutoEstimate Pro'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Vehicles'
+const meta = { title: 'Vehicles — AutoEstimate Pro', description: 'Vehicle database and repair history' }
 
 const navLinks = [
   { label: 'Dashboard', href: '/' },
@@ -65,9 +66,6 @@ function statusColor(status) {
 
 @extends('layouts/dashboard.stx')
 
-@section('styles')
-    .empty-state { text-align: center; padding: 3rem 1.5rem; }
-@endsection
 
 @section('content')
       {{-- Page Header --}}
@@ -126,13 +124,8 @@ function statusColor(status) {
       {{-- Summary Stats --}}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         @foreach (summaryStats as stat)
-          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ stat.color }} fade-in">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ stat.label }}</span>
-              <span class="text-lg">{{ stat.icon }}</span>
-            </div>
-            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ stat.value }}</div>
-          </div>
+          @component('KpiCard', { label: stat.label, value: stat.value, icon: stat.icon, color: stat.color })
+          @endcomponent
         @endforeach
       </div>
 
@@ -210,15 +203,8 @@ function statusColor(status) {
             <h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Top Makes</h3>
             <div class="space-y-3">
               @foreach (topMakes as make)
-                <div class="cursor-pointer" onclick="filterByMake('{{ make.name }}')">
-                  <div class="flex items-center justify-between text-sm mb-1.5">
-                    <span style="color: var(--text-tertiary)">{{ make.name }}</span>
-                    <span class="tabular-nums" style="color: var(--text-muted)">{{ make.count }}</span>
-                  </div>
-                  <div class="h-2 rounded-full overflow-hidden" style="background: var(--bar-track)">
-                    <div class="bar-blue h-full rounded-full bar-animate" style="width: {{ Math.round((make.count / 142) * 100) }}%"></div>
-                  </div>
-                </div>
+                @component('ProgressBar', { label: make.name, value: make.count, percentage: Math.round(make.count / 142 * 100), color: 'blue' })
+                @endcomponent
               @endforeach
             </div>
           </div>

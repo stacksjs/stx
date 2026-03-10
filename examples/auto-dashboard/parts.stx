@@ -3,6 +3,7 @@ const companyName = 'AutoEstimate Pro'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Parts'
+const meta = { title: 'Parts Search — AutoEstimate Pro', description: 'Search, compare, and source parts from connected suppliers' }
 
 const navLinks = [
   { label: 'Dashboard', href: '/' },
@@ -76,9 +77,7 @@ function orderStatusBadge(status) {
 
 @extends('layouts/dashboard.stx')
 
-@section('styles')
-    .empty-state { text-align: center; padding: 3rem 1.5rem; }
-
+@push('styles')
     {{-- Part card styles --}}
     .part-card { cursor: pointer; transition: all 0.2s ease; }
     .part-card:hover { transform: translateY(-2px); }
@@ -86,7 +85,7 @@ function orderStatusBadge(status) {
     .price-tag { font-size: 0.6875rem; padding: 0.25rem 0.5rem; border-radius: 0.375rem; }
     .star-filled { color: var(--badge-amber-text); }
     .star-empty { color: var(--text-muted); opacity: 0.3; }
-@endsection
+@endpush
 
 @section('content')
       {{-- Page Header --}}
@@ -100,13 +99,8 @@ function orderStatusBadge(status) {
       {{-- Summary Stats --}}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         @foreach (summaryStats as stat)
-          <div class="glass rounded-xl p-5 glass-card transition-all duration-300 glow-{{ stat.color }} fade-in">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-medium uppercase tracking-wider" style="color: var(--text-tertiary)">{{ stat.label }}</span>
-              <span class="text-lg">{{ stat.icon }}</span>
-            </div>
-            <div class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">{{ stat.value }}</div>
-          </div>
+          @component('KpiCard', { label: stat.label, value: stat.value, icon: stat.icon, color: stat.color })
+          @endcomponent
         @endforeach
       </div>
 
