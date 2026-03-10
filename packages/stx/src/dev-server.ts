@@ -1726,53 +1726,81 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
     }
   }
 
-  // Build a single page file
+  // Build a single page file by processing the template directly
+  // This matches the approach used by bun-plugin-stx/serve (which powers buddy dev)
+  // instead of using Bun.build() which has issues with HTML asset resolution
   const buildPage = async (route: Route): Promise<BuiltPage | null> => {
     try {
-      // Plugin to handle public asset paths and CSS files
-      const publicAssetsPlugin: BunPlugin = {
-        name: 'public-assets',
-        setup(build) {
-          // Handle absolute paths to public directories
-          build.onResolve({ filter: /^\/(images|fonts|assets|public|dist|js|css)\// }, (args) => {
-            return { path: args.path, external: true }
-          })
-          // Handle asset files (images, fonts, etc.) referenced with absolute paths
-          build.onResolve({ filter: /\.(png|jpe?g|gif|svg|webp|ico|woff2?|ttf|eot|otf|mp4|webm|ogg|mp3|wav|pdf)$/ }, (args) => {
-            return { path: args.path, external: true }
-          })
-          // Handle all CSS files - mark as external to prevent bundling
-          build.onResolve({ filter: /\.css$/ }, (args) => {
-            return { path: args.path, external: true }
-          })
-        },
+      const { processDirectives, extractVariables, defaultConfig, loadStxConfig, injectRouterScript } = await import('./')
+
+      // Load project stx.config.ts (e.g. partialsDir, componentsDir, layoutsDir)
+      const projectConfig = await loadStxConfig()
+
+      const content = await Bun.file(route.filePath).text()
+
+      // Extract script tags and categorize as server or client
+      const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+      const clientScripts: string[] = []
+      const serverScripts: string[] = []
+      let scriptMatch: RegExpExecArray | null
+
+      while ((scriptMatch = scriptRegex.exec(content)) !== null) {
+        const attrs = scriptMatch[1]
+        const scriptBody = scriptMatch[2]
+        const fullScript = scriptMatch[0]
+
+        const isClientScript = attrs.includes('client')
+          || attrs.includes('type="module"')
+          || attrs.includes('src=')
+          || /\b(?:document|window|addEventListener|querySelector|getElementById|fetch\(|localStorage|sessionStorage)\b/.test(scriptBody)
+
+        if (isClientScript) {
+          clientScripts.push(fullScript)
+        }
+        else {
+          serverScripts.push(scriptBody)
+        }
       }
 
-      const result = await Bun.build({
-        entrypoints: [route.filePath],
-        outdir: outputDir,
-        plugins: [publicAssetsPlugin, stxPlugin],
-        publicPath: '/',
-        define: {
-          'process.env.NODE_ENV': '"development"',
-        },
+      // Remove all script tags from template content
+      let templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+
+      // Create context and extract variables
+      const context: Record<string, any> = {
+        __filename: route.filePath,
+        __dirname: path.dirname(route.filePath),
+      }
+
+      for (const scriptBody of serverScripts) {
+        await extractVariables(scriptBody, context, route.filePath)
+      }
+
+      // Process template directives
+      const dependencies = new Set<string>()
+      let output = await processDirectives(templateContent, context, route.filePath, {
+        ...defaultConfig,
+        ...projectConfig,
         ...options.stxOptions,
-      })
+      }, dependencies)
 
-      if (!result.success) {
-        console.error(`${colors.red}Build failed for ${colors.bright}${route.pattern}${colors.reset}:`, result.logs)
-        return null
+      // Inject SPA router
+      output = injectRouterScript(output)
+
+      // Re-inject client scripts before </body>
+      if (clientScripts.length > 0) {
+        const scriptsHtml = clientScripts.join('\n')
+        const bodyIdx = output.lastIndexOf('</body>')
+        if (bodyIdx !== -1) {
+          output = output.slice(0, bodyIdx) + scriptsHtml + '\n</body>' + output.slice(bodyIdx + 7)
+        }
+        else {
+          output += `\n${scriptsHtml}`
+        }
       }
 
-      const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
-      if (!htmlOutput) {
-        console.error(`${colors.red}No HTML output for ${colors.bright}${route.pattern}${colors.reset}`)
-        return null
-      }
-
-      const content = await Bun.file(htmlOutput.path).text()
-      return { route, content }
-    } catch (error) {
+      return { route, content: output }
+    }
+    catch (error) {
       console.error(`${colors.red}Error building ${colors.bright}${route.pattern}${colors.reset}:`, error)
       return null
     }
