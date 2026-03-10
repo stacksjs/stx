@@ -138,10 +138,9 @@ test('plugin installs correctly', () => {
 
 ### Official Plugins
 
-- `@stacksjs/router` - Client-side routing
+- `stx-router` - Client-side routing
 - `@stacksjs/state` - State management
 - `@stacksjs/i18n` - Internationalization
-- `@stacksjs/auth` - Authentication
 
 ### Community Guidelines
 

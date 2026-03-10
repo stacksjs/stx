@@ -129,7 +129,7 @@ See `packages/benchmarks/js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the
 
 ### Results by Document Size
 
-| Benchmark | @stacksjs/markdown | markdown-it | marked | showdown |
+| Benchmark | stx markdown | markdown-it | marked | showdown |
 |-----------|-------------------|-------------|---------|----------|
 | **Small (< 1KB)** | 324B ops/sec | 112B ops/sec | 26B ops/sec | 14B ops/sec |
 | **Medium (~3KB)** | 34.7B ops/sec | 17.7B ops/sec | 2.8B ops/sec | 2.8B ops/sec |
@@ -206,21 +206,21 @@ See `packages/benchmarks/js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| **@stacksjs/markdown (Bun)** | 94.7B ops/sec | Baseline |
+| **stx markdown (Bun)** | 94.7B ops/sec | Baseline |
 | js-yaml | 62.5B ops/sec | 1.52x slower |
 
 ### Large YAML (500 objects, ~20KB)
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| **@stacksjs/markdown (Bun)** | 887.8M ops/sec | Baseline |
+| **stx markdown (Bun)** | 887.8M ops/sec | Baseline |
 | js-yaml | 566.3M ops/sec | 1.57x slower |
 
 ### YAML Stringify (500 objects)
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| **@stacksjs/markdown (Bun)** | 945.9M ops/sec | Baseline |
+| **stx markdown (Bun)** | 945.9M ops/sec | Baseline |
 | js-yaml | 349.6M ops/sec | 2.71x slower |
 
 ### Benefits
@@ -239,19 +239,19 @@ See `packages/benchmarks/js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
 | gray-matter | 2,188.3B ops/sec | Fastest |
-| **@stacksjs/markdown** | 217.5B ops/sec | 10.06x slower |
+| **stx markdown** | 217.5B ops/sec | 10.06x slower |
 
 ### Large Frontmatter (100+ fields)
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
 | gray-matter | 1,295.6B ops/sec | Fastest |
-| **@stacksjs/markdown** | 10.8B ops/sec | 119.48x slower |
+| **stx markdown** | 10.8B ops/sec | 119.48x slower |
 
 ### Notes
 
 - gray-matter is highly optimized for frontmatter-specific parsing
-- @stacksjs/markdown still processes 217 billion operations per second
+- stx markdown still processes 217 billion operations per second
 - For most use cases, this is more than sufficient
 - Trade-off: Unified API (markdown + frontmatter + YAML) vs. specialized performance
 

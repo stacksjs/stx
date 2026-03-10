@@ -414,7 +414,7 @@ interface Props {
 bun install @stacksjs/core@latest
 
 # Update optional packages
-bun install @stacksjs/store@latest @stacksjs/router@latest
+bun install @stacksjs/store@latest stx-router@latest
 ```
 
 2. Update Configuration

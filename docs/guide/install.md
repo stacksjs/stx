@@ -42,13 +42,10 @@ STX packages are modular. Install only what you need:
 stx
 
 ```sh
-# Markdown parser (2.89x faster than markdown-it)
-bun add @stacksjs/markdown
-
-# HTML sanitizestx1.7-72.4x faster than competitors)
+# HTML sanitizer (1.7-72.4x faster than competitors)
 bun add @stacksjs/sanitizer
 
-# Full testxate engine with Blade-like syntax
+# Full template engine with Blade-like syntax
 bun add bun-plugin-stx
 ```
 

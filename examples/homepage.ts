@@ -1067,7 +1067,7 @@ Event.listen('user.registered', (data) => {
     },
     'routing': {
       title: 'Routing',
-      code: `import { Router } from '@stacksjs/router'
+      code: `import { Router } from 'stx-router'
 
 Router.get('/', () => {
   return view('home')

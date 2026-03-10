@@ -1,8 +1,8 @@
 {
-  "name": "@stacksjs/router",
+  "name": "stx-router",
   "type": "module",
   "version": "0.2.6",
-  "description": "Hybrid server/client file-based router with typed params, nested layouts, and middleware for STX applications.",
+  "description": "File-based router for STX — .stx template discovery, nested layouts, typed route params, middleware, and client-side SPA navigation.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
   "homepage": "https://github.com/stacksjs/stx#readme",
@@ -18,6 +18,8 @@
     "file-based",
     "middleware",
     "typed-routes",
+    "nested-layouts",
+    "spa",
     "bun",
     "stx"
   ],

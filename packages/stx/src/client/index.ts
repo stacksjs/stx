@@ -7,5 +7,5 @@
 export * from './router'
 export * from './directive'
 
-// Re-export getRouterScript from @stacksjs/router
-export { getRouterScript } from '@stacksjs/router'
+// Re-export getRouterScript from stx-router
+export { getRouterScript } from 'stx-router'

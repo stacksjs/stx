@@ -170,7 +170,6 @@ This is **markdown** content.
 
 ```sh
 # Use individual packages
-bun add @stacksjs/markdown      # Fast markdown parser
 bun add @stacksjs/sanitizer     # Secure HTML sanitizer
 
 # Or use the full template engine

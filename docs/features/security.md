@@ -48,16 +48,25 @@ app.use(csp({
 
 ## Authentication & Authorization
 
-### Authentication Middleware
+### Authentication Directives
 
-```typescript
-import { auth } from '@stacksjs/auth'
+stx provides built-in authentication directives for template-level access control:
 
-// Route protection
-app.use('/dashboard', auth.requireAuth())
+```stx
+<!-- Show content only to authenticated users -->
+@auth
+  <p>Welcome back, {{ user.name }}!</p>
+@endauth
 
-// Role-based access
-app.use('/admin', auth.requireRole('admin'))
+<!-- Show content only to guests -->
+@guest
+  <a href="/login">Sign in</a>
+@endguest
+
+<!-- Role-based access -->
+@can('admin')
+  <a href="/admin">Admin Panel</a>
+@endcan
 ```
 
 ### Session Security
@@ -74,23 +83,6 @@ app.use(session({
   },
   rolling: true
 }))
-```
-
-### JWT Security
-
-```typescript
-import { jwt } from '@stacksjs/auth'
-
-// Secure JWT configuration
-const jwtConfig = {
-  algorithm: 'HS256',
-  expiresIn: '15m',
-  issuer: 'stx-app',
-  audience: 'stx-users'
-}
-
-// Token validation
-app.use(jwt.verify(jwtConfig))
 ```
 
 ## Input Validation & Sanitization

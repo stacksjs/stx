@@ -1,7 +1,7 @@
-// Re-export named route primitives from @stacksjs/router
-export { defineRoute, defineRoutes, resetRoutes, route, setAppUrl } from '@stacksjs/router'
+// Re-export named route primitives from stx-router
+export { defineRoute, defineRoutes, resetRoutes, route, setAppUrl } from 'stx-router'
 
-import { route } from '@stacksjs/router'
+import { route } from 'stx-router'
 import { safeEvaluateObject } from './safe-evaluator'
 
 /**

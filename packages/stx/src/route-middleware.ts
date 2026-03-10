@@ -1,4 +1,4 @@
-// Re-export from @stacksjs/router
+// Re-export from stx-router
 export {
   abortNavigation,
   clearMiddleware,
@@ -15,7 +15,7 @@ export {
   navigateTo,
   registerMiddleware,
   runMiddleware,
-} from '@stacksjs/router'
+} from 'stx-router'
 
 export type {
   AbortNavigationResult,
@@ -33,4 +33,4 @@ export type {
   RouteMiddlewareDefinition,
   RouteMiddlewareHandler,
   StorageManager,
-} from '@stacksjs/router'
+} from 'stx-router'
