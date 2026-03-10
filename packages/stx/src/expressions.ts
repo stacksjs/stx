@@ -299,7 +299,8 @@ export const defaultFilters: Record<string, FilterFunction> = {
       return ''
     // Escape special regex characters to treat search as a literal string
     const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    return String(value).replace(new RegExp(escapedSearch, 'g'), replacement)
+    // Use callback to avoid $-interpretation in replacement string
+    return String(value).replace(new RegExp(escapedSearch, 'g'), () => replacement)
   },
 
   // Strip HTML tags

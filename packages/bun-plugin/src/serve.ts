@@ -284,8 +284,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     // Re-inject client scripts before </body>
     if (clientScripts.length > 0) {
       const scriptsHtml = clientScripts.join('\n')
-      if (output.includes('</body>')) {
-        output = output.replace('</body>', `${scriptsHtml}\n</body>`)
+      const bodyIdx = output.lastIndexOf('</body>')
+      if (bodyIdx !== -1) {
+        output = output.slice(0, bodyIdx) + scriptsHtml + '\n</body>' + output.slice(bodyIdx + 7)
       }
       else {
         output += `\n${scriptsHtml}`
@@ -539,8 +540,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     // Re-inject client scripts before </body>
     if (dynClientScripts.length > 0) {
       const scriptsHtml = dynClientScripts.join('\n')
-      if (output.includes('</body>')) {
-        output = output.replace('</body>', `${scriptsHtml}\n</body>`)
+      const bodyIdx = output.lastIndexOf('</body>')
+      if (bodyIdx !== -1) {
+        output = output.slice(0, bodyIdx) + scriptsHtml + '\n</body>' + output.slice(bodyIdx + 7)
       }
       else {
         output += `\n${scriptsHtml}`

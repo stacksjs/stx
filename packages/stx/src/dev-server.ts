@@ -467,7 +467,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         return false
       }
 
-      // Read the file content
+      // Read the file content (router injected by plugin)
       const html = await Bun.file(htmlOutput.path).text()
 
       htmlContent = html
@@ -1172,7 +1172,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
             continue
           }
 
-          // Read the file content
+          // Read the file content (router injected by plugin)
           const htmlContent = await Bun.file(htmlOutput.path).text()
 
           // Generate route path based on file location relative to common directory
@@ -1318,29 +1318,10 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
       // If we found a matching route, serve its content with Crosswind CSS injection
       if (routeMatched) {
-        const isRouterRequest = request.headers.get('X-STX-Router') === 'true'
-
         // Inject Crosswind CSS for utility classes (async)
+        // Always return full HTML — the SPA router extracts <main> content
+        // and swaps <head> styles client-side via DOMParser
         return injectCrosswindCSS(routeMatched.content).then(content => {
-          // For SPA router requests, return only the <main> content to reduce bandwidth
-          if (isRouterRequest) {
-            const mainMatch = content.match(/<main[^>]*>([\s\S]*?)<\/main>/i)
-            if (mainMatch) {
-              const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
-              const title = titleMatch ? titleMatch[1] : ''
-              const partialHtml = `<!DOCTYPE html><html><head><title>${title}</title></head><body><main>${mainMatch[1]}</main></body></html>`
-              return new Response(partialHtml, {
-                headers: {
-                  'Content-Type': 'text/html',
-                  'X-STX-Partial': 'true',
-                  'Cache-Control': 'no-store, no-cache, must-revalidate',
-                  'Pragma': 'no-cache',
-                  'Expires': '0',
-                },
-              })
-            }
-          }
-
           return new Response(content, {
             headers: {
               'Content-Type': 'text/html',

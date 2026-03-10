@@ -606,9 +606,12 @@ export function minifyHtml(template: string): string {
   // Collapse multiple spaces
   result = result.replace(/\s{2,}/g, ' ')
 
-  // Restore preserved content
+  // Restore preserved content (use indexOf+slice to avoid $-interpretation)
   for (const { marker, content } of preserved) {
-    result = result.replace(marker, content)
+    const idx = result.indexOf(marker)
+    if (idx !== -1) {
+      result = result.slice(0, idx) + content + result.slice(idx + marker.length)
+    }
   }
 
   return result.trim()

@@ -535,7 +535,8 @@ export async function renderComponentWithSlot(
 
     // Find and replace any direct references to {{ text || slot }} with the actual value
     if (slotContent && templateContent.includes('{{ text || slot }}')) {
-      templateContent = templateContent.replace(/\{\{\s*text\s*\|\|\s*slot\s*\}\}/g, slotContent)
+      // Use callback to avoid $-interpretation in slot content
+      templateContent = templateContent.replace(/\{\{\s*text\s*\|\|\s*slot\s*\}\}/g, () => slotContent)
     }
 
     // Process slots using the new slots module (supports named and scoped slots)

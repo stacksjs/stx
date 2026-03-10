@@ -649,9 +649,12 @@ export function injectRouterScript(template: string): string {
     return template
   }
 
-  const routerScript = `<script>${getRouterScript().replace(/\$/g, '$$$$')}</script>`
+  const routerScript = `<script>${getRouterScript()}</script>`
 
-  return template.replace('</body>', `${routerScript}\n</body>`)
+  // Use string concatenation to avoid $-interpretation in .replace()
+  const bodyCloseIdx = template.lastIndexOf('</body>')
+  if (bodyCloseIdx === -1) return template
+  return template.slice(0, bodyCloseIdx) + routerScript + '\n</body>' + template.slice(bodyCloseIdx + 7)
 }
 
 /**
@@ -1530,7 +1533,8 @@ async function processDirectivesInternal(
         // This is important for nested layouts
         for (const [name, content] of Object.entries(layoutSections)) {
           if (sections[name] && sections[name].includes('<!--PARENT_CONTENT_PLACEHOLDER-->')) {
-            sections[name] = sections[name].replace('<!--PARENT_CONTENT_PLACEHOLDER-->', content)
+            const idx = sections[name].indexOf('<!--PARENT_CONTENT_PLACEHOLDER-->')
+            sections[name] = sections[name].slice(0, idx) + content + sections[name].slice(idx + '<!--PARENT_CONTENT_PLACEHOLDER-->'.length)
           }
           else if (!sections[name]) {
             sections[name] = content
@@ -1565,7 +1569,9 @@ async function processDirectivesInternal(
           // If the section has a parent placeholder, replace it with the parent content
           let sectionContent = sections[sectionName]
           if (sectionContent.includes('<!--PARENT_CONTENT_PLACEHOLDER-->')) {
-            sectionContent = sectionContent.replace('<!--PARENT_CONTENT_PLACEHOLDER-->', layoutSections[sectionName] || '')
+            const parentContent = layoutSections[sectionName] || ''
+            const idx = sectionContent.indexOf('<!--PARENT_CONTENT_PLACEHOLDER-->')
+            sectionContent = sectionContent.slice(0, idx) + parentContent + sectionContent.slice(idx + '<!--PARENT_CONTENT_PLACEHOLDER-->'.length)
           }
           return sectionContent
         }

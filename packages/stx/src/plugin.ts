@@ -6,6 +6,7 @@ import { devHelpers, errorLogger, safeExecuteAsync, StxFileError, StxRuntimeErro
 import { isDevelopment } from './env'
 import { escapeHtml } from './expressions'
 import { performanceMonitor } from './performance-utils'
+import { injectRouterScript } from './process'
 
 export const plugin: BunPlugin = {
   name: 'bun-plugin-stx',
@@ -176,17 +177,19 @@ export const plugin: BunPlugin = {
 
         // Add all script tags back to the output
         if (allScripts.length > 0) {
-          // Find the closing </body> tag and insert scripts before it
-          const bodyEndMatch = output.match(/(<\/body>)/i)
-          if (bodyEndMatch) {
-            const scriptsHtml = allScripts.join('\n')
-            output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
+          const scriptsHtml = allScripts.join('\n')
+          // Use callback to avoid $-interpretation in script content
+          const bodyCloseIdx = output.search(/<\/body>/i)
+          if (bodyCloseIdx !== -1) {
+            output = output.slice(0, bodyCloseIdx) + scriptsHtml + '\n' + output.slice(bodyCloseIdx)
           }
           else {
-            // If no </body> tag, append scripts at the end
-            output += `\n${allScripts.join('\n')}`
+            output += `\n${scriptsHtml}`
           }
         }
+
+        // Inject SPA router for full-page templates (has </body> guard built in)
+        output = injectRouterScript(output)
 
         // Track dependencies for this file
         dependencies.forEach(dep => allDependencies.add(dep))
