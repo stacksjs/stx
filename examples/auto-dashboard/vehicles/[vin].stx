@@ -1,0 +1,372 @@
+<script>
+const companyName = 'AutoEstimate Pro'
+const currentUser = 'Sarah Mitchell'
+const currentRole = 'Senior Estimator'
+const activePage = 'Vehicles'
+const meta = { title: 'Vehicle Detail — AutoEstimate Pro', description: 'Vehicle detail and repair history' }
+
+const navLinks = [
+  { label: 'Dashboard', href: '/' },
+  { label: 'Estimates', href: '/estimates' },
+  { label: 'Production', href: '/production' },
+  { label: 'Vehicles', href: '/vehicles' },
+  { label: 'Parts', href: '/parts' },
+  { label: 'Insurers', href: '/insurers' },
+  { label: 'Customers', href: '/customers' },
+  { label: 'Reports', href: '/reports' },
+  { label: 'Schedule', href: '/schedule' },
+]
+
+// Vehicle database keyed by VIN
+const vehicleDb = {
+  '7SAY1E9P8RF123456': {
+    year: 2024, make: 'Tesla', model: 'Model Y', color: 'Pearl White Multi-Coat', mileage: '12,340',
+    plate: 'EVC-4821', body: 'SUV', status: 'Active Repair', insurer: 'State Farm',
+    owner: { id: 1, name: 'James Rodriguez', phone: '(512) 555-0174', email: 'j.rodriguez@email.com', address: '1247 Elm Street, Austin, TX 78701' },
+    adas: { required: true, preScan: 'Completed', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor', 'Parking Sensors'], estCost: '$450–$1,200' },
+    repairs: [
+      { date: '2026-03-09', estimateId: 'EST-4821', desc: 'Front-end collision repair', cost: '$8,420', status: 'In Progress', insurer: 'State Farm' },
+      { date: '2025-11-14', estimateId: 'EST-4612', desc: 'Quarter panel dent — PDR', cost: '$1,850', status: 'Completed', insurer: 'State Farm' },
+      { date: '2025-06-22', estimateId: 'EST-4401', desc: 'Rear bumper replacement', cost: '$4,320', status: 'Completed', insurer: 'State Farm' },
+      { date: '2025-02-08', estimateId: 'EST-4198', desc: 'Windshield replacement', cost: '$3,830', status: 'Completed', insurer: 'State Farm' },
+    ],
+    financial: { totalEstimates: 8, totalSpent: '$18,420', avgRepair: '$2,303', claims: 3, outstanding: '$8,420' },
+  },
+  '1HGCV1F34MA054782': {
+    year: 2021, make: 'Honda', model: 'Accord', color: 'Lunar Silver Metallic', mileage: '38,210',
+    plate: 'HND-3392', body: 'Sedan', status: 'Complete', insurer: 'State Farm',
+    owner: { id: 1, name: 'James Rodriguez', phone: '(512) 555-0174', email: 'j.rodriguez@email.com', address: '1247 Elm Street, Austin, TX 78701' },
+    adas: null,
+    repairs: [
+      { date: '2025-02-08', estimateId: 'EST-4198', desc: 'Windshield replacement', cost: '$3,830', status: 'Completed', insurer: 'State Farm' },
+      { date: '2024-09-15', estimateId: 'EST-3920', desc: 'Paint correction', cost: '$8,420', status: 'Completed', insurer: 'State Farm' },
+    ],
+    financial: { totalEstimates: 2, totalSpent: '$12,250', avgRepair: '$6,125', claims: 2, outstanding: '$0' },
+  },
+  '5UX23EP05P9A71842': {
+    year: 2023, make: 'BMW', model: 'X5', color: 'Carbon Black Metallic', mileage: '28,760',
+    plate: 'LUX-7734', body: 'SUV', status: 'Active Repair', insurer: 'Progressive',
+    owner: { id: 2, name: 'Lisa Chen', phone: '(415) 555-0298', email: 'lisa.chen@email.com', address: '582 Pacific Ave, San Francisco, CA 94133' },
+    adas: { required: true, preScan: 'Completed', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor'], estCost: '$650–$1,100' },
+    repairs: [
+      { date: '2026-03-08', estimateId: 'EST-4820', desc: 'Side impact door repair', cost: '$12,640', status: 'In Progress', insurer: 'Progressive' },
+      { date: '2025-09-30', estimateId: 'EST-4490', desc: 'Front bumper and grille replacement', cost: '$9,870', status: 'Completed', insurer: 'Progressive' },
+      { date: '2025-04-17', estimateId: 'EST-4215', desc: 'Hail damage — full PDR', cost: '$11,420', status: 'Completed', insurer: 'Progressive' },
+    ],
+    financial: { totalEstimates: 14, totalSpent: '$42,380', avgRepair: '$3,027', claims: 6, outstanding: '$12,640' },
+  },
+  '2HGFE2F59NH512847': {
+    year: 2022, make: 'Honda', model: 'Civic', color: 'Sonic Gray Pearl', mileage: '41,220',
+    plate: 'HND-2098', body: 'Sedan', status: 'Complete', insurer: 'GEICO',
+    owner: { id: 3, name: 'Mark Thompson', phone: '(614) 555-0132', email: 'm.thompson@email.com', address: '890 High St, Columbus, OH 43215' },
+    adas: null,
+    repairs: [
+      { date: '2026-03-07', estimateId: 'EST-4819', desc: 'Rear bumper scuff repair', cost: '$1,215', status: 'Completed', insurer: 'GEICO' },
+      { date: '2025-08-19', estimateId: 'EST-4380', desc: 'Front fender replacement', cost: '$3,890', status: 'Completed', insurer: 'GEICO' },
+      { date: '2025-01-11', estimateId: 'EST-4052', desc: 'Door ding — PDR', cost: '$3,110', status: 'Completed', insurer: 'GEICO' },
+    ],
+    financial: { totalEstimates: 6, totalSpent: '$8,215', avgRepair: '$1,369', claims: 2, outstanding: '$0' },
+  },
+  '1FTFW1E87NKE45923': {
+    year: 2024, make: 'Ford', model: 'F-150', color: 'Iconic Silver Metallic', mileage: '18,450',
+    plate: 'TRK-5543', body: 'Truck', status: 'Pending', insurer: 'Allstate',
+    owner: { id: 4, name: 'Diana Watts', phone: '(214) 555-0387', email: 'diana.watts@email.com', address: '3401 Oak Lawn Ave, Dallas, TX 75219' },
+    adas: { required: true, preScan: 'Required', postScan: 'Pending', calibrations: ['Forward Camera', 'Parking Sensors'], estCost: '$500–$900' },
+    repairs: [
+      { date: '2026-03-06', estimateId: 'EST-4818', desc: 'Bed-side panel dent repair', cost: '$6,230', status: 'Pending Pickup', insurer: 'Allstate' },
+      { date: '2025-10-22', estimateId: 'EST-4520', desc: 'Front-end collision repair', cost: '$14,870', status: 'Completed', insurer: 'Allstate' },
+      { date: '2025-05-09', estimateId: 'EST-4280', desc: 'Tailgate replacement', cost: '$7,340', status: 'Completed', insurer: 'Allstate' },
+      { date: '2024-11-18', estimateId: 'EST-3910', desc: 'Running board damage', cost: '$3,230', status: 'Completed', insurer: 'Allstate' },
+    ],
+    financial: { totalEstimates: 11, totalSpent: '$31,670', avgRepair: '$2,879', claims: 5, outstanding: '$6,230' },
+  },
+  '5YFBU4EE4NP091827': {
+    year: 2023, make: 'Toyota', model: 'Camry', color: 'Celestial Silver Metallic', mileage: '34,870',
+    plate: 'TYT-8812', body: 'Sedan', status: 'Complete', insurer: 'USAA',
+    owner: { id: 5, name: 'Robert Kim', phone: '(310) 555-0421', email: 'r.kim@email.com', address: '7720 Sunset Blvd, Los Angeles, CA 90046' },
+    adas: null,
+    repairs: [
+      { date: '2026-03-05', estimateId: 'EST-4817', desc: 'Rear quarter panel repair', cost: '$3,450', status: 'Completed', insurer: 'USAA' },
+      { date: '2025-07-14', estimateId: 'EST-4350', desc: 'Front bumper replacement', cost: '$4,120', status: 'Completed', insurer: 'USAA' },
+      { date: '2025-02-28', estimateId: 'EST-4120', desc: 'Side mirror replacement', cost: '$4,880', status: 'Completed', insurer: 'USAA' },
+    ],
+    financial: { totalEstimates: 9, totalSpent: '$12,450', avgRepair: '$1,383', claims: 4, outstanding: '$0' },
+  },
+  '1GCUYEED5RZ284715': {
+    year: 2025, make: 'Chevrolet', model: 'Silverado', color: 'Summit White', mileage: '8,120',
+    plate: 'SLV-3309', body: 'Truck', status: 'Active Repair', insurer: 'Liberty Mutual',
+    owner: { id: 6, name: 'Angela Brooks', phone: '(713) 555-0245', email: 'a.brooks@email.com', address: '4512 Westheimer Rd, Houston, TX 77027' },
+    adas: { required: true, preScan: 'Completed', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor', 'Parking Sensors'], estCost: '$550–$1,200' },
+    repairs: [
+      { date: '2026-03-04', estimateId: 'EST-4816', desc: 'Front-end collision repair', cost: '$5,870', status: 'In Progress', insurer: 'Liberty Mutual' },
+      { date: '2025-12-10', estimateId: 'EST-4630', desc: 'Scratches and paint correction', cost: '$2,100', status: 'Completed', insurer: 'Liberty Mutual' },
+      { date: '2025-09-01', estimateId: 'EST-4445', desc: 'Bed liner repair', cost: '$1,900', status: 'Completed', insurer: 'Liberty Mutual' },
+    ],
+    financial: { totalEstimates: 3, totalSpent: '$9,870', avgRepair: '$3,290', claims: 1, outstanding: '$5,870' },
+  },
+  'KM8J3CA46NU387215': {
+    year: 2022, make: 'Hyundai', model: 'Tucson', color: 'Amazon Gray', mileage: '52,340',
+    plate: 'HYN-6670', body: 'SUV', status: 'Complete', insurer: 'Farmers',
+    owner: { id: 7, name: 'Kevin Patel', phone: '(404) 555-0189', email: 'k.patel@email.com', address: '255 Peachtree St NE, Atlanta, GA 30303' },
+    adas: null,
+    repairs: [
+      { date: '2026-03-03', estimateId: 'EST-4815', desc: 'Liftgate dent repair', cost: '$2,890', status: 'Completed', insurer: 'Farmers' },
+      { date: '2025-11-05', estimateId: 'EST-4580', desc: 'Hail damage — PDR', cost: '$8,450', status: 'Completed', insurer: 'Farmers' },
+      { date: '2025-06-18', estimateId: 'EST-4340', desc: 'Front-end collision repair', cost: '$7,650', status: 'Completed', insurer: 'Farmers' },
+    ],
+    financial: { totalEstimates: 17, totalSpent: '$24,590', avgRepair: '$1,447', claims: 7, outstanding: '$0' },
+  },
+  '2T3P1RFV5RC084562': {
+    year: 2024, make: 'Toyota', model: 'RAV4', color: 'Blueprint', mileage: '15,690',
+    plate: 'RAV-1124', body: 'SUV', status: 'Pending', insurer: 'State Farm',
+    owner: { id: 8, name: 'Sarah Jensen', phone: '(503) 555-0356', email: 's.jensen@email.com', address: '1820 NW Lovejoy St, Portland, OR 97209' },
+    adas: { required: true, preScan: 'Required', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor'], estCost: '$450–$950' },
+    repairs: [
+      { date: '2026-03-02', estimateId: 'EST-4798', desc: 'Rear-end collision repair', cost: '$4,120', status: 'Pending Pickup', insurer: 'State Farm' },
+      { date: '2025-08-30', estimateId: 'EST-4410', desc: 'Side panel scratch repair', cost: '$1,650', status: 'Completed', insurer: 'State Farm' },
+      { date: '2025-04-05', estimateId: 'EST-4190', desc: 'Windshield chip repair', cost: '$1,550', status: 'Completed', insurer: 'State Farm' },
+    ],
+    financial: { totalEstimates: 5, totalSpent: '$7,320', avgRepair: '$1,464', claims: 2, outstanding: '$4,120' },
+  },
+  '1N4BL4BV7NN384215': {
+    year: 2023, make: 'Nissan', model: 'Altima', color: 'Gun Metallic', mileage: '38,410',
+    plate: 'NSN-4456', body: 'Sedan', status: 'Complete', insurer: 'GEICO',
+    owner: { id: 9, name: 'David Martinez', phone: '(602) 555-0278', email: 'd.martinez@email.com', address: '4402 N Central Ave, Phoenix, AZ 85012' },
+    adas: null,
+    repairs: [
+      { date: '2026-02-28', estimateId: 'EST-4790', desc: 'Front bumper and hood repair', cost: '$6,240', status: 'Completed', insurer: 'GEICO' },
+      { date: '2025-10-12', estimateId: 'EST-4540', desc: 'Rear-end collision repair', cost: '$5,890', status: 'Completed', insurer: 'GEICO' },
+      { date: '2025-05-26', estimateId: 'EST-4300', desc: 'Door panel replacement', cost: '$4,320', status: 'Completed', insurer: 'GEICO' },
+      { date: '2024-12-19', estimateId: 'EST-3870', desc: 'Fender bender — front left', cost: '$3,390', status: 'Completed', insurer: 'GEICO' },
+    ],
+    financial: { totalEstimates: 12, totalSpent: '$19,840', avgRepair: '$1,653', claims: 5, outstanding: '$0' },
+  },
+  'WBA5R1C07M7D48291': {
+    year: 2021, make: 'BMW', model: '330i', color: 'Alpine White', mileage: '67,890',
+    plate: 'BMW-9981', body: 'Sedan', status: 'Active Repair', insurer: 'Progressive',
+    owner: { id: 10, name: 'Michelle Wu', phone: '(212) 555-0443', email: 'm.wu@email.com', address: '350 W 42nd St, New York, NY 10036' },
+    adas: { required: true, preScan: 'Completed', postScan: 'Completed', calibrations: ['Forward Camera', 'Blind Spot Monitor'], estCost: '$650–$1,100' },
+    repairs: [
+      { date: '2026-02-25', estimateId: 'EST-4775', desc: 'Front-end collision — major', cost: '$18,340', status: 'In Progress', insurer: 'Progressive' },
+      { date: '2025-09-14', estimateId: 'EST-4470', desc: 'Side impact door repair', cost: '$12,870', status: 'Completed', insurer: 'Progressive' },
+      { date: '2025-03-22', estimateId: 'EST-4160', desc: 'Rear bumper and trunk repair', cost: '$14,200', status: 'Completed', insurer: 'Progressive' },
+      { date: '2024-10-08', estimateId: 'EST-3830', desc: 'Hail damage — full PDR', cost: '$10,800', status: 'Completed', insurer: 'Progressive' },
+    ],
+    financial: { totalEstimates: 20, totalSpent: '$56,210', avgRepair: '$2,811', claims: 9, outstanding: '$18,340' },
+  },
+  '2HKRS2H86RH415283': {
+    year: 2024, make: 'Honda', model: 'CR-V', color: 'Radiant Red Metallic II', mileage: '21,350',
+    plate: 'CRV-7712', body: 'SUV', status: 'Pending', insurer: 'Allstate',
+    owner: { id: 11, name: 'Thomas Green', phone: '(303) 555-0165', email: 't.green@email.com', address: '1600 Champa St, Denver, CO 80202' },
+    adas: null,
+    repairs: [
+      { date: '2026-02-22', estimateId: 'EST-4768', desc: 'Rear quarter panel dent', cost: '$3,680', status: 'Pending Estimate', insurer: 'Allstate' },
+      { date: '2025-12-15', estimateId: 'EST-4650', desc: 'Paint scratch repair', cost: '$5,000', status: 'Completed', insurer: 'Allstate' },
+    ],
+    financial: { totalEstimates: 7, totalSpent: '$11,680', avgRepair: '$1,669', claims: 3, outstanding: '$3,680' },
+  },
+  '3FMTK3SU8NMA72841': {
+    year: 2023, make: 'Ford', model: 'Mustang Mach-E', color: 'Grabber Blue Metallic', mileage: '29,870',
+    plate: 'MCE-2245', body: 'SUV', status: 'Complete', insurer: 'USAA',
+    owner: { id: 12, name: 'Jennifer Liu', phone: '(206) 555-0512', email: 'j.liu@email.com', address: '2201 Westlake Ave, Seattle, WA 98121' },
+    adas: { required: true, preScan: 'Completed', postScan: 'Completed', calibrations: ['Forward Camera', 'Blind Spot Monitor', 'Parking Sensors'], estCost: '$550–$1,200' },
+    repairs: [
+      { date: '2026-02-18', estimateId: 'EST-4756', desc: 'Front-end collision repair', cost: '$14,230', status: 'Completed', insurer: 'USAA' },
+      { date: '2025-10-01', estimateId: 'EST-4510', desc: 'Charging port surround repair', cost: '$3,870', status: 'Completed', insurer: 'USAA' },
+      { date: '2025-05-15', estimateId: 'EST-4270', desc: 'Hail damage — PDR', cost: '$9,640', status: 'Completed', insurer: 'USAA' },
+      { date: '2024-11-30', estimateId: 'EST-3895', desc: 'Rear bumper replacement', cost: '$11,200', status: 'Completed', insurer: 'USAA' },
+    ],
+    financial: { totalEstimates: 15, totalSpent: '$38,940', avgRepair: '$2,596', claims: 6, outstanding: '$0' },
+  },
+}
+
+function statusColor(status) {
+  const colors = { 'Active Repair': 'badge-amber', 'Complete': 'badge-emerald', 'Pending': 'badge-blue', 'Pending Pickup': 'badge-blue', 'In Progress': 'badge-amber', 'Completed': 'badge-emerald', 'Pending Estimate': 'badge-slate' }
+  return colors[status] || 'badge-slate'
+}
+</script>
+
+@extends('../layouts/dashboard.stx')
+
+@push('styles')
+    .vehicle-hero { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .vehicle-hero-main { flex: 1; min-width: 300px; }
+    .vehicle-hero-side { width: 280px; flex-shrink: 0; }
+    .spec-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .spec-item { padding: 0.75rem; border-radius: 0.5rem; background: var(--bg-subtle); }
+    .spec-label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.25rem; }
+    .spec-value { font-size: 0.9375rem; font-weight: 500; color: var(--text-primary); }
+    .timeline-card { padding: 0.875rem; border-radius: 0.5rem; background: var(--bg-subtle); margin-bottom: 0.75rem; transition: background 0.15s ease; }
+    .timeline-card:hover { background: var(--bg-subtle-hover); }
+    @media (max-width: 768px) { .vehicle-hero-side { width: 100%; } .spec-grid { grid-template-columns: 1fr; } }
+@endpush
+
+@section('content')
+      <div id="vehiclePage">
+        {{-- Loading state replaced by JS --}}
+        <div id="vehicleLoading" class="text-center py-20">
+          <p style="color: var(--text-muted)">Loading vehicle data...</p>
+        </div>
+        <div id="vehicleContent" style="display: none;"></div>
+        <div id="vehicleNotFound" style="display: none;" class="text-center py-20">
+          <svg class="w-16 h-16 mx-auto mb-4" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+          <h2 class="text-xl font-semibold mb-2" style="color: var(--text-primary)">Vehicle Not Found</h2>
+          <p class="text-sm mb-6" style="color: var(--text-muted)">The VIN you requested was not found in our database.</p>
+          <a href="/vehicles" class="px-6 py-2.5 rounded-lg text-sm font-medium text-white" style="background: var(--btn-primary-bg); text-decoration: none;">Back to Vehicles</a>
+        </div>
+      </div>
+@endsection
+
+<script client>
+    var db = {
+      '7SAY1E9P8RF123456': { year: 2024, make: 'Tesla', model: 'Model Y', color: 'Pearl White Multi-Coat', mileage: '12,340', plate: 'EVC-4821', body: 'SUV', status: 'Active Repair', insurer: 'State Farm', owner: { name: 'James Rodriguez', phone: '(512) 555-0174', email: 'j.rodriguez@email.com', address: '1247 Elm Street, Austin, TX 78701' }, adas: { required: true, preScan: 'Completed', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor', 'Parking Sensors'], estCost: '$450–$1,200' }, repairs: [ { date: '2026-03-09', estimateId: 'EST-4821', desc: 'Front-end collision repair', cost: '$8,420', status: 'In Progress' }, { date: '2025-11-14', estimateId: 'EST-4612', desc: 'Quarter panel dent — PDR', cost: '$1,850', status: 'Completed' }, { date: '2025-06-22', estimateId: 'EST-4401', desc: 'Rear bumper replacement', cost: '$4,320', status: 'Completed' }, { date: '2025-02-08', estimateId: 'EST-4198', desc: 'Windshield replacement', cost: '$3,830', status: 'Completed' } ], financial: { totalEstimates: 8, totalSpent: '$18,420', avgRepair: '$2,303', claims: 3, outstanding: '$8,420' } },
+      '1HGCV1F34MA054782': { year: 2021, make: 'Honda', model: 'Accord', color: 'Lunar Silver Metallic', mileage: '38,210', plate: 'HND-3392', body: 'Sedan', status: 'Complete', insurer: 'State Farm', owner: { name: 'James Rodriguez', phone: '(512) 555-0174', email: 'j.rodriguez@email.com', address: '1247 Elm Street, Austin, TX 78701' }, adas: null, repairs: [ { date: '2025-02-08', estimateId: 'EST-4198', desc: 'Windshield replacement', cost: '$3,830', status: 'Completed' }, { date: '2024-09-15', estimateId: 'EST-3920', desc: 'Paint correction', cost: '$8,420', status: 'Completed' } ], financial: { totalEstimates: 2, totalSpent: '$12,250', avgRepair: '$6,125', claims: 2, outstanding: '$0' } },
+      '5UX23EP05P9A71842': { year: 2023, make: 'BMW', model: 'X5', color: 'Carbon Black Metallic', mileage: '28,760', plate: 'LUX-7734', body: 'SUV', status: 'Active Repair', insurer: 'Progressive', owner: { name: 'Lisa Chen', phone: '(415) 555-0298', email: 'lisa.chen@email.com', address: '582 Pacific Ave, San Francisco, CA 94133' }, adas: { required: true, preScan: 'Completed', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor'], estCost: '$650–$1,100' }, repairs: [ { date: '2026-03-08', estimateId: 'EST-4820', desc: 'Side impact door repair', cost: '$12,640', status: 'In Progress' }, { date: '2025-09-30', estimateId: 'EST-4490', desc: 'Front bumper and grille replacement', cost: '$9,870', status: 'Completed' }, { date: '2025-04-17', estimateId: 'EST-4215', desc: 'Hail damage — full PDR', cost: '$11,420', status: 'Completed' } ], financial: { totalEstimates: 14, totalSpent: '$42,380', avgRepair: '$3,027', claims: 6, outstanding: '$12,640' } },
+      '2HGFE2F59NH512847': { year: 2022, make: 'Honda', model: 'Civic', color: 'Sonic Gray Pearl', mileage: '41,220', plate: 'HND-2098', body: 'Sedan', status: 'Complete', insurer: 'GEICO', owner: { name: 'Mark Thompson', phone: '(614) 555-0132', email: 'm.thompson@email.com', address: '890 High St, Columbus, OH 43215' }, adas: null, repairs: [ { date: '2026-03-07', estimateId: 'EST-4819', desc: 'Rear bumper scuff repair', cost: '$1,215', status: 'Completed' }, { date: '2025-08-19', estimateId: 'EST-4380', desc: 'Front fender replacement', cost: '$3,890', status: 'Completed' }, { date: '2025-01-11', estimateId: 'EST-4052', desc: 'Door ding — PDR', cost: '$3,110', status: 'Completed' } ], financial: { totalEstimates: 6, totalSpent: '$8,215', avgRepair: '$1,369', claims: 2, outstanding: '$0' } },
+      '1FTFW1E87NKE45923': { year: 2024, make: 'Ford', model: 'F-150', color: 'Iconic Silver Metallic', mileage: '18,450', plate: 'TRK-5543', body: 'Truck', status: 'Pending', insurer: 'Allstate', owner: { name: 'Diana Watts', phone: '(214) 555-0387', email: 'diana.watts@email.com', address: '3401 Oak Lawn Ave, Dallas, TX 75219' }, adas: { required: true, preScan: 'Required', postScan: 'Pending', calibrations: ['Forward Camera', 'Parking Sensors'], estCost: '$500–$900' }, repairs: [ { date: '2026-03-06', estimateId: 'EST-4818', desc: 'Bed-side panel dent repair', cost: '$6,230', status: 'Pending Pickup' }, { date: '2025-10-22', estimateId: 'EST-4520', desc: 'Front-end collision repair', cost: '$14,870', status: 'Completed' }, { date: '2025-05-09', estimateId: 'EST-4280', desc: 'Tailgate replacement', cost: '$7,340', status: 'Completed' }, { date: '2024-11-18', estimateId: 'EST-3910', desc: 'Running board damage', cost: '$3,230', status: 'Completed' } ], financial: { totalEstimates: 11, totalSpent: '$31,670', avgRepair: '$2,879', claims: 5, outstanding: '$6,230' } },
+      '5YFBU4EE4NP091827': { year: 2023, make: 'Toyota', model: 'Camry', color: 'Celestial Silver Metallic', mileage: '34,870', plate: 'TYT-8812', body: 'Sedan', status: 'Complete', insurer: 'USAA', owner: { name: 'Robert Kim', phone: '(310) 555-0421', email: 'r.kim@email.com', address: '7720 Sunset Blvd, Los Angeles, CA 90046' }, adas: null, repairs: [ { date: '2026-03-05', estimateId: 'EST-4817', desc: 'Rear quarter panel repair', cost: '$3,450', status: 'Completed' }, { date: '2025-07-14', estimateId: 'EST-4350', desc: 'Front bumper replacement', cost: '$4,120', status: 'Completed' }, { date: '2025-02-28', estimateId: 'EST-4120', desc: 'Side mirror replacement', cost: '$4,880', status: 'Completed' } ], financial: { totalEstimates: 9, totalSpent: '$12,450', avgRepair: '$1,383', claims: 4, outstanding: '$0' } },
+      '1GCUYEED5RZ284715': { year: 2025, make: 'Chevrolet', model: 'Silverado', color: 'Summit White', mileage: '8,120', plate: 'SLV-3309', body: 'Truck', status: 'Active Repair', insurer: 'Liberty Mutual', owner: { name: 'Angela Brooks', phone: '(713) 555-0245', email: 'a.brooks@email.com', address: '4512 Westheimer Rd, Houston, TX 77027' }, adas: { required: true, preScan: 'Completed', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor', 'Parking Sensors'], estCost: '$550–$1,200' }, repairs: [ { date: '2026-03-04', estimateId: 'EST-4816', desc: 'Front-end collision repair', cost: '$5,870', status: 'In Progress' }, { date: '2025-12-10', estimateId: 'EST-4630', desc: 'Scratches and paint correction', cost: '$2,100', status: 'Completed' }, { date: '2025-09-01', estimateId: 'EST-4445', desc: 'Bed liner repair', cost: '$1,900', status: 'Completed' } ], financial: { totalEstimates: 3, totalSpent: '$9,870', avgRepair: '$3,290', claims: 1, outstanding: '$5,870' } },
+      'KM8J3CA46NU387215': { year: 2022, make: 'Hyundai', model: 'Tucson', color: 'Amazon Gray', mileage: '52,340', plate: 'HYN-6670', body: 'SUV', status: 'Complete', insurer: 'Farmers', owner: { name: 'Kevin Patel', phone: '(404) 555-0189', email: 'k.patel@email.com', address: '255 Peachtree St NE, Atlanta, GA 30303' }, adas: null, repairs: [ { date: '2026-03-03', estimateId: 'EST-4815', desc: 'Liftgate dent repair', cost: '$2,890', status: 'Completed' }, { date: '2025-11-05', estimateId: 'EST-4580', desc: 'Hail damage — PDR', cost: '$8,450', status: 'Completed' }, { date: '2025-06-18', estimateId: 'EST-4340', desc: 'Front-end collision repair', cost: '$7,650', status: 'Completed' } ], financial: { totalEstimates: 17, totalSpent: '$24,590', avgRepair: '$1,447', claims: 7, outstanding: '$0' } },
+      '2T3P1RFV5RC084562': { year: 2024, make: 'Toyota', model: 'RAV4', color: 'Blueprint', mileage: '15,690', plate: 'RAV-1124', body: 'SUV', status: 'Pending', insurer: 'State Farm', owner: { name: 'Sarah Jensen', phone: '(503) 555-0356', email: 's.jensen@email.com', address: '1820 NW Lovejoy St, Portland, OR 97209' }, adas: { required: true, preScan: 'Required', postScan: 'Pending', calibrations: ['Forward Camera', 'Blind Spot Monitor'], estCost: '$450–$950' }, repairs: [ { date: '2026-03-02', estimateId: 'EST-4798', desc: 'Rear-end collision repair', cost: '$4,120', status: 'Pending Pickup' }, { date: '2025-08-30', estimateId: 'EST-4410', desc: 'Side panel scratch repair', cost: '$1,650', status: 'Completed' }, { date: '2025-04-05', estimateId: 'EST-4190', desc: 'Windshield chip repair', cost: '$1,550', status: 'Completed' } ], financial: { totalEstimates: 5, totalSpent: '$7,320', avgRepair: '$1,464', claims: 2, outstanding: '$4,120' } },
+      '1N4BL4BV7NN384215': { year: 2023, make: 'Nissan', model: 'Altima', color: 'Gun Metallic', mileage: '38,410', plate: 'NSN-4456', body: 'Sedan', status: 'Complete', insurer: 'GEICO', owner: { name: 'David Martinez', phone: '(602) 555-0278', email: 'd.martinez@email.com', address: '4402 N Central Ave, Phoenix, AZ 85012' }, adas: null, repairs: [ { date: '2026-02-28', estimateId: 'EST-4790', desc: 'Front bumper and hood repair', cost: '$6,240', status: 'Completed' }, { date: '2025-10-12', estimateId: 'EST-4540', desc: 'Rear-end collision repair', cost: '$5,890', status: 'Completed' }, { date: '2025-05-26', estimateId: 'EST-4300', desc: 'Door panel replacement', cost: '$4,320', status: 'Completed' }, { date: '2024-12-19', estimateId: 'EST-3870', desc: 'Fender bender — front left', cost: '$3,390', status: 'Completed' } ], financial: { totalEstimates: 12, totalSpent: '$19,840', avgRepair: '$1,653', claims: 5, outstanding: '$0' } },
+      'WBA5R1C07M7D48291': { year: 2021, make: 'BMW', model: '330i', color: 'Alpine White', mileage: '67,890', plate: 'BMW-9981', body: 'Sedan', status: 'Active Repair', insurer: 'Progressive', owner: { name: 'Michelle Wu', phone: '(212) 555-0443', email: 'm.wu@email.com', address: '350 W 42nd St, New York, NY 10036' }, adas: { required: true, preScan: 'Completed', postScan: 'Completed', calibrations: ['Forward Camera', 'Blind Spot Monitor'], estCost: '$650–$1,100' }, repairs: [ { date: '2026-02-25', estimateId: 'EST-4775', desc: 'Front-end collision — major', cost: '$18,340', status: 'In Progress' }, { date: '2025-09-14', estimateId: 'EST-4470', desc: 'Side impact door repair', cost: '$12,870', status: 'Completed' }, { date: '2025-03-22', estimateId: 'EST-4160', desc: 'Rear bumper and trunk repair', cost: '$14,200', status: 'Completed' }, { date: '2024-10-08', estimateId: 'EST-3830', desc: 'Hail damage — full PDR', cost: '$10,800', status: 'Completed' } ], financial: { totalEstimates: 20, totalSpent: '$56,210', avgRepair: '$2,811', claims: 9, outstanding: '$18,340' } },
+      '2HKRS2H86RH415283': { year: 2024, make: 'Honda', model: 'CR-V', color: 'Radiant Red Metallic II', mileage: '21,350', plate: 'CRV-7712', body: 'SUV', status: 'Pending', insurer: 'Allstate', owner: { name: 'Thomas Green', phone: '(303) 555-0165', email: 't.green@email.com', address: '1600 Champa St, Denver, CO 80202' }, adas: null, repairs: [ { date: '2026-02-22', estimateId: 'EST-4768', desc: 'Rear quarter panel dent', cost: '$3,680', status: 'Pending Estimate' }, { date: '2025-12-15', estimateId: 'EST-4650', desc: 'Paint scratch repair', cost: '$5,000', status: 'Completed' } ], financial: { totalEstimates: 7, totalSpent: '$11,680', avgRepair: '$1,669', claims: 3, outstanding: '$3,680' } },
+      '3FMTK3SU8NMA72841': { year: 2023, make: 'Ford', model: 'Mustang Mach-E', color: 'Grabber Blue Metallic', mileage: '29,870', plate: 'MCE-2245', body: 'SUV', status: 'Complete', insurer: 'USAA', owner: { name: 'Jennifer Liu', phone: '(206) 555-0512', email: 'j.liu@email.com', address: '2201 Westlake Ave, Seattle, WA 98121' }, adas: { required: true, preScan: 'Completed', postScan: 'Completed', calibrations: ['Forward Camera', 'Blind Spot Monitor', 'Parking Sensors'], estCost: '$550–$1,200' }, repairs: [ { date: '2026-02-18', estimateId: 'EST-4756', desc: 'Front-end collision repair', cost: '$14,230', status: 'Completed' }, { date: '2025-10-01', estimateId: 'EST-4510', desc: 'Charging port surround repair', cost: '$3,870', status: 'Completed' }, { date: '2025-05-15', estimateId: 'EST-4270', desc: 'Hail damage — PDR', cost: '$9,640', status: 'Completed' }, { date: '2024-11-30', estimateId: 'EST-3895', desc: 'Rear bumper replacement', cost: '$11,200', status: 'Completed' } ], financial: { totalEstimates: 15, totalSpent: '$38,940', avgRepair: '$2,596', claims: 6, outstanding: '$0' } },
+    }
+
+    // Get VIN from route params or URL path
+    var vin = (window.__routeParams && window.__routeParams.vin) || window.location.pathname.split('/').pop() || ''
+    vin = decodeURIComponent(vin).toUpperCase()
+    var v = db[vin]
+
+    if (!v) {
+      document.getElementById('vehicleLoading').style.display = 'none'
+      document.getElementById('vehicleNotFound').style.display = ''
+    } else {
+      document.getElementById('vehicleLoading').style.display = 'none'
+      var el = document.getElementById('vehicleContent')
+      el.style.display = ''
+
+      var statusClass = v.status === 'Active Repair' ? 'badge-amber' : v.status === 'Complete' ? 'badge-emerald' : 'badge-blue'
+
+      // Build repair timeline
+      var timeline = ''
+      v.repairs.forEach(function(r, i) {
+        var isLast = i === v.repairs.length - 1
+        var dotColor = r.status === 'In Progress' ? 'var(--bar-amber)' : r.status === 'Pending Pickup' ? 'var(--bar-blue)' : 'var(--bar-emerald)'
+        var statusCls = r.status === 'In Progress' ? 'badge-amber' : r.status === 'Pending Pickup' ? 'badge-blue' : r.status === 'Pending Estimate' ? 'badge-slate' : 'badge-emerald'
+        timeline += '<div class="timeline-card">'
+        timeline += '<div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">'
+        timeline += '<span style="font-size: 0.9375rem; font-weight: 500; color: var(--text-primary);">' + r.desc + '</span>'
+        timeline += '<span style="font-size: 0.9375rem; font-weight: 600; color: var(--text-primary);">' + r.cost + '</span>'
+        timeline += '</div>'
+        timeline += '<div style="display: flex; gap: 1rem; margin-top: 0.375rem; flex-wrap: wrap; align-items: center;">'
+        timeline += '<span style="font-size: 0.75rem; color: var(--text-muted);">' + r.date + '</span>'
+        timeline += '<a href="/estimates" style="font-size: 0.75rem; color: var(--text-accent); text-decoration: none;">' + r.estimateId + '</a>'
+        timeline += '<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + statusCls + '">' + r.status + '</span>'
+        timeline += '</div>'
+        timeline += '</div>'
+      })
+
+      // Build ADAS section
+      var adasHtml = ''
+      if (v.adas) {
+        adasHtml = '<div class="glass rounded-xl p-5 fade-in">'
+        adasHtml += '<h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">ADAS / Calibration</h3>'
+        adasHtml += '<div class="detail-row"><span class="detail-row-label">Required</span><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium badge-amber">Yes</span></div>'
+        adasHtml += '<div class="detail-row"><span class="detail-row-label">Pre-Scan</span><span class="detail-row-value">' + v.adas.preScan + '</span></div>'
+        adasHtml += '<div class="detail-row"><span class="detail-row-label">Post-Scan</span><span class="detail-row-value">' + v.adas.postScan + '</span></div>'
+        adasHtml += '<div class="detail-row"><span class="detail-row-label">Est. Cost</span><span class="detail-row-value">' + v.adas.estCost + '</span></div>'
+        adasHtml += '<div style="margin-top: 0.75rem;"><span class="detail-row-label" style="display: block; margin-bottom: 0.5rem;">Calibrations Needed</span>'
+        v.adas.calibrations.forEach(function(c) {
+          adasHtml += '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium badge-blue" style="margin: 0 0.25rem 0.25rem 0;">' + c + '</span>'
+        })
+        adasHtml += '</div></div>'
+      }
+
+      el.innerHTML = ''
+        // Breadcrumb
+        + '<div class="flex items-center gap-2 mb-6 text-sm" style="color: var(--text-muted);">'
+        + '<a href="/vehicles" style="color: var(--text-accent); text-decoration: none;">Vehicles</a>'
+        + '<span>/</span>'
+        + '<span style="color: var(--text-primary);">' + v.year + ' ' + v.make + ' ' + v.model + '</span>'
+        + '</div>'
+
+        // Header
+        + '<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">'
+        + '<div>'
+        + '<h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-primary)">' + v.year + ' ' + v.make + ' ' + v.model + '</h1>'
+        + '<div class="flex items-center gap-3 mt-2">'
+        + '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + statusClass + '">' + v.status + '</span>'
+        + '<span class="font-mono text-xs px-2 py-1 rounded" style="background: var(--bg-subtle); color: var(--text-muted)">VIN: ' + vin + '</span>'
+        + '</div>'
+        + '</div>'
+        + '<div class="flex items-center gap-3">'
+        + '<a href="/customers" class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2" style="background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); color: var(--btn-action-text); text-decoration: none;">'
+        + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>'
+        + v.owner.name
+        + '</a>'
+        + '<a href="/estimates" class="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2" style="background: var(--btn-primary-bg); text-decoration: none;">'
+        + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'
+        + 'New Estimate'
+        + '</a>'
+        + '</div>'
+        + '</div>'
+
+        // Main grid
+        + '<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">'
+
+        // Left column (2/3)
+        + '<div class="xl:col-span-2 space-y-6">'
+
+        // Vehicle specs
+        + '<div class="glass rounded-xl p-5 fade-in">'
+        + '<h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Vehicle Information</h3>'
+        + '<div class="spec-grid">'
+        + '<div class="spec-item"><div class="spec-label">Color</div><div class="spec-value">' + v.color + '</div></div>'
+        + '<div class="spec-item"><div class="spec-label">Mileage</div><div class="spec-value">' + v.mileage + ' mi</div></div>'
+        + '<div class="spec-item"><div class="spec-label">Body Style</div><div class="spec-value">' + v.body + '</div></div>'
+        + '<div class="spec-item"><div class="spec-label">License Plate</div><div class="spec-value">' + v.plate + '</div></div>'
+        + '<div class="spec-item"><div class="spec-label">Insurer</div><div class="spec-value">' + v.insurer + '</div></div>'
+        + '<div class="spec-item"><div class="spec-label">VIN</div><div class="spec-value" style="font-family: monospace; font-size: 0.8125rem;">' + vin + '</div></div>'
+        + '</div>'
+        + '</div>'
+
+        // Repair history
+        + '<div class="glass rounded-xl p-5 fade-in">'
+        + '<div class="flex items-center justify-between mb-4">'
+        + '<h3 class="text-base font-semibold" style="color: var(--text-primary)">Repair History</h3>'
+        + '<span class="text-xs" style="color: var(--text-muted);">' + v.repairs.length + ' repairs on record</span>'
+        + '</div>'
+        + timeline
+        + '</div>'
+        + '</div>'
+
+        // Right column (1/3)
+        + '<div class="space-y-6">'
+
+        // Owner card
+        + '<div class="glass rounded-xl p-5 fade-in">'
+        + '<h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Owner</h3>'
+        + '<div class="detail-row"><span class="detail-row-label">Name</span><a href="/customers" class="detail-row-value" style="color: var(--text-accent); text-decoration: none;">' + v.owner.name + '</a></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">' + v.owner.phone + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value" style="color: var(--text-accent);">' + v.owner.email + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Address</span><span class="detail-row-value" style="text-align: right; max-width: 60%;">' + v.owner.address + '</span></div>'
+        + '</div>'
+
+        // Financial summary
+        + '<div class="glass rounded-xl p-5 fade-in">'
+        + '<h3 class="text-base font-semibold mb-4" style="color: var(--text-primary)">Financial Summary</h3>'
+        + '<div class="detail-row"><span class="detail-row-label">Total Spent</span><span class="detail-row-value" style="color: var(--text-revenue);">' + v.financial.totalSpent + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Avg Repair</span><span class="detail-row-value">' + v.financial.avgRepair + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Total Estimates</span><span class="detail-row-value">' + v.financial.totalEstimates + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Insurance Claims</span><span class="detail-row-value">' + v.financial.claims + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Outstanding</span><span class="detail-row-value" style="color: ' + (v.financial.outstanding !== '$0' ? 'var(--badge-amber-text)' : 'var(--text-primary)') + ';">' + v.financial.outstanding + '</span></div>'
+        + '</div>'
+
+        // ADAS
+        + adasHtml
+
+        + '</div></div>'
+    }
+</script>

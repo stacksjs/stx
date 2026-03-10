@@ -25,21 +25,21 @@ const summaryStats = [
 ]
 
 const customers = [
-  { id: 1, name: 'James Rodriguez', email: 'j.rodriguez@email.com', phone: '(512) 555-0174', vehicles: 2, totalSpent: '$26,840', lastVisit: '2026-03-09', status: 'Active Repair', rating: 5 },
-  { id: 2, name: 'Lisa Chen', email: 'lisa.chen@email.com', phone: '(415) 555-0298', vehicles: 3, totalSpent: '$54,210', lastVisit: '2026-03-08', status: 'Active Repair', rating: 4 },
-  { id: 3, name: 'Mark Thompson', email: 'm.thompson@email.com', phone: '(614) 555-0132', vehicles: 1, totalSpent: '$8,215', lastVisit: '2026-03-07', status: 'Completed', rating: 5 },
-  { id: 4, name: 'Diana Watts', email: 'diana.watts@email.com', phone: '(214) 555-0387', vehicles: 2, totalSpent: '$38,920', lastVisit: '2026-03-06', status: 'Pending Pickup', rating: 4 },
-  { id: 5, name: 'Robert Kim', email: 'r.kim@email.com', phone: '(310) 555-0421', vehicles: 1, totalSpent: '$12,450', lastVisit: '2026-03-05', status: 'Completed', rating: 5 },
-  { id: 6, name: 'Angela Brooks', email: 'a.brooks@email.com', phone: '(713) 555-0245', vehicles: 2, totalSpent: '$15,340', lastVisit: '2026-03-04', status: 'Active Repair', rating: 4 },
-  { id: 7, name: 'Kevin Patel', email: 'k.patel@email.com', phone: '(404) 555-0189', vehicles: 3, totalSpent: '$31,760', lastVisit: '2026-03-03', status: 'Completed', rating: 5 },
-  { id: 8, name: 'Sarah Jensen', email: 's.jensen@email.com', phone: '(503) 555-0356', vehicles: 1, totalSpent: '$7,320', lastVisit: '2026-03-02', status: 'Pending Pickup', rating: 4 },
-  { id: 9, name: 'David Martinez', email: 'd.martinez@email.com', phone: '(602) 555-0278', vehicles: 2, totalSpent: '$22,640', lastVisit: '2026-02-28', status: 'Completed', rating: 3 },
-  { id: 10, name: 'Michelle Wu', email: 'm.wu@email.com', phone: '(212) 555-0443', vehicles: 1, totalSpent: '$56,210', lastVisit: '2026-02-25', status: 'Active Repair', rating: 5 },
-  { id: 11, name: 'Thomas Green', email: 't.green@email.com', phone: '(303) 555-0165', vehicles: 2, totalSpent: '$14,890', lastVisit: '2026-02-22', status: 'New', rating: 4 },
-  { id: 12, name: 'Jennifer Liu', email: 'j.liu@email.com', phone: '(206) 555-0512', vehicles: 1, totalSpent: '$38,940', lastVisit: '2026-02-18', status: 'Completed', rating: 5 },
-  { id: 13, name: 'Carlos Gutierrez', email: 'c.gutierrez@email.com', phone: '(305) 555-0634', vehicles: 3, totalSpent: '$47,120', lastVisit: '2026-02-15', status: 'Completed', rating: 4 },
-  { id: 14, name: 'Priya Sharma', email: 'p.sharma@email.com', phone: '(408) 555-0791', vehicles: 1, totalSpent: '$5,680', lastVisit: '2026-02-10', status: 'New', rating: 5 },
-  { id: 15, name: 'William Okafor', email: 'w.okafor@email.com', phone: '(773) 555-0823', vehicles: 2, totalSpent: '$19,350', lastVisit: '2026-02-05', status: 'Pending Pickup', rating: 4 },
+  { id: 1, name: 'James Rodriguez', email: 'j.rodriguez@email.com', phone: '(512) 555-0174', vehicles: 2, vins: '7SAY1E9P8RF123456, 1HGCV1F34MA054782', totalSpent: '$26,840', lastVisit: '2026-03-09', status: 'Active Repair', rating: 5 },
+  { id: 2, name: 'Lisa Chen', email: 'lisa.chen@email.com', phone: '(415) 555-0298', vehicles: 3, vins: '5UX23EP05P9A71842, JTDKN3DU7N0582341, WA1BNAFY0L2018473', totalSpent: '$54,210', lastVisit: '2026-03-08', status: 'Active Repair', rating: 4 },
+  { id: 3, name: 'Mark Thompson', email: 'm.thompson@email.com', phone: '(614) 555-0132', vehicles: 1, vins: '2HGFE2F59NH512847', totalSpent: '$8,215', lastVisit: '2026-03-07', status: 'Completed', rating: 5 },
+  { id: 4, name: 'Diana Watts', email: 'diana.watts@email.com', phone: '(214) 555-0387', vehicles: 2, vins: '1FTFW1E87NKE45923, 3GNAXUEV5MS218764', totalSpent: '$38,920', lastVisit: '2026-03-06', status: 'Pending Pickup', rating: 4 },
+  { id: 5, name: 'Robert Kim', email: 'r.kim@email.com', phone: '(310) 555-0421', vehicles: 1, vins: '5YFBU4EE4NP091827', totalSpent: '$12,450', lastVisit: '2026-03-05', status: 'Completed', rating: 5 },
+  { id: 6, name: 'Angela Brooks', email: 'a.brooks@email.com', phone: '(713) 555-0245', vehicles: 2, vins: '1GCUYEED5RZ284715, JN8AT3CA7NW142683', totalSpent: '$15,340', lastVisit: '2026-03-04', status: 'Active Repair', rating: 4 },
+  { id: 7, name: 'Kevin Patel', email: 'k.patel@email.com', phone: '(404) 555-0189', vehicles: 3, vins: 'KM8J3CA46NU387215, 2HKRW2H52LH504182, JTDEPRAE5LJ023847', totalSpent: '$31,760', lastVisit: '2026-03-03', status: 'Completed', rating: 5 },
+  { id: 8, name: 'Sarah Jensen', email: 's.jensen@email.com', phone: '(503) 555-0356', vehicles: 1, vins: '2T3P1RFV5RC084562', totalSpent: '$7,320', lastVisit: '2026-03-02', status: 'Pending Pickup', rating: 4 },
+  { id: 9, name: 'David Martinez', email: 'd.martinez@email.com', phone: '(602) 555-0278', vehicles: 2, vins: '1N4BL4BV7NN384215, 1FMCU9G65LUA57183', totalSpent: '$22,640', lastVisit: '2026-02-28', status: 'Completed', rating: 3 },
+  { id: 10, name: 'Michelle Wu', email: 'm.wu@email.com', phone: '(212) 555-0443', vehicles: 1, vins: 'WBA5R1C07M7D48291', totalSpent: '$56,210', lastVisit: '2026-02-25', status: 'Active Repair', rating: 5 },
+  { id: 11, name: 'Thomas Green', email: 't.green@email.com', phone: '(303) 555-0165', vehicles: 2, vins: '2HKRS2H86RH415283, 4S4BTAFC1K3218475', totalSpent: '$14,890', lastVisit: '2026-02-22', status: 'New', rating: 4 },
+  { id: 12, name: 'Jennifer Liu', email: 'j.liu@email.com', phone: '(206) 555-0512', vehicles: 1, vins: '3FMTK3SU8NMA72841', totalSpent: '$38,940', lastVisit: '2026-02-18', status: 'Completed', rating: 5 },
+  { id: 13, name: 'Carlos Gutierrez', email: 'c.gutierrez@email.com', phone: '(305) 555-0634', vehicles: 3, vins: 'W1N0J8DB5RA218347, 2T2HZMDA5NC284791, 5UXTY5C09L9B41823', totalSpent: '$47,120', lastVisit: '2026-02-15', status: 'Completed', rating: 4 },
+  { id: 14, name: 'Priya Sharma', email: 'p.sharma@email.com', phone: '(408) 555-0791', vehicles: 1, vins: '5YJ3E1EA5RF192847', totalSpent: '$5,680', lastVisit: '2026-02-10', status: 'New', rating: 5 },
+  { id: 15, name: 'William Okafor', email: 'w.okafor@email.com', phone: '(773) 555-0823', vehicles: 2, vins: '5XYP3DHC7NG182435, 5NPEH4JA6MH045218', totalSpent: '$19,350', lastVisit: '2026-02-05', status: 'Pending Pickup', rating: 4 },
 ]
 
 const recentComms = [
@@ -125,7 +125,7 @@ function starsHtml(rating) {
       <div class="glass rounded-xl p-4 mb-8 fade-in">
         <div class="flex flex-col md:flex-row gap-3">
           <div class="flex-1">
-            <input id="customerSearch" type="text" placeholder="Search by name, email, or phone..." oninput="filterCustomers()" class="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary)" />
+            <input id="customerSearch" type="text" placeholder="Search by name, email, phone, or VIN..." oninput="filterCustomers()" class="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary)" />
           </div>
           <select id="statusFilter" onchange="filterCustomers()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
             <option value="">All Statuses</option>
@@ -171,7 +171,7 @@ function starsHtml(rating) {
               </thead>
               <tbody id="customerTableBody">
                 @foreach (customers as idx => customer)
-                  <tr class="clickable customer-row" data-name="{{ customer.name.toLowerCase() }}" data-email="{{ customer.email }}" data-phone="{{ customer.phone }}" data-status="{{ customer.status }}" data-vehicles="{{ customer.vehicles }}" data-lastvisit="{{ customer.lastVisit }}" style="border-bottom: 1px solid var(--row-border)" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='transparent'" onclick="openCustomerDetail({{ idx }})">
+                  <tr class="clickable customer-row" data-name="{{ customer.name.toLowerCase() }}" data-email="{{ customer.email }}" data-phone="{{ customer.phone }}" data-vins="{{ customer.vins.toLowerCase() }}" data-status="{{ customer.status }}" data-vehicles="{{ customer.vehicles }}" data-lastvisit="{{ customer.lastVisit }}" style="border-bottom: 1px solid var(--row-border)" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='transparent'" onclick="openCustomerDetail({{ idx }})">
                     <td class="px-5 py-3.5">
                       <div>
                         <span class="font-medium" style="color: var(--text-secondary)">{{ customer.name }}</span>
@@ -285,15 +285,15 @@ function starsHtml(rating) {
         address: '1247 Elm Street, Austin, TX 78701', status: 'Active Repair',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2024, make: 'Tesla', model: 'Model Y', status: 'Active Repair' },
-          { year: 2021, make: 'Honda', model: 'Accord', status: 'No Active Repair' }
+          { year: 2024, make: 'Tesla', model: 'Model Y', vin: '7SAY1E9P8RF123456', insurer: 'State Farm', estimates: 3, status: 'Active Repair' },
+          { year: 2021, make: 'Honda', model: 'Accord', vin: '1HGCV1F34MA054782', insurer: 'State Farm', estimates: 2, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-03-09', desc: 'Front-end collision repair — Tesla Model Y', cost: '$8,420', status: 'In Progress' },
-          { date: '2025-11-14', desc: 'Quarter panel dent — PDR', cost: '$1,850', status: 'Completed' },
-          { date: '2025-06-22', desc: 'Rear bumper replacement', cost: '$4,320', status: 'Completed' },
-          { date: '2025-02-08', desc: 'Windshield replacement', cost: '$3,830', status: 'Completed' },
-          { date: '2024-09-15', desc: 'Paint correction — Honda Accord', cost: '$8,420', status: 'Completed' }
+          { date: '2026-03-09', desc: 'Front-end collision repair — Tesla Model Y', cost: '$8,420', status: 'In Progress', estimateId: 'EST-4821', insurer: 'State Farm', vin: '7SAY1E9P8RF123456' },
+          { date: '2025-11-14', desc: 'Quarter panel dent — PDR', cost: '$1,850', status: 'Completed', estimateId: 'EST-4612', insurer: 'State Farm', vin: '7SAY1E9P8RF123456' },
+          { date: '2025-06-22', desc: 'Rear bumper replacement', cost: '$4,320', status: 'Completed', estimateId: 'EST-4401', insurer: 'State Farm', vin: '7SAY1E9P8RF123456' },
+          { date: '2025-02-08', desc: 'Windshield replacement', cost: '$3,830', status: 'Completed', estimateId: 'EST-4198', insurer: 'State Farm', vin: '1HGCV1F34MA054782' },
+          { date: '2024-09-15', desc: 'Paint correction — Honda Accord', cost: '$8,420', status: 'Completed', estimateId: 'EST-3920', insurer: 'State Farm', vin: '1HGCV1F34MA054782' }
         ],
         financial: { totalSpent: '$26,840', avgRepair: '$5,368', outstanding: '$8,420' },
         notes: 'Loyal customer since 2024. Prefers SMS updates. Has two vehicles on file.',
@@ -310,16 +310,16 @@ function starsHtml(rating) {
         address: '582 Pacific Ave, San Francisco, CA 94133', status: 'Active Repair',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2023, make: 'BMW', model: 'X5', status: 'Active Repair' },
-          { year: 2022, make: 'Toyota', model: 'Prius', status: 'No Active Repair' },
-          { year: 2020, make: 'Audi', model: 'Q5', status: 'No Active Repair' }
+          { year: 2023, make: 'BMW', model: 'X5', vin: '5UX23EP05P9A71842', insurer: 'Progressive', estimates: 4, status: 'Active Repair' },
+          { year: 2022, make: 'Toyota', model: 'Prius', vin: 'JTDKN3DU7N0582341', insurer: 'Progressive', estimates: 1, status: 'No Active Repair' },
+          { year: 2020, make: 'Audi', model: 'Q5', vin: 'WA1BNAFY0L2018473', insurer: 'Progressive', estimates: 1, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-03-08', desc: 'Side impact door repair — BMW X5', cost: '$12,640', status: 'In Progress' },
-          { date: '2025-09-30', desc: 'Front bumper and grille replacement', cost: '$9,870', status: 'Completed' },
-          { date: '2025-04-17', desc: 'Hail damage — full PDR', cost: '$11,420', status: 'Completed' },
-          { date: '2024-12-05', desc: 'Rear-end collision repair', cost: '$8,450', status: 'Completed' },
-          { date: '2024-06-20', desc: 'Paint correction — Audi Q5', cost: '$11,830', status: 'Completed' }
+          { date: '2026-03-08', desc: 'Side impact door repair — BMW X5', cost: '$12,640', status: 'In Progress', estimateId: 'EST-4820', insurer: 'Progressive', vin: '5UX23EP05P9A71842' },
+          { date: '2025-09-30', desc: 'Front bumper and grille replacement', cost: '$9,870', status: 'Completed', estimateId: 'EST-4490', insurer: 'Progressive', vin: '5UX23EP05P9A71842' },
+          { date: '2025-04-17', desc: 'Hail damage — full PDR', cost: '$11,420', status: 'Completed', estimateId: 'EST-4215', insurer: 'Progressive', vin: '5UX23EP05P9A71842' },
+          { date: '2024-12-05', desc: 'Rear-end collision repair', cost: '$8,450', status: 'Completed', estimateId: 'EST-3845', insurer: 'Progressive', vin: 'JTDKN3DU7N0582341' },
+          { date: '2024-06-20', desc: 'Paint correction — Audi Q5', cost: '$11,830', status: 'Completed', estimateId: 'EST-3612', insurer: 'Progressive', vin: 'WA1BNAFY0L2018473' }
         ],
         financial: { totalSpent: '$54,210', avgRepair: '$10,842', outstanding: '$12,640' },
         notes: 'High-value customer. Owns three vehicles. Very responsive via email.',
@@ -336,12 +336,12 @@ function starsHtml(rating) {
         address: '890 High St, Columbus, OH 43215', status: 'Completed',
         smsEnabled: false, emailEnabled: true,
         vehicles: [
-          { year: 2022, make: 'Honda', model: 'Civic', status: 'No Active Repair' }
+          { year: 2022, make: 'Honda', model: 'Civic', vin: '2HGFE2F59NH512847', insurer: 'GEICO', estimates: 3, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-03-07', desc: 'Rear bumper scuff repair', cost: '$1,215', status: 'Completed' },
-          { date: '2025-08-19', desc: 'Front fender replacement', cost: '$3,890', status: 'Completed' },
-          { date: '2025-01-11', desc: 'Door ding — PDR', cost: '$3,110', status: 'Completed' }
+          { date: '2026-03-07', desc: 'Rear bumper scuff repair', cost: '$1,215', status: 'Completed', estimateId: 'EST-4819', insurer: 'GEICO', vin: '2HGFE2F59NH512847' },
+          { date: '2025-08-19', desc: 'Front fender replacement', cost: '$3,890', status: 'Completed', estimateId: 'EST-4380', insurer: 'GEICO', vin: '2HGFE2F59NH512847' },
+          { date: '2025-01-11', desc: 'Door ding — PDR', cost: '$3,110', status: 'Completed', estimateId: 'EST-4052', insurer: 'GEICO', vin: '2HGFE2F59NH512847' }
         ],
         financial: { totalSpent: '$8,215', avgRepair: '$2,738', outstanding: '$0' },
         notes: 'Prefers email communication only. Single vehicle owner.',
@@ -358,15 +358,15 @@ function starsHtml(rating) {
         address: '3401 Oak Lawn Ave, Dallas, TX 75219', status: 'Pending Pickup',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2024, make: 'Ford', model: 'F-150', status: 'Pending Pickup' },
-          { year: 2021, make: 'Chevrolet', model: 'Equinox', status: 'No Active Repair' }
+          { year: 2024, make: 'Ford', model: 'F-150', vin: '1FTFW1E87NKE45923', insurer: 'Allstate', estimates: 4, status: 'Pending Pickup' },
+          { year: 2021, make: 'Chevrolet', model: 'Equinox', vin: '3GNAXUEV5MS218764', insurer: 'Allstate', estimates: 1, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-03-06', desc: 'Bed-side panel dent repair — F-150', cost: '$6,230', status: 'Pending Pickup' },
-          { date: '2025-10-22', desc: 'Front-end collision repair', cost: '$14,870', status: 'Completed' },
-          { date: '2025-05-09', desc: 'Tailgate replacement', cost: '$7,340', status: 'Completed' },
-          { date: '2024-11-18', desc: 'Running board damage', cost: '$3,230', status: 'Completed' },
-          { date: '2024-07-02', desc: 'Paint touch-up — Equinox', cost: '$7,250', status: 'Completed' }
+          { date: '2026-03-06', desc: 'Bed-side panel dent repair — F-150', cost: '$6,230', status: 'Pending Pickup', estimateId: 'EST-4818', insurer: 'Allstate', vin: '1FTFW1E87NKE45923' },
+          { date: '2025-10-22', desc: 'Front-end collision repair', cost: '$14,870', status: 'Completed', estimateId: 'EST-4520', insurer: 'Allstate', vin: '1FTFW1E87NKE45923' },
+          { date: '2025-05-09', desc: 'Tailgate replacement', cost: '$7,340', status: 'Completed', estimateId: 'EST-4280', insurer: 'Allstate', vin: '1FTFW1E87NKE45923' },
+          { date: '2024-11-18', desc: 'Running board damage', cost: '$3,230', status: 'Completed', estimateId: 'EST-3910', insurer: 'Allstate', vin: '1FTFW1E87NKE45923' },
+          { date: '2024-07-02', desc: 'Paint touch-up — Equinox', cost: '$7,250', status: 'Completed', estimateId: 'EST-3690', insurer: 'Allstate', vin: '3GNAXUEV5MS218764' }
         ],
         financial: { totalSpent: '$38,920', avgRepair: '$7,784', outstanding: '$6,230' },
         notes: 'Repeat customer. Two vehicles on file. Responsive to both SMS and email.',
@@ -383,12 +383,12 @@ function starsHtml(rating) {
         address: '7720 Sunset Blvd, Los Angeles, CA 90046', status: 'Completed',
         smsEnabled: true, emailEnabled: false,
         vehicles: [
-          { year: 2023, make: 'Toyota', model: 'Camry', status: 'No Active Repair' }
+          { year: 2023, make: 'Toyota', model: 'Camry', vin: '5YFBU4EE4NP091827', insurer: 'USAA', estimates: 3, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-03-05', desc: 'Rear quarter panel repair', cost: '$3,450', status: 'Completed' },
-          { date: '2025-07-14', desc: 'Front bumper replacement', cost: '$4,120', status: 'Completed' },
-          { date: '2025-02-28', desc: 'Side mirror replacement', cost: '$4,880', status: 'Completed' }
+          { date: '2026-03-05', desc: 'Rear quarter panel repair', cost: '$3,450', status: 'Completed', estimateId: 'EST-4817', insurer: 'USAA', vin: '5YFBU4EE4NP091827' },
+          { date: '2025-07-14', desc: 'Front bumper replacement', cost: '$4,120', status: 'Completed', estimateId: 'EST-4350', insurer: 'USAA', vin: '5YFBU4EE4NP091827' },
+          { date: '2025-02-28', desc: 'Side mirror replacement', cost: '$4,880', status: 'Completed', estimateId: 'EST-4120', insurer: 'USAA', vin: '5YFBU4EE4NP091827' }
         ],
         financial: { totalSpent: '$12,450', avgRepair: '$4,150', outstanding: '$0' },
         notes: 'Prefers SMS only. Consistent customer for minor repairs.',
@@ -405,14 +405,14 @@ function starsHtml(rating) {
         address: '4512 Westheimer Rd, Houston, TX 77027', status: 'Active Repair',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2025, make: 'Chevrolet', model: 'Silverado', status: 'Active Repair' },
-          { year: 2022, make: 'Nissan', model: 'Rogue', status: 'No Active Repair' }
+          { year: 2025, make: 'Chevrolet', model: 'Silverado', vin: '1GCUYEED5RZ284715', insurer: 'Liberty Mutual', estimates: 3, status: 'Active Repair' },
+          { year: 2022, make: 'Nissan', model: 'Rogue', vin: 'JN8AT3CA7NW142683', insurer: 'Liberty Mutual', estimates: 1, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-03-04', desc: 'Front-end collision — Silverado', cost: '$5,870', status: 'In Progress' },
-          { date: '2025-12-10', desc: 'Scratches and paint correction', cost: '$2,100', status: 'Completed' },
-          { date: '2025-09-01', desc: 'Bed liner repair', cost: '$1,900', status: 'Completed' },
-          { date: '2025-04-15', desc: 'Bumper repair — Nissan Rogue', cost: '$5,470', status: 'Completed' }
+          { date: '2026-03-04', desc: 'Front-end collision — Silverado', cost: '$5,870', status: 'In Progress', estimateId: 'EST-4816', insurer: 'Liberty Mutual', vin: '1GCUYEED5RZ284715' },
+          { date: '2025-12-10', desc: 'Scratches and paint correction', cost: '$2,100', status: 'Completed', estimateId: 'EST-4630', insurer: 'Liberty Mutual', vin: '1GCUYEED5RZ284715' },
+          { date: '2025-09-01', desc: 'Bed liner repair', cost: '$1,900', status: 'Completed', estimateId: 'EST-4445', insurer: 'Liberty Mutual', vin: '1GCUYEED5RZ284715' },
+          { date: '2025-04-15', desc: 'Bumper repair — Nissan Rogue', cost: '$5,470', status: 'Completed', estimateId: 'EST-4230', insurer: 'Liberty Mutual', vin: 'JN8AT3CA7NW142683' }
         ],
         financial: { totalSpent: '$15,340', avgRepair: '$3,835', outstanding: '$5,870' },
         notes: 'Two vehicles. Recently purchased the Silverado. Good communication.',
@@ -429,16 +429,16 @@ function starsHtml(rating) {
         address: '255 Peachtree St NE, Atlanta, GA 30303', status: 'Completed',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2022, make: 'Hyundai', model: 'Tucson', status: 'No Active Repair' },
-          { year: 2020, make: 'Honda', model: 'CR-V', status: 'No Active Repair' },
-          { year: 2019, make: 'Toyota', model: 'Corolla', status: 'No Active Repair' }
+          { year: 2022, make: 'Hyundai', model: 'Tucson', vin: 'KM8J3CA46NU387215', insurer: 'Farmers', estimates: 3, status: 'No Active Repair' },
+          { year: 2020, make: 'Honda', model: 'CR-V', vin: '2HKRW2H52LH504182', insurer: 'Farmers', estimates: 1, status: 'No Active Repair' },
+          { year: 2019, make: 'Toyota', model: 'Corolla', vin: 'JTDEPRAE5LJ023847', insurer: 'Farmers', estimates: 1, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-03-03', desc: 'Liftgate dent repair — Tucson', cost: '$2,890', status: 'Completed' },
-          { date: '2025-11-05', desc: 'Hail damage — PDR', cost: '$8,450', status: 'Completed' },
-          { date: '2025-06-18', desc: 'Front-end collision repair', cost: '$7,650', status: 'Completed' },
-          { date: '2025-01-25', desc: 'Rear bumper replacement — CR-V', cost: '$5,600', status: 'Completed' },
-          { date: '2024-08-12', desc: 'Side panel repair — Corolla', cost: '$7,170', status: 'Completed' }
+          { date: '2026-03-03', desc: 'Liftgate dent repair — Tucson', cost: '$2,890', status: 'Completed', estimateId: 'EST-4815', insurer: 'Farmers', vin: 'KM8J3CA46NU387215' },
+          { date: '2025-11-05', desc: 'Hail damage — PDR', cost: '$8,450', status: 'Completed', estimateId: 'EST-4580', insurer: 'Farmers', vin: 'KM8J3CA46NU387215' },
+          { date: '2025-06-18', desc: 'Front-end collision repair', cost: '$7,650', status: 'Completed', estimateId: 'EST-4340', insurer: 'Farmers', vin: 'KM8J3CA46NU387215' },
+          { date: '2025-01-25', desc: 'Rear bumper replacement — CR-V', cost: '$5,600', status: 'Completed', estimateId: 'EST-4080', insurer: 'Farmers', vin: '2HKRW2H52LH504182' },
+          { date: '2024-08-12', desc: 'Side panel repair — Corolla', cost: '$7,170', status: 'Completed', estimateId: 'EST-3780', insurer: 'Farmers', vin: 'JTDEPRAE5LJ023847' }
         ],
         financial: { totalSpent: '$31,760', avgRepair: '$6,352', outstanding: '$0' },
         notes: 'Family fleet — three vehicles. Always pays promptly. Great referral source.',
@@ -455,12 +455,12 @@ function starsHtml(rating) {
         address: '1820 NW Lovejoy St, Portland, OR 97209', status: 'Pending Pickup',
         smsEnabled: false, emailEnabled: true,
         vehicles: [
-          { year: 2024, make: 'Toyota', model: 'RAV4', status: 'Pending Pickup' }
+          { year: 2024, make: 'Toyota', model: 'RAV4', vin: '2T3P1RFV5RC084562', insurer: 'State Farm', estimates: 3, status: 'Pending Pickup' }
         ],
         repairs: [
-          { date: '2026-03-02', desc: 'Rear-end collision repair', cost: '$4,120', status: 'Pending Pickup' },
-          { date: '2025-08-30', desc: 'Side panel scratch repair', cost: '$1,650', status: 'Completed' },
-          { date: '2025-04-05', desc: 'Windshield chip repair', cost: '$1,550', status: 'Completed' }
+          { date: '2026-03-02', desc: 'Rear-end collision repair', cost: '$4,120', status: 'Pending Pickup', estimateId: 'EST-4798', insurer: 'State Farm', vin: '2T3P1RFV5RC084562' },
+          { date: '2025-08-30', desc: 'Side panel scratch repair', cost: '$1,650', status: 'Completed', estimateId: 'EST-4410', insurer: 'State Farm', vin: '2T3P1RFV5RC084562' },
+          { date: '2025-04-05', desc: 'Windshield chip repair', cost: '$1,550', status: 'Completed', estimateId: 'EST-4190', insurer: 'State Farm', vin: '2T3P1RFV5RC084562' }
         ],
         financial: { totalSpent: '$7,320', avgRepair: '$2,440', outstanding: '$4,120' },
         notes: 'Email only. First-time customer in 2025. Single vehicle.',
@@ -477,15 +477,15 @@ function starsHtml(rating) {
         address: '4402 N Central Ave, Phoenix, AZ 85012', status: 'Completed',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2023, make: 'Nissan', model: 'Altima', status: 'No Active Repair' },
-          { year: 2020, make: 'Ford', model: 'Escape', status: 'No Active Repair' }
+          { year: 2023, make: 'Nissan', model: 'Altima', vin: '1N4BL4BV7NN384215', insurer: 'GEICO', estimates: 4, status: 'No Active Repair' },
+          { year: 2020, make: 'Ford', model: 'Escape', vin: '1FMCU9G65LUA57183', insurer: 'GEICO', estimates: 1, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-02-28', desc: 'Front bumper and hood repair — Altima', cost: '$6,240', status: 'Completed' },
-          { date: '2025-10-12', desc: 'Rear-end collision repair', cost: '$5,890', status: 'Completed' },
-          { date: '2025-05-26', desc: 'Door panel replacement', cost: '$4,320', status: 'Completed' },
-          { date: '2024-12-19', desc: 'Fender bender — front left', cost: '$3,390', status: 'Completed' },
-          { date: '2024-07-30', desc: 'Bumper repair — Ford Escape', cost: '$2,800', status: 'Completed' }
+          { date: '2026-02-28', desc: 'Front bumper and hood repair — Altima', cost: '$6,240', status: 'Completed', estimateId: 'EST-4790', insurer: 'GEICO', vin: '1N4BL4BV7NN384215' },
+          { date: '2025-10-12', desc: 'Rear-end collision repair', cost: '$5,890', status: 'Completed', estimateId: 'EST-4540', insurer: 'GEICO', vin: '1N4BL4BV7NN384215' },
+          { date: '2025-05-26', desc: 'Door panel replacement', cost: '$4,320', status: 'Completed', estimateId: 'EST-4300', insurer: 'GEICO', vin: '1N4BL4BV7NN384215' },
+          { date: '2024-12-19', desc: 'Fender bender — front left', cost: '$3,390', status: 'Completed', estimateId: 'EST-3870', insurer: 'GEICO', vin: '1N4BL4BV7NN384215' },
+          { date: '2024-07-30', desc: 'Bumper repair — Ford Escape', cost: '$2,800', status: 'Completed', estimateId: 'EST-3720', insurer: 'GEICO', vin: '1FMCU9G65LUA57183' }
         ],
         financial: { totalSpent: '$22,640', avgRepair: '$4,528', outstanding: '$0' },
         notes: 'Regular customer. Two vehicles. Sometimes delayed on pickup.',
@@ -502,13 +502,13 @@ function starsHtml(rating) {
         address: '350 W 42nd St, New York, NY 10036', status: 'Active Repair',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2021, make: 'BMW', model: '330i', status: 'Active Repair' }
+          { year: 2021, make: 'BMW', model: '330i', vin: 'WBA5R1C07M7D48291', insurer: 'Progressive', estimates: 4, status: 'Active Repair' }
         ],
         repairs: [
-          { date: '2026-02-25', desc: 'Front-end collision — major', cost: '$18,340', status: 'In Progress' },
-          { date: '2025-09-14', desc: 'Side impact door repair', cost: '$12,870', status: 'Completed' },
-          { date: '2025-03-22', desc: 'Rear bumper and trunk repair', cost: '$14,200', status: 'Completed' },
-          { date: '2024-10-08', desc: 'Hail damage — full PDR', cost: '$10,800', status: 'Completed' }
+          { date: '2026-02-25', desc: 'Front-end collision — major', cost: '$18,340', status: 'In Progress', estimateId: 'EST-4775', insurer: 'Progressive', vin: 'WBA5R1C07M7D48291' },
+          { date: '2025-09-14', desc: 'Side impact door repair', cost: '$12,870', status: 'Completed', estimateId: 'EST-4470', insurer: 'Progressive', vin: 'WBA5R1C07M7D48291' },
+          { date: '2025-03-22', desc: 'Rear bumper and trunk repair', cost: '$14,200', status: 'Completed', estimateId: 'EST-4160', insurer: 'Progressive', vin: 'WBA5R1C07M7D48291' },
+          { date: '2024-10-08', desc: 'Hail damage — full PDR', cost: '$10,800', status: 'Completed', estimateId: 'EST-3830', insurer: 'Progressive', vin: 'WBA5R1C07M7D48291' }
         ],
         financial: { totalSpent: '$56,210', avgRepair: '$14,053', outstanding: '$18,340' },
         notes: 'Highest lifetime value customer. BMW specialist. Very engaged.',
@@ -525,14 +525,14 @@ function starsHtml(rating) {
         address: '1600 Champa St, Denver, CO 80202', status: 'New',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2024, make: 'Honda', model: 'CR-V', status: 'Pending Estimate' },
-          { year: 2019, make: 'Subaru', model: 'Outback', status: 'No Active Repair' }
+          { year: 2024, make: 'Honda', model: 'CR-V', vin: '2HKRS2H86RH415283', insurer: 'Allstate', estimates: 2, status: 'Pending Estimate' },
+          { year: 2019, make: 'Subaru', model: 'Outback', vin: '4S4BTAFC1K3218475', insurer: 'Allstate', estimates: 2, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-02-22', desc: 'Rear quarter panel dent — CR-V', cost: '$3,680', status: 'Pending Estimate' },
-          { date: '2026-02-10', desc: 'Side mirror replacement — Outback', cost: '$1,210', status: 'Completed' },
-          { date: '2025-12-15', desc: 'Paint scratch repair — CR-V', cost: '$5,000', status: 'Completed' },
-          { date: '2025-09-20', desc: 'Bumper scuff — Outback', cost: '$5,000', status: 'Completed' }
+          { date: '2026-02-22', desc: 'Rear quarter panel dent — CR-V', cost: '$3,680', status: 'Pending Estimate', estimateId: 'EST-4768', insurer: 'Allstate', vin: '2HKRS2H86RH415283' },
+          { date: '2026-02-10', desc: 'Side mirror replacement — Outback', cost: '$1,210', status: 'Completed', estimateId: 'EST-4745', insurer: 'Allstate', vin: '4S4BTAFC1K3218475' },
+          { date: '2025-12-15', desc: 'Paint scratch repair — CR-V', cost: '$5,000', status: 'Completed', estimateId: 'EST-4650', insurer: 'Allstate', vin: '2HKRS2H86RH415283' },
+          { date: '2025-09-20', desc: 'Bumper scuff — Outback', cost: '$5,000', status: 'Completed', estimateId: 'EST-4460', insurer: 'Allstate', vin: '4S4BTAFC1K3218475' }
         ],
         financial: { totalSpent: '$14,890', avgRepair: '$3,723', outstanding: '$3,680' },
         notes: 'New customer as of late 2025. Two vehicles. Referred by Kevin Patel.',
@@ -549,13 +549,13 @@ function starsHtml(rating) {
         address: '2201 Westlake Ave, Seattle, WA 98121', status: 'Completed',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2023, make: 'Ford', model: 'Mustang Mach-E', status: 'No Active Repair' }
+          { year: 2023, make: 'Ford', model: 'Mustang Mach-E', vin: '3FMTK3SU8NMA72841', insurer: 'USAA', estimates: 4, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-02-18', desc: 'Front-end collision repair', cost: '$14,230', status: 'Completed' },
-          { date: '2025-10-01', desc: 'Charging port surround repair', cost: '$3,870', status: 'Completed' },
-          { date: '2025-05-15', desc: 'Hail damage — PDR', cost: '$9,640', status: 'Completed' },
-          { date: '2024-11-30', desc: 'Rear bumper replacement', cost: '$11,200', status: 'Completed' }
+          { date: '2026-02-18', desc: 'Front-end collision repair', cost: '$14,230', status: 'Completed', estimateId: 'EST-4756', insurer: 'USAA', vin: '3FMTK3SU8NMA72841' },
+          { date: '2025-10-01', desc: 'Charging port surround repair', cost: '$3,870', status: 'Completed', estimateId: 'EST-4510', insurer: 'USAA', vin: '3FMTK3SU8NMA72841' },
+          { date: '2025-05-15', desc: 'Hail damage — PDR', cost: '$9,640', status: 'Completed', estimateId: 'EST-4270', insurer: 'USAA', vin: '3FMTK3SU8NMA72841' },
+          { date: '2024-11-30', desc: 'Rear bumper replacement', cost: '$11,200', status: 'Completed', estimateId: 'EST-3895', insurer: 'USAA', vin: '3FMTK3SU8NMA72841' }
         ],
         financial: { totalSpent: '$38,940', avgRepair: '$9,735', outstanding: '$0' },
         notes: 'EV specialist customer. Mach-E requires certified repair. Always satisfied.',
@@ -572,15 +572,15 @@ function starsHtml(rating) {
         address: '801 Brickell Ave, Miami, FL 33131', status: 'Completed',
         smsEnabled: true, emailEnabled: false,
         vehicles: [
-          { year: 2024, make: 'Mercedes', model: 'GLE 350', status: 'No Active Repair' },
-          { year: 2022, make: 'Lexus', model: 'RX 350', status: 'No Active Repair' },
-          { year: 2020, make: 'BMW', model: 'X3', status: 'No Active Repair' }
+          { year: 2024, make: 'Mercedes', model: 'GLE 350', vin: 'W1N0J8DB5RA218347', insurer: 'State Farm', estimates: 2, status: 'No Active Repair' },
+          { year: 2022, make: 'Lexus', model: 'RX 350', vin: '2T2HZMDA5NC284791', insurer: 'State Farm', estimates: 1, status: 'No Active Repair' },
+          { year: 2020, make: 'BMW', model: 'X3', vin: '5UXTY5C09L9B41823', insurer: 'State Farm', estimates: 1, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-02-15', desc: 'Side panel repair — GLE 350', cost: '$11,450', status: 'Completed' },
-          { date: '2025-11-20', desc: 'Rear-end collision — Lexus RX', cost: '$13,870', status: 'Completed' },
-          { date: '2025-07-08', desc: 'Hail damage — full PDR — BMW X3', cost: '$9,800', status: 'Completed' },
-          { date: '2025-02-14', desc: 'Front bumper — Mercedes GLE', cost: '$12,000', status: 'Completed' }
+          { date: '2026-02-15', desc: 'Side panel repair — GLE 350', cost: '$11,450', status: 'Completed', estimateId: 'EST-4740', insurer: 'State Farm', vin: 'W1N0J8DB5RA218347' },
+          { date: '2025-11-20', desc: 'Rear-end collision — Lexus RX', cost: '$13,870', status: 'Completed', estimateId: 'EST-4600', insurer: 'State Farm', vin: '2T2HZMDA5NC284791' },
+          { date: '2025-07-08', desc: 'Hail damage — full PDR — BMW X3', cost: '$9,800', status: 'Completed', estimateId: 'EST-4370', insurer: 'State Farm', vin: '5UXTY5C09L9B41823' },
+          { date: '2025-02-14', desc: 'Front bumper — Mercedes GLE', cost: '$12,000', status: 'Completed', estimateId: 'EST-4110', insurer: 'State Farm', vin: 'W1N0J8DB5RA218347' }
         ],
         financial: { totalSpent: '$47,120', avgRepair: '$11,780', outstanding: '$0' },
         notes: 'Luxury fleet owner. Three vehicles. SMS preferred. High-value repairs.',
@@ -597,10 +597,10 @@ function starsHtml(rating) {
         address: '5890 Stevens Creek Blvd, San Jose, CA 95129', status: 'New',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2025, make: 'Tesla', model: 'Model 3', status: 'Pending Estimate' }
+          { year: 2025, make: 'Tesla', model: 'Model 3', vin: '5YJ3E1EA5RF192847', insurer: 'GEICO', estimates: 1, status: 'Pending Estimate' }
         ],
         repairs: [
-          { date: '2026-02-10', desc: 'Rear bumper and sensor repair', cost: '$5,680', status: 'Completed' }
+          { date: '2026-02-10', desc: 'Rear bumper and sensor repair', cost: '$5,680', status: 'Completed', estimateId: 'EST-4748', insurer: 'GEICO', vin: '5YJ3E1EA5RF192847' }
         ],
         financial: { totalSpent: '$5,680', avgRepair: '$5,680', outstanding: '$0' },
         notes: 'Brand new customer. First visit in February 2026. Tesla Model 3 owner.',
@@ -617,14 +617,14 @@ function starsHtml(rating) {
         address: '233 S Wacker Dr, Chicago, IL 60606', status: 'Pending Pickup',
         smsEnabled: true, emailEnabled: true,
         vehicles: [
-          { year: 2023, make: 'Kia', model: 'Telluride', status: 'Pending Pickup' },
-          { year: 2021, make: 'Hyundai', model: 'Sonata', status: 'No Active Repair' }
+          { year: 2023, make: 'Kia', model: 'Telluride', vin: '5XYP3DHC7NG182435', insurer: 'Allstate', estimates: 2, status: 'Pending Pickup' },
+          { year: 2021, make: 'Hyundai', model: 'Sonata', vin: '5NPEH4JA6MH045218', insurer: 'Allstate', estimates: 2, status: 'No Active Repair' }
         ],
         repairs: [
-          { date: '2026-02-05', desc: 'Front-end collision — Telluride', cost: '$8,450', status: 'Pending Pickup' },
-          { date: '2025-10-28', desc: 'Door panel dent — Sonata', cost: '$2,900', status: 'Completed' },
-          { date: '2025-06-14', desc: 'Rear bumper — Telluride', cost: '$4,500', status: 'Completed' },
-          { date: '2025-01-20', desc: 'Windshield replacement — Sonata', cost: '$3,500', status: 'Completed' }
+          { date: '2026-02-05', desc: 'Front-end collision — Telluride', cost: '$8,450', status: 'Pending Pickup', estimateId: 'EST-4710', insurer: 'Allstate', vin: '5XYP3DHC7NG182435' },
+          { date: '2025-10-28', desc: 'Door panel dent — Sonata', cost: '$2,900', status: 'Completed', estimateId: 'EST-4555', insurer: 'Allstate', vin: '5NPEH4JA6MH045218' },
+          { date: '2025-06-14', desc: 'Rear bumper — Telluride', cost: '$4,500', status: 'Completed', estimateId: 'EST-4320', insurer: 'Allstate', vin: '5XYP3DHC7NG182435' },
+          { date: '2025-01-20', desc: 'Windshield replacement — Sonata', cost: '$3,500', status: 'Completed', estimateId: 'EST-4060', insurer: 'Allstate', vin: '5NPEH4JA6MH045218' }
         ],
         financial: { totalSpent: '$19,350', avgRepair: '$4,838', outstanding: '$8,450' },
         notes: 'Two-vehicle household. Prefers weekend pickup. Responsive to reminders.',
@@ -659,8 +659,9 @@ function starsHtml(rating) {
         var name = row.getAttribute('data-name')
         var email = row.getAttribute('data-email')
         var phone = row.getAttribute('data-phone')
+        var vins = row.getAttribute('data-vins') || ''
         var rowStatus = row.getAttribute('data-status')
-        var matchSearch = !search || name.indexOf(search) !== -1 || email.indexOf(search) !== -1 || phone.indexOf(search) !== -1
+        var matchSearch = !search || name.indexOf(search) !== -1 || email.indexOf(search) !== -1 || phone.indexOf(search) !== -1 || vins.indexOf(search) !== -1
         var matchStatus = !status || rowStatus === status
 
         if (matchSearch && matchStatus) {
@@ -708,9 +709,19 @@ function starsHtml(rating) {
       var vehiclesList = ''
       c.vehicles.forEach(function(v) {
         var vBadge = v.status === 'Active Repair' ? 'badge-amber' : v.status === 'Pending Pickup' ? 'badge-blue' : v.status === 'Pending Estimate' ? 'badge-slate' : 'badge-emerald'
-        vehiclesList += '<div class="detail-row">'
-        vehiclesList += '<span class="detail-row-label">' + v.year + ' ' + v.make + ' ' + v.model + '</span>'
+        var vinParam = v.vin ? encodeURIComponent(v.vin) : ''
+        vehiclesList += '<div onclick="closeSlideOver(); window.location.href=\'/vehicles/' + vinParam + '\'" style="padding: 0.625rem; border-radius: 0.5rem; background: var(--bg-subtle); margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease; border: 1px solid transparent;" onmouseover="this.style.background=\'var(--bg-subtle-hover)\'; this.style.borderColor=\'var(--bg-glass-border-hover)\'" onmouseout="this.style.background=\'var(--bg-subtle)\'; this.style.borderColor=\'transparent\'">'
+        vehiclesList += '<div style="display: flex; justify-content: space-between; align-items: center;">'
+        vehiclesList += '<span style="font-size: 0.875rem; font-weight: 500; color: var(--text-primary);">' + v.year + ' ' + v.make + ' ' + v.model + ' <svg style="display:inline;vertical-align:middle;opacity:0.4;margin-left:2px" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span>'
         vehiclesList += '<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + vBadge + '">' + v.status + '</span>'
+        vehiclesList += '</div>'
+        if (v.vin) {
+          vehiclesList += '<div style="display: flex; gap: 1rem; margin-top: 0.375rem; flex-wrap: wrap;">'
+          vehiclesList += '<span style="font-size: 0.75rem; color: var(--text-muted);">VIN: <span style="font-family: monospace; color: var(--text-tertiary);">' + v.vin + '</span></span>'
+          if (v.insurer) { vehiclesList += '<span style="font-size: 0.75rem; color: var(--text-muted);">Insurer: <span style="color: var(--text-tertiary);">' + v.insurer + '</span></span>' }
+          if (v.estimates) { vehiclesList += '<span style="font-size: 0.75rem; color: var(--text-muted);">Estimates: <span style="color: var(--text-accent);">' + v.estimates + '</span></span>' }
+          vehiclesList += '</div>'
+        }
         vehiclesList += '</div>'
       })
 
@@ -718,9 +729,10 @@ function starsHtml(rating) {
       var repairTimeline = ''
       c.repairs.forEach(function(r, i) {
         var isLast = i === c.repairs.length - 1
+        var dotColor = r.status === 'In Progress' ? 'var(--bar-amber)' : r.status === 'Pending Pickup' ? 'var(--bar-blue)' : r.status === 'Pending Estimate' ? 'var(--bar-slate)' : 'var(--text-accent)'
         repairTimeline += '<div style="display: flex; gap: 0.75rem;">'
         repairTimeline += '<div style="display: flex; flex-direction: column; align-items: center;">'
-        repairTimeline += '<div style="width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--text-accent); margin-top: 4px;"></div>'
+        repairTimeline += '<div style="width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: ' + dotColor + '; margin-top: 4px;"></div>'
         if (!isLast) {
           repairTimeline += '<div style="width: 2px; flex: 1; background: var(--border-main); margin: 4px 0;"></div>'
         }
@@ -730,10 +742,14 @@ function starsHtml(rating) {
         repairTimeline += '<span style="font-size: 0.875rem; font-weight: 500; color: var(--text-primary);">' + r.desc + '</span>'
         repairTimeline += '<span style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">' + r.cost + '</span>'
         repairTimeline += '</div>'
-        repairTimeline += '<div style="display: flex; gap: 1rem; margin-top: 0.25rem;">'
+        repairTimeline += '<div style="display: flex; gap: 1rem; margin-top: 0.25rem; flex-wrap: wrap;">'
         repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-muted);">' + r.date + '</span>'
-        repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-success);">' + r.status + '</span>'
+        if (r.estimateId) { repairTimeline += '<a href="/estimates" style="font-size: 0.75rem; color: var(--text-accent); text-decoration: none;">' + r.estimateId + '</a>' }
+        if (r.insurer) { repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-tertiary);">' + r.insurer + '</span>' }
+        var statusColor = r.status === 'In Progress' ? 'var(--badge-amber-text)' : r.status === 'Pending Pickup' ? 'var(--badge-blue-text)' : r.status === 'Pending Estimate' ? 'var(--text-muted)' : 'var(--text-success)'
+        repairTimeline += '<span style="font-size: 0.75rem; color: ' + statusColor + ';">' + r.status + '</span>'
         repairTimeline += '</div>'
+        if (r.vin) { repairTimeline += '<span style="font-size: 0.6875rem; color: var(--text-muted); margin-top: 0.125rem; display: block;">VIN: <span style="font-family: monospace;">' + r.vin + '</span></span>' }
         repairTimeline += '</div></div>'
       })
 
@@ -767,6 +783,20 @@ function starsHtml(rating) {
         + '<div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">' + c.email + '</span></div>'
         + '<div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">' + c.phone + '</span></div>'
         + '<div class="detail-row"><span class="detail-row-label">Address</span><span class="detail-row-value" style="text-align: right; max-width: 60%;">' + c.address + '</span></div>'
+        + '</div>'
+
+        // Insurance summary
+        + '<div class="detail-section">'
+        + '<div class="detail-label">Insurance</div>'
+        + (function() {
+          var insurers = {}
+          c.vehicles.forEach(function(v) { if (v.insurer) insurers[v.insurer] = true })
+          return Object.keys(insurers).map(function(ins) {
+            return '<div class="detail-row"><span class="detail-row-label">Primary Insurer</span><span class="detail-row-value">' + ins + '</span></div>'
+          }).join('')
+        })()
+        + '<div class="detail-row"><span class="detail-row-label">Total Vehicles</span><span class="detail-row-value">' + c.vehicles.length + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Total Estimates</span><span class="detail-row-value">' + c.vehicles.reduce(function(sum, v) { return sum + (v.estimates || 0) }, 0) + '</span></div>'
         + '</div>'
 
         // Communication preferences

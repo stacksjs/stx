@@ -879,6 +879,15 @@ interface RouteMapping {
   }
 }
 
+// Dynamic route info for [param] segments
+interface DynamicRoute {
+  pattern: RegExp
+  paramNames: string[]
+  filePath: string
+  routeTemplate: string
+  fileType: 'stx' | 'md'
+}
+
 // Build and serve multiple files (stx and Markdown)
 export async function serveMultipleStxFiles(filePaths: string[], options: DevServerOptions = {}): Promise<boolean> {
   // Default options
@@ -910,6 +919,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
   // Route mapping for serving files
   const routes: RouteMapping = {}
+  const dynamicRoutes: DynamicRoute[] = []
 
   // Function to build all files
   const buildFiles = async (): Promise<boolean> => {
@@ -1185,11 +1195,31 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
             routePath = routePath.slice(0, -6) || '/'
           }
 
-          // Add to routes mapping
-          routes[routePath || '/'] = {
-            filePath: absolutePath,
-            content: htmlContent,
-            fileType: 'stx',
+          // Check if this is a dynamic route (contains [param] segments)
+          if (routePath.includes('[')) {
+            const paramNames = [...routePath.matchAll(/\[([^\]]+)\]/g)].map(m => m[1])
+            const regexStr = routePath.replace(/\[([^\]]+)\]/g, '([^/]+)')
+            dynamicRoutes.push({
+              pattern: new RegExp(`^${regexStr}$`),
+              paramNames,
+              filePath: absolutePath,
+              routeTemplate: routePath,
+              fileType: 'stx',
+            })
+            // Store the template content keyed by the template path for later param injection
+            routes[routePath] = {
+              filePath: absolutePath,
+              content: htmlContent,
+              fileType: 'stx',
+            }
+          }
+          else {
+            // Add to routes mapping
+            routes[routePath || '/'] = {
+              filePath: absolutePath,
+              content: htmlContent,
+              fileType: 'stx',
+            }
           }
         }
       }
@@ -1314,6 +1344,35 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       // If no match, try to find a index match (for cases like /about -> /about/index)
       if (!routeMatched && !url.pathname.endsWith('/')) {
         routeMatched = routes[`${url.pathname}/`]
+      }
+
+      // If still no match, try dynamic routes (e.g., /vehicles/[vin])
+      if (!routeMatched) {
+        for (const dynRoute of dynamicRoutes) {
+          const match = url.pathname.match(dynRoute.pattern)
+          if (match) {
+            // Get the template content
+            const templateRoute = routes[dynRoute.routeTemplate]
+            if (templateRoute) {
+              // Inject route params into the page content as a script block
+              const params: Record<string, string> = {}
+              for (let i = 0; i < dynRoute.paramNames.length; i++) {
+                params[dynRoute.paramNames[i]] = decodeURIComponent(match[i + 1])
+              }
+              let content = templateRoute.content
+              // Inject params as a global variable before </head> or at start of <body>
+              const paramScript = `<script>window.__routeParams = ${JSON.stringify(params)};</script>`
+              if (content.includes('</head>')) {
+                content = content.replace('</head>', `${paramScript}\n</head>`)
+              }
+              else {
+                content = paramScript + content
+              }
+              routeMatched = { ...templateRoute, content }
+            }
+            break
+          }
+        }
       }
 
       // If we found a matching route, serve its content with Crosswind CSS injection
@@ -1461,14 +1520,27 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   // Print the routes in Bun-like format
   console.log(`\n${colors.yellow}Routes:${colors.reset}`)
 
-  // Get all routes sorted for display
+  // Get all routes sorted for display (exclude dynamic route templates from static list)
+  const dynamicTemplates = new Set(dynamicRoutes.map(d => d.routeTemplate))
   const sortedRoutes = Object.entries(routes)
+    .filter(([route]) => !dynamicTemplates.has(route))
     .sort(([pathA], [pathB]) => pathA.localeCompare(pathB))
     .map(([route, info]) => ({
       route: route === '/' ? '/' : route,
       filePath: path.relative(process.cwd(), info.filePath),
       fileType: info.fileType,
     }))
+
+  // Add dynamic routes to display
+  for (const dynRoute of dynamicRoutes) {
+    const displayRoute = dynRoute.routeTemplate.replace(/\[([^\]]+)\]/g, ':$1')
+    sortedRoutes.push({
+      route: displayRoute,
+      filePath: path.relative(process.cwd(), dynRoute.filePath),
+      fileType: 'stx',
+    })
+  }
+  sortedRoutes.sort((a, b) => a.route.localeCompare(b.route))
 
   // Display routes in tree-like structure
   sortedRoutes.forEach((routeInfo, index) => {

@@ -25,18 +25,31 @@ const summaryStats = [
 ]
 
 const vehicles = [
-  { year: 2024, make: 'Tesla', model: 'Model Y', owner: 'James Rodriguez', vin: '7SAY1E9P', estimates: 8, lastRepair: '2026-03-09', totalSpent: '$18,420', status: 'Active Repair', adas: true },
-  { year: 2023, make: 'BMW', model: 'X5', owner: 'Lisa Chen', vin: '5UX23EP0', estimates: 14, lastRepair: '2026-03-08', totalSpent: '$42,380', status: 'Active Repair', adas: true },
-  { year: 2022, make: 'Honda', model: 'Civic', owner: 'Mark Thompson', vin: '2HGFE2F5', estimates: 6, lastRepair: '2026-03-07', totalSpent: '$8,215', status: 'Complete', adas: false },
-  { year: 2024, make: 'Ford', model: 'F-150', owner: 'Diana Watts', vin: '1FTFW1E8', estimates: 11, lastRepair: '2026-03-06', totalSpent: '$31,670', status: 'Pending', adas: true },
-  { year: 2023, make: 'Toyota', model: 'Camry', owner: 'Robert Kim', vin: '4T1G11AK', estimates: 9, lastRepair: '2026-03-05', totalSpent: '$12,450', status: 'Complete', adas: false },
-  { year: 2025, make: 'Chevrolet', model: 'Silverado', owner: 'Angela Brooks', vin: '3GCUYGED', estimates: 3, lastRepair: '2026-03-04', totalSpent: '$9,870', status: 'Active Repair', adas: true },
-  { year: 2022, make: 'Hyundai', model: 'Tucson', owner: 'Kevin Patel', vin: 'KM8JBCA1', estimates: 17, lastRepair: '2026-03-03', totalSpent: '$24,590', status: 'Complete', adas: false },
-  { year: 2024, make: 'Toyota', model: 'RAV4', owner: 'Sarah Jensen', vin: '2T3P1RFV', estimates: 5, lastRepair: '2026-03-02', totalSpent: '$7,320', status: 'Pending', adas: true },
-  { year: 2023, make: 'Nissan', model: 'Altima', owner: 'David Martinez', vin: '1N4BL4CV', estimates: 12, lastRepair: '2026-02-28', totalSpent: '$19,840', status: 'Complete', adas: false },
-  { year: 2021, make: 'BMW', model: '330i', owner: 'Michelle Wu', vin: '3MW5R7J0', estimates: 20, lastRepair: '2026-02-25', totalSpent: '$56,210', status: 'Active Repair', adas: true },
-  { year: 2024, make: 'Honda', model: 'CR-V', owner: 'Thomas Green', vin: '7FARW2H9', estimates: 7, lastRepair: '2026-02-22', totalSpent: '$11,680', status: 'Pending', adas: false },
-  { year: 2023, make: 'Ford', model: 'Mustang Mach-E', owner: 'Jennifer Liu', vin: '3FMTK3SU', estimates: 15, lastRepair: '2026-02-18', totalSpent: '$38,940', status: 'Complete', adas: true },
+  { year: 2024, make: 'Tesla', model: 'Model Y', owner: 'James Rodriguez', vin: '7SAY1E9P8RF123456', estimates: 8, lastRepair: '2026-03-09', totalSpent: '$18,420', status: 'Active Repair', adas: true, insurer: 'State Farm', customerId: 1 },
+  { year: 2021, make: 'Honda', model: 'Accord', owner: 'James Rodriguez', vin: '1HGCV1F34MA054782', estimates: 2, lastRepair: '2025-02-08', totalSpent: '$12,250', status: 'Complete', adas: false, insurer: 'State Farm', customerId: 1 },
+  { year: 2023, make: 'BMW', model: 'X5', owner: 'Lisa Chen', vin: '5UX23EP05P9A71842', estimates: 14, lastRepair: '2026-03-08', totalSpent: '$42,380', status: 'Active Repair', adas: true, insurer: 'Progressive', customerId: 2 },
+  { year: 2022, make: 'Toyota', model: 'Prius', owner: 'Lisa Chen', vin: 'JTDKN3DU7N0582341', estimates: 1, lastRepair: '2024-12-05', totalSpent: '$8,450', status: 'Complete', adas: false, insurer: 'Progressive', customerId: 2 },
+  { year: 2020, make: 'Audi', model: 'Q5', owner: 'Lisa Chen', vin: 'WA1BNAFY0L2018473', estimates: 1, lastRepair: '2024-06-20', totalSpent: '$11,830', status: 'Complete', adas: true, insurer: 'Progressive', customerId: 2 },
+  { year: 2022, make: 'Honda', model: 'Civic', owner: 'Mark Thompson', vin: '2HGFE2F59NH512847', estimates: 6, lastRepair: '2026-03-07', totalSpent: '$8,215', status: 'Complete', adas: false, insurer: 'GEICO', customerId: 3 },
+  { year: 2024, make: 'Ford', model: 'F-150', owner: 'Diana Watts', vin: '1FTFW1E87NKE45923', estimates: 11, lastRepair: '2026-03-06', totalSpent: '$31,670', status: 'Pending', adas: true, insurer: 'Allstate', customerId: 4 },
+  { year: 2021, make: 'Chevrolet', model: 'Equinox', owner: 'Diana Watts', vin: '3GNAXUEV5MS218764', estimates: 1, lastRepair: '2024-07-02', totalSpent: '$7,250', status: 'Complete', adas: false, insurer: 'Allstate', customerId: 4 },
+  { year: 2023, make: 'Toyota', model: 'Camry', owner: 'Robert Kim', vin: '5YFBU4EE4NP091827', estimates: 9, lastRepair: '2026-03-05', totalSpent: '$12,450', status: 'Complete', adas: false, insurer: 'USAA', customerId: 5 },
+  { year: 2025, make: 'Chevrolet', model: 'Silverado', owner: 'Angela Brooks', vin: '1GCUYEED5RZ284715', estimates: 3, lastRepair: '2026-03-04', totalSpent: '$9,870', status: 'Active Repair', adas: true, insurer: 'Liberty Mutual', customerId: 6 },
+  { year: 2022, make: 'Nissan', model: 'Rogue', owner: 'Angela Brooks', vin: 'JN8AT3CA7NW142683', estimates: 1, lastRepair: '2025-04-15', totalSpent: '$5,470', status: 'Complete', adas: false, insurer: 'Liberty Mutual', customerId: 6 },
+  { year: 2022, make: 'Hyundai', model: 'Tucson', owner: 'Kevin Patel', vin: 'KM8J3CA46NU387215', estimates: 17, lastRepair: '2026-03-03', totalSpent: '$24,590', status: 'Complete', adas: false, insurer: 'Farmers', customerId: 7 },
+  { year: 2020, make: 'Honda', model: 'CR-V', owner: 'Kevin Patel', vin: '2HKRW2H52LH504182', estimates: 1, lastRepair: '2025-01-25', totalSpent: '$5,600', status: 'Complete', adas: false, insurer: 'Farmers', customerId: 7 },
+  { year: 2024, make: 'Toyota', model: 'RAV4', owner: 'Sarah Jensen', vin: '2T3P1RFV5RC084562', estimates: 5, lastRepair: '2026-03-02', totalSpent: '$7,320', status: 'Pending', adas: true, insurer: 'State Farm', customerId: 8 },
+  { year: 2023, make: 'Nissan', model: 'Altima', owner: 'David Martinez', vin: '1N4BL4BV7NN384215', estimates: 12, lastRepair: '2026-02-28', totalSpent: '$19,840', status: 'Complete', adas: false, insurer: 'GEICO', customerId: 9 },
+  { year: 2020, make: 'Ford', model: 'Escape', owner: 'David Martinez', vin: '1FMCU9G65LUA57183', estimates: 1, lastRepair: '2024-07-30', totalSpent: '$2,800', status: 'Complete', adas: false, insurer: 'GEICO', customerId: 9 },
+  { year: 2021, make: 'BMW', model: '330i', owner: 'Michelle Wu', vin: 'WBA5R1C07M7D48291', estimates: 20, lastRepair: '2026-02-25', totalSpent: '$56,210', status: 'Active Repair', adas: true, insurer: 'Progressive', customerId: 10 },
+  { year: 2024, make: 'Honda', model: 'CR-V', owner: 'Thomas Green', vin: '2HKRS2H86RH415283', estimates: 7, lastRepair: '2026-02-22', totalSpent: '$11,680', status: 'Pending', adas: false, insurer: 'Allstate', customerId: 11 },
+  { year: 2019, make: 'Subaru', model: 'Outback', owner: 'Thomas Green', vin: '4S4BTAFC1K3218475', estimates: 2, lastRepair: '2025-09-20', totalSpent: '$6,210', status: 'Complete', adas: false, insurer: 'Allstate', customerId: 11 },
+  { year: 2023, make: 'Ford', model: 'Mustang Mach-E', owner: 'Jennifer Liu', vin: '3FMTK3SU8NMA72841', estimates: 15, lastRepair: '2026-02-18', totalSpent: '$38,940', status: 'Complete', adas: true, insurer: 'USAA', customerId: 12 },
+  { year: 2024, make: 'Mercedes', model: 'GLE 350', owner: 'Carlos Gutierrez', vin: 'W1N0J8DB5RA218347', estimates: 2, lastRepair: '2026-02-15', totalSpent: '$23,450', status: 'Complete', adas: true, insurer: 'State Farm', customerId: 13 },
+  { year: 2022, make: 'Lexus', model: 'RX 350', owner: 'Carlos Gutierrez', vin: '2T2HZMDA5NC284791', estimates: 1, lastRepair: '2025-11-20', totalSpent: '$13,870', status: 'Complete', adas: true, insurer: 'State Farm', customerId: 13 },
+  { year: 2025, make: 'Tesla', model: 'Model 3', owner: 'Priya Sharma', vin: '5YJ3E1EA5RF192847', estimates: 1, lastRepair: '2026-02-10', totalSpent: '$5,680', status: 'Complete', adas: true, insurer: 'GEICO', customerId: 14 },
+  { year: 2023, make: 'Kia', model: 'Telluride', owner: 'William Okafor', vin: '5XYP3DHC7NG182435', estimates: 2, lastRepair: '2026-02-05', totalSpent: '$12,950', status: 'Pending', adas: true, insurer: 'Allstate', customerId: 15 },
+  { year: 2021, make: 'Hyundai', model: 'Sonata', owner: 'William Okafor', vin: '5NPEH4JA6MH045218', estimates: 2, lastRepair: '2025-10-28', totalSpent: '$6,400', status: 'Complete', adas: false, insurer: 'Allstate', customerId: 15 },
 ]
 
 const topMakes = [
@@ -86,7 +99,7 @@ function statusColor(status) {
       <div class="glass rounded-xl p-4 mb-8 fade-in">
         <div class="flex flex-col md:flex-row gap-3">
           <div class="flex-1">
-            <input id="vinSearch" type="text" placeholder="Search by VIN number..." oninput="filterVehicles()" class="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary)" />
+            <input id="vinSearch" type="text" placeholder="Search by VIN, owner name, or vehicle..." oninput="filterVehicles()" class="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary)" />
           </div>
           <select id="makeFilter" onchange="filterVehicles()" class="rounded-lg py-2.5 text-sm focus:outline-none" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-tertiary); padding-left: 0.75rem; padding-right: 2rem">
             <option value="">All Makes</option>
@@ -144,27 +157,31 @@ function statusColor(status) {
                 <tr class="text-left text-xs uppercase tracking-wider" style="color: var(--text-muted); border-bottom: 1px solid var(--border-main)">
                   <th class="px-5 py-3 font-medium">Vehicle</th>
                   <th class="px-5 py-3 font-medium">Owner</th>
-                  <th class="px-5 py-3 font-medium">VIN (Last 8)</th>
+                  <th class="px-5 py-3 font-medium">VIN</th>
                   <th class="px-5 py-3 font-medium text-right">Estimates</th>
                   <th class="px-5 py-3 font-medium">Last Repair</th>
                   <th class="px-5 py-3 font-medium text-right">Total Spent</th>
+                  <th class="px-5 py-3 font-medium">Insurer</th>
                   <th class="px-5 py-3 font-medium">Status</th>
                   <th class="px-5 py-3 font-medium">ADAS</th>
                 </tr>
               </thead>
               <tbody id="vehicleTableBody">
                 @foreach (vehicles as idx => vehicle)
-                  <tr class="clickable" data-vin="{{ vehicle.vin }}" data-make="{{ vehicle.make }}" data-model="{{ vehicle.model }}" style="border-bottom: 1px solid var(--row-border)" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='transparent'" onclick="openVehicleDetail({{ idx }})">
+                  <tr class="clickable" data-vin="{{ vehicle.vin.toLowerCase() }}" data-make="{{ vehicle.make }}" data-model="{{ vehicle.model }}" data-owner="{{ vehicle.owner.toLowerCase() }}" style="border-bottom: 1px solid var(--row-border)" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='transparent'" onclick="openVehicleDetail({{ idx }})">
                     <td class="px-5 py-3.5">
                       <span class="font-medium" style="color: var(--text-secondary)">{{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}</span>
                     </td>
-                    <td class="px-5 py-3.5" style="color: var(--text-tertiary)">{{ vehicle.owner }}</td>
+                    <td class="px-5 py-3.5">
+                      <a href="/customers" onclick="event.stopPropagation()" class="text-sm" style="color: var(--text-accent); text-decoration: none;">{{ vehicle.owner }}</a>
+                    </td>
                     <td class="px-5 py-3.5">
                       <span class="font-mono text-xs px-2 py-1 rounded" style="background: var(--bg-subtle); color: var(--text-muted)">{{ vehicle.vin }}</span>
                     </td>
                     <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-tertiary)">{{ vehicle.estimates }}</td>
                     <td class="px-5 py-3.5" style="color: var(--text-muted)">{{ vehicle.lastRepair }}</td>
                     <td class="px-5 py-3.5 text-right tabular-nums font-medium" style="color: var(--text-primary)">{{ vehicle.totalSpent }}</td>
+                    <td class="px-5 py-3.5" style="color: var(--text-tertiary)">{{ vehicle.insurer }}</td>
                     <td class="px-5 py-3.5">
                       <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ statusColor(vehicle.status) }}">{{ vehicle.status }}</span>
                     </td>
@@ -233,10 +250,12 @@ function statusColor(status) {
 
 <script client>
     // Vehicle detail data
+    // vehicleDetails keyed by VIN for reliable lookup
+    const vehicleDetailsByVin = {}
     const vehicleDetails = {
       0: {
         year: 2024, make: 'Tesla', model: 'Model Y', status: 'Active Repair',
-        vin: '7SAYGKEE9PA012847', color: 'Pearl White Multi-Coat', mileage: '12,340',
+        vin: '7SAY1E9P8RF123456', color: 'Pearl White Multi-Coat', mileage: '12,340',
         plate: 'EVC-4821', body: 'SUV',
         owner: { name: 'James Rodriguez', phone: '(512) 555-0174', email: 'j.rodriguez@email.com', address: 'Austin, TX' },
         repairs: [
@@ -250,7 +269,7 @@ function statusColor(status) {
       },
       1: {
         year: 2023, make: 'BMW', model: 'X5', status: 'Active Repair',
-        vin: '5UX23EP00P9L78234', color: 'Carbon Black Metallic', mileage: '28,760',
+        vin: '5UX23EP05P9A71842', color: 'Carbon Black Metallic', mileage: '28,760',
         plate: 'LUX-7734', body: 'SUV',
         owner: { name: 'Lisa Chen', phone: '(415) 555-0298', email: 'lisa.chen@email.com', address: 'San Francisco, CA' },
         repairs: [
@@ -264,7 +283,7 @@ function statusColor(status) {
       },
       2: {
         year: 2022, make: 'Honda', model: 'Civic', status: 'Complete',
-        vin: '2HGFE2F59NH534821', color: 'Sonic Gray Pearl', mileage: '41,220',
+        vin: '2HGFE2F59NH512847', color: 'Sonic Gray Pearl', mileage: '41,220',
         plate: 'HND-2098', body: 'Sedan',
         owner: { name: 'Mark Thompson', phone: '(614) 555-0132', email: 'm.thompson@email.com', address: 'Columbus, OH' },
         repairs: [
@@ -277,7 +296,7 @@ function statusColor(status) {
       },
       3: {
         year: 2024, make: 'Ford', model: 'F-150', status: 'Pending',
-        vin: '1FTFW1E80NKD45632', color: 'Iconic Silver Metallic', mileage: '18,450',
+        vin: '1FTFW1E87NKE45923', color: 'Iconic Silver Metallic', mileage: '18,450',
         plate: 'TRK-5543', body: 'Truck',
         owner: { name: 'Diana Watts', phone: '(214) 555-0387', email: 'diana.watts@email.com', address: 'Dallas, TX' },
         repairs: [
@@ -291,7 +310,7 @@ function statusColor(status) {
       },
       4: {
         year: 2023, make: 'Toyota', model: 'Camry', status: 'Complete',
-        vin: '4T1G11AK8PU284930', color: 'Celestial Silver Metallic', mileage: '34,870',
+        vin: '5YFBU4EE4NP091827', color: 'Celestial Silver Metallic', mileage: '34,870',
         plate: 'TYT-8812', body: 'Sedan',
         owner: { name: 'Robert Kim', phone: '(310) 555-0421', email: 'r.kim@email.com', address: 'Los Angeles, CA' },
         repairs: [
@@ -304,7 +323,7 @@ function statusColor(status) {
       },
       5: {
         year: 2025, make: 'Chevrolet', model: 'Silverado', status: 'Active Repair',
-        vin: '3GCUYGED1RG178452', color: 'Summit White', mileage: '8,120',
+        vin: '1GCUYEED5RZ284715', color: 'Summit White', mileage: '8,120',
         plate: 'SLV-3309', body: 'Truck',
         owner: { name: 'Angela Brooks', phone: '(713) 555-0245', email: 'a.brooks@email.com', address: 'Houston, TX' },
         repairs: [
@@ -317,7 +336,7 @@ function statusColor(status) {
       },
       6: {
         year: 2022, make: 'Hyundai', model: 'Tucson', status: 'Complete',
-        vin: 'KM8JBCA19NU652387', color: 'Amazon Gray', mileage: '52,340',
+        vin: 'KM8J3CA46NU387215', color: 'Amazon Gray', mileage: '52,340',
         plate: 'HYN-6670', body: 'SUV',
         owner: { name: 'Kevin Patel', phone: '(404) 555-0189', email: 'k.patel@email.com', address: 'Atlanta, GA' },
         repairs: [
@@ -331,7 +350,7 @@ function statusColor(status) {
       },
       7: {
         year: 2024, make: 'Toyota', model: 'RAV4', status: 'Pending',
-        vin: '2T3P1RFV5RC913478', color: 'Blueprint', mileage: '15,690',
+        vin: '2T3P1RFV5RC084562', color: 'Blueprint', mileage: '15,690',
         plate: 'RAV-1124', body: 'SUV',
         owner: { name: 'Sarah Jensen', phone: '(503) 555-0356', email: 's.jensen@email.com', address: 'Portland, OR' },
         repairs: [
@@ -344,7 +363,7 @@ function statusColor(status) {
       },
       8: {
         year: 2023, make: 'Nissan', model: 'Altima', status: 'Complete',
-        vin: '1N4BL4CV2PN587124', color: 'Gun Metallic', mileage: '38,410',
+        vin: '1N4BL4BV7NN384215', color: 'Gun Metallic', mileage: '38,410',
         plate: 'NSN-4456', body: 'Sedan',
         owner: { name: 'David Martinez', phone: '(602) 555-0278', email: 'd.martinez@email.com', address: 'Phoenix, AZ' },
         repairs: [
@@ -358,7 +377,7 @@ function statusColor(status) {
       },
       9: {
         year: 2021, make: 'BMW', model: '330i', status: 'Active Repair',
-        vin: '3MW5R7J05M8B34591', color: 'Alpine White', mileage: '67,890',
+        vin: 'WBA5R1C07M7D48291', color: 'Alpine White', mileage: '67,890',
         plate: 'BMW-9981', body: 'Sedan',
         owner: { name: 'Michelle Wu', phone: '(212) 555-0443', email: 'm.wu@email.com', address: 'New York, NY' },
         repairs: [
@@ -372,7 +391,7 @@ function statusColor(status) {
       },
       10: {
         year: 2024, make: 'Honda', model: 'CR-V', status: 'Pending',
-        vin: '7FARW2H93RE482130', color: 'Radiant Red Metallic II', mileage: '21,350',
+        vin: '2HKRS2H86RH415283', color: 'Radiant Red Metallic II', mileage: '21,350',
         plate: 'CRV-7712', body: 'SUV',
         owner: { name: 'Thomas Green', phone: '(303) 555-0165', email: 't.green@email.com', address: 'Denver, CO' },
         repairs: [
@@ -385,7 +404,7 @@ function statusColor(status) {
       },
       11: {
         year: 2023, make: 'Ford', model: 'Mustang Mach-E', status: 'Complete',
-        vin: '3FMTK3SU4PMA76218', color: 'Grabber Blue Metallic', mileage: '29,870',
+        vin: '3FMTK3SU8NMA72841', color: 'Grabber Blue Metallic', mileage: '29,870',
         plate: 'MCE-2245', body: 'SUV',
         owner: { name: 'Jennifer Liu', phone: '(206) 555-0512', email: 'j.liu@email.com', address: 'Seattle, WA' },
         repairs: [
@@ -399,8 +418,24 @@ function statusColor(status) {
       }
     }
 
+    // Build VIN-keyed lookup from vehicleDetails
+    Object.keys(vehicleDetails).forEach(function(key) {
+      var d = vehicleDetails[key]
+      if (d && d.vin) vehicleDetailsByVin[d.vin.toUpperCase()] = d
+    })
+
+    // Also build a table-row-index → VIN map from the DOM
+    var tableRowVins = []
+    document.querySelectorAll('#vehicleTableBody tr').forEach(function(row) {
+      tableRowVins.push((row.getAttribute('data-vin') || '').toUpperCase())
+    })
+
     function openVehicleDetail(idx) {
-      const v = vehicleDetails[idx]
+      // idx can be a table row index — look up the VIN from that row, then find its detail
+      var v = vehicleDetails[idx]
+      if (!v && typeof idx === 'number' && tableRowVins[idx]) {
+        v = vehicleDetailsByVin[tableRowVins[idx]]
+      }
       if (!v) return
 
       const statusBadgeClass = v.status === 'Active Repair' ? 'badge-amber' : v.status === 'Complete' ? 'badge-emerald' : 'badge-blue'
@@ -498,18 +533,19 @@ function statusColor(status) {
     var vFilteredRows = []
 
     function getVehicleFilteredRows() {
-      var vinQuery = document.getElementById('vinSearch').value.toUpperCase().trim()
+      var query = document.getElementById('vinSearch').value.toLowerCase().trim()
       var makeVal = document.getElementById('makeFilter').value
       var modelVal = document.getElementById('modelFilter').value
       var rows = document.querySelectorAll('#vehicleTableBody tr')
       var matched = []
       rows.forEach(function(row) {
-        var vin = (row.getAttribute('data-vin') || '').toUpperCase()
+        var vin = (row.getAttribute('data-vin') || '')
         var make = row.getAttribute('data-make') || ''
         var model = row.getAttribute('data-model') || ''
+        var owner = (row.getAttribute('data-owner') || '')
         row.style.display = 'none'
         var show = true
-        if (vinQuery && vin.indexOf(vinQuery) === -1) show = false
+        if (query && vin.indexOf(query) === -1 && owner.indexOf(query) === -1 && (make + ' ' + model).toLowerCase().indexOf(query) === -1) show = false
         if (makeVal && make !== makeVal) show = false
         if (modelVal && model !== modelVal) show = false
         if (show) matched.push(row)
@@ -593,8 +629,38 @@ function statusColor(status) {
       filterVehicles()
     }
 
+    // Build VIN → detail index lookup
+    var vinToDetailIdx = {}
+    Object.keys(vehicleDetails).forEach(function(key) {
+      var v = vehicleDetails[key]
+      if (v && v.vin) vinToDetailIdx[v.vin.toLowerCase()] = parseInt(key)
+    })
+
+    // Check for ?vin= query parameter
+    var urlParams = new URLSearchParams(window.location.search)
+    var vinParam = urlParams.get('vin')
+    if (vinParam) {
+      document.getElementById('vinSearch').value = vinParam
+    }
+
     // Initialize pagination on load
     applyVehiclePagination()
+
+    // If we arrived with a VIN param, auto-open its detail slide-over
+    if (vinParam) {
+      var vinUpper = vinParam.toUpperCase()
+      var detail = vehicleDetailsByVin[vinUpper]
+      if (detail) {
+        // Find the vehicleDetails key for this entry
+        var detailKey = -1
+        Object.keys(vehicleDetails).forEach(function(key) {
+          if (vehicleDetails[key] === detail) detailKey = parseInt(key)
+        })
+        if (detailKey !== -1) {
+          setTimeout(function() { openVehicleDetail(detailKey) }, 100)
+        }
+      }
+    }
 
     function openAddVehicleForm() {
       var h = '';

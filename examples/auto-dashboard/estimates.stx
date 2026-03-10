@@ -30,21 +30,21 @@ const summaryStats = [
 ]
 
 const estimates = [
-  { id: 'EST-4821', date: '2026-03-09', year: 2024, make: 'Tesla', model: 'Model Y', owner: 'James Rodriguez', vin: 'MN109186', insurer: 'State Farm', severity: 'moderate', laborHrs: 12.5, parts: 4310, total: 6842.50, status: 'Approved' },
-  { id: 'EST-4820', date: '2026-03-09', year: 2023, make: 'BMW', model: 'X5', owner: 'Lisa Chen', vin: 'KL872934', insurer: 'Progressive', severity: 'heavy', laborHrs: 38, parts: 8200, total: 12390.00, status: 'In Review' },
-  { id: 'EST-4819', date: '2026-03-08', year: 2022, make: 'Honda', model: 'Civic', owner: 'Mark Thompson', vin: 'JX450291', insurer: 'GEICO', severity: 'light', laborHrs: 6, parts: 1840, total: 3215.75, status: 'Supplement' },
-  { id: 'EST-4818', date: '2026-03-08', year: 2024, make: 'Ford', model: 'F-150', owner: 'Diana Watts', vin: 'NP738461', insurer: 'Allstate', severity: 'moderate', laborHrs: 18, parts: 5600, total: 8967.00, status: 'Approved' },
-  { id: 'EST-4817', date: '2026-03-08', year: 2023, make: 'Toyota', model: 'Camry', owner: 'Robert Kim', vin: 'BH641823', insurer: 'USAA', severity: 'light', laborHrs: 4.5, parts: 1450, total: 2450.00, status: 'Draft' },
-  { id: 'EST-4816', date: '2026-03-07', year: 2025, make: 'Rivian', model: 'R1S', owner: 'Angela Brooks', vin: 'WT290157', insurer: 'Liberty Mutual', severity: 'heavy', laborHrs: 42, parts: 12400, total: 18230.00, status: 'In Review' },
-  { id: 'EST-4815', date: '2026-03-07', year: 2022, make: 'Chevrolet', model: 'Tahoe', owner: 'Kevin Patel', vin: 'DM583042', insurer: 'Farmers', severity: 'moderate', laborHrs: 10, parts: 3200, total: 5120.50, status: 'Approved' },
-  { id: 'EST-4814', date: '2026-03-07', year: 2023, make: 'Hyundai', model: 'Tucson', owner: 'Maria Gonzalez', vin: 'FK821376', insurer: 'State Farm', severity: 'light', laborHrs: 5, parts: 1680, total: 2890.00, status: 'Approved' },
-  { id: 'EST-4813', date: '2026-03-06', year: 2024, make: 'Mercedes-Benz', model: 'GLC', owner: 'Thomas Wright', vin: 'HN463920', insurer: 'Progressive', severity: 'heavy', laborHrs: 52, parts: 14800, total: 24350.00, status: 'Supplement' },
-  { id: 'EST-4812', date: '2026-03-06', year: 2022, make: 'Subaru', model: 'Outback', owner: 'Emily Davis', vin: 'AX192847', insurer: 'GEICO', severity: 'moderate', laborHrs: 14, parts: 4100, total: 6540.00, status: 'Approved' },
-  { id: 'EST-4811', date: '2026-03-06', year: 2023, make: 'Nissan', model: 'Altima', owner: 'Jason Park', vin: 'CP374615', insurer: 'Allstate', severity: 'light', laborHrs: 3.5, parts: 890, total: 1580.00, status: 'Draft' },
-  { id: 'EST-4810', date: '2026-03-05', year: 2024, make: 'Audi', model: 'Q5', owner: 'Rachel Green', vin: 'EL508293', insurer: 'USAA', severity: 'moderate', laborHrs: 22, parts: 7200, total: 11450.00, status: 'In Review' },
-  { id: 'EST-4809', date: '2026-03-05', year: 2023, make: 'Kia', model: 'Sportage', owner: 'Carlos Reyes', vin: 'GM726481', insurer: 'Liberty Mutual', severity: 'light', laborHrs: 6.5, parts: 2100, total: 3780.00, status: 'Approved' },
-  { id: 'EST-4808', date: '2026-03-05', year: 2024, make: 'Jeep', model: 'Grand Cherokee', owner: 'Nicole Foster', vin: 'RV841036', insurer: 'Farmers', severity: 'moderate', laborHrs: 16, parts: 5400, total: 8120.00, status: 'Supplement' },
-  { id: 'EST-4807', date: '2026-03-04', year: 2022, make: 'Dodge', model: 'Charger', owner: 'Brandon Lee', vin: 'TP629174', insurer: 'State Farm', severity: 'heavy', laborHrs: 35, parts: 9600, total: 15200.00, status: 'In Review' },
+  { id: 'EST-4821', date: '2026-03-09', year: 2024, make: 'Tesla', model: 'Model Y', owner: 'James Rodriguez', vin: '7SAY1E9P8RF123456', insurer: 'State Farm', severity: 'moderate', laborHrs: 12.5, parts: 4310, total: 6842.50, status: 'Approved', customerId: 1 },
+  { id: 'EST-4820', date: '2026-03-09', year: 2023, make: 'BMW', model: 'X5', owner: 'Lisa Chen', vin: '5UX23EP05P9A71842', insurer: 'Progressive', severity: 'heavy', laborHrs: 38, parts: 8200, total: 12390.00, status: 'In Review', customerId: 2 },
+  { id: 'EST-4819', date: '2026-03-08', year: 2022, make: 'Honda', model: 'Civic', owner: 'Mark Thompson', vin: '2HGFE2F59NH512847', insurer: 'GEICO', severity: 'light', laborHrs: 6, parts: 1840, total: 3215.75, status: 'Supplement', customerId: 3 },
+  { id: 'EST-4818', date: '2026-03-08', year: 2024, make: 'Ford', model: 'F-150', owner: 'Diana Watts', vin: '1FTFW1E87NKE45923', insurer: 'Allstate', severity: 'moderate', laborHrs: 18, parts: 5600, total: 8967.00, status: 'Approved', customerId: 4 },
+  { id: 'EST-4817', date: '2026-03-08', year: 2023, make: 'Toyota', model: 'Camry', owner: 'Robert Kim', vin: '5YFBU4EE4NP091827', insurer: 'USAA', severity: 'light', laborHrs: 4.5, parts: 1450, total: 2450.00, status: 'Draft', customerId: 5 },
+  { id: 'EST-4816', date: '2026-03-07', year: 2025, make: 'Chevrolet', model: 'Silverado', owner: 'Angela Brooks', vin: '1GCUYEED5RZ284715', insurer: 'Liberty Mutual', severity: 'heavy', laborHrs: 42, parts: 12400, total: 18230.00, status: 'In Review', customerId: 6 },
+  { id: 'EST-4815', date: '2026-03-07', year: 2022, make: 'Hyundai', model: 'Tucson', owner: 'Kevin Patel', vin: 'KM8J3CA46NU387215', insurer: 'Farmers', severity: 'moderate', laborHrs: 10, parts: 3200, total: 5120.50, status: 'Approved', customerId: 7 },
+  { id: 'EST-4814', date: '2026-03-07', year: 2023, make: 'Hyundai', model: 'Tucson', owner: 'Maria Gonzalez', vin: 'KM8J3CA46NU921587', insurer: 'State Farm', severity: 'light', laborHrs: 5, parts: 1680, total: 2890.00, status: 'Approved' },
+  { id: 'EST-4813', date: '2026-03-06', year: 2024, make: 'Mercedes-Benz', model: 'GLC', owner: 'Thomas Wright', vin: 'W1N0J4JB5RF384721', insurer: 'Progressive', severity: 'heavy', laborHrs: 52, parts: 14800, total: 24350.00, status: 'Supplement' },
+  { id: 'EST-4812', date: '2026-03-06', year: 2022, make: 'Subaru', model: 'Outback', owner: 'Emily Davis', vin: '4S4BTAPC2N3128745', insurer: 'GEICO', severity: 'moderate', laborHrs: 14, parts: 4100, total: 6540.00, status: 'Approved' },
+  { id: 'EST-4811', date: '2026-03-06', year: 2023, make: 'Nissan', model: 'Altima', owner: 'Jason Park', vin: '1N4BL4BV7PN374615', insurer: 'Allstate', severity: 'light', laborHrs: 3.5, parts: 890, total: 1580.00, status: 'Draft' },
+  { id: 'EST-4810', date: '2026-03-05', year: 2024, make: 'Audi', model: 'Q5', owner: 'Rachel Green', vin: 'WA1BNAFY5R2508293', insurer: 'USAA', severity: 'moderate', laborHrs: 22, parts: 7200, total: 11450.00, status: 'In Review' },
+  { id: 'EST-4809', date: '2026-03-05', year: 2023, make: 'Kia', model: 'Sportage', owner: 'Carlos Reyes', vin: 'KNDPM3AC7P7726481', insurer: 'Liberty Mutual', severity: 'light', laborHrs: 6.5, parts: 2100, total: 3780.00, status: 'Approved' },
+  { id: 'EST-4808', date: '2026-03-05', year: 2024, make: 'Jeep', model: 'Grand Cherokee', owner: 'Nicole Foster', vin: '1C4RJKBG5R8841036', insurer: 'Farmers', severity: 'moderate', laborHrs: 16, parts: 5400, total: 8120.00, status: 'Supplement' },
+  { id: 'EST-4807', date: '2026-03-04', year: 2022, make: 'Dodge', model: 'Charger', owner: 'Brandon Lee', vin: '2C3CDXCT7NH629174', insurer: 'State Farm', severity: 'heavy', laborHrs: 35, parts: 9600, total: 15200.00, status: 'In Review' },
 ]
 
 const ROWS_PER_PAGE = 10
@@ -195,10 +195,10 @@ function formatCurrency(val) {
                   <td class="px-5 py-3.5" style="color: var(--text-muted)">{{ est.date }}</td>
                   <td class="px-5 py-3.5">
                     <span style="color: var(--text-secondary)">{{ est.year }} {{ est.make }} {{ est.model }}</span>
-                    <p class="text-xs mt-0.5" style="color: var(--text-muted)">{{ est.owner }}</p>
+                    <p class="text-xs mt-0.5"><a href="/customers" onclick="event.stopPropagation()" style="color: var(--text-accent); text-decoration: none;">{{ est.owner }}</a></p>
                   </td>
                   <td class="px-5 py-3.5">
-                    <span class="font-mono text-xs" style="color: var(--text-muted)">...{{ est.vin }}</span>
+                    <span class="font-mono text-xs" style="color: var(--text-muted)" title="{{ est.vin }}">{{ est.vin }}</span>
                   </td>
                   <td class="px-5 py-3.5" style="color: var(--text-tertiary)">{{ est.insurer }}</td>
                   <td class="px-5 py-3.5">

@@ -387,6 +387,23 @@ if (isDirectMode) {
           ? files.filter(file => file.endsWith('.md'))
           : files.filter(file => file.endsWith('.stx') || file.endsWith('.md'))
 
+      // Auto-discover dynamic route files ([param].stx) in subdirectories
+      const baseDir = fileArg.split('*')[0].replace(/\/$/, '') || '.'
+      const absoluteBaseDir = path.resolve(baseDir)
+      try {
+        const dynamicGlob = new Bun.Glob('**/*.stx')
+        const allSubFiles = await Array.fromAsync(dynamicGlob.scan({ cwd: absoluteBaseDir, onlyFiles: true, absolute: true }))
+        const dynamicFiles = allSubFiles.filter(f => /\[.+\]/.test(path.basename(f)))
+        for (const df of dynamicFiles) {
+          if (!supportedFiles.includes(df)) {
+            supportedFiles.push(df)
+          }
+        }
+      }
+      catch {
+        // ignore dynamic route discovery errors
+      }
+
       if (supportedFiles.length === 0) {
         console.error(`Error: No STX or Markdown files found matching pattern: ${fileArg}`)
         process.exit(1)
@@ -623,6 +640,23 @@ else {
             console.error(`No STX or Markdown files found matching pattern: ${filePattern}`)
             console.error(`Try using patterns like '*.stx' or 'components/**/*.stx'`)
             process.exit(1)
+          }
+
+          // Auto-discover dynamic route files ([param].stx) in subdirectories
+          const devBaseDir = filePattern.split('*')[0].replace(/\/$/, '') || '.'
+          const devAbsoluteBaseDir = path.resolve(devBaseDir)
+          try {
+            const devDynamicGlob = new Bun.Glob('**/*.stx')
+            const devAllSubFiles = await Array.fromAsync(devDynamicGlob.scan({ cwd: devAbsoluteBaseDir, onlyFiles: true, absolute: true }))
+            const devDynamicFiles = devAllSubFiles.filter(f => /\[.+\]/.test(path.basename(f)))
+            for (const df of devDynamicFiles) {
+              if (!supportedFiles.includes(df)) {
+                supportedFiles.push(df)
+              }
+            }
+          }
+          catch {
+            // ignore dynamic route discovery errors
           }
 
           console.log(`Found ${supportedFiles.length} ${supportedFiles.length === 1 ? 'file' : 'files'} matching ${filePattern}`)
