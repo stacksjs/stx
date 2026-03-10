@@ -47,11 +47,74 @@ import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
 import { processExpressions } from './expressions'
 import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
-import { createSafeFunction, isExpressionSafe, isForExpressionSafe, sanitizeExpression, safeEvaluate } from './safe-evaluator'
+import { createSafeFunction, isExpressionSafe, isForExpressionSafe, sanitizeExpression, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
 const DEFAULT_USE_ALT_LOOP_VARIABLE = false
+
+/**
+ * Pre-evaluate @component props during loop iteration so that loop variables
+ * are resolved before the component directive is processed later.
+ *
+ * Transforms: @component('Name', { label: item.label, value: item.count })
+ * Into:       @component('Name', { "label": "Active", "value": 42 })
+ */
+function preEvaluateComponentProps(content: string, ctx: Record<string, any>): string {
+  const componentPat = /@component\s*\(/g
+  let result = content
+  let match: RegExpExecArray | null
+
+  // Process from end to start to preserve indices
+  const replacements: Array<{ start: number, end: number, replacement: string }> = []
+
+  while ((match = componentPat.exec(result)) !== null) {
+    const cStart = match.index
+    const openP = cStart + match[0].length - 1
+    let d = 1
+    let p = openP + 1
+    while (p < result.length && d > 0) {
+      if (result[p] === '(') d++
+      else if (result[p] === ')') { d--; if (d === 0) break }
+      p++
+    }
+    if (d !== 0) continue
+    const innerArgs = result.substring(openP + 1, p)
+    const directiveEnd = p + 1
+
+    // Parse: 'componentPath', optional { props }
+    const pathMatch = innerArgs.match(/^\s*['"]([^'"]+)['"]/)
+    if (!pathMatch) continue
+    const componentPath = pathMatch[1]
+    const afterPath = innerArgs.slice(pathMatch[0].length)
+    const propsMatch = afterPath.match(/^\s*,\s*/)
+    if (!propsMatch) continue // no props to evaluate
+
+    const propsString = afterPath.slice(propsMatch[0].length).trim()
+    if (!propsString) continue
+
+    try {
+      // Evaluate the props object with the current loop context
+      const evaluated = safeEvaluateObject(propsString, ctx)
+      // Serialize as JSON so that values are literal when processed later
+      const serialized = JSON.stringify(evaluated)
+      const replacement = `@component('${componentPath}', ${serialized})`
+      replacements.push({ start: cStart, end: directiveEnd, replacement })
+    }
+    catch {
+      // If evaluation fails, leave as-is for later error handling
+      continue
+    }
+  }
+
+  // Apply replacements from end to start
+  for (let i = replacements.length - 1; i >= 0; i--) {
+    const { start, end, replacement } = replacements[i]
+    result = result.substring(0, start) + replacement + result.substring(end)
+  }
+
+  return result
+}
 
 /**
  * Replace directive calls with balanced parenthesis matching.
@@ -752,6 +815,11 @@ export function processLoops(template: string, context: Record<string, any>, fil
           // This converts :prop="loopVar" to __stx_prop="serialized_data" so components
           // can receive the data even after the loop context is gone
           processedContent = processPropBindings(processedContent, itemContext)
+
+          // Step 7: Pre-evaluate @component props with the loop context
+          // This resolves loop variable references in component props before the loop
+          // context is lost, so processComponentDirectives can later use literal values
+          processedContent = preEvaluateComponentProps(processedContent, itemContext)
 
           loopResult += processedContent
         }

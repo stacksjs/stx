@@ -337,23 +337,24 @@ export async function renderComponentWithSlot(
       // Remove duplicates
       const uniqueVariants = [...new Set(fileVariants)]
 
-      // Directories to search - filter out undefined/empty values
-      const searchDirs = [
-        componentsDir,
-        path.join(path.dirname(parentFilePath), 'components'),
-      ].filter(Boolean)
-      if (options.componentsDir && options.componentsDir !== componentsDir) {
-        searchDirs.push(options.componentsDir)
-      }
-
-      // When processing a layout, also search relative to the original page file
-      // that extended this layout (components are typically co-located with pages, not layouts)
+      // When processing a layout, search relative to the original page file FIRST
+      // Page-specific components should take precedence over global componentsDir
       const originalFilePath = parentContext.__originalFilePath as string | undefined
+      const searchDirs: string[] = []
+
       if (originalFilePath) {
         const originalDir = path.join(path.dirname(originalFilePath), 'components')
-        if (!searchDirs.includes(originalDir)) {
-          searchDirs.push(originalDir)
-        }
+        searchDirs.push(originalDir)
+      }
+
+      // Then search global componentsDir and parent-relative paths
+      if (componentsDir) searchDirs.push(componentsDir)
+      const parentRelative = path.join(path.dirname(parentFilePath), 'components')
+      if (!searchDirs.includes(parentRelative)) {
+        searchDirs.push(parentRelative)
+      }
+      if (options.componentsDir && options.componentsDir !== componentsDir && !searchDirs.includes(options.componentsDir)) {
+        searchDirs.push(options.componentsDir)
       }
 
       // Also search common project component directories as fallbacks
@@ -460,6 +461,10 @@ export async function renderComponentWithSlot(
       props, // Allow `props.foo` syntax in addition to just `foo`
       slot: slotContent,
       __processedComponents: branchComponents,
+      // Clear __sections so {{ slot }} in the component template is resolved as an
+      // expression (using the `slot` variable above) rather than being replaced by
+      // the parent page's @section('content') content
+      __sections: {},
     }
 
     // SFC Support: Extract <template>, <script>, and <style> sections

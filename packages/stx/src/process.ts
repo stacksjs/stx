@@ -1428,9 +1428,13 @@ async function processDirectivesInternal(
   })
 
   // Replace {{ slot }} with content section (simpler syntax for layouts)
-  output = output.replace(/\{\{\s*slot\s*\}\}/g, () => {
-    return sections.content || ''
-  })
+  // Only do this when `slot` is not explicitly defined in the context (e.g., as a component prop)
+  // so that component templates can use {{ slot }} as a normal expression
+  if (!('slot' in context) || context.slot === undefined) {
+    output = output.replace(/\{\{\s*slot\s*\}\}/g, () => {
+      return sections.content || ''
+    })
+  }
 
   // Replace @stack directives with their content
   output = processStackReplacements(output, stacks)
@@ -1708,6 +1712,7 @@ async function processOtherDirectives(
   // Process loops FIRST - BEFORE components so that loop variables are evaluated
   // when components are processed, not after components have already been expanded
   output = processLoops(output, context, filePath, opts)
+
 
   // Process component directives (opts has already-resolved paths)
   if (opts.componentsDir) {
