@@ -1554,6 +1554,10 @@ async function processDirectivesInternal(
       // Process stack replacements in the layout
       processedLayout = processStackReplacements(processedLayout, stacks)
 
+      // Store the original page's file path so component resolution
+      // can search relative to the page, not just relative to the layout
+      context.__originalFilePath = filePath
+
       // Process the fully combined layout content with all other directives
       output = await processOtherDirectives(processedLayout, context, layoutFullPath, resolvedOptions, dependencies)
       return output
@@ -2180,7 +2184,7 @@ async function processComponentDirectives(
     while (p < output.length && d > 0) { if (output[p] === '(') d++; else if (output[p] === ')') { d--; if (d === 0) break } p++ }
     if (d !== 0) break
     const innerArgs = output.substring(openP + 1, p)
-    const fullMatch = output.substring(cStart, p + 1)
+    const directiveEnd = p + 1 // position after closing paren
 
     // Parse: 'componentPath', optional { props }
     const pathMatch = innerArgs.match(/^\s*['"]([^'"]+)['"]/)
@@ -2201,16 +2205,28 @@ async function processComponentDirectives(
       }
       catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error)
-        output = output.replace(fullMatch, `[Error parsing component props: ${msg}]`)
+        output = output.replace(output.substring(cStart, directiveEnd), `[Error parsing component props: ${msg}]`)
         continue
       }
     }
+
+    // Check for @endcomponent to extract slot content
+    let slotContent = ''
+    let fullMatchEnd = directiveEnd
+    const afterDirective = output.substring(directiveEnd)
+    const endComponentMatch = afterDirective.match(/^([\s\S]*?)@endcomponent/)
+    if (endComponentMatch) {
+      slotContent = endComponentMatch[1].trim()
+      fullMatchEnd = directiveEnd + endComponentMatch[0].length
+    }
+
+    const fullMatch = output.substring(cStart, fullMatchEnd)
 
     // Process the component
     const processedContent = await renderComponentWithSlot(
       componentPath,
       props,
-      '',
+      slotContent,
       componentsDir,
       context,
       filePath,
@@ -2220,7 +2236,7 @@ async function processComponentDirectives(
     )
 
     // Replace in the output
-    output = output.replace(fullMatch, processedContent)
+    output = output.substring(0, cStart) + processedContent + output.substring(fullMatchEnd)
 
     // Reset regex index to start from the beginning
     componentPat.lastIndex = 0

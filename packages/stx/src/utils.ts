@@ -342,6 +342,16 @@ export async function renderComponentWithSlot(
         searchDirs.push(options.componentsDir)
       }
 
+      // When processing a layout, also search relative to the original page file
+      // that extended this layout (components are typically co-located with pages, not layouts)
+      const originalFilePath = parentContext.__originalFilePath as string | undefined
+      if (originalFilePath) {
+        const originalDir = path.join(path.dirname(originalFilePath), 'components')
+        if (!searchDirs.includes(originalDir)) {
+          searchDirs.push(originalDir)
+        }
+      }
+
       // Also search common project component directories as fallbacks
       // This handles cases where the caller (e.g., bun-router) passes a viewsDir-relative
       // componentsDir but actual components live at the project-level src/components
