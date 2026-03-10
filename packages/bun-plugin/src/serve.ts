@@ -232,7 +232,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       __dirname: path.dirname(filePath),
     }
 
-    const { processDirectives, extractVariables, defaultConfig, generateSpaShell } = await import('@stacksjs/stx')
+    const { processDirectives, extractVariables, defaultConfig, generateSpaShell, injectRouterScript } = await import('@stacksjs/stx')
     for (const scriptBody of serverScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
@@ -257,6 +257,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     let output = templateContent
     const dependencies = new Set<string>()
     output = await processDirectives(output, context, filePath, config, dependencies)
+
+    // Inject the SPA router (auto-initializes, guards against double-init)
+    output = injectRouterScript(output)
 
     // Strip plain <template> wrapper tags - browsers don't render template content
     // STX uses <template> in source but output should be renderable HTML
@@ -512,7 +515,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       context[paramNames[i]] = paramValues[i]
     }
 
-    const { processDirectives, extractVariables, defaultConfig } = await import('@stacksjs/stx')
+    const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter } = await import('@stacksjs/stx')
     for (const scriptBody of dynServerScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
@@ -527,6 +530,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     let output = templateContent
     const dependencies = new Set<string>()
     output = await processDirectives(output, context, filePath, config, dependencies)
+
+    // Inject the SPA router
+    output = injectRouter(output)
 
     output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
 

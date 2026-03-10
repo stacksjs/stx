@@ -4,8 +4,7 @@
  * Browser-side functionality for STX applications.
  */
 
-export * from './router'
 export * from './directive'
 
-// Re-export getRouterScript from stx-router
+// Re-export getRouterScript from the canonical router (packages/router)
 export { getRouterScript } from 'stx-router'

@@ -33,6 +33,7 @@ import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe
 import { fileExists, renderComponentWithSlot, resolveTemplatePath, shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { runComposers } from './view-composers'
 import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
+import { getRouterScript } from 'stx-router'
 import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 
@@ -630,6 +631,27 @@ function injectSignalsRuntime(template: string, options: StxOptions): string {
 
   // Prepend to output
   return runtimeScript + '\n' + template
+}
+
+/**
+ * Inject the SPA router script into the template.
+ * The router is provided by the canonical router in packages/router/src/client.ts.
+ * It guards against double-initialization so it's safe to inject alongside @stxRouter.
+ */
+export function injectRouterScript(template: string): string {
+  // Only inject into full HTML pages (not template fragments or components)
+  if (!template.includes('</body>')) {
+    return template
+  }
+
+  // Don't inject if already present
+  if (template.includes('__stxRouter')) {
+    return template
+  }
+
+  const routerScript = `<script>${getRouterScript().replace(/\$/g, '$$$$')}</script>`
+
+  return template.replace('</body>', `${routerScript}\n</body>`)
 }
 
 /**

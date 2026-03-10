@@ -38,7 +38,7 @@ describe('StxLink Component', () => {
 
   it('should conditionally add prefetch attribute', () => {
     expect(componentSource).toContain('data-stx-prefetch')
-    expect(componentSource).toContain('@if(prefetch)')
+    expect(componentSource).toContain("@if(typeof prefetch !== 'undefined' && prefetch)")
   })
 
   it('should support slot for link content', () => {
