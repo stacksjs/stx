@@ -436,7 +436,7 @@ describe('Helper functions', () => {
 
 describe('Serve Internal Fixes', () => {
   describe('debug variable references stxOptions.debug', () => {
-    it('should have debug flag accessible through StxOptions', async () => {
+    test('should have debug flag accessible through StxOptions', async () => {
       const { StxOptions } = await import('../../src/types') as any
       const opts = { debug: true }
       expect(opts.debug).toBe(true)
@@ -446,7 +446,7 @@ describe('Serve Internal Fixes', () => {
   })
 
   describe('stack trace leak prevention', () => {
-    it('should not expose stack traces in non-debug mode conceptually', () => {
+    test('should not expose stack traces in non-debug mode conceptually', () => {
       const opts = { debug: false }
       expect(opts.debug).toBe(false)
       const optsDebug = { debug: true }
@@ -455,7 +455,7 @@ describe('Serve Internal Fixes', () => {
   })
 
   describe('cache eviction pattern', () => {
-    it('should demonstrate Map-based cache eviction for stale keys', () => {
+    test('should demonstrate Map-based cache eviction for stale keys', () => {
       const cache = new Map<string, { content: string, mtime: number }>()
       const filePath = '/test/file.stx'
       cache.set(`${filePath}:100`, { content: 'v1', mtime: 100 })
@@ -473,7 +473,7 @@ describe('Serve Internal Fixes', () => {
   })
 
   describe('balanced template extraction', () => {
-    it('should handle nested <template> tags via balanced depth tracking', () => {
+    test('should handle nested <template> tags via balanced depth tracking', () => {
       const content = '<template><div><template id="modal"><p>inner</p></template></div></template>'
       const templateOpen = '<template>'
       const start = content.indexOf(templateOpen) + templateOpen.length

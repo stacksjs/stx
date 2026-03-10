@@ -27,6 +27,7 @@
 
 import type { StxOptions } from './types'
 import { processDirectives } from './process'
+import { extractVariables } from './variable-extractor'
 
 // =============================================================================
 // Types
@@ -82,18 +83,14 @@ export interface ComponentWrapper {
   findComponent(name: string): ComponentWrapper | null
   /** Find all components by name */
   findAllComponents(name: string): ComponentWrapper[]
-  /** Check if element exists */
-  exists(): boolean
+  /** Check if element exists, or if selector matches */
+  exists(selector?: string): boolean
   /** Check if element is visible */
   isVisible(): boolean
-  /** Get attributes */
-  attributes(): Record<string, string>
-  /** Get specific attribute */
-  attributes(name: string): string | null
-  /** Get classes */
-  classes(): string[]
-  /** Check if has class */
-  classes(name: string): boolean
+  /** Get attributes of root or element matching selector */
+  attributes(selectorOrName?: string): Record<string, string> | string | null
+  /** Get classes of root or element matching selector */
+  classes(selectorOrName?: string): string[] | boolean
   /** Get props */
   props(): Record<string, unknown>
   /** Get specific prop */
@@ -178,7 +175,7 @@ export interface FireEventOptions {
 export async function render(
   template: string,
   options: MountOptions = {},
-): Promise<RenderResult> {
+): Promise<string> {
   const context: Record<string, unknown> = {
     ...options.context,
     props: options.props || {},
@@ -194,6 +191,21 @@ export async function render(
     context.__slots__ = options.slots
   }
 
+  // Extract variables from <script server> blocks
+  let processedTemplate = template
+  const serverScriptRe = /<script\s+server\b[^>]*>([\s\S]*?)<\/script>/gi
+  let match: RegExpExecArray | null
+  while ((match = serverScriptRe.exec(template)) !== null) {
+    const scriptBody = match[1]
+    await extractVariables(scriptBody, context, 'test.stx')
+    processedTemplate = processedTemplate.replace(match[0], '')
+  }
+
+  // Strip <template> wrapper tags
+  processedTemplate = processedTemplate
+    .replace(/<template\b[^>]*>/gi, '')
+    .replace(/<\/template>/gi, '')
+
   const dependencies = new Set<string>()
 
   const stxOptions: StxOptions = {
@@ -203,7 +215,7 @@ export async function render(
 
   // Process the template
   const html = await processDirectives(
-    template,
+    processedTemplate,
     context,
     'test.stx',
     stxOptions,
@@ -211,17 +223,7 @@ export async function render(
   )
 
   // Create DOM
-  const parser = new DOMParser()
-  const document = parser.parseFromString(html, 'text/html')
-  const container = document.body
-
-  return {
-    html,
-    document,
-    container,
-    context,
-    dependencies,
-  }
+  return html
 }
 
 // =============================================================================
@@ -265,6 +267,29 @@ export async function mount(
     $emit: captureEvent,
   }
 
+  // Extract variables from <script server> blocks
+  let processedTemplate = template
+  const serverScriptRe = /<script\s+server\b[^>]*>([\s\S]*?)<\/script>/gi
+  let scriptMatch: RegExpExecArray | null
+  while ((scriptMatch = serverScriptRe.exec(template)) !== null) {
+    const scriptBody = scriptMatch[1]
+    await extractVariables(scriptBody, context, 'test.stx')
+    processedTemplate = processedTemplate.replace(scriptMatch[0], '')
+  }
+
+  // Also handle <script> blocks (without server attribute) that define variables
+  const plainScriptRe = /<script\b(?!\s+(?:server|client|src))[^>]*>([\s\S]*?)<\/script>/gi
+  while ((scriptMatch = plainScriptRe.exec(processedTemplate)) !== null) {
+    const scriptBody = scriptMatch[1]
+    await extractVariables(scriptBody, context, 'test.stx')
+    processedTemplate = processedTemplate.replace(scriptMatch[0], '')
+  }
+
+  // Strip <template> wrapper tags
+  processedTemplate = processedTemplate
+    .replace(/<template\b[^>]*>/gi, '')
+    .replace(/<\/template>/gi, '')
+
   const dependencies = new Set<string>()
 
   const stxOptions: StxOptions = {
@@ -274,7 +299,7 @@ export async function mount(
 
   // Process template
   let html = await processDirectives(
-    template,
+    processedTemplate,
     context,
     'test.stx',
     stxOptions,
@@ -419,7 +444,10 @@ export async function mount(
       return Array.from(els).map(() => wrapper) // Simplified
     },
 
-    exists: () => container.children.length > 0,
+    exists: (selector?: string) => {
+      if (selector) return container.querySelector(selector) !== null
+      return container.children.length > 0
+    },
 
     isVisible: () => {
       const el = container.firstElementChild as HTMLElement
@@ -428,26 +456,46 @@ export async function mount(
       return style.display !== 'none' && style.visibility !== 'hidden'
     },
 
-    attributes: ((name?: string) => {
+    attributes: ((selectorOrName?: string) => {
+      if (!selectorOrName) {
+        const el = container.firstElementChild
+        if (!el) return {}
+        const attrs: Record<string, string> = {}
+        for (const attr of el.attributes) {
+          attrs[attr.name] = attr.value
+        }
+        return attrs
+      }
+      // Try as a CSS selector first
+      const found = container.querySelector(selectorOrName)
+      if (found) {
+        const attrs: Record<string, string> = {}
+        for (const attr of found.attributes) {
+          attrs[attr.name] = attr.value
+        }
+        return attrs
+      }
+      // Fall back to attribute name lookup on root element
       const el = container.firstElementChild
-      if (!el) return name ? null : {}
-      if (name) {
-        return el.getAttribute(name)
-      }
-      const attrs: Record<string, string> = {}
-      for (const attr of el.attributes) {
-        attrs[attr.name] = attr.value
-      }
-      return attrs
+      return el ? el.getAttribute(selectorOrName) : null
     }) as ComponentWrapper['attributes'],
 
-    classes: ((name?: string) => {
-      const el = container.firstElementChild
-      if (!el) return name ? false : []
-      if (name) {
-        return el.classList.contains(name)
+    classes: ((selectorOrName?: string) => {
+      const getClasses = (el: Element) => (el.className || '').split(/\s+/).filter(Boolean)
+      if (!selectorOrName) {
+        const el = container.firstElementChild
+        if (!el) return []
+        return getClasses(el)
       }
-      return Array.from(el.classList)
+      // Try as a CSS selector first
+      const found = container.querySelector(selectorOrName)
+      if (found) {
+        return getClasses(found)
+      }
+      // Fall back to class name check on root element
+      const el = container.firstElementChild
+      if (el) return getClasses(el).includes(selectorOrName)
+      return false
     }) as ComponentWrapper['classes'],
 
     props: ((name?: string) => {
@@ -836,10 +884,10 @@ export async function flushPromises(): Promise<void> {
 /**
  * Create a mock function.
  */
-export function createMockFn<T extends (...args: unknown[]) => unknown>(): MockFn<T> {
+export function createMockFn<T extends (...args: unknown[]) => unknown>(impl?: T): MockFn<T> {
   const calls: unknown[][] = []
   const results: unknown[] = []
-  let implementation: T | undefined
+  let implementation: T | undefined = impl
 
   const fn = ((...args: unknown[]) => {
     calls.push(args)
@@ -856,8 +904,17 @@ export function createMockFn<T extends (...args: unknown[]) => unknown>(): MockF
     results,
   }
 
-  fn.mockImplementation = (impl: T) => {
+  // Convenience aliases
+  fn.calls = calls
+  fn.reset = () => {
+    calls.length = 0
+    results.length = 0
     implementation = impl
+    return fn
+  }
+
+  fn.mockImplementation = (newImpl: T) => {
+    implementation = newImpl
     return fn
   }
 
@@ -889,6 +946,10 @@ export interface MockFn<T extends (...args: unknown[]) => unknown = (...args: un
     calls: unknown[][]
     results: unknown[]
   }
+  /** Convenience alias for mock.calls */
+  calls: unknown[][]
+  /** Convenience alias for mockReset */
+  reset(): MockFn<T>
   mockImplementation(impl: T): MockFn<T>
   mockReturnValue(value: unknown): MockFn<T>
   mockClear(): MockFn<T>
