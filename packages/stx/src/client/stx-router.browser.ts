@@ -193,7 +193,6 @@
       if (targetUrl.origin !== window.location.origin) return
 
       event.preventDefault()
-      event.stopPropagation()
       this.navigate(href)
     }
 

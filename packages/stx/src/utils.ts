@@ -277,11 +277,15 @@ export async function renderComponentWithSlot(
   const components = processedComponents ?? new Set<string>()
 
   if (components.has(componentPath)) {
-    // Avoid infinite recursion
+    // Avoid infinite recursion - only for actual self-referencing components
+    // (e.g., a component that includes itself in its own template)
     return `[Circular component reference: ${componentPath}]`
   }
 
-  components.add(componentPath)
+  // Clone the set so sibling usages of the same component are not blocked,
+  // only nested (recursive) usages within this component's own subtree
+  const branchComponents = new Set(components)
+  branchComponents.add(componentPath)
 
   try {
     // Helper: convert kebab-case to PascalCase
@@ -455,6 +459,7 @@ export async function renderComponentWithSlot(
       ...props,
       props, // Allow `props.foo` syntax in addition to just `foo`
       slot: slotContent,
+      __processedComponents: branchComponents,
     }
 
     // SFC Support: Extract <template>, <script>, and <style> sections

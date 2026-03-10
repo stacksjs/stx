@@ -4,5 +4,5 @@
   data-stx-link
   data-stx-active-class="{{ activeClass || 'active' }}"
   data-stx-exact-active-class="{{ exactActiveClass || 'exact-active' }}"
-  @if(prefetch) data-stx-prefetch @endif
+  @if(typeof prefetch !== 'undefined' && prefetch) data-stx-prefetch @endif
 >{!! slot !!}</a>

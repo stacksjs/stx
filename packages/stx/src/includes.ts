@@ -921,6 +921,9 @@ export async function processIncludes(
       // Process expressions
       processedContent = processExpressions(processedContent, includeContext, includeFilePath)
 
+      // Expand built-in <StxLink> components inline (simple regex, no recursive processing)
+      processedContent = expandStxLinks(processedContent)
+
       // Append preserved style and script for SFC support
       if (preservedStyle) {
         processedContent += '\n' + preservedStyle
@@ -1125,4 +1128,54 @@ export function processStackReplacements(template: string, stacks: Record<string
     // Join all stack entries with newlines to preserve formatting
     return stacks[name].join('\n')
   })
+}
+
+/**
+ * Expand <StxLink> tags inline into <a> tags without recursive processing.
+ * This handles the built-in StxLink component that may appear in included files.
+ */
+function expandStxLinks(content: string): string {
+  // Match both self-closing and paired StxLink tags
+  // Use a loop to handle the paired tags properly (content between open/close)
+  let result = content
+
+  // Process paired <StxLink ...>...</StxLink> tags
+  const pairedPattern = /<StxLink\b([^>]*)>([\s\S]*?)<\/StxLink>/g
+  result = result.replace(pairedPattern, (_match, attrs: string, slotContent: string) => {
+    return buildStxLinkAnchor(attrs, slotContent)
+  })
+
+  // Process self-closing <StxLink ... /> tags
+  const selfClosingPattern = /<StxLink\b([^>]*?)\/>/g
+  result = result.replace(selfClosingPattern, (_match, attrs: string) => {
+    return buildStxLinkAnchor(attrs, '')
+  })
+
+  return result
+}
+
+function buildStxLinkAnchor(attrs: string, slotContent: string): string {
+  const getAttr = (name: string): string | undefined => {
+    const match = attrs.match(new RegExp(`${name}=["']([^"']*)["']`))
+    return match ? match[1] : undefined
+  }
+
+  const to = getAttr('to') || '#'
+  const className = getAttr('className') || getAttr('class') || ''
+  const activeClass = getAttr('activeClass') || 'active'
+  const exactActiveClass = getAttr('exactActiveClass') || 'exact-active'
+  const prefetch = getAttr('prefetch')
+
+  // Collect any @click or other event attributes to preserve
+  const eventAttrs: string[] = []
+  const eventPattern = /@[\w.]+="[^"]*"/g
+  let eventMatch
+  while ((eventMatch = eventPattern.exec(attrs)) !== null) {
+    eventAttrs.push(eventMatch[0])
+  }
+
+  const prefetchAttr = prefetch ? ' data-stx-prefetch' : ''
+  const eventStr = eventAttrs.length > 0 ? ' ' + eventAttrs.join(' ') : ''
+
+  return `<a href="${to}" class="${className}" data-stx-link data-stx-active-class="${activeClass}" data-stx-exact-active-class="${exactActiveClass}"${prefetchAttr}${eventStr}>${slotContent}</a>`
 }
