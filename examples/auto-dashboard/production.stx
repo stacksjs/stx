@@ -1,9 +1,9 @@
 <script>
-const companyName = 'AutoEstimate Pro'
+const companyName = 'AutoEstimate'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Production'
-const meta = { title: 'Production — AutoEstimate Pro', description: 'Track vehicle repair production workflow and kanban board' }
+const meta = { title: 'Production — AutoEstimate', description: 'Track vehicle repair production workflow and kanban board' }
 
 const navLinks = [
   { label: 'Dashboard', href: '/' },

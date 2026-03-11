@@ -1,9 +1,9 @@
 <script>
-const companyName = 'AutoEstimate Pro'
+const companyName = 'AutoEstimate'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Dashboard'
-const meta = { title: 'Dashboard — AutoEstimate Pro', description: 'Overview of collision repair estimates, revenue, and key metrics' }
+const meta = { title: 'Dashboard — AutoEstimate', description: 'Overview of collision repair estimates, revenue, and key metrics' }
 
 const kpis = [
   { label: 'Total Estimates', value: '1,247', change: '+12.5%', trend: 'up', icon: '📋', color: 'blue', trendVsLastMonth: '↑ 12%' },

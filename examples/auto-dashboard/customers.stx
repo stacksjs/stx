@@ -1,9 +1,9 @@
 <script>
-const companyName = 'AutoEstimate Pro'
+const companyName = 'AutoEstimate'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Customers'
-const meta = { title: 'Customers — AutoEstimate Pro', description: 'Customer relationship management and communication history' }
+const meta = { title: 'Customers — AutoEstimate', description: 'Customer relationship management and communication history' }
 
 const navLinks = [
   { label: 'Dashboard', href: '/' },
@@ -541,7 +541,7 @@ function starsHtml(rating) {
           { date: '2026-02-10', channel: 'SMS', message: 'Mirror replacement complete. Pick up anytime.' },
           { date: '2025-12-15', channel: 'Email', message: 'Paint repair done. Vehicle ready for pickup.' },
           { date: '2025-12-12', channel: 'SMS', message: 'Vehicle received. Starting repair.' },
-          { date: '2025-09-20', channel: 'Email', message: 'Welcome to AutoEstimate Pro! Estimate ready.' }
+          { date: '2025-09-20', channel: 'Email', message: 'Welcome to AutoEstimate! Estimate ready.' }
         ]
       },
       11: {
@@ -609,7 +609,7 @@ function starsHtml(rating) {
           { date: '2026-02-08', channel: 'SMS', message: 'Repair nearing completion. ETA tomorrow.' },
           { date: '2026-02-05', channel: 'Email', message: 'Estimate approved. Starting repair.' },
           { date: '2026-02-03', channel: 'SMS', message: 'Vehicle received at our facility.' },
-          { date: '2026-02-01', channel: 'Email', message: 'Welcome to AutoEstimate Pro!' }
+          { date: '2026-02-01', channel: 'Email', message: 'Welcome to AutoEstimate!' }
         ]
       },
       14: {
@@ -644,7 +644,7 @@ function starsHtml(rating) {
       'estimate-ready': { subject: 'Estimate Ready', body: 'Your repair estimate is ready for review. Please log in to your portal or contact us to discuss the details and approve the work.' },
       'repair-progress': { subject: 'Repair In Progress', body: 'Your vehicle repair is currently in progress. Our technicians are working diligently to restore your vehicle. Estimated completion date will be provided soon.' },
       'ready-pickup': { subject: 'Ready for Pickup', body: 'Great news! Your vehicle repair is complete and ready for pickup. Please visit our facility during business hours (Mon-Fri 8AM-6PM, Sat 9AM-1PM).' },
-      'followup-survey': { subject: 'How Was Your Experience?', body: 'Thank you for choosing AutoEstimate Pro. We value your feedback! Please take a moment to rate your experience and let us know how we can improve.' }
+      'followup-survey': { subject: 'How Was Your Experience?', body: 'Thank you for choosing AutoEstimate. We value your feedback! Please take a moment to rate your experience and let us know how we can improve.' }
     }
 
     // Filter customers
@@ -897,7 +897,7 @@ function starsHtml(rating) {
         + '<div id="msgPreview" style="padding: 1rem; border-radius: 0.5rem; background: var(--bg-subtle); border: 1px solid var(--border-main);">'
         + '<p style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Vehicle Received</p>'
         + '<p style="font-size: 0.8125rem; color: var(--text-tertiary); line-height: 1.5;">We have received your vehicle at our facility. Our team will begin the assessment process shortly. We will keep you updated on the progress.</p>'
-        + '<p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem;">— AutoEstimate Pro</p>'
+        + '<p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem;">— AutoEstimate</p>'
         + '</div>'
         + '</div>'
 
@@ -918,7 +918,7 @@ function starsHtml(rating) {
       if (!tmpl) return
       preview.innerHTML = '<p style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">' + tmpl.subject + '</p>'
         + '<p style="font-size: 0.8125rem; color: var(--text-tertiary); line-height: 1.5;">' + tmpl.body + '</p>'
-        + '<p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem;">— AutoEstimate Pro</p>'
+        + '<p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem;">— AutoEstimate</p>'
     }
 
     // Send message action

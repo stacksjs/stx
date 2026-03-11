@@ -1,5 +1,5 @@
 <script>
-const companyName = 'AutoEstimate Pro'
+const companyName = 'AutoEstimate'
 
 const features = [
   { id: 'ai', title: 'AI-Powered Estimating', desc: 'Photo analysis, voice-to-estimate, and intelligent supplement prediction reduce estimate time by 47% on average.', highlight: true },

@@ -1,9 +1,9 @@
 <script>
-const companyName = 'AutoEstimate Pro'
+const companyName = 'AutoEstimate'
 const currentUser = 'Sarah Mitchell'
 const currentRole = 'Senior Estimator'
 const activePage = 'Schedule'
-const meta = { title: 'Schedule — AutoEstimate Pro', description: 'Technician scheduling and capacity management' }
+const meta = { title: 'Schedule — AutoEstimate', description: 'Technician scheduling and capacity management' }
 
 const navLinks = [
   { label: 'Dashboard', href: '/' },
