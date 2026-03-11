@@ -446,7 +446,7 @@ function formatBadgeClass(format) {
         + '<button class="w-full px-4 py-2.5 rounded-lg text-sm font-medium text-white" style="background: var(--btn-primary-bg)" onclick="showToast(\'Report queued for generation...\', \'success\'); closeSlideOver()">Generate Report</button>'
         + '</div>'
 
-      openSlideOver(html)
+      stx.detail.open(html)
     }
 
     // Date range change
@@ -616,23 +616,6 @@ function formatBadgeClass(format) {
       }
     }
 
-    // Render stars
-    function renderStars(rating) {
-      var full = Math.floor(rating)
-      var half = rating - full >= 0.5
-      var html = ''
-      for (var i = 0; i < 5; i++) {
-        if (i < full) {
-          html += '<span style="color: var(--badge-amber-text)">&#9733;</span>'
-        } else if (i === full && half) {
-          html += '<span style="color: var(--badge-amber-text)">&#9733;</span>'
-        } else {
-          html += '<span style="color: var(--text-muted)">&#9734;</span>'
-        }
-      }
-      return html
-    }
-
     // Open technician detail
     function openTechDetail(name) {
       var tech = technicianDetails[name]
@@ -700,7 +683,7 @@ function formatBadgeClass(format) {
         + '<div class="detail-row"><span class="detail-row-label">Estimates completed</span><span class="detail-row-value">' + tech.estimates + '</span></div>'
         + '<div class="detail-row"><span class="detail-row-label">Accuracy rate</span><span class="detail-row-value" style="color: var(--text-success)">' + tech.accuracy + '%</span></div>'
         + '<div class="detail-row"><span class="detail-row-label">Average cycle time</span><span class="detail-row-value">' + tech.cycleTime + ' days</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Customer rating</span><span class="detail-row-value">' + tech.rating + '/5.0 ' + renderStars(tech.rating) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-row-label">Customer rating</span><span class="detail-row-value">' + tech.rating + '/5.0 ' + stx.renderStars(tech.rating) + '</span></div>'
         + '<div class="detail-row"><span class="detail-row-label">Revenue generated</span><span class="detail-row-value" style="color: var(--text-revenue)">' + tech.revenue + '</span></div>'
         + '<div class="detail-row"><span class="detail-row-label">Supplement rate</span><span class="detail-row-value">' + tech.supplementRate + '</span></div>'
         + '</div>'
@@ -748,6 +731,6 @@ function formatBadgeClass(format) {
         + '<button class="px-4 py-2 rounded-lg text-sm font-medium border" style="background: var(--bg-subtle); border-color: var(--border-input); color: var(--text-tertiary)" onclick="showToast(\'Generating performance report...\', \'info\'); closeSlideOver()">Performance Report</button>'
         + '</div>'
 
-      openSlideOver(html)
+      stx.detail.open(html)
     }
 </script>

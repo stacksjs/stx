@@ -49,19 +49,7 @@ const estimates = [
 
 const ROWS_PER_PAGE = 10
 
-function statusColor(status) {
-  const colors = { 'Approved': 'badge-emerald', 'In Review': 'badge-blue', 'Supplement': 'badge-amber', 'Draft': 'badge-slate', 'Rejected': 'badge-red' }
-  return colors[status] || 'badge-slate'
-}
-
-function severityBadge(severity) {
-  const badges = { 'light': 'severity-light', 'moderate': 'severity-moderate', 'heavy': 'severity-heavy' }
-  return badges[severity] || ''
-}
-
-function formatCurrency(val) {
-  return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
+// Using stx.badgeClass() and stx.formatCurrency() from framework helpers
 </script>
 
 @extends('layouts/dashboard.stx')
@@ -202,13 +190,13 @@ function formatCurrency(val) {
                   </td>
                   <td class="px-5 py-3.5" style="color: var(--text-tertiary)">{{ est.insurer }}</td>
                   <td class="px-5 py-3.5">
-                    <span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border capitalize {{ severityBadge(est.severity) }}">{{ est.severity }}</span>
+                    <span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border capitalize {{ stx.badgeClass(est.severity, 'severity') }}">{{ est.severity }}</span>
                   </td>
                   <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-tertiary)">{{ est.laborHrs }}</td>
-                  <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-tertiary)">{{ formatCurrency(est.parts) }}</td>
-                  <td class="px-5 py-3.5 text-right font-medium tabular-nums" style="color: var(--text-primary)">{{ formatCurrency(est.total) }}</td>
+                  <td class="px-5 py-3.5 text-right tabular-nums" style="color: var(--text-tertiary)">{{ stx.formatCurrency(est.parts) }}</td>
+                  <td class="px-5 py-3.5 text-right font-medium tabular-nums" style="color: var(--text-primary)">{{ stx.formatCurrency(est.total) }}</td>
                   <td class="px-5 py-3.5">
-                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ statusColor(est.status) }}">{{ est.status }}</span>
+                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ stx.badgeClass(est.status, 'status') }}">{{ est.status }}</span>
                   </td>
                   <td class="px-5 py-3.5">
                     <button onclick="event.stopPropagation(); openEstimateDetail('{{ est.id }}')" class="text-xs font-medium" style="color: var(--text-accent); background: none; border: none; cursor: pointer;">View →</button>
@@ -241,22 +229,15 @@ function formatCurrency(val) {
     var filteredRows = [];
 
     function getFilteredRows() {
-      var search = document.getElementById('searchInput').value.toLowerCase();
-      var statusVal = document.getElementById('statusFilter').value;
-      var sevVal = document.getElementById('severityFilter').value;
-      var insVal = document.getElementById('insurerFilter').value;
-      var rows = document.querySelectorAll('#estimatesTable tbody tr');
-      var matched = [];
-      rows.forEach(function(row) {
-        var text = row.textContent.toLowerCase();
-        var matchSearch = !search || text.indexOf(search) !== -1;
-        var matchStatus = statusVal === 'All Statuses' || row.getAttribute('data-status') === statusVal;
-        var matchSev = sevVal === 'All Severities' || row.getAttribute('data-severity') === sevVal.toLowerCase();
-        var matchIns = insVal === 'All Insurers' || row.getAttribute('data-insurer') === insVal;
-        row.style.display = 'none';
-        if (matchSearch && matchStatus && matchSev && matchIns) matched.push(row);
+      return stx.table.filter({
+        searchId: 'searchInput',
+        rowSelector: '#estimatesTable tbody tr',
+        filters: [
+          { id: 'statusFilter', attr: 'data-status', allValue: 'All Statuses' },
+          { id: 'severityFilter', attr: 'data-severity', allValue: 'All Severities' },
+          { id: 'insurerFilter', attr: 'data-insurer', allValue: 'All Insurers' }
+        ]
       });
-      return matched;
     }
 
     function filterEstimates() {
@@ -266,58 +247,17 @@ function formatCurrency(val) {
 
     function applyPagination() {
       filteredRows = getFilteredRows();
-      var total = filteredRows.length;
-      var totalPages = Math.max(1, Math.ceil(total / perPage()));
-      if (currentPage() > totalPages) currentPage.set(totalPages);
-      var start = (currentPage() - 1) * perPage();
-      var end = Math.min(start + perPage(), total);
-      for (var i = 0; i < filteredRows.length; i++) {
-        filteredRows[i].style.display = (i >= start && i < end) ? '' : 'none';
-      }
-      var showing = total === 0 ? '0' : (start + 1) + '–' + end;
-      document.getElementById('visibleCount').textContent = showing;
-      document.getElementById('totalCount').textContent = total;
-      document.getElementById('emptyState').style.display = total === 0 ? 'block' : 'none';
-      document.getElementById('paginationBar').style.display = total === 0 ? 'none' : '';
-      renderPaginationButtons(totalPages);
-    }
-
-    function renderPaginationButtons(totalPages) {
-      var wrap = document.getElementById('paginationButtons');
-      var h = '';
-      var btnBase = 'px-3 py-1.5 rounded-lg text-sm cursor-pointer ';
-      // Previous
-      var cp = currentPage();
-      h += '<button onclick="goToPage(' + (cp - 1) + ')"' + (cp === 1 ? ' disabled' : '') + ' class="' + btnBase + '" style="background:var(--bg-subtle);border:1px solid var(--border-input);color:' + (cp === 1 ? 'var(--text-muted)' : 'var(--text-primary)') + ';opacity:' + (cp === 1 ? '0.5' : '1') + '">Previous</button>';
-      // Page numbers
-      var pages = getPageNumbers(cp, totalPages);
-      for (var i = 0; i < pages.length; i++) {
-        var p = pages[i];
-        if (p === '...') {
-          h += '<span class="px-2 text-sm" style="color:var(--text-muted)">…</span>';
-        } else if (p === cp) {
-          h += '<button class="w-9 h-9 rounded-lg text-sm font-medium" style="background:var(--btn-primary-bg);color:#fff">' + p + '</button>';
-        } else {
-          h += '<button onclick="goToPage(' + p + ')" class="w-9 h-9 rounded-lg text-sm cursor-pointer" style="background:var(--bg-subtle);color:var(--text-tertiary)">' + p + '</button>';
-        }
-      }
-      // Next
-      h += '<button onclick="goToPage(' + (cp + 1) + ')"' + (cp === totalPages ? ' disabled' : '') + ' class="' + btnBase + 'font-medium" style="background:var(--bg-subtle);border:1px solid var(--border-input);color:' + (cp === totalPages ? 'var(--text-muted)' : 'var(--text-primary)') + ';opacity:' + (cp === totalPages ? '0.5' : '1') + '">Next</button>';
-      wrap.innerHTML = h;
-    }
-
-    function getPageNumbers(current, total) {
-      if (total <= 7) {
-        var arr = [];
-        for (var i = 1; i <= total; i++) arr.push(i);
-        return arr;
-      }
-      var pages = [1];
-      if (current > 3) pages.push('...');
-      for (var j = Math.max(2, current - 1); j <= Math.min(total - 1, current + 1); j++) pages.push(j);
-      if (current < total - 2) pages.push('...');
-      pages.push(total);
-      return pages;
+      stx.pagination({
+        page: currentPage(),
+        perPage: perPage(),
+        items: filteredRows,
+        countId: 'visibleCount',
+        totalId: 'totalCount',
+        emptyId: 'emptyState',
+        barId: 'paginationBar',
+        buttonsId: 'paginationButtons',
+        goToPage: goToPage
+      });
     }
 
     function goToPage(page) {
@@ -408,27 +348,25 @@ function formatCurrency(val) {
         timeline: [['2026-03-04','Submitted to State Farm','var(--bar-blue)'],['2026-03-03','Full estimate written','var(--bar-blue)'],['2026-03-02','Teardown and hidden damage assessment','var(--bar-blue)'],['2026-03-01','Vehicle towed in','var(--bar-slate)']] }
     };
 
-    // Build detail HTML from data
+    // Build detail HTML from data using stx.detail.* helpers
     function buildDetail(id) {
       var d = ED[id];
       if (!d) return '';
       var h = '';
+
       // Header
-      h += '<div class="detail-section" style="display:flex;align-items:center;justify-content:space-between">';
-      h += '<div><h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary)">' + id + '</h2>';
-      h += '<p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">' + d.date + '</p></div>';
-      h += '<div style="display:flex;align-items:center;gap:0.75rem"><span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + d.statusClass + '">' + d.status + '</span>';
-      // Show supplement count for Supplement status estimates
+      var badges = [{ text: d.status, map: 'status' }];
       if (d.status === 'Supplement') {
-        h += '<span style="font-size:0.75rem;font-weight:500;color:var(--badge-amber-text)">Supplement 1 of 2</span>';
+        badges.push({ text: 'Supplement 1 of 2', map: 'status' });
       }
-      h += '<button onclick="closeSlideOver()" style="color:var(--text-muted);font-size:1.5rem;background:none;border:none;cursor:pointer;line-height:1" aria-label="Close">&times;</button></div></div>';
+      h += stx.detail.panel({ title: id, subtitle: d.date, badges: badges });
+
       // Vehicle
-      h += sec('Vehicle', [['Year / Make / Model', d.vehicle], ['VIN', d.vin], ['Color', d.color], ['Mileage', d.mileage]]);
+      h += stx.detail.section('Vehicle', { 'Year / Make / Model': d.vehicle, 'VIN': d.vin, 'Color': d.color, 'Mileage': d.mileage });
       // Customer
-      h += sec('Customer', [['Name', d.owner], ['Phone', d.phone], ['Email', d.email]]);
+      h += stx.detail.section('Customer', { 'Name': d.owner, 'Phone': d.phone, 'Email': d.email });
       // Insurance
-      h += sec('Insurance', [['Company', d.insurer], ['Policy #', d.policy], ['Claim #', d.claim], ['Adjuster', d.adjuster]]);
+      h += stx.detail.section('Insurance', { 'Company': d.insurer, 'Policy #': d.policy, 'Claim #': d.claim, 'Adjuster': d.adjuster });
       // Compliance
       h += '<div class="detail-section"><div class="detail-label">Compliance</div>';
       h += '<div style="display:flex;flex-direction:column;gap:0.5rem">';
@@ -439,9 +377,9 @@ function formatCurrency(val) {
       h += '</div></div>';
       // Damage
       h += '<div class="detail-section"><div class="detail-label">Damage Assessment</div>';
-      h += row('Point of Impact', d.impact);
-      h += row('Severity', '<span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border ' + d.sevClass + '" style="text-transform:capitalize">' + d.severity + '</span>');
-      h += row('Driveable', d.driveable) + '</div>';
+      h += stx.detail.row('Point of Impact', d.impact);
+      h += stx.detail.row('Severity', '<span class="inline-flex px-2 py-0.5 rounded text-[11px] font-medium border ' + d.sevClass + '" style="text-transform:capitalize">' + d.severity + '</span>');
+      h += stx.detail.row('Driveable', d.driveable) + '</div>';
       // Line Items
       h += '<div class="detail-section"><div class="detail-label">Line Items</div><table class="line-items-table"><thead><tr><th>Description</th><th>Type</th><th>Amount</th></tr></thead><tbody>';
       for (var i = 0; i < d.items.length; i++) {
@@ -452,15 +390,15 @@ function formatCurrency(val) {
       h += '</tbody></table></div>';
       // Totals
       h += '<div class="detail-section"><div class="detail-label">Cost Summary</div>';
-      h += row('Labor', d.labor) + row('Parts', d.parts) + row('Paint &amp; Materials', d.paintMat);
+      h += stx.detail.row('Labor', d.labor) + stx.detail.row('Parts', d.parts) + stx.detail.row('Paint &amp; Materials', d.paintMat);
       h += '<div class="detail-row" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-main)"><span class="detail-row-label" style="font-weight:600;color:var(--text-primary)">Grand Total</span><span class="detail-row-value" style="font-size:1rem;color:var(--text-accent)">' + d.total + '</span></div></div>';
       // Timeline
-      h += '<div class="detail-section"><div class="detail-label">Timeline</div>';
+      var timelineItems = [];
       for (var j = 0; j < d.timeline.length; j++) {
         var t = d.timeline[j];
-        h += '<div class="timeline-item"><div class="timeline-dot" style="background:' + t[2] + '"></div><div><div class="timeline-text">' + t[1] + '</div><div class="timeline-date">' + t[0] + '</div></div></div>';
+        timelineItems.push({ title: t[1], meta: t[0], color: t[2] });
       }
-      h += '</div>';
+      h += stx.detail.timeline(timelineItems);
       // Photos & Documentation
       h += '<div class="detail-section"><div class="detail-label">Photos &amp; Documentation <span style="font-size:0.6875rem;font-weight:400;color:var(--text-muted)">(3 photos)</span></div>';
       h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-bottom:0.75rem">';
@@ -475,11 +413,11 @@ function formatCurrency(val) {
       // Supplements
       h += '<div class="detail-section"><div class="detail-label">Supplements</div>';
       if (d.status === 'Supplement') {
-        h += row('Original Estimate', d.total);
-        h += '<div class="detail-row"><span class="detail-row-label">Supplement 1</span><span class="detail-row-value"><span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium badge-emerald" style="margin-right:0.375rem">approved</span>+$1,240.00</span></div>';
-        h += '<div class="detail-row"><span class="detail-row-label">Supplement 2</span><span class="detail-row-value"><span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium badge-amber" style="margin-right:0.375rem">pending</span>+$680.00</span></div>';
+        h += stx.detail.row('Original Estimate', d.total);
+        h += '<div class="detail-row"><span class="detail-row-label">Supplement 1</span><span class="detail-row-value">' + stx.badge('approved', 'status') + ' +$1,240.00</span></div>';
+        h += '<div class="detail-row"><span class="detail-row-label">Supplement 2</span><span class="detail-row-value">' + stx.badge('pending', 'status') + ' +$680.00</span></div>';
         var origNum = parseFloat(d.total.replace(/[$,]/g, ''));
-        var revisedTotal = '$' + (origNum + 1240 + 680).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        var revisedTotal = stx.formatCurrency(origNum + 1240 + 680);
         h += '<div class="detail-row" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-main)"><span class="detail-row-label" style="font-weight:600;color:var(--text-primary)">Revised Total</span><span class="detail-row-value" style="color:var(--text-accent)">' + revisedTotal + '</span></div>';
       } else {
         h += '<p style="font-size:0.8125rem;color:var(--text-muted)">No supplements filed</p>';
@@ -495,14 +433,6 @@ function formatCurrency(val) {
       return h;
     }
 
-    function sec(label, rows) {
-      var h = '<div class="detail-section"><div class="detail-label">' + label + '</div>';
-      for (var i = 0; i < rows.length; i++) h += row(rows[i][0], rows[i][1]);
-      return h + '</div>';
-    }
-    function row(label, value) {
-      return '<div class="detail-row"><span class="detail-row-label">' + label + '</span><span class="detail-row-value">' + value + '</span></div>';
-    }
     function btn(label, onclick, primary) {
       if (primary) return '<button onclick="' + onclick + '" style="flex:1;text-align:center;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);border:none;cursor:pointer">' + label + '</button>';
       return '<button onclick="' + onclick + '" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;background:var(--bg-subtle);border:1px solid var(--border-input);color:var(--text-tertiary);cursor:pointer">' + label + '</button>';
@@ -510,7 +440,7 @@ function formatCurrency(val) {
 
     function openEstimateDetail(id) {
       var html = buildDetail(id);
-      if (html) openSlideOver(html);
+      if (html) stx.detail.open(html);
     }
 
     function openNewEstimateForm() {

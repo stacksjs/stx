@@ -551,7 +551,7 @@ const monthApptSamples = {
       html += '<button onclick="showToast(\'Appointment cancelled\', \'warn\'); closeSlideOver();" style="flex:1;min-width:140px;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:var(--badge-red-text);background:var(--badge-red-bg);border:1px solid rgba(239,68,68,0.3);cursor:pointer">Cancel</button>'
       html += '</div>'
 
-      openSlideOver(html)
+      stx.detail.open(html)
     }
 
     // New appointment form
@@ -627,7 +627,7 @@ const monthApptSamples = {
       html += '<button onclick="submitNewAppointment()" style="flex:1;padding:0.625rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;color:#fff;background:var(--btn-primary-bg);border:none;cursor:pointer">Create Appointment</button>'
       html += '</div>'
 
-      openSlideOver(html)
+      stx.detail.open(html)
     }
 
     function apptField(label, id, type, placeholder) {

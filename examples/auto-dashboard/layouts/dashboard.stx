@@ -163,6 +163,8 @@
     /* Shared utility: empty state */
     .empty-state { text-align: center; padding: 3rem 1.5rem; }
 
+    .nav-icon-btn:hover { background: var(--bg-subtle); }
+
     @stack('styles')
   </style>
 </head>
@@ -193,10 +195,12 @@
           </button>
           <div class="hidden md:flex items-center gap-1">
             @foreach (navLinks as link)
-              @if (link.label === activePage)
-                <a href="{{ link.href }}" class="px-3 py-1.5 rounded-lg text-sm font-medium" style="background: var(--nav-active-bg); color: var(--text-primary)">{{ link.label }}</a>
-              @else
-                <a href="{{ link.href }}" class="px-3 py-1.5 rounded-lg text-sm" style="color: var(--text-nav)">{{ link.label }}</a>
+              @if (link.label !== 'Customers' && link.label !== 'Schedule' && link.label !== 'Reports')
+                @if (link.label === activePage)
+                  <a href="{{ link.href }}" class="px-3 py-1.5 rounded-lg text-sm font-medium" style="background: var(--nav-active-bg); color: var(--text-primary)">{{ link.label }}</a>
+                @else
+                  <a href="{{ link.href }}" class="px-3 py-1.5 rounded-lg text-sm" style="color: var(--text-nav)">{{ link.label }}</a>
+                @endif
               @endif
             @endforeach
           </div>
@@ -208,22 +212,81 @@
               <svg class="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
             </div></div>
           </button>
+          <!-- Quick-nav icons -->
+          <a href="/schedule" class="nav-icon-btn relative p-2 rounded-lg transition-colors" style="color: var(--text-nav)" title="Schedule" aria-label="Schedule">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"/>
+            </svg>
+          </a>
+
+          <a href="/customers" class="nav-icon-btn relative p-2 rounded-lg transition-colors" style="color: var(--text-nav)" title="Customers" aria-label="Customers">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
+            </svg>
+          </a>
+
+          <a href="/reports" class="nav-icon-btn relative p-2 rounded-lg transition-colors" style="color: var(--text-nav)" title="Reports" aria-label="Reports">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+            </svg>
+          </a>
+
           <div class="relative">
-            <button @click="toggleNotifications()" class="relative p-2 rounded-lg" style="color: var(--text-nav)">
+            <button onclick="toggleNotifications()" class="nav-icon-btn relative p-2 rounded-lg transition-colors" style="color: var(--text-nav)">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
               <span id="notifBadge" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <div id="notifDropdown" class="absolute right-0 top-12 w-80 rounded-xl overflow-hidden shadow-lg z-50" style="display: none; border: 1px solid var(--bg-glass-border);">
               <div class="px-4 py-3 flex items-center justify-between" style="background: var(--bg-nav); border-bottom: 1px solid var(--border-main)">
                 <span class="text-sm font-semibold" style="color: var(--text-primary)">Notifications</span>
-                <button @click="clearNotifications()" class="text-xs" style="color: var(--text-accent); background: none; border: none; cursor: pointer">Mark all read</button>
+                <button onclick="clearNotifications()" class="text-xs" style="color: var(--text-accent); background: none; border: none; cursor: pointer">Mark all read</button>
               </div>
               <div style="background: var(--bg-nav); max-height: 320px; overflow-y: auto;">
-                @include('../partials/notification-item', { color: 'blue', title: 'EST-4820', message: 'submitted to Progressive for review', time: '2 minutes ago' })
-                @include('../partials/notification-item', { color: 'emerald', title: 'EST-4818', message: 'approved by Allstate — ready for repair', time: '15 minutes ago' })
-                @include('../partials/notification-item', { color: 'amber', title: 'Parts delay', message: ': Headlamp for EST-4807 backordered — ETA 3 days', time: '1 hour ago' })
-                @include('../partials/notification-item', { color: 'red', title: 'AI Alert', message: ': EST-4816 (Rivian R1S) approaching total loss threshold', time: '2 hours ago' })
-                @include('../partials/notification-item', { color: 'emerald', title: 'New assignment', message: ': State Farm — 2024 Chevrolet Equinox', time: '3 hours ago' })
+                <div class="px-4 py-3" style="border-bottom: 1px solid var(--border-main)">
+                  <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-blue)"></div>
+                    <div>
+                      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">EST-4820</span> submitted to Progressive for review</p>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">2 minutes ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-3" style="border-bottom: 1px solid var(--border-main)">
+                  <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-emerald)"></div>
+                    <div>
+                      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">EST-4818</span> approved by Allstate — ready for repair</p>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">15 minutes ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-3" style="border-bottom: 1px solid var(--border-main)">
+                  <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-amber)"></div>
+                    <div>
+                      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">Parts delay</span>: Headlamp for EST-4807 backordered — ETA 3 days</p>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">1 hour ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-3" style="border-bottom: 1px solid var(--border-main)">
+                  <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-red)"></div>
+                    <div>
+                      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">AI Alert</span>: EST-4816 (Rivian R1S) approaching total loss threshold</p>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">2 hours ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-3" style="border-bottom: 1px solid var(--border-main)">
+                  <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 mt-1.5 rounded-full flex-shrink-0" style="background: var(--bar-emerald)"></div>
+                    <div>
+                      <p class="text-sm" style="color: var(--text-secondary)"><span class="font-medium">New assignment</span>: State Farm — 2024 Chevrolet Equinox</p>
+                      <p class="text-xs mt-0.5" style="color: var(--text-muted)">3 hours ago</p>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="px-4 py-2.5 text-center" style="background: var(--bg-nav); border-top: 1px solid var(--border-main)">
                 <a href="/reports" class="text-xs font-medium" style="color: var(--text-accent)">View all notifications</a>

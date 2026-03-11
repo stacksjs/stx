@@ -71,10 +71,6 @@ const repairCategories = [
   { category: 'Other', percent: 8 },
 ]
 
-function statusColor(status) {
-  const colors = { 'Active Repair': 'badge-amber', 'Complete': 'badge-emerald', 'Pending': 'badge-blue' }
-  return colors[status] || 'badge-slate'
-}
 </script>
 
 @extends('layouts/dashboard.stx')
@@ -183,7 +179,7 @@ function statusColor(status) {
                     <td class="px-5 py-3.5 text-right tabular-nums font-medium" style="color: var(--text-primary)">{{ vehicle.totalSpent }}</td>
                     <td class="px-5 py-3.5" style="color: var(--text-tertiary)">{{ vehicle.insurer }}</td>
                     <td class="px-5 py-3.5">
-                      <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ statusColor(vehicle.status) }}">{{ vehicle.status }}</span>
+                      <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ stx.badgeClass(vehicle.status, 'status') }}">{{ vehicle.status }}</span>
                     </td>
                     <td class="px-5 py-3.5">
                       @if (vehicle.adas)
@@ -438,84 +434,55 @@ function statusColor(status) {
       }
       if (!v) return
 
-      const statusBadgeClass = v.status === 'Active Repair' ? 'badge-amber' : v.status === 'Complete' ? 'badge-emerald' : 'badge-blue'
-
-      let repairTimeline = ''
-      v.repairs.forEach(function(r, i) {
-        const isLast = i === v.repairs.length - 1
-        repairTimeline += '<div style="display: flex; gap: 0.75rem;">'
-        repairTimeline += '<div style="display: flex; flex-direction: column; align-items: center;">'
-        repairTimeline += '<div style="width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--text-accent); margin-top: 4px;"></div>'
-        if (!isLast) {
-          repairTimeline += '<div style="width: 2px; flex: 1; background: var(--border-main); margin: 4px 0;"></div>'
-        }
-        repairTimeline += '</div>'
-        repairTimeline += '<div style="flex: 1; padding-bottom: ' + (isLast ? '0' : '1rem') + ';">'
-        repairTimeline += '<div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">'
-        repairTimeline += '<span style="font-size: 0.875rem; font-weight: 500; color: var(--text-primary);">' + r.desc + '</span>'
-        repairTimeline += '<span style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">' + r.cost + '</span>'
-        repairTimeline += '</div>'
-        repairTimeline += '<div style="display: flex; gap: 1rem; margin-top: 0.25rem;">'
-        repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-muted);">' + r.date + '</span>'
-        repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-muted);">' + r.estimate + '</span>'
-        repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-success);">' + r.status + '</span>'
-        repairTimeline += '</div>'
-        repairTimeline += '</div></div>'
+      var html = stx.detail.panel({
+        title: v.year + ' ' + v.make + ' ' + v.model,
+        badges: [{ text: v.status, map: 'status' }]
       })
 
-      const html = ''
-        + '<div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main);">'
-        + '<div>'
-        + '<h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">' + v.year + ' ' + v.make + ' ' + v.model + '</h2>'
-        + '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + statusBadgeClass + '" style="margin-top: 0.5rem;">' + v.status + '</span>'
-        + '</div>'
-        + '<button onclick="closeSlideOver()" style="padding: 0.5rem; border-radius: 0.5rem; color: var(--text-muted); background: none; border: none; cursor: pointer;" aria-label="Close">'
-        + '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
-        + '</button>'
-        + '</div>'
+      html += stx.detail.section('Vehicle Information', {
+        'VIN': '<span style="font-family: monospace; font-size: 0.8125rem;">' + v.vin + '</span>',
+        'Color': v.color,
+        'Year': v.year,
+        'Make': v.make,
+        'Model': v.model,
+        'Mileage': v.mileage + ' mi',
+        'License Plate': v.plate,
+        'Body Style': v.body
+      })
 
-        + '<div class="detail-section">'
-        + '<div class="detail-label">Vehicle Information</div>'
-        + '<div class="detail-row"><span class="detail-row-label">VIN</span><span class="detail-row-value" style="font-family: monospace; font-size: 0.8125rem;">' + v.vin + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Color</span><span class="detail-row-value">' + v.color + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Year</span><span class="detail-row-value">' + v.year + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Make</span><span class="detail-row-value">' + v.make + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Model</span><span class="detail-row-value">' + v.model + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Mileage</span><span class="detail-row-value">' + v.mileage + ' mi</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">License Plate</span><span class="detail-row-value">' + v.plate + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Body Style</span><span class="detail-row-value">' + v.body + '</span></div>'
-        + '</div>'
+      html += stx.detail.section('Owner', {
+        'Name': v.owner.name,
+        'Phone': v.owner.phone,
+        'Email': '<span style="color: var(--text-accent);">' + v.owner.email + '</span>',
+        'Location': v.owner.address
+      })
 
-        + '<div class="detail-section">'
-        + '<div class="detail-label">Owner</div>'
-        + '<div class="detail-row"><span class="detail-row-label">Name</span><span class="detail-row-value">' + v.owner.name + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">' + v.owner.phone + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value" style="color: var(--text-accent);">' + v.owner.email + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Location</span><span class="detail-row-value">' + v.owner.address + '</span></div>'
-        + '</div>'
+      html += '<div class="detail-section"><div class="detail-label">Repair History</div>'
+      html += stx.detail.timeline(v.repairs.map(function(r) {
+        return {
+          title: r.desc,
+          description: r.date + ' &middot; ' + r.estimate + ' &middot; <span style="color: var(--text-success);">' + r.status + '</span>',
+          meta: r.cost,
+          color: 'var(--text-accent)'
+        }
+      }))
+      html += '</div>'
 
-        + '<div class="detail-section">'
-        + '<div class="detail-label">Repair History</div>'
-        + repairTimeline
-        + '</div>'
-
-        + '<div class="detail-section">'
-        + '<div class="detail-label">Financial Summary</div>'
-        + '<div class="detail-row"><span class="detail-row-label">Total Estimates</span><span class="detail-row-value">' + v.financial.totalEstimates + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Total Spent</span><span class="detail-row-value" style="color: var(--text-revenue);">' + v.financial.totalSpent + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Average Repair</span><span class="detail-row-value">' + v.financial.avgRepair + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Insurance Claims</span><span class="detail-row-value">' + v.financial.claims + '</span></div>'
-        + '</div>'
+      html += stx.detail.section('Financial Summary', {
+        'Total Estimates': v.financial.totalEstimates,
+        'Total Spent': '<span style="color: var(--text-revenue);">' + v.financial.totalSpent + '</span>',
+        'Average Repair': v.financial.avgRepair,
+        'Insurance Claims': v.financial.claims
+      })
 
       // ADAS & Calibration section
       if (v.adas) {
-        html += '<div class="detail-section">'
-        html += '<div class="detail-label">ADAS & Calibration</div>'
-        html += '<div class="detail-row"><span class="detail-row-label">Pre-scan status</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + (v.adas.preScan === 'Completed' ? 'badge-emerald' : 'badge-amber') + '">' + v.adas.preScan + '</span></span></div>'
-        html += '<div class="detail-row"><span class="detail-row-label">Post-scan status</span><span class="detail-row-value"><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + (v.adas.postScan === 'Completed' ? 'badge-emerald' : 'badge-amber') + '">' + v.adas.postScan + '</span></span></div>'
-        html += '<div class="detail-row"><span class="detail-row-label">Calibrations needed</span><span class="detail-row-value" style="text-align: right; max-width: 60%;">' + v.adas.calibrations.join(', ') + '</span></div>'
-        html += '<div class="detail-row"><span class="detail-row-label">Est. calibration cost</span><span class="detail-row-value" style="color: var(--text-revenue);">' + v.adas.estCost + '</span></div>'
-        html += '</div>'
+        html += stx.detail.section('ADAS & Calibration', {
+          'Pre-scan status': stx.badge(v.adas.preScan, 'status'),
+          'Post-scan status': stx.badge(v.adas.postScan, 'status'),
+          'Calibrations needed': '<span style="text-align: right; max-width: 60%;">' + v.adas.calibrations.join(', ') + '</span>',
+          'Est. calibration cost': '<span style="color: var(--text-revenue);">' + v.adas.estCost + '</span>'
+        })
       }
 
       html += '<div class="detail-section" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">'
@@ -524,7 +491,7 @@ function statusColor(status) {
         + '<button onclick="showToast(\'Opening vehicle editor...\', \'info\'); closeSlideOver();" style="flex: 1; min-width: 140px; padding: 0.625rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--btn-action-text); background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); cursor: pointer;">Edit Vehicle</button>'
         + '</div>'
 
-      openSlideOver(html)
+      stx.detail.open(html)
     }
 
     // Pagination state
@@ -533,24 +500,14 @@ function statusColor(status) {
     var vFilteredRows = []
 
     function getVehicleFilteredRows() {
-      var query = document.getElementById('vinSearch').value.toLowerCase().trim()
-      var makeVal = document.getElementById('makeFilter').value
-      var modelVal = document.getElementById('modelFilter').value
-      var rows = document.querySelectorAll('#vehicleTableBody tr')
-      var matched = []
-      rows.forEach(function(row) {
-        var vin = (row.getAttribute('data-vin') || '')
-        var make = row.getAttribute('data-make') || ''
-        var model = row.getAttribute('data-model') || ''
-        var owner = (row.getAttribute('data-owner') || '')
-        row.style.display = 'none'
-        var show = true
-        if (query && vin.indexOf(query) === -1 && owner.indexOf(query) === -1 && (make + ' ' + model).toLowerCase().indexOf(query) === -1) show = false
-        if (makeVal && make !== makeVal) show = false
-        if (modelVal && model !== modelVal) show = false
-        if (show) matched.push(row)
+      return stx.table.filter({
+        searchId: 'vinSearch',
+        rowSelector: '#vehicleTableBody tr',
+        filters: [
+          { id: 'makeFilter', attr: 'data-make', allValue: '' },
+          { id: 'modelFilter', attr: 'data-model', allValue: '' }
+        ]
       })
-      return matched
     }
 
     function filterVehicles() {
@@ -560,50 +517,17 @@ function statusColor(status) {
 
     function applyVehiclePagination() {
       vFilteredRows = getVehicleFilteredRows()
-      var total = vFilteredRows.length
-      var totalPages = Math.max(1, Math.ceil(total / vPerPage))
-      if (vPage > totalPages) vPage = totalPages
-      var start = (vPage - 1) * vPerPage
-      var end = Math.min(start + vPerPage, total)
-      for (var i = 0; i < vFilteredRows.length; i++) {
-        vFilteredRows[i].style.display = (i >= start && i < end) ? '' : 'none'
-      }
-      var label = total === 0 ? 'No results' : 'Showing ' + (start + 1) + '–' + end + ' of ' + total
-      document.getElementById('vPagLabel').textContent = label
-      document.getElementById('vehicleShowingLabel').textContent = label
-      document.getElementById('emptyState').style.display = total === 0 ? '' : 'none'
-      document.getElementById('paginationBar').style.display = total === 0 ? 'none' : ''
-      renderVPagButtons(totalPages)
-    }
-
-    function renderVPagButtons(totalPages) {
-      var wrap = document.getElementById('vPagButtons')
-      var h = ''
-      var btnBase = 'px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer '
-      h += '<button onclick="vGoToPage(' + (vPage - 1) + ')"' + (vPage === 1 ? ' disabled' : '') + ' class="' + btnBase + '" style="background:var(--bg-subtle);border:1px solid var(--border-input);color:' + (vPage === 1 ? 'var(--text-muted)' : 'var(--text-primary)') + ';opacity:' + (vPage === 1 ? '0.5' : '1') + '">Previous</button>'
-      var pages = vGetPageNums(vPage, totalPages)
-      for (var i = 0; i < pages.length; i++) {
-        var p = pages[i]
-        if (p === '...') {
-          h += '<span class="px-2 text-xs" style="color:var(--text-muted)">…</span>'
-        } else if (p === vPage) {
-          h += '<button class="w-8 h-8 rounded-lg text-xs font-medium" style="background:var(--btn-primary-bg);color:#fff">' + p + '</button>'
-        } else {
-          h += '<button onclick="vGoToPage(' + p + ')" class="w-8 h-8 rounded-lg text-xs cursor-pointer" style="background:var(--bg-subtle);color:var(--text-tertiary)">' + p + '</button>'
-        }
-      }
-      h += '<button onclick="vGoToPage(' + (vPage + 1) + ')"' + (vPage === totalPages ? ' disabled' : '') + ' class="' + btnBase + '" style="background:var(--bg-subtle);border:1px solid var(--border-input);color:' + (vPage === totalPages ? 'var(--text-muted)' : 'var(--text-primary)') + ';opacity:' + (vPage === totalPages ? '0.5' : '1') + '">Next</button>'
-      wrap.innerHTML = h
-    }
-
-    function vGetPageNums(current, total) {
-      if (total <= 7) { var arr = []; for (var i = 1; i <= total; i++) arr.push(i); return arr; }
-      var pages = [1]
-      if (current > 3) pages.push('...')
-      for (var j = Math.max(2, current - 1); j <= Math.min(total - 1, current + 1); j++) pages.push(j)
-      if (current < total - 2) pages.push('...')
-      pages.push(total)
-      return pages
+      stx.pagination({
+        page: vPage,
+        perPage: vPerPage,
+        items: vFilteredRows,
+        countId: 'vehicleShowingLabel',
+        totalId: 'vPagLabel',
+        emptyId: 'emptyState',
+        barId: 'paginationBar',
+        buttonsId: 'vPagButtons',
+        goToPage: vGoToPage
+      })
     }
 
     function vGoToPage(page) {

@@ -66,18 +66,6 @@ const summaryStats = [
 
 const insurers = ['State Farm', 'Progressive', 'GEICO', 'Allstate', 'USAA', 'Farmers', 'Liberty Mutual']
 
-function daysColor(days) {
-  if (days < 2) return 'badge-emerald'
-  if (days <= 4) return 'badge-amber'
-  return 'badge-red'
-}
-
-function priorityColor(priority) {
-  if (priority === 'Rush') return 'badge-red'
-  if (priority === 'Low') return 'badge-slate'
-  return 'badge-blue'
-}
-
 function stageIndex(stageId) {
   return stages.findIndex(function(s) { return s.id === stageId })
 }
@@ -189,7 +177,7 @@ function stageIndex(stageId) {
                       <div class="kanban-card" data-vehicle-id="{{ v.id }}" data-tech="{{ v.tech }}" data-priority="{{ v.priority }}" data-insurer="{{ v.insurer }}" onclick="openVehicleDetail({{ v.id }})">
                         <div class="flex items-start justify-between gap-2 mb-2">
                           <span class="text-sm font-semibold leading-tight" style="color: var(--text-primary)">{{ v.year }} {{ v.make }} {{ v.model }}</span>
-                          <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 {{ priorityColor(v.priority) }}">{{ v.priority }}</span>
+                          <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 {{ stx.badgeClass(v.priority, 'priority') }}">{{ v.priority }}</span>
                         </div>
                         <div class="text-xs mb-1.5" style="color: var(--text-muted)">
                           <span class="font-mono" style="color: var(--text-accent)">{{ v.estimate }}</span>
@@ -198,7 +186,7 @@ function stageIndex(stageId) {
                         <div class="text-xs mb-2" style="color: var(--text-muted)">{{ v.insurer }}</div>
                         <div class="flex items-center justify-between mb-2">
                           <span class="text-xs" style="color: var(--text-muted)">{{ v.tech }}</span>
-                          <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold {{ daysColor(v.days) }}">{{ v.days }}d</span>
+                          <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold {{ v.days < 2 ? 'badge-emerald' : v.days <= 4 ? 'badge-amber' : 'badge-red' }}">{{ v.days }}d</span>
                         </div>
                         <div class="progress-dots">
                           @foreach (stages as si => s)
@@ -257,10 +245,10 @@ function stageIndex(stageId) {
                     <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium badge-{{ stages.find(function(s) { return s.id === v.stage }).color }}">{{ stages.find(function(s) { return s.id === v.stage }).label }}</span>
                   </td>
                   <td>
-                    <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold {{ daysColor(v.days) }}">{{ v.days }}d</span>
+                    <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold {{ v.days < 2 ? 'badge-emerald' : v.days <= 4 ? 'badge-amber' : 'badge-red' }}">{{ v.days }}d</span>
                   </td>
                   <td>
-                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ priorityColor(v.priority) }}">{{ v.priority }}</span>
+                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ stx.badgeClass(v.priority, 'priority') }}">{{ v.priority }}</span>
                   </td>
                 </tr>
               @endforeach
@@ -424,13 +412,9 @@ function stageIndex(stageId) {
       })
 
       // Days badge
-      var daysBadge = 'badge-emerald'
-      if (v.days >= 2 && v.days <= 4) daysBadge = 'badge-amber'
-      if (v.days > 4) daysBadge = 'badge-red'
+      var daysBadge = v.days < 2 ? 'badge-emerald' : v.days <= 4 ? 'badge-amber' : 'badge-red'
 
-      var priorityBadge = 'badge-blue'
-      if (v.priority === 'Rush') priorityBadge = 'badge-red'
-      if (v.priority === 'Low') priorityBadge = 'badge-slate'
+      var priorityBadge = stx.badgeClass(v.priority, 'priority')
 
       var nextStageLabel = isLastStage ? '' : stageLabels[stageOrder[currentIdx + 1]]
 

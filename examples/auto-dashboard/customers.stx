@@ -67,22 +67,7 @@ const topCustomers = [
   { name: 'Jennifer Liu', revenue: '$38,940' },
 ]
 
-function statusColor(status) {
-  const colors = { 'Active Repair': 'badge-amber', 'Completed': 'badge-emerald', 'Pending Pickup': 'badge-blue', 'New': 'badge-slate' }
-  return colors[status] || 'badge-slate'
-}
-
-function starsHtml(rating) {
-  let html = ''
-  for (let i = 0; i < 5; i++) {
-    if (i < rating) {
-      html += '<span style="color: #f59e0b;">&#9733;</span>'
-    } else {
-      html += '<span style="color: var(--text-muted);">&#9733;</span>'
-    }
-  }
-  return html
-}
+// Helper functions (statusColor, starsHtml) replaced by stx.* client-side helpers
 </script>
 
 @extends('layouts/dashboard.stx')
@@ -183,10 +168,10 @@ function starsHtml(rating) {
                     <td class="px-5 py-3.5 text-right tabular-nums font-medium" style="color: var(--text-primary)">{{ customer.totalSpent }}</td>
                     <td class="px-5 py-3.5" style="color: var(--text-muted)">{{ customer.lastVisit }}</td>
                     <td class="px-5 py-3.5">
-                      <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ statusColor(customer.status) }}">{{ customer.status }}</span>
+                      <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium" :class="stx.badgeClass(customer.status, 'status')">{{ customer.status }}</span>
                     </td>
                     <td class="px-5 py-3.5">
-                      <span class="text-xs">{!! starsHtml(customer.rating) !!}</span>
+                      <span class="text-xs">{!! stx.renderStars(customer.rating) !!}</span>
                     </td>
                     <td class="px-5 py-3.5">
                       <div class="flex items-center gap-2" onclick="event.stopPropagation()">
@@ -647,45 +632,26 @@ function starsHtml(rating) {
       'followup-survey': { subject: 'How Was Your Experience?', body: 'Thank you for choosing AutoEstimate. We value your feedback! Please take a moment to rate your experience and let us know how we can improve.' }
     }
 
-    // Filter customers
+    // Filter customers using stx.table.filter()
     function filterCustomers() {
-      var search = document.getElementById('customerSearch').value.toLowerCase()
-      var status = document.getElementById('statusFilter').value
-      var sort = document.getElementById('sortFilter').value
-      var rows = document.querySelectorAll('.customer-row')
-      var visible = []
-
-      rows.forEach(function(row) {
-        var name = row.getAttribute('data-name')
-        var email = row.getAttribute('data-email')
-        var phone = row.getAttribute('data-phone')
-        var vins = row.getAttribute('data-vins') || ''
-        var rowStatus = row.getAttribute('data-status')
-        var matchSearch = !search || name.indexOf(search) !== -1 || email.indexOf(search) !== -1 || phone.indexOf(search) !== -1 || vins.indexOf(search) !== -1
-        var matchStatus = !status || rowStatus === status
-
-        if (matchSearch && matchStatus) {
-          row.style.display = ''
-          visible.push(row)
-        } else {
-          row.style.display = 'none'
-        }
+      stx.table.filter({
+        searchId: 'customerSearch',
+        rowSelector: '.customer-row',
+        filters: [
+          { id: 'statusFilter', attr: 'data-status', allValue: '' }
+        ],
+        searchAttrs: ['data-name', 'data-email', 'data-phone', 'data-vins'],
+        sortId: 'sortFilter',
+        sortMap: {
+          name: { attr: 'data-name', dir: 'asc' },
+          vehicles: { attr: 'data-vehicles', dir: 'desc', type: 'number' },
+          recent: { attr: 'data-lastvisit', dir: 'desc' }
+        },
+        tbodyId: 'customerTableBody',
+        countId: 'customerShowingLabel',
+        totalLabel: '15 customers',
+        emptyId: 'emptyState'
       })
-
-      // Sort
-      var tbody = document.getElementById('customerTableBody')
-      if (sort === 'name') {
-        visible.sort(function(a, b) { return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name')) })
-      } else if (sort === 'vehicles') {
-        visible.sort(function(a, b) { return parseInt(b.getAttribute('data-vehicles')) - parseInt(a.getAttribute('data-vehicles')) })
-      } else {
-        visible.sort(function(a, b) { return b.getAttribute('data-lastvisit').localeCompare(a.getAttribute('data-lastvisit')) })
-      }
-      visible.forEach(function(row) { tbody.appendChild(row) })
-
-      // Update label and empty state
-      document.getElementById('customerShowingLabel').textContent = visible.length + ' of 15 customers'
-      document.getElementById('emptyState').style.display = visible.length === 0 ? '' : 'none'
     }
 
     function clearFilters() {
@@ -703,12 +669,12 @@ function starsHtml(rating) {
       var c = customerDetails[idx]
       if (!c) return
 
-      var statusBadgeClass = c.status === 'Active Repair' ? 'badge-amber' : c.status === 'Completed' ? 'badge-emerald' : c.status === 'Pending Pickup' ? 'badge-blue' : 'badge-slate'
+      var statusBadgeClass = stx.badgeClass(c.status, 'status')
 
       // Vehicles list
       var vehiclesList = ''
       c.vehicles.forEach(function(v) {
-        var vBadge = v.status === 'Active Repair' ? 'badge-amber' : v.status === 'Pending Pickup' ? 'badge-blue' : v.status === 'Pending Estimate' ? 'badge-slate' : 'badge-emerald'
+        var vBadge = stx.badgeClass(v.status, 'status')
         var vinParam = v.vin ? encodeURIComponent(v.vin) : ''
         vehiclesList += '<div onclick="closeSlideOver(); window.location.href=\'/vehicles/' + vinParam + '\'" style="padding: 0.625rem; border-radius: 0.5rem; background: var(--bg-subtle); margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease; border: 1px solid transparent;" onmouseover="this.style.background=\'var(--bg-subtle-hover)\'; this.style.borderColor=\'var(--bg-glass-border-hover)\'" onmouseout="this.style.background=\'var(--bg-subtle)\'; this.style.borderColor=\'transparent\'">'
         vehiclesList += '<div style="display: flex; justify-content: space-between; align-items: center;">'
@@ -725,33 +691,17 @@ function starsHtml(rating) {
         vehiclesList += '</div>'
       })
 
-      // Repair timeline
-      var repairTimeline = ''
-      c.repairs.forEach(function(r, i) {
-        var isLast = i === c.repairs.length - 1
-        var dotColor = r.status === 'In Progress' ? 'var(--bar-amber)' : r.status === 'Pending Pickup' ? 'var(--bar-blue)' : r.status === 'Pending Estimate' ? 'var(--bar-slate)' : 'var(--text-accent)'
-        repairTimeline += '<div style="display: flex; gap: 0.75rem;">'
-        repairTimeline += '<div style="display: flex; flex-direction: column; align-items: center;">'
-        repairTimeline += '<div style="width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: ' + dotColor + '; margin-top: 4px;"></div>'
-        if (!isLast) {
-          repairTimeline += '<div style="width: 2px; flex: 1; background: var(--border-main); margin: 4px 0;"></div>'
-        }
-        repairTimeline += '</div>'
-        repairTimeline += '<div style="flex: 1; padding-bottom: ' + (isLast ? '0' : '1rem') + ';">'
-        repairTimeline += '<div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">'
-        repairTimeline += '<span style="font-size: 0.875rem; font-weight: 500; color: var(--text-primary);">' + r.desc + '</span>'
-        repairTimeline += '<span style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">' + r.cost + '</span>'
-        repairTimeline += '</div>'
-        repairTimeline += '<div style="display: flex; gap: 1rem; margin-top: 0.25rem; flex-wrap: wrap;">'
-        repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-muted);">' + r.date + '</span>'
-        if (r.estimateId) { repairTimeline += '<a href="/estimates" style="font-size: 0.75rem; color: var(--text-accent); text-decoration: none;">' + r.estimateId + '</a>' }
-        if (r.insurer) { repairTimeline += '<span style="font-size: 0.75rem; color: var(--text-tertiary);">' + r.insurer + '</span>' }
-        var statusColor = r.status === 'In Progress' ? 'var(--badge-amber-text)' : r.status === 'Pending Pickup' ? 'var(--badge-blue-text)' : r.status === 'Pending Estimate' ? 'var(--text-muted)' : 'var(--text-success)'
-        repairTimeline += '<span style="font-size: 0.75rem; color: ' + statusColor + ';">' + r.status + '</span>'
-        repairTimeline += '</div>'
-        if (r.vin) { repairTimeline += '<span style="font-size: 0.6875rem; color: var(--text-muted); margin-top: 0.125rem; display: block;">VIN: <span style="font-family: monospace;">' + r.vin + '</span></span>' }
-        repairTimeline += '</div></div>'
+      // Repair timeline using stx.detail.timeline()
+      var repairTimelineItems = c.repairs.map(function(r) {
+        var color = r.status === 'In Progress' ? 'amber' : r.status === 'Pending Pickup' ? 'blue' : r.status === 'Pending Estimate' ? 'slate' : 'accent'
+        var meta = r.date
+        if (r.estimateId) meta += ' · <a href="/estimates" style="color: var(--text-accent); text-decoration: none;">' + r.estimateId + '</a>'
+        if (r.insurer) meta += ' · ' + r.insurer
+        meta += ' · ' + r.status
+        if (r.vin) meta += '<br><span style="font-size: 0.6875rem;">VIN: <span style="font-family: monospace;">' + r.vin + '</span></span>'
+        return { title: r.desc, description: r.cost, meta: meta, color: color }
       })
+      var repairTimeline = stx.detail.timeline(repairTimelineItems)
 
       // Communication log
       var commLog = ''
@@ -766,38 +716,25 @@ function starsHtml(rating) {
         commLog += '</div>'
       })
 
-      var html = ''
-        + '<div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main);">'
-        + '<div>'
-        + '<h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">' + c.name + '</h2>'
-        + '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + statusBadgeClass + '" style="margin-top: 0.5rem;">' + c.status + '</span>'
-        + '</div>'
-        + '<button onclick="closeSlideOver()" style="padding: 0.5rem; border-radius: 0.5rem; color: var(--text-muted); background: none; border: none; cursor: pointer;" aria-label="Close">'
-        + '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
-        + '</button>'
-        + '</div>'
+      var html = stx.detail.panel({ title: c.name, badges: [{ text: c.status, map: 'status' }] })
 
         // Contact info
-        + '<div class="detail-section">'
-        + '<div class="detail-label">Contact Information</div>'
-        + '<div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">' + c.email + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">' + c.phone + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Address</span><span class="detail-row-value" style="text-align: right; max-width: 60%;">' + c.address + '</span></div>'
-        + '</div>'
+        + stx.detail.section('Contact Information', {
+          'Email': c.email,
+          'Phone': c.phone,
+          'Address': c.address
+        })
 
         // Insurance summary
-        + '<div class="detail-section">'
-        + '<div class="detail-label">Insurance</div>'
-        + (function() {
+        + stx.detail.section('Insurance', (function() {
           var insurers = {}
           c.vehicles.forEach(function(v) { if (v.insurer) insurers[v.insurer] = true })
-          return Object.keys(insurers).map(function(ins) {
-            return '<div class="detail-row"><span class="detail-row-label">Primary Insurer</span><span class="detail-row-value">' + ins + '</span></div>'
-          }).join('')
-        })()
-        + '<div class="detail-row"><span class="detail-row-label">Total Vehicles</span><span class="detail-row-value">' + c.vehicles.length + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Total Estimates</span><span class="detail-row-value">' + c.vehicles.reduce(function(sum, v) { return sum + (v.estimates || 0) }, 0) + '</span></div>'
-        + '</div>'
+          var result = []
+          Object.keys(insurers).forEach(function(ins) { result.push({ label: 'Primary Insurer', value: ins }) })
+          result.push({ label: 'Total Vehicles', value: c.vehicles.length })
+          result.push({ label: 'Total Estimates', value: c.vehicles.reduce(function(sum, v) { return sum + (v.estimates || 0) }, 0) })
+          return result
+        })())
 
         // Communication preferences
         + '<div class="detail-section">'
@@ -819,12 +756,11 @@ function starsHtml(rating) {
         + '</div>'
 
         // Financial summary
-        + '<div class="detail-section">'
-        + '<div class="detail-label">Financial Summary</div>'
-        + '<div class="detail-row"><span class="detail-row-label">Total Spent</span><span class="detail-row-value" style="color: var(--text-revenue);">' + c.financial.totalSpent + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Avg Repair Cost</span><span class="detail-row-value">' + c.financial.avgRepair + '</span></div>'
-        + '<div class="detail-row"><span class="detail-row-label">Outstanding Balance</span><span class="detail-row-value" style="color: ' + (c.financial.outstanding !== '$0' ? 'var(--badge-amber-text)' : 'var(--text-primary)') + ';">' + c.financial.outstanding + '</span></div>'
-        + '</div>'
+        + stx.detail.section('Financial Summary', {
+          'Total Spent': c.financial.totalSpent,
+          'Avg Repair Cost': c.financial.avgRepair,
+          'Outstanding Balance': c.financial.outstanding
+        })
 
         // Notes
         + '<div class="detail-section">'
@@ -844,7 +780,7 @@ function starsHtml(rating) {
         + '<button onclick="showToast(\'Appointment scheduler coming soon\', \'info\')" style="flex: 1; padding: 0.625rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--btn-action-text); background: var(--btn-action-bg); border: 1px solid var(--btn-action-border); cursor: pointer;">Schedule Appointment</button>'
         + '</div>'
 
-      openSlideOver(html)
+      stx.detail.open(html)
     }
 
     // Open send message slide-over

@@ -58,20 +58,10 @@ const recentOrders = [
   { part: 'Windshield Glass', orderNum: 'PO-8828', date: '2026-03-04', supplier: 'Pilkington Glass', status: 'Shipped' },
 ]
 
-function typeBadge(type) {
-  const colors = { 'OEM': 'badge-blue', 'Aftermarket': 'badge-amber', 'Recycled': 'badge-emerald', 'Reman': 'badge-slate' }
-  return colors[type] || 'badge-slate'
-}
-
 function availabilityColor(avail) {
   if (avail === 'In Stock') return 'color: var(--text-success)'
   if (avail === 'Backordered') return 'color: var(--badge-red-text)'
   return 'color: var(--badge-amber-text)'
-}
-
-function orderStatusBadge(status) {
-  const colors = { 'Delivered': 'badge-emerald', 'Shipped': 'badge-blue', 'Processing': 'badge-amber' }
-  return colors[status] || 'badge-slate'
 }
 </script>
 
@@ -161,7 +151,7 @@ function orderStatusBadge(status) {
               <div class="part-card glass rounded-xl p-5 glass-card fade-in" data-idx="{{ idx }}" data-name="{{ part.name }}" data-oem="{{ part.oem }}" data-type="{{ part.type }}" data-make="{{ part.make }}" data-category="{{ part.category }}" onclick="openPartDetail({{ idx }})">
                 <div class="flex items-start justify-between mb-2">
                   <h3 class="text-sm font-semibold" style="color: var(--text-primary)">{{ part.name }}</h3>
-                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ typeBadge(part.type) }}" style="white-space: nowrap">{{ part.type }}</span>
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ stx.badgeClass(part.type, 'type') }}" style="white-space: nowrap">{{ part.type }}</span>
                 </div>
                 <p class="text-xs font-mono mb-1" style="color: var(--text-muted)">OEM# {{ part.oem }}</p>
                 <p class="text-xs mb-3" style="color: var(--text-tertiary)">{{ part.vehicles }}</p>
@@ -245,7 +235,7 @@ function orderStatusBadge(status) {
                     <p class="text-xs" style="color: var(--text-muted)">{{ order.orderNum }} — {{ order.date }}</p>
                     <p class="text-xs" style="color: var(--text-tertiary)">{{ order.supplier }}</p>
                   </div>
-                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 {{ orderStatusBadge(order.status) }}">{{ order.status }}</span>
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 {{ stx.badgeClass(order.status, 'status') }}">{{ order.status }}</span>
                 </div>
               @endforeach
             </div>
@@ -645,12 +635,12 @@ function orderStatusBadge(status) {
       var p = partsData[idx]
       if (!p) return
 
-      var typeBadge = p.type === 'OEM' ? 'badge-blue' : p.type === 'Aftermarket' ? 'badge-amber' : p.type === 'Recycled' ? 'badge-emerald' : 'badge-slate'
+      var typeBadge = stx.badgeClass(p.type, 'type')
 
       // Build suppliers table
       var suppliersHtml = ''
       p.allSuppliers.forEach(function(s) {
-        var sBadge = s.type === 'OEM' ? 'badge-blue' : s.type === 'Aftermarket' ? 'badge-amber' : s.type === 'Recycled' ? 'badge-emerald' : 'badge-slate'
+        var sBadge = stx.badgeClass(s.type, 'type')
         suppliersHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--row-border)">'
         suppliersHtml += '<div>'
         suppliersHtml += '<span style="font-size:0.875rem;font-weight:500;color:var(--text-primary)">' + s.name + '</span>'
@@ -742,14 +732,7 @@ function orderStatusBadge(status) {
       if (!s) return
 
       // Stars
-      var starsHtml = ''
-      for (var i = 1; i <= 5; i++) {
-        if (i <= Math.floor(s.rating)) {
-          starsHtml += '<svg width="14" height="14" style="color:var(--badge-amber-text)" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>'
-        } else {
-          starsHtml += '<svg width="14" height="14" style="color:var(--text-muted);opacity:0.3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>'
-        }
-      }
+      var starsHtml = stx.renderStars(s.rating)
 
       // Categories
       var catsHtml = ''
@@ -760,7 +743,7 @@ function orderStatusBadge(status) {
       // Recent orders
       var ordersHtml = ''
       s.recentOrders.forEach(function(o) {
-        var oBadge = o.status === 'Delivered' ? 'badge-emerald' : o.status === 'Shipped' ? 'badge-blue' : 'badge-amber'
+        var oBadge = stx.badgeClass(o.status, 'status')
         ordersHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--row-border)">'
         ordersHtml += '<div>'
         ordersHtml += '<span style="font-size:0.8125rem;font-weight:500;color:var(--text-primary)">' + o.part + '</span>'

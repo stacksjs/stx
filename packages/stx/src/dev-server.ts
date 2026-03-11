@@ -20,6 +20,7 @@ import {
 // 2. Importing from the package would create a circular dependency (bun-plugin-stx -> @stacksjs/stx)
 // 3. During development, the built dist of bun-plugin-stx might not be available
 // If consolidating, consider making bun-plugin-stx re-export from @stacksjs/stx/plugin
+import { stxClientHelpers } from './client-helpers'
 import { partialsCache } from './includes'
 import { plugin as stxPlugin } from './plugin'
 import { clearComponentCache } from './utils'
@@ -1381,6 +1382,10 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         // Always return full HTML — the SPA router extracts <main> content
         // and swaps <head> styles client-side via DOMParser
         return injectCrosswindCSS(routeMatched.content).then(content => {
+          // Inject stx client helpers (formatters, badge system, detail panel builder, etc.)
+          if (content.includes('</head>')) {
+            content = content.replace('</head>', `${stxClientHelpers}\n</head>`)
+          }
           return new Response(content, {
             headers: {
               'Content-Type': 'text/html',

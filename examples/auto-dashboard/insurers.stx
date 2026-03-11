@@ -35,11 +35,6 @@ const insurers = [
   { name: 'Nationwide', drpStatus: 'Standard', contact: 'Karen Brown', phone: '(555) 901-2345', estimates: 35, revenue: '$18,400', avgCycle: '4.1', supplementRate: '26.5', csi: 85 },
 ]
 
-function drpBadgeClass(status) {
-  const classes = { 'Active DRP': 'badge-emerald', 'Preferred': 'badge-blue', 'Standard': 'badge-slate' }
-  return classes[status] || 'badge-slate'
-}
-
 function csiBarColor(csi) {
   if (csi >= 95) return 'var(--bar-emerald)'
   if (csi >= 90) return 'var(--bar-blue)'
@@ -137,7 +132,7 @@ function csiBarColor(csi) {
             {{-- Card Header: Name + DRP Badge --}}
             <div class="flex items-start justify-between mb-4">
               <h3 class="text-lg font-semibold" style="color: var(--text-primary)">{{ insurer.name }}</h3>
-              <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ drpBadgeClass(insurer.drpStatus) }}">{{ insurer.drpStatus }}</span>
+              <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium {{ stx.badgeClass(insurer.drpStatus, 'drp') }}">{{ insurer.drpStatus }}</span>
             </div>
 
             {{-- Contact Info --}}
@@ -330,16 +325,6 @@ function csiBarColor(csi) {
       return 'var(--bar-red)'
     }
 
-    function drpBadgeClassClient(status) {
-      var classes = { 'Active DRP': 'badge-emerald', 'Preferred': 'badge-blue', 'Standard': 'badge-slate' }
-      return classes[status] || 'badge-slate'
-    }
-
-    function statusBadgeClass(status) {
-      var classes = { 'Approved': 'badge-emerald', 'In Review': 'badge-amber', 'Supplement': 'badge-blue', 'Denied': 'badge-red' }
-      return classes[status] || 'badge-slate'
-    }
-
     function trendClass(val) {
       if (!val) return ''
       return val.indexOf('-') === 0 && val.indexOf('days') === -1
@@ -373,7 +358,7 @@ function csiBarColor(csi) {
       html += '<div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-main); display: flex; align-items: center; justify-content: space-between;">'
       html += '<div>'
       html += '<h2 id="slideOverTitle" style="font-size: 1.375rem; font-weight: 700; color: var(--text-primary); margin: 0;">' + name + '</h2>'
-      html += '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + drpBadgeClassClient(drpStatus) + '" style="margin-top: 0.5rem; display: inline-flex;">' + drpStatus + '</span>'
+      html += '<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium ' + stx.badgeClass(drpStatus, 'drp') + '" style="margin-top: 0.5rem; display: inline-flex;">' + drpStatus + '</span>'
       html += '</div>'
       html += '<button onclick="closeSlideOver()" style="padding: 0.5rem; border-radius: 0.5rem; border: none; cursor: pointer; background: var(--bg-subtle); color: var(--text-tertiary);" aria-label="Close panel">'
       html += '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
@@ -455,7 +440,7 @@ function csiBarColor(csi) {
         html += '<td>' + e.vehicle + '</td>'
         html += '<td style="color: var(--text-muted); font-size: 0.75rem;">' + e.date + '</td>'
         html += '<td style="font-weight: 600; color: var(--text-primary);">' + e.total + '</td>'
-        html += '<td><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + statusBadgeClass(e.status) + '">' + e.status + '</span></td>'
+        html += '<td><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' + stx.badgeClass(e.status, 'status') + '">' + e.status + '</span></td>'
         html += '</tr>'
       }
       html += '</tbody></table>'

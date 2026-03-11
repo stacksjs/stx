@@ -180,10 +180,6 @@ const vehicleDb = {
   },
 }
 
-function statusColor(status) {
-  const colors = { 'Active Repair': 'badge-amber', 'Complete': 'badge-emerald', 'Pending': 'badge-blue', 'Pending Pickup': 'badge-blue', 'In Progress': 'badge-amber', 'Completed': 'badge-emerald', 'Pending Estimate': 'badge-slate' }
-  return colors[status] || 'badge-slate'
-}
 </script>
 
 @extends('../layouts/dashboard.stx')
@@ -247,14 +243,13 @@ function statusColor(status) {
       var el = document.getElementById('vehicleContent')
       el.style.display = ''
 
-      var statusClass = v.status === 'Active Repair' ? 'badge-amber' : v.status === 'Complete' ? 'badge-emerald' : 'badge-blue'
+      var statusClass = stx.badgeClass(v.status, 'status')
 
       // Build repair timeline
       var timeline = ''
       v.repairs.forEach(function(r, i) {
         var isLast = i === v.repairs.length - 1
-        var dotColor = r.status === 'In Progress' ? 'var(--bar-amber)' : r.status === 'Pending Pickup' ? 'var(--bar-blue)' : 'var(--bar-emerald)'
-        var statusCls = r.status === 'In Progress' ? 'badge-amber' : r.status === 'Pending Pickup' ? 'badge-blue' : r.status === 'Pending Estimate' ? 'badge-slate' : 'badge-emerald'
+        var statusCls = stx.badgeClass(r.status, 'status')
         timeline += '<div class="timeline-card">'
         timeline += '<div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">'
         timeline += '<span style="font-size: 0.9375rem; font-weight: 500; color: var(--text-primary);">' + r.desc + '</span>'
