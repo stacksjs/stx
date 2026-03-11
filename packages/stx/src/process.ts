@@ -1264,6 +1264,7 @@ export async function processDirectives(
         // Must run at top level after ALL processing (layouts, includes, components)
         // because partials injected via layout resolution may bypass processOtherDirectives
         result = processRefAttributes(result)
+
       }
 
       // Restore @@ escape placeholders to literal @ AFTER all directive processing
@@ -1737,6 +1738,13 @@ async function processOtherDirectives(
   // Process built-in STX components
   output = await processBuiltInComponents(output, context, filePath, opts)
 
+  // For templates that use signals, convert @if/@for directive blocks to attribute-style
+  // MUST run BEFORE processLoops/processConditionals so signal loops aren't evaluated server-side
+  if (usesSignalsInScript(output)) {
+    output = convertSignalDirectivesToAttributes(output)
+    output = convertSignalLoopsToAttributes(output)
+  }
+
   // Process loops FIRST - BEFORE components so that loop variables are evaluated
   // when components are processed, not after components have already been expanded
   output = processLoops(output, context, filePath, opts)
@@ -1832,16 +1840,6 @@ async function processOtherDirectives(
   // Process @ref attributes for DOM references
   // Must run AFTER processIncludes so ref= attributes in partials/components are transformed
   output = processRefAttributes(output)
-
-  // For templates that use signals, convert @if/@for directive blocks to attribute-style
-  // This allows the signals runtime to handle them reactively instead of build-time evaluation
-  if (usesSignalsInScript(output)) {
-    output = convertSignalDirectivesToAttributes(output)
-    output = convertSignalLoopsToAttributes(output)
-  }
-
-  // Note: Loop processing moved earlier, before component processing
-  // This ensures loop variables like 'trail' are available when components are rendered
 
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
@@ -2626,6 +2624,7 @@ function processRefAttributes(template: string): string {
   result = result.replace(/(<[a-zA-Z][a-zA-Z0-9-]*\b[^>]*?)\sref="([^"]+)"/g, '$1 data-stx-ref="$2"')
   return result
 }
+
 
 /**
  * Prohibited DOM API patterns in client scripts.

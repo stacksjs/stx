@@ -120,6 +120,23 @@ export function getRouterScript(): string {
       // ── Swap main content ──
       currentContent.innerHTML=newContent.innerHTML;
 
+      // ── Load new external <head> scripts ──
+      var loadedSrcs={};
+      document.querySelectorAll('head script[src]').forEach(function(s){loadedSrcs[s.src]=1});
+      var extPromises=[];
+      doc.querySelectorAll('head script[src]').forEach(function(s){
+        var src=new URL(s.getAttribute('src'),location.origin).href;
+        if(loadedSrcs[src])return;
+        loadedSrcs[src]=1;
+        extPromises.push(new Promise(function(resolve,reject){
+          var ns=document.createElement('script');
+          ns.src=src;
+          ns.onload=resolve;
+          ns.onerror=reject;
+          document.head.appendChild(ns);
+        }));
+      });
+
       // ── Script re-execution ──
       // Remove previously injected page scripts
       document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
@@ -140,12 +157,20 @@ export function getRouterScript(): string {
         scripts.push(text);
       });
 
-      scripts.forEach(function(text){
-        var ns=document.createElement('script');
-        ns.textContent=text;
-        ns.setAttribute('data-stx-page','');
-        document.body.appendChild(ns);
-      });
+      function execScripts(){
+        scripts.forEach(function(text){
+          var ns=document.createElement('script');
+          ns.textContent=text;
+          ns.setAttribute('data-stx-page','');
+          document.body.appendChild(ns);
+        });
+      }
+
+      if(extPromises.length>0){
+        Promise.all(extPromises).then(execScripts).catch(execScripts);
+      }else{
+        execScripts();
+      }
 
       // Update active nav links
       updateNav(url);

@@ -732,6 +732,12 @@ export function generateSignalsRuntimeDev(): string {
 (function() {
   'use strict';
 
+  // Inject x-cloak CSS to prevent FOUC (Flash of Unstyled Content)
+  // Elements with x-cloak are hidden until the runtime removes the attribute after mount
+  var cloakStyle = document.createElement('style');
+  cloakStyle.textContent = '[x-cloak] { display: none !important; }';
+  document.head.appendChild(cloakStyle);
+
   // ==========================================================================
   // Reactive Core
   // ==========================================================================
@@ -2214,13 +2220,21 @@ export function generateSignalsRuntimeDev(): string {
           Array.from(templateContent.childNodes).forEach(node => {
             const clone = node.cloneNode(true);
             parent.insertBefore(clone, placeholder);
-            if (clone.nodeType === 1) processElement(clone, itemScope);
+            if (clone.nodeType === 1) {
+              processElement(clone, itemScope);
+              // Remove x-cloak from processed clones (prevents hidden cells in @for loops)
+              clone.removeAttribute('x-cloak');
+              clone.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
+            }
             currentElements.push(clone);
           });
         } else {
           const clone = templateContent.cloneNode(true);
           parent.insertBefore(clone, placeholder);
           processElement(clone, itemScope);
+          // Remove x-cloak from processed clones
+          clone.removeAttribute('x-cloak');
+          clone.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
           currentElements.push(clone);
         }
       });
@@ -2303,7 +2317,12 @@ export function generateSignalsRuntimeDev(): string {
           // Process the new nodes for nested directives with captured scope - pass scope explicitly
           const childScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
           currentNodes.forEach(node => {
-            if (node.nodeType === 1) processElement(node, childScope);
+            if (node.nodeType === 1) {
+              processElement(node, childScope);
+              // Remove x-cloak from processed clones
+              node.removeAttribute('x-cloak');
+              node.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
+            }
           });
           isInserted = true;
         } else if (!value && isInserted) {
@@ -2747,6 +2766,30 @@ export function generateSignalsRuntimeDev(): string {
   var watch = $watch;
   var watchEffect = function(fn) { return effect(fn); };
 
+  function useLocalStorage(key, defaultValue) {
+    var stored = localStorage.getItem(key)
+    var initial = stored !== null ? JSON.parse(stored) : defaultValue
+    var s = state(initial)
+    effect(function() {
+      localStorage.setItem(key, JSON.stringify(s()))
+    })
+    var handler = function(e) {
+      if (e.key === key) s.set(e.newValue !== null ? JSON.parse(e.newValue) : defaultValue)
+    }
+    window.addEventListener('storage', handler)
+    onDestroy(function() { window.removeEventListener('storage', handler) })
+    return s
+  }
+
+  function useEventListener(event, handler, options) {
+    var target = (options && options.target) || window
+    if (typeof target === 'string') target = document.querySelector(target)
+    if (!target) return
+    var opts = { capture: options && options.capture, passive: options && options.passive, once: options && options.once }
+    target.addEventListener(event, handler, opts)
+    onDestroy(function() { target.removeEventListener(event, handler, opts) })
+  }
+
   // Component mount system
   var mountQueue = [];
 
@@ -2787,6 +2830,8 @@ export function generateSignalsRuntimeDev(): string {
     useClickOutside,
     useFocus,
     useAsync,
+    useLocalStorage,
+    useEventListener,
     useColorMode,
     useDark,
     helpers: globalHelpers,
@@ -2794,6 +2839,49 @@ export function generateSignalsRuntimeDev(): string {
     _destroyCallbacks: destroyCallbacks,
     _cleanupContainer: cleanupContainer,
     _scopes: {},  // Component-level scopes
+    mountEl: function(selector, setupFn) {
+      function doMount() {
+        var root = document.querySelector(selector)
+        if (!root) { console.warn('[stx] mountEl: element not found:', selector); return }
+
+        var mountStart = mountCallbacks.length;
+        var destroyStart = destroyCallbacks.length;
+
+        var scope = setupFn();
+
+        var localMountHooks = mountCallbacks.splice(mountStart);
+        var localDestroyHooks = destroyCallbacks.splice(destroyStart);
+
+        if (typeof scope === 'object' && scope !== null) {
+          scope.$el = root;
+          scope.$refs = scope.$refs || {};
+          root.__stx_scope = scope;
+        }
+
+        var disposeEffects = trackEffects(function() {
+          processElement(root, scope || componentScope);
+        });
+        root.__stx_disposers = disposeEffects;
+
+        root.removeAttribute('x-cloak');
+        root.querySelectorAll('[x-cloak]').forEach(function(el) { el.removeAttribute('x-cloak'); });
+
+        localMountHooks.forEach(function(fn) {
+          try {
+            var cleanup = fn();
+            if (typeof cleanup === 'function') localDestroyHooks.push(cleanup);
+          } catch(e) { console.error('[stx] onMount error:', e); }
+        });
+
+        root.__stx_destroy = localDestroyHooks;
+      }
+
+      if (document.readyState === 'loading') {
+        mountQueue.push(doMount);
+      } else {
+        doMount();
+      }
+    },
     mount: function(setupFn) {
       // Capture script reference synchronously (only valid during execution)
       var scriptEl = document.currentScript;
@@ -2828,6 +2916,10 @@ export function generateSignalsRuntimeDev(): string {
           processElement(root, scope || componentScope);
         });
         root.__stx_disposers = disposeEffects;
+
+        // Remove x-cloak after bindings are applied (prevents FOUC)
+        root.removeAttribute('x-cloak');
+        root.querySelectorAll('[x-cloak]').forEach(function(el) { el.removeAttribute('x-cloak'); });
 
         // Fire mount hooks
         localMountHooks.forEach(function(fn) {
@@ -2878,6 +2970,8 @@ export function generateSignalsRuntimeDev(): string {
   window.useClickOutside = useClickOutside;
   window.useFocus = useFocus;
   window.useAsync = useAsync;
+  window.useLocalStorage = useLocalStorage;
+  window.useEventListener = useEventListener;
   window.useColorMode = useColorMode;
   window.useDark = useDark;
   window.ref = state;

@@ -63,6 +63,12 @@ export function generateXElementRuntime(): string {
 
     init() {
       this.processElement(this.el);
+
+      // Process x-init (run expression after initialization)
+      const initExpr = this.el.getAttribute('x-init');
+      if (initExpr) {
+        setTimeout(() => this.execute(initExpr), 0);
+      }
     }
 
     processElement(el) {
@@ -119,6 +125,17 @@ export function generateXElementRuntime(): string {
         this.watchExpression(expr, update);
       });
 
+      // Process x-html (reactive innerHTML)
+      const htmls = el.querySelectorAll('[x-html]');
+      htmls.forEach(elem => {
+        const expr = elem.getAttribute('x-html');
+        const update = () => {
+          elem.innerHTML = this.evaluate(expr);
+        };
+        update();
+        this.watchExpression(expr, update);
+      });
+
       // Process x-show (toggle visibility)
       const shows = el.querySelectorAll('[x-show]');
       shows.forEach(elem => {
@@ -144,10 +161,27 @@ export function generateXElementRuntime(): string {
             const event = parts[0];
             const modifiers = parts.slice(1);
 
-            elem.addEventListener(event, (e) => {
+            // Determine target element for event listener
+            const useWindow = modifiers.includes('window');
+            const useOutside = modifiers.includes('outside');
+            const useOnce = modifiers.includes('once');
+            const target = useWindow ? window : elem;
+
+            // Check for debounce modifier (e.g., debounce.300)
+            let debounceMs = 0;
+            const debounceIdx = modifiers.indexOf('debounce');
+            if (debounceIdx !== -1 && modifiers[debounceIdx + 1]) {
+              debounceMs = parseInt(modifiers[debounceIdx + 1]) || 0;
+            }
+
+            let debounceTimer;
+            const handler = (e) => {
               if (modifiers.includes('prevent')) e.preventDefault();
               if (modifiers.includes('stop')) e.stopPropagation();
               if (modifiers.includes('self') && e.target !== elem) return;
+
+              // For .outside modifier, only fire if click was outside the element
+              if (useOutside && elem.contains(e.target)) return;
 
               // Key modifiers
               if (event === 'keydown' || event === 'keyup' || event === 'keypress') {
@@ -157,8 +191,15 @@ export function generateXElementRuntime(): string {
                 }
               }
 
-              this.execute(expr, { $event: e, $el: elem });
-            });
+              if (debounceMs > 0) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => this.execute(expr, { $event: e, $el: elem }), debounceMs);
+              } else {
+                this.execute(expr, { $event: e, $el: elem });
+              }
+            };
+
+            target.addEventListener(event, handler, { once: useOnce });
           } else if (attr.name.startsWith(':')) {
             // Attribute binding (:disabled, :class, :href, :src, etc.)
             const bindAttr = attr.name.slice(1);
@@ -265,7 +306,7 @@ export function generateXElementRuntime(): string {
  * Check if template uses x-* directives
  */
 export function hasXElementDirectives(template: string): boolean {
-  return /\bx-(data|model|text|show)\b/.test(template) || /\s:[a-z]/.test(template)
+  return /\bx-(data|model|text|show|init|html)\b/.test(template) || /\s:[a-z]/.test(template)
 }
 
 /**

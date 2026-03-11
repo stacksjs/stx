@@ -281,17 +281,9 @@ export async function serve(options: ServeOptions): Promise<void> {
       output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
     }
 
-    // Re-inject client scripts before </body>
-    if (clientScripts.length > 0) {
-      const scriptsHtml = clientScripts.join('\n')
-      const bodyIdx = output.lastIndexOf('</body>')
-      if (bodyIdx !== -1) {
-        output = output.slice(0, bodyIdx) + scriptsHtml + '\n</body>' + output.slice(bodyIdx + 7)
-      }
-      else {
-        output += `\n${scriptsHtml}`
-      }
-    }
+    // NOTE: Do NOT re-inject client scripts here.
+    // processDirectives() already transforms <script client> into <script data-stx-scoped>.
+    // Re-injecting would cause duplicate scripts (raw TS + processed JS).
 
     // Generate and inject Crosswind CSS
     const crosswindCSS = await generateCrosswindCSS(output)
@@ -537,17 +529,8 @@ export async function serve(options: ServeOptions): Promise<void> {
 
     output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
 
-    // Re-inject client scripts before </body>
-    if (dynClientScripts.length > 0) {
-      const scriptsHtml = dynClientScripts.join('\n')
-      const bodyIdx = output.lastIndexOf('</body>')
-      if (bodyIdx !== -1) {
-        output = output.slice(0, bodyIdx) + scriptsHtml + '\n</body>' + output.slice(bodyIdx + 7)
-      }
-      else {
-        output += `\n${scriptsHtml}`
-      }
-    }
+    // Client scripts are already handled by processDirectives (transformed into data-stx-scoped)
+    // No need to re-inject them here
 
     const crosswindCSS = await generateCrosswindCSS(output)
     if (crosswindCSS) {
