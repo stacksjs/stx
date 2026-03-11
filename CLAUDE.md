@@ -357,3 +357,8 @@ stx serve <directory> [--port 3000]
 5. **Middleware Timing**: Middleware can run `before` or `after` directive processing. Set the `timing` field appropriately.
 
 6. **Component Resolution**: Components are resolved relative to `componentsDir` first, then fall back to current directory. Paths without extensions automatically append `.stx`.
+
+
+## Git Commits
+
+When committing changes, do not include a `Co-Authored-By` line for Claude in commit messages.
