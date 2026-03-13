@@ -15,7 +15,7 @@
     },
     "packages/benchmarks": {
       "name": "@stacksjs/benchmarks",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@11ty/eleventy": "^3.1.2",
         "@stacksjs/sanitizer": "workspace:*",
@@ -47,14 +47,14 @@
     },
     "packages/benchmarks/js-framework-benchmark": {
       "name": "js-framework-benchmark-stx",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "happy-dom": "^20.8.3",
       },
     },
     "packages/bun-plugin": {
       "name": "bun-plugin-stx",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "bin": {
         "serve": "./dist/serve.js",
         "stx-serve": "./dist/serve.js",
@@ -65,1535 +65,1535 @@
     },
     "packages/collections/iconify-academicons": {
       "name": "@stacksjs/iconify-academicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-akar-icons": {
       "name": "@stacksjs/iconify-akar-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ant-design": {
       "name": "@stacksjs/iconify-ant-design",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-arcticons": {
       "name": "@stacksjs/iconify-arcticons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-basil": {
       "name": "@stacksjs/iconify-basil",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-bi": {
       "name": "@stacksjs/iconify-bi",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-bitcoin-icons": {
       "name": "@stacksjs/iconify-bitcoin-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-bpmn": {
       "name": "@stacksjs/iconify-bpmn",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-brandico": {
       "name": "@stacksjs/iconify-brandico",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-bx": {
       "name": "@stacksjs/iconify-bx",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-bxl": {
       "name": "@stacksjs/iconify-bxl",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-bxs": {
       "name": "@stacksjs/iconify-bxs",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-bytesize": {
       "name": "@stacksjs/iconify-bytesize",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-carbon": {
       "name": "@stacksjs/iconify-carbon",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-catppuccin": {
       "name": "@stacksjs/iconify-catppuccin",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-cbi": {
       "name": "@stacksjs/iconify-cbi",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-charm": {
       "name": "@stacksjs/iconify-charm",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ci": {
       "name": "@stacksjs/iconify-ci",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-cib": {
       "name": "@stacksjs/iconify-cib",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-cif": {
       "name": "@stacksjs/iconify-cif",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-cil": {
       "name": "@stacksjs/iconify-cil",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-circle-flags": {
       "name": "@stacksjs/iconify-circle-flags",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-circum": {
       "name": "@stacksjs/iconify-circum",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-clarity": {
       "name": "@stacksjs/iconify-clarity",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-codex": {
       "name": "@stacksjs/iconify-codex",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-codicon": {
       "name": "@stacksjs/iconify-codicon",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-covid": {
       "name": "@stacksjs/iconify-covid",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-cryptocurrency": {
       "name": "@stacksjs/iconify-cryptocurrency",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-cryptocurrency-color": {
       "name": "@stacksjs/iconify-cryptocurrency-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-cuida": {
       "name": "@stacksjs/iconify-cuida",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-dashicons": {
       "name": "@stacksjs/iconify-dashicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-devicon": {
       "name": "@stacksjs/iconify-devicon",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-devicon-plain": {
       "name": "@stacksjs/iconify-devicon-plain",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-dinkie-icons": {
       "name": "@stacksjs/iconify-dinkie-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-duo-icons": {
       "name": "@stacksjs/iconify-duo-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ei": {
       "name": "@stacksjs/iconify-ei",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-el": {
       "name": "@stacksjs/iconify-el",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-emojione": {
       "name": "@stacksjs/iconify-emojione",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-emojione-monotone": {
       "name": "@stacksjs/iconify-emojione-monotone",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-emojione-v1": {
       "name": "@stacksjs/iconify-emojione-v1",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-entypo": {
       "name": "@stacksjs/iconify-entypo",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-entypo-social": {
       "name": "@stacksjs/iconify-entypo-social",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-eos-icons": {
       "name": "@stacksjs/iconify-eos-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ep": {
       "name": "@stacksjs/iconify-ep",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-et": {
       "name": "@stacksjs/iconify-et",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-eva": {
       "name": "@stacksjs/iconify-eva",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-f7": {
       "name": "@stacksjs/iconify-f7",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fa": {
       "name": "@stacksjs/iconify-fa",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fa-brands": {
       "name": "@stacksjs/iconify-fa-brands",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fa-regular": {
       "name": "@stacksjs/iconify-fa-regular",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fa-solid": {
       "name": "@stacksjs/iconify-fa-solid",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fa6-brands": {
       "name": "@stacksjs/iconify-fa6-brands",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fa6-regular": {
       "name": "@stacksjs/iconify-fa6-regular",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fa6-solid": {
       "name": "@stacksjs/iconify-fa6-solid",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fa7-brands": {
       "name": "@stacksjs/iconify-fa7-brands",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fa7-regular": {
       "name": "@stacksjs/iconify-fa7-regular",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fa7-solid": {
       "name": "@stacksjs/iconify-fa7-solid",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fad": {
       "name": "@stacksjs/iconify-fad",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-famicons": {
       "name": "@stacksjs/iconify-famicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fe": {
       "name": "@stacksjs/iconify-fe",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-feather": {
       "name": "@stacksjs/iconify-feather",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-file-icons": {
       "name": "@stacksjs/iconify-file-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-flag": {
       "name": "@stacksjs/iconify-flag",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-flagpack": {
       "name": "@stacksjs/iconify-flagpack",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-flat-color-icons": {
       "name": "@stacksjs/iconify-flat-color-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-flat-ui": {
       "name": "@stacksjs/iconify-flat-ui",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-flowbite": {
       "name": "@stacksjs/iconify-flowbite",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fluent": {
       "name": "@stacksjs/iconify-fluent",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fluent-color": {
       "name": "@stacksjs/iconify-fluent-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fluent-emoji": {
       "name": "@stacksjs/iconify-fluent-emoji",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fluent-emoji-flat": {
       "name": "@stacksjs/iconify-fluent-emoji-flat",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fluent-emoji-high-contrast": {
       "name": "@stacksjs/iconify-fluent-emoji-high-contrast",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fluent-mdl2": {
       "name": "@stacksjs/iconify-fluent-mdl2",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fontelico": {
       "name": "@stacksjs/iconify-fontelico",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fontisto": {
       "name": "@stacksjs/iconify-fontisto",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-formkit": {
       "name": "@stacksjs/iconify-formkit",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-foundation": {
       "name": "@stacksjs/iconify-foundation",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-fxemoji": {
       "name": "@stacksjs/iconify-fxemoji",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-gala": {
       "name": "@stacksjs/iconify-gala",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-game-icons": {
       "name": "@stacksjs/iconify-game-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-garden": {
       "name": "@stacksjs/iconify-garden",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-geo": {
       "name": "@stacksjs/iconify-geo",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-gg": {
       "name": "@stacksjs/iconify-gg",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-gis": {
       "name": "@stacksjs/iconify-gis",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-gravity-ui": {
       "name": "@stacksjs/iconify-gravity-ui",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-gridicons": {
       "name": "@stacksjs/iconify-gridicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-grommet-icons": {
       "name": "@stacksjs/iconify-grommet-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-guidance": {
       "name": "@stacksjs/iconify-guidance",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-healthicons": {
       "name": "@stacksjs/iconify-healthicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-heroicons": {
       "name": "@stacksjs/iconify-heroicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-heroicons-outline": {
       "name": "@stacksjs/iconify-heroicons-outline",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-heroicons-solid": {
       "name": "@stacksjs/iconify-heroicons-solid",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-hugeicons": {
       "name": "@stacksjs/iconify-hugeicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-humbleicons": {
       "name": "@stacksjs/iconify-humbleicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ic": {
       "name": "@stacksjs/iconify-ic",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-icomoon-free": {
       "name": "@stacksjs/iconify-icomoon-free",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-icon-park": {
       "name": "@stacksjs/iconify-icon-park",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-icon-park-outline": {
       "name": "@stacksjs/iconify-icon-park-outline",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-icon-park-solid": {
       "name": "@stacksjs/iconify-icon-park-solid",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-icon-park-twotone": {
       "name": "@stacksjs/iconify-icon-park-twotone",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-iconamoon": {
       "name": "@stacksjs/iconify-iconamoon",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-iconoir": {
       "name": "@stacksjs/iconify-iconoir",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-icons8": {
       "name": "@stacksjs/iconify-icons8",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-il": {
       "name": "@stacksjs/iconify-il",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ion": {
       "name": "@stacksjs/iconify-ion",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-iwwa": {
       "name": "@stacksjs/iconify-iwwa",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ix": {
       "name": "@stacksjs/iconify-ix",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-jam": {
       "name": "@stacksjs/iconify-jam",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-la": {
       "name": "@stacksjs/iconify-la",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-lets-icons": {
       "name": "@stacksjs/iconify-lets-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-line-md": {
       "name": "@stacksjs/iconify-line-md",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-lineicons": {
       "name": "@stacksjs/iconify-lineicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-logos": {
       "name": "@stacksjs/iconify-logos",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ls": {
       "name": "@stacksjs/iconify-ls",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-lsicon": {
       "name": "@stacksjs/iconify-lsicon",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-lucide": {
       "name": "@stacksjs/iconify-lucide",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-lucide-lab": {
       "name": "@stacksjs/iconify-lucide-lab",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-mage": {
       "name": "@stacksjs/iconify-mage",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-majesticons": {
       "name": "@stacksjs/iconify-majesticons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-maki": {
       "name": "@stacksjs/iconify-maki",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-map": {
       "name": "@stacksjs/iconify-map",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-marketeq": {
       "name": "@stacksjs/iconify-marketeq",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-material-icon-theme": {
       "name": "@stacksjs/iconify-material-icon-theme",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-material-symbols": {
       "name": "@stacksjs/iconify-material-symbols",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-material-symbols-light": {
       "name": "@stacksjs/iconify-material-symbols-light",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-mdi": {
       "name": "@stacksjs/iconify-mdi",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-mdi-light": {
       "name": "@stacksjs/iconify-mdi-light",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-medical-icon": {
       "name": "@stacksjs/iconify-medical-icon",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-memory": {
       "name": "@stacksjs/iconify-memory",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-meteocons": {
       "name": "@stacksjs/iconify-meteocons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-meteor-icons": {
       "name": "@stacksjs/iconify-meteor-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-mi": {
       "name": "@stacksjs/iconify-mi",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-mingcute": {
       "name": "@stacksjs/iconify-mingcute",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-mono-icons": {
       "name": "@stacksjs/iconify-mono-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-mynaui": {
       "name": "@stacksjs/iconify-mynaui",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-nimbus": {
       "name": "@stacksjs/iconify-nimbus",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-nonicons": {
       "name": "@stacksjs/iconify-nonicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-noto": {
       "name": "@stacksjs/iconify-noto",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-noto-v1": {
       "name": "@stacksjs/iconify-noto-v1",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-nrk": {
       "name": "@stacksjs/iconify-nrk",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-octicon": {
       "name": "@stacksjs/iconify-octicon",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-oi": {
       "name": "@stacksjs/iconify-oi",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ooui": {
       "name": "@stacksjs/iconify-ooui",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-openmoji": {
       "name": "@stacksjs/iconify-openmoji",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-oui": {
       "name": "@stacksjs/iconify-oui",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-pajamas": {
       "name": "@stacksjs/iconify-pajamas",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-pepicons": {
       "name": "@stacksjs/iconify-pepicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-pepicons-pencil": {
       "name": "@stacksjs/iconify-pepicons-pencil",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-pepicons-pop": {
       "name": "@stacksjs/iconify-pepicons-pop",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-pepicons-print": {
       "name": "@stacksjs/iconify-pepicons-print",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ph": {
       "name": "@stacksjs/iconify-ph",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-picon": {
       "name": "@stacksjs/iconify-picon",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-pixel": {
       "name": "@stacksjs/iconify-pixel",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-pixelarticons": {
       "name": "@stacksjs/iconify-pixelarticons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-prime": {
       "name": "@stacksjs/iconify-prime",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-proicons": {
       "name": "@stacksjs/iconify-proicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ps": {
       "name": "@stacksjs/iconify-ps",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-qlementine-icons": {
       "name": "@stacksjs/iconify-qlementine-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-quill": {
       "name": "@stacksjs/iconify-quill",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-radix-icons": {
       "name": "@stacksjs/iconify-radix-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-raphael": {
       "name": "@stacksjs/iconify-raphael",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-ri": {
       "name": "@stacksjs/iconify-ri",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-rivet-icons": {
       "name": "@stacksjs/iconify-rivet-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-si": {
       "name": "@stacksjs/iconify-si",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-si-glyph": {
       "name": "@stacksjs/iconify-si-glyph",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-sidekickicons": {
       "name": "@stacksjs/iconify-sidekickicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-simple-icons": {
       "name": "@stacksjs/iconify-simple-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-simple-line-icons": {
       "name": "@stacksjs/iconify-simple-line-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-skill-icons": {
       "name": "@stacksjs/iconify-skill-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-solar": {
       "name": "@stacksjs/iconify-solar",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-stash": {
       "name": "@stacksjs/iconify-stash",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline": {
       "name": "@stacksjs/iconify-streamline",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-block": {
       "name": "@stacksjs/iconify-streamline-block",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-color": {
       "name": "@stacksjs/iconify-streamline-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-cyber": {
       "name": "@stacksjs/iconify-streamline-cyber",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-cyber-color": {
       "name": "@stacksjs/iconify-streamline-cyber-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-emojis": {
       "name": "@stacksjs/iconify-streamline-emojis",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-flex": {
       "name": "@stacksjs/iconify-streamline-flex",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-flex-color": {
       "name": "@stacksjs/iconify-streamline-flex-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-freehand": {
       "name": "@stacksjs/iconify-streamline-freehand",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-freehand-color": {
       "name": "@stacksjs/iconify-streamline-freehand-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-kameleon-color": {
       "name": "@stacksjs/iconify-streamline-kameleon-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-logos": {
       "name": "@stacksjs/iconify-streamline-logos",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-pixel": {
       "name": "@stacksjs/iconify-streamline-pixel",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-plump": {
       "name": "@stacksjs/iconify-streamline-plump",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-plump-color": {
       "name": "@stacksjs/iconify-streamline-plump-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-sharp": {
       "name": "@stacksjs/iconify-streamline-sharp",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-sharp-color": {
       "name": "@stacksjs/iconify-streamline-sharp-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-stickies-color": {
       "name": "@stacksjs/iconify-streamline-stickies-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-ultimate": {
       "name": "@stacksjs/iconify-streamline-ultimate",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-streamline-ultimate-color": {
       "name": "@stacksjs/iconify-streamline-ultimate-color",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-subway": {
       "name": "@stacksjs/iconify-subway",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-svg-spinners": {
       "name": "@stacksjs/iconify-svg-spinners",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-system-uicons": {
       "name": "@stacksjs/iconify-system-uicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-tabler": {
       "name": "@stacksjs/iconify-tabler",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-tdesign": {
       "name": "@stacksjs/iconify-tdesign",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-teenyicons": {
       "name": "@stacksjs/iconify-teenyicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-token": {
       "name": "@stacksjs/iconify-token",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-token-branded": {
       "name": "@stacksjs/iconify-token-branded",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-topcoat": {
       "name": "@stacksjs/iconify-topcoat",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-twemoji": {
       "name": "@stacksjs/iconify-twemoji",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-typcn": {
       "name": "@stacksjs/iconify-typcn",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-uil": {
       "name": "@stacksjs/iconify-uil",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-uim": {
       "name": "@stacksjs/iconify-uim",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-uis": {
       "name": "@stacksjs/iconify-uis",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-uit": {
       "name": "@stacksjs/iconify-uit",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-uiw": {
       "name": "@stacksjs/iconify-uiw",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-unjs": {
       "name": "@stacksjs/iconify-unjs",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-vaadin": {
       "name": "@stacksjs/iconify-vaadin",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-vs": {
       "name": "@stacksjs/iconify-vs",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-vscode-icons": {
       "name": "@stacksjs/iconify-vscode-icons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-websymbol": {
       "name": "@stacksjs/iconify-websymbol",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-weui": {
       "name": "@stacksjs/iconify-weui",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-whh": {
       "name": "@stacksjs/iconify-whh",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-wi": {
       "name": "@stacksjs/iconify-wi",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-wpf": {
       "name": "@stacksjs/iconify-wpf",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-zmdi": {
       "name": "@stacksjs/iconify-zmdi",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/collections/iconify-zondicons": {
       "name": "@stacksjs/iconify-zondicons",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
     },
     "packages/components": {
       "name": "@stacksjs/components",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
-        "@stacksjs/headwind": "^0.1.3",
+        "@cwcss/crosswind": "^0.1.3",
         "@stacksjs/stx": "workspace:*",
         "bun-plugin-stx": "workspace:*",
         "ts-syntax-highlighter": "^0.2.1",
@@ -1607,21 +1607,21 @@
     },
     "packages/create-stx": {
       "name": "create-stx",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "bin": {
         "create-stx": "./index.ts",
       },
     },
     "packages/deploy": {
       "name": "@stx/deploy",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "@stacksjs/ts-cloud": "^0.2.2",
       },
     },
     "packages/desktop": {
       "name": "@stacksjs/desktop",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "peerDependencies": {
         "craft": "*",
       },
@@ -1631,18 +1631,18 @@
     },
     "packages/devtools": {
       "name": "@stacksjs/devtools",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "dependencies": {
         "bun-plugin-stx": "workspace:*",
       },
     },
     "packages/iconify-core": {
       "name": "@stacksjs/iconify-core",
-      "version": "0.2.6",
+      "version": "0.2.7",
     },
     "packages/iconify-generator": {
       "name": "@stacksjs/iconify-generator",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "bin": {
         "stx-iconify": "./dist/cli.js",
       },
@@ -1652,15 +1652,15 @@
     },
     "packages/router": {
       "name": "stx-router",
-      "version": "0.2.6",
+      "version": "0.2.7",
     },
     "packages/sanitizer": {
       "name": "@stacksjs/sanitizer",
-      "version": "0.2.6",
+      "version": "0.2.7",
     },
     "packages/stx": {
       "name": "@stacksjs/stx",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "bin": {
         "stx": "./dist/cli.js",
       },
@@ -1678,7 +1678,7 @@
     },
     "packages/stx-native": {
       "name": "stx-native",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "bin": {
         "stx-native": "./dist/cli/index.js",
       },
@@ -1741,7 +1741,7 @@
 
     "@csstools/css-parser-algorithms": ["@csstools/css-parser-algorithms@4.0.0", "", { "peerDependencies": { "@csstools/css-tokenizer": "^4.0.0" } }, "sha512-+B87qS7fIG3L5h3qwJ/IFbjoVoOe/bpOdh9hAjXbvx0o8ImEmUsGXN0inFOnk2ChCFgqkkGFQ+TpM5rbhkKe4w=="],
 
-    "@csstools/css-syntax-patches-for-csstree": ["@csstools/css-syntax-patches-for-csstree@1.0.29", "", {}, "sha512-jx9GjkkP5YHuTmko2eWAvpPnb0mB4mGRr2U7XwVNwevm8nlpobZEVk+GNmiYMk2VuA75v+plfXWyroWKmICZXg=="],
+    "@csstools/css-syntax-patches-for-csstree": ["@csstools/css-syntax-patches-for-csstree@1.1.0", "", {}, "sha512-H4tuz2nhWgNKLt1inYpoVCfbJbMwX/lQKp3g69rrrIMIYlFD9+zTykOKhNR8uGrAmbS/kT9n6hTFkmDkxLgeTA=="],
 
     "@csstools/css-tokenizer": ["@csstools/css-tokenizer@4.0.0", "", {}, "sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA=="],
 
@@ -1800,8 +1800,6 @@
     "@stacksjs/dtsx": ["@stacksjs/dtsx@0.9.13", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0" }, "peerDependencies": { "typescript": ">=5.9.3" }, "bin": { "dtsx": "./dist/bin/cli.js" } }, "sha512-2/UvcKgRYuuY70q1SOMp/7Tj2eXBg8SOV7dvWAndyVyyukZiczR4kPkSxI6eTdJDVpe4MfEL0pPNlpBBtKrhIw=="],
 
     "@stacksjs/gitlint": ["@stacksjs/gitlint@0.1.5", "", { "bin": { "gitlint": "dist/bin/cli.js" } }, "sha512-5nSr6PN8/cRPdIz9Cj65Dh12N9gR7BPtJzR3rnqhAgpm5q0ihjmVTTybFQqigMcYuRpt2qX4HenV7YXuFOYScw=="],
-
-    "@stacksjs/headwind": ["@stacksjs/headwind@0.1.3", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.0" }, "bin": { "headwind": "dist/bin/cli.js" } }, "sha512-PFWzXb9A2+7uWNFLDRD87mJe4JORcQwrD0CCcD3sFmES02yUevnYq+GwvjEQeZvWEo9lm9ZC9p5LihUeJ8Lmaw=="],
 
     "@stacksjs/iconify-academicons": ["@stacksjs/iconify-academicons@workspace:packages/collections/iconify-academicons"],
 
@@ -2283,7 +2281,7 @@
 
     "@types/ms": ["@types/ms@2.1.0", "", {}, "sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA=="],
 
-    "@types/node": ["@types/node@25.3.3", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-DpzbrH7wIcBaJibpKo9nnSQL0MTRdnWttGyE5haGwK86xgMOkFLp7vEyfQPGLOJh5wNYiJ3V9PmUMDhV9u8kkQ=="],
+    "@types/node": ["@types/node@25.5.0", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw=="],
 
     "@types/sanitize-html": ["@types/sanitize-html@2.16.1", "", { "dependencies": { "htmlparser2": "^10.1" } }, "sha512-n9wjs8bCOTyN/ynwD8s/nTcTreIHB1vf31vhLMGqUPNHaweKC4/fAl4Dj+hUlCTKYgm4P3k83fmiFfzkZ6sgMA=="],
 
@@ -2349,7 +2347,7 @@
 
     "bare-path": ["bare-path@3.0.0", "", { "dependencies": { "bare-os": "^3.0.1" } }, "sha512-tyfW2cQcB5NN8Saijrhqn0Zh7AnFNsnczRcuWODH0eYAXBsJ5gVxAUuNr7tsHSC6IZ77cA0SitzT+s47kot8Mw=="],
 
-    "bare-stream": ["bare-stream@2.8.0", "", { "dependencies": { "streamx": "^2.21.0", "teex": "^1.0.1" }, "peerDependencies": { "bare-buffer": "*", "bare-events": "*" }, "optionalPeers": ["bare-buffer", "bare-events"] }, "sha512-reUN0M2sHRqCdG4lUK3Fw8w98eeUIZHL5c3H7Mbhk2yVBL+oofgaIp0ieLfD5QXwPCypBpmEEKU2WZKzbAk8GA=="],
+    "bare-stream": ["bare-stream@2.8.1", "", { "dependencies": { "streamx": "^2.21.0", "teex": "^1.0.1" }, "peerDependencies": { "bare-buffer": "*", "bare-events": "*" }, "optionalPeers": ["bare-buffer", "bare-events"] }, "sha512-bSeR8RfvbRwDpD7HWZvn8M3uYNDrk7m9DQjYOFkENZlXW8Ju/MPaqUPQq5LqJ3kyjEm07siTaAQ7wBKCU59oHg=="],
 
     "bare-url": ["bare-url@2.3.2", "", { "dependencies": { "bare-path": "^3.0.0" } }, "sha512-ZMq4gd9ngV5aTMa5p9+UfY0b3skwhHELaDkhEHetMdX0LRkW9kzaym4oo/Eh+Ghm0CCDuMTsRIGM/ytUc1ZYmw=="],
 
@@ -2461,7 +2459,7 @@
 
     "domhandler": ["domhandler@5.0.3", "", { "dependencies": { "domelementtype": "^2.3.0" } }, "sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w=="],
 
-    "dompurify": ["dompurify@3.3.2", "", { "optionalDependencies": { "@types/trusted-types": "^2.0.7" } }, "sha512-6obghkliLdmKa56xdbLOpUZ43pAR6xFy1uOrxBaIDjT+yaRuuybLjGS9eVBoSR/UPU5fq3OXClEHLJNGvbxKpQ=="],
+    "dompurify": ["dompurify@3.3.3", "", { "optionalDependencies": { "@types/trusted-types": "^2.0.7" } }, "sha512-Oj6pzI2+RqBfFG+qOaOLbFXLQ90ARpcGG6UePL82bJLtdsa6CYJD7nmiU8MW9nQNOtCHV3lZ/Bzq1X0QYbBZCA=="],
 
     "domutils": ["domutils@3.2.2", "", { "dependencies": { "dom-serializer": "^2.0.0", "domelementtype": "^2.3.0", "domhandler": "^5.0.3" } }, "sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw=="],
 
@@ -2511,9 +2509,9 @@
 
     "fast-fifo": ["fast-fifo@1.3.2", "", {}, "sha512-/d9sfos4yxzpwkDkuN7k2SqFKtYNmCTzgfEpz82x34IM9/zc8KGxQoXg1liNC/izpRM/MBdt44Nmx41ZWqk+FQ=="],
 
-    "fast-xml-builder": ["fast-xml-builder@1.0.0", "", {}, "sha512-fpZuDogrAgnyt9oDDz+5DBz0zgPdPZz6D4IR7iESxRXElrlGTRkHJ9eEt+SACRJwT0FNFrt71DFQIUFBJfX/uQ=="],
+    "fast-xml-builder": ["fast-xml-builder@1.1.2", "", { "dependencies": { "path-expression-matcher": "^1.1.3" } }, "sha512-NJAmiuVaJEjVa7TjLZKlYd7RqmzOC91EtPFXHvlTcqBVo50Qh7XV5IwvXi1c7NRz2Q/majGX9YLcwJtWgHjtkA=="],
 
-    "fast-xml-parser": ["fast-xml-parser@5.4.2", "", { "dependencies": { "fast-xml-builder": "^1.0.0", "strnum": "^2.1.2" }, "bin": { "fxparser": "src/cli/cli.js" } }, "sha512-pw/6pIl4k0CSpElPEJhDppLzaixDEuWui2CUQQBH/ECDf7+y6YwA4Gf7Tyb0Rfe4DIMuZipYj4AEL0nACKglvQ=="],
+    "fast-xml-parser": ["fast-xml-parser@5.5.3", "", { "dependencies": { "fast-xml-builder": "^1.1.2", "path-expression-matcher": "^1.1.3", "strnum": "^2.1.2" }, "bin": { "fxparser": "src/cli/cli.js" } }, "sha512-Ymnuefk6VzAhT3SxLzVUw+nMio/wB1NGypHkgetwtXcK1JfryaHk4DWQFGVwQ9XgzyS5iRZ7C2ZGI4AMsdMZ6A=="],
 
     "fdir": ["fdir@6.5.0", "", { "peerDependencies": { "picomatch": "^3 || ^4" }, "optionalPeers": ["picomatch"] }, "sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg=="],
 
@@ -2549,7 +2547,7 @@
 
     "handlebars": ["handlebars@4.7.8", "", { "dependencies": { "minimist": "^1.2.5", "neo-async": "^2.6.2", "source-map": "^0.6.1", "wordwrap": "^1.0.0" }, "optionalDependencies": { "uglify-js": "^3.1.4" }, "bin": { "handlebars": "bin/handlebars" } }, "sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ=="],
 
-    "happy-dom": ["happy-dom@20.8.3", "", { "dependencies": { "@types/node": ">=20.0.0", "@types/whatwg-mimetype": "^3.0.2", "@types/ws": "^8.18.1", "entities": "^7.0.1", "whatwg-mimetype": "^3.0.0", "ws": "^8.18.3" } }, "sha512-lMHQRRwIPyJ70HV0kkFT7jH/gXzSI7yDkQFe07E2flwmNDFoWUTRMKpW2sglsnpeA7b6S2TJPp98EbQxai8eaQ=="],
+    "happy-dom": ["happy-dom@20.8.4", "", { "dependencies": { "@types/node": ">=20.0.0", "@types/whatwg-mimetype": "^3.0.2", "@types/ws": "^8.18.1", "entities": "^7.0.1", "whatwg-mimetype": "^3.0.0", "ws": "^8.18.3" } }, "sha512-GKhjq4OQCYB4VLFBzv8mmccUadwlAusOZOI7hC1D9xDIT5HhzkJK17c4el2f6R6C715P9xB4uiMxeKUa2nHMwQ=="],
 
     "has-symbols": ["has-symbols@1.1.0", "", {}, "sha512-1cDNdwJ2Jaohmb3sg4OmKaMBwuC48sYni5HUw2DvsC8LjGTLK9h+eb1X6RyuOHe4hT0ULCW68iomhjUoKUqlPQ=="],
 
@@ -2623,7 +2621,7 @@
 
     "iso-639-1": ["iso-639-1@3.1.5", "", {}, "sha512-gXkz5+KN7HrG0Q5UGqSMO2qB9AsbEeyLP54kF1YrMsIxmu+g4BdB7rflReZTSTZGpfj8wywu6pfPBCylPIzGQA=="],
 
-    "isomorphic-dompurify": ["isomorphic-dompurify@3.1.0", "", { "dependencies": { "dompurify": "^3.3.2", "jsdom": "^28.1.0" } }, "sha512-mwWh3/+EQPeBvUAfZZDG5Tmyvr/yKxKB8VYSdw6c+3hMfW4FZZ93kxdohpHmtmSRUWX/jOJQtVObeA6cBLvosA=="],
+    "isomorphic-dompurify": ["isomorphic-dompurify@3.3.0", "", { "dependencies": { "dompurify": "^3.3.3", "jsdom": "^28.1.0" } }, "sha512-Xx3GlNZNAXIISX49OMpfNgxrRU49KVQ5hqnK2zbkqkPucdWnCZXquTMK/COnb8pmIOJlfiaNYav9qyHX3gRDMA=="],
 
     "jackspeak": ["jackspeak@3.4.3", "", { "dependencies": { "@isaacs/cliui": "^8.0.2" }, "optionalDependencies": { "@pkgjs/parseargs": "^0.11.0" } }, "sha512-OGlZQpz2yfahA/Rd1Y8Cd9SIEsqvXkLVoSw/cgwhnhFMDbsQFeZYoJJ7bIZBS9BcamUW96asq/npPWugM+RQBw=="],
 
@@ -2768,6 +2766,8 @@
     "parse5": ["parse5@8.0.0", "", { "dependencies": { "entities": "^6.0.0" } }, "sha512-9m4m5GSgXjL4AjumKzq1Fgfp3Z8rsvjRNbnkVwfu2ImRqE5D0LnY2QfDen18FSY9C573YU5XxSapdHZTZ2WolA=="],
 
     "parseurl": ["parseurl@1.3.3", "", {}, "sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ=="],
+
+    "path-expression-matcher": ["path-expression-matcher@1.1.3", "", {}, "sha512-qdVgY8KXmVdJZRSS1JdEPOKPdTiEK/pi0RkcT2sw1RhXxohdujUlJFPuS1TSkevZ9vzd3ZlL7ULl1MHGTApKzQ=="],
 
     "path-key": ["path-key@3.1.1", "", {}, "sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q=="],
 
@@ -2931,9 +2931,9 @@
 
     "tinyglobby": ["tinyglobby@0.2.15", "", { "dependencies": { "fdir": "^6.5.0", "picomatch": "^4.0.3" } }, "sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ=="],
 
-    "tldts": ["tldts@7.0.24", "", { "dependencies": { "tldts-core": "^7.0.24" }, "bin": { "tldts": "bin/cli.js" } }, "sha512-1r6vQTTt1rUiJkI5vX7KG8PR342Ru/5Oh13kEQP2SMbRSZpOey9SrBe27IDxkoWulx8ShWu4K6C0BkctP8Z1bQ=="],
+    "tldts": ["tldts@7.0.25", "", { "dependencies": { "tldts-core": "^7.0.25" }, "bin": { "tldts": "bin/cli.js" } }, "sha512-keinCnPbwXEUG3ilrWQZU+CqcTTzHq9m2HhoUP2l7Xmi8l1LuijAXLpAJ5zRW+ifKTNscs4NdCkfkDCBYm352w=="],
 
-    "tldts-core": ["tldts-core@7.0.24", "", {}, "sha512-pj7yygNMoMRqG7ML2SDQ0xNIOfN3IBDUcPVM2Sg6hP96oFNN2nqnzHreT3z9xLq85IWJyNTvD38O002DdOrPMw=="],
+    "tldts-core": ["tldts-core@7.0.25", "", {}, "sha512-ZjCZK0rppSBu7rjHYDYsEaMOIbbT+nWF57hKkv4IUmZWBNrBWBOjIElc0mKRgLM8bm7x/BBlof6t2gi/Oq/Asw=="],
 
     "to-regex-range": ["to-regex-range@5.0.1", "", { "dependencies": { "is-number": "^7.0.0" } }, "sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ=="],
 
@@ -2941,7 +2941,7 @@
 
     "token-stream": ["token-stream@1.0.0", "", {}, "sha512-VSsyNPPW74RpHwR8Fc21uubwHY7wMDeJLys2IX5zJNih+OnAnaifKHo+1LHT7DAdloQ7apeaaWg8l7qnf/TnEg=="],
 
-    "tough-cookie": ["tough-cookie@6.0.0", "", { "dependencies": { "tldts": "^7.0.5" } }, "sha512-kXuRi1mtaKMrsLUxz3sQYvVl37B0Ns6MzfrtV5DvJceE9bPyspOqk9xxv7XbZWcfLWbFmm997vl83qUWVJA64w=="],
+    "tough-cookie": ["tough-cookie@6.0.1", "", { "dependencies": { "tldts": "^7.0.5" } }, "sha512-LktZQb3IeoUWB9lqR5EWTHgW/VTITCXg4D21M+lvybRVdylLrRMnqaIONLVb5mav8vM19m44HIcGq4qASeu2Qw=="],
 
     "tr46": ["tr46@6.0.0", "", { "dependencies": { "punycode": "^2.3.1" } }, "sha512-bLVMLPtstlZ4iMQHpFHTR7GAGj2jxi8Dg0s2h2MafAE4uSWF98FC/3MomU51iQAMf8/qDUbKWf5GxuvvVcXEhw=="],
 
@@ -2949,11 +2949,11 @@
 
     "trough": ["trough@2.2.0", "", {}, "sha512-tmMpK00BjZiUyVyvrBK7knerNgmgvcV/KLVyuma/SC+TQN167GrMRciANTz09+k3zW8L8t60jWO1GpfkZdjTaw=="],
 
-    "ts-cloud-aws-types": ["ts-cloud-aws-types@0.1.11", "", {}, "sha512-z/crXrHhcSr851k3dbj3NDvnsAQbCJSyPqJcxoVvt4FLNndg+jfv2gM2VXLt7qphIP3G2W8gz6CtG2LSNV//tA=="],
+    "ts-cloud-aws-types": ["ts-cloud-aws-types@0.1.14", "", {}, "sha512-dnT0LYyrzS0qlcDLaq4L2NRRx1oisY0btrPtWIldRgvZQFKYwA3S3TTJ0496TJckNzHPen+6VXNcdp5RZulJ4Q=="],
 
-    "ts-cloud-core": ["ts-cloud-core@0.1.11", "", { "dependencies": { "ts-cloud-aws-types": "0.1.11", "ts-cloud-types": "0.1.11" } }, "sha512-rRtDxJrm+Jhkf3CEt+o7X7h1FaiGgopw5bmtePe18hbfXcgnghACI6vZUdq/48OsLZex3DdE05uy+1txSKbitg=="],
+    "ts-cloud-core": ["ts-cloud-core@0.1.14", "", { "dependencies": { "ts-cloud-aws-types": "0.1.14", "ts-cloud-types": "0.1.14" } }, "sha512-ycoW+k8JclmoKitrAUMBdYNe2jZBLWZY9F8pWfH6wH5JJWBADbPT+1fk/bMHyJ95MhoYOb/JCkFCBKnAsnmgmg=="],
 
-    "ts-cloud-types": ["ts-cloud-types@0.1.11", "", {}, "sha512-5AKUjqIQwRVnK1NdgPqK2Zwq9Wlf5EVCCBjISTX9WjZH9C8ayhzL7GnqJGy/tPJ3YAY7KPrTEJmjk3+IVoWjUA=="],
+    "ts-cloud-types": ["ts-cloud-types@0.1.14", "", {}, "sha512-lOqgwNvcF51JC3b0k+KG0JdkITcNlvAtoXy5kQPAcJSmtpm0m/1ptgrGGF+srgrqreiRvpGficP4e7U3/c7sww=="],
 
     "ts-error-handling": ["ts-error-handling@0.1.1", "", {}, "sha512-d4VqdX0bJ+jvOYNsY58isJgrEr806Q9cjef5+1UO/kIn1M/+YYSwpR6fqdRhn9XXVASJLSzNmcnBSdl0fRCjDg=="],
 
@@ -2969,7 +2969,7 @@
 
     "uglify-js": ["uglify-js@3.19.3", "", { "bin": { "uglifyjs": "bin/uglifyjs" } }, "sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ=="],
 
-    "undici": ["undici@7.22.0", "", {}, "sha512-RqslV2Us5BrllB+JeiZnK4peryVTndy9Dnqq62S3yYRRTj0tFQCwEniUy2167skdGOy3vqRzEvl1Dm4sV2ReDg=="],
+    "undici": ["undici@7.24.0", "", {}, "sha512-jxytwMHhsbdpBXxLAcuu0fzlQeXCNnWdDyRHpvWsUl8vd98UwYdl9YTyn8/HcpcJPC3pwUveefsa3zTxyD/ERg=="],
 
     "undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
 
@@ -3031,8 +3031,6 @@
 
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
 
-    "@11ty/eleventy/liquidjs": ["liquidjs@10.24.0", "", { "dependencies": { "commander": "^10.0.0" }, "bin": { "liquidjs": "bin/liquid.js", "liquid": "bin/liquid.js" } }, "sha512-TAUNAdgwaAXjjcUFuYVJm9kOVH7zc0mTKxsG9t9Lu4qdWjB2BEblyVIYpjWcmJLMGgiYqnGNJjpNMHx0gp/46A=="],
-
     "@isaacs/cliui/string-width": ["string-width@5.1.2", "", { "dependencies": { "eastasianwidth": "^0.2.0", "emoji-regex": "^9.2.2", "strip-ansi": "^7.0.1" } }, "sha512-HnLOCR3vjcY8beoNLtcjZ5/nxn2afmME6lhrDrebokqMap+XbeW8n9TXpPDOqdGK5qcI3oT0GKTW6wC7EMiVqA=="],
 
     "@isaacs/cliui/wrap-ansi": ["wrap-ansi@8.1.0", "", { "dependencies": { "ansi-styles": "^6.1.0", "string-width": "^5.0.1", "strip-ansi": "^7.0.1" } }, "sha512-si7QWI6zUMq56bESFvagtmzMdGOtoxfR+Sez11Mobfc7tm+VkUckk9bW2UeffTGVUbOksxmSw0AA2gs8g71NCQ=="],
@@ -3041,7 +3039,7 @@
 
     "@sindresorhus/transliterate/escape-string-regexp": ["escape-string-regexp@5.0.0", "", {}, "sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw=="],
 
-    "@stacksjs/bunpress/@stacksjs/ts-cloud": ["@stacksjs/ts-cloud@0.1.11", "", { "dependencies": { "fast-xml-parser": "^5.3.5", "ts-cloud-aws-types": "0.1.11", "ts-cloud-core": "0.1.11", "ts-cloud-types": "0.1.11" }, "bin": { "cloud": "./dist/bin/cli.js" } }, "sha512-WgKwgRdxV4cAXJjc6l7/xFgIFriijErBEbyPn+Hd6aNRhFxu6cJ9OeEkT3p3YvEOc9Pt8DL5SO1RhXcq8otphw=="],
+    "@stacksjs/bunpress/@stacksjs/ts-cloud": ["@stacksjs/ts-cloud@0.1.14", "", { "dependencies": { "fast-xml-parser": "^5.4.2", "ts-cloud-aws-types": "0.1.14", "ts-cloud-core": "0.1.14", "ts-cloud-types": "0.1.14" }, "bin": { "cloud": "./dist/bin/cli.js" } }, "sha512-/uIJSR9QJm6WvaMxWx8OAC4kMdkamgpFiIG0J2+Qs+EPMoQXEJHI2wujhTrJFgwnf7ucuqd+qHU6Er4klEW8Cg=="],
 
     "anymatch/picomatch": ["picomatch@2.3.1", "", {}, "sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA=="],
 

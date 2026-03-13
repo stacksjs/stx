@@ -20,7 +20,7 @@ const result = await Bun.build({
   splitting: false,
   external: [
     '@stacksjs/stx',
-    '@stacksjs/headwind',
+    '@cwcss/crosswind',
     'ts-syntax-highlighter',
     'bun-plugin-stx',
   ],
@@ -68,7 +68,7 @@ const utilResult = await Bun.build({
   splitting: false,
   external: [
     '@stacksjs/stx',
-    '@stacksjs/headwind',
+    '@cwcss/crosswind',
     'ts-syntax-highlighter',
   ],
 })

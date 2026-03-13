@@ -3,7 +3,8 @@
 ## Executive Summary
 
 The VSCode extension was failing to activate with two critical errors:
-1. **Module not found**: Cannot find module `@stacksjs/headwind/dist/src/index.js`
+
+1. **Module not found**: Cannot find module `@cwcss/crosswind/dist/src/index.js`
 2. **ReferenceError**: `vscode is not defined`
 
 After a comprehensive analysis of the entire monorepo structure, I identified the root causes and implemented fixes.
@@ -13,17 +14,21 @@ After a comprehensive analysis of the entire monorepo structure, I identified th
 ## Phase 1: Monorepo Structure Analysis
 
 ### Discovery
+
 - **Monorepo Setup**: The stx project uses workspaces defined in root `package.json`
 - **Critical Finding**: `packages/vscode` is **explicitly excluded** from workspaces (line 88)
+
   ```json
   "workspaces": [
     "packages/**",
     "!packages/vscode"  // ← vscode is isolated
   ]
   ```
+
 - **Implication**: vscode package has its own isolated `node_modules` and doesn't share dependencies with the workspace
 
 ### Packages Structure
+
 ```
 packages/
 ├── benchmarks/
@@ -39,19 +44,19 @@ packages/
 └── zyte/
 ```
 
-**Note**: There is NO `headwind` package in this monorepo. `@stacksjs/headwind` is an external npm dependency.
+**Note**: There is NO `headwind` package in this monorepo. `@cwcss/crosswind` is an external npm dependency.
 
 ---
 
 ## Phase 2: Root Cause Analysis
 
-### Issue #1: @stacksjs/headwind Package Bug
+### Issue #1: @cwcss/crosswind Package Bug
 
-Analyzed the installed package at `node_modules/@stacksjs/headwind/package.json`:
+Analyzed the installed package at `node_modules/@cwcss/crosswind/package.json`:
 
 ```json
 {
-  "name": "@stacksjs/headwind",
+  "name": "@cwcss/crosswind",
   "version": "0.1.3",
   "type": "module",
   "exports": {
@@ -67,14 +72,15 @@ Analyzed the installed package at `node_modules/@stacksjs/headwind/package.json`
 **Problem**: The `exports` field points to `./dist/src/index.js`, but inspection of the actual package shows:
 
 ```bash
-$ ls node_modules/@stacksjs/headwind/dist/
+$ ls node_modules/@cwcss/crosswind/dist/
 index.js  index.d.ts  [other files...]
 # NO src/ directory exists!
 ```
 
-**Impact**: When using `import('@stacksjs/headwind')` or `require('@stacksjs/headwind')`, Node.js respects the `exports` field and tries to load from the non-existent path, causing:
+**Impact**: When using `import('@cwcss/crosswind')` or `require('@cwcss/crosswind')`, Node.js respects the `exports` field and tries to load from the non-existent path, causing:
+
 ```
-Error: Cannot find module '@stacksjs/headwind/dist/src/index.js'
+Error: Cannot find module '@cwcss/crosswind/dist/src/index.js'
 ```
 
 ### Issue #2: Type-Only vscode Imports
@@ -82,6 +88,7 @@ Error: Cannot find module '@stacksjs/headwind/dist/src/index.js'
 Multiple provider files were using `vscode` directly despite importing it as type-only:
 
 **hover-provider.ts** (lines 12, 41, 48, 55):
+
 ```typescript
 import type * as vscode from 'vscode'  // ← Type-only import
 
@@ -93,6 +100,7 @@ export function createHeadwindHoverProvider(context: HeadwindContext) {
 ```
 
 **completion-provider.ts** (lines 41, 62, 68, 70, 82, 86, 98):
+
 ```typescript
 import type * as vscode from 'vscode'  // ← Type-only import
 
@@ -105,11 +113,13 @@ export function createHeadwindCompletionProvider(context: HeadwindContext) {
 ```
 
 **Why This Happened**:
+
 - TypeScript's `import type` syntax imports ONLY the types, not the runtime values
 - At runtime, `vscode` is `undefined`
 - When the providers try to access `vscode.workspace` or `new vscode.CompletionItem()`, they fail with "vscode is not defined"
 
 **Timing of Errors**:
+
 1. Extension tries to load Headwind → fails due to wrong path
 2. Error handler tries to show error using `vscode.window.showErrorMessage()` → fails because vscode is undefined
 3. User sees cascading errors
@@ -121,38 +131,41 @@ export function createHeadwindCompletionProvider(context: HeadwindContext) {
 ### Fix #1: Bypass Faulty Package Exports
 
 **src/headwind/context.ts**:
+
 ```typescript
 async function loadHeadwind() {
   if (headwindLoaded) return
 
   try {
-    // WORKAROUND: The @stacksjs/headwind package.json has a bug where exports
+    // WORKAROUND: The @cwcss/crosswind package.json has a bug where exports
     // points to "./dist/src/index.js" but the actual file is at "./dist/index.js"
     // We bypass the faulty exports by requiring the actual file directly
-    const headwind = require('@stacksjs/headwind/dist/index.js')
+    const headwind = require('@cwcss/crosswind/dist/index.js')
     CSSGenerator = headwind.CSSGenerator
     parseClass = headwind.parseClass
     builtInRules = headwind.builtInRules
     headwindLoaded = true
   } catch (error) {
-    console.error('[Headwind] Failed to load @stacksjs/headwind:', error)
-    throw new Error(`Cannot load @stacksjs/headwind: ${error}`)
+    console.error('[Headwind] Failed to load @cwcss/crosswind:', error)
+    throw new Error(`Cannot load @cwcss/crosswind: ${error}`)
   }
 }
 ```
 
 **src/headwind/sort-provider.ts**:
+
 ```typescript
 export async function sortClasses(classes: string[]): Promise<string[]> {
   try {
     // WORKAROUND: Load from actual file path to bypass faulty package.json exports
-    const headwind = require('@stacksjs/headwind/dist/index.js')
+    const headwind = require('@cwcss/crosswind/dist/index.js')
     const { builtInRules, parseClass } = headwind
     // ...
 ```
 
 **Why This Works**:
-- By specifying the full path `'@stacksjs/headwind/dist/index.js'`, we bypass the faulty `exports` field
+
+- By specifying the full path `'@cwcss/crosswind/dist/index.js'`, we bypass the faulty `exports` field
 - Node.js loads the file directly instead of trying to resolve through package.json
 - The actual file exists and exports everything we need (CSSGenerator, parseClass, builtInRules)
 
@@ -161,6 +174,7 @@ export async function sortClasses(classes: string[]): Promise<string[]> {
 Updated ALL provider factories to accept `vscodeModule` as the first parameter:
 
 **hover-provider.ts**:
+
 ```typescript
 export function createHeadwindHoverProvider(
   vscodeModule: typeof vscode,  // ← Added parameter
@@ -174,6 +188,7 @@ export function createHeadwindHoverProvider(
 ```
 
 **completion-provider.ts**:
+
 ```typescript
 export function createHeadwindCompletionProvider(
   vscodeModule: typeof vscode,  // ← Added parameter
@@ -187,6 +202,7 @@ export function createHeadwindCompletionProvider(
 ```
 
 **sort-provider.ts** (already fixed earlier):
+
 ```typescript
 export function createSortClassesCommand(
   vscodeModule: typeof vscode  // ← Added parameter
@@ -197,6 +213,7 @@ export function createSortClassesCommand(
 ```
 
 **index.ts** - Updated all call sites:
+
 ```typescript
 export async function activateHeadwind(extensionContext: vscode.ExtensionContext) {
   // vscode is imported as regular import (not type-only) in this file
@@ -270,27 +287,32 @@ export async function activateHeadwind(extensionContext: vscode.ExtensionContext
 Press F5 to launch Extension Development Host. The extension should now:
 
 ### ✅ Activation
+
 - [ ] No errors in Debug Console
 - [ ] See: `[Headwind] Activating utility class features...`
 - [ ] See: `[Headwind] CSS Generator initialized`
 - [ ] See: `[Headwind] Successfully activated utility class features`
 
 ### ✅ Hover Tooltips
+
 - [ ] Hover over `flex` → Shows CSS with `display: flex;`
 - [ ] Hover over `bg-blue-500` → Shows CSS with background color
 - [ ] Hover over `p-4` → Shows CSS with padding and rem-to-px comments
 
 ### ✅ Color Previews
+
 - [ ] `bg-blue-500` has blue colored square decoration
 - [ ] `text-white` has white colored square decoration
 - [ ] `bg-red-500` has red colored square decoration
 
 ### ✅ Autocomplete
+
 - [ ] Type `class="` and get suggestions
 - [ ] Type `flex` and see flex-related utilities
 - [ ] Autocomplete shows CSS preview in documentation
 
 ### ✅ Class Sorting
+
 - [ ] Command Palette → "Stacks: Sort Utility Classes"
 - [ ] Classes are reordered according to Headwind rules
 - [ ] Message: "Sorted N class attribute(s)"
@@ -299,7 +321,7 @@ Press F5 to launch Extension Development Host. The extension should now:
 
 ## Long-term Recommendations
 
-### For the @stacksjs/headwind Package
+### For the @cwcss/crosswind Package
 
 The upstream package needs to fix its package.json:
 
@@ -314,18 +336,20 @@ The upstream package needs to fix its package.json:
 }
 ```
 
-**Action**: File an issue or PR at https://github.com/stacksjs/headwind
+**Action**: File an issue or PR at <https://github.com/cwcss/crosswind>
 
 ### For the VSCode Extension
 
 Once the upstream package is fixed, we can:
+
 1. Remove the workaround direct path imports
-2. Go back to standard `require('@stacksjs/headwind')` or `import('@stacksjs/headwind')`
+2. Go back to standard `require('@cwcss/crosswind')` or `import('@cwcss/crosswind')`
 3. Keep the vscode parameter passing pattern (this is good practice anyway)
 
 ### Alternative: Include vscode in Workspace
 
 Consider removing the workspace exclusion:
+
 ```json
 "workspaces": [
   "packages/**"  // Include vscode in workspace
@@ -333,11 +357,13 @@ Consider removing the workspace exclusion:
 ```
 
 **Benefits**:
+
 - Share dependencies across packages
 - Easier development and testing
 - Better monorepo integration
 
 **Trade-offs**:
+
 - VSCode extension dependencies might conflict with other packages
 - Requires careful dependency management
 
@@ -346,10 +372,12 @@ Consider removing the workspace exclusion:
 ## Summary
 
 **Root Causes**:
-1. ❌ `@stacksjs/headwind` package has incorrect exports path
+
+1. ❌ `@cwcss/crosswind` package has incorrect exports path
 2. ❌ VSCode extension providers used type-only imports for runtime code
 
 **Solutions**:
+
 1. ✅ Import from actual file path to bypass faulty exports
 2. ✅ Pass vscode module as parameter to all provider factories
 3. ✅ Use regular import for vscode in entry point (index.ts)

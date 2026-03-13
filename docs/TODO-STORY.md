@@ -887,7 +887,7 @@ packages/stx/src/story/
 - `packages/stx/src/i18n.ts` - Internationalization for locale testing
 - `packages/stx/src/web-components.ts` - Web component generation
 - `packages/desktop` - Native window support
-- `@stacksjs/headwind` - CSS utility generation
+- `@cwcss/crosswind` - CSS utility generation
 
 ### No External Dependencies Required
 

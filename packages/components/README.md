@@ -253,7 +253,7 @@ module.exports = { isDark, toggle }
 The components use headwind for utility classes. You can customize the design system by creating a `headwind.config.ts` file:
 
 ```typescript
-import type { HeadwindConfig } from '@stacksjs/headwind'
+import type { HeadwindConfig } from '@cwcss/crosswind'
 
 export default {
   theme: {
@@ -472,6 +472,6 @@ MIT © [Chris Breuer](https://github.com/chrisbbreuer)
 ## Credits
 
 - Built with [STX](https://github.com/stacksjs/stx)
-- Styled with [Headwind](https://github.com/stacksjs/headwind)
+- Styled with [Headwind](https://github.com/cwcss/crosswind)
 - Syntax highlighting by [ts-syntax-highlighter](https://github.com/stacksjs/ts-syntax-highlighter)
 - Inspired by [Headless UI](https://headlessui.com)

@@ -1,6 +1,6 @@
 # Marketing Page Example
 
-A complete marketing page example built with Stacks, demonstrating a modern media management SaaS landing page. Styled with **@stacksjs/headwind** (a performant Tailwind-compatible utility-first CSS framework).
+A complete marketing page example built with Stacks, demonstrating a modern media management SaaS landing page. Styled with **@cwcss/crosswind** (a performant Tailwind-compatible utility-first CSS framework).
 
 ## Overview
 
@@ -28,6 +28,7 @@ examples/
 ## Features
 
 ### Design
+
 - Ocean-themed gradient backgrounds (`from-ocean-blue to-ocean-green`)
 - Animated SVG waves with smooth transitions
 - Responsive grid layouts
@@ -36,7 +37,8 @@ examples/
 - Inter font family
 
 ### Styling
-The page uses @stacksjs/headwind which provides Tailwind-compatible utility classes. Custom colors can be defined in `headwind.config.ts`
+
+The page uses @cwcss/crosswind which provides Tailwind-compatible utility classes. Custom colors can be defined in `headwind.config.ts`
 
 ## Usage
 
@@ -70,13 +72,17 @@ This will scan all `.stx` files in the examples directory and generate the CSS a
 ## Customization
 
 ### Colors
+
 Custom colors are defined via CSS custom properties in the `<style>` block or in `headwind.config.ts`. The example uses:
+
 - Ocean blue gradients for hero section
 - Sky/cyan colors for accents
 - Gray scale for text and backgrounds
 
 ### Content
+
 Edit `examples/marketing-page.stx` to modify:
+
 - Headlines and copy
 - Feature descriptions
 - Pricing tiers and features
@@ -84,6 +90,7 @@ Edit `examples/marketing-page.stx` to modify:
 - Sections can be reordered by moving HTML blocks
 
 ### Adding Custom Styles
+
 For complex animations or custom CSS, add them to the `<style>` block in the page head (like the wave animations).
 
 ## Based On

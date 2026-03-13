@@ -13,6 +13,7 @@
 ## ✨ Features at a Glance
 
 ### 🎨 Syntax Highlighting
+
 Beautiful, context-aware syntax highlighting that understands TypeScript, HTML, CSS, and stx directives.
 
 ```stx
@@ -28,15 +29,19 @@ Beautiful, context-aware syntax highlighting that understands TypeScript, HTML, 
 ```
 
 ### 💡 Intelligent Hover Information
+
 Hover over any directive, variable, or function to see helpful documentation, type information, and examples.
 
 ![Hover Example](https://via.placeholder.com/600x200?text=Hover+over+directives+to+see+documentation)
 
 ### 🎯 Smart Autocomplete
+
 Get intelligent suggestions as you type - from directives to properties to file paths.
 
 ### 🌈 Utility Class Support
+
 Built-in integration with utility-first CSS frameworks like Tailwind:
+
 - **Color Previews**: See actual colors inline in your editor
 - **Hover CSS**: View generated CSS when hovering over utility classes
 - **Auto-sort**: Keep your classes organized automatically
@@ -49,13 +54,16 @@ Built-in integration with utility-first CSS frameworks like Tailwind:
 ```
 
 ### 🔍 Error Detection
+
 Catch mistakes early with built-in diagnostics:
+
 - Unclosed directives
 - Missing template files
 - Type errors in expressions
 - Invalid utility classes
 
 ### ⚡ And Much More
+
 - Code folding for all directive blocks
 - Semantic syntax highlighting
 - Quick fixes and code actions
@@ -386,7 +394,8 @@ See [CHANGELOG.md](./CHANGELOG.md) for recent changes and version history.
 ## 🙏 Acknowledgments
 
 This extension is built with love by the Stacks team and powered by:
-- **[@stacksjs/headwind](https://github.com/stacksjs/headwind)** - Utility-first CSS engine
+
+- **[@cwcss/crosswind](https://github.com/cwcss/crosswind)** - Utility-first CSS engine
 - **TypeScript** - Language support and type checking
 - **VS Code Language Server** - IntelliSense and diagnostics
 

@@ -1,10 +1,10 @@
-import type { HeadwindConfig } from '@stacksjs/headwind'
+import type { HeadwindConfig } from '@cwcss/crosswind'
 import type * as vscode from 'vscode'
 
 // Polyfill Bun APIs for Node.js environment (VSCode extension host)
 function setupBunPolyfill() {
   if (typeof globalThis.Bun === 'undefined') {
-    // Minimal Bun polyfill - only what @stacksjs/headwind needs
+    // Minimal Bun polyfill - only what @cwcss/crosswind needs
     (globalThis as any).Bun = {
       // Glob is used by Scanner class which we don't use in VSCode
       Glob: class FakeGlob {
@@ -37,7 +37,7 @@ async function loadHeadwind() {
 
   try {
     // Try dynamic import first for ESM module compatibility
-    const headwind = await import('@stacksjs/headwind')
+    const headwind = await import('@cwcss/crosswind')
     CSSGenerator = headwind.CSSGenerator
     parseClass = headwind.parseClass
     builtInRules = headwind.builtInRules
@@ -46,15 +46,15 @@ async function loadHeadwind() {
   catch (error) {
     // Fallback to require for CommonJS bundled context
     try {
-      const headwind = await import('@stacksjs/headwind')
+      const headwind = await import('@cwcss/crosswind')
       CSSGenerator = headwind.CSSGenerator
       parseClass = headwind.parseClass
       builtInRules = headwind.builtInRules
       headwindLoaded = true
     }
     catch (requireError) {
-      console.error('[Headwind] Failed to load @stacksjs/headwind:', requireError)
-      throw new Error(`Cannot load @stacksjs/headwind: ${error}`)
+      console.error('[Headwind] Failed to load @cwcss/crosswind:', requireError)
+      throw new Error(`Cannot load @cwcss/crosswind: ${error}`)
     }
   }
 }

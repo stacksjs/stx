@@ -224,7 +224,7 @@
       "name": "stx",
       "dependencies": {
         "very-happy-dom": "^0.0.9",
-        "@stacksjs/headwind": "^0.1.3",
+        "@cwcss/crosswind": "^0.1.3",
         "@stacksjs/ts-craft": "^0.0.2"
       },
       "devDependencies": {
@@ -659,7 +659,7 @@
       "name": "@stacksjs/components",
       "version": "0.2.6",
       "dependencies": {
-        "@stacksjs/headwind": "^0.1.3",
+        "@cwcss/crosswind": "^0.1.3",
         "ts-syntax-highlighter": "^0.2.1",
         "@stacksjs/stx": "workspace:*",
         "bun-plugin-stx": "workspace:*"
@@ -745,7 +745,7 @@
       "name": "vscode-stacks",
       "version": "0.2.6",
       "dependencies": {
-        "@stacksjs/headwind": "^0.1.3",
+        "@cwcss/crosswind": "^0.1.3",
         "prettier": "^3.8.1"
       },
       "devDependencies": {
@@ -1944,11 +1944,11 @@
       "resolved": "https://registry.npmjs.org/mitata/-/mitata-1.0.34.tgz",
       "integrity": "sha512-Mc3zrtNBKIMeHSCQ0XqRLo1vbdIx1wvFV9c8NJAiyho6AjNfMY8bVhbS12bwciUdd1t4rj8099CH3N3NFahaUA=="
     },
-    "@stacksjs/headwind@0.1.3": {
-      "name": "@stacksjs/headwind",
+    "@cwcss/crosswind@0.1.3": {
+      "name": "@cwcss/crosswind",
       "version": "0.1.3",
       "source": "npm",
-      "resolved": "https://registry.npmjs.org/@stacksjs/headwind/-/headwind-0.1.3.tgz",
+      "resolved": "https://registry.npmjs.org/@cwcss/crosswind/-/headwind-0.1.3.tgz",
       "integrity": "sha512-PFWzXb9A2+7uWNFLDRD87mJe4JORcQwrD0CCcD3sFmES02yUevnYq+GwvjEQeZvWEo9lm9ZC9p5LihUeJ8Lmaw==",
       "dependencies": {
         "@stacksjs/clapp": "^0.2.0",

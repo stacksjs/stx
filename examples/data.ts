@@ -125,7 +125,7 @@ export const templates = [
 export const frameworks = [
   { name: 'BunPress', url: 'https://github.com/stacksjs/bunpress', desc: 'Modern documentation-needs covered. Coming soon.' },
   { name: 'Clapp', url: 'https://github.com/stacksjs/clapp', desc: 'A modern framework to build powerful & pretty CLI apps.' },
-  { name: 'Headwind', url: 'https://github.com/stacksjs/headwind', desc: 'A Tailwind-like utility-first CSS framework. Powered by Bun.' },
+  { name: 'Headwind', url: 'https://github.com/cwcss/crosswind', desc: 'A Tailwind-like utility-first CSS framework. Powered by Bun.' },
   { name: 'Launchpad', url: 'https://github.com/stacksjs/launchpad', desc: 'Performant system & project dependency management. Similar to Homebrew, just faster.' },
   { name: 'Stacks', url: 'https://github.com/stacksjs/stacks', desc: 'Develop powerful apps, clouds & framework-agnostic libraries—faster.' },
   { name: 'stx', url: 'https://github.com/stacksjs/stx', desc: 'A fast & powerful UI framework. Templating inspired by Laravel Blade & Vue.' },

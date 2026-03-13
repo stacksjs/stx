@@ -1,12 +1,12 @@
-# Fix Needed for @stacksjs/headwind Package
+# Fix Needed for @cwcss/crosswind Package
 
 ## Issue
 
-The `@stacksjs/headwind` package has an incorrect `exports` configuration in its `package.json`, causing it to fail when imported by VSCode extensions and other CommonJS consumers.
+The `@cwcss/crosswind` package has an incorrect `exports` configuration in its `package.json`, causing it to fail when imported by VSCode extensions and other CommonJS consumers.
 
 ## Current (Broken) Configuration
 
-**File**: `package.json` in https://github.com/stacksjs/headwind
+**File**: `package.json` in <https://github.com/cwcss/crosswind>
 
 ```json
 {
@@ -31,7 +31,7 @@ The `@stacksjs/headwind` package has an incorrect `exports` configuration in its
 ### Error Messages
 
 ```
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/path/to/node_modules/@stacksjs/headwind/dist/src/index.js'
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/path/to/node_modules/@cwcss/crosswind/dist/src/index.js'
 ```
 
 Or:
@@ -45,6 +45,7 @@ Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './dist/index.js' is not 
 **File**: `package.json` in the headwind repository
 
 **Change**:
+
 ```diff
   "exports": {
     ".": {
@@ -72,26 +73,29 @@ After making this change:
 
 1. Build the package: `bun run build`
 2. Verify the dist structure:
+
    ```bash
    ls -la dist/
    # Should show: index.js, index.d.ts, and other files
    # Should NOT have a src/ directory
    ```
+
 3. Test imports work:
+
    ```typescript
    // ESM
-   import { CSSGenerator } from '@stacksjs/headwind'
+   import { CSSGenerator } from '@cwcss/crosswind'
 
    // CommonJS
-   const { CSSGenerator } = require('@stacksjs/headwind')
+   const { CSSGenerator } = require('@cwcss/crosswind')
    ```
 
 ## Testing Checklist
 
 After publishing the fixed version:
 
-- [ ] Can import with ESM: `import { CSSGenerator } from '@stacksjs/headwind'`
-- [ ] Can require with CommonJS: `const { CSSGenerator } = require('@stacksjs/headwind')`
+- [ ] Can import with ESM: `import { CSSGenerator } from '@cwcss/crosswind'`
+- [ ] Can require with CommonJS: `const { CSSGenerator } = require('@cwcss/crosswind')`
 - [ ] VSCode extension can load it without errors
 - [ ] All exports work: `CSSGenerator`, `parseClass`, `builtInRules`, etc.
 - [ ] Type definitions load correctly
@@ -105,13 +109,15 @@ If the build is supposed to output to `dist/src/index.js`, then check your build
 ### Publishing
 
 After fixing:
+
 1. Bump version (e.g., to `0.1.4`)
 2. Run `bun run release` or `npm publish`
 3. Update consumers to use the new version
 
 ## Impact
 
-This fix affects all consumers of `@stacksjs/headwind`, including:
+This fix affects all consumers of `@cwcss/crosswind`, including:
+
 - VSCode extensions (like vscode-stx)
 - Build tools and plugins
 - Any CommonJS projects
@@ -123,10 +129,10 @@ While waiting for the fix, consumers can work around this by:
 
 ```typescript
 // Instead of:
-const headwind = require('@stacksjs/headwind')
+const headwind = require('@cwcss/crosswind')
 
 // Use direct file path (bypasses exports):
-const headwind = require('@stacksjs/headwind/dist/index.js')
+const headwind = require('@cwcss/crosswind/dist/index.js')
 ```
 
 But this is fragile and should be removed once the package is fixed.
@@ -136,6 +142,7 @@ But this is fragile and should be removed once the package is fixed.
 ## Summary
 
 **Change Required**:
+
 ```json
 "import": "./dist/index.js",
 "require": "./dist/index.js"

@@ -14,6 +14,7 @@
 All components are now fully migrated and production-ready:
 
 #### Form & Input Components
+
 - ✅ Button - Multiple variants, sizes, and states
 - ✅ Input - Text inputs with validation support
 - ✅ Textarea - Multi-line text input
@@ -25,6 +26,7 @@ All components are now fully migrated and production-ready:
 - ✅ Listbox - List selection with keyboard nav
 
 #### Layout & Navigation
+
 - ✅ Navigator - Main navigation component (NEW!)
 - ✅ Breadcrumb - Navigation breadcrumbs
 - ✅ Tabs - Tabbed interfaces
@@ -32,6 +34,7 @@ All components are now fully migrated and production-ready:
 - ✅ Pagination - Page navigation
 
 #### Overlays & Feedback
+
 - ✅ Dialog - Modal dialogs
 - ✅ Drawer - Slide-out panels
 - ✅ Dropdown - Dropdown menus
@@ -40,6 +43,7 @@ All components are now fully migrated and production-ready:
 - ✅ Command Palette - Command/search interface
 
 #### Data Display
+
 - ✅ Calendar - Date picker (NEW!)
 - ✅ Table - Data tables with sorting, filtering, pagination
 - ✅ Card - Content cards
@@ -47,6 +51,7 @@ All components are now fully migrated and production-ready:
 - ✅ Avatar - User avatars
 
 #### Media & Special
+
 - ✅ Image - Optimized images with lazy loading
 - ✅ Audio - Audio player
 - ✅ Video - Video player
@@ -57,6 +62,7 @@ All components are now fully migrated and production-ready:
 ## ✨ Features
 
 ### Component Features
+
 - 🎨 **Dark Mode Support** - All components support dark mode out of the box
 - 🌍 **Internationalization** - i18n support with locale configuration
 - ♿ **Accessibility** - WCAG 2.1 compliant with proper ARIA attributes
@@ -68,6 +74,7 @@ All components are now fully migrated and production-ready:
 - 🌈 **Syntax Highlighting** - Built-in code highlighting with ts-syntax-highlighter
 
 ### Developer Experience
+
 - 📦 **TypeScript** - Full TypeScript support with strict types
 - 🔧 **Composables** - Reusable composition functions (useCopyCode, useDarkMode, useSEO)
 - 🧪 **Well-Tested** - 78+ tests with integration tests
@@ -105,8 +112,8 @@ const handleDateChange = (date: Date) => {
   console.log('Selected:', date)
 }
 
-<Calendar 
-  value={new Date()} 
+<Calendar
+  value={new Date()}
   onChange={handleDateChange}
   locale="en-US"
 />
@@ -117,9 +124,9 @@ const navItems = [
   { id: 'about', label: 'About', href: '/about' },
 ]
 
-<Navigator 
-  items={navItems} 
-  active="home" 
+<Navigator
+  items={navItems}
+  active="home"
   variant="pills"
 />
 ```
@@ -127,6 +134,7 @@ const navItems = [
 ## 📖 Documentation
 
 Each component includes:
+
 - ✅ Complete API documentation
 - ✅ TypeScript type definitions
 - ✅ Usage examples
@@ -171,8 +179,9 @@ Contributions are welcome! Please check out our [Contributing Guide](https://git
 ## 🙏 Acknowledgments
 
 Built with:
+
 - [STX Framework](https://github.com/stacksjs/stx)
-- [Headwind CSS](https://github.com/stacksjs/headwind)
+- [Headwind CSS](https://github.com/cwcss/crosswind)
 - [ts-syntax-highlighter](https://github.com/stacksjs/ts-syntax-highlighter)
 - [Bun](https://bun.sh)
 
@@ -182,4 +191,4 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ---
 
-**Full Changelog**: https://github.com/stacksjs/stx/compare/v0.1.0...v0.2.0
+**Full Changelog**: <https://github.com/stacksjs/stx/compare/v0.1.0...v0.2.0>

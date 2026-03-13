@@ -3,19 +3,23 @@
 ## Problem
 
 The VSCode extension was failing to activate with the error:
+
 ```
 ReferenceError: vscode is not defined
 ```
 
 Additionally, there was an ESM module loading issue:
+
 ```
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '@stacksjs/headwind'
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '@cwcss/crosswind'
 ```
 
 ## Root Causes
 
 ### 1. Type-only Import Issue
+
 The `vscode` module was imported as a **type-only** import in `src/headwind/index.ts`:
+
 ```typescript
 import type * as vscode from 'vscode'  // ❌ Type-only - undefined at runtime
 ```
@@ -23,7 +27,9 @@ import type * as vscode from 'vscode'  // ❌ Type-only - undefined at runtime
 This meant `vscode` was only available for TypeScript type checking, but was `undefined` at runtime when trying to pass it to functions.
 
 ### 2. Optional Parameter with Fallback
+
 Functions in `context.ts` had optional `vscode` parameters with fallback to global import:
+
 ```typescript
 export function getDefaultConfig(vscodeModule?: typeof vscode): HeadwindConfig {
   const vs = vscodeModule || vscode  // ❌ Falls back to undefined after bundling
@@ -33,9 +39,11 @@ export function getDefaultConfig(vscodeModule?: typeof vscode): HeadwindConfig {
 After bundling, the fallback `vscode` was also undefined in the module scope.
 
 ### 3. ESM Dynamic Import in CommonJS Bundle
-The extension is bundled as CommonJS (`format: 'cjs'`), but was using dynamic imports for the ESM `@stacksjs/headwind` module:
+
+The extension is bundled as CommonJS (`format: 'cjs'`), but was using dynamic imports for the ESM `@cwcss/crosswind` module:
+
 ```typescript
-const headwind = await import('@stacksjs/headwind')  // ❌ Path resolution fails in CJS bundle
+const headwind = await import('@cwcss/crosswind')  // ❌ Path resolution fails in CJS bundle
 ```
 
 Dynamic imports have different path resolution in CommonJS bundles, causing module not found errors.
@@ -43,7 +51,9 @@ Dynamic imports have different path resolution in CommonJS bundles, causing modu
 ## Solutions Applied
 
 ### Fix 1: Regular Import in index.ts
+
 Changed from type-only to regular import:
+
 ```typescript
 // Before
 import type * as vscode from 'vscode'
@@ -53,7 +63,9 @@ import * as vscode from 'vscode'
 ```
 
 ### Fix 2: Required Parameters (No Fallback)
+
 Made `vscodeModule` a required parameter and removed fallback logic:
+
 ```typescript
 // Before
 export function getDefaultConfig(vscodeModule?: typeof vscode): HeadwindConfig {
@@ -69,34 +81,38 @@ export function getDefaultConfig(vscodeModule: typeof vscode): HeadwindConfig {
 ```
 
 ### Fix 3: Dynamic Import with require() Fallback
+
 Added fallback to `require()` for CommonJS bundled context:
+
 ```typescript
 async function loadHeadwind() {
   if (headwindLoaded) return
 
   try {
     // Try dynamic import first (for ESM)
-    const headwind = await import('@stacksjs/headwind')
+    const headwind = await import('@cwcss/crosswind')
     CSSGenerator = headwind.CSSGenerator
     // ...
     headwindLoaded = true
   } catch (importError) {
     // Fallback to require for CommonJS bundled context
     try {
-      const headwind = require('@stacksjs/headwind')
+      const headwind = require('@cwcss/crosswind')
       CSSGenerator = headwind.CSSGenerator
       // ...
       headwindLoaded = true
     } catch (requireError) {
-      console.error('[Headwind] Failed to load @stacksjs/headwind:', { importError, requireError })
-      throw new Error(`Cannot load @stacksjs/headwind: ${importError}`)
+      console.error('[Headwind] Failed to load @cwcss/crosswind:', { importError, requireError })
+      throw new Error(`Cannot load @cwcss/crosswind: ${importError}`)
     }
   }
 }
 ```
 
 ### Fix 4: Pass vscode to All Functions
+
 Updated all function signatures to require the vscode module:
+
 - `createSortClassesCommand(vscodeModule: typeof vscode)`
 - All call sites pass `vscode` explicitly
 
@@ -149,11 +165,13 @@ To verify the fix works:
 
 1. Press F5 to launch Extension Development Host
 2. Check Debug Console for successful activation:
+
    ```
    [Headwind] Activating utility class features...
    [Headwind] CSS Generator initialized
    [Headwind] Successfully activated utility class features
    ```
+
 3. Test features:
    - Hover over utility classes (e.g., `flex`, `bg-blue-500`) → should show CSS
    - Color classes should show colored square decorations
@@ -163,6 +181,7 @@ To verify the fix works:
 ## Prevention
 
 The test suite now validates:
+
 - Import patterns (catches type-only imports where values are needed)
 - Parameter requirements (catches optional params that should be required)
 - No fallback patterns (catches `|| vscode` fallbacks)

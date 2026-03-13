@@ -6,7 +6,7 @@ import type * as vscode from 'vscode'
 export async function sortClasses(classes: string[]): Promise<string[]> {
   try {
     // Load headwind - works after fixing package.json exports
-    const headwind = await import('@stacksjs/headwind')
+    const headwind = await import('@cwcss/crosswind')
     const { builtInRules, parseClass, defaultConfig } = headwind
 
     // Calculate priority for each class

@@ -601,7 +601,7 @@
     "theme": "light"
   },
   "dependencies": {
-    "@stacksjs/headwind": "^0.1.3",
+    "@cwcss/crosswind": "^0.1.3",
     "prettier": "^3.8.1"
   },
   "devDependencies": {

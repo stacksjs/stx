@@ -39,11 +39,13 @@ Hover over any element to see helpful information right in your editor.
 ### Directive Documentation
 
 Hover over any directive to see:
+
 - **What it does**: Clear description of the directive's purpose
 - **Syntax**: How to use it with parameters
 - **Examples**: Real-world usage examples
 
 **Try hovering over:**
+
 ```stx
 @foreach (items as item, index)
   <div>Item {{ index }}: {{ item.name }}</div>
@@ -150,6 +152,7 @@ const props = defineProps<ButtonProps>()
 ```
 
 **Features:**
+
 - **Autocomplete**: Shows all available prop names when you type `props.`
 - **Type information**: Displays the type of each prop
 - **Required indicators**: Shows which props are required
@@ -210,11 +213,13 @@ Utility classes with colors show an inline color preview:
 Keep your utility classes organized with the sort command:
 
 **Before:**
+
 ```stx
 <div class="text-white p-4 bg-blue-500 flex rounded-lg items-center">
 ```
 
 **After sorting** (`Cmd+Shift+P` → "Stacks: Sort Utility Classes"):
+
 ```stx
 <div class="flex items-center rounded-lg bg-blue-500 p-4 text-white">
 ```
@@ -312,6 +317,7 @@ Collapse and expand sections of your template for better readability.
 - HTML tags: `<div>...</div>`
 
 **Example:**
+
 ```stx
 @ts ⊟
   const items = [1, 2, 3]
@@ -486,12 +492,14 @@ Customize the extension to match your workflow.
 ### 1. Quick Directive Insertion
 
 Type `@` and press `Tab` to quickly insert directive pairs:
+
 - `@if` + Tab → Full if-endif block with cursor inside condition
 - `@for` + Tab → Complete foreach block with placeholder
 
 ### 2. Organize Utility Classes
 
 Use the sort command regularly to keep classes readable:
+
 - Shortcut: `Cmd+Shift+P` → "Sort Utility Classes"
 - Or enable `"stx.utilityClasses.sortOnSave": true` to sort automatically
 
@@ -506,6 +514,7 @@ Select a variable name and press `Cmd+D` to select the next occurrence for simul
 ### 5. Preview Colors
 
 Hover over color utilities to see the actual color before applying it:
+
 ```stx
 <div class="bg-indigo-600">  ← Hover to see #4F46E5
 ```
@@ -521,7 +530,7 @@ Hover over color utilities to see the actual color before applying it:
 ### Colors Not Showing?
 
 1. Ensure `stx.utilityClasses.colorPreview` is enabled
-2. Check that you have `@stacksjs/headwind` dependency installed
+2. Check that you have `@cwcss/crosswind` dependency installed
 3. Reload window to reinitialize the extension
 
 ### Syntax Highlighting Issues?

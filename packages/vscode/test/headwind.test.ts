@@ -204,11 +204,11 @@ describe('Headwind Integration Tests', () => {
     const contextPath = path.join(PACKAGE_ROOT, 'src/headwind/context.ts')
     const content = await Bun.file(contextPath).text()
 
-    // Should use dynamic import for @stacksjs/headwind
-    expect(content).toContain('await import(\'@stacksjs/headwind\')')
+    // Should use dynamic import for @cwcss/crosswind
+    expect(content).toContain('await import(\'@cwcss/crosswind\')')
     expect(content).toContain('async function loadHeadwind()')
     // Should have dynamic import fallback for CommonJS bundled context
-    expect(content).toContain('const headwind = await import(\'@stacksjs/headwind\')')
+    expect(content).toContain('const headwind = await import(\'@cwcss/crosswind\')')
   })
 
   test('should have proper async initialization pattern', async () => {
@@ -278,13 +278,13 @@ describe('Headwind Integration Tests', () => {
     expect(content).toContain('createSortClassesCommand(vscodeModule: typeof vscode)')
   })
 
-  test('should have @stacksjs/headwind dependency', async () => {
+  test('should have @cwcss/crosswind dependency', async () => {
     const packagePath = path.join(PACKAGE_ROOT, 'package.json')
     const content = await Bun.file(packagePath).text()
     const packageJson = JSON.parse(content)
 
-    expect(packageJson.dependencies).toHaveProperty('@stacksjs/headwind')
-    expect(packageJson.dependencies['@stacksjs/headwind']).toMatch(/^\^?0\.\d+\.\d+/)
+    expect(packageJson.dependencies).toHaveProperty('@cwcss/crosswind')
+    expect(packageJson.dependencies['@cwcss/crosswind']).toMatch(/^\^?0\.\d+\.\d+/)
   })
 
   test('should have prettier dependency for CSS formatting', async () => {

@@ -11,7 +11,7 @@ try {
     format: 'cjs',
     external: [
       'vscode',
-      '@stacksjs/headwind',
+      '@cwcss/crosswind',
       'prettier',
     ],
     minify: false, // Disable minification for easier debugging
