@@ -588,7 +588,7 @@ Sponsor Here</div>
                 <a href="https://github.com/cwcss/crosswind" target="_blank" class="folder-item">
                   <div class="folder-item-icon">🏗️</div>
                   <div class="folder-item-content">
-                    <div class="folder-item-name">Headwind</div>
+                    <div class="folder-item-name">crosswind</div>
                     <div class="folder-item-desc">A Tailwind-like utility-first CSS framework. Powered by Bun.</div>
                   </div>
                 </a>
@@ -2576,7 +2576,7 @@ export default {
             </button>
             <button class="start-menu-item" onclick="window.open('https://github.com/cwcss/crosswind', '_blank')">
               <div class="start-menu-item-icon">💨</div>
-              <div>Headwind</div>
+              <div>crosswind</div>
             </button>
             <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/launchpad', '_blank')">
               <div class="start-menu-item-icon">🚀</div>

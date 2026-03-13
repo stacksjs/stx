@@ -1,9 +1,9 @@
 import { spawn } from 'bun'
 
-const headwindBin = '/Users/glennmichaeltorregosa/Documents/Projects/headwind/packages/headwind/bin/headwind'
+const crosswindBin = '/Users/glennmichaeltorregosa/Documents/Projects/crosswind/packages/crosswind/bin/crosswind'
 
-// Start headwind watch
-const headwind = spawn([headwindBin, 'watch', '--config', './headwind.config.ts'], {
+// Start crosswind watch
+const crosswind = spawn([crosswindBin, 'watch', '--config', './crosswind.config.ts'], {
   cwd: import.meta.dir,
   stdout: 'inherit',
   stderr: 'inherit',
@@ -18,16 +18,16 @@ const server = spawn(['bun', 'serve.ts'], {
 
 // Handle cleanup
 process.on('SIGINT', () => {
-  headwind.kill()
+  crosswind.kill()
   server.kill()
   process.exit(0)
 })
 
 process.on('SIGTERM', () => {
-  headwind.kill()
+  crosswind.kill()
   server.kill()
   process.exit(0)
 })
 
 // Wait for both
-await Promise.all([headwind.exited, server.exited])
+await Promise.all([crosswind.exited, server.exited])

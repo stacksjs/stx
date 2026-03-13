@@ -1,6 +1,6 @@
-// Build script for generating headwind CSS for voide app
-import { buildAndWrite, defaultConfig, tailwindPreflight } from '/Users/glennmichaeltorregosa/Documents/Projects/headwind/packages/headwind/src/index.ts'
-import type { Preflight } from '/Users/glennmichaeltorregosa/Documents/Projects/headwind/packages/headwind/src/types.ts'
+// Build script for generating crosswind CSS for voide app
+import { buildAndWrite, defaultConfig, tailwindPreflight } from '/Users/glennmichaeltorregosa/Documents/Projects/crosswind/packages/crosswind/src/index.ts'
+import type { Preflight } from '/Users/glennmichaeltorregosa/Documents/Projects/crosswind/packages/crosswind/src/types.ts'
 
 // Custom form reset preflight for dark mode apps
 // This allows utility classes to properly style form elements

@@ -32,13 +32,13 @@ examples/
 - Ocean-themed gradient backgrounds (`from-ocean-blue to-ocean-green`)
 - Animated SVG waves with smooth transitions
 - Responsive grid layouts
-- **Headwind CSS** for styling (Tailwind-compatible)
+- **crosswind CSS** for styling (Tailwind-compatible)
 - Clean, modern aesthetic
 - Inter font family
 
 ### Styling
 
-The page uses @cwcss/crosswind which provides Tailwind-compatible utility classes. Custom colors can be defined in `headwind.config.ts`
+The page uses @cwcss/crosswind which provides Tailwind-compatible utility classes. Custom colors can be defined in `crosswind.config.ts`
 
 ## Usage
 
@@ -73,7 +73,7 @@ This will scan all `.stx` files in the examples directory and generate the CSS a
 
 ### Colors
 
-Custom colors are defined via CSS custom properties in the `<style>` block or in `headwind.config.ts`. The example uses:
+Custom colors are defined via CSS custom properties in the `<style>` block or in `crosswind.config.ts`. The example uses:
 
 - Ocean blue gradients for hero section
 - Sky/cyan colors for accents

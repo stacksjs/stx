@@ -231,7 +231,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   if (utilityClassesEnabled) {
     try {
-      const { activateHeadwind } = await import('./headwind/index')
+      const { activateHeadwind } = await import('./crosswind/index')
       await activateHeadwind(context)
       console.log('stx Extension - Headwind utility class features activated')
     }
