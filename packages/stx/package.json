@@ -103,9 +103,11 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
+    "@cwcss/crosswind": "^0.1.6",
     "@stacksjs/clapp": "^0.2.0",
     "@stacksjs/desktop": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
+    "@stacksjs/ts-craft": "^0.0.2",
     "bun-plugin-stx": "workspace:*",
     "bunfig": "^0.15.6",
     "stx-router": "workspace:*",
