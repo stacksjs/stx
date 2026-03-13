@@ -226,18 +226,18 @@ export async function activate(context: vscode.ExtensionContext) {
     semanticTokensProvider,
   )
 
-  // Activate Headwind utility class features
+  // Activate Crosswind utility class features
   const utilityClassesEnabled = vscode.workspace.getConfiguration('stx.utilityClasses').get<boolean>('enable', true)
 
   if (utilityClassesEnabled) {
     try {
-      const { activateHeadwind } = await import('./crosswind/index')
-      await activateHeadwind(context)
-      console.log('stx Extension - Headwind utility class features activated')
+      const { activateCrosswind } = await import('./crosswind/index')
+      await activateCrosswind(context)
+      console.log('stx Extension - Crosswind utility class features activated')
     }
     catch (error) {
-      console.error('stx Extension - Failed to activate Headwind features:', error)
-      vscode.window.showErrorMessage(`Failed to activate Headwind: ${error}`)
+      console.error('stx Extension - Failed to activate Crosswind features:', error)
+      vscode.window.showErrorMessage(`Failed to activate Crosswind: ${error}`)
     }
   }
 
