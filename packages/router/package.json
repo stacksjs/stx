@@ -1,7 +1,7 @@
 {
   "name": "stx-router",
   "type": "module",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "File-based router for STX — .stx template discovery, nested layouts, typed route params, middleware, and client-side SPA navigation.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",

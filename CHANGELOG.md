@@ -1,4 +1,187 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.6...v0.2.7)
+
+### 🚀 Features
+
+- stx extension icon for vscode (#1592) ([9320bfb](https://github.com/stacksjs/stx/commit/9320bfb)) _(by [Janrey Maligro <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_ ([#1592](https://github.com/stacksjs/stx/issues/1592), [#1592](https://github.com/stacksjs/stx/issues/1592))
+
+### 🧹 Chores
+
+- release v0.2.7 ([0d70430](https://github.com/stacksjs/stx/commit/0d70430)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([2390d86](https://github.com/stacksjs/stx/commit/2390d86)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([027c4b2](https://github.com/stacksjs/stx/commit/027c4b2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([32e6add](https://github.com/stacksjs/stx/commit/32e6add)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add proper claude code guidelines ([1389670](https://github.com/stacksjs/stx/commit/1389670)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- use pantry monorepo action instead of pantry-setup ([0d863fc](https://github.com/stacksjs/stx/commit/0d863fc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- ignore claude config in linter ([184ba45](https://github.com/stacksjs/stx/commit/184ba45)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([3ea45e4](https://github.com/stacksjs/stx/commit/3ea45e4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add co-author guideline to claude config ([7ffdc12](https://github.com/stacksjs/stx/commit/7ffdc12)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add claude code guidelines ([a8c8410](https://github.com/stacksjs/stx/commit/a8c8410)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([67baa6f](https://github.com/stacksjs/stx/commit/67baa6f)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([35e725b](https://github.com/stacksjs/stx/commit/35e725b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([86ae1cd](https://github.com/stacksjs/stx/commit/86ae1cd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([389eed5](https://github.com/stacksjs/stx/commit/389eed5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([105c9e2](https://github.com/stacksjs/stx/commit/105c9e2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([6d91bdf](https://github.com/stacksjs/stx/commit/6d91bdf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([6f70b88](https://github.com/stacksjs/stx/commit/6f70b88)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([3f8e689](https://github.com/stacksjs/stx/commit/3f8e689)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([dc005b4](https://github.com/stacksjs/stx/commit/dc005b4)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([d9cfced](https://github.com/stacksjs/stx/commit/d9cfced)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([21893da](https://github.com/stacksjs/stx/commit/21893da)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([b6a0a70](https://github.com/stacksjs/stx/commit/b6a0a70)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([39d39dc](https://github.com/stacksjs/stx/commit/39d39dc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([e9258be](https://github.com/stacksjs/stx/commit/e9258be)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([5a45c6b](https://github.com/stacksjs/stx/commit/5a45c6b)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([e348acf](https://github.com/stacksjs/stx/commit/e348acf)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([1ad9e32](https://github.com/stacksjs/stx/commit/1ad9e32)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([52b27fe](https://github.com/stacksjs/stx/commit/52b27fe)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([0fc7616](https://github.com/stacksjs/stx/commit/0fc7616)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update all non-major dependencies (#1651) ([bc4aeb8](https://github.com/stacksjs/stx/commit/bc4aeb8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1651](https://github.com/stacksjs/stx/issues/1651), [#1651](https://github.com/stacksjs/stx/issues/1651))
+- wip ([b0ad309](https://github.com/stacksjs/stx/commit/b0ad309)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update all non-major dependencies (rebased) (#1647) ([a1ed4ff](https://github.com/stacksjs/stx/commit/a1ed4ff)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1647](https://github.com/stacksjs/stx/issues/1647), [#1647](https://github.com/stacksjs/stx/issues/1647))
+- **deps**: update dependency @vscode/vsce to 3.7.2-9 (rebased) (#1650) ([bc3d329](https://github.com/stacksjs/stx/commit/bc3d329)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1650](https://github.com/stacksjs/stx/issues/1650), [#1650](https://github.com/stacksjs/stx/issues/1650))
+- wip ([634537d](https://github.com/stacksjs/stx/commit/634537d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([6930606](https://github.com/stacksjs/stx/commit/6930606)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a00c6ef](https://github.com/stacksjs/stx/commit/a00c6ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([8b9796b](https://github.com/stacksjs/stx/commit/8b9796b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([31005f2](https://github.com/stacksjs/stx/commit/31005f2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f1845c8](https://github.com/stacksjs/stx/commit/f1845c8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([88dd2ec](https://github.com/stacksjs/stx/commit/88dd2ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([909d181](https://github.com/stacksjs/stx/commit/909d181)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip test ([34de811](https://github.com/stacksjs/stx/commit/34de811)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([d626beb](https://github.com/stacksjs/stx/commit/d626beb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip stx improvements ([0140f6d](https://github.com/stacksjs/stx/commit/0140f6d)) _(by [Janrey Maligro <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- phase 4 of improvements ([e82081e](https://github.com/stacksjs/stx/commit/e82081e)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- phase 3 improvements ([c0936fd](https://github.com/stacksjs/stx/commit/c0936fd)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- phase 2 of improvements ([a6791b8](https://github.com/stacksjs/stx/commit/a6791b8)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- phase 1 of improvements ([918cc11](https://github.com/stacksjs/stx/commit/918cc11)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([7459d95](https://github.com/stacksjs/stx/commit/7459d95)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- **deps**: update all non-major dependencies (updated) (#1641) ([d9e7b49](https://github.com/stacksjs/stx/commit/d9e7b49)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1641](https://github.com/stacksjs/stx/issues/1641), [#1641](https://github.com/stacksjs/stx/issues/1641))
+- **deps**: update dependency @capacitor/splash-screen to 8.0.1 (rebased) (#1642) ([9be6536](https://github.com/stacksjs/stx/commit/9be6536)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1642](https://github.com/stacksjs/stx/issues/1642), [#1642](https://github.com/stacksjs/stx/issues/1642))
+- **deps**: update dependency @vscode/vsce to 3.7.2-8 (rebased) (#1643) ([89c23f8](https://github.com/stacksjs/stx/commit/89c23f8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1643](https://github.com/stacksjs/stx/issues/1643), [#1643](https://github.com/stacksjs/stx/issues/1643))
+- **deps**: update dependency isomorphic-dompurify to 3.0.0 (rebased) (#1644) ([b37294c](https://github.com/stacksjs/stx/commit/b37294c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1644](https://github.com/stacksjs/stx/issues/1644), [#1644](https://github.com/stacksjs/stx/issues/1644))
+- **deps**: update dependency ejs to 5.0.1 (rebased) (#1646) ([ee70420](https://github.com/stacksjs/stx/commit/ee70420)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1646](https://github.com/stacksjs/stx/issues/1646), [#1646](https://github.com/stacksjs/stx/issues/1646))
+- move pickier config to config/code-style.ts ([09ed58b](https://github.com/stacksjs/stx/commit/09ed58b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip SPA navigation lifecycle cleanup ([2de8966](https://github.com/stacksjs/stx/commit/2de8966)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([cf0c1b9](https://github.com/stacksjs/stx/commit/cf0c1b9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9baa928](https://github.com/stacksjs/stx/commit/9baa928)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip stx spa ([921194f](https://github.com/stacksjs/stx/commit/921194f)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([481f588](https://github.com/stacksjs/stx/commit/481f588)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([795c9c4](https://github.com/stacksjs/stx/commit/795c9c4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([f439581](https://github.com/stacksjs/stx/commit/f439581)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([5fb95e2](https://github.com/stacksjs/stx/commit/5fb95e2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([5c987da](https://github.com/stacksjs/stx/commit/5c987da)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([55e9064](https://github.com/stacksjs/stx/commit/55e9064)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip StxLink hot reload ([8832e95](https://github.com/stacksjs/stx/commit/8832e95)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip StxLink File based routing ([8abe64b](https://github.com/stacksjs/stx/commit/8abe64b)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip default app layout ([43bb2de](https://github.com/stacksjs/stx/commit/43bb2de)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip stx improvements markdown ([ab7e5d4](https://github.com/stacksjs/stx/commit/ab7e5d4)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([adcd9c9](https://github.com/stacksjs/stx/commit/adcd9c9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📄 Miscellaneous
+
+- Revert "chore: add claude code guidelines" ([62e174f](https://github.com/stacksjs/stx/commit/62e174f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- chore: ([38ec2cb](https://github.com/stacksjs/stx/commit/38ec2cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- Merge branch 'main' of https://github.com/stacksjs/stx ([60c5049](https://github.com/stacksjs/stx/commit/60c5049)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _[Janrey Maligro <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind)_
+- _[devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind)_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.6...HEAD)
+
+### 🚀 Features
+
+- stx extension icon for vscode (#1592) ([9320bfb](https://github.com/stacksjs/stx/commit/9320bfb)) _(by [Janrey Maligro <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_ ([#1592](https://github.com/stacksjs/stx/issues/1592), [#1592](https://github.com/stacksjs/stx/issues/1592))
+
+### 🧹 Chores
+
+- wip ([2390d86](https://github.com/stacksjs/stx/commit/2390d86)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([027c4b2](https://github.com/stacksjs/stx/commit/027c4b2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([32e6add](https://github.com/stacksjs/stx/commit/32e6add)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add proper claude code guidelines ([1389670](https://github.com/stacksjs/stx/commit/1389670)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- use pantry monorepo action instead of pantry-setup ([0d863fc](https://github.com/stacksjs/stx/commit/0d863fc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- ignore claude config in linter ([184ba45](https://github.com/stacksjs/stx/commit/184ba45)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([3ea45e4](https://github.com/stacksjs/stx/commit/3ea45e4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add co-author guideline to claude config ([7ffdc12](https://github.com/stacksjs/stx/commit/7ffdc12)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add claude code guidelines ([a8c8410](https://github.com/stacksjs/stx/commit/a8c8410)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([67baa6f](https://github.com/stacksjs/stx/commit/67baa6f)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([35e725b](https://github.com/stacksjs/stx/commit/35e725b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([86ae1cd](https://github.com/stacksjs/stx/commit/86ae1cd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([389eed5](https://github.com/stacksjs/stx/commit/389eed5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([105c9e2](https://github.com/stacksjs/stx/commit/105c9e2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([6d91bdf](https://github.com/stacksjs/stx/commit/6d91bdf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([6f70b88](https://github.com/stacksjs/stx/commit/6f70b88)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([3f8e689](https://github.com/stacksjs/stx/commit/3f8e689)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([dc005b4](https://github.com/stacksjs/stx/commit/dc005b4)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([d9cfced](https://github.com/stacksjs/stx/commit/d9cfced)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([21893da](https://github.com/stacksjs/stx/commit/21893da)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([b6a0a70](https://github.com/stacksjs/stx/commit/b6a0a70)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([39d39dc](https://github.com/stacksjs/stx/commit/39d39dc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([e9258be](https://github.com/stacksjs/stx/commit/e9258be)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([5a45c6b](https://github.com/stacksjs/stx/commit/5a45c6b)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([e348acf](https://github.com/stacksjs/stx/commit/e348acf)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([1ad9e32](https://github.com/stacksjs/stx/commit/1ad9e32)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([52b27fe](https://github.com/stacksjs/stx/commit/52b27fe)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([0fc7616](https://github.com/stacksjs/stx/commit/0fc7616)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update all non-major dependencies (#1651) ([bc4aeb8](https://github.com/stacksjs/stx/commit/bc4aeb8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1651](https://github.com/stacksjs/stx/issues/1651), [#1651](https://github.com/stacksjs/stx/issues/1651))
+- wip ([b0ad309](https://github.com/stacksjs/stx/commit/b0ad309)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update all non-major dependencies (rebased) (#1647) ([a1ed4ff](https://github.com/stacksjs/stx/commit/a1ed4ff)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1647](https://github.com/stacksjs/stx/issues/1647), [#1647](https://github.com/stacksjs/stx/issues/1647))
+- **deps**: update dependency @vscode/vsce to 3.7.2-9 (rebased) (#1650) ([bc3d329](https://github.com/stacksjs/stx/commit/bc3d329)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1650](https://github.com/stacksjs/stx/issues/1650), [#1650](https://github.com/stacksjs/stx/issues/1650))
+- wip ([634537d](https://github.com/stacksjs/stx/commit/634537d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([6930606](https://github.com/stacksjs/stx/commit/6930606)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a00c6ef](https://github.com/stacksjs/stx/commit/a00c6ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([8b9796b](https://github.com/stacksjs/stx/commit/8b9796b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([31005f2](https://github.com/stacksjs/stx/commit/31005f2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f1845c8](https://github.com/stacksjs/stx/commit/f1845c8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([88dd2ec](https://github.com/stacksjs/stx/commit/88dd2ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([909d181](https://github.com/stacksjs/stx/commit/909d181)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip test ([34de811](https://github.com/stacksjs/stx/commit/34de811)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([d626beb](https://github.com/stacksjs/stx/commit/d626beb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip stx improvements ([0140f6d](https://github.com/stacksjs/stx/commit/0140f6d)) _(by [Janrey Maligro <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- phase 4 of improvements ([e82081e](https://github.com/stacksjs/stx/commit/e82081e)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- phase 3 improvements ([c0936fd](https://github.com/stacksjs/stx/commit/c0936fd)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- phase 2 of improvements ([a6791b8](https://github.com/stacksjs/stx/commit/a6791b8)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- phase 1 of improvements ([918cc11](https://github.com/stacksjs/stx/commit/918cc11)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([7459d95](https://github.com/stacksjs/stx/commit/7459d95)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- **deps**: update all non-major dependencies (updated) (#1641) ([d9e7b49](https://github.com/stacksjs/stx/commit/d9e7b49)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1641](https://github.com/stacksjs/stx/issues/1641), [#1641](https://github.com/stacksjs/stx/issues/1641))
+- **deps**: update dependency @capacitor/splash-screen to 8.0.1 (rebased) (#1642) ([9be6536](https://github.com/stacksjs/stx/commit/9be6536)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1642](https://github.com/stacksjs/stx/issues/1642), [#1642](https://github.com/stacksjs/stx/issues/1642))
+- **deps**: update dependency @vscode/vsce to 3.7.2-8 (rebased) (#1643) ([89c23f8](https://github.com/stacksjs/stx/commit/89c23f8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1643](https://github.com/stacksjs/stx/issues/1643), [#1643](https://github.com/stacksjs/stx/issues/1643))
+- **deps**: update dependency isomorphic-dompurify to 3.0.0 (rebased) (#1644) ([b37294c](https://github.com/stacksjs/stx/commit/b37294c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1644](https://github.com/stacksjs/stx/issues/1644), [#1644](https://github.com/stacksjs/stx/issues/1644))
+- **deps**: update dependency ejs to 5.0.1 (rebased) (#1646) ([ee70420](https://github.com/stacksjs/stx/commit/ee70420)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1646](https://github.com/stacksjs/stx/issues/1646), [#1646](https://github.com/stacksjs/stx/issues/1646))
+- move pickier config to config/code-style.ts ([09ed58b](https://github.com/stacksjs/stx/commit/09ed58b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip SPA navigation lifecycle cleanup ([2de8966](https://github.com/stacksjs/stx/commit/2de8966)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([cf0c1b9](https://github.com/stacksjs/stx/commit/cf0c1b9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9baa928](https://github.com/stacksjs/stx/commit/9baa928)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip stx spa ([921194f](https://github.com/stacksjs/stx/commit/921194f)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([481f588](https://github.com/stacksjs/stx/commit/481f588)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([795c9c4](https://github.com/stacksjs/stx/commit/795c9c4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([f439581](https://github.com/stacksjs/stx/commit/f439581)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([5fb95e2](https://github.com/stacksjs/stx/commit/5fb95e2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([5c987da](https://github.com/stacksjs/stx/commit/5c987da)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([55e9064](https://github.com/stacksjs/stx/commit/55e9064)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip StxLink hot reload ([8832e95](https://github.com/stacksjs/stx/commit/8832e95)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip StxLink File based routing ([8abe64b](https://github.com/stacksjs/stx/commit/8abe64b)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip default app layout ([43bb2de](https://github.com/stacksjs/stx/commit/43bb2de)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip stx improvements markdown ([ab7e5d4](https://github.com/stacksjs/stx/commit/ab7e5d4)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- wip ([adcd9c9](https://github.com/stacksjs/stx/commit/adcd9c9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📄 Miscellaneous
+
+- Revert "chore: add claude code guidelines" ([62e174f](https://github.com/stacksjs/stx/commit/62e174f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- chore: ([38ec2cb](https://github.com/stacksjs/stx/commit/38ec2cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- Merge branch 'main' of https://github.com/stacksjs/stx ([60c5049](https://github.com/stacksjs/stx/commit/60c5049)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _[Janrey Maligro <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind)_
+- _[devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind)_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.5...v0.2.6)
 
 ### 📚 Documentation
