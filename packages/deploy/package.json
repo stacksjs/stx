@@ -2,6 +2,7 @@
   "name": "@stx/deploy",
   "type": "module",
   "version": "0.2.8",
+  "private": true,
   "description": "Deployment adapters for STX applications. Bun server default, static export, and community adapter interface.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
