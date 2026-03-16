@@ -1,4 +1,39 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.9...v0.2.10)
+
+### 🐛 Bug Fixes
+
+- don't treat <script type="application/json"> as server script ([ff4ce4c](https://github.com/stacksjs/stx/commit/ff4ce4c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.10 ([991cfd0](https://github.com/stacksjs/stx/commit/991cfd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a403e59](https://github.com/stacksjs/stx/commit/a403e59)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update better-dx to ^0.2.7 ([0a878bf](https://github.com/stacksjs/stx/commit/0a878bf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update CLAUDE.md with project context and crosswind details ([81eb3df](https://github.com/stacksjs/stx/commit/81eb3df)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.9...HEAD)
+
+### 🐛 Bug Fixes
+
+- don't treat <script type="application/json"> as server script ([ff4ce4c](https://github.com/stacksjs/stx/commit/ff4ce4c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([a403e59](https://github.com/stacksjs/stx/commit/a403e59)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update better-dx to ^0.2.7 ([0a878bf](https://github.com/stacksjs/stx/commit/0a878bf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update CLAUDE.md with project context and crosswind details ([81eb3df](https://github.com/stacksjs/stx/commit/81eb3df)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.8...v0.2.9)
 
 ### 🧹 Chores
