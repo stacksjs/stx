@@ -120,7 +120,7 @@ function parseTemplate(content: string): {
     const scriptContent = scriptMatch[2]
     const fullScript = scriptMatch[0]
 
-    const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
+    const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=') || (attrs.includes('type=') && !attrs.includes('server'))
     const isSignalsScript = usesSignalsAPI(scriptContent)
 
     if (isSignalsScript) {
