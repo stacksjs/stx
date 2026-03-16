@@ -121,7 +121,7 @@ else {
       // ── Swap main content ──
       // Strip inline scripts from innerHTML — they won't execute via innerHTML anyway,
       // and leaving them causes stx.mount() to find the wrong nextElementSibling
-      var cleanHTML=newContent.innerHTML.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');
+      var cleanHTML=newContent.innerHTML.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt\\\\s*>','gi'),'');
       currentContent.innerHTML=cleanHTML;
 
       // ── Load new external <head> scripts ──
@@ -166,9 +166,7 @@ else {
           var ns=document.createElement('script');
           ns.textContent=text;
           ns.setAttribute('data-stx-page','');
-          // Insert into the content container so stx.mount() can find
-          // its root element via document.currentScript.nextElementSibling
-          currentContent.insertBefore(ns, currentContent.firstChild);
+          document.body.appendChild(ns);
         });
       }
 

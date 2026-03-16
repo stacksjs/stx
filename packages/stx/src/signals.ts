@@ -2989,8 +2989,12 @@ else {
         if (!root && scriptEl) root = scriptEl.previousElementSibling || scriptEl.parentElement;
 
         // SPA fallback: during router navigation, script is appended to <body>
-        // but template content is inside the router container (e.g. <main>)
-        if (!root || root === document.body) {
+        // (not inside the content container), so nextElementSibling won't find the page content.
+        // Detect this by checking if the script's parent is <body> or if root is unsuitable.
+        var needsFallback = !root || root === document.body
+          || (scriptEl && scriptEl.parentElement === document.body)
+          || (root && root.tagName === 'SCRIPT');
+        if (needsFallback) {
           var container = document.querySelector('[data-stx-router-container]')
             || document.querySelector('main')
             || document.querySelector('#content');
