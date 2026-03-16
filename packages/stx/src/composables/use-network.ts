@@ -87,7 +87,8 @@ export function useNetwork(): NetworkRef {
     for (const callback of subscribers) {
       try {
         callback(newState)
-      } catch (e) {
+      }
+catch (e) {
         console.error('[useNetwork] Subscriber error:', e)
       }
     }

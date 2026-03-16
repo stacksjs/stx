@@ -266,7 +266,8 @@ function generateDefaultOfflinePage(options: StxOptions): string {
         container.classList.add('online');
         statusText.textContent = 'Back online! Reloading...';
         setTimeout(() => window.location.reload(), 1000);
-      } else {
+      }
+else {
         container.classList.remove('online');
         statusText.textContent = 'Waiting for connection...';
       }

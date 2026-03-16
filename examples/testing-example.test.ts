@@ -161,7 +161,8 @@ describe('STX Testing Utilities', () => {
       try {
         await waitFor(() => false, { timeout: 100 })
         expect(true).toBe(false) // Should not reach here
-      } catch (error) {
+      }
+catch (error) {
         expect(error).toBeDefined()
       }
     })

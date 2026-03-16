@@ -249,7 +249,8 @@ class BuildCache {
         for (const [key, value] of Object.entries(data)) {
           this.cache.set(key, value as BuildCacheEntry)
         }
-      } catch {
+      }
+catch {
         // Ignore corrupt cache
       }
     }
@@ -334,7 +335,8 @@ class FileISRCache implements ISRCache {
     try {
       const data = JSON.parse(await Bun.file(filePath).text())
       return data as CachedPage
-    } catch {
+    }
+catch {
       return null
     }
   }
@@ -405,7 +407,8 @@ async function extractStaticPaths(filePath: string): Promise<StaticPathsResult |
 
     const result = await asyncFn()
     return result as StaticPathsResult
-  } catch (error) {
+  }
+catch (error) {
     console.error(`Error extracting static paths from ${filePath}:`, error)
     return null
   }
@@ -433,7 +436,8 @@ async function generatePathsForRoute(route: Route): Promise<Array<{
       url: route.pattern,
       params: {},
     })
-  } else {
+  }
+else {
     // Dynamic route - need getStaticPaths
     const staticPaths = await extractStaticPaths(route.filePath)
 
@@ -488,18 +492,22 @@ async function loadDataFile(templatePath: string): Promise<Record<string, unknow
         if (typeof dataModule.default === 'function') {
           // export default async function() { return { ... } }
           return await dataModule.default()
-        } else if (typeof dataModule.default === 'object') {
+        }
+else if (typeof dataModule.default === 'object') {
           // export default { ... }
           return dataModule.default
-        } else if (typeof dataModule.getData === 'function') {
+        }
+else if (typeof dataModule.getData === 'function') {
           // export function getData() { return { ... } }
           return await dataModule.getData()
-        } else {
+        }
+else {
           // export const user = { ... }; export const items = [...]
           const { default: _, ...namedExports } = dataModule
           return namedExports
         }
-      } catch (error) {
+      }
+catch (error) {
         console.error(`Error loading data file ${dataFile}:`, error)
       }
     }
@@ -539,7 +547,8 @@ async function extractStaticProps(
 
     const result = await asyncFn(params)
     return result as Record<string, unknown>
-  } catch (error) {
+  }
+catch (error) {
     console.error(`Error executing getStaticProps in ${filePath}:`, error)
     return null
   }
@@ -878,7 +887,8 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
           let outputPath: string
           if (cfg.trailingSlash) {
             outputPath = path.join(cfg.outputDir, url, 'index.html')
-          } else {
+          }
+else {
             outputPath = url === '/'
               ? path.join(cfg.outputDir, 'index.html')
               : path.join(cfg.outputDir, `${url}.html`)
@@ -911,7 +921,8 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
 
           await cfg.hooks.onPageEnd?.(url, html)
 
-        } catch (error) {
+        }
+catch (error) {
           result.failedCount++
           result.errors.push({
             route: url,
@@ -942,7 +953,8 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
           notFoundDeps
         )
         await Bun.write(path.join(cfg.outputDir, '404.html'), html)
-      } else {
+      }
+else {
         // Generate default 404
         const default404 = `<!DOCTYPE html>
 <html lang="en">
@@ -1037,7 +1049,8 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
       console.log(`Copied public assets from ${cfg.publicDir}`)
     }
 
-  } catch (error) {
+  }
+catch (error) {
     await cfg.hooks.onError?.(error as Error)
     throw error
   }
@@ -1072,7 +1085,8 @@ async function copyDirectory(src: string, dest: string): Promise<void> {
     if (entry.isDirectory()) {
       await fs.promises.mkdir(destPath, { recursive: true })
       await copyDirectory(srcPath, destPath)
-    } else {
+    }
+else {
       await fs.promises.copyFile(srcPath, destPath)
     }
   }
@@ -1162,7 +1176,8 @@ export function createISRHandler(options: SSGConfig = {}): {
     async invalidate(route: string | RegExp) {
       if (typeof route === 'string') {
         await cache.invalidate(route)
-      } else {
+      }
+else {
         await cache.invalidatePattern(route)
       }
     },

@@ -599,7 +599,8 @@ describe('stx Conditional Directives', () => {
           {},
         )
         expect(result).toContain('Prod only')
-      } finally {
+      }
+finally {
         process.env.NODE_ENV = origEnv
       }
     })
@@ -613,7 +614,8 @@ describe('stx Conditional Directives', () => {
           {},
         )
         expect(result).not.toContain('Prod only')
-      } finally {
+      }
+finally {
         process.env.NODE_ENV = origEnv
       }
     })
@@ -627,7 +629,8 @@ describe('stx Conditional Directives', () => {
           {},
         )
         expect(result).toContain('Staging info')
-      } finally {
+      }
+finally {
         process.env.NODE_ENV = origEnv
       }
     })

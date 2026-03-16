@@ -289,7 +289,8 @@ export function watch<T>(
   // Initial run
   if (options.immediate) {
     run()
-  } else {
+  }
+else {
     oldValue = source()
   }
 
@@ -370,7 +371,8 @@ export function setupComponent(
 
   try {
     setup()
-  } finally {
+  }
+finally {
     setCurrentInstance(null)
   }
 
@@ -391,7 +393,8 @@ export function mountComponent(instance: ComponentInstance): void {
       if (typeof cleanup === 'function') {
         instance.destroyHooks.push(cleanup)
       }
-    } catch (error) {
+    }
+catch (error) {
       console.error('[stx] Error in onMount hook:', error)
     }
   }
@@ -409,7 +412,8 @@ export function updateComponent(instance: ComponentInstance): void {
       if (typeof cleanup === 'function') {
         instance.destroyHooks.push(cleanup)
       }
-    } catch (error) {
+    }
+catch (error) {
       console.error('[stx] Error in onUpdate hook:', error)
     }
   }
@@ -430,7 +434,8 @@ export function destroyComponent(instance: ComponentInstance): void {
   for (const hook of instance.destroyHooks) {
     try {
       hook()
-    } catch (error) {
+    }
+catch (error) {
       console.error('[stx] Error in onDestroy hook:', error)
     }
   }
@@ -531,7 +536,8 @@ export function generateLifecycleRuntime(): string {
 
     if (options.immediate) {
       run();
-    } else {
+    }
+else {
       oldValue = source();
     }
 
@@ -573,7 +579,8 @@ export function generateLifecycleRuntime(): string {
     currentInstance = instance;
     try {
       setup();
-    } finally {
+    }
+finally {
       currentInstance = null;
     }
     return instance;
@@ -588,7 +595,8 @@ export function generateLifecycleRuntime(): string {
         if (typeof cleanup === 'function') {
           instance.destroyHooks.push(cleanup);
         }
-      } catch (e) {
+      }
+catch (e) {
         console.error('[stx] onMount error:', e);
       }
     });
@@ -598,7 +606,8 @@ export function generateLifecycleRuntime(): string {
     if (!instance.isMounted) return;
     instance.watchers.forEach(function(w) { w.stop(); });
     instance.destroyHooks.forEach(function(hook) {
-      try { hook(); } catch (e) { console.error('[stx] onDestroy error:', e); }
+      try { hook(); }
+catch (e) { console.error('[stx] onDestroy error:', e); }
     });
     instance.refs.forEach(function(ref) { ref.value = null; });
     instance.isMounted = false;
@@ -660,9 +669,11 @@ export function generateLifecycleRuntime(): string {
     // Set initial value
     if (isCheckbox) {
       el.checked = !!state[key];
-    } else if (isRadio) {
+    }
+else if (isRadio) {
       el.checked = el.value === state[key];
-    } else {
+    }
+else {
       el.value = state[key] || '';
     }
 
@@ -671,9 +682,11 @@ export function generateLifecycleRuntime(): string {
     el.addEventListener(eventType, function() {
       if (isCheckbox) {
         state[key] = el.checked;
-      } else if (isRadio) {
+      }
+else if (isRadio) {
         if (el.checked) state[key] = el.value;
-      } else {
+      }
+else {
         state[key] = el.value;
       }
     });
@@ -728,9 +741,11 @@ export function generateLifecycleRuntime(): string {
       Object.keys(attrs).forEach(function(key) {
         if (key === 'class') {
           el.className = attrs[key];
-        } else if (key.startsWith('on')) {
+        }
+else if (key.startsWith('on')) {
           el.addEventListener(key.slice(2).toLowerCase(), attrs[key]);
-        } else {
+        }
+else {
           el.setAttribute(key, attrs[key]);
         }
       });
@@ -738,9 +753,11 @@ export function generateLifecycleRuntime(): string {
     if (content) {
       if (typeof content === 'string') {
         el.textContent = content;
-      } else if (Array.isArray(content)) {
+      }
+else if (Array.isArray(content)) {
         content.forEach(function(child) { el.appendChild(child); });
-      } else {
+      }
+else {
         el.appendChild(content);
       }
     }
@@ -778,7 +795,8 @@ export function generateLifecycleRuntime(): string {
     document.addEventListener('DOMContentLoaded', function() {
       observer.observe(document.body, { childList: true, subtree: true });
     });
-  } else {
+  }
+else {
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
@@ -906,7 +924,8 @@ export async function withInjectionScope<T>(fn: () => T | Promise<T>): Promise<T
   pushInjectionScope()
   try {
     return await fn()
-  } finally {
+  }
+finally {
     popInjectionScope()
   }
 }

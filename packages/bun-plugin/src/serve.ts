@@ -202,30 +202,19 @@ export async function serve(options: ServeOptions): Promise<void> {
     const path = await import('node:path')
     const content = await Bun.file(filePath).text()
 
-    // Extract all script tags and categorize them as server or client
-    const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-    const clientScripts: string[] = []
+    // Extract server script bodies for variable extraction, and remove only
+    // server scripts from the template. Client scripts (including <script client>
+    // with signals) must remain in the template for processDirectives to transform.
+    const serverScriptRegex = /<script\b([^>]*)\bserver\b[^>]*>([\s\S]*?)<\/script>/gi
     const serverScripts: string[] = []
     let scriptMatch: RegExpExecArray | null
 
-    while ((scriptMatch = scriptRegex.exec(content)) !== null) {
-      const attrs = scriptMatch[1]
-      const scriptBody = scriptMatch[2]
-      const fullScript = scriptMatch[0]
-
-      // Client scripts have 'client', 'type="module"', or 'src=' attributes
-      const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
-
-      if (isClientScript) {
-        clientScripts.push(fullScript)
-      }
-      else {
-        serverScripts.push(scriptBody)
-      }
+    while ((scriptMatch = serverScriptRegex.exec(content)) !== null) {
+      serverScripts.push(scriptMatch[2])
     }
 
-    // Remove all script tags from template content (server scripts extracted, client scripts re-injected later)
-    let templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    // Only remove server scripts from template — client scripts stay for processDirectives
+    let templateContent = content.replace(/<script\b[^>]*\bserver\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
     const context: Record<string, any> = {
       __filename: filePath,
@@ -281,9 +270,8 @@ export async function serve(options: ServeOptions): Promise<void> {
       output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
     }
 
-    // NOTE: Do NOT re-inject client scripts here.
-    // processDirectives() already transforms <script client> into <script data-stx-scoped>.
-    // Re-injecting would cause duplicate scripts (raw TS + processed JS).
+    // Client scripts remain in the template (not stripped) so processDirectives()
+    // transforms <script client> into <script data-stx-scoped> with stx.mount().
 
     // Generate and inject Crosswind CSS
     const crosswindCSS = await generateCrosswindCSS(output)

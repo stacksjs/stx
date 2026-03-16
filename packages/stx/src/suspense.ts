@@ -178,11 +178,13 @@ function generateSuspenseHtml(
     if (status === 'resolved') {
       fallbackEl.style.display = 'none';
       contentEl.style.display = '';
-    } else if (status === 'rejected') {
+    }
+else if (status === 'rejected') {
       fallbackEl.style.display = 'none';
       contentEl.style.display = '';
       // Show error in content area if needed
-    } else {
+    }
+else {
       fallbackEl.style.display = '';
       contentEl.style.display = 'none';
     }
@@ -397,7 +399,8 @@ export async function renderSSRSuspense(
 })();
 </script>
 `
-      } catch (error) {
+      }
+catch (error) {
         yield `
 <script>
 (function() {
@@ -531,12 +534,14 @@ export function generateSuspenseRuntime(): string {
         if (boundary.getStatus() === 'resolved') {
           resolved++;
           if (resolved === boundaries.length) resolve();
-        } else if (boundary.getStatus() === 'rejected') {
+        }
+else if (boundary.getStatus() === 'rejected') {
           if (!rejected) {
             rejected = true;
             reject(boundary.getError());
           }
-        } else {
+        }
+else {
           // Listen for resolution
           const container = document.querySelector('[data-suspense-id="' + boundary.id + '"]');
           if (container) {

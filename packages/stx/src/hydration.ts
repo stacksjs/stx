@@ -198,7 +198,8 @@ export function extractState(): HydrationState | null {
     }
 
     return state
-  } catch (error) {
+  }
+catch (error) {
     console.error('[Hydration] Failed to parse state:', error)
     return null
   }
@@ -278,7 +279,8 @@ export class HydrationRuntime {
       this.options.onHydrated()
       window.dispatchEvent(new CustomEvent('stx:hydrated'))
 
-    } catch (error) {
+    }
+catch (error) {
       this.root?.classList.remove('stx-hydrating')
       this.root?.classList.add('stx-hydration-error')
       this.options.onError(error as Error)
@@ -418,7 +420,8 @@ export class HydrationRuntime {
         bubbles: true,
       }))
 
-    } catch (error) {
+    }
+catch (error) {
       console.error(`[Hydration] Failed to hydrate component ${config.id}:`, error)
       el.classList.add('stx-hydration-error')
 
@@ -446,14 +449,18 @@ export class HydrationRuntime {
       if (boundEl instanceof HTMLInputElement) {
         if (boundEl.type === 'checkbox' || boundEl.type === 'radio') {
           boundEl.checked = Boolean(value)
-        } else {
+        }
+else {
           boundEl.value = String(value)
         }
-      } else if (boundEl instanceof HTMLSelectElement) {
+      }
+else if (boundEl instanceof HTMLSelectElement) {
         boundEl.value = String(value)
-      } else if (boundEl instanceof HTMLTextAreaElement) {
+      }
+else if (boundEl instanceof HTMLTextAreaElement) {
         boundEl.value = String(value)
-      } else {
+      }
+else {
         boundEl.textContent = String(value)
       }
     })
@@ -492,7 +499,8 @@ export class HydrationRuntime {
 
     if ('requestIdleCallback' in window) {
       (window as any).requestIdleCallback(hydrate, { timeout: 2000 })
-    } else {
+    }
+else {
       setTimeout(hydrate, 200)
     }
   }
@@ -539,7 +547,8 @@ export class HydrationRuntime {
       events.forEach(event => {
         this.bindSingleEvent(el, event)
       })
-    } catch (error) {
+    }
+catch (error) {
       console.error('[Hydration] Failed to parse events:', error)
     }
   }
@@ -608,7 +617,8 @@ export class HydrationRuntime {
       // Call handler
       try {
         handler.call(el, e)
-      } catch (error) {
+      }
+catch (error) {
         console.error(`[Hydration] Event handler error:`, error)
       }
     }
@@ -685,7 +695,8 @@ export class HydrationRuntime {
       return (e: Event) => {
         new Function('$event', 'stx', handlerStr)(e, stx)
       }
-    } catch {
+    }
+catch {
       return null
     }
   }
@@ -747,7 +758,8 @@ export class HydrationRuntime {
         Object.entries(parsed).forEach(([attr, expr]) => {
           this.setupAttributeBinding(el as HTMLElement, attr, expr as string)
         })
-      } catch {
+      }
+catch {
         // Ignore parse errors
       }
     })
@@ -794,7 +806,8 @@ export class HydrationRuntime {
           new RegExp(`\\{\\{\\s*${expression.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\}\\}`),
           String(value)
         )
-      } catch {
+      }
+catch {
         // Keep original on error
       }
     }
@@ -824,10 +837,12 @@ export class HydrationRuntime {
         if (typeof value === 'boolean') {
           if (value) el.setAttribute(attr, '')
           else el.removeAttribute(attr)
-        } else {
+        }
+else {
           el.setAttribute(attr, String(value))
         }
-      } catch {
+      }
+catch {
         // Keep current value on error
       }
     }
@@ -853,7 +868,8 @@ export class HydrationRuntime {
       try {
         const value = new Function('stx', `with(stx) { return ${expression} }`)(stx)
         el.textContent = String(value)
-      } catch {
+      }
+catch {
         // Keep current on error
       }
     }
@@ -973,7 +989,8 @@ ${stateScript}
             eventEl.addEventListener('click', (e) => {
               try {
                 new Function('$event', 'stx', handler)(e, window.stx);
-              } catch (err) {
+              }
+catch (err) {
                 console.error('[Hydration] Event error:', err);
               }
             });
@@ -989,13 +1006,16 @@ ${stateScript}
       // Execute based on strategy
       if (strategy === 'eager') {
         hydrate();
-      } else if (strategy === 'idle') {
+      }
+else if (strategy === 'idle') {
         if ('requestIdleCallback' in window) {
           requestIdleCallback(hydrate, { timeout: 2000 });
-        } else {
+        }
+else {
           setTimeout(hydrate, 100);
         }
-      } else if (strategy === 'visible') {
+      }
+else if (strategy === 'visible') {
         const observer = new IntersectionObserver(entries => {
           if (entries[0].isIntersecting) {
             observer.disconnect();
@@ -1003,7 +1023,8 @@ ${stateScript}
           }
         });
         observer.observe(el);
-      } else if (strategy === 'interaction') {
+      }
+else if (strategy === 'interaction') {
         ['mouseenter', 'focusin', 'touchstart'].forEach(event => {
           el.addEventListener(event, hydrate, { once: true });
         });
@@ -1017,7 +1038,8 @@ ${stateScript}
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
-  } else {
+  }
+else {
     init();
   }
 })();

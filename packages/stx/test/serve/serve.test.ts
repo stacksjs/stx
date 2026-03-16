@@ -487,7 +487,8 @@ describe('Serve Internal Fixes', () => {
         if (openIdx !== -1 && openIdx < closeIdx) {
           depth++
           pos = openIdx + '<template'.length
-        } else {
+        }
+else {
           depth--
           if (depth === 0) {
             endPos = closeIdx

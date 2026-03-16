@@ -44,7 +44,8 @@ export async function processMarkdownDirectives(
           depth++
         }
         searchPos = nextOpen + '@markdown'.length
-      } else {
+      }
+else {
         depth--
         if (depth === 0) { endPos = nextClose; break }
         searchPos = nextClose + '@endmarkdown'.length

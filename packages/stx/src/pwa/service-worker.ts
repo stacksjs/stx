@@ -131,7 +131,8 @@ self.addEventListener('install', (event) => {
               return { url, success: true };
             }
             return { url, success: false, reason: response.status };
-          } catch (error) {
+          }
+catch (error) {
             return { url, success: false, reason: error.message };
           }
         })
@@ -363,7 +364,8 @@ async function networkFirst(request, cache) {
       cache.put(request, cloned);
     }
     return response;
-  } catch (error) {
+  }
+catch (error) {
     const cached = await cache.match(request);
     if (cached) {
       return cached;
@@ -405,7 +407,8 @@ async function staleWhileRevalidate(request, cache) {
 async function networkOnly(request) {
   try {
     return await fetch(request);
-  } catch (error) {
+  }
+catch (error) {
     return offlineResponse(request);
   }
 }
@@ -439,7 +442,8 @@ async function fetchAndCache(request, cache) {
       cache.put(request, cachedResponse);
     }
     return response;
-  } catch (error) {
+  }
+catch (error) {
     return offlineResponse(request);
   }
 }
@@ -627,7 +631,8 @@ self.addEventListener('push', (event) => {
     try {
       const payload = event.data.json();
       data = { ...data, ...payload };
-    } catch {
+    }
+catch {
       data.body = event.data.text();
     }
   }
@@ -844,10 +849,12 @@ async function processBackgroundSync() {
             success: true,
           });
         });
-      } else {
+      }
+else {
         throw new Error('Response not ok: ' + response.status);
       }
-    } catch (error) {
+    }
+catch (error) {
       console.log('[SW] Sync failed, will retry:', request.url, error.message);
       await updateSyncRetries(request.id, request.retries + 1);
     }

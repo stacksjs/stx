@@ -79,11 +79,14 @@ async function requestFullscreen(element: Element, options?: FullscreenOptions):
 
   if (element.requestFullscreen) {
     await element.requestFullscreen(opts)
-  } else if ((element as any).webkitRequestFullscreen) {
+  }
+else if ((element as any).webkitRequestFullscreen) {
     await (element as any).webkitRequestFullscreen()
-  } else if ((element as any).mozRequestFullScreen) {
+  }
+else if ((element as any).mozRequestFullScreen) {
     await (element as any).mozRequestFullScreen()
-  } else if ((element as any).msRequestFullscreen) {
+  }
+else if ((element as any).msRequestFullscreen) {
     await (element as any).msRequestFullscreen()
   }
 }
@@ -94,11 +97,14 @@ async function requestFullscreen(element: Element, options?: FullscreenOptions):
 async function exitFullscreen(): Promise<void> {
   if (document.exitFullscreen) {
     await document.exitFullscreen()
-  } else if ((document as any).webkitExitFullscreen) {
+  }
+else if ((document as any).webkitExitFullscreen) {
     await (document as any).webkitExitFullscreen()
-  } else if ((document as any).mozCancelFullScreen) {
+  }
+else if ((document as any).mozCancelFullScreen) {
     await (document as any).mozCancelFullScreen()
-  } else if ((document as any).msExitFullscreen) {
+  }
+else if ((document as any).msExitFullscreen) {
     await (document as any).msExitFullscreen()
   }
 }
@@ -181,7 +187,8 @@ export function useFullscreen(
   const toggle = async (): Promise<void> => {
     if (state.isFullscreen) {
       await exit()
-    } else {
+    }
+else {
       await enter()
     }
   }

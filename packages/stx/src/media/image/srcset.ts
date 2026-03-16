@@ -321,13 +321,17 @@ export function parseImageUrl(url: string): { src: string; params: ImageParams }
       // Convert numeric values
       if (/^\d+$/.test(value)) {
         ;(params as Record<string, unknown>)[key] = Number.parseInt(value, 10)
-      } else if (/^\d+\.\d+$/.test(value)) {
+      }
+else if (/^\d+\.\d+$/.test(value)) {
         ;(params as Record<string, unknown>)[key] = Number.parseFloat(value)
-      } else if (value === 'true') {
+      }
+else if (value === 'true') {
         ;(params as Record<string, unknown>)[key] = true
-      } else if (value === 'false') {
+      }
+else if (value === 'false') {
         ;(params as Record<string, unknown>)[key] = false
-      } else {
+      }
+else {
         ;(params as Record<string, unknown>)[key] = value
       }
     })
@@ -366,7 +370,8 @@ export function generateSrcsetData(options: SrcsetOptions): SrcsetData[] {
         size: 0,
         dpr,
       }))
-    } else {
+    }
+else {
       // Width-based srcset
       const usedWidths = widths || DEFAULT_WIDTHS
       srcset = generateWidthSrcset(src, usedWidths, params, format)

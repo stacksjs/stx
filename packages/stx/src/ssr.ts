@@ -324,7 +324,8 @@ function verifyCsrfToken(token: string, sessionToken: string): boolean {
       Buffer.from(token),
       Buffer.from(sessionToken),
     )
-  } catch {
+  }
+catch {
     return false
   }
 }
@@ -371,7 +372,8 @@ export async function render(
     }
 
     templateContent = await Bun.file(templatePath).text()
-  } else {
+  }
+else {
     // Inline template
     templateContent = template
     templatePath = 'inline-template.stx'
@@ -641,7 +643,8 @@ export function createApp(config: AppConfig = {}) {
       })
 
       return response
-    } catch (error) {
+    }
+catch (error) {
       errorLogger.log(error instanceof Error ? error : new Error(String(error)), { handler: 'request' }, 'error')
       return new Response('Internal Server Error', { status: 500 })
     }

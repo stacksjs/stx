@@ -792,7 +792,8 @@ export function generateHydrationRuntime(config: HydrationRuntimeConfig = { mode
       if (!propsScript) return {};
       try {
         return JSON.parse(propsScript.textContent || '{}');
-      } catch (e) {
+      }
+catch (e) {
         console.warn('[stx] Failed to parse island props:', id, e);
         return {};
       }
@@ -821,7 +822,8 @@ export function generateHydrationRuntime(config: HydrationRuntimeConfig = { mode
         // Call component's hydrate method if available
         if (component.hydrate) {
           await component.hydrate(element, props);
-        } else if (component.default && component.default.hydrate) {
+        }
+else if (component.default && component.default.hydrate) {
           await component.default.hydrate(element, props);
         }
 
@@ -830,7 +832,8 @@ export function generateHydrationRuntime(config: HydrationRuntimeConfig = { mode
         element.dataset.hydrated = 'true';
         this.islands.set(id, { element, component, props });
 
-      } catch (error) {
+      }
+catch (error) {
         console.error('[stx] Failed to hydrate island:', name, error);
         element.dataset.hydrateError = 'true';
       }
@@ -867,7 +870,8 @@ export function generateHydrationRuntime(config: HydrationRuntimeConfig = { mode
         }, { rootMargin: '50px' });
 
         lazy.forEach(function(el) { observer.observe(el); });
-      } else {
+      }
+else {
         // Fallback: hydrate all lazy immediately
         lazy.forEach(function(el) { stx.hydrateIsland(el); });
       }
@@ -877,7 +881,8 @@ export function generateHydrationRuntime(config: HydrationRuntimeConfig = { mode
         requestIdleCallback(function() {
           idle.forEach(function(el) { stx.hydrateIsland(el); });
         });
-      } else {
+      }
+else {
         // Fallback: hydrate after a delay
         setTimeout(function() {
           idle.forEach(function(el) { stx.hydrateIsland(el); });
@@ -892,7 +897,8 @@ export function generateHydrationRuntime(config: HydrationRuntimeConfig = { mode
   // Auto-hydrate on DOMContentLoaded if not SSR
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() { stx.hydrate(); });
-  } else {
+  }
+else {
     stx.hydrate();
   }
 })();`

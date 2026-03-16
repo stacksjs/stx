@@ -89,7 +89,8 @@ export function getThemeSelectorScript(): string {
       if (theme.includes('dark') || theme.includes('night') || theme.includes('monokai') ||
           theme.includes('dracula') || theme.includes('nord') || theme.includes('material')) {
         document.body.classList.add('dark-mode');
-      } else {
+      }
+else {
         document.body.classList.remove('dark-mode');
       }
     }

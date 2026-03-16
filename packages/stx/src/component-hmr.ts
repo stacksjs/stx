@@ -206,7 +206,8 @@ class ComponentRegistry {
         console.log(`[HMR] Restored state for: ${instance.name}`)
       }
       return true
-    } catch (error) {
+    }
+catch (error) {
       console.error(`[HMR] Failed to restore state for ${instance.name}:`, error)
       return false
     }
@@ -228,7 +229,8 @@ class ComponentRegistry {
         if (refName && refValue) {
           try {
             refs[refName] = JSON.parse(refValue)
-          } catch {
+          }
+catch {
             refs[refName] = refValue
           }
         }
@@ -391,7 +393,8 @@ export class ComponentHMRHandler {
       // Apply update based on type
       if (update.type === 'style') {
         await this.updateStyles(instance, update)
-      } else {
+      }
+else {
         await this.updateComponent(instance, update)
       }
 
@@ -409,7 +412,8 @@ export class ComponentHMRHandler {
         bubbles: true,
       }))
 
-    } catch (error) {
+    }
+catch (error) {
       errorOccurred = true
       console.error(`[HMR] Error updating component ${instance.name}:`, error)
 
@@ -537,7 +541,8 @@ export class ComponentHMRHandler {
       // Execute with context
       const fn = new Function(...Object.keys(context), wrappedScript)
       await fn(...Object.values(context))
-    } catch (error) {
+    }
+catch (error) {
       console.error(`[HMR] Script execution error:`, error)
       throw error
     }
@@ -563,7 +568,8 @@ export class ComponentHMRHandler {
             el.addEventListener(eventName, (window as any).stx[handlerName as string])
           }
         }
-      } catch {
+      }
+catch {
         // Ignore parse errors
       }
     })
@@ -761,7 +767,8 @@ export function generateHMRClientScript(wsPort: number): string {
         instance.element?.dispatchEvent(new CustomEvent('stx:hmr-updated', { bubbles: true }));
 
         console.log('[HMR] Updated:', instance.name);
-      } catch (error) {
+      }
+catch (error) {
         console.error('[HMR] Update failed for', instance.name, error);
         // Restore previous state on error
         restoreState(instance.id);
@@ -791,11 +798,13 @@ export function generateHMRClientScript(wsPort: number): string {
           const data = JSON.parse(event.data);
           if (data.type === 'component-update') {
             await handleUpdate(data);
-          } else if (data.type === 'reload') {
+          }
+else if (data.type === 'reload') {
             // Fall back to full reload
             window.location.reload();
           }
-        } catch (e) {
+        }
+catch (e) {
           console.error('[HMR] Message error:', e);
         }
       };
@@ -804,7 +813,8 @@ export function generateHMRClientScript(wsPort: number): string {
         ws = null;
         reconnectTimer = setTimeout(connect, 1000);
       };
-    } catch (e) {
+    }
+catch (e) {
       reconnectTimer = setTimeout(connect, 1000);
     }
   }
@@ -812,7 +822,8 @@ export function generateHMRClientScript(wsPort: number): string {
   // Initialize
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', connect);
-  } else {
+  }
+else {
     connect();
   }
 

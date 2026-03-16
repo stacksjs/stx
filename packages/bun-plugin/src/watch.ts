@@ -354,7 +354,8 @@ export function createWatcher(options: WatchOptions = {}): WatcherInstance {
  *   onRebuild: (result) => {
  *     if (result.success) {
  *       console.log(`Rebuilt in ${result.duration}ms`)
- *     } else {
+ *     }
+else {
  *       console.error('Build failed:', result.errors)
  *     }
  *   },

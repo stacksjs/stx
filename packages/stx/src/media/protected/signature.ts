@@ -122,7 +122,8 @@ export async function batchSignUrls(
     for (const item of data.results) {
       if (item.error) {
         errors.set(item.url, item.error)
-      } else {
+      }
+else {
         signatures.set(item.url || item.originalUrl, {
           url: item.signedUrl || item.url,
           signature: item.signature,
@@ -131,7 +132,8 @@ export async function batchSignUrls(
         })
       }
     }
-  } else if (typeof data.signatures === 'object') {
+  }
+else if (typeof data.signatures === 'object') {
     // Object format: { signatures: { [url]: { signedUrl, signature, expires } }, errors: { [url]: error } }
     for (const [url, signed] of Object.entries(data.signatures)) {
       const s = signed as { signedUrl?: string; url?: string; signature: string; expires?: number }
@@ -358,14 +360,17 @@ export function generateSignatureRuntime(): string {
       var signed = await window.STX.signUrl(src, config);
       if (element.tagName === 'IMG') {
         element.src = signed.url;
-      } else if (element.tagName === 'VIDEO') {
+      }
+else if (element.tagName === 'VIDEO') {
         element.src = signed.url;
         element.load();
-      } else if (element.tagName === 'SOURCE') {
+      }
+else if (element.tagName === 'SOURCE') {
         element.src = signed.url;
         element.parentElement.load();
       }
-    } catch (error) {
+    }
+catch (error) {
       console.error('Failed to load protected media:', error);
       if (element.dataset.fallback) {
         element.src = element.dataset.fallback;

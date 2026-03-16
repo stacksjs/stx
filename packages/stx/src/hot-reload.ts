@@ -310,7 +310,8 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
   function connect() {
     try {
       socket = new WebSocket(wsUrl);
-    } catch (e) {
+    }
+catch (e) {
       // Silent fail for initial connection attempts
       if (wasConnected) {
         scheduleReconnect();
@@ -348,7 +349,8 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
           case 'connected':
             break;
         }
-      } catch (e) {
+      }
+catch (e) {
         console.error('[stx] Invalid message:', e);
       }
     };
@@ -359,7 +361,8 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
       if (wasConnected) {
         console.log('[stx] Connection closed, reconnecting...');
         scheduleReconnect();
-      } else {
+      }
+else {
         // Silently retry initial connection
         setTimeout(connect, reconnectInterval);
       }
@@ -375,7 +378,8 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
       reconnectAttempts++;
       showOverlay('Reconnecting... (' + reconnectAttempts + '/' + maxAttempts + ')');
       setTimeout(connect, reconnectInterval);
-    } else {
+    }
+else {
       showOverlay('Connection lost. Refresh to reconnect.', true);
     }
   }
@@ -411,7 +415,8 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
   // Start connection when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', connect);
-  } else {
+  }
+else {
     connect();
   }
 

@@ -305,7 +305,8 @@ export function getStatePersistenceScript(): string {
             window.__stxStory.selectStory(state.selectedStoryId, state.selectedVariantId);
           }
         }
-      } catch (e) {}
+      }
+catch (e) {}
 
       // Save state on changes
       window.__stxStory = window.__stxStory || {};
@@ -330,7 +331,8 @@ export function getStatePersistenceScript(): string {
 
           localStorage.setItem('stx-story-nav', JSON.stringify(state));
           window.__stxStoryState = state;
-        } catch (e) {}
+        }
+catch (e) {}
       };
     })();
   `

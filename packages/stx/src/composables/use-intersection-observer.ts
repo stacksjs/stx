@@ -265,7 +265,8 @@ export function useInfiniteScroll(
         isLoading = true
         try {
           await loadMore()
-        } finally {
+        }
+finally {
           isLoading = false
         }
       }, debounce)

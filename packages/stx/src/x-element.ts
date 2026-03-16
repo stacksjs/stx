@@ -81,9 +81,11 @@ export function generateXElementRuntime(): string {
         if (this.data[key] !== undefined) {
           if (input.type === 'checkbox') {
             input.checked = this.data[key];
-          } else if (input.type === 'radio') {
+          }
+else if (input.type === 'radio') {
             input.checked = input.value === this.data[key];
-          } else {
+          }
+else {
             input.value = this.data[key];
           }
         }
@@ -93,11 +95,14 @@ export function generateXElementRuntime(): string {
         input.addEventListener(eventType, () => {
           if (input.type === 'checkbox') {
             this.data[key] = input.checked;
-          } else if (input.type === 'radio') {
+          }
+else if (input.type === 'radio') {
             if (input.checked) this.data[key] = input.value;
-          } else if (input.type === 'number' || input.type === 'range') {
+          }
+else if (input.type === 'number' || input.type === 'range') {
             this.data[key] = parseFloat(input.value) || 0;
-          } else {
+          }
+else {
             this.data[key] = input.value;
           }
         });
@@ -106,9 +111,11 @@ export function generateXElementRuntime(): string {
         this.watch(key, (value) => {
           if (input.type === 'checkbox') {
             input.checked = value;
-          } else if (input.type === 'radio') {
+          }
+else if (input.type === 'radio') {
             input.checked = input.value === value;
-          } else if (input.value !== String(value)) {
+          }
+else if (input.value !== String(value)) {
             input.value = value;
           }
         });
@@ -194,13 +201,15 @@ export function generateXElementRuntime(): string {
               if (debounceMs > 0) {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => this.execute(expr, { $event: e, $el: elem }), debounceMs);
-              } else {
+              }
+else {
                 this.execute(expr, { $event: e, $el: elem });
               }
             };
 
             target.addEventListener(event, handler, { once: useOnce });
-          } else if (attr.name.startsWith(':')) {
+          }
+else if (attr.name.startsWith(':')) {
             // Attribute binding (:disabled, :class, :href, :src, etc.)
             const bindAttr = attr.name.slice(1);
             const expr = attr.value;
@@ -213,17 +222,21 @@ export function generateXElementRuntime(): string {
                   for (const [cls, active] of Object.entries(val)) {
                     elem.classList.toggle(cls, !!active);
                   }
-                } else if (typeof val === 'string') {
+                }
+else if (typeof val === 'string') {
                   elem.className = val;
                 }
-              } else if (typeof val === 'boolean') {
+              }
+else if (typeof val === 'boolean') {
                 // Boolean attributes (disabled, hidden, readonly, etc.)
                 if (val) {
                   elem.setAttribute(bindAttr, '');
-                } else {
+                }
+else {
                   elem.removeAttribute(bindAttr);
                 }
-              } else {
+              }
+else {
                 elem.setAttribute(bindAttr, val != null ? String(val) : '');
               }
             };
@@ -259,7 +272,8 @@ export function generateXElementRuntime(): string {
       try {
         const fn = new Function(...Object.keys(this.data), 'return ' + expr);
         return fn(...Object.values(this.data));
-      } catch (e) {
+      }
+catch (e) {
         console.warn('x-element: Error evaluating', expr, e);
         return '';
       }
@@ -270,7 +284,8 @@ export function generateXElementRuntime(): string {
         const allData = { ...this.data, ...extra };
         const fn = new Function(...Object.keys(allData), expr);
         fn.call(this.data, ...Object.values(allData));
-      } catch (e) {
+      }
+catch (e) {
         console.warn('x-element: Error executing', expr, e);
       }
     }
@@ -283,7 +298,8 @@ export function generateXElementRuntime(): string {
       try {
         const data = new Function('return ' + dataExpr)();
         new XElement(el, data);
-      } catch (e) {
+      }
+catch (e) {
         console.error('x-element: Error parsing x-data', e);
       }
     });
@@ -292,7 +308,8 @@ export function generateXElementRuntime(): string {
   // Run on DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
-  } else {
+  }
+else {
     init();
   }
 

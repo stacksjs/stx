@@ -284,7 +284,8 @@ export async function renderSlot(
           slotContext[actualKey] = slotProps[key]
         }
       }
-    } else {
+    }
+else {
       // Single binding: slotProps or props
       slotContext[binding] = slotProps
     }
@@ -313,7 +314,8 @@ function processSlotExpressions(
       // Handle simple property access (item.name, index + 1, etc.)
       const result = evaluateSimpleExpression(trimmedExpr, context)
       return escapeHtml(String(result ?? ''))
-    } catch {
+    }
+catch {
       // If evaluation fails, return the original expression
       return `{{ ${expr} }}`
     }
@@ -335,7 +337,8 @@ function evaluateSimpleExpression(
     for (const part of parts) {
       if (value && typeof value === 'object' && part in value) {
         value = (value as Record<string, unknown>)[part]
-      } else {
+      }
+else {
         return undefined
       }
     }
@@ -365,7 +368,8 @@ function evaluateSimpleExpression(
     }
     const fn = createSafeFunction(expr, Object.keys(context))
     return fn(...Object.values(context))
-  } catch {
+  }
+catch {
     return undefined
   }
 }

@@ -61,7 +61,8 @@ export function useWindowSize(): WindowSizeRef {
       for (const callback of subscribers) {
         try {
           callback(currentSize)
-        } catch (e) {
+        }
+catch (e) {
           console.error('[useWindowSize] Subscriber error:', e)
         }
       }
@@ -114,7 +115,8 @@ export function useScroll(): ScrollRef {
       for (const callback of subscribers) {
         try {
           callback(currentPosition)
-        } catch (e) {
+        }
+catch (e) {
           console.error('[useScroll] Subscriber error:', e)
         }
       }
@@ -135,7 +137,8 @@ export function useScroll(): ScrollRef {
       if (!isClient) return
       if (typeof options === 'number') {
         window.scrollTo(options, y ?? 0)
-      } else {
+      }
+else {
         window.scrollTo(options)
       }
     },
@@ -175,7 +178,8 @@ export function useVisibility(): VisibilityRef {
       for (const callback of subscribers) {
         try {
           callback(isVisible)
-        } catch (e) {
+        }
+catch (e) {
           console.error('[useVisibility] Subscriber error:', e)
         }
       }

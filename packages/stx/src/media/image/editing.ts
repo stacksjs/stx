@@ -38,9 +38,11 @@ export function buildImageUrl(src: string, params: ImageParams = {}): string {
 
     if (Array.isArray(value)) {
       queryParams.push(`${key}=${encodeURIComponent(value.join(','))}`)
-    } else if (typeof value === 'boolean') {
+    }
+else if (typeof value === 'boolean') {
       if (value) queryParams.push(`${key}=true`)
-    } else {
+    }
+else {
       queryParams.push(`${key}=${encodeURIComponent(String(value))}`)
     }
   }
@@ -71,15 +73,20 @@ export function parseImageUrl(url: string): { src: string; params: ImageParams }
     // Convert to appropriate types
     if (value === 'true') {
       ;(params as Record<string, unknown>)[key] = true
-    } else if (value === 'false') {
+    }
+else if (value === 'false') {
       ;(params as Record<string, unknown>)[key] = false
-    } else if (/^-?\d+$/.test(value)) {
+    }
+else if (/^-?\d+$/.test(value)) {
       ;(params as Record<string, unknown>)[key] = Number.parseInt(value, 10)
-    } else if (/^-?\d+\.\d+$/.test(value)) {
+    }
+else if (/^-?\d+\.\d+$/.test(value)) {
       ;(params as Record<string, unknown>)[key] = Number.parseFloat(value)
-    } else if (value.includes(',')) {
+    }
+else if (value.includes(',')) {
       ;(params as Record<string, unknown>)[key] = value.split(',')
-    } else {
+    }
+else {
       ;(params as Record<string, unknown>)[key] = value
     }
   }

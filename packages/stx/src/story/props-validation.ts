@@ -231,11 +231,14 @@ export function getValidationScript(definitions: StoryAnalyzedProp[]): string {
 
         if (expectedType === 'string' && actualType !== 'string') {
           errors.push({ prop: name, message: 'Expected string, got ' + actualType });
-        } else if (expectedType === 'number' && actualType !== 'number') {
+        }
+else if (expectedType === 'number' && actualType !== 'number') {
           errors.push({ prop: name, message: 'Expected number, got ' + actualType });
-        } else if (expectedType === 'boolean' && actualType !== 'boolean') {
+        }
+else if (expectedType === 'boolean' && actualType !== 'boolean') {
           errors.push({ prop: name, message: 'Expected boolean, got ' + actualType });
-        } else if (expectedType === 'array' && !Array.isArray(value)) {
+        }
+else if (expectedType === 'array' && !Array.isArray(value)) {
           errors.push({ prop: name, message: 'Expected array, got ' + actualType });
         }
 

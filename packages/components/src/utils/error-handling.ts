@@ -271,7 +271,8 @@ export function clearErrorHandler(): void {
  * ```ts
  * try {
  *   // Component code
- * } catch (error) {
+ * }
+catch (error) {
  *   handleError(error, { throwError: false })
  * }
  * ```

@@ -143,7 +143,8 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
 
       if (isClientScript) {
         clientScripts.push(fullScript)
-      } else {
+      }
+else {
         // Server script - extract variables but don't output
         serverScripts.push(scriptContent)
       }

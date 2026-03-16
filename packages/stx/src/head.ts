@@ -428,7 +428,8 @@ export function renderHead(config: HeadConfig = currentHead): string {
 
     if (content) {
       parts.push(`<script ${attrStr}>${content}</script>`)
-    } else {
+    }
+else {
       parts.push(`<script ${attrStr}></script>`)
     }
   }

@@ -16,7 +16,8 @@ export async function hashFile(filePath: string): Promise<string> {
   try {
     const content = await readFile(filePath)
     return createHash('sha256').update(content).digest('hex').slice(0, 16)
-  } catch {
+  }
+catch {
     return ''
   }
 }
@@ -53,7 +54,8 @@ export async function getFileMtime(filePath: string): Promise<number> {
   try {
     const stats = await stat(filePath)
     return stats.mtimeMs
-  } catch {
+  }
+catch {
     return 0
   }
 }
@@ -65,7 +67,8 @@ export async function fileExists(filePath: string): Promise<boolean> {
   try {
     await stat(filePath)
     return true
-  } catch {
+  }
+catch {
     return false
   }
 }

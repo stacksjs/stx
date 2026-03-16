@@ -92,7 +92,8 @@ export async function renderProtectedImg(
   if (fallback) {
     attrs.push(`data-fallback="${escapeAttr(fallback)}"`)
     attrs.push(`src="${escapeAttr(fallback)}"`) // Show fallback initially
-  } else {
+  }
+else {
     // Transparent placeholder
     attrs.push('src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"')
   }
@@ -240,7 +241,8 @@ export async function processProtectedMedia(
           if (signedUrl) {
             if (el.tagName === 'IMG') el.src = signedUrl.url;
             else if (el.tagName === 'VIDEO') { el.src = signedUrl.url; el.load(); }
-          } else if (el.dataset.fallback) {
+          }
+else if (el.dataset.fallback) {
             el.src = el.dataset.fallback;
           }
         });
@@ -315,9 +317,11 @@ function parseArguments(argsStr: string): unknown[] {
       if (!inString) {
         inString = true
         stringChar = char
-      } else if (char === stringChar) {
+      }
+else if (char === stringChar) {
         inString = false
-      } else {
+      }
+else {
         current += char
       }
       continue
@@ -363,7 +367,8 @@ function resolveValue(value: unknown, context: Record<string, unknown>): unknown
   if (trimmed.startsWith('{')) {
     try {
       return JSON.parse(trimmed)
-    } catch {
+    }
+catch {
       // Not valid JSON
     }
   }

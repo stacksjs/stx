@@ -137,7 +137,8 @@ export function usePermission(name: PermissionName): PermissionRef {
       }
 
       return status
-    } catch {
+    }
+catch {
       // Permission name not supported
       return createStatus('prompt')
     }
@@ -277,7 +278,8 @@ export async function requestMediaPermissions(
   try {
     const stream = await navigator.mediaDevices.getUserMedia(options)
     return { granted: true, stream }
-  } catch (err) {
+  }
+catch (err) {
     return {
       granted: false,
       error: err instanceof Error ? err : new Error(String(err)),

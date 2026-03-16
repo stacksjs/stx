@@ -57,7 +57,8 @@ export function parseCookies(): Record<string, string> {
     if (key) {
       try {
         cookies[key] = defaultDecode(valueParts.join('='))
-      } catch {
+      }
+catch {
         cookies[key] = valueParts.join('=')
       }
     }
@@ -176,7 +177,8 @@ export function useCookie<T = string>(
     try {
       // Try to parse as JSON first
       return JSON.parse(decode(raw)) as T
-    } catch {
+    }
+catch {
       // Return as string if not valid JSON
       return decode(raw) as unknown as T
     }
@@ -185,7 +187,8 @@ export function useCookie<T = string>(
   const write = (value: T | null): void => {
     if (value === null || value === undefined) {
       removeCookie(name, options)
-    } else {
+    }
+else {
       const stringValue = typeof value === 'string' ? value : JSON.stringify(value)
       setCookie(name, stringValue, options)
     }
@@ -197,7 +200,8 @@ export function useCookie<T = string>(
     for (const callback of subscribers) {
       try {
         callback(newValue, prevValue)
-      } catch (e) {
+      }
+catch (e) {
         console.error('[useCookie] Subscriber error:', e)
       }
     }

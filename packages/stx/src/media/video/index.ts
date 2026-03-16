@@ -39,7 +39,8 @@ import type {
 async function getProcessor(): Promise<typeof import('./processor') | null> {
   try {
     return await import('./processor')
-  } catch (error) {
+  }
+catch (error) {
     // Log warning only once per session
     if (!processorWarningLogged) {
       console.warn('[stx-media] Video processor not available, some features disabled:', error)
@@ -191,7 +192,8 @@ export async function renderVideoComponent(
     attrs.push('preload="none"')
     if (poster) attrs.push(`data-poster="${escapeAttr(poster)}"`)
     attrs.push('data-stx-lazy')
-  } else {
+  }
+else {
     attrs.push(`preload="${preload}"`)
     if (poster) attrs.push(`poster="${escapeAttr(poster)}"`)
   }
@@ -474,10 +476,12 @@ function renderTsVideoPlayer(
       });
     }, { rootMargin: '50px' });
     observer.observe(container);
-  } else {
+  }
+else {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', loadPlayer);
-    } else {
+    }
+else {
       loadPlayer();
     }
   }
@@ -657,7 +661,8 @@ export function parseVideoDirectiveOptions(
   try {
     const opts = JSON.parse(optStr)
     return { src, ...opts }
-  } catch {
+  }
+catch {
     return { src }
   }
 }
@@ -772,7 +777,8 @@ function renderFromProcessedResult(
     if (processed.streaming?.hls) {
       videoSrc = processed.streaming.hls.manifestUrl
       mimeType = 'application/x-mpegURL'
-    } else if (processed.streaming?.dash) {
+    }
+else if (processed.streaming?.dash) {
       videoSrc = processed.streaming.dash.manifestUrl
       mimeType = 'application/dash+xml'
     }
@@ -799,7 +805,8 @@ function renderFromProcessedResult(
     attrs.push('preload="none"')
     if (poster) attrs.push(`data-poster="${escapeAttr(poster)}"`)
     attrs.push('data-stx-lazy')
-  } else {
+  }
+else {
     attrs.push(`preload="${preload}"`)
     if (poster) attrs.push(`poster="${escapeAttr(poster)}"`)
   }

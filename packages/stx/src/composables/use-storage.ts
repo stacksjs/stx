@@ -40,7 +40,8 @@ const defaultSerializer = {
   read: <T>(value: string): T => {
     try {
       return JSON.parse(value)
-    } catch {
+    }
+catch {
       return value as unknown as T
     }
   },
@@ -105,7 +106,8 @@ export function useStorage<T>(
       }
 
       return parsed
-    } catch {
+    }
+catch {
       return defaultValue
     }
   }
@@ -117,10 +119,12 @@ export function useStorage<T>(
     try {
       if (value === null || value === undefined) {
         store.removeItem(key)
-      } else {
+      }
+else {
         store.setItem(key, serializer.write(value))
       }
-    } catch (e) {
+    }
+catch (e) {
       console.warn(`[useStorage] Failed to write key "${key}":`, e)
     }
   }
@@ -131,7 +135,8 @@ export function useStorage<T>(
     for (const callback of subscribers) {
       try {
         callback(newValue, prevValue)
-      } catch (e) {
+      }
+catch (e) {
         console.error('[useStorage] Subscriber error:', e)
       }
     }

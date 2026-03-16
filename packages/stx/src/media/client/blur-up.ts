@@ -72,7 +72,8 @@ export function initBlurUp(img: HTMLImageElement, options: BlurUpOptions = {}): 
   if (img.complete && img.naturalWidth > 0) {
     // Image already loaded
     onImageLoaded(img, wrapper, opts)
-  } else {
+  }
+else {
     img.addEventListener('load', () => onImageLoaded(img, wrapper, opts), { once: true })
     img.addEventListener('error', () => onImageError(img, wrapper, opts), { once: true })
   }
@@ -91,7 +92,8 @@ function handleImageLoad(img: HTMLImageElement, options: BlurUpOptions): void {
 
   if (img.complete && img.naturalWidth > 0) {
     handleLoad()
-  } else {
+  }
+else {
     img.style.opacity = '0'
     img.classList.add(options.loadingClass!)
     img.addEventListener('load', handleLoad, { once: true })
@@ -309,7 +311,8 @@ export function generateBlurUpRuntime(): string {
     if (!wrapper) {
       if (img.complete && img.naturalWidth > 0) {
         img.style.opacity = '1';
-      } else {
+      }
+else {
         img.style.opacity = '0';
         img.style.transition = 'opacity ' + options.duration + 'ms ' + options.easing;
         img.onload = function() { img.style.opacity = '1'; };
@@ -327,7 +330,8 @@ export function generateBlurUpRuntime(): string {
 
     if (img.complete && img.naturalWidth > 0) {
       onLoaded();
-    } else {
+    }
+else {
       img.addEventListener('load', onLoaded, { once: true });
     }
   }
@@ -340,7 +344,8 @@ export function generateBlurUpRuntime(): string {
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
-  } else {
+  }
+else {
     init();
   }
 

@@ -108,9 +108,11 @@ function StxReactive(Base) {
       const attrName = name.replace(/([A-Z])/g, '-$1').toLowerCase();
       if (value === null || value === undefined || value === false) {
         this.removeAttribute(attrName);
-      } else if (value === true) {
+      }
+else if (value === true) {
         this.setAttribute(attrName, '');
-      } else {
+      }
+else {
         this.setAttribute(attrName, String(value));
       }
     }
@@ -150,7 +152,8 @@ function StxReactive(Base) {
       for (const handler of handlers) {
         try {
           handler.call(this, newValue, oldValue);
-        } catch (e) {
+        }
+catch (e) {
           console.error(\`Watcher error for "\${name}":\`, e);
         }
       }
@@ -200,7 +203,8 @@ function StxReactive(Base) {
       this.#updateScheduled = true;
       try {
         fn();
-      } finally {
+      }
+finally {
         this.#updateScheduled = prevScheduled;
         if (!prevScheduled) {
           this.#scheduleUpdate();
@@ -332,7 +336,8 @@ ${watchersSetup}
         case 'array':
           try {
             value = newValue !== null ? JSON.parse(newValue) : propConfig.default;
-          } catch (e) {
+          }
+catch (e) {
             value = propConfig.default;
           }
           break;
@@ -502,7 +507,8 @@ ${watchersSetup}
         case 'array':
           try {
             value = newValue !== null ? JSON.parse(newValue) : propConfig.default;
-          } catch {
+          }
+catch {
             value = propConfig.default;
           }
           break;

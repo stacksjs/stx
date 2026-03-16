@@ -297,7 +297,8 @@ export async function extractVariables(
         try {
           cached = fn()
           computed = true
-        } catch {
+        }
+catch {
           // Derivation may fail during SSR if it depends on client-only values
           cached = undefined
         }

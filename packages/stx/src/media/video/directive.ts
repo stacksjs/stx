@@ -159,10 +159,12 @@ function parseVideoArgs(
     const resolvedOptions = resolveValue(parsed[1], context)
     if (typeof resolvedOptions === 'object' && resolvedOptions !== null) {
       options = resolvedOptions as VideoDirectiveOptions
-    } else if (typeof parsed[1] === 'string') {
+    }
+else if (typeof parsed[1] === 'string') {
       try {
         options = JSON.parse(parsed[1])
-      } catch {
+      }
+catch {
         // Options parsing failed, use empty
       }
     }
@@ -191,10 +193,12 @@ function parseArguments(argsStr: string): unknown[] {
       if (!inString) {
         inString = true
         stringChar = char
-      } else if (char === stringChar) {
+      }
+else if (char === stringChar) {
         inString = false
         stringChar = ''
-      } else {
+      }
+else {
         current += char
       }
       continue
@@ -254,7 +258,8 @@ function resolveValue(value: unknown, context: Record<string, unknown>): unknown
   if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
     try {
       return JSON.parse(trimmed)
-    } catch {
+    }
+catch {
       // Not valid JSON
     }
   }

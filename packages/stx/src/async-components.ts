@@ -274,7 +274,8 @@ function generateAsyncComponentHtml(
         const newScript = document.createElement('script');
         if (script.src) {
           newScript.src = script.src;
-        } else {
+        }
+else {
           newScript.textContent = script.textContent;
         }
         script.parentNode.replaceChild(newScript, script);
@@ -291,7 +292,8 @@ function generateAsyncComponentHtml(
         bubbles: true
       }));
 
-    } catch (error) {
+    }
+catch (error) {
       handleError(error);
     }
   }
@@ -562,7 +564,8 @@ export function generateAsyncComponentRuntime(): string {
         const newScript = document.createElement('script');
         if (script.src) {
           newScript.src = script.src;
-        } else {
+        }
+else {
           newScript.textContent = script.textContent;
         }
         script.parentNode.replaceChild(newScript, script);
@@ -570,7 +573,8 @@ export function generateAsyncComponentRuntime(): string {
 
       if (options.onLoad) options.onLoad();
       return true;
-    } catch (error) {
+    }
+catch (error) {
       if (options.error) {
         target.innerHTML = options.error;
       }

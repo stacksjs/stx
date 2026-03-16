@@ -309,7 +309,8 @@ export class STXBridge {
       try {
         const message = JSON.parse(rawMessage) as BridgeMessage
         this.handleIncomingMessage(message)
-      } catch (error) {
+      }
+catch (error) {
         console.error('[STXBridge] Failed to parse message:', error)
       }
     })
@@ -470,7 +471,8 @@ export class STXBridge {
 
     try {
       this.nativeBridge.postMessage(JSON.stringify(message))
-    } catch (error) {
+    }
+catch (error) {
       console.error('[STXBridge] Failed to post message:', error)
     }
   }
@@ -485,7 +487,8 @@ export class STXBridge {
       if (message.type === 'API_ERROR') {
         const error = message.payload as ApiErrorPayload
         pending.reject(new Error(`${error.code}: ${error.message}`))
-      } else {
+      }
+else {
         pending.resolve((message.payload as ApiResponsePayload).data)
       }
       return
@@ -497,7 +500,8 @@ export class STXBridge {
       for (const handler of handlers) {
         try {
           handler(message)
-        } catch (error) {
+        }
+catch (error) {
           console.error(`[STXBridge] Handler error for ${message.type}:`, error)
         }
       }
@@ -604,7 +608,8 @@ export function createBridge(): STXBridge {
 
   if (nativeBridge) {
     bridge.initialize(nativeBridge)
-  } else {
+  }
+else {
     console.warn('[STXBridge] No native bridge available, running in mock mode')
   }
 

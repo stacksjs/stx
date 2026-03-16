@@ -49,7 +49,8 @@ export function useClipboard(options: { timeout?: number } = {}): ClipboardRef {
     for (const callback of subscribers) {
       try {
         callback(text)
-      } catch (e) {
+      }
+catch (e) {
         console.error('[useClipboard] Subscriber error:', e)
       }
     }
@@ -75,7 +76,8 @@ export function useClipboard(options: { timeout?: number } = {}): ClipboardRef {
         copiedTimeout = setTimeout(() => { copied = false }, timeout)
 
         return true
-      } catch {
+      }
+catch {
         return false
       }
     }
@@ -90,7 +92,8 @@ export function useClipboard(options: { timeout?: number } = {}): ClipboardRef {
       copiedTimeout = setTimeout(() => { copied = false }, timeout)
 
       return true
-    } catch {
+    }
+catch {
       return false
     }
   }
@@ -102,7 +105,8 @@ export function useClipboard(options: { timeout?: number } = {}): ClipboardRef {
       const text = await navigator.clipboard.readText()
       currentText = text
       return text
-    } catch {
+    }
+catch {
       return ''
     }
   }

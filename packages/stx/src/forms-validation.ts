@@ -708,7 +708,8 @@ export function processErrorDirective(
       for (const part of parts) {
         if (current && typeof current === 'object' && part in current) {
           current = (current as Record<string, unknown>)[part]
-        } else {
+        }
+else {
           return '' // Field not found, return empty
         }
       }
@@ -725,7 +726,8 @@ export function processErrorDirective(
           return body.replace(/\{\{\s*message\s*\}\}/g, message)
         })
         .join('\n')
-    } catch {
+    }
+catch {
       return '' // Error processing, return empty
     }
   })
@@ -757,7 +759,8 @@ export function processErrorsDirective(
       for (const part of parts) {
         if (current && typeof current === 'object' && part in current) {
           current = (current as Record<string, unknown>)[part]
-        } else {
+        }
+else {
           return ''
         }
       }
@@ -770,7 +773,8 @@ export function processErrorsDirective(
       return errors
         .map((message) => body.replace(/\{\{\s*message\s*\}\}/g, message))
         .join('\n')
-    } catch {
+    }
+catch {
       return ''
     }
   })
@@ -803,7 +807,8 @@ export function processHasErrorsDirective(
       for (const part of parts) {
         if (current && typeof current === 'object' && part in current) {
           current = (current as Record<string, unknown>)[part]
-        } else {
+        }
+else {
           return ''
         }
       }
@@ -814,7 +819,8 @@ export function processHasErrorsDirective(
       }
 
       return body
-    } catch {
+    }
+catch {
       return ''
     }
   })

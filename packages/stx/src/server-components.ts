@@ -802,7 +802,8 @@ export function generateServerComponentsRuntime(): string {
       try {
         hydrator(element, props);
         element.dataset.hydrated = 'true';
-      } catch (error) {
+      }
+catch (error) {
         console.error('[stx] Hydration error:', name, error);
       }
     },
@@ -834,7 +835,8 @@ export function generateServerComponentsRuntime(): string {
           });
         }, { rootMargin: '50px' });
         lazy.forEach(el => observer.observe(el));
-      } else {
+      }
+else {
         lazy.forEach(el => this.hydrateComponent(el));
       }
 
@@ -843,7 +845,8 @@ export function generateServerComponentsRuntime(): string {
         requestIdleCallback(() => {
           idle.forEach(el => this.hydrateComponent(el));
         });
-      } else {
+      }
+else {
         setTimeout(() => {
           idle.forEach(el => this.hydrateComponent(el));
         }, 100);
@@ -855,7 +858,8 @@ export function generateServerComponentsRuntime(): string {
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => stxServerComponents.hydrateAll());
-  } else {
+  }
+else {
     stxServerComponents.hydrateAll();
   }
 })();`

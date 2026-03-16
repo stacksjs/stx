@@ -145,11 +145,14 @@ export function loadElement(element: HTMLElement, options: LazyLoadOptions = {})
 
   if (isImg) {
     loadImage(element as HTMLImageElement, onLoaded, onError)
-  } else if (isVideo) {
+  }
+else if (isVideo) {
     loadVideo(element as HTMLVideoElement, onLoaded, onError)
-  } else if (isIframe) {
+  }
+else if (isIframe) {
     loadIframe(element as HTMLIFrameElement, onLoaded, onError)
-  } else {
+  }
+else {
     // For wrapper elements, find nested img/video
     const img = element.querySelector('img[data-src], img[data-srcset]') as HTMLImageElement
     const video = element.querySelector('video[data-src]') as HTMLVideoElement
@@ -160,7 +163,8 @@ export function loadElement(element: HTMLElement, options: LazyLoadOptions = {})
       }, (error) => {
         if (onError) onError(element, error as any)
       })
-    } else if (video) {
+    }
+else if (video) {
       loadVideo(video, () => {
         if (onLoaded) onLoaded(element)
       }, (error) => {
@@ -447,7 +451,8 @@ export function generateLazyLoadRuntime(): string {
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
-  } else {
+  }
+else {
     init();
   }
 

@@ -40,7 +40,8 @@ const craftBridge = `
           micBtn.addEventListener('click', () => {
             if (window.isListening) {
               window.craft.stopListening();
-            } else {
+            }
+else {
               window.craft.startListening();
             }
             window.isListening = !window.isListening;

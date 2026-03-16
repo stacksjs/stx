@@ -142,7 +142,8 @@ function convertSignalDirectivesToAttributes(template: string): string {
     while ((endMatch = endifRegex.exec(output)) !== null) {
       if (endMatch[1].startsWith('if')) {
         ifDepth++
-      } else if (endMatch[1] === 'endif') {
+      }
+else if (endMatch[1] === 'endif') {
         ifDepth--
         if (ifDepth === 0) {
           endIdx = endMatch.index + endMatch[0].length
@@ -167,7 +168,8 @@ function convertSignalDirectivesToAttributes(template: string): string {
       // Escape double quotes in condition to avoid breaking the attribute
       const escapedCondition = condition.replace(/"/g, '&quot;')
       replacement = `<${tag}${attrs} @if="${escapedCondition}">${innerContent}</${tag}>`
-    } else {
+    }
+else {
       // Multiple elements or text - wrap in template
       const escapedCondition = condition.replace(/"/g, '&quot;')
       replacement = `<template @if="${escapedCondition}">${content}</template>`
@@ -222,8 +224,14 @@ function convertSignalLoopsToAttributes(template: string): string {
 
     if (depth !== 0) continue
 
-    const expr = output.substring(exprStart, i - 1).trim()
+    let expr = output.substring(exprStart, i - 1).trim()
     const afterExpr = i
+
+    // Convert "list as item" (Blade-style) to "item in list" (JS-style) for bindFor
+    const asMatch = expr.match(/^(.+?)\s+as\s+(\w+(?:\s*,\s*\w+)?)\s*$/)
+    if (asMatch) {
+      expr = `${asMatch[2]} in ${asMatch[1]}`
+    }
 
     // Find matching @endfor or @endforeach
     const endTag = directive === 'for' ? '@endfor' : '@endforeach'
@@ -238,7 +246,8 @@ function convertSignalLoopsToAttributes(template: string): string {
     while ((endMatch = endRegex.exec(output)) !== null) {
       if (endMatch[1].startsWith(directive)) {
         forDepth++
-      } else {
+      }
+else {
         forDepth--
         if (forDepth === 0) {
           endIdx = endMatch.index + endMatch[0].length
@@ -259,7 +268,8 @@ function convertSignalLoopsToAttributes(template: string): string {
     if (singleElementMatch) {
       const [, tag, attrs, innerContent] = singleElementMatch
       replacement = `<${tag}${attrs} @for="${expr}">${innerContent}</${tag}>`
-    } else {
+    }
+else {
       replacement = `<template @for="${expr}">${content}</template>`
     }
 
@@ -339,7 +349,8 @@ ${resolvedContent}
   // Try to add data-stx to body or first content element
   if (output.includes('<body')) {
     output = output.replace(/<body([^>]*)>/, `<body$1 data-stx="${setupFnName}">`)
-  } else {
+  }
+else {
     // Find the first non-meta element and add data-stx
     const skipTags = ['script', 'style', 'html', 'head', 'meta', 'link', 'title', '!doctype']
     output = output.replace(/<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/i, (match, tag, attrs) => {
@@ -608,25 +619,26 @@ function injectSignalsRuntime(template: string, options: StxOptions): string {
   }
 
   const runtime = options.debug ? generateSignalsRuntimeDev() : generateSignalsRuntime()
-  // Escape $ as $$ to prevent interpretation as replacement patterns in String.replace()
-  // (e.g., $' means "text after match" in replacement strings)
-  const escapedRuntime = runtime.replace(/\$/g, '$$$$')
-  const runtimeScript = `<script data-stx-scoped>${escapedRuntime}</script>`
+  const runtimeScript = `<script data-stx-scoped>${runtime}</script>`
 
   // Inject before the first <script in the ENTIRE document, not just <head>.
   // Layout scripts (e.g. <script client>) may appear before <head>.
+  // Use string concatenation to avoid $ replacement pattern issues in String.replace()
   const firstScriptInDoc = template.indexOf('<script')
   if (firstScriptInDoc !== -1) {
     return template.slice(0, firstScriptInDoc) + runtimeScript + '\n' + template.slice(firstScriptInDoc)
   }
 
-  // Fallback: no scripts in document
+  // Fallback: no scripts in document — use string concat to avoid $ replacement patterns
   if (template.includes('</head>')) {
-    return template.replace('</head>', `${runtimeScript}\n</head>`)
+    const idx = template.indexOf('</head>')
+    return template.slice(0, idx) + runtimeScript + '\n' + template.slice(idx)
   }
 
   if (template.includes('<body')) {
-    return template.replace(/<body([^>]*)>/, `<body$1>\n${runtimeScript}`)
+    const idx = template.indexOf('<body')
+    const closeIdx = template.indexOf('>', idx)
+    return template.slice(0, closeIdx + 1) + '\n' + runtimeScript + template.slice(closeIdx + 1)
   }
 
   // Prepend to output
@@ -688,9 +700,11 @@ function processSignals(template: string, options: StxOptions): string {
   if (setupCode) {
     if (output.includes('</head>')) {
       output = output.replace('</head>', `${setupCode}\n</head>`)
-    } else if (output.includes('<body')) {
+    }
+else if (output.includes('<body')) {
       output = output.replace(/<body([^>]*)>/, `<body$1>\n${setupCode}`)
-    } else {
+    }
+else {
       output = output + '\n' + setupCode
     }
   }
@@ -1927,7 +1941,8 @@ async function processOtherDirectives(
       // Inject before </head> or at start of document
       if (output.includes('</head>')) {
         output = output.replace('</head>', `${renderedHead}\n</head>`)
-      } else if (output.includes('<head>')) {
+      }
+else if (output.includes('<head>')) {
         output = output.replace('<head>', `<head>\n${renderedHead}`)
       }
     }
@@ -1937,7 +1952,8 @@ async function processOtherDirectives(
   if (headResult.headContent) {
     if (output.includes('</head>')) {
       output = output.replace('</head>', `${headResult.headContent}\n</head>`)
-    } else if (output.includes('<head>')) {
+    }
+else if (output.includes('<head>')) {
       output = output.replace('<head>', `<head>\n${headResult.headContent}`)
     }
   }
@@ -1985,13 +2001,16 @@ async function processOtherDirectives(
         const before = output.slice(0, firstScriptPos)
         const after = output.slice(firstScriptPos)
         output = before + runtimeScript + '\n' + after
-      } else {
+      }
+else {
         // No scripts in head, insert before </head>
         output = output.replace('</head>', `${runtimeScript}\n</head>`)
       }
-    } else if (output.includes('<body')) {
+    }
+else if (output.includes('<body')) {
       output = output.replace(/<body([^>]*)>/, `<body$1>\n${runtimeScript}`)
-    } else {
+    }
+else {
       // No head or body, prepend to output
       output = runtimeScript + '\n' + output
     }
@@ -2015,7 +2034,8 @@ async function processOtherDirectives(
         if (nextOpen !== -1 && nextOpen < nextClose) {
           sDepth++
           sPos = nextOpen + '<script'.length
-        } else {
+        }
+else {
           sDepth--
           if (sDepth === 0) {
             let rangeEnd = nextClose + '</script>'.length
@@ -2566,14 +2586,16 @@ export function processJsonDirective(template: string, context: Record<string, a
       if (isExpressionSafe(trimmedPath)) {
         const evalFn = createSafeFunction(trimmedPath, Object.keys(context))
         data = evalFn(...Object.values(context))
-      } else {
+      }
+else {
         data = undefined
       }
 
       let json: string
       if (pretty === 'true') {
         json = JSON.stringify(data, null, 2)
-      } else {
+      }
+else {
         json = JSON.stringify(data)
       }
       // Escape sequences that could break out of script tags or HTML context
@@ -2585,7 +2607,8 @@ export function processJsonDirective(template: string, context: Record<string, a
         .replace(/\u2029/g, '\\u2029')
       result = result.substring(0, start) + escaped + result.substring(pos + 1)
       jsonPat.lastIndex = start + escaped.length
-    } catch (error) {
+    }
+catch (error) {
       errorLogger.log(error instanceof Error ? error : new Error(String(error)), { directive: '@json' }, 'error')
       jsonPat.lastIndex = start + fullMatch.length
     }

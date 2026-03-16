@@ -162,7 +162,8 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}): Sp
 
         if (result.isFinal) {
           finalTranscript += transcript
-        } else {
+        }
+else {
           interimTranscript += transcript
         }
       }
@@ -214,7 +215,8 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}): Sp
 
     try {
       recognition.start()
-    } catch (err) {
+    }
+catch (err) {
       state = { ...state, error: 'Failed to start speech recognition' }
       notify()
     }
@@ -224,7 +226,8 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}): Sp
     if (!recognition || !state.isListening) return
     try {
       recognition.stop()
-    } catch {
+    }
+catch {
       // Ignore stop errors
     }
   }
@@ -233,7 +236,8 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}): Sp
     if (!recognition) return
     try {
       recognition.abort()
-    } catch {
+    }
+catch {
       // Ignore abort errors
     }
     state = { ...state, isListening: false }
@@ -243,7 +247,8 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}): Sp
   const toggle = () => {
     if (state.isListening) {
       stop()
-    } else {
+    }
+else {
       start()
     }
   }
@@ -483,7 +488,8 @@ export function useSpeechSynthesis(defaultOptions: SpeechSynthesisOptions = {}):
   const toggle = () => {
     if (state.isPaused) {
       resume()
-    } else if (state.isSpeaking) {
+    }
+else if (state.isSpeaking) {
       pause()
     }
   }

@@ -373,7 +373,8 @@ window.__stxShortcuts = {
   toggleFullscreen() {
     if (document.fullscreenElement) {
       document.exitFullscreen();
-    } else {
+    }
+else {
       document.documentElement.requestFullscreen();
     }
   },
@@ -392,7 +393,8 @@ function closeShortcutsModal() {
 // Initialize on load
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => window.__stxShortcuts.init());
-} else {
+}
+else {
   window.__stxShortcuts.init();
 }
 </script>

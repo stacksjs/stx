@@ -29,7 +29,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { defaultConfig } from './config'
 import { extractVariables } from './variable-extractor'
-import { processDirectives } from './process'
+import { injectRouterScript, processDirectives } from './process'
 import { processClientScript } from './client-script'
 import type { StxOptions } from './types'
 
@@ -95,7 +95,8 @@ function parseTemplate(content: string): {
           depth++
         }
         pos = nextOpen + '<template'.length
-      } else {
+      }
+else {
         depth--
         if (depth === 0) {
           workingContent = content.slice(openEnd, nextClose).trim()
@@ -343,6 +344,9 @@ async function renderTemplateString(
       output = wrapInHtmlDocument(output, renderOptions.title)
     }
   }
+
+  // Inject SPA router script for client-side navigation
+  output = injectRouterScript(output)
 
   // Optionally inject Crosswind CSS from Tailwind utility classes
   if (renderOptions.injectCSS) {

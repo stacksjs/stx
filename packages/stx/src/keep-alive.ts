@@ -221,7 +221,8 @@ function generateKeepAliveHtml(
       if (key === '__self__') {
         element.scrollTop = pos.top;
         element.scrollLeft = pos.left;
-      } else {
+      }
+else {
         const el = element.querySelector('[data-keep-scroll="' + key + '"]') ||
                    document.getElementById(key);
         if (el) {
@@ -241,7 +242,8 @@ function generateKeepAliveHtml(
       const key = input.name || input.id || 'input_' + index;
       if (input.type === 'checkbox' || input.type === 'radio') {
         state[key] = input.checked;
-      } else {
+      }
+else {
         state[key] = input.value;
       }
     });
@@ -266,7 +268,8 @@ function generateKeepAliveHtml(
       if (state[key] !== undefined) {
         if (input.type === 'checkbox' || input.type === 'radio') {
           input.checked = state[key];
-        } else {
+        }
+else {
           input.value = state[key];
         }
       }
@@ -366,7 +369,8 @@ function generateKeepAliveHtml(
       if (index > -1) {
         cacheOrder.splice(index, 1);
       }
-    } else {
+    }
+else {
       cache.forEach(function(cached) {
         if (cached.element) {
           cached.element.remove();

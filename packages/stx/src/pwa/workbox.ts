@@ -268,7 +268,8 @@ const navigationRoute = new NavigationRoute(
       try {
         const response = await this.handle(request);
         return response;
-      } catch (error) {
+      }
+catch (error) {
         const cache = await caches.open('stx-offline-cache');
         return cache.match(OFFLINE_PAGE) || new Response('You are offline', {
           status: 503,
@@ -393,7 +394,8 @@ self.addEventListener('push', (event) => {
     try {
       const payload = event.data.json();
       data = { ...data, ...payload };
-    } catch {
+    }
+catch {
       data.body = event.data.text();
     }
   }
@@ -467,7 +469,8 @@ const syncQueue = new Queue('${syncConfig?.queueName || 'stx-sync-queue'}', {
             success: true,
           });
         });
-      } catch (error) {
+      }
+catch (error) {
         console.log('[Workbox SW] Sync failed, re-queuing:', entry.request.url);
         await queue.unshiftRequest(entry);
         throw error;

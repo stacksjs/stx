@@ -387,7 +387,8 @@ describe('Deploy Module', () => {
 
       try {
         await expect(deploy({ directory: distDir })).rejects.toThrow('No Netlify auth token found')
-      } finally {
+      }
+finally {
         if (originalToken) {
           process.env.NETLIFY_AUTH_TOKEN = originalToken
         }
@@ -402,10 +403,12 @@ describe('Deploy Module', () => {
 
       try {
         await expect(deploy({ directory: distDir })).rejects.toThrow('No Netlify site ID found')
-      } finally {
+      }
+finally {
         if (originalToken) {
           process.env.NETLIFY_AUTH_TOKEN = originalToken
-        } else {
+        }
+else {
           delete process.env.NETLIFY_AUTH_TOKEN
         }
         if (originalSiteId) {
@@ -422,15 +425,18 @@ describe('Deploy Module', () => {
 
       try {
         await expect(deploy({ directory: '/nonexistent/path' })).rejects.toThrow('Build directory not found')
-      } finally {
+      }
+finally {
         if (originalToken) {
           process.env.NETLIFY_AUTH_TOKEN = originalToken
-        } else {
+        }
+else {
           delete process.env.NETLIFY_AUTH_TOKEN
         }
         if (originalSiteId) {
           process.env.NETLIFY_SITE_ID = originalSiteId
-        } else {
+        }
+else {
           delete process.env.NETLIFY_SITE_ID
         }
       }
@@ -454,15 +460,18 @@ describe('Deploy Module', () => {
         expect(result.success).toBe(true)
         expect(result.deployId).toBe('dry-run')
         expect(result.filesUploaded).toBe(1)
-      } finally {
+      }
+finally {
         if (originalToken) {
           process.env.NETLIFY_AUTH_TOKEN = originalToken
-        } else {
+        }
+else {
           delete process.env.NETLIFY_AUTH_TOKEN
         }
         if (originalSiteId) {
           process.env.NETLIFY_SITE_ID = originalSiteId
-        } else {
+        }
+else {
           delete process.env.NETLIFY_SITE_ID
         }
       }

@@ -66,7 +66,8 @@ export function getRouterScript(): string {
     if(o.cache&&cache[targetPath]){
       swap(cache[targetPath],targetPath,pushState,targetHash);
       done();
-    }else{
+    }
+else {
       fetch(url,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
         if(!r.ok)throw new Error(r.status);
         return r.text();
@@ -118,7 +119,10 @@ export function getRouterScript(): string {
       incoming.forEach(function(s){s.removeAttribute('data-stx-incoming')});
 
       // ── Swap main content ──
-      currentContent.innerHTML=newContent.innerHTML;
+      // Strip inline scripts from innerHTML — they won't execute via innerHTML anyway,
+      // and leaving them causes stx.mount() to find the wrong nextElementSibling
+      var cleanHTML=newContent.innerHTML.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');
+      currentContent.innerHTML=cleanHTML;
 
       // ── Load new external <head> scripts ──
       var loadedSrcs={};
@@ -162,13 +166,16 @@ export function getRouterScript(): string {
           var ns=document.createElement('script');
           ns.textContent=text;
           ns.setAttribute('data-stx-page','');
-          document.body.appendChild(ns);
+          // Insert into the content container so stx.mount() can find
+          // its root element via document.currentScript.nextElementSibling
+          currentContent.insertBefore(ns, currentContent.firstChild);
         });
       }
 
       if(extPromises.length>0){
         Promise.all(extPromises).then(execScripts).catch(execScripts);
-      }else{
+      }
+else {
         execScripts();
       }
 
@@ -194,7 +201,8 @@ export function getRouterScript(): string {
 
     if(o.viewTransitions&&document.startViewTransition){
       document.startViewTransition(doSwap);
-    }else{
+    }
+else {
       // Fallback fade for browsers without View Transitions API
       currentContent.style.transition='opacity 0.12s ease-out';
       currentContent.style.opacity='0';

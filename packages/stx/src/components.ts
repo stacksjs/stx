@@ -35,13 +35,15 @@ function parsePropsString(propsString: string, context: Record<string, unknown>)
         if (inner[pos] === '\\' && pos + 1 < inner.length) {
           key += inner[pos + 1]
           pos += 2
-        } else {
+        }
+else {
           key += inner[pos]
           pos++
         }
       }
       pos++ // Skip closing quote
-    } else {
+    }
+else {
       while (pos < inner.length && /[\w$]/.test(inner[pos])) {
         key += inner[pos]
         pos++
@@ -66,14 +68,16 @@ function parsePropsString(propsString: string, context: Record<string, unknown>)
         if (inner[pos] === '\\' && pos + 1 < inner.length) {
           strValue += inner[pos + 1]
           pos += 2
-        } else {
+        }
+else {
           strValue += inner[pos]
           pos++
         }
       }
       pos++ // Skip closing quote
       value = strValue
-    } else if (inner[pos] === '{') {
+    }
+else if (inner[pos] === '{') {
       // Nested object
       let depth = 1
       pos++
@@ -92,7 +96,8 @@ function parsePropsString(propsString: string, context: Record<string, unknown>)
       }
       const objStr = inner.slice(valueStart, pos)
       value = parsePropsString(objStr, context)
-    } else if (inner[pos] === '[') {
+    }
+else if (inner[pos] === '[') {
       // Array
       let depth = 1
       pos++
@@ -112,10 +117,12 @@ function parsePropsString(propsString: string, context: Record<string, unknown>)
       const arrStr = inner.slice(valueStart, pos)
       try {
         value = JSON.parse(arrStr.replace(/'/g, '"'))
-      } catch {
+      }
+catch {
         value = arrStr
       }
-    } else {
+    }
+else {
       // Primitive value (number, boolean, null, undefined, or variable reference)
       let rawValue = ''
       while (pos < inner.length && inner[pos] !== ',' && !/\s/.test(inner[pos])) {

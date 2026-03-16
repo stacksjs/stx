@@ -43,7 +43,8 @@ describe('STX Signals - DOM Binding Behavior', () => {
         const existing = this.attributes.find((a: any) => a.name === name)
         if (existing) {
           existing.value = value
-        } else {
+        }
+else {
           this.attributes.push({ name, value })
         }
       },
@@ -67,11 +68,13 @@ describe('STX Signals - DOM Binding Behavior', () => {
         newNode.parentElement = this
         if (refNode === null) {
           this.childNodes.push(newNode)
-        } else {
+        }
+else {
           const idx = this.childNodes.indexOf(refNode)
           if (idx !== -1) {
             this.childNodes.splice(idx, 0, newNode)
-          } else {
+          }
+else {
             this.childNodes.push(newNode)
           }
         }
@@ -79,7 +82,8 @@ describe('STX Signals - DOM Binding Behavior', () => {
           const refIdx = refNode ? this.children.indexOf(refNode) : -1
           if (refIdx !== -1) {
             this.children.splice(refIdx, 0, newNode)
-          } else {
+          }
+else {
             this.children.push(newNode)
           }
         }

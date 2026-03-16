@@ -193,7 +193,8 @@ class Lexer {
             this.advance(1)
           }
           this.advance(1) // Skip closing quote
-        } else if (this.peek() === '{') {
+        }
+else if (this.peek() === '{') {
           // Expression attribute: name={expression}
           this.advance(1)
           let depth = 1
@@ -207,7 +208,8 @@ class Lexer {
           }
           raw = `{${attrValue}}`
           attrValue = attrValue.trim()
-        } else {
+        }
+else {
           throw new Error(`Expected " or { after = at line ${this.line}`)
         }
 
@@ -255,7 +257,8 @@ class Lexer {
       if (this.input[this.pos] === '\n') {
         this.line++
         this.column = 1
-      } else {
+      }
+else {
         this.column++
       }
       this.pos++
@@ -367,7 +370,8 @@ class Parser {
       try {
         // Try to parse the initial value
         this.ctx.exports[name] = JSON.parse(value.trim())
-      } catch {
+      }
+catch {
         // If not JSON parseable, store as string
         this.ctx.exports[name] = value.trim()
       }
@@ -515,10 +519,12 @@ class Parser {
         try {
           if (value.startsWith('{') && value.endsWith('}')) {
             inlineStyle = JSON.parse(value)
-          } else {
+          }
+else {
             inlineStyle = JSON.parse(`{${value}}`)
           }
-        } catch {
+        }
+catch {
           // If not valid JSON, try to parse as CSS-in-JS
           inlineStyle = this.parseCSSInJS(value)
         }
@@ -544,7 +550,8 @@ class Parser {
       // Try to parse as JSON for booleans, numbers, etc.
       try {
         props[name] = JSON.parse(value)
-      } catch {
+      }
+catch {
         props[name] = value
       }
     }

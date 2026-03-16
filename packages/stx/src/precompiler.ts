@@ -407,13 +407,15 @@ export class TemplateCompiler {
 
     // Generate elseif branches
     for (const elseif of parts.elseifs) {
-      code += `  } else if (${elseif.condition}) {\n`
+      code += `  }
+else if (${elseif.condition}) {\n`
       code += elseif.body.map(child => this.generateNode(child, ctx)).join('')
     }
 
     // Generate else branch
     if (parts.elseBody.length > 0) {
-      code += '  } else {\n'
+      code += '  }
+else {\n'
       code += parts.elseBody.map(child => this.generateNode(child, ctx)).join('')
     }
 

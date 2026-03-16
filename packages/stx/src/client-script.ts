@@ -202,7 +202,8 @@ function transformAutoImports(code: string): AutoImportResult {
       existingImports.add(name)
       if (source === 'stx') {
         usedStxImports.add(name)
-      } else {
+      }
+else {
         usedBrowserImports.add(name)
       }
     })
@@ -348,7 +349,8 @@ function generateSingleEventBinding(binding: ParsedEvent, index: number): string
     return `var scope = $el.closest('[data-stx-scope]');
       if (scope && scope.__stx_execute) {
         scope.__stx_execute('${escapedHandler}', $event, $el);
-      } else {
+      }
+else {
         ${h}
       }`
   }
@@ -387,7 +389,8 @@ function generateSingleEventBinding(binding: ParsedEvent, index: number): string
     ${handlerBody}var scope = $el.closest('[data-stx-scope]');
     if (scope && scope.__stx_execute) {
       scope.__stx_execute('${escapedHandler}', $event, $el);
-    } else {
+    }
+else {
       ${handler}
     }
   }${optionsStr})`

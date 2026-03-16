@@ -384,7 +384,8 @@ function generateEventListener(event: ParsedEvent): string {
     var scope = $el.closest('[data-stx-scope]');
     if (scope && scope.__stx_execute) {
       scope.__stx_execute('${escapedHandler}', null, $el);
-    } else {
+    }
+else {
       ${handler}
     }
   })();`
@@ -404,7 +405,8 @@ function generateEventListener(event: ParsedEvent): string {
             var scope = $el.closest('[data-stx-scope]');
             if (scope && scope.__stx_execute) {
               scope.__stx_execute('${escapedHandler}', null, $el);
-            } else {
+            }
+else {
               ${handler}
             }
             return;
@@ -428,7 +430,8 @@ function generateEventListener(event: ParsedEvent): string {
       var scope = $el.closest('[data-stx-scope]');
       if (scope && scope.__stx_execute) {
         scope.__stx_execute('${escapedHandler}', $event, $el);
-      } else {
+      }
+else {
         // Fallback for non-reactive context
         ${handler}
       }

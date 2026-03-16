@@ -1144,9 +1144,11 @@ export function generateStoreImportRuntime(): string {
         var store = s.useStore ? s.useStore(storeName) : null;
         if (store) {
           resolve(store);
-        } else if (Date.now() - start > timeout) {
+        }
+else if (Date.now() - start > timeout) {
           reject(new Error('Timeout waiting for store: ' + storeName));
-        } else {
+        }
+else {
           requestAnimationFrame(check);
         }
       }

@@ -167,7 +167,8 @@ export function renderMediaUpload(props: MediaUploadProps): { html: string; scri
         item.innerHTML = '<img src="' + e.target.result + '" alt="' + escapeHtml(file.name) + '" /><span>' + escapeHtml(file.name) + '</span>';
       };
       reader.readAsDataURL(file);
-    } else {
+    }
+else {
       item.innerHTML = '<div class="stx-upload-preview-file">' + getFileIcon(file.type) + '</div><span>' + escapeHtml(file.name) + '</span>';
     }
 
@@ -188,7 +189,8 @@ export function renderMediaUpload(props: MediaUploadProps): { html: string; scri
         uploaded++;
         if (result.success) {
           container.dispatchEvent(new CustomEvent('upload', { detail: result }));
-        } else {
+        }
+else {
           container.dispatchEvent(new CustomEvent('error', { detail: result }));
         }
 

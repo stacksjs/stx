@@ -183,7 +183,8 @@ export async function performEnter(
     await new Promise<void>((resolve) => {
       options.onEnter!(el, resolve)
     })
-  } else {
+  }
+else {
     await whenTransitionEnds(el, duration)
   }
 
@@ -227,7 +228,8 @@ export async function performLeave(
     await new Promise<void>((resolve) => {
       options.onLeave!(el, resolve)
     })
-  } else {
+  }
+else {
     await whenTransitionEnds(el, duration)
   }
 
@@ -631,7 +633,8 @@ export function generateTransitionRuntime(): string {
       if (show) {
         el.style.display = '';
         return this.enter(el, options);
-      } else {
+      }
+else {
         return this.leave(el, options).then(function() {
           el.style.display = 'none';
           return el;

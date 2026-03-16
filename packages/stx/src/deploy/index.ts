@@ -193,7 +193,8 @@ export async function deploy(config: DeployConfig = {}): Promise<DeployResult> {
   try {
     const site = await client.getSite(siteId)
     log(`Deploying to: ${site.name} (${site.url})`)
-  } catch (error) {
+  }
+catch (error) {
     if ((error as { status?: number }).status === 404) {
       throw new DeployError(
         `Site not found: ${siteId}\n\n` +
@@ -252,7 +253,8 @@ export async function deploy(config: DeployConfig = {}): Promise<DeployResult> {
     }
 
     log(`Uploaded ${formatSize(uploadSize)}`)
-  } else {
+  }
+else {
     log('All files already on CDN (no upload needed)')
   }
 
@@ -315,7 +317,8 @@ export async function initNetlify(config: InitConfig = {}): Promise<{
 
   if (hasNetlifyConfig(directory)) {
     configPath = path.join(directory, 'netlify.toml')
-  } else {
+  }
+else {
     const projectConfig = await detectProjectConfig(directory)
     configPath = await writeNetlifyConfig(directory, createDefaultNetlifyConfig(projectConfig))
   }

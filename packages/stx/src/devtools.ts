@@ -713,7 +713,8 @@ function timeTravel(historyIndex: number, storeId: string): void {
     const record = store.history[i]
     if (record.type === 'state' && record.name !== '__init__') {
       reconstructed[record.name] = record.newValue
-    } else if (record.name === '__init__') {
+    }
+else if (record.name === '__init__') {
       Object.assign(reconstructed, record.newValue)
     }
   }

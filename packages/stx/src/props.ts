@@ -529,7 +529,8 @@ export function defineEmits<E extends Record<string, unknown>>(): EmitFn<E> {
         cancelable: true,
       })
       element.dispatchEvent(customEvent)
-    } else {
+    }
+else {
       // Fallback for SSR or when element not available
       console.warn(`Cannot emit event "${String(event)}" - no element context`)
     }

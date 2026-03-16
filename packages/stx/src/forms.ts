@@ -1371,7 +1371,8 @@ export function generateValidationScript(formId: string, rules: Record<string, s
   const validators = {
     required: (v) => v !== null && v !== undefined && v !== '' ? true : 'This field is required',
     email: (v) => !v || /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v) ? true : 'Please enter a valid email',
-    url: (v) => { if (!v) return true; try { new URL(v); return true; } catch { return 'Please enter a valid URL'; } },
+    url: (v) => { if (!v) return true; try { new URL(v); return true; }
+catch { return 'Please enter a valid URL'; } },
     numeric: (v) => !v || !isNaN(Number(v)) ? true : 'Please enter a number',
     integer: (v) => !v || Number.isInteger(Number(v)) ? true : 'Please enter a whole number',
     min: (v, p) => !v || (typeof v === 'string' ? v.length >= p : v >= p) ? true : 'Too short/small',

@@ -415,7 +415,8 @@ export async function renderComponentWithSlot(
                   if (componentFilePath) break
                 }
               }
-            } catch {
+            }
+catch {
               // Ignore directory read errors
             }
           }
@@ -619,7 +620,8 @@ ${content}
   const __localVars = {};
   try {
     ${extractVariableNames(content).map(v => `if (typeof ${v} !== 'undefined') __localVars['${v}'] = ${v};`).join('\n    ')}
-  } catch(e) {}
+  }
+catch (e) {}
   Object.assign(__scopeVars, __localVars);
 })();`
         return `<script data-stx-scoped${attrs}>${wrappedContent}</script>`
@@ -631,7 +633,8 @@ ${content}
       if (preservedStyle) {
         output += '\n' + preservedStyle
       }
-    } else {
+    }
+else {
       // No signals, transform and append style and scripts
       if (preservedStyle) {
         output += '\n' + preservedStyle

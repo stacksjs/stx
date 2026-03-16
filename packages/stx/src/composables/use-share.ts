@@ -81,7 +81,8 @@ export function useShare(): ShareRef {
       if (!fileSupported) return false
       try {
         return navigator.canShare(data as globalThis.ShareData)
-      } catch {
+      }
+catch {
         return false
       }
     }
@@ -117,7 +118,8 @@ export function useShare(): ShareRef {
     try {
       await navigator.share(data as globalThis.ShareData)
       return { success: true }
-    } catch (err) {
+    }
+catch (err) {
       // User cancelled
       if (err instanceof Error && err.name === 'AbortError') {
         return { success: false, cancelled: true }
@@ -228,7 +230,8 @@ export async function shareWithFallback(
       alert(fallbackMessage)
     }
     return { success: true, usedFallback: true }
-  } catch (err) {
+  }
+catch (err) {
     return {
       success: false,
       error: err instanceof Error ? err : new Error(String(err)),

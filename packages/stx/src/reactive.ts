@@ -563,7 +563,8 @@ window.__stx_reactive = (function() {
       const values = Object.values(ctx);
       const fn = new Function(...keys, 'return (' + expr + ')');
       return fn(...values);
-    } catch (e) {
+    }
+catch (e) {
       console.warn('[stx-reactive] Error evaluating:', expr, e);
       return undefined;
     }
@@ -580,18 +581,23 @@ window.__stx_reactive = (function() {
       var body = getVars + ';' + stmt + ';' + setVars;
       var fn = new Function('__ctx', '$event', '$el', body);
       fn(ctx, $event, $el);
-    } catch (e) {
+    }
+catch (e) {
       console.warn('[stx-reactive] Error executing:', stmt, e);
     }
   }
 
   // Initialize a reactive scope
   function initScope(scopeEl, initialState, bindings, refs, initExpr) {
+    // Mark this scope as reactive-initialized so signals runtime skips it
+    scopeEl.__stx_reactive_initialized = true;
+
     // Parse initial state
     let state;
     try {
       state = new Function('return (' + initialState + ')')();
-    } catch (e) {
+    }
+catch (e) {
       console.error('[stx-reactive] Invalid x-data:', initialState, e);
       return;
     }
@@ -629,7 +635,8 @@ window.__stx_reactive = (function() {
             var wasVisible = el.style.display !== 'none';
             if (value && !wasVisible) {
               transitionIn(el, binding.transition);
-            } else if (!value && wasVisible) {
+            }
+else if (!value && wasVisible) {
               transitionOut(el, binding.transition);
             }
             break;
@@ -639,7 +646,8 @@ window.__stx_reactive = (function() {
             var wasHidden = el.style.display === 'none';
             if (value && !wasHidden) {
               transitionOut(el, binding.transition);
-            } else if (!value && wasHidden) {
+            }
+else if (!value && wasHidden) {
               transitionIn(el, binding.transition);
             }
             break;
@@ -649,7 +657,8 @@ window.__stx_reactive = (function() {
               for (const [cls, active] of Object.entries(value)) {
                 el.classList.toggle(cls, !!active);
               }
-            } else if (typeof value === 'string') {
+            }
+else if (typeof value === 'string') {
               el.className = value;
             }
             break;
@@ -657,7 +666,8 @@ window.__stx_reactive = (function() {
           case 'style':
             if (typeof value === 'object') {
               Object.assign(el.style, value);
-            } else if (typeof value === 'string') {
+            }
+else if (typeof value === 'string') {
               el.style.cssText = value;
             }
             break;
@@ -666,9 +676,11 @@ window.__stx_reactive = (function() {
             if (binding.attribute) {
               if (value === false || value === null || value === undefined) {
                 el.removeAttribute(binding.attribute);
-              } else if (value === true) {
+              }
+else if (value === true) {
                 el.setAttribute(binding.attribute, '');
-              } else {
+              }
+else {
                 el.setAttribute(binding.attribute, value);
               }
             }
@@ -679,9 +691,11 @@ window.__stx_reactive = (function() {
             if (document.activeElement !== el) {
               if (binding.inputType === 'checkbox') {
                 el.checked = !!value;
-              } else if (binding.inputType === 'radio') {
+              }
+else if (binding.inputType === 'radio') {
                 el.checked = el.value === value;
-              } else {
+              }
+else {
                 el.value = value ?? '';
               }
             }
@@ -715,11 +729,14 @@ window.__stx_reactive = (function() {
         let value;
         if (binding.inputType === 'checkbox') {
           value = e.target.checked;
-        } else if (binding.inputType === 'radio') {
+        }
+else if (binding.inputType === 'radio') {
           value = e.target.value;
-        } else if (binding.inputType === 'number' || binding.inputType === 'range') {
+        }
+else if (binding.inputType === 'number' || binding.inputType === 'range') {
           value = e.target.valueAsNumber;
-        } else {
+        }
+else {
           value = e.target.value;
         }
 
@@ -834,9 +851,14 @@ function generateScopeInitializers(scopes: ReactiveScope[]): string {
 ${generateReactiveRuntime()}
 
 // Initialize all reactive scopes
-document.addEventListener('DOMContentLoaded', function() {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+  ${initializers}
+  });
+}
+else {
 ${initializers}
-});
+}
 </script>`
 }
 

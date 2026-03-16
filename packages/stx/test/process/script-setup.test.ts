@@ -435,7 +435,8 @@ describe('Script Processing Fixes', () => {
         if (nextOpen !== -1 && nextOpen < nextClose) {
           depth++
           pos = nextOpen + '<script'.length
-        } else {
+        }
+else {
           depth--
           if (depth === 0) {
             endPos = nextClose

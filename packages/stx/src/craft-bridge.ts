@@ -122,7 +122,8 @@ export const CRAFT_BRIDGE_SCRIPT = `
     let data;
     try {
       data = event.detail || (typeof event.data === 'string' ? JSON.parse(event.data) : event.data);
-    } catch (e) {
+    }
+catch (e) {
       return;
     }
 
@@ -139,11 +140,13 @@ export const CRAFT_BRIDGE_SCRIPT = `
         pending.delete(data.id);
         if (data.error) {
           req.reject(new Error(data.error.message));
-        } else {
+        }
+else {
           req.resolve(data.result);
         }
       }
-    } else if (data.type === 'event' && data.method) {
+    }
+else if (data.type === 'event' && data.method) {
       const listeners = eventListeners.get(data.method) || [];
       listeners.forEach(fn => fn(data.params));
     }

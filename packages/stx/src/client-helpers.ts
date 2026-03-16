@@ -130,7 +130,8 @@ export const stxClientHelpers = `
       if (rows) {
         if (!Array.isArray(rows) && typeof rows === 'object') {
           Object.keys(rows).forEach(function(k) { inner += stx.detail.row(k, rows[k]) })
-        } else {
+        }
+else {
           rows.forEach(function(r) {
             if (Array.isArray(r)) inner += stx.detail.row(r[0], r[1])
             else inner += stx.detail.row(r.label, r.value)
@@ -273,9 +274,11 @@ export const stxClientHelpers = `
         pages.forEach(function(p) {
           if (p === '...') {
             h += '<span class="px-2 text-sm" style="color:var(--text-muted)">\\u2026</span>'
-          } else if (p === page) {
+          }
+else if (p === page) {
             h += \`<button class="w-9 h-9 rounded-lg text-sm font-medium" style="background:var(--btn-primary-bg, var(--text-accent));color:#fff">\${p}</button>\`
-          } else {
+          }
+else {
             h += btn(p, p, false)
           }
         })

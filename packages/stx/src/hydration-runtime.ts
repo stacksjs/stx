@@ -56,7 +56,8 @@ export function generateHydrationBootstrap(): string {
       var propsScript = el.querySelector('script[data-island-props="' + id + '"]');
       var props = {};
       if (propsScript) {
-        try { props = JSON.parse(propsScript.textContent || '{}'); } catch(e) {}
+        try { props = JSON.parse(propsScript.textContent || '{}'); }
+catch (e) {}
       }
 
       var loader = componentName ? this._registry[componentName] : null;
@@ -67,7 +68,8 @@ export function generateHydrationBootstrap(): string {
             var comp = mod && mod.default ? mod.default : mod;
             if (comp && comp.hydrate) {
               return comp.hydrate(el, props);
-            } else if (comp && comp.mount) {
+            }
+else if (comp && comp.mount) {
               return comp.mount(el, props);
             }
           })
@@ -100,7 +102,8 @@ export function generateHydrationBootstrap(): string {
         case 'idle':
           if ('requestIdleCallback' in window) {
             requestIdleCallback(function() { self.hydrateIsland(el); }, { timeout: 2000 });
-          } else {
+          }
+else {
             setTimeout(function() { self.hydrateIsland(el); }, 200);
           }
           break;
@@ -118,7 +121,8 @@ export function generateHydrationBootstrap(): string {
               });
             }, { rootMargin: rootMargin, threshold: threshold });
             obs.observe(el);
-          } else {
+          }
+else {
             self.hydrateIsland(el);
           }
           break;
@@ -128,7 +132,8 @@ export function generateHydrationBootstrap(): string {
           var mq = window.matchMedia(mediaQuery);
           if (mq.matches) {
             self.hydrateIsland(el);
-          } else {
+          }
+else {
             var handler = function(e) {
               if (e.matches) {
                 mq.removeEventListener('change', handler);
@@ -185,7 +190,8 @@ export function generateHydrationBootstrap(): string {
   // Auto-init on DOMContentLoaded
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() { stxIslands.initIslands(); });
-  } else {
+  }
+else {
     stxIslands.initIslands();
   }
 })();
@@ -247,7 +253,8 @@ export function extractBoundProps(
     // Resolve from context
     if (expr in context) {
       props[propName] = context[expr]
-    } else {
+    }
+else {
       props[propName] = expr
     }
   }

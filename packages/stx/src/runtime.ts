@@ -106,9 +106,11 @@ export function waitForStore<T = unknown>(name: string, timeout = 5000): Promise
       const store = useStore<T>(name)
       if (store) {
         resolve(store)
-      } else if (Date.now() - startTime > timeout) {
+      }
+else if (Date.now() - startTime > timeout) {
         reject(new Error(`Timeout waiting for store "${name}"`))
-      } else {
+      }
+else {
         requestAnimationFrame(check)
       }
     }

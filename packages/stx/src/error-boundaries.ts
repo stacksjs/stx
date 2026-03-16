@@ -273,10 +273,12 @@ export async function withErrorBoundary<T>(
 ): Promise<T> {
   try {
     return await render()
-  } catch (error) {
+  }
+catch (error) {
     if (onError) {
       onError(error instanceof Error ? error : new Error(String(error)))
-    } else {
+    }
+else {
       console.error('[stx:errorBoundary] SSR Error:', error)
     }
     return fallback

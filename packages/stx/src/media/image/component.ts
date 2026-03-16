@@ -43,7 +43,8 @@ import {
 async function getProcessor(): Promise<typeof import('./processor') | null> {
   try {
     return await import('./processor')
-  } catch (error) {
+  }
+catch (error) {
     // Log warning only once per session
     if (!processorWarningLogged) {
       console.warn('[stx-media] Image processor not available, some features disabled:', error)
@@ -181,7 +182,8 @@ export async function renderImgComponent(
         ...placeholderOptions,
       })
       placeholderCss = generatePlaceholderCSS(componentId, placeholder, placeholderOptions)
-    } catch {
+    }
+catch {
       // Continue without placeholder
     }
   }
@@ -195,7 +197,8 @@ export async function renderImgComponent(
   if (usesDprSrcset) {
     // DPR-based srcset for fixed-width images
     html = renderDprBasedImg(props, componentId, placeholder, context)
-  } else {
+  }
+else {
     // Width-based srcset with <picture> element
     html = await renderPictureElement(props, componentId, placeholder, context)
   }
@@ -276,7 +279,8 @@ async function renderPictureElement(
     if (lazy && !priority) {
       // Lazy loading: use data-srcset
       sources.push(`  <source type="${mimeType}" data-srcset="${srcset}" data-sizes="${sizesAttr}" />`)
-    } else {
+    }
+else {
       sources.push(`  <source type="${mimeType}" srcset="${srcset}" sizes="${sizesAttr}" />`)
     }
   }
@@ -310,7 +314,8 @@ ${sources.join('\n')}
     <img ${imgAttrs} />
   </picture>
 </div>`
-  } else {
+  }
+else {
     html = `<picture${componentId ? ` id="${componentId}"` : ''}>
 ${sources.join('\n')}
   <img ${imgAttrs} />
@@ -465,7 +470,8 @@ function buildImgAttributes(opts: ImgAttrsOptions): string {
   if (opts.lazy) {
     attrs.push(`data-src="${escapeAttr(opts.src)}"`)
     attrs.push(`src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"`)
-  } else {
+  }
+else {
     attrs.push(`src="${escapeAttr(opts.src)}"`)
   }
   attrs.push(`alt="${escapeAttr(opts.alt)}"`)
@@ -607,10 +613,12 @@ export function parseImgComponent(content: string): ImgProps | null {
     if (isBound && typeof value === 'string') {
       try {
         ;(props as Record<string, unknown>)[name] = JSON.parse(value)
-      } catch {
+      }
+catch {
         ;(props as Record<string, unknown>)[name] = value
       }
-    } else {
+    }
+else {
       switch (name) {
         case 'src':
           props.src = String(value)
@@ -752,7 +760,8 @@ async function renderWithTsImages(
     if (variants) {
       return renderFromResponsiveVariants(props, variants, context)
     }
-  } else {
+  }
+else {
     // Process single image
     const processed = await processor.processImage(props.src, props, tsConfig)
     if (processed.processed) {
@@ -823,7 +832,8 @@ async function renderFromProcessedResult(
 
       if (lazy && !priority) {
         sources.push(`  <source type="${mimeType}" data-srcset="${formatSrcset}" />`)
-      } else {
+      }
+else {
         sources.push(`  <source type="${mimeType}" srcset="${formatSrcset}" />`)
       }
     }
@@ -836,7 +846,8 @@ async function renderFromProcessedResult(
     imgAttrs.push(`data-src="${escapeAttr(fallbackSrc)}"`)
     imgAttrs.push(`src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"`)
     if (srcset) imgAttrs.push(`data-srcset="${srcset}"`)
-  } else {
+  }
+else {
     imgAttrs.push(`src="${escapeAttr(fallbackSrc)}"`)
     if (srcset) imgAttrs.push(`srcset="${srcset}"`)
   }
@@ -888,7 +899,8 @@ ${sources.join('\n')}
     <img ${imgAttrs.join(' ')} />
   </picture>
 </div>`
-  } else {
+  }
+else {
     html = `<picture${id ? ` id="${id}"` : ''}>
 ${sources.join('\n')}
   <img ${imgAttrs.join(' ')} />

@@ -67,7 +67,8 @@ export const defaultCacheConfig: CacheConfig = {
 async function ensureCacheDir(cacheDir: string): Promise<void> {
   try {
     await mkdir(cacheDir, { recursive: true })
-  } catch {
+  }
+catch {
     // Directory might already exist
   }
 }
@@ -138,7 +139,8 @@ export async function getCached<T>(
         memoryCache.set(key, entry)
         return entry.data
       }
-    } catch {
+    }
+catch {
       // Cache file corrupted, ignore
     }
   }
@@ -183,7 +185,8 @@ export async function setCached<T>(
   try {
     await ensureCacheDir(dirname(cachePath))
     await writeFile(cachePath, JSON.stringify(entry, null, 2))
-  } catch (error) {
+  }
+catch (error) {
     console.warn(`[stx-media] Failed to write cache: ${error}`)
   }
 }
@@ -217,7 +220,8 @@ export async function clearCache(
   // Clear memory cache
   if (type === 'all') {
     memoryCache.clear()
-  } else {
+  }
+else {
     // Clear entries of specific type (would need type tracking)
     memoryCache.clear()
   }
@@ -228,7 +232,8 @@ export async function clearCache(
     const cacheDir = join(config.directory, typeDir)
     try {
       await rm(cacheDir, { recursive: true, force: true })
-    } catch {
+    }
+catch {
       // Directory might not exist
     }
   }
@@ -261,7 +266,8 @@ export async function getCacheStats(
         const fileStat = await stat(filePath)
         stats.totalSizeMB += fileStat.size / (1024 * 1024)
       }
-    } catch {
+    }
+catch {
       // Directory might not exist
     }
   }
@@ -294,13 +300,15 @@ export async function pruneCache(
             memoryCache.delete(entry.key)
             prunedCount++
           }
-        } catch {
+        }
+catch {
           // File corrupted, remove it
           await rm(filePath).catch(() => {})
           prunedCount++
         }
       }
-    } catch {
+    }
+catch {
       // Directory might not exist
     }
   }

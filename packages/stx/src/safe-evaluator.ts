@@ -266,7 +266,8 @@ export function safeEvaluate<T = unknown>(expression: string, context: Record<st
       'use strict';
       try {
         return ${sanitizedExpr};
-      } catch (e) {
+      }
+catch (e) {
         if (e instanceof ReferenceError || e instanceof TypeError) {
           return undefined;
         }
@@ -388,7 +389,8 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
     'use strict';
     try {
       return ${sanitizedExpr};
-    } catch (e) {
+    }
+catch (e) {
       if (e instanceof ReferenceError || e instanceof TypeError) {
         return undefined;
       }

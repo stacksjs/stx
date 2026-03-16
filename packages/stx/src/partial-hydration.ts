@@ -185,14 +185,16 @@ function generateIdleHydration(islandId: string, options: HydrationOptions): str
             requestIdleCallback((deadline) => {
               if (deadline.didTimeout || ++idleCount >= 2) {
                 hydrate();
-              } else {
+              }
+else {
                 waitForIdle();
               }
             }, idleOptions);
           }
           waitForIdle();
           `}
-        } else {
+        }
+else {
           // Fallback for browsers without requestIdleCallback
           setTimeout(hydrate, ${timeout});
         }
@@ -234,7 +236,8 @@ function generateVisibleHydration(islandId: string, options: HydrationOptions): 
           });
 
           observer.observe(island);
-        } else {
+        }
+else {
           // Fallback: hydrate on load
           hydrate();
         }
@@ -272,7 +275,8 @@ function generateMediaHydration(islandId: string, options: HydrationOptions): st
 
         if (mediaQuery.matches) {
           hydrate();
-        } else {
+        }
+else {
           mediaQuery.addEventListener('change', handleMediaChange);
         }
       })();

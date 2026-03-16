@@ -609,7 +609,8 @@ export const ${storeName} = defineStore('${name}', {
       try {
         // Add your async logic here
         await new Promise(resolve => setTimeout(resolve, 1000))
-      } finally {
+      }
+finally {
         this.loading = false
       }
     },

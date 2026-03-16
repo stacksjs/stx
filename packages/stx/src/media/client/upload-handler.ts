@@ -235,7 +235,8 @@ async function uploadSingle(
             type: file.type,
             data,
           })
-        } catch {
+        }
+catch {
           resolve({
             success: true,
             name: file.name,
@@ -243,7 +244,8 @@ async function uploadSingle(
             type: file.type,
           })
         }
-      } else {
+      }
+else {
         resolve({
           success: false,
           error: `Upload failed with status ${xhr.status}`,
@@ -390,7 +392,8 @@ async function uploadChunked(
           data,
         }
       }
-    } catch (error) {
+    }
+catch (error) {
       return {
         success: false,
         error: `Chunk upload failed: ${error}`,
@@ -468,7 +471,8 @@ export function generateImagePreview(file: File, maxSize: number = 200): Promise
           if (width > height) {
             height = Math.round((height * maxSize) / width)
             width = maxSize
-          } else {
+          }
+else {
             width = Math.round((width * maxSize) / height)
             height = maxSize
           }
@@ -481,7 +485,8 @@ export function generateImagePreview(file: File, maxSize: number = 200): Promise
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height)
           resolve(canvas.toDataURL('image/jpeg', 0.7))
-        } else {
+        }
+else {
           reject(new Error('Could not get canvas context'))
         }
       }
@@ -525,7 +530,8 @@ export function generateVideoPreview(file: File): Promise<string> {
       if (ctx) {
         ctx.drawImage(video, 0, 0)
         resolve(canvas.toDataURL('image/jpeg', 0.7))
-      } else {
+      }
+else {
         reject(new Error('Could not get canvas context'))
       }
 
@@ -578,10 +584,12 @@ export function generateUploadRuntime(): string {
           try {
             var data = JSON.parse(xhr.responseText);
             resolve({ success: true, url: data.url, id: data.id, data: data });
-          } catch (e) {
+          }
+catch (e) {
             resolve({ success: true });
           }
-        } else {
+        }
+else {
           resolve({ success: false, error: 'Upload failed: ' + xhr.status });
         }
       });

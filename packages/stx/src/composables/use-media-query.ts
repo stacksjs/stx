@@ -40,7 +40,8 @@ export function useMediaQuery(query: string): MediaQueryRef {
       for (const callback of subscribers) {
         try {
           callback(event.matches)
-        } catch (e) {
+        }
+catch (e) {
           console.error('[useMediaQuery] Subscriber error:', e)
         }
       }
@@ -49,7 +50,8 @@ export function useMediaQuery(query: string): MediaQueryRef {
     // Modern browsers
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handler)
-    } else {
+    }
+else {
       // Legacy browsers
       mediaQuery.addListener(handler)
     }

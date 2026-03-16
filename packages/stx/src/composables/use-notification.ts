@@ -123,7 +123,8 @@ export function useNotification(): NotificationRef {
       state = { ...state, permission: result as NotificationPermission }
       notify()
       return result as NotificationPermission
-    } catch {
+    }
+catch {
       return state.permission
     }
   }
@@ -160,7 +161,8 @@ export function useNotification(): NotificationRef {
       }
 
       return notification
-    } catch {
+    }
+catch {
       return null
     }
   }

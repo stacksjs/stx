@@ -70,7 +70,8 @@ export const BLUR_UP_CSS = `
 async function getTsImages(): Promise<typeof import('ts-images') | null> {
   try {
     return await import('ts-images')
-  } catch {
+  }
+catch {
     return null
   }
 }
@@ -102,7 +103,8 @@ export async function generatePlaceholder(
   if (tsImages) {
     try {
       return await generateWithTsImages(src, opts, tsImages)
-    } catch (error) {
+    }
+catch (error) {
       console.warn(`[stx-media] ts-images placeholder generation failed, using fallback: ${error}`)
     }
   }
@@ -214,7 +216,8 @@ export async function generateThumbhashPlaceholder(src: string): Promise<string>
     try {
       const result = await tsImages.generateThumbHash(src)
       return result.dataUrl
-    } catch {
+    }
+catch {
       // Fall through to fallback
     }
   }
@@ -312,7 +315,8 @@ export async function extractDominantColor(src: string): Promise<string> {
         strategy: 'dominant-color',
       })
       return result.dominantColor || '#e5e7eb'
-    } catch {
+    }
+catch {
       // Fall through
     }
   }

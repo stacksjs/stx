@@ -36,7 +36,8 @@
  * // Later, check if loaded or wait
  * if (isLoaded('es')) {
  *   const translations = getTranslationSync('es')
- * } else {
+ * }
+else {
  *   await waitForLocale('es', 5000) // Wait up to 5s
  * }
  * ```
@@ -404,7 +405,8 @@ export async function loadTranslationLazy(
  * const translations = getTranslationSync('en')
  * if (translations) {
  *   // Use translations
- * } else {
+ * }
+else {
  *   // Show loading state or fallback
  *   loadTranslationLazy('en', options).then(handleLoaded)
  * }

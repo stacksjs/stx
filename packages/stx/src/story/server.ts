@@ -932,7 +932,8 @@ function generateStoryHTML(ctx: StoryContext, port: number): string {
           .replace(/,\\s*}/g, '}')
           .replace(/,\\s*]/g, ']');
         return JSON.parse(cleaned);
-      } catch {
+      }
+catch {
         return [{ id: 'default', title: 'Default' }];
       }
     }
@@ -958,10 +959,12 @@ function generateStoryHTML(ctx: StoryContext, port: number): string {
         if (valueStr === 'true' || valueStr === 'false') {
           type = 'boolean';
           value = valueStr === 'true';
-        } else if (valueStr.match(/^\\d+$/)) {
+        }
+else if (valueStr.match(/^\\d+$/)) {
           type = 'number';
           value = parseInt(valueStr);
-        } else if (valueStr.startsWith("'") || valueStr.startsWith('"')) {
+        }
+else if (valueStr.startsWith("'") || valueStr.startsWith('"')) {
           value = valueStr.slice(1, -1);
         }
 
@@ -1131,7 +1134,8 @@ function generateStoryHTML(ctx: StoryContext, port: number): string {
       if (panel.style.display === 'none') {
         panel.style.display = 'flex';
         btn.textContent = 'Controls ◀';
-      } else {
+      }
+else {
         panel.style.display = 'none';
         btn.textContent = 'Controls ▶';
       }

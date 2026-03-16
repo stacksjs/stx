@@ -110,19 +110,24 @@ class Main {
       if (e.target.matches("#add")) {
         e.stopPropagation();
         this.add();
-      } else if (e.target.matches("#run")) {
+      }
+else if (e.target.matches("#run")) {
         e.stopPropagation();
         this.run();
-      } else if (e.target.matches("#update")) {
+      }
+else if (e.target.matches("#update")) {
         e.stopPropagation();
         this.update();
-      } else if (e.target.matches("#runlots")) {
+      }
+else if (e.target.matches("#runlots")) {
         e.stopPropagation();
         this.runLots();
-      } else if (e.target.matches("#clear")) {
+      }
+else if (e.target.matches("#clear")) {
         e.stopPropagation();
         this.clear();
-      } else if (e.target.matches("#swaprows")) {
+      }
+else if (e.target.matches("#swaprows")) {
         e.stopPropagation();
         this.swapRows();
       }
@@ -140,7 +145,8 @@ class Main {
         const id = getParentId(e.target);
         const idx = this.data.findIndex((row) => row.id === id);
         if (idx >= 0) this.select(idx);
-      } else if (p.parentNode.childNodes[2] === p) {
+      }
+else if (p.parentNode.childNodes[2] === p) {
         const id = getParentId(e.target);
         const idx = this.data.findIndex((row) => row.id === id);
         if (idx >= 0) this.delete(idx);

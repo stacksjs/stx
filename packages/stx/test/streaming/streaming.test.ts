@@ -607,7 +607,8 @@ describe('stx Streaming - Suspense', () => {
       const result = await reader.read()
       if (result.done) {
         done = true
-      } else {
+      }
+else {
         chunks.push(result.value)
       }
     }
@@ -645,7 +646,8 @@ describe('stx Streaming - Suspense', () => {
       const result = await reader.read()
       if (result.done) {
         done = true
-      } else {
+      }
+else {
         chunks.push(result.value)
       }
     }
@@ -677,7 +679,8 @@ describe('stx Streaming - Suspense', () => {
       const result = await reader.read()
       if (result.done) {
         done = true
-      } else {
+      }
+else {
         chunks.push(result.value)
       }
     }
@@ -801,7 +804,8 @@ describe('stx Streaming - Section-First Chunking', () => {
       const result = await reader.read()
       if (result.done) {
         done = true
-      } else {
+      }
+else {
         chunks.push(result.value)
       }
     }
@@ -842,7 +846,8 @@ describe('stx Streaming - Section-First Chunking', () => {
       const result = await reader.read()
       if (result.done) {
         done = true
-      } else {
+      }
+else {
         chunks.push(result.value)
       }
     }
@@ -878,7 +883,8 @@ describe('stx Streaming - Section-First Chunking', () => {
       const result = await reader.read()
       if (result.done) {
         done = true
-      } else {
+      }
+else {
         chunks.push(result.value)
       }
     }
@@ -912,7 +918,8 @@ describe('stx Streaming - Section-First Chunking', () => {
       const result = await reader.read()
       if (result.done) {
         done = true
-      } else {
+      }
+else {
         chunks.push(result.value)
       }
     }

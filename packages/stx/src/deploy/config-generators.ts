@@ -162,7 +162,8 @@ export function generateNetlifyToml(config: NetlifyConfig): string {
         for (const [key, value] of Object.entries(plugin.inputs)) {
           if (typeof value === 'string') {
             lines.push(`    ${key} = "${escapeTomlString(value)}"`)
-          } else if (typeof value === 'boolean' || typeof value === 'number') {
+          }
+else if (typeof value === 'boolean' || typeof value === 'number') {
             lines.push(`    ${key} = ${value}`)
           }
         }
@@ -239,7 +240,8 @@ export async function detectProjectConfig(directory: string): Promise<ProjectCon
       if (deps['@stacksjs/stx'] || deps.stx) {
         config.framework = 'stx'
       }
-    } catch {
+    }
+catch {
       // Ignore parse errors
     }
   }

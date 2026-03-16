@@ -236,7 +236,8 @@ export function createStore<T extends object>(
       if (stored) {
         currentValue = { ...initialValue, ...JSON.parse(stored) }
       }
-    } catch { /* Invalid stored value */ }
+    }
+catch { /* Invalid stored value */ }
   }
 
   const persistValue = (value: T) => {
@@ -246,14 +247,16 @@ export function createStore<T extends object>(
     if (persist.debounce) {
       if (persistTimeout) clearTimeout(persistTimeout)
       persistTimeout = setTimeout(() => storage.setItem(key, JSON.stringify(value)), persist.debounce)
-    } else {
+    }
+else {
       storage.setItem(key, JSON.stringify(value))
     }
   }
 
   const notify = (newValue: T, prevValue: T | undefined) => {
     for (const subscriber of subscribers) {
-      try { subscriber(newValue, prevValue) } catch (e) { console.error('[store]', e) }
+      try { subscriber(newValue, prevValue) }
+catch (e) { console.error('[store]', e) }
     }
     if (onChange) onChange(newValue, prevValue)
   }
@@ -322,7 +325,8 @@ export function useStorage<T>(
     try {
       const raw = storage.getItem(key)
       return raw !== null ? serializer.read(raw) : defaultValue
-    } catch {
+    }
+catch {
       return defaultValue
     }
   }
@@ -331,7 +335,8 @@ export function useStorage<T>(
     try {
       storage.setItem(key, serializer.write(value))
       listeners.forEach(fn => fn(value))
-    } catch (e) {
+    }
+catch (e) {
       console.error('[useStorage] Failed to set:', e)
     }
   }
@@ -396,7 +401,8 @@ export function useCookie<T = string>(name: string, options: CookieOptions = {})
   const serialize = (val: T): string =>
     typeof val === 'string' ? val : JSON.stringify(val)
   const deserialize = (raw: string): T => {
-    try { return JSON.parse(raw) as T } catch { return raw as T }
+    try { return JSON.parse(raw) as T }
+catch { return raw as T }
   }
 
   return {
@@ -634,7 +640,8 @@ async function createProject(projectName: string, targetDir: string) {
     child.on('close', (code) => {
       if (code === 0) {
         success('Installed dependencies')
-      } else {
+      }
+else {
         log('')
         info('Could not install STX packages from npm (not yet published)')
         info('For local development, link the packages manually:')
@@ -679,7 +686,8 @@ async function main() {
       error(`Directory "${projectName}" already exists and is not empty`)
       process.exit(1)
     }
-  } else {
+  }
+else {
     fs.mkdirSync(targetDir, { recursive: true })
   }
 
@@ -694,7 +702,8 @@ async function main() {
     log(`    ${colors.cyan}cd ${projectName}${colors.reset}`)
     log(`    ${colors.cyan}bun dev${colors.reset}`)
     log('')
-  } catch (err) {
+  }
+catch (err) {
     error(`Failed to create project: ${err}`)
     process.exit(1)
   }

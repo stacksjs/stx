@@ -174,7 +174,8 @@ export function getThemeToggleScript(): string {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       if (e.matches) {
         document.documentElement.classList.add('dark');
-      } else {
+      }
+else {
         document.documentElement.classList.remove('dark');
       }
     });

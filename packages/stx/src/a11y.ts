@@ -139,7 +139,8 @@ export function getScreenReaderOnlyStyle(): string {
  * ```typescript
  * if (hasDOMSupport()) {
  *   console.log('Using full DOM-based a11y checking')
- * } else {
+ * }
+else {
  *   console.log('Using regex-based a11y checking (limited)')
  * }
  * ```

@@ -256,7 +256,8 @@ function transformSignalScript(scriptContent: string, scopeId: string): string {
   var derived = __stx.derived || function(fn) { return fn; };
   var effect = __stx.effect || function(fn) { fn(); return function() {}; };
   var batch = __stx.batch || function(fn) { fn(); };
-  var onMount = __stx.onMount || function(fn) { if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', fn); } else { fn(); } };
+  var onMount = __stx.onMount || function(fn) { if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', fn); }
+else { fn(); } };
   var __destroyHooks = [];
   var onDestroy = function(fn) { if (__stx.onDestroy) __stx.onDestroy(fn); __destroyHooks.push(fn); };
 
@@ -470,7 +471,8 @@ export async function processIncludes(
         if (isExpressionSafe(condExpr)) {
           const condFn = createSafeFunction(condExpr, Object.keys(context))
           condResult = Boolean(condFn(...Object.values(context)))
-        } else {
+        }
+else {
           condResult = Boolean(safeEvaluate(condExpr, context))
         }
 
@@ -483,7 +485,8 @@ export async function processIncludes(
         }
         output = output.substring(0, start) + replacement + output.substring(p)
         pat.lastIndex = 0
-      } catch (error: unknown) {
+      }
+catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         const errHtml = createDetailedErrorMessage('Include', `Error evaluating ${directive} condition: ${errorMessage}`, filePath, template, start)
         output = output.substring(0, start) + errHtml + output.substring(p)
@@ -519,7 +522,8 @@ export async function processIncludes(
         if (isExpressionSafe(trimmedExpr)) {
           const fn = createSafeFunction(trimmedExpr, Object.keys(context))
           array = fn(...Object.values(context))
-        } else {
+        }
+else {
           array = safeEvaluate(trimmedExpr, context)
         }
 
@@ -530,13 +534,15 @@ export async function processIncludes(
             const processed = await processIncludeHelper(partialName, { [itemVar]: item }, template, eStart)
             replacement += processed
           }
-        } else if (emptyPartial) {
+        }
+else if (emptyPartial) {
           replacement = await processIncludeHelper(emptyPartial, {}, template, eStart)
         }
 
         output = output.substring(0, eStart) + replacement + output.substring(ep + 1)
         eachPat.lastIndex = 0
-      } catch (error: unknown) {
+      }
+catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         output = output.substring(0, eStart) + createDetailedErrorMessage('Each', `Error in @each: ${errorMessage}`, filePath, template, eStart) + output.substring(ep + 1)
         eachPat.lastIndex = 0
@@ -886,7 +892,8 @@ export async function processIncludes(
           try {
             const { extractVariables } = await import('./variable-extractor')
             await extractVariables(scriptContent, includeContext, includeFilePath)
-          } catch (e) {
+          }
+catch (e) {
             // Script may contain unsupported syntax, continue without extracted variables
             if (options.debug) {
               console.warn(`Warning: Could not extract variables from server script in ${includeFilePath}:`, e)

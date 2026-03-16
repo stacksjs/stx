@@ -132,7 +132,8 @@ function generateUpdatePrompt(content: string, options: StxOptions): string {
     if (updateContainer) {
       if (updateContainer.classList.contains('stx-pwa-update-banner')) {
         updateContainer.style.transform = 'translateY(0)';
-      } else {
+      }
+else {
         updateContainer.style.display = 'block';
       }
     }
@@ -145,7 +146,8 @@ function generateUpdatePrompt(content: string, options: StxOptions): string {
     if (updateContainer) {
       if (updateContainer.classList.contains('stx-pwa-update-banner')) {
         updateContainer.style.transform = 'translateY(100%)';
-      } else {
+      }
+else {
         updateContainer.style.display = 'none';
       }
     }
@@ -307,7 +309,8 @@ function generatePushSubscribe(content: string, options: StxOptions): string {
       }
 
       return subscription;
-    } catch (error) {
+    }
+catch (error) {
       console.error('[PWA] Push subscription failed:', error);
       return null;
     }

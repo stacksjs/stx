@@ -324,7 +324,8 @@ export function state<T>(initialValue: T): Signal<T> {
       // Trigger effects
       if (isBatching) {
         effects.forEach(effect => pendingEffects.add(effect))
-      } else {
+      }
+else {
         effects.forEach(effect => effect())
       }
     }
@@ -400,7 +401,8 @@ export function derived<T>(compute: () => T): DerivedSignal<T> {
       // Propagate to dependent effects
       if (isBatching) {
         effects.forEach(effect => pendingEffects.add(effect))
-      } else {
+      }
+else {
         effects.forEach(effect => effect())
       }
     }
@@ -420,7 +422,8 @@ export function derived<T>(compute: () => T): DerivedSignal<T> {
 
       try {
         cachedValue = compute()
-      } finally {
+      }
+finally {
         effectStack.pop()
         activeEffect = prevEffect
       }
@@ -504,7 +507,8 @@ export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}):
 
     try {
       cleanup = fn()
-    } finally {
+    }
+finally {
       effectStack.pop()
       activeEffect = prevEffect
     }
@@ -552,7 +556,8 @@ export function batch(fn: () => void): void {
   isBatching = true
   try {
     fn()
-  } finally {
+  }
+finally {
     isBatching = false
     // Run all pending effects
     pendingEffects.forEach(effect => effect())
@@ -689,7 +694,8 @@ export function peek<T>(fn: () => T): T {
   activeEffect = null
   try {
     return fn()
-  } finally {
+  }
+finally {
     activeEffect = prevEffect
   }
 }
@@ -833,7 +839,8 @@ export function generateSignalsRuntimeDev(): string {
     json(value, indent = 2) {
       try {
         return JSON.stringify(value, null, indent);
-      } catch (e) {
+      }
+catch (e) {
         return String(value);
       }
     },
@@ -878,7 +885,8 @@ export function generateSignalsRuntimeDev(): string {
     if (deps) {
       if (isBatching) {
         deps.forEach(effect => pendingEffects.add(effect));
-      } else {
+      }
+else {
         deps.forEach(effect => effect());
       }
     }
@@ -929,7 +937,8 @@ export function generateSignalsRuntimeDev(): string {
         if (!inString) {
           inString = true;
           stringChar = char;
-        } else if (char === stringChar) {
+        }
+else if (char === stringChar) {
           inString = false;
         }
         continue;
@@ -984,7 +993,8 @@ export function generateSignalsRuntimeDev(): string {
         if (!inString) {
           inString = true;
           stringChar = char;
-        } else if (char === stringChar) {
+        }
+else if (char === stringChar) {
           inString = false;
         }
         currentPipe += char;
@@ -1011,7 +1021,8 @@ export function generateSignalsRuntimeDev(): string {
           });
         }
         currentPipe = '';
-      } else {
+      }
+else {
         currentPipe += char;
       }
     }
@@ -1036,7 +1047,8 @@ export function generateSignalsRuntimeDev(): string {
     try {
       const fn = new Function(...Object.keys(scope), 'return ' + valueExpr);
       value = fn(...Object.values(scope));
-    } catch (e) {
+    }
+catch (e) {
       console.warn('[STX] Pipe base expression error:', valueExpr, e);
       return '';
     }
@@ -1056,15 +1068,18 @@ export function generateSignalsRuntimeDev(): string {
             try {
               const fn = new Function(...Object.keys(scope), 'return ' + arg);
               return fn(...Object.values(scope));
-            } catch (e) {
+            }
+catch (e) {
               return arg;
             }
           });
           value = filterFn(value, ...parsedArgs);
-        } catch (e) {
+        }
+catch (e) {
           console.warn('[STX] Pipe filter error:', pipe.name, e);
         }
-      } else {
+      }
+else {
         console.warn('[STX] Unknown pipe/filter:', pipe.name);
       }
     }
@@ -1093,7 +1108,8 @@ export function generateSignalsRuntimeDev(): string {
         subscribers.forEach(cb => cb(value, prev));
         if (isBatching) {
           effects.forEach(effect => pendingEffects.add(effect));
-        } else {
+        }
+else {
           effects.forEach(effect => effect());
         }
       }
@@ -1105,6 +1121,13 @@ export function generateSignalsRuntimeDev(): string {
       return () => subscribers.delete(cb);
     };
     signal._isSignal = true;
+
+    // Vue-compatible .value getter/setter for templates that use signal.value syntax
+    Object.defineProperty(signal, 'value', {
+      get() { return signal(); },
+      set(v) { signal.set(v); },
+      configurable: true
+    });
 
     return signal;
   }
@@ -1123,7 +1146,8 @@ export function generateSignalsRuntimeDev(): string {
         isDirty = true;
         if (isBatching) {
           effects.forEach(e => pendingEffects.add(e));
-        } else {
+        }
+else {
           effects.forEach(e => e());
         }
       }
@@ -1137,7 +1161,8 @@ export function generateSignalsRuntimeDev(): string {
         effectStack.push(markDirty);
         try {
           cached = compute();
-        } finally {
+        }
+finally {
           effectStack.pop();
           activeEffect = prev;
         }
@@ -1147,6 +1172,13 @@ export function generateSignalsRuntimeDev(): string {
     };
 
     signal._isDerived = true;
+
+    // Vue-compatible .value getter for templates that use computed.value syntax
+    Object.defineProperty(signal, 'value', {
+      get() { return signal(); },
+      configurable: true
+    });
+
     return signal;
   }
 
@@ -1169,7 +1201,8 @@ export function generateSignalsRuntimeDev(): string {
       effectStack.push(runEffect);
       try {
         cleanup = fn();
-      } finally {
+      }
+finally {
         effectStack.pop();
         activeEffect = prev;
       }
@@ -1195,14 +1228,16 @@ export function generateSignalsRuntimeDev(): string {
     activeDisposers = disposers;
     try {
       fn();
-    } finally {
+    }
+finally {
       activeDisposers = parentDisposers;
       if (parentDisposers) {
         disposers.forEach(function(d) { parentDisposers.push(d); });
       }
     }
     return function disposeAll() {
-      disposers.forEach(function(d) { try { d(); } catch(e) { console.warn('[stx] dispose error:', e); } });
+      disposers.forEach(function(d) { try { d(); }
+catch (e) { console.warn('[stx] dispose error:', e); } });
       disposers.length = 0;
     };
   }
@@ -1240,7 +1275,8 @@ export function generateSignalsRuntimeDev(): string {
     activeEffect = null;
     try {
       return fn();
-    } finally {
+    }
+finally {
       activeEffect = prev;
     }
   }
@@ -1300,11 +1336,13 @@ export function generateSignalsRuntimeDev(): string {
         // Apply transform if provided
         const transformed = options.transform ? options.transform(result) : result;
         data.set(transformed);
-      } catch (e) {
+      }
+catch (e) {
         console.error('[STX] useFetch error:', e);
         error.set(e.message || 'Fetch failed');
         if (options.onError) options.onError(e);
-      } finally {
+      }
+finally {
         loading.set(false);
       }
     };
@@ -1358,7 +1396,8 @@ export function generateSignalsRuntimeDev(): string {
   function navigate(url) {
     if (window.stxRouter && typeof window.stxRouter.navigate === 'function') {
       window.stxRouter.navigate(url);
-    } else {
+    }
+else {
       window.location.href = url;
     }
   }
@@ -1456,10 +1495,12 @@ export function generateSignalsRuntimeDev(): string {
         if (options.onSuccess) options.onSuccess(transformed);
         // Schedule cache eviction
         setTimeout(function() { delete _queryCache[key]; }, cacheTime);
-      } catch (e) {
+      }
+catch (e) {
         error.set(e.message || 'Query failed');
         if (options.onError) options.onError(e);
-      } finally {
+      }
+finally {
         loading.set(false);
       }
     };
@@ -1530,13 +1571,15 @@ export function generateSignalsRuntimeDev(): string {
           options.invalidateQueries.forEach(function(key) { delete _queryCache[key]; });
         }
         return transformed;
-      } catch (e) {
+      }
+catch (e) {
         error.set(e.message || 'Mutation failed');
         // Rollback optimistic update
         if (options.optimisticData) data.set(previousData);
         if (options.onError) options.onError(e);
         throw e;
-      } finally {
+      }
+finally {
         loading.set(false);
       }
     };
@@ -1554,7 +1597,7 @@ export function generateSignalsRuntimeDev(): string {
   // Template Binding
   // ==========================================================================
 
-  let componentScope = {};
+  let componentScope = { $refs: {} };
 
   // Current element being processed (for scope lookup)
   let currentElement = null;
@@ -1599,7 +1642,8 @@ export function generateSignalsRuntimeDev(): string {
       const scope = enableAutoUnwrap ? createAutoUnwrapProxy(baseScope) : baseScope;
       const fn = new Function(...Object.keys(baseScope), 'return ' + expr);
       return fn(...Object.values(scope));
-    } catch (e) {
+    }
+catch (e) {
       console.warn('[STX] Expression error:', expr, e);
       return '';
     }
@@ -1700,12 +1744,17 @@ export function generateSignalsRuntimeDev(): string {
 
       const fn = new Function(...Object.keys(scope), '$event', expr);
       fn(...Object.values(scope), event);
-    } catch (e) {
+    }
+catch (e) {
       console.warn('[STX] Handler error:', expr, e);
     }
   }
 
   function processElement(el, scope = componentScope) {
+    // Skip elements managed by __stx_reactive or x-element (x-data scopes)
+    if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
+      if (el.hasAttribute('x-data') || el.__stx_reactive_initialized) return;
+    }
     if (el.nodeType === Node.TEXT_NODE) {
       const text = el.textContent;
       if (text && text.includes('{{')) {
@@ -1736,26 +1785,30 @@ export function generateSignalsRuntimeDev(): string {
                   if (pipeResult) {
                     const unwrapScope = createAutoUnwrapProxy(capturedScope);
                     span.textContent = executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
-                  } else {
+                  }
+else {
                     // Use auto-unwrap proxy (Feature #1)
                     const unwrapScope = createAutoUnwrapProxy(capturedScope);
                     const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
                     span.textContent = fn(...Object.values(unwrapScope));
                   }
-                } catch (e) {
+                }
+catch (e) {
                   // Auto-unwrap can break explicit signal calls like errorData().message
                   // because it converts the signal to its value before the expression runs.
                   // Retry without auto-unwrap so signal functions remain callable.
                   try {
                     const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
                     span.textContent = fn(...Object.values(capturedScope));
-                  } catch (e2) {
+                  }
+catch (e2) {
                     console.warn('[STX] Expression error:', expr, e2);
                     span.textContent = '';
                   }
                 }
               });
-            } else if (part) {
+            }
+else if (part) {
               fragment.appendChild(document.createTextNode(part));
             }
           });
@@ -1810,13 +1863,15 @@ export function generateSignalsRuntimeDev(): string {
         const unwrapScope = createAutoUnwrapProxy(attrCapturedScope);
         const fn = new Function(...Object.keys(attrCapturedScope), 'return ' + expr);
         return fn(...Object.values(unwrapScope));
-      } catch (e) {
+      }
+catch (e) {
         // Auto-unwrap can break explicit signal calls like errorData().message
         // Retry without auto-unwrap so signal functions remain callable
         try {
           const fn = new Function(...Object.keys(attrCapturedScope), 'return ' + expr);
           return fn(...Object.values(attrCapturedScope));
-        } catch (e2) {
+        }
+catch (e2) {
           console.warn('[STX] Attribute expression error:', expr, e2);
           return '';
         }
@@ -1843,34 +1898,42 @@ export function generateSignalsRuntimeDev(): string {
           const v = evalAttrExpr(value);
           if (v === false || v === null || v === undefined) {
             el.removeAttribute(attrName);
-          } else if (v === true) {
+          }
+else if (v === true) {
             el.setAttribute(attrName, '');
-          } else {
+          }
+else {
             el.setAttribute(attrName, v);
           }
         });
         el.removeAttribute(name);
-      } else if (name === '@class' || name === ':class') {
+      }
+else if (name === '@class' || name === ':class') {
         bindClass(el, value, scope);
         el.removeAttribute(name);
-      } else if (name === '@style' || name === ':style') {
+      }
+else if (name === '@style' || name === ':style') {
         bindStyle(el, value, scope);
         el.removeAttribute(name);
-      } else if (name === '@text' || name === ':text') {
+      }
+else if (name === '@text' || name === ':text') {
         effect(() => {
           el.textContent = evalAttrExpr(value);
         });
         el.removeAttribute(name);
-      } else if (name === '@html' || name === ':html') {
+      }
+else if (name === '@html' || name === ':html') {
         effect(() => {
           el.innerHTML = evalAttrExpr(value);
         });
         el.removeAttribute(name);
-      } else if (name === ':ref' || name === 'data-stx-ref') {
-        // Store ref in scope.$refs (from :ref directive or build-time ref="name" transform)
+      }
+else if (name === 'ref' || name === ':ref' || name === 'data-stx-ref') {
+        // Store ref in scope.$refs and componentScope.$refs
         if (scope.$refs) scope.$refs[value] = el;
-        el.removeAttribute(name);
-      } else if (name.startsWith('@') || name.startsWith(':')) {
+        if (componentScope.$refs) componentScope.$refs[value] = el;
+      }
+else if (name.startsWith('@') || name.startsWith(':')) {
         // Event handlers: @click, :click, @submit.prevent, :keydown.enter, etc.
         const parts = name.slice(1).split('.');
         const eventName = parts[0];
@@ -1904,7 +1967,8 @@ export function generateSignalsRuntimeDev(): string {
             if (shorthandFn) { shorthandFn(); return; }
             var fn = new Function(...Object.keys(eventCapturedScope), '$event', value);
             fn(...Object.values(eventCapturedScope), event);
-          } catch (e) {
+          }
+catch (e) {
             console.warn('[STX] Handler error:', value, e);
           }
         }, {
@@ -1917,8 +1981,18 @@ export function generateSignalsRuntimeDev(): string {
     });
 
     // Process children (skip script/style elements — their text content is not template markup)
+    // Skip elements that are roots of nested stx.mount() components — those have their own scope
     if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
-      Array.from(el.childNodes).forEach(child => processElement(child, scope));
+      var children = Array.from(el.childNodes);
+      children.forEach(function(child) {
+        // Skip script elements entirely
+        if (child.nodeType === Node.ELEMENT_NODE && child.tagName === 'SCRIPT') return;
+        // Skip elements already mounted by stx.mount() — they have their own scope
+        if (child.nodeType === Node.ELEMENT_NODE && child.__stx_scope) return;
+        // Skip data-stx-scope elements — they are managed by the reactive (x-data) runtime
+        if (child.nodeType === Node.ELEMENT_NODE && child.hasAttribute && child.hasAttribute('data-stx-scope')) return;
+        processElement(child, scope);
+      });
     }
   }
 
@@ -1931,7 +2005,8 @@ export function generateSignalsRuntimeDev(): string {
       try {
         const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
         return fn(...Object.values(capturedScope));
-      } catch (e) {
+      }
+catch (e) {
         console.warn('[STX] Show expression error:', expr, e);
         return false;
       }
@@ -1956,11 +2031,13 @@ export function generateSignalsRuntimeDev(): string {
 
         if (scope[expr] && scope[expr]._isSignal) {
           scope[expr].set(val);
-        } else {
+        }
+else {
           const fn = new Function(...Object.keys(scope), 'v', expr + ' = v');
           fn(...Object.values(scope), val);
         }
-      } catch (e) {
+      }
+catch (e) {
         console.warn('[STX] ' + attrName + ' set error:', expr, e);
       }
     };
@@ -1968,10 +2045,12 @@ export function generateSignalsRuntimeDev(): string {
     if (tag === 'input' && (type === 'checkbox' || type === 'radio')) {
       effect(() => { el.checked = getValue(); });
       el.addEventListener('change', () => setValue(el.checked));
-    } else if (tag === 'select') {
+    }
+else if (tag === 'select') {
       effect(() => { el.value = getValue(); });
       el.addEventListener('change', () => setValue(el.value));
-    } else {
+    }
+else {
       effect(() => { el.value = getValue() ?? ''; });
       el.addEventListener('input', () => setValue(el.value));
     }
@@ -1988,7 +2067,8 @@ export function generateSignalsRuntimeDev(): string {
       try {
         const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
         return fn(...Object.values(capturedScope));
-      } catch (e) {
+      }
+catch (e) {
         console.warn('[STX] Class expression error:', expr, e);
         return '';
       }
@@ -2000,9 +2080,11 @@ export function generateSignalsRuntimeDev(): string {
         Object.keys(value).forEach(cls => {
           value[cls] ? el.classList.add(cls) : el.classList.remove(cls);
         });
-      } else if (Array.isArray(value)) {
+      }
+else if (Array.isArray(value)) {
         el.className = originalClasses + ' ' + value.filter(Boolean).join(' ');
-      } else {
+      }
+else {
         el.className = originalClasses + (value ? ' ' + value : '');
       }
     });
@@ -2016,7 +2098,8 @@ export function generateSignalsRuntimeDev(): string {
       try {
         const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
         return fn(...Object.values(capturedScope));
-      } catch (e) {
+      }
+catch (e) {
         console.warn('[STX] Style expression error:', expr, e);
         return {};
       }
@@ -2026,7 +2109,8 @@ export function generateSignalsRuntimeDev(): string {
       const value = evalExpr();
       if (typeof value === 'object' && value !== null) {
         Object.assign(el.style, value);
-      } else if (typeof value === 'string') {
+      }
+else if (typeof value === 'string') {
         el.style.cssText = value;
       }
     });
@@ -2094,7 +2178,8 @@ export function generateSignalsRuntimeDev(): string {
     let templateContent;
     if (isTemplate) {
       templateContent = el.content;
-    } else {
+    }
+else {
       const wrapper = el.cloneNode(true);
       wrapper.removeAttribute('@for');
       wrapper.removeAttribute(':for');
@@ -2120,7 +2205,8 @@ export function generateSignalsRuntimeDev(): string {
         const scope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers, ...extraScope };
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(scope));
-      } catch (e) {
+      }
+catch (e) {
         console.warn('[STX] Expression error:', expression, e);
         return '';
       }
@@ -2202,7 +2288,8 @@ export function generateSignalsRuntimeDev(): string {
             parent.insertBefore(textNode, placeholder);
             currentElements.push(textNode);
           }
-        } else if (emptyTemplate) {
+        }
+else if (emptyTemplate) {
           showEmpty();
         }
         return;
@@ -2228,7 +2315,8 @@ export function generateSignalsRuntimeDev(): string {
             }
             currentElements.push(clone);
           });
-        } else {
+        }
+else {
           const clone = templateContent.cloneNode(true);
           parent.insertBefore(clone, placeholder);
           processElement(clone, itemScope);
@@ -2286,7 +2374,8 @@ export function generateSignalsRuntimeDev(): string {
         const scope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(scope));
-      } catch (e) {
+      }
+catch (e) {
         console.warn('[STX] Expression error:', expression, e);
         return '';
       }
@@ -2325,13 +2414,15 @@ export function generateSignalsRuntimeDev(): string {
             }
           });
           isInserted = true;
-        } else if (!value && isInserted) {
+        }
+else if (!value && isInserted) {
           // Remove all current nodes
           currentNodes.forEach(node => node.remove());
           currentNodes = [];
           isInserted = false;
         }
-      } else {
+      }
+else {
         if (value && !isInserted) {
           parent.insertBefore(el, placeholder.nextSibling);
           // Process children if not already done
@@ -2339,7 +2430,8 @@ export function generateSignalsRuntimeDev(): string {
             processChildrenWithScope();
           }
           isInserted = true;
-        } else if (!value && isInserted) {
+        }
+else if (!value && isInserted) {
           el.remove();
           isInserted = false;
         }
@@ -2456,7 +2548,8 @@ export function generateSignalsRuntimeDev(): string {
         if (timer !== null) { clearTimeout(timer); timer = null; }
         lastRan = now;
         fn.apply(null, args);
-      } else if (timer === null) {
+      }
+else if (timer === null) {
         timer = setTimeout(function() {
           lastRan = Date.now();
           timer = null;
@@ -2694,9 +2787,11 @@ export function generateSignalsRuntimeDev(): string {
       else { if (mode === 'dark') el.classList.add(darkClass); else el.classList.remove(darkClass); }
       if (disableTransitions) { el.offsetHeight; el.style.removeProperty('transition'); }
     }
-    function persist(pref) { try { localStorage.setItem(storageKey, pref); } catch(e) {} }
+    function persist(pref) { try { localStorage.setItem(storageKey, pref); }
+catch (e) {} }
     function readPersisted() {
-      try { var v = localStorage.getItem(storageKey); if (v === 'light' || v === 'dark' || v === 'auto') return v; } catch(e) {}
+      try { var v = localStorage.getItem(storageKey); if (v === 'light' || v === 'dark' || v === 'auto') return v; }
+catch (e) {}
       return null;
     }
     function update(pref) {
@@ -2767,27 +2862,27 @@ export function generateSignalsRuntimeDev(): string {
   var watchEffect = function(fn) { return effect(fn); };
 
   function useLocalStorage(key, defaultValue) {
-    var stored = localStorage.getItem(key)
-    var initial = stored !== null ? JSON.parse(stored) : defaultValue
-    var s = state(initial)
+    var stored = localStorage.getItem(key);
+    var initial = stored !== null ? JSON.parse(stored) : defaultValue;
+    var s = state(initial);
     effect(function() {
-      localStorage.setItem(key, JSON.stringify(s()))
-    })
+      localStorage.setItem(key, JSON.stringify(s()));
+    });
     var handler = function(e) {
-      if (e.key === key) s.set(e.newValue !== null ? JSON.parse(e.newValue) : defaultValue)
-    }
-    window.addEventListener('storage', handler)
-    onDestroy(function() { window.removeEventListener('storage', handler) })
-    return s
+      if (e.key === key) s.set(e.newValue !== null ? JSON.parse(e.newValue) : defaultValue);
+    };
+    window.addEventListener('storage', handler);
+    onDestroy(function() { window.removeEventListener('storage', handler); });
+    return s;
   }
 
   function useEventListener(event, handler, options) {
-    var target = (options && options.target) || window
-    if (typeof target === 'string') target = document.querySelector(target)
-    if (!target) return
-    var opts = { capture: options && options.capture, passive: options && options.passive, once: options && options.once }
-    target.addEventListener(event, handler, opts)
-    onDestroy(function() { target.removeEventListener(event, handler, opts) })
+    var target = (options && options.target) || window;
+    if (typeof target === 'string') target = document.querySelector(target);
+    if (!target) return;
+    var opts = { capture: options && options.capture, passive: options && options.passive, once: options && options.once };
+    target.addEventListener(event, handler, opts);
+    onDestroy(function() { target.removeEventListener(event, handler, opts); });
   }
 
   // Component mount system
@@ -2841,8 +2936,8 @@ export function generateSignalsRuntimeDev(): string {
     _scopes: {},  // Component-level scopes
     mountEl: function(selector, setupFn) {
       function doMount() {
-        var root = document.querySelector(selector)
-        if (!root) { console.warn('[stx] mountEl: element not found:', selector); return }
+        var root = document.querySelector(selector);
+        if (!root) { console.warn('[stx] mountEl: element not found:', selector); return; }
 
         var mountStart = mountCallbacks.length;
         var destroyStart = destroyCallbacks.length;
@@ -2870,7 +2965,8 @@ export function generateSignalsRuntimeDev(): string {
           try {
             var cleanup = fn();
             if (typeof cleanup === 'function') localDestroyHooks.push(cleanup);
-          } catch(e) { console.error('[stx] onMount error:', e); }
+          }
+catch (e) { console.error('[stx] onMount error:', e); }
         });
 
         root.__stx_destroy = localDestroyHooks;
@@ -2878,7 +2974,8 @@ export function generateSignalsRuntimeDev(): string {
 
       if (document.readyState === 'loading') {
         mountQueue.push(doMount);
-      } else {
+      }
+else {
         doMount();
       }
     },
@@ -2890,6 +2987,25 @@ export function generateSignalsRuntimeDev(): string {
         // Find component root: next sibling element after the script tag
         var root = scriptEl ? scriptEl.nextElementSibling : null;
         if (!root && scriptEl) root = scriptEl.previousElementSibling || scriptEl.parentElement;
+
+        // SPA fallback: during router navigation, script is appended to <body>
+        // but template content is inside the router container (e.g. <main>)
+        if (!root || root === document.body) {
+          var container = document.querySelector('[data-stx-router-container]')
+            || document.querySelector('main')
+            || document.querySelector('#content');
+          if (container) {
+            // Find the first child element that isn't already mounted
+            var children = container.children;
+            for (var ci = 0; ci < children.length; ci++) {
+              if (!children[ci].__stx_scope && children[ci].tagName !== 'SCRIPT') {
+                root = children[ci];
+                break;
+              }
+            }
+          }
+        }
+
         if (!root) { console.warn('[stx] mount: no root element found'); return; }
 
         // Track lifecycle hooks registered during setup
@@ -2926,7 +3042,8 @@ export function generateSignalsRuntimeDev(): string {
           try {
             var cleanup = fn();
             if (typeof cleanup === 'function') localDestroyHooks.push(cleanup);
-          } catch(e) { console.error('[stx] onMount error:', e); }
+          }
+catch (e) { console.error('[stx] onMount error:', e); }
         });
 
         // Store cleanup on element for auto-destroy
@@ -2935,7 +3052,8 @@ export function generateSignalsRuntimeDev(): string {
 
       if (document.readyState === 'loading') {
         mountQueue.push(doMount);
-      } else {
+      }
+else {
         doMount();
       }
     }
@@ -3014,6 +3132,10 @@ export function generateSignalsRuntimeDev(): string {
     document.querySelectorAll('[data-stx-scope]').forEach(el => {
       const scopeId = el.getAttribute('data-stx-scope');
       processedScopes.add(el);
+
+      // Skip scopes already handled by __stx_reactive (x-data conversions)
+      if (el.__stx_reactive_initialized) return;
+
       const scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
 
       // Merge component scope vars into componentScope (don't restore - keep for head elements)
@@ -3058,12 +3180,14 @@ export function generateSignalsRuntimeDev(): string {
                 });
               }
               el.textContent = result;
-            } catch (e) {
+            }
+catch (e) {
               console.warn('[STX] Title expression error:', e);
             }
           });
         }
-      } else if (el.tagName === 'META') {
+      }
+else if (el.tagName === 'META') {
         const content = el.getAttribute('content');
         if (content && content.includes('{{')) {
           // Skip build-time placeholders like {{__TITLE__}}
@@ -3083,7 +3207,8 @@ export function generateSignalsRuntimeDev(): string {
                 });
               }
               el.setAttribute('content', result);
-            } catch (e) {
+            }
+catch (e) {
               console.warn('[STX] Meta expression error:', e);
             }
           });
@@ -3106,7 +3231,8 @@ export function generateSignalsRuntimeDev(): string {
     container.querySelectorAll('*').forEach(function(el) {
       if (el.__stx_destroy && Array.isArray(el.__stx_destroy)) {
         el.__stx_destroy.forEach(function(fn) {
-          try { fn(); } catch(e) { console.warn('[stx] destroy hook error:', e); }
+          try { fn(); }
+catch (e) { console.warn('[stx] destroy hook error:', e); }
         });
         el.__stx_destroy = null;
       }
@@ -3119,7 +3245,8 @@ export function generateSignalsRuntimeDev(): string {
     // 2. Check container itself
     if (container.__stx_destroy) {
       container.__stx_destroy.forEach(function(fn) {
-        try { fn(); } catch(e) { console.warn('[stx] destroy hook error:', e); }
+        try { fn(); }
+catch (e) { console.warn('[stx] destroy hook error:', e); }
       });
       container.__stx_destroy = null;
     }
@@ -3136,7 +3263,8 @@ export function generateSignalsRuntimeDev(): string {
         // Fire scope-level destroy callbacks
         if (scopeVars.__destroyCallbacks && Array.isArray(scopeVars.__destroyCallbacks)) {
           scopeVars.__destroyCallbacks.forEach(function(fn) {
-            try { fn(); } catch(e) { console.warn('[stx] scope destroy error:', e); }
+            try { fn(); }
+catch (e) { console.warn('[stx] scope destroy error:', e); }
           });
         }
         delete window.stx._scopes[scopeId];
@@ -3148,7 +3276,8 @@ export function generateSignalsRuntimeDev(): string {
   window.addEventListener('stx:load', function() {
     // Run any pending destroy callbacks before re-initializing
     destroyCallbacks.forEach(function(fn) {
-      try { fn(); } catch(e) { console.warn('[stx] destroy callback error:', e); }
+      try { fn(); }
+catch (e) { console.warn('[stx] destroy callback error:', e); }
     });
     destroyCallbacks.length = 0;
 
@@ -3183,7 +3312,8 @@ export function generateSignalsRuntimeDev(): string {
 
     // Flush global mountCallbacks (from scripts re-executed after SPA content swap)
     mountCallbacks.forEach(function(fn) {
-      try { fn(); } catch(e) { console.warn('[stx] mount callback error:', e); }
+      try { fn(); }
+catch (e) { console.warn('[stx] mount callback error:', e); }
     });
     mountCallbacks.length = 0;
   });

@@ -287,13 +287,15 @@ function parseParams<P extends DirectiveParams>(
       else if (typeof value === 'string' && value.startsWith('{')) {
         try {
           value = JSON.parse(value)
-        } catch {
+        }
+catch {
           // Keep as string
         }
       }
 
       result[key] = value
-    } else {
+    }
+else {
       // Positional parameter - use index as key or 'value' for first
       const index = Object.keys(result).filter(k => !defaults || !(k in defaults)).length
       result[index === 0 ? 'value' : `arg${index}`] = param

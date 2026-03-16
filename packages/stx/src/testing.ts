@@ -313,7 +313,8 @@ export async function mount(
     container = typeof options.attachTo === 'string'
       ? document.querySelector(options.attachTo) || document.createElement('div')
       : options.attachTo
-  } else {
+  }
+else {
     container = document.createElement('div')
     container.id = `stx-test-${Date.now()}`
   }
@@ -399,12 +400,14 @@ export async function mount(
       if (el instanceof HTMLInputElement) {
         if (el.type === 'checkbox' || el.type === 'radio') {
           el.checked = value as boolean
-        } else {
+        }
+else {
           el.value = value as string
         }
         el.dispatchEvent(new Event('input', { bubbles: true }))
         el.dispatchEvent(new Event('change', { bubbles: true }))
-      } else if (el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
+      }
+else if (el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
         el.value = value as string
         el.dispatchEvent(new Event('input', { bubbles: true }))
         el.dispatchEvent(new Event('change', { bubbles: true }))
@@ -833,7 +836,8 @@ export function nextTick(): Promise<void> {
   return new Promise((resolve) => {
     if (typeof requestAnimationFrame !== 'undefined') {
       requestAnimationFrame(() => resolve())
-    } else {
+    }
+else {
       setTimeout(resolve, 0)
     }
   })

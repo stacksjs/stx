@@ -1843,7 +1843,8 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
     if (actualPort !== port) {
       console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
     }
-  } catch {
+  }
+catch {
     console.error(`${colors.red}Could not find an available port${colors.reset}`)
     return false
   }
@@ -2160,7 +2161,8 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
             hmrServer.reload(filename)
           }
         }
-      } else if (isCssOnlyChange(filename)) {
+      }
+else if (isCssOnlyChange(filename)) {
         console.log(`${colors.cyan}CSS ${filename} changed${colors.reset}`)
         if (hotReload && hmrServer) {
           hmrServer.updateCss(filename)

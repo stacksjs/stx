@@ -202,7 +202,8 @@ export function useFetch<T = unknown>(
             'Content-Type': 'application/json',
             ...fetchOptions.headers,
           }
-        } else {
+        }
+else {
           requestBody = body as BodyInit
         }
       }
@@ -236,7 +237,8 @@ export function useFetch<T = unknown>(
         error: null,
       }
       notify()
-    } catch (err) {
+    }
+catch (err) {
       clearTimeout(timeoutId)
 
       // Don't treat abort as error
@@ -409,7 +411,8 @@ export function useAsyncData<T>(
         error: null,
       }
       notify()
-    } catch (err) {
+    }
+catch (err) {
       state = {
         ...state,
         loading: false,
@@ -476,7 +479,8 @@ export function usePost<T = unknown, B = unknown>(
 export function clearFetchCache(key?: string): void {
   if (key) {
     fetchCache.delete(key)
-  } else {
+  }
+else {
     fetchCache.clear()
   }
 }

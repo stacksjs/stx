@@ -138,7 +138,8 @@ export function getHotSwapScript(): string {
             detail: { storyId: this.storyId, variantId: this.variantId }
           }));
         }
-      } catch (error) {
+      }
+catch (error) {
         console.error('[STX Story] Hot swap failed:', error);
         // Fallback to full reload
         this.iframe.src = '/preview/' + this.storyId + '/' + this.variantId;
@@ -190,7 +191,8 @@ export function getHotSwapScript(): string {
     document.addEventListener('DOMContentLoaded', function() {
       window.__stxHotSwap.init('#preview-iframe');
     });
-  } else {
+  }
+else {
     window.__stxHotSwap.init('#preview-iframe');
   }
 })();

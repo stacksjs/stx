@@ -304,7 +304,8 @@ export function generateHeatmapScript(options: StxOptions): string {
     // Use sendBeacon for reliability
     if (navigator.sendBeacon) {
       navigator.sendBeacon(config.endpoint, JSON.stringify(data));
-    } else {
+    }
+else {
       var xhr = new XMLHttpRequest();
       xhr.open('POST', config.endpoint, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
@@ -389,7 +390,8 @@ export function generateHeatmapScript(options: StxOptions): string {
           session.points = parsed.points || [];
         }
       }
-    } catch (e) {}
+    }
+catch (e) {}
 
     // Save periodically
     setInterval(function() {
@@ -398,7 +400,8 @@ export function generateHeatmapScript(options: StxOptions): string {
           points: session.points,
           lastActivity: session.lastActivity
         }));
-      } catch (e) {}
+      }
+catch (e) {}
     }, 5000);
   }
 
@@ -472,7 +475,8 @@ export function generateHeatmapScript(options: StxOptions): string {
       session.points = [];
       if (config.persistData) {
         var storageKey = config.storagePrefix + '_' + session.page.replace(/\\//g, '_');
-        try { localStorage.removeItem(storageKey); } catch (e) {}
+        try { localStorage.removeItem(storageKey); }
+catch (e) {}
       }
     },
     // Add custom event
@@ -530,15 +534,18 @@ export function generateHeatmapScript(options: StxOptions): string {
             pixels[i] = 0;
             pixels[i + 1] = Math.round(ratio * 4 * 255);
             pixels[i + 2] = 255;
-          } else if (ratio < 0.5) {
+          }
+else if (ratio < 0.5) {
             pixels[i] = 0;
             pixels[i + 1] = 255;
             pixels[i + 2] = Math.round((1 - (ratio - 0.25) * 4) * 255);
-          } else if (ratio < 0.75) {
+          }
+else if (ratio < 0.75) {
             pixels[i] = Math.round((ratio - 0.5) * 4 * 255);
             pixels[i + 1] = 255;
             pixels[i + 2] = 0;
-          } else {
+          }
+else {
             pixels[i] = 255;
             pixels[i + 1] = Math.round((1 - (ratio - 0.75) * 4) * 255);
             pixels[i + 2] = 0;

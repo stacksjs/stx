@@ -187,7 +187,8 @@ const mobileScript = `
         try {
           await StatusBar.setStyle({ style: Style.Dark });
           await StatusBar.setBackgroundColor({ color: '#1a1a2e' });
-        } catch (e) {
+        }
+catch (e) {
           console.log('StatusBar not available');
         }
 
@@ -201,7 +202,8 @@ const mobileScript = `
             }[style] || ImpactStyle.Medium;
 
             await Haptics.impact({ style: impactStyle });
-          } catch (e) {
+          }
+catch (e) {
             console.log('Haptics not available');
           }
         };
@@ -215,7 +217,8 @@ const mobileScript = `
           Keyboard.addListener('keyboardWillHide', () => {
             document.body.style.paddingBottom = '';
           });
-        } catch (e) {
+        }
+catch (e) {
           console.log('Keyboard plugin not available');
         }
 

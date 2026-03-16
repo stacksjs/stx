@@ -139,7 +139,8 @@ function generateMotionPreferencesScript(): string {
       // Apply reduced motion settings
       document.documentElement.style.setProperty('--stx-transition-duration', '0ms');
       document.documentElement.setAttribute('data-reduced-motion', 'true');
-    } else {
+    }
+else {
       document.documentElement.setAttribute('data-reduced-motion', 'false');
     }
 
@@ -148,7 +149,8 @@ function generateMotionPreferencesScript(): string {
       if (e.matches) {
         document.documentElement.style.setProperty('--stx-transition-duration', '0ms');
         document.documentElement.setAttribute('data-reduced-motion', 'true');
-      } else {
+      }
+else {
         document.documentElement.style.setProperty('--stx-transition-duration', '');
         document.documentElement.setAttribute('data-reduced-motion', 'false');
       }
@@ -221,7 +223,8 @@ function generateIntersectionObserverScript(threshold = 0.1, rootMargin = '0px')
     // Initialize observer when DOM is ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initObserver);
-    } else {
+    }
+else {
       initObserver();
     }
   })();
@@ -392,7 +395,8 @@ function generateAnimationGroup(
     // Run when DOM is fully loaded
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', animateGroup);
-    } else {
+    }
+else {
       animateGroup();
     }
   })();
@@ -896,7 +900,8 @@ export function createAnimationTimeline(entries: TimelineEntry[]): string {
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', runTimeline);
-  } else {
+  }
+else {
     runTimeline();
   }
 })();
@@ -1006,7 +1011,8 @@ window.__stxAnimation = {
       const registered = this.animations.get(nameOrKeyframes);
       keyframes = registered.keyframes;
       defaultOptions = registered.options;
-    } else {
+    }
+else {
       keyframes = nameOrKeyframes;
       defaultOptions = {};
     }

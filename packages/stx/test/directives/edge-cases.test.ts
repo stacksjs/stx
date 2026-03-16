@@ -139,7 +139,8 @@ describe('Directive edge cases', () => {
         )
         if (expected) {
           expect(result).toContain('Shown')
-        } else {
+        }
+else {
           expect(result).not.toContain('Shown')
         }
       }

@@ -527,7 +527,8 @@ describe('signals integration - error handling', () => {
       })
 
       trigger.set(10) // Should throw
-    } catch {
+    }
+catch {
       errorCaught = true
     }
 

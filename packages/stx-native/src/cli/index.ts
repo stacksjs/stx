@@ -142,7 +142,8 @@ class STXCLI {
     // Run on platform
     if (platform === 'ios') {
       await this.runIOS(flags)
-    } else {
+    }
+else {
       await this.runAndroid(flags)
     }
   }
@@ -162,7 +163,8 @@ class STXCLI {
     // Build for platform
     if (platform === 'ios') {
       await this.buildIOS(release)
-    } else {
+    }
+else {
       await this.buildAndroid(release)
     }
   }
@@ -323,7 +325,8 @@ class STXCLI {
     if (outputFile) {
       writeFileSync(outputFile, ir)
       console.log(`Compiled: ${inputFile} → ${outputFile}`)
-    } else {
+    }
+else {
       console.log(ir)
     }
   }
@@ -346,7 +349,8 @@ class STXCLI {
     // Boot simulator
     try {
       execSync(`xcrun simctl boot "${simulator}" 2>/dev/null || true`, { stdio: 'inherit' })
-    } catch {
+    }
+catch {
       // Simulator might already be booted
     }
 
@@ -371,7 +375,8 @@ class STXCLI {
           execSync(`xcrun simctl install booted "${appPath}"`, { stdio: 'inherit' })
           execSync(`xcrun simctl launch booted ${this.projectConfig?.bundleId}`, { stdio: 'inherit' })
         }
-      } else {
+      }
+else {
         console.error('\n❌ Build failed')
       }
     })
@@ -399,7 +404,8 @@ class STXCLI {
           await new Promise(resolve => setTimeout(resolve, 30000))
         }
       }
-    } catch (e) {
+    }
+catch (e) {
       console.warn('Could not start emulator automatically')
     }
 
@@ -417,7 +423,8 @@ class STXCLI {
       if (code === 0) {
         console.log('\n✅ Build succeeded. Launching app...')
         execSync(`adb shell am start -n ${this.projectConfig?.androidPackage}/.MainActivity`, { stdio: 'inherit' })
-      } else {
+      }
+else {
         console.error('\n❌ Build failed')
       }
     })
@@ -445,7 +452,8 @@ class STXCLI {
     archiveProcess.on('close', (code) => {
       if (code === 0) {
         console.log('\n✅ iOS archive created successfully')
-      } else {
+      }
+else {
         console.error('\n❌ iOS build failed')
       }
     })
@@ -471,7 +479,8 @@ class STXCLI {
       if (code === 0) {
         console.log('\n✅ Android APK built successfully')
         console.log(`   Output: android/app/build/outputs/apk/${release ? 'release' : 'debug'}/`)
-      } else {
+      }
+else {
         console.error('\n❌ Android build failed')
       }
     })
@@ -539,24 +548,29 @@ class STXCLI {
       if (existsSync(bundlePath)) {
         res.writeHead(200, { 'Content-Type': 'application/javascript' })
         res.end(readFileSync(bundlePath))
-      } else {
+      }
+else {
         res.writeHead(404)
         res.end('Bundle not found')
       }
-    } else if (url === '/ir.json') {
+    }
+else if (url === '/ir.json') {
       // Serve compiled IR
       const irPath = join(this.config.outputDir, 'ir.json')
       if (existsSync(irPath)) {
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(readFileSync(irPath))
-      } else {
+      }
+else {
         res.writeHead(404)
         res.end('IR not found')
       }
-    } else if (url === '/health') {
+    }
+else if (url === '/health') {
       res.writeHead(200)
       res.end('OK')
-    } else {
+    }
+else {
       res.writeHead(404)
       res.end('Not found')
     }
@@ -577,7 +591,8 @@ class STXCLI {
 
       if (file.isDirectory()) {
         this.watchDirectory(fullPath)
-      } else if (file.name.endsWith('.stx') || file.name.endsWith('.ts') || file.name.endsWith('.js')) {
+      }
+else if (file.name.endsWith('.stx') || file.name.endsWith('.ts') || file.name.endsWith('.js')) {
         watchFile(fullPath, { interval: 500 }, async (curr, prev) => {
           if (curr.mtime !== prev.mtime) {
             console.log(`  📝 File changed: ${file.name}`)
@@ -610,7 +625,8 @@ class STXCLI {
       }
 
       console.log('  🔄 Hot reload sent to', this.connectedClients.size, 'client(s)')
-    } catch (error) {
+    }
+catch (error) {
       console.error('  ❌ Compile error:', error)
     }
   }
@@ -711,10 +727,12 @@ class STXCLI {
       if (arg.startsWith('--')) {
         const [key, value] = arg.slice(2).split('=')
         flags[key] = value || args[++i] || 'true'
-      } else if (arg.startsWith('-')) {
+      }
+else if (arg.startsWith('-')) {
         const key = arg.slice(1)
         flags[key] = args[++i] || 'true'
-      } else {
+      }
+else {
         (flags._ as unknown as string[]).push(arg)
       }
     }

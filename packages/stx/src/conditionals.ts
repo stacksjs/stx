@@ -452,7 +452,8 @@ export function processAuthDirectives(template: string, context: Record<string, 
       if (nextOpen < nextClose) {
         depth++
         pos = nextOpen + openMatch![0].length
-      } else if (nextClose < Infinity) {
+      }
+else if (nextClose < Infinity) {
         depth--
         if (depth === 0) return nextClose
         pos = nextClose + closeMatch![0].length
@@ -501,7 +502,8 @@ export function processAuthDirectives(template: string, context: Record<string, 
       if (guardMatch) {
         guard = guardMatch[2]
         contentStart = startPos + '@auth'.length + guardMatch[0].length
-      } else {
+      }
+else {
         contentStart = startPos + '@auth'.length
       }
 
@@ -514,7 +516,8 @@ export function processAuthDirectives(template: string, context: Record<string, 
       let isAuthenticated: boolean
       if (!context.auth) {
         isAuthenticated = false
-      } else {
+      }
+else {
         isAuthenticated = guard
           ? evaluateAuthExpression(`auth?.check && auth?.user?.[${guard}]`, context)
           : evaluateAuthExpression('auth?.check', context)
@@ -525,7 +528,8 @@ export function processAuthDirectives(template: string, context: Record<string, 
         const trueContent = fullContent.slice(0, elsePos)
         const falseContent = fullContent.slice(elsePos + '@else'.length)
         replacement = isAuthenticated ? trueContent : falseContent
-      } else {
+      }
+else {
         replacement = isAuthenticated ? fullContent : ''
       }
 
@@ -551,7 +555,8 @@ export function processAuthDirectives(template: string, context: Record<string, 
       if (guardMatch) {
         guard = guardMatch[2]
         contentStart = startPos + '@guest'.length + guardMatch[0].length
-      } else {
+      }
+else {
         contentStart = startPos + '@guest'.length
       }
 
@@ -564,7 +569,8 @@ export function processAuthDirectives(template: string, context: Record<string, 
       let isGuest: boolean
       if (!context.auth) {
         isGuest = true
-      } else {
+      }
+else {
         isGuest = guard
           ? evaluateAuthExpression(`!auth?.check || !auth?.user?.[${guard}]`, context)
           : evaluateAuthExpression('!auth?.check', context)
@@ -575,7 +581,8 @@ export function processAuthDirectives(template: string, context: Record<string, 
         const trueContent = fullContent.slice(0, elsePos)
         const falseContent = fullContent.slice(elsePos + '@else'.length)
         replacement = isGuest ? trueContent : falseContent
-      } else {
+      }
+else {
         replacement = isGuest ? fullContent : ''
       }
 
@@ -875,7 +882,8 @@ export function processEnvDirective(template: string, _context: Record<string, a
         if (nextOpen < nextClose) {
           depth++
           searchPos = nextOpen + nextOpenMatch![0].length
-        } else if (nextClose < Infinity) {
+        }
+else if (nextClose < Infinity) {
           depth--
           if (depth === 0) { endPos = nextClose; break }
           searchPos = nextClose + nextCloseMatch![0].length
@@ -904,7 +912,8 @@ export function processEnvDirective(template: string, _context: Record<string, a
         const trueContent = fullContent.slice(0, elseIdx)
         const falseContent = fullContent.slice(elseIdx + '@else'.length)
         replacement = condition ? trueContent : falseContent
-      } else {
+      }
+else {
         replacement = condition ? fullContent : ''
       }
 

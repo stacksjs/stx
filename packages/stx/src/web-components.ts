@@ -434,7 +434,8 @@ function generateWebComponentCodeTypeScript(options: WebComponentTypeScriptOptio
     this._${camelCase} = value;
     if (value !== null) {
       this.setAttribute('${attr}', String(value));
-    } else {
+    }
+else {
       this.removeAttribute('${attr}');
     }
   }`
@@ -476,7 +477,8 @@ ${attributes.map((attr) => {
     switch (type) {
       case 'number': return Number(value);
       case 'boolean': return value !== 'false' && value !== '0';
-      case 'object': try { return JSON.parse(value); } catch { return value; }
+      case 'object': try { return JSON.parse(value); }
+catch { return value; }
       default: return value;
     }
   }
@@ -988,9 +990,11 @@ export function generateReactiveWebComponent(config: ReactiveWebComponentConfig)
       ? `
       if (value !== null && value !== undefined) {
         ${def.type === 'boolean'
-          ? `if (value) { this.setAttribute('${attrName}', ''); } else { this.removeAttribute('${attrName}'); }`
+          ? `if (value) { this.setAttribute('${attrName}', ''); }
+else { this.removeAttribute('${attrName}'); }`
           : `this.setAttribute('${attrName}', ${def.type === 'object' || def.type === 'array' ? 'JSON.stringify(value)' : 'String(value)'});`}
-      } else {
+      }
+else {
         this.removeAttribute('${attrName}');
       }`
       : ''
@@ -1338,9 +1342,11 @@ export interface ${className}State {
       ? `
       if (value !== null && value !== undefined) {
         ${def.type === 'boolean'
-          ? `if (value) { this.setAttribute('${attrName}', ''); } else { this.removeAttribute('${attrName}'); }`
+          ? `if (value) { this.setAttribute('${attrName}', ''); }
+else { this.removeAttribute('${attrName}'); }`
           : `this.setAttribute('${attrName}', ${def.type === 'object' || def.type === 'array' ? 'JSON.stringify(value)' : 'String(value)'});`}
-      } else {
+      }
+else {
         this.removeAttribute('${attrName}');
       }`
       : ''
@@ -1684,7 +1690,8 @@ const ReactiveElement = (Base) => class extends Base {
             const attrName = def.attribute || name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
             if (def.type === 'boolean') {
               value ? this.setAttribute(attrName, '') : this.removeAttribute(attrName);
-            } else {
+            }
+else {
               this.setAttribute(attrName, def.type === 'object' ? JSON.stringify(value) : String(value));
             }
           }
@@ -1805,7 +1812,8 @@ export function generateReactiveRuntime(): string {
       if (this.constructor.useShadowDOM !== false) {
         this.attachShadow({ mode: 'open' });
         this._root = this.shadowRoot;
-      } else {
+      }
+else {
         this._root = this;
       }
     }
@@ -1853,11 +1861,14 @@ export function generateReactiveRuntime(): string {
       const attrName = def.attribute || toKebabCase(name);
       if (value == null || (def.type === 'boolean' && !value)) {
         this.removeAttribute(attrName);
-      } else if (def.type === 'boolean') {
+      }
+else if (def.type === 'boolean') {
         this.setAttribute(attrName, '');
-      } else if (def.type === 'object' || def.type === 'array') {
+      }
+else if (def.type === 'object' || def.type === 'array') {
         this.setAttribute(attrName, JSON.stringify(value));
-      } else {
+      }
+else {
         this.setAttribute(attrName, String(value));
       }
     }
@@ -2121,7 +2132,8 @@ export function generateSFCWebComponent(parsed: ParsedSFCComponent): string {
   set ${prop}(value) {
     if (value) {
       this.setAttribute('${prop}', value);
-    } else {
+    }
+else {
       this.removeAttribute('${prop}');
     }
   }`).join('\n')

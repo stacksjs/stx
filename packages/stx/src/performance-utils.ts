@@ -383,7 +383,8 @@ class ExpressionEvaluatorPool {
               'use strict';
               try {
                 return ${expr};
-              } catch (e) {
+              }
+catch (e) {
                 if (e instanceof ReferenceError || e instanceof TypeError) {
                   return undefined;
                 }

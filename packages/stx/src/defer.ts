@@ -132,7 +132,8 @@ function generateDeferScript(id: string, block: DeferBlock): string {
       triggerCode = `
         if ('requestIdleCallback' in window) {
           requestIdleCallback(() => loadContent(), { timeout: 3000 });
-        } else {
+        }
+else {
           setTimeout(loadContent, 200);
         }
       `

@@ -172,7 +172,8 @@ export function generateSimpleMediaPicker(options: {
           item.innerHTML = '<img src="' + e.target.result + '" alt="' + file.name + '" />';
         };
         reader.readAsDataURL(file);
-      } else {
+      }
+else {
         item.textContent = file.name;
       }
 

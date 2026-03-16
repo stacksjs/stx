@@ -126,12 +126,15 @@ export function processReactiveBindings(html: string): ProcessedBindings {
           // But keep the attribute with an empty or default value for initial render
           if (attrName === 'text') {
             processedAttrs = processedAttrs.replace(fullAttrMatch, '')
-          } else if (attrName === 'class') {
+          }
+else if (attrName === 'class') {
             // Keep class but remove the {{ }} part for initial render
             processedAttrs = processedAttrs.replace(fullAttrMatch, `class=""`)
-          } else if (attrName === 'disabled' || attrName === 'hidden') {
+          }
+else if (attrName === 'disabled' || attrName === 'hidden') {
             processedAttrs = processedAttrs.replace(fullAttrMatch, '')
-          } else {
+          }
+else {
             processedAttrs = processedAttrs.replace(fullAttrMatch, `${attrName}=""`)
           }
         }
@@ -222,7 +225,8 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
         if (el) {
           try {
             el.textContent = ${evalExpr};
-          } catch(e) { console.error('Binding error:', e); }
+          }
+catch (e) { console.error('Binding error:', e); }
         }
       })();
 `
@@ -234,7 +238,8 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
         if (el) {
           try {
             el.innerHTML = ${evalExpr};
-          } catch(e) { console.error('Binding error:', e); }
+          }
+catch (e) { console.error('Binding error:', e); }
         }
       })();
 `
@@ -253,17 +258,20 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
                 el.setAttribute('data-static-class', el.className);
               }
               el.className = (el.getAttribute('data-static-class') + ' ' + value).trim();
-            } else if (typeof value === 'object') {
+            }
+else if (typeof value === 'object') {
               // Object syntax: { 'class-name': condition }
               for (var cls in value) {
                 if (value[cls]) {
                   el.classList.add(cls);
-                } else {
+                }
+else {
                   el.classList.remove(cls);
                 }
               }
             }
-          } catch(e) { console.error('Binding error:', e); }
+          }
+catch (e) { console.error('Binding error:', e); }
         }
       })();
 `
@@ -275,7 +283,8 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
         if (el) {
           try {
             el.style.display = (${evalExpr}) ? '' : 'none';
-          } catch(e) { console.error('Binding error:', e); }
+          }
+catch (e) { console.error('Binding error:', e); }
         }
       })();
 `
@@ -287,7 +296,8 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
         if (el) {
           try {
             el.style.visibility = (${evalExpr}) ? 'visible' : 'hidden';
-          } catch(e) { console.error('Binding error:', e); }
+          }
+catch (e) { console.error('Binding error:', e); }
         }
       })();
 `
@@ -301,12 +311,15 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
             var value = ${evalExpr};
             if (value === false || value === null || value === undefined) {
               el.removeAttribute('${attribute}');
-            } else if (value === true) {
+            }
+else if (value === true) {
               el.setAttribute('${attribute}', '');
-            } else {
+            }
+else {
               el.setAttribute('${attribute}', value);
             }
-          } catch(e) { console.error('Binding error:', e); }
+          }
+catch (e) { console.error('Binding error:', e); }
         }
       })();
 `
@@ -337,7 +350,8 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
   // Start when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initBindings);
-  } else {
+  }
+else {
     initBindings();
   }
 })();

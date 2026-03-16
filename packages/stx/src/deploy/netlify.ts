@@ -129,7 +129,8 @@ export function createNetlifyClient(config: NetlifyClientConfig): NetlifyClient 
     if (options.rawBody) {
       headers['Content-Type'] = options.contentType || 'application/octet-stream'
       body = options.rawBody as BodyInit
-    } else if (options.body) {
+    }
+else if (options.body) {
       headers['Content-Type'] = 'application/json'
       body = JSON.stringify(options.body)
     }
@@ -149,7 +150,8 @@ export function createNetlifyClient(config: NetlifyClientConfig): NetlifyClient 
         error.message = data.message || error.message
         error.code = data.code
         error.details = data
-      } catch {
+      }
+catch {
         // Ignore JSON parse errors
       }
 

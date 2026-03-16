@@ -234,7 +234,8 @@ class STXRuntime {
       fn()
 
       this.log('Script executed')
-    } catch (error) {
+    }
+catch (error) {
       this.logError('Script execution failed:', error)
 
       if (this.config.hotReload) {
@@ -253,7 +254,8 @@ class STXRuntime {
       if (typeof fn === 'function') {
         return fn as (...args: unknown[]) => unknown
       }
-    } catch {
+    }
+catch {
       // Function not found
     }
     return null
@@ -263,7 +265,8 @@ class STXRuntime {
     try {
       // @ts-expect-error - Global access
       globalThis[key] = value
-    } catch {
+    }
+catch {
       // Could not set global
     }
   }

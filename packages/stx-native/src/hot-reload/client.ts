@@ -88,7 +88,8 @@ class HotReloadClient {
         this.isConnected = false
         this.attemptReconnect()
       }
-    } catch (error) {
+    }
+catch (error) {
       console.error('[HotReload] Failed to connect:', error)
       this.attemptReconnect()
     }
@@ -149,7 +150,8 @@ class HotReloadClient {
         default:
           console.warn('[HotReload] Unknown message type:', message.type)
       }
-    } catch (error) {
+    }
+catch (error) {
       console.error('[HotReload] Failed to parse message:', error)
     }
   }
@@ -167,7 +169,8 @@ class HotReloadClient {
       for (const callback of this.callbacks) {
         try {
           callback(payload.document)
-        } catch (error) {
+        }
+catch (error) {
           console.error('[HotReload] Callback error:', error)
         }
       }
@@ -253,7 +256,8 @@ class HotReloadClient {
           // @ts-expect-error - Global access
           globalThis[key] = value
         }
-      } catch (error) {
+      }
+catch (error) {
         console.warn(`[HotReload] Could not restore state for ${key}:`, error)
       }
     }
@@ -318,7 +322,8 @@ class HotReloadClient {
         // Execute the new script code
         // Note: In a real implementation, this would use the JS runtime's eval
         // For now, just re-render
-      } catch (error) {
+      }
+catch (error) {
         console.error('[HotReload] Failed to execute script:', error)
       }
     }

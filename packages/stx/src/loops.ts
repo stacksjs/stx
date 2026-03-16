@@ -462,7 +462,8 @@ function findOutermostForelse(template: string): {
     if (nextOpen && nextOpen.index < nextClose.index) {
       depth++
       searchPos = nextOpen.index + nextOpen[0].length
-    } else {
+    }
+else {
       depth--
       if (depth === 0) { endForelsePos = nextClose.index; break }
       searchPos = nextClose.index + '@endforelse'.length
@@ -484,16 +485,19 @@ function findOutermostForelse(template: string): {
     if (/^@forelse\s*\(/.test(remaining)) {
       nestedDepth++
       searchI = atPos + 1
-    } else if (remaining.startsWith('@endforelse')) {
+    }
+else if (remaining.startsWith('@endforelse')) {
       nestedDepth--
       searchI = atPos + '@endforelse'.length
-    } else if (nestedDepth === 0 && remaining.startsWith('@empty')) {
+    }
+else if (nestedDepth === 0 && remaining.startsWith('@empty')) {
       if (fullContent.length <= atPos + 6 || !/[a-z]/i.test(fullContent[atPos + 6])) {
         emptyPos = atPos
         break
       }
       searchI = atPos + 1
-    } else {
+    }
+else {
       searchI = atPos + 1
     }
   }
@@ -534,19 +538,22 @@ function processForelse(template: string, context: Record<string, any>): string 
       if (isExpressionSafe(arrayExpr)) {
         const arrayFn = createSafeFunction(arrayExpr, Object.keys(context))
         array = arrayFn(...Object.values(context))
-      } else {
+      }
+else {
         array = safeEvaluate(arrayExpr, context)
       }
 
       let replacement: string
       if (!Array.isArray(array) || array.length === 0) {
         replacement = emptyContent
-      } else {
+      }
+else {
         replacement = `@foreach (${arrayExpr} as ${itemVar})${foreachContent}@endforeach`
       }
 
       output = output.substring(0, start) + replacement + output.substring(end)
-    } catch (error: unknown) {
+    }
+catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error)
       const replacement = inlineError('Forelse', `Error in @forelse(${arrayExpr} as ${itemVar}): ${errMsg}`, ErrorCodes.EVALUATION_ERROR)
       output = output.substring(0, start) + replacement + output.substring(end)

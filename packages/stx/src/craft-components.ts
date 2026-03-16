@@ -585,9 +585,11 @@ export function processCraftComponents(
   if (!content.includes('craft-component-styles')) {
     if (content.includes('</head>')) {
       content = content.replace('</head>', `${CRAFT_COMPONENT_STYLES}\n</head>`)
-    } else if (content.includes('<style>')) {
+    }
+else if (content.includes('<style>')) {
       content = content.replace('<style>', `${CRAFT_COMPONENT_STYLES}\n<style>`)
-    } else {
+    }
+else {
       content = CRAFT_COMPONENT_STYLES + content
     }
   }
@@ -675,13 +677,16 @@ function parseProps(propsStr: string): Record<string, unknown> {
     if (full.startsWith(':')) {
       // Vue-style binding - keep as-is for now
       props[name] = value
-    } else if (full.startsWith('@')) {
+    }
+else if (full.startsWith('@')) {
       // Event handler - convert to on* attribute
       props[`on${name.charAt(0).toUpperCase()}${name.slice(1)}`] = value
-    } else if (value === undefined) {
+    }
+else if (value === undefined) {
       // Boolean attribute
       props[name] = true
-    } else {
+    }
+else {
       props[name] = value
     }
   }
@@ -709,7 +714,8 @@ function buildAttributes(
   for (const [key, value] of Object.entries(props)) {
     if (value === true) {
       attrs.push(key)
-    } else if (value !== false && value !== undefined && value !== null) {
+    }
+else if (value !== false && value !== undefined && value !== null) {
       // Escape quotes in value
       const escaped = String(value).replace(/"/g, '&quot;')
       attrs.push(`${key}="${escaped}"`)

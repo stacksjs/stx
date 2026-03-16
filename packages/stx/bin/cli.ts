@@ -129,7 +129,8 @@ function validateFileExists(filePath: string): ValidationResult {
     }
 
     return { isValid: true }
-  } catch (error) {
+  }
+catch (error) {
     return { isValid: false, error: `Cannot access file: ${filePath}`, suggestion: 'Check file permissions and path' }
   }
 }
@@ -891,7 +892,8 @@ else {
             if (port < 1024) {
               console.error(`\n  Port must be between 1024 and 65535`)
               console.error(`\n  suggestion: Try using a port between 1024 and 65535 (e.g., --port 3000)`)
-            } else {
+            }
+else {
               console.error(`\n  Port must be between 1024 and 65535`)
             }
             process.exit(1)
@@ -1518,7 +1520,8 @@ else {
               if (options.check) {
                 console.log(`❌ ${path.relative(process.cwd(), file)} needs formatting`)
                 errorCount++
-              } else if (options.diff) {
+              }
+else if (options.diff) {
                 console.log(`\n📝 ${path.relative(process.cwd(), file)}:`)
                 // Simple diff display (could be enhanced with a proper diff library)
                 console.log('--- Original')
@@ -1526,13 +1529,15 @@ else {
                 // This is a basic diff - in a real implementation you'd use a proper diff library
                 console.log(`@@ Changes in ${path.basename(file)} @@`)
                 console.log('+ Formatted content would be applied')
-              } else {
+              }
+else {
                 await Bun.write(file, formatted)
                 console.log(`✅ Formatted ${path.relative(process.cwd(), file)}`)
                 formattedCount++
               }
             }
-          } catch (error) {
+          }
+catch (error) {
             console.error(`❌ Error formatting ${path.relative(process.cwd(), file)}:`, error)
             errorCount++
           }
@@ -1541,10 +1546,12 @@ else {
         if (options.check && errorCount > 0) {
           console.log(`\n${errorCount} files need formatting. Run 'stx format' to fix.`)
           process.exit(1)
-        } else if (!options.check && !options.diff) {
+        }
+else if (!options.check && !options.diff) {
           console.log(`✨ Formatted ${formattedCount} files successfully`)
         }
-      } catch (error) {
+      }
+catch (error) {
         console.error('Error formatting files:', error)
         process.exit(1)
       }
@@ -1578,7 +1585,8 @@ else {
 
         if (options.json) {
           console.log(JSON.stringify(stats, null, 2))
-        } else {
+        }
+else {
           console.log('\n📊 STX Performance Statistics\n')
 
           for (const [operation, metrics] of Object.entries(stats)) {
@@ -1591,7 +1599,8 @@ else {
             console.log('')
           }
         }
-      } catch (error) {
+      }
+catch (error) {
         console.error('Error showing performance stats:', error)
         process.exit(1)
       }
@@ -1626,7 +1635,8 @@ else {
         if (options.context) {
           try {
             context = JSON.parse(options.context)
-          } catch (error) {
+          }
+catch (error) {
             console.error('❌ Invalid JSON in --context option')
             process.exit(1)
           }
@@ -1679,7 +1689,8 @@ else {
           console.log(`📋 Debug report saved to: ${options.saveReport}`)
         }
 
-      } catch (error) {
+      }
+catch (error) {
         console.error('Error debugging template:', error)
         process.exit(1)
       }
@@ -1731,7 +1742,8 @@ else {
 
         if (options.json) {
           console.log(JSON.stringify(status, null, 2))
-        } else {
+        }
+else {
           console.log('\n📋 stx Project Status\n')
           console.log(`📁 Project Root: ${projectRoot}`)
           console.log(`⚙️  Config File: ${status.hasConfig ? '✅ Found' : '❌ Not found'}`)
@@ -1754,7 +1766,8 @@ else {
             })
           }
         }
-      } catch (error) {
+      }
+catch (error) {
         console.error('Error getting project status:', error)
         process.exit(1)
       }
@@ -1859,12 +1872,14 @@ else {
               const duration = Date.now() - startTime
               if (code === 0) {
                 console.log(`✅ Command completed successfully in ${duration}ms`)
-              } else {
+              }
+else {
                 console.log(`❌ Command failed with exit code ${code} after ${duration}ms`)
               }
               isRunning = false
             })
-          } catch (error) {
+          }
+catch (error) {
             console.error(`❌ Error running command:`, error)
             isRunning = false
           }
@@ -1924,7 +1939,8 @@ else {
             if (options.verbose) {
               console.log(`📁 Watching directory: ${dir}`)
             }
-          } catch (error) {
+          }
+catch (error) {
             console.warn(`⚠️  Could not watch directory: ${dir}`)
           }
         }
@@ -1936,7 +1952,8 @@ else {
           process.exit(0)
         })
 
-      } catch (error) {
+      }
+catch (error) {
         console.error('Error setting up file watcher:', error)
         process.exit(1)
       }
@@ -1991,7 +2008,8 @@ else {
           if (options.saveReport) {
             await Bun.write(options.saveReport, JSON.stringify(jsonOutput, null, 2))
             console.log(`📋 Analysis report saved to: ${options.saveReport}`)
-          } else {
+          }
+else {
             console.log(JSON.stringify(jsonOutput, null, 2))
           }
           return
@@ -2050,7 +2068,8 @@ else {
               })
             }
           }
-        } else if (filteredResults.length > 0 && !options.onlyIssues) {
+        }
+else if (filteredResults.length > 0 && !options.onlyIssues) {
           console.log(`\n📄 Files with issues:`)
           filteredResults.forEach(result => {
             const issueCount = result.issues.filter(issue => thresholdLevels[issue.type] >= minLevel).length
@@ -2074,7 +2093,8 @@ else {
 
         console.log(`\n✨ Analysis complete! Use --detailed for more information.`)
 
-      } catch (error) {
+      }
+catch (error) {
         console.error('Error analyzing templates:', error)
         process.exit(1)
       }
@@ -2236,14 +2256,17 @@ else {
           // Platform-specific hints
           if (target === 'macos' && result.format === 'app') {
             console.log(`\n💡 To run: open "${result.outputPath}"`)
-          } else if (target === 'linux' && result.format === 'appimage') {
+          }
+else if (target === 'linux' && result.format === 'appimage') {
             console.log(`\n💡 To run: chmod +x "${result.outputPath}" && "${result.outputPath}"`)
           }
-        } else {
+        }
+else {
           console.error(`❌ Build failed: ${result.error}`)
           process.exit(1)
         }
-      } catch (error) {
+      }
+catch (error) {
         console.error(`❌ Build error: ${(error as Error).message}`)
         process.exit(1)
       }
@@ -2267,7 +2290,8 @@ else {
           open: options.open,
           host: options.host,
         })
-      } catch (error) {
+      }
+catch (error) {
         console.error(`❌ Story error: ${(error as Error).message}`)
         process.exit(1)
       }
@@ -2282,7 +2306,8 @@ else {
       try {
         const { buildCommand } = await import('../src/story/commands/build')
         await buildCommand({ outDir: options.outDir })
-      } catch (error) {
+      }
+catch (error) {
         console.error(`❌ Story build error: ${(error as Error).message}`)
         process.exit(1)
       }
@@ -2307,7 +2332,8 @@ else {
             filter: options.filter ? [options.filter] : undefined,
           })
           console.log(`Updated ${count} snapshots`)
-        } else {
+        }
+else {
           const result = await runVisualTests(ctx, {
             filter: options.filter ? [options.filter] : undefined,
           })
@@ -2316,7 +2342,8 @@ else {
             process.exit(1)
           }
         }
-      } catch (error) {
+      }
+catch (error) {
         console.error(`❌ Story test error: ${(error as Error).message}`)
         process.exit(1)
       }
@@ -2446,7 +2473,8 @@ else {
             console.log(`   - ${error.message}`)
           }
         }
-      } catch (error) {
+      }
+catch (error) {
         console.error(`❌ Compilation error: ${(error as Error).message}`)
         process.exit(1)
       }
@@ -2468,7 +2496,8 @@ else {
       for (let j = 1; j <= a.length; j++) {
         if (b.charAt(i - 1) === a.charAt(j - 1)) {
           matrix[i][j] = matrix[i - 1][j - 1]
-        } else {
+        }
+else {
           matrix[i][j] = Math.min(
             matrix[i - 1][j - 1] + 1,
             matrix[i][j - 1] + 1,

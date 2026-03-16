@@ -370,7 +370,8 @@ export function createVisualRegressionTester(config: VisualTestConfig = {}) {
             results.push(result)
             lastError = null
             break
-          } catch (error) {
+          }
+catch (error) {
             lastError = error as Error
             if (attempt < cfg.retries - 1) {
               await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)))
@@ -484,7 +485,8 @@ export function createStoryTester(config: VisualTestConfig = {}) {
           result.passed = false
         }
 
-      } catch (error) {
+      }
+catch (error) {
         result.passed = false
         result.errors.push(error as Error)
       }
@@ -770,7 +772,8 @@ function generateHtmlDiff(expected: string, actual: string): string {
 
     if (exp === act) {
       diff += `<div><span class="line-num">${i + 1}</span> ${escapeHtml(exp)}</div>`
-    } else {
+    }
+else {
       if (exp) {
         diff += `<div class="remove"><span class="line-num">${i + 1}</span>-${escapeHtml(exp)}</div>`
       }
@@ -813,7 +816,8 @@ function generateJsonDiff(expected: string, actual: string): string {
       for (const key of expKeys) {
         if (!actKeys.includes(key)) {
           diffs.push(`${path}.${key}: removed`)
-        } else {
+        }
+else {
           compare(`${path}.${key}`, (exp as Record<string, unknown>)[key], (act as Record<string, unknown>)[key])
         }
       }
@@ -823,7 +827,8 @@ function generateJsonDiff(expected: string, actual: string): string {
           diffs.push(`${path}.${key}: added`)
         }
       }
-    } else if (exp !== act) {
+    }
+else if (exp !== act) {
       diffs.push(`${path}: ${JSON.stringify(exp)} → ${JSON.stringify(act)}`)
     }
   }

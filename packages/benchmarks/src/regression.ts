@@ -422,7 +422,8 @@ function loadBaseline(path: string): Record<string, BenchmarkResult> | null {
       acc[r.benchmark] = r.result
       return acc
     }, {}) || null
-  } catch {
+  }
+catch {
     return null
   }
 }
@@ -580,7 +581,8 @@ export async function runRegressionTests(
     console.log(`\n📋 Summary: ${report.summary.passed}/${report.summary.total} passed`)
     if (report.summary.hasRegressions) {
       console.log('❌ Performance regressions detected!')
-    } else {
+    }
+else {
       console.log('✅ All benchmarks within thresholds')
     }
     console.log('')
