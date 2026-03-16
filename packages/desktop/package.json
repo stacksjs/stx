@@ -57,7 +57,5 @@
     "craft": {
       "optional": true
     }
-  },
-  "dependencies": {},
-  "devDependencies": {}
+  }
 }
