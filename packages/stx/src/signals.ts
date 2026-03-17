@@ -1426,6 +1426,10 @@ else {
     };
     window.addEventListener('popstate', syncFromUrl);
     window.addEventListener('stx:navigate', syncFromUrl);
+    onDestroy(function() {
+      window.removeEventListener('popstate', syncFromUrl);
+      window.removeEventListener('stx:navigate', syncFromUrl);
+    });
     return {
       data: params,
       get: function(key) { return params()[key]; },
@@ -1449,6 +1453,14 @@ else {
   // ==========================================================================
 
   var _queryCache = {};
+  var _queryCacheKeys = [];
+  var QUERY_CACHE_MAX = 50;
+  function _evictQueryCache() {
+    while (_queryCacheKeys.length > QUERY_CACHE_MAX) {
+      var oldest = _queryCacheKeys.shift();
+      delete _queryCache[oldest];
+    }
+  }
 
   function useQuery(url, options) {
     options = options || {};
@@ -1492,6 +1504,8 @@ else {
         data.set(transformed);
         isStale.set(false);
         _queryCache[key] = { data: transformed, timestamp: Date.now() };
+        if (_queryCacheKeys.indexOf(key) === -1) _queryCacheKeys.push(key);
+        _evictQueryCache();
         if (options.onSuccess) options.onSuccess(transformed);
         // Schedule cache eviction
         setTimeout(function() { delete _queryCache[key]; }, cacheTime);
@@ -1924,7 +1938,13 @@ else if (name === '@text' || name === ':text') {
       }
 else if (name === '@html' || name === ':html') {
         effect(() => {
-          el.innerHTML = evalAttrExpr(value);
+          var rawHtml = evalAttrExpr(value);
+          // Basic sanitization: strip <script> tags and on* event handlers
+          if (typeof rawHtml === 'string') {
+            rawHtml = rawHtml.replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, '');
+            rawHtml = rawHtml.replace(/\\son\\w+\\s*=\\s*["'][^"']*["']/gi, '');
+          }
+          el.innerHTML = rawHtml;
         });
         el.removeAttribute(name);
       }
