@@ -177,6 +177,9 @@ else {
         execScripts();
       }
 
+      // Push history state (before active link updates so location.pathname is current)
+      if(pushState!==false)history.pushState({},'',url+(hash||''));
+
       // Update active nav links
       updateNav(url);
       updateActiveLinks();
@@ -188,9 +191,6 @@ else {
       // Update title
       var newTitle=doc.querySelector('title');
       if(newTitle)document.title=newTitle.textContent;
-
-      // Push history state
-      if(pushState!==false)history.pushState({},'',url+(hash||''));
 
       // Dispatch navigation events
       window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
@@ -262,9 +262,6 @@ else {
       var href=a.getAttribute('href');
       if(!href||href.startsWith('#')||href.startsWith('http'))return;
       var isActive=(href===url)||(href==='/'&&url==='/');
-      a.style.background=isActive?'var(--nav-active-bg, rgba(0,0,0,0.06))':'';
-      a.style.color=isActive?'var(--text-primary, inherit)':'var(--text-nav, inherit)';
-      a.style.fontWeight=isActive?'500':'';
       if(a.hasAttribute('data-stx-link')){
         var ac=a.getAttribute('data-stx-active-class')||'active';
         if(isActive)a.classList.add(ac);else a.classList.remove(ac);
