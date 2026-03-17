@@ -254,9 +254,10 @@ export class HydrationRuntime {
       this.options.onHydrating()
       this.root.classList.add('stx-hydrating')
 
-      // Set up timeout
+      // Set up timeout (cleared on success to prevent dangling timer)
+      let timeoutId: ReturnType<typeof setTimeout>
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Hydration timeout')), this.options.timeout)
+        timeoutId = setTimeout(() => reject(new Error('Hydration timeout')), this.options.timeout)
       })
 
       // Run hydration with timeout
@@ -264,6 +265,7 @@ export class HydrationRuntime {
         this.runHydration(),
         timeoutPromise,
       ])
+      clearTimeout(timeoutId!)
 
       this.isHydrated = true
       this.root.classList.remove('stx-hydrating')
@@ -360,7 +362,7 @@ catch (error) {
         id,
         name: name || id,
         strategy: strategyAttr as ComponentHydrationConfig['strategy'],
-        props: propsAttr ? JSON.parse(propsAttr) : {},
+        props: propsAttr ? (() => { try { return JSON.parse(propsAttr) } catch (e) { console.warn('[Hydration] Failed to parse props for', id, e); return {} } })() : {},
         events: [],
       }
 
