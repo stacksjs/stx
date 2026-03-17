@@ -27,9 +27,20 @@ export function getRouterScript(): string {
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
 
+  var CACHE_TTL=5*60*1000; // 5 minutes
   var cache={};
   var prefetching={};
   var isNavigating=false;
+  var currentAbort=null;
+
+  function normalizePath(p){return p.length>1&&p.charAt(p.length-1)==='/'?p.slice(0,-1):p}
+  function getCached(key){
+    var entry=cache[key];
+    if(!entry)return null;
+    if(Date.now()-entry.ts>CACHE_TTL){delete cache[key];return null}
+    return entry.html;
+  }
+  function setCache(key,html){cache[key]={html:html,ts:Date.now()}}
 
   function getContainer(){
     return document.querySelector(containerSel)||document.querySelector('[data-stx-content]')||document.querySelector('main');
@@ -37,14 +48,13 @@ export function getRouterScript(): string {
 
   // ── Navigation ──
   function navigate(url,pushState){
-    if(isNavigating)return;
     var t=new URL(url,location.origin);
 
     // Different origin → full navigation
     if(t.origin!==location.origin){location.href=url;return}
 
     // Hash-only navigation on same page
-    if(t.pathname===location.pathname&&t.hash){
+    if(normalizePath(t.pathname)===normalizePath(location.pathname)&&t.hash){
       if(pushState!==false)history.pushState({},'',t.href);
       var el=document.querySelector(t.hash);
       if(el)el.scrollIntoView({behavior:'smooth'});
@@ -54,27 +64,33 @@ export function getRouterScript(): string {
     // Same page, no hash → skip
     if(t.href===location.href&&!t.hash)return;
 
+    // Abort any in-flight navigation
+    if(currentAbort){currentAbort.abort();currentAbort=null}
+
     isNavigating=true;
     document.body.classList.add(o.loadingClass);
 
-    var targetHref=t.href;
-    var targetPath=t.pathname;
+    var targetPath=normalizePath(t.pathname);
     var targetHash=t.hash;
 
-    function done(){isNavigating=false;document.body.classList.remove(o.loadingClass)}
+    function done(){isNavigating=false;currentAbort=null;document.body.classList.remove(o.loadingClass)}
 
-    if(o.cache&&cache[targetPath]){
-      swap(cache[targetPath],targetPath,pushState,targetHash);
+    var cached=o.cache&&getCached(targetPath);
+    if(cached){
+      swap(cached,targetPath,pushState,targetHash);
       done();
     }
-else {
-      fetch(url,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
+    else {
+      var abort=new AbortController();
+      currentAbort=abort;
+      fetch(url,{headers:{'X-STX-Router':'true','Accept':'text/html'},signal:abort.signal}).then(function(r){
         if(!r.ok)throw new Error(r.status);
         return r.text();
       }).then(function(html){
-        if(o.cache)cache[targetPath]=html;
+        if(o.cache)setCache(targetPath,html);
         swap(html,targetPath,pushState,targetHash);
-      }).catch(function(){
+      }).catch(function(err){
+        if(err&&err.name==='AbortError')return;
         location.href=url;
       }).finally(done);
     }
@@ -181,7 +197,6 @@ else {
       if(pushState!==false)history.pushState({},'',url+(hash||''));
 
       // Update active nav links
-      updateNav(url);
       updateActiveLinks();
 
       // Scroll
@@ -220,7 +235,7 @@ else {
     if(href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:')||href.startsWith('javascript:'))return false;
     if(link.target==='_blank')return false;
     if(link.hasAttribute('data-stx-no-router')||link.hasAttribute('data-no-router')||link.hasAttribute('download'))return false;
-    if(href===location.pathname)return false;
+    if(normalizePath(href)===normalizePath(location.pathname))return false;
     if(!getContainer())return false;
     return true;
   }
@@ -236,7 +251,10 @@ else {
   },true);
 
   // ── Back/forward ──
-  window.addEventListener('popstate',function(){
+  window.addEventListener('popstate',function(e){
+    // Cancel any in-flight navigation so back/forward always works
+    if(currentAbort){currentAbort.abort();currentAbort=null}
+    isNavigating=false;
     navigate(location.pathname+location.search+location.hash,false);
   });
 
@@ -248,37 +266,29 @@ else {
       if(!shouldIntercept(link))return;
       // Only prefetch links with data-stx-prefetch or all internal links
       var href=link.getAttribute('href');
-      if(cache[href]||prefetching[href])return;
-      prefetching[href]=true;
+      var cacheKey=normalizePath(new URL(href,location.origin).pathname);
+      if(getCached(cacheKey)||prefetching[cacheKey])return;
+      prefetching[cacheKey]=true;
       fetch(href,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){return r.text()}).then(function(html){
-        if(o.cache)cache[href]=html;
-      }).catch(function(){}).finally(function(){delete prefetching[href]});
+        if(o.cache)setCache(cacheKey,html);
+      }).catch(function(){}).finally(function(){delete prefetching[cacheKey]});
     },true);
   }
 
   // ── Active link management ──
-  function updateNav(url){
-    document.querySelectorAll('nav a[href], #mobileNav a[href], [data-stx-nav] a[href]').forEach(function(a){
-      var href=a.getAttribute('href');
-      if(!href||href.startsWith('#')||href.startsWith('http'))return;
-      var isActive=(href===url)||(href==='/'&&url==='/');
-      if(a.hasAttribute('data-stx-link')){
-        var ac=a.getAttribute('data-stx-active-class')||'active';
-        if(isActive)a.classList.add(ac);else a.classList.remove(ac);
-      }
-    });
-  }
-
   function updateActiveLinks(){
+    var cur=normalizePath(location.pathname);
     var links=document.querySelectorAll('[data-stx-link]');
-    var cur=location.pathname;
     links.forEach(function(link){
-      var href=link.getAttribute('href')||'';
+      var href=normalizePath(link.getAttribute('href')||'');
       var ac=link.getAttribute('data-stx-active-class')||'active';
       var eac=link.getAttribute('data-stx-exact-active-class')||'exact-active';
+      // Remove all active classes first
       ac.split(' ').forEach(function(cls){if(cls)link.classList.remove(cls)});
       eac.split(' ').forEach(function(cls){if(cls)link.classList.remove(cls)});
+      // Exact match
       var isExact=cur===href;
+      // Prefix match (root "/" only matches itself)
       var isActive=href!=='/'?cur.startsWith(href):cur==='/';
       if(isExact)eac.split(' ').forEach(function(cls){if(cls)link.classList.add(cls)});
       if(isActive)ac.split(' ').forEach(function(cls){if(cls)link.classList.add(cls)});
@@ -305,14 +315,15 @@ else {
     navigate:navigate,
     navigateTo:navigate,
     prefetch:function(url){
-      if(!cache[url]){
-        fetch(url,{headers:{'X-STX-Router':'true'}}).then(function(r){return r.text()}).then(function(html){cache[url]=html}).catch(function(){});
+      var key=normalizePath(new URL(url,location.origin).pathname);
+      if(!getCached(key)){
+        fetch(url,{headers:{'X-STX-Router':'true'}}).then(function(r){return r.text()}).then(function(html){setCache(key,html)}).catch(function(){});
       }
     },
     clearCache:function(){for(var k in cache)delete cache[k]},
     cache:cache,
     swap:swap,
-    updateNav:updateNav
+    updateActiveLinks:updateActiveLinks
   };
 
   window.__stxRouter=router;
@@ -324,7 +335,6 @@ else {
     injectStyles();
     injectViewTransitionCSS();
     updateActiveLinks();
-    updateNav(location.pathname);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
