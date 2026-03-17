@@ -64,6 +64,9 @@ export function getRouterScript(): string {
     // Same page, no hash → skip
     if(t.href===location.href&&!t.hash)return;
 
+    // Save scroll position before navigating away
+    history.replaceState({scrollX:window.scrollX,scrollY:window.scrollY},'',location.href);
+
     // Abort any in-flight navigation
     if(currentAbort){currentAbort.abort();currentAbort=null}
 
@@ -199,13 +202,23 @@ else {
       // Update active nav links
       updateActiveLinks();
 
-      // Scroll
-      if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
+      // Scroll — restore saved position on back/forward, otherwise scroll to top
+      if(pushState===false&&history.state&&typeof history.state.scrollY==='number'){
+        window.scrollTo({top:history.state.scrollY,left:history.state.scrollX,behavior:'instant'});
+      }
+      else if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
       else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
 
       // Update title
       var newTitle=doc.querySelector('title');
       if(newTitle)document.title=newTitle.textContent;
+
+      // Swap meta tags (description, og:*, twitter:*)
+      var swappableMeta='meta[name="description"],meta[property^="og:"],meta[name^="twitter:"]';
+      document.querySelectorAll(swappableMeta).forEach(function(m){m.remove()});
+      doc.querySelectorAll(swappableMeta).forEach(function(m){
+        document.head.appendChild(m.cloneNode(true));
+      });
 
       // Dispatch navigation events
       window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
