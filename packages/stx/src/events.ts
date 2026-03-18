@@ -578,7 +578,11 @@ export function processEventDirectives(
   }
 
   // SFC mode: collect bindings, don't generate standalone script
+  // But skip if template has x-data scopes - reactive system handles events in those
   if (context.__stx_sfc_mode) {
+    if (/x-data\s*=\s*["']/.test(template)) {
+      return template
+    }
     const { template: processed, bindings } = extractAndProcessEvents(template)
     const existing = (context.__stx_event_bindings || []) as ParsedEvent[]
     context.__stx_event_bindings = [...existing, ...bindings]

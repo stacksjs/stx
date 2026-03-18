@@ -99,21 +99,49 @@ else {
       var curStyles=document.querySelectorAll('head style');
       var newStyles=doc.querySelectorAll('head style');
 
+      // Merge crosswind styles instead of replacing — persistent elements
+      // (nav, footer) outside <main> still need their utility classes
+      var curCrosswind=document.querySelector('head style[data-crosswind]');
+      var newCrosswind=null;
+      newStyles.forEach(function(s){if(s.getAttribute('data-crosswind'))newCrosswind=s});
+
+      if(curCrosswind&&newCrosswind){
+        // Parse existing rules to avoid duplicates
+        var existing=curCrosswind.textContent||'';
+        var incoming_css=newCrosswind.textContent||'';
+        // Extract individual rule blocks from new CSS
+        var newRules=[];
+        incoming_css.replace(/([^{}]+\\{[^{}]*\\})/g,function(m){
+          if(existing.indexOf(m.trim())===-1)newRules.push(m);
+          return m;
+        });
+        if(newRules.length>0){
+          curCrosswind.textContent=existing+'\\n'+newRules.join('\\n');
+        }
+      }
+
       var incoming=[];
       newStyles.forEach(function(s){
-        if(!keepIds[s.id]){
+        if(!keepIds[s.id]&&!s.getAttribute('data-crosswind')){
           var ns=document.createElement('style');
           ns.textContent=s.textContent;
           ns.setAttribute('data-stx-incoming','');
-          if(s.getAttribute('data-crosswind'))ns.setAttribute('data-crosswind',s.getAttribute('data-crosswind'));
           document.head.appendChild(ns);
           incoming.push(ns);
         }
       });
 
-      // Remove old styles (except persistent ones and incoming)
+      // If no existing crosswind but new page has one, add it
+      if(!curCrosswind&&newCrosswind){
+        var ns=document.createElement('style');
+        ns.textContent=newCrosswind.textContent;
+        ns.setAttribute('data-crosswind',newCrosswind.getAttribute('data-crosswind'));
+        document.head.appendChild(ns);
+      }
+
+      // Remove old styles (except persistent ones, crosswind, and incoming)
       curStyles.forEach(function(s){
-        if(!keepIds[s.id]&&!s.hasAttribute('data-stx-incoming'))s.remove();
+        if(!keepIds[s.id]&&!s.hasAttribute('data-stx-incoming')&&!s.hasAttribute('data-crosswind'))s.remove();
       });
 
       incoming.forEach(function(s){s.removeAttribute('data-stx-incoming')});

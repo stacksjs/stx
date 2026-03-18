@@ -670,6 +670,74 @@ export function injectRouterScript(template: string): string {
 }
 
 /**
+ * Add x-cloak to HTML elements that contain unresolved {{ }} expressions.
+ * These expressions were preserved for client-side evaluation (signals, loop vars, etc.).
+ * x-cloak hides them until the JS runtime processes and reveals them — prevents FOUC.
+ */
+function addCloakToUnresolvedExpressions(html: string): string {
+  // Add x-cloak to elements whose text content contains {{ }} expressions.
+  // We parse tag boundaries carefully to avoid breaking attributes that contain ">".
+  const tagNames = 'div|span|p|h[1-6]|td|th|li|a|button|label|section|article|header|footer|main|nav|aside|dd|dt|figcaption|summary|caption|blockquote|pre|code|em|strong|small|sub|sup|time|mark|abbr|cite|q|s|u|b|i'
+  const tagStartRe = new RegExp(`<(${tagNames})\\b`, 'gi')
+  let result = ''
+  let lastIndex = 0
+  let tagMatch: RegExpExecArray | null
+
+  // eslint-disable-next-line no-cond-assign
+  while ((tagMatch = tagStartRe.exec(html)) !== null) {
+    const tagOpenStart = tagMatch.index
+
+    // Find the real closing ">" of this opening tag, skipping ">" inside quoted attributes
+    let i = tagOpenStart + tagMatch[0].length
+    let inSingleQuote = false
+    let inDoubleQuote = false
+    let tagCloseIdx = -1
+
+    while (i < html.length) {
+      const ch = html[i]
+      if (inSingleQuote) {
+        if (ch === '\'') inSingleQuote = false
+      }
+      else if (inDoubleQuote) {
+        if (ch === '"') inDoubleQuote = false
+      }
+      else if (ch === '\'') {
+        inSingleQuote = true
+      }
+      else if (ch === '"') {
+        inDoubleQuote = true
+      }
+      else if (ch === '>') {
+        tagCloseIdx = i
+        break
+      }
+      i++
+    }
+
+    if (tagCloseIdx === -1) continue
+
+    const fullTag = html.slice(tagOpenStart, tagCloseIdx + 1)
+
+    // Skip if already has x-cloak
+    if (fullTag.includes('x-cloak')) continue
+
+    // Look at text content after this tag until the next "</" or "<" tag
+    const afterTag = html.slice(tagCloseIdx + 1)
+    const closingIdx = afterTag.indexOf('</')
+    const textContent = closingIdx >= 0 ? afterTag.slice(0, closingIdx) : afterTag.slice(0, 200)
+
+    if (/\{\{[\s\S]*?\}\}/.test(textContent)) {
+      // Insert x-cloak before the closing >
+      result += html.slice(lastIndex, tagCloseIdx) + ' x-cloak>'
+      lastIndex = tagCloseIdx + 1
+    }
+  }
+
+  result += html.slice(lastIndex)
+  return result
+}
+
+/**
  * Process STX signals in template.
  * Handles script setup, runtime injection, and transforms.
  */
@@ -1910,6 +1978,11 @@ async function processOtherDirectives(
 
   // Process expressions now (delayed to allow other directives to generate expressions)
   output = await processExpressions(output, context, filePath)
+
+  // Add x-cloak to elements containing unresolved {{ }} expressions (preserved for client-side).
+  // This prevents FOUC — raw mustache syntax flashing before the JS runtime processes them.
+  // The signals runtime removes x-cloak after binding, identical to Vue's v-cloak approach.
+  output = addCloakToUnresolvedExpressions(output)
 
   // Process reactive bindings (:class, :text, stx-class, stx-bind:class, etc.)
   // This generates client-side JS for store-aware reactive updates

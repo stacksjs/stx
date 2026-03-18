@@ -78,7 +78,7 @@ export interface ReactiveBinding {
   /** Element ID or selector */
   elementId: string
   /** Binding type */
-  type: 'model' | 'show' | 'hide' | 'text' | 'html' | 'bind' | 'class' | 'style'
+  type: 'model' | 'show' | 'hide' | 'text' | 'html' | 'bind' | 'class' | 'style' | 'event'
   /** Expression to evaluate */
   expression: string
   /** For x-bind, the attribute name */
@@ -248,12 +248,18 @@ function findClosingTag(template: string, tagName: string, startFrom: number): {
 function findBindingsInScope(scopeContent: string, _scopeStart: number): ReactiveBinding[] {
   const bindings: ReactiveBinding[] = []
 
+  // Strip x-data attribute values to prevent HTML strings inside JS methods
+  // from being matched as real DOM elements by the tag-matching regexes
+  let content = scopeContent
+    .replace(/x-data\s*=\s*"[^"]*"/gi, 'x-data="__stripped__"')
+    .replace(/x-data\s*=\s*'[^']*'/gi, "x-data='__stripped__'")
+
   // Helper to find bindings with a specific attribute
   function findBindings(attrName: string, type: ReactiveBinding['type']) {
     // Double-quoted version
     const doubleRegex = new RegExp(`<([a-z][a-z0-9-]*)\\s+([^>]*${attrName}\\s*=\\s*"([^"]*)"[^>]*)>`, 'gi')
     let match
-    while ((match = doubleRegex.exec(scopeContent)) !== null) {
+    while ((match = doubleRegex.exec(content)) !== null) {
       const [, tagName, attributesStr, expression] = match
       const elementId = extractOrGenerateId(attributesStr)
       const inputType = type === 'model' ? extractInputType(attributesStr, tagName) : undefined
@@ -265,7 +271,7 @@ function findBindingsInScope(scopeContent: string, _scopeStart: number): Reactiv
 
     // Single-quoted version
     const singleRegex = new RegExp(`<([a-z][a-z0-9-]*)\\s+([^>]*${attrName}\\s*=\\s*'([^']*)'[^>]*)>`, 'gi')
-    while ((match = singleRegex.exec(scopeContent)) !== null) {
+    while ((match = singleRegex.exec(content)) !== null) {
       const [, tagName, attributesStr, expression] = match
       const elementId = extractOrGenerateId(attributesStr)
       const inputType = type === 'model' ? extractInputType(attributesStr, tagName) : undefined
@@ -286,7 +292,7 @@ function findBindingsInScope(scopeContent: string, _scopeStart: number): Reactiv
   // Find x-bind and :attr bindings (double quotes)
   const bindDoubleRegex = /<[a-z][a-z0-9-]*\s+([^>]*(?:x-bind:|:)([a-z][a-z0-9-]*)\s*=\s*"([^"]*)"[^>]*)>/gi
   let match
-  while ((match = bindDoubleRegex.exec(scopeContent)) !== null) {
+  while ((match = bindDoubleRegex.exec(content)) !== null) {
     const [, attributesStr, attribute, expression] = match
     const elementId = extractOrGenerateId(attributesStr)
     bindings.push({
@@ -299,7 +305,7 @@ function findBindingsInScope(scopeContent: string, _scopeStart: number): Reactiv
 
   // Find x-bind and :attr bindings (single quotes)
   const bindSingleRegex = /<[a-z][a-z0-9-]*\s+([^>]*(?:x-bind:|:)([a-z][a-z0-9-]*)\s*=\s*'([^']*)'[^>]*)>/gi
-  while ((match = bindSingleRegex.exec(scopeContent)) !== null) {
+  while ((match = bindSingleRegex.exec(content)) !== null) {
     const [, attributesStr, attribute, expression] = match
     const elementId = extractOrGenerateId(attributesStr)
     bindings.push({
@@ -310,6 +316,42 @@ function findBindingsInScope(scopeContent: string, _scopeStart: number): Reactiv
     })
   }
 
+  // Find event bindings (@click, @submit.prevent, etc.)
+  // Use a tag-by-tag approach to handle multiline attribute values
+  const tagRegex = /<([a-z][a-z0-9-]*)((?:\s+(?:[^>"']|"[^"]*"|'[^']*')*)*)>/gis
+  let tagMatch
+  while ((tagMatch = tagRegex.exec(content)) !== null) {
+    const attrsStr = tagMatch[2]
+    if (!attrsStr) continue
+
+    // Find @event attributes in this tag's attributes
+    const eventAttrRegex = /@([a-z]+(?:\.[a-z]+)*)\s*=\s*"([\s\S]*?)"/gi
+    let evtMatch
+    while ((evtMatch = eventAttrRegex.exec(attrsStr)) !== null) {
+      const [, eventAttr, expression] = evtMatch
+      const elementId = extractOrGenerateId(attrsStr)
+      bindings.push({
+        elementId,
+        type: 'event',
+        expression: expression.replace(/\s+/g, ' ').trim(),
+        attribute: eventAttr,
+      })
+    }
+
+    // Single-quoted version
+    const eventAttrSingleRegex = /@([a-z]+(?:\.[a-z]+)*)\s*=\s*'([\s\S]*?)'/gi
+    while ((evtMatch = eventAttrSingleRegex.exec(attrsStr)) !== null) {
+      const [, eventAttr, expression] = evtMatch
+      const elementId = extractOrGenerateId(attrsStr)
+      bindings.push({
+        elementId,
+        type: 'event',
+        expression: expression.replace(/\s+/g, ' ').trim(),
+        attribute: eventAttr,
+      })
+    }
+  }
+
   return bindings
 }
 
@@ -318,10 +360,14 @@ function findBindingsInScope(scopeContent: string, _scopeStart: number): Reactiv
  */
 function findRefsInScope(scopeContent: string): Map<string, string> {
   const refs = new Map<string, string>()
+  // Strip x-data values to prevent matching HTML inside JS strings
+  const content = scopeContent
+    .replace(/x-data\s*=\s*"[^"]*"/gi, 'x-data="__stripped__"')
+    .replace(/x-data\s*=\s*'[^']*'/gi, "x-data='__stripped__'")
   const refRegex = /<[a-z][a-z0-9-]*\s+([^>]*x-ref\s*=\s*["']([^"']*)["'][^>]*)>/gi
   let match
 
-  while ((match = refRegex.exec(scopeContent)) !== null) {
+  while ((match = refRegex.exec(content)) !== null) {
     const [, attributesStr, refName] = match
     const elementId = extractOrGenerateId(attributesStr)
     refs.set(refName, elementId)
@@ -613,6 +659,16 @@ catch (e) {
     // Add $refs and $el to state context
     const ctx = { ...state, $refs, $el: scopeEl };
 
+    // Bind all methods to ctx so 'this' inside methods refers to the state.
+    // Use a proxy-like approach: methods read from ctx so they see latest state.
+    for (var k in state) {
+      if (typeof state[k] === 'function') {
+        ctx[k] = (function(methodName) {
+          return function() { return state[methodName].apply(ctx, arguments); };
+        })(k);
+      }
+    }
+
     // Update function that re-evaluates all bindings
     function update(changedProp) {
       for (const binding of bindings) {
@@ -655,7 +711,10 @@ else if (!value && wasHidden) {
           case 'class':
             if (typeof value === 'object') {
               for (const [cls, active] of Object.entries(value)) {
-                el.classList.toggle(cls, !!active);
+                // Handle space-separated classes like 'opacity-50 cursor-not-allowed'
+                cls.split(/\\s+/).forEach(function(c) {
+                  if (c) el.classList.toggle(c, !!active);
+                });
               }
             }
 else if (typeof value === 'string') {
@@ -750,6 +809,61 @@ else {
       });
     }
 
+    // Set up event listeners (@click, @submit.prevent, etc.)
+    for (const binding of bindings) {
+      if (binding.type !== 'event') continue;
+
+      const el = document.getElementById(binding.elementId);
+      if (!el) continue;
+
+      const parts = binding.attribute.split('.');
+      const eventName = parts[0];
+      const modifiers = parts.slice(1);
+
+      const handler = binding.expression;
+      const useCapture = modifiers.includes('capture');
+
+      el.addEventListener(eventName, function(e) {
+        if (modifiers.includes('prevent')) e.preventDefault();
+        if (modifiers.includes('stop')) e.stopPropagation();
+        if (modifiers.includes('self') && e.target !== el) return;
+
+        // Key modifiers
+        if (eventName === 'keydown' || eventName === 'keyup' || eventName === 'keypress') {
+          var keyMods = modifiers.filter(function(m) { return m !== 'prevent' && m !== 'stop' && m !== 'self' && m !== 'once' && m !== 'capture' && m !== 'passive' });
+          if (keyMods.length > 0) {
+            var keyMap = { enter: 'Enter', escape: 'Escape', space: ' ', tab: 'Tab', delete: 'Delete', backspace: 'Backspace', up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+            var matched = keyMods.every(function(m) {
+              if (m === 'ctrl') return e.ctrlKey;
+              if (m === 'alt') return e.altKey;
+              if (m === 'shift') return e.shiftKey;
+              if (m === 'meta') return e.metaKey;
+              return e.key === (keyMap[m] || m);
+            });
+            if (!matched) return;
+          }
+        }
+
+        // Execute handler in reactive scope context
+        var execCtx = {};
+        for (var k in state) {
+          if (Object.prototype.hasOwnProperty.call(state, k)) {
+            execCtx[k] = reactiveState[k];
+          }
+        }
+        execCtx.$refs = $refs;
+        execCtx.$el = scopeEl;
+        execute(handler, execCtx, e, el);
+        for (var k in state) {
+          if (Object.prototype.hasOwnProperty.call(state, k) && execCtx[k] !== reactiveState[k]) {
+            reactiveState[k] = execCtx[k];
+          }
+        }
+        Object.assign(ctx, state);
+        update();
+      }, { capture: useCapture, once: modifiers.includes('once'), passive: modifiers.includes('passive') });
+    }
+
     // Expose execute function for event handlers
     scopeEl.__stx_execute = function(stmt, $event, $el) {
       // Build execution context with reactive state + special vars
@@ -836,18 +950,22 @@ function generateScopeInitializers(scopes: ReactiveScope[]): string {
 
     const refsJson = JSON.stringify(Object.fromEntries(scope.refs))
 
+    // Use JSON.stringify for stateExpr/initExpr to safely handle all quote types and escapes
+    const stateExprJson = JSON.stringify(scope.stateExpr)
+    const initExprJson = scope.initExpr ? JSON.stringify(scope.initExpr) : 'null'
+
     return `
   (function() {
     var scopeEl = document.querySelector('${scope.selector}');
     if (!scopeEl) return;
     var bindings = ${bindingsJson};
     var refs = ${refsJson};
-    __stx_reactive.initScope(scopeEl, '${scope.stateExpr.replace(/'/g, "\\'")}', bindings, refs, ${scope.initExpr ? `'${scope.initExpr.replace(/'/g, "\\'")}'` : 'null'});
+    __stx_reactive.initScope(scopeEl, ${stateExprJson}, bindings, refs, ${initExprJson});
   })();`
   }).join('\n')
 
   return `
-<script data-stx-reactive>
+<script data-stx-scoped data-stx-reactive>
 ${generateReactiveRuntime()}
 
 // Initialize all reactive scopes
@@ -932,6 +1050,9 @@ function removeReactiveAttributes(template: string): string {
     // Simple x-transition (no value) and duration modifiers
     /\s*x-transition\.duration\.\d+(?:ms)?/g,
     /\s*x-transition(?=[\s>\/])/g,
+    // Event directives (@click, @submit.prevent, etc.) - may span multiple lines
+    /\s*@[a-z]+(?:\.[a-z]+)*\s*=\s*"[^"]*"/gs,
+    /\s*@[a-z]+(?:\.[a-z]+)*\s*=\s*'[^']*'/gs,
   ]
 
   for (const regex of attrsToRemove) {
@@ -1004,6 +1125,28 @@ function addAllReactiveIds(template: string): string {
   let output = template
   elementCounter = 0
 
+  // Protect x-data attribute values from being parsed as HTML.
+  // x-data values can contain HTML string literals (e.g. in methods that return HTML).
+  // Without this, addIdsToElements would match <tags> inside those JS strings
+  // because its [^>]* pattern can't handle > inside quoted attribute values.
+  const xDataPlaceholders: string[] = []
+  output = output.replace(
+    /x-data\s*=\s*"[^"]*"/gi,
+    (match) => {
+      const idx = xDataPlaceholders.length
+      xDataPlaceholders.push(match)
+      return `__XDATA_PLACEHOLDER_${idx}__`
+    },
+  )
+  output = output.replace(
+    /x-data\s*=\s*'[^']*'/gi,
+    (match) => {
+      const idx = xDataPlaceholders.length
+      xDataPlaceholders.push(match)
+      return `__XDATA_PLACEHOLDER_${idx}__`
+    },
+  )
+
   // Add IDs to all elements that need them
   output = addIdsToElements(output, /x-model\s*=\s*["']/)
   output = addIdsToElements(output, /x-show\s*=\s*["']/)
@@ -1012,6 +1155,12 @@ function addAllReactiveIds(template: string): string {
   output = addIdsToElements(output, /x-html\s*=\s*["']/)
   output = addIdsToElements(output, /(?:x-bind:|:)[a-z]/)
   output = addIdsToElements(output, /x-ref\s*=\s*["']/)
+  output = addIdsToElements(output, /@[a-z]+(?:\.[a-z]+)*\s*=\s*["']/)
+
+  // Restore x-data values
+  for (let i = 0; i < xDataPlaceholders.length; i++) {
+    output = output.replace(`__XDATA_PLACEHOLDER_${i}__`, xDataPlaceholders[i])
+  }
 
   return output
 }
@@ -1022,17 +1171,18 @@ function addAllReactiveIds(template: string): string {
 function finalizeTemplate(template: string, scopes: ReactiveScope[]): string {
   let output = template
 
-  // Add data-stx-scope to x-data elements
+  // Add data-stx-scope and data-stx-reactive-owner to x-data elements
+  // data-stx-reactive-owner tells the signals runtime to skip these scopes entirely
   for (const scope of scopes) {
     // Match x-data with double quotes
     output = output.replace(
       new RegExp(`(<[a-z][a-z0-9-]*\\s+)([^>]*)(x-data\\s*=\\s*"${escapeRegex(scope.stateExpr)}")([^>]*>)`, 'gi'),
-      `$1data-stx-scope="${scope.id}" $2$3$4`,
+      `$1data-stx-scope="${scope.id}" data-stx-reactive-owner $2$3$4`,
     )
     // Match x-data with single quotes
     output = output.replace(
       new RegExp(`(<[a-z][a-z0-9-]*\\s+)([^>]*)(x-data\\s*=\\s*'${escapeRegex(scope.stateExpr)}')([^>]*>)`, 'gi'),
-      `$1data-stx-scope="${scope.id}" $2$3$4`,
+      `$1data-stx-scope="${scope.id}" data-stx-reactive-owner $2$3$4`,
     )
   }
 
