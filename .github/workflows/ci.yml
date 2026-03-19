@@ -96,20 +96,16 @@ jobs:
         run: bun test test/integration/
 
   publish-commit:
+    needs: [lint, typecheck, test]
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v6.0.2
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2.1.2
-
-      - name: Use cached node_modules
-        uses: actions/cache@v5.0.3
+      - uses: actions/checkout@v6
         with:
-          path: node_modules
-          key: node-modules-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            node-modules-
+          fetch-depth: 0
+
+      - name: Setup Pantry
+        uses: home-lang/pantry/packages/action@main
 
       - name: Install Dependencies
         run: bun install
@@ -118,4 +114,7 @@ jobs:
         run: bun run build
 
       - name: Publish Commit
-        run: bunx pkg-pr-new publish './packages/stx' './packages/bun-plugin' './packages/components'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: pantry publish:commit './packages/stx' './packages/bun-plugin' './packages/components'
+        env:
+          PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
