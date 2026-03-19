@@ -200,7 +200,7 @@ else {
  *     <div>{{ item.name }}</div>
  *   </template>
  */
-function convertSignalLoopsToAttributes(template: string): string {
+function convertSignalLoopsToAttributes(template: string, context?: Record<string, any>): string {
   let output = template
 
   // Pattern to match @for(expr)...@endfor or @foreach(expr)...@endforeach
@@ -227,8 +227,22 @@ function convertSignalLoopsToAttributes(template: string): string {
     let expr = output.substring(exprStart, i - 1).trim()
     const afterExpr = i
 
-    // Convert "list as item" (Blade-style) to "item in list" (JS-style) for bindFor
+    // Check if the iterable comes from server context — if so, leave it for
+    // server-side processLoops() instead of converting to a client-side @for attribute.
+    // "list as item" → iterable is "list"; "item in list" → iterable is "list"
     const asMatch = expr.match(/^(.+?)\s+as\s+(\w+(?:\s*,\s*\w+)?)\s*$/)
+    const inMatch = !asMatch ? expr.match(/^\w+(?:\s*,\s*\w+)?\s+(?:in|of)\s+(.+)$/) : null
+    const iterableExpr = asMatch ? asMatch[1].trim() : (inMatch ? inMatch[1].trim() : null)
+    if (iterableExpr && context) {
+      // Extract the root variable name (e.g. "items" from "items" or "obj.items")
+      const rootVar = iterableExpr.split(/[.[]/)[0]
+      if (rootVar && rootVar in context) {
+        // This iterable is server-side data — skip conversion, let processLoops handle it
+        continue
+      }
+    }
+
+    // Convert "list as item" (Blade-style) to "item in list" (JS-style) for bindFor
     if (asMatch) {
       expr = `${asMatch[2]} in ${asMatch[1]}`
     }
@@ -1822,9 +1836,10 @@ async function processOtherDirectives(
 
   // For templates that use signals, convert @if/@for directive blocks to attribute-style
   // MUST run BEFORE processLoops/processConditionals so signal loops aren't evaluated server-side
+  // Pass context so loops referencing server-side data are kept for server-side processing
   if (usesSignalsInScript(output)) {
     output = convertSignalDirectivesToAttributes(output)
-    output = convertSignalLoopsToAttributes(output)
+    output = convertSignalLoopsToAttributes(output, context)
   }
 
   // Process loops FIRST - BEFORE components so that loop variables are evaluated
