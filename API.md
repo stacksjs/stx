@@ -54,6 +54,7 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
   - [Scoped Styles](#scoped-styles)
   - [App Shell](#app-shell)
   - [Client-Side Router Hydration](#client-side-router-hydration)
+  - [StxLink Component](#stxlink-component)
   - [Component Composition API](#component-composition-api)
 
 ---
@@ -5774,6 +5775,48 @@ The SPA router handles two response types:
 7. Signals runtime re-processes `[data-stx-scope]` and `[data-stx]` elements
 
 **View Transitions API** is used when available, with a CSS opacity fallback for older browsers.
+
+### `<StxLink>` Component
+
+Built-in navigation component (equivalent to Nuxt's `<NuxtLink>`). Renders an `<a>` tag with SPA navigation, active class management, and optional prefetching.
+
+```html
+<!-- Basic usage -->
+<StxLink to="/about">About</StxLink>
+
+<!-- Custom active class -->
+<StxLink to="/jobs" activeClass="nav-active">Jobs</StxLink>
+
+<!-- Exact active class (only on exact path match) -->
+<StxLink to="/" exactActiveClass="current-page">Home</StxLink>
+
+<!-- Prefetch on hover -->
+<StxLink to="/dashboard" prefetch>Dashboard</StxLink>
+
+<!-- With CSS class -->
+<StxLink to="/settings" className="btn btn-link">Settings</StxLink>
+```
+
+**Props:**
+
+| Prop | Default | Description |
+|------|---------|-------------|
+| `to` | — | Target URL (required) |
+| `activeClass` | `'active'` | Class added when route matches or is a parent |
+| `exactActiveClass` | `'exact-active'` | Class added only on exact path match |
+| `prefetch` | `false` | Prefetch page content on hover |
+| `className` | `''` | CSS class for the `<a>` element |
+
+The router automatically intercepts clicks on `<StxLink>` for SPA navigation — no full page reload. Active classes are toggled on every navigation.
+
+You can also use plain `<a>` tags — the router intercepts all internal links by default:
+
+```html
+<a href="/about">About</a>                          <!-- SPA navigation, no active class -->
+<a href="/about" data-stx-link>About</a>             <!-- SPA navigation + active class -->
+<a href="/about" data-stx-no-router>About</a>        <!-- Full page reload (opt out) -->
+<a href="https://example.com">External</a>           <!-- External links are never intercepted -->
+```
 
 ### Component Composition API
 

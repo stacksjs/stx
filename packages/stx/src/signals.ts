@@ -1878,7 +1878,9 @@ catch (e) {
   function processElement(el, scope = componentScope) {
     // Skip elements managed by __stx_reactive or x-element (x-data scopes)
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
-      if (el.hasAttribute('x-data') || el.__stx_reactive_initialized) return;
+      if (el.hasAttribute('x-data') || el.__stx_reactive_initialized) {
+        return;
+      }
     }
     if (el.nodeType === Node.TEXT_NODE) {
       const text = el.textContent;
@@ -3316,6 +3318,11 @@ else {
       }
       var disposeEffects = trackEffects(function() { processElement(el); });
       el.__stx_disposers = disposeEffects;
+
+      // Remove x-cloak after bindings are applied (prevents FOUC)
+      el.removeAttribute('x-cloak');
+      el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
+
       mountCallbacks.forEach(fn => fn());
     });
 
@@ -3341,6 +3348,10 @@ else {
       var disposeEffects = trackEffects(function() { processElement(el); });
       el.__stx_disposers = disposeEffects;
 
+      // Remove x-cloak after bindings are applied
+      el.removeAttribute('x-cloak');
+      el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
+
       // Run scope-specific mount callbacks
       if (scopeVars && scopeVars.__mountCallbacks) {
         scopeVars.__mountCallbacks.forEach(fn => fn());
@@ -3351,6 +3362,10 @@ else {
     document.querySelectorAll('[data-stx-auto]').forEach(el => {
       // Process element but skip children that are in scoped containers
       processElementSkipScopes(el, processedScopes);
+
+      // Remove x-cloak after bindings are applied
+      el.removeAttribute('x-cloak');
+      el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
     });
 
     // Process <head> elements (title, meta) that may contain {{ }} expressions

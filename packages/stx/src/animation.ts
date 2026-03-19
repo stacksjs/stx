@@ -216,7 +216,6 @@ function generateIntersectionObserverScript(threshold = 0.1, rootMargin = '0px')
 
       // Start observing elements
       const elements = document.querySelectorAll('.stx-observe');
-      console.log('Observing', elements.length, 'elements for animations');
       elements.forEach(el => observer.observe(el));
     };
 
