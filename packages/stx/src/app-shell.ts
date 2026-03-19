@@ -209,16 +209,64 @@ ${routerScript}
 }
 
 /**
- * Wrap page content as a fragment for SPA navigation.
+ * Strip document wrapper (DOCTYPE, html, head, body) from page content,
+ * returning just the body content as a fragment.
  *
- * Returns just the page HTML, scripts, and styles — no document wrapper.
- * The client-side router will inject this into the shell's content area.
+ * If the content has no document wrapper, it's returned as-is.
+ *
+ * Preserves:
+ * - `<script>` tags from `<body>` (page scripts)
+ * - `<style>` tags from `<head>` (page styles, moved to fragment)
+ * - Body content
+ *
+ * Strips:
+ * - `<!DOCTYPE>`, `<html>`, `<head>`, `<body>` wrappers
+ * - `<meta>`, `<title>`, `<link>` tags from `<head>`
  */
-export function buildPageFragment(pageContent: string): string {
-  // The page content is already processed through processDirectives.
-  // For SPA navigation, we return it as-is (no document wrapper).
-  // The router's swap() function will handle injection.
-  return pageContent
+export function stripDocumentWrapper(html: string): string {
+  const trimmed = html.trim()
+
+  // No document wrapper — already a fragment
+  if (!trimmed.match(/<!DOCTYPE\b/i) && !trimmed.match(/^<html[\s>]/i)) {
+    return html
+  }
+
+  // Extract <style> tags from <head> (page-specific styles to preserve)
+  const headStyles: string[] = []
+  const headMatch = trimmed.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)
+  if (headMatch) {
+    const headContent = headMatch[1]
+    const styleRegex = /<style\b[^>]*>[\s\S]*?<\/style>/gi
+    let styleMatch: RegExpExecArray | null
+    while ((styleMatch = styleRegex.exec(headContent)) !== null) {
+      headStyles.push(styleMatch[0])
+    }
+  }
+
+  // Extract body content
+  const bodyMatch = trimmed.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i)
+  if (bodyMatch) {
+    const bodyContent = bodyMatch[1].trim()
+    // Prepend head styles to body content
+    if (headStyles.length > 0) {
+      return headStyles.join('\n') + '\n' + bodyContent
+    }
+    return bodyContent
+  }
+
+  // Fallback: strip tags manually if regex didn't match cleanly
+  let result = trimmed
+  result = result.replace(/<!DOCTYPE\b[^>]*>/i, '')
+  result = result.replace(/<html\b[^>]*>/i, '')
+  result = result.replace(/<\/html>/i, '')
+  result = result.replace(/<head\b[^>]*>[\s\S]*?<\/head>/i, () => {
+    // Preserve styles from head
+    return headStyles.join('\n')
+  })
+  result = result.replace(/<body\b[^>]*>/i, '')
+  result = result.replace(/<\/body>/i, '')
+
+  return result.trim()
 }
 
 /**

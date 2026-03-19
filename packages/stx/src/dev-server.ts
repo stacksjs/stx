@@ -24,7 +24,7 @@ import { stxClientHelpers } from './client-helpers'
 import { partialsCache } from './includes'
 import { plugin as stxPlugin } from './plugin'
 import { clearComponentCache } from './utils'
-import { detectShell, processShell, composeShellWithPage, isSpaNavigation } from './app-shell'
+import { detectShell, processShell, composeShellWithPage, stripDocumentWrapper, isSpaNavigation } from './app-shell'
 import type { ProcessedShell } from './app-shell'
 
 // Import from modular dev-server components
@@ -1815,6 +1815,13 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         else {
           output += `\n${scriptsHtml}`
         }
+      }
+
+      // Shell mode: strip document wrapper from page output so it doesn't nest
+      // inside the shell's own <!DOCTYPE>/html/head/body structure.
+      // Preserves page scripts and styles as fragment content.
+      if (shell) {
+        output = stripDocumentWrapper(output)
       }
 
       return { route, content: output }

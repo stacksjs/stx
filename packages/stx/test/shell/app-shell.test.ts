@@ -8,7 +8,7 @@ import {
   detectShell,
   processShell,
   composeShellWithPage,
-  buildPageFragment,
+  stripDocumentWrapper,
   isSpaNavigation,
 } from '../../src/app-shell'
 
@@ -161,11 +161,82 @@ describe('App Shell', () => {
     })
   })
 
-  describe('buildPageFragment', () => {
-    it('should return page content as-is', () => {
-      const page = '<h1>Hello</h1><p>World</p>'
-      const result = buildPageFragment(page)
-      expect(result).toBe(page)
+  describe('stripDocumentWrapper', () => {
+    it('should return fragments as-is', () => {
+      const fragment = '<h1>Hello</h1><p>World</p>'
+      const result = stripDocumentWrapper(fragment)
+      expect(result).toBe(fragment)
+    })
+
+    it('should strip full document wrapper', () => {
+      const doc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Page</title>
+</head>
+<body>
+<h1>Hello</h1>
+<p>World</p>
+</body>
+</html>`
+      const result = stripDocumentWrapper(doc)
+      expect(result).not.toContain('<!DOCTYPE')
+      expect(result).not.toContain('<html')
+      expect(result).not.toContain('<head')
+      expect(result).not.toContain('<body')
+      expect(result).not.toContain('</html>')
+      expect(result).toContain('<h1>Hello</h1>')
+      expect(result).toContain('<p>World</p>')
+    })
+
+    it('should preserve scripts from body', () => {
+      const doc = `<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body>
+<h1>Hello</h1>
+<script data-stx-scoped>const x = 1;</script>
+</body>
+</html>`
+      const result = stripDocumentWrapper(doc)
+      expect(result).toContain('<script data-stx-scoped>const x = 1;</script>')
+      expect(result).toContain('<h1>Hello</h1>')
+    })
+
+    it('should preserve styles from head', () => {
+      const doc = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Test</title>
+  <style>.card { color: red; }</style>
+</head>
+<body>
+<div class="card">Content</div>
+</body>
+</html>`
+      const result = stripDocumentWrapper(doc)
+      expect(result).toContain('<style>.card { color: red; }</style>')
+      expect(result).toContain('<div class="card">Content</div>')
+      expect(result).not.toContain('<title>')
+    })
+
+    it('should strip meta and link tags from head', () => {
+      const doc = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width">
+  <link rel="stylesheet" href="/style.css">
+  <title>Test</title>
+</head>
+<body><p>Content</p></body>
+</html>`
+      const result = stripDocumentWrapper(doc)
+      expect(result).not.toContain('<meta')
+      expect(result).not.toContain('<link')
+      expect(result).not.toContain('<title>')
+      expect(result).toContain('<p>Content</p>')
     })
   })
 

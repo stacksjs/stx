@@ -70,10 +70,12 @@ export function getRouterScript(): string {
 else {
       fetch(url,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
         if(!r.ok)throw new Error(r.status);
-        return r.text();
-      }).then(function(html){
-        if(o.cache)cache[targetPath]=html;
-        swap(html,targetPath,pushState,targetHash);
+        var isFragment=r.headers.get('X-STX-Fragment')==='true';
+        return r.text().then(function(html){return{html:html,isFragment:isFragment}});
+      }).then(function(result){
+        if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
+        if(o.cache)cache[targetPath]=result.html;
+        swap(result.html,targetPath,pushState,targetHash);
       }).catch(function(){
         location.href=url;
       }).finally(done);
@@ -81,7 +83,8 @@ else {
   }
 
   function swap(html,url,pushState,hash){
-    var isFragment=html.trim().charAt(0)!=='<'||(!html.includes('<!DOCTYPE')&&!html.includes('<html')&&!html.includes('<head'));
+    var isFragment=html.indexOf('<!--stx-fragment-->')===0;
+    if(isFragment)html=html.slice('<!--stx-fragment-->'.length);
     var currentContent=getContainer();
     if(!currentContent){location.href=url;return}
 
@@ -225,19 +228,22 @@ else {
       document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
 
       var scripts=[];
-      doc.querySelectorAll('script').forEach(function(s){
+      // Only collect scripts from within the container — layout scripts outside
+      // the container (sidebar mounts, config, etc.) must NOT re-execute on SPA nav.
+      // Also check <head> for page-specific setup functions (SFC __stx_setup_).
+      newContent.querySelectorAll('script').forEach(function(s){
         var text=s.textContent||'';
-        // Skip the signals runtime
-        if(text.indexOf('let activeEffect')!==-1)return;
-        // Skip the router
-        if(text.indexOf('__stxRouter')!==-1)return;
-        // Skip layout shell scripts
-        if(text.indexOf('__stxDashboardInit')!==-1||text.indexOf('__stxLayoutInit')!==-1)return;
-        // Skip external scripts
         if(s.hasAttribute('src'))return;
-        // Skip empty
         if(!text.trim())return;
         scripts.push(text);
+      });
+      // Collect SFC setup functions from <head> that are page-specific
+      doc.querySelectorAll('head script').forEach(function(s){
+        var text=s.textContent||'';
+        if(s.hasAttribute('src'))return;
+        if(!text.trim())return;
+        // Only include scripts that define page setup functions
+        if(text.indexOf('__stx_setup_')!==-1)scripts.push(text);
       });
 
       function execScripts(){
@@ -329,7 +335,10 @@ else {
       var href=link.getAttribute('href');
       if(cache[href]||prefetching[href])return;
       prefetching[href]=true;
-      fetch(href,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){return r.text()}).then(function(html){
+      fetch(href,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
+        var isFrag=r.headers.get('X-STX-Fragment')==='true';
+        return r.text().then(function(html){return isFrag?'<!--stx-fragment-->'+html:html});
+      }).then(function(html){
         if(o.cache)cache[href]=html;
       }).catch(function(){}).finally(function(){delete prefetching[href]});
     },true);
@@ -385,7 +394,7 @@ else {
     navigateTo:navigate,
     prefetch:function(url){
       if(!cache[url]){
-        fetch(url,{headers:{'X-STX-Router':'true'}}).then(function(r){return r.text()}).then(function(html){cache[url]=html}).catch(function(){});
+        fetch(url,{headers:{'X-STX-Router':'true'}}).then(function(r){var isFrag=r.headers.get('X-STX-Fragment')==='true';return r.text().then(function(html){return isFrag?'<!--stx-fragment-->'+html:html})}).then(function(html){cache[url]=html}).catch(function(){});
       }
     },
     clearCache:function(){for(var k in cache)delete cache[k]},

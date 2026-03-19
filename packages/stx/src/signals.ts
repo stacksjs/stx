@@ -3100,6 +3100,7 @@ catch (e) {}
     _destroyCallbacks: destroyCallbacks,
     _cleanupContainer: cleanupContainer,
     _scopes: {},  // Component-level scopes
+    _latestSetup: null,  // Latest SFC setup function (for SPA re-initialization)
     mountEl: function(selector, setupFn) {
       function doMount() {
         var root = document.querySelector(selector);
@@ -3167,12 +3168,15 @@ else {
 
         // SPA fallback: during router navigation, script is appended to <body>
         // (not inside the content container), so nextElementSibling won't find the page content.
-        // Detect this by checking if the script's parent is <body> or if root is unsuitable.
+        // Only use fallback when we genuinely couldn't find a suitable root element.
+        // Do NOT fallback just because the script is in <body> — layout scripts in <body>
+        // with valid siblings (e.g. sidebar <aside>) should use those siblings as root.
         var needsFallback = !root || root === document.body
-          || (scriptEl && scriptEl.parentElement === document.body)
           || (root && root.tagName === 'SCRIPT');
         if (needsFallback) {
+          var routerOpts = window.STX_ROUTER_OPTIONS || window.__stxRouterConfig || {};
           var container = document.querySelector('[data-stx-router-container]')
+            || (routerOpts.container ? document.querySelector(routerOpts.container) : null)
             || document.querySelector('main')
             || document.querySelector('#content');
           if (container) {
@@ -3494,7 +3498,29 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     mountQueue = [];
 
     // Re-process scoped components in new content
-    var container = document.querySelector('[data-stx-content]') || document.querySelector('#main-content') || document.body;
+    var routerOpts = window.STX_ROUTER_OPTIONS || window.__stxRouterConfig || {};
+    var container = document.querySelector('[data-stx-content]')
+      || (routerOpts.container ? document.querySelector(routerOpts.container) : null)
+      || document.querySelector('#main-content')
+      || document.body;
+
+    // Check if a new page SFC setup function was registered by re-executed scripts.
+    // stx._latestSetup is set by scripts that define __stx_setup_ functions.
+    if (window.stx._latestSetup && typeof window.stx._latestSetup === 'function') {
+      var setupResult = window.stx._latestSetup();
+      window.stx._latestSetup = null;
+      if (typeof setupResult === 'object' && setupResult !== null) {
+        Object.assign(componentScope, setupResult);
+      }
+      // Process the container content with the new scope
+      var disposeEffects = trackEffects(function() { processElement(container, componentScope); });
+      container.__stx_disposers = disposeEffects;
+
+      // Remove x-cloak
+      container.removeAttribute('x-cloak');
+      container.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
+    }
+
     container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
       var scopeId = el.getAttribute('data-stx-scope');
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];

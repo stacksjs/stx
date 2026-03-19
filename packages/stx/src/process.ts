@@ -355,6 +355,7 @@ function ${setupFnName}() {
 ${resolvedContent}
   return { ${extractExports(resolvedContent)} };
 }
+if(window.stx)window.stx._latestSetup=${setupFnName};
 </script>`
 
   // Remove the original script and add data-stx attribute to the root element

@@ -668,7 +668,7 @@ ${eventCode}
   //    - Uses signal APIs → auto-mount (existing behavior)
   //    - Has template-referenced declarations → auto-mount (Phase 2: auto-binding)
   //    - Otherwise → legacy IIFE
-  const usesSignals = /\b(state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(scriptContent)
+  const usesSignals = /\b(state|derived|effect|ref|reactive|computed|watch|watchEffect|useLocalStorage|useSessionStorage|useRef|useEventListener|useFetch|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useWebSocket|useRoute|useSearchParams|onMount|onDestroy|batch|untrack|peek)\s*(?:<[^>]*>)?\s*\(/.test(scriptContent)
   const isSfcWrapped = /function __stx_setup_/.test(code)
   const alreadyMounts = /\bstx\.mount\s*\(|\bstx\.mountEl\s*\(/.test(scriptContent)
 
