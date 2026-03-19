@@ -49,6 +49,7 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
 - [Image Optimization](#image-optimization)
 - [Suggested Future Syntax](#suggested-future-syntax)
 - [v2 Features](#v2-features)
+  - [Signals vs Alpine-Style Reactivity](#signals-vs-alpine-style-reactivity)
   - [TypeScript-First Scripts](#typescript-first-scripts)
   - [Auto-Binding](#auto-binding)
   - [Scoped Styles](#scoped-styles)
@@ -554,7 +555,9 @@ Parent listens via CustomEvent:
 
 ## Two-Way Binding (x-element)
 
-STX includes a lightweight reactivity system for client-side interactivity.
+STX includes a lightweight Alpine-style reactivity system for inline client-side interactivity. For TypeScript-first components with signals, see [Signals Reactivity](#signals-vs-alpine-style-reactivity) in v2 Features.
+
+> **Which to use?** `x-data` for quick inline interactivity (counters, toggles, form state). Signals (`state`/`derived`/`effect`) for typed components with complex state, derived values, and lifecycle hooks.
 
 ### x-data
 Define a reactive scope:
@@ -5584,6 +5587,41 @@ The following APIs are auto-imported in `<script client>` blocks — no import s
 ## v2 Features
 
 STX v2 introduces TypeScript-first single-file components with automatic hydration. These features build incrementally on v1 — existing `.stx` files continue to work unchanged.
+
+### Signals vs Alpine-Style Reactivity
+
+STX has two client-side reactivity systems. They coexist on the same page but manage separate scopes.
+
+| | Alpine-style (`x-data`) | Signals (`state`/`derived`/`effect`) |
+|---|---|---|
+| **Syntax** | `x-data`, `x-model`, `x-show`, `x-text`, `@click` | `state()`, `derived()`, `effect()`, `{{ }}`, `:attr`, `@event` |
+| **TypeScript** | No (inline JS expressions) | Yes (full TS in `<script>` blocks) |
+| **Scope** | Per-element via `x-data="{ ... }"` | Per-component via `<script>` block |
+| **Use case** | Quick inline interactivity | Typed components with complex state |
+| **Lifecycle** | `x-init` only | `onMount`, `onDestroy` |
+| **Derived state** | Manual (recompute in handlers) | `derived(() => ...)` auto-tracks |
+| **Two-way binding** | `x-model="name"` | `@model="name"` |
+| **File** | `reactive.ts` runtime | `signals.ts` runtime |
+
+**Recommendation:** Use signals for new components. Use `x-data` for quick sprinkles of interactivity where a full component isn't warranted.
+
+**Mixing on the same page** works — an `x-data` section and a signals component can coexist. They just don't share state. Mixing on the **same element** is not supported and will produce a dev warning when `debug: true`.
+
+```html
+<!-- This works: separate scopes on the same page -->
+<div x-data="{ open: false }">
+  <button @click="open = !open">Toggle</button>
+  <div x-show="open">Alpine-managed</div>
+</div>
+
+<div>
+  <script>
+  const count = state(0)
+  </script>
+  <p>{{ count() }}</p>
+  <button @click="count.set(count() + 1)">Signals-managed</button>
+</div>
+```
 
 ### TypeScript-First Scripts
 

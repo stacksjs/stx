@@ -1993,6 +1993,20 @@ async function processOtherDirectives(
   // Process reactive directives (x-data, x-model, x-show, etc.) - Alpine-style reactivity
   output = processReactiveDirectives(output, context, filePath)
 
+  // Dev warning: detect mixing of Alpine-style (x-data) and signals (state/derived/effect)
+  // in the same template. Both systems work on the same page but not on the same element.
+  if (opts.debug) {
+    const hasXData = /\bx-data\s*=/.test(output)
+    const hasSignals = hasSignalsSyntax(template)
+    if (hasXData && hasSignals) {
+      console.warn(
+        `[stx] ${filePath}: Template mixes Alpine-style (x-data) and signals (state/derived/effect) reactivity.\n`
+        + `  Both work on the same page, but they manage separate scopes.\n`
+        + `  Prefer signals (state/derived/effect) for new components.`,
+      )
+    }
+  }
+
   // Process expressions now (delayed to allow other directives to generate expressions)
   output = await processExpressions(output, context, filePath)
 
