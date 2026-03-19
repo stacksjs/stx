@@ -3419,7 +3419,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     mountQueue = [];
 
     // Re-process scoped components in new content
-    var container = document.querySelector('#main-content') || document.body;
+    var container = document.querySelector('[data-stx-content]') || document.querySelector('#main-content') || document.body;
     container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
       var scopeId = el.getAttribute('data-stx-scope');
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];

@@ -516,6 +516,15 @@ export interface StxConfig {
    * Pass a StrictModeConfig object for fine-grained control.
    */
   strict?: boolean | StrictModeConfig
+
+  /**
+   * App shell file for single-shell mode.
+   * When set (or auto-detected as 'app.stx'), the shell wraps all pages.
+   * The shell's `<slot />` is replaced with page content.
+   * Direct requests get full shell + page; SPA navigation gets page fragments.
+   * @default undefined (auto-detects 'app.stx' in project root)
+   */
+  shell?: string | false
 }
 
 /**

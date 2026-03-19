@@ -606,7 +606,11 @@ window.__stx_reactive = (function() {
   function evaluate(expr, ctx) {
     try {
       const keys = Object.keys(ctx);
-      const values = Object.values(ctx);
+      // Bind function values to ctx so 'this' works inside methods
+      const values = keys.map(function(k) {
+        var v = ctx[k];
+        return typeof v === 'function' ? v.bind(ctx) : v;
+      });
       const fn = new Function(...keys, 'return (' + expr + ')');
       return fn(...values);
     }
@@ -620,8 +624,8 @@ catch (e) {
   function execute(stmt, ctx, $event, $el) {
     try {
       var keys = Object.keys(ctx);
-      // Read values into local vars, execute statement, write non-$ keys back
-      var getVars = keys.map(function(k) { return 'var ' + k + ' = __ctx["' + k + '"]' }).join(';');
+      // Read values into local vars, binding functions so 'this' works inside methods
+      var getVars = keys.map(function(k) { return 'var ' + k + ' = typeof __ctx["' + k + '"] === "function" ? __ctx["' + k + '"].bind(__ctx) : __ctx["' + k + '"]' }).join(';');
       var stateKeys = keys.filter(function(k) { return k.charAt(0) !== '$' });
       var setVars = stateKeys.map(function(k) { return '__ctx["' + k + '"] = ' + k }).join(';');
       var body = getVars + ';' + stmt + ';' + setVars;
@@ -659,19 +663,11 @@ catch (e) {
     // Add $refs and $el to state context
     const ctx = { ...state, $refs, $el: scopeEl };
 
-    // Bind all methods to ctx so 'this' inside methods refers to the state.
-    // Use a proxy-like approach: methods read from ctx so they see latest state.
-    for (var k in state) {
-      if (typeof state[k] === 'function') {
-        ctx[k] = (function(methodName) {
-          return function() { return state[methodName].apply(ctx, arguments); };
-        })(k);
-      }
-    }
-
     // Update function that re-evaluates all bindings
     function update(changedProp) {
       for (const binding of bindings) {
+        // Skip event bindings — they are only executed when events fire
+        if (binding.type === 'event') continue;
         const el = document.getElementById(binding.elementId);
         if (!el) continue;
 

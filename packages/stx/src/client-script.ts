@@ -139,6 +139,8 @@ export interface ClientScriptOptions {
   attrs?: string
   /** Whether the component template contains : prefix directives */
   hasColonDirectives?: boolean
+  /** Template HTML content for auto-binding analysis (Phase 2: auto-detect which scripts need stx.mount()) */
+  templateContent?: string
 }
 
 // =============================================================================
@@ -515,6 +517,96 @@ function extractTopLevelDeclarations(code: string): string[] {
 }
 
 // =============================================================================
+// Template Reference Analyzer (Phase 2: Auto-Binding)
+// =============================================================================
+
+/**
+ * JS keywords and built-ins to exclude from template reference extraction.
+ * These appear in expressions but are not user-defined identifiers.
+ */
+const JS_KEYWORDS = new Set([
+  'if', 'else', 'true', 'false', 'null', 'undefined', 'typeof', 'instanceof',
+  'in', 'of', 'new', 'this', 'return', 'void', 'delete', 'throw', 'switch',
+  'case', 'break', 'continue', 'for', 'while', 'do', 'try', 'catch', 'finally',
+  'const', 'let', 'var', 'function', 'class', 'import', 'export', 'default',
+  'async', 'await', 'yield', 'with', 'debugger',
+  // Common globals that aren't user declarations
+  'console', 'window', 'document', 'Math', 'JSON', 'Date', 'Array', 'Object',
+  'String', 'Number', 'Boolean', 'Symbol', 'Map', 'Set', 'Promise', 'Error',
+  'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'encodeURIComponent',
+  'decodeURIComponent', 'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval',
+  'fetch', 'alert', 'confirm', 'prompt', 'event',
+])
+
+/**
+ * Extract all identifiers referenced in template binding expressions.
+ *
+ * Scans for:
+ * - {{ expression }} mustache expressions
+ * - :attribute="expression" bindings (:class, :style, :if, :show, etc.)
+ * - @event="handler" event handlers (@click, @input, etc.)
+ * - @model="value" two-way bindings
+ * - @for="item in items" loop directives (extracts the iterable)
+ *
+ * Returns a Set of identifier names (excluding JS keywords/built-ins).
+ */
+function extractTemplateReferences(templateHtml: string): Set<string> {
+  const refs = new Set<string>()
+  const identifierRegex = /[a-zA-Z_$][a-zA-Z0-9_$]*/g
+
+  function addIdentifiers(expr: string) {
+    let match
+    while ((match = identifierRegex.exec(expr)) !== null) {
+      const name = match[0]
+      if (!JS_KEYWORDS.has(name)) {
+        refs.add(name)
+      }
+    }
+  }
+
+  // {{ expression }}
+  const mustacheRegex = /\{\{([\s\S]*?)\}\}/g
+  let m
+  while ((m = mustacheRegex.exec(templateHtml)) !== null) {
+    addIdentifiers(m[1])
+  }
+
+  // :attribute="expression" (covers :class, :style, :if, :show, :bind, etc.)
+  const colonBindRegex = /:[a-z][\w.-]*\s*=\s*"([^"]*)"/gi
+  while ((m = colonBindRegex.exec(templateHtml)) !== null) {
+    addIdentifiers(m[1])
+  }
+  const colonBindSingleRegex = /:[a-z][\w.-]*\s*=\s*'([^']*)'/gi
+  while ((m = colonBindSingleRegex.exec(templateHtml)) !== null) {
+    addIdentifiers(m[1])
+  }
+
+  // @event="handler" (covers @click, @input, @submit.prevent, etc.)
+  const eventRegex = /@[a-z]+(?:\.[a-z]+)*\s*=\s*"([^"]*)"/gi
+  while ((m = eventRegex.exec(templateHtml)) !== null) {
+    addIdentifiers(m[1])
+  }
+  const eventSingleRegex = /@[a-z]+(?:\.[a-z]+)*\s*=\s*'([^']*)'/gi
+  while ((m = eventSingleRegex.exec(templateHtml)) !== null) {
+    addIdentifiers(m[1])
+  }
+
+  // @model="value"
+  const modelRegex = /@model\s*=\s*["']([^"']*)["']/gi
+  while ((m = modelRegex.exec(templateHtml)) !== null) {
+    addIdentifiers(m[1])
+  }
+
+  // @for="item in items" — extract the iterable (right side of 'in')
+  const forRegex = /@for\s*=\s*["'][^"']*\bin\s+([^"']+)["']/gi
+  while ((m = forRegex.exec(templateHtml)) !== null) {
+    addIdentifiers(m[1])
+  }
+
+  return refs
+}
+
+// =============================================================================
 // Main Processing Function
 // =============================================================================
 
@@ -570,16 +662,18 @@ ${eventCode}
 </script>`
   }
 
-  // 6. Check if we should use stx.mount() wrapper
-  // Only use mount for scripts that actually use signals (state/derived/effect).
-  // : prefix directives are handled by the runtime's processElement regardless of wrapper type.
-  // Skip mount wrapping for SFC components — they already have __stx_setup scoping from utils.ts.
+  // 6. Determine wrapping strategy:
+  //    - Explicit stx.mount()/stx.mountEl() → don't double-wrap (IIFE)
+  //    - SFC __stx_setup_ wrapped → don't double-wrap (IIFE)
+  //    - Uses signal APIs → auto-mount (existing behavior)
+  //    - Has template-referenced declarations → auto-mount (Phase 2: auto-binding)
+  //    - Otherwise → legacy IIFE
   const usesSignals = /\b(state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(scriptContent)
   const isSfcWrapped = /function __stx_setup_/.test(code)
+  const alreadyMounts = /\bstx\.mount\s*\(|\bstx\.mountEl\s*\(/.test(scriptContent)
 
-  if (usesSignals && !isSfcWrapped) {
-    // Extract top-level declarations from ORIGINAL code (before transforms)
-    const declarations = extractTopLevelDeclarations(scriptContent)
+  // Helper: generate stx.mount() wrapper with auto-extracted return statement
+  function wrapInMount(declarations: string[]): string {
     const returnStmt = declarations.length > 0
       ? `\n  return { ${declarations.join(', ')} };`
       : ''
@@ -592,7 +686,27 @@ ${eventCode}${returnStmt}
 })</script>`
   }
 
-  // Fallback: legacy IIFE (for components without signals)
+  // Don't double-wrap scripts that already call mount or are SFC-wrapped
+  if (!alreadyMounts && !isSfcWrapped) {
+    // Scripts using signal APIs → always auto-mount
+    if (usesSignals) {
+      return wrapInMount(extractTopLevelDeclarations(scriptContent))
+    }
+
+    // Phase 2 auto-binding: non-signal scripts with template-referenced declarations
+    if (options.templateContent) {
+      const declarations = extractTopLevelDeclarations(scriptContent)
+      if (declarations.length > 0) {
+        const templateRefs = extractTemplateReferences(options.templateContent)
+        const hasMatchingBindings = declarations.some(name => templateRefs.has(name))
+        if (hasMatchingBindings) {
+          return wrapInMount(declarations)
+        }
+      }
+    }
+  }
+
+  // Fallback: legacy IIFE (no template bindings, or explicit mount, or SFC-wrapped)
   return `<script data-stx-scoped>
 ;(function() {
   'use strict';

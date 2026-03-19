@@ -462,4 +462,84 @@ else {
       expect(hasDotSegment).toBe(false)
     })
   })
+
+  describe('Phase 2: Auto-binding (non-signal scripts)', () => {
+    it('should auto-mount non-signal script when declarations match template expressions', async () => {
+      const html = `<script>
+const greeting = 'Hello'
+function handleClick() { console.log('clicked') }
+</script>
+<div>{{ greeting }}</div>
+<button @click="handleClick()">Click</button>`
+
+      const result = await processTemplate(html, {})
+      // Should be wrapped in stx.mount(), not a plain IIFE
+      expect(result).toContain('window.stx.mount(function()')
+      expect(result).toContain('return { greeting, handleClick }')
+    })
+
+    it('should keep IIFE wrapping when script has no template-referenced declarations', async () => {
+      const html = `<script>
+const internal = 42
+function helper() { return internal + 1 }
+</script>
+<div>Static content only</div>`
+
+      const result = await processTemplate(html, {})
+      // No template references to internal or helper, so should stay IIFE
+      expect(result).toContain(';(function()')
+      expect(result).not.toContain('window.stx.mount')
+    })
+
+    it('should not double-wrap scripts that already call stx.mount()', async () => {
+      const html = `<script>
+stx.mount(function() {
+  const count = 0
+  return { count }
+})
+</script>
+<div>{{ count }}</div>`
+
+      const result = await processTemplate(html, {})
+      // Should NOT have a second stx.mount wrapper
+      const mountCount = (result.match(/window\.stx\.mount\(/g) || []).length
+      expect(mountCount).toBeLessThanOrEqual(1)
+      // Should use IIFE since user already calls mount
+      expect(result).toContain(';(function()')
+    })
+
+    it('should auto-mount when :class references a script declaration', async () => {
+      const html = `<script>
+const isActive = true
+</script>
+<div :class="{ active: isActive }">Content</div>`
+
+      const result = await processTemplate(html, {})
+      expect(result).toContain('window.stx.mount(function()')
+      expect(result).toContain('return { isActive }')
+    })
+
+    it('should auto-mount when @model references a script declaration', async () => {
+      const html = `<script>
+const name = ''
+</script>
+<input @model="name" type="text">`
+
+      const result = await processTemplate(html, {})
+      expect(result).toContain('window.stx.mount(function()')
+      expect(result).toContain('return { name }')
+    })
+
+    it('should still auto-mount signal scripts as before', async () => {
+      const html = `<script>
+const count = state(0)
+</script>
+<div>{{ count() }}</div>`
+
+      const result = await processTemplate(html, {})
+      // Signal scripts go through processScriptSetup which wraps in a __stx_setup_ function
+      expect(result).toContain('__stx_setup_')
+      expect(result).toContain('return {')
+    })
+  })
 })

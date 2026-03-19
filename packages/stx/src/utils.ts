@@ -21,6 +21,7 @@ import { unescapeHtml } from './expressions'
 import { transformStoreImports } from './state-management'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
+import { processScopedStyles } from './style-scoping'
 
 // Re-export from extracted modules for backward compatibility
 export {
@@ -523,6 +524,7 @@ catch {
     const styleAttrs = styleMatch ? styleMatch[1] : ''
     const styleContent = styleMatch ? styleMatch[2] : ''
     let preservedStyle = ''
+    const hasScopedStyle = styleAttrs && /\bscoped\b/i.test(styleAttrs)
     if (styleMatch) {
       preservedStyle = `<style${styleAttrs}>${styleContent}</style>`
     }
@@ -645,11 +647,19 @@ else {
         const transformedScripts = clientScripts.map((fullScript: string) => {
           const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
           if (!contentMatch) return fullScript
-          return processClientScript(contentMatch[1], { eventBindings })
+          return processClientScript(contentMatch[1], { eventBindings, templateContent: output })
         })
         output += '\n' + transformedScripts.join('\n')
         // Clear bindings after use
         componentContext.__stx_event_bindings = []
+      }
+    }
+
+    // Process <style scoped> for this component (scopes CSS and adds data-v-hash to elements)
+    if (hasScopedStyle) {
+      const scopedStyleResult = processScopedStyles(output, componentFilePath)
+      if (scopedStyleResult.hasScoped) {
+        output = scopedStyleResult.html
       }
     }
 

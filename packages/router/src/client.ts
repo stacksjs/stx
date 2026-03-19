@@ -81,11 +81,62 @@ else {
   }
 
   function swap(html,url,pushState,hash){
+    var isFragment=html.trim().charAt(0)!=='<'||(!html.includes('<!DOCTYPE')&&!html.includes('<html')&&!html.includes('<head'));
+    var currentContent=getContainer();
+    if(!currentContent){location.href=url;return}
+
+    // Fragment mode: server returned just the page content (no document wrapper)
+    if(isFragment){
+      if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(currentContent);
+      function doFragSwap(){
+        // Extract scripts from fragment before injecting HTML
+        var fragScripts=[];
+        var fragStyles=[];
+        var cleanFrag=html.replace(/<script\b[^>]*>([\s\S]*?)<\/scr'+'ipt>/gi,function(m,code){
+          if(code&&code.trim())fragScripts.push(code);
+          return '';
+        });
+        cleanFrag=cleanFrag.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi,function(m,attrs,css){
+          fragStyles.push({attrs:attrs,css:css});
+          return '';
+        });
+        // Remove old page styles
+        document.querySelectorAll('style[data-stx-page]').forEach(function(s){s.remove()});
+        // Add new page styles
+        fragStyles.forEach(function(s){
+          var el=document.createElement('style');
+          el.textContent=s.css;
+          el.setAttribute('data-stx-page','');
+          document.head.appendChild(el);
+        });
+        // Swap content
+        currentContent.innerHTML=cleanFrag;
+        // Remove old page scripts and execute new ones
+        document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
+        fragScripts.forEach(function(code){
+          var ns=document.createElement('script');
+          ns.textContent=code;
+          ns.setAttribute('data-stx-page','');
+          document.body.appendChild(ns);
+        });
+        if(pushState!==false)history.pushState({},'',url+(hash||''));
+        updateNav(url);
+        updateActiveLinks();
+        if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
+        else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
+        window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
+        window.dispatchEvent(new Event('stx:load'));
+      }
+      if(o.viewTransitions&&document.startViewTransition){document.startViewTransition(doFragSwap)}
+      else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){doFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
+      return;
+    }
+
+    // Full document mode: parse with DOMParser and extract container content
     var parser=new DOMParser();
     var doc=parser.parseFromString(html,'text/html');
     var newContent=doc.querySelector(containerSel)||doc.querySelector('[data-stx-content]')||doc.querySelector('main');
-    var currentContent=getContainer();
-    if(!newContent||!currentContent){location.href=url;return}
+    if(!newContent){location.href=url;return}
 
     // Clean up existing signals/effects
     if(window.stx&&window.stx._cleanupContainer){

@@ -36,6 +36,7 @@ import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
 import { getRouterScript } from 'stx-router'
 import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
+import { processScopedStyles } from './style-scoping'
 
 // Counter for unique signal setup function names (avoids Date.now() collisions)
 let signalSetupCounter = 0
@@ -2143,6 +2144,12 @@ else {
     }
   }
 
+  // Process <style scoped> blocks: scope CSS selectors and add scope attributes to elements
+  const scopedResult = processScopedStyles(output, filePath)
+  if (scopedResult.hasScoped) {
+    output = scopedResult.html
+  }
+
   // Transform client <script> blocks: resolve @stores imports, inject event
   // bindings into the script scope, and auto-wrap in a scoped IIFE.
   // Client scripts include: <script>, <script client>, <script type="module">, etc.
@@ -2171,7 +2178,7 @@ else {
     validateClientScript(processedContent, filePath, options.strict)
 
     // Use callback form of replace to avoid $ pattern interpretation in replacement string
-    const scriptResult = processClientScript(processedContent, { eventBindings, attrs, hasColonDirectives })
+    const scriptResult = processClientScript(processedContent, { eventBindings, attrs, hasColonDirectives, templateContent: template })
     output = output.replace(match, () => scriptResult)
   }
   // Only clear event bindings if scripts were found and transformed.

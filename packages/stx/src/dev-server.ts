@@ -24,6 +24,8 @@ import { stxClientHelpers } from './client-helpers'
 import { partialsCache } from './includes'
 import { plugin as stxPlugin } from './plugin'
 import { clearComponentCache } from './utils'
+import { detectShell, processShell, composeShellWithPage, isSpaNavigation } from './app-shell'
+import type { ProcessedShell } from './app-shell'
 
 // Import from modular dev-server components
 import {
@@ -1687,6 +1689,16 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
   console.log(`${colors.blue}Found ${colors.bright}${routes.length}${colors.blue} routes${colors.reset}`)
 
+  // Detect app shell (app.stx)
+  const shellPath = detectShell(absoluteAppDir, options.stxOptions?.shell)
+  let shell: ProcessedShell | null = null
+  if (shellPath) {
+    shell = await processShell(shellPath, options.stxOptions || {})
+    if (shell) {
+      console.log(`${colors.blue}Using app shell: ${colors.bright}${path.relative(absoluteAppDir, shellPath)}${colors.reset}`)
+    }
+  }
+
   // Load route middleware from middleware/ directory
   clearMiddleware() // Clear any previously registered middleware
   await loadMiddlewareFromDirectory(absoluteAppDir)
@@ -1788,8 +1800,10 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         ...options.stxOptions,
       }, dependencies)
 
-      // Inject SPA router
-      output = injectRouterScript(output)
+      // Inject SPA router (skip when using shell — router goes in shell composition)
+      if (!shell) {
+        output = injectRouterScript(output)
+      }
 
       // Re-inject client scripts before </body>
       if (clientScripts.length > 0) {
@@ -1973,6 +1987,26 @@ catch {
 
           let content = builtPage.content
 
+          // Shell mode: SPA navigation returns page fragment only
+          if (shell && isSpaNavigation(request)) {
+            // Inject route params into fragment
+            if (Object.keys(routeMatch.params).length > 0) {
+              content = injectRouteParams(content, routeMatch.params)
+            }
+            return new Response(content, {
+              headers: {
+                'Content-Type': 'text/html',
+                'X-STX-Fragment': 'true',
+                'Cache-Control': 'no-store, no-cache, must-revalidate',
+              },
+            })
+          }
+
+          // Shell mode: direct request wraps page in shell
+          if (shell) {
+            content = composeShellWithPage(shell, content)
+          }
+
           // Inject route params for dynamic routes
           if (Object.keys(routeMatch.params).length > 0) {
             content = injectRouteParams(content, routeMatch.params)
@@ -2142,6 +2176,11 @@ catch {
           // Clear all caches to ensure fresh content
           partialsCache.clear()
           clearComponentCache()
+          // Rebuild shell if shell file changed
+          if (shellPath && filename && path.resolve(path.dirname(shellPath), filename) === shellPath) {
+            const newShell = await processShell(shellPath, options.stxOptions || {})
+            if (newShell) shell = newShell
+          }
           await buildAllPages()
           await rebuildCrosswindCSS(absoluteAppDir)
 
