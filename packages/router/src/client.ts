@@ -92,11 +92,11 @@ else {
         // Extract scripts from fragment before injecting HTML
         var fragScripts=[];
         var fragStyles=[];
-        var cleanFrag=html.replace(/<script\b[^>]*>([\s\S]*?)<\/scr'+'ipt>/gi,function(m,code){
+        var cleanFrag=html.replace(new RegExp('<script\\b[^>]*>([\\s\\S]*?)<\\/scr'+'ipt>','gi'),function(m,code){
           if(code&&code.trim())fragScripts.push(code);
           return '';
         });
-        cleanFrag=cleanFrag.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi,function(m,attrs,css){
+        cleanFrag=cleanFrag.replace(new RegExp('<style\\b([^>]*)>([\\s\\S]*?)<\\/style>','gi'),function(m,attrs,css){
           fragStyles.push({attrs:attrs,css:css});
           return '';
         });
@@ -200,7 +200,7 @@ else {
       // ── Swap main content ──
       // Strip inline scripts from innerHTML — they won't execute via innerHTML anyway,
       // and leaving them causes stx.mount() to find the wrong nextElementSibling
-      var cleanHTML=newContent.innerHTML.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt\\\\s*>','gi'),'');
+      var cleanHTML=newContent.innerHTML.replace(new RegExp('<scr'+'ipt\\b[^>]*>[\\s\\S]*?<\\/scr'+'ipt\\s*>','gi'),'');
       currentContent.innerHTML=cleanHTML;
 
       // ── Load new external <head> scripts ──
