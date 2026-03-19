@@ -39,7 +39,7 @@
     "dist"
   ],
   "dependencies": {
-    "@stacksjs/ts-cloud": "^0.2.2"
+    "@stacksjs/ts-cloud": "^0.2.3"
   },
   "scripts": {
     "build": "bun --bun build.ts",
