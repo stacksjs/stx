@@ -48,19 +48,26 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
 - [Deployment](#deployment)
 - [Image Optimization](#image-optimization)
 - [Suggested Future Syntax](#suggested-future-syntax)
+- [v2 Features](#v2-features)
+  - [TypeScript-First Scripts](#typescript-first-scripts)
+  - [Auto-Binding](#auto-binding)
+  - [Scoped Styles](#scoped-styles)
+  - [App Shell](#app-shell)
+  - [Client-Side Router Hydration](#client-side-router-hydration)
+  - [Component Composition API](#component-composition-api)
 
 ---
 
 ## Single File Components (SFC)
 
-STX uses Vue-like Single File Components with `<script>`, `<template>`, and `<style>` sections.
+STX uses Vue-like Single File Components with `<script>`, `<template>`, and `<style>` sections. **TypeScript is the default** — all `<script>` blocks are transpiled via `Bun.Transpiler` automatically. No `lang="ts"` attribute needed.
 
 ```html
 <!-- components/MyComponent.stx -->
 <script server>
 // Server-side only - extracted for SSR, stripped from output
-const title = props.title || 'Default Title'
-const count = props.count || 0
+const title: string = props.title || 'Default Title'
+const count: number = props.count || 0
 </script>
 
 <template>
@@ -71,7 +78,7 @@ const count = props.count || 0
   </div>
 </template>
 
-<style>
+<style scoped>
 .card {
   padding: 1rem;
   border: 1px solid #ccc;
@@ -79,12 +86,17 @@ const count = props.count || 0
 </style>
 
 <script client>
-// Client-side only - preserved for browser execution
-(() => {
-  console.log('Component mounted');
-})();
+// Client-side only - TypeScript works here too
+interface User { name: string; role: string }
+
+const user: User = { name: 'John', role: 'Admin' }
+onMount(() => {
+  console.log('Component mounted')
+})
 </script>
 ```
+
+To opt out of TypeScript transpilation, use `<script js>` or `<script lang="js">`.
 
 ---
 
@@ -184,6 +196,8 @@ Components in `components/` are auto-imported using PascalCase naming.
 ```
 
 ### Accessing Props in Components
+
+#### Simple props access
 ```html
 <script server>
 // Via props object
@@ -198,6 +212,66 @@ const { name, email } = props
   <h1>{{ title }}</h1>
   <p>{{ props.description }}</p>
 </template>
+```
+
+#### Typed props with `defineProps` (v2)
+```html
+<script>
+interface CardProps {
+  title: string
+  count?: number
+  variant?: 'primary' | 'secondary'
+}
+
+const props = defineProps<CardProps>()
+</script>
+```
+
+#### With defaults via `withDefaults` (v2)
+```html
+<script>
+const props = withDefaults(defineProps<{
+  title: string
+  variant?: string
+  size?: string
+}>(), {
+  variant: 'primary',
+  size: 'md',
+})
+</script>
+```
+
+#### With validation
+```html
+<script>
+const props = defineProps({
+  title: { required: true },
+  count: { default: 0 },
+  status: {
+    default: 'active',
+    validator: (v) => ['active', 'inactive'].includes(v)
+  }
+})
+</script>
+```
+
+### Emitting Events (v2)
+```html
+<script>
+const emit = defineEmits<{
+  change: string
+  submit: { data: Record<string, unknown> }
+}>()
+
+function handleClick() {
+  emit('change', 'new value')
+}
+</script>
+```
+
+Parent listens via CustomEvent:
+```html
+<my-component @change="handleChange($event.detail)" />
 ```
 
 ### Slots
@@ -5503,6 +5577,298 @@ The following APIs are auto-imported in `<script client>` blocks — no import s
 
 ### JSX
 `h`, `Fragment`
+
+---
+
+## v2 Features
+
+STX v2 introduces TypeScript-first single-file components with automatic hydration. These features build incrementally on v1 — existing `.stx` files continue to work unchanged.
+
+### TypeScript-First Scripts
+
+All `<script>` blocks are **TypeScript by default**. Type annotations, interfaces, and generics are stripped at build time via `Bun.Transpiler({ loader: 'ts' })`.
+
+```html
+<script>
+interface Job {
+  id: string
+  name: string
+  status: 'active' | 'completed' | 'failed'
+}
+
+const jobs = state<Job[]>([])
+const filter = state<string>('all')
+
+async function loadJobs(): Promise<void> {
+  const res: Response = await fetch('/api/jobs')
+  jobs.set(await res.json())
+}
+</script>
+```
+
+No `lang="ts"` attribute needed. To opt out, use `<script js>` or `<script lang="js">`.
+
+Works in all script types: `<script>`, `<script server>`, `<script client>`, and `<script type="module">`.
+
+### Auto-Binding
+
+Scripts no longer need manual `stx.mount()` calls. The compiler analyzes the template for referenced identifiers and automatically wraps scripts in `stx.mount()` when their declarations match template bindings.
+
+#### Before (v1)
+```html
+<script>
+stx.mount(function() {
+  const greeting = 'Hello'
+  function handleClick() { console.log('clicked') }
+  return { greeting, handleClick }
+})
+</script>
+<div>{{ greeting }}</div>
+<button @click="handleClick()">Click</button>
+```
+
+#### After (v2)
+```html
+<script>
+const greeting = 'Hello'
+function handleClick() { console.log('clicked') }
+</script>
+<div>{{ greeting }}</div>
+<button @click="handleClick()">Click</button>
+```
+
+The compiler detects that `greeting` and `handleClick` are referenced in `{{ }}` and `@click` expressions, and auto-generates the mount wrapper with the correct return statement.
+
+**How it works:**
+1. Template is scanned for identifiers in `{{ }}`, `:attr=""`, `@event=""`, `@model=""`, `@for=""` expressions
+2. Script is scanned for top-level declarations (`const`, `let`, `var`, `function`)
+3. If any declarations match template references, the script is wrapped in `stx.mount()` with an auto-generated `return` statement
+4. Scripts with explicit `stx.mount()` calls are never double-wrapped
+5. Scripts with no template references remain as plain IIFEs
+
+### Scoped Styles
+
+`<style scoped>` isolates CSS to the component using attribute-based selector scoping.
+
+```html
+<!-- components/card.stx -->
+<template>
+  <div class="card">
+    <h2>{{ title }}</h2>
+    <p>{{ description }}</p>
+  </div>
+</template>
+
+<style scoped>
+.card {
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 0.5rem;
+}
+
+.card h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+</style>
+```
+
+**Output:**
+- CSS selectors become `[data-v-stx-abc123] .card { ... }`
+- All HTML elements get `data-v-stx-abc123` attribute
+- Hash is deterministic (based on file path) — same file always produces the same hash
+- Non-scoped `<style>` tags pass through unchanged
+- Supports nested selectors, `@media` queries, `@keyframes`, and comma-separated selectors
+
+**Mixing scoped and global styles:**
+```html
+<style>
+/* Global — applies everywhere */
+.global-reset { margin: 0; }
+</style>
+
+<style scoped>
+/* Scoped — only this component */
+.card { background: white; }
+</style>
+```
+
+### App Shell
+
+Single-shell architecture: one `app.stx` wraps all pages. The shell's `<slot />` is the page injection point.
+
+#### Shell file
+```html
+<!-- app.stx -->
+<template>
+  <div class="app">
+    <nav>
+      <a href="/" data-stx-link>Dashboard</a>
+      <a href="/jobs" data-stx-link>Jobs</a>
+      <a href="/settings" data-stx-link>Settings</a>
+    </nav>
+
+    <main>
+      <slot />
+    </main>
+  </div>
+</template>
+
+<style>
+.app { display: flex; min-height: 100vh; }
+nav { width: 200px; padding: 1rem; }
+main { flex: 1; padding: 2rem; }
+</style>
+```
+
+#### Page files
+```html
+<!-- pages/index.stx -->
+<h1>Dashboard</h1>
+<p>Welcome back!</p>
+
+<!-- pages/jobs.stx -->
+<script server>
+const jobs = await fetchJobs()
+</script>
+<h1>Jobs</h1>
+@foreach(jobs as job)
+  <div>{{ job.name }}</div>
+@endforeach
+```
+
+**How it works:**
+- `app.stx` is auto-detected in the project root (or configured via `shell` in `stx.config.ts`)
+- Direct browser requests get the full shell + page pre-rendered into `<slot />`
+- SPA navigation (`data-stx-link` clicks) fetch only the page fragment
+- The router swaps fragments into `<div data-stx-content>` without full page reloads
+- Shell scripts, styles, and layout persist across navigations
+
+**Configuration:**
+```typescript
+// stx.config.ts
+export default {
+  shell: 'app.stx',        // custom shell path
+  // shell: false,          // disable shell auto-detection
+}
+```
+
+**No shell?** Everything works as before — full HTML documents per page.
+
+### Client-Side Router Hydration
+
+The SPA router handles two response types:
+
+| Request | Header | Server Response | Router Behavior |
+|---------|--------|----------------|-----------------|
+| Direct (browser) | None | Full shell + page | Normal page load |
+| SPA navigation | `X-STX-Router: true` | Page fragment | Inject into `[data-stx-content]` |
+
+**Fragment handling:**
+1. Router detects fragment (no `<!DOCTYPE`/`<html>` wrapper)
+2. Extracts `<script>` and `<style>` tags from fragment
+3. Removes old page styles (`[data-stx-page]`), injects new ones into `<head>`
+4. Swaps HTML content into the content container
+5. Re-executes page scripts
+6. Dispatches `stx:navigate` and `stx:load` events
+7. Signals runtime re-processes `[data-stx-scope]` and `[data-stx]` elements
+
+**View Transitions API** is used when available, with a CSS opacity fallback for older browsers.
+
+### Component Composition API
+
+Full typed component composition available in both server and client scripts.
+
+#### `defineProps<T>()`
+
+Declare typed props with optional validation and defaults.
+
+```html
+<script>
+interface StatCardProps {
+  label: string
+  value: string | number
+  color?: string
+}
+
+const props = defineProps<StatCardProps>()
+</script>
+
+<template>
+  <div class="stat">
+    <span class="label">{{ props.label }}</span>
+    <span class="value">{{ props.value }}</span>
+  </div>
+</template>
+```
+
+At runtime, `defineProps()` reads props from the component context:
+- **Server-side:** from `__STX_CURRENT_PROPS__` (set by component renderer)
+- **Client-side:** from `data-stx-props` attribute on the component element (JSON-serialized during SSR)
+
+#### `withDefaults()`
+
+Merge default values into props.
+
+```html
+<script>
+const { label, value, color } = withDefaults(defineProps<{
+  label: string
+  value: string | number
+  color?: string
+}>(), {
+  color: 'text-zinc-50',
+})
+</script>
+```
+
+#### `defineEmits<T>()`
+
+Declare and emit typed events from components.
+
+```html
+<script>
+const emit = defineEmits<{
+  select: { id: string }
+  delete: string
+}>()
+
+function handleSelect(id: string) {
+  emit('select', { id })
+}
+</script>
+```
+
+Events are dispatched as `CustomEvent` with `detail` payload. Parents listen via standard event handling or `@event` syntax.
+
+#### `defineExpose()`
+
+Expose component methods/state to parent components.
+
+```html
+<script>
+const count = state(0)
+
+defineExpose({
+  increment: () => count.set(count() + 1),
+  getCount: () => count(),
+})
+</script>
+```
+
+Exposed methods are stored on the element as `el.__stx_exposed`.
+
+#### Auto-Imports
+
+All composition functions are auto-imported in client scripts — no import statement needed:
+
+```
+defineProps, withDefaults, defineEmits, defineExpose,
+provide, inject, nextTick, getCurrentInstance,
+onErrorCaptured, useSlots, useAttrs
+```
+
+These are available from `window.stx` at runtime.
 
 ---
 

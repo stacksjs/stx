@@ -3056,6 +3056,44 @@ catch (e) {}
     useColorMode,
     useDark,
     helpers: globalHelpers,
+
+    // Component composition API (Phase 4)
+    defineProps: function(definitions) {
+      var props = window.__STX_CURRENT_PROPS__ || {};
+      if (!definitions) return props;
+      var result = Object.assign({}, props);
+      for (var key in definitions) {
+        if (!definitions.hasOwnProperty(key)) continue;
+        var def = definitions[key];
+        var opts = (typeof def === 'function' || Array.isArray(def)) ? { type: def } : (def || {});
+        if (result[key] === undefined && opts['default'] !== undefined) {
+          result[key] = typeof opts['default'] === 'function' ? opts['default']() : opts['default'];
+        }
+      }
+      return result;
+    },
+    withDefaults: function(props, defaults) {
+      var result = Object.assign({}, props);
+      for (var key in defaults) {
+        if (!defaults.hasOwnProperty(key)) continue;
+        if (result[key] === undefined) {
+          result[key] = typeof defaults[key] === 'function' ? defaults[key]() : defaults[key];
+        }
+      }
+      return result;
+    },
+    defineEmits: function() {
+      var el = window.__STX_CURRENT_ELEMENT__ || null;
+      return function(event, payload) {
+        var target = el || document.body;
+        target.dispatchEvent(new CustomEvent(event, { detail: payload, bubbles: true, cancelable: true }));
+      };
+    },
+    defineExpose: function(exposed) {
+      var el = window.__STX_CURRENT_ELEMENT__;
+      if (el) el.__stx_exposed = exposed;
+    },
+
     _mountCallbacks: mountCallbacks,
     _destroyCallbacks: destroyCallbacks,
     _cleanupContainer: cleanupContainer,
@@ -3065,10 +3103,21 @@ catch (e) {}
         var root = document.querySelector(selector);
         if (!root) { console.warn('[stx] mountEl: element not found:', selector); return; }
 
+        // Set component context for defineProps/defineEmits (Phase 4)
+        var prevProps = window.__STX_CURRENT_PROPS__;
+        var prevEl = window.__STX_CURRENT_ELEMENT__;
+        var propsAttr = root.getAttribute && root.getAttribute('data-stx-props');
+        window.__STX_CURRENT_PROPS__ = root.__stx_props || (propsAttr ? JSON.parse(propsAttr) : {});
+        window.__STX_CURRENT_ELEMENT__ = root;
+
         var mountStart = mountCallbacks.length;
         var destroyStart = destroyCallbacks.length;
 
         var scope = setupFn();
+
+        // Restore previous context (supports nested components)
+        window.__STX_CURRENT_PROPS__ = prevProps;
+        window.__STX_CURRENT_ELEMENT__ = prevEl;
 
         var localMountHooks = mountCallbacks.splice(mountStart);
         var localDestroyHooks = destroyCallbacks.splice(destroyStart);
@@ -3138,12 +3187,23 @@ else {
 
         if (!root) { console.warn('[stx] mount: no root element found'); return; }
 
+        // Set component context for defineProps/defineEmits (Phase 4)
+        var prevProps = window.__STX_CURRENT_PROPS__;
+        var prevEl = window.__STX_CURRENT_ELEMENT__;
+        var propsAttr = root.getAttribute && root.getAttribute('data-stx-props');
+        window.__STX_CURRENT_PROPS__ = root.__stx_props || (propsAttr ? JSON.parse(propsAttr) : {});
+        window.__STX_CURRENT_ELEMENT__ = root;
+
         // Track lifecycle hooks registered during setup
         var mountStart = mountCallbacks.length;
         var destroyStart = destroyCallbacks.length;
 
         // Run setup function — returns scope object with declarations
         var scope = setupFn();
+
+        // Restore previous context (supports nested components)
+        window.__STX_CURRENT_PROPS__ = prevProps;
+        window.__STX_CURRENT_ELEMENT__ = prevEl;
 
         // Capture mount/destroy hooks added during setup
         var localMountHooks = mountCallbacks.splice(mountStart);

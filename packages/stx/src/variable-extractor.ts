@@ -215,8 +215,19 @@ export async function extractVariables(
   if (!scriptContent.trim())
     return
 
-  // Strip TypeScript syntax first
-  const jsContent = stripTypeScript(scriptContent)
+  // Strip TypeScript syntax using Bun.Transpiler for full TS support
+  let jsContent: string
+  try {
+    const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser' })
+    // Strip .stx component imports before transpiling
+    let processedCode = scriptContent.replace(/^\s*import\s+\w+\s+from\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
+    processedCode = processedCode.replace(/^\s*import\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
+    jsContent = transpiler.transformSync(processedCode)
+  }
+  catch {
+    // Fallback to regex-based stripping if Bun.Transpiler fails
+    jsContent = stripTypeScript(scriptContent)
+  }
 
   // Create a safe execution environment
   const module = { exports: {} as Record<string, unknown> }

@@ -45,6 +45,11 @@ export {
 // Cache for components to avoid repeated file reads (LRU with max 500 entries)
 const componentsCache = new LRUCache<string, string>(500)
 
+/** Escape a string for safe use in an HTML attribute value */
+function escapeAttr(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
 /**
  * Check if script should be treated as plain JavaScript (opt-out from TypeScript)
  * By default ALL scripts are TypeScript. Use <script js> or <script lang="js"> to opt-out.
@@ -591,7 +596,11 @@ catch {
 
     if (hasSignalScripts) {
       // Wrap the component output in a scoped container
-      output = `<div data-stx-scope="${scopeId}">${result}</div>`
+      // Serialize props for client-side defineProps() access (Phase 4)
+      const propsJson = Object.keys(props).length > 0
+        ? ` data-stx-props="${escapeAttr(JSON.stringify(props))}"`
+        : ''
+      output = `<div data-stx-scope="${scopeId}"${propsJson}>${result}</div>`
 
       // Modify client scripts to register variables in this scope
       const scopedScripts = clientScripts.map(script => {
