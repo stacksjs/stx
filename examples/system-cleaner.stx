@@ -1,0 +1,1155 @@
+<script server>
+// SystemSweep — Startup & Background Process Manager
+// A macOS-native utility for managing startup apps, browser extensions,
+// and hidden background processes to improve performance.
+//
+// Run:  stx dev examples/system-cleaner.stx --port 3456
+//       stx dev examples/system-cleaner.stx --native
+
+const fs = require('node:fs')
+const path = require('node:path')
+const os = require('node:os')
+const cp = require('node:child_process')
+
+const HOME = os.homedir()
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function formatBytes(bytes) {
+  if (bytes >= 1e9) return (bytes / 1e9).toFixed(1) + ' GB'
+  if (bytes >= 1e6) return (bytes / 1e6).toFixed(1) + ' MB'
+  if (bytes >= 1e3) return (bytes / 1e3).toFixed(1) + ' KB'
+  return bytes + ' B'
+}
+
+function safeExec(cmd, fallback) {
+  try {
+    return cp.execSync(cmd, { encoding: 'utf8', timeout: 5000 }).trim()
+  }
+  catch {
+    return fallback || ''
+  }
+}
+
+function safeReadDir(dir) {
+  try { return fs.readdirSync(dir) }
+  catch { return [] }
+}
+
+function safeReadFile(filepath) {
+  try { return fs.readFileSync(filepath, 'utf8') }
+  catch { return '' }
+}
+
+function safeStat(filepath) {
+  try { return fs.statSync(filepath) }
+  catch { return null }
+}
+
+// ── System Overview ─────────────────────────────────────────────────────
+
+const cpuModel = os.cpus()[0]?.model || 'Unknown CPU'
+const totalMemGB = (os.totalmem() / 1e9).toFixed(0)
+const freeMemGB = (os.freemem() / 1e9).toFixed(1)
+const usedMemGB = ((os.totalmem() - os.freemem()) / 1e9).toFixed(1)
+const memPercent = Math.round(((os.totalmem() - os.freemem()) / os.totalmem()) * 100)
+const uptimeHours = Math.round(os.uptime() / 3600)
+const uptimeDays = Math.floor(uptimeHours / 24)
+const uptimeRemHours = uptimeHours % 24
+const uptimeStr = uptimeDays > 0 ? `${uptimeDays}d ${uptimeRemHours}h` : `${uptimeHours}h`
+
+// Disk usage via df
+const diskLine = safeExec("df -h / | tail -1")
+const diskParts = diskLine.split(/\s+/)
+const diskTotal = diskParts[1] || '—'
+const diskUsed = diskParts[2] || '—'
+const diskAvail = diskParts[3] || '—'
+const diskPercent = parseInt(diskParts[4]) || 0
+
+// ── Scan Launch Agents & Daemons (Startup Items) ────────────────────────
+
+function parsePlist(filepath) {
+  const content = safeReadFile(filepath)
+  const getField = (key) => {
+    const match = content.match(new RegExp(`<key>${key}</key>\\s*<([^>]+)>([^<]*)<`))
+    if (match) return match[2]
+    // boolean plist values
+    if (content.includes(`<key>${key}</key>`) && content.includes(`<true/>`)) return 'true'
+    return ''
+  }
+  const label = getField('Label') || path.basename(filepath, '.plist')
+  const program = getField('Program') || getField('ProgramArguments')
+  const runAtLoad = content.includes('<key>RunAtLoad</key>') &&
+    content.substring(content.indexOf('<key>RunAtLoad</key>')).includes('<true/>')
+  const keepAlive = content.includes('<key>KeepAlive</key>') &&
+    content.substring(content.indexOf('<key>KeepAlive</key>')).includes('<true/>')
+  const disabled = content.includes('<key>Disabled</key>') &&
+    content.substring(content.indexOf('<key>Disabled</key>')).includes('<true/>')
+
+  return { label, program, runAtLoad, keepAlive, disabled, filepath }
+}
+
+function categorizeAgent(label) {
+  const l = label.toLowerCase()
+  if (l.includes('apple') || l.includes('com.apple')) return { vendor: 'Apple', category: 'system', icon: '' }
+  if (l.includes('google')) return { vendor: 'Google', category: 'vendor', icon: '🔍' }
+  if (l.includes('microsoft') || l.includes('com.microsoft')) return { vendor: 'Microsoft', category: 'vendor', icon: '🪟' }
+  if (l.includes('adobe')) return { vendor: 'Adobe', category: 'vendor', icon: '🎨' }
+  if (l.includes('spotify')) return { vendor: 'Spotify', category: 'vendor', icon: '🎵' }
+  if (l.includes('dropbox')) return { vendor: 'Dropbox', category: 'vendor', icon: '📦' }
+  if (l.includes('docker')) return { vendor: 'Docker', category: 'dev', icon: '🐳' }
+  if (l.includes('homebrew') || l.includes('brew')) return { vendor: 'Homebrew', category: 'dev', icon: '🍺' }
+  if (l.includes('slack')) return { vendor: 'Slack', category: 'vendor', icon: '💬' }
+  if (l.includes('zoom')) return { vendor: 'Zoom', category: 'vendor', icon: '📹' }
+  if (l.includes('1password') || l.includes('onepassword')) return { vendor: '1Password', category: 'vendor', icon: '🔐' }
+  if (l.includes('raycast')) return { vendor: 'Raycast', category: 'vendor', icon: '🚀' }
+  if (l.includes('linear')) return { vendor: 'Linear', category: 'vendor', icon: '📋' }
+  if (l.includes('figma')) return { vendor: 'Figma', category: 'vendor', icon: '🎨' }
+  if (l.includes('notion')) return { vendor: 'Notion', category: 'vendor', icon: '📝' }
+  if (l.includes('discord')) return { vendor: 'Discord', category: 'vendor', icon: '🎮' }
+  if (l.includes('steam')) return { vendor: 'Steam', category: 'vendor', icon: '🎮' }
+  return { vendor: 'Third-party', category: 'other', icon: '⚙️' }
+}
+
+const agentDirs = [
+  { path: `${HOME}/Library/LaunchAgents`, scope: 'user', type: 'agent' },
+  { path: '/Library/LaunchAgents', scope: 'system', type: 'agent' },
+  { path: '/Library/LaunchDaemons', scope: 'system', type: 'daemon' },
+]
+
+const startupItems = []
+for (const dir of agentDirs) {
+  const files = safeReadDir(dir.path).filter(f => f.endsWith('.plist'))
+  for (const file of files) {
+    const filepath = path.join(dir.path, file)
+    const info = parsePlist(filepath)
+    const cat = categorizeAgent(info.label)
+    startupItems.push({
+      id: `startup-${startupItems.length}`,
+      name: info.label,
+      vendor: cat.vendor,
+      icon: cat.icon,
+      category: cat.category,
+      scope: dir.scope,
+      type: dir.type,
+      runAtLoad: info.runAtLoad,
+      keepAlive: info.keepAlive,
+      disabled: info.disabled,
+      filepath: info.filepath,
+      program: info.program,
+    })
+  }
+}
+
+// Sort: enabled first, then alphabetical
+startupItems.sort((a, b) => {
+  if (a.disabled !== b.disabled) return a.disabled ? 1 : -1
+  return a.name.localeCompare(b.name)
+})
+
+const enabledStartup = startupItems.filter(i => !i.disabled)
+const disabledStartup = startupItems.filter(i => i.disabled)
+
+// ── Scan Browser Extensions ─────────────────────────────────────────────
+
+function scanChromeExtensions() {
+  const extDir = `${HOME}/Library/Application Support/Google/Chrome/Default/Extensions`
+  const dirs = safeReadDir(extDir)
+  const extensions = []
+
+  for (const extId of dirs) {
+    const extPath = path.join(extDir, extId)
+    const stat = safeStat(extPath)
+    if (!stat || !stat.isDirectory()) continue
+
+    const versions = safeReadDir(extPath).filter(v => !v.startsWith('.'))
+    if (versions.length === 0) continue
+
+    const latestVer = versions.sort().pop()
+    const manifestPath = path.join(extPath, latestVer, 'manifest.json')
+    const manifestRaw = safeReadFile(manifestPath)
+    if (!manifestRaw) continue
+
+    try {
+      const manifest = JSON.parse(manifestRaw)
+      const dirSize = parseInt(safeExec(`du -sk "${path.join(extPath, latestVer)}" 2>/dev/null | cut -f1`)) * 1024 || 0
+      extensions.push({
+        id: `chrome-${extId}`,
+        name: manifest.name || extId,
+        version: manifest.version || latestVer,
+        description: (manifest.description || '').slice(0, 80),
+        size: dirSize,
+        sizeStr: formatBytes(dirSize),
+        browser: 'Chrome',
+        browserIcon: '🌐',
+        extId,
+        permissions: (manifest.permissions || []).length,
+        hostPermissions: (manifest.host_permissions || []).length,
+      })
+    }
+    catch { /* skip malformed */ }
+  }
+  return extensions
+}
+
+function scanSafariExtensions() {
+  const extDir = `${HOME}/Library/Safari/Extensions`
+  const files = safeReadDir(extDir).filter(f => f.endsWith('.safariextz') || f.endsWith('.appex'))
+  return files.map((f, i) => ({
+    id: `safari-${i}`,
+    name: f.replace(/\.(safariextz|appex)$/, ''),
+    version: '—',
+    description: 'Safari extension',
+    size: 0,
+    sizeStr: '—',
+    browser: 'Safari',
+    browserIcon: '🧭',
+    extId: f,
+    permissions: 0,
+    hostPermissions: 0,
+  }))
+}
+
+function scanFirefoxExtensions() {
+  const profilesDir = `${HOME}/Library/Application Support/Firefox/Profiles`
+  const profiles = safeReadDir(profilesDir).filter(d => d.endsWith('.default-release') || d.endsWith('.default'))
+  const extensions = []
+
+  for (const profile of profiles) {
+    const extFile = path.join(profilesDir, profile, 'extensions.json')
+    const raw = safeReadFile(extFile)
+    if (!raw) continue
+
+    try {
+      const data = JSON.parse(raw)
+      const addons = data.addons || []
+      for (const addon of addons) {
+        if (addon.type !== 'extension') continue
+        extensions.push({
+          id: `firefox-${addon.id}`,
+          name: addon.defaultLocale?.name || addon.id,
+          version: addon.version || '—',
+          description: (addon.defaultLocale?.description || '').slice(0, 80),
+          size: 0,
+          sizeStr: '—',
+          browser: 'Firefox',
+          browserIcon: '🦊',
+          extId: addon.id,
+          permissions: 0,
+          hostPermissions: 0,
+        })
+      }
+    }
+    catch { /* skip */ }
+  }
+  return extensions
+}
+
+const browserExtensions = [
+  ...scanChromeExtensions(),
+  ...scanSafariExtensions(),
+  ...scanFirefoxExtensions(),
+].sort((a, b) => b.size - a.size)
+
+const totalExtSize = browserExtensions.reduce((sum, e) => sum + e.size, 0)
+
+// ── Scan Background Processes ───────────────────────────────────────────
+
+function getRunningProcesses() {
+  const raw = safeExec('ps aux', '')
+  if (!raw) return []
+
+  const lines = raw.split('\n').slice(1) // skip header
+  const processes = []
+
+  for (const line of lines) {
+    const parts = line.trim().split(/\s+/)
+    if (parts.length < 11) continue
+
+    const user = parts[0]
+    const pid = parts[1]
+    const cpu = parseFloat(parts[2]) || 0
+    const mem = parseFloat(parts[3]) || 0
+    const command = parts.slice(10).join(' ')
+
+    // Skip kernel and very low-resource system processes
+    if (user === 'root' && cpu < 0.1 && mem < 0.1) continue
+    if (command.startsWith('/usr/libexec/') && cpu < 0.1) continue
+    if (command.startsWith('/System/') && cpu < 0.1 && mem < 0.1) continue
+
+    // Only include notable processes
+    if (cpu >= 0.1 || mem >= 0.3) {
+      const basename = path.basename(command.split(' ')[0])
+      processes.push({
+        id: `proc-${pid}`,
+        pid: parseInt(pid),
+        name: basename,
+        fullCommand: command.slice(0, 120),
+        user,
+        cpu,
+        mem,
+        memMB: Math.round(mem * os.totalmem() / 100 / 1e6),
+        isSystem: user === 'root' || user === '_windowserver' || user.startsWith('_'),
+      })
+    }
+  }
+
+  return processes.sort((a, b) => b.cpu - a.cpu)
+}
+
+const processes = getRunningProcesses()
+const topCPU = processes.slice(0, 20)
+const totalCPU = processes.reduce((s, p) => s + p.cpu, 0)
+const totalMemUsed = processes.reduce((s, p) => s + p.memMB, 0)
+
+// ── Sidebar Config ──────────────────────────────────────────────────────
+
+const sidebarConfig = {
+  header: {
+    title: 'SystemSweep',
+    subtitle: 'Performance Manager',
+    icon: 'shield.checkered',
+  },
+  searchPlaceholder: 'Search items...',
+  sections: [
+    {
+      id: 'overview',
+      title: 'Overview',
+      collapsible: false,
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: 'gauge.with.dots.needle.33percent', selected: true },
+        { id: 'health', label: 'System Health', icon: 'heart.fill', tintColor: '#34C759' },
+      ]
+    },
+    {
+      id: 'manage',
+      title: 'Manage',
+      items: [
+        { id: 'startup', label: 'Startup Items', icon: 'power', badge: enabledStartup.length, tintColor: '#FF9500' },
+        { id: 'extensions', label: 'Browser Extensions', icon: 'puzzlepiece.extension.fill', badge: browserExtensions.length, tintColor: '#5856D6' },
+        { id: 'processes', label: 'Background Processes', icon: 'cpu', badge: topCPU.length, tintColor: '#FF3B30' },
+      ]
+    },
+  ],
+}
+
+const sidebarFooter = {
+  avatar: os.userInfo().username.slice(0, 2).toUpperCase(),
+  name: os.userInfo().username,
+  status: `macOS ${safeExec('sw_vers -productVersion', '—')}`,
+  showSettings: true,
+}
+
+// Summary stats for the dashboard
+const healthScore = Math.max(0, 100
+  - Math.max(0, memPercent - 70)          // penalize high memory
+  - Math.max(0, diskPercent - 80) * 2     // penalize low disk
+  - Math.min(20, Math.floor(enabledStartup.length / 5))  // penalize many startup items
+  - Math.min(10, topCPU.filter(p => p.cpu > 10).length * 3) // penalize CPU hogs
+)
+
+const healthLabel = healthScore >= 80 ? 'Good' : healthScore >= 60 ? 'Fair' : 'Needs Attention'
+const healthColor = healthScore >= 80 ? '#34C759' : healthScore >= 60 ? '#FF9500' : '#FF3B30'
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SystemSweep — Performance Manager</title>
+  <link rel="preconnect" href="https://fonts.bunny.net">
+  <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── macOS Tahoe Dark Theme ─────────────────────────────────────── */
+    :root {
+      --bg-primary: #1c1c1e;
+      --bg-secondary: #2c2c2e;
+      --bg-tertiary: #3a3a3c;
+      --bg-elevated: #1c1c1e;
+      --bg-sidebar: rgba(30, 30, 32, 0.85);
+      --text-primary: #f5f5f7;
+      --text-secondary: rgba(235, 235, 245, 0.6);
+      --text-tertiary: rgba(235, 235, 245, 0.3);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.15);
+      --accent: #0a84ff;
+      --accent-green: #30d158;
+      --accent-orange: #ff9f0a;
+      --accent-red: #ff453a;
+      --accent-purple: #bf5af2;
+      --accent-teal: #64d2ff;
+      --hover: rgba(255, 255, 255, 0.05);
+      --selected: rgba(10, 132, 255, 0.15);
+      --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    ::-webkit-scrollbar { width: 7px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+
+    /* ── Layout ─────────────────────────────────────────────────────── */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── Sidebar ────────────────────────────────────────────────────── */
+    .sidebar {
+      width: 240px; min-width: 240px; height: 100%;
+      background: var(--bg-sidebar);
+      backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      -webkit-app-region: drag;
+      padding-top: 52px; /* traffic light spacing */
+    }
+    .sidebar-header {
+      padding: 0 16px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-title { font-size: 13px; font-weight: 700; letter-spacing: -0.01em; }
+    .sidebar-subtitle { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 8px; -webkit-app-region: no-drag; }
+    .sidebar-section { margin-bottom: 16px; }
+    .sidebar-section-title {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.4px; color: var(--text-tertiary);
+      padding: 4px 8px; margin-bottom: 2px;
+    }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: 6px;
+      font-size: 13px; font-weight: 400;
+      cursor: pointer; transition: background 0.1s;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+    .sidebar-item:hover { background: var(--hover); }
+    .sidebar-item.active { background: var(--selected); color: var(--accent); font-weight: 500; }
+    .sidebar-item-icon { width: 20px; text-align: center; font-size: 14px; flex-shrink: 0; }
+    .sidebar-item-badge {
+      margin-left: auto; font-size: 11px; font-weight: 500;
+      background: var(--bg-tertiary); color: var(--text-secondary);
+      padding: 1px 7px; border-radius: 10px;
+    }
+    .sidebar-footer {
+      padding: 12px 16px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; -webkit-app-region: no-drag;
+    }
+    .sidebar-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--bg-tertiary); display: flex;
+      align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600;
+    }
+    .sidebar-footer-name { font-weight: 500; font-size: 12px; }
+    .sidebar-footer-status { font-size: 11px; color: var(--text-secondary); }
+
+    /* ── Main Content ───────────────────────────────────────────────── */
+    .main {
+      flex: 1; overflow-y: auto; padding: 0;
+      background: var(--bg-primary);
+    }
+    .main-header {
+      position: sticky; top: 0; z-index: 10;
+      padding: 52px 32px 16px;
+      background: linear-gradient(to bottom, var(--bg-primary) 70%, transparent);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    }
+    .main-title { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+    .main-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+    .content { padding: 0 32px 40px; }
+
+    /* ── Cards ───────────────────────────────────────────────────────── */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px;
+      transition: border-color 0.15s;
+    }
+    .card:hover { border-color: var(--border-strong); }
+    .card-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-secondary); margin-bottom: 8px; }
+    .card-value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+    .card-detail { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+    .card-wide { grid-column: 1 / -1; }
+
+    /* ── Health Ring ─────────────────────────────────────────────────── */
+    .health-ring-container { display: flex; align-items: center; gap: 24px; }
+    .health-ring { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
+    .health-ring svg { width: 100px; height: 100px; transform: rotate(-90deg); }
+    .health-ring-bg { fill: none; stroke: var(--bg-tertiary); stroke-width: 8; }
+    .health-ring-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+    .health-ring-text {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .health-score { font-size: 24px; font-weight: 700; }
+    .health-label { font-size: 10px; color: var(--text-secondary); }
+    .health-details { flex: 1; }
+    .health-detail-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+    .health-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Progress Bar ───────────────────────────────────────────────── */
+    .progress-bar { height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+    /* ── Table ───────────────────────────────────────────────────────── */
+    .table-container { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+    .table-header-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .table-title { font-size: 15px; font-weight: 600; }
+    .table-count { font-size: 12px; color: var(--text-secondary); }
+    .table-actions { display: flex; gap: 8px; }
+    .btn {
+      padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
+      border: 1px solid var(--border); background: var(--bg-tertiary);
+      color: var(--text-primary); cursor: pointer; transition: all 0.1s;
+      font-family: inherit;
+    }
+    .btn:hover { background: rgba(255, 255, 255, 0.12); border-color: var(--border-strong); }
+    .btn-danger { background: rgba(255, 69, 58, 0.15); border-color: rgba(255, 69, 58, 0.3); color: var(--accent-red); }
+    .btn-danger:hover { background: rgba(255, 69, 58, 0.25); }
+    .btn-sm { padding: 3px 10px; font-size: 11px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-secondary);
+      border-bottom: 1px solid var(--border); background: rgba(0, 0, 0, 0.15);
+    }
+    tbody td { padding: 10px 16px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr { transition: background 0.1s; }
+    tbody tr:hover { background: var(--hover); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .item-name { font-weight: 500; }
+    .item-vendor { font-size: 11px; color: var(--text-secondary); }
+    .item-icon { margin-right: 6px; }
+    .item-path { font-size: 11px; color: var(--text-tertiary); font-family: 'SF Mono', Menlo, monospace; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .badge {
+      display: inline-flex; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 500;
+    }
+    .badge-green { background: rgba(48, 209, 88, 0.15); color: var(--accent-green); }
+    .badge-orange { background: rgba(255, 159, 10, 0.15); color: var(--accent-orange); }
+    .badge-red { background: rgba(255, 69, 58, 0.15); color: var(--accent-red); }
+    .badge-purple { background: rgba(191, 90, 242, 0.15); color: var(--accent-purple); }
+    .badge-gray { background: rgba(142, 142, 147, 0.15); color: var(--text-secondary); }
+
+    .cpu-bar { display: flex; align-items: center; gap: 8px; }
+    .cpu-bar-track { flex: 1; height: 4px; background: var(--bg-tertiary); border-radius: 2px; max-width: 80px; }
+    .cpu-bar-fill { height: 100%; border-radius: 2px; }
+
+    /* ── Section tabs ───────────────────────────────────────────────── */
+    .section-tabs {
+      display: flex; gap: 1px; background: var(--border);
+      border-radius: 8px; overflow: hidden; margin-bottom: 20px;
+      width: fit-content;
+    }
+    .section-tab {
+      padding: 8px 20px; font-size: 13px; font-weight: 500;
+      background: var(--bg-secondary); color: var(--text-secondary);
+      cursor: pointer; border: none; font-family: inherit;
+      transition: all 0.15s;
+    }
+    .section-tab:first-child { border-radius: 8px 0 0 8px; }
+    .section-tab:last-child { border-radius: 0 8px 8px 0; }
+    .section-tab.active { background: var(--accent); color: #fff; }
+    .section-tab:hover:not(.active) { background: var(--bg-tertiary); color: var(--text-primary); }
+
+    /* ── Panel visibility ───────────────────────────────────────────── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Checkbox ────────────────────────────────────────────────────── */
+    .check { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+    /* ── Empty state ────────────────────────────────────────────────── */
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--text-secondary); }
+    .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state-text { font-size: 14px; }
+
+    /* ── Animations ─────────────────────────────────────────────────── */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
+    .fade-in-delay-1 { animation-delay: 0.05s; opacity: 0; }
+    .fade-in-delay-2 { animation-delay: 0.1s; opacity: 0; }
+    .fade-in-delay-3 { animation-delay: 0.15s; opacity: 0; }
+
+    /* ── Toast ───────────────────────────────────────────────────────── */
+    .toast-container { position: fixed; top: 60px; right: 24px; z-index: 100; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      display: flex; align-items: center; gap: 8px;
+      animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes fadeOut { to { opacity: 0; transform: translateX(40px); } }
+  </style>
+</head>
+<body>
+  <div class="app" ref="app" x-data="{
+    activePanel: 'dashboard',
+    selectedItems: [],
+    searchQuery: '',
+    startupFilter: 'all',
+
+    setPanel(id) { this.activePanel = id; this.selectedItems = []; },
+    toggleItem(id) {
+      const idx = this.selectedItems.indexOf(id);
+      if (idx === -1) this.selectedItems.push(id);
+      else this.selectedItems.splice(idx, 1);
+    },
+    isSelected(id) { return this.selectedItems.includes(id); },
+    selectAll(ids) {
+      if (ids.every(id => this.selectedItems.includes(id))) this.selectedItems = this.selectedItems.filter(id => !ids.includes(id));
+      else ids.forEach(id => { if (!this.selectedItems.includes(id)) this.selectedItems.push(id); });
+    },
+    setStartupFilter(filter) {
+      this.startupFilter = filter;
+    },
+    isRowVisible(cat, disabled) {
+      if (this.startupFilter === 'all') return true;
+      if (this.startupFilter === 'enabled') return disabled !== 'true';
+      if (this.startupFilter === 'vendor') return cat === 'vendor' || cat === 'other' || cat === 'dev';
+      if (this.startupFilter === 'system') return cat === 'system';
+      return true;
+    },
+    showToast(msg, type) {
+      const toasts = STX.useRef('toasts');
+      if (!toasts) return;
+      const icons = { success: '✓', warning: '⚠', error: '✕' };
+      const toast = toasts.ownerDocument.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = '<span>' + (icons[type] || '●') + '</span> ' + msg;
+      toasts.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+  }">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">🛡 SystemSweep</div>
+        <div class="sidebar-subtitle">Performance Manager</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Overview</div>
+          <a class="sidebar-item" :class="{ active: activePanel === 'dashboard' }" @click="setPanel('dashboard')">
+            <span class="sidebar-item-icon">📊</span> Dashboard
+          </a>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Manage</div>
+          <a class="sidebar-item" :class="{ active: activePanel === 'startup' }" @click="setPanel('startup')">
+            <span class="sidebar-item-icon">⚡</span> Startup Items
+            <span class="sidebar-item-badge">{{ enabledStartup.length }}</span>
+          </a>
+          <a class="sidebar-item" :class="{ active: activePanel === 'extensions' }" @click="setPanel('extensions')">
+            <span class="sidebar-item-icon">🧩</span> Browser Extensions
+            <span class="sidebar-item-badge">{{ browserExtensions.length }}</span>
+          </a>
+          <a class="sidebar-item" :class="{ active: activePanel === 'processes' }" @click="setPanel('processes')">
+            <span class="sidebar-item-icon">🔄</span> Background Processes
+            <span class="sidebar-item-badge">{{ topCPU.length }}</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-avatar">{{ sidebarFooter.avatar }}</div>
+        <div>
+          <div class="sidebar-footer-name">{{ sidebarFooter.name }}</div>
+          <div class="sidebar-footer-status">{{ sidebarFooter.status }}</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Toast container -->
+    <div class="toast-container" ref="toasts"></div>
+
+    <!-- Main Content -->
+    <main class="main">
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- Dashboard Panel                                                -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div class="panel" :class="{ active: activePanel === 'dashboard' }">
+        <div class="main-header">
+          <div class="main-title">Dashboard</div>
+          <div class="main-subtitle">System overview for {{ os.hostname() }}</div>
+        </div>
+
+        <div class="content">
+          <!-- Health Score + Stats Row -->
+          <div class="card-grid fade-in">
+            <div class="card" style="grid-column: span 2;">
+              <div class="card-label">System Health</div>
+              <div class="health-ring-container">
+                <div class="health-ring">
+                  <svg viewBox="0 0 100 100">
+                    <circle class="health-ring-bg" cx="50" cy="50" r="42" />
+                    <circle class="health-ring-fill" cx="50" cy="50" r="42"
+                      stroke="{{ healthColor }}"
+                      stroke-dasharray="{{ 2 * Math.PI * 42 }}"
+                      stroke-dashoffset="{{ 2 * Math.PI * 42 * (1 - healthScore / 100) }}" />
+                  </svg>
+                  <div class="health-ring-text">
+                    <span class="health-score" style="color: {{ healthColor }}">{{ healthScore }}</span>
+                    <span class="health-label">{{ healthLabel }}</span>
+                  </div>
+                </div>
+                <div class="health-details">
+                  <div class="health-detail-row">
+                    <span class="health-dot" style="background: {{ memPercent > 80 ? 'var(--accent-red)' : memPercent > 60 ? 'var(--accent-orange)' : 'var(--accent-green)' }}"></span>
+                    Memory: {{ usedMemGB }} / {{ totalMemGB }} GB ({{ memPercent }}%)
+                  </div>
+                  <div class="health-detail-row">
+                    <span class="health-dot" style="background: {{ diskPercent > 85 ? 'var(--accent-red)' : diskPercent > 70 ? 'var(--accent-orange)' : 'var(--accent-green)' }}"></span>
+                    Disk: {{ diskUsed }} / {{ diskTotal }} ({{ diskPercent }}%)
+                  </div>
+                  <div class="health-detail-row">
+                    <span class="health-dot" style="background: {{ enabledStartup.length > 30 ? 'var(--accent-red)' : enabledStartup.length > 15 ? 'var(--accent-orange)' : 'var(--accent-green)' }}"></span>
+                    {{ enabledStartup.length }} startup items active
+                  </div>
+                  <div class="health-detail-row">
+                    <span class="health-dot" style="background: var(--accent-green)"></span>
+                    Uptime: {{ uptimeStr }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card fade-in fade-in-delay-1">
+              <div class="card-label">CPU</div>
+              <div class="card-value">{{ cpuModel.split(' ').slice(0, 3).join(' ') }}</div>
+              <div class="card-detail">{{ os.cpus().length }} cores · {{ totalCPU.toFixed(0) }}% total usage</div>
+            </div>
+          </div>
+
+          <div class="card-grid fade-in fade-in-delay-2">
+            <div class="card">
+              <div class="card-label">Memory</div>
+              <div class="card-value">{{ usedMemGB }} <span style="font-size: 16px; color: var(--text-secondary)">/ {{ totalMemGB }} GB</span></div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ memPercent }}%; background: {{ memPercent > 80 ? 'var(--accent-red)' : memPercent > 60 ? 'var(--accent-orange)' : 'var(--accent-green)' }};"></div>
+              </div>
+              <div class="card-detail" style="margin-top: 6px;">{{ freeMemGB }} GB available</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Disk</div>
+              <div class="card-value">{{ diskUsed }} <span style="font-size: 16px; color: var(--text-secondary)">/ {{ diskTotal }}</span></div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ diskPercent }}%; background: {{ diskPercent > 85 ? 'var(--accent-red)' : diskPercent > 70 ? 'var(--accent-orange)' : 'var(--accent-green)' }};"></div>
+              </div>
+              <div class="card-detail" style="margin-top: 6px;">{{ diskAvail }} available</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Startup Items</div>
+              <div class="card-value" style="color: var(--accent-orange);">{{ enabledStartup.length }}</div>
+              <div class="card-detail">{{ disabledStartup.length }} disabled · {{ startupItems.length }} total</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Browser Extensions</div>
+              <div class="card-value" style="color: var(--accent-purple);">{{ browserExtensions.length }}</div>
+              <div class="card-detail">{{ formatBytes(totalExtSize) }} total size</div>
+            </div>
+          </div>
+
+          <!-- Top Processes Quick View -->
+          <div class="table-container fade-in fade-in-delay-3">
+            <div class="table-header-bar">
+              <div>
+                <span class="table-title">Top Processes</span>
+                <span class="table-count" style="margin-left: 8px;">by CPU usage</span>
+              </div>
+              <button class="btn btn-sm" @click="setPanel('processes')">View All →</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Process</th>
+                  <th>PID</th>
+                  <th>CPU</th>
+                  <th>Memory</th>
+                  <th>User</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach(topCPU.slice(0, 8) as proc)
+                  <tr>
+                    <td>
+                      <span class="item-name">{{ proc.name }}</span>
+                    </td>
+                    <td style="font-family: 'SF Mono', Menlo, monospace; font-size: 12px; color: var(--text-secondary);">{{ proc.pid }}</td>
+                    <td>
+                      <div class="cpu-bar">
+                        <span style="font-size: 12px; min-width: 42px; {{ proc.cpu > 50 ? 'color: var(--accent-red);' : proc.cpu > 20 ? 'color: var(--accent-orange);' : '' }}">{{ proc.cpu.toFixed(1) }}%</span>
+                        <div class="cpu-bar-track">
+                          <div class="cpu-bar-fill" style="width: {{ Math.min(100, proc.cpu) }}%; background: {{ proc.cpu > 50 ? 'var(--accent-red)' : proc.cpu > 20 ? 'var(--accent-orange)' : 'var(--accent-green)' }};"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="font-size: 12px;">{{ proc.memMB }} MB</td>
+                    <td style="font-size: 12px; color: var(--text-secondary);">{{ proc.user }}</td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- Startup Items Panel                                            -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div class="panel" :class="{ active: activePanel === 'startup' }">
+        <div class="main-header">
+          <div class="main-title">Startup Items</div>
+          <div class="main-subtitle">Launch Agents & Daemons that run when your Mac starts</div>
+        </div>
+
+        <div class="content">
+          <div class="card-grid" style="margin-bottom: 20px;">
+            <div class="card">
+              <div class="card-label">Active</div>
+              <div class="card-value" style="color: var(--accent-orange);">{{ enabledStartup.length }}</div>
+              <div class="card-detail">Running at startup</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Disabled</div>
+              <div class="card-value" style="color: var(--text-secondary);">{{ disabledStartup.length }}</div>
+              <div class="card-detail">Not running</div>
+            </div>
+            <div class="card">
+              <div class="card-label">User Agents</div>
+              <div class="card-value">{{ startupItems.filter(i => i.scope === 'user').length }}</div>
+              <div class="card-detail">~/Library/LaunchAgents</div>
+            </div>
+            <div class="card">
+              <div class="card-label">System Daemons</div>
+              <div class="card-value">{{ startupItems.filter(i => i.type === 'daemon').length }}</div>
+              <div class="card-detail">/Library/LaunchDaemons</div>
+            </div>
+          </div>
+
+          <div class="section-tabs">
+            <button class="section-tab" :class="{ active: startupFilter === 'all' }" @click="setStartupFilter('all')">All ({{ startupItems.length }})</button>
+            <button class="section-tab" :class="{ active: startupFilter === 'enabled' }" @click="setStartupFilter('enabled')">Enabled ({{ enabledStartup.length }})</button>
+            <button class="section-tab" :class="{ active: startupFilter === 'vendor' }" @click="setStartupFilter('vendor')">Third-party</button>
+            <button class="section-tab" :class="{ active: startupFilter === 'system' }" @click="setStartupFilter('system')">Apple</button>
+          </div>
+
+          <div class="table-container">
+            <div class="table-header-bar">
+              <div>
+                <span class="table-title">Launch Agents & Daemons</span>
+              </div>
+              <div class="table-actions">
+                <button class="btn btn-sm" x-show="selectedItems.length > 0" @click="showToast(selectedItems.length + ' items would be disabled (demo mode)', 'warning')">
+                  Disable Selected (<span x-text="selectedItems.length">0</span>)
+                </button>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 32px;"><input type="checkbox" class="check" @click="selectAll({{ JSON.stringify(enabledStartup.map(i => i.id)) }})" /></th>
+                  <th>Name</th>
+                  <th>Scope</th>
+                  <th>Status</th>
+                  <th>Run at Load</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach(startupItems as item)
+                  <tr x-show="isRowVisible('{{ item.category }}', '{{ item.disabled }}')">
+                    <td><input type="checkbox" class="check" :checked="isSelected('{{ item.id }}')" @click="toggleItem('{{ item.id }}')" /></td>
+                    <td>
+                      <div>
+                        <span class="item-icon">{{ item.icon }}</span>
+                        <span class="item-name">{{ item.name }}</span>
+                      </div>
+                      <div class="item-vendor">{{ item.vendor }}</div>
+                    </td>
+                    <td>
+                      @if(item.scope === 'user')
+                        <span class="badge badge-green">User</span>
+                      @else
+                        <span class="badge badge-orange">System</span>
+                      @endif
+                    </td>
+                    <td>
+                      @if(item.disabled)
+                        <span class="badge badge-gray">Disabled</span>
+                      @else
+                        <span class="badge badge-green">Active</span>
+                      @endif
+                    </td>
+                    <td>
+                      @if(item.runAtLoad)
+                        <span style="color: var(--accent-green);">✓</span>
+                      @else
+                        <span style="color: var(--text-tertiary);">—</span>
+                      @endif
+                    </td>
+                    <td>
+                      @if(!item.disabled && item.scope === 'user')
+                        <button class="btn btn-danger btn-sm" @click="showToast('{{ item.name }} would be disabled (demo mode)', 'warning')">Disable</button>
+                      @elseif(item.disabled && item.scope === 'user')
+                        <button class="btn btn-sm" @click="showToast('{{ item.name }} would be enabled (demo mode)', 'success')">Enable</button>
+                      @else
+                        <span style="font-size: 11px; color: var(--text-tertiary);">System</span>
+                      @endif
+                    </td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- Browser Extensions Panel                                       -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div class="panel" :class="{ active: activePanel === 'extensions' }">
+        <div class="main-header">
+          <div class="main-title">Browser Extensions</div>
+          <div class="main-subtitle">Installed extensions across all browsers</div>
+        </div>
+
+        <div class="content">
+          <div class="card-grid" style="margin-bottom: 20px;">
+            <div class="card">
+              <div class="card-label">Total Extensions</div>
+              <div class="card-value" style="color: var(--accent-purple);">{{ browserExtensions.length }}</div>
+              <div class="card-detail">Across all browsers</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Total Size</div>
+              <div class="card-value">{{ formatBytes(totalExtSize) }}</div>
+              <div class="card-detail">Disk space used</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Chrome</div>
+              <div class="card-value">{{ browserExtensions.filter(e => e.browser === 'Chrome').length }}</div>
+              <div class="card-detail">extensions</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Firefox / Safari</div>
+              <div class="card-value">{{ browserExtensions.filter(e => e.browser !== 'Chrome').length }}</div>
+              <div class="card-detail">extensions</div>
+            </div>
+          </div>
+
+          @if(browserExtensions.length > 0)
+            <div class="table-container">
+              <div class="table-header-bar">
+                <div>
+                  <span class="table-title">Installed Extensions</span>
+                  <span class="table-count" style="margin-left: 8px;">sorted by size</span>
+                </div>
+                <div class="table-actions">
+                  <button class="btn btn-sm" x-show="selectedItems.length > 0" @click="showToast(selectedItems.length + ' extensions would be removed (demo mode)', 'warning')">
+                    Remove Selected
+                  </button>
+                </div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 32px;"><input type="checkbox" class="check" @click="selectAll({{ JSON.stringify(browserExtensions.map(e => e.id)) }})" /></th>
+                    <th>Extension</th>
+                    <th>Browser</th>
+                    <th>Version</th>
+                    <th>Size</th>
+                    <th>Permissions</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach(browserExtensions as ext)
+                    <tr>
+                      <td><input type="checkbox" class="check" :checked="isSelected('{{ ext.id }}')" @click="toggleItem('{{ ext.id }}')" /></td>
+                      <td>
+                        <div class="item-name">{{ ext.browserIcon }} {{ ext.name }}</div>
+                        @if(ext.description)
+                          <div class="item-vendor">{{ ext.description }}</div>
+                        @endif
+                      </td>
+                      <td><span class="badge badge-purple">{{ ext.browser }}</span></td>
+                      <td style="font-size: 12px; color: var(--text-secondary); font-family: 'SF Mono', Menlo, monospace;">{{ ext.version }}</td>
+                      <td style="font-size: 12px;">{{ ext.sizeStr }}</td>
+                      <td>
+                        @if(ext.permissions + ext.hostPermissions > 5)
+                          <span class="badge badge-red">{{ ext.permissions + ext.hostPermissions }} perms</span>
+                        @elseif(ext.permissions + ext.hostPermissions > 0)
+                          <span class="badge badge-orange">{{ ext.permissions + ext.hostPermissions }} perms</span>
+                        @else
+                          <span class="badge badge-gray">None</span>
+                        @endif
+                      </td>
+                      <td>
+                        <button class="btn btn-danger btn-sm" @click="showToast('{{ ext.name }} would be removed (demo mode)', 'warning')">Remove</button>
+                      </td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+          @else
+            <div class="table-container">
+              <div class="empty-state">
+                <div class="empty-state-icon">🧩</div>
+                <div class="empty-state-text">No browser extensions found. Chrome, Firefox, and Safari are scanned.</div>
+              </div>
+            </div>
+          @endif
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- Background Processes Panel                                     -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div class="panel" :class="{ active: activePanel === 'processes' }">
+        <div class="main-header">
+          <div class="main-title">Background Processes</div>
+          <div class="main-subtitle">Active processes using notable CPU or memory</div>
+        </div>
+
+        <div class="content">
+          <div class="card-grid" style="margin-bottom: 20px;">
+            <div class="card">
+              <div class="card-label">Processes Shown</div>
+              <div class="card-value" style="color: var(--accent-red);">{{ topCPU.length }}</div>
+              <div class="card-detail">Processes above threshold</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Total CPU</div>
+              <div class="card-value">{{ totalCPU.toFixed(0) }}%</div>
+              <div class="card-detail">Across all processes</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Process Memory</div>
+              <div class="card-value">{{ (totalMemUsed / 1000).toFixed(1) }} GB</div>
+              <div class="card-detail">{{ topCPU.length }} processes combined</div>
+            </div>
+            <div class="card">
+              <div class="card-label">System Processes</div>
+              <div class="card-value">{{ topCPU.filter(p => p.isSystem).length }}</div>
+              <div class="card-detail">vs {{ topCPU.filter(p => !p.isSystem).length }} user processes</div>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <div class="table-header-bar">
+              <div>
+                <span class="table-title">Running Processes</span>
+                <span class="table-count" style="margin-left: 8px;">sorted by CPU</span>
+              </div>
+              <div class="table-actions">
+                <button class="btn btn-sm" x-show="selectedItems.length > 0" @click="showToast(selectedItems.length + ' processes would be terminated (demo mode)', 'warning')">
+                  Kill Selected
+                </button>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 32px;"><input type="checkbox" class="check" /></th>
+                  <th>Process</th>
+                  <th>PID</th>
+                  <th>CPU</th>
+                  <th>Memory</th>
+                  <th>User</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach(topCPU as proc)
+                  <tr>
+                    <td><input type="checkbox" class="check" :checked="isSelected('{{ proc.id }}')" @click="toggleItem('{{ proc.id }}')" /></td>
+                    <td>
+                      <div class="item-name">{{ proc.name }}</div>
+                      <div class="item-path" title="{{ proc.fullCommand }}">{{ proc.fullCommand }}</div>
+                    </td>
+                    <td style="font-family: 'SF Mono', Menlo, monospace; font-size: 12px; color: var(--text-secondary);">{{ proc.pid }}</td>
+                    <td>
+                      <div class="cpu-bar">
+                        <span style="font-size: 12px; font-weight: 500; min-width: 48px; {{ proc.cpu > 50 ? 'color: var(--accent-red);' : proc.cpu > 20 ? 'color: var(--accent-orange);' : '' }}">{{ proc.cpu.toFixed(1) }}%</span>
+                        <div class="cpu-bar-track">
+                          <div class="cpu-bar-fill" style="width: {{ Math.min(100, proc.cpu) }}%; background: {{ proc.cpu > 50 ? 'var(--accent-red)' : proc.cpu > 20 ? 'var(--accent-orange)' : 'var(--accent-green)' }};"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="font-size: 12px;">{{ proc.memMB }} MB</td>
+                    <td>
+                      @if(proc.isSystem)
+                        <span class="badge badge-orange">{{ proc.user }}</span>
+                      @else
+                        <span class="badge badge-green">{{ proc.user }}</span>
+                      @endif
+                    </td>
+                    <td>
+                      @if(!proc.isSystem)
+                        <button class="btn btn-danger btn-sm" @click="showToast('PID {{ proc.pid }} ({{ proc.name }}) would be killed (demo mode)', 'warning')">Kill</button>
+                      @else
+                        <span style="font-size: 11px; color: var(--text-tertiary);">Protected</span>
+                      @endif
+                    </td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script client>
+    // ── Keyboard Shortcuts ──────────────────────────────────────────
+    // Panel navigation via Cmd+1–4 using STX reactive scope
+    var appEl = STX.useRef('app');
+
+    STX.onKey('cmd+1', function() {
+      if (appEl && appEl.__stx_scope) appEl.__stx_scope.activePanel = 'dashboard';
+    });
+    STX.onKey('cmd+2', function() {
+      if (appEl && appEl.__stx_scope) appEl.__stx_scope.activePanel = 'startup';
+    });
+    STX.onKey('cmd+3', function() {
+      if (appEl && appEl.__stx_scope) appEl.__stx_scope.activePanel = 'extensions';
+    });
+    STX.onKey('cmd+4', function() {
+      if (appEl && appEl.__stx_scope) appEl.__stx_scope.activePanel = 'processes';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,748 @@
+<script>
+// ============================================================================
+// DiskScope — Disk Space Analyzer
+//
+// A DaisyDisk-inspired sunburst chart for visualizing disk usage.
+// Uses the same partition + arc algorithms as @ts-charts/hierarchy and
+// @ts-charts/shape (ts-charts — a complete D3.js rewrite in TypeScript).
+//
+// Run:  stx dev examples/disk-scope.stx --port 3456
+//       stx dev examples/disk-scope.stx --native   (Craft desktop window)
+// ============================================================================
+
+const fs = require('node:fs')
+const nodePath = require('node:path')
+const os = require('node:os')
+const cp = require('node:child_process')
+
+// ── Configuration ──────────────────────────────────────────────────────────
+// Edit these to customize DiskScope for your machine
+
+const SCAN_PATH = os.homedir()      // directory to scan (try '/' for full disk)
+const MAX_DEPTH = 4                  // depth of visible rings in sunburst
+const DETAIL_DEPTH = 6               // how deep to recurse for drill-down data
+const MAX_SCAN_MS = 15000            // max scan time in ms
+const MIN_ANGLE = 0.005              // min arc angle (radians) to render
+const PAD_ANGLE = 0.004              // gap between segments
+const CENTER_R = 65                  // center hole radius
+const MAX_R = 300                    // outer radius
+const MAX_SEGMENTS = 400             // max segments per view
+const MAX_FILE_CHILDREN = 5          // max files to include per dir in tree export
+
+// dirs to skip recursing into (still counted via du)
+const SKIP_RECURSE = new Set([
+  'node_modules', '.git', '__pycache__', '.cache', 'vendor',
+  'DerivedData', '.Spotlight-V100', '.fseventsd',
+  'CachedData', 'GPUCache', 'ShaderCache', '.npm', '.bun',
+  '.Trash', 'Caches',
+])
+
+// system dirs to skip entirely
+const SKIP_SYSTEM = new Set(['.Spotlight-V100', '.fseventsd', '.vol', '.file'])
+
+// ── Color Palette (DaisyDisk-inspired) ────────────────────────────────────
+
+const PALETTE = [
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#F7DC6F',
+  '#DDA0DD', '#98D8C8', '#F8C471', '#BB8FCE', '#85C1E9',
+  '#82E0AA', '#F1948A', '#AED6F1', '#D7BDE2', '#F5B7B1',
+  '#73C6B6', '#F0B27A', '#A9CCE3', '#D2B4DE', '#A3E4D7',
+]
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function formatBytes(bytes) {
+  if (bytes >= 1e12) return (bytes / 1e12).toFixed(1) + ' TB'
+  if (bytes >= 1e9) return (bytes / 1e9).toFixed(1) + ' GB'
+  if (bytes >= 1e6) return (bytes / 1e6).toFixed(1) + ' MB'
+  if (bytes >= 1e3) return (bytes / 1e3).toFixed(1) + ' KB'
+  return bytes + ' B'
+}
+
+function lightenHex(hex, amount) {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const nr = Math.min(255, Math.round(r + (255 - r) * amount))
+  const ng = Math.min(255, Math.round(g + (255 - g) * amount))
+  const nb = Math.min(255, Math.round(b + (255 - b) * amount))
+  return '#' + nr.toString(16).padStart(2, '0')
+             + ng.toString(16).padStart(2, '0')
+             + nb.toString(16).padStart(2, '0')
+}
+
+function shortenPath(fullPath, maxLen) {
+  if (fullPath.length <= maxLen) return fullPath
+  const home = os.homedir()
+  let display = fullPath.startsWith(home) ? '~' + fullPath.slice(home.length) : fullPath
+  if (display.length <= maxLen) return display
+  return '...' + display.slice(display.length - maxLen + 3)
+}
+
+// ── Fast Recursive Scan ───────────────────────────────────────────────────
+// Includes hidden dirs for full coverage. Time-bounded.
+
+const scanStartTime = Date.now()
+let abortedEarly = false
+let folderCount = 0
+let fileCount = 0
+let checkCounter = 0
+
+function scanDir(dirPath, depth) {
+  if (depth > DETAIL_DEPTH || abortedEarly) return { n: nodePath.basename(dirPath) || '/', p: dirPath, s: 0, d: true, c: [] }
+
+  // Check time every 500 operations
+  checkCounter++
+  if (checkCounter % 500 === 0 && Date.now() - scanStartTime > MAX_SCAN_MS) {
+    abortedEarly = true
+    return { n: nodePath.basename(dirPath) || '/', p: dirPath, s: 0, d: true, c: [] }
+  }
+
+  let entries
+  try { entries = fs.readdirSync(dirPath, { withFileTypes: true }) } catch {
+    return { n: nodePath.basename(dirPath) || '/', p: dirPath, s: 0, d: true, c: [] }
+  }
+
+  const children = []
+  let totalSize = 0
+
+  for (let i = 0; i < entries.length; i++) {
+    if (abortedEarly) break
+    const entry = entries[i]
+    if (SKIP_SYSTEM.has(entry.name)) continue
+
+    const fullPath = nodePath.join(dirPath, entry.name)
+
+    try {
+      const stats = fs.lstatSync(fullPath)
+      if (stats.isSymbolicLink()) continue
+
+      if (stats.isDirectory()) {
+        folderCount++
+        if (SKIP_RECURSE.has(entry.name) || depth >= DETAIL_DEPTH - 1) {
+          children.push({ n: entry.name, p: fullPath, s: stats.size || 4096, d: true, c: [] })
+          totalSize += stats.size || 4096
+        } else {
+          const child = scanDir(fullPath, depth + 1)
+          children.push(child)
+          totalSize += child.s
+        }
+      } else {
+        fileCount++
+        // Only keep top files per dir (for tree export size)
+        if (children.filter(function(c) { return !c.d }).length < MAX_FILE_CHILDREN) {
+          children.push({ n: entry.name, p: fullPath, s: stats.size, d: false })
+        }
+        totalSize += stats.size
+      }
+    } catch {}
+
+    checkCounter++
+    if (checkCounter % 500 === 0 && Date.now() - scanStartTime > MAX_SCAN_MS) {
+      abortedEarly = true; break
+    }
+  }
+
+  children.sort(function(a, b) { return b.s - a.s })
+  return { n: nodePath.basename(dirPath) || '/', p: dirPath, s: totalSize, d: true, c: children }
+}
+
+// ── Sunburst Layout ───────────────────────────────────────────────────────
+
+function computeLayout(root, maxD) {
+  const ringWidth = (MAX_R - CENTER_R) / maxD
+
+  function layout(node, sa, ea, depth) {
+    node._depth = depth
+    node._sa = sa
+    node._ea = ea
+    if (depth > 0) {
+      node._ir = CENTER_R + (depth - 1) * ringWidth
+      node._or = CENTER_R + depth * ringWidth
+    }
+    if (node.c && node.c.length > 0 && depth < maxD) {
+      let cur = sa
+      const span = ea - sa
+      for (let i = 0; i < node.c.length; i++) {
+        if (node.s <= 0) continue
+        const p = node.c[i].s / node.s
+        const cs = p * span
+        layout(node.c[i], cur, cur + cs, depth + 1)
+        cur += cs
+      }
+    }
+  }
+  layout(root, 0, 2 * Math.PI, 0)
+}
+
+function describeArc(sa, ea, ir, or2) {
+  const a = sa + PAD_ANGLE / 2
+  const b = ea - PAD_ANGLE / 2
+  if (b - a < 0.001) return ''
+  const la = (b - a > Math.PI) ? 1 : 0
+  const sx = Math.sin(a), sy = -Math.cos(a)
+  const ex = Math.sin(b), ey = -Math.cos(b)
+  return 'M ' + (sx*or2).toFixed(2) + ' ' + (sy*or2).toFixed(2) +
+    ' A ' + or2 + ' ' + or2 + ' 0 ' + la + ' 1 ' + (ex*or2).toFixed(2) + ' ' + (ey*or2).toFixed(2) +
+    ' L ' + (ex*ir).toFixed(2) + ' ' + (ey*ir).toFixed(2) +
+    ' A ' + ir + ' ' + ir + ' 0 ' + la + ' 0 ' + (sx*ir).toFixed(2) + ' ' + (sy*ir).toFixed(2) + ' Z'
+}
+
+function flattenTree(node, segments, colorIdx) {
+  if (node._depth === undefined || segments.length >= MAX_SEGMENTS) return
+  if (node._depth === 0) {
+    if (node.c) {
+      for (let i = 0; i < node.c.length; i++) flattenTree(node.c[i], segments, i)
+    }
+    return
+  }
+  const span = node._ea - node._sa
+  if (span < MIN_ANGLE) return
+  const base = PALETTE[colorIdx % PALETTE.length]
+  const color = lightenHex(base, Math.max(0, (node._depth - 1) * 0.15))
+  const d = describeArc(node._sa, node._ea, node._ir, node._or)
+  if (!d) return
+  segments.push({
+    idx: segments.length, d, color,
+    name: node.n, fullPath: shortenPath(node.p || '', 55),
+    size: node.s, formattedSize: formatBytes(node.s),
+    depth: node._depth, isDir: node.d !== false,
+    childCount: node.c ? node.c.length : 0,
+    percent: '0', colorIdx
+  })
+  if (node.c) {
+    for (let i = 0; i < node.c.length; i++) flattenTree(node.c[i], segments, colorIdx)
+  }
+}
+
+// ── Execute ───────────────────────────────────────────────────────────────
+
+const diskTree = scanDir(SCAN_PATH, 0)
+const scanDuration = Date.now() - scanStartTime
+
+computeLayout(diskTree, MAX_DEPTH)
+const segments = []
+flattenTree(diskTree, segments, 0)
+const rootSize = diskTree.s
+for (let i = 0; i < segments.length; i++) {
+  segments[i].percent = rootSize > 0 ? ((segments[i].size / rootSize) * 100).toFixed(1) : '0'
+}
+
+const topFolders = segments.filter(function(s) { return s.depth === 1 }).sort(function(a,b) { return b.size - a.size }).slice(0, 20)
+const maxFS = topFolders.length > 0 ? topFolders[0].size : 1
+for (let i = 0; i < topFolders.length; i++) {
+  topFolders[i].barWidth = Math.max(3, Math.round((topFolders[i].size / maxFS) * 100))
+}
+
+const totalFormatted = formatBytes(diskTree.s)
+const scanBasename = nodePath.basename(SCAN_PATH)
+const scanPathDisplay = SCAN_PATH.startsWith(os.homedir()) ? '~' + SCAN_PATH.slice(os.homedir().length) : SCAN_PATH
+const scanPathFull = SCAN_PATH
+
+let diskTotal = 0, diskFree = 0, diskUsedPercent = 0
+try {
+  const dfLines = cp.execSync('df -k / 2>/dev/null').toString().trim().split('\n')
+  if (dfLines.length >= 2) {
+    const p = dfLines[1].split(/\s+/)
+    diskTotal = parseInt(p[1]) * 1024
+    diskFree = parseInt(p[3]) * 1024
+    diskUsedPercent = Math.round((1 - diskFree / diskTotal) * 100)
+  }
+} catch {}
+const diskTotalFormatted = formatBytes(diskTotal)
+const diskFreeFormatted = formatBytes(diskFree)
+const diskUsedFormatted = formatBytes(diskTotal - diskFree)
+const scanTimeFormatted = scanDuration < 1000 ? scanDuration + 'ms' : (scanDuration / 1000).toFixed(1) + 's'
+const segmentCount = segments.length
+
+// Tree JSON for client-side drill-down (compact keys: n=name, s=size, d=isDir, c=children, p=path)
+const treeJson = JSON.stringify(diskTree)
+const segmentsJson = JSON.stringify(segments.map(function(s) {
+  return { idx: s.idx, name: s.name, formattedSize: s.formattedSize, percent: s.percent, isDir: s.isDir, depth: s.depth, childCount: s.childCount, fullPath: s.fullPath, color: s.color }
+}))
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiskScope</title>
+  <link rel="preconnect" href="https://fonts.bunny.net">
+  <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%; background: #0d0d0d; color: #f5f5f7;
+      font-family: 'Inter', -apple-system, 'SF Pro Display', BlinkMacSystemFont, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased; user-select: none; overflow: hidden;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+    .app-window {
+      width: calc(100vw - 24px); height: calc(100vh - 24px); margin: 12px;
+      background: #1c1c1e; border-radius: 12px;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.8), 0 25px 60px rgba(0,0,0,0.55);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    .titlebar {
+      height: 52px; min-height: 52px; background: #2c2c2e;
+      border-bottom: 0.5px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; padding: 0 16px; position: relative;
+      -webkit-app-region: drag;
+    }
+    .traffic-lights { display: flex; gap: 8px; -webkit-app-region: no-drag; }
+    .tl-btn { width: 12px; height: 12px; border-radius: 50%; border: none; cursor: default; }
+    .tl-close { background: #ff5f56; } .tl-minimize { background: #ffbd2e; } .tl-maximize { background: #27c93f; }
+    .titlebar-text { position: absolute; left: 50%; transform: translateX(-50%); font-size: 13px; font-weight: 500; color: #98989d; }
+    .titlebar-text strong { color: #d1d1d6; font-weight: 600; }
+
+    .toolbar {
+      height: 40px; min-height: 40px; background: rgba(44,44,46,0.6);
+      border-bottom: 0.5px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; padding: 0 16px; gap: 8px;
+    }
+    .breadcrumb { display: flex; align-items: center; gap: 2px; font-size: 12px; }
+    .bc-item { padding: 3px 8px; border-radius: 4px; color: #6c6c70; cursor: pointer; font-weight: 500; }
+    .bc-item:hover { background: rgba(255,255,255,0.06); color: #d1d1d6; }
+    .bc-item.active { color: #d1d1d6; cursor: default; }
+    .bc-item.active:hover { background: transparent; }
+    .bc-sep { color: #48484a; font-size: 10px; }
+    .toolbar-stat { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #6c6c70; margin-left: auto; }
+    .toolbar-dot { width: 6px; height: 6px; border-radius: 50%; background: #32d74b; }
+
+    .main-content { flex: 1; display: flex; overflow: hidden; }
+
+    .sidebar {
+      width: 260px; min-width: 260px; background: rgba(28,28,30,0.95);
+      border-right: 0.5px solid rgba(255,255,255,0.06);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sidebar-section { padding: 16px; }
+    .sidebar-section + .sidebar-section { border-top: 0.5px solid rgba(255,255,255,0.06); }
+    .sidebar-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6c6c70; margin-bottom: 12px; }
+
+    .disk-card { background: rgba(255,255,255,0.04); border-radius: 10px; padding: 14px; border: 0.5px solid rgba(255,255,255,0.06); }
+    .disk-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .disk-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #3a3a3c, #48484a); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #98989d; }
+    .disk-name { font-size: 13px; font-weight: 600; }
+    .disk-subtitle { font-size: 11px; color: #6c6c70; margin-top: 1px; }
+    .disk-usage-bar { height: 6px; background: #3a3a3c; border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+    .disk-usage-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #0a84ff, #30d158); }
+    .disk-usage-text { display: flex; justify-content: space-between; font-size: 11px; color: #98989d; }
+
+    .folder-list { flex: 1; overflow-y: auto; padding: 0 16px 16px; }
+    .folder-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; cursor: default; transition: background 0.12s; }
+    .folder-item:hover { background: rgba(255,255,255,0.05); }
+    .folder-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .folder-name { flex: 1; font-size: 12px; font-weight: 500; color: #d1d1d6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .folder-size { font-size: 11px; color: #6c6c70; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+    .folder-bar-track { width: 48px; height: 3px; background: #3a3a3c; border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+    .folder-bar-fill { height: 100%; border-radius: 2px; }
+
+    .chart-area {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      background: #1a1a1c; position: relative; overflow: hidden;
+    }
+    .chart-area::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse at center, rgba(30,30,34,1) 0%, rgba(26,26,28,1) 100%);
+    }
+    .sunburst-svg { position: relative; z-index: 1; width: 100%; height: 100%; max-width: 720px; max-height: 720px; }
+    .segment { transition: opacity 0.18s, filter 0.18s; cursor: pointer; stroke: #1a1a1c; stroke-width: 0.8; }
+    .segment:hover { filter: brightness(1.3) saturate(1.15); }
+    .sunburst-svg:has(.segment:hover) .segment:not(:hover) { opacity: 0.2; }
+    .center-bg { fill: #1a1a1c; cursor: pointer; }
+    .center-bg:hover { fill: #242426; }
+    .center-ring { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 0.5; pointer-events: none; }
+    .center-text-size { fill: #f5f5f7; font-size: 15px; font-weight: 600; text-anchor: middle; pointer-events: none; }
+    .center-text-name { fill: #98989d; font-size: 11px; font-weight: 500; text-anchor: middle; pointer-events: none; }
+    .center-back { fill: #6c6c70; font-size: 9px; text-anchor: middle; pointer-events: none; opacity: 0; transition: opacity 0.15s; }
+    .center-bg:hover ~ .center-back { opacity: 1; }
+
+    .inspector {
+      width: 280px; min-width: 280px; background: rgba(28,28,30,0.95);
+      border-left: 0.5px solid rgba(255,255,255,0.06);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .inspector-header { padding: 14px 16px; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+    .inspector-header-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6c6c70; }
+    .inspector-body { flex: 1; overflow-y: auto; padding: 16px; }
+    .inspector-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: #48484a; }
+    .placeholder-text { font-size: 12px; line-height: 1.5; color: #48484a; }
+    .info-card { animation: fadeIn 0.15s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+    .info-icon-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .info-type-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+    .info-type-name { font-size: 15px; font-weight: 600; word-break: break-word; }
+    .info-type-kind { font-size: 11px; color: #6c6c70; margin-top: 2px; }
+    .info-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid rgba(255,255,255,0.04); }
+    .info-label { font-size: 11px; color: #6c6c70; }
+    .info-value { font-size: 12px; font-weight: 500; color: #d1d1d6; font-variant-numeric: tabular-nums; }
+    .info-path { margin-top: 12px; padding: 8px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; font-size: 10.5px; font-family: 'SF Mono', 'Fira Code', monospace; color: #98989d; word-break: break-all; line-height: 1.5; }
+    .info-size-bar { margin-top: 14px; }
+    .info-size-bar-label { font-size: 11px; color: #6c6c70; margin-bottom: 6px; }
+    .info-size-bar-track { height: 6px; background: #3a3a3c; border-radius: 3px; overflow: hidden; }
+    .info-size-bar-fill { height: 100%; border-radius: 3px; }
+    .info-size-bar-text { font-size: 11px; color: #6c6c70; margin-top: 4px; text-align: right; }
+    .info-drill-hint { margin-top: 16px; padding: 8px 12px; background: rgba(10,132,255,0.08); border: 0.5px solid rgba(10,132,255,0.2); border-radius: 6px; font-size: 11px; color: #0a84ff; text-align: center; }
+
+    .statusbar {
+      height: 28px; min-height: 28px; background: #2c2c2e;
+      border-top: 0.5px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; padding: 0 16px; gap: 16px; font-size: 11px; color: #6c6c70;
+    }
+    .statusbar-item { display: flex; align-items: center; gap: 5px; }
+    .statusbar-dot { width: 5px; height: 5px; border-radius: 50%; }
+    .statusbar-spacer { flex: 1; }
+
+    @media (max-width: 1100px) { .inspector { display: none; } }
+    @media (max-width: 800px) { .sidebar { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="app-window">
+
+    <div class="titlebar">
+      <div class="traffic-lights">
+        <div class="tl-btn tl-close"></div>
+        <div class="tl-btn tl-minimize"></div>
+        <div class="tl-btn tl-maximize"></div>
+      </div>
+      <div class="titlebar-text"><strong>DiskScope</strong></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="breadcrumb" id="breadcrumb">
+        <span class="bc-item active">{{ scanBasename || '/' }}</span>
+      </div>
+      <div class="toolbar-stat">
+        <span class="toolbar-dot"></span>
+        Scanned in {{ scanTimeFormatted }}
+      </div>
+    </div>
+
+    <div class="main-content">
+
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="disk-card">
+            <div class="disk-card-header">
+              <div class="disk-icon">HD</div>
+              <div>
+                <div class="disk-name">Macintosh HD</div>
+                <div class="disk-subtitle">{{ diskTotalFormatted }} total</div>
+              </div>
+            </div>
+            <div class="disk-usage-bar">
+              <div class="disk-usage-fill" style="width: {{ diskUsedPercent }}%"></div>
+            </div>
+            <div class="disk-usage-text">
+              <span>{{ diskUsedFormatted }} used</span>
+              <span>{{ diskFreeFormatted }} free</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">Scanned: {{ scanBasename || '/' }}</div>
+          <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">{{ totalFormatted }}</div>
+          <div style="font-size: 11px; color: #6c6c70;">{{ folderCount }} folders &middot; {{ fileCount }} files</div>
+        </div>
+
+        <div class="sidebar-section" style="padding-bottom: 4px;">
+          <div class="sidebar-title">Largest Items</div>
+        </div>
+        <div class="folder-list" id="folder-list">
+          @foreach(topFolders as folder)
+            <div class="folder-item" data-seg="{{ folder.idx }}">
+              <span class="folder-dot" style="background: {{ folder.color }}"></span>
+              <span class="folder-name">{{ folder.name }}</span>
+              <span class="folder-size">{{ folder.formattedSize }}</span>
+              <div class="folder-bar-track">
+                <div class="folder-bar-fill" style="width: {{ folder.barWidth }}%; background: {{ folder.color }}"></div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </aside>
+
+      <div class="chart-area">
+        <svg class="sunburst-svg" id="sunburst" viewBox="-350 -350 700 700">
+          <circle cx="0" cy="0" r="125" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5" />
+          <circle cx="0" cy="0" r="185" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5" />
+          <circle cx="0" cy="0" r="245" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5" />
+          <g id="segments-group">
+            @foreach(segments as seg)
+              <path class="segment" d="{{ seg.d }}" fill="{{ seg.color }}" data-idx="{{ seg.idx }}">
+                <title>{{ seg.name }} — {{ seg.formattedSize }} ({{ seg.percent }}%)</title>
+              </path>
+            @endforeach
+          </g>
+          <circle cx="0" cy="0" r="62" class="center-bg" id="center-circle" />
+          <circle cx="0" cy="0" r="62" class="center-ring" />
+          <text id="center-size" x="0" y="-6" class="center-text-size">{{ totalFormatted }}</text>
+          <text id="center-name" x="0" y="14" class="center-text-name">{{ scanBasename || '/' }}</text>
+          <text x="0" y="30" class="center-back" id="center-back">Back</text>
+        </svg>
+      </div>
+
+      <aside class="inspector">
+        <div class="inspector-header">
+          <div class="inspector-header-title">Inspector</div>
+        </div>
+        <div class="inspector-body">
+          <div class="inspector-placeholder" id="inspector-placeholder">
+            <div class="placeholder-text">Hover over a segment<br>to inspect its details</div>
+          </div>
+          <div class="info-card" id="inspector-card" style="display:none"></div>
+        </div>
+      </aside>
+
+    </div>
+
+    <div class="statusbar">
+      <span class="statusbar-item"><span class="statusbar-dot" style="background:#0a84ff"></span> {{ segmentCount }} segments</span>
+      <span class="statusbar-item">{{ folderCount }} folders</span>
+      <span class="statusbar-item">{{ fileCount }} files</span>
+      <span class="statusbar-spacer"></span>
+      <span class="statusbar-item">Depth: {{ MAX_DEPTH }} rings</span>
+      <span class="statusbar-item">{{ scanPathDisplay || '/' }}</span>
+    </div>
+
+  </div>
+
+  <script client>
+    (function() {
+      // ── Data from server ──
+      var segs = {!! segmentsJson !!};
+      var tree = {!! treeJson !!};
+      var PAL = {!! JSON.stringify(PALETTE) !!};
+      var CFG = {!! JSON.stringify({ centerR: CENTER_R, maxR: MAX_R, maxDepth: MAX_DEPTH, padAngle: PAD_ANGLE, minAngle: MIN_ANGLE, maxSegs: MAX_SEGMENTS }) !!};
+      var defaultSize = {!! JSON.stringify(totalFormatted) !!};
+      var defaultName = {!! JSON.stringify(scanBasename || '/') !!};
+      var rootPath = {!! JSON.stringify(SCAN_PATH) !!};
+
+      // ── DOM refs ──
+      var centerSize = document.getElementById('center-size');
+      var centerName = document.getElementById('center-name');
+      var centerBack = document.getElementById('center-back');
+      var centerCircle = document.getElementById('center-circle');
+      var card = document.getElementById('inspector-card');
+      var placeholder = document.getElementById('inspector-placeholder');
+      var svgEl = document.getElementById('sunburst');
+      var segGroup = document.getElementById('segments-group');
+      var bcEl = document.getElementById('breadcrumb');
+      var folderListEl = document.getElementById('folder-list');
+
+      // ── Helpers ──
+      function fmtBytes(b) {
+        if (b >= 1e12) return (b/1e12).toFixed(1)+' TB';
+        if (b >= 1e9) return (b/1e9).toFixed(1)+' GB';
+        if (b >= 1e6) return (b/1e6).toFixed(1)+' MB';
+        if (b >= 1e3) return (b/1e3).toFixed(1)+' KB';
+        return b+' B';
+      }
+      function lighten(hex, amt) {
+        var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+        r=Math.min(255,Math.round(r+(255-r)*amt)); g=Math.min(255,Math.round(g+(255-g)*amt)); b=Math.min(255,Math.round(b+(255-b)*amt));
+        return '#'+r.toString(16).padStart(2,'0')+g.toString(16).padStart(2,'0')+b.toString(16).padStart(2,'0');
+      }
+
+      // ── Layout + Arc (same algorithms as server, for client-side drill-down) ──
+      function computeLayout(node, maxD) {
+        var rw = (CFG.maxR - CFG.centerR) / maxD;
+        function go(nd, sa, ea, depth) {
+          nd._d = depth; nd._sa = sa; nd._ea = ea;
+          if (depth > 0) { nd._ir = CFG.centerR + (depth-1)*rw; nd._or = CFG.centerR + depth*rw; }
+          if (nd.c && nd.c.length && depth < maxD) {
+            var cur = sa, span = ea - sa;
+            for (var i = 0; i < nd.c.length; i++) {
+              if (nd.s <= 0) continue;
+              var cs = (nd.c[i].s / nd.s) * span;
+              go(nd.c[i], cur, cur + cs, depth + 1);
+              cur += cs;
+            }
+          }
+        }
+        go(node, 0, 2 * Math.PI, 0);
+      }
+      function arcPath(sa, ea, ir, or2) {
+        var a = sa + CFG.padAngle/2, b = ea - CFG.padAngle/2;
+        if (b - a < 0.001) return '';
+        var la = (b-a > Math.PI) ? 1 : 0;
+        var sx=Math.sin(a),sy=-Math.cos(a),ex=Math.sin(b),ey=-Math.cos(b);
+        return 'M '+(sx*or2).toFixed(2)+' '+(sy*or2).toFixed(2)+' A '+or2+' '+or2+' 0 '+la+' 1 '+(ex*or2).toFixed(2)+' '+(ey*or2).toFixed(2)+' L '+(ex*ir).toFixed(2)+' '+(ey*ir).toFixed(2)+' A '+ir+' '+ir+' 0 '+la+' 0 '+(sx*ir).toFixed(2)+' '+(sy*ir).toFixed(2)+' Z';
+      }
+
+      // ── Navigation state ──
+      var viewStack = [];
+      var currentRoot = tree;
+
+      function flatten(node, arr, colorIdx) {
+        if (node._d === undefined || arr.length >= CFG.maxSegs) return;
+        if (node._d === 0) {
+          if (node.c) for (var i=0;i<node.c.length;i++) flatten(node.c[i], arr, i);
+          return;
+        }
+        if (node._ea - node._sa < CFG.minAngle) return;
+        var base = PAL[colorIdx % PAL.length];
+        var col = lighten(base, Math.max(0, (node._d-1)*0.15));
+        var d = arcPath(node._sa, node._ea, node._ir, node._or);
+        if (!d) return;
+        arr.push({ idx: arr.length, d:d, color:col, name:node.n, fullPath:node.p||'', size:node.s, formattedSize:fmtBytes(node.s), depth:node._d, isDir:node.d!==false, childCount:node.c?node.c.length:0, percent:'0', colorIdx:colorIdx, _node:node });
+        if (node.c) for (var j=0;j<node.c.length;j++) flatten(node.c[j], arr, colorIdx);
+      }
+
+      function renderView(root) {
+        currentRoot = root;
+        computeLayout(root, CFG.maxDepth);
+        var newSegs = [];
+        flatten(root, newSegs, 0);
+        var rs = root.s;
+        for (var i=0;i<newSegs.length;i++) newSegs[i].percent = rs > 0 ? ((newSegs[i].size/rs)*100).toFixed(1) : '0';
+        segs = newSegs;
+
+        // Rebuild SVG segments
+        segGroup.innerHTML = '';
+        var ns = 'http://www.w3.org/2000/svg';
+        for (var k=0;k<segs.length;k++) {
+          var p = document.createElementNS(ns, 'path');
+          p.setAttribute('class', 'segment');
+          p.setAttribute('d', segs[k].d);
+          p.setAttribute('fill', segs[k].color);
+          p.setAttribute('data-idx', segs[k].idx);
+          var t = document.createElementNS(ns, 'title');
+          t.textContent = segs[k].name + ' — ' + segs[k].formattedSize + ' (' + segs[k].percent + '%)';
+          p.appendChild(t);
+          segGroup.appendChild(p);
+        }
+
+        // Update center
+        centerSize.textContent = fmtBytes(root.s);
+        centerName.textContent = root.n;
+        defaultSize = fmtBytes(root.s);
+        defaultName = root.n;
+        centerBack.style.opacity = viewStack.length > 0 ? '0.6' : '0';
+
+        // Update breadcrumb
+        var parts = [];
+        var node = root;
+        var chain = [root];
+        for (var v = viewStack.length-1; v >= 0; v--) chain.unshift(viewStack[v]);
+        var html = '';
+        for (var c=0;c<chain.length;c++) {
+          if (c > 0) html += '<span class="bc-sep">/</span>';
+          var isLast = c === chain.length - 1;
+          html += '<span class="bc-item' + (isLast ? ' active' : '') + '" data-bc="' + c + '">' + chain[c].n + '</span>';
+        }
+        bcEl.innerHTML = html;
+
+        // Update sidebar folder list
+        var top = segs.filter(function(s){return s.depth===1}).sort(function(a,b){return b.size-a.size}).slice(0,20);
+        var maxS = top.length > 0 ? top[0].size : 1;
+        var fhtml = '';
+        for (var f=0;f<top.length;f++) {
+          var bw = Math.max(3, Math.round((top[f].size/maxS)*100));
+          fhtml += '<div class="folder-item" data-seg="'+top[f].idx+'"><span class="folder-dot" style="background:'+top[f].color+'"></span><span class="folder-name">'+top[f].name+'</span><span class="folder-size">'+top[f].formattedSize+'</span><div class="folder-bar-track"><div class="folder-bar-fill" style="width:'+bw+'%;background:'+top[f].color+'"></div></div></div>';
+        }
+        folderListEl.innerHTML = fhtml;
+
+        showInfo(null);
+        bindSidebarHover();
+      }
+
+      // ── Inspector ──
+      function showInfo(s) {
+        if (!s) {
+          centerSize.textContent = defaultSize;
+          centerName.textContent = defaultName;
+          card.style.display = 'none';
+          placeholder.style.display = '';
+          return;
+        }
+        centerSize.textContent = s.formattedSize;
+        centerName.textContent = s.name;
+        placeholder.style.display = 'none';
+        card.style.display = '';
+        card.innerHTML =
+          '<div class="info-icon-row"><div class="info-type-icon" style="background:'+s.color+'20;color:'+s.color+'">'+(s.isDir?'Dir':'File')+'</div><div><div class="info-type-name">'+s.name+'</div><div class="info-type-kind">'+(s.isDir?'Folder':'File')+' &middot; Level '+s.depth+'</div></div></div>' +
+          '<div class="info-row"><span class="info-label">Size</span><span class="info-value">'+s.formattedSize+'</span></div>' +
+          '<div class="info-row"><span class="info-label">% of View</span><span class="info-value">'+s.percent+'%</span></div>' +
+          (s.isDir ? '<div class="info-row"><span class="info-label">Items</span><span class="info-value">'+s.childCount+'</span></div>' : '') +
+          '<div class="info-row" style="border-bottom:none"><span class="info-label">Depth</span><span class="info-value">Ring '+s.depth+'</span></div>' +
+          '<div class="info-path">'+s.fullPath+'</div>' +
+          '<div class="info-size-bar"><div class="info-size-bar-label">Proportion</div><div class="info-size-bar-track"><div class="info-size-bar-fill" style="width:'+s.percent+'%;background:'+s.color+'"></div></div><div class="info-size-bar-text">'+s.formattedSize+' of '+defaultSize+'</div></div>' +
+          (s.isDir && s.childCount > 0 ? '<div class="info-drill-hint">Click to drill down</div>' : '');
+      }
+
+      // ── Events ──
+      if (svgEl) {
+        svgEl.addEventListener('mouseover', function(e) {
+          var p = e.target.closest('.segment');
+          if (p) { var idx = parseInt(p.getAttribute('data-idx')); if (segs[idx]) showInfo(segs[idx]); }
+        });
+        svgEl.addEventListener('mouseout', function(e) {
+          var p = e.target.closest('.segment');
+          if (p && (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.segment'))) showInfo(null);
+        });
+        // Click to drill down
+        svgEl.addEventListener('click', function(e) {
+          var p = e.target.closest('.segment');
+          if (p) {
+            var idx = parseInt(p.getAttribute('data-idx'));
+            var seg = segs[idx];
+            if (seg && seg.isDir && seg._node && seg._node.c && seg._node.c.length > 0) {
+              viewStack.push(currentRoot);
+              renderView(seg._node);
+            }
+          }
+        });
+      }
+
+      // Center click → go up
+      if (centerCircle) {
+        centerCircle.addEventListener('click', function() {
+          if (viewStack.length > 0) {
+            var prev = viewStack.pop();
+            renderView(prev);
+          }
+        });
+      }
+
+      // Breadcrumb click
+      if (bcEl) {
+        bcEl.addEventListener('click', function(e) {
+          var item = e.target.closest('.bc-item');
+          if (!item || item.classList.contains('active')) return;
+          var idx = parseInt(item.getAttribute('data-bc'));
+          // Navigate to that level
+          var chain = [tree];
+          for (var i = 0; i < viewStack.length; i++) chain.push(viewStack[i]);
+          chain.push(currentRoot);
+          if (idx < chain.length) {
+            viewStack = chain.slice(1, idx+1);
+            viewStack.pop();
+            renderView(chain[idx]);
+          }
+        });
+      }
+
+      function bindSidebarHover() {
+        document.querySelectorAll('.folder-item[data-seg]').forEach(function(el) {
+          el.addEventListener('mouseenter', function() {
+            var idx = parseInt(el.getAttribute('data-seg'));
+            if (segs[idx]) showInfo(segs[idx]);
+          });
+          el.addEventListener('mouseleave', function() { showInfo(null); });
+        });
+      }
+      bindSidebarHover();
+    })();
+  </script>
+</body>
+</html>
