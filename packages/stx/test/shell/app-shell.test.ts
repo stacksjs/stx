@@ -114,15 +114,38 @@ describe('App Shell', () => {
       expect(result!.shellStyles[0]).toContain('.app { display: flex; }')
     })
 
-    it('should extract shell scripts', async () => {
+    it('should extract shell client scripts', async () => {
       const shellPath = path.join(tmpDir, 'shell-scripts.stx')
       fs.writeFileSync(shellPath, `<template><div><slot /></div></template>
-<script>const x = 1</script>`)
+<script client>const x = 1</script>`)
 
       const result = await processShell(shellPath, {})
       expect(result).not.toBeNull()
       expect(result!.shellScripts.length).toBe(1)
       expect(result!.shellScripts[0]).toContain('const x = 1')
+    })
+
+    it('should extract shell signals scripts', async () => {
+      const shellPath = path.join(tmpDir, 'shell-signals.stx')
+      fs.writeFileSync(shellPath, `<template><div><slot /></div></template>
+<script>const collapsed = state(false)</script>`)
+
+      const result = await processShell(shellPath, {})
+      expect(result).not.toBeNull()
+      expect(result!.shellScripts.length).toBe(1)
+      expect(result!.shellScripts[0]).toContain('state(false)')
+    })
+
+    it('should not include server scripts in shell scripts', async () => {
+      const shellPath = path.join(tmpDir, 'shell-server.stx')
+      fs.writeFileSync(shellPath, `<template><div><slot /></div></template>
+<script server>const data = await fetchData()</script>
+<script client>const x = 1</script>`)
+
+      const result = await processShell(shellPath, {})
+      expect(result).not.toBeNull()
+      expect(result!.shellScripts.length).toBe(1)
+      expect(result!.shellScripts[0]).not.toContain('fetchData')
     })
   })
 

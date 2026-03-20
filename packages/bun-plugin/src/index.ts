@@ -38,7 +38,7 @@
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile, renderToString } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, classifyScript, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile, renderToString } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -260,35 +260,26 @@ export { content as default };
             workingContent = templateTagMatch[1].trim()
           }
 
-          // Extract all script tags and categorize them from original content
+          // Extract all script tags and categorize them using the unified classifier
           const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
           const clientScripts: string[] = []
           const serverScripts: string[] = []
-          const signalsScripts: string[] = [] // Scripts using STX signals API
+          const signalsScripts: string[] = []
           let scriptMatch: RegExpExecArray | null
 
-          // Check if script uses STX signals API (state, derived, effect, batch)
-          const usesSignalsAPI = (content: string) => /\b(?:state|derived|effect|batch|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)
-
           while ((scriptMatch = scriptRegex.exec(content)) !== null) {
-            const attrs = scriptMatch[1]
-            const scriptContent = scriptMatch[2]
-            const fullScript = scriptMatch[0]
+            const classified = classifyScript(scriptMatch[1], scriptMatch[2], scriptMatch[0])
 
-            // Check if it's a client-only script
-            const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
-            // Check if it uses STX signals API (should be processed by signals runtime)
-            const isSignalsScript = usesSignalsAPI(scriptContent)
-
-            if (isSignalsScript) {
-              // Scripts with signals should be kept in template for processSignals to handle
-              signalsScripts.push(fullScript)
-            }
-            else if (isClientScript) {
-              clientScripts.push(fullScript)
-            }
-            else {
-              serverScripts.push(scriptContent)
+            switch (classified.type) {
+              case 'signals':
+                signalsScripts.push(classified.fullTag)
+                break
+              case 'client':
+                clientScripts.push(classified.fullTag)
+                break
+              case 'server':
+                serverScripts.push(classified.content)
+                break
             }
           }
 

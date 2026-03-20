@@ -582,6 +582,8 @@ catch {
       skipSignalsRuntime: true,
       // Skip event directive processing for signal components - runtime handles @click etc.
       skipEventDirectives: hasSignalScripts,
+      // Components must never get auto-layout wrapping — they are fragments, not pages
+      defaultLayout: undefined,
     }
 
     // Process the component content recursively with the new context

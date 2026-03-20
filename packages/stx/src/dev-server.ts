@@ -1755,32 +1755,21 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
       const content = await Bun.file(route.filePath).text()
 
-      // Extract script tags and categorize as server or client
-      const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-      const clientScripts: string[] = []
-      const serverScripts: string[] = []
-      let scriptMatch: RegExpExecArray | null
+      // Extract and classify script tags using unified classifier
+      const { classifyAllScripts } = await import('./')
+      const classified = classifyAllScripts(content)
+      const clientScripts = classified.client.map(s => s.fullTag)
+      const serverScripts = classified.server.map(s => s.content)
+      // Signals scripts stay in template — handled by processDirectives/processSignals
 
-      while ((scriptMatch = scriptRegex.exec(content)) !== null) {
-        const attrs = scriptMatch[1]
-        const scriptBody = scriptMatch[2]
-        const fullScript = scriptMatch[0]
-
-        const isClientScript = attrs.includes('client')
-          || attrs.includes('type="module"')
-          || attrs.includes('src=')
-          || /\b(?:document|window|addEventListener|querySelector|getElementById|fetch\(|localStorage|sessionStorage)\b/.test(scriptBody)
-
-        if (isClientScript) {
-          clientScripts.push(fullScript)
-        }
-        else {
-          serverScripts.push(scriptBody)
-        }
+      // Remove server and client script tags from template, keep signals scripts
+      let templateContent = content
+      for (const s of classified.server) {
+        templateContent = templateContent.replace(s.fullTag, '')
       }
-
-      // Remove all script tags from template content
-      let templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      for (const s of classified.client) {
+        templateContent = templateContent.replace(s.fullTag, '')
+      }
 
       // Create context and extract variables
       const context: Record<string, any> = {
@@ -2184,9 +2173,12 @@ catch {
           partialsCache.clear()
           clearComponentCache()
           // Rebuild shell if shell file changed
-          if (shellPath && filename && path.resolve(path.dirname(shellPath), filename) === shellPath) {
-            const newShell = await processShell(shellPath, options.stxOptions || {})
-            if (newShell) shell = newShell
+          if (shellPath && filename) {
+            const changedPath = path.resolve(absoluteAppDir, filename)
+            if (changedPath === shellPath || path.basename(shellPath) === filename) {
+              const newShell = await processShell(shellPath, options.stxOptions || {})
+              if (newShell) shell = newShell
+            }
           }
           await buildAllPages()
           await rebuildCrosswindCSS(absoluteAppDir)

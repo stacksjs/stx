@@ -13,6 +13,21 @@
 import type { StxOptions } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
+import { classifyAllScripts } from './script-classifier'
+
+// Cache router script at module level (loaded once)
+let _cachedRouterScript: string | null = null
+function getRouterScriptCached(): string {
+  if (_cachedRouterScript !== null) return _cachedRouterScript
+  try {
+    const { getRouterScript } = require('stx-router')
+    _cachedRouterScript = `<script>${getRouterScript()}</script>`
+  }
+  catch {
+    _cachedRouterScript = ''
+  }
+  return _cachedRouterScript
+}
 
 /**
  * Processed shell ready for page injection
@@ -79,16 +94,14 @@ export async function processShell(
       shellTemplate = templateMatch[1].trim()
     }
 
-    // Extract shell scripts (to preserve them across navigations)
-    const shellScripts: string[] = []
-    const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-    let scriptMatch: RegExpExecArray | null
-    while ((scriptMatch = scriptRegex.exec(content)) !== null) {
-      const attrs = scriptMatch[1]
-      // Skip server-only scripts
-      if (attrs.includes('server')) continue
-      shellScripts.push(scriptMatch[0])
-    }
+    // Classify shell scripts using the unified classifier
+    const classified = classifyAllScripts(content)
+
+    // Shell scripts that persist across navigations (client + signals, not server)
+    const shellScripts = [
+      ...classified.client.map(s => s.fullTag),
+      ...classified.signals.map(s => s.fullTag),
+    ]
 
     // Extract shell styles
     const shellStyles: string[] = []
@@ -98,10 +111,17 @@ export async function processShell(
       shellStyles.push(styleMatch[0])
     }
 
-    // Remove scripts and styles from template for processing
+    // Remove server and client scripts from template, keep signals scripts
+    // so processDirectives can handle them (signals runtime injection, setup functions)
     let cleanTemplate = shellTemplate
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+    for (const s of classified.server) {
+      cleanTemplate = cleanTemplate.replace(s.fullTag, '')
+    }
+    for (const s of classified.client) {
+      cleanTemplate = cleanTemplate.replace(s.fullTag, '')
+    }
+    // Remove styles from template (re-injected in shell composition)
+    cleanTemplate = cleanTemplate.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
 
     // Replace <slot /> or <slot></slot> with a unique placeholder
     const SLOT_PLACEHOLDER = '<!--__STX_PAGE_SLOT__-->'
@@ -173,15 +193,8 @@ export function composeShellWithPage(
 ): string {
   const title = pageTitle || 'stx App'
 
-  // Import router script for shell-level injection
-  let routerScript = ''
-  try {
-    const { getRouterScript } = require('stx-router')
-    routerScript = `<script>${getRouterScript()}</script>`
-  }
-  catch {
-    // Router not available — SPA navigation won't work but pages still render
-  }
+  // Router script (cached at module level)
+  const routerScript = getRouterScriptCached()
 
   // Configure router to use data-stx-content as the swap container
   const routerConfig = `<script>window.__stxRouterConfig={container:'[data-stx-content]'};</script>`
@@ -227,7 +240,7 @@ export function stripDocumentWrapper(html: string): string {
   const trimmed = html.trim()
 
   // No document wrapper — already a fragment
-  if (!trimmed.match(/<!DOCTYPE\b/i) && !trimmed.match(/^<html[\s>]/i)) {
+  if (!/<!DOCTYPE\b/i.test(trimmed) && !/^<html[\s>]/i.test(trimmed)) {
     return html
   }
 
@@ -237,34 +250,35 @@ export function stripDocumentWrapper(html: string): string {
   if (headMatch) {
     const headContent = headMatch[1]
     const styleRegex = /<style\b[^>]*>[\s\S]*?<\/style>/gi
-    let styleMatch: RegExpExecArray | null
-    while ((styleMatch = styleRegex.exec(headContent)) !== null) {
-      headStyles.push(styleMatch[0])
+    let m: RegExpExecArray | null
+    while ((m = styleRegex.exec(headContent)) !== null) {
+      headStyles.push(m[0])
     }
   }
 
-  // Extract body content
-  const bodyMatch = trimmed.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i)
-  if (bodyMatch) {
-    const bodyContent = bodyMatch[1].trim()
-    // Prepend head styles to body content
+  // Use index-based extraction for <body> — more robust than regex with [\s\S]*?
+  // which can match the wrong </body> if one appears in a string literal
+  const bodyOpenMatch = trimmed.match(/<body\b[^>]*>/i)
+  const bodyCloseIdx = trimmed.lastIndexOf('</body>')
+  if (bodyOpenMatch && bodyCloseIdx !== -1) {
+    const bodyStart = bodyOpenMatch.index! + bodyOpenMatch[0].length
+    const bodyContent = trimmed.slice(bodyStart, bodyCloseIdx).trim()
     if (headStyles.length > 0) {
       return headStyles.join('\n') + '\n' + bodyContent
     }
     return bodyContent
   }
 
-  // Fallback: strip tags manually if regex didn't match cleanly
+  // Fallback: strip tags manually if structure doesn't match cleanly
   let result = trimmed
   result = result.replace(/<!DOCTYPE\b[^>]*>/i, '')
   result = result.replace(/<html\b[^>]*>/i, '')
-  result = result.replace(/<\/html>/i, '')
-  result = result.replace(/<head\b[^>]*>[\s\S]*?<\/head>/i, () => {
-    // Preserve styles from head
-    return headStyles.join('\n')
-  })
+  result = result.replace(/<\/html\s*>/i, '')
+  if (headMatch) {
+    result = result.replace(/<head\b[^>]*>[\s\S]*?<\/head>/i, headStyles.join('\n'))
+  }
   result = result.replace(/<body\b[^>]*>/i, '')
-  result = result.replace(/<\/body>/i, '')
+  result = result.replace(/<\/body\s*>/i, '')
 
   return result.trim()
 }
