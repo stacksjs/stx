@@ -512,6 +512,21 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     actualHmrPort = hmrServer.start(desiredHmrPort)
   }
 
+  // Load API routes from stx.config.ts if available
+  let apiRoutes: Record<string, (request: Request) => Response | Promise<Response>> = {}
+  try {
+    const { loadStxConfig } = await import('./')
+    const projectConfig = await loadStxConfig()
+    if (projectConfig?.apiRoutes) {
+      apiRoutes = projectConfig.apiRoutes
+      const routeCount = Object.keys(apiRoutes).length
+      if (routeCount > 0) {
+        console.log(`${colors.blue}Loaded ${colors.bright}${routeCount} API route${routeCount > 1 ? 's' : ''}${colors.reset}`)
+      }
+    }
+  }
+  catch { /* no config or no apiRoutes */ }
+
   // Start a server
   console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
   if (hotReload) {
@@ -521,6 +536,19 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     port: actualPort,
     async fetch(request) {
       const url = new URL(request.url)
+
+      // Handle custom API routes from stx.config.ts
+      if (apiRoutes[url.pathname]) {
+        try {
+          return await apiRoutes[url.pathname](request)
+        }
+        catch (err: any) {
+          return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+      }
 
       // Serve the main HTML for the root path
       if (url.pathname === '/') {

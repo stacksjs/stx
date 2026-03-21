@@ -2950,11 +2950,11 @@ export function validateClientScript(
     }
   }
 
-  if (errors.length > 0) {
+  if (errors.length > 0 && strictConfig.enabled) {
     const fileName = filePath.split('/').pop() || filePath
     const baseMessage = `[STX] DOM API violation in ${fileName}:\n${errors.join('\n')}\n  Tip: prefer useRef(), navigate(), and composables for component code`
 
-    if (strictConfig.enabled && strictConfig.failOnViolation) {
+    if (strictConfig.failOnViolation) {
       throw new Error(baseMessage)
     }
     else {

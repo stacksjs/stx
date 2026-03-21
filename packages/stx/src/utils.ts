@@ -78,12 +78,47 @@ export function transpileTypeScript(code: string): string {
     // Also strip side-effect .stx imports
     processedCode = processedCode.replace(/^\s*import\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
 
+    // Protect STX template expressions from the TypeScript transpiler.
+    // {!! expr !!}, {{{ expr }}}, and {{ expr }} are not valid JS/TS syntax
+    // so we replace them with string placeholders before transpilation
+    // and restore them afterwards.
+    const placeholders: string[] = []
+    // Replace {!! expr !!} (raw/unescaped output)
+    processedCode = processedCode.replace(/\{!![\s\S]*?!!\}/g, (match) => {
+      const idx = placeholders.length
+      placeholders.push(match)
+      return `"__STX_EXPR_${idx}__"`
+    })
+
+    // Replace {{{ expr }}} (triple-brace unescaped output)
+    processedCode = processedCode.replace(/\{\{\{[\s\S]*?\}\}\}/g, (match) => {
+      const idx = placeholders.length
+      placeholders.push(match)
+      return `"__STX_EXPR_${idx}__"`
+    })
+
+    // Replace {{ expr }} (escaped output)
+    processedCode = processedCode.replace(/\{\{[\s\S]*?\}\}/g, (match) => {
+      const idx = placeholders.length
+      placeholders.push(match)
+      return `"__STX_EXPR_${idx}__"`
+    })
+
     // Use Bun's transpiler directly for inline code
     const transpiler = new Bun.Transpiler({
       loader: 'ts',
       target: 'browser',
     })
-    return transpiler.transformSync(processedCode)
+    let result = transpiler.transformSync(processedCode)
+
+    // Restore STX template expressions (handle both quote styles since
+    // the transpiler may convert double quotes to single quotes)
+    for (let i = 0; i < placeholders.length; i++) {
+      result = result.replace(`"__STX_EXPR_${i}__"`, placeholders[i])
+      result = result.replace(`'__STX_EXPR_${i}__'`, placeholders[i])
+    }
+
+    return result
   }
   catch (e) {
     console.warn('[STX] TypeScript transpilation error:', e)

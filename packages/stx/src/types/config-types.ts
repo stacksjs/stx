@@ -525,6 +525,13 @@ export interface StxConfig {
    * @default undefined (auto-detects 'app.stx' in project root)
    */
   shell?: string | false
+
+  /**
+   * Custom API routes for the dev server.
+   * Keys are path patterns (e.g. '/api/delete'), values are request handlers.
+   * Handlers receive the standard Request and return a Response.
+   */
+  apiRoutes?: Record<string, (request: Request) => Response | Promise<Response>>
 }
 
 /**
