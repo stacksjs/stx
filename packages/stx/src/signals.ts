@@ -3510,7 +3510,15 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       var setupResult = window.stx._latestSetup();
       window.stx._latestSetup = null;
       if (typeof setupResult === 'object' && setupResult !== null) {
-        Object.assign(componentScope, setupResult);
+        // Reset componentScope to prevent stale variables from previous pages
+        // leaking into the new page's expression evaluation. Preserve $refs.
+        var freshScope = { $refs: componentScope.$refs || {} };
+        // Re-apply any shell-level scope (from stx.mount() calls outside the container)
+        document.querySelectorAll('body > aside[id], body > nav[id]').forEach(function(el) {
+          if (el.__stx_scope) Object.assign(freshScope, el.__stx_scope);
+        });
+        Object.assign(freshScope, setupResult);
+        componentScope = freshScope;
       }
       // Process the container content with the new scope
       var disposeEffects = trackEffects(function() { processElement(container, componentScope); });
