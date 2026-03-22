@@ -264,6 +264,14 @@ export {
   type WebSocketRef,
 } from './use-websocket'
 
+// Broadcasting Channels (ts-broadcasting)
+export {
+  useChannel,
+  type ChannelState,
+  type ChannelOptions,
+  type ChannelRef,
+} from './use-channel'
+
 // Device Orientation & Motion
 export {
   useDeviceOrientation,

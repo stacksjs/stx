@@ -120,10 +120,22 @@ export class HotReloadServer {
               }
             },
             message: (_ws, message) => {
+              const str = typeof message === 'string' ? message : message.toString()
               // Handle ping/pong for connection keep-alive
-              if (message === 'ping') {
-                // Pong is automatic in Bun
+              if (str === 'ping') return
+
+              // Forward browser console logs to the terminal
+              try {
+                const msg = JSON.parse(str)
+                if (msg.type === 'console' && Array.isArray(msg.args)) {
+                  const args = msg.args.join(' ')
+                  const colors = { log: '\x1B[36m', warn: '\x1B[33m', error: '\x1B[31m', info: '\x1B[34m' } as Record<string, string>
+                  const c = colors[msg.level] ?? '\x1B[36m'
+                  // eslint-disable-next-line no-console
+                  console.log(`${c}[browser]${msg.level !== 'log' ? ` ${msg.level}` : ''}\x1B[0m ${args}`)
+                }
               }
+              catch { /* not JSON, ignore */ }
             },
           },
         })
@@ -419,6 +431,34 @@ else {
 else {
     connect();
   }
+
+  // Forward browser console to the dev server terminal
+  var _origLog = console.log;
+  var _origError = console.error;
+  var _origWarn = console.warn;
+  var _origInfo = console.info;
+
+  function _fwd(level, args) {
+    if (socket && socket.readyState === 1) {
+      try {
+        socket.send(JSON.stringify({
+          type: 'console',
+          level: level,
+          args: Array.prototype.slice.call(args).map(function(a) {
+            if (a === null) return 'null';
+            if (a === undefined) return 'undefined';
+            if (typeof a === 'object') { try { return JSON.stringify(a); } catch(e) { return String(a); } }
+            return String(a);
+          })
+        }));
+      } catch(e) {}
+    }
+  }
+
+  console.log = function() { _origLog.apply(console, arguments); _fwd('log', arguments); };
+  console.error = function() { _origError.apply(console, arguments); _fwd('error', arguments); };
+  console.warn = function() { _origWarn.apply(console, arguments); _fwd('warn', arguments); };
+  console.info = function() { _origInfo.apply(console, arguments); _fwd('info', arguments); };
 
   // Expose for debugging
   window.__stxHmr = {

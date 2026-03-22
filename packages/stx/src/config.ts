@@ -371,6 +371,18 @@ export const defaultConfig: StxConfig = {
       maxSize: 500,
     },
   },
+
+  // ==========================================================================
+  // Broadcasting Configuration
+  // ==========================================================================
+  broadcasting: {
+    enabled: false,
+    driver: 'bun',
+    host: '0.0.0.0',
+    port: 6001,
+    scheme: 'ws',
+    verbose: false,
+  },
 }
 
 // Lazy-load config to avoid blocking module initialization

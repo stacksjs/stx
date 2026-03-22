@@ -399,6 +399,27 @@ export interface StrictModeConfig {
 }
 
 /**
+ * Real-time broadcasting configuration.
+ *
+ * When enabled, stx starts a ts-broadcasting WebSocket server
+ * alongside the dev server so pages can receive push events.
+ */
+export interface BroadcastingConfig {
+  /** Enable the broadcasting server @default false */
+  enabled?: boolean
+  /** Broadcasting driver @default 'bun' */
+  driver?: 'bun' | 'reverb' | 'pusher' | 'ably' | 'log' | 'null'
+  /** WebSocket server host @default '0.0.0.0' */
+  host?: string
+  /** WebSocket server port @default 6001 */
+  port?: number
+  /** URL scheme @default 'ws' */
+  scheme?: 'ws' | 'wss'
+  /** Enable verbose logging @default false */
+  verbose?: boolean
+}
+
+/**
  * stx configuration options
  */
 export interface StxConfig {
@@ -527,6 +548,25 @@ export interface StxConfig {
   shell?: string | false
 
   /**
+   * Real-time broadcasting configuration (powered by ts-broadcasting).
+   *
+   * When enabled, stx starts a WebSocket broadcasting server alongside
+   * the dev server and injects client helpers automatically.
+   *
+   * @example
+   * ```ts
+   * // stx.config.ts
+   * export default {
+   *   broadcasting: {
+   *     enabled: true,
+   *     port: 6001,
+   *   }
+   * }
+   * ```
+   */
+  broadcasting?: Partial<BroadcastingConfig>
+
+  /**
    * Custom API routes for the dev server.
    * Keys are path patterns (e.g. '/api/delete'), values are request handlers.
    * Handlers receive the standard Request and return a Response.
@@ -548,6 +588,14 @@ export interface StxConfig {
     skipSelectors?: string
     viewTransitionCSS?: Record<string, string>
   }
+
+  /**
+   * Custom router instance (e.g. @stacksjs/bun-router) for API handling.
+   * When set, incoming requests are passed to router.handleRequest() before
+   * falling through to page routes. Takes precedence over apiRoutes for
+   * matching paths.
+   */
+  apiRouter?: { handleRequest: (request: Request) => Response | Promise<Response> }
 }
 
 /**

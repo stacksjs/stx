@@ -1653,6 +1653,7 @@
         "bun-plugin-stx": "workspace:*",
         "bunfig": "^0.15.6",
         "stx-router": "workspace:*",
+        "ts-broadcasting": "link:ts-broadcasting",
         "ts-syntax-highlighter": "^0.2.1"
       }
     },
@@ -2180,6 +2181,11 @@
       "source": "npm",
       "resolved": "https://registry.npmjs.org/tinybench/-/tinybench-6.0.0-beta.2.tgz",
       "integrity": "sha512-Bx4WtB3hTBkq5TSADEgm2R7XBg8144c5EcuWHI28rdEw88pA2qSVPns97CXVVKEYwgAZW2w63FOfKReuQOC2oQ=="
+    },
+    "ts-broadcasting@link:ts-broadcasting": {
+      "name": "ts-broadcasting",
+      "version": "link:ts-broadcasting",
+      "source": "npm"
     },
     "ts-syntax-highlighter@0.2.1": {
       "name": "ts-syntax-highlighter",

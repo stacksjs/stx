@@ -512,16 +512,46 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     actualHmrPort = hmrServer.start(desiredHmrPort)
   }
 
-  // Load API routes from stx.config.ts if available
+  // Load API routes and custom router from stx.config.ts
   let apiRoutes: Record<string, (request: Request) => Response | Promise<Response>> = {}
+  let customRouter: { handleRequest: (request: Request) => Response | Promise<Response> } | null = null
   try {
     const { loadStxConfig } = await import('./')
     const projectConfig = await loadStxConfig()
+    if (projectConfig?.apiRouter) {
+      customRouter = projectConfig?.apiRouter
+      console.log(`${colors.blue}Using custom router for API handling${colors.reset}`)
+    }
     if (projectConfig?.apiRoutes) {
       apiRoutes = projectConfig.apiRoutes
       const routeCount = Object.keys(apiRoutes).length
       if (routeCount > 0) {
         console.log(`${colors.blue}Loaded ${colors.bright}${routeCount} API route${routeCount > 1 ? 's' : ''}${colors.reset}`)
+      }
+    }
+    // Start broadcasting server if enabled, then auto-discover channels.ts
+    if (projectConfig?.broadcasting?.enabled) {
+      try {
+        const { startBroadcasting, loadChannels } = await import('./broadcasting')
+        const bcConfig = projectConfig.broadcasting
+        await startBroadcasting(bcConfig)
+        const bcPort = bcConfig.port ?? 6001
+        console.log(`${colors.magenta}Broadcasting on ${colors.cyan}ws://localhost:${bcPort}/ws${colors.reset}`)
+
+        // Auto-discover channels.ts at project root
+        const channelsFile = path.join(process.cwd(), 'channels.ts')
+        if (fs.existsSync(channelsFile)) {
+          try {
+            const count = await loadChannels(channelsFile)
+            console.log(`${colors.blue}Loaded ${colors.bright}${count} broadcast channel${count !== 1 ? 's' : ''}${colors.blue} from channels.ts${colors.reset}`)
+          }
+          catch (err: any) {
+            console.warn(`${colors.yellow}Failed to load channels.ts: ${err.message}${colors.reset}`)
+          }
+        }
+      }
+      catch (err: any) {
+        console.warn(`${colors.yellow}Broadcasting failed to start: ${err.message}${colors.reset}`)
       }
     }
   }
@@ -537,7 +567,18 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     async fetch(request) {
       const url = new URL(request.url)
 
-      // Handle custom API routes from stx.config.ts
+      // Handle requests via custom router (e.g. @stacksjs/bun-router)
+      if (customRouter) {
+        try {
+          const routerResponse = await customRouter.handleRequest(request)
+          if (routerResponse.status !== 404) {
+            return routerResponse
+          }
+        }
+        catch { /* router error — fall through to STX pages */ }
+      }
+
+      // Handle custom API routes from stx.config.ts (fallback)
       if (apiRoutes[url.pathname]) {
         try {
           return await apiRoutes[url.pathname](request)
@@ -1735,11 +1776,16 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
     console.log(`${colors.blue}Loaded ${colors.bright}${loadedMiddleware.length}${colors.blue} middleware: ${colors.dim}${loadedMiddleware.join(', ')}${colors.reset}`)
   }
 
-  // Load API routes from stx.config.ts
+  // Load API routes and custom router from stx.config.ts
   let apiRoutes: Record<string, (request: Request) => Response | Promise<Response>> = {}
+  let customRouter: { handleRequest: (request: Request) => Response | Promise<Response> } | null = null
   try {
     const { loadStxConfig } = await import('./')
     const projectConfig = await loadStxConfig()
+    if (projectConfig?.apiRouter) {
+      customRouter = projectConfig?.apiRouter
+      console.log(`${colors.blue}Using custom router for API handling${colors.reset}`)
+    }
     if (projectConfig?.apiRoutes) {
       apiRoutes = projectConfig.apiRoutes
       const routeCount = Object.keys(apiRoutes).length
@@ -1948,7 +1994,20 @@ catch {
         return serveStaticFile(outputPath)
       }
 
-      // Handle API routes from stx.config.ts
+      // Handle requests via custom router (e.g. @stacksjs/bun-router)
+      // Supports both API routes (routes/api.ts) and web routes (routes/web.ts)
+      if (customRouter) {
+        try {
+          const routerResponse = await customRouter.handleRequest(request)
+          // Only use the router response if it's not a 404 (let STX pages handle those)
+          if (routerResponse.status !== 404) {
+            return routerResponse
+          }
+        }
+        catch { /* router error — fall through to STX pages */ }
+      }
+
+      // Handle API routes from stx.config.ts (fallback)
       if (apiRoutes[url.pathname]) {
         try {
           return await apiRoutes[url.pathname](request)
