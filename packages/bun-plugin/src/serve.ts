@@ -681,6 +681,31 @@ export async function serve(options: ServeOptions): Promise<void> {
       // Try to serve the requested page (lazy load on demand)
       const content = await getRoute(path)
       if (content) {
+        // SPA navigation: return only <main> content as fragment
+        const isSpaNav = req.headers.get('X-STX-Router') === 'true'
+        if (isSpaNav) {
+          let fragment = content
+          // Extract only the <main> inner content (not sidebar, header, or layout)
+          const mainOpenMatch = fragment.match(/<main\b[^>]*>/i)
+          const mainCloseIdx = fragment.lastIndexOf('</main>')
+          if (mainOpenMatch && mainCloseIdx !== -1) {
+            const mainStart = mainOpenMatch.index! + mainOpenMatch[0].length
+            fragment = fragment.slice(mainStart, mainCloseIdx).trim()
+          }
+          // Strip the signals runtime IIFE — keep only stx.mount() page scripts
+          fragment = fragment.replace(
+            /<script data-stx-scoped>\s*;?\(function\(\)\s*\{[\s\S]*?<\/script>/g,
+            '',
+          )
+          return new Response(fragment, {
+            headers: {
+              'Content-Type': 'text/html',
+              'X-STX-Fragment': 'true',
+              'Cache-Control': 'no-cache',
+              ...corsHeaders,
+            },
+          })
+        }
         return new Response(content, {
           headers: {
             'Content-Type': 'text/html',

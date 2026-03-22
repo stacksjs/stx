@@ -532,6 +532,22 @@ export interface StxConfig {
    * Handlers receive the standard Request and return a Response.
    */
   apiRoutes?: Record<string, (request: Request) => Response | Promise<Response>>
+
+  /**
+   * Client-side router configuration
+   */
+  router?: {
+    enabled?: boolean
+    container?: string
+    linkSelector?: string
+    viewTransitions?: boolean
+    scrollToTop?: boolean
+    prefetch?: boolean
+    cache?: boolean
+    cacheTTL?: number
+    skipSelectors?: string
+    viewTransitionCSS?: Record<string, string>
+  }
 }
 
 /**

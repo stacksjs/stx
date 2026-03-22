@@ -54,7 +54,7 @@ export function cloudAdapter(config: CloudAdapterConfig): DeployAdapter {
       const logs: string[] = []
 
       try {
-        const { deployStaticSite } = await import('ts-cloud')
+        const { deployStaticSite } = await import('@stacksjs/ts-cloud')
 
         logs.push(`Deploying ${config.siteName} to AWS...`)
 
