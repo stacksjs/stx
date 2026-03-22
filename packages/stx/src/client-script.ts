@@ -34,7 +34,7 @@
 
 import type { ParsedEvent, EventModifiers } from './events'
 import { transformStoreImports } from './state-management'
-import { transpileTypeScript } from './utils'
+import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 
 // =============================================================================
 // Auto-Import Configuration
@@ -643,7 +643,10 @@ export function processClientScript(
   code = transformStoreImports(code)
 
   // 3. Transpile TypeScript to JavaScript (strips type annotations, interfaces, etc.)
-  code = transpileTypeScript(code)
+  // Skip if the caller already transpiled, or if attrs indicate plain JS
+  if (shouldTranspileTypeScript(options.attrs || '')) {
+    code = transpileTypeScript(code)
+  }
 
   // 4. Generate event binding code
   const eventCode = generateInlineEventBindings(options.eventBindings || [])

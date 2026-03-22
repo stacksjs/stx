@@ -902,8 +902,11 @@ catch (e) {
         }
 
         // Preserve client-only scripts (non-signal)
+        // Wrap with data-stx-scoped to prevent re-processing in the parent template's
+        // client script pipeline, which would otherwise merge them with other scripts
         if (isClientScript && !isSignalScript) {
-          preservedScript += `<script${scriptAttrs}>${scriptContent}</script>\n`
+          const extraAttrs = scriptAttrs.replace(/\bclient\b/i, '').trim()
+          preservedScript += `<script data-stx-scoped${extraAttrs ? ` ${extraAttrs}` : ''}>${scriptContent}</script>\n`
         }
       }
 

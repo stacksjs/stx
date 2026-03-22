@@ -2184,16 +2184,12 @@ else {
     clientScriptsTransformed = true
     let processedContent = content
 
-    // Transpile TypeScript if needed
-    if (shouldTranspileTypeScript(attrs)) {
-      processedContent = transpileTypeScript(content)
-    }
-
     // Validate client scripts for prohibited patterns
-    validateClientScript(processedContent, filePath, options.strict)
+    validateClientScript(content, filePath, options.strict)
 
     // Use callback form of replace to avoid $ pattern interpretation in replacement string
-    const scriptResult = processClientScript(processedContent, { eventBindings, attrs, hasColonDirectives, templateContent: template })
+    // Note: processClientScript handles transpilation internally based on attrs
+    const scriptResult = processClientScript(content, { eventBindings, attrs, hasColonDirectives, templateContent: template })
     output = output.replace(match, () => scriptResult)
   }
   // Only clear event bindings if scripts were found and transformed.

@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 /**
  * Variable Extraction
  *
@@ -233,9 +235,38 @@ export async function extractVariables(
   const module = { exports: {} as Record<string, unknown> }
   const exports = module.exports
 
-  // Create a require function for CommonJS compatibility (bun:sqlite, path, etc.)
+  // Pre-load workspace/project packages via import() before script execution.
+  // The bundled CLI's require() can't resolve packages from the project's
+  // node_modules (different resolution root), so we resolve and load them
+  // here, then provide them through a custom require function.
+  const projectRoot = process.cwd()
+  const preloaded: Record<string, unknown> = {}
+
+  const serverRequires = [...(jsContent.matchAll(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g) || [])]
+    .map(m => m[1])
+    .filter(id => !id.startsWith('node:') && !id.startsWith('.')
+      && !['fs', 'path', 'os', 'child_process', 'crypto', 'http', 'https', 'url', 'util', 'stream', 'events', 'buffer', 'net', 'querystring', 'zlib', 'tls'].includes(id))
+
+  for (const id of serverRequires) {
+    try {
+      const pkgDir = path.resolve(projectRoot, 'node_modules', id)
+      const pkgJsonPath = path.join(pkgDir, 'package.json')
+      const pkgJson = JSON.parse(require('fs').readFileSync(pkgJsonPath, 'utf8'))
+      let entry = pkgJson.main || 'index.js'
+      if (pkgJson.exports) {
+        const exp = typeof pkgJson.exports === 'string' ? pkgJson.exports : pkgJson.exports['.']
+        if (typeof exp === 'string') entry = exp
+        else if (exp?.bun) entry = exp.bun
+        else if (exp?.import) entry = exp.import
+        else if (exp?.default) entry = exp.default
+      }
+      preloaded[id] = await import(path.resolve(pkgDir, entry))
+    }
+    catch { /* not in project node_modules — CLI require will handle it */ }
+  }
+
   const requireFn = (id: string) => {
-    // Use Bun's require for built-in and node modules
+    if (preloaded[id]) return preloaded[id]
     return require(id)
   }
 

@@ -627,8 +627,15 @@ catch (e) {
       // Read values into local vars, binding functions so 'this' works inside methods
       var getVars = keys.map(function(k) { return 'var ' + k + ' = typeof __ctx["' + k + '"] === "function" ? __ctx["' + k + '"].bind(__ctx) : __ctx["' + k + '"]' }).join(';');
       var stateKeys = keys.filter(function(k) { return k.charAt(0) !== '$' });
-      var setVars = stateKeys.map(function(k) { return '__ctx["' + k + '"] = ' + k }).join(';');
-      var body = getVars + ';' + stmt + ';' + setVars;
+      // After execution, only write back local vars that changed AND weren't
+      // already updated by a bound method (which modifies __ctx directly).
+      // We snapshot __ctx before execution and compare: if __ctx[k] changed,
+      // the method already handled it — don't overwrite with the stale local copy.
+      var saveSnapshot = stateKeys.map(function(k) { return '__snap["' + k + '"] = __ctx["' + k + '"]' }).join(';');
+      var setVars = stateKeys.map(function(k) {
+        return 'if(__ctx["' + k + '"] === __snap["' + k + '"] && ' + k + ' !== __snap["' + k + '"]) __ctx["' + k + '"] = ' + k
+      }).join(';');
+      var body = 'var __snap = {};' + saveSnapshot + ';' + getVars + ';' + stmt + ';' + setVars;
       var fn = new Function('__ctx', '$event', '$el', body);
       fn(ctx, $event, $el);
     }
