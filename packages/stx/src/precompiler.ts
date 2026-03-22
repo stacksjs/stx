@@ -414,8 +414,8 @@ else if (${elseif.condition}) {\n`
 
     // Generate else branch
     if (parts.elseBody.length > 0) {
-      code += '  }
-else {\n'
+      code += `  }
+else {\n`
       code += parts.elseBody.map(child => this.generateNode(child, ctx)).join('')
     }
 
