@@ -827,6 +827,10 @@ else {
       const useCapture = modifiers.includes('capture');
 
       el.addEventListener(eventName, function(e) {
+        // Auto-prevent default on click for links/buttons with handlers (matches Alpine/Vue behavior)
+        if (eventName === 'click' && (el.tagName === 'A' || el.tagName === 'BUTTON' || el.type === 'submit')) {
+          e.preventDefault();
+        }
         if (modifiers.includes('prevent')) e.preventDefault();
         if (modifiers.includes('stop')) e.stopPropagation();
         if (modifiers.includes('self') && e.target !== el) return;

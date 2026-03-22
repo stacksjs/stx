@@ -1735,6 +1735,21 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
     console.log(`${colors.blue}Loaded ${colors.bright}${loadedMiddleware.length}${colors.blue} middleware: ${colors.dim}${loadedMiddleware.join(', ')}${colors.reset}`)
   }
 
+  // Load API routes from stx.config.ts
+  let apiRoutes: Record<string, (request: Request) => Response | Promise<Response>> = {}
+  try {
+    const { loadStxConfig } = await import('./')
+    const projectConfig = await loadStxConfig()
+    if (projectConfig?.apiRoutes) {
+      apiRoutes = projectConfig.apiRoutes
+      const routeCount = Object.keys(apiRoutes).length
+      if (routeCount > 0) {
+        console.log(`${colors.blue}Loaded ${colors.bright}${routeCount} API route${routeCount > 1 ? 's' : ''}${colors.reset}`)
+      }
+    }
+  }
+  catch { /* no config or no apiRoutes */ }
+
   // Create output directory
   const outputDir = path.join(absoluteAppDir, '.stx/output')
   fs.mkdirSync(outputDir, { recursive: true })
@@ -1931,6 +1946,19 @@ catch {
       const outputPath = path.join(outputDir, url.pathname)
       if (fs.existsSync(outputPath) && fs.statSync(outputPath).isFile()) {
         return serveStaticFile(outputPath)
+      }
+
+      // Handle API routes from stx.config.ts
+      if (apiRoutes[url.pathname]) {
+        try {
+          return await apiRoutes[url.pathname](request)
+        }
+        catch (err: any) {
+          return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
       }
 
       // Match route
