@@ -122,7 +122,7 @@ else {
               if(existing.indexOf(rule.trim())===-1)newRules.push(rule);
               return rule;
             });
-            if(newRules.length>0)curCrosswind.textContent=existing+'\n'+newRules.join('\n');
+            if(newRules.length>0)curCrosswind.textContent=existing+'\\n'+newRules.join('\\n');
           }else{
             var cw=document.createElement('style');
             cw.setAttribute('data-crosswind','generated');
