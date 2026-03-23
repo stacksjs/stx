@@ -497,8 +497,15 @@ catch {
 
     // Create a new context with component props and slot content
     // Include both individual props and a `props` object for Vue-style access
+    // Filter internal variables from parent context to prevent leaking into child components
+    const filteredParentContext: Record<string, unknown> = {}
+    for (const [key, val] of Object.entries(parentContext)) {
+      if (!key.startsWith('__')) {
+        filteredParentContext[key] = val
+      }
+    }
     const componentContext: Record<string, unknown> = {
-      ...parentContext,
+      ...filteredParentContext,
       ...props,
       props, // Allow `props.foo` syntax in addition to just `foo`
       slot: slotContent,
@@ -634,9 +641,15 @@ catch {
     if (hasSignalScripts) {
       // Wrap the component output in a scoped container
       // Serialize props for client-side defineProps() access (Phase 4)
-      const propsJson = Object.keys(props).length > 0
-        ? ` data-stx-props="${escapeAttr(JSON.stringify(props))}"`
-        : ''
+      let propsJson = ''
+      if (Object.keys(props).length > 0) {
+        try {
+          propsJson = ` data-stx-props="${escapeAttr(JSON.stringify(props))}"`
+        }
+        catch {
+          // Skip props serialization if circular references or other JSON errors
+        }
+      }
       output = `<div data-stx-scope="${scopeId}"${propsJson}>${result}</div>`
 
       // Modify client scripts to register variables in this scope

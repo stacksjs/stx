@@ -420,7 +420,9 @@ export const config: StxConfig = new Proxy(defaultConfig, {
     }
     // Otherwise, start loading in background and return default
     if (!_configPromise) {
-      loadStxConfig().catch(() => {}) // Load in background, ignore errors
+      loadStxConfig().catch((err) => {
+        console.warn('[stx] Failed to load config file:', err?.message || err)
+      })
     }
     return target[prop as keyof StxConfig]
   },

@@ -30,6 +30,9 @@ export async function buildWebComponents(
       }
       catch (error) {
         console.error(`Error building web component ${component.name}:`, error)
+        if (options.debug) {
+          throw error
+        }
       }
     }
   }

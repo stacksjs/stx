@@ -103,7 +103,7 @@ describe('parseMarkdown edge cases', () => {
   describe('links with special characters', () => {
     it('should handle URL with query parameters', () => {
       const result = parseMarkdown('[text](https://example.com/path?a=1&b=2)')
-      expect(result).toContain('<a href="https://example.com/path?a=1&b=2">text</a>')
+      expect(result).toContain('<a href="https://example.com/path?a=1&amp;b=2">text</a>')
     })
 
     it('should handle link immediately followed by text with no space', () => {
@@ -122,8 +122,8 @@ describe('parseMarkdown edge cases', () => {
     it('should handle image with alt text containing special chars', () => {
       const result = parseMarkdown('![A "quoted" image](pic.jpg)')
       expect(result).toContain('<img src="pic.jpg"')
-      // The markdown parser does not HTML-escape alt text attributes
-      expect(result).toContain('alt="A "quoted" image"')
+      // The markdown parser HTML-escapes alt text attributes to prevent XSS
+      expect(result).toContain('alt="A &quot;quoted&quot; image"')
     })
   })
 

@@ -1,10 +1,10 @@
 <script>
-const title = 'My stx Page'
-const description = 'A page built with stx'
+const title = "My stx Page"
+const description = "A page built with stx"
 const features = [
-  { name: 'Single File Components', desc: 'Script, style, and template in one .stx file' },
-  { name: 'Component System', desc: "Import components with @component('name', {})" },
-  { name: 'Blade Directives', desc: '@if, @foreach, @switch, @layout and more' }
+  { name: "Single File Components", desc: "Script, style, and template in one .stx file" },
+  { name: "Component System", desc: "Import components with @component('name', {})" },
+  { name: "Blade Directives", desc: "@if, @foreach, @switch, @layout and more" }
 ]
 </script>
 
@@ -17,7 +17,7 @@ const features = [
 <main>
   <h2>Features</h2>
   @foreach(features as feature)
-    <div class='card'>
+    <div class="card">
       <h3>{{ feature.name }}</h3>
       <p>{{ feature.desc }}</p>
     </div>

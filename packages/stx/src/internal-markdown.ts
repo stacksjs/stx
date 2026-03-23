@@ -3,6 +3,20 @@
  * Provides frontmatter parsing and markdown to HTML conversion
  */
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+function isSafeUrl(url: string): boolean {
+  const trimmed = url.trim().toLowerCase()
+  return !trimmed.startsWith('javascript:') && !trimmed.startsWith('vbscript:') && !trimmed.startsWith('data:text/html')
+}
+
 export interface FrontmatterResult {
   data: Record<string, unknown>
   content: string
@@ -97,14 +111,14 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
   const codeBlocks: string[] = []
   html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_match, lang, code) => {
     const index = codeBlocks.length
-    const langAttr = lang ? ` class="language-${lang}"` : ''
-    codeBlocks.push(`<pre><code${langAttr}>${code.trim()}</code></pre>`)
+    const langAttr = lang ? ` class="language-${escapeHtml(lang)}"` : ''
+    codeBlocks.push(`<pre><code${langAttr}>${escapeHtml(code.trim())}</code></pre>`)
     return `\x00CODEBLOCK${index}\x00`
   })
 
   // Inline code
   // Handle inline code (including empty code spans like ``)
-  html = html.replace(/`([^`]*)`/g, '<code>$1</code>')
+  html = html.replace(/`([^`]*)`/g, (_m, code) => `<code>${escapeHtml(code)}</code>`)
 
   // Headers
   html = html.replace(/^######\s+(.*)$/gm, '<h6>$1</h6>')
@@ -129,10 +143,16 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
   }
 
   // Images (must be processed before links since ![alt](url) contains [text](url))
-  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, url) => {
+    const safeUrl = isSafeUrl(url) ? escapeHtml(url) : ''
+    return `<img src="${safeUrl}" alt="${escapeHtml(alt)}" />`
+  })
 
   // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, url) => {
+    const safeUrl = isSafeUrl(url) ? escapeHtml(url) : ''
+    return `<a href="${safeUrl}">${text}</a>`
+  })
 
   // Horizontal rules
   html = html.replace(/^(?:---|\*\*\*|___)\s*$/gm, '<hr />')
@@ -160,14 +180,14 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
   if (gfm) {
     html = html.replace(/^\|(.+)\|\s*\n\|[-:\s|]+\|\s*\n((?:\|.+\|\s*\n)*)/gm, (_match, header, body) => {
       const headers = header.split('|').map((h: string) => h.trim()).filter(Boolean)
-      const headerRow = `<tr>${headers.map((h: string) => `<th>${h}</th>`).join('')}</tr>`
+      const headerRow = `<tr>${headers.map((h: string) => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`
 
       const bodyRows = body
         .trim()
         .split('\n')
         .map((row: string) => {
           const cells = row.split('|').map((c: string) => c.trim()).filter(Boolean)
-          return `<tr>${cells.map((c: string) => `<td>${c}</td>`).join('')}</tr>`
+          return `<tr>${cells.map((c: string) => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`
         })
         .join('\n')
 

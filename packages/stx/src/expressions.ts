@@ -140,8 +140,9 @@ export const defaultFilters: Record<string, FilterFunction> = {
 
     // Replace :parameter style placeholders
     Object.entries(params).forEach(([paramKey, paramValue]) => {
+      const escapedKey = paramKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       result = result.replace(
-        new RegExp(`:${paramKey}`, 'g'),
+        new RegExp(`:${escapedKey}`, 'g'),
         String(paramValue),
       )
     })

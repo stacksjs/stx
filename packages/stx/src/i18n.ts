@@ -1213,8 +1213,9 @@ export function getTranslation(
 
   // Replace :parameter style placeholders (Laravel-style)
   for (const [paramKey, paramValue] of Object.entries(params)) {
+    const escapedKey = paramKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     result = result.replace(
-      new RegExp(`:${paramKey}`, 'g'),
+      new RegExp(`:${escapedKey}`, 'g'),
       String(paramValue),
     )
   }

@@ -21,7 +21,8 @@ export const templateCache: Map<string, CacheEntry> = new Map()
 export async function checkCache(filePath: string, options: StxOptions): Promise<string | null> {
   try {
     // Ensure cache directory exists
-    const cachePath = path.resolve(options.cachePath!)
+    if (!options.cachePath) return null
+    const cachePath = path.resolve(options.cachePath)
     const cacheFile = path.join(cachePath, `${hashFilePath(filePath)}.html`)
     const metaFile = path.join(cachePath, `${hashFilePath(filePath)}.meta.json`)
 
@@ -76,7 +77,8 @@ export async function cacheTemplate(
 ): Promise<void> {
   try {
     // Ensure cache directory exists
-    const cachePath = path.resolve(options.cachePath!)
+    if (!options.cachePath) return
+    const cachePath = path.resolve(options.cachePath)
     await fs.promises.mkdir(cachePath, { recursive: true })
 
     const cacheFile = path.join(cachePath, `${hashFilePath(filePath)}.html`)

@@ -681,7 +681,6 @@ export function injectRouterScript(template: string): string {
 
   // Use string concatenation to avoid $-interpretation in .replace()
   const bodyCloseIdx = template.lastIndexOf('</body>')
-  if (bodyCloseIdx === -1) return template
   return template.slice(0, bodyCloseIdx) + routerScript + '\n</body>' + template.slice(bodyCloseIdx + 7)
 }
 
@@ -1299,7 +1298,7 @@ function parseAttributes(attributesStr: string): ParsedAttribute[] {
           }
           pos++
         }
-        pos++ // Skip closing quote
+        if (pos < len) pos++ // Skip closing quote (with bounds check)
       }
       else {
         // Unquoted value (read until whitespace)
@@ -1474,8 +1473,8 @@ async function processDirectivesInternal(
   const layoutMatch = output.match(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/)
   if (layoutMatch) {
     layoutPath = layoutMatch[1]
-    // Remove the @layout/@extends directive from the template
-    output = output.replace(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/, '')
+    // Remove all @layout/@extends directives from the template
+    output = output.replace(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/g, '')
   }
 
   // Auto-layout: if no explicit layout and no @nolayout, auto-detect layout

@@ -211,7 +211,7 @@ export function processBasicFormDirectives(template: string, context: Record<str
   result = result.replace(/@method\(['"]([^'"]+)['"]\)/g, (match, method) => {
     // Method spoofing for non-GET/POST methods
     if (method && ['PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
-      return `<input type="hidden" name="_method" value="${method.toUpperCase()}">`
+      return `<input type="hidden" name="_method" value="${escapeAttr(method.toUpperCase())}">`
     }
 
     // Return unchanged if not a supported method
