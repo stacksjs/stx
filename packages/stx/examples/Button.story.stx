@@ -13,21 +13,21 @@ const label = 'Click me'
 const disabled = false
 </script>
 
-<Story title="Button">
-  <Variant title="Primary">
-    <button class="btn btn-primary">
+<Story title='Button'>
+  <Variant title='Primary'>
+    <button class='btn btn-primary'>
       {{ label }}
     </button>
   </Variant>
 
-  <Variant title="Secondary">
-    <button class="btn btn-secondary">
+  <Variant title='Secondary'>
+    <button class='btn btn-secondary'>
       {{ label }}
     </button>
   </Variant>
 
-  <Variant title="Disabled">
-    <button class="btn btn-primary" disabled>
+  <Variant title='Disabled'>
+    <button class='btn btn-primary' disabled>
       {{ label }}
     </button>
   </Variant>

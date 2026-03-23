@@ -1202,7 +1202,15 @@ finally {
       try {
         cleanup = fn();
       }
-finally {
+      catch (e) {
+        // Auto-dispose effects that fail — prevents zombie subscriptions
+        // from body-level processElement walking into mount-scoped content.
+        // Without this, failed effects stay in signal dependency sets and
+        // fire on unrelated signal changes during SPA navigation.
+        isDisposed = true;
+        throw e;
+      }
+      finally {
         effectStack.pop();
         activeEffect = prev;
       }
@@ -2112,12 +2120,16 @@ catch (e) {
     if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
       var children = Array.from(el.childNodes);
       children.forEach(function(child) {
+        if (child.nodeType !== Node.ELEMENT_NODE) { processElement(child, scope); return; }
         // Skip script elements entirely
-        if (child.nodeType === Node.ELEMENT_NODE && child.tagName === 'SCRIPT') return;
+        if (child.tagName === 'SCRIPT') return;
         // Skip elements already mounted by stx.mount() — they have their own scope
-        if (child.nodeType === Node.ELEMENT_NODE && child.__stx_scope) return;
+        if (child.__stx_scope) return;
         // Skip data-stx-scope elements — they are managed by the reactive (x-data) runtime
-        if (child.nodeType === Node.ELEMENT_NODE && child.hasAttribute && child.hasAttribute('data-stx-scope')) return;
+        if (child.hasAttribute && child.hasAttribute('data-stx-scope')) return;
+        // Skip the SPA router container — page content is handled by stx.mount()
+        // This prevents body-level walks from creating zombie effects on page bindings
+        if (child.tagName === 'MAIN') return;
         processElement(child, scope);
       });
     }
@@ -3175,14 +3187,21 @@ else {
           || (root && root.tagName === 'SCRIPT');
         if (needsFallback) {
           var routerOpts = window.STX_ROUTER_OPTIONS || window.__stxRouterConfig || {};
-          var container = document.querySelector('[data-stx-router-container]')
+          var container = document.querySelector('[data-stx-content]')
+            || document.querySelector('[data-stx-router-container]')
             || (routerOpts.container ? document.querySelector(routerOpts.container) : null)
             || document.querySelector('main')
             || document.querySelector('#content');
           if (container) {
-            // Find the first child element that isn't already mounted
+            // Use the container itself as root — process ALL content inside it
+            root = container;
+            // But if a specific child is already mounted, find first unmounted one instead
+            var hasMount = false;
             var children = container.children;
             for (var ci = 0; ci < children.length; ci++) {
+              if (children[ci].__stx_scope) { hasMount = true; break; }
+            }
+            if (hasMount) for (var ci = 0; ci < children.length; ci++) {
               if (!children[ci].__stx_scope && children[ci].tagName !== 'SCRIPT') {
                 root = children[ci];
                 break;
@@ -3439,6 +3458,19 @@ catch (e) {
     // Clear pending mount callbacks from the departing page
     mountCallbacks.length = 0;
 
+    // Reset componentScope — clear old page variables to prevent scope leaking
+    // between SPA navigations. Preserve $refs and re-apply shell-level scope
+    // from persistent elements (sidebar, nav) that live outside the container.
+    var preservedRefs = componentScope.$refs || {};
+    componentScope = { $refs: preservedRefs };
+    // Re-apply scope from shell elements (outside the swap container)
+    var shellElements = document.querySelectorAll('[data-stx-content] ~ *');
+    document.querySelectorAll('body > *').forEach(function(el) {
+      if (el === container) return;
+      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
+      if (el.__stx_scope) Object.assign(componentScope, el.__stx_scope);
+    });
+
     // 1. Walk all child elements — fire destroy hooks and dispose effects
     container.querySelectorAll('*').forEach(function(el) {
       if (el.__stx_destroy && Array.isArray(el.__stx_destroy)) {
@@ -3504,52 +3536,46 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       || document.querySelector('#main-content')
       || document.body;
 
-    // Check if a new page SFC setup function was registered by re-executed scripts.
-    // stx._latestSetup is set by scripts that define __stx_setup_ functions.
+    // Apply new page's SFC setup function if registered by re-executed scripts.
     if (window.stx._latestSetup && typeof window.stx._latestSetup === 'function') {
       var setupResult = window.stx._latestSetup();
       window.stx._latestSetup = null;
       if (typeof setupResult === 'object' && setupResult !== null) {
-        // Reset componentScope to prevent stale variables from previous pages
-        // leaking into the new page's expression evaluation. Preserve $refs.
-        var freshScope = { $refs: componentScope.$refs || {} };
-        // Re-apply any shell-level scope (from stx.mount() calls outside the container)
-        document.querySelectorAll('body > aside[id], body > nav[id]').forEach(function(el) {
-          if (el.__stx_scope) Object.assign(freshScope, el.__stx_scope);
-        });
-        Object.assign(freshScope, setupResult);
-        componentScope = freshScope;
+        Object.assign(componentScope, setupResult);
       }
-      // Process the container content with the new scope
-      var disposeEffects = trackEffects(function() { processElement(container, componentScope); });
-      container.__stx_disposers = disposeEffects;
-
-      // Remove x-cloak
-      container.removeAttribute('x-cloak');
-      container.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
     }
 
-    container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
-      var scopeId = el.getAttribute('data-stx-scope');
-      var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
-      if (scopeVars) {
-        componentScope = Object.assign({}, componentScope, scopeVars);
-      }
-      var disposeEffects = trackEffects(function() { processElement(el); });
-      el.__stx_disposers = disposeEffects;
-      if (scopeVars && scopeVars.__mountCallbacks) {
-        scopeVars.__mountCallbacks.forEach(function(fn) { fn(); });
-      }
-    });
-
+    // Apply scope from [data-stx] elements (SFC setup functions on elements)
     container.querySelectorAll('[data-stx]').forEach(function(el) {
       var setupName = el.getAttribute('data-stx');
       if (setupName && window[setupName]) {
         var result = window[setupName]();
         if (typeof result === 'object') Object.assign(componentScope, result);
       }
-      var disposeEffects = trackEffects(function() { processElement(el); });
-      el.__stx_disposers = disposeEffects;
+    });
+
+    // Apply scope from [data-stx-scope] elements (component scopes)
+    container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
+      var scopeId = el.getAttribute('data-stx-scope');
+      var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
+      if (scopeVars) {
+        Object.assign(componentScope, scopeVars);
+      }
+    });
+
+    // Remove x-cloak (mount handles processElement)
+    if (container) {
+      container.removeAttribute('x-cloak');
+      container.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
+    }
+
+    // Fire mount callbacks from scoped components
+    container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
+      var scopeId = el.getAttribute('data-stx-scope');
+      var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
+      if (scopeVars && scopeVars.__mountCallbacks) {
+        scopeVars.__mountCallbacks.forEach(function(fn) { fn(); });
+      }
     });
 
     // Flush global mountCallbacks (from scripts re-executed after SPA content swap)

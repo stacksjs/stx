@@ -95,16 +95,39 @@ else {
         // Extract scripts from fragment before injecting HTML
         var fragScripts=[];
         var fragStyles=[];
+        var fragCrosswindCSS=null;
         var cleanFrag=html.replace(new RegExp('<script\\b[^>]*>([\\s\\S]*?)<\\/scr'+'ipt>','gi'),function(m,code){
           if(code&&code.trim())fragScripts.push(code);
           return '';
         });
         cleanFrag=cleanFrag.replace(new RegExp('<style\\b([^>]*)>([\\s\\S]*?)<\\/style>','gi'),function(m,attrs,css){
-          fragStyles.push({attrs:attrs,css:css});
+          if(attrs.indexOf('data-crosswind')!==-1){
+            fragCrosswindCSS=css;
+          }else{
+            fragStyles.push({attrs:attrs,css:css});
+          }
           return '';
         });
-        // Remove old page styles
+        // Remove old page styles (not crosswind — that gets merged)
         document.querySelectorAll('style[data-stx-page]').forEach(function(s){s.remove()});
+        // Merge crosswind CSS from fragment into existing crosswind style
+        if(fragCrosswindCSS){
+          var curCrosswind=document.querySelector('head style[data-crosswind]');
+          if(curCrosswind){
+            var existing=curCrosswind.textContent||'';
+            var newRules=[];
+            fragCrosswindCSS.replace(/([^{}]+\{[^{}]*\})/g,function(rule){
+              if(existing.indexOf(rule.trim())===-1)newRules.push(rule);
+              return rule;
+            });
+            if(newRules.length>0)curCrosswind.textContent=existing+'\n'+newRules.join('\n');
+          }else{
+            var cw=document.createElement('style');
+            cw.setAttribute('data-crosswind','generated');
+            cw.textContent=fragCrosswindCSS;
+            document.head.appendChild(cw);
+          }
+        }
         // Add new page styles
         fragStyles.forEach(function(s){
           var el=document.createElement('style');

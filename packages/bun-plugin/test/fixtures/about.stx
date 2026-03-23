@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-  <meta charset="UTF-8">
+  <meta charset='UTF-8'>
   <title>About Page</title>
   <script>
-    export const pageName = "About Us";
+    export const pageName = 'About Us';
     export const team = [
-      { name: "Alice", role: "Developer" },
-      { name: "Bob", role: "Designer" },
-      { name: "Charlie", role: "Manager" }
+      { name: 'Alice', role: 'Developer' },
+      { name: 'Bob', role: 'Designer' },
+      { name: 'Charlie', role: 'Manager' }
     ];
   </script>
   <style>
@@ -31,7 +31,7 @@
   <p>Meet our amazing team:</p>
 
   @foreach (team as member)
-    <div class="team-member">
+    <div class='team-member'>
       <strong>{{ member.name }}</strong> - {{ member.role }}
     </div>
   @endforeach

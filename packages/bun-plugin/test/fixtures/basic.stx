@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>Test stx File</title>
   <script>
     // Define some test data
-    export const title = "Hello from stx Plugin!";
-    export const items = ["Apple", "Banana", "Cherry", "Date"];
+    export const title = 'Hello from stx Plugin!';
+    export const items = ['Apple', 'Banana', 'Cherry', 'Date'];
     export const showFooter = true;
     export const timestamp = new Date().toLocaleString();
   </script>
@@ -43,7 +43,7 @@
   </style>
 </head>
 <body>
-  <div class="card">
+  <div class='card'>
     <h1>{{ title }}</h1>
     <p>This page was rendered using the bun-plugin-stx at: <strong>{{ timestamp }}</strong></p>
 

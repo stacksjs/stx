@@ -27,7 +27,7 @@
   <p>{{ 'greeting' | t({ "name": "Bob" }) }}</p>
 
   <h2>German Translation</h2>
-  <div id="german-translations" data-lang="de">
+  <div id='german-translations' data-lang='de'>
     <!-- These will be used by setting locale to de in config -->
     <p>@translate('welcome')</p>
     <p>@translate('greeting', { "name": "Hans" })</p>

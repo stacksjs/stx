@@ -706,7 +706,20 @@ export async function serve(options: ServeOptions): Promise<void> {
             },
           })
         }
-        return new Response(content, {
+        // Strip duplicate signals runtime IIFEs from @extends pages.
+        // The layout and page each generate a runtime — only the first is needed.
+        // Match the IIFE by its unique start: (function(){'use strict';var cloakStyle
+        // The code uses </scr'+'ipt> internally, so the first literal </script> is the real end.
+        let cleaned = content
+        let runtimeCount = 0
+        cleaned = content.replace(
+          /<script data-stx-scoped>\(function\(\)\{'use strict';var cloakStyle[\s\S]*?<\/script>/g,
+          (match) => {
+            runtimeCount++
+            return runtimeCount === 1 ? match : '' // keep first, drop duplicates
+          },
+        )
+        return new Response(cleaned, {
           headers: {
             'Content-Type': 'text/html',
             'Cache-Control': 'no-cache',

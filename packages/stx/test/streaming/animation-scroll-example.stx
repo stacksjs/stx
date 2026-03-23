@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>stx Scroll Animation Demo</title>
   <style>
     body {
@@ -138,118 +138,118 @@
   </style>
   <script>
     module.exports = {
-      title: "Scroll Animation Demo",
-      subtitle: "Animations that trigger on scroll",
+      title: 'Scroll Animation Demo',
+      subtitle: 'Animations that trigger on scroll',
     };
   </script>
 </head>
 <body>
 
 @motion(true)
-  <div class="container">
+  <div class='container'>
     <header>
       <h1>{{ title }}</h1>
-      <div class="subtitle">{{ subtitle }}</div>
+      <div class='subtitle'>{{ subtitle }}</div>
     </header>
 
-    <div class="content">
-      <div class="controls">
-        <button id="scroll-down">Scroll Down</button>
-        <button id="reduced-motion-toggle">Toggle Reduced Motion</button>
+    <div class='content'>
+      <div class='controls'>
+        <button id='scroll-down'>Scroll Down</button>
+        <button id='reduced-motion-toggle'>Toggle Reduced Motion</button>
       </div>
 
-      <div class="section">
+      <div class='section'>
         <h2>Fade Animations</h2>
         <p>Elements will fade in when scrolled into view.</p>
 
-        <div class="grid">
+        <div class='grid'>
           @scrollAnimate('fade', 500, 'ease-out', 0.1)
-            <div class="card">
-              <div class="card-title">Fade In</div>
-              <div class="card-description">Opacity transition from 0 to 1</div>
+            <div class='card'>
+              <div class='card-title'>Fade In</div>
+              <div class='card-description'>Opacity transition from 0 to 1</div>
             </div>
           @endscrollAnimate
 
           @scrollAnimate('fade', 800, 'ease-in-out', 0.1, 200)
-            <div class="card">
-              <div class="card-title">Delayed Fade</div>
-              <div class="card-description">With 200ms delay and 800ms duration</div>
+            <div class='card'>
+              <div class='card-title'>Delayed Fade</div>
+              <div class='card-description'>With 200ms delay and 800ms duration</div>
             </div>
           @endscrollAnimate
         </div>
       </div>
 
-      <div class="spacer">Scroll down to see more animations</div>
+      <div class='spacer'>Scroll down to see more animations</div>
 
-      <div class="section">
+      <div class='section'>
         <h2>Slide Animations</h2>
         <p>Elements will slide in from different directions.</p>
 
-        <div class="grid">
+        <div class='grid'>
           @scrollAnimate('slide-up', 600, 'ease-out', 0.1)
-            <div class="card">
-              <div class="card-title">Slide Up</div>
-              <div class="card-description">Slides in from bottom</div>
+            <div class='card'>
+              <div class='card-title'>Slide Up</div>
+              <div class='card-description'>Slides in from bottom</div>
             </div>
           @endscrollAnimate
 
           @scrollAnimate('slide-down', 600, 'ease-out', 0.1)
-            <div class="card">
-              <div class="card-title">Slide Down</div>
-              <div class="card-description">Slides in from top</div>
+            <div class='card'>
+              <div class='card-title'>Slide Down</div>
+              <div class='card-description'>Slides in from top</div>
             </div>
           @endscrollAnimate
         </div>
 
-        <div class="grid" style="margin-top: 20px;">
+        <div class='grid' style='margin-top: 20px;'>
           @scrollAnimate('slide-right', 600, 'ease-out', 0.1)
-            <div class="card">
-              <div class="card-title">Slide Right</div>
-              <div class="card-description">Slides in from left</div>
+            <div class='card'>
+              <div class='card-title'>Slide Right</div>
+              <div class='card-description'>Slides in from left</div>
             </div>
           @endscrollAnimate
 
           @scrollAnimate('slide-left', 600, 'ease-out', 0.1)
-            <div class="card">
-              <div class="card-title">Slide Left</div>
-              <div class="card-description">Slides in from right</div>
+            <div class='card'>
+              <div class='card-title'>Slide Left</div>
+              <div class='card-description'>Slides in from right</div>
             </div>
           @endscrollAnimate
         </div>
       </div>
 
-      <div class="spacer">Scroll down to see more animations</div>
+      <div class='spacer'>Scroll down to see more animations</div>
 
-      <div class="section">
+      <div class='section'>
         <h2>Scale & Staggered Animations</h2>
         <p>Elements will scale up with staggered timing.</p>
 
-        <div id="staggered-cards" class="grid">
+        <div id='staggered-cards' class='grid'>
           @scrollAnimate('scale', 500, 'ease-out', 0.1, 0)
-            <div class="card" id="card-1">
-              <div class="card-title">First Card</div>
-              <div class="card-description">Scales in first</div>
+            <div class='card' id='card-1'>
+              <div class='card-title'>First Card</div>
+              <div class='card-description'>Scales in first</div>
             </div>
           @endscrollAnimate
 
           @scrollAnimate('scale', 500, 'ease-out', 0.1, 150)
-            <div class="card" id="card-2">
-              <div class="card-title">Second Card</div>
-              <div class="card-description">Scales in with 150ms delay</div>
+            <div class='card' id='card-2'>
+              <div class='card-title'>Second Card</div>
+              <div class='card-description'>Scales in with 150ms delay</div>
             </div>
           @endscrollAnimate
 
           @scrollAnimate('scale', 500, 'ease-out', 0.1, 300)
-            <div class="card" id="card-3">
-              <div class="card-title">Third Card</div>
-              <div class="card-description">Scales in with 300ms delay</div>
+            <div class='card' id='card-3'>
+              <div class='card-title'>Third Card</div>
+              <div class='card-description'>Scales in with 300ms delay</div>
             </div>
           @endscrollAnimate
 
           @scrollAnimate('scale', 500, 'ease-out', 0.1, 450)
-            <div class="card" id="card-4">
-              <div class="card-title">Fourth Card</div>
-              <div class="card-description">Scales in with 450ms delay</div>
+            <div class='card' id='card-4'>
+              <div class='card-title'>Fourth Card</div>
+              <div class='card-description'>Scales in with 450ms delay</div>
             </div>
           @endscrollAnimate
         </div>

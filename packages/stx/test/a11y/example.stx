@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>Accessibility Features Demo</title>
   <style>
     body {
@@ -74,21 +74,21 @@
   <p>This page demonstrates the accessibility features available in stx.</p>
   <p>Today's date: {{ getDate() }}</p>
 
-  <div class="container">
+  <div class='container'>
     <h2>1. Accessible Images</h2>
 
-    <div class="a11y-demo">
+    <div class='a11y-demo'>
       @a11y('alt-text')
-      <img src="path/to/image.jpg" alt="A beautiful mountain landscape with snow-capped peaks">
+      <img src='path/to/image.jpg' alt='A beautiful mountain landscape with snow-capped peaks'>
     </div>
 
     <p>The <code>@a11y('alt-text')</code> directive serves as a reminder to include descriptive alt text for images.</p>
   </div>
 
-  <div class="container">
+  <div class='container'>
     <h2>2. Screen Reader Content</h2>
 
-    <div class="a11y-demo">
+    <div class='a11y-demo'>
       <button>
         ×
         @screenReader(Close dialog)@endScreenReader
@@ -98,46 +98,46 @@
     <p>The <code>@screenReader</code> directive allows you to add content that is only visible to screen readers.</p>
   </div>
 
-  <div class="container">
+  <div class='container'>
     <h2>3. ARIA Descriptions</h2>
 
-    <div class="a11y-demo">
-      <button id="delete-btn" aria-describedby="delete-description">Delete Account</button>
+    <div class='a11y-demo'>
+      <button id='delete-btn' aria-describedby='delete-description'>Delete Account</button>
       @ariaDescribe('delete-btn', 'Warning: This action will permanently delete your account and all associated data')
     </div>
 
     <p>The <code>@ariaDescribe</code> directive connects elements with detailed descriptions for screen readers.</p>
   </div>
 
-  <div class="container">
+  <div class='container'>
     <h2>4. Ensuring Accessible Forms</h2>
 
-    <div class="a11y-demo">
+    <div class='a11y-demo'>
       <form>
         <div>
-          <label for="username">Username</label>
-          <input type="text" id="username" @a11y('focus')>
+          <label for='username'>Username</label>
+          <input type='text' id='username' @a11y('focus')>
         </div>
         <div>
-          <label for="password">Password</label>
-          <input type="password" id="password">
+          <label for='password'>Password</label>
+          <input type='password' id='password'>
         </div>
-        <button type="submit">Submit</button>
+        <button type='submit'>Submit</button>
       </form>
     </div>
 
     <p>Using the <code>@a11y('focus')</code> directive reminds developers to ensure keyboard focus states are visible.</p>
   </div>
 
-  <div class="container">
+  <div class='container'>
     <h2>5. Dynamic Content Accessibility</h2>
 
-    <div class="a11y-demo">
+    <div class='a11y-demo'>
       <h3>User List</h3>
       <ul>
         @foreach(users as user)
           <li>
-            <button aria-label="View details for {{user.name}}" @a11y('aria-label')>
+            <button aria-label='View details for {{user.name}}' @a11y('aria-label')>
               {{user.name}} - {{user.role}}
             </button>
           </li>
@@ -148,7 +148,7 @@
     <p>Accessibility directives can be used with other stx directives like <code>@foreach</code>.</p>
   </div>
 
-  <div class="container">
+  <div class='container'>
     <h2>A11y Command</h2>
     <p>You can run the stx a11y command to scan your templates for accessibility issues:</p>
     <pre><code>stx a11y ./templates</code></pre>

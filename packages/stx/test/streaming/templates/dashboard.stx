@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>{{ title }}</title>
   <style>
     /* Base styles that load immediately with the shell */
@@ -58,32 +58,32 @@
   </style>
   <script>
     // Data will be progressively injected by the server
-    export const title = "Loading Dashboard...";
+    export const title = 'Loading Dashboard...';
     // This is initial default data, but the server will pass in more data
     // via the streaming sections
   </script>
 </head>
 <body>
-  <div class="dashboard">
-    <div class="sidebar">
+  <div class='dashboard'>
+    <div class='sidebar'>
       <h2>Admin Dashboard</h2>
       <nav>
         <ul>
-          <li><a href="/dashboard">Dashboard</a></li>
-          <li><a href="/users">Users</a></li>
-          <li><a href="/analytics">Analytics</a></li>
-          <li><a href="/settings">Settings</a></li>
+          <li><a href='/dashboard'>Dashboard</a></li>
+          <li><a href='/users'>Users</a></li>
+          <li><a href='/analytics'>Analytics</a></li>
+          <li><a href='/settings'>Settings</a></li>
         </ul>
       </nav>
     </div>
 
-    <div class="main-content">
+    <div class='main-content'>
       <h1>{{ title || "Dashboard" }}</h1>
 
       <!-- @section:header -->
-      <header class="panel user-welcome">
-        <div class="user-info">
-          <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
+      <header class='panel user-welcome'>
+        <div class='user-info'>
+          <img src='{{ user.avatar }}' alt='{{ user.name }}' class='user-avatar' />
           <div>
             <h2>Welcome, {{ user.name }}</h2>
             <p>Role: {{ user.role }}</p>
@@ -94,46 +94,46 @@
 
       <!-- @section:stats -->
       @island('stats-panel')
-        <div class="panel stats-panel">
+        <div class='panel stats-panel'>
           <h3>Statistics</h3>
-          <div class="stats-grid">
+          <div class='stats-grid'>
             @foreach (stats.items as stat)
-              <div class="stat-card">
-                <div class="stat-value">{{ stat.value }}</div>
-                <div class="stat-label">{{ stat.label }}</div>
+              <div class='stat-card'>
+                <div class='stat-value'>{{ stat.value }}</div>
+                <div class='stat-label'>{{ stat.label }}</div>
               </div>
             @endforeach
           </div>
-          <div class="chart-container">
+          <div class='chart-container'>
             <!-- Charts will be added by client-side hydration -->
           </div>
           <script props>
-            "chartType": "bar",
-            "height": 300,
-            "stats": stats
+            'chartType': 'bar',
+            'height': 300,
+            'stats': stats
           </script>
         </div>
       @endisland
       <!-- @endsection:stats -->
 
-      <div class="dashboard-grid">
+      <div class='dashboard-grid'>
         <!-- @section:activity -->
         @island('activity-feed')
-          <div class="panel activity-feed">
+          <div class='panel activity-feed'>
             <h3>Recent Activity</h3>
-            <ul class="activity-list">
+            <ul class='activity-list'>
               @foreach (activity as item)
-                <li class="activity-item">
-                  <span class="activity-time">{{ item.time }}</span>
-                  <span class="activity-desc">{{ item.description }}</span>
-                  <span class="activity-user">{{ item.user }}</span>
+                <li class='activity-item'>
+                  <span class='activity-time'>{{ item.time }}</span>
+                  <span class='activity-desc'>{{ item.description }}</span>
+                  <span class='activity-user'>{{ item.user }}</span>
                 </li>
               @endforeach
             </ul>
-            <button class="load-more hidden">Load more</button>
+            <button class='load-more hidden'>Load more</button>
             <script props>
-              "maxItems": 10,
-              "refreshInterval": 30000
+              'maxItems': 10,
+              'refreshInterval': 30000
             </script>
           </div>
         @endisland
@@ -141,18 +141,18 @@
 
         <!-- @section:notifications -->
         @island('notification-panel')
-          <div class="panel notifications-panel">
+          <div class='panel notifications-panel'>
             <h3>Notifications</h3>
-            <ul class="notification-list">
+            <ul class='notification-list'>
               @foreach (notifications as notification)
-                <li class="notification {{ notification.read ? 'read' : 'unread' }}" data-id="{{ notification.id }}">
+                <li class="notification {{ notification.read ? 'read' : 'unread' }}" data-id='{{ notification.id }}'>
                   {{ notification.message }}
                 </li>
               @endforeach
             </ul>
             <script props>
-              "realtime": true,
-              "autoRefresh": true
+              'realtime': true,
+              'autoRefresh': true
             </script>
           </div>
         @endisland
@@ -162,6 +162,6 @@
   </div>
 
   <!-- Load client hydration code -->
-  <script type="module" src="/assets/js/dashboard.js"></script>
+  <script type='module' src='/assets/js/dashboard.js'></script>
 </body>
 </html>

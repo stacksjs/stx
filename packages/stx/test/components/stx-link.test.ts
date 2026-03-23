@@ -21,7 +21,7 @@ describe('StxLink Component', () => {
   })
 
   it('should use "to" prop as href', () => {
-    expect(componentSource).toContain('href="{{ to }}"')
+    expect(componentSource).toMatch(/href=["']{{ to }}["']/)
   })
 
   it('should include data-stx-link attribute', () => {

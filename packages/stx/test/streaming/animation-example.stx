@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>stx Animation System Demo</title>
   <style>
     body {
@@ -233,14 +233,14 @@
   </style>
   <script>
     module.exports = {
-      title: "stx Animation System",
-      subtitle: "Powerful, accessible animations for your web apps",
+      title: 'stx Animation System',
+      subtitle: 'Powerful, accessible animations for your web apps',
       transitions: [
-        { name: "fade", description: "Smooth opacity transitions" },
-        { name: "slide", description: "Elegant sliding movements" },
-        { name: "scale", description: "Size scaling effects" },
-        { name: "flip", description: "3D flipping animations" },
-        { name: "rotate", description: "Rotation-based animations" },
+        { name: 'fade', description: 'Smooth opacity transitions' },
+        { name: 'slide', description: 'Elegant sliding movements' },
+        { name: 'scale', description: 'Size scaling effects' },
+        { name: 'flip', description: '3D flipping animations' },
+        { name: 'rotate', description: 'Rotation-based animations' },
       ],
       showAnimations: true,
     };
@@ -249,17 +249,17 @@
 <body>
 
 @motion(true)
-  <div class="container">
+  <div class='container'>
     @transition('fade', 500, 'ease-out')
-      <header id="page-header">
+      <header id='page-header'>
         <h1>{{ title }}</h1>
-        <div class="subtitle">{{ subtitle }}</div>
+        <div class='subtitle'>{{ subtitle }}</div>
       </header>
     @endtransition
 
-    <div class="content">
+    <div class='content'>
       @transition('slide', 400, 'ease-out', 100)
-        <div class="demo-section" id="intro">
+        <div class='demo-section' id='intro'>
           <h2>Introduction</h2>
           <p>
             The stx Animation System provides a set of powerful directives to create beautiful,
@@ -270,9 +270,9 @@
       @endtransition
 
       @transition('slide', 400, 'ease-out', 200)
-        <div class="demo-section" id="features">
+        <div class='demo-section' id='features'>
           <h2>Key Features</h2>
-          <div class="card">
+          <div class='card'>
             <ul>
               <li>Transition directives with multiple animation types</li>
               <li>Animation coordination with groups and sequences</li>
@@ -284,21 +284,21 @@
         </div>
       @endtransition
 
-      <div class="demo-section" id="transitions">
+      <div class='demo-section' id='transitions'>
         <h2>Transition Types</h2>
         <p>Choose a transition type to see it in action:</p>
 
-        <div class="toggle-btn">
-          <button id="show-items">Show Animation Grid</button>
-          <button id="reduced-motion-toggle">Toggle Reduced Motion</button>
+        <div class='toggle-btn'>
+          <button id='show-items'>Show Animation Grid</button>
+          <button id='reduced-motion-toggle'>Toggle Reduced Motion</button>
         </div>
 
-        <p class="help-text">After clicking "Show Animation Grid", click on individual items to replay their animations</p>
+        <p class='help-text'>After clicking "Show Animation Grid", click on individual items to replay their animations</p>
 
-        <div class="grid">
+        <div class='grid'>
           @foreach (transitions as transition, index)
             @transition(transition.name, 400, 'ease-out', index * 100, 'out')
-              <div class="grid-item stx-out" id="item-{{ index }}">
+              <div class='grid-item stx-out' id='item-{{ index }}'>
                 <h3>{{ transition.name }}</h3>
                 <p>{{ transition.description }}</p>
               </div>
@@ -308,14 +308,14 @@
       </div>
 
       @transition('scale', 400, 'ease-out', 300)
-        <div class="demo-section" id="animation-groups">
+        <div class='demo-section' id='animation-groups'>
           <h2>Animation Groups</h2>
           <p>Animation groups allow coordinating multiple elements to animate in sequence or together:</p>
 
-          <div class="card" id="group-demo">
-            <div id="step-1" class="sequence-step">1. First, this element appears</div>
-            <div id="step-2" class="sequence-step">2. Then this one follows</div>
-            <div id="step-3" class="sequence-step">3. Finally, this element completes the sequence</div>
+          <div class='card' id='group-demo'>
+            <div id='step-1' class='sequence-step'>1. First, this element appears</div>
+            <div id='step-2' class='sequence-step'>2. Then this one follows</div>
+            <div id='step-3' class='sequence-step'>3. Finally, this element completes the sequence</div>
           </div>
 
           @animationGroup('demo-sequence', '#step-1', '#step-2', '#step-3')
@@ -323,7 +323,7 @@
       @endtransition
 
       @transition('fade', 400, 'ease-out', 400)
-        <footer id="page-footer">
+        <footer id='page-footer'>
           <p>Built with stx Animation System</p>
         </footer>
       @endtransition

@@ -18,10 +18,10 @@ const context = {
 </script>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>{{ title }} | {{ site.name }}</title>
   <style>
     body {
@@ -74,13 +74,13 @@ const context = {
 <body>
   <header>
     <h1>{{ title }}</h1>
-    <p class="meta">By {{ author }} on {{ date }}</p>
+    <p class='meta'>By {{ author }} on {{ date }}</p>
     @if(description)
       <p><em>{{ description }}</em></p>
     @endif
   </header>
 
-  <div class="content">
+  <div class='content'>
     <!-- Method 1: Directly use imported content -->
     @if(false)
       {{{ content }}}
@@ -91,10 +91,10 @@ const context = {
   </div>
 
   <footer>
-    <div class="tags">
+    <div class='tags'>
       <strong>Tags:</strong>
       @foreach(tags as tag)
-        <span class="tag">{{ tag }}</span>
+        <span class='tag'>{{ tag }}</span>
       @endforeach
     </div>
     <p>This article is part of the {{ seriesName }} series on {{ site.name }}.</p>

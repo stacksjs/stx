@@ -1,32 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>{{ title }}</title>
   <script>
-    const title = "My stx Project"
-    const description = "A new project built with stx"
+    const title = 'My stx Project'
+    const description = 'A new project built with stx'
     const features = [
       {
-        name: "Single File Components",
-        icon: "⚡",
-        description: "Script, style, and template in one .stx file"
+        name: 'Single File Components',
+        icon: '⚡',
+        description: 'Script, style, and template in one .stx file'
       },
       {
-        name: "Component System",
-        icon: "🧩",
+        name: 'Component System',
+        icon: '🧩',
         description: "Import components with @component('name', {}) directive"
       },
       {
-        name: "Blade Directives",
-        icon: "🔧",
-        description: "@if, @foreach, @switch, @layout, @section and more"
+        name: 'Blade Directives',
+        icon: '🔧',
+        description: '@if, @foreach, @switch, @layout, @section and more'
       },
       {
-        name: "Layouts & Sections",
-        icon: "📦",
-        description: "Use @layout and @section for page templates"
+        name: 'Layouts & Sections',
+        icon: '📦',
+        description: 'Use @layout and @section for page templates'
       }
     ]
   </script>
@@ -159,26 +159,26 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class='container'>
     <header>
       <h1>{{ title }}</h1>
-      <p class="subtitle">{{ description }}</p>
+      <p class='subtitle'>{{ description }}</p>
     </header>
 
-    <section class="features">
+    <section class='features'>
       @foreach(features as feature)
-        <div class="feature-card">
-          <div class="feature-icon">{{ feature.icon }}</div>
+        <div class='feature-card'>
+          <div class='feature-icon'>{{ feature.icon }}</div>
           <h3>{{ feature.name }}</h3>
           <p>{{ feature.description }}</p>
         </div>
       @endforeach
     </section>
 
-    <section class="getting-started">
+    <section class='getting-started'>
       <h2>Getting Started</h2>
       <p>Run these commands to start developing:</p>
-      <div class="commands">
+      <div class='commands'>
         <code>stx dev index.stx --port 3000</code>
         <code>stx init components/header.stx --preset component</code>
         <code>stx init app.stx --preset app</code>
@@ -186,7 +186,7 @@
     </section>
 
     <footer>
-      <p>Built with <a href="https://github.com/stacksjs/stx">stx</a></p>
+      <p>Built with <a href='https://github.com/stacksjs/stx'>stx</a></p>
     </footer>
   </div>
 </body>

@@ -2104,6 +2104,9 @@ catch {
             if (Object.keys(routeMatch.params).length > 0) {
               content = injectRouteParams(content, routeMatch.params)
             }
+            // Generate Crosswind CSS for this page's utility classes and include in fragment
+            // Without this, SPA-navigated pages have no CSS for their utility classes
+            content = await injectCrosswindCSS(content)
             return new Response(content, {
               headers: {
                 'Content-Type': 'text/html',

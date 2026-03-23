@@ -1,5 +1,6 @@
 {
   "recommendations": [
+    "pickier.pickier-vscode",
     "Stacks.vscode-stacks"
   ]
 }

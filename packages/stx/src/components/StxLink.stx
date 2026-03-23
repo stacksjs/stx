@@ -1,5 +1,5 @@
 <a
-  href="{{ to }}"
+  href='{{ to }}'
   class="{{ className || '' }}"
   data-stx-link
   data-stx-active-class="{{ activeClass || 'active' }}"

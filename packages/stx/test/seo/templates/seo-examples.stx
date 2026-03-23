@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
 
   <!-- Basic meta tags using @meta directive -->
   @meta("description", "A detailed description of this product page")
@@ -68,25 +68,25 @@
   </header>
 
   <main>
-    <section class="product">
-      <div class="product-image">
-        <img src="{{ productImage }}" alt="{{ productImageAlt }}">
+    <section class='product'>
+      <div class='product-image'>
+        <img src='{{ productImage }}' alt='{{ productImageAlt }}'>
       </div>
 
-      <div class="product-details">
+      <div class='product-details'>
         <h2>{{ productName }}</h2>
-        <p class="price">${{ productPrice }}</p>
-        <div class="description">{{ productDescription }}</div>
+        <p class='price'>${{ productPrice }}</p>
+        <div class='description'>{{ productDescription }}</div>
 
-        <div class="rating">
+        <div class='rating'>
           Rating: {{ productRating }}/5 ({{ reviewCount }} reviews)
         </div>
 
-        <button class="add-to-cart">Add to Cart</button>
+        <button class='add-to-cart'>Add to Cart</button>
       </div>
     </section>
 
-    <section class="related-products">
+    <section class='related-products'>
       <h2>Related Products</h2>
       <!-- Related products would be here -->
     </section>
