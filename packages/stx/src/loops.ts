@@ -677,10 +677,10 @@ export function processLoops(template: string, context: Record<string, any>, fil
           if (depth === 0) {
             // This is our matching @endforeach
             const content = template.substring(contentStart, nextEndforeach.index)
-            const end = nextEndforeach.index + 11 // length of '@endforeach'
+            const end = nextEndforeach.index + '@endforeach'.length
             return { start, end, arrayExpr, itemVar, content }
           }
-          searchPos = nextEndforeach.index + 11
+          searchPos = nextEndforeach.index + '@endforeach'.length
         }
       }
       // If we reach here, this @foreach didn't have a matching @endforeach, try next match

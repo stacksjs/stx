@@ -531,7 +531,7 @@ else {
         if (Array.isArray(array) && array.length > 0) {
           for (const item of array) {
             const itemContext = { ...context, [itemVar]: item }
-            const processed = await processIncludeHelper(partialName, { [itemVar]: item }, template, eStart)
+            const processed = await processIncludeHelper(partialName, itemContext, template, eStart)
             replacement += processed
           }
         }
@@ -784,17 +784,6 @@ catch (error: unknown) {
     }
 
     try {
-      // Path already resolved above, no need to resolve again
-      if (!includeFilePath) {
-        return createDetailedErrorMessage(
-          'Include',
-          `Could not resolve path for include: ${includePath}`,
-          filePath,
-          templateStr,
-          offsetPos,
-        )
-      }
-
       // Track dependency
       dependencies.add(includeFilePath)
 
@@ -1187,5 +1176,6 @@ function buildStxLinkAnchor(attrs: string, slotContent: string): string {
   const prefetchAttr = prefetch ? ' data-stx-prefetch' : ''
   const eventStr = eventAttrs.length > 0 ? ' ' + eventAttrs.join(' ') : ''
 
-  return `<a href="${to}" class="${className}" data-stx-link data-stx-active-class="${activeClass}" data-stx-exact-active-class="${exactActiveClass}"${prefetchAttr}${eventStr}>${slotContent}</a>`
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return `<a href="${esc(to)}" class="${esc(className)}" data-stx-link data-stx-active-class="${esc(activeClass)}" data-stx-exact-active-class="${esc(exactActiveClass)}"${prefetchAttr}${eventStr}>${slotContent}</a>`
 }

@@ -230,14 +230,13 @@ export function createWatcher(options: WatchOptions = {}): WatcherInstance {
   // Track pending changes for debouncing
   const pendingChanges: WatchEvent[] = []
 
-  // Debounced change handler
+  // Debounced change handler - snapshot and clear before processing to avoid race conditions
   const handleChanges = debounce(() => {
     if (pendingChanges.length > 0 && options.onChange) {
-      // Process all pending changes
-      for (const event of pendingChanges) {
+      const batch = pendingChanges.splice(0)
+      for (const event of batch) {
         options.onChange(event)
       }
-      pendingChanges.length = 0
     }
   }, debounceDelay)
 
@@ -516,14 +515,14 @@ export async function startWatchMode(args: {
     },
   })
 
-  // Handle graceful shutdown
-  process.on('SIGINT', () => {
+  // Handle graceful shutdown (use `once` to avoid listener accumulation)
+  process.once('SIGINT', () => {
     console.log('\n\x1B[36m[stx]\x1B[0m Stopping watch mode...')
     watcher.close()
     process.exit(0)
   })
 
-  process.on('SIGTERM', () => {
+  process.once('SIGTERM', () => {
     watcher.close()
     process.exit(0)
   })

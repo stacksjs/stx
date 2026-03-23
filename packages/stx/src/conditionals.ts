@@ -664,7 +664,8 @@ else {
       // Build segments: primary, elseDirective segments, final else
       const segments: { content: string, ability?: string, type?: string, id?: string, isFinalElse?: boolean }[] = []
       let segStart = 0
-      for (const brk of topLevelBreaks) {
+      for (let brkIdx = 0; brkIdx < topLevelBreaks.length; brkIdx++) {
+        const brk = topLevelBreaks[brkIdx]
         segments.push({ content: fullContent.slice(segStart, brk.pos), ability: undefined })
         if (brk.type === 'elseDirective') {
           // Parse the elseDirective params
@@ -678,8 +679,8 @@ else {
             // Actually we need to continue collecting content for this segment
             // Remove the placeholder, it will be filled on next iteration
             segments.pop()
-            // Use a trick: remember params for the next segment boundary
-            const nextBrk = topLevelBreaks[topLevelBreaks.indexOf(brk) + 1]
+            // Look ahead to next break boundary
+            const nextBrk = topLevelBreaks[brkIdx + 1]
             const nextEnd = nextBrk ? nextBrk.pos : fullContent.length
             segments.push({ content: fullContent.slice(segStart, nextEnd), ability: ep.ability, type: ep.type, id: ep.id })
             segStart = nextEnd

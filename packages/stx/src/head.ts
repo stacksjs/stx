@@ -589,12 +589,12 @@ export function processTitleDirective(
   context: Record<string, unknown>
 ): string {
   return content.replace(
-    /@title\s*\(\s*(['"`]?)([^)]+)\1\s*\)/g,
-    (_, quote, title) => {
+    /@title\s*\(\s*(?:(['"`])(.+?)\1|([^)]+))\s*\)/g,
+    (_, quote, quotedTitle, unquotedTitle) => {
       // If quoted, use literal string; otherwise evaluate from context
       const resolvedTitle = quote
-        ? title
-        : (context[title.trim()] as string) ?? title
+        ? quotedTitle
+        : (context[(unquotedTitle || '').trim()] as string) ?? unquotedTitle
       useHead({ title: resolvedTitle })
       return ''
     }
@@ -615,11 +615,12 @@ export function processMetaDirective(
   context: Record<string, unknown>
 ): string {
   return content.replace(
-    /@meta\s*\(\s*(['"`])([^'"]+)\1\s*,\s*(['"`]?)([^)]+)\3\s*\)/g,
-    (_, _q1, name, q2, value) => {
+    /@meta\s*\(\s*(['"`])(.+?)\1\s*,\s*(?:(['"`])(.+?)\3|([^)]+))\s*\)/g,
+    (_, _q1, name, q2, quotedValue, unquotedValue) => {
+      const value = q2 ? quotedValue : unquotedValue
       const resolvedValue = q2
         ? value
-        : (context[value.trim()] as string) ?? value
+        : (context[(value || '').trim()] as string) ?? value
 
       const isProperty = name.includes(':')
       const meta: MetaTag = isProperty

@@ -584,6 +584,14 @@ export async function serve(options: ServeOptions): Promise<void> {
             })
           }
 
+          // Validate table name to prevent SQL injection (allow only alphanumeric and underscores)
+          if (!/^[a-zA-Z_]\w*$/.test(tableName)) {
+            return new Response(JSON.stringify({ error: 'Invalid table name' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            })
+          }
+
           const body = await req.json()
           const nodePath = await import('node:path')
 
@@ -592,68 +600,69 @@ export async function serve(options: ServeOptions): Promise<void> {
           const dbPath = nodePath.resolve(process.cwd(), 'database/stacks.sqlite')
           const db = new Database(dbPath)
 
-          // Get column info to validate fields
-          const tableInfo = db.query(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string, type: string, notnull: number, dflt_value: any }>
-          const validColumns = tableInfo.map((c: any) => c.name).filter((n: string) => n !== 'id' && n !== 'created_at' && n !== 'updated_at')
+          try {
+            // Get column info to validate fields (table name validated above)
+            const tableInfo = db.query(`PRAGMA table_info("${tableName}")`).all() as Array<{ name: string, type: string, notnull: number, dflt_value: any }>
+            const validColumns = tableInfo.map((c: any) => c.name).filter((n: string) => n !== 'id' && n !== 'created_at' && n !== 'updated_at')
 
-          // Build INSERT query with only valid columns that have values
-          const columns: string[] = []
-          const placeholders: string[] = []
-          const values: any[] = []
+            // Build INSERT query with only valid columns that have values
+            const columns: string[] = []
+            const placeholders: string[] = []
+            const values: any[] = []
 
-          for (const col of validColumns) {
-            if (body[col] !== undefined && body[col] !== '') {
-              columns.push(col)
-              placeholders.push('?')
-              values.push(body[col])
+            for (const col of validColumns) {
+              if (body[col] !== undefined && body[col] !== '') {
+                columns.push(col)
+                placeholders.push('?')
+                values.push(body[col])
+              }
             }
-          }
 
-          // Add timestamps
-          const now = new Date().toISOString()
-          if (tableInfo.some((c: any) => c.name === 'created_at')) {
-            columns.push('created_at')
-            placeholders.push('?')
-            values.push(now)
-          }
-          if (tableInfo.some((c: any) => c.name === 'updated_at')) {
-            columns.push('updated_at')
-            placeholders.push('?')
-            values.push(now)
-          }
+            // Add timestamps
+            const now = new Date().toISOString()
+            if (tableInfo.some((c: any) => c.name === 'created_at')) {
+              columns.push('created_at')
+              placeholders.push('?')
+              values.push(now)
+            }
+            if (tableInfo.some((c: any) => c.name === 'updated_at')) {
+              columns.push('updated_at')
+              placeholders.push('?')
+              values.push(now)
+            }
 
-          if (columns.length === 0) {
-            db.close()
-            return new Response(JSON.stringify({ error: 'No valid fields provided' }), {
-              status: 400,
+            if (columns.length === 0) {
+              return new Response(JSON.stringify({ error: 'No valid fields provided' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json', ...corsHeaders },
+              })
+            }
+
+            const query = `INSERT INTO "${tableName}" (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`
+            const stmt = db.prepare(query)
+            const result = stmt.run(...values)
+
+            return new Response(JSON.stringify({
+              success: true,
+              id: result.lastInsertRowid,
+              message: 'Record created successfully',
+            }), {
+              status: 201,
               headers: { 'Content-Type': 'application/json', ...corsHeaders },
             })
           }
-
-          const query = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`
-          const stmt = db.prepare(query)
-          const result = stmt.run(...values)
-
-          db.close()
-
-          return new Response(JSON.stringify({
-            success: true,
-            id: result.lastInsertRowid,
-            message: 'Record created successfully',
-          }), {
-            status: 201,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          })
-        }
-        catch (error: any) {
-          console.error('API Error:', error)
-          return new Response(JSON.stringify({
-            error: error.message || 'Failed to create record',
-          }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          })
-        }
+          catch (error: any) {
+            console.error('API Error:', error)
+            return new Response(JSON.stringify({
+              error: error.message || 'Failed to create record',
+            }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            })
+          }
+          finally {
+            db.close()
+          }
       }
 
       // Normalize path

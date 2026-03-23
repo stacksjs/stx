@@ -281,7 +281,14 @@ export function memoize<T extends (...args: any[]) => any>(
   const cache = new Map<string, ReturnType<T>>()
 
   return ((...args: Parameters<T>): ReturnType<T> => {
-    const key = JSON.stringify(args)
+    let key: string
+    try {
+      key = JSON.stringify(args)
+    }
+    catch {
+      // Fallback for circular references or non-serializable args - skip cache
+      return func(...args)
+    }
 
     if (cache.has(key)) {
       return cache.get(key)!
@@ -585,7 +592,7 @@ export class PerformanceMonitor {
       return
 
     const exceedancePercent = (duration / budget.maxTime) * 100
-    const isWarning = budget.warnThreshold
+    const isWarning = budget.warnThreshold !== undefined
       ? duration >= budget.maxTime * budget.warnThreshold && duration < budget.maxTime
       : false
     const isViolation = duration >= budget.maxTime
@@ -604,8 +611,8 @@ export class PerformanceMonitor {
 
     // Store violation
     this.violations.push(violation)
-    if (this.violations.length > this.maxViolations) {
-      this.violations = this.violations.slice(-this.maxViolations)
+    while (this.violations.length > this.maxViolations) {
+      this.violations.shift()
     }
 
     // Call handlers
