@@ -345,7 +345,13 @@ catch (e) {
         switch (msg.type) {
           case 'reload':
             console.log('[stx] Reloading...', msg.path || '');
-            window.location.reload();
+            // Use SPA router for progressive update instead of full page reload.
+            // Falls back to hard reload only when the router isn't available.
+            if (typeof window.navigate === 'function') {
+              window.navigate(window.location.pathname + window.location.search, false, true);
+            } else {
+              window.location.reload();
+            }
             break;
 
           case 'css-update':

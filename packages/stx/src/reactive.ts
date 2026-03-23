@@ -861,8 +861,10 @@ else {
         execCtx.$refs = $refs;
         execCtx.$el = scopeEl;
         execute(handler, execCtx, e, el);
+        // Write back ALL state properties — object mutations keep the same
+        // reference but change internal state, so !== would miss them.
         for (var k in state) {
-          if (Object.prototype.hasOwnProperty.call(state, k) && execCtx[k] !== reactiveState[k]) {
+          if (Object.prototype.hasOwnProperty.call(state, k)) {
             reactiveState[k] = execCtx[k];
           }
         }
@@ -884,9 +886,11 @@ else {
       execCtx.$refs = $refs;
       execCtx.$el = scopeEl;
       execute(stmt, execCtx, $event, $el);
-      // Write back changes to reactive state (triggers Proxy setters and update)
+      // Write back ALL state properties (not just changed references).
+      // Object mutations (e.g. obj[key]=val) keep the same reference but
+      // change internal state — a !== check would miss those.
       for (var k in state) {
-        if (Object.prototype.hasOwnProperty.call(state, k) && execCtx[k] !== reactiveState[k]) {
+        if (Object.prototype.hasOwnProperty.call(state, k)) {
           reactiveState[k] = execCtx[k];
         }
       }

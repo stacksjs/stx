@@ -1793,6 +1793,32 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         console.log(`${colors.blue}Loaded ${colors.bright}${routeCount} API route${routeCount > 1 ? 's' : ''}${colors.reset}`)
       }
     }
+
+    // Start broadcasting server if enabled, then auto-discover channels.ts
+    if (projectConfig?.broadcasting?.enabled) {
+      try {
+        const { startBroadcasting, loadChannels } = await import('./broadcasting')
+        const bcConfig = projectConfig.broadcasting
+        await startBroadcasting(bcConfig)
+        const bcPort = bcConfig.port ?? 6001
+        console.log(`${colors.magenta}Broadcasting on ${colors.cyan}ws://localhost:${bcPort}/ws${colors.reset}`)
+
+        // Auto-discover channels.ts at project root
+        const channelsFile = path.join(process.cwd(), 'channels.ts')
+        if (fs.existsSync(channelsFile)) {
+          try {
+            const count = await loadChannels(channelsFile)
+            console.log(`${colors.blue}Loaded ${colors.bright}${count} broadcast channel${count !== 1 ? 's' : ''}${colors.blue} from channels.ts${colors.reset}`)
+          }
+          catch (err: any) {
+            console.warn(`${colors.yellow}Failed to load channels.ts: ${err.message}${colors.reset}`)
+          }
+        }
+      }
+      catch (err: any) {
+        console.warn(`${colors.yellow}Broadcasting failed to start: ${err.message}${colors.reset}`)
+      }
+    }
   }
   catch { /* no config or no apiRoutes */ }
 

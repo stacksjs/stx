@@ -36,7 +36,7 @@ export function getRouterScript(): string {
   }
 
   // ── Navigation ──
-  function navigate(url,pushState){
+  function navigate(url,pushState,force){
     if(isNavigating)return;
     var t=new URL(url,location.origin);
 
@@ -51,8 +51,8 @@ export function getRouterScript(): string {
       return;
     }
 
-    // Same page, no hash → skip
-    if(t.href===location.href&&!t.hash)return;
+    // Same page, no hash → skip (unless forced, e.g. HMR)
+    if(t.href===location.href&&!t.hash&&!force)return;
 
     isNavigating=true;
     document.body.classList.add(o.loadingClass);
@@ -63,11 +63,13 @@ export function getRouterScript(): string {
 
     function done(){isNavigating=false;document.body.classList.remove(o.loadingClass)}
 
-    if(o.cache&&cache[targetPath]){
+    if(o.cache&&cache[targetPath]&&!force){
       swap(cache[targetPath],targetPath,pushState,targetHash);
       done();
     }
 else {
+      // Clear stale cache entry on forced reload (HMR)
+      if(force&&cache[targetPath])delete cache[targetPath];
       fetch(url,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
         if(!r.ok)throw new Error(r.status);
         var isFragment=r.headers.get('X-STX-Fragment')==='true';
@@ -137,21 +139,23 @@ else {
         });
         // Swap content
         currentContent.innerHTML=cleanFrag;
-        // Remove old page scripts and execute new ones
+        // Remove old page scripts
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
-        fragScripts.forEach(function(code){
-          var ns=document.createElement('script');
-          ns.textContent=code;
-          ns.setAttribute('data-stx-page','');
-          document.body.appendChild(ns);
-        });
         if(pushState!==false)history.pushState({},'',url+(hash||''));
         updateNav(url);
         updateActiveLinks();
         if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
         else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
         window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
+        // Initialize reactive scopes BEFORE page scripts run
         window.dispatchEvent(new Event('stx:load'));
+        // Now execute page scripts (they can use __stx_execute immediately)
+        fragScripts.forEach(function(code){
+          var ns=document.createElement('script');
+          ns.textContent=code;
+          ns.setAttribute('data-stx-page','');
+          document.body.appendChild(ns);
+        });
       }
       if(o.viewTransitions&&document.startViewTransition){document.startViewTransition(doFragSwap)}
       else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){doFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
@@ -269,22 +273,6 @@ else {
         if(text.indexOf('__stx_setup_')!==-1)scripts.push(text);
       });
 
-      function execScripts(){
-        scripts.forEach(function(text){
-          var ns=document.createElement('script');
-          ns.textContent=text;
-          ns.setAttribute('data-stx-page','');
-          document.body.appendChild(ns);
-        });
-      }
-
-      if(extPromises.length>0){
-        Promise.all(extPromises).then(execScripts).catch(execScripts);
-      }
-else {
-        execScripts();
-      }
-
       // Push history state (before active link updates so location.pathname is current)
       if(pushState!==false)history.pushState({},'',url+(hash||''));
 
@@ -300,9 +288,26 @@ else {
       var newTitle=doc.querySelector('title');
       if(newTitle)document.title=newTitle.textContent;
 
-      // Dispatch navigation events
+      // Initialize reactive scopes BEFORE page scripts run
       window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
       window.dispatchEvent(new Event('stx:load'));
+
+      // Now execute page scripts (they can use __stx_execute immediately)
+      function execScripts(){
+        scripts.forEach(function(text){
+          var ns=document.createElement('script');
+          ns.textContent=text;
+          ns.setAttribute('data-stx-page','');
+          document.body.appendChild(ns);
+        });
+      }
+
+      if(extPromises.length>0){
+        Promise.all(extPromises).then(execScripts).catch(execScripts);
+      }
+else {
+        execScripts();
+      }
     }
 
     if(o.viewTransitions&&document.startViewTransition){
