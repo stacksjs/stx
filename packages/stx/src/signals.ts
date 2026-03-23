@@ -3170,6 +3170,7 @@ else {
       }
     },
     mount: function(setupFn) {
+      console.log('[stx] mount() called. currentScript:', document.currentScript ? document.currentScript.tagName : 'NULL', 'readyState:', document.readyState);
       // Capture script reference synchronously (only valid during execution)
       var scriptEl = document.currentScript;
 
@@ -3240,6 +3241,7 @@ else {
           scope.$refs = scope.$refs || {};
           root.__stx_scope = scope;  // Store isolated scope on element
           Object.assign(componentScope, scope);  // Keep for backwards compat
+          console.log('[stx] mount: merged scope into componentScope. Keys now:', Object.keys(componentScope).slice(0, 10).join(', '));
         }
 
         // Walk DOM and bind directives, tracking effects for cleanup
@@ -3563,7 +3565,12 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       }
     });
 
-    // Remove x-cloak (mount handles processElement)
+    // Process the new page content — bind {{ }}, :attr, @event directives
+    console.log('[stx] stx:load processElement scope keys:', Object.keys(componentScope).join(', '));
+    var disposeEffects = trackEffects(function() { processElement(container, componentScope); });
+    container.__stx_disposers = disposeEffects;
+
+    // Remove x-cloak
     if (container) {
       container.removeAttribute('x-cloak');
       container.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });

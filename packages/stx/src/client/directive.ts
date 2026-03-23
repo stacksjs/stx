@@ -32,7 +32,7 @@ export async function stxRouterHandler(
     )
   }
 
-  return `<script>${script}</script>`
+  return `<script data-stx-router>${script}</script>`
 }
 
 /**

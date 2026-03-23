@@ -317,7 +317,7 @@ function processScriptSetup(template: string): { output: string, setupCode: stri
   // Find client-side scripts (not server, not src, not type=module for external, not already scoped)
   // Scripts with data-stx-scoped are already wrapped by component processing
   // Capture attributes to check for TypeScript
-  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)([^>]*)>([\s\S]*?)<\/script>/gi
+  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)(?![^>]*\bdata-stx-router\b)([^>]*)>([\s\S]*?)<\/script>/gi
   let match: RegExpExecArray | null
   let signalScript: { fullMatch: string, attrs: string, content: string } | null = null
 
@@ -2175,7 +2175,7 @@ else {
   // Detect : prefix directives in the template output (for stx.mount() decision)
   const hasColonDirectives = /\s:[a-z][\w.-]*\s*=/.test(output)
   // Match all client scripts: NOT server, NOT external src, NOT already processed (data-stx-scoped)
-  output.replace(/<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
+  output.replace(/<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)(?![^>]*\bdata-stx-router\b)([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
     clientScriptMatches.push({ match, attrs: attrs || '', content })
     return match
   })
