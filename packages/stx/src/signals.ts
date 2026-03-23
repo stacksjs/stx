@@ -2123,13 +2123,8 @@ catch (e) {
         if (child.nodeType !== Node.ELEMENT_NODE) { processElement(child, scope); return; }
         // Skip script elements entirely
         if (child.tagName === 'SCRIPT') return;
-        // Skip elements already mounted by stx.mount() — they have their own scope
-        if (child.__stx_scope) return;
         // Skip data-stx-scope elements — they are managed by the reactive (x-data) runtime
         if (child.hasAttribute && child.hasAttribute('data-stx-scope')) return;
-        // Skip the SPA router container — page content is handled by stx.mount()
-        // This prevents body-level walks from creating zombie effects on page bindings
-        if (child.tagName === 'MAIN') return;
         processElement(child, scope);
       });
     }
@@ -3565,16 +3560,20 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       }
     });
 
-    // Process the new page content — bind {{ }}, :attr, @event directives
-    console.log('[stx] stx:load processElement scope keys:', Object.keys(componentScope).join(', '));
-    var disposeEffects = trackEffects(function() { processElement(container, componentScope); });
-    container.__stx_disposers = disposeEffects;
+    // Defer processElement to next microtask — the mount script appended by
+    // doFragSwap may not have executed yet when stx:load fires synchronously.
+    // setTimeout(0) ensures mount merges scope into componentScope first.
+    var _container = container;
+    setTimeout(function() {
+      var disposeEffects = trackEffects(function() { processElement(_container, componentScope); });
+      _container.__stx_disposers = disposeEffects;
 
-    // Remove x-cloak
-    if (container) {
-      container.removeAttribute('x-cloak');
-      container.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
-    }
+      // Remove x-cloak
+      if (_container) {
+        _container.removeAttribute('x-cloak');
+        _container.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
+      }
+    }, 0);
 
     // Fire mount callbacks from scoped components
     container.querySelectorAll('[data-stx-scope]').forEach(function(el) {

@@ -685,6 +685,20 @@ export async function serve(options: ServeOptions): Promise<void> {
         const isSpaNav = req.headers.get('X-STX-Router') === 'true'
         if (isSpaNav) {
           let fragment = content
+
+          // Extract <head> styles to include in fragment (Crosswind CSS, page styles)
+          // The router's doFragSwap injects these into <head> during SPA swap
+          const headStyles: string[] = []
+          const headMatch = content.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)
+          if (headMatch) {
+            const headContent = headMatch[1]
+            let styleMatch: RegExpExecArray | null
+            const styleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
+            while ((styleMatch = styleRe.exec(headContent)) !== null) {
+              headStyles.push(styleMatch[0])
+            }
+          }
+
           // Extract only the <main> inner content (not sidebar, header, or layout)
           const mainOpenMatch = fragment.match(/<main\b[^>]*>/i)
           const mainCloseIdx = fragment.lastIndexOf('</main>')
@@ -697,6 +711,10 @@ export async function serve(options: ServeOptions): Promise<void> {
             /<script data-stx-scoped>\s*;?\(function\(\)\s*\{[\s\S]*?<\/script>/g,
             '',
           )
+
+          // Prepend styles so doFragSwap can extract and inject them into <head>
+          fragment = headStyles.join('\n') + '\n' + fragment
+
           return new Response(fragment, {
             headers: {
               'Content-Type': 'text/html',
