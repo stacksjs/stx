@@ -258,18 +258,25 @@ function generateDefaultOfflinePage(options: StxOptions): string {
 
   <script>
     // Update status and auto-reload when online
+    var reloadTimeout = null;
+    var checkInterval = null;
+
     function updateStatus() {
-      const container = document.getElementById('container');
-      const statusText = document.getElementById('status-text');
+      var container = document.getElementById('container');
+      var statusText = document.getElementById('status-text');
 
       if (navigator.onLine) {
         container.classList.add('online');
         statusText.textContent = 'Back online! Reloading...';
-        setTimeout(() => window.location.reload(), 1000);
+        if (!reloadTimeout) {
+          if (checkInterval) { clearInterval(checkInterval); checkInterval = null; }
+          reloadTimeout = setTimeout(function() { window.location.reload(); }, 1000);
+        }
       }
-else {
+      else {
         container.classList.remove('online');
         statusText.textContent = 'Waiting for connection...';
+        if (reloadTimeout) { clearTimeout(reloadTimeout); reloadTimeout = null; }
       }
     }
 
@@ -280,17 +287,11 @@ else {
     updateStatus();
 
     // Periodic check every 5 seconds
-    setInterval(() => {
+    checkInterval = setInterval(function() {
       if (!navigator.onLine) {
-        // Try to fetch a small resource to verify connectivity
         fetch('/', { method: 'HEAD', cache: 'no-store' })
-          .then(() => {
-            // If fetch succeeds, we're actually online
-            updateStatus();
-          })
-          .catch(() => {
-            // Still offline
-          });
+          .then(function() { updateStatus(); })
+          .catch(function() { /* Still offline */ });
       }
     }, 5000);
   </script>

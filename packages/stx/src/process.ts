@@ -2304,6 +2304,7 @@ async function processImportDirectives(
 
     // Remove the @import directive from output
     output = output.replace(fullMatch, '')
+    importRegex.lastIndex = 0
   }
 
   return output

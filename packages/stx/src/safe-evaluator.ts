@@ -201,7 +201,7 @@ export function createSafeContext(context: Record<string, unknown>): Record<stri
  */
 function sanitizeObject(obj: unknown, depth = 0): unknown {
   // Prevent infinite recursion - use configurable depth
-  if (depth > currentConfig.maxSanitizeDepth) {
+  if (depth >= currentConfig.maxSanitizeDepth) {
     return '[Object too deep]'
   }
 
@@ -333,7 +333,7 @@ export function safeEvaluateArray(expression: string, context: Record<string, un
       return result
     }
     // Handle array-like objects
-    if (result && typeof result === 'object' && 'length' in result) {
+    if (result && typeof result === 'object' && 'length' in result && typeof (result as any).length === 'number') {
       return Array.from(result as ArrayLike<unknown>)
     }
     return []

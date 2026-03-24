@@ -68,6 +68,19 @@ function extractDeclaredVariableNames(script: string): string[] {
       if (match) {
         names.push(match[1])
       }
+      else {
+        // Handle destructuring: const { a, b } = ... or const [a, b] = ...
+        const destructMatch = line.match(/(?:const|let|var)\s+(\{[^}]+\}|\[[^\]]+\])\s*=/)
+        if (destructMatch) {
+          const inner = destructMatch[1].slice(1, -1) // Remove { } or [ ]
+          const vars = inner.split(',').map(v => {
+            // Handle renaming: { original: renamed } -> extract renamed
+            const parts = v.split(':')
+            return (parts.length > 1 ? parts[1] : parts[0]).trim()
+          }).filter(v => /^\w+$/.test(v))
+          names.push(...vars)
+        }
+      }
     }
   }
   return [...new Set(names)] // Remove duplicates

@@ -300,7 +300,7 @@ export class ErrorLogger {
         const oldPath = `${this.logFilePath}.${i}`
         const newPath = `${this.logFilePath}.${i + 1}`
         if (fs.existsSync(oldPath)) {
-          if (i === this.maxLogFiles - 1) {
+          if (i >= this.maxLogFiles - 1) {
             fs.unlinkSync(oldPath) // Delete oldest
           }
           else {
@@ -309,8 +309,14 @@ export class ErrorLogger {
         }
       }
 
-      // Rotate current file
-      fs.renameSync(this.logFilePath, `${this.logFilePath}.1`)
+      // When maxLogFiles is 1, just truncate the current file instead of rotating
+      if (this.maxLogFiles <= 1) {
+        fs.writeFileSync(this.logFilePath, '')
+      }
+      else {
+        // Rotate current file
+        fs.renameSync(this.logFilePath, `${this.logFilePath}.1`)
+      }
     }
     catch (err) {
       // Silently fail rotation errors

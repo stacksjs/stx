@@ -330,7 +330,7 @@ function renderOptimizedImage(
       const srcset = generateSrcSet(formatVariants)
       const mimeType = getMimeType(format)
       const sizes = options.sizes || '100vw'
-      sources.push(`  <source type="${mimeType}" srcset="${srcset}" sizes="${sizes}" />`)
+      sources.push(`  <source type="${mimeType}" srcset="${escapeAttr(srcset)}" sizes="${escapeAttr(sizes)}" />`)
     }
   }
 
@@ -372,17 +372,19 @@ function renderOptimizedImage(
     const wrapperId = `stx-img-${Math.random().toString(36).slice(2, 8)}`
 
     if (options.placeholder === 'blur') {
-      html = `<div id="${wrapperId}" class="stx-image-placeholder" style="background-image: url('${placeholder}'); background-size: cover;">\n${html}\n</div>`
+      const safeUrl = placeholder.replace(/'/g, '%27').replace(/"/g, '%22')
+      html = `<div id="${wrapperId}" class="stx-image-placeholder" style="background-image: url('${safeUrl}'); background-size: cover;">\n${html}\n</div>`
     }
     else if (options.placeholder === 'color') {
-      html = `<div id="${wrapperId}" class="stx-image-placeholder" style="background-color: ${placeholder};">\n${html}\n</div>`
+      const safeColor = placeholder.replace(/[^a-zA-Z0-9#(),.\s%-]/g, '')
+      html = `<div id="${wrapperId}" class="stx-image-placeholder" style="background-color: ${safeColor};">\n${html}\n</div>`
     }
   }
 
   // Add preload link for priority images
   if (options.priority && fallback) {
     const preloadMime = getMimeType(fallback.format)
-    html = `<link rel="preload" as="image" href="${fallback.url}" type="${preloadMime}" />\n` + html
+    html = `<link rel="preload" as="image" href="${escapeAttr(fallback.url)}" type="${preloadMime}" />\n` + html
   }
 
   return html

@@ -153,11 +153,11 @@ export const validators = {
    */
   isSafeContent(content: string): boolean {
     const dangerousPatterns = [
-      /<script[^>]*>[\s\S]*?<\/script>/gi,
-      /javascript:/gi,
-      /data:text\/html/gi,
-      /vbscript:/gi,
-      /on\w+\s*=/gi, // Event handlers
+      /<script[^>]*>[\s\S]*?<\/script>/i,
+      /javascript:/i,
+      /data:text\/html/i,
+      /vbscript:/i,
+      /on\w+\s*=/i, // Event handlers
     ]
 
     return !dangerousPatterns.some(pattern => pattern.test(content))

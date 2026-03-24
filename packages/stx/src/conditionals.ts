@@ -636,7 +636,7 @@ else {
       if (!parsed) break
 
       const contentStart = startPos + `@${directive}`.length + parsed.paramsEnd
-      const endPos = findEndTag(output, `${directive}\\s*\\(`, endDirective, contentStart)
+      const endPos = findEndTag(output, directive, endDirective, contentStart)
       if (endPos === -1) break
 
       const fullContent = output.slice(contentStart, endPos)

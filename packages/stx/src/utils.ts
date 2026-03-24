@@ -44,6 +44,7 @@ export {
 
 // Cache for components to avoid repeated file reads (LRU with max 500 entries)
 const componentsCache = new LRUCache<string, string>(500)
+let scopeIdCounter = 0
 
 /** Escape a string for safe use in an HTML attribute value */
 function escapeAttr(str: string): string {
@@ -497,10 +498,12 @@ catch {
 
     // Create a new context with component props and slot content
     // Include both individual props and a `props` object for Vue-style access
-    // Filter internal variables from parent context to prevent leaking into child components
+    // Filter internal variables from parent context to prevent leaking into child components,
+    // but preserve specific internal vars needed for component resolution
+    const internalKeysToPreserve = new Set(['__originalFilePath', '__importedComponents'])
     const filteredParentContext: Record<string, unknown> = {}
     for (const [key, val] of Object.entries(parentContext)) {
-      if (!key.startsWith('__')) {
+      if (!key.startsWith('__') || internalKeysToPreserve.has(key)) {
         filteredParentContext[key] = val
       }
     }
@@ -632,7 +635,7 @@ catch {
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
 
     // Generate unique scope ID for this component instance
-    const scopeId = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    const scopeId = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}_${Math.random().toString(36).slice(2, 8)}`
 
     // Wrap component in a scope container if it has client scripts with signals
     // (hasSignalScripts already computed above for componentOptions)

@@ -318,11 +318,11 @@ export function processSeoDirective(
           }
 
           if (og.imageWidth) {
-            metaTags += `<meta property="og:image:width" content="${og.imageWidth}">\n`
+            metaTags += `<meta property="og:image:width" content="${escapeHtml(String(og.imageWidth))}">\n`
           }
 
           if (og.imageHeight) {
-            metaTags += `<meta property="og:image:height" content="${og.imageHeight}">\n`
+            metaTags += `<meta property="og:image:height" content="${escapeHtml(String(og.imageHeight))}">\n`
           }
         }
 

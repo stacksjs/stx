@@ -166,6 +166,8 @@ export const defaultFilters: Record<string, FilterFunction> = {
     const str = String(value)
     if (str.length <= length)
       return str
+    if (length <= suffix.length)
+      return suffix.substring(0, length)
     return str.substring(0, length - suffix.length) + suffix
   },
 
@@ -879,13 +881,6 @@ function findFilterPipeIndex(expr: string): number {
 export function evaluateExpression(expression: string, context: Record<string, any>, silent: boolean = false): any {
   try {
     const trimmedExpr = expression.trim()
-
-    // Handle circular references specifically
-    if (trimmedExpr.includes('parent.child.parent')) {
-      if (context.parent && context.parent.name) {
-        return context.parent.name
-      }
-    }
 
     // Find filter pipe index, properly distinguishing from || and |= operators
     const filterPipeIndex = findFilterPipeIndex(trimmedExpr)

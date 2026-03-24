@@ -426,7 +426,7 @@ export function processFormInputDirectives(
       ]
 
       if (accept) {
-        parts.push(`accept="${accept}"`)
+        parts.push(`accept="${escapeAttr(accept)}"`)
       }
 
       if (isMultiple) {

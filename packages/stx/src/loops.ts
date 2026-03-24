@@ -1013,7 +1013,7 @@ function processWhileLoops(template: string, context: Record<string, any>, maxIt
           counter++;
           result += \`${processedContent}\`;
         }
-        if (counter >= maxIterations) {
+        if (counter > maxIterations) {
           result += '<!-- [While Error [1104]]: Maximum iterations (${maxIterations}) exceeded in while loop. Configure via options.loops.maxWhileIterations -->';
         }
         return result;

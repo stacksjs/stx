@@ -197,7 +197,7 @@ function hashString(str: string): string {
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i)
     hash = ((hash << 5) - hash) + char
-    hash = hash & hash // Convert to 32bit integer
+    hash = hash | 0 // Convert to 32bit integer
   }
   return Math.abs(hash).toString(36)
 }
@@ -441,6 +441,17 @@ export async function renderComponent(
 // =============================================================================
 
 const suspenseStates = new Map<string, SuspenseState>()
+
+/**
+ * Clean up resolved/errored suspense states to prevent memory leaks.
+ */
+export function cleanupSuspenseStates(): void {
+  for (const [id, state] of suspenseStates) {
+    if (state.status === 'resolved' || state.status === 'error') {
+      suspenseStates.delete(id)
+    }
+  }
+}
 
 /**
  * Create a suspense boundary.
