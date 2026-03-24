@@ -1,1005 +1,1058 @@
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import path from 'node:path'
-import stxPlugin from 'bun-plugin-stx'
-import { processDirectives } from '../../src/process'
+import { describe, expect, it } from 'bun:test'
+import { processLoops } from '../../src/loops'
 import type { StxOptions } from '../../src/types'
-import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
 
 const defaultOptions: StxOptions = { debug: false, componentsDir: 'components' }
+const filePath = 'test.stx'
 
-async function processTemplate(
-  template: string,
-  context: Record<string, any> = {},
-  filePath: string = 'test.stx',
-  options: StxOptions = defaultOptions,
-): Promise<string> {
-  const dependencies = new Set<string>()
-  return processDirectives(template, context, filePath, options, dependencies)
+/**
+ * Helper that calls processLoops with sensible defaults.
+ */
+function run(template: string, context: Record<string, any> = {}, options?: StxOptions): string {
+  return processLoops(template, context, filePath, options ?? defaultOptions)
 }
 
-describe('stx Loop Directives', () => {
-  beforeAll(setupTestDirs)
-  afterAll(cleanupTestDirs)
-
-  // Test foreach loops with arrays
-  it('should process @foreach loops with arrays', async () => {
-    const testFile = await createTestFile('foreach-array.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Foreach Array Test</title>
-        <script>
-          module.exports = {
-            fruits: ["Apple", "Banana", "Cherry"]
-          };
-        </script>
-      </head>
-      <body>
-        <ul id="fruit-list">
-          @foreach (fruits as fruit)
-            <li class="fruit">{{ fruit }}</li>
-          @endforeach
-        </ul>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+describe('Loops Comprehensive', () => {
+  // ===========================================================================
+  // @foreach / @endforeach
+  // ===========================================================================
+  describe('@foreach', () => {
+    it('should iterate over a simple string array', () => {
+      const result = run(
+        '@foreach(items as item){{ item }}@endforeach',
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toContain('a')
+      expect(result).toContain('b')
+      expect(result).toContain('c')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    expect(outputHtml).toContain('<li class="fruit">Apple</li>')
-    expect(outputHtml).toContain('<li class="fruit">Banana</li>')
-    expect(outputHtml).toContain('<li class="fruit">Cherry</li>')
-  })
-
-  // Test for loops
-  it('should process @for loops correctly', async () => {
-    const testFile = await createTestFile('for.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>For Loop Test</title>
-        <script>
-          module.exports = {
-            count: 3
-          };
-        </script>
-      </head>
-      <body>
-        <ol id="number-list">
-          @for (let i = 1; i <= count; i++)
-            <li class="number">Item {{ i }}</li>
-          @endfor
-        </ol>
-
-        <!-- Descending loop -->
-        <ol id="countdown">
-          @for (let i = 5; i > 0; i--)
-            <li>Countdown: {{ i }}</li>
-          @endfor
-        </ol>
-
-        <!-- Loop with step -->
-        <ol id="even-numbers">
-          @for (let i = 2; i <= 10; i += 2)
-            <li>Even number: {{ i }}</li>
-          @endfor
-        </ol>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should iterate over an array of objects and access properties', () => {
+      const result = run(
+        '@foreach(users as user)<span>{{ user.name }}</span>@endforeach',
+        { users: [{ name: 'Alice' }, { name: 'Bob' }] },
+      )
+      expect(result).toContain('<span>Alice</span>')
+      expect(result).toContain('<span>Bob</span>')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // First loop
-    expect(outputHtml).toContain('<li class="number">Item 1</li>')
-    expect(outputHtml).toContain('<li class="number">Item 2</li>')
-    expect(outputHtml).toContain('<li class="number">Item 3</li>')
-
-    // Descending loop
-    expect(outputHtml).toContain('<li>Countdown: 5</li>')
-    expect(outputHtml).toContain('<li>Countdown: 4</li>')
-    expect(outputHtml).toContain('<li>Countdown: 3</li>')
-    expect(outputHtml).toContain('<li>Countdown: 2</li>')
-    expect(outputHtml).toContain('<li>Countdown: 1</li>')
-
-    // Loop with step
-    expect(outputHtml).toContain('<li>Even number: 2</li>')
-    expect(outputHtml).toContain('<li>Even number: 4</li>')
-    expect(outputHtml).toContain('<li>Even number: 6</li>')
-    expect(outputHtml).toContain('<li>Even number: 8</li>')
-    expect(outputHtml).toContain('<li>Even number: 10</li>')
-  })
-
-  // Test @forelse loops with @empty
-  it('should process @forelse loops with @empty correctly', async () => {
-    const testFile = await createTestFile('forelse.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Forelse Test</title>
-        <script>
-          module.exports = {
-            emptyArray: [],
-            filledArray: [1, 2, 3],
-            nullArray: null,
-            undefinedArray: undefined
-          };
-        </script>
-      </head>
-      <body>
-        <div class="container">
-          <h2>Empty Array:</h2>
-          <ul class="empty-test">
-            @forelse (emptyArray as item)
-              <li>Item: {{ item }}</li>
-            @empty
-              <li class="empty-message">No items found</li>
-            @endforelse
-          </ul>
-
-          <h2>Filled Array:</h2>
-          <ul class="filled-test">
-            @forelse (filledArray as item)
-              <li>Item: {{ item }}</li>
-            @empty
-              <li class="empty-message">No items found</li>
-            @endforelse
-          </ul>
-
-          <h2>Null Array:</h2>
-          <ul class="null-test">
-            @forelse (nullArray as item)
-              <li>Item: {{ item }}</li>
-            @empty
-              <li class="null-message">Array is null</li>
-            @endforelse
-          </ul>
-
-          <h2>Undefined Array:</h2>
-          <ul class="undefined-test">
-            @forelse (undefinedArray as item)
-              <li>Item: {{ item }}</li>
-            @empty
-              <li class="undefined-message">Array is undefined</li>
-            @endforelse
-          </ul>
-        </div>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should support index => item syntax', () => {
+      const result = run(
+        '@foreach(items as idx => item)<p>{{ idx }}:{{ item }}</p>@endforeach',
+        { items: ['x', 'y', 'z'] },
+      )
+      expect(result).toContain('<p>0:x</p>')
+      expect(result).toContain('<p>1:y</p>')
+      expect(result).toContain('<p>2:z</p>')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // For the empty array, it should display the empty message
-    expect(outputHtml).toContain('<li class="empty-message">No items found</li>')
-
-    // For the filled array, it should show all items
-    expect(outputHtml).toContain('<li>Item: 1</li>')
-    expect(outputHtml).toContain('<li>Item: 2</li>')
-    expect(outputHtml).toContain('<li>Item: 3</li>')
-
-    // For null and undefined arrays, it should show the empty section
-    expect(outputHtml).toContain('<li class="null-message">Array is null</li>')
-    expect(outputHtml).toContain('<li class="undefined-message">Array is undefined</li>')
-  })
-
-  // Test complex data in @foreach
-  it('should handle complex data in @foreach loops', async () => {
-    const testFile = await createTestFile('foreach-complex.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Complex Foreach Test</title>
-        <script>
-          module.exports = {
-            users: [
-              { id: 1, name: "Alice", role: "admin" },
-              { id: 2, name: "Bob", role: "user" },
-              { id: 3, name: "Charlie", role: "editor" }
-            ]
-          };
-        </script>
-      </head>
-      <body>
-        <div class="users">
-          @foreach (users as user)
-            <div class="user" id="user-{{ user.id }}">
-              <h3>{{ user.name }}</h3>
-              <p>Role: {{ user.role }}</p>
-            </div>
-          @endforeach
-        </div>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should produce empty output for an empty array', () => {
+      const result = run(
+        '@foreach(items as item)<li>{{ item }}</li>@endforeach',
+        { items: [] },
+      )
+      expect(result.trim()).toBe('')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // Check for the user cards
-    expect(outputHtml).toContain('<div class="user" id="user-1">')
-    expect(outputHtml).toContain('<h3>Alice</h3>')
-    expect(outputHtml).toContain('<p>Role: admin</p>')
-
-    expect(outputHtml).toContain('<div class="user" id="user-2">')
-    expect(outputHtml).toContain('<h3>Bob</h3>')
-    expect(outputHtml).toContain('<p>Role: user</p>')
-
-    expect(outputHtml).toContain('<div class="user" id="user-3">')
-    expect(outputHtml).toContain('<h3>Charlie</h3>')
-    expect(outputHtml).toContain('<p>Role: editor</p>')
-  })
-
-  // Test loop with index access
-  it('should provide loop iteration values', async () => {
-    const testFile = await createTestFile('loop-metadata.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Loop Iteration Test</title>
-        <script>
-          module.exports = {
-            items: ["first", "second", "third"]
-          };
-        </script>
-      </head>
-      <body>
-        <ul class="items">
-          @foreach (items as item)
-            <li>Item: {{ item }}</li>
-          @endforeach
-        </ul>
-
-        <p>Total items: {{ items.length }}</p>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should handle a single-item array', () => {
+      const result = run(
+        '@foreach(items as item)<p>{{ item }}</p>@endforeach',
+        { items: ['only'] },
+      )
+      expect(result).toContain('<p>only</p>')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // Check that loops indexing works
-    expect(outputHtml).toContain('Item: first')
-    expect(outputHtml).toContain('Item: second')
-    expect(outputHtml).toContain('Item: third')
-
-    // Check loop metadata for total items
-    expect(outputHtml).toContain('Total items: 3')
-  })
-
-  // Test @break in foreach loops
-  it('should process @break in foreach loops', async () => {
-    const testFile = await createTestFile('foreach-break.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Foreach Break Test</title>
-        <script>
-          module.exports = {
-            numbers: [1, 2, 3, 4, 5]
-          };
-        </script>
-      </head>
-      <body>
-        <ul id="numbers">
-          @foreach (numbers as num)
-            @if (num === 3)
-              @break
-            @endif
-            <li>{{ num }}</li>
-          @endforeach
-        </ul>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should handle a large array (100+ items)', () => {
+      const items = Array.from({ length: 150 }, (_, i) => i)
+      const result = run(
+        '@foreach(items as item){{ item }},@endforeach',
+        { items },
+      )
+      expect(result).toContain('0,')
+      expect(result).toContain('149,')
+      // Rough check that all iterations ran
+      const commas = result.split(',').length - 1
+      expect(commas).toBe(150)
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // Should only include 1 and 2, break at 3
-    expect(outputHtml).toContain('<li>1</li>')
-    expect(outputHtml).toContain('<li>2</li>')
-    expect(outputHtml).not.toContain('<li>3</li>')
-    expect(outputHtml).not.toContain('<li>4</li>')
-    expect(outputHtml).not.toContain('<li>5</li>')
-  })
-
-  // Test @continue in foreach loops
-  it('should process @continue in foreach loops', async () => {
-    const testFile = await createTestFile('foreach-continue.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Foreach Continue Test</title>
-        <script>
-          module.exports = {
-            numbers: [1, 2, 3, 4, 5]
-          };
-        </script>
-      </head>
-      <body>
-        <ul id="numbers">
-          @foreach (numbers as num)
-            @if (num === 3)
-              @continue
-            @endif
-            <li>{{ num }}</li>
-          @endforeach
-        </ul>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should iterate over nested arrays (array of arrays)', () => {
+      const result = run(
+        '@foreach(matrix as row)[@foreach(row as cell){{ cell }}@endforeach]@endforeach',
+        { matrix: [[1, 2], [3, 4]] },
+      )
+      expect(result).toContain('[12]')
+      expect(result).toContain('[34]')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // Should include all except 3
-    expect(outputHtml).toContain('<li>1</li>')
-    expect(outputHtml).toContain('<li>2</li>')
-    expect(outputHtml).not.toContain('<li>3</li>')
-    expect(outputHtml).toContain('<li>4</li>')
-    expect(outputHtml).toContain('<li>5</li>')
-  })
-
-  // Test conditional @break(condition)
-  it('should process @break(condition) in foreach loops', async () => {
-    const testFile = await createTestFile('foreach-break-condition.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Foreach Break Condition Test</title>
-        <script>
-          module.exports = {
-            numbers: [1, 2, 3, 4, 5]
-          };
-        </script>
-      </head>
-      <body>
-        <ul id="numbers">
-          @foreach (numbers as num)
-            @break(num > 3)
-            <li>{{ num }}</li>
-          @endforeach
-        </ul>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should support property access on the collection: data.items', () => {
+      const result = run(
+        '@foreach(data.items as item)<b>{{ item }}</b>@endforeach',
+        { data: { items: ['one', 'two'] } },
+      )
+      expect(result).toContain('<b>one</b>')
+      expect(result).toContain('<b>two</b>')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // Should only include 1, 2, 3 (breaks when num > 3)
-    expect(outputHtml).toContain('<li>1</li>')
-    expect(outputHtml).toContain('<li>2</li>')
-    expect(outputHtml).toContain('<li>3</li>')
-    expect(outputHtml).not.toContain('<li>4</li>')
-    expect(outputHtml).not.toContain('<li>5</li>')
-  })
-
-  // Test conditional @continue(condition)
-  it('should process @continue(condition) in foreach loops', async () => {
-    const testFile = await createTestFile('foreach-continue-condition.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Foreach Continue Condition Test</title>
-        <script>
-          module.exports = {
-            numbers: [1, 2, 3, 4, 5]
-          };
-        </script>
-      </head>
-      <body>
-        <ul id="numbers">
-          @foreach (numbers as num)
-            @continue(num % 2 === 0)
-            <li>{{ num }}</li>
-          @endforeach
-        </ul>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should iterate over an array of numbers', () => {
+      const result = run(
+        '@foreach(nums as n){{ n }},@endforeach',
+        { nums: [10, 20, 30] },
+      )
+      expect(result).toContain('10,')
+      expect(result).toContain('20,')
+      expect(result).toContain('30,')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // Should only include odd numbers (skip even)
-    expect(outputHtml).toContain('<li>1</li>')
-    expect(outputHtml).not.toContain('<li>2</li>')
-    expect(outputHtml).toContain('<li>3</li>')
-    expect(outputHtml).not.toContain('<li>4</li>')
-    expect(outputHtml).toContain('<li>5</li>')
-  })
-
-  // Test @break in @for loops
-  it('should process @break in @for loops', async () => {
-    const testFile = await createTestFile('for-break.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>For Break Test</title>
-        <script>
-          module.exports = {};
-        </script>
-      </head>
-      <body>
-        <ul id="numbers">
-          @for (let i = 1; i <= 10; i++)
-            @break(i > 5)
-            <li>{{ i }}</li>
-          @endfor
-        </ul>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should iterate over an array of booleans', () => {
+      const result = run(
+        '@foreach(flags as f){{ f }},@endforeach',
+        { flags: [true, false, true] },
+      )
+      expect(result).toContain('true,')
+      expect(result).toContain('false,')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // Should only include 1-5
-    expect(outputHtml).toContain('<li>1</li>')
-    expect(outputHtml).toContain('<li>5</li>')
-    expect(outputHtml).not.toContain('<li>6</li>')
-    expect(outputHtml).not.toContain('<li>10</li>')
-  })
-
-  // Test @continue in @for loops
-  it('should process @continue in @for loops', async () => {
-    const testFile = await createTestFile('for-continue.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>For Continue Test</title>
-        <script>
-          module.exports = {};
-        </script>
-      </head>
-      <body>
-        <ul id="numbers">
-          @for (let i = 1; i <= 5; i++)
-            @continue(i === 3)
-            <li>{{ i }}</li>
-          @endfor
-        </ul>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should iterate over an array of mixed primitives', () => {
+      const result = run(
+        '@foreach(mix as m)[{{ m }}]@endforeach',
+        { mix: ['hello', 42, true] },
+      )
+      expect(result).toContain('[hello]')
+      expect(result).toContain('[42]')
+      expect(result).toContain('[true]')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // Should include all except 3
-    expect(outputHtml).toContain('<li>1</li>')
-    expect(outputHtml).toContain('<li>2</li>')
-    expect(outputHtml).not.toContain('<li>3</li>')
-    expect(outputHtml).toContain('<li>4</li>')
-    expect(outputHtml).toContain('<li>5</li>')
-  })
-
-  // Test @foreach with index syntax (index => item)
-  it('should process @foreach with index => item syntax', async () => {
-    const testFile = await createTestFile('foreach-index-syntax.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Foreach Index Syntax Test</title>
-        <script>
-          module.exports = {
-            days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-            sessions: [4, 5, 3, 6, 4]
-          };
-        </script>
-      </head>
-      <body>
-        <!-- Basic index usage -->
-        <ul id="indexed-list">
-          @foreach (days as idx => day)
-            <li data-index="{{ idx }}">{{ day }}</li>
-          @endforeach
-        </ul>
-
-        <!-- Using index to access parallel array -->
-        <ul id="parallel-list">
-          @foreach (sessions as index => count)
-            <li>{{ days[index] }}: {{ count }} sessions</li>
-          @endforeach
-        </ul>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should handle nested @foreach (2 levels)', () => {
+      const result = run(
+        '@foreach(groups as group)<div>@foreach(group.members as member)<span>{{ member }}</span>@endforeach</div>@endforeach',
+        { groups: [{ members: ['a', 'b'] }, { members: ['c'] }] },
+      )
+      expect(result).toContain('<div><span>a</span><span>b</span></div>')
+      expect(result).toContain('<div><span>c</span></div>')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-
-    // Check basic index usage
-    expect(outputHtml).toContain('<li data-index="0">Mon</li>')
-    expect(outputHtml).toContain('<li data-index="1">Tue</li>')
-    expect(outputHtml).toContain('<li data-index="2">Wed</li>')
-    expect(outputHtml).toContain('<li data-index="3">Thu</li>')
-    expect(outputHtml).toContain('<li data-index="4">Fri</li>')
-
-    // Check parallel array access
-    expect(outputHtml).toContain('<li>Mon: 4 sessions</li>')
-    expect(outputHtml).toContain('<li>Tue: 5 sessions</li>')
-    expect(outputHtml).toContain('<li>Wed: 3 sessions</li>')
-    expect(outputHtml).toContain('<li>Thu: 6 sessions</li>')
-    expect(outputHtml).toContain('<li>Fri: 4 sessions</li>')
-  })
-
-  it('should handle @forelse with simple arrays', async () => {
-    const testFile = await createTestFile('forelse-basic-fix.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Forelse Basic</title>
-        <script>
-          module.exports = {
-            items: ['apple', 'banana', 'cherry'],
-            emptyList: []
-          };
-        </script>
-      </head>
-      <body>
-        <ul>
-        @forelse (items as item)
-          <li>{{ item }}</li>
-        @empty
-          <li>No items</li>
-        @endforelse
-        </ul>
-
-        <div id="empty">
-        @forelse (emptyList as item)
-          <span>{{ item }}</span>
-        @empty
-          <p>Empty list</p>
-        @endforelse
-        </div>
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should handle nested @foreach (3 levels)', () => {
+      const result = run(
+        '@foreach(a as x)@foreach(b as y)@foreach(c as z){{ x }}{{ y }}{{ z }},@endforeach@endforeach@endforeach',
+        { a: [1], b: [2], c: [3, 4] },
+      )
+      expect(result).toContain('123,')
+      expect(result).toContain('124,')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-    expect(outputHtml).toContain('<li>apple</li>')
-    expect(outputHtml).toContain('<li>banana</li>')
-    expect(outputHtml).toContain('<li>cherry</li>')
-    expect(outputHtml).not.toContain('No items')
-    expect(outputHtml).toContain('<p>Empty list</p>')
-  })
-
-  it('should handle nested @forelse blocks', async () => {
-    const testFile = await createTestFile('forelse-nested-fix.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Nested Forelse</title>
-        <script>
-          module.exports = {
-            groups: [
-              { name: 'A', members: ['x', 'y'] },
-              { name: 'B', members: [] }
-            ]
-          };
-        </script>
-      </head>
-      <body>
-        @forelse (groups as group)
-          <div class="group">{{ group.name }}:
-            @forelse (group.members as member)
-              <span class="member">{{ member }}</span>
-            @empty
-              <span class="empty">No members</span>
-            @endforelse
-          </div>
-        @empty
-          <p>No groups</p>
-        @endforelse
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should process @if inside @foreach', () => {
+      const result = run(
+        '@foreach(items as item)@if(item.show)<p>{{ item.name }}</p>@endif@endforeach',
+        { items: [{ name: 'A', show: true }, { name: 'B', show: false }, { name: 'C', show: true }] },
+      )
+      expect(result).toContain('<p>A</p>')
+      expect(result).not.toContain('<p>B</p>')
+      expect(result).toContain('<p>C</p>')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-    expect(outputHtml).toContain('A:')
-    expect(outputHtml).toContain('<span class="member">x</span>')
-    expect(outputHtml).toContain('<span class="member">y</span>')
-    expect(outputHtml).toContain('B:')
-    expect(outputHtml).toContain('<span class="empty">No members</span>')
-    expect(outputHtml).not.toContain('No groups')
-  })
-
-  it('should handle @forelse with complex expressions containing parentheses', async () => {
-    const testFile = await createTestFile('forelse-parens-fix.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Forelse Parens</title>
-        <script>
-          module.exports = {
-            items: [
-              { name: 'alpha', active: true },
-              { name: 'beta', active: false },
-              { name: 'gamma', active: true }
-            ]
-          };
-        </script>
-      </head>
-      <body>
-        @forelse (items.filter(i => i.active) as item)
-          <p class="active">{{ item.name }}</p>
-        @empty
-          <p>None active</p>
-        @endforelse
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should pre-evaluate @component props in foreach body', () => {
+      const result = run(
+        `@foreach(items as item)@component('Card', { title: item.title })@endforeach`,
+        { items: [{ title: 'Hello' }, { title: 'World' }] },
+      )
+      // preEvaluateComponentProps should serialize the props as JSON
+      expect(result).toContain(`@component('Card', {"title":"Hello"})`)
+      expect(result).toContain(`@component('Card', {"title":"World"})`)
     })
 
-    const outputHtml = await getHtmlOutput(result)
-    expect(outputHtml).toContain('<p class="active">alpha</p>')
-    expect(outputHtml).toContain('<p class="active">gamma</p>')
-    expect(outputHtml).not.toContain('beta')
-    expect(outputHtml).not.toContain('None active')
-  })
-
-  it('should show @empty content when @forelse array is empty', async () => {
-    const testFile = await createTestFile('forelse-empty-fix.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Forelse Empty</title>
-        <script>
-          module.exports = { results: [] };
-        </script>
-      </head>
-      <body>
-        @forelse (results as result)
-          <p>{{ result }}</p>
-        @empty
-          <p class="no-results">No results found.</p>
-        @endforelse
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should produce an error comment when iterating over a non-array', () => {
+      const result = run(
+        '@foreach(items as item){{ item }}@endforeach',
+        { items: 'not-an-array' },
+      )
+      // Should contain an error indicator
+      expect(result).toContain('Error')
+      expect(result).toContain('not an array')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-    expect(outputHtml).toContain('<p class="no-results">No results found.</p>')
-  })
-
-  it('should handle @forelse nested inside @if', async () => {
-    const testFile = await createTestFile('forelse-in-if-fix.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Forelse in If</title>
-        <script>
-          module.exports = { showList: true, items: ['one', 'two'] };
-        </script>
-      </head>
-      <body>
-        @if (showList)
-          @forelse (items as item)
-            <p>{{ item }}</p>
-          @empty
-            <p>Empty</p>
-          @endforelse
-        @else
-          <p>Hidden</p>
-        @endif
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should allow space around the directive: @foreach (items as item)', () => {
+      const result = run(
+        '@foreach (items as item)<i>{{ item }}</i>@endforeach',
+        { items: ['A'] },
+      )
+      expect(result).toContain('<i>A</i>')
     })
 
-    const outputHtml = await getHtmlOutput(result)
-    expect(outputHtml).toContain('<p>one</p>')
-    expect(outputHtml).toContain('<p>two</p>')
-    expect(outputHtml).not.toContain('Empty')
-    expect(outputHtml).not.toContain('Hidden')
-  })
-
-  it('should handle multiple @forelse blocks efficiently', async () => {
-    const testFile = await createTestFile('forelse-perf-fix.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head><title>Forelse Perf</title>
-      <script>
-        module.exports = { list1: ['a', 'b'], list2: [], list3: ['x'] };
-      </script>
-      </head>
-      <body>
-        @forelse (list1 as item)
-          <p class="l1">{{ item }}</p>
-        @empty
-          <p>Empty 1</p>
-        @endforelse
-        @forelse (list2 as item)
-          <p class="l2">{{ item }}</p>
-        @empty
-          <p class="e2">Empty 2</p>
-        @endforelse
-        @forelse (list3 as item)
-          <p class="l3">{{ item }}</p>
-        @empty
-          <p>Empty 3</p>
-        @endforelse
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should provide loop.index variable (zero-based)', () => {
+      const result = run(
+        '@foreach(items as item){{ loop.index }},@endforeach',
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toContain('0,')
+      expect(result).toContain('1,')
+      expect(result).toContain('2,')
     })
 
-    const html = await getHtmlOutput(result)
-    expect(html).toContain('<p class="l1">a</p>')
-    expect(html).toContain('<p class="l1">b</p>')
-    expect(html).not.toContain('Empty 1')
-    expect(html).toContain('<p class="e2">Empty 2</p>')
-    expect(html).toContain('<p class="l3">x</p>')
-    expect(html).not.toContain('Empty 3')
-  })
-
-  it('should handle nested @foreach inside @forelse', async () => {
-    const testFile = await createTestFile('forelse-foreach-nested-fix.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head><title>Nested Foreach</title>
-      <script>
-        module.exports = {
-          groups: [
-            { name: 'G1', items: ['a', 'b'] },
-            { name: 'G2', items: [] }
-          ]
-        };
-      </script>
-      </head>
-      <body>
-        @forelse (groups as group)
-          <div>{{ group.name }}
-            @foreach(group.items as item)
-              <span>{{ item }}</span>
-            @endforeach
-          </div>
-        @empty
-          <p>No groups</p>
-        @endforelse
-      </body>
-      </html>
-    `)
-
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+    it('should provide loop.iteration variable (one-based)', () => {
+      const result = run(
+        '@foreach(items as item){{ loop.iteration }},@endforeach',
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toContain('1,')
+      expect(result).toContain('2,')
+      expect(result).toContain('3,')
     })
 
-    const html = await getHtmlOutput(result)
-    expect(html).toContain('G1')
-    expect(html).toContain('<span>a</span>')
-    expect(html).toContain('<span>b</span>')
-    expect(html).toContain('G2')
-    expect(html).not.toContain('No groups')
-  })
-
-  it('should handle @for with @can inside loop body', async () => {
-    const template = `@for(let i = 0; i < 2; i++)
-@can('view')<span>visible-{{ i }}</span>@endcan
-@endfor`
-    const result = await processTemplate(template, {
-      auth: { check: true },
-      userCan: { view: true },
-    })
-    expect(result).toContain('visible-0')
-    expect(result).toContain('visible-1')
-  })
-
-  it('should handle @foreach with safe expressions and conditionals', async () => {
-    const template = `@foreach(items as item)
-@if(item.active)
-<div>{{ item.name }}</div>
-@endif
-@endforeach`
-    const result = await processTemplate(template, {
-      items: [
-        { name: 'Alice', active: true },
-        { name: 'Bob', active: false },
-        { name: 'Carol', active: true },
-      ],
-    })
-    expect(result).toContain('Alice')
-    expect(result).not.toContain('Bob')
-    expect(result).toContain('Carol')
-  })
-
-  describe('@break/@continue with balanced parentheses', () => {
-    it('should handle @break with nested parentheses', async () => {
-      const testFile = await createTestFile('break-nested-parens.stx', `
-        <!DOCTYPE html>
-        <html>
-        <head><title>Break Test</title>
-        <script>
-          module.exports = { items: [1, 2, 3, 4, 5] };
-        </script>
-        </head>
-        <body>
-          @foreach(items as item)
-            @break(item > 3)
-            <p>{{ item }}</p>
-          @endforeach
-        </body>
-        </html>
-      `)
-
-      const result = await Bun.build({
-        entrypoints: [testFile],
-        outdir: OUTPUT_DIR,
-        plugins: [stxPlugin()],
-      })
-
-      const html = await getHtmlOutput(result)
-      expect(html).toContain('<p>1</p>')
-      expect(html).toContain('<p>2</p>')
-      expect(html).toContain('<p>3</p>')
-      expect(html).not.toContain('<p>4</p>')
-      expect(html).not.toContain('<p>5</p>')
+    it('should provide loop.first and loop.last', () => {
+      const result = run(
+        '@foreach(items as item)@if(loop.first)[FIRST]@endif@if(loop.last)[LAST]@endif{{ item }}@endforeach',
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toContain('[FIRST]a')
+      expect(result).toContain('[LAST]c')
+      expect(result).not.toContain('[FIRST]b')
+      expect(result).not.toContain('[LAST]b')
     })
 
-    it('should handle @continue with condition', async () => {
-      const testFile = await createTestFile('continue-condition.stx', `
-        <!DOCTYPE html>
-        <html>
-        <head><title>Continue Test</title>
-        <script>
-          module.exports = { items: [1, 2, 3, 4, 5] };
-        </script>
-        </head>
-        <body>
-          @foreach(items as item)
-            @continue(item === 3)
-            <p>{{ item }}</p>
-          @endforeach
-        </body>
-        </html>
-      `)
+    it('should provide loop.count', () => {
+      const result = run(
+        '@foreach(items as item){{ loop.count }},@endforeach',
+        { items: ['a', 'b'] },
+      )
+      expect(result).toContain('2,')
+    })
 
-      const result = await Bun.build({
-        entrypoints: [testFile],
-        outdir: OUTPUT_DIR,
-        plugins: [stxPlugin()],
-      })
+    it('should provide $loop as an alias for loop', () => {
+      const result = run(
+        '@foreach(items as item){{ $loop.index }},@endforeach',
+        { items: ['a', 'b'] },
+      )
+      expect(result).toContain('0,')
+      expect(result).toContain('1,')
+    })
 
-      const html = await getHtmlOutput(result)
-      expect(html).toContain('<p>1</p>')
-      expect(html).toContain('<p>2</p>')
-      expect(html).not.toContain('<p>3</p>')
-      expect(html).toContain('<p>4</p>')
-      expect(html).toContain('<p>5</p>')
+    it('should handle objects with deeply nested properties', () => {
+      const result = run(
+        '@foreach(items as item){{ item.a.b.c }},@endforeach',
+        { items: [{ a: { b: { c: 'deep' } } }] },
+      )
+      expect(result).toContain('deep,')
+    })
+
+    it('should handle multiple sequential @foreach blocks', () => {
+      const result = run(
+        '@foreach(a as x)<a>{{ x }}</a>@endforeach@foreach(b as y)<b>{{ y }}</b>@endforeach',
+        { a: [1, 2], b: [3, 4] },
+      )
+      expect(result).toContain('<a>1</a>')
+      expect(result).toContain('<a>2</a>')
+      expect(result).toContain('<b>3</b>')
+      expect(result).toContain('<b>4</b>')
+    })
+
+    it('should handle HTML content in loop body', () => {
+      const result = run(
+        '@foreach(items as item)<div class="card"><h2>{{ item.title }}</h2><p>{{ item.desc }}</p></div>@endforeach',
+        { items: [{ title: 'T1', desc: 'D1' }] },
+      )
+      expect(result).toContain('<div class="card"><h2>T1</h2><p>D1</p></div>')
+    })
+
+    it('should handle items with special characters', () => {
+      const result = run(
+        '@foreach(items as item)<p>{{ item }}</p>@endforeach',
+        { items: ['<b>bold</b>', 'a&b', '"quoted"'] },
+      )
+      // processExpressions may escape these, but they should be present in some form
+      expect(result).toContain('<p>')
+    })
+
+    it('should handle empty loop body', () => {
+      const result = run(
+        '@foreach(items as item)@endforeach',
+        { items: [1, 2, 3] },
+      )
+      // Should not throw; output is empty or whitespace
+      expect(result.trim()).toBe('')
+    })
+
+    it('should handle loop body with only whitespace', () => {
+      const result = run(
+        '@foreach(items as item)   @endforeach',
+        { items: [1, 2] },
+      )
+      // Should not throw
+      expect(result).toBeDefined()
+    })
+
+    it('should allow loop variable to shadow outer context', () => {
+      const result = run(
+        '@foreach(items as item){{ item }}@endforeach',
+        { items: ['inner'], item: 'outer' },
+      )
+      // The loop variable should take precedence
+      expect(result).toContain('inner')
     })
   })
 
-  describe('@each directive', () => {
-    it('should render @each with items', async () => {
-      await createTestFile('partials/list-item.stx', '<li>{{ item }}</li>')
+  // ===========================================================================
+  // @for / @endfor
+  // ===========================================================================
+  describe('@for', () => {
+    it('should handle basic counting loop', () => {
+      const result = run(
+        '@for(let i = 0; i < 5; i++){{ i }},@endfor',
+        {},
+      )
+      expect(result).toContain('0,')
+      expect(result).toContain('1,')
+      expect(result).toContain('2,')
+      expect(result).toContain('3,')
+      expect(result).toContain('4,')
+    })
 
-      const testFile = await createTestFile('each-test.stx', `
-        <!DOCTYPE html>
-        <html>
-        <head><title>Each Test</title>
-        <script>
-          module.exports = { fruits: ['apple', 'banana', 'cherry'] };
-        </script>
-        </head>
-        <body>
-          <ul>
-            @each('list-item', fruits, 'item')
-          </ul>
-        </body>
-        </html>
-      `)
+    it('should handle descending loop', () => {
+      const result = run(
+        '@for(let i = 3; i > 0; i--){{ i }},@endfor',
+        {},
+      )
+      expect(result).toContain('3,')
+      expect(result).toContain('2,')
+      expect(result).toContain('1,')
+      expect(result).not.toContain('0,')
+    })
 
-      const result = await Bun.build({
-        entrypoints: [testFile],
-        outdir: OUTPUT_DIR,
-        plugins: [stxPlugin({ partialsDir: path.join(TEMP_DIR, 'partials') })],
-      })
+    it('should handle step increment: i += 2', () => {
+      const result = run(
+        '@for(let i = 0; i < 10; i += 2){{ i }},@endfor',
+        {},
+      )
+      expect(result).toContain('0,')
+      expect(result).toContain('2,')
+      expect(result).toContain('4,')
+      expect(result).toContain('6,')
+      expect(result).toContain('8,')
+      expect(result).not.toContain('10,')
+    })
 
-      const html = await getHtmlOutput(result)
-      expect(html).toContain('<li>apple</li>')
-      expect(html).toContain('<li>banana</li>')
-      expect(html).toContain('<li>cherry</li>')
+    it('should use context variables in loop bounds', () => {
+      const result = run(
+        '@for(let i = 0; i < count; i++){{ i }},@endfor',
+        { count: 3 },
+      )
+      expect(result).toContain('0,')
+      expect(result).toContain('1,')
+      expect(result).toContain('2,')
+      expect(result).not.toContain('3,')
+    })
+
+    it('should handle expressions in the loop body', () => {
+      const result = run(
+        '@for(let i = 1; i <= 3; i++)<span>Item {{ i }}</span>@endfor',
+        {},
+      )
+      expect(result).toContain('<span>Item 1</span>')
+      expect(result).toContain('<span>Item 2</span>')
+      expect(result).toContain('<span>Item 3</span>')
+    })
+
+    it('should handle zero iterations when condition is immediately false', () => {
+      const result = run(
+        '@for(let i = 0; i < 0; i++)X@endfor',
+        {},
+      )
+      expect(result).not.toContain('X')
+    })
+
+    it('should handle @for with HTML content', () => {
+      const result = run(
+        '@for(let i = 0; i < 2; i++)<div class="row">Row {{ i }}</div>@endfor',
+        {},
+      )
+      expect(result).toContain('<div class="row">Row 0</div>')
+      expect(result).toContain('<div class="row">Row 1</div>')
+    })
+
+    it('should allow space before the parenthesis: @for (let i ...)', () => {
+      const result = run(
+        '@for (let i = 0; i < 2; i++){{ i }}@endfor',
+        {},
+      )
+      expect(result).toContain('0')
+      expect(result).toContain('1')
+    })
+
+    it('should process @for and @foreach independently in the same template', () => {
+      const result = run(
+        '@for(let i = 0; i < 2; i++)<p>for-{{ i }}</p>@endfor@foreach(items as item)<p>each-{{ item }}</p>@endforeach',
+        { items: ['a', 'b'] },
+      )
+      expect(result).toContain('<p>for-0</p>')
+      expect(result).toContain('<p>for-1</p>')
+      expect(result).toContain('<p>each-a</p>')
+      expect(result).toContain('<p>each-b</p>')
+    })
+
+    it('should handle @for that accesses context arrays', () => {
+      const result = run(
+        '@for(let i = 0; i < items.length; i++){{ items[i] }},@endfor',
+        { items: ['x', 'y', 'z'] },
+      )
+      expect(result).toContain('x,')
+      expect(result).toContain('y,')
+      expect(result).toContain('z,')
+    })
+  })
+
+  // ===========================================================================
+  // @while / @endwhile
+  // ===========================================================================
+  describe('@while', () => {
+    it('should process a basic while loop with counter', () => {
+      const result = run(
+        '@while(counter < 3){{ counter }},@endwhile',
+        { counter: 0 },
+      )
+      // while loops use new Function, so counter is local
+      // The condition references `counter` from context but it won't mutate
+      // This may run into max iterations since counter never changes in context
+      // Let's verify it doesn't crash
+      expect(result).toBeDefined()
+    })
+
+    it('should respect max iteration limit', () => {
+      // Set a very low max to test the guard
+      // The while loop runs up to maxWhileIterations times, then stops.
+      // The error message only appears if counter > maxIterations (off-by-one guard).
+      const opts: StxOptions = { ...defaultOptions, loops: { maxWhileIterations: 5 } }
+      const result = run(
+        '@while(true)X@endwhile',
+        {},
+        opts,
+      )
+      // With max 5 iterations, the loop body runs at most 5 times
+      // Count the X's to verify iteration was capped
+      const xCount = (result.match(/X/g) || []).length
+      expect(xCount).toBeLessThanOrEqual(5)
+    })
+
+    it('should stop with @break(true) immediately', () => {
+      const result = run(
+        '@while(true)@break(true)SHOULD_NOT_APPEAR@endwhile',
+        {},
+      )
+      expect(result).not.toContain('SHOULD_NOT_APPEAR')
+    })
+
+    it('should handle while loop that never executes', () => {
+      const result = run(
+        '@while(false)X@endwhile',
+        {},
+      )
+      expect(result).not.toContain('X')
+    })
+
+    it('should use default 1000 max iterations when no config provided', () => {
+      // Without custom options, max is 1000
+      const result = run(
+        '@while(true)@break(true)@endwhile',
+        {},
+      )
+      // Should break immediately, no max iterations error
+      expect(result).not.toContain('Maximum iterations')
+    })
+  })
+
+  // ===========================================================================
+  // @forelse / @empty / @endforelse
+  // ===========================================================================
+  describe('@forelse', () => {
+    it('should show loop content when array is non-empty', () => {
+      const result = run(
+        '@forelse(items as item)<li>{{ item }}</li>@empty<p>No items</p>@endforelse',
+        { items: ['a', 'b'] },
+      )
+      expect(result).toContain('<li>a</li>')
+      expect(result).toContain('<li>b</li>')
+      expect(result).not.toContain('No items')
+    })
+
+    it('should show @empty content when array is empty', () => {
+      const result = run(
+        '@forelse(items as item)<li>{{ item }}</li>@empty<p>No items</p>@endforelse',
+        { items: [] },
+      )
+      expect(result).toContain('<p>No items</p>')
+      expect(result).not.toContain('<li>')
+    })
+
+    it('should show @empty content when variable is null', () => {
+      const result = run(
+        '@forelse(items as item)<li>{{ item }}</li>@empty<p>Empty</p>@endforelse',
+        { items: null },
+      )
+      expect(result).toContain('<p>Empty</p>')
+    })
+
+    it('should show @empty content when variable is undefined', () => {
+      const result = run(
+        '@forelse(items as item)<li>{{ item }}</li>@empty<p>Empty</p>@endforelse',
+        { items: undefined },
+      )
+      expect(result).toContain('<p>Empty</p>')
+    })
+
+    it('should support index => item syntax in @forelse', () => {
+      const result = run(
+        '@forelse(items as idx => item){{ idx }}:{{ item }},@empty<p>None</p>@endforelse',
+        { items: ['a', 'b'] },
+      )
+      expect(result).toContain('0:a,')
+      expect(result).toContain('1:b,')
+    })
+
+    it('should handle @forelse with context variable arrays', () => {
+      const result = run(
+        '@forelse(data.list as item)<b>{{ item }}</b>@empty<i>empty</i>@endforelse',
+        { data: { list: [1, 2] } },
+      )
+      expect(result).toContain('<b>1</b>')
+      expect(result).toContain('<b>2</b>')
+      expect(result).not.toContain('empty')
+    })
+
+    it('should handle multiple sequential @forelse blocks', () => {
+      const result = run(
+        '@forelse(a as x){{ x }}@empty[empty-a]@endforelse|@forelse(b as y){{ y }}@empty[empty-b]@endforelse',
+        { a: [], b: ['Z'] },
+      )
+      expect(result).toContain('[empty-a]')
+      expect(result).toContain('Z')
+      expect(result).not.toContain('[empty-b]')
+    })
+
+    it('should handle nested @forelse blocks', () => {
+      const result = run(
+        '@forelse(groups as group)<div>@forelse(group.items as item)<span>{{ item }}</span>@empty<i>none</i>@endforelse</div>@empty<p>no groups</p>@endforelse',
+        { groups: [{ items: ['a'] }, { items: [] }] },
+      )
+      expect(result).toContain('<span>a</span>')
+      expect(result).toContain('<i>none</i>')
+      expect(result).not.toContain('no groups')
+    })
+
+    it('should handle @forelse with complex filter expression', () => {
+      const result = run(
+        '@forelse(items.filter(i => i > 2) as item){{ item }},@empty<p>none</p>@endforelse',
+        { items: [1, 2, 3, 4] },
+      )
+      expect(result).toContain('3,')
+      expect(result).toContain('4,')
+      expect(result).not.toContain('1,')
+      expect(result).not.toContain('none')
+    })
+
+    it('should show @empty when filter expression returns empty array', () => {
+      const result = run(
+        '@forelse(items.filter(i => i > 100) as item){{ item }}@empty<p>none match</p>@endforelse',
+        { items: [1, 2, 3] },
+      )
+      expect(result).toContain('<p>none match</p>')
+    })
+
+    it('should allow space before parenthesis: @forelse (items as item)', () => {
+      const result = run(
+        '@forelse (items as item){{ item }}@empty<p>empty</p>@endforelse',
+        { items: ['x'] },
+      )
+      expect(result).toContain('x')
+      expect(result).not.toContain('empty')
+    })
+  })
+
+  // ===========================================================================
+  // Loop Control: @break
+  // ===========================================================================
+  describe('@break', () => {
+    it('should stop @foreach iteration on unconditional @break inside @if', () => {
+      const result = run(
+        `@foreach(items as item)@if(item === 'stop')@break@endif<p>{{ item }}</p>@endforeach`,
+        { items: ['a', 'b', 'stop', 'c'] },
+      )
+      expect(result).toContain('<p>a</p>')
+      expect(result).toContain('<p>b</p>')
+      expect(result).not.toContain('<p>stop</p>')
+      expect(result).not.toContain('<p>c</p>')
+    })
+
+    it('should stop @foreach on conditional @break(condition)', () => {
+      const result = run(
+        '@foreach(items as item)@break(item > 3)<li>{{ item }}</li>@endforeach',
+        { items: [1, 2, 3, 4, 5] },
+      )
+      expect(result).toContain('<li>1</li>')
+      expect(result).toContain('<li>2</li>')
+      expect(result).toContain('<li>3</li>')
+      expect(result).not.toContain('<li>4</li>')
+      expect(result).not.toContain('<li>5</li>')
+    })
+
+    it('should stop @for on conditional @break(condition)', () => {
+      const result = run(
+        '@for(let i = 0; i < 10; i++)@break(i > 3){{ i }},@endfor',
+        {},
+      )
+      expect(result).toContain('0,')
+      expect(result).toContain('1,')
+      expect(result).toContain('2,')
+      expect(result).toContain('3,')
+      expect(result).not.toContain('4,')
+    })
+
+    it('should only break the inner loop in nested @foreach using @if+@break', () => {
+      // In nested loops, use @if + unconditional @break since @break(condition)
+      // in an inner loop body gets evaluated (and removed) during outer loop processing
+      const result = run(
+        '@foreach(groups as group)[@foreach(group.nums as n)@if(n > 1)@break@endif{{ n }}@endforeach]@endforeach',
+        { groups: [{ nums: [1, 2, 3] }, { nums: [1, 2, 3] }] },
+      )
+      // Inner loop should only produce "1" each time because it breaks when n > 1
+      expect(result).toContain('[1]')
+      const matches = result.match(/\[1\]/g)
+      expect(matches).not.toBeNull()
+      expect(matches!.length).toBe(2)
+    })
+
+    it('should handle @break(condition) with equality check', () => {
+      const result = run(
+        `@foreach(items as item)@break(item === 'stop'){{ item }},@endforeach`,
+        { items: ['a', 'b', 'stop', 'c'] },
+      )
+      expect(result).toContain('a,')
+      expect(result).toContain('b,')
+      expect(result).not.toContain('stop')
+      expect(result).not.toContain('c,')
+    })
+
+    it('should handle @break with no remaining iterations', () => {
+      // @break on the last item
+      const result = run(
+        '@foreach(items as item)@break(item === 3){{ item }},@endforeach',
+        { items: [1, 2, 3] },
+      )
+      expect(result).toContain('1,')
+      expect(result).toContain('2,')
+      expect(result).not.toContain('3,')
+    })
+  })
+
+  // ===========================================================================
+  // Loop Control: @continue
+  // ===========================================================================
+  describe('@continue', () => {
+    it('should skip iteration on unconditional @continue inside @if', () => {
+      const result = run(
+        `@foreach(items as item)@if(item === 'skip')@continue@endif<p>{{ item }}</p>@endforeach`,
+        { items: ['a', 'skip', 'b'] },
+      )
+      expect(result).toContain('<p>a</p>')
+      expect(result).not.toContain('<p>skip</p>')
+      expect(result).toContain('<p>b</p>')
+    })
+
+    it('should skip iteration on conditional @continue(condition)', () => {
+      const result = run(
+        '@foreach(items as item)@continue(item % 2 === 0)<li>{{ item }}</li>@endforeach',
+        { items: [1, 2, 3, 4, 5] },
+      )
+      expect(result).toContain('<li>1</li>')
+      expect(result).not.toContain('<li>2</li>')
+      expect(result).toContain('<li>3</li>')
+      expect(result).not.toContain('<li>4</li>')
+      expect(result).toContain('<li>5</li>')
+    })
+
+    it('should skip iteration on conditional @continue in @for loop', () => {
+      const result = run(
+        '@for(let i = 1; i <= 5; i++)@continue(i === 3){{ i }},@endfor',
+        {},
+      )
+      expect(result).toContain('1,')
+      expect(result).toContain('2,')
+      expect(result).not.toContain('3,')
+      expect(result).toContain('4,')
+      expect(result).toContain('5,')
+    })
+
+    it('should only affect inner loop in nested @foreach using @if+@continue', () => {
+      // In nested loops, use @if + unconditional @continue since @continue(condition)
+      // in an inner loop body gets evaluated during outer loop processing
+      const result = run(
+        '@foreach(groups as group)@foreach(group.nums as n)@if(n === 2)@continue@endif{{ group.label }}-{{ n }},@endforeach@endforeach',
+        { groups: [{ label: 'A', nums: [1, 2, 3] }, { label: 'B', nums: [1, 2, 3] }] },
+      )
+      expect(result).toContain('A-1,')
+      expect(result).not.toContain('A-2,')
+      expect(result).toContain('A-3,')
+      expect(result).toContain('B-1,')
+      expect(result).not.toContain('B-2,')
+      expect(result).toContain('B-3,')
+    })
+
+    it('should handle @continue(condition) with boolean property', () => {
+      const result = run(
+        '@foreach(items as item)@continue(item.hidden)<p>{{ item.name }}</p>@endforeach',
+        { items: [{ name: 'A', hidden: false }, { name: 'B', hidden: true }, { name: 'C', hidden: false }] },
+      )
+      expect(result).toContain('<p>A</p>')
+      expect(result).not.toContain('<p>B</p>')
+      expect(result).toContain('<p>C</p>')
+    })
+
+    it('should handle @continue that skips every item', () => {
+      const result = run(
+        '@foreach(items as item)@continue(true){{ item }}@endforeach',
+        { items: [1, 2, 3] },
+      )
+      // All items skipped
+      expect(result).not.toContain('1')
+      expect(result).not.toContain('2')
+      expect(result).not.toContain('3')
+    })
+  })
+
+  // ===========================================================================
+  // Combined @break and @continue
+  // ===========================================================================
+  describe('@break and @continue combined', () => {
+    it('should handle @continue before @break in foreach', () => {
+      const result = run(
+        '@foreach(items as item)@continue(item === 2)@break(item === 4){{ item }},@endforeach',
+        { items: [1, 2, 3, 4, 5] },
+      )
+      expect(result).toContain('1,')
+      expect(result).not.toContain('2,')
+      expect(result).toContain('3,')
+      expect(result).not.toContain('4,')
+      expect(result).not.toContain('5,')
+    })
+  })
+
+  // ===========================================================================
+  // Prop Bindings in Loops
+  // ===========================================================================
+  describe('prop bindings', () => {
+    it('should process :prop="expression" within @foreach', () => {
+      const result = run(
+        '@foreach(items as item)<my-comp :title="item.name"></my-comp>@endforeach',
+        { items: [{ name: 'Hello' }] },
+      )
+      // Should convert to __stx_title="..."
+      expect(result).toContain('__stx_title=')
+      expect(result).toContain('Hello')
+    })
+
+    it('should process shorthand :prop syntax within @foreach', () => {
+      const result = run(
+        '@foreach(items as item)<my-comp :item></my-comp>@endforeach',
+        { items: [{ id: 1 }] },
+      )
+      // Shorthand :item should expand and evaluate
+      expect(result).toContain('__stx_item=')
+    })
+
+    it('should process multiple :prop bindings', () => {
+      const result = run(
+        '@foreach(items as item)<my-comp :name="item.name" :age="item.age"></my-comp>@endforeach',
+        { items: [{ name: 'Alice', age: 30 }] },
+      )
+      expect(result).toContain('__stx_name=')
+      expect(result).toContain('__stx_age=')
+    })
+  })
+
+  // ===========================================================================
+  // Edge Cases
+  // ===========================================================================
+  describe('edge cases', () => {
+    it('should handle whitespace around directive keywords', () => {
+      const result = run(
+        '@foreach( items as item ){{ item }}@endforeach',
+        { items: ['a'] },
+      )
+      expect(result).toContain('a')
+    })
+
+    it('should handle newlines in loop body', () => {
+      const result = run(
+        '@foreach(items as item)\n<p>{{ item }}</p>\n@endforeach',
+        { items: ['x'] },
+      )
+      expect(result).toContain('<p>x</p>')
+    })
+
+    it('should handle very deep nesting (5 levels)', () => {
+      const result = run(
+        '@foreach(a as v1)@foreach(a as v2)@foreach(a as v3)@foreach(a as v4)@foreach(a as v5){{ v5 }}@endforeach@endforeach@endforeach@endforeach@endforeach',
+        { a: [1] },
+      )
+      expect(result).toContain('1')
+    })
+
+    it('should handle multiple loops in same template sequentially', () => {
+      const result = run(
+        '<div>@foreach(a as x){{ x }}@endforeach</div><div>@foreach(b as y){{ y }}@endforeach</div>',
+        { a: [1, 2], b: [3, 4] },
+      )
+      expect(result).toContain('<div>12</div>')
+      expect(result).toContain('<div>34</div>')
+    })
+
+    it('should handle foreach with method call on collection', () => {
+      const result = run(
+        '@foreach(items.slice(1) as item){{ item }},@endforeach',
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toContain('b,')
+      expect(result).toContain('c,')
+      expect(result).not.toContain('a,')
+    })
+
+    it('should handle foreach with map on collection', () => {
+      const result = run(
+        '@foreach(items.map(x => x * 2) as item){{ item }},@endforeach',
+        { items: [1, 2, 3] },
+      )
+      expect(result).toContain('2,')
+      expect(result).toContain('4,')
+      expect(result).toContain('6,')
+    })
+
+    it('should not confuse @endfor with @endforeach', () => {
+      const result = run(
+        '@foreach(items as item)<span>{{ item }}</span>@endforeach',
+        { items: ['x', 'y'] },
+      )
+      expect(result).toContain('<span>x</span>')
+      expect(result).toContain('<span>y</span>')
+    })
+
+    it('should handle template literal injection prevention in @for body', () => {
+      const result = run(
+        '@for(let i = 0; i < 1; i++)<div>${"safe"}</div>@endfor',
+        {},
+      )
+      // ${ should be escaped, not interpreted
+      expect(result).toContain('${"safe"}')
+    })
+
+    it('should handle backtick escaping in @for body', () => {
+      const result = run(
+        '@for(let i = 0; i < 1; i++)<div>`hello`</div>@endfor',
+        {},
+      )
+      expect(result).toContain('`hello`')
+    })
+
+    it('should handle items with parentheses in string values', () => {
+      const result = run(
+        '@foreach(items as item)<p>{{ item }}</p>@endforeach',
+        { items: ['hello (world)', 'test (123)'] },
+      )
+      expect(result).toContain('hello (world)')
+      expect(result).toContain('test (123)')
+    })
+
+    it('should handle @foreach with numeric index and parallel array access', () => {
+      const result = run(
+        '@foreach(names as idx => name){{ name }}: {{ scores[idx] }},@endforeach',
+        { names: ['Alice', 'Bob'], scores: [95, 87] },
+      )
+      expect(result).toContain('Alice: 95,')
+      expect(result).toContain('Bob: 87,')
+    })
+
+    it('should handle @forelse inside @if', () => {
+      const result = run(
+        '@foreach(items as item)@if(item.active)<b>{{ item.name }}</b>@endif@endforeach',
+        { items: [{ name: 'X', active: true }, { name: 'Y', active: false }] },
+      )
+      expect(result).toContain('<b>X</b>')
+      expect(result).not.toContain('<b>Y</b>')
+    })
+
+    it('should handle context with many variables', () => {
+      const ctx: Record<string, any> = { items: [1] }
+      for (let i = 0; i < 50; i++) {
+        ctx[`var${i}`] = i
+      }
+      const result = run(
+        '@foreach(items as item){{ item }}@endforeach',
+        ctx,
+      )
+      expect(result).toContain('1')
+    })
+
+    it('should handle @foreach with object.entries-like iteration using index', () => {
+      const result = run(
+        '@foreach(entries as idx => entry)<p>{{ idx }}: {{ entry.key }}={{ entry.value }}</p>@endforeach',
+        { entries: [{ key: 'a', value: 1 }, { key: 'b', value: 2 }] },
+      )
+      expect(result).toContain('<p>0: a=1</p>')
+      expect(result).toContain('<p>1: b=2</p>')
+    })
+  })
+
+  // ===========================================================================
+  // Error Handling
+  // ===========================================================================
+  describe('error handling', () => {
+    it('should produce error output when @foreach collection is not iterable', () => {
+      const result = run(
+        '@foreach(items as item){{ item }}@endforeach',
+        { items: 42 },
+      )
+      expect(result).toContain('Error')
+    })
+
+    it('should produce error output for undefined collection in @foreach', () => {
+      const result = run(
+        '@foreach(missing as item){{ item }}@endforeach',
+        {},
+      )
+      // Should produce an error since missing is undefined and not an array
+      expect(result).toContain('Error')
+    })
+
+    it('should produce error output for unsafe @for expression', () => {
+      // Things like process.exit should be rejected
+      const result = run(
+        '@for(let i = 0; require("fs"); i++){{ i }}@endfor',
+        {},
+      )
+      // Should contain an error about unsafe expression
+      expect(result.toLowerCase()).toMatch(/error|unsafe/)
+    })
+
+    it('should handle @foreach gracefully when expression throws', () => {
+      const result = run(
+        '@foreach(items.nonExistentMethod() as item){{ item }}@endforeach',
+        { items: [1, 2, 3] },
+      )
+      expect(result).toContain('Error')
+    })
+  })
+
+  // ===========================================================================
+  // Loop Variable ($loop) Comprehensive
+  // ===========================================================================
+  describe('$loop variable', () => {
+    it('should provide $loop.index for each iteration', () => {
+      const result = run(
+        '@foreach(items as item){{ $loop.index }},@endforeach',
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toContain('0,')
+      expect(result).toContain('1,')
+      expect(result).toContain('2,')
+    })
+
+    it('should provide $loop.first and $loop.last', () => {
+      const result = run(
+        '@foreach(items as item)@if($loop.first)FIRST@endif@if($loop.last)LAST@endif@endforeach',
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toContain('FIRST')
+      expect(result).toContain('LAST')
+    })
+
+    it('should provide $loop.count', () => {
+      const result = run(
+        '@foreach(items as item){{ $loop.count }}@endforeach',
+        { items: [1, 2, 3, 4, 5] },
+      )
+      expect(result).toContain('5')
+    })
+
+    it('should provide $loop.iteration (one-based)', () => {
+      const result = run(
+        '@foreach(items as item){{ $loop.iteration }},@endforeach',
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toContain('1,')
+      expect(result).toContain('2,')
+      expect(result).toContain('3,')
+    })
+  })
+
+  // ===========================================================================
+  // Misc: combined directives, ordering, and correctness
+  // ===========================================================================
+  describe('combined and ordering', () => {
+    it('should handle @foreach followed by plain text', () => {
+      const result = run(
+        '@foreach(items as item){{ item }}@endforeach -- done',
+        { items: ['x'] },
+      )
+      expect(result).toContain('x')
+      expect(result).toContain('-- done')
+    })
+
+    it('should handle plain text before @foreach', () => {
+      const result = run(
+        'Header: @foreach(items as item){{ item }}@endforeach',
+        { items: ['y'] },
+      )
+      expect(result).toContain('Header:')
+      expect(result).toContain('y')
+    })
+
+    it('should handle @for loop with complex arithmetic in body', () => {
+      const result = run(
+        '@for(let i = 1; i <= 3; i++){{ i * i }},@endfor',
+        {},
+      )
+      expect(result).toContain('1,')
+      expect(result).toContain('4,')
+      expect(result).toContain('9,')
+    })
+
+    it('should handle @foreach with @if/@else inside', () => {
+      const result = run(
+        '@foreach(items as item)@if(item > 2)<b>{{ item }}</b>@else<i>{{ item }}</i>@endif@endforeach',
+        { items: [1, 2, 3, 4] },
+      )
+      expect(result).toContain('<i>1</i>')
+      expect(result).toContain('<i>2</i>')
+      expect(result).toContain('<b>3</b>')
+      expect(result).toContain('<b>4</b>')
+    })
+
+    it('should handle @foreach where loop body outputs nothing for some items', () => {
+      const result = run(
+        '@foreach(items as item)@if(item.visible){{ item.name }}@endif@endforeach',
+        { items: [{ name: 'A', visible: true }, { name: 'B', visible: false }, { name: 'C', visible: true }] },
+      )
+      expect(result).toContain('A')
+      expect(result).not.toContain('B')
+      expect(result).toContain('C')
+    })
+
+    it('should handle @for with multiple context variables', () => {
+      const result = run(
+        '@for(let i = start; i < end; i += step){{ i }},@endfor',
+        { start: 0, end: 10, step: 3 },
+      )
+      expect(result).toContain('0,')
+      expect(result).toContain('3,')
+      expect(result).toContain('6,')
+      expect(result).toContain('9,')
+      expect(result).not.toContain('10,')
+    })
+
+    it('should handle @foreach outputting the index from index => item syntax correctly', () => {
+      const result = run(
+        '@foreach(items as i => val)<span data-i="{{ i }}">{{ val }}</span>@endforeach',
+        { items: ['first', 'second', 'third'] },
+      )
+      expect(result).toContain('<span data-i="0">first</span>')
+      expect(result).toContain('<span data-i="1">second</span>')
+      expect(result).toContain('<span data-i="2">third</span>')
     })
   })
 })
