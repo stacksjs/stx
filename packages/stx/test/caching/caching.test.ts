@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
+import { hashFilePath } from '../../src/caching'
 
 describe('stx Template Caching', () => {
   const CACHE_DIR = path.join(TEMP_DIR, '.stx/cache')
@@ -282,5 +283,54 @@ describe('stx Template Caching', () => {
     if (output1 === output2) {
       expect(output3).not.toBe(output1)
     }
+  })
+})
+
+// =============================================================================
+// Caching Edge Cases - hashFilePath (from discovered-bugs and deep-edge-cases)
+// =============================================================================
+
+describe('Caching Edge Cases', () => {
+  it('hashFilePath should produce consistent hash', () => {
+    const h1 = hashFilePath('/path/to/file.stx')
+    const h2 = hashFilePath('/path/to/file.stx')
+    expect(h1).toBe(h2)
+  })
+
+  it('hashFilePath should produce different hashes for different paths', () => {
+    const h1 = hashFilePath('/path/to/file1.stx')
+    const h2 = hashFilePath('/path/to/file2.stx')
+    expect(h1).not.toBe(h2)
+  })
+
+  it('hashFilePath returns 16-char hex string', () => {
+    const hash = hashFilePath('/some/path/template.stx')
+    expect(hash.length).toBe(16)
+    expect(/^[0-9a-f]+$/.test(hash)).toBe(true)
+  })
+
+  it('hashFilePath handles empty string', () => {
+    const hash = hashFilePath('')
+    expect(hash.length).toBe(16)
+    expect(/^[0-9a-f]+$/.test(hash)).toBe(true)
+  })
+
+  it('hashFilePath handles very long paths', () => {
+    const longPath = '/a'.repeat(5000) + '.stx'
+    const hash = hashFilePath(longPath)
+    expect(hash.length).toBe(16)
+    expect(/^[0-9a-f]+$/.test(hash)).toBe(true)
+  })
+
+  it('hashFilePath handles special characters in path', () => {
+    const hash = hashFilePath('/path/with spaces/and-dashes/file (1).stx')
+    expect(hash.length).toBe(16)
+    expect(/^[0-9a-f]+$/.test(hash)).toBe(true)
+  })
+
+  it('hashFilePath handles unicode in path', () => {
+    const hash = hashFilePath('/path/\u65E5\u672C\u8A9E/\u30D5\u30A1\u30A4\u30EB.stx')
+    expect(hash.length).toBe(16)
+    expect(/^[0-9a-f]+$/.test(hash)).toBe(true)
   })
 })

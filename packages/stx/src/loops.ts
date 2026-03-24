@@ -713,10 +713,32 @@ export function processLoops(template: string, context: Record<string, any>, fil
           array = safeEvaluate(trimmedArrayExpr, ctx)
         }
 
+        // Convert non-array iterables to arrays for iteration support
+        let isObjectEntries = false
         if (!Array.isArray(array)) {
-          const errorMsg = inlineError('Foreach', `Error in @foreach: ${trimmedArrayExpr} is not an array`, ErrorCodes.TYPE_ERROR)
-          result = result.substring(0, start) + errorMsg + result.substring(end)
-          continue
+          if (array instanceof Map) {
+            // Map → [[key, value], ...] — treat as entries for key => value syntax
+            array = Array.from(array)
+            isObjectEntries = true
+          }
+          else if (array instanceof Set) {
+            // Set → [value, ...]
+            array = Array.from(array)
+          }
+          else if (typeof array === 'string') {
+            // String → ['c', 'h', 'a', 'r', ...]
+            array = Array.from(array)
+          }
+          else if (array && typeof array === 'object' && !(array instanceof Date) && !(array instanceof RegExp)) {
+            // Plain object → [[key, value], ...] for key => value iteration
+            array = Object.entries(array)
+            isObjectEntries = true
+          }
+          else {
+            const errorMsg = inlineError('Foreach', `Error in @foreach: ${trimmedArrayExpr} is not iterable`, ErrorCodes.TYPE_ERROR)
+            result = result.substring(0, start) + errorMsg + result.substring(end)
+            continue
+          }
         }
 
         // Get loop configuration (useAltLoopVar reserved for future use when exclusively using $loop)
@@ -761,14 +783,36 @@ export function processLoops(template: string, context: Record<string, any>, fil
           // Always provide both loop and $loop for maximum compatibility
           const itemContext: Record<string, any> = {
             ...ctx,
-            [itemName]: item,
             loop: loopContext,
             $loop: loopContext, // Alternative name to avoid conflicts with user's 'loop' variable
           }
 
+          // Handle array destructuring syntax: @foreach(items as [key, val])
+          if (itemName.startsWith('[') && itemName.endsWith(']')) {
+            const destructuredNames = itemName.slice(1, -1).split(',').map(n => n.trim())
+            if (Array.isArray(item)) {
+              destructuredNames.forEach((name, i) => {
+                if (name) itemContext[name] = item[i]
+              })
+            }
+            else {
+              itemContext[itemName] = item
+            }
+          }
+          else {
+            itemContext[itemName] = item
+          }
+
           // Add index variable if using "index => item" syntax
           if (indexName) {
-            itemContext[indexName] = index
+            // For object/Map entries, use the entry key as index and entry value as item
+            if (isObjectEntries && Array.isArray(item) && item.length === 2) {
+              itemContext[indexName] = item[0]
+              itemContext[itemName] = item[1]
+            }
+            else {
+              itemContext[indexName] = index
+            }
           }
 
           // Step 1: Process conditional @break(condition) and @continue(condition)

@@ -17,7 +17,7 @@ import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
 import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError, StxValidationError } from './error-handling'
 import { processExpressions, usesSignalsInScript } from './expressions'
-import { processBasicFormDirectives, processErrorDirective } from './forms'
+import { processBasicFormDirectives, processErrorDirective, processFormInputDirectives } from './forms'
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processJsDirectives, processTsDirectives } from './js-ts'
@@ -1948,8 +1948,9 @@ async function processOtherDirectives(
   // Process env directive
   output = processEnvDirective(output, context)
 
-  // Process form directives
+  // Process form directives (basic: @csrf, @method; input: @form, @input, @textarea, @select, @checkbox, @radio, @file, @label)
   output = processBasicFormDirectives(output, context)
+  output = processFormInputDirectives(output, context)
 
   // Process error directive
   output = processErrorDirective(output, context)

@@ -1,5 +1,16 @@
 import { describe, expect, it, spyOn } from 'bun:test'
-import { validateClientScript } from '../src/process'
+import { validateClientScript as _validateClientScript } from '../src/process'
+import type { StrictModeConfig } from '../src/types'
+
+// Wrapper that enables strict mode with warnings by default when no explicit config is passed
+function validateClientScript(content: string, filePath: string, strict?: boolean | StrictModeConfig) {
+  if (strict !== undefined) {
+    _validateClientScript(content, filePath, strict)
+  }
+  else {
+    _validateClientScript(content, filePath, { enabled: true, failOnViolation: false })
+  }
+}
 
 describe('Strict Mode - validateClientScript', () => {
   describe('document.* patterns', () => {

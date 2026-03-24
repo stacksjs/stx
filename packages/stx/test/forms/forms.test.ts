@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { processForms, processBasicFormDirectives, processFormInputDirectives, defaultFormClasses } from '../../src/forms'
+import { processForms, processBasicFormDirectives, processFormInputDirectives, processErrorDirective, defaultFormClasses, processValidateDirective, validateField } from '../../src/forms'
 import type { StxOptions } from '../../src/types'
 import { defaultConfig } from '../../src/config'
 
@@ -1026,5 +1026,400 @@ describe('edge cases', () => {
     expect(result).toContain('</form>')
     // @validate should have been processed first, producing a comment
     expect(result).toContain('<!-- @validate:email:required|email -->')
+  })
+})
+
+// =============================================================================
+// @input old value with falsy values (from discovered-bugs)
+// =============================================================================
+
+describe('@input old value with falsy values', () => {
+  it('should preserve old value of 0 instead of falling back to explicit value', () => {
+    const ctx = { old: { age: 0 }, errors: {} }
+    const result = processFormInputDirectives("@input('age', '25')", ctx, defaultFormClasses)
+    expect(result).toContain('value="0"')
+  })
+
+  it('should preserve old value of empty string instead of falling back', () => {
+    const ctx = { old: { name: '' }, errors: {} }
+    const result = processFormInputDirectives("@input('name', 'default')", ctx, defaultFormClasses)
+    expect(result).toContain('value=""')
+  })
+
+  it('should preserve old value of false instead of falling back', () => {
+    const ctx = { old: { active: false }, errors: {} }
+    const result = processFormInputDirectives("@input('active', 'yes')", ctx, defaultFormClasses)
+    expect(result).toContain('value="false"')
+  })
+})
+
+// =============================================================================
+// @select type coercion (from discovered-bugs)
+// =============================================================================
+
+describe('@select type coercion', () => {
+  it('should select option when old value is number 1 and option value is string "1"', () => {
+    const ctx = { old: { priority: 1 }, errors: {} }
+    const template = '@select(\'priority\')<option value="1">High</option><option value="2">Low</option>@endselect'
+    const result = processFormInputDirectives(template, ctx, defaultFormClasses)
+    expect(result).toContain('selected')
+  })
+
+  it('should select option when old value is number 0', () => {
+    const ctx = { old: { rating: 0 }, errors: {} }
+    const template = '@select(\'rating\')<option value="0">None</option><option value="1">One</option>@endselect'
+    const result = processFormInputDirectives(template, ctx, defaultFormClasses)
+    expect(result).toContain('selected')
+  })
+})
+
+// =============================================================================
+// @checkbox type coercion (from discovered-bugs)
+// =============================================================================
+
+describe('@checkbox type coercion', () => {
+  it('should check checkbox when old value is number 1 and checkbox value is string "1"', () => {
+    const ctx = { old: { level: 1 }, errors: {} }
+    const result = processFormInputDirectives("@checkbox('level', '1')", ctx, defaultFormClasses)
+    expect(result).toContain('checked')
+  })
+
+  it('should check checkbox when old value is array of numbers [1,2] and value is string "1"', () => {
+    const ctx = { old: { levels: [1, 2] }, errors: {} }
+    const result = processFormInputDirectives("@checkbox('levels', '1')", ctx, defaultFormClasses)
+    expect(result).toContain('checked')
+  })
+})
+
+// =============================================================================
+// @method HTTP methods (from discovered-bugs)
+// =============================================================================
+
+describe('@method additional HTTP methods', () => {
+  it('should generate hidden field for HEAD method', () => {
+    const result = processBasicFormDirectives("@method('HEAD')", {})
+    expect(result).toContain('_method')
+    expect(result).toContain('HEAD')
+  })
+
+  it('should generate hidden field for OPTIONS method', () => {
+    const result = processBasicFormDirectives("@method('OPTIONS')", {})
+    expect(result).toContain('_method')
+    expect(result).toContain('OPTIONS')
+  })
+})
+
+// =============================================================================
+// CSRF token format (from discovered-bugs)
+// =============================================================================
+
+describe('CSRF token format', () => {
+  it('should generate valid UUID format tokens', () => {
+    const ctx: Record<string, any> = {}
+    const result = processBasicFormDirectives('@csrf', ctx)
+    const token = result.match(/value="([^"]+)"/)?.[1]
+    expect(token).toBeDefined()
+    expect(token).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+  })
+
+  it('should reuse token across multiple @csrf in same context', () => {
+    const ctx: Record<string, any> = {}
+    const result = processBasicFormDirectives('@csrf @csrf', ctx)
+    const tokens = [...result.matchAll(/value="([^"]+)"/g)].map(m => m[1])
+    expect(tokens.length).toBe(2)
+    expect(tokens[0]).toBe(tokens[1])
+  })
+})
+
+// =============================================================================
+// XSS prevention in forms (from discovered-bugs)
+// =============================================================================
+
+describe('XSS prevention in forms', () => {
+  it('should escape HTML in input values from old context', () => {
+    const ctx = { old: { name: '"><script>alert(1)</script>' }, errors: {} }
+    const result = processFormInputDirectives("@input('name')", ctx, defaultFormClasses)
+    expect(result).not.toContain('<script>')
+    expect(result).toContain('&lt;script&gt;')
+  })
+
+  it('should escape HTML in textarea content', () => {
+    const ctx = { old: { bio: '<img onerror="alert(1)" src=x>' }, errors: {} }
+    const result = processFormInputDirectives("@textarea('bio')default@endtextarea", ctx, defaultFormClasses)
+    expect(result).not.toContain('<img')
+    expect(result).toContain('&lt;img')
+  })
+})
+
+// =============================================================================
+// Form validation edge cases (from edge-case-bugs)
+// =============================================================================
+
+describe('Form validation edge cases', () => {
+  it('should handle @input with type=number and value 0 (falsy)', () => {
+    const ctx = { errors: {} }
+    const result = processFormInputDirectives("@input('count', '0')", ctx, defaultFormClasses)
+    expect(result).toContain('value="0"')
+    expect(result).toContain('type="text"')
+  })
+
+  it('should handle @input with type=hidden in attributes', () => {
+    const ctx = { errors: {} }
+    const result = processFormInputDirectives("@input('token', 'abc123', { type: 'hidden' })", ctx, defaultFormClasses)
+    expect(result).toContain('type="hidden"')
+  })
+
+  it('should handle @input with placeholder in attributes', () => {
+    const ctx = { errors: {} }
+    const result = processFormInputDirectives("@input('email', '', { placeholder: 'user@example.com' })", ctx, defaultFormClasses)
+    expect(result).toContain('placeholder')
+  })
+
+  it('should handle @textarea with very long content', () => {
+    const longContent = 'x'.repeat(10000)
+    const ctx = { errors: {} }
+    const result = processFormInputDirectives(`@textarea('bio')${longContent}@endtextarea`, ctx, defaultFormClasses)
+    expect(result).toContain('<textarea')
+    expect(result).toContain('</textarea>')
+  })
+
+  it('should handle @select with many options (performance)', () => {
+    const options = Array.from({ length: 100 }, (_, i) => `<option value="${i}">Option ${i}</option>`).join('\n')
+    const ctx = { old: { category: '50' }, errors: {} }
+    const template = `@select('category')${options}@endselect`
+    const result = processFormInputDirectives(template, ctx, defaultFormClasses)
+    expect(result).toContain('<select')
+    expect(result).toContain('Option 50')
+    expect(result).toContain('selected')
+  })
+
+  it('should handle @checkbox with value containing special HTML chars', () => {
+    const ctx = { errors: {} }
+    const result = processFormInputDirectives("@checkbox('agree', '<script>alert(1)</script>')", ctx, defaultFormClasses)
+    expect(result).not.toContain('<script>')
+    expect(result).toContain('&lt;script&gt;')
+  })
+
+  it('should handle @radio group with no old value (nothing checked)', () => {
+    const ctx = { errors: {} }
+    const r1 = processFormInputDirectives("@radio('color', 'red')", ctx, defaultFormClasses)
+    const r2 = processFormInputDirectives("@radio('color', 'blue')", ctx, defaultFormClasses)
+    expect(r1).not.toContain('checked')
+    expect(r2).not.toContain('checked')
+  })
+
+  it('should handle @error for field with empty error array', () => {
+    const ctx = { errors: { email: [] } }
+    const result = processErrorDirective("@error('email')<span>{{ $message }}</span>@enderror", ctx)
+    expect(result).toBeDefined()
+  })
+
+  it('should handle @error for field with non-array error (string)', () => {
+    const ctx = { errors: { email: 'Invalid email' } }
+    const result = processErrorDirective("@error('email')<span>{{ $message }}</span>@enderror", ctx)
+    expect(result).toContain('Invalid email')
+  })
+
+  it('should handle @form with method POST', () => {
+    const ctx = {}
+    const result = processFormInputDirectives("@form('POST', '/submit')", ctx, defaultFormClasses)
+    expect(result).toContain('<form')
+    expect(result).toContain('method="POST"')
+    expect(result).toContain('action="/submit"')
+  })
+
+  it('should handle @form with file upload enctype', () => {
+    const ctx = {}
+    const result = processFormInputDirectives("@form('POST', '/upload', { enctype: 'multipart/form-data' })", ctx, defaultFormClasses)
+    expect(result).toContain('enctype="multipart/form-data"')
+  })
+
+  it('should handle @label with HTML content', () => {
+    const ctx = { errors: {} }
+    const result = processFormInputDirectives("@label('name')<strong>Name</strong> <em>(required)</em>@endlabel", ctx, defaultFormClasses)
+    expect(result).toContain('<label')
+    expect(result).toContain('<strong>Name</strong>')
+    expect(result).toContain('for="name"')
+  })
+
+  it('should handle double @csrf in same form (same token)', () => {
+    const ctx: Record<string, any> = {}
+    const result = processBasicFormDirectives('@csrf @csrf', ctx)
+    const tokens = [...result.matchAll(/value="([^"]+)"/g)].map(m => m[1])
+    expect(tokens.length).toBe(2)
+    expect(tokens[0]).toBe(tokens[1])
+  })
+
+  it('should handle @input with error state (adds error class)', () => {
+    const ctx = { errors: { email: 'Required' } }
+    const result = processFormInputDirectives("@input('email')", ctx, defaultFormClasses)
+    expect(result).toContain(defaultFormClasses.inputError)
+  })
+
+  it('should handle @endform correctly', () => {
+    const ctx = {}
+    const result = processFormInputDirectives('@endform', ctx, defaultFormClasses)
+    expect(result).toBe('</form>')
+  })
+})
+
+// =============================================================================
+// Form directive edge cases (from deep-edge-cases)
+// =============================================================================
+
+describe('Form directive edge cases (deep)', () => {
+  const formOpts: StxOptions = { debug: false }
+
+  it('@input with type attribute via { type: email } syntax', () => {
+    const template = `@input('email', '', { type: email })`
+    const result = processForms(template, {}, 'test.stx', formOpts)
+    expect(result).toContain('type="email"')
+    expect(result).toContain('name="email"')
+  })
+
+  it('@input generates input with name and value', () => {
+    const template = `@input('age', '25')`
+    const result = processForms(template, {}, 'test.stx', formOpts)
+    expect(result).toContain('name="age"')
+    expect(result).toContain('value="25"')
+    expect(result).toContain('type="text"')
+  })
+
+  it('@input with default type is text', () => {
+    const template = `@input('birthday', '2024-01-01')`
+    const result = processForms(template, {}, 'test.stx', formOpts)
+    expect(result).toContain('type="text"')
+    expect(result).toContain('value="2024-01-01"')
+  })
+
+  it('@input with empty value', () => {
+    const template = `@input('website', '')`
+    const result = processForms(template, {}, 'test.stx', formOpts)
+    expect(result).toContain('name="website"')
+    expect(result).toContain('<input')
+  })
+
+  it('@input renders form-control class by default', () => {
+    const template = `@input('phone', '+1234567890')`
+    const result = processForms(template, {}, 'test.stx', formOpts)
+    expect(result).toContain('class="form-control"')
+  })
+
+  it('@textarea with plain content', () => {
+    const template = `@textarea('bio')Some bio text@endtextarea`
+    const result = processForms(template, {}, 'test.stx', formOpts)
+    expect(result).toContain('<textarea')
+    expect(result).toContain('name="bio"')
+    expect(result).toContain('Some bio text')
+  })
+})
+
+// =============================================================================
+// @validate directive tests (from deep-edge-cases)
+// =============================================================================
+
+describe('@validate directive edge cases', () => {
+  it('@validate with required rule generates required attribute', () => {
+    const template = `@validate('email', 'required')`
+    const result = processValidateDirective(template, {})
+    expect(result).toContain('required')
+  })
+
+  it('@validate with email rule generates type=email', () => {
+    const template = `@validate('email', 'email')`
+    const result = processValidateDirective(template, {})
+    expect(result).toContain('type="email"')
+  })
+
+  it('@validate with url rule generates type=url', () => {
+    const template = `@validate('website', 'url')`
+    const result = processValidateDirective(template, {})
+    expect(result).toContain('type="url"')
+  })
+
+  it('@validate with numeric rule generates type=number', () => {
+    const template = `@validate('age', 'numeric')`
+    const result = processValidateDirective(template, {})
+    expect(result).toContain('type="number"')
+  })
+
+  it('@validate with min rule generates minlength', () => {
+    const template = `@validate('password', 'min:8')`
+    const result = processValidateDirective(template, {})
+    expect(result).toContain('minlength="8"')
+  })
+
+  it('@validate with max rule generates maxlength', () => {
+    const template = `@validate('bio', 'max:500')`
+    const result = processValidateDirective(template, {})
+    expect(result).toContain('maxlength="500"')
+  })
+
+  it('@validate with multiple rules', () => {
+    const template = `@validate('email', 'required|email|max:255')`
+    const result = processValidateDirective(template, {})
+    expect(result).toContain('required')
+    expect(result).toContain('type="email"')
+    expect(result).toContain('maxlength="255"')
+  })
+})
+
+// =============================================================================
+// validateField tests (from deep-edge-cases)
+// =============================================================================
+
+describe('validateField rules', () => {
+  it('after date rule', () => {
+    const result = validateField('date', '2025-06-01', 'after:2024-01-01')
+    expect(result.valid).toBe(true)
+  })
+
+  it('after date rule fails for earlier date', () => {
+    const result = validateField('date', '2023-06-01', 'after:2024-01-01')
+    expect(result.valid).toBe(false)
+  })
+
+  it('url rule with valid URL', () => {
+    const result = validateField('website', 'https://example.com', 'url')
+    expect(result.valid).toBe(true)
+  })
+
+  it('url rule with invalid URL', () => {
+    const result = validateField('website', 'not a url', 'url')
+    expect(result.valid).toBe(false)
+  })
+
+  it('numeric rule with valid number', () => {
+    const result = validateField('age', '25', 'numeric')
+    expect(result.valid).toBe(true)
+  })
+
+  it('numeric rule with non-numeric value', () => {
+    const result = validateField('age', 'abc', 'numeric')
+    expect(result.valid).toBe(false)
+  })
+
+  it('multiple rules combined: required|email|max:255', () => {
+    const result = validateField('email', '', 'required|email|max:255')
+    expect(result.valid).toBe(false)
+    expect(result.errors.length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+// =============================================================================
+// Form class configuration (from discovered-bugs)
+// =============================================================================
+
+describe('form class configuration edge cases', () => {
+  it('should apply custom form classes', () => {
+    const customClasses = {
+      ...defaultFormClasses,
+      input: 'custom-input',
+      inputError: 'custom-error',
+    }
+    const ctx = { errors: { name: 'Required' } }
+    const result = processFormInputDirectives("@input('name')", ctx, customClasses)
+    expect(result).toContain('custom-input')
+    expect(result).toContain('custom-error')
   })
 })

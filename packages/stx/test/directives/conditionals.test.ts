@@ -1347,17 +1347,16 @@ describe('Conditionals Comprehensive', () => {
       expect(result).toContain('<p>visible</p>')
     })
 
-    it('should handle @empty for 0 value (0 is not empty in context of null/undefined check)', () => {
-      // Based on source: empty checks for undefined, null, '', empty array, empty object
-      // 0 is NOT in that list, so @empty should hide content for 0
+    it('should handle @empty for 0 value (Blade semantics: 0 is empty)', () => {
+      // Blade semantics: 0, false, '', null, undefined, [], {} are all "empty"
       const result = processIssetEmptyDirectives('@empty(val)<p>Empty</p>@else<p>Has value</p>@endempty', { val: 0 }, filePath)
-      expect(result).toContain('<p>Has value</p>')
+      expect(result).toContain('<p>Empty</p>')
     })
 
-    it('should handle @empty for false value', () => {
-      // false is not in the empty check list (undefined, null, '', [], {})
+    it('should handle @empty for false value (Blade semantics: false is empty)', () => {
+      // Blade semantics: false is considered empty
       const result = processIssetEmptyDirectives('@empty(val)<p>Empty</p>@else<p>Has value</p>@endempty', { val: false }, filePath)
-      expect(result).toContain('<p>Has value</p>')
+      expect(result).toContain('<p>Empty</p>')
     })
 
     it('should handle processConditionals calling all sub-processors', () => {
@@ -1431,6 +1430,136 @@ describe('Conditionals Comprehensive', () => {
         { auth: { check: true, user: { id: 1 } } },
       )
       expect(result).toContain('<p>Content</p>')
+    })
+  })
+
+  // =========================================================================
+  // Deep @if edge cases (from bug discovery)
+  // =========================================================================
+  describe('Deep @if edge cases', () => {
+    it('should handle newlines in @if condition', () => {
+      const result = processConditionals('@if(a &&\n  b)yes@else no@endif', { a: true, b: true }, filePath)
+      expect(result.trim()).toBe('yes')
+    })
+
+    it('should handle regex test in conditions', () => {
+      const result = processConditionals('@if(/^admin/.test(role))yes@else no@endif', { role: 'admin-user' }, filePath)
+      expect(result.trim()).toBe('yes')
+    })
+
+    it('should treat NaN as falsy', () => {
+      const result = processConditionals('@if(val)yes@else no@endif', { val: NaN }, filePath)
+      expect(result.trim()).toBe('no')
+    })
+
+    it('should handle @if with array.some', () => {
+      const ctx = { users: [{ admin: false }, { admin: true }] }
+      const result = processConditionals('@if(users.some(u => u.admin))has admin@else no admin@endif', ctx, filePath)
+      expect(result.trim()).toBe('has admin')
+    })
+
+    it('should handle @if with array.every (true case)', () => {
+      const ctx = { items: [1, 2, 3] }
+      const result = processConditionals('@if(items.every(i => i > 0))all positive@else not all@endif', ctx, filePath)
+      expect(result.trim()).toBe('all positive')
+    })
+
+    it('should handle @if with array.every (false case)', () => {
+      const ctx = { items: [1, -2, 3] }
+      const result = processConditionals('@if(items.every(i => i > 0))all positive@else not all@endif', ctx, filePath)
+      expect(result.trim()).toBe('not all')
+    })
+
+    it('should handle @if with array.find', () => {
+      const ctx = { items: [{ id: 1, name: 'A' }, { id: 2, name: 'B' }] }
+      const result = processConditionals('@if(items.find(i => i.id === 1))found@else not found@endif', ctx, filePath)
+      expect(result.trim()).toBe('found')
+    })
+
+    it('should handle @if with Object.keys length check', () => {
+      const ctx = { obj: { a: 1, b: 2 } }
+      const result = processConditionals('@if(Object.keys(obj).length > 0)has keys@else empty@endif', ctx, filePath)
+      expect(result.trim()).toBe('has keys')
+    })
+
+    it('should handle @if with Number.isInteger', () => {
+      const ctx = { val: 42 }
+      const result = processConditionals('@if(Number.isInteger(val))integer@else not integer@endif', ctx, filePath)
+      expect(result.trim()).toBe('integer')
+    })
+
+    it('should handle @if with multiple && and || precedence', () => {
+      const ctx = { a: true, b: false, c: true, d: false }
+      const result = processConditionals('@if(a || b && c || d)yes@else no@endif', ctx, filePath)
+      // a || (b && c) || d => true || false || false => true
+      expect(result.trim()).toBe('yes')
+    })
+
+    it('should handle @if with negated condition and data', () => {
+      const ctx = { isLoading: false, data: { value: 1 } }
+      const result = processConditionals('@if(!isLoading && data)ready@else loading@endif', ctx, filePath)
+      expect(result.trim()).toBe('ready')
+    })
+
+    it('should handle @if with comparison to string literal containing spaces', () => {
+      const ctx = { status: 'in progress' }
+      const result = processConditionals("@if(status === 'in progress')ongoing@else done@endif", ctx, filePath)
+      expect(result.trim()).toBe('ongoing')
+    })
+
+    it('should handle @if with null and undefined checks', () => {
+      const ctx = { val: 0 }
+      const result = processConditionals('@if(val !== null && val !== undefined)exists@else missing@endif', ctx, filePath)
+      expect(result.trim()).toBe('exists')
+    })
+
+    it('should handle @if comparing strings lexicographically', () => {
+      const ctx = { name: 'Alice' }
+      const result = processConditionals("@if(name < 'M')before M@else after M@endif", ctx, filePath)
+      expect(result.trim()).toBe('before M')
+    })
+
+    it('should handle @if with bitwise operators', () => {
+      const ctx = { flags: 0x05 }
+      const result = processConditionals('@if(flags & 0x01)flag set@else flag not set@endif', ctx, filePath)
+      expect(result.trim()).toBe('flag set')
+    })
+
+    it('should handle @if with exponentiation', () => {
+      const result = processConditionals('@if(2 ** 10 === 1024)correct@else wrong@endif', {}, filePath)
+      expect(result.trim()).toBe('correct')
+    })
+
+    it('should handle @if with string includes for email validation', () => {
+      const ctx = { email: 'test@example.com' }
+      const result = processConditionals("@if(email.includes('@'))valid@else invalid@endif", ctx, filePath)
+      expect(result.trim()).toBe('valid')
+    })
+
+    it('should handle @if with ternary inside condition', () => {
+      const ctx = { x: 5 }
+      const result = processConditionals('@if(x > 3 ? true : false)big@else small@endif', ctx, filePath)
+      expect(result.trim()).toBe('big')
+    })
+  })
+
+  // =========================================================================
+  // Advanced @switch patterns (from bug discovery)
+  // =========================================================================
+  describe('Advanced @switch patterns', () => {
+    it('should handle @switch(true) pattern for range matching', () => {
+      const template = '@switch(true)@case(score >= 90)A@break@case(score >= 80)B@break@case(score >= 70)C@break@default F@endswitch'
+      expect(processSwitchStatements(template, { score: 85 }, filePath).trim()).toBe('B')
+    })
+
+    it('should handle expressions in both switch value and case', () => {
+      const result = processSwitchStatements('@switch(a + b)@case(3)three@break@case(7)seven@break@endswitch', { a: 3, b: 4 }, filePath)
+      expect(result.trim()).toBe('seven')
+    })
+
+    it('should match only first matching case (no fall-through)', () => {
+      const result = processSwitchStatements('@switch(val)@case("a")first@break@case("a")second@break@endswitch', { val: 'a' }, filePath)
+      expect(result.trim()).toBe('first')
     })
   })
 })

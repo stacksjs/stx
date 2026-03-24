@@ -112,11 +112,11 @@ export function processMetaDirectives(
         content = ''
       }
 
-      return content ? `<meta property="${property}" content="${escapeHtml(content)}">` : ''
+      return content ? `<meta property="${escapeHtml(property)}" content="${escapeHtml(content)}">` : ''
     }
 
     return content
-      ? `<meta name="${name}" content="${escapeHtml(content)}">`
+      ? `<meta name="${escapeHtml(name)}" content="${escapeHtml(content)}">`
       : ''
   })
 

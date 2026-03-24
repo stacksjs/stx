@@ -135,28 +135,106 @@ export function stripTypeScript(scriptContent: string): string {
 
   // Remove type annotations from function parameters
   // e.g., "function foo(a: string, b: number)" -> "function foo(a, b)"
-  // Only match function declarations, not arbitrary parentheses
+  // Handles complex generics like Record<string, any>, Map<K, V> etc.
+  // Strategy: use a helper that strips type annotations from a param string,
+  // properly handling nested angle brackets in generics.
+  function stripParamTypes(params: string): string {
+    if (!params.includes(':')) return params
+    // Split params respecting angle brackets and nested generics
+    const paramParts: string[] = []
+    let current = ''
+    let angleDepth = 0
+    let parenDepth = 0
+    let inStr: string | null = null
+    for (let i = 0; i < params.length; i++) {
+      const c = params[i]
+      if (inStr) { current += c; if (c === inStr) inStr = null; continue }
+      if (c === '"' || c === '\'' || c === '`') { inStr = c; current += c; continue }
+      if (c === '<') angleDepth++
+      else if (c === '>' && angleDepth > 0) angleDepth--
+      else if (c === '(') parenDepth++
+      else if (c === ')') parenDepth--
+      if (c === ',' && angleDepth === 0 && parenDepth === 0) {
+        paramParts.push(current)
+        current = ''
+        continue
+      }
+      current += c
+    }
+    if (current) paramParts.push(current)
+    return paramParts.map((param: string) => {
+      const trimmedParam = param.trim()
+      // Handle rest params: ...args: string[]
+      const isRest = trimmedParam.startsWith('...')
+      const paramBody = isRest ? trimmedParam.slice(3) : trimmedParam
+      // Split on first colon that's not inside angle brackets
+      let colonIdx = -1
+      let aDepth = 0
+      for (let i = 0; i < paramBody.length; i++) {
+        if (paramBody[i] === '<') aDepth++
+        else if (paramBody[i] === '>') aDepth--
+        else if (paramBody[i] === ':' && aDepth === 0) { colonIdx = i; break }
+      }
+      if (colonIdx === -1) return param // No type annotation
+      const namePartRaw = paramBody.substring(0, colonIdx).trim()
+      // Remove optional marker (?)
+      const namePart = namePartRaw.replace(/\?$/, '')
+      // Check for default value after the type
+      // Find = sign after the type annotation (outside angle brackets)
+      const afterColon = paramBody.substring(colonIdx + 1)
+      let eqIdx = -1
+      let eqADepth = 0
+      for (let i = 0; i < afterColon.length; i++) {
+        if (afterColon[i] === '<') eqADepth++
+        else if (afterColon[i] === '>') eqADepth--
+        else if (afterColon[i] === '=' && eqADepth === 0) { eqIdx = i; break }
+      }
+      const prefix = isRest ? '...' : ''
+      if (eqIdx !== -1) {
+        return `${prefix}${namePart} = ${afterColon.substring(eqIdx + 1).trim()}`
+      }
+      return `${prefix}${namePart}`
+    }).join(', ')
+  }
+
+  // Apply to function declarations (match balanced parens)
   result = result.replace(
     /\b(function\s+\w*\s*)\(([^)]*)\)/g,
     (match, prefix, params) => {
-      // Don't process if no type annotations
-      if (!params.includes(':'))
-        return match
-      const cleanedParams = params
-        .split(',')
-        .map((param: string) => {
-          // Remove type annotation but keep default values
-          const [nameWithType, ...defaultParts] = param.split('=')
-          const name = nameWithType.split(':')[0].trim()
-          if (defaultParts.length > 0) {
-            return `${name} = ${defaultParts.join('=').trim()}`
-          }
-          return name
-        })
-        .join(', ')
-      return `${prefix}(${cleanedParams})`
+      if (!params.includes(':')) return match
+      return `${prefix}(${stripParamTypes(params)})`
     },
   )
+  // Handle function params with generics (the simple regex [^)]* fails on Record<string, any>)
+  // Process functions with complex params using balanced paren matching
+  {
+    const funcPattern = /\b(function\s+\w*\s*)\(/g
+    let funcMatch: RegExpExecArray | null
+    const replacements: Array<{ start: number, end: number, replacement: string }> = []
+    while ((funcMatch = funcPattern.exec(result)) !== null) {
+      const openParen = funcMatch.index + funcMatch[0].length - 1
+      let depth = 1, pos = openParen + 1, aDepth = 0, inStr: string | null = null
+      while (pos < result.length && depth > 0) {
+        const ch = result[pos]
+        if (inStr) { if (ch === inStr) inStr = null; pos++; continue }
+        if (ch === '"' || ch === '\'' || ch === '`') { inStr = ch; pos++; continue }
+        if (ch === '<') aDepth++
+        else if (ch === '>' && aDepth > 0) aDepth--
+        else if (aDepth === 0) { if (ch === '(') depth++; else if (ch === ')') depth-- }
+        if (depth > 0) pos++
+      }
+      if (depth !== 0) continue
+      const params = result.substring(openParen + 1, pos)
+      if (!params.includes(':')) continue
+      const cleaned = stripParamTypes(params)
+      replacements.push({ start: openParen + 1, end: pos, replacement: cleaned })
+    }
+    // Apply from end to preserve positions
+    for (let i = replacements.length - 1; i >= 0; i--) {
+      const { start, end, replacement } = replacements[i]
+      result = result.substring(0, start) + replacement + result.substring(end)
+    }
+  }
 
   // Also handle arrow function parameters with type annotations
   // e.g., "(a: string, b: number) =>" -> "(a, b) =>"
@@ -201,13 +279,22 @@ export function stripTypeScript(scriptContent: string): string {
   // Also handle simple generic calls like foo<T>() but only when followed by (
   result = result.replace(/(\w+)\s*<[A-Z][^<>()]*>\s*(?=\()/g, '$1')
 
-  // Remove 'as Type' assertions
-  result = result.replace(/\s+as\s+\w+(?:\[\])?/g, '')
+  // Remove 'as Type' assertions (including 'as const', 'as any', complex types)
+  result = result.replace(/\s+as\s+(?:const|[A-Za-z]\w*(?:\[\])?(?:\s*\|\s*\w+(?:\[\])?)*)/g, '')
 
-  // Keep defineProps and withDefaults calls but remove generic type parameters
-  // They will be handled by stub functions during execution
-  // e.g., defineProps<SomeType>() -> defineProps()
-  // (Generic removal already handled above)
+  // Remove 'satisfies Type' expressions (TypeScript 4.9+)
+  result = result.replace(/\s+satisfies\s+\w+(?:<[^>]*>)?/g, '')
+
+  // Remove non-null assertion operator (!)
+  // Only match ! after identifiers/closings, not !== or !=
+  result = result.replace(/(\w|\)|\])\s*!(?!=)/g, '$1')
+
+  // Remove enum declarations (TypeScript-only)
+  result = result.replace(/^\s*(?:export\s+)?(?:const\s+)?enum\s+\w+\s*\{[^}]*\}\s*$/gm, '')
+
+  // Remove angle bracket type assertions: <Type>value (legacy syntax)
+  // Only at expression boundaries (after = or after ( or at start of expression)
+  result = result.replace(/(?<=[\s=,(])<[A-Z]\w*(?:\[\])?>/g, '')
 
   // Clean up any double spaces or empty lines created
   result = result.replace(/\n\s*\n\s*\n/g, '\n\n')
@@ -567,6 +654,51 @@ export function convertToCommonJS(scriptContent: string): string {
       convertedLines.push(`module.exports.${result.name} = ${result.name};`)
 
       i = result.nextIndex
+    }
+    else if (line.startsWith('export default function ') || line.startsWith('export default async function ')) {
+      // Handle export default function - strip "export default" prefix before parsing
+      const strippedLine = lines[i].replace(/^(\s*)export\s+default\s+/, '$1')
+      const tempLines = [...lines]
+      tempLines[i] = strippedLine
+      const result = parseFunctionDeclaration(tempLines, i)
+      convertedLines.push(result.functionCode)
+      if (result.name) {
+        convertedLines.push(`module.exports.default = ${result.name};`)
+      }
+      i = result.nextIndex
+    }
+    else if (line.startsWith('export default ')) {
+      // Handle export default value
+      const value = line.replace(/^export\s+default\s+/, '').replace(/;$/, '')
+      convertedLines.push(`module.exports.default = ${value};`)
+      i++
+    }
+    else if (line.startsWith('class ') || line.startsWith('export class ')) {
+      // Handle class declarations (auto-export)
+      const classMatch = line.match(/(?:export\s+)?class\s+(\w+)/)
+      if (classMatch) {
+        const className = classMatch[1]
+        // Collect the full class body by tracking braces
+        let classCode = lines[i].replace(/^export\s+/, '')
+        let braceDepth = 0
+        let j = i
+        for (; j < lines.length; j++) {
+          const l = lines[j]
+          for (const ch of l) {
+            if (ch === '{') braceDepth++
+            else if (ch === '}') braceDepth--
+          }
+          if (j > i) classCode += '\n' + l
+          if (braceDepth <= 0 && j >= i) break
+        }
+        convertedLines.push(classCode)
+        convertedLines.push(`module.exports.${className} = ${className};`)
+        i = j + 1
+      }
+      else {
+        convertedLines.push(line)
+        i++
+      }
     }
     else if (line.includes('module.exports')) {
       // Keep existing module.exports statements

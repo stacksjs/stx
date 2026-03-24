@@ -65,8 +65,8 @@
         "title": "Stacks: Sort Utility Classes"
       },
       {
-        "command": "headwind.reload",
-        "title": "Headwind: Reload Configuration"
+        "command": "crosswind.reload",
+        "title": "Crosswind: Reload Configuration"
       }
     ],
     "iconThemes": [
@@ -577,7 +577,7 @@
           "default": true,
           "description": "Enable autocomplete for utility classes"
         },
-        "headwind.remToPxRatio": {
+        "crosswind.remToPxRatio": {
           "type": "number",
           "default": 16,
           "description": "Rem to px conversion ratio for hover previews"

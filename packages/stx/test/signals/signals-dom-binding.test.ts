@@ -260,6 +260,12 @@ else {
       createComment: (text: string) => createComment(text),
       createDocumentFragment: () => createDocumentFragment(),
       getElementById: (id: string) => domElements.get(id),
+      head: {
+        appendChild: () => {},
+      },
+      body: {
+        appendChild: () => {},
+      },
     }
 
     mockWindow = {

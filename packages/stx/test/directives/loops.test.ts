@@ -160,14 +160,25 @@ describe('Loops Comprehensive', () => {
       expect(result).toContain(`@component('Card', {"title":"World"})`)
     })
 
-    it('should produce an error comment when iterating over a non-array', () => {
+    it('should iterate over string characters (iterable support)', () => {
+      const result = run(
+        '@foreach(str as ch){{ ch }},@endforeach',
+        { str: 'abc' },
+      )
+      // Strings are now iterable - each character becomes an item
+      expect(result).toContain('a,')
+      expect(result).toContain('b,')
+      expect(result).toContain('c,')
+    })
+
+    it('should produce an error comment when iterating over a non-iterable', () => {
       const result = run(
         '@foreach(items as item){{ item }}@endforeach',
-        { items: 'not-an-array' },
+        { items: 42 },
       )
-      // Should contain an error indicator
+      // Numbers are not iterable
       expect(result).toContain('Error')
-      expect(result).toContain('not an array')
+      expect(result).toContain('not iterable')
     })
 
     it('should allow space around the directive: @foreach (items as item)', () => {
@@ -1053,6 +1064,306 @@ describe('Loops Comprehensive', () => {
       expect(result).toContain('<span data-i="0">first</span>')
       expect(result).toContain('<span data-i="1">second</span>')
       expect(result).toContain('<span data-i="2">third</span>')
+    })
+  })
+
+  // ===========================================================================
+  // Object and Iterable Support (from discovered-bugs)
+  // ===========================================================================
+  describe('object and iterable support', () => {
+    it('should iterate over object entries with key => value syntax', () => {
+      const result = run(
+        '@foreach(items as key => value){{ key }}={{ value }},@endforeach',
+        { items: { a: 1, b: 2, c: 3 } },
+      )
+      expect(result).not.toContain('Error')
+      expect(result).toContain('a=1')
+      expect(result).toContain('b=2')
+      expect(result).toContain('c=3')
+    })
+
+    it('should iterate over object with simple as syntax', () => {
+      const result = run(
+        '@foreach(config as entry){{ entry }},@endforeach',
+        { config: { host: 'localhost', port: 3000 } },
+      )
+      expect(result).not.toContain('Error')
+    })
+
+    it('should iterate over Map entries', () => {
+      const result = run(
+        '@foreach(items as item){{ item }},@endforeach',
+        { items: new Map([['a', 1], ['b', 2]]) },
+      )
+      expect(result).not.toContain('Error')
+    })
+
+    it('should iterate over Set entries', () => {
+      const result = run(
+        '@foreach(items as item){{ item }},@endforeach',
+        { items: new Set([1, 2, 3]) },
+      )
+      expect(result).not.toContain('Error')
+    })
+
+    it('should destructure array pairs in @foreach', () => {
+      const result = run(
+        '@foreach(items as [key, val]){{ key }}={{ val }},@endforeach',
+        { items: [['a', 1], ['b', 2]] },
+      )
+      expect(result).toContain('a=1')
+      expect(result).toContain('b=2')
+    })
+  })
+
+  // ===========================================================================
+  // Complex Iteration Patterns (from edge-case-bugs)
+  // ===========================================================================
+  describe('complex iteration patterns', () => {
+    it('should handle @foreach with computed collection items.filter()', () => {
+      const result = run(
+        '@foreach(items.filter(x => x.active) as item){{ item.name }},@endforeach',
+        { items: [{ active: true, name: 'A' }, { active: false, name: 'B' }, { active: true, name: 'C' }] },
+      )
+      expect(result).toContain('A')
+      expect(result).toContain('C')
+      expect(result).not.toContain('B,')
+    })
+
+    it('should handle @foreach where item has methods: toUpperCase()', () => {
+      const result = run(
+        '@foreach(items as item){{ item.toUpperCase() }},@endforeach',
+        { items: ['hello', 'world'] },
+      )
+      expect(result).toContain('HELLO')
+      expect(result).toContain('WORLD')
+    })
+
+    it('should handle @foreach with a large array (1000 items) for performance', () => {
+      const items = Array.from({ length: 1000 }, (_, i) => i)
+      const start = performance.now()
+      const result = run(
+        '@foreach(items as item){{ item }},@endforeach',
+        { items },
+      )
+      const elapsed = performance.now() - start
+      expect(result).toContain('0,')
+      expect(result).toContain('999,')
+      expect(elapsed).toBeLessThan(5000)
+    })
+
+    it('should handle @foreach with null items in array', () => {
+      const result = run(
+        '@foreach(items as item){{ item }},@endforeach',
+        { items: [1, null, 3] },
+      )
+      expect(result).toContain('1,')
+      expect(result).toContain('3,')
+      expect(result).not.toContain('Error')
+    })
+
+    it('should handle @foreach with undefined items in array', () => {
+      const result = run(
+        '@foreach(items as item){{ item }},@endforeach',
+        { items: [1, undefined, 3] },
+      )
+      expect(result).toContain('1,')
+      expect(result).toContain('3,')
+    })
+
+    it('should handle nested @foreach where inner uses outer scope variables', () => {
+      const result = run(
+        '@foreach(groups as group){{ group.name }}:@foreach(group.items as item){{ item }},@endforeach|@endforeach',
+        { groups: [{ name: 'G1', items: ['x', 'y'] }, { name: 'G2', items: ['z'] }] },
+      )
+      expect(result).toContain('G1:')
+      expect(result).toContain('G2:')
+      expect(result).toContain('x,')
+    })
+
+    it('should handle @foreach accessing both item AND outer context vars', () => {
+      const result = run(
+        '@foreach(items as item){{ prefix }}-{{ item }},@endforeach',
+        { prefix: 'item', items: [1, 2, 3] },
+      )
+      expect(result).toContain('item-1')
+      expect(result).toContain('item-2')
+      expect(result).toContain('item-3')
+    })
+
+    it('should handle @foreach where collection name shadows built-in (length)', () => {
+      const result = run(
+        '@foreach(length as item){{ item }},@endforeach',
+        { length: [10, 20, 30] },
+      )
+      expect(result).toContain('10,')
+      expect(result).toContain('20,')
+      expect(result).toContain('30,')
+    })
+
+    it('should handle @forelse with function expression as collection', () => {
+      const result = run(
+        '@forelse(getItems() as item){{ item }},@empty nothing@endforelse',
+        { getItems: () => ['a', 'b'] },
+      )
+      expect(result).toBeDefined()
+    })
+
+    it('should handle @forelse where empty content has HTML', () => {
+      const result = run(
+        '@forelse(items as item){{ item }}@empty<p class="empty">No items found</p>@endforelse',
+        { items: [] as string[] },
+      )
+      expect(result).toContain('No items found')
+      expect(result).toContain('<p class="empty">')
+    })
+
+    it('should handle @forelse with index syntax on empty array (should show @empty)', () => {
+      const result = run(
+        '@forelse(items as index => item){{ index }}: {{ item }}@empty empty@endforelse',
+        { items: [] as string[] },
+      )
+      expect(result).toContain('empty')
+    })
+
+    it('should handle @foreach over empty collection with @break (no error)', () => {
+      const result = run(
+        '@foreach(items as item)@break{{ item }}@endforeach',
+        { items: [] as string[] },
+      )
+      expect(result).not.toContain('Error')
+      expect(result.trim()).toBe('')
+    })
+  })
+
+  // ===========================================================================
+  // Robustness (from discovered-bugs)
+  // ===========================================================================
+  describe('robustness', () => {
+    it('should not mutate original array', () => {
+      const items = [1, 2, 3]
+      run(
+        '@foreach(items as item){{ item }}@endforeach',
+        { items },
+      )
+      expect(items).toEqual([1, 2, 3])
+      expect(items.length).toBe(3)
+    })
+  })
+
+  // ===========================================================================
+  // Real-World Regression Patterns (from regression-bugs)
+  // ===========================================================================
+  describe('real-world patterns', () => {
+    it('should handle foreach over Object.entries', () => {
+      const result = run(
+        '@foreach(Object.entries(config) as entry){{ entry[0] }}: {{ entry[1] }},@endforeach',
+        { config: { theme: 'dark', lang: 'en' } },
+      )
+      expect(result).toContain('theme')
+      expect(result).toContain('dark')
+      expect(result).toContain('lang')
+      expect(result).toContain('en')
+    })
+
+    it('should handle foreach over Array.from for range', () => {
+      const result = run(
+        '@foreach(Array.from({length: 3}, (_, i) => i + 1) as num){{ num }},@endforeach',
+        {},
+      )
+      expect(result).toContain('1,')
+      expect(result).toContain('2,')
+      expect(result).toContain('3,')
+    })
+
+    it('should render image gallery items', () => {
+      const result = run(
+        '@foreach(images as img)<figure><img src="{{ img.src }}" alt="{{ img.alt }}"><figcaption>{{ img.caption }}</figcaption></figure>@endforeach',
+        {
+          images: [
+            { src: '/img/1.jpg', alt: 'Sunset', caption: 'Beautiful sunset' },
+            { src: '/img/2.jpg', alt: 'Mountain', caption: 'Mountain view' },
+          ],
+        },
+      )
+      expect(result).toContain('/img/1.jpg')
+      expect(result).toContain('Beautiful sunset')
+      expect(result).toContain('Mountain view')
+    })
+
+    it('should render dropdown options from array', () => {
+      const result = run(
+        '@foreach(countries as country)<option value="{{ country.code }}">{{ country.name }}</option>@endforeach',
+        {
+          countries: [
+            { code: 'US', name: 'United States' },
+            { code: 'CA', name: 'Canada' },
+            { code: 'MX', name: 'Mexico' },
+          ],
+        },
+      )
+      expect(result).toContain('US')
+      expect(result).toContain('United States')
+      expect(result).toContain('CA')
+      expect(result).toContain('Canada')
+    })
+
+    it('should render checkbox list from array', () => {
+      const result = run(
+        '@foreach(skills as skill)<label><input type="checkbox" name="skills[]" value="{{ skill }}"> {{ skill }}</label>@endforeach',
+        { skills: ['HTML', 'CSS', 'JavaScript', 'TypeScript'] },
+      )
+      expect(result).toContain('HTML')
+      expect(result).toContain('CSS')
+      expect(result).toContain('JavaScript')
+      expect(result).toContain('TypeScript')
+    })
+
+    it('should render multi-level nested menu', () => {
+      const result = run(
+        '@foreach(menu as item){{ item.label }}@foreach(item.children as child)[{{ child.label }}]@endforeach|@endforeach',
+        {
+          menu: [
+            { label: 'Products', children: [{ label: 'Software' }, { label: 'Hardware' }] },
+            { label: 'About', children: [] },
+          ],
+        },
+      )
+      expect(result).toContain('Products')
+      expect(result).toContain('[Software]')
+      expect(result).toContain('[Hardware]')
+      expect(result).toContain('About')
+    })
+
+    it('should render a data table with header and body rows', () => {
+      const result = run(
+        '<thead>@foreach(columns as col)<th>{{ col }}</th>@endforeach</thead><tbody>@foreach(rows as row)@foreach(columns as col)<td>{{ row[col] }}</td>@endforeach@endforeach</tbody>',
+        {
+          columns: ['name', 'age'],
+          rows: [
+            { name: 'Alice', age: 30 },
+            { name: 'Bob', age: 25 },
+          ],
+        },
+      )
+      expect(result).toContain('<th>name</th>')
+      expect(result).toContain('<th>age</th>')
+      expect(result).toContain('Alice')
+      expect(result).toContain('Bob')
+    })
+
+    it('should handle foreach with computation in body', () => {
+      const result = run(
+        '@foreach(lineItems as item)<span>{{ item.price * item.qty }}</span>@endforeach',
+        {
+          lineItems: [
+            { price: 10, qty: 3 },
+            { price: 25, qty: 2 },
+          ],
+        },
+      )
+      expect(result).toContain('30')
+      expect(result).toContain('50')
     })
   })
 })

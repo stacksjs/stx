@@ -1,5 +1,5 @@
 import type * as vscode from 'vscode'
-import type { HeadwindContext } from './context'
+import type { CrosswindContext } from './context'
 import { extractClassesFromDocument } from './utils/class-matcher'
 import { extractColorFromCSS, isColorClass } from './utils/color-extractor'
 
@@ -8,7 +8,7 @@ import { extractColorFromCSS, isColorClass } from './utils/color-extractor'
  */
 export async function registerColorDecorations(
   vscodeModule: typeof vscode,
-  context: HeadwindContext,
+  context: CrosswindContext,
   extensionContext: vscode.ExtensionContext,
 ): Promise<void> {
   const config = vscodeModule.workspace.getConfiguration('stx.utilityClasses')
@@ -18,10 +18,8 @@ export async function registerColorDecorations(
     return
   }
 
-  // Get border radius setting
   const borderRadius = config.get<string>('colorPreviewRadius', '0')
 
-  // Create decoration type for color previews
   const colorDecorationType = vscodeModule.window.createTextEditorDecorationType({
     before: {
       width: '0.9em',
@@ -42,9 +40,6 @@ export async function registerColorDecorations(
     },
   })
 
-  /**
-   * Update decorations for the active editor
-   */
   async function updateDecorations(editor: vscode.TextEditor | undefined) {
     if (!editor) {
       return
@@ -52,25 +47,20 @@ export async function registerColorDecorations(
 
     const document = editor.document
     const decorations: vscode.DecorationOptions[] = []
-
-    // Extract all classes from the document
     const classes = extractClassesFromDocument(document)
 
     for (const { className, start, end } of classes) {
-      // Skip non-color classes
       if (!isColorClass(className)) {
         continue
       }
 
       try {
-        // Get CSS for this class
         const css = await context.getCSSForClass(className)
 
         if (!css) {
           continue
         }
 
-        // Extract color from CSS
         const color = extractColorFromCSS(css)
 
         if (color) {
@@ -88,26 +78,23 @@ export async function registerColorDecorations(
         }
       }
       catch (error) {
-        console.error(`[Headwind] Error processing color class "${className}":`, error)
+        console.error(`[Crosswind] Error processing color class "${className}":`, error)
       }
     }
 
     editor.setDecorations(colorDecorationType, decorations)
   }
 
-  // Update decorations for active editor
   if (vscodeModule.window.activeTextEditor) {
     await updateDecorations(vscodeModule.window.activeTextEditor)
   }
 
-  // Listen for editor changes
   extensionContext.subscriptions.push(
     vscodeModule.window.onDidChangeActiveTextEditor(async (editor) => {
       await updateDecorations(editor)
     }),
   )
 
-  // Listen for document changes (with debounce)
   let timeout: NodeJS.Timeout | undefined
   extensionContext.subscriptions.push(
     vscodeModule.workspace.onDidChangeTextDocument(async (event) => {
@@ -120,7 +107,6 @@ export async function registerColorDecorations(
     }),
   )
 
-  // Clean up
   extensionContext.subscriptions.push({
     dispose: () => {
       colorDecorationType.dispose()

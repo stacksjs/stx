@@ -209,12 +209,13 @@ export function processBasicFormDirectives(template: string, context: Record<str
 
   // Process @method directive
   result = result.replace(/@method\(['"]([^'"]+)['"]\)/g, (match, method) => {
-    // Method spoofing for non-GET/POST methods
-    if (method && ['PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
-      return `<input type="hidden" name="_method" value="${escapeAttr(method.toUpperCase())}">`
+    // Method spoofing for non-GET/POST methods (any method other than GET/POST needs spoofing)
+    const upperMethod = method.toUpperCase()
+    if (method && !['GET', 'POST'].includes(upperMethod)) {
+      return `<input type="hidden" name="_method" value="${escapeAttr(upperMethod)}">`
     }
 
-    // Return unchanged if not a supported method
+    // Return unchanged if GET or POST (no spoofing needed)
     return match
   })
 
@@ -272,7 +273,8 @@ export function processFormInputDirectives(
       const value = singleQuoteValue || doubleQuoteValue || ''
 
       const attrs = parseAttributes(attributes)
-      const oldValue = getOldValue(name, context) || (value || '')
+      const rawOldValue = getOldValue(name, context)
+      const oldValue = rawOldValue !== undefined && rawOldValue !== null ? rawOldValue : (value || '')
 
       // Get type from attributes or default to text
       const typeMatch = attrs.match(/type=['"]([^'"]+)['"]/i)
@@ -331,10 +333,10 @@ export function processFormInputDirectives(
         processedContent = content.replace(
           /(<option[^>]*value=['"]([^'"]+)['"][^>]*>)/gi,
           (optionMatch: string, optionTag: string, optionValue: string) => {
-            // Handle both string and array old values
+            // Handle both string and array old values (use loose equality for type coercion: number 1 == string "1")
             const isSelected = Array.isArray(oldValue)
-              ? oldValue.includes(optionValue)
-              : oldValue === optionValue
+              ? oldValue.some(v => String(v) === optionValue)
+              : String(oldValue) === optionValue
 
             if (isSelected && !optionTag.includes('selected')) {
               return optionTag.replace(/(<option)/, '$1 selected')
@@ -355,11 +357,11 @@ export function processFormInputDirectives(
       const attrs = parseAttributes(attributes)
       const oldValues = getOldValue(name, context)
 
-      // Check if checkbox should be checked
+      // Check if checkbox should be checked (use String() for type coercion: number 1 matches string "1")
       const isChecked = oldValues !== undefined && (
         Array.isArray(oldValues)
-          ? oldValues.includes(value)
-          : oldValues === value || oldValues === true
+          ? oldValues.some(v => String(v) === value)
+          : oldValues === true || String(oldValues) === value
       )
 
       // Parse existing class attribute
@@ -606,12 +608,13 @@ function parseAttributes(attributesStr: string): string {
     return ''
 
   const attrs: string[] = []
-  // Match key:value pairs with proper handling of quoted values and commas
-  const attrRegex = /([\w-]+)\s*:\s*(['"]?)([^,'"]*)\2(?:,|$)/g
+  // Match key:value pairs with proper handling of quoted values, commas, and trailing whitespace
+  const trimmed = attributesStr.trim()
+  const attrRegex = /([\w-]+)\s*:\s*(['"]?)([^,'"]*)\2(?:\s*,\s*|\s*$)/g
 
   let match: RegExpExecArray | null
   // eslint-disable-next-line no-cond-assign
-  while ((match = attrRegex.exec(attributesStr)) !== null) {
+  while ((match = attrRegex.exec(trimmed)) !== null) {
     const [, name, , value] = match
     attrs.push(`${name}="${value.trim()}"`)
   }

@@ -24,6 +24,8 @@ import {
   sanitizeDirectiveParams,
   sanitizeComponentProps,
 } from '../../src/errors/sanitizer'
+import { validateConfig } from '../../src/config'
+import { processMiddleware } from '../../src/middleware'
 
 // =============================================================================
 // validators.isValidFilePath
@@ -799,5 +801,224 @@ describe('devHelpers', () => {
     const report = devHelpers.createErrorReport(new Error('no ctx'))
     expect(report).toContain('no ctx')
     expect(report).not.toContain('Context:')
+  })
+})
+
+// =============================================================================
+// Config Validation (from deep-edge-cases)
+// =============================================================================
+
+describe('Config Validation', () => {
+  it('valid minimal config', () => {
+    const result = validateConfig({})
+    expect(result.valid).toBe(true)
+    expect(result.errors.length).toBe(0)
+  })
+
+  it('invalid streaming.strategy value', () => {
+    const result = validateConfig({
+      streaming: { strategy: 'invalid' as any },
+    })
+    expect(result.valid).toBe(false)
+    expect(result.errors.some(e => e.path === 'streaming.strategy')).toBe(true)
+  })
+
+  it('invalid i18n.format value', () => {
+    const result = validateConfig({
+      i18n: { format: 'xml' as any },
+    })
+    expect(result.valid).toBe(false)
+    expect(result.errors.some(e => e.path === 'i18n.format')).toBe(true)
+  })
+
+  it('invalid a11y.level value', () => {
+    const result = validateConfig({
+      a11y: { level: 'A' as any },
+    })
+    expect(result.valid).toBe(false)
+    expect(result.errors.some(e => e.path === 'a11y.level')).toBe(true)
+  })
+
+  it('invalid hydration.mode value', () => {
+    const result = validateConfig({
+      hydration: { mode: 'full' as any },
+    })
+    expect(result.valid).toBe(false)
+    expect(result.errors.some(e => e.path === 'hydration.mode')).toBe(true)
+  })
+
+  it('invalid hydration.preload value', () => {
+    const result = validateConfig({
+      hydration: { preload: 'always' as any },
+    })
+    expect(result.valid).toBe(false)
+    expect(result.errors.some(e => e.path === 'hydration.preload')).toBe(true)
+  })
+
+  it('warning: debug enabled with caching', () => {
+    const result = validateConfig({
+      debug: true,
+      cache: true,
+    })
+    expect(result.warnings.some(w => w.path === 'debug+cache')).toBe(true)
+  })
+
+  it('warning: SEO enabled without title', () => {
+    const result = validateConfig({
+      seo: { enabled: true, defaultConfig: {} },
+    })
+    expect(result.warnings.some(w => w.path === 'seo.defaultConfig.title')).toBe(true)
+  })
+
+  it('custom directive missing handler', () => {
+    const result = validateConfig({
+      customDirectives: [
+        { name: 'test', handler: undefined as any, hasEndTag: false },
+      ],
+    })
+    expect(result.valid).toBe(false)
+    expect(result.errors.some(e => e.path.includes('handler'))).toBe(true)
+  })
+
+  it('middleware missing timing', () => {
+    const result = validateConfig({
+      middleware: [
+        { name: 'test', handler: () => '', timing: undefined as any },
+      ],
+    })
+    expect(result.valid).toBe(false)
+    expect(result.errors.some(e => e.path.includes('timing'))).toBe(true)
+  })
+})
+
+// =============================================================================
+// Middleware Edge Cases (from deep-edge-cases)
+// =============================================================================
+
+describe('Middleware Edge Cases', () => {
+  it('processMiddleware with no middleware configured', async () => {
+    const result = await processMiddleware(
+      '<div>test</div>',
+      {},
+      'test.stx',
+      { middleware: [] },
+      'before',
+    )
+    expect(result).toBe('<div>test</div>')
+  })
+
+  it('processMiddleware with before timing only runs before handlers', async () => {
+    const result = await processMiddleware(
+      'input',
+      {},
+      'test.stx',
+      {
+        middleware: [
+          { name: 'before-mw', timing: 'before', handler: (t: string) => `BEFORE:${t}` },
+          { name: 'after-mw', timing: 'after', handler: (t: string) => `AFTER:${t}` },
+        ],
+      },
+      'before',
+    )
+    expect(result).toBe('BEFORE:input')
+  })
+
+  it('processMiddleware continues after one middleware errors', async () => {
+    const result = await processMiddleware(
+      'input',
+      {},
+      'test.stx',
+      {
+        debug: true,
+        middleware: [
+          {
+            name: 'error-mw',
+            timing: 'before',
+            handler: () => {
+              throw new Error('middleware failed')
+            },
+          },
+          { name: 'ok-mw', timing: 'before', handler: (t: string) => `OK:${t}` },
+        ],
+      },
+      'before',
+    )
+    expect(result).toContain('OK:')
+  })
+
+  it('processMiddleware skips middleware with no name', async () => {
+    const result = await processMiddleware(
+      'input',
+      {},
+      'test.stx',
+      {
+        debug: true,
+        middleware: [
+          { name: '', timing: 'before', handler: (t: string) => `BAD:${t}` },
+          { name: 'good', timing: 'before', handler: (t: string) => `GOOD:${t}` },
+        ],
+      },
+      'before',
+    )
+    expect(result).toBe('GOOD:input')
+  })
+
+  it('processMiddleware with handler that returns non-string', async () => {
+    const result = await processMiddleware(
+      'input',
+      {},
+      'test.stx',
+      {
+        debug: true,
+        middleware: [
+          { name: 'bad-return', timing: 'before', handler: () => 42 as any },
+          { name: 'good', timing: 'before', handler: (t: string) => `GOOD:${t}` },
+        ],
+      },
+      'before',
+    )
+    expect(result).toBe('GOOD:input')
+  })
+
+  it('processMiddleware with async handler', async () => {
+    const result = await processMiddleware(
+      'input',
+      {},
+      'test.stx',
+      {
+        middleware: [
+          {
+            name: 'async-mw',
+            timing: 'before',
+            handler: async (t: string) => `ASYNC:${t}`,
+          },
+        ],
+      },
+      'before',
+    )
+    expect(result).toBe('ASYNC:input')
+  })
+
+  it('middleware can modify context', async () => {
+    const ctx: Record<string, any> = {}
+    await processMiddleware(
+      'input',
+      ctx,
+      'test.stx',
+      {
+        middleware: [
+          {
+            name: 'ctx-mw',
+            timing: 'before',
+            handler: (t: string, context: Record<string, any>) => {
+              context.injected = true
+              return t
+            },
+          },
+        ],
+      },
+      'before',
+    )
+    expect(ctx.injected).toBe(true)
   })
 })

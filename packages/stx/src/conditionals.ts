@@ -254,7 +254,7 @@ export function processConditionals(template: string, context: Record<string, an
       if (elsePos !== -1) {
         const unlessContent = content.slice(0, elsePos)
         const elseContent = content.slice(elsePos + '@else'.length)
-        replacement = `@if (${condition})${elseContent}@else${unlessContent}@endif`
+        replacement = `@if (${condition})${elseContent}@else ${unlessContent}@endif`
       }
       else {
         replacement = `@if (!(${condition}))${content}@endif`
@@ -822,10 +822,10 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
     return value !== undefined && value !== null
   }, 'Isset')
 
-  // Process @empty directive with balanced parsing
+  // Process @empty directive with balanced parsing (Blade semantics: 0, false, '', null, undefined, [], {} are all "empty")
   result = processBalancedDirective(result, 'empty', 'endempty', (variable) => {
     const value = evaluateAuthExpression(variable, context)
-    return value === undefined || value === null || value === ''
+    return value === undefined || value === null || value === '' || value === 0 || value === false
       || (Array.isArray(value) && value.length === 0)
       || (typeof value === 'object' && value !== null && Object.keys(value).length === 0)
   }, 'Empty')

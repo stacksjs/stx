@@ -1,19 +1,16 @@
-import type { HeadwindConfig } from '@cwcss/crosswind'
+import type { CrosswindConfig } from '@cwcss/crosswind'
 import type * as vscode from 'vscode'
 
 // Polyfill Bun APIs for Node.js environment (VSCode extension host)
 function setupBunPolyfill() {
   if (typeof globalThis.Bun === 'undefined') {
-    // Minimal Bun polyfill - only what @cwcss/crosswind needs
     (globalThis as any).Bun = {
-      // Glob is used by Scanner class which we don't use in VSCode
       Glob: class FakeGlob {
         constructor(_pattern: string) {}
         async* scan(_dir: string): AsyncIterableIterator<string> {
-          // No-op: We don't use Scanner in VSCode extension
+          // No-op: Scanner is not used in VSCode extension
         }
       },
-      // file() is used by Scanner to read files - we don't need it
       file: (_path: string) => ({
         text: async () => '',
         exists: async () => false,
@@ -26,50 +23,36 @@ function setupBunPolyfill() {
 let CSSGenerator: any
 let parseClass: any
 let builtInRules: any
-let headwindLoaded = false
+let crosswindLoaded = false
 
-async function loadHeadwind() {
-  if (headwindLoaded)
+async function loadCrosswind() {
+  if (crosswindLoaded)
     return
 
-  // Setup Bun polyfill before importing headwind
   setupBunPolyfill()
 
   try {
-    // Try dynamic import first for ESM module compatibility
-    const headwind = await import('@cwcss/crosswind')
-    CSSGenerator = headwind.CSSGenerator
-    parseClass = headwind.parseClass
-    builtInRules = headwind.builtInRules
-    headwindLoaded = true
+    const crosswind = await import('@cwcss/crosswind')
+    CSSGenerator = crosswind.CSSGenerator
+    parseClass = crosswind.parseClass
+    builtInRules = crosswind.builtInRules
+    crosswindLoaded = true
   }
   catch (error) {
-    // Fallback to require for CommonJS bundled context
-    try {
-      const headwind = await import('@cwcss/crosswind')
-      CSSGenerator = headwind.CSSGenerator
-      parseClass = headwind.parseClass
-      builtInRules = headwind.builtInRules
-      headwindLoaded = true
-    }
-    catch (requireError) {
-      console.error('[Headwind] Failed to load @cwcss/crosswind:', requireError)
-      throw new Error(`Cannot load @cwcss/crosswind: ${error}`)
-    }
+    console.error('[Crosswind] Failed to load @cwcss/crosswind:', error)
+    throw new Error(`Cannot load @cwcss/crosswind: ${error}`)
   }
 }
 
 /**
- * Manages the Headwind CSS generator instance
+ * Manages the Crosswind CSS generator instance
  */
-export class HeadwindContext {
-  private generator: CSSGenerator | null = null
-  private generatedCSS: string = ''
+export class CrosswindContext {
+  private generator: typeof CSSGenerator | null = null
   private classCache: Map<string, string> = new Map()
-
   private ready: Promise<void>
 
-  constructor(private config: HeadwindConfig) {
+  constructor(private config: CrosswindConfig) {
     this.ready = this.initialize()
   }
 
@@ -77,44 +60,30 @@ export class HeadwindContext {
     await this.ready
   }
 
-  /**
-   * Initialize the CSS generator
-   */
   private async initialize(): Promise<void> {
     try {
-      await loadHeadwind()
+      await loadCrosswind()
       this.generator = new CSSGenerator(this.config)
-      console.log('[Headwind] CSS Generator initialized')
+      console.log('[Crosswind] CSS Generator initialized')
     }
     catch (error) {
-      console.error('[Headwind] Failed to initialize generator:', error)
+      console.error('[Crosswind] Failed to initialize generator:', error)
     }
   }
 
-  /**
-   * Get generated CSS for a specific utility class
-   */
   async getCSSForClass(className: string): Promise<string | null> {
     await this.waitReady()
 
     if (!this.generator)
       return null
 
-    // Check cache first
     if (this.classCache.has(className))
       return this.classCache.get(className)!
 
     try {
-      await loadHeadwind()
-
-      // Create a new generator instance for this single class
-      // This ensures we only get CSS for the requested class
+      await loadCrosswind()
       const singleClassGenerator = new CSSGenerator(this.config)
-
-      // Generate the class
       singleClassGenerator.generate(className)
-
-      // Get CSS output (without preflight, not minified)
       const css = singleClassGenerator.toCSS(false, false)
 
       if (css && css.trim()) {
@@ -123,47 +92,35 @@ export class HeadwindContext {
       }
     }
     catch (error) {
-      console.error(`[Headwind] Error generating CSS for class "${className}":`, error)
+      console.error(`[Crosswind] Error generating CSS for class "${className}":`, error)
     }
 
     return null
   }
 
-  /**
-   * Generate CSS for multiple classes
-   */
   async generateCSS(classes: string[]): Promise<string> {
     if (!this.generator)
       return ''
 
     try {
-      // Generate all classes
       for (const className of classes) {
         this.generator.generate(className)
       }
-
-      // Get CSS output
       return this.generator.toCSS(false, false)
     }
     catch (error) {
-      console.error('[Headwind] Error generating CSS:', error)
+      console.error('[Crosswind] Error generating CSS:', error)
       return ''
     }
   }
 
-  /**
-   * Reload configuration
-   */
-  async reload(config: HeadwindConfig): Promise<void> {
+  async reload(config: CrosswindConfig): Promise<void> {
     this.config = config
     this.generator = null
     this.classCache.clear()
     await this.initialize()
   }
 
-  /**
-   * Get all utility rules
-   */
   getRules(): any[] {
     if (!this.generator)
       return []
@@ -176,17 +133,11 @@ export class HeadwindContext {
     }
   }
 
-  /**
-   * Check if a class name matches any rules
-   */
   async matchesRule(className: string): Promise<boolean> {
     try {
-      await loadHeadwind()
-
-      // Parse the class
+      await loadCrosswind()
       const parsed = parseClass(className)
 
-      // Test against all built-in rules (builtInRules is an array, not a function)
       for (const rule of builtInRules) {
         const result = rule(parsed, this.config)
         if (result) {
@@ -201,27 +152,24 @@ export class HeadwindContext {
     }
   }
 
-  /**
-   * Clear the cache
-   */
   clearCache(): void {
     this.classCache.clear()
   }
 }
 
 /**
- * Get default Headwind configuration
+ * Get default Crosswind configuration
  */
-export function getDefaultConfig(vscodeModule: typeof vscode): HeadwindConfig {
+export function getDefaultConfig(vscodeModule: typeof vscode): CrosswindConfig {
   const workspaceFolder = vscodeModule.workspace.workspaceFolders?.[0]?.uri.fsPath
 
   return {
     content: workspaceFolder
       ? [`${workspaceFolder}/**/*.{html,js,ts,jsx,tsx,stx,vue,svelte}`]
       : ['**/*.{html,js,ts,jsx,tsx,stx,vue,svelte}'],
-    output: '', // We don't need file output for IDE features
+    output: '',
     minify: false,
-    watch: false, // Not needed for VSCode extension
+    watch: false,
     theme: {
       colors: {},
       spacing: {},
@@ -232,7 +180,7 @@ export function getDefaultConfig(vscodeModule: typeof vscode): HeadwindConfig {
       boxShadow: {},
     },
     shortcuts: {},
-    rules: [], // Empty array - will use built-in rules
+    rules: [],
     variants: {
       'responsive': true,
       'hover': true,
@@ -288,23 +236,21 @@ export function getDefaultConfig(vscodeModule: typeof vscode): HeadwindConfig {
 }
 
 /**
- * Load Headwind configuration from workspace
+ * Load Crosswind configuration from workspace
  */
-export async function loadHeadwindConfig(vscodeModule: typeof vscode): Promise<HeadwindConfig> {
+export async function loadCrosswindConfig(vscodeModule: typeof vscode): Promise<CrosswindConfig> {
   const workspaceFolder = vscodeModule.workspace.workspaceFolders?.[0]?.uri.fsPath
 
   if (!workspaceFolder) {
     return getDefaultConfig(vscodeModule)
   }
 
-  // Try to load headwind.config.ts or headwind.config.js
   try {
-    const configPath = `${workspaceFolder}/headwind.config`
+    const configPath = `${workspaceFolder}/crosswind.config`
     const config = await import(configPath)
     return config.default || config
   }
   catch {
-    // Fallback to default config
     return getDefaultConfig(vscodeModule)
   }
 }

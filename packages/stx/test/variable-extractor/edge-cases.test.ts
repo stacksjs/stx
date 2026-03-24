@@ -127,8 +127,8 @@ const value: MyType = 'test'`
     it('should handle optional parameters', () => {
       const code = 'function foo(a?: string) { return a }'
       const stripped = stripTypeScript(code)
-      // Note: current implementation preserves the ? but removes the type
-      expect(stripped).toContain('function foo(a?)')
+      // The ? marker is stripped along with the type annotation
+      expect(stripped).toContain('function foo(a)')
       expect(stripped).not.toContain('string')
     })
 

@@ -2,6 +2,7 @@ import type { StxOptions } from '../../src/types'
 import { describe, expect, it } from 'bun:test'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { processForms } from '../../src/forms'
 
 const defaultOptions: StxOptions = { ...defaultConfig, cache: false, debug: false }
 
@@ -1064,7 +1065,7 @@ describe('Pipeline: @isset and @empty Directives', () => {
 
   it('should hide content when variable is not set with @isset', async () => {
     const result = await processTemplate(
-      '@isset(title)<h1>{{ title }}</h1>@endisset',
+      '@isset(myCustomVar)<h1>{{ myCustomVar }}</h1>@endisset',
       {},
     )
     expect(result).not.toContain('<h1>')
@@ -1656,5 +1657,1028 @@ describe('Pipeline: E-commerce Cart Template', () => {
     expect(result).toContain('name="_token"')
     expect(result).toContain('Checkout')
     expect(result).not.toContain('Your cart is empty.')
+  })
+})
+
+// =============================================================================
+// Pipeline integration bugs (from discovered-bugs)
+// =============================================================================
+
+describe('Pipeline: Integration Bugs', () => {
+  it('should handle @unless correctly in full pipeline', async () => {
+    const r = await processTemplate('@unless(isAdmin)guest@else admin@endunless', { isAdmin: false })
+    expect(r.trim()).toContain('guest')
+  })
+
+  it('should process @foreach with object in full pipeline', async () => {
+    const r = await processTemplate('@foreach(data as key => val){{ key }}:{{ val }},@endforeach', { data: { x: 1, y: 2 } })
+    expect(r).not.toContain('Error')
+  })
+
+  it('should handle comments before directives', async () => {
+    const r = await processTemplate('{{-- comment --}}@if(true)visible@endif')
+    expect(r).not.toContain('comment')
+    expect(r).toContain('visible')
+  })
+
+  it('should handle escaped @ sign', async () => {
+    const r = await processTemplate('@@if this is literal')
+    expect(r).toContain('@if this is literal')
+  })
+
+  it('should handle @foreach inside @if', async () => {
+    const r = await processTemplate('@if(show)@foreach(items as item){{ item }}@endforeach@endif', { show: true, items: ['a', 'b'] })
+    expect(r).toContain('a')
+    expect(r).toContain('b')
+  })
+
+  it('should handle @if inside @foreach', async () => {
+    const r = await processTemplate('@foreach(items as item)@if(item > 1){{ item }}@endif@endforeach', { items: [1, 2, 3] })
+    expect(r).toContain('2')
+    expect(r).toContain('3')
+    expect(r).not.toContain('1')
+  })
+
+  it('should process expression filters in full pipeline', async () => {
+    const r = await processTemplate('{{ name | uppercase }}', { name: 'alice' })
+    expect(r).toContain('ALICE')
+  })
+
+  it('should preserve plain HTML unchanged', async () => {
+    const html = '<div class="test"><p>Hello World</p></div>'
+    const r = await processTemplate(html)
+    expect(r).toContain(html)
+  })
+
+  it('should handle empty template', async () => {
+    const r = await processTemplate('')
+    expect(r).toBeDefined()
+  })
+
+  it('should handle template with only whitespace', async () => {
+    const r = await processTemplate('   \n  \n   ')
+    expect(r.trim()).toBe('')
+  })
+})
+
+// =============================================================================
+// Process Pipeline Stress Tests (from edge-case-bugs)
+// =============================================================================
+
+describe('Pipeline: Stress Tests', () => {
+  it('template with 100 {{ }} expressions', async () => {
+    const exprs = Array.from({ length: 100 }, (_, i) => `{{ val_${i} }}`).join(' ')
+    const context: Record<string, any> = {}
+    for (let i = 0; i < 100; i++) context[`val_${i}`] = `v${i}`
+    const result = await processTemplate(exprs, context)
+    for (let i = 0; i < 100; i++) {
+      expect(result).toContain(`v${i}`)
+    }
+  })
+
+  it('template with 50 sequential @if blocks', async () => {
+    const blocks = Array.from({ length: 50 }, (_, i) =>
+      `@if(show_${i})<span>${i}</span>@endif`,
+    ).join('\n')
+    const context: Record<string, any> = {}
+    for (let i = 0; i < 50; i++) context[`show_${i}`] = i % 2 === 0
+    const result = await processTemplate(blocks, context)
+    for (let i = 0; i < 50; i++) {
+      if (i % 2 === 0) {
+        expect(result).toContain(`<span>${i}</span>`)
+      }
+      else {
+        expect(result).not.toContain(`<span>${i}</span>`)
+      }
+    }
+  })
+
+  it('template mixing conditionals, expressions, and forms', async () => {
+    const template = `
+      @if(show)
+        <h1>{{ title }}</h1>
+        @csrf
+      @endif
+    `
+    const result = await processTemplate(template, { show: true, title: 'Test' })
+    expect(result).toContain('Test')
+    expect(result).toContain('_token')
+  })
+
+  it('template with @foreach of 500 items', async () => {
+    const template = `@foreach(items as item){{ item }},@endforeach`
+    const items = Array.from({ length: 500 }, (_, i) => `i${i}`)
+    const result = await processTemplate(template, { items })
+    expect(result).toContain('i0')
+    expect(result).toContain('i499')
+  })
+
+  it('deeply nested structures: @if > @foreach > @if > expression', async () => {
+    const template = `
+      @if(show)
+        @foreach(items as item)
+          @if(item.visible)
+            {{ item.name }}
+          @endif
+        @endforeach
+      @endif
+    `
+    const items = [
+      { name: 'visible-item', visible: true },
+      { name: 'hidden-item', visible: false },
+    ]
+    const result = await processTemplate(template, { show: true, items })
+    expect(result).toContain('visible-item')
+    expect(result).not.toContain('hidden-item')
+  })
+
+  it('@foreach where each item has a @switch', async () => {
+    const template = `
+      @foreach(items as item)
+        @switch(item.type)
+          @case('a')
+            <span>Type A: {{ item.name }}</span>
+            @break
+          @case('b')
+            <span>Type B: {{ item.name }}</span>
+            @break
+          @default
+            <span>Other: {{ item.name }}</span>
+        @endswitch
+      @endforeach
+    `
+    const items = [
+      { type: 'a', name: 'Alpha' },
+      { type: 'b', name: 'Beta' },
+      { type: 'c', name: 'Gamma' },
+    ]
+    const result = await processTemplate(template, { items })
+    expect(result).toContain('Type A: Alpha')
+    expect(result).toContain('Type B: Beta')
+    expect(result).toContain('Other: Gamma')
+  })
+
+  it('@csrf inside @foreach produces tokens', async () => {
+    const template = `@foreach(items as item)<form>@csrf</form>@endforeach`
+    const result = await processTemplate(template, { items: [1, 2, 3] })
+    const tokenMatches = result.match(/_token/g)
+    expect(tokenMatches).not.toBeNull()
+    expect(tokenMatches!.length).toBe(3)
+  })
+
+  it('template with HTML comments interspersed between directives', async () => {
+    const template = `
+      <!-- comment before -->
+      @if(show)
+        <!-- comment inside -->
+        <div>visible</div>
+      @endif
+      <!-- comment after -->
+    `
+    const result = await processTemplate(template, { show: true })
+    expect(result).toContain('visible')
+  })
+
+  it('template with @push/@prepend and @stack', async () => {
+    const template = `
+      @push('scripts')
+        <script>console.log('pushed')</script>
+      @endpush
+      @prepend('scripts')
+        <script>console.log('prepended')</script>
+      @endprepend
+      <div>@stack('scripts')</div>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('prepended')
+    expect(result).toContain('pushed')
+  })
+
+  it('template with multiline @if conditions', async () => {
+    const template = `
+      @if(
+        items.length > 0
+      )
+        <span>has items</span>
+      @endif
+    `
+    const result = await processTemplate(template, { items: [1, 2] })
+    expect(result).toContain('has items')
+  })
+
+  it('template with raw HTML that looks like directives but is inside strings', async () => {
+    const template = `<div>{{ text }}</div>`
+    const result = await processTemplate(template, { text: '@if(true)fake@endif' })
+    expect(result).toContain('@if(true)fake@endif')
+  })
+
+  it('template where same variable is used in multiple scopes', async () => {
+    const template = `
+      @foreach(items as item)
+        {{ item }}
+      @endforeach
+      @foreach(items as item)
+        {{ item }}
+      @endforeach
+    `
+    const result = await processTemplate(template, { items: ['A', 'B'] })
+    const countA = (result.match(/A/g) || []).length
+    expect(countA).toBeGreaterThanOrEqual(2)
+  })
+
+  it('template with @break inside nested @if inside @foreach', async () => {
+    const template = `
+      @foreach(items as item)
+        @if(item === 'stop')
+          @break
+        @endif
+        <span>{{ item }}</span>
+      @endforeach
+    `
+    const result = await processTemplate(template, { items: ['a', 'b', 'stop', 'c'] })
+    expect(result).toContain('a')
+    expect(result).toContain('b')
+    expect(result).not.toContain('<span>stop</span>')
+  })
+
+  it('template with @continue inside nested @if inside @foreach', async () => {
+    const template = `
+      @foreach(items as item)
+        @if(item === 'skip')
+          @continue
+        @endif
+        <span>{{ item }}</span>
+      @endforeach
+    `
+    const result = await processTemplate(template, { items: ['a', 'skip', 'c'] })
+    expect(result).toContain('<span>a</span>')
+    expect(result).toContain('<span>c</span>')
+    expect(result).not.toContain('<span>skip</span>')
+  })
+
+  it('template with expressions containing pipe chars in strings', async () => {
+    const result = await processTemplate(`{{ text }}`, { text: 'a|b' })
+    expect(result).toContain('a|b')
+  })
+
+  it('template with HTML attributes containing {{ }}', async () => {
+    const template = `<input value="{{ val }}">`
+    const result = await processTemplate(template, { val: 'hello' })
+    expect(result).toContain('value="hello"')
+  })
+
+  it('template processes 1000-item @foreach in reasonable time', async () => {
+    const template = `@foreach(items as item){{ item }}@endforeach`
+    const items = Array.from({ length: 1000 }, (_, i) => `x${i}`)
+    const start = performance.now()
+    const result = await processTemplate(template, { items })
+    const elapsed = performance.now() - start
+    expect(result).toContain('x999')
+    expect(elapsed).toBeLessThan(5000)
+  })
+
+  it('escaped @@ directives: @@ produces literal @', async () => {
+    const template = `
+      @if(true)
+        <span>real</span>
+      @endif
+      <p>contact: user@@example.com</p>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('real')
+    expect(result).toContain('user@')
+  })
+
+  it('template with @for loop counting backwards', async () => {
+    const template = `@for(let i = 5; i > 0; i--)<span>{{ i }}</span>@endfor`
+    const result = await processTemplate(template)
+    expect(result).toContain('<span>5</span>')
+    expect(result).toContain('<span>1</span>')
+  })
+
+  it('template with multiple @form blocks on same page', async () => {
+    const template = `
+      @form('POST', '/login')
+      @endform
+      @form('POST', '/register')
+      @endform
+    `
+    const result = processForms(template, {}, 'test.stx', defaultOptions)
+    const formMatches = result.match(/<form/g)
+    expect(formMatches).not.toBeNull()
+    expect(formMatches!.length).toBe(2)
+  })
+})
+
+// =============================================================================
+// Full pipeline integration edge cases (from edge-case-bugs)
+// =============================================================================
+
+describe('Pipeline: Full Integration Edge Cases', () => {
+  it('should handle HTML comment {{-- comment --}} removal', async () => {
+    const result = await processTemplate('before{{-- this is a comment --}}after')
+    expect(result).toContain('before')
+    expect(result).toContain('after')
+    expect(result).not.toContain('this is a comment')
+  })
+
+  it('should handle escaped @@if becoming @if literal', async () => {
+    const result = await processTemplate('@@if(true)not a directive@@endif')
+    expect(result).toContain('@if(true)')
+    expect(result).toContain('@endif')
+  })
+
+  it('should handle nested conditional inside loop inside conditional', async () => {
+    const template = `@if(show)@foreach(items as item)@if(item > 1){{ item }},@endif@endforeach@endif`
+    const result = await processTemplate(template, { show: true, items: [1, 2, 3] })
+    expect(result).toContain('2,')
+    expect(result).toContain('3,')
+    expect(result).not.toContain('1,')
+  })
+
+  it('@form/@endform in full pipeline', async () => {
+    const template = `@form('PUT', '/api/update')
+  @csrf
+  @method('PUT')
+@endform`
+    const result = await processTemplate(template)
+    expect(result).toContain('<form')
+    expect(result).toContain('_token')
+    expect(result).toContain('_method')
+    expect(result).toContain('PUT')
+    expect(result).toContain('</form>')
+  })
+
+  it('should handle @forelse with @if inside each iteration', async () => {
+    const template = `@forelse(items as item)@if(item > 2){{ item }}@endif @empty none@endforelse`
+    const result = await processTemplate(template, { items: [1, 2, 3, 4] })
+    expect(result).toContain('3')
+    expect(result).toContain('4')
+    expect(result).not.toContain('none')
+  })
+
+  it('should handle template with Unicode content', async () => {
+    const result = await processTemplate('<p>{{ greeting }}</p>', { greeting: 'Hello World' })
+    expect(result).toContain('Hello')
+  })
+
+  it('should handle template with HTML entities that look like expressions', async () => {
+    const result = await processTemplate('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>')
+    expect(result).toContain('&lt;script&gt;')
+  })
+
+  it('should handle expression inside HTML attributes', async () => {
+    const result = await processTemplate('<div class="{{ cls }}">content</div>', { cls: 'active' })
+    expect(result).toContain('class="active"')
+  })
+
+  it('@for loop basic functionality', async () => {
+    const template = '@for(let i = 0; i < 3; i++){{ i }},@endfor'
+    const result = await processTemplate(template)
+    expect(result).toContain('0,')
+    expect(result).toContain('1,')
+    expect(result).toContain('2,')
+  })
+
+  it('should handle @switch inside @foreach', async () => {
+    const template = `@foreach(items as item)@switch(item)@case('a')A@break@case('b')B@break@default X@endswitch,@endforeach`
+    const result = await processTemplate(template, { items: ['a', 'b', 'c'] })
+    expect(result).toContain('A,')
+    expect(result).toContain('B,')
+    expect(result).toContain('X,')
+  })
+
+  it('should handle multiple @switch blocks in same template', async () => {
+    const template = `@switch(x)@case(1)one@break@default other@endswitch|@switch(y)@case('a')alpha@break@default beta@endswitch`
+    const result = await processTemplate(template, { x: 1, y: 'a' })
+    expect(result).toContain('one')
+    expect(result).toContain('alpha')
+  })
+
+  it('should handle @env directive in full pipeline', async () => {
+    const template = '@env(\'test\')test mode@endenv @env(\'production\')prod mode@endenv'
+    const result = await processTemplate(template)
+    expect(result).toBeDefined()
+  })
+
+  it('should handle @isset/@empty in full pipeline', async () => {
+    const template = '@isset(name)Hello {{ name }}@endisset @empty(missing)nothing here@endempty'
+    const result = await processTemplate(template, { name: 'Alice' })
+    expect(result).toContain('Hello Alice')
+    expect(result).toContain('nothing here')
+  })
+
+  it('should handle expression with || fallback', async () => {
+    const result = await processTemplate('{{ name || "Guest" }}', { name: '' })
+    expect(result).toContain('Guest')
+  })
+
+  it('should handle expression with ?? nullish coalescing', async () => {
+    const result = await processTemplate('{{ val ?? "default" }}', { val: null })
+    expect(result).toContain('default')
+  })
+
+  it('should handle very large template with 100 @foreach items', async () => {
+    const items = Array.from({ length: 100 }, (_, i) => `item${i}`)
+    const template = '@foreach(items as item){{ item }},@endforeach'
+    const result = await processTemplate(template, { items })
+    expect(result).toContain('item0,')
+    expect(result).toContain('item99,')
+  })
+
+  it('should pass through template with only HTML (no directives) unchanged', async () => {
+    const html = '<div><p>Hello World</p></div>'
+    const result = await processTemplate(html)
+    expect(result).toContain('<div><p>Hello World</p></div>')
+  })
+
+  it('should produce stable results when processed twice (idempotent)', async () => {
+    const template = '<p>{{ name }}</p>'
+    const context = { name: 'Alice' }
+    const result1 = await processTemplate(template, { ...context })
+    const result2 = await processTemplate(result1, { ...context })
+    expect(result1).toBe(result2)
+  })
+
+  it('should handle complex real-world page template with multiple features', async () => {
+    const template = `<html>
+<head></head>
+<body>
+  <h1>{{ title }}</h1>
+  @if(showList)
+  <ul>
+    @foreach(items as item)
+      <li>{{ item }}</li>
+    @endforeach
+  </ul>
+  @else
+    <p>No items</p>
+  @endif
+  @csrf
+</body>
+</html>`
+    const result = await processTemplate(template, {
+      title: 'My Page',
+      showList: true,
+      items: ['One', 'Two', 'Three'],
+    })
+    expect(result).toContain('<h1>My Page</h1>')
+    expect(result).toContain('<li>One</li>')
+    expect(result).toContain('<li>Two</li>')
+    expect(result).toContain('<li>Three</li>')
+    expect(result).toContain('_token')
+    expect(result).not.toContain('No items')
+  })
+})
+
+// =============================================================================
+// Real-World Page Templates (from regression-bugs)
+// =============================================================================
+
+describe('Pipeline: Real-World Page Templates (regression)', () => {
+  it('should render a blog index page with posts loop', async () => {
+    const template = `<div class="blog">
+  <h1>{{ title }}</h1>
+  @foreach(posts as post)
+    <article>
+      <h2>{{ post.title }}</h2>
+      <time>{{ post.date }}</time>
+      <p>{{ post.excerpt }}</p>
+      <span>By {{ post.author }}</span>
+    </article>
+  @endforeach
+</div>`
+    const context = {
+      title: 'My Blog',
+      posts: [
+        { title: 'First Post', date: '2025-01-15', excerpt: 'Hello world', author: 'Alice' },
+        { title: 'Second Post', date: '2025-02-20', excerpt: 'Another day', author: 'Bob' },
+      ],
+    }
+    const result = await processTemplate(template, context)
+    expect(result).toContain('My Blog')
+    expect(result).toContain('First Post')
+    expect(result).toContain('Second Post')
+    expect(result).toContain('By Alice')
+    expect(result).toContain('By Bob')
+  })
+
+  it('should render a user profile with conditional auth display', async () => {
+    const template = `<div class="profile">
+  @if(authenticated)
+    <img src="{{ user.avatar }}" alt="{{ user.name }}">
+    <h1>{{ user.name }}</h1>
+    <p>{{ user.bio }}</p>
+    @if(user.isAdmin)
+      <span class="badge">Admin</span>
+    @endif
+  @else
+    <p>Please log in to view this profile.</p>
+  @endif
+</div>`
+    const context = {
+      authenticated: true,
+      user: { name: 'Jane Doe', avatar: '/img/jane.png', bio: 'Developer from NYC', isAdmin: true },
+    }
+    const result = await processTemplate(template, context)
+    expect(result).toContain('Jane Doe')
+    expect(result).toContain('/img/jane.png')
+    expect(result).toContain('Developer from NYC')
+    expect(result).toContain('Admin')
+    expect(result).not.toContain('Please log in')
+  })
+
+  it('should render a navigation menu with active item conditional', async () => {
+    const template = `<nav>
+  @foreach(menuItems as item)
+    @if(item.url === currentUrl)
+      <a href="{{ item.url }}" class="active">{{ item.label }}</a>
+    @else
+      <a href="{{ item.url }}">{{ item.label }}</a>
+    @endif
+  @endforeach
+</nav>`
+    const context = {
+      currentUrl: '/about',
+      menuItems: [
+        { url: '/', label: 'Home' },
+        { url: '/about', label: 'About' },
+        { url: '/contact', label: 'Contact' },
+      ],
+    }
+    const result = await processTemplate(template, context)
+    expect(result).toContain('href="/"')
+    expect(result).toContain('class="active"')
+    expect(result).toContain('About')
+    expect(result).toContain('Contact')
+    const activeMatches = result.match(/class="active"/g)
+    expect(activeMatches?.length).toBe(1)
+  })
+
+  it('should render a search results page with forelse for no results', async () => {
+    const template = `<div class="search">
+  <h1>Search Results for "{{ query }}"</h1>
+  <p>{{ results.length }} results found</p>
+  @forelse(results as result)
+    <div class="result">
+      <a href="{{ result.url }}">{{ result.title }}</a>
+      <p>{{ result.snippet }}</p>
+    </div>
+  @empty
+    <p class="no-results">No results found for "{{ query }}".</p>
+  @endforelse
+</div>`
+    const context1 = {
+      query: 'stx templates',
+      results: [{ url: '/docs', title: 'Documentation', snippet: 'Learn about stx...' }],
+    }
+    const result1 = await processTemplate(template, context1)
+    expect(result1).toContain('Documentation')
+    expect(result1).not.toContain('No results found')
+
+    const context2 = { query: 'xyz123', results: [] }
+    const result2 = await processTemplate(template, context2)
+    expect(result2).toContain('No results found')
+    expect(result2).toContain('0 results found')
+  })
+
+  it('should render an admin table with index and conditional action buttons', async () => {
+    const template = `<table>
+  <thead><tr><th>#</th><th>Name</th><th>Role</th><th>Actions</th></tr></thead>
+  <tbody>
+    @foreach(users as idx => user)
+      <tr>
+        <td>{{ idx + 1 }}</td>
+        <td>{{ user.name }}</td>
+        <td>{{ user.role }}</td>
+        <td>
+          @if(user.role !== 'admin')
+            <button class="delete">Delete</button>
+          @endif
+          <button class="edit">Edit</button>
+        </td>
+      </tr>
+    @endforeach
+  </tbody>
+</table>`
+    const context = {
+      users: [
+        { name: 'Admin User', role: 'admin' },
+        { name: 'Editor User', role: 'editor' },
+        { name: 'Viewer User', role: 'viewer' },
+      ],
+    }
+    const result = await processTemplate(template, context)
+    expect(result).toContain('Admin User')
+    expect(result).toContain('Editor User')
+    expect(result).toContain('Viewer User')
+    const deleteCount = (result.match(/class="delete"/g) || []).length
+    expect(deleteCount).toBe(2)
+    const editCount = (result.match(/class="edit"/g) || []).length
+    expect(editCount).toBe(3)
+  })
+
+  it('should render a comment thread with nested replies', async () => {
+    const template = `<div class="comments">
+  @foreach(comments as comment)
+    @if(!comment.deleted)
+      <div class="comment">
+        <strong>{{ comment.author }}</strong>
+        <p>{{ comment.text }}</p>
+        @if(comment.replies.length > 0)
+          <div class="replies">
+            @foreach(comment.replies as reply)
+              <div class="reply">
+                <strong>{{ reply.author }}</strong>
+                <p>{{ reply.text }}</p>
+              </div>
+            @endforeach
+          </div>
+        @endif
+      </div>
+    @else
+      <div class="comment deleted">[This comment has been deleted]</div>
+    @endif
+  @endforeach
+</div>`
+    const context = {
+      comments: [
+        { author: 'Alice', text: 'Great article!', deleted: false, replies: [
+          { author: 'Bob', text: 'I agree!' },
+        ] },
+        { author: 'Troll', text: 'Bad content', deleted: true, replies: [] },
+        { author: 'Charlie', text: 'Thanks for sharing.', deleted: false, replies: [] },
+      ],
+    }
+    const result = await processTemplate(template, context)
+    expect(result).toContain('Great article!')
+    expect(result).toContain('I agree!')
+    expect(result).toContain('[This comment has been deleted]')
+    expect(result).toContain('Thanks for sharing.')
+    expect(result).not.toContain('Bad content')
+  })
+
+  it('should render an API response rendering page with conditional status', async () => {
+    const template = `<div class="api-response">
+  @if(status === 200)
+    <h2>Success</h2>
+    @foreach(data as item)
+      <div>{{ item.id }}: {{ item.name }}</div>
+    @endforeach
+  @elseif(status === 404)
+    <h2>Not Found</h2>
+    <p>The resource was not found.</p>
+  @else
+    <h2>Error {{ status }}</h2>
+    <p>{{ errorMessage }}</p>
+  @endif
+</div>`
+    const context = {
+      status: 200,
+      data: [
+        { id: 1, name: 'Item One' },
+        { id: 2, name: 'Item Two' },
+      ],
+      errorMessage: '',
+    }
+    const result = await processTemplate(template, context)
+    expect(result).toContain('Success')
+    expect(result).toContain('1: Item One')
+    expect(result).toContain('2: Item Two')
+    expect(result).not.toContain('Not Found')
+  })
+})
+
+// =============================================================================
+// Error Recovery Tests (from regression-bugs)
+// =============================================================================
+
+describe('Pipeline: Error Recovery', () => {
+  it('should handle missing @endif for @if gracefully', async () => {
+    const template = `@if(true)
+  <div>Open block</div>`
+    const result = await processTemplate(template, {})
+    expect(typeof result).toBe('string')
+  })
+
+  it('should handle missing @endforeach gracefully', async () => {
+    const template = `@foreach(items as item)
+  <div>{{ item }}</div>`
+    const result = await processTemplate(template, { items: ['a', 'b'] })
+    expect(typeof result).toBe('string')
+  })
+
+  it('should handle @foreach with non-iterable value', async () => {
+    const template = `@foreach(notAnArray as item)
+  <div>{{ item }}</div>
+@endforeach`
+    const result = await processTemplate(template, { notAnArray: 42 })
+    expect(typeof result).toBe('string')
+    expect(result).not.toContain('undefined')
+  })
+
+  it('should handle @if with syntax error in condition', async () => {
+    const template = `@if(&&& invalid !!!)
+  <div>Should not render</div>
+@endif`
+    const result = await processTemplate(template, {})
+    expect(typeof result).toBe('string')
+  })
+
+  it('should handle deeply nested unclosed tags without crashing', async () => {
+    const template = `@if(true)
+  @if(true)
+    @if(true)
+      <div>Deep</div>`
+    const result = await processTemplate(template, {})
+    expect(typeof result).toBe('string')
+  })
+})
+
+// =============================================================================
+// @if Condition Evaluation Stress (from deep-edge-cases)
+// =============================================================================
+
+describe('Pipeline: @if Condition Evaluation Stress', () => {
+  it('long chained && condition', async () => {
+    const template = `@if(a && b && c && d && e && f && g)<span>all true</span>@endif`
+    const ctx = { a: true, b: true, c: true, d: true, e: true, f: true, g: true }
+    const result = await processTemplate(template, ctx)
+    expect(result).toContain('all true')
+  })
+
+  it('long chained && condition where one is false', async () => {
+    const template = `@if(a && b && c && d && e && f && g)<span>all true</span>@endif`
+    const ctx = { a: true, b: true, c: true, d: false, e: true, f: true, g: true }
+    const result = await processTemplate(template, ctx)
+    expect(result).not.toContain('all true')
+  })
+
+  it('condition with nested function calls: items.filter(x => x > 0).length > 0', async () => {
+    const template = `@if(items.filter(x => x > 0).length > 0)<span>has positive</span>@endif`
+    const result = await processTemplate(template, { items: [1, -2, 3] })
+    expect(result).toContain('has positive')
+  })
+
+  it('condition with string includes', async () => {
+    const template = `@if(name.includes('admin'))<span>is admin</span>@endif`
+    const result = await processTemplate(template, { name: 'admin_user' })
+    expect(result).toContain('is admin')
+  })
+
+  it('condition referencing non-existent variable', async () => {
+    const template = `@if(nonExistentVar)<span>visible</span>@endif`
+    const result = await processTemplate(template, {})
+    expect(result).not.toContain('visible')
+  })
+
+  it('condition with deeply nested property: a.b.c.d.e', async () => {
+    const template = `@if(a.b.c.d.e)<span>deep</span>@endif`
+    const ctx = { a: { b: { c: { d: { e: true } } } } }
+    const result = await processTemplate(template, ctx)
+    expect(result).toContain('deep')
+  })
+
+  it('condition with Math: Math.floor(score / 10) >= 9', async () => {
+    const template = `@if(Math.floor(score / 10) >= 9)<span>high</span>@endif`
+    const result = await processTemplate(template, { score: 95 })
+    expect(result).toContain('high')
+  })
+
+  it('condition mixing && and ||: (a || b) && (c || d)', async () => {
+    const template = `@if((a || b) && (c || d))<span>yes</span>@endif`
+    const result = await processTemplate(template, { a: false, b: true, c: false, d: true })
+    expect(result).toContain('yes')
+  })
+
+  it('condition with double negation: !!value', async () => {
+    const template = `@if(!!value)<span>truthy</span>@endif`
+    const result = await processTemplate(template, { value: 'hello' })
+    expect(result).toContain('truthy')
+  })
+
+  it('condition that accesses property on undefined (short-circuit)', async () => {
+    const template = `@if(undefinedVar && undefinedVar.property)<span>visible</span>@endif`
+    const result = await processTemplate(template, {})
+    expect(result).not.toContain('visible')
+  })
+
+  it('condition with NaN check: val !== val', async () => {
+    const template = `@if(val !== val)<span>is NaN</span>@endif`
+    const result = await processTemplate(template, { val: NaN })
+    expect(result).toContain('is NaN')
+  })
+})
+
+// =============================================================================
+// @switch Stress Tests (from deep-edge-cases)
+// =============================================================================
+
+describe('Pipeline: @switch Stress Tests', () => {
+  it('@switch with many cases (10)', async () => {
+    const cases = Array.from({ length: 10 }, (_, i) =>
+      `@case(${i})<span>case${i}</span>@break`,
+    ).join('\n')
+    const template = `@switch(val)\n${cases}\n@default<span>default</span>\n@endswitch`
+    const result = await processTemplate(template, { val: 7 })
+    expect(result).toContain('case7')
+    expect(result).not.toContain('case0')
+  })
+
+  it('@switch with null case value', async () => {
+    const template = `
+      @switch(val)
+        @case(null)
+          <span>null case</span>
+          @break
+        @default
+          <span>default case</span>
+      @endswitch
+    `
+    const result = await processTemplate(template, { val: null })
+    expect(typeof result).toBe('string')
+  })
+
+  it('@switch with nested @if inside case', async () => {
+    const template = `
+      @switch(type)
+        @case('special')
+          @if(extra)
+            <span>special+extra</span>
+          @else
+            <span>special only</span>
+          @endif
+          @break
+        @default
+          <span>default</span>
+      @endswitch
+    `
+    const result = await processTemplate(template, { type: 'special', extra: true })
+    expect(result).toContain('special+extra')
+    expect(result).not.toContain('default')
+  })
+
+  it('@switch with @foreach inside case', async () => {
+    const template = `
+      @switch(mode)
+        @case('list')
+          @foreach(items as item)
+            <li>{{ item }}</li>
+          @endforeach
+          @break
+        @default
+          <span>no list</span>
+      @endswitch
+    `
+    const result = await processTemplate(template, { mode: 'list', items: ['a', 'b'] })
+    expect(result).toContain('<li>a</li>')
+    expect(result).toContain('<li>b</li>')
+  })
+
+  it('@switch immediately after another @switch', async () => {
+    const template = `
+      @switch(a)
+        @case(1)<span>a1</span>@break
+        @default<span>a-default</span>
+      @endswitch
+      @switch(b)
+        @case(2)<span>b2</span>@break
+        @default<span>b-default</span>
+      @endswitch
+    `
+    const result = await processTemplate(template, { a: 1, b: 2 })
+    expect(result).toContain('a1')
+    expect(result).toContain('b2')
+  })
+
+  it('@switch with default only', async () => {
+    const template = `
+      @switch(val)
+        @default
+          <span>always default</span>
+      @endswitch
+    `
+    const result = await processTemplate(template, { val: 'anything' })
+    expect(result).toContain('always default')
+  })
+
+  it('@switch where no case matches and no default', async () => {
+    const template = `
+      @switch(val)
+        @case('a')<span>A</span>@break
+        @case('b')<span>B</span>@break
+      @endswitch
+    `
+    const result = await processTemplate(template, { val: 'c' })
+    expect(result).not.toContain('<span>A</span>')
+    expect(result).not.toContain('<span>B</span>')
+  })
+
+  it('@switch with boolean case values', async () => {
+    const template = `
+      @switch(flag)
+        @case(true)
+          <span>on</span>
+          @break
+        @case(false)
+          <span>off</span>
+          @break
+      @endswitch
+    `
+    const result = await processTemplate(template, { flag: true })
+    expect(result).toContain('on')
+    expect(result).not.toContain('off')
+  })
+})
+
+// =============================================================================
+// Variable Extractor via Pipeline (from deep-edge-cases)
+// =============================================================================
+
+describe('Pipeline: Variable Extractor Edge Cases', () => {
+  it('script with spread in destructuring: const { a, ...rest } = obj', async () => {
+    const template = `
+      <script server>
+      const obj = { a: 1, b: 2, c: 3 }
+      const { a, ...rest } = obj
+      </script>
+      <div>{{ a }}</div>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('1')
+  })
+
+  it('script with default values: const { a = 1 } = obj', async () => {
+    const template = `
+      <script server>
+      const obj = {}
+      const { a = 42 } = obj
+      </script>
+      <div>{{ a }}</div>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('42')
+  })
+
+  it('script with regex literal: const re = /test/g', async () => {
+    const template = `
+      <script server>
+      const text = 'test123test'
+      const re = /test/g
+      const matches = text.match(re)
+      const count = matches ? matches.length : 0
+      </script>
+      <div>{{ count }}</div>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('2')
+  })
+
+  it('script with comments between declarations', async () => {
+    const template = `
+      <script server>
+      // first variable
+      const a = 'hello'
+      /* second variable */
+      const b = 'world'
+      </script>
+      <div>{{ a }} {{ b }}</div>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('hello')
+    expect(result).toContain('world')
+  })
+
+  it('script with empty script tag', async () => {
+    const template = `
+      <script server></script>
+      <div>static content</div>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('static content')
+  })
+
+  it('script with arrow function', async () => {
+    const template = `
+      <script server>
+      const double = (x) => x * 2
+      const result = double(21)
+      </script>
+      <div>{{ result }}</div>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('42')
+  })
+
+  it('script with array destructuring', async () => {
+    const template = `
+      <script server>
+      const [first, second] = ['one', 'two']
+      </script>
+      <div>{{ first }} {{ second }}</div>
+    `
+    const result = await processTemplate(template)
+    expect(result).toContain('one')
+    expect(result).toContain('two')
   })
 })

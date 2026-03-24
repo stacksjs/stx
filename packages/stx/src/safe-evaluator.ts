@@ -126,12 +126,57 @@ const DANGEROUS_PATTERNS = [
   /__\w+__/,
   // Bind/call/apply (can change execution context)
   /\.(bind|call|apply)\s*\(/,
+  // Object creation (can invoke arbitrary constructors)
+  /\bnew\s+/,
+  // Delete operator (can modify object structure)
+  /\bdelete\s+/,
+  // this keyword (can access execution context)
+  /\bthis\b/,
 ]
 
 /**
- * Pattern for bracket notation with strings - checked separately based on config
+ * Pattern for bracket notation property access with strings - checked separately based on config.
+ * Only matches bracket notation when preceded by a word char, ), or ] (property access context).
+ * Does NOT match array literals like ['a', 'b'] which are preceded by [, :, =, (, or start of expression.
  */
-const BRACKET_NOTATION_PATTERN = /\[\s*['"]/
+const BRACKET_NOTATION_PATTERN = /[\w)\]]\s*\[\s*['"]/
+
+/**
+ * Strip string literals from an expression for safe pattern checking.
+ * This prevents false positives when dangerous keywords appear inside strings.
+ * e.g., "__proto__" as a string value should be allowed.
+ *
+ * IMPORTANT: Template literal interpolations (${...}) are preserved because
+ * they execute code and must still be checked for dangerous patterns.
+ */
+function stripStringLiterals(expr: string): string {
+  let result = ''
+  let inString: string | null = null
+  let escaped = false
+  for (let i = 0; i < expr.length; i++) {
+    const ch = expr[i]
+    if (escaped) { escaped = false; continue }
+    if (ch === '\\' && inString) { escaped = true; continue }
+    if (inString) {
+      // Template literals: preserve ${...} interpolations (they execute code)
+      if (inString === '`' && ch === '$' && i + 1 < expr.length && expr[i + 1] === '{') {
+        let tplDepth = 1
+        i += 2 // skip ${
+        while (i < expr.length && tplDepth > 0) {
+          if (expr[i] === '{') tplDepth++
+          else if (expr[i] === '}') tplDepth--
+          if (tplDepth > 0) { result += expr[i]; i++ }
+        }
+        continue
+      }
+      if (ch === inString) inString = null
+      continue
+    }
+    if (ch === '"' || ch === '\'' || ch === '`') { inString = ch; continue }
+    result += ch
+  }
+  return result
+}
 
 /**
  * Sanitize an expression by checking for dangerous patterns
@@ -139,9 +184,13 @@ const BRACKET_NOTATION_PATTERN = /\[\s*['"]/
 export function sanitizeExpression(expression: string): string {
   const trimmed = expression.trim()
 
-  // Check for dangerous patterns
+  // Strip string literals before checking patterns to avoid false positives
+  // e.g., "__proto__" as a string value should be allowed
+  const stripped = stripStringLiterals(trimmed)
+
+  // Check for dangerous patterns on the stripped expression
   for (const pattern of DANGEROUS_PATTERNS) {
-    if (pattern.test(trimmed)) {
+    if (pattern.test(stripped)) {
       throw new Error(`Potentially unsafe expression: ${trimmed}`)
     }
   }

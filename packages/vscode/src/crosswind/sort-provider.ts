@@ -1,20 +1,16 @@
 import type * as vscode from 'vscode'
 
 /**
- * Sort utility classes based on Headwind's rule ordering
+ * Sort utility classes based on Crosswind's rule ordering
  */
 export async function sortClasses(classes: string[]): Promise<string[]> {
   try {
-    // Load headwind - works after fixing package.json exports
-    const headwind = await import('@cwcss/crosswind')
-    const { builtInRules, parseClass, defaultConfig } = headwind
+    const crosswind = await import('@cwcss/crosswind')
+    const { builtInRules, parseClass, defaultConfig } = crosswind
 
-    // Calculate priority for each class
     const classesWithPriority = classes.map((className) => {
       const parsed = parseClass(className)
 
-      // Find the first matching rule index
-      // Use defaultConfig to ensure rules can properly match values like spacing fractions
       let priority = Number.MAX_SAFE_INTEGER
       for (let i = 0; i < builtInRules.length; i++) {
         const rule = builtInRules[i]
@@ -28,7 +24,6 @@ export async function sortClasses(classes: string[]): Promise<string[]> {
       return { className, priority }
     })
 
-    // Sort by priority, then alphabetically
     classesWithPriority.sort((a, b) => {
       if (a.priority !== b.priority) {
         return a.priority - b.priority
@@ -39,7 +34,7 @@ export async function sortClasses(classes: string[]): Promise<string[]> {
     return classesWithPriority.map(item => item.className)
   }
   catch (error) {
-    console.error('[Headwind Sort] Error sorting classes:', error)
+    console.error('[Crosswind Sort] Error sorting classes:', error)
     return classes
   }
 }
@@ -59,7 +54,6 @@ export function createSortClassesCommand(vscodeModule: typeof vscode): vscode.Di
     const document = editor.document
     const text = document.getText()
 
-    // Find all class attributes
     const classRegex = /class(?:Name)?=["']([^"']*)["']/g
     let match = classRegex.exec(text)
     const edits: { range: any, newText: string }[] = []
@@ -69,10 +63,10 @@ export function createSortClassesCommand(vscodeModule: typeof vscode): vscode.Di
       const classes = classContent.split(/\s+/).filter(Boolean)
 
       if (classes.length <= 1) {
-        continue // No need to sort single or empty class
+        match = classRegex.exec(text)
+        continue
       }
 
-      // Sort the classes
       const sortedClasses = await sortClasses(classes)
       const sortedContent = sortedClasses.join(' ')
 
@@ -97,7 +91,6 @@ export function createSortClassesCommand(vscodeModule: typeof vscode): vscode.Di
       return
     }
 
-    // Apply all edits
     await editor.edit((editBuilder) => {
       for (const edit of edits) {
         editBuilder.replace(edit.range, edit.newText)

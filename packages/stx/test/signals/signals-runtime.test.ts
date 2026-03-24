@@ -15,10 +15,29 @@ describe('STX Signals - Runtime Behavior', () => {
       addEventListener: () => {},
     }
 
-    const mockDocument = {
+    const mockStyles: any[] = []
+    const mockDocument: any = {
       readyState: 'complete',
       addEventListener: () => {},
       querySelectorAll: () => [],
+      createElement: (tag: string) => ({
+        tagName: tag.toUpperCase(),
+        textContent: '',
+        setAttribute: () => {},
+        getAttribute: () => null,
+        appendChild: () => {},
+        style: {},
+      }),
+      head: {
+        appendChild: (child: any) => mockStyles.push(child),
+      },
+      body: {
+        appendChild: () => {},
+      },
+      createTreeWalker: () => ({
+        nextNode: () => null,
+        currentNode: null,
+      }),
     }
 
     // Evaluate the runtime in our mock environment
