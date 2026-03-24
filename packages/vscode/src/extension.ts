@@ -133,58 +133,48 @@ export async function activate(context: vscode.ExtensionContext) {
     legend,
   )
 
-  // Track document changes
+  // Track document changes with debouncing to avoid excessive recomputation
+  let updateTimeout: ReturnType<typeof setTimeout> | undefined
   const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
     if (event.document.languageId === 'stx'
       || (event.document.languageId === 'markdown' && event.document.fileName.endsWith('.md'))) {
-      virtualTsDocumentProvider.updateVirtualTsDocument(event.document)
+      clearTimeout(updateTimeout)
+      updateTimeout = setTimeout(() => {
+        virtualTsDocumentProvider.updateVirtualTsDocument(event.document)
+      }, 150)
     }
   })
 
-  // Track document opens
-  const documentOpenListener = vscode.workspace.onDidOpenTextDocument((document) => {
-    // Handle stx files
-    if (document.languageId === 'stx' || document.fileName.endsWith('.stx')) {
-      virtualTsDocumentProvider.trackDocument(document)
+  // Track document opens and create virtual TypeScript documents
+  const documentOpenListener = vscode.workspace.onDidOpenTextDocument(async (document) => {
+    const isStx = document.languageId === 'stx' || document.fileName.endsWith('.stx')
+    const isMarkdown = document.languageId === 'markdown' && document.fileName.endsWith('.md')
 
-      // If the file has .stx extension but doesn't have stx language ID, set it
-      if (document.languageId !== 'stx' && document.fileName.endsWith('.stx')) {
-        vscode.languages.setTextDocumentLanguage(document, 'stx')
-          .then(() => console.log(`Set language ID for ${document.fileName} to stx`))
+    if (!isStx && !isMarkdown) return
+
+    virtualTsDocumentProvider.trackDocument(document)
+
+    // Set language ID for .stx files if needed
+    if (isStx && document.languageId !== 'stx') {
+      try {
+        await vscode.languages.setTextDocumentLanguage(document, 'stx')
       }
-
-      // Open a virtual TypeScript document for this stx file
-      const virtualUri = document.uri.with({
-        scheme: 'stx-ts',
-        path: `${document.uri.path}.ts`,
-      })
-
-      // Load the virtual document in the background to activate TypeScript features
-      vscode.workspace.openTextDocument(virtualUri)
-        .then(() => {
-          console.log('TypeScript virtual document created for', document.uri.toString())
-        }, (error: Error) => {
-          console.error('Failed to open virtual TypeScript document:', error)
-        })
+      catch {
+        // Language may already be set
+      }
     }
 
-    // Handle Markdown files
-    if (document.languageId === 'markdown' && document.fileName.endsWith('.md')) {
-      virtualTsDocumentProvider.trackDocument(document)
+    // Create virtual TypeScript document for IDE features
+    const virtualUri = document.uri.with({
+      scheme: 'stx-ts',
+      path: `${document.uri.path}.ts`,
+    })
 
-      // Open a virtual TypeScript document for this MD file to support frontmatter
-      const virtualUri = document.uri.with({
-        scheme: 'stx-ts',
-        path: `${document.uri.path}.ts`,
-      })
-
-      // Load the virtual document in the background to activate TypeScript features
-      vscode.workspace.openTextDocument(virtualUri)
-        .then(() => {
-          console.log('TypeScript virtual document created for Markdown file', document.uri.toString())
-        }, (error: Error) => {
-          console.error('Failed to open virtual TypeScript document for Markdown:', error)
-        })
+    try {
+      await vscode.workspace.openTextDocument(virtualUri)
+    }
+    catch (error) {
+      console.error('Failed to open virtual TypeScript document:', error)
     }
   })
 
@@ -200,21 +190,9 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   })
 
-  // Automatically set language ID for .stx files
-  const fileOpenListener = vscode.workspace.onDidOpenTextDocument(async (document) => {
-    const fileName = document.fileName
-    const extension = path.extname(fileName)
-
-    if (extension.toLowerCase() === '.stx' && document.languageId !== 'stx') {
-      await vscode.languages.setTextDocumentLanguage(document, 'stx')
-      console.log(`Set language ID for ${fileName} to stx`)
-    }
-  })
-
   context.subscriptions.push(
     documentChangeListener,
     documentOpenListener,
-    fileOpenListener,
     hoverProvider,
     definitionProvider,
     documentLinkProvider,

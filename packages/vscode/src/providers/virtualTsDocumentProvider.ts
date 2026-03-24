@@ -339,23 +339,43 @@ declare const history: History;
       }
 
       // Extract TypeScript from <script> tags
-      const scriptTagRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi
+      // Skip external scripts (with src attribute), handle lang="ts"/"js" and server/client attributes
+      const scriptTagRegex = /<script\b(?![^>]*\bsrc\s*=)([^>]*)>([\s\S]*?)<\/script>/gi
       let scriptMatch
 
       while ((scriptMatch = scriptTagRegex.exec(text)) !== null) {
-        const scriptContent = scriptMatch[1]
-        const scriptStartPos = document.positionAt(scriptMatch.index + scriptMatch[0].indexOf('>') + 1)
+        const scriptAttrs = scriptMatch[1]
+        const scriptContent = scriptMatch[2]
 
-        // Add each line with position mapping
+        // Skip scripts explicitly marked as JavaScript (not TypeScript)
+        if (/\blang\s*=\s*["']?(?:js|javascript)["']?/i.test(scriptAttrs)) {
+          continue
+        }
+
+        // Determine script context for type annotations
+        const isServer = /\bserver\b/i.test(scriptAttrs)
+        if (isServer) {
+          tsContent += `// Server-side script context\n`
+          tsLineCounter++
+        }
+
+        // Find the position of the content start (after the > of <script ...>)
+        const tagEndIndex = scriptMatch.index + scriptMatch[0].indexOf('>') + 1
+        const scriptStartPos = document.positionAt(tagEndIndex)
+
+        // Add each line with accurate position mapping
         const scriptLines = scriptContent.split('\n')
         for (let i = 0; i < scriptLines.length; i++) {
           const line = scriptLines[i]
           tsContent += `${line}\n`
 
-          // Create position mapping for this line
+          // Calculate the actual character offset in the .stx file
+          // First line starts where the > tag ends, subsequent lines start at column 0
+          const stxCharOffset = i === 0 ? scriptStartPos.character : 0
+
           mappings.push({
             stxLine: scriptStartPos.line + i,
-            stxChar: i === 0 ? scriptStartPos.character : 0,
+            stxChar: stxCharOffset,
             tsLine: tsLineCounter,
             tsChar: 0,
             length: line.length,
@@ -367,7 +387,6 @@ declare const history: History;
         // Extract interface information from script content
         this.extractInterfaceTypeInfo(scriptContent, jsDocComments)
 
-        // Add an extra newline for separation
         tsContent += '\n'
         tsLineCounter++
       }
