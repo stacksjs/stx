@@ -33,6 +33,21 @@
     "Extension Packs"
   ],
   "main": "./dist/extension.js",
+  "module": "./dist/index.mjs",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/extension.js",
+      "types": "./src/index.ts"
+    },
+    "./extension": {
+      "require": "./dist/extension.js"
+    },
+    "./plugin": {
+      "require": "./dist/typescript-stx-plugin.js"
+    }
+  },
   "icon": "logo.png",
   "engines": {
     "vscode": "^1.999.0"
