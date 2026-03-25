@@ -12,7 +12,7 @@ A modern templating engine with Vue-like Single File Components, Laravel Blade d
 ## Features
 
 - **Vue-like SFC** - `<script>`, `<template>`, `<style>` structure
-- **Auto-imported Components** - Use `<Card />` directly, no imports needed
+- **Auto-imported Components** - Use your `<Card />` directly, no imports needed
 - **Reactive Signals** - `state()`, `derived()`, `effect()` for fine-grained reactivity
 - **Blade Directives** - `@if`, `@foreach`, `@layout`, `@section`, and 40+ more
 - **Expression Filters** - `{{ price | currency }}` with 30+ built-in filters
