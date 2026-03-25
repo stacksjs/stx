@@ -1522,21 +1522,20 @@ async function processDirectivesInternal(
     }
   }
 
-  // Extract sections
-  output = output.replace(/@section\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?\)([\s\S]*?)(?:@endsection|@show)/g, (match, name, value, content) => {
-    // If single line section with value
-    if (value) {
-      sections[name] = value
-      return ''
-    }
+  // Extract sections — two passes to avoid inline sections consuming block sections
+  // Pass 1: Extract inline sections: @section('name', 'value')
+  output = output.replace(/@section\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)/g, (_, name, value) => {
+    sections[name] = value
+    return ''
+  })
 
+  // Pass 2: Extract block sections: @section('name')...@endsection
+  output = output.replace(/@section\(\s*['"]([^'"]+)['"]\s*\)([\s\S]*?)(?:@endsection|@show)/g, (_, name, content) => {
     // Process @parent directive in sections
     if (content.includes('@parent')) {
-      // Store with parent placeholder to be replaced when inserted
       sections[name] = content.replace('@parent', '<!--PARENT_CONTENT_PLACEHOLDER-->')
     }
     else {
-      // Multi-line section without @parent
       sections[name] = content.trim()
     }
     return ''
