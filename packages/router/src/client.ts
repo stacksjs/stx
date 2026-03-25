@@ -147,15 +147,16 @@ else {
         if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
         else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
         window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
-        // Initialize reactive scopes BEFORE page scripts run
-        window.dispatchEvent(new Event('stx:load'));
-        // Now execute page scripts (they can use __stx_execute immediately)
+        // Execute page scripts FIRST — they define setup functions and set _latestSetup
+        document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
         fragScripts.forEach(function(code){
           var ns=document.createElement('script');
           ns.textContent=code;
           ns.setAttribute('data-stx-page','');
           document.body.appendChild(ns);
         });
+        // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
+        window.dispatchEvent(new Event('stx:load'));
       }
       if(o.viewTransitions&&document.startViewTransition){document.startViewTransition(doFragSwap)}
       else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){doFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
@@ -288,11 +289,9 @@ else {
       var newTitle=doc.querySelector('title');
       if(newTitle)document.title=newTitle.textContent;
 
-      // Initialize reactive scopes BEFORE page scripts run
       window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
-      window.dispatchEvent(new Event('stx:load'));
 
-      // Now execute page scripts (they can use __stx_execute immediately)
+      // Execute page scripts FIRST — they define setup functions and set _latestSetup
       function execScripts(){
         scripts.forEach(function(text){
           var ns=document.createElement('script');
@@ -300,6 +299,8 @@ else {
           ns.setAttribute('data-stx-page','');
           document.body.appendChild(ns);
         });
+        // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
+        window.dispatchEvent(new Event('stx:load'));
       }
 
       if(extPromises.length>0){

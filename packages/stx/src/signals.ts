@@ -713,18 +713,17 @@ finally {
  * @returns Minified JavaScript runtime code
  */
 export function generateSignalsRuntime(): string {
-  // Minify the dev runtime:
-  // 1. Remove single-line comments (but preserve strings containing //)
-  // 2. Remove multi-line comments
-  // 3. Remove excess whitespace
-  return generateSignalsRuntimeDev()
-    .replace(/\/\/[^\n]*/g, '') // Remove single-line comments first (while newlines exist)
-    .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
-    .replace(/\n\s*/g, ' ') // Replace newlines with single space
-    .replace(/\s+/g, ' ') // Collapse multiple spaces
-    .replace(/\s*([{}();,:])\s*/g, '$1') // Remove spaces around punctuation
-    .replace(/;\}/g, '}') // Remove unnecessary semicolons before }
-    .trim()
+  // Use Bun.Transpiler for proper minification that handles ASI correctly.
+  // The previous regex-based minifier stripped newlines without adding semicolons,
+  // producing invalid JS like `cleanup=fn()throw e` or `}var x`.
+  try {
+    const transpiler = new Bun.Transpiler({ loader: 'js', minifyWhitespace: true })
+    return transpiler.transformSync(generateSignalsRuntimeDev())
+  }
+  catch {
+    // Fallback: return dev runtime unminified (larger but correct)
+    return generateSignalsRuntimeDev()
+  }
 }
 
 /**
@@ -1049,7 +1048,7 @@ else {
       value = fn(...Object.values(scope));
     }
 catch (e) {
-      console.warn('[STX] Pipe base expression error:', valueExpr, e);
+      if (!(e instanceof ReferenceError)) console.warn('[STX] Pipe base expression error:', valueExpr, e);
       return '';
     }
 
@@ -1076,7 +1075,7 @@ catch (e) {
           value = filterFn(value, ...parsedArgs);
         }
 catch (e) {
-          console.warn('[STX] Pipe filter error:', pipe.name, e);
+          if (!(e instanceof ReferenceError)) console.warn('[STX] Pipe filter error:', pipe.name, e);
         }
       }
 else {
@@ -1205,10 +1204,15 @@ finally {
       catch (e) {
         // Auto-dispose effects that fail — prevents zombie subscriptions
         // from body-level processElement walking into mount-scoped content.
-        // Without this, failed effects stay in signal dependency sets and
-        // fire on unrelated signal changes during SPA navigation.
         isDisposed = true;
-        throw e;
+        // Only log if this is likely a real error, not a stale SPA effect.
+        // Stale effects reference variables from a previous page's scope that no longer exist.
+        if (e instanceof ReferenceError) {
+          // Silently dispose — this is expected during SPA navigation when
+          // old effects fire against the new page's scope. Don't re-throw.
+        } else {
+          throw e;
+        }
       }
       finally {
         effectStack.pop();
@@ -1777,7 +1781,7 @@ finally {
       return fn(...Object.values(scope));
     }
 catch (e) {
-      console.warn('[STX] Expression error:', expr, e);
+      if (!(e instanceof ReferenceError)) console.warn('[STX] Expression error:', expr, e);
       return '';
     }
   }
@@ -1879,7 +1883,7 @@ catch (e) {
       fn(...Object.values(scope), event);
     }
 catch (e) {
-      console.warn('[STX] Handler error:', expr, e);
+      if (!(e instanceof ReferenceError)) console.warn('[STX] Handler error:', expr, e);
     }
   }
 
@@ -1937,7 +1941,7 @@ catch (e) {
                     span.textContent = fn(...Object.values(capturedScope));
                   }
 catch (e2) {
-                    console.warn('[STX] Expression error:', expr, e2);
+                    if (!(e2 instanceof ReferenceError)) console.warn('[STX] Expression error:', expr, e2);
                     span.textContent = '';
                   }
                 }
@@ -2007,7 +2011,7 @@ catch (e) {
           return fn(...Object.values(attrCapturedScope));
         }
 catch (e2) {
-          console.warn('[STX] Attribute expression error:', expr, e2);
+          if (!(e2 instanceof ReferenceError)) console.warn('[STX] Attribute expression error:', expr, e2);
           return '';
         }
       }
@@ -2104,7 +2108,7 @@ else if (name.startsWith('@') || name.startsWith(':')) {
             fn(...Object.values(eventCapturedScope), event);
           }
 catch (e) {
-            console.warn('[STX] Handler error:', value, e);
+            if (!(e instanceof ReferenceError)) console.warn('[STX] Handler error:', value, e);
           }
         }, {
           capture: modifiers.includes('capture'),
@@ -2141,7 +2145,7 @@ catch (e) {
         return fn(...Object.values(capturedScope));
       }
 catch (e) {
-        console.warn('[STX] Show expression error:', expr, e);
+        if (!(e instanceof ReferenceError)) console.warn('[STX] Show expression error:', expr, e);
         return false;
       }
     };
@@ -2172,7 +2176,7 @@ else {
         }
       }
 catch (e) {
-        console.warn('[STX] ' + attrName + ' set error:', expr, e);
+        if (!(e instanceof ReferenceError)) console.warn('[STX] ' + attrName + ' set error:', expr, e);
       }
     };
 
@@ -2203,7 +2207,7 @@ else {
         return fn(...Object.values(capturedScope));
       }
 catch (e) {
-        console.warn('[STX] Class expression error:', expr, e);
+        if (!(e instanceof ReferenceError)) console.warn('[STX] Class expression error:', expr, e);
         return '';
       }
     };
@@ -2234,7 +2238,7 @@ else {
         return fn(...Object.values(capturedScope));
       }
 catch (e) {
-        console.warn('[STX] Style expression error:', expr, e);
+        if (!(e instanceof ReferenceError)) console.warn('[STX] Style expression error:', expr, e);
         return {};
       }
     };
@@ -2341,7 +2345,7 @@ else {
         return fn(...Object.values(scope));
       }
 catch (e) {
-        console.warn('[STX] Expression error:', expression, e);
+        if (!(e instanceof ReferenceError)) console.warn('[STX] Expression error:', expression, e);
         return '';
       }
     };
@@ -2510,7 +2514,7 @@ else {
         return fn(...Object.values(scope));
       }
 catch (e) {
-        console.warn('[STX] Expression error:', expression, e);
+        if (!(e instanceof ReferenceError)) console.warn('[STX] Expression error:', expression, e);
         return '';
       }
     };
@@ -3165,7 +3169,6 @@ else {
       }
     },
     mount: function(setupFn) {
-      console.log('[stx] mount() called. currentScript:', document.currentScript ? document.currentScript.tagName : 'NULL', 'readyState:', document.readyState);
       // Capture script reference synchronously (only valid during execution)
       var scriptEl = document.currentScript;
 
@@ -3236,7 +3239,6 @@ else {
           scope.$refs = scope.$refs || {};
           root.__stx_scope = scope;  // Store isolated scope on element
           Object.assign(componentScope, scope);  // Keep for backwards compat
-          console.log('[stx] mount: merged scope into componentScope. Keys now:', Object.keys(componentScope).slice(0, 10).join(', '));
         }
 
         // Walk DOM and bind directives, tracking effects for cleanup
@@ -3410,7 +3412,7 @@ else {
               el.textContent = result;
             }
 catch (e) {
-              console.warn('[STX] Title expression error:', e);
+              if (!(e instanceof ReferenceError)) console.warn('[STX] Title expression error:', e);
             }
           });
         }
@@ -3437,7 +3439,7 @@ else if (el.tagName === 'META') {
               el.setAttribute('content', result);
             }
 catch (e) {
-              console.warn('[STX] Meta expression error:', e);
+              if (!(e instanceof ReferenceError)) console.warn('[STX] Meta expression error:', e);
             }
           });
         }
@@ -3513,8 +3515,16 @@ catch (e) { console.warn('[stx] scope destroy error:', e); }
     });
   }
 
-  // Re-initialize components after SPA content swap
+  // Re-initialize components after SPA content swap.
+  // Debounce to handle rapid re-fires (HMR triggers navigate which triggers stx:load again).
+  var _stxLoadTimer = null;
   window.addEventListener('stx:load', function() {
+    if (_stxLoadTimer) { clearTimeout(_stxLoadTimer); }
+    _stxLoadTimer = setTimeout(_handleStxLoad, 5);
+  });
+  function _handleStxLoad() {
+    _stxLoadTimer = null;
+
     // Run any pending destroy callbacks before re-initializing
     destroyCallbacks.forEach(function(fn) {
       try { fn(); }
@@ -3533,47 +3543,60 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       || document.querySelector('#main-content')
       || document.body;
 
-    // Apply new page's SFC setup function if registered by re-executed scripts.
+    // Apply new page's SFC setup function. During SPA navigation, re-executed page
+    // scripts set window.stx._latestSetup to the new setup function. This takes priority
+    // over the stale data-stx attribute on <body> (which has the PREVIOUS page's function name).
+    var usedLatestSetup = false;
     if (window.stx._latestSetup && typeof window.stx._latestSetup === 'function') {
       var setupResult = window.stx._latestSetup();
-      window.stx._latestSetup = null;
+      // Keep _latestSetup for re-fires (HMR, auto-refresh re-navigation)
+      // It will be overwritten when a NEW page's script sets it
+      usedLatestSetup = true;
       if (typeof setupResult === 'object' && setupResult !== null) {
         Object.assign(componentScope, setupResult);
       }
     }
 
-    // Apply scope from [data-stx] elements (SFC setup functions on elements)
-    container.querySelectorAll('[data-stx]').forEach(function(el) {
-      var setupName = el.getAttribute('data-stx');
-      if (setupName && window[setupName]) {
-        var result = window[setupName]();
-        if (typeof result === 'object') Object.assign(componentScope, result);
-      }
-    });
+    // Only fall back to [data-stx] attribute lookup if _latestSetup wasn't available.
+    // This handles the initial DOMContentLoaded-like case and pages that don't use _latestSetup.
+    if (!usedLatestSetup) {
+      document.querySelectorAll('[data-stx]').forEach(function(el) {
+        var setupName = el.getAttribute('data-stx');
+        if (setupName && window[setupName]) {
+          var result = window[setupName]();
+          if (typeof result === 'object') Object.assign(componentScope, result);
+        }
+      });
+    }
 
-    // Apply scope from [data-stx-scope] elements (component scopes)
+    // Apply scope from [data-stx-scope] elements and process them
     container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
       var scopeId = el.getAttribute('data-stx-scope');
+      if (el.hasAttribute('data-stx-reactive-owner') || el.__stx_reactive_initialized) return;
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
+      if (!scopeVars && window.__stx_reactive) return;
       if (scopeVars) {
         Object.assign(componentScope, scopeVars);
       }
+      var disposeEffects = trackEffects(function() { processElement(el, componentScope); });
+      el.__stx_disposers = disposeEffects;
     });
 
-    // Defer processElement to next microtask — the mount script appended by
-    // doFragSwap may not have executed yet when stx:load fires synchronously.
-    // setTimeout(0) ensures mount merges scope into componentScope first.
-    var _container = container;
-    setTimeout(function() {
-      var disposeEffects = trackEffects(function() { processElement(_container, componentScope); });
-      _container.__stx_disposers = disposeEffects;
-
-      // Remove x-cloak
-      if (_container) {
-        _container.removeAttribute('x-cloak');
-        _container.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
+    // Process the container content — bind {{ }}, :attr, @event directives.
+    // Run synchronously (not in setTimeout) so componentScope is captured correctly.
+    // The DOMContentLoaded path processes <body> synchronously — the SPA path must match.
+    if (!container.__stx_scope) {
+      // Dispose previous effects on the container (from prior navigation)
+      if (container.__stx_disposers && typeof container.__stx_disposers === 'function') {
+        container.__stx_disposers();
       }
-    }, 0);
+      var disposeEffects = trackEffects(function() { processElement(container, componentScope); });
+      container.__stx_disposers = disposeEffects;
+    }
+
+    // Remove x-cloak
+    container.removeAttribute('x-cloak');
+    container.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
 
     // Fire mount callbacks from scoped components
     container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
@@ -3590,7 +3613,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
 catch (e) { console.warn('[stx] mount callback error:', e); }
     });
     mountCallbacks.length = 0;
-  });
+  }
 
   // Helper to process elements while skipping already-processed scoped containers
   function processElementSkipScopes(el, processedScopes) {
