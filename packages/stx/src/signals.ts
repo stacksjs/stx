@@ -2128,7 +2128,7 @@ catch (e) {
         // Skip script elements entirely
         if (child.tagName === 'SCRIPT') return;
         // Skip elements already processed by stx.mount() — they have their own scope and effects
-        if (child.__stx_scope) { console.log('[processElement] skipping child with __stx_scope:', child.tagName); return; }
+        if (child.__stx_scope) return;
         // Skip data-stx-scope elements — they are managed by the reactive (x-data) runtime
         if (child.hasAttribute && child.hasAttribute('data-stx-scope')) return;
         processElement(child, scope);
@@ -2258,7 +2258,6 @@ else if (typeof value === 'string') {
 
   function bindFor(el, passedScope = componentScope, attrName = '@for') {
     const expr = el.getAttribute(attrName);
-    console.log('[bindFor] expr:', expr, 'el:', el.tagName, 'scope keys:', Object.keys(passedScope).slice(0, 8));
     const match = expr.match(/^\\s*(\\w+)(?:\\s*,\\s*(\\w+))?\\s+(?:in|of)\\s+(.+)\\s*$/);
 
     if (!match) {
@@ -3174,13 +3173,11 @@ else {
     mount: function(setupFn) {
       // Capture script reference synchronously (only valid during execution)
       var scriptEl = document.currentScript;
-      console.log('[mount] called. scriptEl:', scriptEl ? scriptEl.tagName : null, 'parent:', scriptEl ? scriptEl.parentElement?.tagName : null);
 
       function doMount() {
         // Find component root: next sibling element after the script tag
         var root = scriptEl ? scriptEl.nextElementSibling : null;
         if (!root && scriptEl) root = scriptEl.previousElementSibling || scriptEl.parentElement;
-        console.log('[mount] doMount. initial root:', root ? root.tagName + (root.id ? '#' + root.id : '') : null);
 
         // SPA fallback: during router navigation, script is appended to <body>
         // (not inside the content container), so nextElementSibling won't find the page content.
@@ -3215,7 +3212,6 @@ else {
         }
 
         if (!root) { console.warn('[stx] mount: no root element found'); return; }
-        console.log('[mount] final root:', root.tagName + (root.id ? '#' + root.id : ''), 'needsFallback:', needsFallback);
 
         // Set component context for defineProps/defineEmits (Phase 4)
         var prevProps = window.__STX_CURRENT_PROPS__;
@@ -3245,16 +3241,13 @@ else {
           scope.$refs = scope.$refs || {};
           root.__stx_scope = scope;  // Store isolated scope on element
           Object.assign(componentScope, scope);  // Keep for backwards compat
-          console.log('[mount] scope keys:', Object.keys(scope).slice(0, 10));
         }
 
         // Walk DOM and bind directives, tracking effects for cleanup
-        console.log('[mount] calling processElement on root:', root.tagName);
         var disposeEffects = trackEffects(function() {
           processElement(root, scope || componentScope);
         });
         root.__stx_disposers = disposeEffects;
-        console.log('[mount] processElement complete');
 
         // Remove x-cloak after bindings are applied (prevents FOUC)
         root.removeAttribute('x-cloak');
@@ -3533,7 +3526,6 @@ catch (e) { console.warn('[stx] scope destroy error:', e); }
   });
   function _handleStxLoad() {
     _stxLoadTimer = null;
-    console.log('[stx:load] === START ===');
 
     // Run any pending destroy callbacks before re-initializing
     destroyCallbacks.forEach(function(fn) {
@@ -3543,7 +3535,6 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     destroyCallbacks.length = 0;
 
     // Process mount queue (scripts in swapped content may have called stx.mount())
-    console.log('[stx:load] mountQueue length:', mountQueue.length);
     mountQueue.forEach(function(fn) { fn(); });
     mountQueue = [];
 
@@ -3558,18 +3549,15 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     // scripts set window.stx._latestSetup to the new setup function. This takes priority
     // over the stale data-stx attribute on <body> (which has the PREVIOUS page's function name).
     var usedLatestSetup = false;
-    console.log('[stx:load] _latestSetup available:', !!window.stx._latestSetup);
     if (window.stx._latestSetup && typeof window.stx._latestSetup === 'function') {
       var setupResult = window.stx._latestSetup();
       // Keep _latestSetup for re-fires (HMR, auto-refresh re-navigation)
       // It will be overwritten when a NEW page's script sets it
       usedLatestSetup = true;
       if (typeof setupResult === 'object' && setupResult !== null) {
-        console.log('[stx:load] _latestSetup returned:', Object.keys(setupResult).slice(0, 10));
         Object.assign(componentScope, setupResult);
       }
     }
-    console.log('[stx:load] usedLatestSetup:', usedLatestSetup, 'componentScope keys:', Object.keys(componentScope).slice(0, 10));
 
     // Only fall back to [data-stx] attribute lookup if _latestSetup wasn't available.
     // This handles the initial DOMContentLoaded-like case and pages that don't use _latestSetup.
@@ -3599,19 +3587,14 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     // Process the container content — bind {{ }}, :attr, @event directives.
     // Run synchronously (not in setTimeout) so componentScope is captured correctly.
     // The DOMContentLoaded path processes <body> synchronously — the SPA path must match.
-    console.log('[stx:load] container:', container.tagName, 'has __stx_scope:', !!container.__stx_scope);
     if (!container.__stx_scope) {
       // Dispose previous effects on the container (from prior navigation)
       if (container.__stx_disposers && typeof container.__stx_disposers === 'function') {
-        console.log('[stx:load] disposing previous container effects');
         container.__stx_disposers();
       }
-      console.log('[stx:load] calling processElement on container with scope keys:', Object.keys(componentScope).slice(0, 10));
       var disposeEffects = trackEffects(function() { processElement(container, componentScope); });
       container.__stx_disposers = disposeEffects;
-      console.log('[stx:load] processElement complete');
     } else {
-      console.log('[stx:load] SKIPPED processElement — container has __stx_scope');
     }
 
     // Remove x-cloak
