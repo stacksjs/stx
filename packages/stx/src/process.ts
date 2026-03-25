@@ -634,6 +634,21 @@ function injectSignalsRuntime(template: string, options: StxOptions): string {
     return template
   }
 
+  // Build mode: emit a placeholder reference instead of inlining the full runtime.
+  // The production builder will replace this with a fingerprinted <script src> tag.
+  if (options.buildMode === 'compile') {
+    const runtimeScript = `<script src="/__stx/runtime.__STX_HASH__.js"></script>`
+    const firstScriptInDoc = template.indexOf('<script')
+    if (firstScriptInDoc !== -1) {
+      return template.slice(0, firstScriptInDoc) + runtimeScript + '\n' + template.slice(firstScriptInDoc)
+    }
+    if (template.includes('</head>')) {
+      const idx = template.indexOf('</head>')
+      return template.slice(0, idx) + runtimeScript + '\n' + template.slice(idx)
+    }
+    return runtimeScript + '\n' + template
+  }
+
   const runtime = options.debug ? generateSignalsRuntimeDev() : generateSignalsRuntime()
   const runtimeScript = `<script data-stx-scoped>${runtime}</script>`
 
@@ -666,7 +681,7 @@ function injectSignalsRuntime(template: string, options: StxOptions): string {
  * The router is provided by the canonical router in packages/router/src/client.ts.
  * It guards against double-initialization so it's safe to inject alongside @stxRouter.
  */
-export function injectRouterScript(template: string): string {
+export function injectRouterScript(template: string, options?: StxOptions): string {
   // Only inject into full HTML pages (not template fragments or components)
   if (!template.includes('</body>')) {
     return template
@@ -677,7 +692,10 @@ export function injectRouterScript(template: string): string {
     return template
   }
 
-  const routerScript = `<script>${getRouterScript()}</script>`
+  // Build mode: emit a placeholder reference instead of inlining the full router script.
+  const routerScript = options?.buildMode === 'compile'
+    ? `<script src="/__stx/router.__STX_HASH__.js"></script>`
+    : `<script>${getRouterScript()}</script>`
 
   // Use string concatenation to avoid $-interpretation in .replace()
   const bodyCloseIdx = template.lastIndexOf('</body>')

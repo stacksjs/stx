@@ -539,6 +539,20 @@ export interface StxConfig {
   strict?: boolean | StrictModeConfig
 
   /**
+   * Build mode for the processing pipeline.
+   * - `undefined` (default): dev mode, inline everything per request
+   * - `'compile'`: build mode, emit asset reference placeholders instead of inline code
+   * - `'serve'`: production serve mode, hydrate pre-compiled templates
+   */
+  buildMode?: 'compile' | 'serve'
+
+  /**
+   * Output directory for production builds.
+   * @default '.output'
+   */
+  outputDir?: string
+
+  /**
    * App shell file for single-shell mode.
    * When set (or auto-detected as 'app.stx'), the shell wraps all pages.
    * The shell's `<slot />` is replaced with page content.
