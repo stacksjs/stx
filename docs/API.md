@@ -5953,4 +5953,4 @@ These are available from `window.stx` at runtime.
 
 ---
 
-*For more details, see the [full documentation](https://stx.sh).*
+*For more details, see the [full documentation](https://stx.stacksjs.com).*

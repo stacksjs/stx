@@ -204,7 +204,7 @@ export default {
 
   sitemap: {
     enabled: true,
-    baseUrl: 'https://stx.sh',
+    baseUrl: 'https://stx.stacksjs.com',
   },
 
   robots: {
