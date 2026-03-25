@@ -1672,6 +1672,7 @@
         "bun-plugin-stx": "workspace:*",
         "bunfig": "^0.15.6",
         "stx-router": "workspace:*",
+        "ts-broadcasting": "^0.0.3",
         "ts-syntax-highlighter": "^0.2.1",
       },
     },
@@ -2937,6 +2938,8 @@
     "trim-lines": ["trim-lines@3.0.1", "", {}, "sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg=="],
 
     "trough": ["trough@2.2.0", "", {}, "sha512-tmMpK00BjZiUyVyvrBK7knerNgmgvcV/KLVyuma/SC+TQN167GrMRciANTz09+k3zW8L8t60jWO1GpfkZdjTaw=="],
+
+    "ts-broadcasting": ["ts-broadcasting@0.0.3", "", { "bin": { "broadcast": "./dist/bin/cli.js" } }, "sha512-bHnDCbgMpIFXj4F/x4x7SVbiaVpN8HtFcWBZWJpCrZ+KzGDr8UL2Xs5xBGbMvdnMWPYurNC/lgYWhTwYj+uVLQ=="],
 
     "ts-cloud-aws-types": ["ts-cloud-aws-types@0.1.14", "", {}, "sha512-dnT0LYyrzS0qlcDLaq4L2NRRx1oisY0btrPtWIldRgvZQFKYwA3S3TTJ0496TJckNzHPen+6VXNcdp5RZulJ4Q=="],
 
