@@ -243,7 +243,7 @@ Next steps:
  * Get project directories based on template
  */
 function getProjectDirs(template: ProjectTemplate): string[] {
-  const baseDirs = ['src', 'src/pages', 'src/components', 'src/layouts', 'public']
+  const baseDirs = ['pages', 'components', 'layouts', 'partials', 'public']
 
   switch (template) {
     case 'minimal':
@@ -287,46 +287,46 @@ function getProjectFiles(
       break
 
     case 'blog':
-      files['src/pages/index.stx'] = getBlogIndexPage()
-      files['src/pages/[slug].stx'] = getBlogPostPage()
-      files['src/layouts/app.stx'] = getBlogLayout()
-      files['src/components/PostCard.stx'] = getPostCardComponent()
+      files['pages/index.stx'] = getBlogIndexPage()
+      files['pages/[slug].stx'] = getBlogPostPage()
+      files['layouts/app.stx'] = getBlogLayout()
+      files['components/PostCard.stx'] = getPostCardComponent()
       break
 
     case 'dashboard':
-      files['src/pages/index.stx'] = getDashboardIndexPage()
-      files['src/pages/settings.stx'] = getDashboardSettingsPage()
-      files['src/layouts/app.stx'] = getDashboardLayout()
-      files['src/components/Sidebar.stx'] = getSidebarComponent()
-      files['src/components/StatsCard.stx'] = getStatsCardComponent()
+      files['pages/index.stx'] = getDashboardIndexPage()
+      files['pages/settings.stx'] = getDashboardSettingsPage()
+      files['layouts/app.stx'] = getDashboardLayout()
+      files['components/Sidebar.stx'] = getSidebarComponent()
+      files['components/StatsCard.stx'] = getStatsCardComponent()
       files['src/stores/dashboard.ts'] = getDashboardStore()
       break
 
     case 'landing':
-      files['src/pages/index.stx'] = getLandingPage()
-      files['src/layouts/app.stx'] = getLandingLayout()
+      files['pages/index.stx'] = getLandingPage()
+      files['layouts/app.stx'] = getLandingLayout()
       files['src/sections/Hero.stx'] = getHeroSection()
       files['src/sections/Features.stx'] = getFeaturesSection()
       files['src/sections/Pricing.stx'] = getPricingSection()
-      files['src/components/Button.stx'] = getButtonComponent()
+      files['components/Button.stx'] = getButtonComponent()
       break
 
     case 'full':
-      files['src/pages/index.stx'] = getDefaultIndexPage()
-      files['src/pages/about.stx'] = getAboutPage()
-      files['src/layouts/app.stx'] = getDefaultLayout()
-      files['src/components/Header.stx'] = getHeaderComponent()
-      files['src/components/Footer.stx'] = getFooterComponent()
+      files['pages/index.stx'] = getDefaultIndexPage()
+      files['pages/about.stx'] = getAboutPage()
+      files['layouts/app.stx'] = getDefaultLayout()
+      files['components/Header.stx'] = getHeaderComponent()
+      files['components/Footer.stx'] = getFooterComponent()
       files['src/stores/app.ts'] = getAppStore()
       files['src/i18n/en.json'] = getI18nFile('en')
       files['test/example.test.ts'] = getTestFile()
       break
 
     default:
-      files['src/pages/index.stx'] = getDefaultIndexPage()
-      files['src/layouts/app.stx'] = getDefaultLayout()
-      files['src/components/Header.stx'] = getHeaderComponent()
-      files['src/components/Footer.stx'] = getFooterComponent()
+      files['pages/index.stx'] = getDefaultIndexPage()
+      files['layouts/app.stx'] = getDefaultLayout()
+      files['components/Header.stx'] = getHeaderComponent()
+      files['components/Footer.stx'] = getFooterComponent()
       files['src/stores/app.ts'] = getAppStore()
   }
 
@@ -346,7 +346,7 @@ export async function addComponent(
 ): Promise<ScaffoldResult> {
   const result: ScaffoldResult = { success: true, message: '', files: [], errors: [] }
 
-  const dir = options.dir || 'src/components'
+  const dir = options.dir || 'components'
   const componentName = toPascalCase(name)
   const filePath = join(dir, `${componentName}.stx`)
 
@@ -381,7 +381,7 @@ export async function addPage(
 ): Promise<ScaffoldResult> {
   const result: ScaffoldResult = { success: true, message: '', files: [], errors: [] }
 
-  const dir = options.dir || 'src/pages'
+  const dir = options.dir || 'pages'
   const pageName = name.toLowerCase().replace(/\s+/g, '-')
   const filePath = join(dir, `${pageName}.stx`)
 
@@ -451,7 +451,7 @@ export async function addLayout(
 ): Promise<ScaffoldResult> {
   const result: ScaffoldResult = { success: true, message: '', files: [], errors: [] }
 
-  const dir = options.dir || 'src/layouts'
+  const dir = options.dir || 'layouts'
   const layoutName = name.toLowerCase().replace(/\s+/g, '-')
   const filePath = join(dir, `${layoutName}.stx`)
 
@@ -713,7 +713,7 @@ function getPackageJson(name: string, template: ProjectTemplate, options: Create
     version: '0.0.1',
     type: 'module',
     scripts: {
-      dev: 'stx dev src/pages/index.stx',
+      dev: 'stx dev pages/index.stx',
       build: 'stx build',
       preview: 'stx serve dist',
     },
@@ -744,9 +744,9 @@ function getStxConfig(template: ProjectTemplate, options: CreateProjectOptions):
 
 export default defineConfig({
   // Template directories
-  partialsDir: 'src/partials',
-  componentsDir: 'src/components',
-  layoutsDir: 'src/layouts',
+  partialsDir: 'partials',
+  componentsDir: 'components',
+  layoutsDir: 'layouts',
   defaultLayout: 'app',
 
   // Development
