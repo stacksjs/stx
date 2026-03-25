@@ -672,8 +672,8 @@ export function injectRouterScript(template: string): string {
     return template
   }
 
-  // Don't inject if already present
-  if (template.includes('__stxRouter')) {
+  // Don't inject if already present (check for the router's own guard, not config references)
+  if (template.includes('__stxRouter)return') || template.includes('__stxRouter=true')) {
     return template
   }
 
