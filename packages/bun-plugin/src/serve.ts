@@ -717,14 +717,26 @@ export async function serve(options: ServeOptions): Promise<void> {
             const mainStart = mainOpenMatch.index! + mainOpenMatch[0].length
             fragment = fragment.slice(mainStart, mainCloseIdx).trim()
           }
-          // Strip the signals runtime IIFE — keep only stx.mount() page scripts
+          // Extract page setup scripts (__stx_setup_ functions) from <head>
+          // These are NOT inside <main> but are needed for SPA page hydration
+          const pageSetupScripts: string[] = []
+          if (headMatch) {
+            const headContent = headMatch[1]
+            const setupRe = /<script data-stx-scoped>\s*function __stx_setup_[\s\S]*?<\/script>/gi
+            let setupMatch: RegExpExecArray | null
+            while ((setupMatch = setupRe.exec(headContent)) !== null) {
+              pageSetupScripts.push(setupMatch[0])
+            }
+          }
+
+          // Strip the signals runtime IIFE — keep only page-specific scripts
           fragment = fragment.replace(
             /<script data-stx-scoped>\s*;?\(function\(\)\s*\{[\s\S]*?<\/script>/g,
             '',
           )
 
-          // Prepend styles so doFragSwap can extract and inject them into <head>
-          fragment = headStyles.join('\n') + '\n' + fragment
+          // Prepend styles and append page setup scripts
+          fragment = headStyles.join('\n') + '\n' + fragment + '\n' + pageSetupScripts.join('\n')
 
           return new Response(fragment, {
             headers: {
