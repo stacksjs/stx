@@ -135,13 +135,13 @@ else {
     }
   }
 
-  // Remove all script tags from template content
-  // Server scripts: match the inner content (serverScripts only has the content, not the tags)
-  // Client scripts: match the full tag (clientScripts has the full <script>...</script>)
+  // Remove server and client script tags from template content.
+  // Signals scripts STAY in the template — processDirectives handles them.
   let templateContent = workingContent
 
-  // Remove server script tags using balanced </script> matching
-  // to handle scripts containing '</script>' in string literals
+  // Re-inject signals scripts if they were in the original content
+  // (they were classified separately but need to stay in the template)
+  // Skip removal for signals scripts by only removing non-signals, non-client scripts
   {
     const serverScriptOpenRe = /<script\b(?![^>]*\b(?:client|type\s*=\s*["']module["']|src\s*=))[^>]*>/gi
     let sMatch: RegExpExecArray | null
