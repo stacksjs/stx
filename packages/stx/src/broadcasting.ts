@@ -267,7 +267,7 @@ export function broadcastPrivate<T = unknown>(
   data: T,
 ): void {
   if (!isReady()) return
-  Broadcast.private(channelName, event, data)
+  Broadcast.send(`private-${channelName}`, event, data)
 }
 
 /**
