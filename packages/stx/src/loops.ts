@@ -767,16 +767,17 @@ export function processLoops(template: string, context: Record<string, any>, fil
         }
 
         let loopResult = ''
-        for (let index = 0; index < array.length; index++) {
-          const item = array[index]
+        const items = array as any[]
+        for (let index = 0; index < items.length; index++) {
+          const item = items[index]
 
           // Create loop context object
           const loopContext = {
             index,
             iteration: index + 1,
             first: index === 0,
-            last: index === array.length - 1,
-            count: array.length,
+            last: index === items.length - 1,
+            count: items.length,
           }
 
           // Create a new context with loop variable for this iteration
