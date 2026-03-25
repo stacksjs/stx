@@ -2127,6 +2127,8 @@ catch (e) {
         if (child.nodeType !== Node.ELEMENT_NODE) { processElement(child, scope); return; }
         // Skip script elements entirely
         if (child.tagName === 'SCRIPT') return;
+        // Skip elements already processed by stx.mount() — they have their own scope and effects
+        if (child.__stx_scope) return;
         // Skip data-stx-scope elements — they are managed by the reactive (x-data) runtime
         if (child.hasAttribute && child.hasAttribute('data-stx-scope')) return;
         processElement(child, scope);
