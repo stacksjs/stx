@@ -1,0 +1,138 @@
+/**
+ * Document Shell Generator
+ *
+ * Auto-generates the HTML document wrapper around page content.
+ * No .stx file needs to write <!DOCTYPE>, <html>, <head>, or <body>.
+ * The shell is configured via stx.config.ts `app.head` and enhanced
+ * at build/serve time with runtime scripts, CSS, and meta tags.
+ *
+ * @module document-shell
+ */
+
+import type { AppHeadConfig } from './types/config-types'
+
+/**
+ * Generate the full HTML document shell wrapping page content.
+ *
+ * @param content - The rendered page/layout HTML (no document wrapper)
+ * @param headConfig - Head configuration from stx.config.ts
+ * @param options - Additional options for script/style injection
+ * @returns Complete HTML document
+ */
+export function generateDocumentShell(
+  content: string,
+  headConfig: AppHeadConfig = {},
+  options: {
+    /** Page-specific title (overrides config) */
+    title?: string
+    /** Extra styles to inject in <head> (e.g. Crosswind CSS, scoped styles) */
+    styles?: string[]
+    /** Extra scripts to inject before </body> (e.g. signals runtime, router) */
+    bodyScripts?: string[]
+    /** Extra scripts/tags for <head> */
+    headScripts?: string[]
+    /** Stacks to inject (from @push directives) */
+    headStack?: string
+    bodyStack?: string
+  } = {},
+): string {
+  const {
+    title: configTitle = 'stx App',
+    lang = 'en',
+    meta = [],
+    link = [],
+    script: headScriptTags = [],
+    headRaw = '',
+    bodyClass = '',
+    bodyAttrs = {},
+  } = headConfig
+
+  const pageTitle = options.title || configTitle
+
+  // Build <meta> tags
+  const defaultMeta = [
+    { charset: 'UTF-8' },
+    { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
+  ]
+  const allMeta = [...defaultMeta, ...meta]
+  const metaTags = allMeta.map(m => {
+    const attrs = Object.entries(m).map(([k, v]) => `${k}="${v}"`).join(' ')
+    return `  <meta ${attrs}>`
+  }).join('\n')
+
+  // Build <link> tags
+  const linkTags = link.map(l => {
+    const attrs = Object.entries(l).map(([k, v]) => `${k}="${v}"`).join(' ')
+    return `  <link ${attrs}>`
+  }).join('\n')
+
+  // Build <head> script tags (from config)
+  const configHeadScripts = headScriptTags.map(s => {
+    if (s.src) {
+      const attrs = Object.entries(s).filter(([k]) => k !== 'content').map(([k, v]) => `${k}="${v}"`).join(' ')
+      return `  <script ${attrs}></script>`
+    }
+    if (s.content) {
+      return `  <script>${s.content}</script>`
+    }
+    return ''
+  }).filter(Boolean).join('\n')
+
+  // Build body attributes
+  const bodyAttrStr = Object.entries(bodyAttrs).map(([k, v]) => ` ${k}="${v}"`).join('')
+  const bodyClassStr = bodyClass ? ` class="${bodyClass}"` : ''
+
+  // Compose <head>
+  const headParts = [
+    metaTags,
+    `  <title>${pageTitle}</title>`,
+    linkTags,
+    configHeadScripts,
+    headRaw ? `  ${headRaw}` : '',
+    ...(options.styles || []).map(s => `  ${s}`),
+    ...(options.headScripts || []).map(s => `  ${s}`),
+    options.headStack || '',
+  ].filter(Boolean)
+
+  // Compose body
+  const bodyParts = [
+    content,
+    ...(options.bodyScripts || []).map(s => s),
+    options.bodyStack || '',
+  ].filter(Boolean)
+
+  return `<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+${headParts.join('\n')}
+</head>
+<body${bodyClassStr}${bodyAttrStr}>
+${bodyParts.join('\n')}
+</body>
+</html>`
+}
+
+/**
+ * Check if HTML already has a document shell (<!DOCTYPE> or <html>).
+ * Templates that extend layouts with document shells should not be double-wrapped.
+ */
+export function hasDocumentShell(html: string): boolean {
+  const trimmed = html.trim()
+  return /^<!DOCTYPE\b/i.test(trimmed) || /^<html[\s>]/i.test(trimmed)
+}
+
+/**
+ * Wrap HTML in a document shell if it doesn't already have one.
+ * This is the main entry point — called at the top level after all
+ * directive processing is complete.
+ */
+export function ensureDocumentShell(
+  html: string,
+  headConfig: AppHeadConfig = {},
+  options: Parameters<typeof generateDocumentShell>[2] = {},
+): string {
+  if (hasDocumentShell(html)) {
+    return html
+  }
+  return generateDocumentShell(html, headConfig, options)
+}

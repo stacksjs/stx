@@ -37,6 +37,7 @@ import { getRouterScript } from 'stx-router'
 import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 import { processScopedStyles } from './style-scoping'
+import { ensureDocumentShell } from './document-shell'
 
 // Counter for unique signal setup function names (avoids Date.now() collisions)
 let signalSetupCounter = 0
@@ -1383,6 +1384,14 @@ export async function processDirectives(
         // because partials injected via layout resolution may bypass processOtherDirectives
         result = processRefAttributes(result)
 
+      }
+
+      // Auto-generate document shell if explicitly requested via autoShell option.
+      // The serve paths (dev-server.ts, serve.ts) set this when serving pages.
+      // Tests and programmatic usage don't set it, so output stays unwrapped.
+      if (isTopLevel && options.autoShell && options.buildMode !== 'compile') {
+        const headConfig = (options as any).app?.head || {}
+        result = ensureDocumentShell(result, headConfig)
       }
 
       // Restore @@ escape placeholders to literal @ AFTER all directive processing

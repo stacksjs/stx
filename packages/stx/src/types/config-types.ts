@@ -420,9 +420,59 @@ export interface BroadcastingConfig {
 }
 
 /**
+ * App head configuration — auto-generates the document shell.
+ * No .stx file needs to write <!DOCTYPE>, <html>, <head>, or <body>.
+ */
+export interface AppHeadConfig {
+  /** Page title (can be overridden per-page with @section('title')) */
+  title?: string
+  /** HTML lang attribute @default 'en' */
+  lang?: string
+  /** Meta tags */
+  meta?: Array<Record<string, string>>
+  /** Link tags (stylesheets, icons, etc.) */
+  link?: Array<Record<string, string>>
+  /** Script tags to include in <head> */
+  script?: Array<{ src?: string, content?: string, [key: string]: any }>
+  /** Additional raw HTML to inject in <head> */
+  headRaw?: string
+  /** Body class */
+  bodyClass?: string
+  /** Body attributes */
+  bodyAttrs?: Record<string, string>
+}
+
+/**
  * stx configuration options
  */
 export interface StxConfig {
+  /**
+   * App head configuration.
+   * Defines the document shell that stx auto-generates around page content.
+   * No .stx file needs to write <!DOCTYPE>, <html>, <head>, or <body>.
+   *
+   * @example
+   * ```ts
+   * // stx.config.ts
+   * export default {
+   *   app: {
+   *     head: {
+   *       title: 'My App',
+   *       meta: [
+   *         { name: 'description', content: 'My stx app' },
+   *       ],
+   *       link: [
+   *         { rel: 'icon', href: '/favicon.ico' },
+   *       ],
+   *     },
+   *   },
+   * }
+   * ```
+   */
+  app?: {
+    head?: AppHeadConfig
+  }
+
   /**
    * Root directory for templates
    */
@@ -545,6 +595,13 @@ export interface StxConfig {
    * - `'serve'`: production serve mode, hydrate pre-compiled templates
    */
   buildMode?: 'compile' | 'serve'
+
+  /**
+   * Auto-generate document shell (<!DOCTYPE>, <html>, <head>, <body>) around output.
+   * Set by serve paths to wrap page output. Not set for tests or programmatic usage.
+   * @default false
+   */
+  autoShell?: boolean
 
   /**
    * Output directory for production builds.
