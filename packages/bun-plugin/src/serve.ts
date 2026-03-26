@@ -232,6 +232,8 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
       ...(partialsDir && { partialsDir }),
+      autoShell: true,
+      app: stxConfig.app || {},
     }
 
     // When SSR is disabled, serve a client-side SPA shell instead of processing directives

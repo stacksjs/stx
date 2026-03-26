@@ -20,7 +20,7 @@ export const defaultConfig: StxConfig = {
   partialsDir: 'partials',
   componentsDir: 'components',
   layoutsDir: 'layouts',
-  defaultLayout: 'app',
+  defaultLayout: 'default',
   debug: false,
   cache: true,
   cachePath: '.stx/cache',

@@ -47,6 +47,10 @@ export interface ProcessedShell {
 /**
  * Detect an app shell file in the given directory.
  *
+ * @deprecated Use `layouts/default.stx` instead. The framework now auto-generates
+ * the document shell from `stx.config.ts` `app.head` configuration.
+ * The app.stx shell pattern is kept for backwards compatibility.
+ *
  * Checks for `app.stx` in the project root (or configured shell path).
  * Returns the absolute path if found, null otherwise.
  */
