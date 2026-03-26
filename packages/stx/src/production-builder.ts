@@ -18,6 +18,9 @@ import { createRouter, type Route } from './router'
 import { buildRuntimeAsset, buildRouterAsset, type BuiltAsset } from './build-assets'
 import { compileTemplate, type CompiledTemplate } from './template-compiler'
 import { generateManifest, writeManifest, type ManifestRoute, type ManifestAssets } from './manifest'
+import { ensureDocumentShell } from './document-shell'
+import { stripDocumentWrapper } from './app-shell'
+import { loadStxConfig } from './config'
 
 /**
  * Production build configuration.
@@ -86,8 +89,13 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
 
   // ── 2. Discover routes ──
   console.log('[stx build] Discovering routes...')
-  const routes = createRouter(root)
-  console.log(`[stx build] Found ${routes.length} routes`)
+  const allRoutes = createRouter(root)
+  // Filter out non-page files (components, layouts, partials)
+  const excludeDirs = ['components', 'layouts', 'partials']
+  const routes = allRoutes.filter(r => {
+    return !excludeDirs.some(dir => r.pattern.startsWith(`/${dir}/`) || r.pattern === `/${dir}`)
+  })
+  console.log(`[stx build] Found ${routes.length} page routes (${allRoutes.length - routes.length} non-page files excluded)`)
 
   // ── 3. Generate shared assets ──
   console.log('[stx build] Generating shared assets...')
@@ -128,9 +136,22 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
       compiled.html = compiled.html
         .replace(/runtime\.__STX_HASH__\.js/g, runtimeAsset.filename)
         .replace(/router\.__STX_HASH__\.js/g, routerAsset.filename)
-      compiled.fragment = compiled.fragment
-        .replace(/runtime\.__STX_HASH__\.js/g, runtimeAsset.filename)
-        .replace(/router\.__STX_HASH__\.js/g, routerAsset.filename)
+
+      // Load head config for document shell
+      let headConfig = {}
+      try {
+        const projectConfig = await loadStxConfig()
+        headConfig = (projectConfig as any).app?.head || {}
+      }
+      catch { /* no config */ }
+
+      // Wrap in document shell with router script reference
+      compiled.html = ensureDocumentShell(compiled.html, headConfig, {
+        bodyScripts: [`<script src="/__stx/${routerAsset.filename}"></script>`],
+      })
+
+      // Extract fragment AFTER shell wrapping (body content without document wrapper)
+      compiled.fragment = stripDocumentWrapper(compiled.html)
 
       // Write compiled template
       const safeRouteName = route.pattern === '/' ? 'index' : route.pattern.slice(1).replace(/\//g, '-').replace(/[[\]]/g, '_')
