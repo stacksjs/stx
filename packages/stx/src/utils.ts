@@ -818,12 +818,26 @@ export async function resolveTemplatePath(
     }
   }
 
-  // Handle special case for layouts
-  // First check if current directory has a "layouts" dir
-  let layoutsDir = path.join(dirPath, 'layouts')
-  if (await fileExists(layoutsDir)) {
-    // Check in the current file's directory/layouts
-    const fromCurrentLayouts = path.join(layoutsDir, templatePath)
+  // Handle special case for layouts — walk up directory tree to find layouts/
+  // This allows pages/requests/[id].stx to find pages/layouts/default.stx
+  let layoutsDir = ''
+  let searchDir = dirPath
+  const rootDir = process.cwd()
+  for (let i = 0; i < 10; i++) {
+    const candidate = path.join(searchDir, 'layouts')
+    if (await fileExists(candidate)) {
+      layoutsDir = candidate
+      break
+    }
+    const parent = path.dirname(searchDir)
+    if (parent === searchDir || parent.length < rootDir.length) break
+    searchDir = parent
+  }
+  if (layoutsDir) {
+    // Strip layouts/ prefix if present — @extends('layouts/default') + layoutsDir='pages/layouts'
+    // should resolve to pages/layouts/default, not pages/layouts/layouts/default
+    const layoutTemplatePath = templatePath.startsWith('layouts/') ? templatePath.slice(8) : templatePath
+    const fromCurrentLayouts = path.join(layoutsDir, layoutTemplatePath)
     if (await fileExists(fromCurrentLayouts)) {
       if (options.debug) {
         console.log(`Found in current layouts dir: ${fromCurrentLayouts}`)
@@ -836,7 +850,7 @@ export async function resolveTemplatePath(
     }
 
     // With extension
-    if (!templatePath.endsWith('.stx')) {
+    if (!layoutTemplatePath.endsWith('.stx')) {
       const fromCurrentLayoutsWithExt = `${fromCurrentLayouts}.stx`
       if (await fileExists(fromCurrentLayoutsWithExt)) {
         if (options.debug) {
