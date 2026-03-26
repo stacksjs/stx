@@ -51,7 +51,7 @@ const STX_AUTO_IMPORTS = [
   // Template refs
   'useRef',
   // Navigation
-  'navigate', 'goBack', 'goForward', 'useRoute', 'useSearchParams',
+  'navigate', 'goBack', 'goForward', 'useRoute', 'setRouteParams', 'useSearchParams',
   // Data fetching
   'useQuery', 'useMutation',
   // DOM utilities

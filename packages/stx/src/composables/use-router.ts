@@ -81,6 +81,10 @@ export function useRoute(): RouteInfo {
   if (typeof window === 'undefined') {
     return { path: '/', fullPath: '/', hash: '', query: {}, params: {} }
   }
+  // Runtime version in signals.ts uses reactive state for params
+  if ((window as any).stx?.useRoute) {
+    return (window as any).stx.useRoute()
+  }
   return {
     get path() { return window.location.pathname },
     get fullPath() { return window.location.pathname + window.location.search + window.location.hash },
@@ -90,7 +94,16 @@ export function useRoute(): RouteInfo {
       new URLSearchParams(window.location.search).forEach((v, k) => { params[k] = v })
       return params
     },
-    get params() { return (window as any).stxRouter?.params ?? {} },
+    get params() { return (window as any).stx?._rp ?? {} },
+  }
+}
+
+/**
+ * Set route params (called by server injection or page scripts).
+ */
+export function setRouteParams(params: Record<string, string>): void {
+  if (typeof window !== 'undefined' && (window as any).stx?.setRouteParams) {
+    (window as any).stx.setRouteParams(params)
   }
 }
 

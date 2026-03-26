@@ -1542,6 +1542,29 @@ else {
   function goBack() { window.history.back(); }
   function goForward() { window.history.forward(); }
 
+  // Route params — set by server injection or parsed from URL on client navigation
+  var _routeParams = state({});
+
+  // setRouteParams: called by the server-injected script to set initial params
+  function setRouteParams(params) {
+    _routeParams.set(params || {});
+  }
+
+  // Listen for SPA navigation to update params
+  window.addEventListener('stx:navigate', function(e) {
+    // Parse params from URL if route patterns are registered
+    // For now, reset params — the server will inject them on full loads
+    // and the page's script can set them via setRouteParams() on SPA nav
+    if (e.detail && e.detail.params) {
+      _routeParams.set(e.detail.params);
+    }
+  });
+
+  // Apply any server-injected params (set before runtime loaded)
+  if (window.stx && window.stx._rp) {
+    _routeParams.set(window.stx._rp);
+  }
+
   function useRoute() {
     return {
       get path() { return window.location.pathname; },
@@ -1552,7 +1575,7 @@ else {
         new URLSearchParams(window.location.search).forEach(function(v, k) { params[k] = v; });
         return params;
       },
-      get params() { return window.stxRouter && window.stxRouter.params ? window.stxRouter.params : {}; }
+      get params() { return _routeParams(); }
     };
   }
 
@@ -3044,6 +3067,7 @@ catch (e) {}
     goBack,
     goForward,
     useRoute,
+    setRouteParams,
     useSearchParams,
     useQuery,
     useMutation,
