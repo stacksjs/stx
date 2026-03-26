@@ -15,6 +15,112 @@ interface CacheEntry {
 // Memory cache for compiled templates
 export const templateCache: Map<string, CacheEntry> = new Map()
 
+// ── Dev Mode In-Memory Caches ──
+// These caches persist across requests in the dev server process.
+// They're invalidated by mtime checks, not by full cache clears.
+
+/**
+ * File content cache — avoids re-reading unchanged files from disk.
+ * Key: absolute file path, Value: { content, mtime }
+ */
+const fileContentCache = new Map<string, { content: string, mtime: number }>()
+
+/**
+ * Read a file with mtime-based caching.
+ * Returns cached content if file hasn't been modified since last read.
+ */
+export async function readFileCached(filePath: string): Promise<string> {
+  try {
+    const stats = await fs.promises.stat(filePath)
+    const mtime = stats.mtime.getTime()
+    const cached = fileContentCache.get(filePath)
+
+    if (cached && cached.mtime === mtime) {
+      return cached.content
+    }
+
+    const content = await Bun.file(filePath).text()
+    fileContentCache.set(filePath, { content, mtime })
+    return content
+  }
+  catch {
+    // File doesn't exist or can't be read — remove from cache
+    fileContentCache.delete(filePath)
+    throw new Error(`File not found: ${filePath}`)
+  }
+}
+
+/**
+ * Invalidate a specific file from the content cache.
+ * Called by HMR when a file changes.
+ */
+export function invalidateFileCache(filePath: string): void {
+  fileContentCache.delete(filePath)
+}
+
+/**
+ * Invalidate all files matching a pattern from the content cache.
+ */
+export function invalidateFileCacheByDir(dirPath: string): void {
+  for (const key of fileContentCache.keys()) {
+    if (key.startsWith(dirPath)) {
+      fileContentCache.delete(key)
+    }
+  }
+}
+
+/**
+ * Cached signals runtime string.
+ * This never changes between edits — only regenerated on stx package update.
+ */
+let _cachedSignalsRuntime: string | null = null
+let _cachedSignalsRuntimeDev: string | null = null
+
+/**
+ * Get the signals runtime with module-level caching.
+ * The runtime is identical for every page and never changes during a dev session.
+ */
+export function getCachedSignalsRuntime(debug = false): string {
+  if (debug) {
+    if (_cachedSignalsRuntimeDev === null) {
+      const { generateSignalsRuntimeDev } = require('./signals')
+      _cachedSignalsRuntimeDev = generateSignalsRuntimeDev()
+    }
+    return _cachedSignalsRuntimeDev
+  }
+  if (_cachedSignalsRuntime === null) {
+    const { generateSignalsRuntime } = require('./signals')
+    _cachedSignalsRuntime = generateSignalsRuntime()
+  }
+  return _cachedSignalsRuntime
+}
+
+/**
+ * Cached router script string.
+ */
+let _cachedRouterScript: string | null = null
+
+/**
+ * Get the router script with module-level caching.
+ */
+export function getCachedRouterScript(): string {
+  if (_cachedRouterScript === null) {
+    const { getRouterScript } = require('stx-router')
+    _cachedRouterScript = getRouterScript()
+  }
+  return _cachedRouterScript
+}
+
+/**
+ * Clear all dev caches. Called during full rebuild or HMR reset.
+ */
+export function clearDevCaches(): void {
+  fileContentCache.clear()
+  _cachedSignalsRuntime = null
+  _cachedSignalsRuntimeDev = null
+  _cachedRouterScript = null
+}
+
 /**
  * Check if a cached version of the template is available and valid
  */

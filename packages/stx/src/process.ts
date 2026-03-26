@@ -649,7 +649,9 @@ function injectSignalsRuntime(template: string, options: StxOptions): string {
     return runtimeScript + '\n' + template
   }
 
-  const runtime = options.debug ? generateSignalsRuntimeDev() : generateSignalsRuntime()
+  // Use cached runtime (identical for every page, never changes during dev session)
+  const { getCachedSignalsRuntime } = require('./caching')
+  const runtime = getCachedSignalsRuntime(options.debug)
   const runtimeScript = `<script data-stx-scoped>${runtime}</script>`
 
   // Inject before the first <script in the ENTIRE document, not just <head>.
@@ -693,9 +695,10 @@ export function injectRouterScript(template: string, options?: StxOptions): stri
   }
 
   // Build mode: emit a placeholder reference instead of inlining the full router script.
+  const { getCachedRouterScript } = require('./caching')
   const routerScript = options?.buildMode === 'compile'
     ? `<script src="/__stx/router.__STX_HASH__.js"></script>`
-    : `<script>${getRouterScript()}</script>`
+    : `<script>${getCachedRouterScript()}</script>`
 
   // Use string concatenation to avoid $-interpretation in .replace()
   const bodyCloseIdx = template.lastIndexOf('</body>')
