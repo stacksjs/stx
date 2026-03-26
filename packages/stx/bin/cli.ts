@@ -2555,8 +2555,8 @@ else {
 
   // Check for unknown commands and provide suggestions
   const knownCommands = [
-    'docs', 'iconify', 'dev', 'a11y', 'build', 'build:native', 'compile', 'test', 'init', 'new',
-    'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version',
+    'docs', 'iconify', 'dev', 'a11y', 'build', 'start', 'build:native', 'compile', 'test', 'init', 'new',
+    'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version', 'deploy',
     'interactive', 'i', 'story', 'story:build', 'story:test'
   ]
 
