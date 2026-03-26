@@ -474,6 +474,20 @@ export interface StxConfig {
   }
 
   /**
+   * Source root for .stx files.
+   * pages/, layouts/, components/, partials/ resolve relative to this.
+   *
+   * - Standalone app: defaults to '.' (project root)
+   * - Stacks app: auto-detected as 'resources/views' if that directory has pages/
+   * - Override: set explicitly to any path
+   *
+   * Note: .stx/ (cache), .output/ (build), and stx.config.ts stay at project root.
+   *
+   * @default '.' (auto-detects 'resources/views' if it exists with pages/)
+   */
+  root?: string
+
+  /**
    * Root directory for templates
    */
   templatesDir?: string

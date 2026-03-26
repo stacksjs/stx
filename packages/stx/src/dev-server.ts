@@ -1736,20 +1736,25 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   let hmrServer: ReturnType<typeof getHmrServer> | null = null
   let actualHmrPort = options.hmrPort || port + 1
 
-  // Resolve app directory
+  // Resolve app directory, respecting the stx root config
   const absoluteAppDir = path.resolve(appDir)
-  const pagesDir = path.join(absoluteAppDir, 'pages')
+  const { loadStxConfig } = await import('./')
+  const projectConfig = await loadStxConfig()
+  const stxRoot = projectConfig.root && projectConfig.root !== '.'
+    ? path.join(absoluteAppDir, projectConfig.root)
+    : absoluteAppDir
+  const pagesDir = path.join(stxRoot, 'pages')
 
   // Check if pages directory exists
   if (!fs.existsSync(pagesDir)) {
-    console.error(`${colors.red}Error: No 'pages' directory found in ${colors.bright}${absoluteAppDir}${colors.reset}`)
+    console.error(`${colors.red}Error: No 'pages' directory found in ${colors.bright}${stxRoot}${colors.reset}`)
     console.log(`${colors.dim}Create a pages/ directory with .stx files to define your routes.${colors.reset}`)
     console.log(`${colors.dim}Example: pages/index.stx for the homepage.${colors.reset}`)
     return false
   }
 
-  // Create router from pages directory
-  const routes = createRouter(absoluteAppDir)
+  // Create router from stx root (where pages/ lives)
+  const routes = createRouter(stxRoot)
 
   if (routes.length === 0) {
     console.error(`${colors.red}Error: No page files found in ${colors.bright}${pagesDir}${colors.reset}`)

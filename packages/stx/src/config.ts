@@ -1,4 +1,6 @@
 import type { StxConfig, StxOptions } from './types'
+import fs from 'node:fs'
+import path from 'node:path'
 import { resolve } from 'node:path'
 import { loadConfigWithResult } from 'bunfig'
 import { a11yDirective, screenReaderDirective } from './a11y'
@@ -385,6 +387,28 @@ export const defaultConfig: StxConfig = {
   },
 }
 
+/**
+ * Resolve the stx source root directory.
+ *
+ * Priority:
+ * 1. Explicit config value (if set)
+ * 2. Auto-detect 'resources/views' if it has a pages/ subdirectory
+ * 3. Default to '.' (project root)
+ */
+function resolveStxRoot(configRoot?: string): string {
+  // Explicit config wins
+  if (configRoot) return configRoot
+
+  // Auto-detect: check for resources/views/pages/ (Stacks convention)
+  const resourcesViewsPages = path.join(process.cwd(), 'resources', 'views', 'pages')
+  if (fs.existsSync(resourcesViewsPages)) {
+    return 'resources/views'
+  }
+
+  // Default: project root
+  return '.'
+}
+
 // Lazy-load config to avoid blocking module initialization
 // This makes imports near-instant instead of taking 2-3 seconds
 let _config: StxConfig | null = null
@@ -404,7 +428,26 @@ export async function loadStxConfig(): Promise<StxConfig> {
       defaultConfig,
       verbose: false,
     })
-    _config = configResult.config
+    const loaded = configResult.config
+
+    // Resolve the source root for .stx files
+    loaded.root = resolveStxRoot(loaded.root)
+
+    // If root is not '.', prefix directory paths that aren't already absolute
+    if (loaded.root && loaded.root !== '.') {
+      const rootPrefix = loaded.root
+      if (loaded.partialsDir && !path.isAbsolute(loaded.partialsDir)) {
+        loaded.partialsDir = path.join(rootPrefix, loaded.partialsDir)
+      }
+      if (loaded.componentsDir && !path.isAbsolute(loaded.componentsDir)) {
+        loaded.componentsDir = path.join(rootPrefix, loaded.componentsDir)
+      }
+      if (loaded.layoutsDir && !path.isAbsolute(loaded.layoutsDir)) {
+        loaded.layoutsDir = path.join(rootPrefix, loaded.layoutsDir)
+      }
+    }
+
+    _config = loaded
     return _config
   })()
 
