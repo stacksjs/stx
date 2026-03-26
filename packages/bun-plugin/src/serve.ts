@@ -462,29 +462,17 @@ export async function serve(options: ServeOptions): Promise<void> {
     const path = await import('node:path')
     const content = await Bun.file(filePath).text()
 
-    // Extract all script tags and categorize them as server or client
-    const dynScriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-    const dynClientScripts: string[] = []
+    // Extract server scripts only — client scripts stay for processDirectives to transform
+    const serverScriptRegex = /<script\b([^>]*)\bserver\b[^>]*>([\s\S]*?)<\/script>/gi
     const dynServerScripts: string[] = []
     let dynScriptMatch: RegExpExecArray | null
 
-    while ((dynScriptMatch = dynScriptRegex.exec(content)) !== null) {
-      const attrs = dynScriptMatch[1]
-      const scriptBody = dynScriptMatch[2]
-      const fullScript = dynScriptMatch[0]
-
-      const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
-
-      if (isClientScript) {
-        dynClientScripts.push(fullScript)
-      }
-      else {
-        dynServerScripts.push(scriptBody)
-      }
+    while ((dynScriptMatch = serverScriptRegex.exec(content)) !== null) {
+      dynServerScripts.push(dynScriptMatch[2])
     }
 
-    // Remove all script tags from template content
-    const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    // Only remove server scripts from template — client scripts stay for processDirectives
+    const templateContent = content.replace(/<script\b[^>]*\bserver\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
     // Build context with dynamic params
     const context: Record<string, any> = {
