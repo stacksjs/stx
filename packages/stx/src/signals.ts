@@ -1561,8 +1561,8 @@ else {
   });
 
   // Apply any server-injected params (set before runtime loaded)
-  if (window.stx && window.stx._rp) {
-    _routeParams.set(window.stx._rp);
+  if ((window.stx && window.stx._rp) || window.__stx_rp) {
+    _routeParams.set(window.stx?._rp || window.__stx_rp);
   }
 
   function useRoute() {

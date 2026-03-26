@@ -514,6 +514,21 @@ export async function serve(options: ServeOptions): Promise<void> {
     const dependencies = new Set<string>()
     output = await processDirectives(output, context, filePath, config, dependencies)
 
+    // Inject route params for client-side useRoute().params
+    if (paramNames.length > 0) {
+      const paramsObj: Record<string, string> = {}
+      for (let i = 0; i < paramNames.length; i++) {
+        paramsObj[paramNames[i]] = paramValues[i]
+      }
+      const paramsScript = `<script>if(window.stx)window.stx._rp=${JSON.stringify(paramsObj)};else window.__stx_rp=${JSON.stringify(paramsObj)};</script>`
+      if (output.includes('</head>')) {
+        output = output.replace('</head>', `${paramsScript}\n</head>`)
+      }
+      else {
+        output = paramsScript + '\n' + output
+      }
+    }
+
     // Inject the SPA router
     output = injectRouter(output)
 
