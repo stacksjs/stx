@@ -388,25 +388,35 @@ export const defaultConfig: StxConfig = {
 }
 
 /**
- * Resolve the stx source root directory.
+ * Resolve the stx source root directory and pages directory name.
  *
  * Priority:
  * 1. Explicit config value (if set)
- * 2. Auto-detect 'resources/views' if it has a pages/ subdirectory
- * 3. Default to '.' (project root)
+ * 2. Auto-detect Stacks convention: resources/ with views/ as pages
+ * 3. Auto-detect: resources/views/pages/
+ * 4. Default to '.' (project root)
  */
-function resolveStxRoot(configRoot?: string): string {
-  // Explicit config wins
-  if (configRoot) return configRoot
+function resolveStxRoot(configRoot?: string, configPagesDir?: string): { root: string, pagesDir: string } {
+  const defaultPagesDir = configPagesDir || 'pages'
 
-  // Auto-detect: check for resources/views/pages/ (Stacks convention)
+  // Explicit config wins
+  if (configRoot) return { root: configRoot, pagesDir: defaultPagesDir }
+
+  // Auto-detect Stacks convention: resources/ has views/, layouts/, components/
+  const resourcesViews = path.join(process.cwd(), 'resources', 'views')
+  const resourcesLayouts = path.join(process.cwd(), 'resources', 'layouts')
+  if (fs.existsSync(resourcesViews) && fs.existsSync(resourcesLayouts)) {
+    return { root: 'resources', pagesDir: 'views' }
+  }
+
+  // Auto-detect: check for resources/views/pages/ (nested convention)
   const resourcesViewsPages = path.join(process.cwd(), 'resources', 'views', 'pages')
   if (fs.existsSync(resourcesViewsPages)) {
-    return 'resources/views'
+    return { root: 'resources/views', pagesDir: defaultPagesDir }
   }
 
   // Default: project root
-  return '.'
+  return { root: '.', pagesDir: defaultPagesDir }
 }
 
 // Lazy-load config to avoid blocking module initialization
@@ -430,8 +440,10 @@ export async function loadStxConfig(): Promise<StxConfig> {
     })
     const loaded = configResult.config
 
-    // Resolve the source root for .stx files
-    loaded.root = resolveStxRoot(loaded.root)
+    // Resolve the source root and pages directory for .stx files
+    const resolved = resolveStxRoot(loaded.root, loaded.pagesDir)
+    loaded.root = resolved.root
+    loaded.pagesDir = resolved.pagesDir
 
     // If root is not '.', prefix directory paths that aren't already absolute
     if (loaded.root && loaded.root !== '.') {

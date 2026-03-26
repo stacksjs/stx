@@ -1743,13 +1743,14 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   const stxRoot = projectConfig.root && projectConfig.root !== '.'
     ? path.join(absoluteAppDir, projectConfig.root)
     : absoluteAppDir
-  const pagesDir = path.join(stxRoot, 'pages')
+  const pagesDirName = projectConfig.pagesDir || 'pages'
+  const pagesDir = path.join(stxRoot, pagesDirName)
 
   // Check if pages directory exists
   if (!fs.existsSync(pagesDir)) {
-    console.error(`${colors.red}Error: No 'pages' directory found in ${colors.bright}${stxRoot}${colors.reset}`)
-    console.log(`${colors.dim}Create a pages/ directory with .stx files to define your routes.${colors.reset}`)
-    console.log(`${colors.dim}Example: pages/index.stx for the homepage.${colors.reset}`)
+    console.error(`${colors.red}Error: No '${pagesDirName}' directory found in ${colors.bright}${stxRoot}${colors.reset}`)
+    console.log(`${colors.dim}Create a ${pagesDirName}/ directory with .stx files to define your routes.${colors.reset}`)
+    console.log(`${colors.dim}Example: ${pagesDirName}/index.stx for the homepage.${colors.reset}`)
     return false
   }
 

@@ -774,7 +774,6 @@ export async function resolveTemplatePath(
 
   // Try relative to current file
   const dirPath = path.dirname(currentFilePath)
-  console.log(`[resolveTemplatePath] templatePath="${templatePath}" currentFile="${currentFilePath}" dirPath="${dirPath}"`)
 
   // Handle common paths
   // 1. Absolute path (starts with /)
@@ -828,7 +827,6 @@ export async function resolveTemplatePath(
     const candidate = path.join(searchDir, 'layouts')
     let candidateExists = false
     try { candidateExists = (await fs.promises.stat(candidate)).isDirectory() } catch {}
-    console.log(`[resolveTemplatePath] walk ${i}: checking "${candidate}" exists=${candidateExists}`)
     if (candidateExists) {
       layoutsDir = candidate
       break
@@ -842,7 +840,6 @@ export async function resolveTemplatePath(
     // should resolve to pages/layouts/default, not pages/layouts/layouts/default
     const layoutTemplatePath = templatePath.startsWith('layouts/') ? templatePath.slice(8) : templatePath
     const fromCurrentLayouts = path.join(layoutsDir, layoutTemplatePath)
-    console.log(`[resolveTemplatePath] trying layoutsDir="${layoutsDir}" layoutTemplatePath="${layoutTemplatePath}" full="${fromCurrentLayouts}"`)
     if (await fileExists(fromCurrentLayouts)) {
       if (options.debug) {
         console.log(`Found in current layouts dir: ${fromCurrentLayouts}`)

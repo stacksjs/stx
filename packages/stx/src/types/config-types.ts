@@ -488,6 +488,15 @@ export interface StxConfig {
   root?: string
 
   /**
+   * Pages directory name (relative to root).
+   * Standalone apps: 'pages' (default)
+   * Stacks apps: 'views'
+   *
+   * @default 'pages'
+   */
+  pagesDir?: string
+
+  /**
    * Root directory for templates
    */
   templatesDir?: string

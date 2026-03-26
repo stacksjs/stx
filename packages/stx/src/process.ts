@@ -1587,7 +1587,6 @@ async function processDirectivesInternal(
   })
 
   // Add sections to context
-  console.log(`[sections] extracted:`, Object.keys(sections), 'content length:', sections.content?.length || 0)
   context.__sections = sections
 
   // Replace yield/slot with section content (@slot is preferred, @yield is legacy)
@@ -1610,7 +1609,6 @@ async function processDirectivesInternal(
   // Load and process the layout if one was specified
   if (layoutPath) {
     try {
-      console.log(`[layout] layoutPath="${layoutPath}" filePath="${filePath}"`)
 
 
       // If layoutPath is already absolute (from auto-layout), use it directly
@@ -1630,7 +1628,6 @@ async function processDirectivesInternal(
             },
           )
 
-      console.log(`[layout] resolved layoutFullPath="${layoutFullPath}"`)
       if (!layoutFullPath) {
         const warning = `Layout not found: ${layoutPath} (referenced from ${filePath})`
         errorLogger.log(new Error(warning), { layoutPath, filePath }, 'warning')
