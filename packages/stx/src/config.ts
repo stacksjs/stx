@@ -399,6 +399,7 @@ export async function loadStxConfig(): Promise<StxConfig> {
   _configPromise = (async () => {
     const configResult = await loadConfigWithResult({
       name: 'stx',
+      alias: 'ui',
       cwd: process.cwd(), // Load config from the project directory, not the stx package
       defaultConfig,
       verbose: false,
