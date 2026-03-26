@@ -695,6 +695,21 @@ export function injectRouterScript(template: string, options?: StxOptions): stri
     return template
   }
 
+  // Inject router config from stx.config.ts (replaces manual window.STX_ROUTER_OPTIONS scripts)
+  const routerConfig = options?.router
+  let configScript = ''
+  if (routerConfig) {
+    const configObj: Record<string, any> = {}
+    if (routerConfig.container) configObj.container = routerConfig.container
+    if (routerConfig.viewTransitions !== undefined) configObj.viewTransitions = routerConfig.viewTransitions
+    if (routerConfig.scrollToTop !== undefined) configObj.scrollToTop = routerConfig.scrollToTop
+    if (routerConfig.prefetch !== undefined) configObj.prefetch = routerConfig.prefetch
+    if (routerConfig.cache !== undefined) configObj.cache = routerConfig.cache
+    if (Object.keys(configObj).length > 0) {
+      configScript = `<script>window.__stxRouterConfig=${JSON.stringify(configObj)};</script>\n`
+    }
+  }
+
   // Build mode: emit a placeholder reference instead of inlining the full router script.
   const { getCachedRouterScript } = require('./caching')
   const routerScript = options?.buildMode === 'compile'
@@ -703,7 +718,7 @@ export function injectRouterScript(template: string, options?: StxOptions): stri
 
   // Use string concatenation to avoid $-interpretation in .replace()
   const bodyCloseIdx = template.lastIndexOf('</body>')
-  return template.slice(0, bodyCloseIdx) + routerScript + '\n</body>' + template.slice(bodyCloseIdx + 7)
+  return template.slice(0, bodyCloseIdx) + configScript + routerScript + '\n</body>' + template.slice(bodyCloseIdx + 7)
 }
 
 /**
