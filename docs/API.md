@@ -5953,4 +5953,78 @@ These are available from `window.stx` at runtime.
 
 ---
 
+### Project Structure
+
+stx uses a convention-based project structure. No HTML boilerplate in `.stx` files — the framework generates the document shell.
+
+```
+stx.config.ts              ← config (head, root, app settings)
+pages/                     ← file-based routes
+  index.stx                ← /
+  about.stx                ← /about
+  jobs/[id].stx            ← /jobs/:id (dynamic)
+layouts/
+  default.stx              ← root layout (auto-applied, no @extends needed)
+components/                ← reusable components
+partials/                  ← includes (@include)
+.stx/                      ← cache (auto-generated)
+.output/                   ← production build (auto-generated)
+```
+
+For Stacks apps (embedded mode), set `root: 'resources/views'` in config. All stx directories resolve from that root. `.stx/` and `.output/` stay at project root.
+
+### Configuration (`stx.config.ts`)
+
+```typescript
+export default {
+  // Source root (default: '.', auto-detects 'resources/views')
+  root: '.',
+
+  // Document shell — auto-generated around every page
+  app: {
+    head: {
+      title: 'My App',
+      lang: 'en',
+      meta: [
+        { name: 'description', content: 'My stx app' },
+      ],
+      link: [
+        { rel: 'icon', href: '/favicon.ico' },
+      ],
+      bodyClass: 'dark min-h-screen',
+    },
+  },
+
+  // Directory conventions
+  // partialsDir: 'partials',
+  // componentsDir: 'components',
+  // layoutsDir: 'layouts',
+  // defaultLayout: 'default',
+}
+```
+
+### Production Build
+
+```bash
+# Build for production
+stx build --out .output
+
+# Start production server
+stx start --port 3000
+```
+
+The production build:
+- Compiles all templates at build time
+- Externalizes shared runtimes into fingerprinted JS files
+- Pre-extracts SPA fragments for instant navigation
+- Generates a manifest for the production server
+
+The production server:
+- Serves static pages directly (zero processing, <1ms)
+- Hydrates dynamic pages with request-time data
+- Serves SPA fragments for client-side navigation
+- Sets immutable cache headers on fingerprinted assets
+
+---
+
 *For more details, see the [full documentation](https://stx.stacksjs.com).*

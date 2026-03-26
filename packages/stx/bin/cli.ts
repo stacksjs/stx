@@ -932,6 +932,23 @@ else {
           process.exit(1)
         }
 
+        // Production build mode — generates .output/ with compiled templates,
+        // fingerprinted assets, and SPA fragments for the production server
+        if (options.out === '.output' || process.env.NODE_ENV === 'production') {
+          const { buildForProduction } = await import('../src/production-builder')
+          const result = await buildForProduction({
+            root: input ? path.dirname(input) : undefined,
+            outputDir: options.out,
+            debug: options.verbose,
+          })
+          const buildTime = ((performance.now() - startTime) / 1000).toFixed(2)
+          console.log(`\n  Production build complete!\n`)
+          console.log(`    Pages compiled: ${result.pageCount}`)
+          console.log(`    Output: ${result.outputDir}`)
+          console.log(`    Duration: ${buildTime}s\n`)
+          return
+        }
+
         console.log('\n  Building static site...\n')
         if (options.verbose) {
           console.log(`  Pages directory: ${pagesDir}`)
@@ -943,7 +960,7 @@ else {
           console.log('')
         }
 
-        // Call generateStaticSite with options
+        // Call generateStaticSite with options (SSG mode)
         const result = await generateStaticSite({
           pagesDir: options.pages,
           outputDir: options.out,
@@ -1016,6 +1033,32 @@ else {
       }
       catch (error) {
         console.error('\n  Build failed:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
+  // Start production server
+  cli
+    .command('start', 'Start the production server (serves pre-built .output/)')
+    .option('--port <number>', 'Server port', { default: '3000' })
+    .option('--output <dir>', 'Output directory from stx build', { default: '.output' })
+    .example('stx start')
+    .example('stx start --port 8080')
+    .action(async (options: { port: string, output: string }) => {
+      try {
+        const outputDir = path.resolve(options.output)
+        if (!fs.existsSync(path.join(outputDir, 'manifest.json'))) {
+          console.error('\n  No production build found. Run `stx build --out .output` first.\n')
+          process.exit(1)
+        }
+        const { startProductionServer } = await import('../src/production-server')
+        await startProductionServer({
+          outputDir,
+          port: Number.parseInt(options.port, 10) || 3000,
+        })
+      }
+      catch (error) {
+        console.error('\n  Failed to start production server:', error instanceof Error ? error.message : String(error))
         process.exit(1)
       }
     })

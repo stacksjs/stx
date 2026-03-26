@@ -188,8 +188,85 @@ Parent template                    Component file
 | `client-script.ts` | Client script transformation, auto-binding, auto-imports | ~700 |
 | `variable-extractor.ts` | Server script execution, TS stripping, variable extraction | ~450 |
 | `utils.ts` | Component rendering, SFC processing | ~700 |
-| `app-shell.ts` | Shell detection, composition, fragment stripping | ~260 |
+| `app-shell.ts` | Shell detection (deprecated), fragment stripping | ~260 |
 | `style-scoping.ts` | `<style scoped>` processing | ~130 |
+| `document-shell.ts` | Auto-generated HTML document wrapper | ~130 |
+| `build-assets.ts` | Fingerprinted runtime/router/CSS assets | ~90 |
+| `template-compiler.ts` | Build-time template pre-compilation | ~160 |
+| `template-hydrator.ts` | Serve-time placeholder resolution | ~130 |
+| `production-builder.ts` | `stx build` orchestrator → `.output/` | ~160 |
+| `production-server.ts` | `stx start` production HTTP server | ~200 |
+| `manifest.ts` | Build manifest (routes, assets, hashes) | ~100 |
+| `placeholder.ts` | Placeholder token system for pre-compilation | ~80 |
 | `router/client.ts` | SPA router (click interception, swap, prefetch) | ~420 |
 | `bun-plugin/index.ts` | Bun build plugin for .stx files | ~390 |
 | `dev-server.ts` | Development server with HMR | ~2200 |
+
+## Project Structure Convention
+
+### Standalone stx app
+```
+stx.config.ts              ← config (app.head, plugins, build)
+pages/                     ← file-based routes
+layouts/default.stx        ← root layout (no HTML boilerplate)
+components/                ← reusable components
+partials/                  ← includes
+.stx/                      ← cache (auto-generated)
+.output/                   ← production build (auto-generated)
+```
+
+### stx inside Stacks (embedded)
+```
+stx.config.ts              ← at project root (root: 'resources/views')
+resources/views/
+  pages/                   ← routes
+  layouts/default.stx      ← layout
+  components/
+  partials/
+.stx/                      ← cache at project root
+.output/                   ← production build at project root
+```
+
+## Document Shell
+
+Templates never write `<!DOCTYPE>`, `<html>`, `<head>`, or `<body>`. The framework auto-generates the document shell from `stx.config.ts` `app.head` configuration:
+
+```typescript
+// stx.config.ts
+export default {
+  app: {
+    head: {
+      title: 'My App',
+      meta: [{ name: 'description', content: '...' }],
+      bodyClass: 'dark min-h-screen',
+    },
+  },
+}
+```
+
+Layouts are pure content fragments:
+```html
+<!-- layouts/default.stx -->
+<nav>...</nav>
+<main>@slot('content')</main>
+<footer>...</footer>
+```
+
+## Production Build Pipeline
+
+```
+stx build --out .output
+  → Discover routes from pages/
+  → Generate fingerprinted assets (runtime.js, router.js)
+  → Compile all templates (processDirectives in build mode)
+  → Generate CSS from all pages
+  → Extract SPA fragments
+  → Write .output/ + manifest.json
+
+stx start
+  → Load manifest.json
+  → Static pages: serve directly (<1ms)
+  → Dynamic pages: hydrate with request data
+  → SPA fragments: serve pre-extracted HTML
+  → Assets: immutable cache headers (1 year)
+```
