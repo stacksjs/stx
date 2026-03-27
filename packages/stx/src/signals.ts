@@ -2151,7 +2151,7 @@ catch (e) {
         // Skip script elements entirely
         if (child.tagName === 'SCRIPT') return;
         // Skip elements already processed by stx.mount() — they have their own scope and effects
-        if (child.__stx_scope) return;
+        if (child.__stx_scope) { console.log('[processElement] skip __stx_scope:', child.tagName); return; }
         // Skip data-stx-scope elements — they are managed by the reactive (x-data) runtime
         if (child.hasAttribute && child.hasAttribute('data-stx-scope')) return;
         processElement(child, scope);
@@ -2280,6 +2280,7 @@ else if (typeof value === 'string') {
   }
 
   function bindFor(el, passedScope = componentScope, attrName = '@for') {
+    console.log('[bindFor]', el.getAttribute(attrName), 'scope keys:', Object.keys(passedScope).slice(0,8));
     const expr = el.getAttribute(attrName);
     const match = expr.match(/^\\s*(\\w+)(?:\\s*,\\s*(\\w+))?\\s+(?:in|of)\\s+(.+)\\s*$/);
 
@@ -3195,6 +3196,7 @@ else {
       }
     },
     mount: function(setupFn) {
+      console.log('[mount] called');
       // Capture script reference synchronously (only valid during execution)
       var scriptEl = document.currentScript;
 
@@ -3250,6 +3252,7 @@ else {
 
         // Run setup function — returns scope object with declarations
         var scope = setupFn();
+        console.log('[mount] root:', root.tagName, 'scope keys:', scope ? Object.keys(scope).slice(0, 10) : 'null');
 
         // Restore previous context (supports nested components)
         window.__STX_CURRENT_PROPS__ = prevProps;
@@ -3358,12 +3361,15 @@ else {
     // Initialize components with data-stx attribute
     document.querySelectorAll('[data-stx]').forEach(el => {
       const setupName = el.getAttribute('data-stx');
+      console.log('[DOMContentLoaded] data-stx:', setupName, 'el:', el.tagName, 'fn exists:', !!(setupName && window[setupName]));
       if (setupName && window[setupName]) {
         const result = window[setupName]();
+        console.log('[DOMContentLoaded] setup returned:', result ? Object.keys(result).slice(0, 10) : 'null');
         if (typeof result === 'object') {
           Object.assign(componentScope, result);
         }
       }
+      console.log('[DOMContentLoaded] processElement on:', el.tagName, 'scope keys:', Object.keys(componentScope).slice(0, 10));
       var disposeEffects = trackEffects(function() { processElement(el); });
       el.__stx_disposers = disposeEffects;
 
@@ -3550,6 +3556,7 @@ catch (e) { console.warn('[stx] scope destroy error:', e); }
   });
   function _handleStxLoad() {
     _stxLoadTimer = null;
+    console.log('[stx:load] START. mountQueue:', mountQueue.length, '_latestSetup:', !!window.stx._latestSetup);
 
     // Run any pending destroy callbacks before re-initializing
     destroyCallbacks.forEach(function(fn) {
@@ -3579,9 +3586,11 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       // It will be overwritten when a NEW page's script sets it
       usedLatestSetup = true;
       if (typeof setupResult === 'object' && setupResult !== null) {
+        console.log('[stx:load] _latestSetup keys:', Object.keys(setupResult).slice(0, 10));
         Object.assign(componentScope, setupResult);
       }
     }
+    console.log('[stx:load] usedLatestSetup:', usedLatestSetup, 'scope keys:', Object.keys(componentScope).slice(0, 10));
 
     // Only fall back to [data-stx] attribute lookup if _latestSetup wasn't available.
     // This handles the initial DOMContentLoaded-like case and pages that don't use _latestSetup.
@@ -3611,14 +3620,17 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     // Process the container content — bind {{ }}, :attr, @event directives.
     // Run synchronously (not in setTimeout) so componentScope is captured correctly.
     // The DOMContentLoaded path processes <body> synchronously — the SPA path must match.
+    console.log('[stx:load] container:', container.tagName, '__stx_scope:', !!container.__stx_scope, 'scope keys:', Object.keys(componentScope).slice(0, 10));
     if (!container.__stx_scope) {
       // Dispose previous effects on the container (from prior navigation)
       if (container.__stx_disposers && typeof container.__stx_disposers === 'function') {
         container.__stx_disposers();
       }
+      console.log('[stx:load] processElement on container');
       var disposeEffects = trackEffects(function() { processElement(container, componentScope); });
       container.__stx_disposers = disposeEffects;
     } else {
+      console.log('[stx:load] SKIPPED processElement — container has __stx_scope');
     }
 
     // Remove x-cloak
