@@ -15,29 +15,30 @@ describe('StxLink Component', () => {
     expect(fs.existsSync(COMPONENT_PATH)).toBe(true)
   })
 
-  it('should render an <a> tag', () => {
-    expect(componentSource).toContain('<a')
-    expect(componentSource).toContain('</a>')
+  it('should render a <stx-link> custom element', () => {
+    expect(componentSource).toContain('<stx-link')
+    expect(componentSource).toContain('</stx-link>')
   })
 
-  it('should use "to" prop as href', () => {
-    expect(componentSource).toMatch(/href=["']{{ to }}["']/)
+  it('should use "to" prop for static links', () => {
+    expect(componentSource).toContain("to='{{ to }}'")
   })
 
-  it('should include data-stx-link attribute', () => {
-    expect(componentSource).toContain('data-stx-link')
+  it('should support dynamic :to binding', () => {
+    expect(componentSource).toContain(':to=')
+    expect(componentSource).toContain('__bindTo')
   })
 
   it('should support configurable active class', () => {
-    expect(componentSource).toContain('data-stx-active-class="{{ activeClass || \'active\' }}"')
+    expect(componentSource).toContain("active-class='{{ activeClass || ")
   })
 
   it('should support configurable exact-active class', () => {
-    expect(componentSource).toContain('data-stx-exact-active-class="{{ exactActiveClass || \'exact-active\' }}"')
+    expect(componentSource).toContain("exact-active-class='{{ exactActiveClass || ")
   })
 
   it('should conditionally add prefetch attribute', () => {
-    expect(componentSource).toContain('data-stx-prefetch')
+    expect(componentSource).toContain('prefetch')
     expect(componentSource).toContain("@if(typeof prefetch !== 'undefined' && prefetch)")
   })
 
@@ -46,6 +47,7 @@ describe('StxLink Component', () => {
   })
 
   it('should support className prop', () => {
-    expect(componentSource).toContain('class="{{ className || \'\' }}"')
+    expect(componentSource).toContain('class=')
+    expect(componentSource).toContain('className')
   })
 })

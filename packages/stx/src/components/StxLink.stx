@@ -1,8 +1,18 @@
-<a
-  href='{{ to }}'
-  class="{{ className || '' }}"
-  data-stx-link
-  data-stx-active-class="{{ activeClass || 'active' }}"
-  data-stx-exact-active-class="{{ exactActiveClass || 'exact-active' }}"
-  @if(typeof prefetch !== 'undefined' && prefetch) data-stx-prefetch @endif
->{!! slot !!}</a>
+@if(typeof __bindTo !== 'undefined' && __bindTo)
+<stx-link
+  :to="{{ __bindTo }}"
+  class='{{ className || "" }}'
+  active-class='{{ activeClass || "active" }}'
+  exact-active-class='{{ exactActiveClass || "exact-active" }}'
+  @if(typeof prefetch !== 'undefined' && prefetch) prefetch @endif
+>{!! slot !!}</stx-link>
+@endif
+@if(typeof __bindTo === 'undefined' || !__bindTo)
+<stx-link
+  to='{{ to }}'
+  class='{{ className || "" }}'
+  active-class='{{ activeClass || "active" }}'
+  exact-active-class='{{ exactActiveClass || "exact-active" }}'
+  @if(typeof prefetch !== 'undefined' && prefetch) prefetch @endif
+>{!! slot !!}</stx-link>
+@endif

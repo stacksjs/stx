@@ -2586,6 +2586,17 @@ async function processCustomElements(
           // If value is 'true' (boolean attribute), use shorthand syntax
           // :trail becomes :trail="trail"
           const expression = attrValue === 'true' ? propName : attrValue
+
+          // For built-in components that support client-side bindings (StxLink :to),
+          // pass the raw expression through as a __bind: prefixed prop.
+          // The component template can then emit :attr="expr" for the runtime.
+          const isStxLink = tagName.toLowerCase() === 'stxlink' || tagName.toLowerCase() === 'stx-link'
+          if (isStxLink && propName === 'to') {
+            // Pass through as client-side binding — don't evaluate server-side
+            props.__bindTo = expression
+            continue
+          }
+
           try {
             // Use safe evaluation to prevent code injection
             if (!isExpressionSafe(expression)) {

@@ -342,14 +342,20 @@ else {
     return true;
   }
 
+  // <stx-link> click handling — only StxLink gets SPA navigation.
+  // Regular <a href> does native full page reload (no interception).
   document.addEventListener('click',function(e){
     if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0)return;
     if(!e.target||!e.target.closest)return;
-    var link=e.target.closest('a[href]');
-    if(!shouldIntercept(link))return;
+    // Only intercept clicks inside <stx-link> elements
+    var stxLink=e.target.closest('stx-link');
+    if(!stxLink)return;
+    var link=stxLink.querySelector('a[href]')||stxLink;
+    var href=stxLink.getAttribute('to')||stxLink.getAttribute('href')||(link&&link.getAttribute('href'));
+    if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:'))return;
     e.preventDefault();
     e.stopPropagation();
-    navigate(link.getAttribute('href'));
+    navigate(href);
   },true);
 
   // ── Back/forward ──
@@ -361,10 +367,9 @@ else {
   if(o.prefetch){
     document.addEventListener('mouseover',function(e){
       if(!e.target||!e.target.closest)return;
-      var link=e.target.closest('a[href]');
-      if(!shouldIntercept(link))return;
-      // Only prefetch links with data-stx-prefetch or all internal links
-      var href=link.getAttribute('href');
+      var stxLink=e.target.closest('stx-link');
+      if(!stxLink)return;
+      var href=stxLink.getAttribute('to')||stxLink.getAttribute('href');
       if(cache[href]||prefetching[href])return;
       prefetching[href]=true;
       fetch(href,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
@@ -390,12 +395,13 @@ else {
   }
 
   function updateActiveLinks(){
-    var links=document.querySelectorAll('[data-stx-link]');
+    // Update active classes on <stx-link> elements (and legacy data-stx-link)
+    var links=document.querySelectorAll('stx-link, [data-stx-link]');
     var cur=location.pathname;
     links.forEach(function(link){
-      var href=link.getAttribute('href')||'';
-      var ac=link.getAttribute('data-stx-active-class')||'active';
-      var eac=link.getAttribute('data-stx-exact-active-class')||'exact-active';
+      var href=link.getAttribute('to')||link.getAttribute('href')||'';
+      var ac=link.getAttribute('active-class')||link.getAttribute('data-stx-active-class')||'active';
+      var eac=link.getAttribute('exact-active-class')||link.getAttribute('data-stx-exact-active-class')||'exact-active';
       ac.split(' ').forEach(function(cls){if(cls)link.classList.remove(cls)});
       eac.split(' ').forEach(function(cls){if(cls)link.classList.remove(cls)});
       var isExact=cur===href;

@@ -1,0 +1,12 @@
+<img
+  src='{{ src }}'
+  alt='{{ alt || "" }}'
+  @if(typeof width !== 'undefined' && width) width='{{ width }}' @endif
+  @if(typeof height !== 'undefined' && height) height='{{ height }}' @endif
+  loading='{{ typeof lazy !== "undefined" && lazy === false ? "eager" : "lazy" }}'
+  decoding='async'
+  @if(typeof sizes !== 'undefined' && sizes) sizes='{{ sizes }}' @endif
+  @if(typeof srcset !== 'undefined' && srcset) srcset='{{ srcset }}' @endif
+  @if(typeof placeholder !== 'undefined' && placeholder) style='background-image: url({{ placeholder }}); background-size: cover;' @endif
+  class='{{ className || "" }}'
+/>

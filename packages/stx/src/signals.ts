@@ -1982,6 +1982,54 @@ else if (part) {
 
     if (el.nodeType !== Node.ELEMENT_NODE) return;
 
+    // Handle <stx-link> — convert to <a> with SPA navigation click handler
+    if (el.tagName === 'STX-LINK') {
+      var stxTo = el.getAttribute('to') || el.getAttribute(':to');
+      var stxClass = el.getAttribute('class') || '';
+      var stxActiveClass = el.getAttribute('active-class') || 'active';
+      var stxExactActiveClass = el.getAttribute('exact-active-class') || 'exact-active';
+      var hasDynamicTo = el.hasAttribute(':to');
+      var stxLinkContent = el.innerHTML;
+
+      // Create <a> element
+      var anchor = document.createElement('a');
+      anchor.innerHTML = stxLinkContent;
+      anchor.className = stxClass;
+      anchor.setAttribute('active-class', stxActiveClass);
+      anchor.setAttribute('exact-active-class', stxExactActiveClass);
+
+      if (hasDynamicTo) {
+        // Dynamic :to — evaluate in scope and update reactively
+        var toExpr = el.getAttribute(':to');
+        effect(function() {
+          try {
+            var fn = new Function(Object.keys(scope).join(','), 'return ' + toExpr);
+            var href = fn.apply(null, Object.values(scope));
+            anchor.setAttribute('href', href || '#');
+          } catch(e) {}
+        });
+      } else {
+        // Static to
+        anchor.setAttribute('href', stxTo || '#');
+      }
+
+      // SPA click handler — navigate() instead of native
+      anchor.addEventListener('click', function(e) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        var href = anchor.getAttribute('href');
+        if (!href || href === '#' || href.startsWith('http') || href.startsWith('mailto:')) return;
+        e.preventDefault();
+        navigate(href);
+      });
+
+      // Replace <stx-link> with <a>
+      el.replaceWith(anchor);
+
+      // Process children of the new anchor
+      processElement(anchor, scope);
+      return;
+    }
+
     // Handle @for / :for first (reactive list)
     if (el.hasAttribute('@for') || el.hasAttribute(':for')) {
       bindFor(el, scope, el.hasAttribute(':for') ? ':for' : '@for');
