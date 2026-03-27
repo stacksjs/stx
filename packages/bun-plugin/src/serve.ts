@@ -726,16 +726,14 @@ export async function serve(options: ServeOptions): Promise<void> {
             const mainStart = mainOpenMatch.index! + mainOpenMatch[0].length
             fragment = fragment.slice(mainStart, mainCloseIdx).trim()
           }
-          // Extract page setup scripts (__stx_setup_ functions) from <head>
-          // These are NOT inside <main> but are needed for SPA page hydration
+          // Extract page setup scripts (__stx_setup_ functions) from ANYWHERE in the page.
+          // They may be in <head> or <body> depending on whether auto-shell is used.
+          // These are NOT inside <main> but are needed for SPA page hydration.
           const pageSetupScripts: string[] = []
-          if (headMatch) {
-            const headContent = headMatch[1]
-            const setupRe = /<script data-stx-scoped>\s*function __stx_setup_[\s\S]*?<\/script>/gi
-            let setupMatch: RegExpExecArray | null
-            while ((setupMatch = setupRe.exec(headContent)) !== null) {
-              pageSetupScripts.push(setupMatch[0])
-            }
+          const setupRe = /<script data-stx-scoped>\s*function __stx_setup_[\s\S]*?<\/script>/gi
+          let setupMatch: RegExpExecArray | null
+          while ((setupMatch = setupRe.exec(content)) !== null) {
+            pageSetupScripts.push(setupMatch[0])
           }
 
           // Strip the signals runtime IIFE — keep only page-specific scripts
