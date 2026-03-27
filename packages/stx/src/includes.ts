@@ -1155,17 +1155,20 @@ function expandStxLinks(content: string): string {
 
 function buildStxLinkAnchor(attrs: string, slotContent: string): string {
   const getAttr = (name: string): string | undefined => {
-    const match = attrs.match(new RegExp(`${name}=["']([^"']*)["']`))
+    // Use word boundary or start-of-string to avoid :to matching to
+    const match = attrs.match(new RegExp(`(?:^|\\s)${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}=["']([^"']*)["']`))
     return match ? match[1] : undefined
   }
 
-  const to = getAttr('to') || '#'
+  // Check for dynamic :to binding (runtime expression)
+  const dynamicTo = getAttr(':to')
+  const staticTo = getAttr('to')
   const className = getAttr('className') || getAttr('class') || ''
   const activeClass = getAttr('activeClass') || 'active'
   const exactActiveClass = getAttr('exactActiveClass') || 'exact-active'
   const prefetch = getAttr('prefetch')
 
-  // Collect any @click or other event attributes to preserve
+  // Collect any @click or other event/binding attributes to preserve
   const eventAttrs: string[] = []
   const eventPattern = /@[\w.]+="[^"]*"/g
   let eventMatch
@@ -1177,5 +1180,12 @@ function buildStxLinkAnchor(attrs: string, slotContent: string): string {
   const eventStr = eventAttrs.length > 0 ? ' ' + eventAttrs.join(' ') : ''
 
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+  // Dynamic :to → use :href for runtime binding
+  if (dynamicTo) {
+    return `<a :href="${dynamicTo}" class="${esc(className)}" data-stx-link data-stx-active-class="${esc(activeClass)}" data-stx-exact-active-class="${esc(exactActiveClass)}"${prefetchAttr}${eventStr}>${slotContent}</a>`
+  }
+
+  const to = staticTo || '#'
   return `<a href="${esc(to)}" class="${esc(className)}" data-stx-link data-stx-active-class="${esc(activeClass)}" data-stx-exact-active-class="${esc(exactActiveClass)}"${prefetchAttr}${eventStr}>${slotContent}</a>`
 }
