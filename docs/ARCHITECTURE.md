@@ -198,7 +198,9 @@ Parent template                    Component file
 | `production-server.ts` | `stx start` production HTTP server | ~200 |
 | `manifest.ts` | Build manifest (routes, assets, hashes) | ~100 |
 | `placeholder.ts` | Placeholder token system for pre-compilation | ~80 |
-| `router/client.ts` | SPA router (click interception, swap, prefetch) | ~420 |
+| `components/StxLink.stx` | SPA navigation link (static + dynamic :to) | ~18 |
+| `components/StxImage.stx` | Enhanced image (lazy, responsive, placeholder) | ~12 |
+| `router/client.ts` | SPA router (StxLink-only interception, swap, prefetch) | ~420 |
 | `bun-plugin/index.ts` | Bun build plugin for .stx files | ~390 |
 | `dev-server.ts` | Development server with HMR | ~2200 |
 

@@ -5819,8 +5819,11 @@ The SPA router handles two response types:
 Built-in navigation component (equivalent to Nuxt's `<NuxtLink>`). Renders an `<a>` tag with SPA navigation, active class management, and optional prefetching.
 
 ```html
-<!-- Basic usage -->
+<!-- Static path -->
 <StxLink to="/about">About</StxLink>
+
+<!-- Dynamic path (works inside @for loops) -->
+<StxLink :to="'/jobs/' + job.id">View Details</StxLink>
 
 <!-- Custom active class -->
 <StxLink to="/jobs" activeClass="nav-active">Jobs</StxLink>
@@ -5839,22 +5842,58 @@ Built-in navigation component (equivalent to Nuxt's `<NuxtLink>`). Renders an `<
 
 | Prop | Default | Description |
 |------|---------|-------------|
-| `to` | — | Target URL (required) |
+| `to` | — | Target URL (static string) |
+| `:to` | — | Target URL (dynamic expression, evaluated client-side) |
 | `activeClass` | `'active'` | Class added when route matches or is a parent |
 | `exactActiveClass` | `'exact-active'` | Class added only on exact path match |
 | `prefetch` | `false` | Prefetch page content on hover |
-| `className` | `''` | CSS class for the `<a>` element |
+| `className` | `''` | CSS class for the element |
 
-The router automatically intercepts clicks on `<StxLink>` for SPA navigation — no full page reload. Active classes are toggled on every navigation.
+**Link behavior:**
 
-You can also use plain `<a>` tags — the router intercepts all internal links by default:
+| Element | Behavior |
+|---------|----------|
+| `<StxLink to="/path">` | SPA navigation (no page reload) |
+| `<a href="/path">` | Full page reload (native browser behavior) |
+
+`<StxLink>` does SPA navigation — the router fetches the page fragment and swaps the content without reloading. Plain `<a href>` always does a native full page reload.
+
+### `<StxImage>` Component
+
+Enhanced image with lazy loading, responsive support, and placeholder.
 
 ```html
-<a href="/about">About</a>                          <!-- SPA navigation, no active class -->
-<a href="/about" data-stx-link>About</a>             <!-- SPA navigation + active class -->
-<a href="/about" data-stx-no-router>About</a>        <!-- Full page reload (opt out) -->
-<a href="https://example.com">External</a>           <!-- External links are never intercepted -->
+<!-- Basic -->
+<StxImage src="/photo.jpg" alt="Mountain trail" />
+
+<!-- With dimensions (prevents layout shift) -->
+<StxImage src="/photo.jpg" alt="Photo" width="800" height="600" />
+
+<!-- Eager loading (above the fold) -->
+<StxImage src="/hero.jpg" alt="Hero" lazy="{{ false }}" />
+
+<!-- With responsive srcset -->
+<StxImage src="/photo.jpg" alt="Photo" sizes="(max-width: 768px) 100vw, 50vw" srcset="/photo-400.jpg 400w, /photo-800.jpg 800w" />
+
+<!-- With blur placeholder -->
+<StxImage src="/photo.jpg" alt="Photo" placeholder="data:image/jpeg;base64,..." />
 ```
+
+**Props:**
+
+| Prop | Default | Description |
+|------|---------|-------------|
+| `src` | — | Image URL (required) |
+| `alt` | `''` | Alt text |
+| `width` | — | Image width |
+| `height` | — | Image height |
+| `lazy` | `true` | Lazy loading (`loading="lazy"`) |
+| `sizes` | — | Responsive sizes attribute |
+| `srcset` | — | Responsive srcset attribute |
+| `placeholder` | — | Placeholder image URL (shown while loading) |
+| `className` | `''` | CSS class |
+
+All images use `decoding="async"` for non-blocking decode.
 
 ### Component Composition API
 
