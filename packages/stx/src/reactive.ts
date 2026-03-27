@@ -1062,8 +1062,9 @@ function removeReactiveAttributes(template: string): string {
     /\s*x-transition\.duration\.\d+(?:ms)?/g,
     /\s*x-transition(?=[\s>\/])/g,
     // Event directives (@click, @submit.prevent, etc.) - may span multiple lines
-    /\s*@[a-z]+(?:\.[a-z]+)*\s*=\s*"[^"]*"/gs,
-    /\s*@[a-z]+(?:\.[a-z]+)*\s*=\s*'[^']*'/gs,
+    // Exclude @for, @if, @show, @model — those are reactive directives handled by the signals runtime
+    /\s*@(?!for\b|if\b|show\b|model\b|class\b|style\b)[a-z]+(?:\.[a-z]+)*\s*=\s*"[^"]*"/gs,
+    /\s*@(?!for\b|if\b|show\b|model\b|class\b|style\b)[a-z]+(?:\.[a-z]+)*\s*=\s*'[^']*'/gs,
   ]
 
   for (const regex of attrsToRemove) {
