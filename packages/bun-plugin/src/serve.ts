@@ -706,7 +706,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         if (isSpaNav) {
           let fragment = content
 
-          // Extract <head> styles to include in fragment (Crosswind CSS, page styles)
+          // Extract styles from <head> AND body (Crosswind CSS, page styles, @push('styles'))
           // The router's doFragSwap injects these into <head> during SPA swap
           const headStyles: string[] = []
           const headMatch = content.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)
@@ -719,10 +719,25 @@ export async function serve(options: ServeOptions): Promise<void> {
             }
           }
 
-          // Extract only the <main> inner content (not sidebar, header, or layout)
+          // Also extract styles that are siblings of <main> (from @push/@stack)
+          // These appear in the body but outside <main>, so they'd be lost in fragment extraction
           const mainOpenMatch = fragment.match(/<main\b[^>]*>/i)
           const mainCloseIdx = fragment.lastIndexOf('</main>')
           if (mainOpenMatch && mainCloseIdx !== -1) {
+            // Look for styles between body start and <main> (e.g. from @stack('styles'))
+            const bodyMatch = content.match(/<body\b[^>]*>/i)
+            if (bodyMatch) {
+              const bodyStart = bodyMatch.index! + bodyMatch[0].length
+              const mainIdx = mainOpenMatch.index!
+              const beforeMain = content.slice(bodyStart, mainIdx)
+              let bodyStyleMatch: RegExpExecArray | null
+              const bodyStyleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
+              while ((bodyStyleMatch = bodyStyleRe.exec(beforeMain)) !== null) {
+                headStyles.push(bodyStyleMatch[0])
+              }
+            }
+
+            // Extract only the <main> inner content (not sidebar, header, or layout)
             const mainStart = mainOpenMatch.index! + mainOpenMatch[0].length
             fragment = fragment.slice(mainStart, mainCloseIdx).trim()
           }

@@ -917,11 +917,12 @@ catch (e) {
       // Process conditionals
       processedContent = processConditionals(processedContent, includeContext, includeFilePath)
 
+      // Expand built-in <StxLink> components inline BEFORE expressions,
+      // so {{ }} inside StxLink slots aren't prematurely evaluated server-side
+      processedContent = expandStxLinks(processedContent)
+
       // Process expressions
       processedContent = processExpressions(processedContent, includeContext, includeFilePath)
-
-      // Expand built-in <StxLink> components inline (simple regex, no recursive processing)
-      processedContent = expandStxLinks(processedContent)
 
       // Append preserved style and script for SFC support
       if (preservedStyle) {
@@ -1155,9 +1156,13 @@ function expandStxLinks(content: string): string {
 
 function buildStxLinkAnchor(attrs: string, slotContent: string): string {
   const getAttr = (name: string): string | undefined => {
-    // Use word boundary or start-of-string to avoid :to matching to
-    const match = attrs.match(new RegExp(`(?:^|\\s)${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}=["']([^"']*)["']`))
-    return match ? match[1] : undefined
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    // Try double-quoted first, then single-quoted (handles expressions with mixed quotes)
+    const dblMatch = attrs.match(new RegExp(`(?:^|\\s)${escaped}="([^"]*)"` ))
+    if (dblMatch) return dblMatch[1]
+    const sglMatch = attrs.match(new RegExp(`(?:^|\\s)${escaped}='([^']*)'`))
+    if (sglMatch) return sglMatch[1]
+    return undefined
   }
 
   // Check for dynamic :to binding (runtime expression)

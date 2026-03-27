@@ -3577,6 +3577,8 @@ catch (e) { console.warn('[stx] destroy hook error:', e); }
       container.__stx_disposers();
       container.__stx_disposers = null;
     }
+    // Clear __stx_scope so _handleStxLoad's processElement guard doesn't skip it
+    container.__stx_scope = null;
 
     // 3. Clean up scopes registered on departing components
     container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
@@ -3629,13 +3631,18 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     // over the stale data-stx attribute on <body> (which has the PREVIOUS page's function name).
     var usedLatestSetup = false;
     if (window.stx._latestSetup && typeof window.stx._latestSetup === 'function') {
-      var setupResult = window.stx._latestSetup();
-      // Keep _latestSetup for re-fires (HMR, auto-refresh re-navigation)
-      // It will be overwritten when a NEW page's script sets it
-      usedLatestSetup = true;
-      if (typeof setupResult === 'object' && setupResult !== null) {
-        console.log('[stx:load] _latestSetup keys:', Object.keys(setupResult).slice(0, 10));
-        Object.assign(componentScope, setupResult);
+      try {
+        var setupResult = window.stx._latestSetup();
+        // Keep _latestSetup for re-fires (HMR, auto-refresh re-navigation)
+        // It will be overwritten when a NEW page's script sets it
+        usedLatestSetup = true;
+        if (typeof setupResult === 'object' && setupResult !== null) {
+          console.log('[stx:load] _latestSetup keys:', Object.keys(setupResult).slice(0, 10));
+          Object.assign(componentScope, setupResult);
+        }
+      } catch (e) {
+        console.error('[stx:load] _latestSetup error:', e);
+        usedLatestSetup = true; // Don't fall back to stale data-stx
       }
     }
     console.log('[stx:load] usedLatestSetup:', usedLatestSetup, 'scope keys:', Object.keys(componentScope).slice(0, 10));
