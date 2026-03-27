@@ -48,7 +48,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     name: 'stx',
     cwd: process.cwd(),
     defaultConfig: defaultStxConfig,
-  })
+  }) as Record<string, any>
 
   // Options passed directly take precedence, then bunfig config, then defaults
   const componentsDir = options.componentsDir ?? stxConfig.componentsDir ?? defaultStxConfig.componentsDir

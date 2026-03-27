@@ -86,13 +86,13 @@ export function getCachedSignalsRuntime(debug = false): string {
       const { generateSignalsRuntimeDev } = require('./signals')
       _cachedSignalsRuntimeDev = generateSignalsRuntimeDev()
     }
-    return _cachedSignalsRuntimeDev
+    return _cachedSignalsRuntimeDev!
   }
   if (_cachedSignalsRuntime === null) {
     const { generateSignalsRuntime } = require('./signals')
     _cachedSignalsRuntime = generateSignalsRuntime()
   }
-  return _cachedSignalsRuntime
+  return _cachedSignalsRuntime!
 }
 
 /**
@@ -108,7 +108,7 @@ export function getCachedRouterScript(): string {
     const { getRouterScript } = require('stx-router')
     _cachedRouterScript = getRouterScript()
   }
-  return _cachedRouterScript
+  return _cachedRouterScript!
 }
 
 /**
