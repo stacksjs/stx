@@ -544,7 +544,7 @@ catch {
 
   try {
     // Parse and convert the script content
-    const convertedScript = convertToCommonJS(jsContent)
+    const convertedScript = convertToCommonJS(jsContent, filePath)
 
     // Execute with context variables available
     // IMPORTANT: Filter out keys that are also in props to avoid duplicate variable declarations
@@ -591,14 +591,13 @@ catch {
     }
   }
   catch (error) {
-    console.warn(`Failed to execute script as CommonJS module in ${filePath}:`, error)
-
     // Fallback: Try alternative parsing approaches
     try {
       await fallbackVariableExtraction(jsContent, context, filePath)
     }
-    catch (fallbackError) {
-      console.warn(`Variable extraction issue in ${filePath}:`, fallbackError)
+    catch {
+      // Script execution failed — page will render without server variables.
+      // This is expected for pages using client-only APIs (reactive(), Chart.js, etc.)
     }
   }
 }
@@ -609,13 +608,84 @@ catch {
  * @param scriptContent - ES module style script content
  * @returns CommonJS compatible script
  */
-export function convertToCommonJS(scriptContent: string): string {
+export function convertToCommonJS(scriptContent: string, filePath?: string): string {
+  const templateDir = filePath ? path.dirname(filePath) : process.cwd()
   const lines = scriptContent.split('\n')
   const convertedLines: string[] = []
 
   let i = 0
   while (i < lines.length) {
     const line = lines[i].trim()
+
+    // Strip TypeScript interface/type declarations (no runtime effect)
+    if (line.startsWith('interface ') || line.startsWith('export interface ') || line.startsWith('type ') || line.startsWith('export type ')) {
+      // Skip until closing brace (for multi-line interfaces)
+      if (line.includes('{') && !line.includes('}')) {
+        let braceDepth = 0
+        for (; i < lines.length; i++) {
+          for (const ch of lines[i]) {
+            if (ch === '{') braceDepth++
+            else if (ch === '}') braceDepth--
+          }
+          if (braceDepth <= 0) break
+        }
+      }
+      i++
+      continue
+    }
+
+    // Strip definePageMeta() calls (metadata only, not runtime)
+    if (line.startsWith('definePageMeta(')) {
+      if (!line.includes(')')) {
+        // Multi-line: skip until closing paren
+        while (i < lines.length && !lines[i].includes(')')) i++
+      }
+      i++
+      continue
+    }
+
+    // Convert ES import statements to require() with resolved paths
+    if (line.startsWith('import ')) {
+      const defaultImportMatch = line.match(/^import\s+(\w+)\s+from\s+['"](.+)['"]/)
+      const namedImportMatch = line.match(/^import\s+\{([^}]+)\}\s+from\s+['"](.+)['"]/)
+      const sideEffectMatch = line.match(/^import\s+['"](.+)['"]/)
+
+      // Resolve relative paths against the template's directory
+      const resolveSource = (source: string) => {
+        if (source.startsWith('.')) {
+          return path.resolve(templateDir, source)
+        }
+        return source
+      }
+
+      if (defaultImportMatch) {
+        const [, name, source] = defaultImportMatch
+        const resolved = resolveSource(source)
+        convertedLines.push(`const ${name} = await import('${resolved}')`)
+        convertedLines.push(`module.exports.${name} = ${name};`)
+      }
+      else if (namedImportMatch) {
+        const [, names, source] = namedImportMatch
+        const cleanNames = names.trim()
+        const resolved = resolveSource(source)
+        convertedLines.push(`const { ${cleanNames} } = await import('${resolved}')`)
+        for (const n of cleanNames.split(',')) {
+          const cleanName = n.trim().split(/\s+as\s+/).pop()?.trim()
+          if (cleanName) {
+            convertedLines.push(`module.exports.${cleanName} = ${cleanName};`)
+          }
+        }
+      }
+      else if (sideEffectMatch) {
+        const resolved = resolveSource(sideEffectMatch[1])
+        convertedLines.push(`await import('${resolved}')`)
+      }
+      else {
+        convertedLines.push(line)
+      }
+      i++
+      continue
+    }
 
     if (line.startsWith('export const ') || line.startsWith('export let ') || line.startsWith('export var ')) {
       // Handle export variable declarations
@@ -847,7 +917,20 @@ function parseVariableDeclaration(lines: string[], startIndex: number): Variable
   if (!match) {
     const destructuringPrefix = firstLine.match(/^(?:export\s+)?(const|let|var)\s+/)
     if (destructuringPrefix) {
-      const afterKeyword = firstLine.slice(destructuringPrefix[0].length)
+      let afterKeyword = firstLine.slice(destructuringPrefix[0].length)
+
+      // Join lines for multiline destructuring patterns (e.g., const {\n  a,\n  b\n} = ...)
+      let joinedEndIndex = startIndex
+      if ((afterKeyword.startsWith('{') || afterKeyword.startsWith('[')) && !afterKeyword.includes(afterKeyword.startsWith('{') ? '}' : ']')) {
+        const closeChar = afterKeyword.startsWith('{') ? '}' : ']'
+        let joined = afterKeyword
+        for (let j = startIndex + 1; j < lines.length; j++) {
+          joined += ' ' + lines[j].trim()
+          joinedEndIndex = j
+          if (lines[j].includes(closeChar)) break
+        }
+        afterKeyword = joined
+      }
 
       const patternResult = extractDestructuringPattern(afterKeyword, 0)
       if (patternResult) {
@@ -858,15 +941,16 @@ function parseVariableDeclaration(lines: string[], startIndex: number): Variable
         if (afterPattern.startsWith('=')) {
           const initialValue = afterPattern.slice(1).trim()
           let value = initialValue
-          let currentIndex = startIndex
+          // Start reading from after the joined destructuring lines
+          let currentIndex = Math.max(joinedEndIndex, startIndex)
 
           if (needsMultilineReading(initialValue)) {
-            const result = readMultilineValue(lines, startIndex, initialValue)
+            const result = readMultilineValue(lines, currentIndex, initialValue)
             value = result.value
             currentIndex = result.nextIndex
           }
           else {
-            currentIndex = startIndex + 1
+            currentIndex = currentIndex + 1
           }
 
           value = value.trim().replace(/;$/, '')
