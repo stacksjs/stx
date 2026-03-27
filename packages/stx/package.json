@@ -111,7 +111,7 @@
     "bun-plugin-stx": "workspace:*",
     "bunfig": "^0.15.6",
     "stx-router": "workspace:*",
-    "ts-broadcasting": "^0.0.3",
+    "ts-broadcasting": "^0.0.4",
     "ts-syntax-highlighter": "^0.2.1"
   }
 }
