@@ -148,13 +148,16 @@ else {
         else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
         window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
         // Execute page scripts FIRST — they define setup functions and set _latestSetup
+        console.log('[router] frag scripts:', fragScripts.length);
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
         fragScripts.forEach(function(code){
+          console.log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
           var ns=document.createElement('script');
           ns.textContent=code;
           ns.setAttribute('data-stx-page','');
           document.body.appendChild(ns);
         });
+        console.log('[router] scripts done. _latestSetup:', !!window.stx._latestSetup);
         // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
         window.dispatchEvent(new Event('stx:load'));
       }

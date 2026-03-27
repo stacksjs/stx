@@ -1407,6 +1407,17 @@ export async function processDirectives(
       if (isTopLevel && options.autoShell && options.buildMode !== 'compile') {
         const headConfig = (options as any).app?.head || {}
         result = ensureDocumentShell(result, headConfig)
+
+        // Ensure data-stx attribute is on <body> for __stx_setup functions.
+        // processScriptSetup may have placed it on a non-body element (e.g. <aside>)
+        // because <body> didn't exist before auto-shell wrapping.
+        const setupMatch = result.match(/function (__stx_setup_\d+_\d+)\(/)
+        if (setupMatch && result.includes('<body') && !result.match(/<body[^>]*data-stx=/)) {
+          result = result.replace(/<body([^>]*)>/, `<body$1 data-stx="${setupMatch[1]}">`)
+          // Remove data-stx from the wrong element (if it was placed elsewhere)
+          const wrongAttrRegex = new RegExp(`(<(?!body)[a-zA-Z][^>]*) data-stx="${setupMatch[1]}"`, 'i')
+          result = result.replace(wrongAttrRegex, '$1')
+        }
       }
 
       // Restore @@ escape placeholders to literal @ AFTER all directive processing
