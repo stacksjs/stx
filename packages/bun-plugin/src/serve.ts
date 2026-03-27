@@ -226,7 +226,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       await extractVariables(scriptBody, context, filePath)
     }
 
-    // Merge custom options with default config
+    // Merge custom options with default config and stx.config.ts settings
     const config = {
       ...defaultConfig,
       ...(componentsDir && { componentsDir }),
@@ -234,6 +234,8 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...(partialsDir && { partialsDir }),
       autoShell: true,
       app: stxConfig.app || {},
+      ...('strict' in stxConfig && { strict: stxConfig.strict }),
+      ...('router' in stxConfig && { router: stxConfig.router }),
     }
 
     // When SSR is disabled, serve a client-side SPA shell instead of processing directives
@@ -496,6 +498,8 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
       ...(partialsDir && { partialsDir }),
+      ...('strict' in stxConfig && { strict: stxConfig.strict }),
+      ...('router' in stxConfig && { router: stxConfig.router }),
     }
 
     let output = templateContent
