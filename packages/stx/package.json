@@ -103,7 +103,7 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
-    "@cwcss/crosswind": "^0.1.6",
+    "@cwcss/crosswind": "^0.2.0",
     "@stacksjs/clapp": "^0.2.0",
     "@stacksjs/desktop": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",

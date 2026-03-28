@@ -21,12 +21,12 @@
         "dompurify": "^3.3.3",
         "ejs": "^5.0.1",
         "gray-matter": "^4.0.3",
-        "handlebars": "^4.7.8",
-        "isomorphic-dompurify": "^3.5.1",
+        "handlebars": "^4.7.9",
+        "isomorphic-dompurify": "^3.7.1",
         "js-yaml": "^4.1.1",
-        "liquidjs": "^10.25.0",
+        "liquidjs": "^10.25.2",
         "markdown-it": "^14.1.1",
-        "marked": "^17.0.4",
+        "marked": "^17.0.5",
         "mitata": "^1.0.34",
         "nunjucks": "^3.2.4",
         "pug": "^3.0.4",
@@ -48,7 +48,7 @@
       "name": "js-framework-benchmark-stx",
       "version": "0.2.10",
       "dependencies": {
-        "happy-dom": "^20.8.4"
+        "happy-dom": "^20.8.9"
       }
     },
     "packages/bun-plugin": {
@@ -1594,7 +1594,7 @@
         "ts-syntax-highlighter": "^0.2.1"
       },
       "devDependencies": {
-        "@types/bun": "^1.3.9",
+        "@types/bun": "^1.3.11",
         "bun-plugin-dtsx": "^0.21.17",
         "pickier": "^0.1.20",
         "typescript": "^5.9.3"
@@ -1653,7 +1653,7 @@
         "bun-plugin-stx": "workspace:*",
         "bunfig": "^0.15.6",
         "stx-router": "workspace:*",
-        "ts-broadcasting": "^0.0.3",
+        "ts-broadcasting": "^0.0.4",
         "ts-syntax-highlighter": "^0.2.1"
       }
     },
@@ -1662,7 +1662,7 @@
       "version": "0.2.10",
       "dependencies": {
         "@stacksjs/stx": "workspace:*",
-        "ws": "^8.19.0"
+        "ws": "^8.20.0"
       },
       "devDependencies": {
         "@types/bun": "latest",
@@ -1791,12 +1791,12 @@
         "craft": "./bin/cli.ts"
       }
     },
-    "@types/bun@1.3.10": {
+    "@types/bun@1.3.11": {
       "name": "@types/bun",
-      "version": "1.3.10",
+      "version": "1.3.11",
       "source": "npm",
-      "resolved": "https://registry.npmjs.org/@types/bun/-/bun-1.3.10.tgz",
-      "integrity": "sha512-0+rlrUrOrTSskibryHbvQkDOWRJwJZqZlxrUs1u4oOoTln8+WIXBPmAuCF35SWB2z4Zl3E84Nl/D0P7803nigQ==",
+      "resolved": "https://registry.npmjs.org/@types/bun/-/bun-1.3.11.tgz",
+      "integrity": "sha512-5vPne5QvtpjGpsGYXiFyycfpDF2ECyPcTSsFBMa0fraoxiQyMJ3SmuQIGhzPg2WJuWxVBoxWJ2kClYTcw/4fAg==",
       "dependencies": {
         "bun-types": "1.3.10"
       }
@@ -1926,12 +1926,12 @@
         "strip-bom-string": "^1.0.0"
       }
     },
-    "handlebars@4.7.8": {
+    "handlebars@4.7.9": {
       "name": "handlebars",
-      "version": "4.7.8",
+      "version": "4.7.9",
       "source": "npm",
-      "resolved": "https://registry.npmjs.org/handlebars/-/handlebars-4.7.8.tgz",
-      "integrity": "sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==",
+      "resolved": "https://registry.npmjs.org/handlebars/-/handlebars-4.7.9.tgz",
+      "integrity": "sha512-4E71E0rpOaQuJR2A3xDZ+GM1HyWYv1clR58tC8emQNeQe3RH7MAzSbat+V0wG78LQBo6m6bzSG/L4pBuCsgnUQ==",
       "dependencies": {
         "minimist": "^1.2.5",
         "neo-async": "^2.6.2",
@@ -1942,12 +1942,12 @@
         "handlebars": "bin/handlebars"
       }
     },
-    "happy-dom@20.8.8": {
+    "happy-dom@20.8.9": {
       "name": "happy-dom",
-      "version": "20.8.8",
+      "version": "20.8.9",
       "source": "npm",
-      "resolved": "https://registry.npmjs.org/happy-dom/-/happy-dom-20.8.8.tgz",
-      "integrity": "sha512-5/F8wxkNxYtsN0bXfMwIyNLZ9WYsoOYPbmoluqVJqv8KBUbcyKZawJ7uYK4WTX8IHBLYv+VXIwfeNDPy1oKMwQ==",
+      "resolved": "https://registry.npmjs.org/happy-dom/-/happy-dom-20.8.9.tgz",
+      "integrity": "sha512-Tz23LR9T9jOGVZm2x1EPdXqwA37G/owYMxRwU0E4miurAtFsPMQ1d2Jc2okUaSjZqAFz2oEn3FLXC5a0a+siyA==",
       "dependencies": {
         "@types/node": ">=20.0.0",
         "@types/whatwg-mimetype": "^3.0.2",
@@ -2182,12 +2182,12 @@
       "resolved": "https://registry.npmjs.org/tinybench/-/tinybench-6.0.0.tgz",
       "integrity": "sha512-BWlWpVbbZXaYjRV0twGLNQO00Zj4HA/sjLOQP2IvzQqGwRGp+2kh7UU3ijyJ3ywFRogYDRbiHDMrUOfaMnN56g=="
     },
-    "ts-broadcasting@0.0.3": {
+    "ts-broadcasting@0.0.4": {
       "name": "ts-broadcasting",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "source": "npm",
-      "resolved": "https://registry.npmjs.org/ts-broadcasting/-/ts-broadcasting-0.0.3.tgz",
-      "integrity": "sha512-bHnDCbgMpIFXj4F/x4x7SVbiaVpN8HtFcWBZWJpCrZ+KzGDr8UL2Xs5xBGbMvdnMWPYurNC/lgYWhTwYj+uVLQ==",
+      "resolved": "https://registry.npmjs.org/ts-broadcasting/-/ts-broadcasting-0.0.4.tgz",
+      "integrity": "sha512-dnPtNM6mTCCnJcf8S9ffnWMOLCr5LRpxz87haYw7AtqyqCkM5B3kT6tXr1jJnxjDlWPfSfhpY+n6Y6N2l9CGPQ==",
       "bin": {
         "broadcast": "./dist/bin/cli.js"
       }
