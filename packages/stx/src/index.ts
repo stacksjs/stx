@@ -109,8 +109,9 @@ export * from './build-views'
 export * from './signals'
 export * from './spa-shell'
 
-// Vue compatibility and JSX support
+// Vue compatibility, server bindings, and JSX support
 export * from './vue-template'
+export { processServerBindings } from './server-bindings'
 export { provide, inject, setGlobalProvide, defineEmits, defineExpose, nextTick, onErrorCaptured, handleError, useSlots, useAttrs, createProvideContext, generateCompositionRuntime } from './composition-api'
 export type { StxComponentInstance, EmitFn } from './composition-api'
 export { jsx, jsxs, jsxDEV, Fragment, renderToString, renderToStream, renderToDOM, Show, For, Portal, h } from './jsx-runtime'

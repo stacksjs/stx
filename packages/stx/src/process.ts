@@ -41,6 +41,7 @@ import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { fileExists, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
+import { processServerBindings } from './server-bindings'
 import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 import { processScopedStyles } from './style-scoping'
@@ -719,6 +720,10 @@ async function processOtherDirectives(
       )
     }
   }
+
+  // Resolve server-side :attr="expr" bindings (e.g., :src, :href, :class, :disabled)
+  // before expression processing so they can use the full server context
+  output = processServerBindings(output, context)
 
   // Process expressions now (delayed to allow other directives to generate expressions)
   output = await processExpressions(output, context, filePath)
