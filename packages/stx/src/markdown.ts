@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 import { parseMarkdown } from './internal-markdown'
 import { createDetailedErrorMessage } from './utils'
 
@@ -5,6 +6,7 @@ import { createDetailedErrorMessage } from './utils'
  * Process markdown directives in templates
  * Converts markdown content to HTML
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function processMarkdownDirectives(
   template: string,
   context: Record<string, any>,

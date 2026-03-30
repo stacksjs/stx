@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Loading Indicator
  *
@@ -142,6 +143,7 @@ function createIndicatorElement(options: Required<LoadingIndicatorOptions>): HTM
 /**
  * Update the indicator progress
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function updateProgress(progress: number, options: Required<LoadingIndicatorOptions>): void {
   if (!isBrowser || !indicatorElement) return
 

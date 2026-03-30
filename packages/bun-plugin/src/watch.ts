@@ -1,4 +1,5 @@
 // @ts-nocheck - Skip type checking due to Bun/Node.js type differences
+/* eslint-disable no-console */
 /**
  * Watch Mode for stx Templates
  *

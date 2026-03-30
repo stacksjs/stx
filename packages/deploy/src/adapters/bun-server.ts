@@ -31,6 +31,7 @@ function collectFiles(dir: string, base: string = dir): string[] {
   return files
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 function generateServerScript(config: BunServerConfig, outDir: string): string {
   const port = config.port ?? 3000
   const hostname = config.hostname ?? '0.0.0.0'
@@ -53,7 +54,7 @@ Bun.serve({
     // Try exact file
     let filePath = join(PUBLIC_DIR, pathname)
     if (pathname === '/' || !existsSync(filePath)) {
-      filePath = join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname + '.html')
+      filePath = join(PUBLIC_DIR, pathname === '/' ? 'index.html' : `${pathname}.html`)
     }
 
     if (!existsSync(filePath)) {

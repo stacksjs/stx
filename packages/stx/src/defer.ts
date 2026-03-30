@@ -64,6 +64,7 @@ function parseDeferTrigger(args: string): { trigger: string, value?: string } {
 /**
  * Parse a defer block and extract all parts
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function parseDeferBlock(fullMatch: string, args: string, body: string): DeferBlock {
   const { trigger, value } = parseDeferTrigger(args)
 

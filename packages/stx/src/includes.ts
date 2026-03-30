@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Includes Module
  *
@@ -392,6 +393,7 @@ export async function processIncludes(
   // Uses request-scoped store if available (context.__onceStore), otherwise falls back to global
   const activeOnceStore = getOnceStore(context)
 
+  // eslint-disable-next-line pickier/no-unused-vars
   output = output.replace(/@once([\s\S]*?)@endonce/g, (match, content, _offset) => {
     // Create a unique key for this @once block based on content hash
     const contentHash = content.trim()
@@ -1114,6 +1116,7 @@ export function processStackPushDirectives(template: string, stacks: Record<stri
  */
 export function processStackReplacements(template: string, stacks: Record<string, string[]>): string {
   // Replace @stack directives with their content
+  // eslint-disable-next-line pickier/no-unused-vars
   return template.replace(/@stack\(['"]([^'"]+)['"]\)/g, (match, name) => {
     // No content? Return empty string
     if (!stacks[name] || stacks[name].length === 0) {

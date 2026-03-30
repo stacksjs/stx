@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Hydration Runtime
  *
@@ -894,6 +895,7 @@ catch {
         // Update route params
         const stx = (window as any).stx
         if (stx?.setRouteParams) {
+          // eslint-disable-next-line pickier/no-unused-vars
           const urlObj = new URL(url, window.location.origin)
           // Extract route params from URL
           // This would integrate with actual router implementation

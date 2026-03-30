@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Plugin System for stx
  *

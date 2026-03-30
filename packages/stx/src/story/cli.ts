@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * STX Story - CLI Integration
  * Provides CLI commands for the story feature

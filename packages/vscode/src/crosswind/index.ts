@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import * as vscode from 'vscode'
 import { registerColorDecorations } from './color-provider'
 import { createCrosswindCompletionProvider } from './completion-provider'

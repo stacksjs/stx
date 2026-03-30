@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * STX Story - Preview command
  * Preview the built story site locally

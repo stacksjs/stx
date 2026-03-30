@@ -32,6 +32,7 @@ export interface BroadcastChannelRef<T = unknown> {
 }
 
 type BroadcastEventType = 'message' | 'error'
+// eslint-disable-next-line pickier/no-unused-vars
 type BroadcastEventCallback = (data: MessageEvent) => void
 
 /**

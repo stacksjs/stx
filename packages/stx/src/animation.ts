@@ -1,5 +1,5 @@
 // @ts-nocheck - Skip type checking due to animation option type defaults
-/* eslint-disable no-case-declarations -- const declarations in case blocks are intentional, each case returns immediately */
+/* eslint-disable no-case-declarations -- const declarations in case blocks are intentional, each case returns immediately, prefer-const, style/max-statements-per-line */
 import type { CustomDirective, StxOptions } from './types'
 
 /**
@@ -567,6 +567,7 @@ export const motionDirective: CustomDirective = {
 /**
  * Process animation directives in the template
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export function processAnimationDirectives(
   template: string,
   context: Record<string, any>,

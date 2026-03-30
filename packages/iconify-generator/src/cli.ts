@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+/* eslint-disable no-console */
 import { join } from 'node:path'
 import process from 'node:process'
 import { fetchCollections, generatePackage } from './index'

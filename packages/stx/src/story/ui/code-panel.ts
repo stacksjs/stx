@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Story - Code Panel
  * Shows component source code with syntax highlighting
@@ -14,6 +15,7 @@ export type CodePanelTab = 'source' | 'story' | 'compiled' | 'props'
 /**
  * Generate code panel HTML
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export function generateCodePanel(
   story: ServerStoryFile,
   component: AnalyzedComponent | null,

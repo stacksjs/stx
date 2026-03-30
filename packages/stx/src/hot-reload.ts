@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Hot Reload Module
  *
@@ -183,6 +184,7 @@ export class HotReloadServer {
     }
 
     if (this.options.verbose) {
+      // eslint-disable-next-line no-console
       console.log('[HMR] Server stopped')
     }
   }

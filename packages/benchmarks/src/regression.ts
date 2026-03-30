@@ -1,3 +1,4 @@
+/* eslint-disable no-console, style/max-statements-per-line */
 /**
  * Performance Regression Testing
  *

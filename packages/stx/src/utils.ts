@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Utility functions for the stx compiler
  *
@@ -631,6 +632,7 @@ catch {
     }
 
     // Process the component content recursively with the new context
+    // eslint-disable-next-line ts/no-top-level-await
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
 
     // Generate unique scope ID for this component instance

@@ -1,4 +1,5 @@
 // @ts-nocheck - Skip type checking due to Bun/Node.js type differences
+/* eslint-disable no-console, prefer-const, style/max-statements-per-line */
 import fs from 'node:fs'
 import path from 'node:path'
 /**

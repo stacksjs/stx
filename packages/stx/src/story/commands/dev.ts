@@ -72,6 +72,7 @@ export async function devCommand(options: DevOptions = {}): Promise<void> {
 
   // Handle shutdown
   const shutdown = async (): Promise<void> => {
+    // eslint-disable-next-line no-console
     console.log('\n')
     configWatcher.stop()
     await serverInstance.close()

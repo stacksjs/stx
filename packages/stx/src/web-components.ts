@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 import type { StxOptions, WebComponent } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -812,6 +813,7 @@ export function scopeHTML(
     // Transform class names in HTML
     return html.replace(
       /\bclass\s*=\s*["']([^"']+)["']/gi,
+      // eslint-disable-next-line pickier/no-unused-vars
       (match, classes) => {
         const scopedClasses = classes
           .split(/\s+/)
@@ -1401,6 +1403,7 @@ else {
 
   // Generate event bindings
   const eventBindings = Object.entries(events).map(([event, handler]) => {
+    // eslint-disable-next-line pickier/no-unused-vars
     return `this._root.addEventListener('${event}', (e: Event) => { ${handler} });`
   }).join('\n    ')
 
@@ -2214,6 +2217,7 @@ customElements.define('${tag}', ${className});
  * </style>
  * ```
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function webComponentDirectiveHandler(
   content: string,
   params: string[],

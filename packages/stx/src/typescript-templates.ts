@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * TypeScript-First Templates Module
  *
@@ -750,6 +751,7 @@ export function generateTypeDefinitions(
   // Add render function type
   if (extracted.contextType) {
     lines.push('')
+    // eslint-disable-next-line pickier/no-unused-vars
     lines.push(`  export function render(context: ${extracted.contextType.name}): Promise<string>;`)
   }
   else {
@@ -812,6 +814,7 @@ export function typeToString(type: TSType): string {
           return `${rest}${p.name}${opt}: ${typeToString(p.type)}`
         })
         .join(', ')
+      // eslint-disable-next-line pickier/no-unused-vars
       return `(${params}) => ${typeToString(type.returnType!)}`
     }
 

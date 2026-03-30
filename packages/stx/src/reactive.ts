@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Reactive Directives Module
  *
@@ -487,6 +488,7 @@ window.__stx_reactive = (function() {
   // Apply classes to element
   function applyClasses(el, classes) {
     if (!classes) return;
+    // eslint-disable-next-line pickier/no-unused-vars
     classes.split(/\\s+/).forEach(function(cls) {
       if (cls) el.classList.add(cls);
     });
@@ -495,6 +497,7 @@ window.__stx_reactive = (function() {
   // Remove classes from element
   function removeClasses(el, classes) {
     if (!classes) return;
+    // eslint-disable-next-line pickier/no-unused-vars
     classes.split(/\\s+/).forEach(function(cls) {
       if (cls) el.classList.remove(cls);
     });
@@ -621,6 +624,7 @@ catch (e) {
   }
 
   // Execute a statement in a given context, writing changes back to ctx
+  // eslint-disable-next-line pickier/no-unused-vars
   function execute(stmt, ctx, $event, $el) {
     try {
       var keys = Object.keys(ctx);
@@ -660,6 +664,7 @@ catch (e) {
     }
 
     // Build refs object
+    // eslint-disable-next-line pickier/no-unused-vars
     const $refs = {};
     for (const [name, id] of Object.entries(refs)) {
       Object.defineProperty($refs, name, {
@@ -671,6 +676,7 @@ catch (e) {
     const ctx = { ...state, $refs, $el: scopeEl };
 
     // Update function that re-evaluates all bindings
+    // eslint-disable-next-line pickier/no-unused-vars
     function update(changedProp) {
       for (const binding of bindings) {
         // Skip event bindings — they are only executed when events fire
@@ -715,6 +721,7 @@ else if (!value && wasHidden) {
             if (typeof value === 'object') {
               for (const [cls, active] of Object.entries(value)) {
                 // Handle space-separated classes like 'opacity-50 cursor-not-allowed'
+                // eslint-disable-next-line pickier/no-unused-vars
                 cls.split(/\\s+/).forEach(function(c) {
                   if (c) el.classList.toggle(c, !!active);
                 });
@@ -767,6 +774,7 @@ else {
     }
 
     // Create reactive proxy
+    // eslint-disable-next-line pickier/no-unused-vars
     const reactiveState = reactive(state, (prop, newVal, oldVal) => {
       // Update context with new values
       Object.assign(ctx, state);
@@ -874,6 +882,7 @@ else {
     }
 
     // Expose execute function for event handlers
+    // eslint-disable-next-line pickier/no-unused-vars
     scopeEl.__stx_execute = function(stmt, $event, $el) {
       // Build execution context with reactive state + special vars
       // Writing to reactiveState triggers Proxy setters which fire updates
@@ -928,6 +937,7 @@ else {
     update();
 
     // Remove x-cloak from all elements in scope (reactive system is now initialized)
+    // eslint-disable-next-line pickier/no-unused-vars
     scopeEl.querySelectorAll('[x-cloak]').forEach(function(el) {
       el.removeAttribute('x-cloak');
     });

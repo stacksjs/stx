@@ -215,6 +215,7 @@ export function useChannel<T = unknown>(
     }
 
     ws.onclose = () => {
+      // eslint-disable-next-line pickier/no-unused-vars
       const wasSubscribed = state.isSubscribed
       state = { ...state, isConnected: false, isSubscribed: false, socketId: null }
       ws = null

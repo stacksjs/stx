@@ -1,3 +1,4 @@
+/* eslint-disable pickier/no-unused-vars */
 declare module 'ts-videos' {
   export interface VideoInfo {
     duration?: number

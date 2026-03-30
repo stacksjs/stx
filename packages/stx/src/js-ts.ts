@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 import * as path from 'node:path'
 import { getCachedRegex } from './performance-utils'
 import { createDetailedErrorMessage } from './utils'

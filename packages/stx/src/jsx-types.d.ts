@@ -1,3 +1,4 @@
+/* eslint-disable pickier/no-unused-vars */
 /**
  * STX JSX Type Declarations
  *

@@ -350,6 +350,7 @@ else {
  * @returns Array of srcset data for each format
  */
 export function generateSrcsetData(options: SrcsetOptions): SrcsetData[] {
+  // eslint-disable-next-line pickier/no-unused-vars
   const { src, widths, dprValues, fixedWidth, formats = DEFAULT_FORMATS, baseUrl = '', params = {} } = options
 
   const results: SrcsetData[] = []

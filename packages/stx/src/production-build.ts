@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Production Build System
  *
@@ -402,6 +403,7 @@ export class ProductionBuild {
     if (typeof entry === 'string') {
       entries.set('main', entry)
     }
+    // eslint-disable-next-line pickier/no-unused-vars
     else if (Array.isArray(entry)) {
       entry.forEach((e, i) => {
         const name = basename(e, extname(e))
@@ -550,6 +552,7 @@ export class ProductionBuild {
       return ''
     })
 
+    // eslint-disable-next-line pickier/no-unused-vars
     // Extract inline styles
     output = output.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, (match, css) => {
       if (css.trim()) {

@@ -49,6 +49,7 @@ const componentCache = new Map<string, {
 /**
  * Render a story component with props
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function renderStoryComponent(
   ctx: StoryContext,
   componentPath: string,
@@ -230,6 +231,7 @@ export async function renderStoryVariant(
 /**
  * Render an inline template string
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function renderInlineTemplate(
   ctx: StoryContext,
   template: string,

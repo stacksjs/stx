@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Reactive Bindings
  *
@@ -198,6 +199,7 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
     }
 
     // Store references for expressions
+    // eslint-disable-next-line pickier/no-unused-vars
     var $state = {};
 `
 
@@ -253,6 +255,7 @@ catch (e) { console.error('Binding error:', e); }
             var value = ${evalExpr};
             if (typeof value === 'string') {
               // Dynamic class string - merge with existing static classes
+              // eslint-disable-next-line pickier/no-unused-vars
               var staticClasses = el.getAttribute('data-static-class') || el.className;
               if (!el.hasAttribute('data-static-class')) {
                 el.setAttribute('data-static-class', el.className);

@@ -1,3 +1,4 @@
+/* eslint-disable style/max-statements-per-line */
 /**
  * Headwind to Native Style Compiler
  *
@@ -231,6 +232,7 @@ function resolveSpacing(value: string): number | undefined {
 // Class Parsers
 // ============================================================================
 
+// eslint-disable-next-line pickier/no-unused-vars
 type ClassParser = (value: string, style: STXStyle) => boolean
 
 const classParsers: Record<string, ClassParser> = {

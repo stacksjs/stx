@@ -10,6 +10,7 @@ import path from 'node:path'
 /**
  * Setup function signature
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export type SetupFunction = (ctx: SetupContext) => void | Promise<void>
 
 /**

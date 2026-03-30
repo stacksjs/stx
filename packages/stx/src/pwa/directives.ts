@@ -14,6 +14,7 @@ import type { CustomDirective, StxOptions } from '../types'
  * Generate install button HTML and JavaScript
  */
 function generateInstallButton(content: string, options: StxOptions): string {
+  // eslint-disable-next-line pickier/no-unused-vars
   const themeColor = options.pwa?.manifest?.themeColor || '#4f46e5'
 
   return `<div class="stx-pwa-install" style="display:none;">
@@ -196,6 +197,7 @@ else {
 /**
  * Generate offline indicator HTML and JavaScript
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function generateOfflineIndicator(content: string, options: StxOptions): string {
   const hasCustomContent = content.trim().length > 0
 

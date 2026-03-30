@@ -252,6 +252,7 @@ export function processSeoDirective(
     if (!afterBrace) break
     const fullEnd = pos + afterBrace[0].length
     const seoConfig = output.substring(braceStart, pos)
+    // eslint-disable-next-line pickier/no-unused-vars
     const fullMatch = output.substring(seoMatch.index, fullEnd)
 
     const replacement = ((cfg: string) => {

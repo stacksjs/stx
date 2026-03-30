@@ -121,6 +121,7 @@ export function createImagePlugin(options: ImageBuildOptions = {}): BuildPlugin 
       }
 
       if (verbose) {
+        // eslint-disable-next-line no-console
         console.log('[stx-images] Plugin initialized')
         console.log(`  Input dirs: ${inputDirs.join(', ')}`)
         console.log(`  Output dir: ${outputDir}`)
@@ -294,6 +295,7 @@ function isImageReferenced(imagePath: string, references: Set<string>): boolean 
 
 /**
  * Transform image references in content
+ // eslint-disable-next-line pickier/no-unused-vars
  */
 async function transformImageReferences(
   content: string,
@@ -373,6 +375,7 @@ export async function optimizeImage(
 
 /**
  * Optimize all images in a directory
+ // eslint-disable-next-line pickier/no-unused-vars
  */
 export async function optimizeDirectory(
   inputDir: string,

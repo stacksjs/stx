@@ -101,6 +101,7 @@ export interface AnalyzeOptions {
 /**
  * Analyze a bundle directory and generate a report
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function analyze(options: AnalyzeOptions = {}): Promise<{
   stats: ReturnType<typeof collectBundleStats> extends Promise<infer T> ? T : never
   report: string
@@ -190,6 +191,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<{
 /**
  * Quick summary of bundle size
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function getBundleSummary(directory: string): Promise<{
   totalSize: number
   totalSizeFormatted: string

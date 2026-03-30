@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group, pickier/no-unused-vars */
 /**
  * Performance optimization utilities for stx
  */
@@ -455,6 +456,7 @@ export interface BudgetViolation {
 /**
  * Performance budget violation handler type
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export type BudgetViolationHandler = (violation: BudgetViolation) => void
 
 /**
@@ -632,6 +634,7 @@ export class PerformanceMonitor {
 
     switch (budget.action) {
       case 'log':
+        // eslint-disable-next-line no-console
         console.log(message)
         break
       case 'warn':

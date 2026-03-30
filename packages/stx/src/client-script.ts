@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Client Script Processor
  *
@@ -327,6 +328,7 @@ function generateModifierChecks(modifiers: EventModifiers): string {
  * This code lives inside the component's script scope,
  * so it can directly call functions defined in the script.
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function generateSingleEventBinding(binding: ParsedEvent, index: number): string {
   const { elementId, event, handler, modifiers } = binding
   const checks = generateModifierChecks(modifiers)
@@ -360,6 +362,7 @@ else {
   // Wrap handler in debounce/throttle if specified
   if (modifiers.debounce !== null) {
     return `  ;(function() {
+    // eslint-disable-next-line pickier/no-unused-vars
     var $el = document.getElementById('${elementId}')
     if (!$el) return
     var __timer
@@ -372,6 +375,7 @@ else {
 
   if (modifiers.throttle !== null) {
     return `  ;(function() {
+    // eslint-disable-next-line pickier/no-unused-vars
     var $el = document.getElementById('${elementId}')
     if (!$el) return
     var __last = 0

@@ -53,6 +53,7 @@ export interface UseMutationOptions<T = unknown> {
   /** Transform the response */
   transform?: (data: unknown) => T
   /** Optimistic data to set before the request completes */
+  // eslint-disable-next-line pickier/no-unused-vars
   optimisticData?: T | ((body: unknown) => T)
   /** Query cache keys to invalidate on success */
   invalidateQueries?: string[]

@@ -136,6 +136,7 @@ export async function generateHLSManifest(
 /**
  * Generate HLS master playlist content
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function generateMasterPlaylist(
   playlists: HLSResult['playlists'],
   baseUrl: string,
@@ -275,6 +276,7 @@ export async function generateDASHManifest(
 /**
  * Generate DASH MPD (Media Presentation Description) content
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function generateMPD(
   videoReps: DASHResult['adaptationSets'][0]['representations'],
   audioReps: DASHResult['adaptationSets'][0]['representations'],

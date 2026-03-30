@@ -70,6 +70,7 @@ export interface WebSocketRef<T = unknown> {
 }
 
 type WebSocketEventType = 'open' | 'message' | 'close' | 'error'
+// eslint-disable-next-line pickier/no-unused-vars
 type WebSocketEventCallback = (event: Event | MessageEvent | CloseEvent) => void
 
 /**

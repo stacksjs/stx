@@ -447,6 +447,7 @@ catch (e) {
     }
   `)
 
+  // eslint-disable-next-line pickier/no-unused-vars
   return func as (...args: unknown[]) => unknown
 }
 
@@ -562,6 +563,7 @@ export function createSafeLoopFunction(
         result += \`${processedBody}\`;
       }
       return result;
+    // eslint-disable-next-line pickier/no-unused-vars
     `) as (...args: unknown[]) => string
   }
   else {
@@ -580,6 +582,7 @@ export function createSafeLoopFunction(
         result += '<!-- [Loop Error]: Maximum iterations exceeded -->';
       }
       return result;
+    // eslint-disable-next-line pickier/no-unused-vars
     `) as (...args: unknown[]) => string
   }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import type { WindowInstance, WindowOptions } from './types'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'

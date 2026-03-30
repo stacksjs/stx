@@ -1,3 +1,4 @@
+/* eslint-disable style/max-statements-per-line */
 /**
  * STX Template Parser
  *
@@ -354,7 +355,7 @@ class Parser {
     while (this.ctx.pos < this.ctx.tokens.length) {
       const token = this.peek()
       if (token.type === 'SCRIPT_BLOCK') {
-        this.ctx.scriptCode += token.value + '\n'
+        this.ctx.scriptCode += `${token.value}\n`
         this.extractExportsAndFunctions(token.value)
       }
       this.advance()
@@ -534,7 +535,7 @@ catch {
       // Handle event handlers (onPress, onClick, @click, etc.)
       if (name.startsWith('on') || name.startsWith('@')) {
         const eventName = name.startsWith('@')
-          ? 'on' + name.slice(1).charAt(0).toUpperCase() + name.slice(2)
+          ? `on${name.slice(1).charAt(0).toUpperCase()}${name.slice(2)}`
           : name
         events[eventName] = value
         continue

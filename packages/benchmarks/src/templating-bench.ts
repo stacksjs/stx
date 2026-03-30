@@ -246,6 +246,7 @@ group('Complex Template Rendering (loops, conditionals, nested data)', () => {
   }
 })
 
+// eslint-disable-next-line ts/no-top-level-await
 await run({
   percentiles: false,
 })

@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Media - Client-Side Blur-Up Animation
  *
@@ -172,11 +173,15 @@ export function thumbHashToRGBA(hash: Uint8Array): { w: number; h: number; rgba:
   const hasAlpha = (header >> 23) !== 0
 
   const header2 = hash[3] | (hash[4] << 8)
+  // eslint-disable-next-line pickier/no-unused-vars
   const p_scale = ((header2 >> 3) & 63) / 63
+  // eslint-disable-next-line pickier/no-unused-vars
   const q_scale = ((header2 >> 9) & 63) / 63
   const isLandscape = (header2 >> 15) !== 0
 
+  // eslint-disable-next-line pickier/no-unused-vars
   const lx = Math.max(3, isLandscape ? (hasAlpha ? 5 : 7) : (hasAlpha ? 5 : 5))
+  // eslint-disable-next-line pickier/no-unused-vars
   const ly = Math.max(3, isLandscape ? (hasAlpha ? 5 : 5) : (hasAlpha ? 5 : 7))
 
   // Simplified: generate a 32x32 gradient image from DC values

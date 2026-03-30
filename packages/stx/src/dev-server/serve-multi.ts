@@ -749,6 +749,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     // Watch the entire common directory for changes
     console.log(`${colors.blue}Watching for changes...${colors.reset}`)
 
+    // eslint-disable-next-line pickier/no-unused-vars
     const watcher = fs.watch(commonDir, { recursive: true }, async (eventType, filename) => {
       if (!filename)
         return

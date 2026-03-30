@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Craft Native Components for stx
  *
@@ -597,6 +598,7 @@ else {
   // Process self-closing @craft-* tags: <@craft-button ... />
   content = content.replace(
     /<@craft-(\w+[-\w]*)\s*([^>]*?)\/>/g,
+    // eslint-disable-next-line pickier/no-unused-vars
     (match, componentName, propsStr) => {
       return renderCraftComponent(componentName, propsStr, '', config, classPrefix)
     },
@@ -605,6 +607,7 @@ else {
   // Process @craft-* tags with children: <@craft-button>...</@craft-button>
   content = content.replace(
     /<@craft-(\w+[-\w]*)\s*([^>]*)>([\s\S]*?)<\/@craft-\1>/g,
+    // eslint-disable-next-line pickier/no-unused-vars
     (match, componentName, propsStr, children) => {
       return renderCraftComponent(componentName, propsStr, children.trim(), config, classPrefix)
     },

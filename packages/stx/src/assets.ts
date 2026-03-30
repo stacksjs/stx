@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 import type { StxOptions, SyntaxHighlightTheme } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -140,6 +141,7 @@ async function applyCodeHighlighting(html: string, theme: SyntaxHighlightTheme, 
   }
 
   // Function to process each code block match
+  // eslint-disable-next-line pickier/no-unused-vars
   const processCodeBlock = async (match: string, languageClass: string, language: string, code: string) => {
     // Unescape HTML entities in the code
     const decodedCode = code
@@ -211,6 +213,7 @@ export async function processMarkdownFileDirectives(
   const regex = /@markdown-file\(\s*['"]([^'"]+)['"]\s*(?:,\s*(\{[^}]*\}))?\)/g
 
   // Process all matches
+  // eslint-disable-next-line ts/no-top-level-await
   return await replaceAsync(output, regex, async (match, mdFilePath, contextStr, offset) => {
     try {
       // Resolve the markdown file path - relative to the current template

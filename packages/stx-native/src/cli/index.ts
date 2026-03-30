@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 /**
  * STX Native CLI
  *
@@ -287,7 +288,7 @@ else {
 
     console.log('\n✅ Project initialized successfully!')
     console.log('\nNext steps:')
-    console.log('  1. cd ' + projectName)
+    console.log(`  1. cd ${projectName}`)
     console.log('  2. npm install')
     console.log('  3. stx-native run ios  # or android')
     console.log('')
@@ -306,7 +307,7 @@ else {
     this.startFileWatcher()
 
     console.log(`\n📱 Dev server running at http://localhost:${this.config.port}`)
-    console.log('   WebSocket for hot reload at ws://localhost:' + this.config.port)
+    console.log(`   WebSocket for hot reload at ws://localhost:${this.config.port}`)
     console.log('\n   Watching for file changes...\n')
   }
 
@@ -691,7 +692,7 @@ catch (error) {
 
     // Render initial UI
     bridge.postMessage(JSON.stringify({
-      id: 'init_' + Date.now(),
+      id: `init_${Date.now()}`,
       type: 'RENDER',
       timestamp: Date.now(),
       payload: {
@@ -740,7 +741,9 @@ else {
     return flags
   }
 
+  // eslint-disable-next-line pickier/no-unused-vars
   private findIOSAppPath(): string | null {
+    // eslint-disable-next-line pickier/no-unused-vars
     const buildDir = join(this.config.projectRoot, 'ios', 'build')
     // Search for .app in build directory
     // This is simplified - real implementation would search properly

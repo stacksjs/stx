@@ -20,7 +20,9 @@
 // Types
 // =============================================================================
 
+// eslint-disable-next-line pickier/no-unused-vars
 type ValidatorFn = (value: unknown, formValues?: Record<string, unknown>) => true | string
+// eslint-disable-next-line pickier/no-unused-vars
 type AsyncValidatorFn = (value: unknown, formValues?: Record<string, unknown>) => Promise<true | string>
 
 interface ValidatorRule {

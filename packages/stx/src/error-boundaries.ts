@@ -80,6 +80,7 @@ function generateBoundaryId(): string {
  * Or with options:
  *   @errorBoundary(id: 'my-boundary', logErrors: false)
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export function processErrorBoundaryDirectives(
   template: string,
   context: Record<string, unknown> = {},

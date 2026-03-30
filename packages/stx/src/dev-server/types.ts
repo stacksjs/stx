@@ -66,11 +66,13 @@ export type WatchEventType = 'change' | 'rename' | 'delete' | 'add'
 /**
  * File watcher callback
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export type WatchCallback = (eventType: WatchEventType, filename: string) => void
 
 /**
  * Route handler function
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export type RouteHandler = (request: Request) => Promise<Response> | Response
 
 /**

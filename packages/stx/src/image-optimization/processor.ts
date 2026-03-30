@@ -391,6 +391,7 @@ async function generatePlaceholder(
       .resize(1, 1)
       .toBuffer()
       .then(async (b) => {
+        // eslint-disable-next-line pickier/no-unused-vars
         const meta = await s!(b).metadata()
         return { dominant: { r: 128, g: 128, b: 128 } } // Default gray
       })

@@ -1343,6 +1343,7 @@ export function createHotReloadServer(_config: HotReloadConfig): {
   return {
     start: async () => {
       // Hot reload server implementation
+      // eslint-disable-next-line no-console
       console.log('[craft-compiler] Hot reload server started')
     },
     stop: async () => {

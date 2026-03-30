@@ -202,6 +202,7 @@ export function useMouse(options: MouseOptions = {}): MouseRef {
 /**
  * Track mouse position relative to an element
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export function useMouseInElement(
   element: HTMLElement | (() => HTMLElement | null) | null,
   options: Omit<MouseOptions, 'target'> = {}

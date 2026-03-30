@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+/* eslint-disable style/max-statements-per-line */
 
 /**
  * stx serve command
@@ -517,7 +518,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         output = output.replace('</head>', `${paramsScript}\n</head>`)
       }
       else {
-        output = paramsScript + '\n' + output
+        output = `${paramsScript}\n${output}`
       }
     }
 
@@ -758,7 +759,7 @@ export async function serve(options: ServeOptions): Promise<void> {
           )
 
           // Prepend styles and append page setup scripts
-          fragment = headStyles.join('\n') + '\n' + fragment + '\n' + pageSetupScripts.join('\n')
+          fragment = `${headStyles.join('\n')}\n${fragment}\n${pageSetupScripts.join('\n')}`
 
           return new Response(fragment, {
             headers: {

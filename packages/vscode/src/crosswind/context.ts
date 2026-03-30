@@ -64,6 +64,7 @@ export class CrosswindContext {
     try {
       await loadCrosswind()
       this.generator = new CSSGenerator(this.config)
+      // eslint-disable-next-line no-console
       console.log('[Crosswind] CSS Generator initialized')
     }
     catch (error) {

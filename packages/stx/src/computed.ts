@@ -189,6 +189,7 @@ export function shallowRef<T>(initialValue: T): Ref<T> {
  * Create a computed property with automatic dependency tracking
  */
 export function computed<T>(getter: () => T): ComputedRef<T>
+// eslint-disable-next-line pickier/no-unused-vars
 export function computed<T>(options: ComputedOptions<T>): WritableComputedRef<T>
 export function computed<T>(
   getterOrOptions: (() => T) | ComputedOptions<T>

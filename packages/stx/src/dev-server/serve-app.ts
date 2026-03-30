@@ -680,6 +680,7 @@ catch {
       return ext.endsWith('.stx') || ext.endsWith('.html') || ext.endsWith('.md')
     }
 
+    // eslint-disable-next-line pickier/no-unused-vars
     const watcher = fs.watch(absoluteAppDir, { recursive: true }, async (eventType, filename) => {
       if (!filename || shouldIgnoreFile(filename)) return
 

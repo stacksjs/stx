@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Head Management
  *
@@ -61,6 +62,7 @@ export interface ScriptTag {
 
 export interface HeadConfig {
   title?: string
+  // eslint-disable-next-line pickier/no-unused-vars
   titleTemplate?: string | ((title: string) => string)
   base?: { href?: string; target?: string }
   meta?: MetaTag[]
@@ -109,6 +111,7 @@ export interface PageMeta {
   middleware?: string | string[]
   transition?: string | { name: string; mode?: string }
   keepAlive?: boolean
+  // eslint-disable-next-line pickier/no-unused-vars
   key?: string | ((route: unknown) => string)
   validate?: (route: { params: Record<string, string> }) => boolean | Promise<boolean>
   [key: string]: unknown

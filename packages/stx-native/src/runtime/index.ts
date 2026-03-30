@@ -252,6 +252,7 @@ catch (error) {
       // @ts-expect-error - Global access
       const fn = globalThis[name]
       if (typeof fn === 'function') {
+        // eslint-disable-next-line pickier/no-unused-vars
         return fn as (...args: unknown[]) => unknown
       }
     }
@@ -277,6 +278,7 @@ catch {
 
   private log(...args: unknown[]): void {
     if (this.config.debug) {
+      // eslint-disable-next-line no-console
       console.log('[STXRuntime]', ...args)
     }
   }

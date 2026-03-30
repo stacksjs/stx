@@ -368,6 +368,7 @@ function parseJsImports(content: string): string[] {
 /**
  * Group modules into chunks
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function groupIntoChunks(modules: ModuleInfo[], buildDir: string): ChunkInfo[] {
   // Group by directory or entry point
   const chunkMap = new Map<string, ModuleInfo[]>()

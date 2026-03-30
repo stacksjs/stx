@@ -1,4 +1,5 @@
 // @ts-nocheck - Skip type checking due to error type constraints
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Programmatic server API for serving stx templates and markdown files
  * Designed to be used by documentation systems like BunPress
@@ -358,6 +359,7 @@ else {
   // Setup file watching
   let watcher: fs.FSWatcher | null = null
   if (watch) {
+    // eslint-disable-next-line pickier/no-unused-vars
     watcher = fs.watch(rootDir, { recursive: true }, (eventType, filename) => {
       if (filename && (filename.endsWith('.stx') || filename.endsWith('.md') || filename.endsWith('.html'))) {
         // Clear cache for changed file

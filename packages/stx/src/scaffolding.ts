@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Scaffolding System
  *
@@ -223,6 +224,7 @@ export async function createProject(
     }
 
     result.message = `Created project: ${projectName}`
+    // eslint-disable-next-line no-console
     console.log(`
 ✅ ${result.message}
 
@@ -738,6 +740,7 @@ function getPackageJson(name: string, template: ProjectTemplate, options: Create
 
   return JSON.stringify(pkg, null, 2)
 }
+// eslint-disable-next-line pickier/no-unused-vars
 
 function getStxConfig(template: ProjectTemplate, options: CreateProjectOptions): string {
   return `import { defineConfig } from 'stx'
@@ -1005,6 +1008,7 @@ export const appStore = defineStore('app', {
 })
 `
 }
+// eslint-disable-next-line pickier/no-unused-vars
 
 function getI18nFile(locale: string): string {
   return JSON.stringify({

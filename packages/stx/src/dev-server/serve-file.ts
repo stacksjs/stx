@@ -528,6 +528,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     const dirToWatch = path.dirname(absolutePath)
     console.log(`${colors.blue}Watching ${colors.bright}${dirToWatch}${colors.reset} for changes...`)
 
+    // eslint-disable-next-line pickier/no-unused-vars
     const watcher = fs.watch(dirToWatch, { recursive: true }, async (eventType, filename) => {
       if (!filename || shouldIgnoreFile(filename)) {
         return

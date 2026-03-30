@@ -443,6 +443,7 @@ export function walkAST(node: ASTNode, visitor: ASTVisitor, parent: ASTNode | nu
   // Call type-specific enter
   const typeVisitor = visitor[node.type as keyof ASTVisitor]
   if (typeVisitor && typeof typeVisitor === 'object' && 'enter' in typeVisitor) {
+    // eslint-disable-next-line pickier/no-unused-vars
     const enterFn = typeVisitor.enter as (n: ASTNode) => void | false
     const result = enterFn(node)
     if (result === false) {
@@ -458,6 +459,7 @@ export function walkAST(node: ASTNode, visitor: ASTVisitor, parent: ASTNode | nu
 
   // Call type-specific leave
   if (typeVisitor && typeof typeVisitor === 'object' && 'leave' in typeVisitor) {
+    // eslint-disable-next-line pickier/no-unused-vars
     const leaveFn = typeVisitor.leave as (n: ASTNode) => void
     leaveFn(node)
   }

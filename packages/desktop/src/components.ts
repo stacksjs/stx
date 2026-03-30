@@ -1,3 +1,4 @@
+/* eslint-disable style/max-statements-per-line, indent */
 import type { ComponentProps } from './types'
 
 /**

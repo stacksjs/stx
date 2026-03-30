@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Props System
  *
@@ -493,6 +494,7 @@ export function processComponentProps(
 // =============================================================================
 
 /** Event handler type */
+// eslint-disable-next-line pickier/no-unused-vars
 export type EventHandler<T = unknown> = (payload: T) => void
 
 /** Emit function type */

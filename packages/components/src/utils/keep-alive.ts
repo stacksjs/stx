@@ -189,6 +189,7 @@ export function createKeepAlive(options: KeepAliveOptions = {}): KeepAlive {
    */
   function log(...args: any[]): void {
     if (debug) {
+      // eslint-disable-next-line no-console
       console.log('[KeepAlive]', ...args)
     }
   }

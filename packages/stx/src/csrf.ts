@@ -67,6 +67,7 @@ export function csrfField(inputName: string = DEFAULT_INPUT_NAME): string {
  */
 export function processCsrfDirectives(template: string): string {
   // Replace @csrf with a hidden input field
+  // eslint-disable-next-line pickier/no-unused-vars
   return template.replace(/@csrf(?:\((['"])([^'"]*)\1\))?/g, (_, quote, inputName) => {
     return csrfField(inputName || DEFAULT_INPUT_NAME)
   })

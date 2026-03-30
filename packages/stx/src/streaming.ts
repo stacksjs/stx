@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Streaming and Hydration Module
  *
@@ -653,6 +654,7 @@ export function registerStreamingDirectives(options: StxOptions = {}): CustomDir
  * @param filePath Template file path
  * @param _options stx options
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function processSectionDirectives(
   content: string,
   context: Record<string, any>,

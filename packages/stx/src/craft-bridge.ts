@@ -349,6 +349,7 @@ export function processCraftDirective(
   // Check if @craft directive is present
   const craftDirectivePattern = /@craft(?:\(([\s\S]*?)\))?/g
 
+  // eslint-disable-next-line pickier/no-unused-vars
   return content.replace(craftDirectivePattern, (match, configStr) => {
     let config: CraftBridgeConfig = {}
 

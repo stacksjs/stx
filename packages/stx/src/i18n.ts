@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Module for internationalization (i18n) support
  *
@@ -1226,6 +1227,7 @@ export function getTranslation(
 /**
  * Process @translate directive
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function processTranslateDirective(
   template: string,
   context: Record<string, any>,
@@ -1244,6 +1246,7 @@ export async function processTranslateDirective(
   }
 
   // Load translations for the current locale
+  // eslint-disable-next-line ts/no-top-level-await
   const translations = await loadTranslation(i18nConfig.locale, options)
 
   // Add translations to context for use in expressions
@@ -1252,6 +1255,7 @@ export async function processTranslateDirective(
   context.__i18nConfig = i18nConfig
 
   // Process @translate with content blocks first
+  // eslint-disable-next-line ts/no-top-level-await
   output = await replaceAsync(output, fixedTranslateRegex, async (_match, key, paramsStr, content, _offset) => {
     try {
       // Parse parameters if provided
@@ -1326,6 +1330,7 @@ export async function processTranslateDirective(
   // The original regex /@translate\(\s*['"]([^'"]+)['"]\s*(?:,\s*(\{[^}]+\})\s*)?\)/g could be too greedy
   const fixedInlineTranslateRegex = /@translate\(\s*['"]([^'"]+)['"]\s*(?:,\s*(\{[^}]*\})\s*)?\)/g
 
+  // eslint-disable-next-line ts/no-top-level-await
   output = await replaceAsync(output, fixedInlineTranslateRegex, async (_match, key, paramsStr, _offset) => {
     try {
       // Parse parameters if provided

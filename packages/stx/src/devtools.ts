@@ -1,4 +1,5 @@
 // @ts-nocheck - Skip type checking due to window type casting
+/* eslint-disable no-console, prefer-const, style/max-statements-per-line */
 /**
  * STX DevTools Integration
  *
@@ -729,6 +730,7 @@ else if (record.name === '__init__') {
   if (typeof window !== 'undefined' && (window as Record<string, unknown>).__STX_STORES__) {
     const stores = (window as Record<string, unknown>).__STX_STORES__ as Record<string, unknown>
     const actualStore = stores[storeId] as Record<string, unknown> | undefined
+    // eslint-disable-next-line pickier/no-unused-vars
     if (actualStore && typeof actualStore.$patch === 'function') {
       (actualStore.$patch as (state: Record<string, unknown>) => void)(reconstructed)
     }

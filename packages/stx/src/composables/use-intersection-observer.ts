@@ -57,6 +57,7 @@ export interface IntersectionObserverRef {
   start: () => void
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 type IntersectionCallback = (entry: IntersectionObserverEntry, observer: IntersectionObserver) => void
 
 /**
@@ -180,6 +181,7 @@ export function useIntersectionObserver(
 /**
  * Simple visibility check - returns true when element is in viewport
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export function useElementVisibility(
   target: Element | (() => Element | null) | null,
   options?: Omit<IntersectionObserverOptions, 'once'>

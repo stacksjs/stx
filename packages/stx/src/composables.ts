@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Composables
  *
@@ -15,6 +16,7 @@
 
 export type LifecycleHook = () => void | (() => void)
 export type CleanupFn = () => void
+// eslint-disable-next-line pickier/no-unused-vars
 export type WatchCallback<T> = (newValue: T, oldValue: T | undefined) => void | CleanupFn
 export type WatchSource<T> = () => T
 

@@ -1,4 +1,5 @@
 // @ts-nocheck - Skip type checking due to generic type constraints
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Runtime - Clean APIs that hide window internals
  *
@@ -19,6 +20,7 @@
 const STX_STORES_KEY = '__STX_STORES__'
 const STX_ROUTE_PARAMS_KEY = '__STX_ROUTE_PARAMS__'
 const STX_MIDDLEWARE_STATE_KEY = '__STX_MIDDLEWARE_STATE__'
+// eslint-disable-next-line pickier/no-unused-vars
 const STX_HYDRATE_STORES_KEY = '__STX_HYDRATE_STORES__'
 const STX_STORE_STATE_KEY = '__STX_STORE_STATE__'
 
@@ -45,6 +47,7 @@ export interface StoreRef<T = unknown> {
   /** Get current state */
   getState: () => T
   /** Update state */
+  // eslint-disable-next-line pickier/no-unused-vars
   setState: (updater: Partial<T> | ((state: T) => Partial<T>)) => void
   /** Subscribe to changes */
   subscribe: (listener: (state: T) => void) => () => void

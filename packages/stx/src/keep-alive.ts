@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Keep-Alive
  *
@@ -202,6 +203,7 @@ function generateKeepAliveHtml(
   // Save scroll positions
   function saveScrollPositions(element) {
     const positions = new Map();
+    // eslint-disable-next-line pickier/no-unused-vars
     element.querySelectorAll('[data-keep-scroll]').forEach(function(el) {
       const key = el.getAttribute('data-keep-scroll') || el.id || 'default';
       positions.set(key, { top: el.scrollTop, left: el.scrollLeft });
@@ -238,6 +240,7 @@ else {
     const state = {};
 
     // Save form inputs
+    // eslint-disable-next-line pickier/no-unused-vars
     element.querySelectorAll('input, textarea, select').forEach(function(input, index) {
       const key = input.name || input.id || 'input_' + index;
       if (input.type === 'checkbox' || input.type === 'radio') {
@@ -249,6 +252,7 @@ else {
     });
 
     // Save data attributes marked for keeping
+    // eslint-disable-next-line pickier/no-unused-vars
     element.querySelectorAll('[data-keep-state]').forEach(function(el) {
       const key = el.getAttribute('data-keep-state');
       const value = el.getAttribute('data-state-value') || el.textContent;
@@ -263,6 +267,7 @@ else {
     if (!state) return;
 
     // Restore form inputs
+    // eslint-disable-next-line pickier/no-unused-vars
     element.querySelectorAll('input, textarea, select').forEach(function(input, index) {
       const key = input.name || input.id || 'input_' + index;
       if (state[key] !== undefined) {

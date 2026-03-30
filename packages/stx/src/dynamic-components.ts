@@ -122,6 +122,7 @@ export async function processDynamicComponents(
   }
 
   // Also handle self-closing <component :is="expr" />
+  // eslint-disable-next-line ts/no-top-level-await
   result = await processSelfClosingDynamicComponents(result, context, filePath, options, dependencies)
 
   return result

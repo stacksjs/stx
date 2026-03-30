@@ -11,6 +11,7 @@ type IslandHandlers = Record<string, () => Promise<any>>
 /**
  * Island hydration function
  */
+// eslint-disable-next-line pickier/no-unused-vars
 type IslandHydrationFn = (element: any, props: any) => void | Promise<void>
 
 // Wrap browser-specific code in a check to avoid server-side errors

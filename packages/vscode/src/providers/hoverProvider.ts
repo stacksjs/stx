@@ -81,6 +81,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
         return null
       }
 
+      // eslint-disable-next-line pickier/no-unused-vars
       const showExamples = config.get<boolean>('showExamples', true)
 
       // Check if we're in a TypeScript section or expression
@@ -572,6 +573,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       const inStyleBlock = isInStyleTag(document, position)
 
       // Check if this is a property access (e.g. product.name)
+      // eslint-disable-next-line pickier/no-unused-vars
       const isPropertyAccess = line.substring(0, wordRange.start.character).trim().endsWith('.')
 
       // Handle dot notation objects (e.g., common.greeting in @t('common.greeting'))
@@ -611,6 +613,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       const isCssClassSelector = inStyleBlock && document.getText().charAt(document.offsetAt(wordRange.start) - 1) === '.'
 
       // Get text before the current position for context
+      // eslint-disable-next-line pickier/no-unused-vars
       const beforeText = line.substring(0, wordRange.start.character)
 
       // CSS CLASS NAME IN HTML CLASS ATTRIBUTE
@@ -2517,6 +2520,7 @@ errors.notFound: "Page not found"`, 'yaml')
 
           if (isInExpression || line.includes('@ts') || inScriptTag) {
             // Use vscode's built-in TypeScript support for better type information
+            // eslint-disable-next-line pickier/no-unused-vars
             const tsUri = vscode.Uri.parse(`untitled:${document.uri.path}.ts`)
 
             // Query TypeScript for hover information
@@ -2555,6 +2559,7 @@ errors.notFound: "Page not found"`, 'yaml')
                 }
               }
               catch (tsError) {
+                // eslint-disable-next-line no-console
                 console.log('TypeScript hover provider error:', tsError)
               }
             }
@@ -2579,6 +2584,7 @@ errors.notFound: "Page not found"`, 'yaml')
         const isArrowFunction = arrowFunctionMatch !== null
 
         // Check if this might be an HTML tag rather than a variable
+        // eslint-disable-next-line pickier/no-unused-vars
         const htmlTagMatch = line.match(new RegExp(`<(/)?${word}(\\s|/?>|$)`))
         const commonHtmlTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'a', 'img', 'button', 'input', 'form', 'label', 'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'pre', 'code', 'body', 'html', 'head', 'header', 'footer', 'main', 'section', 'article', 'aside']
 

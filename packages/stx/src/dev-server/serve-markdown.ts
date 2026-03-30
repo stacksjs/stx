@@ -324,6 +324,7 @@ export async function serveMarkdownFile(filePath: string, options: DevServerOpti
     const dirToWatch = path.dirname(absolutePath)
     console.log(`${colors.blue}Watching ${colors.bright}${dirToWatch}${colors.reset} for changes...`)
 
+    // eslint-disable-next-line pickier/no-unused-vars
     const watcher = fs.watch(dirToWatch, { recursive: true }, async (eventType, filename) => {
       if (filename && filename.endsWith('.md')) {
         console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, reprocessing...${colors.reset}`)

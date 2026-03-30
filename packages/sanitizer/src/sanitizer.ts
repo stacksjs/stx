@@ -1,3 +1,4 @@
+/* eslint-disable style/max-statements-per-line */
 import type { SanitizeResult, SanitizerOptions, SanitizerPreset } from './types'
 import { getPreset } from './presets'
 

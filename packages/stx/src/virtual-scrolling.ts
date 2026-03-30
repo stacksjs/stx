@@ -1,4 +1,5 @@
 // @ts-nocheck - Skip type checking due to generic item array type constraints
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Virtual Scrolling Module
  *

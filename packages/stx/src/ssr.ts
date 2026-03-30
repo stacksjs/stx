@@ -125,6 +125,7 @@ export interface ValidationErrors {
 }
 
 /** Route handler */
+// eslint-disable-next-line pickier/no-unused-vars
 export type RouteHandler = (ctx: RequestContext) => Response | Promise<Response>
 
 /** Middleware function */

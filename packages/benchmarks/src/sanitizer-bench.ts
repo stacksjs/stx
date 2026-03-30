@@ -13,6 +13,7 @@ import { Bench } from 'tinybench'
 import { filterXSS } from 'xss'
 
 // Setup JSDOM for DOMPurify
+// eslint-disable-next-line pickier/no-unused-vars
 const { window } = new JSDOM('<!DOCTYPE html>')
 
 // Load fixtures
@@ -66,6 +67,7 @@ safeBench
     filterXSS(safeHtml)
   })
 
+// eslint-disable-next-line ts/no-top-level-await
 await safeBench.run()
 
 console.log('Library                     Operations     Speed')
@@ -98,6 +100,7 @@ dangerousBench
     filterXSS(dangerousHtml)
   })
 
+// eslint-disable-next-line ts/no-top-level-await
 await dangerousBench.run()
 
 console.log('Library                     Operations     Speed')
@@ -130,6 +133,7 @@ largeBench
     filterXSS(largeHtml)
   })
 
+// eslint-disable-next-line ts/no-top-level-await
 await largeBench.run()
 
 console.log('Library                     Operations     Speed')

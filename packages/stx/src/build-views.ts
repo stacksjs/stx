@@ -127,6 +127,7 @@ export async function buildViews(options: ViewBuildOptions): Promise<BuildResult
   } = options
 
   if (debug) {
+    // eslint-disable-next-line no-console
     console.log('Building STX views...')
     console.log(`  Source: ${viewsDir}`)
     console.log(`  Output: ${outputDir}`)
@@ -222,6 +223,7 @@ export async function buildViews(options: ViewBuildOptions): Promise<BuildResult
 export function watchViews(
   options: ViewBuildOptions,
   callback?: (result: BuildResult) => void,
+// eslint-disable-next-line pickier/no-unused-vars
 ): { close: () => void } {
   const watcher = fs.watch(options.viewsDir, { recursive: true }, async (eventType, filename) => {
     if (!filename) return

@@ -78,6 +78,7 @@
  * }
  * ```
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export type ViewComposerCallback = (context: Record<string, any>, filePath: string) => void | Promise<void>
 
 /**

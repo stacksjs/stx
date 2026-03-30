@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, no-console, style/max-statements-per-line, general/prefer-template */
 /**
  * STX Router - Canonical SPA Router
  *

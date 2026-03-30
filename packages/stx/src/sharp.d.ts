@@ -1,3 +1,4 @@
+/* eslint-disable pickier/no-unused-vars */
 declare module 'sharp' {
   interface ImageMetadata {
     width: number

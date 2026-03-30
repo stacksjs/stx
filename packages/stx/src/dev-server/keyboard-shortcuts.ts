@@ -19,6 +19,7 @@ export interface KeyboardCommandHandlers {
  * Print keyboard shortcuts help
  */
 export function printShortcutsHelp(): void {
+  // eslint-disable-next-line no-console
   console.log('\nKeyboard shortcuts:')
   console.log(`  ${colors.cyan}o${colors.reset} + Enter - Open in browser`)
   console.log(`  ${colors.cyan}c${colors.reset} + Enter - Clear console`)

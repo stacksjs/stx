@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * STX Story - Bun Test Runner Integration
  * Run story tests with Bun's test runner
@@ -112,6 +113,7 @@ export async function createStoryTests(options: BunTestOptions = {}): Promise<vo
 /**
  * Run story tests programmatically
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function runStoryTests(options: BunTestOptions = {}): Promise<{
   passed: number
   failed: number

@@ -106,6 +106,7 @@ export function useNotification(): NotificationRef {
     listeners.forEach(fn => fn(state))
   }
 
+  // eslint-disable-next-line pickier/no-unused-vars
   const updatePermission = () => {
     if (!isSupported) return
     state = {

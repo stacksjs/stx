@@ -15,4 +15,5 @@ import stxPlugin from './index'
 // Register the plugin globally for runtime imports
 plugin(stxPlugin())
 
+// eslint-disable-next-line no-console
 console.log('✅ stx plugin loaded - .stx files can now be imported')

@@ -28,10 +28,12 @@ export interface VNode {
   props: Record<string, any> | null
   children: Array<VNode | string>
   key?: string | number | null
+  // eslint-disable-next-line pickier/no-unused-vars
   ref?: string | ((el: any) => void) | null
 }
 
 /** Function component type */
+// eslint-disable-next-line pickier/no-unused-vars
 export type ComponentFunction = (props: Record<string, any>) => VNode | string | null
 
 /** Fragment symbol - renders children without a wrapper element */

@@ -17,6 +17,7 @@ import { ComponentRegistry } from './services/ComponentRegistry'
 export async function activate(context: vscode.ExtensionContext) {
   // Create virtual TypeScript files for each stx and MD file to support language features
   const virtualTsDocumentProvider = new VirtualTsDocumentProvider()
+  // eslint-disable-next-line no-console
   console.log('stx Extension - Activating')
 
   // Initialize the ComponentRegistry for prop type inference

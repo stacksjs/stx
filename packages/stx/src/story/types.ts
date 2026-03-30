@@ -80,8 +80,10 @@ export interface StoryThemeConfig {
  */
 export interface StoryTreeConfig {
   /** How to generate tree paths from files */
+  // eslint-disable-next-line pickier/no-unused-vars
   file?: 'title' | 'path' | ((file: StoryTreeFile) => string[])
   /** Sort order for tree items */
+  // eslint-disable-next-line pickier/no-unused-vars
   order?: 'asc' | ((a: string, b: string) => number)
   /** Group configurations */
   groups?: TreeGroupConfig[]

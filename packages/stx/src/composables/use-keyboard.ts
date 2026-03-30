@@ -71,6 +71,7 @@ export interface HotkeyOptions {
   ignoreInputs?: boolean
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 type HotkeyCallback = (event: KeyboardEvent) => void
 
 /**
@@ -373,6 +374,7 @@ export function useKeySequence(
   callback: () => void,
   options: { timeout?: number; target?: Window | HTMLElement | Document | null } = {}
 ): () => void {
+  // eslint-disable-next-line pickier/no-unused-vars
   const { timeout = 1000, target = typeof window !== 'undefined' ? window : null } = options
 
   if (!target) return () => {}

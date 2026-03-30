@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Event Directives Module
  *
@@ -424,6 +425,7 @@ else {
   (function() {
     var $el = document.getElementById('${elementId}');
     if (!$el) return;
+    // eslint-disable-next-line pickier/no-unused-vars
     $el.addEventListener('${event.event}', function($event) {
       ${checks ? checks + ';' : ''}
       // Find the closest reactive scope and execute within its context

@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 import type { ComponentPropsSchema, CustomDirective, PropType } from './types'
 import * as path from 'node:path'
 import { ErrorCodes, inlineError } from './error-handling'

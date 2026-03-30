@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Component processing functions extracted from process.ts.
  *
@@ -659,6 +660,7 @@ export async function processComponentDirectives(
       fullMatchEnd = directiveEnd + endComponentMatch[0].length
     }
 
+    // eslint-disable-next-line pickier/no-unused-vars
     const fullMatch = output.substring(cStart, fullMatchEnd)
 
     // Process the component

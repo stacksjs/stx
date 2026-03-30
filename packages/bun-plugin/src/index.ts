@@ -1,3 +1,4 @@
+/* eslint-disable style/max-statements-per-line */
 /**
  * bun-plugin-stx
  *

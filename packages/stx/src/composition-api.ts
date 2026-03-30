@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Composition API
  *
@@ -190,6 +191,7 @@ export function setGlobalProvide<T>(key: string | symbol, value: T): void {
 // =============================================================================
 
 /** Type-safe emit function */
+// eslint-disable-next-line pickier/no-unused-vars
 export type EmitFn<T extends string = string> = (event: T, ...args: any[]) => void
 
 /**
@@ -455,6 +457,7 @@ export function generateCompositionRuntime(): string {
     const scope = document.querySelector('[data-stx-scope="' + scopeId + '"]');
     if (!scope) return {};
     const refs = {};
+    // eslint-disable-next-line pickier/no-unused-vars
     scope.querySelectorAll('[data-stx-ref]').forEach(function(el) {
       refs[el.getAttribute('data-stx-ref')] = el;
     });

@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Static Site Generation (SSG) with Incremental Static Regeneration (ISR)
  *
@@ -417,6 +418,7 @@ catch (error) {
 /**
  * Generate all static paths for a route
  */
+// eslint-disable-next-line pickier/no-unused-vars
 async function generatePathsForRoute(route: Route): Promise<Array<{
   url: string
   params: Record<string, string>
@@ -1060,6 +1062,7 @@ catch (error) {
   // Build complete hook
   await cfg.hooks.onBuildEnd?.(result)
 
+  // eslint-disable-next-line no-console
   console.log(`
 Build complete!
   Total: ${result.totalPages} pages

@@ -1,3 +1,4 @@
+/* eslint-disable no-console, prefer-const, style/max-statements-per-line */
 /**
  * STX Story - Pretty terminal output
  * ANSI color codes for terminal styling without external dependencies

@@ -1,3 +1,4 @@
+/* eslint-disable style/max-statements-per-line */
 /**
  * STX Native Bridge Protocol
  *
@@ -279,6 +280,7 @@ export interface PerformancePayload {
 // Bridge Implementation
 // ============================================================================
 
+// eslint-disable-next-line pickier/no-unused-vars
 type MessageHandler<T = unknown> = (message: BridgeMessage<T>) => void | Promise<void>
 type PendingRequest = {
   resolve: (value: unknown) => void

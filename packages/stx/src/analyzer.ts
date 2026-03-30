@@ -386,6 +386,7 @@ function findUnmatchedDirectives(content: string, startDirective: string, endDir
 /**
  * Analyze multiple templates
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function analyzeProject(patterns: string[] = ['**/*.stx'], cwd?: string): Promise<{
   results: AnalysisResult[]
   summary: ProjectSummary

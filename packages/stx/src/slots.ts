@@ -393,6 +393,7 @@ export async function processSlots(
   // Process named slots with props: <slot name="row" :item="item" :index="index">default</slot>
   const namedSlotRegex = /<slot\s+name\s*=\s*["']([^"']+)["']([^>]*?)(?:\/>|>([\s\S]*?)<\/slot>)/gi
 
+  // eslint-disable-next-line pickier/no-unused-vars
   result = await replaceAsync(result, namedSlotRegex, async (match, name, attrs, defaultContent) => {
     const slotDef = parsedSlots.named.get(name)
     const defaultFallback = defaultContent?.trim() || ''

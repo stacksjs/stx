@@ -39,6 +39,7 @@ import { createPlaceholder } from './placeholder'
  * Add basic filter support to expressions
  * Filter functions receive the value to transform, optional args, and the context object
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export type FilterFunction = (value: any, context: Record<string, any>, ...args: any[]) => any
 
 /**
@@ -562,6 +563,7 @@ export function processExpressions(template: string, context: Record<string, any
     const identifierPattern = /^([a-zA-Z_$][a-zA-Z0-9_$]*)/
     const identifierMatch = trimmedExpr.match(identifierPattern)
     const firstVarName = identifierMatch?.[1]
+    // eslint-disable-next-line pickier/no-unused-vars
     const firstVarInContext = firstVarName && (firstVarName in context || jsBuiltins.includes(firstVarName))
 
     // Detect if this looks like a client-side signal expression

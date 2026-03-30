@@ -373,6 +373,7 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
 function formatStxDirectives(content: string, options: Required<FormatterOptions>): string {
   // Format @if, @foreach, @for etc. directives
   // eslint-disable-next-line regexp/optimal-quantifier-concatenation
+  // eslint-disable-next-line pickier/no-unused-vars
   content = content.replace(/@(if|elseif|foreach|for|while)\s*\(\s*([^)]+)\s*\)/g, (match, directive, condition) => {
     const normalizedCondition = condition.trim().replace(/\s+/g, ' ')
     return `@${directive}(${normalizedCondition})`
@@ -380,6 +381,7 @@ function formatStxDirectives(content: string, options: Required<FormatterOptions
 
   // Format simple directives like @csrf, @method etc.
   // eslint-disable-next-line regexp/optimal-quantifier-concatenation
+  // eslint-disable-next-line pickier/no-unused-vars
   content = content.replace(/@(csrf|method)\s*\(\s*([^)]*)\s*\)/g, (match, directive, param) => {
     if (param.trim() === '') {
       return `@${directive}`
@@ -390,12 +392,14 @@ function formatStxDirectives(content: string, options: Required<FormatterOptions
   // Format variable expressions {{ variable }}
   if (options.normalizeWhitespace) {
     // eslint-disable-next-line regexp/optimal-quantifier-concatenation
+    // eslint-disable-next-line pickier/no-unused-vars
     content = content.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expression) => {
       return `{{ ${expression.trim()} }}`
     })
 
     // Format raw expressions {!! variable !!}
     // eslint-disable-next-line regexp/optimal-quantifier-concatenation
+    // eslint-disable-next-line pickier/no-unused-vars
     content = content.replace(/\{!!\s*([^!]+)\s*!!\}/g, (match, expression) => {
       return `{!! ${expression.trim()} !!}`
     })

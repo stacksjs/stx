@@ -54,6 +54,7 @@ catch (error) {
   }
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 let processorWarningLogged = false
 
 /**
@@ -163,6 +164,7 @@ export async function renderImgComponent(
   const id = props.id
   const dataAttrs = props.data || {}
 
+  // eslint-disable-next-line pickier/no-unused-vars
   const { isDev = false, baseUrl = '' } = context
 
   // In development mode without optimization, render simple img
@@ -236,6 +238,7 @@ else {
 /**
  * Render a <picture> element with multiple sources
  */
+// eslint-disable-next-line pickier/no-unused-vars
 async function renderPictureElement(
   props: ImgProps,
   componentId: string,
@@ -328,6 +331,7 @@ ${sources.join('\n')}
 /**
  * Render DPR-based img element for fixed-width images
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function renderDprBasedImg(
   props: ImgProps,
   componentId: string,
@@ -776,6 +780,7 @@ else {
 /**
  * Render from pre-processed result
  */
+// eslint-disable-next-line pickier/no-unused-vars
 async function renderFromProcessedResult(
   props: ImgProps | EnhancedImgProps,
   processed: ProcessedImageResult,

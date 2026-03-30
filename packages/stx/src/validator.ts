@@ -249,6 +249,7 @@ export function getPositionInfo(template: string, position: number): { line: num
  * @param params - Parameters passed to the directive
  * @returns Validation errors, if any
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export function validateDirective(
   directiveName: string,
   content: string,

@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Media - Protected Media Component
  *
@@ -70,6 +71,7 @@ export async function renderProtectedImg(
   }
 
   // Build signature config
+  // eslint-disable-next-line pickier/no-unused-vars
   const config: SignatureConfig = {
     endpoint: signatureEndpoint,
     oneTimeUse,

@@ -294,7 +294,9 @@ export function handleError(
 
     if (error instanceof ComponentError) {
       console.group('Error Details')
+      // eslint-disable-next-line no-console
       console.log('Component:', error.component)
+      // eslint-disable-next-line no-console
       console.log('Context:', error.context)
       console.groupEnd()
     }

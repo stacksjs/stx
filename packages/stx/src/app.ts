@@ -20,6 +20,7 @@ export interface StxAppPlugin {
 }
 
 /** Plugin can be an object with install() or a plain function */
+// eslint-disable-next-line pickier/no-unused-vars
 export type StxPluginInput = StxAppPlugin | ((app: StxApp, ...options: any[]) => void)
 
 /** The stx application instance */

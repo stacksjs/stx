@@ -378,6 +378,7 @@ export async function processVideo(
 /**
  * Internal transcode function
  */
+// eslint-disable-next-line pickier/no-unused-vars
 async function transcodeVideo(
   input: string,
   output: string,

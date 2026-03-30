@@ -377,6 +377,7 @@ export async function extractVariables(
   // Simple $props function for direct access with defaults
   // Usage: const { name = 'default' } = $props
   // Or: const { name } = $props({ name: 'default' })
+  // eslint-disable-next-line pickier/no-unused-vars
   const $props = Object.assign(
     (defaults?: Record<string, unknown>) => {
       if (!defaults) return propsObj

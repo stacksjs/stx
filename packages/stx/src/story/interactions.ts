@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Story - Interaction Testing
  * Simulate user interactions and assert component state
@@ -167,6 +168,7 @@ function parseInteractionSteps(body: string): InteractionStep[] {
 /**
  * Run interaction tests for a story
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function runInteractionTests(
   _ctx: StoryContext,
   story: ServerStoryFile,

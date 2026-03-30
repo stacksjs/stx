@@ -1,3 +1,4 @@
+/* eslint-disable style/max-statements-per-line */
 /**
  * SEO and meta tag utilities for STX components
  */

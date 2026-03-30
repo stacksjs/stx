@@ -58,6 +58,7 @@ export interface Store<S> {
   /** Reset to initial state */
   $reset: () => void
   /** Patch state with partial update */
+  // eslint-disable-next-line pickier/no-unused-vars
   $patch: (partial: Partial<S> | ((state: S) => void)) => void
   /** Store ID */
   $id: string
@@ -159,6 +160,7 @@ export function defineStore<
         }
       }
       if (prop === '$patch') {
+        // eslint-disable-next-line pickier/no-unused-vars
         return (partial: Partial<S> | ((state: S) => void)) => {
           const prev = currentState
           if (typeof partial === 'function') {

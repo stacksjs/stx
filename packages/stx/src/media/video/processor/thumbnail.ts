@@ -164,6 +164,7 @@ export async function generateThumbnails(
 /**
  * Generate sprite sheet for video scrubbing preview
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function generateSpriteSheet(
   src: string,
   options: SpriteSheetConfig,
@@ -238,7 +239,9 @@ export async function generateSpriteSheet(
       const tsImages = await import('ts-images')
 
       // Create sprite sheet by compositing thumbnails
+      // eslint-disable-next-line pickier/no-unused-vars
       const spriteWidth = columns * thumbnailWidth
+      // eslint-disable-next-line pickier/no-unused-vars
       const spriteHeight = rows * thumbnailHeight
 
       const sprite = await tsImages.createSprite({

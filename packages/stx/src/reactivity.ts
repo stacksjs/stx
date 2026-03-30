@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Vue-Style Reactivity Module
  *
@@ -71,6 +72,7 @@ export type DefineComponent<Props = {}, RawBindings = {}, D = any> = {
 export type Component<Props = any> = DefineComponent<Props>
 
 /** Subscriber callback */
+// eslint-disable-next-line pickier/no-unused-vars
 export type WatchCallback<T> = (newValue: T, oldValue: T | undefined) => void
 
 /** Watch options */
@@ -895,7 +897,9 @@ export function generateClientRuntime(): string {
     useMiddlewareState: function() { return __middlewareState; },
 
     // Internal setters (used by framework, not exposed in docs)
+    // eslint-disable-next-line pickier/no-unused-vars
     setRouteParams: function(params) { __routeParams = params || {}; },
+    // eslint-disable-next-line pickier/no-unused-vars
     setMiddlewareState: function(state) { __middlewareState = state || {}; },
     registerStore: function(name, store) { __stores[name] = store; },
 

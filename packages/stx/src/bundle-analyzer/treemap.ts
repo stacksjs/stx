@@ -659,6 +659,7 @@ function addModuleToTree(parent: TreeNode, module: ModuleInfo): void {
 /**
  * Update parent node sizes recursively
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function updateParentSizes(node: TreeNode, size: number, gzipSize: number): void {
   // Sizes are already calculated at chunk level, no need to update
   // This is a placeholder for future enhancements

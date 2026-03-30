@@ -306,6 +306,7 @@ else {
 /**
  * Initialize Netlify configuration for a project
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function initNetlify(config: InitConfig = {}): Promise<{
   configPath: string
   siteId?: string

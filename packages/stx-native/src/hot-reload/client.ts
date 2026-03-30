@@ -1,3 +1,4 @@
+/* eslint-disable no-console, style/max-statements-per-line */
 /**
  * STX Native Hot Reload Client
  *
@@ -33,6 +34,7 @@ interface HotReloadState {
   inputValues: Map<string, string>
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 type HotReloadCallback = (document: STXDocument) => void
 
 // ============================================================================

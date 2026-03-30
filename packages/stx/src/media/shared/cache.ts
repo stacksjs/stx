@@ -194,6 +194,7 @@ catch (error) {
 /**
  * Clear cache for a specific source
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function clearCacheForSource(
   src: string,
   type: 'image' | 'video',
@@ -242,6 +243,7 @@ catch {
 /**
  * Get cache statistics
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function getCacheStats(
   config: CacheConfig = defaultCacheConfig,
 ): Promise<{

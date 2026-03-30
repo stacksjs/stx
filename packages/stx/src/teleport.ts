@@ -112,6 +112,7 @@ export function processTeleportDirectives(
   // Match @teleport(...)...@endteleport
   const teleportRegex = /@teleport\s*\(([^)]+)\)\s*([\s\S]*?)@endteleport/g
 
+  // eslint-disable-next-line pickier/no-unused-vars
   return template.replace(teleportRegex, (fullMatch, args, body) => {
     const id = generateTeleportId()
     const { target, disabled } = parseTeleportArgs(args)

@@ -22,6 +22,7 @@ export interface CompiledOutputOptions {
 /**
  * Get compiled HTML output for a story variant
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function getCompiledOutput(
   ctx: StoryContext,
   story: ServerStoryFile,

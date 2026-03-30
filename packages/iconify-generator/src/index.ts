@@ -1,3 +1,4 @@
+/* eslint-disable no-console, style/max-statements-per-line, indent */
 import type { IconData } from '@stacksjs/iconify-core'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'

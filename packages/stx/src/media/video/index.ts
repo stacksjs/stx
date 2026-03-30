@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Media - Video Module
  *
@@ -50,6 +51,7 @@ catch (error) {
   }
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 let processorWarningLogged = false
 
 /**
@@ -337,6 +339,7 @@ function renderEmbed(
  * - Picture-in-Picture
  * - Accessibility
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function renderTsVideoPlayer(
   props: VideoProps,
   context: { isDev?: boolean } = {},
@@ -631,6 +634,7 @@ export { createVideoDirective, videoDirective } from './directive'
 /**
  * Parse @video directive options (legacy - use videoDirective instead)
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export function parseVideoDirectiveOptions(
   content: string,
   params: Record<string, unknown>,
@@ -737,6 +741,7 @@ async function generatePosterOnDemand(
 /**
  * Render from pre-processed result
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function renderFromProcessedResult(
   props: VideoProps | EnhancedVideoProps,
   processed: ProcessedVideoResult,

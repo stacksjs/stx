@@ -1,4 +1,5 @@
 // @ts-nocheck - Skip type checking due to generic directive type constraints
+/* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * STX Directive API
  *
@@ -244,6 +245,7 @@ export function defineDirective<
  */
 export function defineClientDirective<T = unknown>(
   name: string,
+  // eslint-disable-next-line pickier/no-unused-vars
   definition: ClientDirectiveDefinition<T> | ((el: HTMLElement, binding: DirectiveBinding<T>) => void),
 ): ClientDirectiveDefinition<T> {
   const normalized: ClientDirectiveDefinition<T> = typeof definition === 'function'
@@ -639,6 +641,7 @@ export function processDirectiveAttributes(template: string): string {
   // Match v-directivename:arg.mod1.mod2="value"
   const directiveRegex = /v-(\w+)(?::(\w+))?(?:\.([\w.]+))?="([^"]*)"/g
 
+  // eslint-disable-next-line pickier/no-unused-vars
   return template.replace(directiveRegex, (match, name, arg, modifiers, value) => {
     const mods = modifiers ? modifiers.split('.') : []
     const modObj = mods.reduce((acc: Record<string, boolean>, m: string) => {

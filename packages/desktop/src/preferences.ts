@@ -79,6 +79,7 @@ export interface Preferences<T extends Record<string, unknown>> {
   close(): void
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 type ChangeHandler = (key: string, value: unknown, oldValue: unknown) => void
 
 // ============================================================================
@@ -191,9 +192,11 @@ class PreferencesImpl<T extends Record<string, unknown>> implements Preferences<
     if (!this._changeHandlers.has(keyStr)) {
       this._changeHandlers.set(keyStr, new Set())
     }
+    // eslint-disable-next-line pickier/no-unused-vars
     this._changeHandlers.get(keyStr)!.add(handler as (value: unknown, oldValue: unknown) => void)
 
     return () => {
+      // eslint-disable-next-line pickier/no-unused-vars
       this._changeHandlers.get(keyStr)?.delete(handler as (value: unknown, oldValue: unknown) => void)
     }
   }

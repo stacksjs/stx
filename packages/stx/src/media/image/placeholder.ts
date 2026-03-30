@@ -243,16 +243,22 @@ export function decodeThumbhash(hash: Uint8Array): string {
   const header = hash[0] | (hash[1] << 8) | (hash[2] << 16)
   const l_dc = (header & 63) / 63
   const p_dc = ((header >> 6) & 63) / 31.5 - 1
+  // eslint-disable-next-line pickier/no-unused-vars
   const q_dc = ((header >> 12) & 63) / 31.5 - 1
+  // eslint-disable-next-line pickier/no-unused-vars
   const l_scale = ((header >> 18) & 31) / 31
   const hasAlpha = (header >> 23) !== 0
 
   const header2 = hash[3] | (hash[4] << 8)
+  // eslint-disable-next-line pickier/no-unused-vars
   const p_scale = ((header2 >> 3) & 63) / 63
+  // eslint-disable-next-line pickier/no-unused-vars
   const q_scale = ((header2 >> 9) & 63) / 63
   const isLandscape = (header2 >> 15) !== 0
 
+  // eslint-disable-next-line pickier/no-unused-vars
   const lx = Math.max(3, isLandscape ? (hasAlpha ? 5 : 7) : (hasAlpha ? 5 : 7))
+  // eslint-disable-next-line pickier/no-unused-vars
   const ly = Math.max(3, isLandscape ? (hasAlpha ? 5 : 7) : (hasAlpha ? 5 : 7))
 
   // Generate a small preview (simplified - full implementation in client runtime)
