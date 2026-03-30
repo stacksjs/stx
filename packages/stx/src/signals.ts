@@ -2454,6 +2454,198 @@ catch (e) {}
     _cleanupContainer: cleanupContainer,
     _scopes: {},  // Component-level scopes
     _latestSetup: null,  // Latest SFC setup function (for SPA re-initialization)
+    _stores: new Map(),  // Global store registry — survives SPA navigation
+
+    // ── Store System ──
+    // Pinia-inspired, signals-based. Stores survive SPA navigation.
+
+    defineStore: function(id, setupOrOptions, storeOptions) {
+      // Return existing store if already defined
+      if (window.stx._stores.has(id)) {
+        return window.stx._stores.get(id);
+      }
+
+      // Determine setup function
+      var setupFn;
+      if (typeof setupOrOptions === 'function') {
+        // Setup style: defineStore('id', () => { ... })
+        setupFn = setupOrOptions;
+      } else {
+        // Options style: defineStore('id', { state, getters, actions })
+        var opts = setupOrOptions;
+        setupFn = function() {
+          var result = {};
+          // Convert state to signals
+          var initialState = typeof opts.state === 'function' ? opts.state() : (opts.state || {});
+          var stateSignals = {};
+          for (var key in initialState) {
+            stateSignals[key] = state(initialState[key]);
+            result[key] = stateSignals[key];
+          }
+          // Convert getters to derived signals
+          if (opts.getters) {
+            for (var gKey in opts.getters) {
+              (function(getterKey, getterFn) {
+                result[getterKey] = derived(function() {
+                  // Build state snapshot for getter
+                  var snapshot = {};
+                  for (var sk in stateSignals) { snapshot[sk] = stateSignals[sk](); }
+                  return getterFn(snapshot);
+                });
+              })(gKey, opts.getters[gKey]);
+            }
+          }
+          // Bind actions with proxy for this.propName access
+          if (opts.actions) {
+            for (var aKey in opts.actions) {
+              (function(actionKey, actionFn) {
+                result[actionKey] = function() {
+                  var proxy = new Proxy({}, {
+                    get: function(_, p) {
+                      if (result[p] && result[p]._isSignal) return result[p]();
+                      if (result[p]) return result[p];
+                      return undefined;
+                    },
+                    set: function(_, p, v) {
+                      if (result[p] && result[p]._isSignal) { result[p].set(v); return true; }
+                      return false;
+                    }
+                  });
+                  return actionFn.apply(proxy, arguments);
+                };
+              })(aKey, opts.actions[aKey]);
+            }
+          }
+          return result;
+        };
+      }
+
+      // Run setup with store-safe effect tracking (effects are global, not element-scoped)
+      var prevDisposers = activeDisposers;
+      activeDisposers = null;
+
+      var result;
+      try {
+        result = setupFn();
+      } finally {
+        activeDisposers = prevDisposers;
+      }
+
+      // Capture initial values for $reset
+      var _initialValues = {};
+      for (var k in result) {
+        if (result[k] && result[k]._isSignal) {
+          _initialValues[k] = result[k]();
+        }
+      }
+
+      // Store metadata
+      result.$id = id;
+      result.$reset = function() {
+        batch(function() {
+          for (var rk in _initialValues) {
+            if (result[rk] && result[rk]._isSignal) result[rk].set(_initialValues[rk]);
+          }
+        });
+      };
+      result.$patch = function(partial) {
+        batch(function() {
+          for (var pk in partial) {
+            if (result[pk] && result[pk]._isSignal) result[pk].set(partial[pk]);
+          }
+        });
+      };
+      result.$subscribe = function(cb) {
+        var unsubs = [];
+        for (var sk in result) {
+          if (result[sk] && result[sk]._isSignal && result[sk].subscribe) {
+            unsubs.push(result[sk].subscribe(function() {
+              var snapshot = {};
+              for (var ssk in result) {
+                if (result[ssk] && result[ssk]._isSignal) snapshot[ssk] = result[ssk]();
+              }
+              cb(snapshot);
+            }));
+          }
+        }
+        return function() { unsubs.forEach(function(u) { u(); }); };
+      };
+      result.$dispose = function() {
+        window.stx._stores.delete(id);
+        if (window.__STX_STORES__) delete window.__STX_STORES__[id];
+      };
+
+      // Hydration: restore state from SSR
+      var hydrationData = window.__STX_STORE_STATE__ && window.__STX_STORE_STATE__[id];
+      if (hydrationData) {
+        batch(function() {
+          for (var hk in hydrationData) {
+            if (result[hk] && result[hk]._isSignal) result[hk].set(hydrationData[hk]);
+          }
+        });
+      }
+
+      // Persistence
+      var persistCfg = storeOptions && storeOptions.persist;
+      if (persistCfg) {
+        var pOpts = persistCfg === true ? {} : persistCfg;
+        var storageKey = pOpts.key || ('stx-store-' + id);
+        var storageType = pOpts.storage === 'sessionStorage' ? sessionStorage : localStorage;
+        var pick = pOpts.pick || null;
+
+        // Read persisted state (overrides hydration)
+        try {
+          var saved = storageType.getItem(storageKey);
+          if (saved) {
+            var parsed = JSON.parse(saved);
+            batch(function() {
+              for (var pk in parsed) {
+                if (result[pk] && result[pk]._isSignal && (!pick || pick.indexOf(pk) !== -1)) {
+                  result[pk].set(parsed[pk]);
+                }
+              }
+            });
+          }
+        } catch(e) {}
+
+        // Write on change (debounced)
+        var writeTimer = null;
+        var prevPersistDisposers = activeDisposers;
+        activeDisposers = null;
+        effect(function() {
+          var snapshot = {};
+          for (var wk in result) {
+            if (result[wk] && result[wk]._isSignal && (!pick || pick.indexOf(wk) !== -1)) {
+              snapshot[wk] = result[wk]();
+            }
+          }
+          if (writeTimer) clearTimeout(writeTimer);
+          writeTimer = setTimeout(function() {
+            try { storageType.setItem(storageKey, JSON.stringify(snapshot)); } catch(e) {}
+          }, 100);
+        });
+        activeDisposers = prevPersistDisposers;
+      }
+
+      // Register globally
+      window.stx._stores.set(id, result);
+      window.__STX_STORES__ = window.__STX_STORES__ || {};
+      window.__STX_STORES__[id] = result;
+
+      return result;
+    },
+
+    useStore: function(id) {
+      var store = window.stx._stores.get(id);
+      if (!store && window.__STX_STORES__) {
+        store = window.__STX_STORES__[id];
+      }
+      if (!store) {
+        throw new Error('[stx] Store "' + id + '" not found. Define it with defineStore() first.');
+      }
+      return store;
+    },
+
     mountEl: function(selector, setupFn) {
       function doMount() {
         var root = document.querySelector(selector);

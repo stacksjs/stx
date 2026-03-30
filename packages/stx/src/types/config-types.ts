@@ -548,6 +548,8 @@ export interface StxConfig {
   componentsDir: string
   /** Path to layouts directory, defaults to 'layouts' in the project root */
   layoutsDir?: string
+  /** Path to stores directory for auto-discovered store definitions */
+  storesDir?: string
   /** Default layout to use for pages without DOCTYPE, relative to layoutsDir */
   defaultLayout?: string
   /** Enable debug mode for detailed error messages */
