@@ -103,16 +103,11 @@ export async function processDirectives(
     return await performanceMonitor.timeAsync('template-processing', async () => {
       let result = await processDirectivesInternal(template, context, filePath, options, dependencies)
 
-      // Generate and inject Tailwind CSS using Crosswind (only at top level)
-      // This happens after all includes/layouts/components are processed
       if (isTopLevel) {
-        result = await injectCrosswindCSS(result)
-
         // Final pass: transform any remaining ref= attributes to data-stx-ref=
         // Must run at top level after ALL processing (layouts, includes, components)
         // because partials injected via layout resolution may bypass processOtherDirectives
         result = processRefAttributes(result)
-
       }
 
       // Auto-generate document shell if explicitly requested via autoShell option.
@@ -132,6 +127,12 @@ export async function processDirectives(
           const wrongAttrRegex = new RegExp(`(<(?!body)[a-zA-Z][^>]*) data-stx="${setupMatch[1]}"`, 'i')
           result = result.replace(wrongAttrRegex, '$1')
         }
+      }
+
+      // Generate and inject Crosswind CSS AFTER document shell wrapping
+      // so bodyClass from stx.config.ts (e.g. 'bg-[#0a0a0f]') is included in the scan
+      if (isTopLevel) {
+        result = await injectCrosswindCSS(result)
       }
 
       // Restore @@ escape placeholders to literal @ AFTER all directive processing
