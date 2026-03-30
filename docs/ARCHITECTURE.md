@@ -54,7 +54,7 @@ All paths now use `Bun.Transpiler({ loader: 'ts' })` for TypeScript stripping:
 
 ## Directive Processing Pipeline
 
-`processDirectives()` is the core of the engine. It delegates to three sequential phases:
+`processDirectives()` is the core of the engine (~920 lines after code split). It acts as a pipeline orchestrator, delegating to extracted modules (`signal-processing.ts`, `runtime-injection.ts`, `component-processing.ts`, `script-validation.ts`, `inline-assets.ts`, `misc-directives.ts`). Three sequential phases:
 
 ```
 processDirectives (entry, error handling, Crosswind CSS)
@@ -109,14 +109,15 @@ STX has two independent client-side reactivity runtimes:
 - **Processing:** Build-time extraction of scopes/bindings → runtime initialization
 - **Build marker:** `data-stx-reactive-owner` on scope elements
 
-### Signals (`signals.ts`)
+### Signals (`signals.ts` + `signals-api.ts`)
 
 - **Trigger:** `state()`, `derived()`, `effect()` in `<script>` block, or `:attr`/`@event` in template
 - **Scope:** Per-component, defined in `<script>` block
 - **Runtime:** `window.stx` (fine-grained dependency tracking)
 - **Bindings:** `{{ }}`, `:class`, `:style`, `:if`, `:show`, `@click`, `@model`, `@for`
-- **Processing:** Build-time script wrapping → runtime `processElement()` DOM walk
+- **Processing:** Build-time script wrapping (via `signal-processing.ts`) → runtime `processElement()` DOM walk
 - **Build marker:** `data-stx-scope` on component wrapper, `data-stx` on root element
+- **Split:** `signals.ts` (~3075 lines) contains runtime generation as a template literal; `signals-api.ts` (~550 lines) provides the TypeScript API (state, derived, effect, batch, lifecycle, type guards)
 
 ### Isolation
 
@@ -157,17 +158,26 @@ The server marks fragments with the `X-STX-Fragment: true` response header. The 
 
 ## Component Prop Flow
 
+Props are categorized into three types during parsing:
+
+| Type | Syntax | Behavior |
+|---|---|---|
+| `static` | `title="Hello"` | Plain string value, passed as-is |
+| `serverDynamic` | `:title="expr"` | Evaluated server-side, result passed to component |
+| `clientReactive` | `:title="expr"` | Preserved for signals runtime (when expression references signals) |
+
 ```
 Parent template                    Component file
 <Card :title="expr" />             <script>
         │                          const props = defineProps<{
         ▼                            title: string
-   processCustomElements()          }>()
-   Evaluate :title expression       </script>
+   ComponentRegistry.resolve()      }>()
+   (builtins first, then files)     </script>
         │
         ▼                          Server path:
-   renderComponentWithSlot()       → props spread into componentContext
-   props = { title: value }        → defineProps() reads __STX_CURRENT_PROPS__
+   processComponents()             → props spread into componentContext
+   (unified renderer)              → defineProps() reads __STX_CURRENT_PROPS__
+   props = { title: value }
         │
         ├─── Server rendering ──→  processDirectives(template, { ...props })
         │
@@ -178,12 +188,70 @@ Parent template                    Component file
 
 **Limitation:** Props that survive serialization (strings, numbers, booleans, arrays, plain objects) work with `data-stx-props`. Functions, signals, and class instances do not round-trip through JSON.
 
+## Component Registry and Builtins
+
+The `ComponentRegistry` (`component-registry.ts`) centralizes component resolution:
+
+1. **Builtin registration** — `registerBuiltins()` registers `StxLink`, `StxImage`, and `StxLoadingIndicator` at startup
+2. **File resolution** — user components resolved from `componentsDir`, then current directory
+3. **Unified rendering** — `processComponents()` in `component-renderer.ts` replaces the previous five separate rendering functions
+
+### Builtins
+
+Builtins produce standard HTML directly (no custom elements):
+
+- **`<StxLink to="/path">`** → `<a href="/path" data-stx-link>` — SPA navigation via router click interception on `[data-stx-link]`
+- **`<StxImage src="..." />`** → `<img src="...">` — enhanced image with lazy loading, responsive, placeholder
+- **`<StxLoadingIndicator />`** → loading indicator markup
+
+The old `components/StxLink.stx` and `components/StxImage.stx` template files have been replaced by these builtins.
+
 ## Key Files
+
+### Core Pipeline
 
 | File | Purpose | Lines |
 |---|---|---|
-| `process.ts` | Directive processing pipeline | ~3100 |
-| `signals.ts` | Signals reactive runtime (client-side) | ~3500 |
+| `process.ts` | Pipeline orchestrator (delegates to extracted modules) | ~920 |
+| `signal-processing.ts` | Signal detection, setup function wrapping | — |
+| `runtime-injection.ts` | Signals/router/browser runtime injection | — |
+| `component-processing.ts` | Component tag parsing (findComponentTags, parseMultilineAttributes) | — |
+| `script-validation.ts` | Client script validation rules | — |
+| `inline-assets.ts` | `stx-inline` asset resolution | — |
+| `misc-directives.ts` | `@json`, `@once`, ref attrs, `x-cloak` | — |
+
+### Signals
+
+| File | Purpose | Lines |
+|---|---|---|
+| `signals.ts` | Signals reactive runtime generation (template literal) | ~3075 |
+| `signals-api.ts` | TypeScript API (state, derived, effect, batch, lifecycle, type guards) | ~550 |
+
+### Component System
+
+| File | Purpose | Lines |
+|---|---|---|
+| `component-registry.ts` | Centralized ComponentRegistry with builtin registration and file resolution | — |
+| `component-renderer.ts` | Unified `processComponents()` replacing 5 old functions | — |
+| `builtins/stx-link.ts` | StxLink produces `<a data-stx-link>` directly (no custom element) | — |
+| `builtins/stx-image.ts` | StxImage produces `<img>` directly | — |
+| `builtins/stx-loading-indicator.ts` | Loading indicator builtin | — |
+| `builtins/index.ts` | Barrel file + `registerBuiltins()` | — |
+
+### Dev Server
+
+| File | Purpose | Lines |
+|---|---|---|
+| `dev-server.ts` | Re-export hub (7 lines) | ~7 |
+| `dev-server/serve-markdown.ts` | Markdown file serving | — |
+| `dev-server/serve-file.ts` | Single `.stx` file serving | — |
+| `dev-server/serve-multi.ts` | Multi-file routing | — |
+| `dev-server/serve-app.ts` | Full app serving with file-based routing | — |
+
+### Other Core Files
+
+| File | Purpose | Lines |
+|---|---|---|
 | `reactive.ts` | Alpine-style reactive runtime | ~1200 |
 | `client-script.ts` | Client script transformation, auto-binding, auto-imports | ~700 |
 | `variable-extractor.ts` | Server script execution, TS stripping, variable extraction | ~450 |
@@ -195,14 +263,11 @@ Parent template                    Component file
 | `template-compiler.ts` | Build-time template pre-compilation | ~160 |
 | `template-hydrator.ts` | Serve-time placeholder resolution | ~130 |
 | `production-builder.ts` | `stx build` orchestrator → `.output/` | ~160 |
-| `production-server.ts` | `stx start` production HTTP server | ~200 |
+| `production-server.ts` | `stx start` production HTTP server (handle with stop(), proper 404) | ~200 |
 | `manifest.ts` | Build manifest (routes, assets, hashes) | ~100 |
-| `placeholder.ts` | Placeholder token system for pre-compilation | ~80 |
-| `components/StxLink.stx` | SPA navigation link (static + dynamic :to) | ~18 |
-| `components/StxImage.stx` | Enhanced image (lazy, responsive, placeholder) | ~12 |
-| `router/client.ts` | SPA router (StxLink-only interception, swap, prefetch) | ~420 |
+| `placeholder.ts` | Placeholder token system for pre-compilation (wired into expression processor) | ~80 |
+| `router/client.ts` | SPA router (`[data-stx-link]`-only interception, swap, prefetch) | ~420 |
 | `bun-plugin/index.ts` | Bun build plugin for .stx files | ~390 |
-| `dev-server.ts` | Development server with HMR | ~2200 |
 
 ## Project Structure Convention
 
@@ -254,6 +319,19 @@ Layouts are pure content fragments:
 <footer>...</footer>
 ```
 
+## Bun-First APIs
+
+The codebase uses Bun-native APIs where possible:
+
+| Node.js API | Bun Replacement | Context |
+|---|---|---|
+| `import process from 'node:process'` | Removed (global in Bun) | Across 23 files |
+| `fs.readFileSync(path)` | `Bun.file(path).text()` | Async contexts |
+| `fs.existsSync(path)` | `Bun.file(path).exists()` | Async contexts |
+| `fs.writeFileSync(path, data)` | `Bun.write(path, data)` | Async contexts |
+
+Retained from Node.js: `node:path` (no Bun alternative), `node:fs` for directory operations (`mkdirSync`, `readdirSync`, etc.).
+
 ## Production Build Pipeline
 
 ```
@@ -261,14 +339,19 @@ stx build --out .output
   → Discover routes from pages/
   → Generate fingerprinted assets (runtime.js, router.js)
   → Compile all templates (processDirectives in build mode)
+  → Placeholder system wired into expression processor for compile mode
   → Generate CSS from all pages
-  → Extract SPA fragments
+  → Extract SPA fragments (includes body-level styles from @push)
   → Write .output/ + manifest.json
 
 stx start
   → Load manifest.json
+  → Returns handle with stop() for programmatic control
   → Static pages: serve directly (<1ms)
   → Dynamic pages: hydrate with request data
   → SPA fragments: serve pre-extracted HTML
   → Assets: immutable cache headers (1 year)
+  → Proper 404 handling for unknown routes
 ```
+
+**Tested benchmarks:** bun-queue (12 pages, 169ms), 11ty (17 pages, 510ms).

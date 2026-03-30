@@ -27,7 +27,7 @@ This is a Bun workspace monorepo with packages in `packages/`:
 
 ### Template Processing Pipeline
 
-The core template processing happens in `packages/stx/src/process.ts` via `processDirectives()`:
+The core template processing is orchestrated by `packages/stx/src/process.ts` (~920 lines), which acts as a pipeline orchestrator delegating to extracted modules:
 
 1. **Pre-processing**: Comments removal, escaped directives
 2. **Directive Processing**: Sequential processing of directives in specific order:
@@ -35,16 +35,30 @@ The core template processing happens in `packages/stx/src/process.ts` via `proce
    - JavaScript/TypeScript execution (`@js`, `@ts`)
    - Includes and layouts (`@include`, `@layout`, `@extends`, `@section`)
    - Custom directives
-   - Components (`@component`)
+   - Components (via `component-renderer.ts` and `component-registry.ts`)
    - Conditionals (`@if`, `@switch`, `@auth`, `@env`)
    - Loops (`@foreach`, `@for`)
-   - Expressions (`{{ }}`, `{!! !!}`)
+   - Expressions (`{{ }}`, `{!! !!}`) — includes placeholder system for compile mode
    - i18n (`@translate`)
    - Forms (`@csrf`, `@method`, `@error`)
    - SEO directives (`@meta`, `@seo`)
 3. **Post-processing**: Middleware, stack replacements, web component injection
 
-Each directive type is handled by a dedicated module in `packages/stx/src/`.
+#### Extracted Modules (from process.ts code split)
+
+| Module | Responsibility |
+|---|---|
+| `signal-processing.ts` | Signal detection, setup function wrapping |
+| `runtime-injection.ts` | Signals/router/browser runtime injection |
+| `component-processing.ts` | Component tag parsing (findComponentTags, parseMultilineAttributes) |
+| `script-validation.ts` | Client script validation rules |
+| `inline-assets.ts` | `stx-inline` asset resolution |
+| `misc-directives.ts` | `@json`, `@once`, ref attrs, `x-cloak` |
+
+#### Signals Split
+
+- `signals.ts` (~3075 lines) — runtime generation (template literal for client-side signals runtime)
+- `signals-api.ts` (~550 lines) — TypeScript API (state, derived, effect, batch, lifecycle, type guards)
 
 ### Plugin System
 
@@ -159,11 +173,31 @@ Template caching is managed in `packages/stx/src/caching.ts`:
 
 ### Component System
 
-Components in `components/` are resolved via `packages/stx/src/components.ts`:
-- Components are `.stx` files
-- Can receive props and slots
-- Support scoped context
-- Resolved recursively to prevent circular dependencies
+Components use a centralized registry and unified renderer:
+
+- **`component-registry.ts`** — `ComponentRegistry` with builtin registration and file resolution
+- **`component-renderer.ts`** — unified `processComponents()` replacing the previous five separate functions
+- **Builtins** (in `packages/stx/src/builtins/`):
+  - `stx-link.ts` — `<StxLink>` produces `<a data-stx-link>` directly (no custom element)
+  - `stx-image.ts` — `<StxImage>` produces `<img>` directly
+  - `stx-loading-indicator.ts` — loading indicator builtin
+  - `index.ts` — barrel file + `registerBuiltins()`
+- User components are `.stx` files in `componentsDir`, resolved recursively to prevent circular dependencies
+- Components can receive props and slots, and support scoped context
+
+#### Prop Types
+
+Props are categorized into three types:
+- **`static`** — plain string values (`title="Hello"`)
+- **`serverDynamic`** — `:prop="expr"` evaluated server-side
+- **`clientReactive`** — `:prop="expr"` preserved for signals runtime
+
+#### SPA Navigation
+
+- `<a href>` = native full page reload (always)
+- `<StxLink to>` = SPA navigation via router
+- Router intercepts clicks on `[data-stx-link]` elements only
+- Fragment extraction includes body-level styles from `@push`
 
 ### Web Components
 
@@ -281,7 +315,13 @@ This internally calls `openDevWindow()` from the desktop package, which uses Cra
 
 ### Integration with stx CLI
 
-The `--native` flag in `stx dev` is implemented in `packages/stx/src/dev-server.ts`:
+The `--native` flag in `stx dev` is implemented via the dev-server module. `dev-server.ts` is now a 7-line re-export hub delegating to:
+- `dev-server/serve-markdown.ts` — markdown file serving
+- `dev-server/serve-file.ts` — single `.stx` file serving
+- `dev-server/serve-multi.ts` — multi-file routing
+- `dev-server/serve-app.ts` — full app serving with file-based routing
+
+Native window integration example:
 
 ```typescript
 import { openDevWindow } from '@stacksjs/desktop'
@@ -356,7 +396,11 @@ stx serve <directory> [--port 3000]
 
 5. **Middleware Timing**: Middleware can run `before` or `after` directive processing. Set the `timing` field appropriately.
 
-6. **Component Resolution**: Components are resolved relative to `componentsDir` first, then fall back to current directory. Paths without extensions automatically append `.stx`.
+6. **Component Resolution**: Components are resolved via `ComponentRegistry` — builtins first, then `componentsDir`, then current directory. Paths without extensions automatically append `.stx`.
+
+7. **Bun-First APIs**: The codebase uses Bun-native APIs where possible. `Bun.file().text()` replaces `fs.readFileSync`, `Bun.file().exists()` replaces `fs.existsSync`, and `Bun.write()` replaces `fs.writeFileSync` in async contexts. `node:path` is retained (no Bun alternative) and `node:fs` is kept for directory operations. `import process from 'node:process'` has been removed across the codebase (global in Bun).
+
+8. **Production Build**: The placeholder system is wired into the expression processor for compile mode. The production server returns a handle with `stop()` and proper 404 handling. Tested with real projects: bun-queue (12 pages, 169ms), 11ly (17 pages, 510ms).
 
 
 
