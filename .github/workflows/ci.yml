@@ -115,6 +115,6 @@ jobs:
 
       - name: Publish Commit
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: pantry publish:commit './packages/stx' './packages/bun-plugin' './packages/components'
+        run: pantry publish:commit './packages/stx' && pantry publish:commit './packages/bun-plugin' && pantry publish:commit './packages/components'
         env:
           PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
