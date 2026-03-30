@@ -30,7 +30,7 @@ import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeErr
 import { processExpressions, usesSignalsInScript } from './expressions'
 import { processBasicFormDirectives, processErrorDirective, processFormInputDirectives } from './forms'
 import { processTranslateDirective } from './i18n'
-import { expandStxLinks, processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
+import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processJsDirectives, processTsDirectives } from './js-ts'
 import { processLoops } from './loops'
 import { processMarkdownDirectives } from './markdown'
@@ -49,7 +49,7 @@ import { ensureDocumentShell } from './document-shell'
 
 // Extracted modules
 import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, processSignals } from './signal-processing'
-import { processBuiltInComponents, processImportDirectives, processComponentDirectives, processCustomElements } from './component-processing'
+import { processComponents } from './component-renderer'
 import { processInlineAssets } from './inline-assets'
 import { addCloakToUnresolvedExpressions, processJsonDirective, processOnceDirective, processRefAttributes } from './misc-directives'
 import { validateClientScript } from './script-validation'
@@ -545,14 +545,8 @@ async function processOtherDirectives(
   output = await processJsDirectives(output, context, filePath)
   output = await processTsDirectives(output, context, filePath)
 
-  // Process @import directives for explicit component imports
-  output = await processImportDirectives(output, context, filePath, opts, dependencies)
-
   // Process custom directives
   output = await processCustomDirectives(output, context, filePath, opts)
-
-  // Process built-in STX components
-  output = await processBuiltInComponents(output, context, filePath, opts)
 
   // For templates that use signals, convert @if/@for directive blocks to attribute-style
   // MUST run BEFORE processLoops/processConditionals so signal loops aren't evaluated server-side
@@ -567,17 +561,13 @@ async function processOtherDirectives(
   output = processLoops(output, context, filePath, opts)
 
 
-  // Process component directives (opts has already-resolved paths)
-  if (opts.componentsDir) {
-    // Process @component directives
-    output = await processComponentDirectives(output, context, filePath, opts.componentsDir, opts, dependencies)
+  // Process all components: @import, @component, custom elements, builtins
+  // Single unified pass replaces processImportDirectives, processBuiltInComponents,
+  // processComponentDirectives, processCustomElements, and expandStxLinks
+  output = await processComponents(output, context, filePath, opts, dependencies)
 
-    // Process custom element components (kebab-case and PascalCase tags)
-    output = await processCustomElements(output, context, filePath, opts.componentsDir, opts, dependencies)
-
-    // Process dynamic components (<component :is="expr">)
-    output = await processDynamicComponents(output, context, filePath, opts, dependencies)
-  }
+  // Process dynamic components (<component :is="expr">)
+  output = await processDynamicComponents(output, context, filePath, opts, dependencies)
 
   // Process animations and transitions
   output = processAnimationDirectives(output, context, filePath, opts)
@@ -729,10 +719,6 @@ async function processOtherDirectives(
   // Resolve server-side :attr="expr" bindings (e.g., :src, :href, :class, :disabled)
   // before expression processing so they can use the full server context
   output = processServerBindings(output, context)
-
-  // Expand <StxLink> components BEFORE expressions so {{ }} inside slots
-  // aren't prematurely evaluated server-side (they're client-side bindings)
-  output = expandStxLinks(output)
 
   // Process expressions now (delayed to allow other directives to generate expressions)
   output = await processExpressions(output, context, filePath)

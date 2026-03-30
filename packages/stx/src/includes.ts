@@ -917,10 +917,6 @@ catch (e) {
       // Process conditionals
       processedContent = processConditionals(processedContent, includeContext, includeFilePath)
 
-      // Expand built-in <StxLink> components inline BEFORE expressions,
-      // so {{ }} inside StxLink slots aren't prematurely evaluated server-side
-      processedContent = expandStxLinks(processedContent)
-
       // Process expressions
       processedContent = processExpressions(processedContent, includeContext, includeFilePath)
 
@@ -1130,67 +1126,5 @@ export function processStackReplacements(template: string, stacks: Record<string
   })
 }
 
-/**
- * Expand <StxLink> tags inline into <a> tags without recursive processing.
- * This handles the built-in StxLink component that may appear in included files.
- */
-export function expandStxLinks(content: string): string {
-  // Match both self-closing and paired StxLink tags
-  // Use a loop to handle the paired tags properly (content between open/close)
-  let result = content
-
-  // Process paired <StxLink ...>...</StxLink> tags
-  const pairedPattern = /<StxLink\b([^>]*)>([\s\S]*?)<\/StxLink>/g
-  result = result.replace(pairedPattern, (_match, attrs: string, slotContent: string) => {
-    return buildStxLinkAnchor(attrs, slotContent)
-  })
-
-  // Process self-closing <StxLink ... /> tags
-  const selfClosingPattern = /<StxLink\b([^>]*?)\/>/g
-  result = result.replace(selfClosingPattern, (_match, attrs: string) => {
-    return buildStxLinkAnchor(attrs, '')
-  })
-
-  return result
-}
-
-function buildStxLinkAnchor(attrs: string, slotContent: string): string {
-  const getAttr = (name: string): string | undefined => {
-    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    // Try double-quoted first, then single-quoted (handles expressions with mixed quotes)
-    const dblMatch = attrs.match(new RegExp(`(?:^|\\s)${escaped}="([^"]*)"` ))
-    if (dblMatch) return dblMatch[1]
-    const sglMatch = attrs.match(new RegExp(`(?:^|\\s)${escaped}='([^']*)'`))
-    if (sglMatch) return sglMatch[1]
-    return undefined
-  }
-
-  // Check for dynamic :to binding (runtime expression)
-  const dynamicTo = getAttr(':to')
-  const staticTo = getAttr('to')
-  const className = getAttr('className') || getAttr('class') || ''
-  const activeClass = getAttr('activeClass') || 'active'
-  const exactActiveClass = getAttr('exactActiveClass') || 'exact-active'
-  const prefetch = getAttr('prefetch')
-
-  // Collect any @click or other event/binding attributes to preserve
-  const eventAttrs: string[] = []
-  const eventPattern = /@[\w.]+="[^"]*"/g
-  let eventMatch
-  while ((eventMatch = eventPattern.exec(attrs)) !== null) {
-    eventAttrs.push(eventMatch[0])
-  }
-
-  const prefetchAttr = prefetch ? ' data-stx-prefetch' : ''
-  const eventStr = eventAttrs.length > 0 ? ' ' + eventAttrs.join(' ') : ''
-
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-
-  // Dynamic :to → use :href for runtime binding
-  if (dynamicTo) {
-    return `<a :href="${dynamicTo}" class="${esc(className)}" data-stx-link data-stx-active-class="${esc(activeClass)}" data-stx-exact-active-class="${esc(exactActiveClass)}"${prefetchAttr}${eventStr}>${slotContent}</a>`
-  }
-
-  const to = staticTo || '#'
-  return `<a href="${esc(to)}" class="${esc(className)}" data-stx-link data-stx-active-class="${esc(activeClass)}" data-stx-exact-active-class="${esc(exactActiveClass)}"${prefetchAttr}${eventStr}>${slotContent}</a>`
-}
+// expandStxLinks and buildStxLinkAnchor removed — StxLink is now a builtin
+// component handled by component-renderer.ts via the ComponentRegistry
