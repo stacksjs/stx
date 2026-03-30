@@ -389,6 +389,12 @@ export async function generateCrosswindCSS(htmlContent: string): Promise<string>
  * Tries to inject before </head>, falls back to <body> or prepends
  */
 export async function injectCrosswindCSS(htmlContent: string): Promise<string> {
+  // Skip if Crosswind CSS already injected (prevents duplicate Preflight resets
+  // from recursive processDirectives calls via layout resolution)
+  if (htmlContent.includes('data-crosswind="generated"')) {
+    return htmlContent
+  }
+
   const css = await generateCrosswindCSS(htmlContent)
 
   if (!css) {
