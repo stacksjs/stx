@@ -631,6 +631,10 @@ catch {
       defaultLayout: undefined,
     }
 
+    // Mark as non-top-level so Crosswind CSS isn't injected per-component
+    // (only the top-level page call should inject Crosswind)
+    componentContext.__stxProcessingDepth = (parentContext.__stxProcessingDepth as number || 0) + 1
+
     // Process the component content recursively with the new context
     // eslint-disable-next-line ts/no-top-level-await
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
