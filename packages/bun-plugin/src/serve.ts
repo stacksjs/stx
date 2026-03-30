@@ -690,9 +690,22 @@ export async function serve(options: ServeOptions): Promise<void> {
             let styleMatch: RegExpExecArray | null
             const styleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
             while ((styleMatch = styleRe.exec(headContent)) !== null) {
-              // Skip Crosswind CSS — it persists across SPA navigations from the initial page load.
-              // Including it in fragments causes duplicate Preflight resets that strip styling.
-              if (styleMatch[0].includes('data-crosswind')) continue
+              if (styleMatch[0].includes('data-crosswind')) {
+                // Include Crosswind utility CSS WITHOUT the Preflight reset.
+                // The initial page load already has Preflight — fragments only need
+                // new utility classes for the navigated page.
+                const cssContent = styleMatch[0].replace(/<style[^>]*>/, '').replace(/<\/style>/, '')
+                // Strip everything before the first utility rule (after Preflight + CSS variables)
+                const hiddenRule = cssContent.indexOf('[hidden]')
+                if (hiddenRule !== -1) {
+                  const afterPreflight = cssContent.indexOf('}', hiddenRule) + 1
+                  const utilities = cssContent.slice(afterPreflight).trim()
+                  if (utilities) {
+                    headStyles.push(`<style data-crosswind="fragment">${utilities}</style>`)
+                  }
+                }
+                continue
+              }
               headStyles.push(styleMatch[0])
             }
           }
