@@ -278,20 +278,8 @@ export async function serve(options: ServeOptions): Promise<void> {
     // Client scripts remain in the template (not stripped) so processDirectives()
     // transforms <script client> into <script data-stx-scoped> with stx.mount().
 
-    // Generate and inject Crosswind CSS
-    const crosswindCSS = await generateCrosswindCSS(output)
-    if (crosswindCSS) {
-      const styleTag = `<style>/* crosswind css */\n${crosswindCSS}</style>`
-      if (output.includes('</head>')) {
-        output = output.replace('</head>', `${styleTag}\n</head>`)
-      }
-      else if (output.includes('<body')) {
-        output = output.replace(/<body/i, `${styleTag}\n<body`)
-      }
-      else {
-        output = styleTag + output
-      }
-    }
+    // Crosswind CSS is already injected by processDirectives() (injectCrosswindCSS at top level).
+    // Do NOT generate it again here — duplicate Preflight resets would strip all utility styles.
 
     return output
   }
@@ -528,21 +516,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
 
     // Client scripts are already handled by processDirectives (transformed into data-stx-scoped)
-    // No need to re-inject them here
-
-    const crosswindCSS = await generateCrosswindCSS(output)
-    if (crosswindCSS) {
-      const styleTag = `<style>/* crosswind css */\n${crosswindCSS}</style>`
-      if (output.includes('</head>')) {
-        output = output.replace('</head>', `${styleTag}\n</head>`)
-      }
-      else if (output.includes('<body')) {
-        output = output.replace(/<body/i, `${styleTag}\n<body`)
-      }
-      else {
-        output = styleTag + output
-      }
-    }
+    // Crosswind CSS is already injected by processDirectives() — no duplicate injection needed.
 
     return output
   }
