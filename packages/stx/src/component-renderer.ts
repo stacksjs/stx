@@ -643,6 +643,7 @@ async function processCustomElementTags(
  * This allows the client-side runtime to bind signal expressions to the
  * appropriate DOM elements.
  */
+// eslint-disable-next-line pickier/no-unused-vars
 function emitClientReactiveAttrs(html: string, clientReactive: Record<string, string>): string {
   // Find the first opening HTML tag in the rendered output
   const firstTagMatch = html.match(/^(\s*<)([a-zA-Z][a-zA-Z0-9-]*)(\s|>|\/)/s)

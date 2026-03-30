@@ -22,7 +22,7 @@ export function isExternalUrl(url: string): boolean {
  * @param filePath - Full path to the template file
  * @returns Resolved absolute path, or null if not found
  */
-export function resolveInlinePath(assetPath: string, templateDir: string, filePath: string): string | null {
+export function resolveInlinePath(assetPath: string, templateDir: string, _filePath: string): string | null {
   try {
     let resolvedPath: string
 

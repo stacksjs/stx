@@ -300,7 +300,7 @@ export function processScriptSetup(template: string): { output: string, setupCod
     }
 
     // Check if this script uses signal APIs
-    if (/\b(state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
+    if (/\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
       signalScript = { fullMatch: match[0], attrs, content }
       break
     }

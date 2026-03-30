@@ -16,7 +16,9 @@ import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../compo
  * Sanitize a CSS value to prevent injection (strips semicolons, braces, url()).
  */
 function sanitizeCss(value: string): string {
-  return value.replace(/[;{}()]/g, '').replace(/url/gi, '')
+  return value
+    .replace(/[;{}()]/g, '')
+    .replace(/url/gi, '')
 }
 
 /**
@@ -64,6 +66,7 @@ export const StxLoadingIndicatorBuiltin: BuiltinComponentDef = {
       ? `linear-gradient(to right, ${initialColor}, ${color})`
       : color
 
+    // eslint-disable-next-line style/max-statements-per-line
     return `
 <div id="stx-loading-indicator" style="position:fixed;top:0;left:0;right:0;height:${height};background:${gradient};z-index:${zIndex};transform:scaleX(0);transform-origin:left;transition:transform 0.1s ease-out,opacity 0.3s ease;opacity:0;pointer-events:none">
   <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.4) 50%,transparent 100%);animation:stx-shimmer 1.5s infinite"></div>

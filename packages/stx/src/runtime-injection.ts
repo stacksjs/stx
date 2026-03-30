@@ -25,6 +25,7 @@ export function injectBrowserRuntime(template: string): string {
   // Extract only CLIENT script content (exclude <script server> blocks)
   // Client scripts are: <script>, <script client>, <script type="module">, etc.
   // Server scripts are: <script server>
+  // eslint-disable-next-line no-super-linear-backtracking
   const clientScriptRegex = /<script\b(?![^>]*\bserver\b)[^>]*>([\s\S]*?)<\/script>/gi
   let clientCode = ''
   let match: RegExpExecArray | null
