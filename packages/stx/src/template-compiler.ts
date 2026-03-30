@@ -13,7 +13,7 @@ import path from 'node:path'
 import { processDirectives } from './process'
 import { defaultConfig, loadStxConfig } from './config'
 import { extractVariables } from './variable-extractor'
-import { createPlaceholder, resetPlaceholders, type PlaceholderMap } from './placeholder'
+import { createPlaceholder, resetPlaceholders, getPlaceholderRegistry, type PlaceholderMap } from './placeholder'
 import { stripDocumentWrapper } from './app-shell'
 import { createHash } from 'node:crypto'
 
@@ -146,16 +146,9 @@ export async function compileTemplate(
   // Extract the SPA fragment (content inside <main> or the body without document wrapper)
   const fragment = stripDocumentWrapper(html)
 
-  // Build placeholder map from the compiled output
-  const placeholders: PlaceholderMap = {}
-  const placeholderRegex = /<!--__STX_(EXPR|COND|RAW)_(\d+)__-->/g
-  let phMatch: RegExpExecArray | null
-  while ((phMatch = placeholderRegex.exec(html)) !== null) {
-    placeholders[phMatch[0]] = {
-      type: phMatch[1].toLowerCase() as 'expr' | 'cond' | 'raw',
-      expression: '', // Will be populated by the expression processor
-    }
-  }
+  // Build placeholder map from the registry (populated during processDirectives)
+  // The registry stores each token → expression mapping when createPlaceholder() is called
+  const placeholders = getPlaceholderRegistry()
 
   return {
     route,

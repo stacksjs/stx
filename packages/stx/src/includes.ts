@@ -1134,7 +1134,7 @@ export function processStackReplacements(template: string, stacks: Record<string
  * Expand <StxLink> tags inline into <a> tags without recursive processing.
  * This handles the built-in StxLink component that may appear in included files.
  */
-function expandStxLinks(content: string): string {
+export function expandStxLinks(content: string): string {
   // Match both self-closing and paired StxLink tags
   // Use a loop to handle the paired tags properly (content between open/close)
   let result = content

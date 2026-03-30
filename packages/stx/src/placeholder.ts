@@ -10,24 +10,43 @@
 
 let placeholderCounter = 0
 
+/** Registry of placeholder tokens to their original expressions (populated at build time) */
+const placeholderRegistry = new Map<string, { type: 'expr' | 'cond' | 'raw', expression: string }>()
+
 /**
- * Reset the placeholder counter (for testing).
+ * Reset the placeholder counter and registry (for testing / between builds).
  */
 export function resetPlaceholders(): void {
   placeholderCounter = 0
+  placeholderRegistry.clear()
 }
 
 /**
- * Create a unique placeholder token.
+ * Create a unique placeholder token and register the expression.
  *
  * @param type - The type of placeholder ('expr' for expressions, 'cond' for conditionals)
- * @param expr - The original expression (stored in the compiled template metadata)
+ * @param expr - The original expression (stored in the registry for serve-time hydration)
  * @returns A unique placeholder token string
  */
 export function createPlaceholder(type: 'expr' | 'cond' | 'raw', expr: string): string {
   const id = placeholderCounter++
   // Use HTML comments so they survive HTML parsing and don't affect layout
-  return `<!--__STX_${type.toUpperCase()}_${id}__-->`
+  const token = `<!--__STX_${type.toUpperCase()}_${id}__-->`
+  // Store the expression so the template compiler can retrieve it
+  placeholderRegistry.set(token, { type, expression: expr })
+  return token
+}
+
+/**
+ * Get the registered placeholder map (all tokens created since last reset).
+ * Used by the template compiler to build the CompiledTemplate.placeholders field.
+ */
+export function getPlaceholderRegistry(): PlaceholderMap {
+  const map: PlaceholderMap = {}
+  for (const [token, info] of placeholderRegistry) {
+    map[token] = { type: info.type, expression: info.expression }
+  }
+  return map
 }
 
 /**
@@ -51,8 +70,11 @@ export function extractPlaceholders(html: string): PlaceholderMap {
   let match: RegExpExecArray | null
 
   while ((match = regex.exec(html)) !== null) {
+    const token = match[0]
     const type = match[1].toLowerCase() as 'expr' | 'cond' | 'raw'
-    map[match[0]] = { type, expression: '' } // Expression stored in compiled template metadata
+    // Look up expression from registry (populated during createPlaceholder)
+    const registered = placeholderRegistry.get(token)
+    map[token] = { type, expression: registered?.expression || '' }
   }
 
   return map

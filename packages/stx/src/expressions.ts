@@ -33,6 +33,7 @@
 
 import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
 import { createDetailedErrorMessage } from './utils'
+import { createPlaceholder } from './placeholder'
 
 /**
  * Add basic filter support to expressions
@@ -525,10 +526,18 @@ export function processExpressions(template: string, context: Record<string, any
   output = output.replace(/\{!!([\s\S]*?)!!\}/g, (match, expr, offset) => {
     try {
       const value = evaluateExpression(expr, context)
+      // In compile mode: undefined raw expressions become placeholders
+      if (value === undefined && context.__stx_buildMode === 'compile') {
+        return createPlaceholder('raw', expr.trim())
+      }
       // Return raw content without escaping
       return value !== undefined && value !== null ? String(value) : ''
     }
     catch (error: unknown) {
+      // In compile mode: failed expressions become placeholders
+      if (context.__stx_buildMode === 'compile') {
+        return createPlaceholder('raw', expr.trim())
+      }
       const msg = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Expression',
@@ -580,6 +589,12 @@ export function processExpressions(template: string, context: Record<string, any
       // so we must check here rather than relying on the catch block below.
       if (value === undefined && hasSignals && !expressionUsesOnlyContextVars(trimmedExpr, context)) {
         return match // Preserve {{ expr }} for runtime evaluation
+      }
+
+      // In compile mode: undefined expressions become placeholders for serve-time hydration.
+      // These are server-script variables not available at build time (e.g. user.name, session data).
+      if (value === undefined && context.__stx_buildMode === 'compile' && !hasSignals) {
+        return createPlaceholder('expr', trimmedExpr)
       }
 
       // Escape HTML for security

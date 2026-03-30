@@ -57,7 +57,7 @@ const MIME_TYPES: Record<string, string> = {
  * - Static pages: served directly (zero processing)
  * - Dynamic pages: hydrated with request-time data
  */
-export async function startProductionServer(options: ProductionServerOptions = {}): Promise<void> {
+export async function startProductionServer(options: ProductionServerOptions = {}): Promise<{ port: number, stop: () => void }> {
   const outputDir = path.resolve(options.outputDir || '.output')
   const port = options.port || 3000
 
@@ -168,11 +168,18 @@ export async function startProductionServer(options: ProductionServerOptions = {
       }
 
       if (!matchedRoute) {
-        // Try index fallback
-        matchedRoute = exactRoutes.get('/') || null
-        if (!matchedRoute) {
-          return new Response('Not Found', { status: 404 })
+        // Try 404 error page first, then return plain 404
+        const errorPage = exactRoutes.get('/404') || null
+        if (errorPage) {
+          const compiled = compiledTemplates.get(errorPage.compiledPath)
+          if (compiled) {
+            return new Response(compiled.html, {
+              status: 404,
+              headers: { 'Content-Type': 'text/html' },
+            })
+          }
         }
+        return new Response('Not Found', { status: 404 })
       }
 
       // ── SPA fragment response ──
@@ -227,4 +234,6 @@ export async function startProductionServer(options: ProductionServerOptions = {
 
   console.log(`[stx] Production server running at http://localhost:${port}`)
   console.log(`[stx] Serving ${manifest.routes.length} routes (${compiledTemplates.size} pre-loaded)`)
+
+  return { port, stop: () => server.stop() }
 }

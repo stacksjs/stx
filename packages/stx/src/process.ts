@@ -30,7 +30,7 @@ import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeErr
 import { processExpressions, usesSignalsInScript } from './expressions'
 import { processBasicFormDirectives, processErrorDirective, processFormInputDirectives } from './forms'
 import { processTranslateDirective } from './i18n'
-import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
+import { expandStxLinks, processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processJsDirectives, processTsDirectives } from './js-ts'
 import { processLoops } from './loops'
 import { processMarkdownDirectives } from './markdown'
@@ -498,6 +498,11 @@ async function processOtherDirectives(
   // Add options to context for component processing
   context.__stx_options = opts
 
+  // Pass buildMode to context so expressions.ts can emit placeholders in compile mode
+  if (opts.buildMode) {
+    context.__stx_buildMode = opts.buildMode
+  }
+
   // Run pre-processing middleware with error handling
   output = await safeExecuteAsync(
     () => runPreProcessingMiddleware(output, context, filePath, opts),
@@ -724,6 +729,10 @@ async function processOtherDirectives(
   // Resolve server-side :attr="expr" bindings (e.g., :src, :href, :class, :disabled)
   // before expression processing so they can use the full server context
   output = processServerBindings(output, context)
+
+  // Expand <StxLink> components BEFORE expressions so {{ }} inside slots
+  // aren't prematurely evaluated server-side (they're client-side bindings)
+  output = expandStxLinks(output)
 
   // Process expressions now (delayed to allow other directives to generate expressions)
   output = await processExpressions(output, context, filePath)
