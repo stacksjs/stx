@@ -12,7 +12,6 @@
 
 import path from 'node:path'
 import fs from 'node:fs'
-import process from 'node:process'
 import { fileExists } from './utils'
 import type { StxOptions } from './types'
 

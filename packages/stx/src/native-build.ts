@@ -12,7 +12,7 @@
  * ```
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, chmodSync } from 'node:fs'
+import { existsSync, mkdirSync, copyFileSync, chmodSync } from 'node:fs'
 import { join, dirname, basename, resolve } from 'node:path'
 import { spawn, execSync } from 'node:child_process'
 import { tmpdir, homedir, platform as osPlatform } from 'node:os'
@@ -126,7 +126,7 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
 
   try {
     // Validate input
-    if (!existsSync(config.input)) {
+    if (!await Bun.file(config.input).exists()) {
       return {
         success: false,
         target: config.target || detectPlatform(),
@@ -146,7 +146,7 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
     }
 
     // Read and process the stx template
-    let html = readFileSync(config.input, 'utf-8')
+    let html = await Bun.file(config.input).text()
 
     // Inject Craft bridge
     html = injectCraftBridge(html, { debug: config.verbose })
@@ -250,13 +250,13 @@ async function buildMacOS(
 
   // Write HTML to resources
   const htmlPath = join(resourcesDir, 'index.html')
-  writeFileSync(htmlPath, html)
+  await Bun.write(htmlPath, html)
 
   // Write sidebar config to resources if enabled
   let sidebarConfigPath = ''
   if (config.sidebar?.enabled && config.sidebar?.config) {
     sidebarConfigPath = join(resourcesDir, 'sidebar-config.json')
-    writeFileSync(sidebarConfigPath, JSON.stringify(config.sidebar.config))
+    await Bun.write(sidebarConfigPath, JSON.stringify(config.sidebar.config))
   }
 
   // Create launcher script that uses Craft
@@ -278,7 +278,7 @@ RESOURCES="$DIR/../Resources"
   ${sidebarFlags}
 `
   const launcherPath = join(macOSDir, appName)
-  writeFileSync(launcherPath, launcherScript)
+  await Bun.write(launcherPath, launcherScript)
   chmodSync(launcherPath, 0o755)
 
   // Copy Craft binary
@@ -290,7 +290,7 @@ RESOURCES="$DIR/../Resources"
   catch {
     // Craft might be in PATH, create symlink script instead
     const craftWrapperScript = `#!/bin/bash\nexec "${craftPath}" "$@"`
-    writeFileSync(craftBinaryDest, craftWrapperScript)
+    await Bun.write(craftBinaryDest, craftWrapperScript)
     chmodSync(craftBinaryDest, 0o755)
   }
 
@@ -325,10 +325,10 @@ RESOURCES="$DIR/../Resources"
     <${config.systemTray ? 'true' : 'false'}/>
 </dict>
 </plist>`
-  writeFileSync(join(contentsDir, 'Info.plist'), infoPlist)
+  await Bun.write(join(contentsDir, 'Info.plist'), infoPlist)
 
   // Copy icon if provided
-  if (config.icon && existsSync(config.icon)) {
+  if (config.icon && await Bun.file(config.icon).exists()) {
     copyFileSync(config.icon, join(resourcesDir, 'AppIcon.icns'))
   }
 
@@ -362,7 +362,7 @@ async function buildWindows(
 
   // Write HTML
   const htmlPath = join(appDir, 'index.html')
-  writeFileSync(htmlPath, html)
+  await Bun.write(htmlPath, html)
 
   // Create batch launcher
   const launcherBat = `@echo off
@@ -374,7 +374,7 @@ set DIR=%~dp0
   ${config.systemTray ? '--system-tray' : ''} ^
   ${config.devTools ? '--dev-tools' : ''}
 `
-  writeFileSync(join(appDir, `${appName}.bat`), launcherBat)
+  await Bun.write(join(appDir, `${appName}.bat`), launcherBat)
 
   // Create ZIP if requested
   if (format === 'zip') {
@@ -406,7 +406,7 @@ async function buildLinux(
 
   // Write HTML
   const htmlPath = join(appDir, 'index.html')
-  writeFileSync(htmlPath, html)
+  await Bun.write(htmlPath, html)
 
   // Create launcher script
   const launcherScript = `#!/bin/bash
@@ -419,7 +419,7 @@ DIR="$( cd "$( dirname "\${BASH_SOURCE[0]}" )" && pwd )"
   ${config.devTools ? '--dev-tools' : ''}
 `
   const launcherPath = join(appDir, appName.toLowerCase())
-  writeFileSync(launcherPath, launcherScript)
+  await Bun.write(launcherPath, launcherScript)
   chmodSync(launcherPath, 0o755)
 
   // Create .desktop file
@@ -430,7 +430,7 @@ Exec=${launcherPath}
 Terminal=false
 Categories=Utility;
 `
-  writeFileSync(join(appDir, `${appName.toLowerCase()}.desktop`), desktopFile)
+  await Bun.write(join(appDir, `${appName.toLowerCase()}.desktop`), desktopFile)
 
   // Create DEB if requested
   if (format === 'deb') {
@@ -512,7 +512,7 @@ async function findCraftBinary(): Promise<string | null> {
   ]
 
   for (const path of possiblePaths) {
-    if (existsSync(path)) {
+    if (await Bun.file(path).exists()) {
       return path
     }
   }
@@ -521,7 +521,7 @@ async function findCraftBinary(): Promise<string | null> {
   try {
     const result = execSync('which craft 2>/dev/null || where craft 2>nul', { encoding: 'utf-8' })
     const craftPath = result.trim().split('\n')[0]
-    if (craftPath && existsSync(craftPath)) {
+    if (craftPath && await Bun.file(craftPath).exists()) {
       return craftPath
     }
   }
@@ -655,7 +655,7 @@ async function createDEB(
 
       // Create launcher
       const launcherScript = `#!/bin/bash\nexec /usr/share/${appName.toLowerCase()}/${appName.toLowerCase()} "$@"`
-      writeFileSync(join(binDir, appName.toLowerCase()), launcherScript)
+      require('fs').writeFileSync(join(binDir, appName.toLowerCase()), launcherScript)
       chmodSync(join(binDir, appName.toLowerCase()), 0o755)
 
       // Create control file
@@ -668,7 +668,7 @@ Depends: libgtk-3-0, libwebkit2gtk-4.0-37
 Maintainer: ${config.author || 'Unknown'}
 Description: ${config.description || appName}
 `
-      writeFileSync(join(debianDir, 'control'), control)
+      require('fs').writeFileSync(join(debianDir, 'control'), control)
 
       // Build DEB
       const proc = spawn('dpkg-deb', ['--build', tempDir, outputPath])
@@ -731,7 +731,7 @@ HERE=\${SELF%/*}
 export PATH="\${HERE}/usr/bin:\${PATH}"
 exec "\${HERE}/usr/share/${appName.toLowerCase()}/${appName.toLowerCase()}" "$@"
 `
-      writeFileSync(join(appDirPath, 'AppRun'), appRun)
+      require('fs').writeFileSync(join(appDirPath, 'AppRun'), appRun)
       chmodSync(join(appDirPath, 'AppRun'), 0o755)
 
       // Create .desktop file
@@ -743,7 +743,7 @@ Terminal=false
 Categories=Utility;
 Icon=${appName.toLowerCase()}
 `
-      writeFileSync(join(appDirPath, `${appName.toLowerCase()}.desktop`), desktop)
+      require('fs').writeFileSync(join(appDirPath, `${appName.toLowerCase()}.desktop`), desktop)
 
       // Create placeholder icon
       const placeholderPng = Buffer.from([
@@ -754,7 +754,7 @@ Icon=${appName.toLowerCase()}
         0x00, 0x05, 0xfe, 0x02, 0xfe, 0xdc, 0xcc, 0x59, 0xe7, 0x00, 0x00, 0x00,
         0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
       ])
-      writeFileSync(join(appDirPath, `${appName.toLowerCase()}.png`), placeholderPng)
+      require('fs').writeFileSync(join(appDirPath, `${appName.toLowerCase()}.png`), placeholderPng)
 
       // Copy icon if provided
       if (config.icon && existsSync(config.icon)) {

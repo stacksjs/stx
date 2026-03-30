@@ -12,7 +12,7 @@
  * @module scaffolding
  */
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { join, dirname, basename } from 'node:path'
 import { execSync } from 'node:child_process'
 
@@ -194,7 +194,7 @@ export async function createProject(
     for (const [filePath, content] of Object.entries(files)) {
       const fullPath = join(projectPath, filePath)
       ensureDir(dirname(fullPath))
-      writeFileSync(fullPath, content)
+      await Bun.write(fullPath, content)
       result.files.push(filePath)
     }
 
@@ -202,7 +202,7 @@ export async function createProject(
     if (!options.skipGit) {
       try {
         execSync('git init', { cwd: projectPath, stdio: 'ignore' })
-        writeFileSync(join(projectPath, '.gitignore'), getGitignore())
+        await Bun.write(join(projectPath, '.gitignore'), getGitignore())
         result.files.push('.gitignore')
       }
       catch {
@@ -350,7 +350,7 @@ export async function addComponent(
   const componentName = toPascalCase(name)
   const filePath = join(dir, `${componentName}.stx`)
 
-  if (existsSync(filePath) && !options.force) {
+  if (await Bun.file(filePath).exists() && !options.force) {
     result.success = false
     result.message = `Component ${componentName} already exists. Use --force to overwrite.`
     return result
@@ -359,7 +359,7 @@ export async function addComponent(
   try {
     ensureDir(dir)
     const content = generateComponent(componentName, options)
-    writeFileSync(filePath, content)
+    await Bun.write(filePath, content)
     result.files.push(filePath)
     result.message = `Created component: ${filePath}`
     console.log(`✅ ${result.message}`)
@@ -385,7 +385,7 @@ export async function addPage(
   const pageName = name.toLowerCase().replace(/\s+/g, '-')
   const filePath = join(dir, `${pageName}.stx`)
 
-  if (existsSync(filePath) && !options.force) {
+  if (await Bun.file(filePath).exists() && !options.force) {
     result.success = false
     result.message = `Page ${pageName} already exists. Use --force to overwrite.`
     return result
@@ -394,7 +394,7 @@ export async function addPage(
   try {
     ensureDir(dir)
     const content = generatePage(pageName, options)
-    writeFileSync(filePath, content)
+    await Bun.write(filePath, content)
     result.files.push(filePath)
     result.message = `Created page: ${filePath}`
     console.log(`✅ ${result.message}`)
@@ -420,7 +420,7 @@ export async function addStore(
   const storeName = toCamelCase(name)
   const filePath = join(dir, `${storeName}.ts`)
 
-  if (existsSync(filePath) && !options.force) {
+  if (await Bun.file(filePath).exists() && !options.force) {
     result.success = false
     result.message = `Store ${storeName} already exists. Use --force to overwrite.`
     return result
@@ -429,7 +429,7 @@ export async function addStore(
   try {
     ensureDir(dir)
     const content = generateStore(storeName, options)
-    writeFileSync(filePath, content)
+    await Bun.write(filePath, content)
     result.files.push(filePath)
     result.message = `Created store: ${filePath}`
     console.log(`✅ ${result.message}`)
@@ -455,7 +455,7 @@ export async function addLayout(
   const layoutName = name.toLowerCase().replace(/\s+/g, '-')
   const filePath = join(dir, `${layoutName}.stx`)
 
-  if (existsSync(filePath) && !options.force) {
+  if (await Bun.file(filePath).exists() && !options.force) {
     result.success = false
     result.message = `Layout ${layoutName} already exists. Use --force to overwrite.`
     return result
@@ -464,7 +464,7 @@ export async function addLayout(
   try {
     ensureDir(dir)
     const content = generateLayout(layoutName, options)
-    writeFileSync(filePath, content)
+    await Bun.write(filePath, content)
     result.files.push(filePath)
     result.message = `Created layout: ${filePath}`
     console.log(`✅ ${result.message}`)

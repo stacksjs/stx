@@ -15,7 +15,6 @@
 import type { PwaIconConfig, StxOptions } from '../types'
 import fs from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 /**
  * Icon generation result
@@ -72,7 +71,7 @@ export async function generatePwaIcons(
     ? iconConfig.src
     : path.resolve(process.cwd(), iconConfig.src)
 
-  if (!fs.existsSync(sourcePath)) {
+  if (!await Bun.file(sourcePath).exists()) {
     result.errors.push(`Source icon not found: ${sourcePath}`)
     result.success = false
     return result

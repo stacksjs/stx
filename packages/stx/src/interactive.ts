@@ -1,7 +1,6 @@
 // @ts-nocheck - Skip type checking due to Bun/Node.js type differences
 import fs from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 /**
  * Interactive CLI Mode
  *
@@ -120,13 +119,13 @@ const commands: Record<string, {
 
       const filePath = path.resolve(state.cwd, args[0])
 
-      if (!fs.existsSync(filePath)) {
+      if (!await Bun.file(filePath).exists()) {
         console.log(`${c.red}Error: File not found: ${filePath}${c.reset}`)
         return
       }
 
       try {
-        const content = fs.readFileSync(filePath, 'utf-8')
+        const content = await Bun.file(filePath).text()
         const showRaw = args.includes('--raw')
 
         console.log(`\n${c.dim}Rendering ${filePath}...${c.reset}\n`)
@@ -341,12 +340,12 @@ const commands: Record<string, {
 
       const filePath = path.resolve(state.cwd, args[0])
 
-      if (!fs.existsSync(filePath)) {
+      if (!await Bun.file(filePath).exists()) {
         console.log(`${c.red}Error: File not found: ${filePath}${c.reset}`)
         return
       }
 
-      const content = fs.readFileSync(filePath, 'utf-8')
+      const content = await Bun.file(filePath).text()
       const lines = content.split('\n')
 
       console.log()
@@ -369,13 +368,13 @@ const commands: Record<string, {
 
       const filePath = path.resolve(state.cwd, args[0])
 
-      if (!fs.existsSync(filePath)) {
+      if (!await Bun.file(filePath).exists()) {
         console.log(`${c.red}Error: File not found: ${filePath}${c.reset}`)
         return
       }
 
       try {
-        const content = fs.readFileSync(filePath, 'utf-8')
+        const content = await Bun.file(filePath).text()
         const data = JSON.parse(content)
         state.context = { ...state.context, ...data }
         console.log(`${c.green}✓${c.reset} Loaded ${Object.keys(data).length} variables from ${args[0]}`)
@@ -398,7 +397,7 @@ const commands: Record<string, {
       const filePath = path.resolve(state.cwd, args[0])
 
       try {
-        fs.writeFileSync(filePath, JSON.stringify(state.context, null, 2))
+        await Bun.write(filePath, JSON.stringify(state.context, null, 2))
         console.log(`${c.green}✓${c.reset} Context saved to ${args[0]}`)
       }
       catch (error) {

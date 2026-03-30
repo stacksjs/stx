@@ -163,7 +163,7 @@ export function createSnapshotTester(config: VisualTestConfig = {}) {
       const hash = hashContent(normalizedHtml)
 
       // Check if snapshot exists
-      if (fs.existsSync(snapshotPath)) {
+      if (await Bun.file(snapshotPath).exists()) {
         const existingHtml = await Bun.file(snapshotPath).text()
         const existingHash = hashContent(normalizeHtml(existingHtml))
 
@@ -220,7 +220,7 @@ export function createSnapshotTester(config: VisualTestConfig = {}) {
       const snapshotPath = path.join(cfg.snapshotDir, `${name}.json`)
       const json = JSON.stringify(data, null, 2)
 
-      if (fs.existsSync(snapshotPath)) {
+      if (await Bun.file(snapshotPath).exists()) {
         const existingJson = await Bun.file(snapshotPath).text()
 
         if (json === existingJson) {
@@ -296,7 +296,7 @@ export function createVisualRegressionTester(config: VisualTestConfig = {}) {
       const diffPath = path.join(cfg.diffDir, viewport, `${name}.diff.png`)
 
       // Check if baseline exists
-      if (fs.existsSync(baselinePath)) {
+      if (await Bun.file(baselinePath).exists()) {
         const baseline = await Bun.file(baselinePath).arrayBuffer()
         const baselineBuffer = Buffer.from(baseline)
 

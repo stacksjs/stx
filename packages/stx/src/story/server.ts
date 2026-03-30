@@ -4,7 +4,6 @@
  */
 
 import type { StoryContext } from './types'
-import process from 'node:process'
 import { AnalyticsTracker } from './analytics'
 import { BookmarksManager } from './bookmarks'
 import { scanStoryFiles, watchStoryFiles } from './collect/scanner'

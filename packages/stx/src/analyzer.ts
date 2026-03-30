@@ -2,8 +2,6 @@
  * stx Template Analyzer - Analyze templates for performance, best practices, and potential issues
  */
 
-import process from 'node:process'
-
 export interface AnalysisResult {
   file: string
   metrics: TemplateMetrics

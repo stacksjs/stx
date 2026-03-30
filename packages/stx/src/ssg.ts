@@ -243,7 +243,7 @@ class BuildCache {
     if (this.loaded) return
 
     const cacheFile = path.join(this.cacheDir, 'build-cache.json')
-    if (fs.existsSync(cacheFile)) {
+    if (await Bun.file(cacheFile).exists()) {
       try {
         const data = JSON.parse(await Bun.file(cacheFile).text())
         for (const [key, value] of Object.entries(data)) {
@@ -330,7 +330,7 @@ class FileISRCache implements ISRCache {
 
   async get(route: string): Promise<CachedPage | null> {
     const filePath = this.getFilePath(route)
-    if (!fs.existsSync(filePath)) return null
+    if (!await Bun.file(filePath).exists()) return null
 
     try {
       const data = JSON.parse(await Bun.file(filePath).text())
@@ -349,7 +349,7 @@ catch {
 
   async invalidate(route: string): Promise<void> {
     const filePath = this.getFilePath(route)
-    if (fs.existsSync(filePath)) {
+    if (await Bun.file(filePath).exists()) {
       await fs.promises.unlink(filePath)
     }
   }
@@ -483,7 +483,7 @@ async function loadDataFile(templatePath: string): Promise<Record<string, unknow
   ]
 
   for (const dataFile of dataFilePatterns) {
-    if (fs.existsSync(dataFile)) {
+    if (await Bun.file(dataFile).exists()) {
       try {
         // Use dynamic import to load the data file
         const dataModule = await import(dataFile)
@@ -942,7 +942,7 @@ catch (error) {
     // Generate 404 page
     if (cfg.generate404) {
       const notFoundPath = path.join(cfg.pagesDir, '404.stx')
-      if (fs.existsSync(notFoundPath)) {
+      if (await Bun.file(notFoundPath).exists()) {
         const notFoundDeps = new Set<string>()
         const notFoundOptions = { ...stxConfig, debug: false, cache: false }
         const html = await processDirectives(
@@ -985,7 +985,7 @@ else {
     // Generate additional error pages (500.stx, error.stx)
     for (const errorCode of [500]) {
       const errorPagePath = path.join(cfg.pagesDir, `${errorCode}.stx`)
-      if (fs.existsSync(errorPagePath)) {
+      if (await Bun.file(errorPagePath).exists()) {
         const errorDeps = new Set<string>()
         const errorOptions = { ...stxConfig, debug: false, cache: false }
         const html = await processDirectives(
@@ -1001,7 +1001,7 @@ else {
 
     // Generate generic error page if it exists
     const genericErrorPath = path.join(cfg.pagesDir, 'error.stx')
-    if (fs.existsSync(genericErrorPath)) {
+    if (await Bun.file(genericErrorPath).exists()) {
       const errorDeps = new Set<string>()
       const errorOptions = { ...stxConfig, debug: false, cache: false }
       const html = await processDirectives(

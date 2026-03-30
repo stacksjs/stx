@@ -8,7 +8,6 @@
 
 import type { ErrorCode } from './codes'
 import path from 'node:path'
-import process from 'node:process'
 import { isDevelopment } from '../env'
 import { ErrorCodes } from './codes'
 

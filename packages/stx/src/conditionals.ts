@@ -23,7 +23,6 @@
  *   - Each @elseif/@else creates a branch in the condition chain
  */
 
-import process from 'node:process'
 import { evaluateAuthExpression } from './auth'
 import { ErrorCodes, inlineError } from './error-handling'
 import { extractParenthesizedExpression, findIfBlocks, findMatchingEndTag, parseSwitchBlock } from './parser'

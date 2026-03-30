@@ -66,7 +66,6 @@
  */
 
 import type { StxOptions } from './types'
-import fs from 'node:fs'
 import path from 'node:path'
 import { processConditionals } from './conditionals'
 import { processExpressions } from './expressions'
@@ -425,7 +424,7 @@ export async function processIncludes(
       const incPath = pm[1]
       const incFile = resolvePath(incPath, partialsDir, filePath)
       let replacement = ''
-      if (incFile && fs.existsSync(incFile)) {
+      if (incFile && await Bun.file(incFile).exists()) {
         dependencies.add(incFile)
         replacement = `@include(${inner})`
       }
@@ -480,7 +479,7 @@ else {
         let replacement = ''
         if (shouldInclude) {
           const incFile = resolvePath(includePath, partialsDir, filePath)
-          if (incFile && fs.existsSync(incFile)) dependencies.add(incFile)
+          if (incFile && await Bun.file(incFile).exists()) dependencies.add(incFile)
           replacement = `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`
         }
         output = output.substring(0, start) + replacement + output.substring(p)

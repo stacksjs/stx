@@ -6,9 +6,7 @@
  */
 
 import type { StxOptions } from '../types'
-import fs from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 /**
  * Generate offline fallback page HTML
@@ -29,7 +27,7 @@ export async function generateOfflinePage(options: StxOptions): Promise<string> 
       ? offlineConfig.page
       : path.resolve(process.cwd(), offlineConfig.page)
 
-    if (fs.existsSync(offlinePath)) {
+    if (await Bun.file(offlinePath).exists()) {
       try {
         // Dynamically import processDirectives to avoid circular dependencies
         const { processDirectives } = await import('../process')

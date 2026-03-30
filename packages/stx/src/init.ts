@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 // =============================================================================
 // Types
@@ -47,7 +46,7 @@ export async function initFile(fileName: string = 'index.stx', options: InitOpti
     const filePath = path.resolve(process.cwd(), fileName)
 
     // Check if file exists
-    if (fs.existsSync(filePath)) {
+    if (await Bun.file(filePath).exists()) {
       if (!force) {
         throw new Error(`File ${fileName} already exists. Use --force to overwrite.`)
       }
@@ -68,7 +67,7 @@ export async function initFile(fileName: string = 'index.stx', options: InitOpti
     if (options.template) {
       const templatePath = path.resolve(process.cwd(), options.template)
 
-      if (!fs.existsSync(templatePath)) {
+      if (!await Bun.file(templatePath).exists()) {
         throw new Error(`Template file ${options.template} does not exist.`)
       }
 
@@ -76,7 +75,7 @@ export async function initFile(fileName: string = 'index.stx', options: InitOpti
         console.warn(`Warning: Template file ${options.template} does not have a .stx extension. Using it anyway.`)
       }
 
-      templateContent = fs.readFileSync(templatePath, 'utf-8')
+      templateContent = await Bun.file(templatePath).text()
       console.warn(`Using template from ${options.template}`)
     }
     else if (options.preset) {
@@ -90,7 +89,7 @@ export async function initFile(fileName: string = 'index.stx', options: InitOpti
     }
 
     // Write the file
-    fs.writeFileSync(filePath, templateContent)
+    await Bun.write(filePath, templateContent)
 
     console.warn(`Created new stx file: ${fileName}`)
     return true

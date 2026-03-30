@@ -161,7 +161,7 @@ export async function processImage(
 
   if (typeof input === 'string') {
     srcPath = input
-    if (!fs.existsSync(input)) {
+    if (!await Bun.file(input).exists()) {
       throw new ImageProcessingError(`Image not found: ${input}`, 'NOT_FOUND')
     }
     buffer = await Bun.file(input).arrayBuffer().then(ab => Buffer.from(ab))

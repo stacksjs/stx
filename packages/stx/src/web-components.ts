@@ -1,7 +1,6 @@
 import type { StxOptions, WebComponent } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 import { ErrorCodes, inlineError } from './error-handling'
 import { fileExists, resolveTemplatePath } from './utils'
 

@@ -4,7 +4,6 @@
 
 import type { ServerStoryFile, ServerTree, StoryConfig, StoryContext } from './types'
 import path from 'node:path'
-import process from 'node:process'
 import { resolveStoryConfig } from './config'
 
 /**

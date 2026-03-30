@@ -3,7 +3,6 @@
  * Handles keyboard input for dev server control
  */
 
-import process from 'node:process'
 import { colors } from './terminal-colors'
 
 /**

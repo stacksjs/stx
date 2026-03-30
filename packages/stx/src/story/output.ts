@@ -3,8 +3,6 @@
  * ANSI color codes for terminal styling without external dependencies
  */
 
-import process from 'node:process'
-
 // ANSI escape codes
 const ESC = '\x1B['
 const RESET = `${ESC}0m`

@@ -3,9 +3,7 @@
  * Preview the built story site locally
  */
 
-import fs from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 import { createContext } from '../context'
 
 /**

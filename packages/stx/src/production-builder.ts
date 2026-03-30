@@ -103,12 +103,12 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   const routerAsset = buildRouterAsset()
 
   // Write runtime JS
-  fs.writeFileSync(
+  await Bun.write(
     path.join(outputDir, 'public', '__stx', runtimeAsset.filename),
     runtimeAsset.content,
   )
   // Write router JS
-  fs.writeFileSync(
+  await Bun.write(
     path.join(outputDir, 'public', '__stx', routerAsset.filename),
     routerAsset.content,
   )
@@ -158,11 +158,11 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
       const compiledPath = path.join('server', 'pages', `${safeRouteName}.compiled.json`)
       const fragmentPath = path.join('server', 'fragments', `${safeRouteName}.html`)
 
-      fs.writeFileSync(
+      await Bun.write(
         path.join(outputDir, compiledPath),
         JSON.stringify(compiled, null, 2),
       )
-      fs.writeFileSync(
+      await Bun.write(
         path.join(outputDir, fragmentPath),
         compiled.fragment,
       )

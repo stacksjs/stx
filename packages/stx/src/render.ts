@@ -25,7 +25,6 @@
  * ```
  */
 
-import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { defaultConfig } from './config'
 import { extractVariables } from './variable-extractor'
@@ -227,16 +226,18 @@ export async function renderTemplate(
 ): Promise<string> {
   const resolvedPath = resolve(filePath)
 
-  if (!existsSync(resolvedPath)) {
+  const file = Bun.file(resolvedPath)
+  if (!await file.exists()) {
     throw new Error(`Template file not found: ${resolvedPath}`)
   }
 
-  const content = readFileSync(resolvedPath, 'utf-8')
+  const content = await file.text()
 
   // If layout is specified, render page first, then wrap in layout
   if (renderOptions.layout) {
     const layoutPath = resolve(renderOptions.layout)
-    if (!existsSync(layoutPath)) {
+    const layoutFile = Bun.file(layoutPath)
+    if (!await layoutFile.exists()) {
       throw new Error(`Layout template not found: ${layoutPath}`)
     }
 
@@ -245,7 +246,7 @@ export async function renderTemplate(
     const pageHtml = await renderTemplateString(content, resolvedPath, { ...pageOptions, injectCSS: false })
 
     // Render layout with page content injected as `content`
-    const layoutContent = readFileSync(layoutPath, 'utf-8')
+    const layoutContent = await layoutFile.text()
     const layoutContext = {
       ...(renderOptions.context || {}),
       content: pageHtml,

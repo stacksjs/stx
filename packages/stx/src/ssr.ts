@@ -33,7 +33,6 @@
 
 import type { StxOptions } from './types'
 import crypto from 'node:crypto'
-import fs from 'node:fs'
 import path from 'node:path'
 import { errorLogger } from './error-handling'
 import { processDirectives } from './process'
@@ -367,7 +366,7 @@ export async function render(
       templatePath += '.stx'
     }
 
-    if (!fs.existsSync(templatePath)) {
+    if (!await Bun.file(templatePath).exists()) {
       return new Response(`Template not found: ${template}`, { status: 500 })
     }
 

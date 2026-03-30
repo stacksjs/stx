@@ -8,7 +8,6 @@
  * @module template-compiler
  */
 
-import fs from 'node:fs'
 import path from 'node:path'
 import { processDirectives } from './process'
 import { defaultConfig, loadStxConfig } from './config'

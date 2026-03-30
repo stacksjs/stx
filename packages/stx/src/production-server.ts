@@ -77,13 +77,13 @@ export async function startProductionServer(options: ProductionServerOptions = {
   for (const route of manifest.routes) {
     try {
       const compiledPath = path.join(outputDir, route.compiledPath)
-      const compiled = JSON.parse(fs.readFileSync(compiledPath, 'utf-8')) as CompiledTemplate
+      const compiled = JSON.parse(await Bun.file(compiledPath).text()) as CompiledTemplate
       compiledTemplates.set(route.pattern, compiled)
 
       // Pre-load fragments
       const fragmentPath = path.join(outputDir, route.fragmentPath)
-      if (fs.existsSync(fragmentPath)) {
-        fragmentCache.set(route.pattern, fs.readFileSync(fragmentPath, 'utf-8'))
+      if (await Bun.file(fragmentPath).exists()) {
+        fragmentCache.set(route.pattern, await Bun.file(fragmentPath).text())
       }
     }
     catch (error) {

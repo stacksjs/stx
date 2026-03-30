@@ -328,7 +328,7 @@ else {
     const envPath = path.join(directory, '.env.local')
     let envContent = ''
 
-    if (fs.existsSync(envPath)) {
+    if (await Bun.file(envPath).exists()) {
       envContent = await Bun.file(envPath).text()
       // Remove existing NETLIFY_SITE_ID
       envContent = envContent

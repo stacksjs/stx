@@ -6,7 +6,6 @@
  * @module errors/logger
  */
 
-import process from 'node:process'
 import { isDevelopment } from '../env'
 import { getErrorConfig } from './types'
 

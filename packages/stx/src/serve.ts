@@ -388,7 +388,7 @@ export async function serveFile(
 ): Promise<ServeResult> {
   const absolutePath = path.resolve(filePath)
 
-  if (!fs.existsSync(absolutePath)) {
+  if (!await Bun.file(absolutePath).exists()) {
     throw new Error(`File not found: ${absolutePath}`)
   }
 

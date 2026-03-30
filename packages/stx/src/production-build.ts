@@ -421,12 +421,12 @@ export class ProductionBuild {
    * Build a single entry point
    */
   private async buildEntry(name: string, entryPath: string): Promise<void> {
-    if (!existsSync(entryPath)) {
+    if (!await Bun.file(entryPath).exists()) {
       this.errors.push(`Entry point not found: ${entryPath}`)
       return
     }
 
-    const content = readFileSync(entryPath, 'utf-8')
+    const content = await Bun.file(entryPath).text()
     const ext = extname(entryPath)
 
     // Determine output type
@@ -458,7 +458,7 @@ export class ProductionBuild {
 
     // Write output
     this.ensureDir(dirname(outputPath))
-    writeFileSync(outputPath, outputContent)
+    await Bun.write(outputPath, outputContent)
 
     // Record output
     this.outputs.push({
@@ -566,7 +566,7 @@ export class ProductionBuild {
       const scriptPath = join(this.config.outDir, scriptFile)
 
       this.ensureDir(dirname(scriptPath))
-      writeFileSync(scriptPath, processedScript)
+      await Bun.write(scriptPath, processedScript)
 
       this.outputs.push({
         path: scriptPath,
@@ -587,7 +587,7 @@ export class ProductionBuild {
       const stylePath = join(this.config.outDir, styleFile)
 
       this.ensureDir(dirname(stylePath))
-      writeFileSync(stylePath, processedStyle)
+      await Bun.write(stylePath, processedStyle)
 
       this.outputs.push({
         path: stylePath,
@@ -642,7 +642,7 @@ export class ProductionBuild {
 
     for (const output of this.outputs) {
       if (output.type === 'css') {
-        const content = readFileSync(output.path, 'utf-8')
+        const content = await Bun.file(output.path).text()
         cssContents.push(content)
       }
     }
@@ -658,7 +658,7 @@ export class ProductionBuild {
 
     const outputPath = join(this.config.outDir, filename)
     this.ensureDir(dirname(outputPath))
-    writeFileSync(outputPath, combinedCss)
+    await Bun.write(outputPath, combinedCss)
 
     this.outputs.push({
       path: outputPath,
@@ -753,7 +753,7 @@ export class ProductionBuild {
     const minifyOptions = typeof this.config.minify === 'object' ? this.config.minify : {}
 
     for (const output of this.outputs) {
-      const content = readFileSync(output.path, 'utf-8')
+      const content = await Bun.file(output.path).text()
       let minified = content
 
       if (output.type === 'js' && minifyOptions.js) {
@@ -767,7 +767,7 @@ export class ProductionBuild {
       }
 
       if (minified !== content) {
-        writeFileSync(output.path, minified)
+        await Bun.write(output.path, minified)
         output.size = Buffer.byteLength(minified)
       }
     }
@@ -856,20 +856,29 @@ export class ProductionBuild {
 
     for (const output of this.outputs) {
       if (output.type === 'js' || output.type === 'css') {
-        const content = readFileSync(output.path, 'utf-8')
+        const content = await Bun.file(output.path).text()
 
         // Create basic source map
+        const sourcesContent: (string | null)[] = []
+        for (const s of (output.sources || [])) {
+          if (await Bun.file(s).exists()) {
+            sourcesContent.push(await Bun.file(s).text())
+          }
+          else {
+            sourcesContent.push(null)
+          }
+        }
         const sourceMap = {
           version: 3,
           file: basename(output.path),
           sources: output.sources || [],
-          sourcesContent: output.sources?.map(s => existsSync(s) ? readFileSync(s, 'utf-8') : null) || [],
+          sourcesContent,
           mappings: '',
           names: [],
         }
 
         const mapPath = `${output.path}.map`
-        writeFileSync(mapPath, JSON.stringify(sourceMap))
+        await Bun.write(mapPath, JSON.stringify(sourceMap))
 
         // Add source map reference to file
         const sourceMappingURL = this.config.sourcemaps === 'inline'
@@ -877,7 +886,7 @@ export class ProductionBuild {
           : `\n//# sourceMappingURL=${basename(mapPath)}`
 
         if (this.config.sourcemaps !== 'hidden') {
-          writeFileSync(output.path, content + sourceMappingURL)
+          await Bun.write(output.path, content + sourceMappingURL)
         }
 
         this.outputs.push({
@@ -895,7 +904,7 @@ export class ProductionBuild {
   private async fingerprintAssets(): Promise<void> {
     for (const output of this.outputs) {
       if (output.type === 'html') {
-        let content = readFileSync(output.path, 'utf-8')
+        let content = await Bun.file(output.path).text()
 
         // Replace asset references with fingerprinted versions
         for (const [original, fingerprinted] of this.assetHashes) {
@@ -906,7 +915,7 @@ export class ProductionBuild {
           )
         }
 
-        writeFileSync(output.path, content)
+        await Bun.write(output.path, content)
       }
     }
   }
@@ -924,13 +933,13 @@ export class ProductionBuild {
       if (output.size < threshold)
         continue
 
-      const content = readFileSync(output.path)
+      const content = Buffer.from(await Bun.file(output.path).arrayBuffer())
 
       // Gzip
       if (compression.gzip) {
         const gzipped = gzipSync(content, { level: 9 })
         const gzipPath = `${output.path}.gz`
-        writeFileSync(gzipPath, gzipped)
+        await Bun.write(gzipPath, gzipped)
         output.gzipSize = gzipped.length
       }
 
@@ -939,7 +948,7 @@ export class ProductionBuild {
         try {
           const { brotliCompressSync } = await import('node:zlib')
           const brotlied = brotliCompressSync(content)
-          writeFileSync(`${output.path}.br`, brotlied)
+          await Bun.write(`${output.path}.br`, brotlied)
         }
         catch {
           // Brotli not available
@@ -984,7 +993,7 @@ export class ProductionBuild {
 
     const filename = analyzeOptions.filename || `bundle-analysis.${format === 'html' ? 'html' : format === 'json' ? 'json' : 'txt'}`
     const outputPath = join(this.config.outDir, filename)
-    writeFileSync(outputPath, output)
+    await Bun.write(outputPath, output)
 
     // Print summary to console
     console.log('\n📊 Bundle Analysis')

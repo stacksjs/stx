@@ -138,7 +138,7 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
     // Strategy 2: Search filesystem for linked packages
     const localPaths = findCrosswindPaths()
     for (const localPath of localPaths) {
-      if (fs.existsSync(localPath)) {
+      if (await Bun.file(localPath).exists()) {
         const result = await tryImportCrosswind(localPath)
         if (result) {
           crosswindModule = result
@@ -179,7 +179,7 @@ export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig 
 
   for (const configFile of configFiles) {
     const configPath = path.join(cwd, configFile)
-    if (fs.existsSync(configPath)) {
+    if (await Bun.file(configPath).exists()) {
       try {
         const configModule = await import(configPath)
         const config = configModule.default || configModule
@@ -259,7 +259,7 @@ export async function buildCrosswindCSS(cwd: string): Promise<string> {
         fs.mkdirSync(outputDir, { recursive: true })
       }
 
-      fs.writeFileSync(outputPath, result.css)
+      await Bun.write(outputPath, result.css)
     }
 
     isBuilding = false

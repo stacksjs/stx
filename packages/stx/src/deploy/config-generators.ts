@@ -222,7 +222,7 @@ export async function detectProjectConfig(directory: string): Promise<ProjectCon
 
   // Check for package.json
   const packageJsonPath = path.join(directory, 'package.json')
-  if (fs.existsSync(packageJsonPath)) {
+  if (await Bun.file(packageJsonPath).exists()) {
     try {
       const packageJson = JSON.parse(await Bun.file(packageJsonPath).text())
 
@@ -250,7 +250,7 @@ catch {
   const stxConfigPath = path.join(directory, 'stx.config.ts')
   const stxConfigAltPath = path.join(directory, '.config', 'stx.config.ts')
 
-  if (fs.existsSync(stxConfigPath) || fs.existsSync(stxConfigAltPath)) {
+  if (await Bun.file(stxConfigPath).exists() || await Bun.file(stxConfigAltPath).exists()) {
     config.framework = 'stx'
   }
 
@@ -396,7 +396,7 @@ export function hasNetlifyConfig(directory: string): boolean {
  */
 export async function readNetlifyConfig(directory: string): Promise<string | null> {
   const filePath = path.join(directory, 'netlify.toml')
-  if (!fs.existsSync(filePath)) {
+  if (!await Bun.file(filePath).exists()) {
     return null
   }
   return Bun.file(filePath).text()

@@ -13,7 +13,6 @@
 import type { StxOptions } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 // Import from expressions
 import { processClientScript } from './client-script'
@@ -745,13 +744,7 @@ else {
  * Check if a file exists
  */
 export async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    const stat = await fs.promises.stat(filePath)
-    return stat.isFile()
-  }
-  catch {
-    return false
-  }
+  return Bun.file(filePath).exists()
 }
 
 // =============================================================================
@@ -826,7 +819,7 @@ export async function resolveTemplatePath(
   for (let i = 0; i < 10; i++) {
     const candidate = path.join(searchDir, 'layouts')
     let candidateExists = false
-    try { candidateExists = (await fs.promises.stat(candidate)).isDirectory() } catch {}
+    try { candidateExists = fs.statSync(candidate, { throwIfNoEntry: false })?.isDirectory() ?? false } catch {}
     if (candidateExists) {
       layoutsDir = candidate
       break

@@ -3,7 +3,6 @@
  * Start the story development server
  */
 
-import process from 'node:process'
 import { watchConfigFile } from '../config-watcher'
 import { createContext } from '../context'
 import { printBanner, printError, printHelp, printServerUrls, printStoryCount, printWarning } from '../output'
