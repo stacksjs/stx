@@ -343,17 +343,17 @@ else {
     return true;
   }
 
-  // <stx-link> click handling — only StxLink gets SPA navigation.
+  // SPA click handling — only [data-stx-link] elements get SPA navigation.
   // Regular <a href> does native full page reload (no interception).
+  // StxLink builtin renders <a data-stx-link href="...">, so we intercept those.
   document.addEventListener('click',function(e){
     if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0)return;
     if(!e.target||!e.target.closest)return;
-    // Only intercept clicks inside <stx-link> elements
-    var stxLink=e.target.closest('stx-link');
-    if(!stxLink)return;
-    var link=stxLink.querySelector('a[href]')||stxLink;
-    var href=stxLink.getAttribute('to')||stxLink.getAttribute('href')||(link&&link.getAttribute('href'));
-    if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:'))return;
+    var link=e.target.closest('[data-stx-link]');
+    if(!link)return;
+    var href=link.getAttribute('href');
+    if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:'))return;
+    if(link.target==='_blank'||link.hasAttribute('download'))return;
     e.preventDefault();
     e.stopPropagation();
     navigate(href);
@@ -368,9 +368,9 @@ else {
   if(o.prefetch){
     document.addEventListener('mouseover',function(e){
       if(!e.target||!e.target.closest)return;
-      var stxLink=e.target.closest('stx-link');
-      if(!stxLink)return;
-      var href=stxLink.getAttribute('to')||stxLink.getAttribute('href');
+      var link=e.target.closest('[data-stx-link]');
+      if(!link)return;
+      var href=link.getAttribute('href');
       if(cache[href]||prefetching[href])return;
       prefetching[href]=true;
       fetch(href,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
@@ -397,7 +397,7 @@ else {
 
   function updateActiveLinks(){
     // Update active classes on <stx-link> elements (and legacy data-stx-link)
-    var links=document.querySelectorAll('stx-link, [data-stx-link]');
+    var links=document.querySelectorAll('[data-stx-link]');
     var cur=location.pathname;
     links.forEach(function(link){
       var href=link.getAttribute('to')||link.getAttribute('href')||'';
