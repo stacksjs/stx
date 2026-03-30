@@ -690,6 +690,9 @@ export async function serve(options: ServeOptions): Promise<void> {
             let styleMatch: RegExpExecArray | null
             const styleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
             while ((styleMatch = styleRe.exec(headContent)) !== null) {
+              // Skip Crosswind CSS — it persists across SPA navigations from the initial page load.
+              // Including it in fragments causes duplicate Preflight resets that strip styling.
+              if (styleMatch[0].includes('data-crosswind')) continue
               headStyles.push(styleMatch[0])
             }
           }
