@@ -644,6 +644,9 @@ async function processOtherDirectives(
   // Process includes (@include, @component, etc.)
   output = await processIncludes(output, context, filePath, opts, dependencies)
 
+  // Second component pass — catch components introduced by @include (e.g. StxLink in sidebar partials)
+  output = await processComponents(output, context, filePath, opts, dependencies)
+
   // Process @ref attributes for DOM references
   // Must run AFTER processIncludes so ref= attributes in partials/components are transformed
   output = processRefAttributes(output)
@@ -895,6 +898,7 @@ else {
 
   for (const { match, attrs, content } of clientScriptMatches) {
     clientScriptsTransformed = true
+    // eslint-disable-next-line pickier/no-unused-vars
     let processedContent = content
 
     // Validate client scripts for prohibited patterns
