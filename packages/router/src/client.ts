@@ -64,7 +64,22 @@ export function getRouterScript(): string {
 
     function done(){isNavigating=false;document.body.classList.remove(o.loadingClass)}
 
+    // Layout change helper — compares new page layout with current
+    var layoutCache={};
+    function checkLayoutChange(newLayout,targetUrl){
+      var currentLayout=document.querySelector('meta[name="stx-layout"]');
+      var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'default';
+      if(newLayout&&newLayout!==curLayoutName){
+        console.log('[router] layout change:',curLayoutName,'→',newLayout,'— full reload');
+        location.href=targetUrl;
+        return true;
+      }
+      return false;
+    }
+
     if(o.cache&&cache[targetPath]&&!force){
+      // Check layout on cached entries too
+      if(checkLayoutChange(layoutCache[targetPath],url)){done();return}
       swap(cache[targetPath],targetPath,pushState,targetHash);
       done();
     }
@@ -77,19 +92,10 @@ else {
         var newLayout=r.headers.get('X-STX-Layout')||'default';
         return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout}});
       }).then(function(result){
-        // Layout change detection: if the new page uses a different layout,
-        // do a full page navigation instead of fragment swap.
-        // This handles cases like navigating from a page with header/nav
-        // to an auth page with no layout chrome.
-        var currentLayout=document.querySelector('meta[name="stx-layout"]');
-        var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'default';
-        if(result.isFragment&&result.layout!==curLayoutName){
-          console.log('[router] layout change:',curLayoutName,'→',result.layout,'— full reload');
-          location.href=url;
-          return;
-        }
+        // Layout change detection
+        if(result.isFragment&&checkLayoutChange(result.layout,url)){return}
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
-        if(o.cache)cache[targetPath]=result.html;
+        if(o.cache){cache[targetPath]=result.html;layoutCache[targetPath]=result.layout}
         swap(result.html,targetPath,pushState,targetHash);
       }).catch(function(){
         location.href=url;
@@ -387,9 +393,10 @@ else {
       prefetching[href]=true;
       fetch(href,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
         var isFrag=r.headers.get('X-STX-Fragment')==='true';
-        return r.text().then(function(html){return isFrag?'<!--stx-fragment-->'+html:html});
-      }).then(function(html){
-        if(o.cache)cache[href]=html;
+        var pLayout=r.headers.get('X-STX-Layout')||'default';
+        return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout}});
+      }).then(function(result){
+        if(o.cache){cache[href]=result.html;layoutCache[href]=result.layout}
       }).catch(function(){}).finally(function(){delete prefetching[href]});
     },true);
   }
