@@ -117,6 +117,13 @@ export async function processDirectives(
         const headConfig = (options as any).app?.head || {}
         result = ensureDocumentShell(result, headConfig)
 
+        // Inject layout meta tag for SPA layout-change detection
+        const layoutComment = result.match(/<!-- stx-layout: ([^ ]+) -->/)
+        if (layoutComment && result.includes('<head')) {
+          const layoutName = layoutComment[1]
+          result = result.replace('<head>', `<head>\n  <meta name="stx-layout" content="${layoutName}">`)
+        }
+
         // Ensure data-stx attribute is on <body> for __stx_setup functions.
         // processScriptSetup may have placed it on a non-body element (e.g. <aside>)
         // because <body> didn't exist before auto-shell wrapping.
@@ -458,6 +465,8 @@ async function processDirectivesInternal(
 
       // Process the fully combined layout content with all other directives
       output = await processOtherDirectives(processedLayout, context, layoutFullPath, resolvedOptions, dependencies)
+      // Embed layout identifier for SPA layout-change detection
+      output = `<!-- stx-layout: ${layoutPath} -->\n${output}`
       return output
     }
     catch (error) {

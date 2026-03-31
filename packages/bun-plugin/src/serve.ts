@@ -693,6 +693,12 @@ export async function serve(options: ServeOptions): Promise<void> {
         // SPA navigation: return only <main> content as fragment
         const isSpaNav = req.headers.get('X-STX-Router') === 'true'
         if (isSpaNav) {
+          // Detect layout from rendered content — extract @extends layout name
+          // If layout differs from the referrer's layout, return full HTML (not fragment)
+          // so the router does a full document swap instead of just swapping <main>
+          const layoutMatch = content.match(/<!-- stx-layout: ([^ ]+) -->/)
+          const pageLayout = layoutMatch ? layoutMatch[1] : 'default'
+
           let fragment = content
 
           // Extract styles from <head> AND body (Crosswind CSS, page styles, @push('styles'))
@@ -769,6 +775,7 @@ export async function serve(options: ServeOptions): Promise<void> {
             headers: {
               'Content-Type': 'text/html',
               'X-STX-Fragment': 'true',
+              'X-STX-Layout': pageLayout,
               'Cache-Control': 'no-cache',
               ...corsHeaders,
             },

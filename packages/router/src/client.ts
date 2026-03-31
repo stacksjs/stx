@@ -74,8 +74,20 @@ else {
       fetch(url,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
         if(!r.ok)throw new Error(r.status);
         var isFragment=r.headers.get('X-STX-Fragment')==='true';
-        return r.text().then(function(html){return{html:html,isFragment:isFragment}});
+        var newLayout=r.headers.get('X-STX-Layout')||'default';
+        return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout}});
       }).then(function(result){
+        // Layout change detection: if the new page uses a different layout,
+        // do a full page navigation instead of fragment swap.
+        // This handles cases like navigating from a page with header/nav
+        // to an auth page with no layout chrome.
+        var currentLayout=document.querySelector('meta[name="stx-layout"]');
+        var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'default';
+        if(result.isFragment&&result.layout!==curLayoutName){
+          console.log('[router] layout change:',curLayoutName,'→',result.layout,'— full reload');
+          location.href=url;
+          return;
+        }
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
         if(o.cache)cache[targetPath]=result.html;
         swap(result.html,targetPath,pushState,targetHash);
