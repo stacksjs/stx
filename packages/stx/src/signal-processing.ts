@@ -321,7 +321,7 @@ export function processScriptSetup(template: string): { output: string, setupCod
   const setupCode = `
 <script data-stx-scoped>
 function ${setupFnName}() {
-  const { state, derived, effect, batch, onMount, onDestroy, defineStore, useStore } = window.stx;
+  const { state, derived, effect, batch, onMount, onDestroy, defineStore, useStore, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect } = window.stx;
 ${resolvedContent}
   return { ${extractExports(resolvedContent)} };
 }
