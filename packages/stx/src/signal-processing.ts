@@ -10,7 +10,7 @@
  */
 
 import type { StxOptions } from './types'
-import { transformStoreImports } from './state-management'
+import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { injectSignalsRuntime, injectBrowserRuntime } from './runtime-injection'
 

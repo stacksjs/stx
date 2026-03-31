@@ -34,7 +34,7 @@
  */
 
 import type { ParsedEvent, EventModifiers } from './events'
-import { transformStoreImports } from './state-management'
+import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 
 // =============================================================================

@@ -2460,8 +2460,10 @@ catch (e) {}
     // Pinia-inspired, signals-based. Stores survive SPA navigation.
 
     defineStore: function(id, setupOrOptions, storeOptions) {
+      console.log('[stx:store] defineStore called:', id, 'type:', typeof setupOrOptions === 'function' ? 'setup' : 'options', 'persist:', !!(storeOptions && storeOptions.persist));
       // Return existing store if already defined
       if (window.stx._stores.has(id)) {
+        console.log('[stx:store] returning existing store:', id);
         return window.stx._stores.get(id);
       }
 
@@ -2531,6 +2533,15 @@ catch (e) {}
         activeDisposers = prevDisposers;
       }
 
+      // Log what the setup returned
+      var signalKeys = [];
+      var actionKeys = [];
+      for (var dk in result) {
+        if (result[dk] && result[dk]._isSignal) signalKeys.push(dk);
+        else if (typeof result[dk] === 'function') actionKeys.push(dk);
+      }
+      console.log('[stx:store] setup complete:', id, 'signals:', signalKeys, 'actions:', actionKeys);
+
       // Capture initial values for $reset
       var _initialValues = {};
       for (var k in result) {
@@ -2578,6 +2589,7 @@ catch (e) {}
       // Hydration: restore state from SSR
       var hydrationData = window.__STX_STORE_STATE__ && window.__STX_STORE_STATE__[id];
       if (hydrationData) {
+        console.log('[stx:store] hydrating from SSR:', id, Object.keys(hydrationData));
         batch(function() {
           for (var hk in hydrationData) {
             if (result[hk] && result[hk]._isSignal) result[hk].set(hydrationData[hk]);
@@ -2598,6 +2610,7 @@ catch (e) {}
           var saved = storageType.getItem(storageKey);
           if (saved) {
             var parsed = JSON.parse(saved);
+            console.log('[stx:store] restoring persisted state:', id, 'key:', storageKey, Object.keys(parsed));
             batch(function() {
               for (var pk in parsed) {
                 if (result[pk] && result[pk]._isSignal && (!pick || pick.indexOf(pk) !== -1)) {
@@ -2605,8 +2618,10 @@ catch (e) {}
                 }
               }
             });
+          } else {
+            console.log('[stx:store] no persisted state found:', id, 'key:', storageKey);
           }
-        } catch(e) {}
+        } catch(e) { console.warn('[stx:store] persistence read error:', id, e); }
 
         // Write on change (debounced)
         var writeTimer = null;
@@ -2621,7 +2636,8 @@ catch (e) {}
           }
           if (writeTimer) clearTimeout(writeTimer);
           writeTimer = setTimeout(function() {
-            try { storageType.setItem(storageKey, JSON.stringify(snapshot)); } catch(e) {}
+            console.log('[stx:store] persisting:', id, 'key:', storageKey, Object.keys(snapshot));
+            try { storageType.setItem(storageKey, JSON.stringify(snapshot)); } catch(e) { console.warn('[stx:store] persist write error:', id, e); }
           }, 100);
         });
         activeDisposers = prevPersistDisposers;
@@ -2632,6 +2648,7 @@ catch (e) {}
       window.__STX_STORES__ = window.__STX_STORES__ || {};
       window.__STX_STORES__[id] = result;
 
+      console.log('[stx:store] registered:', id, 'total stores:', window.stx._stores.size);
       return result;
     },
 
@@ -2641,8 +2658,10 @@ catch (e) {}
         store = window.__STX_STORES__[id];
       }
       if (!store) {
+        console.error('[stx:store] Store not found:', id, 'available:', Array.from(window.stx._stores.keys()));
         throw new Error('[stx] Store "' + id + '" not found. Define it with defineStore() first.');
       }
+      console.log('[stx:store] useStore:', id);
       return store;
     },
 

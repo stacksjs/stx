@@ -18,7 +18,7 @@ import path from 'node:path'
 // Import from expressions
 import { processClientScript } from './client-script'
 import { unescapeHtml } from './expressions'
-import { transformStoreImports } from './state-management'
+import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
 import { processScopedStyles } from './style-scoping'

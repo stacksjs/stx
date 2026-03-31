@@ -72,7 +72,7 @@ import { processConditionals } from './conditionals'
 import { processExpressions } from './expressions'
 import { LRUCache } from './performance-utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
-import { transformStoreImports } from './state-management'
+import { transformStoreImports } from './store-imports'
 import { createDetailedErrorMessage, fileExists, shouldTranspileTypeScript, transpileTypeScript } from './utils'
 
 // =============================================================================
