@@ -54,7 +54,7 @@ Bun.serve({
     // Try exact file
     let filePath = join(PUBLIC_DIR, pathname)
     if (pathname === '/' || !existsSync(filePath)) {
-      filePath = join(PUBLIC_DIR, pathname === '/' ? 'index.html' : `${pathname}.html`)
+      filePath = join(PUBLIC_DIR, pathname === '/' ? 'index.html' : \`\${pathname}.html\`)
     }
 
     if (!existsSync(filePath)) {

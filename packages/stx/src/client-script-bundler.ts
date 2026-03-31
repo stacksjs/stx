@@ -168,7 +168,6 @@ export async function bundleClientScript(
       target: 'browser',
       format: 'esm',
       minify,
-      bundle: true,
       plugins: [createBundlePlugin(projectRoot)],
       define: {
         'process.env.NODE_ENV': minify ? '"production"' : '"development"',
