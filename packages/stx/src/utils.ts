@@ -711,11 +711,11 @@ else {
       if (clientScripts.length > 0) {
         // Use event bindings collected during template processing (from @click, @input, etc.)
         const eventBindings = (componentContext.__stx_event_bindings || []) as any[]
-        const transformedScripts = clientScripts.map((fullScript: string) => {
+        const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
           const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
           if (!contentMatch) return fullScript
-          return processClientScript(contentMatch[1], { eventBindings, templateContent: output })
-        })
+          return await processClientScript(contentMatch[1], { eventBindings, templateContent: output, filePath: componentFilePath, projectRoot: process.cwd() })
+        }))
         output += '\n' + transformedScripts.join('\n')
         // Clear bindings after use
         componentContext.__stx_event_bindings = []
