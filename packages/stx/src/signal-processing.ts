@@ -283,7 +283,7 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
  * </script>
  * ```
  */
-export function processScriptSetup(template: string): { output: string, setupCode: string | null } {
+export async function processScriptSetup(template: string, filePath?: string): Promise<{ output: string, setupCode: string | null }> {
   // Find client-side scripts (not server, not src, not type=module for external, not already scoped)
   // Scripts with data-stx-scoped are already wrapped by component processing
   // Capture attributes to check for TypeScript
@@ -313,8 +313,18 @@ export function processScriptSetup(template: string): { output: string, setupCod
 
   const setupFnName = `__stx_setup_${Date.now()}_${signalSetupCounter++}`
 
-  // Transform store imports before wrapping in function (import statements can't be inside functions)
-  const resolvedContent = transformStoreImports(signalScript.content)
+  // Bundle user imports before wrapping (import statements can't be inside functions)
+  let scriptContent = signalScript.content
+  const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
+  if (hasUserImports(scriptContent)) {
+    console.log('[stx:bundler] bundling signal script imports')
+    scriptContent = await bundleClientScript(scriptContent, filePath || '', {
+      projectRoot: process.cwd(),
+    })
+  }
+
+  // Transform store imports before wrapping in function
+  const resolvedContent = transformStoreImports(scriptContent)
 
   // Generate the setup function that provides signal APIs
   // Mark with data-stx-scoped so the client script processing loop skips it
@@ -506,7 +516,7 @@ export function extractExports(setupContent: string): string {
  * Detects signal syntax, wraps scripts in setup functions,
  * injects the signals runtime and browser runtime.
  */
-export function processSignals(template: string, options: StxOptions): string {
+export async function processSignals(template: string, options: StxOptions, filePath?: string): Promise<string> {
   if (!hasSignalsSyntax(template)) {
     return template
   }
@@ -520,7 +530,7 @@ export function processSignals(template: string, options: StxOptions): string {
   }
 
   // Process <script setup> blocks
-  const { output: processedOutput, setupCode } = processScriptSetup(output)
+  const { output: processedOutput, setupCode } = await processScriptSetup(output, filePath)
   output = processedOutput
 
   // Inject the signals runtime

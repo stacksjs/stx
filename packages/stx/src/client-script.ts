@@ -142,6 +142,12 @@ export interface ClientScriptOptions {
   hasColonDirectives?: boolean
   /** Template HTML content for auto-binding analysis (Phase 2: auto-detect which scripts need stx.mount()) */
   templateContent?: string
+  /** File path of the template (for relative import resolution in bundler) */
+  filePath?: string
+  /** Project root directory (for @/ path resolution in bundler) */
+  projectRoot?: string
+  /** Whether this is a production build (enables minification in bundler) */
+  production?: boolean
 }
 
 // =============================================================================
@@ -626,12 +632,24 @@ function extractTemplateReferences(templateHtml: string): Set<string> {
  * @param options - Event bindings and other processing options
  * @returns A complete `<script>...</script>` tag ready for browser injection
  */
-export function processClientScript(
+export async function processClientScript(
   scriptContent: string,
   options: ClientScriptOptions = {},
-): string {
+): Promise<string> {
   let code = scriptContent
   let autoImportCode = ''
+  let wasBundled = false
+
+  // 0. Bundle user imports via Bun.build (if any detected)
+  const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
+  if (hasUserImports(code)) {
+    console.log('[stx:bundler] user imports detected, bundling...')
+    code = await bundleClientScript(code, options.filePath || '', {
+      projectRoot: options.projectRoot,
+      minify: options.production,
+    })
+    wasBundled = true
+  }
 
   // 1. Transform auto-imports from 'stx' and '@stacksjs/browser'
   if (options.autoImports !== false) {
@@ -647,8 +665,8 @@ export function processClientScript(
   code = transformStoreImports(code)
 
   // 3. Transpile TypeScript to JavaScript (strips type annotations, interfaces, etc.)
-  // Skip if the caller already transpiled, or if attrs indicate plain JS
-  if (shouldTranspileTypeScript(options.attrs || '')) {
+  // Skip if Bun.build already handled TS, or if attrs indicate plain JS
+  if (!wasBundled && shouldTranspileTypeScript(options.attrs || '')) {
     code = transpileTypeScript(code)
   }
 

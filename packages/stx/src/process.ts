@@ -744,7 +744,7 @@ async function processOtherDirectives(
 
   // Process STX signals for reactive UI (state, derived, effect, :if, :for, :model, etc.)
   // This injects the signals runtime and processes <script setup> blocks
-  output = processSignals(output, opts)
+  output = await processSignals(output, opts, filePath)
 
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, opts)
@@ -908,7 +908,7 @@ else {
 
     // Use callback form of replace to avoid $ pattern interpretation in replacement string
     // Note: processClientScript handles transpilation internally based on attrs
-    const scriptResult = processClientScript(content, { eventBindings, attrs, hasColonDirectives, templateContent: template })
+    const scriptResult = await processClientScript(content, { eventBindings, attrs, hasColonDirectives, templateContent: template, filePath, projectRoot: process.cwd(), production: options.buildMode === 'compile' })
     output = output.replace(match, () => scriptResult)
   }
   // Only clear event bindings if scripts were found and transformed.
