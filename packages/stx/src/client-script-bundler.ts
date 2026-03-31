@@ -10,8 +10,7 @@
  */
 
 import path from 'node:path'
-import fs from 'node:fs'
-import { createHash } from 'node:crypto'
+import fs from 'node:fs' // kept for mkdir/rmSync (no Bun equivalent for dir ops)
 import type { BunPlugin } from 'bun'
 
 // Known imports that are NOT user imports — handled by other transforms
@@ -98,7 +97,7 @@ function createBundlePlugin(projectRoot: string): BunPlugin {
           path.join(resolved, 'index.js'),
         ]
         for (const candidate of candidates) {
-          if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+          if (fs.existsSync(candidate) && fs.statSync(candidate, { throwIfNoEntry: false })?.isFile()) {
             console.log('[stx:bundler] resolved @/ import:', args.path, '→', candidate)
             return { path: candidate }
           }
@@ -135,13 +134,16 @@ export async function bundleClientScript(
   const cacheDir = options.cacheDir || path.join(projectRoot, '.stx', 'bundle-cache')
 
   // Content-hash for caching and temp file naming
-  const hash = createHash('md5').update(code + filePath).digest('hex').slice(0, 12)
+  const hasher = new Bun.CryptoHasher('md5')
+  hasher.update(code + filePath)
+  const hash = hasher.digest('hex').slice(0, 12)
 
   // Check cache
   const cachePath = path.join(cacheDir, `${hash}.js`)
-  if (fs.existsSync(cachePath)) {
+  const cacheFile = Bun.file(cachePath)
+  if (await cacheFile.exists()) {
     console.log('[stx:bundler] cache hit:', hash)
-    return fs.readFileSync(cachePath, 'utf-8')
+    return await cacheFile.text()
   }
 
   // Write temp entry file (Bun.build needs a real file)
@@ -206,7 +208,7 @@ export async function bundleClientScript(
 
     // Cache the result
     fs.mkdirSync(cacheDir, { recursive: true })
-    fs.writeFileSync(cachePath, bundled)
+    await Bun.write(cachePath, bundled)
 
     return bundled
   }
