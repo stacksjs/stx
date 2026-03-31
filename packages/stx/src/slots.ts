@@ -199,6 +199,47 @@ export function parseSlots(childContent: string): ParsedSlots {
     workingContent = workingContent.slice(0, slot.start) + workingContent.slice(slot.end)
   }
 
+  // Pass 2: Extract slot="name" attributes on direct children (Web Component style)
+  // e.g., <h1 slot="header">Title</h1> or <img slot="icon" src="..." />
+  const slotAttrElements: { start: number, end: number, slotName: string, element: string }[] = []
+
+  // Match paired elements with slot="name"
+  const pairedSlotAttrRegex = /<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*?)\bslot="([^"]+)"([^>]*)>([\s\S]*?)<\/\1>/gi
+  let slotAttrMatch
+  while ((slotAttrMatch = pairedSlotAttrRegex.exec(workingContent)) !== null) {
+    const [fullMatch, tag, before, slotName, after, inner] = slotAttrMatch
+    // Reconstruct element WITHOUT the slot= attribute
+    const cleanBefore = before.replace(/\s*slot="[^"]*"\s*/, ' ').trimEnd()
+    const cleanAfter = after.replace(/\s*slot="[^"]*"\s*/, ' ').trimEnd()
+    const attrs = (cleanBefore + cleanAfter).trim()
+    const element = `<${tag}${attrs ? ' ' + attrs : ''}>${inner}</${tag}>`
+    slotAttrElements.push({ start: slotAttrMatch.index, end: slotAttrMatch.index + fullMatch.length, slotName, element })
+  }
+
+  // Match self-closing elements with slot="name"
+  const selfClosingSlotAttrRegex = /<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*?)\bslot="([^"]+)"([^>]*?)\/>/gi
+  while ((slotAttrMatch = selfClosingSlotAttrRegex.exec(workingContent)) !== null) {
+    const [fullMatch, tag, before, slotName, after] = slotAttrMatch
+    const cleanBefore = before.replace(/\s*slot="[^"]*"\s*/, ' ').trimEnd()
+    const cleanAfter = after.replace(/\s*slot="[^"]*"\s*/, ' ').trimEnd()
+    const attrs = (cleanBefore + cleanAfter).trim()
+    const element = `<${tag}${attrs ? ' ' + attrs : ''} />`
+    slotAttrElements.push({ start: slotAttrMatch.index, end: slotAttrMatch.index + fullMatch.length, slotName, element })
+  }
+
+  // Add to named slots and remove from working content (reverse order)
+  slotAttrElements.sort((a, b) => b.start - a.start)
+  for (const item of slotAttrElements) {
+    const existing = result.named.get(item.slotName)
+    if (existing) {
+      existing.content += item.element
+    }
+    else {
+      result.named.set(item.slotName, { name: item.slotName, content: item.element })
+    }
+    workingContent = workingContent.slice(0, item.start) + workingContent.slice(item.end)
+  }
+
   // Remaining content is the default slot
   result.default = workingContent.trim()
 
