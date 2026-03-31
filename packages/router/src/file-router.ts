@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import type { Route, RouteMatch, RouterConfig } from './types'
-import { generateRouteTypes } from './codegen'
+import { generateRouteTypes, generateRouteManifest } from './codegen'
 import { filePathToPattern, patternToRegex } from './matcher'
 import { resolveLayoutChain } from './nested-layouts'
 
@@ -79,9 +79,10 @@ export class Router {
       return a.pattern.localeCompare(b.pattern)
     })
 
-    // Generate type declarations
+    // Generate type declarations and route manifest into .stx/
     const stxDir = path.join(baseDir, '.stx')
     generateRouteTypes(this.routes, stxDir)
+    generateRouteManifest(this.routes, stxDir, this.pagesDir)
   }
 
   match(pathname: string): RouteMatch | null {

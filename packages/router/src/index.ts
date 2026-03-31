@@ -30,7 +30,7 @@ export {
 export { resolveLayoutChain } from './nested-layouts'
 
 // Route type generation
-export { generateRouteTypes } from './codegen'
+export { generateRouteTypes, generateRouteManifest } from './codegen'
 
 // Client-side SPA navigation
 export { getRouterScript } from './client'

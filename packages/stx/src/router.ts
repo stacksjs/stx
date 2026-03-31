@@ -3,7 +3,7 @@ import { matchRoute, Router as _Router } from 'stx-router'
 import type { Route, RouterConfig } from 'stx-router'
 
 export type { Route, RouteMatch } from 'stx-router'
-export { findErrorPage, formatRoutes, generateRouteTypes, matchRoute } from 'stx-router'
+export { findErrorPage, formatRoutes, generateRouteManifest, generateRouteTypes, matchRoute } from 'stx-router'
 
 // Backwards-compatible createRouter that returns Route[] (original signature)
 export interface RouterOptions {
