@@ -111,6 +111,18 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
 
     sourceFiles = files
+
+    // Generate route manifest and type declarations into .stx/
+    try {
+      const { Router } = await import('stx-router')
+      const pagesDir = patterns[0]?.replace(/\/$/, '') || 'pages'
+      const router = new Router(process.cwd(), { pagesDir })
+      console.log(`[stx] Generated ${router.routes.length} routes → .stx/routes.ts`)
+    }
+    catch (e) {
+      // Non-fatal — route generation is optional
+    }
+
     return files
   }
 
