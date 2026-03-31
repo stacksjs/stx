@@ -534,8 +534,10 @@ export async function serve(options: ServeOptions): Promise<void> {
   }
 
   // Start server immediately - processing happens on-demand
-  if (!options.quiet)
-    console.log(`  ✓ Frontend running at http://localhost:${port}`)
+  const startTime = performance.now()
+
+  // Discover files and generate routes before printing banner
+  await discoverFiles()
 
   // CORS headers for cross-origin requests (needed for Craft WebView)
   const corsHeaders = {
@@ -986,6 +988,42 @@ export async function serve(options: ServeOptions): Promise<void> {
       })
     },
   })
+
+  // Print Bun-style startup banner
+  if (!options.quiet) {
+    const elapsed = (performance.now() - startTime).toFixed(0)
+    const routeCount = sourceFiles?.length || 0
+    const patternsStr = patterns.join(', ')
+
+    console.log()
+    console.log(`  \x1b[36m\x1b[1mstx\x1b[0m`)
+    console.log()
+    console.log(`  \x1b[32m➜\x1b[0m  \x1b[1mLocal\x1b[0m:   \x1b[36mhttp://localhost:${port}/\x1b[0m`)
+    console.log(`  \x1b[32m➜\x1b[0m  \x1b[1mRoutes\x1b[0m:  \x1b[2m${routeCount} files from ${patternsStr}\x1b[0m`)
+    console.log()
+    console.log(`  \x1b[2mready in ${elapsed}ms\x1b[0m`)
+    console.log()
+    console.log(`  \x1b[2mPress\x1b[0m o + Enter \x1b[2mto open in browser\x1b[0m`)
+    console.log(`  \x1b[2mPress\x1b[0m q + Enter \x1b[2mto quit\x1b[0m`)
+    console.log()
+
+    // Interactive keyboard shortcuts (like Bun's HTML dev server)
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(false)
+      const rl = await import('node:readline')
+      const reader = rl.createInterface({ input: process.stdin })
+      reader.on('line', (line: string) => {
+        const cmd = line.trim().toLowerCase()
+        if (cmd === 'o') {
+          const openCmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open'
+          Bun.spawn([openCmd, `http://localhost:${port}/`])
+        }
+        else if (cmd === 'q') {
+          process.exit(0)
+        }
+      })
+    }
+  }
 
   // Keep the process running
   await Bun.sleep(Number.POSITIVE_INFINITY)
