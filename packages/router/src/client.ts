@@ -69,6 +69,7 @@ export function getRouterScript(): string {
     function checkLayoutChange(newLayout,targetUrl){
       var currentLayout=document.querySelector('meta[name="stx-layout"]');
       var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'default';
+      console.log('[router] layout check: current='+curLayoutName+' new='+newLayout+' match='+(newLayout===curLayoutName));
       if(newLayout&&newLayout!==curLayoutName){
         console.log('[router] layout change:',curLayoutName,'→',newLayout,'— full reload');
         location.href=targetUrl;
