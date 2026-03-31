@@ -68,10 +68,13 @@ export function getRouterScript(): string {
     var layoutCache={};
     function checkLayoutChange(newLayout,targetUrl){
       var currentLayout=document.querySelector('meta[name="stx-layout"]');
-      var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'default';
-      console.log('[router] layout check: current='+curLayoutName+' new='+newLayout+' match='+(newLayout===curLayoutName));
-      if(newLayout&&newLayout!==curLayoutName){
-        console.log('[router] layout change:',curLayoutName,'→',newLayout,'— full reload');
+      var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'';
+      var newLayoutName=newLayout||'';
+      console.log('[router] layout check: current='+curLayoutName+' new='+newLayoutName);
+      // If either page has a layout and they differ, full reload.
+      // Also reload if current has a layout but target doesn't (or vice versa).
+      if(curLayoutName!==newLayoutName){
+        console.log('[router] layout change:',curLayoutName||'(none)','→',newLayoutName||'(none)','— full reload');
         location.href=targetUrl;
         return true;
       }
