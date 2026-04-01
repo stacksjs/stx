@@ -82,8 +82,8 @@ export function getRouterScript(): string {
       var newGroup=getLayoutGroup(newLayout);
       console.log('[router] layout check: current='+curLayoutName+'('+curGroup+') new='+(newLayout||'')+'('+newGroup+')');
       if(curGroup!==newGroup){
-        console.log('[router] layout group change:',curGroup,'→',newGroup,'— full reload');
-        location.href=targetUrl;
+        console.log('[router] layout group change:',curGroup,'→',newGroup,'— full reload to:',targetUrl);
+        location.assign(targetUrl);
         return true;
       }
       return false;
@@ -100,9 +100,14 @@ else {
         if(!r.ok)throw new Error(r.status);
         var isFragment=r.headers.get('X-STX-Fragment')==='true';
         var newLayout=r.headers.get('X-STX-Layout')||'';
+        // Check layout BEFORE reading body — if different group, redirect immediately
+        if(isFragment&&checkLayoutChange(newLayout,url)){
+          // checkLayoutChange already called location.assign — just stop processing
+          return null;
+        }
         return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout}});
       }).then(function(result){
-        if(result.isFragment&&checkLayoutChange(result.layout,url)){return}
+        if(!result)return; // layout change redirect already in progress
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
         if(o.cache){cache[targetPath]=result.html;layoutCache[targetPath]=result.layout}
         swap(result.html,targetPath,pushState,targetHash);
