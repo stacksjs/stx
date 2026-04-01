@@ -90,18 +90,22 @@ export function getRouterScript(): string {
     }
 else {
       if(force&&cache[targetPath])delete cache[targetPath];
+      // First fetch as fragment (SPA mode)
       fetch(url,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
         if(!r.ok)throw new Error(r.status);
         var isFragment=r.headers.get('X-STX-Fragment')==='true';
         var newLayout=r.headers.get('X-STX-Layout')||'';
-        // Check layout BEFORE reading body — if different group, redirect immediately
+        // Layout change? Fetch the FULL page (no X-STX-Router header) and do full document swap
         if(isFragment&&checkLayoutChange(newLayout,url)){
-          // checkLayoutChange already called location.assign — just stop processing
-          return null;
+          console.log('[router] layout change — fetching full page for document swap');
+          return fetch(url,{headers:{'Accept':'text/html'}}).then(function(fullRes){
+            if(!fullRes.ok)throw new Error(fullRes.status);
+            return fullRes.text().then(function(html){return{html:html,isFragment:false,layout:newLayout}});
+          });
         }
         return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout}});
       }).then(function(result){
-        if(!result)return; // layout change redirect already in progress
+        if(!result)return;
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
         if(o.cache){cache[targetPath]=result.html;layoutCache[targetPath]=result.layout}
         swap(result.html,targetPath,pushState,targetHash);
@@ -258,11 +262,37 @@ else {
 
       incoming.forEach(function(s){s.removeAttribute('data-stx-incoming')});
 
-      // ── Swap main content ──
-      // Strip inline scripts from innerHTML — they won't execute via innerHTML anyway,
-      // and leaving them causes stx.mount() to find the wrong nextElementSibling
-      var cleanHTML=newContent.innerHTML.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt\\\\s*>','gi'),'');
-      currentContent.innerHTML=cleanHTML;
+      // ── Swap content ──
+      // For layout changes: swap the entire <body> to replace layout chrome (nav, footer, etc.)
+      // For same-layout: swap only the container (<main>)
+      var newBody=doc.querySelector('body');
+      var isLayoutChange=false;
+      if(newBody){
+        var newMeta=doc.querySelector('meta[name="stx-layout"]');
+        var curMeta=document.querySelector('meta[name="stx-layout"]');
+        var curGroup=getLayoutGroup(curMeta?curMeta.getAttribute('content'):'');
+        var newGroup=getLayoutGroup(newMeta?newMeta.getAttribute('content'):'');
+        isLayoutChange=curGroup!==newGroup;
+      }
+      if(isLayoutChange&&newBody){
+        console.log('[router] full body swap for layout change');
+        // Replace entire body content — layout chrome and all
+        var bodyHTML=newBody.innerHTML.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt\\\\s*>','gi'),'');
+        document.body.innerHTML=bodyHTML;
+        // Copy body attributes (class, data-stx, etc.)
+        Array.from(newBody.attributes).forEach(function(attr){document.body.setAttribute(attr.name,attr.value)});
+        // Update layout meta tag
+        var oldMeta=document.querySelector('meta[name="stx-layout"]');
+        var freshMeta=doc.querySelector('meta[name="stx-layout"]');
+        if(oldMeta&&freshMeta)oldMeta.setAttribute('content',freshMeta.getAttribute('content')||'');
+        else if(freshMeta){var m=document.createElement('meta');m.name='stx-layout';m.content=freshMeta.getAttribute('content')||'';document.head.appendChild(m)}
+        // Update container reference for script execution below
+        currentContent=document.querySelector(containerSel)||document.querySelector('main')||document.body;
+      } else {
+        // Same layout — swap only container content
+        var cleanHTML=newContent.innerHTML.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt\\\\s*>','gi'),'');
+        currentContent.innerHTML=cleanHTML;
+      }
 
       // ── Load new external <head> scripts ──
       var loadedSrcs={};
@@ -381,19 +411,6 @@ else {
     console.log('[router] click intercepted:',href,'container:',!!getContainer(),'defaultPrevented:',e.defaultPrevented);
     if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:')){console.log('[router] skipped:',href);return}
     if(link.target==='_blank'||link.hasAttribute('download'))return;
-    // Check layout from prefetch cache BEFORE intercepting — if different group,
-    // let the browser do native navigation (don't preventDefault)
-    var cachedLayout=layoutCache[href]||layoutCache[new URL(href,location.origin).pathname];
-    if(cachedLayout!==undefined){
-      var currentMeta=document.querySelector('meta[name="stx-layout"]');
-      var curL=currentMeta?currentMeta.getAttribute('content'):'';
-      var curG=getLayoutGroup(curL);
-      var newG=getLayoutGroup(cachedLayout);
-      if(curG!==newG){
-        console.log('[router] layout group mismatch in click handler:',curG,'→',newG,'— native nav');
-        return; // Don't preventDefault — browser does native navigation
-      }
-    }
     e.preventDefault();
     e.stopPropagation();
     console.log('[router] navigating to:',href);
