@@ -89,7 +89,7 @@ export function getRouterScript(): string {
       return false;
     }
 
-    if(o.cache&&cache[targetPath]&&!force){
+    if(o.cache&&cache[targetPath]&&layoutCache[targetPath]!==undefined&&!force){
       if(checkLayoutChange(layoutCache[targetPath],url)){done();return}
       swap(cache[targetPath],targetPath,pushState,targetHash);
       done();
