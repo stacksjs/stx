@@ -316,23 +316,43 @@ else {
       document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
 
       var scripts=[];
-      // Only collect scripts from within the container — layout scripts outside
-      // the container (sidebar mounts, config, etc.) must NOT re-execute on SPA nav.
-      // Also check <head> for page-specific setup functions (SFC __stx_setup_).
-      newContent.querySelectorAll('script').forEach(function(s){
-        var text=s.textContent||'';
-        if(s.hasAttribute('src'))return;
-        if(!text.trim())return;
-        scripts.push(text);
-      });
-      // Collect SFC setup functions from <head> that are page-specific
-      doc.querySelectorAll('head script').forEach(function(s){
-        var text=s.textContent||'';
-        if(s.hasAttribute('src'))return;
-        if(!text.trim())return;
-        // Only include scripts that define page setup functions
-        if(text.indexOf('__stx_setup_')!==-1)scripts.push(text);
-      });
+      if(isLayoutChange){
+        // Layout change: collect ALL scripts from the new document body
+        // (layout scripts, component mounts, setup functions — everything)
+        var newBodyEl=doc.querySelector('body');
+        if(newBodyEl){
+          newBodyEl.querySelectorAll('script').forEach(function(s){
+            var text=s.textContent||'';
+            if(s.hasAttribute('src'))return;
+            if(!text.trim())return;
+            // Skip the signals runtime IIFE — it's already loaded
+            if(text.indexOf("'use strict';var cloakStyle")!==-1)return;
+            if(text.indexOf('__stxRouter')!==-1)return;
+            scripts.push(text);
+          });
+        }
+        // Also collect setup functions from <head>
+        doc.querySelectorAll('head script').forEach(function(s){
+          var text=s.textContent||'';
+          if(s.hasAttribute('src'))return;
+          if(!text.trim())return;
+          if(text.indexOf('__stx_setup_')!==-1)scripts.push(text);
+        });
+      } else {
+        // Same layout: only collect scripts from the container
+        newContent.querySelectorAll('script').forEach(function(s){
+          var text=s.textContent||'';
+          if(s.hasAttribute('src'))return;
+          if(!text.trim())return;
+          scripts.push(text);
+        });
+        doc.querySelectorAll('head script').forEach(function(s){
+          var text=s.textContent||'';
+          if(s.hasAttribute('src'))return;
+          if(!text.trim())return;
+          if(text.indexOf('__stx_setup_')!==-1)scripts.push(text);
+        });
+      }
 
       // Push history state (before active link updates so location.pathname is current)
       if(pushState!==false)history.pushState({},'',url+(hash||''));
