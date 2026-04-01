@@ -89,7 +89,7 @@ export function getRouterScript(): string {
       return false;
     }
 
-    if(o.cache&&cache[targetPath]&&layoutCache[targetPath]!==undefined&&!force){
+    if(o.cache&&cache[targetPath]&&!force){
       if(checkLayoutChange(layoutCache[targetPath],url)){done();return}
       swap(cache[targetPath],targetPath,pushState,targetHash);
       done();
@@ -409,7 +409,7 @@ else {
       prefetching[href]=true;
       fetch(href,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
         var isFrag=r.headers.get('X-STX-Fragment')==='true';
-        var pLayout=r.headers.get('X-STX-Layout')||'default';
+        var pLayout=r.headers.get('X-STX-Layout')||'';
         return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout}});
       }).then(function(result){
         if(o.cache){cache[href]=result.html;layoutCache[href]=result.layout}
