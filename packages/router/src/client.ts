@@ -64,17 +64,24 @@ export function getRouterScript(): string {
 
     function done(){isNavigating=false;document.body.classList.remove(o.loadingClass)}
 
-    // Layout change helper — compares new page layout with current
+    // Layout group detection — layouts in the same group share a <main> container
+    // and can SPA-navigate between each other. Only truly different layout groups
+    // (e.g. "auth" vs everything else) trigger a full page reload.
     var layoutCache={};
+    function getLayoutGroup(layout){
+      // Auth/guest layouts have no chrome — they're a different group
+      if(!layout)return 'default';
+      if(layout.indexOf('auth')!==-1||layout.indexOf('guest')!==-1)return 'auth';
+      return 'app';
+    }
     function checkLayoutChange(newLayout,targetUrl){
       var currentLayout=document.querySelector('meta[name="stx-layout"]');
       var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'';
-      var newLayoutName=newLayout||'';
-      console.log('[router] layout check: current='+curLayoutName+' new='+newLayoutName);
-      // If either page has a layout and they differ, full reload.
-      // Also reload if current has a layout but target doesn't (or vice versa).
-      if(curLayoutName!==newLayoutName){
-        console.log('[router] layout change:',curLayoutName||'(none)','→',newLayoutName||'(none)','— full reload');
+      var curGroup=getLayoutGroup(curLayoutName);
+      var newGroup=getLayoutGroup(newLayout);
+      console.log('[router] layout check: current='+curLayoutName+'('+curGroup+') new='+(newLayout||'')+'('+newGroup+')');
+      if(curGroup!==newGroup){
+        console.log('[router] layout group change:',curGroup,'→',newGroup,'— full reload');
         location.href=targetUrl;
         return true;
       }
@@ -82,21 +89,18 @@ export function getRouterScript(): string {
     }
 
     if(o.cache&&cache[targetPath]&&!force){
-      // Check layout on cached entries too
       if(checkLayoutChange(layoutCache[targetPath],url)){done();return}
       swap(cache[targetPath],targetPath,pushState,targetHash);
       done();
     }
 else {
-      // Clear stale cache entry on forced reload (HMR)
       if(force&&cache[targetPath])delete cache[targetPath];
       fetch(url,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
         if(!r.ok)throw new Error(r.status);
         var isFragment=r.headers.get('X-STX-Fragment')==='true';
-        var newLayout=r.headers.get('X-STX-Layout')||'default';
+        var newLayout=r.headers.get('X-STX-Layout')||'';
         return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout}});
       }).then(function(result){
-        // Layout change detection
         if(result.isFragment&&checkLayoutChange(result.layout,url)){return}
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
         if(o.cache){cache[targetPath]=result.html;layoutCache[targetPath]=result.layout}
