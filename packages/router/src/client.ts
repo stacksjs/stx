@@ -99,8 +99,12 @@ else {
         if(isFragment&&checkLayoutChange(newLayout,url)){
           console.log('[router] layout change — fetching full page for document swap');
           return fetch(url,{headers:{'Accept':'text/html'}}).then(function(fullRes){
+            console.log('[router] full page fetched:',fullRes.status,'ok:',fullRes.ok);
             if(!fullRes.ok)throw new Error(fullRes.status);
-            return fullRes.text().then(function(html){return{html:html,isFragment:false,layout:newLayout}});
+            return fullRes.text().then(function(html){
+              console.log('[router] full page html length:',html.length);
+              return{html:html,isFragment:false,layout:newLayout};
+            });
           });
         }
         return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout}});
@@ -109,7 +113,8 @@ else {
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
         if(o.cache){cache[targetPath]=result.html;layoutCache[targetPath]=result.layout}
         swap(result.html,targetPath,pushState,targetHash);
-      }).catch(function(){
+      }).catch(function(err){
+        console.error('[router] fetch error:',err);
         location.href=url;
       }).finally(done);
     }
