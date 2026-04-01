@@ -71,7 +71,7 @@ export function getRouterScript(): string {
     var layoutCache={};
     function getLayoutGroup(layout){
       // Auth/guest layouts have no chrome — they're a different group
-      if(!layout)return 'default';
+      if(!layout)return 'app';
       if(layout.indexOf('auth')!==-1||layout.indexOf('guest')!==-1)return 'auth';
       return 'app';
     }
