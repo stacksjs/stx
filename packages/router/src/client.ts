@@ -387,9 +387,22 @@ else {
     console.log('[router] click intercepted:',href,'container:',!!getContainer(),'defaultPrevented:',e.defaultPrevented);
     if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:')){console.log('[router] skipped:',href);return}
     if(link.target==='_blank'||link.hasAttribute('download'))return;
+    // Check layout from prefetch cache BEFORE intercepting — if different group,
+    // let the browser do native navigation (don't preventDefault)
+    var cachedLayout=layoutCache[href]||layoutCache[new URL(href,location.origin).pathname];
+    if(cachedLayout!==undefined){
+      var currentMeta=document.querySelector('meta[name="stx-layout"]');
+      var curL=currentMeta?currentMeta.getAttribute('content'):'';
+      var curG=getLayoutGroup(curL);
+      var newG=getLayoutGroup(cachedLayout);
+      if(curG!==newG){
+        console.log('[router] layout group mismatch in click handler:',curG,'→',newG,'— native nav');
+        return; // Don't preventDefault — browser does native navigation
+      }
+    }
     e.preventDefault();
     e.stopPropagation();
-    console.log('[router] navigating to:',href,'prevented:',e.defaultPrevented);
+    console.log('[router] navigating to:',href);
     navigate(href);
   },true);
 
