@@ -84,7 +84,21 @@ export function getRouterScript(): string {
     function done(){isNavigating=false;document.body.classList.remove(o.loadingClass)}
 
     if(o.cache&&cache[targetPath]&&!force){
-      if(checkLayoutChange(layoutCache[targetPath],url)){done();return}
+      if(checkLayoutChange(layoutCache[targetPath],url)){
+        // Layout changed — fetch full page and do full document swap
+        console.log('[router] cache hit but layout changed — fetching full page');
+        fetch(url,{headers:{'Accept':'text/html'}}).then(function(r){
+          if(!r.ok)throw new Error(r.status);
+          return r.text();
+        }).then(function(html){
+          console.log('[router] full page fetched from cache path, len:',html.length);
+          swap(html,targetPath,pushState,targetHash);
+        }).catch(function(err){
+          console.error('[router] full page fetch error:',err);
+          location.href=url;
+        }).finally(done);
+        return;
+      }
       swap(cache[targetPath],targetPath,pushState,targetHash);
       done();
     }
