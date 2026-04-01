@@ -38,6 +38,7 @@ export function getRouterScript(): string {
 
   // ── Navigation ──
   function navigate(url,pushState,force){
+    console.log('[router] navigate() called:',url,'isNavigating:',isNavigating);
     if(isNavigating)return;
     var t=new URL(url,location.origin);
 
@@ -378,11 +379,12 @@ else {
     var link=e.target.closest('[data-stx-link]');
     if(!link){return}
     var href=link.getAttribute('href');
-    console.log('[router] click intercepted:',href,'container:',!!getContainer());
-    if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:'))return;
+    console.log('[router] click intercepted:',href,'container:',!!getContainer(),'defaultPrevented:',e.defaultPrevented);
+    if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:')){console.log('[router] skipped:',href);return}
     if(link.target==='_blank'||link.hasAttribute('download'))return;
     e.preventDefault();
     e.stopPropagation();
+    console.log('[router] navigating to:',href,'prevented:',e.defaultPrevented);
     navigate(href);
   },true);
 
