@@ -37,15 +37,34 @@ export function getRouterScript(): string {
   }
 
   // ── Navigation ──
+  // Layout group detection — layouts in the same group share a <main> container.
+  // Only truly different layout groups trigger a full page reload.
+  var layoutCache={};
+  function getLayoutGroup(layout){
+    if(!layout)return 'app';
+    if(layout.indexOf('auth')!==-1||layout.indexOf('guest')!==-1)return 'auth';
+    return 'app';
+  }
+  function checkLayoutChange(newLayout,targetUrl){
+    var currentLayout=document.querySelector('meta[name="stx-layout"]');
+    var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'';
+    var curGroup=getLayoutGroup(curLayoutName);
+    var newGroup=getLayoutGroup(newLayout);
+    console.log('[router] layout check: current='+curLayoutName+'('+curGroup+') new='+(newLayout||'')+'('+newGroup+')');
+    if(curGroup!==newGroup){
+      console.log('[router] layout group change:',curGroup,'→',newGroup,'— full reload to:',targetUrl);
+      return true;
+    }
+    return false;
+  }
+
   function navigate(url,pushState,force){
     console.log('[router] navigate() called:',url,'isNavigating:',isNavigating);
     if(isNavigating)return;
     var t=new URL(url,location.origin);
 
-    // Different origin → full navigation
     if(t.origin!==location.origin){location.href=url;return}
 
-    // Hash-only navigation on same page
     if(t.pathname===location.pathname&&t.hash){
       if(pushState!==false)history.pushState({},'',t.href);
       var el=document.querySelector(t.hash);
@@ -53,7 +72,6 @@ export function getRouterScript(): string {
       return;
     }
 
-    // Same page, no hash → skip (unless forced, e.g. HMR)
     if(t.href===location.href&&!t.hash&&!force)return;
 
     isNavigating=true;
@@ -64,30 +82,6 @@ export function getRouterScript(): string {
     var targetHash=t.hash;
 
     function done(){isNavigating=false;document.body.classList.remove(o.loadingClass)}
-
-    // Layout group detection — layouts in the same group share a <main> container
-    // and can SPA-navigate between each other. Only truly different layout groups
-    // (e.g. "auth" vs everything else) trigger a full page reload.
-    var layoutCache={};
-    function getLayoutGroup(layout){
-      // Auth/guest layouts have no chrome — they're a different group
-      if(!layout)return 'app';
-      if(layout.indexOf('auth')!==-1||layout.indexOf('guest')!==-1)return 'auth';
-      return 'app';
-    }
-    function checkLayoutChange(newLayout,targetUrl){
-      var currentLayout=document.querySelector('meta[name="stx-layout"]');
-      var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'';
-      var curGroup=getLayoutGroup(curLayoutName);
-      var newGroup=getLayoutGroup(newLayout);
-      console.log('[router] layout check: current='+curLayoutName+'('+curGroup+') new='+(newLayout||'')+'('+newGroup+')');
-      if(curGroup!==newGroup){
-        console.log('[router] layout group change:',curGroup,'→',newGroup,'— full reload to:',targetUrl);
-        location.assign(targetUrl);
-        return true;
-      }
-      return false;
-    }
 
     if(o.cache&&cache[targetPath]&&!force){
       if(checkLayoutChange(layoutCache[targetPath],url)){done();return}
