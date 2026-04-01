@@ -629,6 +629,20 @@ async function processCustomElementTags(
         finalContent = emitClientReactiveAttrs(finalContent, resolvedProps.clientReactive)
       }
 
+      // Forward @event attributes from parent to component's root element.
+      // This connects parent handlers to child defineEmits() — the child emits
+      // a CustomEvent that bubbles up, and the root element's @event listener catches it.
+      if (Object.keys(resolvedProps.events).length > 0) {
+        const firstTagMatch = finalContent.match(/^(\s*<)([a-zA-Z][a-zA-Z0-9-]*)(\s|>|\/)/s)
+        if (firstTagMatch) {
+          const eventAttrs = Object.entries(resolvedProps.events)
+            .map(([event, handler]) => `${event}="${handler}"`)
+            .join(' ')
+          const insertPos = firstTagMatch[1].length + firstTagMatch[2].length
+          finalContent = finalContent.substring(0, insertPos) + ' ' + eventAttrs + finalContent.substring(insertPos)
+        }
+      }
+
       // Replace the tag with processed content
       result = result.substring(0, tag.startIndex) + finalContent + result.substring(tag.endIndex)
     }
