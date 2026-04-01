@@ -541,7 +541,6 @@ catch {
       let content = match[2] || ''
 
       const isServerScript = attrs.includes('server')
-      const isClientOnlyScript = attrs.includes('client') || attrs.includes('type="module"')
       const shouldTranspile = shouldTranspileTypeScript(attrs)
 
       // Transpile TypeScript if needed
@@ -549,8 +548,9 @@ catch {
         content = transpileTypeScript(content)
       }
 
-      // Extract variables from server scripts (or scripts without client marker)
-      if (!isClientOnlyScript && content) {
+      // Extract variables ONLY from <script server> — all other scripts are client-side.
+      // <script>, <script client>, <script type="module"> are all client.
+      if (isServerScript && content) {
         try {
           await extractVariables(content, componentContext, componentFilePath)
         }
