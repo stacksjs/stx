@@ -376,8 +376,9 @@ else {
     if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0)return;
     if(!e.target||!e.target.closest)return;
     var link=e.target.closest('[data-stx-link]');
-    if(!link)return;
+    if(!link){return}
     var href=link.getAttribute('href');
+    console.log('[router] click intercepted:',href,'container:',!!getContainer());
     if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:'))return;
     if(link.target==='_blank'||link.hasAttribute('download'))return;
     e.preventDefault();
