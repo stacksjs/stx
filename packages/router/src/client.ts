@@ -119,7 +119,8 @@ else {
     var isFragment=html.indexOf('<!--stx-fragment-->')===0;
     if(isFragment)html=html.slice('<!--stx-fragment-->'.length);
     var currentContent=getContainer();
-    if(!currentContent){location.href=url;return}
+    console.log('[router] swap: isFragment='+isFragment+' container='+!!currentContent+' htmlLen='+html.length);
+    if(!currentContent){console.log('[router] no container — falling back');location.href=url;return}
 
     // Fragment mode: server returned just the page content (no document wrapper)
     if(isFragment){
