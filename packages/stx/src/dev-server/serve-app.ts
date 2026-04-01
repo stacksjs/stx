@@ -401,6 +401,22 @@ catch {
         return serveStaticFile(outputPath)
       }
 
+      // Serve async components — renders a component and returns HTML fragment
+      if (url.pathname.startsWith('/_stx/component/')) {
+        const componentName = decodeURIComponent(url.pathname.slice('/_stx/component/'.length))
+        if (componentName) {
+          try {
+            const componentTemplate = `<${componentName} />`
+            const componentOpts = { ...buildConfig, autoShell: false }
+            const html = await processDirectives(componentTemplate, {}, path.join(absoluteAppDir, 'components', `${componentName}.stx`), componentOpts, new Set())
+            return new Response(html, { headers: { 'Content-Type': 'text/html' } })
+          }
+          catch (e: any) {
+            return new Response(`<div class="stx-async-error">${e.message}</div>`, { status: 500, headers: { 'Content-Type': 'text/html' } })
+          }
+        }
+      }
+
       // Handle requests via custom router (e.g. @stacksjs/bun-router)
       // Supports both API routes (routes/api.ts) and web routes (routes/web.ts)
       if (customRouter) {

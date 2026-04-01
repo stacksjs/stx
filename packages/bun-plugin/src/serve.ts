@@ -571,6 +571,34 @@ export async function serve(options: ServeOptions): Promise<void> {
         }
       }
 
+      // Serve async components — renders a component and returns HTML fragment
+      if (path.startsWith('/_stx/component/')) {
+        const componentName = decodeURIComponent(path.slice('/_stx/component/'.length))
+        if (componentName) {
+          try {
+            const { processDirectives, defaultConfig } = await import('@stacksjs/stx')
+            const componentTemplate = `<${componentName} />`
+            const componentOpts = {
+              ...defaultConfig,
+              ...(componentsDir && { componentsDir }),
+              ...(layoutsDir && { layoutsDir }),
+              ...(partialsDir && { partialsDir }),
+              autoShell: false,
+            }
+            const html = await processDirectives(componentTemplate, {}, `${componentsDir}/${componentName}.stx`, componentOpts, new Set())
+            return new Response(html, {
+              headers: { 'Content-Type': 'text/html', ...corsHeaders },
+            })
+          }
+          catch (e: any) {
+            return new Response(`<div class="stx-async-error">${e.message}</div>`, {
+              status: 500,
+              headers: { 'Content-Type': 'text/html', ...corsHeaders },
+            })
+          }
+        }
+      }
+
       // Handle API routes for data operations
       if (path.startsWith('/api/data/') && req.method === 'POST') {
         try {

@@ -281,6 +281,11 @@ else {
         script.parentNode.replaceChild(newScript, script);
       });
 
+      // Process signals/bindings on the loaded content ({{ }}, :attr, @event, etc.)
+      if (window.stx && window.stx._latestSetup) {
+        window.dispatchEvent(new Event('stx:load'));
+      }
+
       // Notify Suspense boundary
       if (suspensible && window.STX && window.STX.suspense) {
         window.STX.suspense.resolve(asyncId);
