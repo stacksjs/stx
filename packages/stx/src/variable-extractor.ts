@@ -462,6 +462,25 @@ catch {
   // Mock onDestroy() - no-op on server
   const onDestroy = (_fn: () => void) => {}
 
+  // Mock Vue/Nuxt-like composables commonly used in dashboard pages
+  const definePageMeta = (_meta: unknown) => {}
+  const useRoute = () => ({ params: {}, query: {}, path: '', name: '', fullPath: '', hash: '', matched: [] })
+  const useRouter = () => ({ push: (_to: unknown) => {}, replace: (_to: unknown) => {}, back: () => {}, forward: () => {}, go: (_n: number) => {} })
+  const useHead = (_head: unknown) => {}
+  const ref = (val: unknown) => ({ value: val })
+  const reactive = (obj: unknown) => obj
+  const computed = (fn: () => unknown) => ({ value: typeof fn === 'function' ? fn() : fn })
+  const watch = (_source: unknown, _cb: unknown) => {}
+  const onMounted = (_fn: () => void) => {}
+  const onUnmounted = (_fn: () => void) => {}
+  const nextTick = (fn?: () => void) => fn ? fn() : Promise.resolve()
+  const defineEmits = (_events?: unknown) => (_event: string, ..._args: unknown[]) => {}
+  const defineExpose = (_exposed?: unknown) => {}
+  const provide = (_key: unknown, _value: unknown) => {}
+  const inject = (_key: unknown, defaultValue?: unknown) => defaultValue
+  const useColorMode = () => ({ value: 'light' })
+  const useDark = () => ({ value: false })
+
   // Mock window object for browser-only code
   // This allows scripts that reference window to be parsed without errors
   const mockWindow: Record<string, unknown> = {
@@ -562,6 +581,9 @@ catch {
     const scriptFn = new Function(
       'module', 'exports', 'require', 'props', '$props', 'defineProps', 'withDefaults',
       'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
+      'definePageMeta', 'useRoute', 'useRouter', 'useHead',
+      'ref', 'reactive', 'computed', 'watch', 'onMounted', 'onUnmounted', 'nextTick',
+      'defineEmits', 'defineExpose', 'provide', 'inject', 'useColorMode', 'useDark',
       'window', 'document', 'console', 'confirm', 'alert', 'fetch',
       ...filteredContextKeys,
       // Wrap in async IIFE to support top-level await
@@ -575,6 +597,9 @@ catch {
     const result = await scriptFn(
       module, exports, requireFn, propsObj, $props, defineProps, withDefaults,
       state, derived, effect, batch, onMount, onDestroy,
+      definePageMeta, useRoute, useRouter, useHead,
+      ref, reactive, computed, watch, onMounted, onUnmounted, nextTick,
+      defineEmits, defineExpose, provide, inject, useColorMode, useDark,
       windowProxy, mockDocument, mockConsole, mockWindow.confirm, mockWindow.alert, mockWindow.fetch,
       ...filteredContextValues
     )
