@@ -40,7 +40,7 @@ Each entry point classifies `<script>` tags differently. This is a known inconsi
 | **dev-server** | No `client`/`type="module"`/`src=`, no DOM API keywords | Has `client` attr, `type="module"`, `src=`, or uses `document`/`window`/`fetch` |
 | **process.ts** | Has explicit `server` attribute | Everything else (after signals scripts removed) |
 
-The `process.ts` path is the most strict — only `<script server>` is server-side. The bun-plugin and dev-server use heuristics.
+The `process.ts` path is the canonical behavior: only `<script server>` is server-side. `<script>` and `<script client>` are both client-side (they are equivalent). This was corrected in component rendering (`utils.ts`) — bare `<script>` was previously mis-classified as server-side in some paths.
 
 ### TypeScript Transpilation
 
@@ -81,8 +81,11 @@ processDirectives (entry, error handling, Crosswind CSS)
             ├─ @js, @ts directives (variable definition)
             ├─ Custom directives
             ├─ Component resolution (@component, custom elements)
+            ├─ Async components (@async)
             ├─ Loops (@foreach, @for — BEFORE conditionals)
             ├─ Conditionals (@if, @unless, @switch)
+            ├─ Error boundaries (@errorBoundary, @fallback)
+            ├─ Memoization (@memo, v-memo)
             ├─ Includes (@include, @partial)
             ├─ Forms, SEO, i18n, a11y, markdown
             ├─ Event directives (@click, @keydown)
@@ -156,6 +159,27 @@ Direct Request (browser)           SPA Navigation (router)
 
 The server marks fragments with the `X-STX-Fragment: true` response header. The router reads this header on fetch and prepends `<!--stx-fragment-->` to cached HTML. The `swap()` function checks for this marker — no content sniffing.
 
+### SPA Layout Transitions
+
+The router detects layout changes to avoid page reloads when navigating between different layout groups:
+
+```
+Same layout group (app → app)           Different layout group (app → auth)
+        │                                        │
+        ▼                                        ▼
+   Fragment swap                            Full body swap
+   (fast, <main> only)                      (entire <body> replaced)
+        │                                        │
+        ▼                                        ▼
+   [data-stx-content]                       document.body.innerHTML
+   innerHTML replaced                       replaced entirely
+```
+
+- **Detection**: `X-STX-Layout` response header + `<meta name="stx-layout">` tag in the document
+- **Layout groups**: `'auth'` (layouts containing auth/guest), `'app'` (everything else)
+- **Prefetch integration**: Prefetch cache stores layout info alongside HTML, enabling instant layout change detection on hover before navigation occurs
+- **No reloads**: True SPA transitions across layout boundaries (like Vue Router/React Router)
+
 ## Component Prop Flow
 
 Props are categorized into three types during parsing:
@@ -187,6 +211,72 @@ Parent template                    Component file
 ```
 
 **Limitation:** Props that survive serialization (strings, numbers, booleans, arrays, plain objects) work with `data-stx-props`. Functions, signals, and class instances do not round-trip through JSON.
+
+### Component Events (defineEmits)
+
+Components emit custom events using `defineEmits()`:
+
+```
+Component file                          Parent template
+<script>                                <MyButton @click="handleClick"
+const emit = defineEmits()                        @submit="handleSubmit" />
+emit('submit', { data })
+</script>                                       │
+        │                                       ▼
+        ▼                               @event attributes forwarded
+  CustomEvent('submit',                 to component root element
+    { detail: { data },                 at render time
+      bubbles: true })
+```
+
+- `defineEmits()` returns `emit(event, payload)` — no type declaration needed (unlike Vue)
+- Events use `CustomEvent` with `bubbles: true` for natural DOM propagation
+- `@event` attributes on component usage tags are forwarded to the component's root element during server rendering
+
+### Async Components
+
+```
+@async(component: 'HeavyChart', timeout: 5000)
+        │
+        ▼
+  Renders placeholder with loading state
+        │
+        ▼
+  Client fetches /_stx/component/HeavyChart
+        │
+        ├── Success → resolved state, scripts re-executed, stx:load fired
+        ├── Timeout → error state rendered
+        └── Delay   → loading state shown after configurable delay
+```
+
+- `/_stx/component/:name` endpoint serves individual components as HTML fragments
+- Configurable `timeout` and `delay` options
+- Scripts within async components are re-executed after load
+- `stx:load` event fired on the component element after successful load
+
+### Named Slots
+
+Components support Web Component-style named slots:
+
+```html
+<!-- Parent usage -->
+<Card>
+  <h1 slot="header">Title</h1>          ← slot="name" on direct children
+  <img slot="header" src="banner.png">   ← multiple children, same slot
+  <p>Default content</p>                 ← no slot attr = default slot
+  <input slot="footer" />                ← self-closing elements supported
+</Card>
+
+<!-- Component definition -->
+<div class="card">
+  @slot('header')                        ← named slot placeholder
+  @slot                                  ← default slot
+  @slot('footer')
+</div>
+```
+
+- No `<template>` wrapper needed (unlike Vue)
+- `<template #name>` backward compatibility preserved
 
 ## Component Registry and Builtins
 
@@ -248,6 +338,14 @@ The old `components/StxLink.stx` and `components/StxImage.stx` template files ha
 | `dev-server/serve-multi.ts` | Multi-file routing | — |
 | `dev-server/serve-app.ts` | Full app serving with file-based routing | — |
 
+### Dev Server Output
+
+The dev server displays a Bun-style startup banner with interactive shortcuts:
+
+- Pretty banner matching Bun's HTML dev server aesthetic
+- Route count and build timing displayed on startup
+- Interactive shortcuts: `o` = open browser, `q` = quit
+
 ### Other Core Files
 
 | File | Purpose | Lines |
@@ -291,6 +389,45 @@ defineStore('counter', () => {           defineStore('counter', {
 - **Persistence** — `{ persist: true }` (localStorage, full state) or `{ persist: { pick: ['count'], storage: sessionStorage, key: 'custom-key' } }`
 - **SSR hydration** — server serializes state into `window.__STX_STORE_STATE__`, client rehydrates on init
 - **SPA survival** — stores are not cleaned up by `cleanupContainer` during SPA navigation; they persist across route changes
+
+## Error Boundaries
+
+Template-level error catching with fallback content:
+
+```html
+@errorBoundary
+  <DangerousComponent />
+@fallback
+  <p>Something went wrong</p>
+@enderrorBoundary
+```
+
+- Server-side: wraps rendering in try/catch, renders `@fallback` content on error
+- Client-side: `onErrorCaptured()` composition API hook for programmatic error handling
+- Retry support on the client side
+
+## Memoization (@memo / v-memo)
+
+`@memo="[dep1, dep2]"` memoizes template subtrees to skip re-processing when dependencies are unchanged:
+
+```html
+@memo="[items.length, filter]"
+  <ExpensiveList :items="items" :filter="filter" />
+@endmemo
+```
+
+- Runtime compares dependency array values between renders
+- Skips re-processing if all values are identical
+- Vue compatibility: `v-memo="[deps]"` also works
+
+## Lazy Routes
+
+By architecture, stx pages are server-rendered with scripts loading per-page:
+
+- SPA fragments only include the target page's scripts (no global bundle)
+- Router prefetches on hover (`[data-stx-link]` elements)
+- Production build generates separate fragments per route
+- No explicit lazy-loading directive needed — the architecture is inherently lazy
 
 ## Client Script Bundler
 
