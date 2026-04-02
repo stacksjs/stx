@@ -212,6 +212,65 @@ export interface StxPlugin {
    * Use for cleanup.
    */
   onUnregister?: () => void | Promise<void>
+
+  // =========================================================================
+  // Resource Directories (resolved relative to plugin package)
+  // =========================================================================
+
+  /** Directory of .stx components — auto-registered, available in all templates */
+  components?: string
+
+  /** Directory of composable functions — importable via @/functions/ */
+  functions?: string
+
+  /** Directory of store definitions — auto-registered */
+  stores?: string
+
+  /** Directory of page templates — merged into file-based routing */
+  pages?: string
+
+  /** Directory of route middleware */
+  middleware?: string
+
+  /** Setup function called when plugin is loaded — receives options and stx context */
+  setup?: (options: Record<string, any>, stx: PluginSetupContext) => void | Promise<void>
+}
+
+/**
+ * Context passed to plugin setup() function
+ */
+export interface PluginSetupContext {
+  /** Register a custom directive */
+  addDirective: (directive: CustomDirective) => void
+  /** Register an API route handler */
+  addRoute: (path: string, handler: (req: Request) => Response | Promise<Response>) => void
+  /** Register route middleware */
+  addMiddleware: (middleware: any) => void
+  /** The resolved plugin directory path */
+  pluginDir: string
+  /** The stx config */
+  config: StxOptions
+}
+
+/**
+ * Define an stx plugin with type safety.
+ *
+ * Usage:
+ * ```typescript
+ * import { definePlugin } from 'stx'
+ *
+ * export default definePlugin({
+ *   name: 'my-plugin',
+ *   components: './components',
+ *   functions: './functions',
+ *   setup(options, stx) {
+ *     stx.addRoute('/api/custom', handler)
+ *   },
+ * })
+ * ```
+ */
+export function definePlugin(config: StxPlugin): StxPlugin {
+  return config
 }
 
 // =============================================================================

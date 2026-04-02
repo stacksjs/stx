@@ -459,6 +459,79 @@ export async function loadStxConfig(): Promise<StxConfig> {
       }
     }
 
+    // Load plugins from config
+    if (loaded.plugins && loaded.plugins.length > 0) {
+      const { pluginManager } = await import('./plugin-system')
+      const pluginComponentDirs: string[] = []
+      const pluginPageDirs: string[] = []
+
+      for (const pluginEntry of loaded.plugins) {
+        const pluginPath = typeof pluginEntry === 'string' ? pluginEntry : pluginEntry[0]
+        const pluginOptions = typeof pluginEntry === 'string' ? {} : (pluginEntry[1] || {})
+
+        try {
+          // Resolve plugin — try as npm package first, then local path
+          let pluginModule: any
+          let pluginDir: string
+
+          try {
+            pluginModule = await import(pluginPath)
+            pluginDir = path.dirname(require.resolve(pluginPath))
+          }
+          catch {
+            const resolvedPath = path.resolve(process.cwd(), pluginPath)
+            pluginModule = await import(resolvedPath)
+            pluginDir = path.dirname(resolvedPath)
+          }
+
+          const plugin = pluginModule.default || pluginModule
+
+          // Register with plugin manager
+          pluginManager.register(plugin, loaded)
+
+          // Collect resource directories (resolved relative to plugin package)
+          if (plugin.components) {
+            const dir = path.resolve(pluginDir, plugin.components)
+            pluginComponentDirs.push(dir)
+          }
+          if (plugin.pages) {
+            const dir = path.resolve(pluginDir, plugin.pages)
+            pluginPageDirs.push(dir)
+          }
+
+          // Call setup if defined
+          if (plugin.setup) {
+            const setupCtx = {
+              addDirective: (d: any) => {
+                loaded.customDirectives = loaded.customDirectives || []
+                loaded.customDirectives.push(d)
+              },
+              addRoute: (routePath: string, handler: any) => {
+                loaded.apiRoutes = loaded.apiRoutes || {}
+                loaded.apiRoutes[routePath] = handler
+              },
+              addMiddleware: (mw: any) => {
+                loaded.middleware = loaded.middleware || []
+                loaded.middleware.push(mw)
+              },
+              pluginDir,
+              config: loaded,
+            }
+            await plugin.setup(pluginOptions, setupCtx)
+          }
+
+          console.log(`[stx] Plugin loaded: ${plugin.name || pluginPath}`)
+        }
+        catch (e: any) {
+          console.warn(`[stx] Failed to load plugin ${pluginPath}:`, e.message)
+        }
+      }
+
+      // Store plugin directories for component resolution and route discovery
+      ;(loaded as any)._pluginComponentDirs = pluginComponentDirs
+      ;(loaded as any)._pluginPageDirs = pluginPageDirs
+    }
+
     _config = loaded
     return _config
   })()

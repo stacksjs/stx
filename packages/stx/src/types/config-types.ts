@@ -552,6 +552,8 @@ export interface StxConfig {
   storesDir?: string
   /** Default layout to use for pages without DOCTYPE, relative to layoutsDir */
   defaultLayout?: string
+  /** Plugins to load — npm packages, local paths, or [path, options] tuples */
+  plugins?: Array<string | [string, Record<string, any>]>
   /** Enable debug mode for detailed error messages */
   debug: boolean
   /** Directory to store cached templates, defaults to '.stx/cache' in the project root */

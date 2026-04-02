@@ -119,6 +119,8 @@ export type { VNode } from './jsx-runtime'
 export { createApp, createApp as createStxApp, defineCustomElement } from './app'
 export type { StxApp, StxApp as App, StxAppPlugin, StxPluginInput, StxAppConfig } from './app'
 export * from './dynamic-components'
+export { definePlugin, pluginManager } from './plugin-system'
+export type { StxPlugin, PluginContext, PluginSetupContext } from './plugin-system'
 
 // These modules are exported first to establish their types
 export * from './render'
