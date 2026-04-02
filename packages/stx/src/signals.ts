@@ -1228,6 +1228,19 @@ catch (e) {
       if (el.hasAttribute('x-data') || el.__stx_reactive_initialized) {
         return;
       }
+      // v-memo / @memo — skip re-processing if dependency values haven't changed
+      if (el.hasAttribute('data-stx-memo')) {
+        var memoExpr = el.getAttribute('data-stx-memo');
+        try {
+          var memoScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
+          var memoFn = new Function(...Object.keys(memoScope), 'return ' + memoExpr);
+          var memoVals = JSON.stringify(memoFn(...Object.values(memoScope)));
+          if (el.__stx_memo_prev === memoVals) {
+            return; // Dependencies unchanged — skip re-processing
+          }
+          el.__stx_memo_prev = memoVals;
+        } catch(e) {}
+      }
     }
     if (el.nodeType === Node.TEXT_NODE) {
       const text = el.textContent;

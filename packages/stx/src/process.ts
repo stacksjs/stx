@@ -52,7 +52,7 @@ import { ensureDocumentShell } from './document-shell'
 import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, processSignals } from './signal-processing'
 import { processComponents } from './component-renderer'
 import { processInlineAssets } from './inline-assets'
-import { addCloakToUnresolvedExpressions, processJsonDirective, processOnceDirective, processRefAttributes } from './misc-directives'
+import { addCloakToUnresolvedExpressions, processJsonDirective, processMemoDirective, processOnceDirective, processRefAttributes } from './misc-directives'
 import { validateClientScript } from './script-validation'
 
 // Re-export public API from extracted modules (preserves backwards compatibility)
@@ -706,6 +706,9 @@ async function processOtherDirectives(
 
   // Process @once directive
   output = processOnceDirective(output)
+
+  // Process @memo directive — transform to data-stx-memo for runtime memoization
+  output = processMemoDirective(output)
 
   // Process event directives (@click, @keydown.enter, etc.) - Alpine-style events
   // Skip for signal components - runtime handles @click etc. via processElement()

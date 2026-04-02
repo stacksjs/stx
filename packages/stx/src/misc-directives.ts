@@ -105,6 +105,19 @@ export function processOnceDirective(template: string): string {
 }
 
 /**
+ * Process @memo directive — memoize template subtrees.
+ *
+ * Transforms @memo="[dep1, dep2]" on elements to data-stx-memo attributes.
+ * The signals runtime skips re-processing elements whose memo deps haven't changed.
+ *
+ * Usage:
+ *   <div @memo="[count(), name()]">Expensive content</div>
+ */
+export function processMemoDirective(template: string): string {
+  return template.replace(/@memo="([^"]*)"/g, 'data-stx-memo="$1"')
+}
+
+/**
  * Process ref attributes for DOM element references (Vue-style).
  *
  * Transforms:
