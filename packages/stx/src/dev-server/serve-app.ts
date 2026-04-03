@@ -383,8 +383,9 @@ catch {
     async fetch(request) {
       const url = new URL(request.url)
 
-      // Serve static files from public/
-      const publicPath = path.join(absoluteAppDir, 'public', url.pathname)
+      // Serve static files from public/ (configurable via publicDir)
+      const publicDirName = projectConfig?.publicDir || 'public'
+      const publicPath = path.join(absoluteAppDir, publicDirName, url.pathname)
       if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
         return serveStaticFile(publicPath)
       }

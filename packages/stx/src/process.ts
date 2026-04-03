@@ -514,6 +514,17 @@ async function processOtherDirectives(
     context.__stx_buildMode = opts.buildMode
   }
 
+  // Expose public environment variables to template context
+  // Variables matching envPrefix (default: 'STX_PUBLIC_') are available as $env.VAR_NAME
+  const envPrefix = opts.envPrefix || 'STX_PUBLIC_'
+  const publicEnv: Record<string, string> = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    if (key.startsWith(envPrefix) && value !== undefined) {
+      publicEnv[key] = value
+    }
+  }
+  context.$env = publicEnv
+
   // Run pre-processing middleware with error handling
   output = await safeExecuteAsync(
     () => runPreProcessingMiddleware(output, context, filePath, opts),

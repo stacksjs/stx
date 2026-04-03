@@ -554,6 +554,12 @@ export interface StxConfig {
   defaultLayout?: string
   /** Plugins to load — npm packages, local paths, or [path, options] tuples */
   plugins?: Array<string | [string, Record<string, any>]>
+  /** Path to public/static assets directory, defaults to 'public' */
+  publicDir?: string
+  /** Path to .env file, defaults to '.env' in project root (Bun loads this automatically) */
+  envFile?: string | boolean
+  /** Environment variable prefix for client-side exposure (e.g. 'STX_PUBLIC_') */
+  envPrefix?: string
   /** Path to Crosswind/CSS config file, or inline CSS config */
   css?: string | { config?: string, content?: string[], preflight?: boolean, minify?: boolean }
   /** Enable debug mode for detailed error messages */
