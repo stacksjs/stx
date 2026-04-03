@@ -554,6 +554,8 @@ export interface StxConfig {
   defaultLayout?: string
   /** Plugins to load — npm packages, local paths, or [path, options] tuples */
   plugins?: Array<string | [string, Record<string, any>]>
+  /** Path to Crosswind/CSS config file, or inline CSS config */
+  css?: string | { config?: string, content?: string[], preflight?: boolean, minify?: boolean }
   /** Enable debug mode for detailed error messages */
   debug: boolean
   /** Directory to store cached templates, defaults to '.stx/cache' in the project root */

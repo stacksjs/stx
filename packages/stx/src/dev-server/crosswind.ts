@@ -327,9 +327,46 @@ export async function generateCrosswindCSS(htmlContent: string): Promise<string>
       return ''
     }
 
-    // Load the project's crosswind.config.ts (or use module defaults)
+    // Load the project's crosswind config
+    // Priority: 1) stx.config.ts css field, 2) crosswind.config.ts auto-discovery
     if (!cachedConfig) {
-      cachedConfig = await loadCrosswindConfig(process.cwd())
+      // Check if stx.config.ts specifies a CSS config path
+      let stxCssConfig: CrosswindConfig | null = null
+      try {
+        const { loadStxConfig } = await import('../config')
+        const stxConfig = await loadStxConfig()
+        if (stxConfig.css) {
+          if (typeof stxConfig.css === 'string') {
+            // Path to crosswind config file
+            const configPath = path.isAbsolute(stxConfig.css) ? stxConfig.css : path.resolve(process.cwd(), stxConfig.css)
+            if (await Bun.file(configPath).exists()) {
+              const mod = await import(configPath)
+              stxCssConfig = mod.default || mod
+              console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from stx.config.ts → ${stxConfig.css}`)
+            }
+          }
+          else {
+            // Inline CSS config object
+            stxCssConfig = {
+              content: stxConfig.css.content || [],
+              preflight: stxConfig.css.preflight ?? true,
+              minify: stxConfig.css.minify ?? false,
+            } as CrosswindConfig
+            if (stxConfig.css.config) {
+              const configPath = path.isAbsolute(stxConfig.css.config) ? stxConfig.css.config : path.resolve(process.cwd(), stxConfig.css.config)
+              if (await Bun.file(configPath).exists()) {
+                const mod = await import(configPath)
+                const extConfig = mod.default || mod
+                stxCssConfig = { ...extConfig, ...stxCssConfig }
+              }
+            }
+            console.log(`${colors.green}[Crosswind]${colors.reset} Using inline CSS config from stx.config.ts`)
+          }
+        }
+      }
+      catch {}
+
+      cachedConfig = stxCssConfig || await loadCrosswindConfig(process.cwd())
     }
 
     const baseConfig = hw.defaultConfig || hw.config
