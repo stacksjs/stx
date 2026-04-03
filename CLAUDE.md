@@ -251,15 +251,101 @@ Configuration is loaded from `stx.config.ts` or `.config/stx.config.ts` using `b
 
 Default config is in `packages/stx/src/config.ts`.
 
-Important config options:
-- `partialsDir` - Directory for partial templates
-- `componentsDir` - Directory for components
+### Convention over Configuration
+
+All directories default relative to where `stx.config.ts` lives. Only override what differs:
+
+```
+my-app/
+  pages/          ← default pagesDir
+  layouts/        ← default layoutsDir
+  components/     ← default componentsDir
+  partials/       ← default partialsDir
+  functions/      ← shared composables
+  stores/         ← state management
+  public/         ← default publicDir (static assets)
+  stx.config.ts
+  crosswind.config.ts  ← auto-discovered next to stx.config.ts
+```
+
+Minimal config (all defaults):
+```typescript
+export default {
+  app: { head: { title: 'My App' } },
+}
+```
+
+Stacks embedded (only override what differs):
+```typescript
+export default {
+  root: 'resources',    // shifts base directory
+  pagesDir: 'views',    // pages/ → views/
+}
+```
+
+### Config Fields
+
+- `root` - Base directory for all relative paths (default: `.`)
+- `pagesDir` - Pages directory name (default: `pages`)
+- `componentsDir` - Components directory (default: `components`)
+- `layoutsDir` - Layouts directory (default: `layouts`)
+- `partialsDir` - Partials directory (default: `partials`)
+- `storesDir` - Stores directory (default: `stores`)
+- `publicDir` - Static assets directory (default: `public`)
+- `css` - Path to Crosswind config or inline CSS config (default: auto-discovers `crosswind.config.ts`)
+- `envPrefix` - Env var prefix for template exposure (default: `STX_PUBLIC_`)
+- `envFile` - Path to .env file (Bun loads `.env` automatically)
+- `plugins` - Plugin/module array (npm packages, local paths, or `[path, options]` tuples)
 - `cache` - Enable/disable template caching
 - `debug` - Enable detailed error logging
 - `customDirectives` - Register custom directives
 - `middleware` - Pre/post-processing middleware
 - `i18n` - Internationalization settings
 - `webComponents` - Web component generation config
+
+### Plugin/Module System
+
+Plugins register components, functions, stores, pages, and middleware into an stx app:
+
+```typescript
+// stx.config.ts
+export default {
+  plugins: [
+    '@stacksjs/stx-auth',                    // npm package
+    './plugins/analytics',                     // local plugin
+    ['bun-queue/devtools', { port: 4400 }],   // with options
+  ],
+}
+```
+
+Plugin definition:
+```typescript
+import { definePlugin } from 'stx'
+
+export default definePlugin({
+  name: 'my-plugin',
+  components: './components',   // auto-registered in host app
+  functions: './functions',     // importable via @/functions/
+  stores: './stores',           // auto-registered
+  pages: './pages',             // merged into file-based routing
+  setup(options, stx) {
+    stx.addDirective({ name: 'auth', handler: authHandler, hasEndTag: true })
+    stx.addRoute('/api/auth/login', loginHandler)
+  },
+})
+```
+
+### Environment Variables
+
+- Bun automatically loads `.env` files — no stx config needed
+- Variables with `STX_PUBLIC_` prefix (configurable via `envPrefix`) are exposed to templates via `$env`:
+
+```html
+<p>API: {{ $env.STX_PUBLIC_API_URL }}</p>
+@if($env.STX_PUBLIC_FEATURE_FLAG === 'true')
+  <div>New feature enabled</div>
+@endif
+```
 
 ## TypeScript Paths
 
