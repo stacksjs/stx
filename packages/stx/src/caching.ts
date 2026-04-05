@@ -82,11 +82,9 @@ let _cachedSignalsRuntimeDev: string | null = null
  */
 export function getCachedSignalsRuntime(debug = false): string {
   if (debug) {
-    if (_cachedSignalsRuntimeDev === null) {
-      const { generateSignalsRuntimeDev } = require('./signals')
-      _cachedSignalsRuntimeDev = generateSignalsRuntimeDev()
-    }
-    return _cachedSignalsRuntimeDev!
+    // In debug mode, always regenerate to avoid stale runtime issues
+    const { generateSignalsRuntimeDev } = require('./signals')
+    return generateSignalsRuntimeDev()
   }
   if (_cachedSignalsRuntime === null) {
     const { generateSignalsRuntime } = require('./signals')

@@ -199,10 +199,10 @@ export async function streamTemplate(
         // Read the template file
         const content = await Bun.file(templatePath).text()
 
-        // Extract script content
-        const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-        const scriptContent = scriptMatch ? scriptMatch[1] : ''
-        const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+        // Extract only <script server> content for variable extraction
+        const serverScriptMatch = content.match(/<script\b[^>]*\bserver\b[^>]*>([\s\S]*?)<\/script>/i)
+        const scriptContent = serverScriptMatch ? serverScriptMatch[1] : ''
+        const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
         // Create context with data
         const context: Record<string, any> = {
@@ -211,8 +211,10 @@ export async function streamTemplate(
           __dirname: path.dirname(templatePath),
         }
 
-        // Extract variables from script
-        await extractVariables(scriptContent, context, templatePath)
+        // Extract variables from server script
+        if (scriptContent.trim()) {
+          await extractVariables(scriptContent, context, templatePath)
+        }
 
         // Parse into streamable chunks
         const chunks = parseStreamableChunks(templateContent)
@@ -382,9 +384,9 @@ export async function streamTemplateSimple(
     async start(controller) {
       try {
         const content = await Bun.file(templatePath).text()
-        const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-        const scriptContent = scriptMatch ? scriptMatch[1] : ''
-        const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+        const serverScriptMatch = content.match(/<script\b[^>]*\bserver\b[^>]*>([\s\S]*?)<\/script>/i)
+        const scriptContent = serverScriptMatch ? serverScriptMatch[1] : ''
+        const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
         const context: Record<string, any> = {
           ...data,
@@ -392,7 +394,9 @@ export async function streamTemplateSimple(
           __dirname: path.dirname(templatePath),
         }
 
-        await extractVariables(scriptContent, context, templatePath)
+        if (scriptContent.trim()) {
+          await extractVariables(scriptContent, context, templatePath)
+        }
 
         const dependencies = new Set<string>()
         const strategy = fullOptions.streaming?.strategy || 'auto'
@@ -469,10 +473,10 @@ export async function createStreamRenderer(
   // Read the template file
   const content = await Bun.file(templatePath).text()
 
-  // Extract script and template sections
-  const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-  const scriptContent = scriptMatch ? scriptMatch[1] : ''
-  const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+  // Extract only <script server> for variable extraction
+  const serverScriptMatch = content.match(/<script\b[^>]*\bserver\b[^>]*>([\s\S]*?)<\/script>/i)
+  const scriptContent = serverScriptMatch ? serverScriptMatch[1] : ''
+  const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
   // Store template original content
   const originalTemplate = templateContent

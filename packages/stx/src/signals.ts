@@ -46,6 +46,12 @@ export function generateSignalsRuntime(): string {
 export function generateSignalsRuntimeDev(): string {
   return `
 // STX Signals Runtime (Development Build)
+// Pre-initialization shim: capture onMount/onDestroy calls made before the runtime IIFE runs
+// (e.g. from partial scripts that execute before the full runtime is ready)
+if(!window.__stx_early_mounts)window.__stx_early_mounts=[];
+if(!window.__stx_early_destroys)window.__stx_early_destroys=[];
+if(!window.onMount)window.onMount=function(fn){window.__stx_early_mounts.push(fn)};
+if(!window.onDestroy)window.onDestroy=function(fn){window.__stx_early_destroys.push(fn)};
 (function() {
   'use strict';
 
@@ -614,6 +620,10 @@ finally {
 
   function onMount(fn) { mountCallbacks.push(fn); }
   function onDestroy(fn) { destroyCallbacks.push(fn); }
+
+  // Drain any early mount/destroy calls captured by the pre-initialization shim
+  if (window.__stx_early_mounts) { window.__stx_early_mounts.forEach(function(fn) { mountCallbacks.push(fn); }); window.__stx_early_mounts = null; }
+  if (window.__stx_early_destroys) { window.__stx_early_destroys.forEach(function(fn) { destroyCallbacks.push(fn); }); window.__stx_early_destroys = null; }
 
   // ==========================================================================
   // WebSocket Composable
@@ -1338,7 +1348,10 @@ else if (part) {
     // Use the passed scope parameter to preserve context through nested processing
     const attrCapturedScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
 
-    const evalAttrExpr = (expr) => {
+    const evalAttrExpr = (rawExpr) => {
+      // Decode HTML entities that browsers may encode in attribute values
+      // e.g. :text="a > b" may be stored as :text="a &gt; b" in HTML
+      var expr = rawExpr.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&#x27;/g,"'");
       try {
         if (/^__[A-Z_]+__$/.test(expr.trim())) return expr;
 

@@ -139,15 +139,14 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       const scriptContent = scriptMatch[2]
       const fullScript = scriptMatch[0]
 
-      // Check if it's a client-only script
-      const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
+      // Only <script server> runs on the server — bare <script> and <script client> are client-side
+      const isServerScript = attrs.includes('server')
 
-      if (isClientScript) {
-        clientScripts.push(fullScript)
-      }
-else {
-        // Server script - extract variables but don't output
+      if (isServerScript) {
         serverScripts.push(scriptContent)
+      }
+      else {
+        clientScripts.push(fullScript)
       }
     }
 
@@ -415,18 +414,22 @@ export async function serveFile(
         }
         else {
           const fileContent = await Bun.file(absolutePath).text()
-          // Extract ALL script contents (not just the first) using global regex
-          const scriptContents: string[] = []
-          const scriptRe = /<script\b[^>]*>([\s\S]*?)<\/script>/gi
+          // Extract only <script server> contents for variable extraction
+          const serverScriptContents: string[] = []
+          const scriptRe = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
           let scriptM: RegExpExecArray | null
           while ((scriptM = scriptRe.exec(fileContent)) !== null) {
-            scriptContents.push(scriptM[1])
+            if (scriptM[1].includes('server')) {
+              serverScriptContents.push(scriptM[2])
+            }
           }
-          const scriptContent = scriptContents.join('\n')
+          const scriptContent = serverScriptContents.join('\n')
           const templateContent = fileContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
           const context: Record<string, any> = {}
-          await extractVariables(scriptContent, context, absolutePath)
+          if (scriptContent.trim()) {
+            await extractVariables(scriptContent, context, absolutePath)
+          }
 
           const dependencies = new Set<string>()
           content = await processDirectives(templateContent, context, absolutePath, options.stxOptions || {}, dependencies)

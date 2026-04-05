@@ -112,21 +112,12 @@ export const plugin: BunPlugin = {
             const attrs = attrsMatch ? attrsMatch[1] : ''
             const hasServerAttribute = /\bserver\b/i.test(attrs)
 
-            // Check if this is a client-side script (has browser APIs)
-            // Skip heuristic when explicit `server` attribute is present
-            const isClientScript = !hasServerAttribute && /\b(?:document|window|addEventListener|querySelector|getElementById|fetch\(|localStorage|sessionStorage)\b/.test(innerContent)
-
-            // Check if this looks like a server-side data script
-            // Either has explicit 'server' attribute, or has server-side patterns
-            const isServerScript = hasServerAttribute
-              || /\b(?:module\.exports|export\s+(?:const|let|var|function|default))\b/.test(innerContent)
-              || (/^\s*(?:const|let|var)\s+\w+\s*=/.test(innerContent) && !isClientScript)
-
-            if (isServerScript && !isClientScript) {
+            // Only <script server> runs on the server
+            // Bare <script> and <script client> are both client-side
+            if (hasServerAttribute) {
               serverScriptContent = innerContent
             }
-            else if (!hasServerAttribute) {
-              // Keep client scripts to add back to output (never add server scripts)
+            else {
               clientScripts.push(scriptTag)
             }
           }

@@ -120,17 +120,18 @@ else {
     const scriptContent = scriptMatch[2]
     const fullScript = scriptMatch[0]
 
-    const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=') || (attrs.includes('type=') && !attrs.includes('server'))
+    const isServerScript = attrs.includes('server')
     const isSignalsScript = usesSignalsAPI(scriptContent)
 
     if (isSignalsScript) {
       signalsScripts.push(fullScript)
     }
-    else if (isClientScript) {
-      clientScripts.push(fullScript)
+    else if (isServerScript) {
+      serverScripts.push(scriptContent)
     }
     else {
-      serverScripts.push(scriptContent)
+      // Bare <script> and <script client> are both client-side
+      clientScripts.push(fullScript)
     }
   }
 

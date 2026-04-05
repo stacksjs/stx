@@ -877,8 +877,9 @@ catch (error: unknown) {
           continue
         }
 
-        if (isServerScript || (!isClientScript && !scriptAttrs.includes('src') && !isSignalScript)) {
+        if (isServerScript) {
           // Process server-side script to extract variables into includeContext
+          // Only <script server> runs on the server — bare <script> is client-side
           try {
             const { extractVariables } = await import('./variable-extractor')
             await extractVariables(scriptContent, includeContext, includeFilePath)
@@ -891,10 +892,11 @@ catch (e) {
           }
         }
 
-        // Preserve client-only scripts (non-signal)
+        // Preserve client-side scripts (non-signal)
+        // Bare <script> and <script client> are both client-side — only <script server> runs on server
         // Wrap with data-stx-scoped to prevent re-processing in the parent template's
         // client script pipeline, which would otherwise merge them with other scripts
-        if (isClientScript && !isSignalScript) {
+        if (!isServerScript && !isSignalScript) {
           const extraAttrs = scriptAttrs.replace(/\bclient\b/i, '').trim()
           preservedScript += `<script data-stx-scoped${extraAttrs ? ` ${extraAttrs}` : ''}>${scriptContent}</script>\n`
         }

@@ -489,7 +489,7 @@ else {
       var isActive=(href===url)||(href==='/'&&url==='/');
       if(a.hasAttribute('data-stx-link')){
         var ac=a.getAttribute('data-stx-active-class')||'active';
-        if(isActive)a.classList.add(ac);else a.classList.remove(ac);
+        if(isActive)ac.split(' ').forEach(function(cls){if(cls)a.classList.add(cls)});else ac.split(' ').forEach(function(cls){if(cls)a.classList.remove(cls)});
       }
     });
   }

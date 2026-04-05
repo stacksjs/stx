@@ -463,7 +463,7 @@ export async function loadStxConfig(): Promise<StxConfig> {
     if (loaded.plugins && loaded.plugins.length > 0) {
       const { pluginManager } = await import('./plugin-system')
       const pluginComponentDirs: string[] = []
-      const pluginPageDirs: string[] = []
+      const pluginPageDirs: Array<{ dir: string, prefix: string }> = []
 
       for (const pluginEntry of loaded.plugins) {
         const pluginPath = typeof pluginEntry === 'string' ? pluginEntry : pluginEntry[0]
@@ -496,7 +496,9 @@ export async function loadStxConfig(): Promise<StxConfig> {
           }
           if (plugin.pages) {
             const dir = path.resolve(pluginDir, plugin.pages)
-            pluginPageDirs.push(dir)
+            // Use the plugin's configured path prefix (from options), or fallback to '/'
+            const prefix = (pluginOptions as any).path || '/'
+            pluginPageDirs.push({ dir, prefix })
           }
 
           // Call setup if defined
