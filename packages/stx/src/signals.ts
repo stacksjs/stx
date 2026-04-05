@@ -25,12 +25,17 @@ export * from './signals-api'
  * @returns Minified JavaScript runtime code
  */
 export function generateSignalsRuntime(): string {
-  // Use Bun.Transpiler for proper minification that handles ASI correctly.
-  // The previous regex-based minifier stripped newlines without adding semicolons,
-  // producing invalid JS like `cleanup=fn()throw e` or `}var x`.
+  // Use Bun.Transpiler for minification, then fix ASI edge cases.
+  // Bun.Transpiler strips newlines but doesn't always insert semicolons at
+  // statement boundaries like `}var` or `}let`. While Bun's parser handles
+  // these, browsers in strict mode may reject them.
   try {
     const transpiler = new Bun.Transpiler({ loader: 'js', minifyWhitespace: true })
-    return transpiler.transformSync(generateSignalsRuntimeDev())
+    let minified = transpiler.transformSync(generateSignalsRuntimeDev())
+    // Insert semicolons at `}keyword` boundaries where ASI would have applied
+    // with a newline but doesn't on a single line
+    minified = minified.replace(/\}(var |let |const |function )/g, '};$1')
+    return minified
   }
   catch {
     // Fallback: return dev runtime unminified (larger but correct)
@@ -366,7 +371,7 @@ else {
       value = fn(...Object.values(scope));
     }
 catch (e) {
-      if (!(e instanceof ReferenceError)) console.warn('[STX] Pipe base expression error:', valueExpr, e);
+      if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Pipe base expression error:', valueExpr, e);
       return '';
     }
 
@@ -393,7 +398,7 @@ catch (e) {
           value = filterFn(value, ...parsedArgs);
         }
 catch (e) {
-          if (!(e instanceof ReferenceError)) console.warn('[STX] Pipe filter error:', pipe.name, e);
+          if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Pipe filter error:', pipe.name, e);
         }
       }
 else {
@@ -1126,7 +1131,7 @@ finally {
       return fn(...Object.values(scope));
     }
 catch (e) {
-      if (!(e instanceof ReferenceError)) console.warn('[STX] Expression error:', expr, e);
+      if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expr, e);
       return '';
     }
   }
@@ -1228,15 +1233,20 @@ catch (e) {
       fn(...Object.values(scope), event);
     }
 catch (e) {
-      if (!(e instanceof ReferenceError)) console.warn('[STX] Handler error:', expr, e);
+      if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Handler error:', expr, e);
     }
   }
 
   function processElement(el, scope = componentScope) {
-    // Skip elements managed by __stx_reactive or x-element (x-data scopes)
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
-      if (el.hasAttribute('x-data') || el.__stx_reactive_initialized) {
-        return;
+      // x-data elements: the reactive bridge has registered their scope into window.stx._scopes.
+      // Merge that scope into the processing scope and continue — we handle all directives.
+      // Server renames x-data → data-stx-xdata, so check both.
+      if (el.hasAttribute('x-data') || el.hasAttribute('data-stx-xdata') || el.__stx_scope) {
+        var xdScope = el.__stx_scope || (findElementScope(el) || {});
+        if (xdScope && Object.keys(xdScope).length > 0) {
+          scope = { ...scope, ...xdScope };
+        }
       }
       // v-memo / @memo — skip re-processing if dependency values haven't changed
       if (el.hasAttribute('data-stx-memo')) {
@@ -1299,7 +1309,7 @@ catch (e) {
                     span.textContent = fn(...Object.values(capturedScope));
                   }
 catch (e2) {
-                    if (!(e2 instanceof ReferenceError)) console.warn('[STX] Expression error:', expr, e2);
+                    if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expr, e2);
                     span.textContent = '';
                   }
                 }
@@ -1320,27 +1330,29 @@ else if (part) {
     // <stx-link> handling removed — StxLink builtin now produces <a> directly
     // with data-stx-link attribute. The router handles SPA click interception.
 
-    // Handle @for / :for first (reactive list)
-    if (el.hasAttribute('@for') || el.hasAttribute(':for')) {
-      bindFor(el, scope, el.hasAttribute(':for') ? ':for' : '@for');
+    // Handle @for / :for / x-for first (reactive list)
+    if (el.hasAttribute('@for') || el.hasAttribute(':for') || el.hasAttribute('x-for')) {
+      var forAttr = el.hasAttribute(':for') ? ':for' : el.hasAttribute('x-for') ? 'x-for' : '@for';
+      bindFor(el, scope, forAttr);
       return;
     }
 
-    // Handle @if / :if (conditional rendering)
-    if (el.hasAttribute('@if') || el.hasAttribute(':if')) {
-      bindIf(el, scope, el.hasAttribute(':if') ? ':if' : '@if');
+    // Handle @if / :if / x-if (conditional rendering)
+    if (el.hasAttribute('@if') || el.hasAttribute(':if') || el.hasAttribute('x-if')) {
+      var ifAttr = el.hasAttribute(':if') ? ':if' : el.hasAttribute('x-if') ? 'x-if' : '@if';
+      bindIf(el, ifAttr === 'x-if' ? scope : scope, ifAttr);
       return;
     }
 
-    // Handle @show / :show (visibility toggle - keeps element in DOM)
-    if (el.hasAttribute('@show') || el.hasAttribute(':show')) {
-      var showAttr = el.hasAttribute(':show') ? ':show' : '@show';
+    // Handle @show / :show / x-show (visibility toggle - keeps element in DOM)
+    if (el.hasAttribute('@show') || el.hasAttribute(':show') || el.hasAttribute('x-show')) {
+      var showAttr = el.hasAttribute(':show') ? ':show' : el.hasAttribute('x-show') ? 'x-show' : '@show';
       bindShow(el, el.getAttribute(showAttr), scope, showAttr);
     }
 
-    // Handle @model / :model (two-way binding)
-    if (el.hasAttribute('@model') || el.hasAttribute(':model')) {
-      var modelAttr = el.hasAttribute(':model') ? ':model' : '@model';
+    // Handle @model / :model / x-model (two-way binding)
+    if (el.hasAttribute('@model') || el.hasAttribute(':model') || el.hasAttribute('x-model')) {
+      var modelAttr = el.hasAttribute(':model') ? ':model' : el.hasAttribute('x-model') ? 'x-model' : '@model';
       bindModel(el, el.getAttribute(modelAttr), scope, modelAttr);
     }
 
@@ -1375,7 +1387,7 @@ catch (e) {
           return fn(...Object.values(attrCapturedScope));
         }
 catch (e2) {
-          if (!(e2 instanceof ReferenceError)) console.warn('[STX] Attribute expression error:', expr, e2);
+          if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Attribute expression error:', expr, e2);
           return '';
         }
       }
@@ -1391,12 +1403,12 @@ catch (e2) {
       const name = attr.name;
       const value = attr.value;
 
-      // @bind:attr OR :attr shorthand (Feature #4) for dynamic attribute binding
+      // @bind:attr OR :attr OR x-bind:attr (Feature #4) for dynamic attribute binding
       // Only match :attr that is NOT a known directive and NOT an event name
-      if (name.startsWith('@bind:') || (name.startsWith(':') && !name.startsWith('::')
+      if (name.startsWith('@bind:') || name.startsWith('x-bind:') || (name.startsWith(':') && !name.startsWith('::')
           && !DIRECTIVE_NAMES[name.slice(1).split('.')[0]]
           && !EVENT_RE.test(name.slice(1)))) {
-        const attrName = name.startsWith('@bind:') ? name.slice(6) : name.slice(1);
+        const attrName = name.startsWith('@bind:') ? name.slice(6) : name.startsWith('x-bind:') ? name.slice(7) : name.slice(1);
         effect(() => {
           const v = evalAttrExpr(value);
           if (v === false || v === null || v === undefined) {
@@ -1419,19 +1431,19 @@ else if (name === '@style' || name === ':style') {
         bindStyle(el, value, scope);
         el.removeAttribute(name);
       }
-else if (name === '@text' || name === ':text') {
+else if (name === '@text' || name === ':text' || name === 'x-text') {
         effect(() => {
           el.textContent = evalAttrExpr(value);
         });
         el.removeAttribute(name);
       }
-else if (name === '@html' || name === ':html') {
+else if (name === '@html' || name === ':html' || name === 'x-html') {
         effect(() => {
           el.innerHTML = evalAttrExpr(value);
         });
         el.removeAttribute(name);
       }
-else if (name === 'ref' || name === ':ref' || name === 'data-stx-ref') {
+else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data-stx-ref') {
         // Store ref in scope.$refs and componentScope.$refs
         if (scope.$refs) scope.$refs[value] = el;
         if (componentScope.$refs) componentScope.$refs[value] = el;
@@ -1464,15 +1476,37 @@ else if (name.startsWith('@') || name.startsWith(':')) {
           if (modifiers.includes('prevent')) event.preventDefault();
           if (modifiers.includes('stop')) event.stopPropagation();
           // Execute with captured scope (includes @for loop variables)
+          // For x-data scopes, expressions like "mobileOpen = !mobileOpen" need to
+          // read the signal value AND write back through the signal's setter.
           try {
             if (!value || /^__[A-Z_]+__$/.test(value.trim())) return;
             var shorthandFn = parseEventShorthand(value, eventCapturedScope);
             if (shorthandFn) { shorthandFn(); return; }
-            var fn = new Function(...Object.keys(eventCapturedScope), '$event', value);
-            fn(...Object.values(eventCapturedScope), event);
+            // Check if any scope values are signals (x-data pattern)
+            var hasSignals = Object.values(eventCapturedScope).some(function(v) {
+              return v && typeof v === 'function' && v._isSignal;
+            });
+            if (hasSignals) {
+              // Use read/write proxy: reads unwrap signals, assignments write through signal.set()
+              var getVars = Object.keys(eventCapturedScope).map(function(k) {
+                return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
+              }).join(';');
+              var setVars = Object.keys(eventCapturedScope).filter(function(k) {
+                var v = eventCapturedScope[k];
+                return v && typeof v === 'function' && v._isSignal;
+              }).map(function(k) {
+                return 'if(' + k + ' !== __s["' + k + '"]()) __s["' + k + '"].set(' + k + ')';
+              }).join(';');
+              var body = getVars + ';' + value + ';' + setVars;
+              var fn2 = new Function('__s', '$event', body);
+              fn2(eventCapturedScope, event);
+            } else {
+              var fn = new Function(...Object.keys(eventCapturedScope), '$event', value);
+              fn(...Object.values(eventCapturedScope), event);
+            }
           }
 catch (e) {
-            if (!(e instanceof ReferenceError)) console.warn('[STX] Handler error:', value, e);
+            if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Handler error:', value, e);
           }
         }, {
           capture: modifiers.includes('capture'),
@@ -1503,15 +1537,16 @@ catch (e) {
   function bindShow(el, expr, passedScope = componentScope, attrName = '@show') {
     const originalDisplay = el.style.display || '';
     // Capture scope at setup time - use passed scope to preserve context
-    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}) };
+    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
 
     const evalExpr = () => {
       try {
+        const unwrapScope = createAutoUnwrapProxy(capturedScope);
         const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
-        return fn(...Object.values(capturedScope));
+        return fn(...Object.values(unwrapScope));
       }
 catch (e) {
-        if (!(e instanceof ReferenceError)) console.warn('[STX] Show expression error:', expr, e);
+        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Show expression error:', expr, e);
         return false;
       }
     };
@@ -1542,7 +1577,7 @@ else {
         }
       }
 catch (e) {
-        if (!(e instanceof ReferenceError)) console.warn('[STX] ' + attrName + ' set error:', expr, e);
+        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] ' + attrName + ' set error:', expr, e);
       }
     };
 
@@ -1565,15 +1600,16 @@ else {
   function bindClass(el, expr, passedScope = componentScope) {
     const originalClasses = el.className;
     // Capture scope at setup time - use passed scope to preserve context
-    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}) };
+    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
 
     const evalExpr = () => {
       try {
+        const unwrapScope = createAutoUnwrapProxy(capturedScope);
         const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
-        return fn(...Object.values(capturedScope));
+        return fn(...Object.values(unwrapScope));
       }
 catch (e) {
-        if (!(e instanceof ReferenceError)) console.warn('[STX] Class expression error:', expr, e);
+        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Class expression error:', expr, e);
         return '';
       }
     };
@@ -1596,15 +1632,16 @@ else {
 
   function bindStyle(el, expr, passedScope = componentScope) {
     // Capture scope at setup time - use passed scope to preserve context
-    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}) };
+    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
 
     const evalExpr = () => {
       try {
+        const unwrapScope = createAutoUnwrapProxy(capturedScope);
         const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
-        return fn(...Object.values(capturedScope));
+        return fn(...Object.values(unwrapScope));
       }
 catch (e) {
-        if (!(e instanceof ReferenceError)) console.warn('[STX] Style expression error:', expr, e);
+        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Style expression error:', expr, e);
         return {};
       }
     };
@@ -1621,9 +1658,10 @@ else if (typeof value === 'string') {
   }
 
   function bindFor(el, passedScope = componentScope, attrName = '@for') {
-    console.log('[bindFor]', el.getAttribute(attrName), 'scope keys:', Object.keys(passedScope).slice(0,8));
+    // debug: console.log('[bindFor]', el.getAttribute(attrName));
     const expr = el.getAttribute(attrName);
-    const match = expr.match(/^\\s*(\\w+)(?:\\s*,\\s*(\\w+))?\\s+(?:in|of)\\s+(.+)\\s*$/);
+    // Support: "item in list", "item, index in list", "(item, index) in list"
+    const match = expr.match(/^\\s*\\(?\\s*(\\w+)(?:\\s*,\\s*(\\w+))?\\s*\\)?\\s+(?:in|of)\\s+(.+)\\s*$/);
 
     if (!match) {
       console.warn('[STX] Invalid ' + attrName + ':', expr);
@@ -1688,10 +1726,12 @@ else {
       const wrapper = el.cloneNode(true);
       wrapper.removeAttribute('@for');
       wrapper.removeAttribute(':for');
+      wrapper.removeAttribute('x-for');
       wrapper.removeAttribute('@loading');
       wrapper.removeAttribute('@empty');
-      // Also remove @if / :if - we'll handle it inline
-      if (ifExpr) { wrapper.removeAttribute('@if'); wrapper.removeAttribute(':if'); }
+      wrapper.removeAttribute(':key');
+      // Also remove @if / :if / x-if - we'll handle it inline
+      if (ifExpr) { wrapper.removeAttribute('@if'); wrapper.removeAttribute(':if'); wrapper.removeAttribute('x-if'); }
       templateContent = wrapper;
     }
 
@@ -1699,7 +1739,7 @@ else {
     let loadingElement = null;
     let emptyElement = null;
 
-    // Helper to evaluate with captured scope
+    // Helper to evaluate with captured scope (auto-unwraps signals)
     const evalExpr = (expression, extraScope = {}) => {
       try {
         // Skip placeholder expressions like __TITLE__ (build-time placeholders)
@@ -1708,11 +1748,12 @@ else {
         }
         // Use passedScope instead of componentScope to preserve context through nested processing
         const scope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers, ...extraScope };
+        const unwrapScope = createAutoUnwrapProxy(scope);
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
-        return fn(...Object.values(scope));
+        return fn(...Object.values(unwrapScope));
       }
 catch (e) {
-        if (!(e instanceof ReferenceError)) console.warn('[STX] Expression error:', expression, e);
+        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
         return '';
       }
     };
@@ -1868,7 +1909,7 @@ else {
       el.remove(); // Remove the template element itself
     }
 
-    // Helper to evaluate with captured scope
+    // Helper to evaluate with captured scope (auto-unwraps signals)
     const evalExpr = (expression) => {
       try {
         // Skip placeholder expressions like __TITLE__ (build-time placeholders)
@@ -1876,12 +1917,13 @@ else {
           return expression;
         }
         // Use captured componentScope (with @for vars) merged with element scope
-        const scope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
+        const scope = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
+        const unwrapScope = createAutoUnwrapProxy(scope);
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
-        return fn(...Object.values(scope));
+        return fn(...Object.values(unwrapScope));
       }
 catch (e) {
-        if (!(e instanceof ReferenceError)) console.warn('[STX] Expression error:', expression, e);
+        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
         return '';
       }
     };
@@ -2479,6 +2521,7 @@ catch (e) {}
     _destroyCallbacks: destroyCallbacks,
     _cleanupContainer: cleanupContainer,
     _scopes: {},  // Component-level scopes
+    _scopeCounter: 0,  // Counter for generating unique scope IDs during SPA navigation
     _latestSetup: null,  // Latest SFC setup function (for SPA re-initialization)
     _stores: new Map(),  // Global store registry — survives SPA navigation
 
@@ -2937,12 +2980,8 @@ else {
       const scopeId = el.getAttribute('data-stx-scope');
       processedScopes.add(el);
 
-      // Skip scopes owned by the reactive runtime (x-data conversions).
-      // data-stx-reactive-owner is set at build time by the reactive processor,
-      // so it's available even before the reactive runtime initializes the scope.
-      if (el.hasAttribute('data-stx-reactive-owner') || el.__stx_reactive_initialized) return;
       const scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
-      if (!scopeVars && window.__stx_reactive) return;
+      if (!scopeVars) return;
 
       // Merge component scope vars into componentScope (don't restore - keep for head elements)
       // This ensures expressions can access component variables even for elements
@@ -2996,7 +3035,7 @@ else {
               el.textContent = result;
             }
 catch (e) {
-              if (!(e instanceof ReferenceError)) console.warn('[STX] Title expression error:', e);
+              if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Title expression error:', e);
             }
           });
         }
@@ -3023,7 +3062,7 @@ else if (el.tagName === 'META') {
               el.setAttribute('content', result);
             }
 catch (e) {
-              if (!(e instanceof ReferenceError)) console.warn('[STX] Meta expression error:', e);
+              if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Meta expression error:', e);
             }
           });
         }
@@ -3163,15 +3202,33 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       });
     }
 
+    // Initialize x-data scopes after SPA fragment swap.
+    // On full page load, the reactive bridge <script> calls initScope(). But after SPA
+    // navigation, only the HTML fragment is swapped — the bridge script isn't re-executed.
+    // The server renames x-data → data-stx-xdata so we can read the state expression here.
+    if (window.__stx_reactive && window.__stx_reactive.initScope) {
+      container.querySelectorAll('[data-stx-xdata]').forEach(function(el) {
+        var scopeId = el.getAttribute('data-stx-scope');
+        // Skip if scope already registered (e.g. nav scope that persists across navigations)
+        if (scopeId && window.stx._scopes && window.stx._scopes[scopeId]) return;
+        var xdata = el.getAttribute('data-stx-xdata');
+        if (!xdata) return;
+        // Assign a scope ID if not already present
+        if (!scopeId) {
+          scopeId = '__stx_scope_spa_' + (++window.stx._scopeCounter);
+          el.setAttribute('data-stx-scope', scopeId);
+        }
+        console.log('[stx:load] initializing x-data scope:', scopeId, xdata.substring(0, 40));
+        window.__stx_reactive.initScope(el, xdata, [], {}, null);
+      });
+    }
+
     // Apply scope from [data-stx-scope] elements and process them
     container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
       var scopeId = el.getAttribute('data-stx-scope');
-      if (el.hasAttribute('data-stx-reactive-owner') || el.__stx_reactive_initialized) return;
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
-      if (!scopeVars && window.__stx_reactive) return;
-      if (scopeVars) {
-        Object.assign(componentScope, scopeVars);
-      }
+      if (!scopeVars) return;
+      Object.assign(componentScope, scopeVars);
       var disposeEffects = trackEffects(function() { processElement(el, componentScope); });
       el.__stx_disposers = disposeEffects;
     });
@@ -3225,17 +3282,17 @@ catch (e) { console.warn('[stx] mount callback error:', e); }
     if (el.hasAttribute && el.hasAttribute('data-stx-scope')) return;
     // Process this element's directives without recursing into children
     // (we'll handle children manually to skip scoped ones)
-    const hasFor = el.hasAttribute && (el.hasAttribute('@for') || el.hasAttribute(':for'));
-    const hasIf = el.hasAttribute && (el.hasAttribute('@if') || el.hasAttribute(':if'));
-    if (hasFor) { bindFor(el, componentScope, el.hasAttribute(':for') ? ':for' : '@for'); return; }
-    if (hasIf) { bindIf(el, componentScope, el.hasAttribute(':if') ? ':if' : '@if'); return; }
+    const hasFor = el.hasAttribute && (el.hasAttribute('@for') || el.hasAttribute(':for') || el.hasAttribute('x-for'));
+    const hasIf = el.hasAttribute && (el.hasAttribute('@if') || el.hasAttribute(':if') || el.hasAttribute('x-if'));
+    if (hasFor) { var fa = el.hasAttribute(':for') ? ':for' : el.hasAttribute('x-for') ? 'x-for' : '@for'; bindFor(el, componentScope, fa); return; }
+    if (hasIf) { var ia = el.hasAttribute(':if') ? ':if' : el.hasAttribute('x-if') ? 'x-if' : '@if'; bindIf(el, componentScope, ia); return; }
     // Process other attributes...
-    if (el.hasAttribute && (el.hasAttribute('@show') || el.hasAttribute(':show'))) {
-      var sa = el.hasAttribute(':show') ? ':show' : '@show';
+    if (el.hasAttribute && (el.hasAttribute('@show') || el.hasAttribute(':show') || el.hasAttribute('x-show'))) {
+      var sa = el.hasAttribute(':show') ? ':show' : el.hasAttribute('x-show') ? 'x-show' : '@show';
       bindShow(el, el.getAttribute(sa), componentScope, sa);
     }
-    if (el.hasAttribute && (el.hasAttribute('@model') || el.hasAttribute(':model'))) {
-      var ma = el.hasAttribute(':model') ? ':model' : '@model';
+    if (el.hasAttribute && (el.hasAttribute('@model') || el.hasAttribute(':model') || el.hasAttribute('x-model'))) {
+      var ma = el.hasAttribute(':model') ? ':model' : el.hasAttribute('x-model') ? 'x-model' : '@model';
       bindModel(el, el.getAttribute(ma), componentScope, ma);
     }
     // Process children, skipping scoped containers and script/style elements

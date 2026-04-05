@@ -43,6 +43,7 @@ export function hasSignalsSyntax(template: string): boolean {
     /@bind:/, // @bind:attr="value"
     /@class\s*=/, // @class="{ active: isActive }"
     /@style\s*=/, // @style="{ color: textColor }"
+    /\bx-data\s*=/, // x-data="{ ... }" Alpine-style (reactive bridge needs signals runtime)
     /\bstate\s*(?:<[^>]*>)?\s*\(/, // state() signal API
     /\bderived\s*(?:<[^>]*>)?\s*\(/, // derived() signal API
     /\beffect\s*(?:<[^>]*>)?\s*\(/, // effect() signal API

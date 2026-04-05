@@ -814,9 +814,9 @@ catch (error: unknown) {
       let workingContent = partialContent
 
       // Extract <template> content if present (Vue-style SFC)
-      // Only match <template> WITHOUT an id attribute - templates with id are HTML template elements
-      // that should be preserved (used for client-side JS template cloning)
-      const templateMatch = workingContent.match(/<template\b(?![^>]*\bid\s*=)[^>]*>([\s\S]*?)<\/template>/i)
+      // Only match <template> WITHOUT id, x-for, x-if, @for, @if, :for, :if attributes.
+      // Templates with those attributes are client-side loop/conditional elements that must be preserved.
+      const templateMatch = workingContent.match(/<template\b(?![^>]*\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=)[^>]*>([\s\S]*?)<\/template>/i)
       if (templateMatch) {
         workingContent = templateMatch[1].trim()
       }

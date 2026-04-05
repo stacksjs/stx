@@ -37,10 +37,10 @@ describe('Template Improvements Integration', () => {
   })
 
   describe(':attr shorthand with reactive expressions', () => {
-    it('should process :attr like @bind:attr', () => {
+    it('should process :attr like @bind:attr and x-bind:attr', () => {
       const runtime = generateSignalsRuntimeDev()
-      // Both syntaxes should use the same binding logic
-      expect(runtime).toContain("name.startsWith('@bind:') || (name.startsWith(':') && !name.startsWith('::')")
+      // All three syntaxes should use the same binding logic
+      expect(runtime).toContain("name.startsWith('@bind:') || name.startsWith('x-bind:') || (name.startsWith(':') && !name.startsWith('::')")
     })
 
     it('should use auto-unwrap in attribute bindings', () => {

@@ -104,9 +104,10 @@ export function injectPwaTags(html: string, options: StxOptions): string {
   // Check if document has a head tag
   if (!html.includes('</head>')) {
     // No head tag, try body
-    if (html.includes('</body>')) {
+    const pwaBodyIdx = html.lastIndexOf('</body>')
+    if (pwaBodyIdx !== -1) {
       const pwaTags = generatePwaTags(options)
-      return html.replace('</body>', `${pwaTags}\n</body>`)
+      return html.slice(0, pwaBodyIdx) + pwaTags + '\n' + html.slice(pwaBodyIdx)
     }
     // No body either, append to end
     return html + generatePwaTags(options)

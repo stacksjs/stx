@@ -349,11 +349,13 @@ export function injectScopedCss(
       }
       return styleTag + template
 
-    case 'body-end':
-      if (template.includes('</body>')) {
-        return template.replace('</body>', `${styleTag}\n</body>`)
+    case 'body-end': {
+      const csBodyIdx = template.lastIndexOf('</body>')
+      if (csBodyIdx !== -1) {
+        return template.slice(0, csBodyIdx) + styleTag + '\n' + template.slice(csBodyIdx)
       }
       return template + styleTag
+    }
 
     default:
       return template

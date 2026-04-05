@@ -339,8 +339,10 @@ export function processXElementDirectives(template: string): string {
   // Inject the runtime before </body> or at the end
   const runtime = generateXElementRuntime()
 
-  if (template.includes('</body>')) {
-    return template.replace('</body>', `${runtime}\n</body>`)
+  // Use lastIndexOf to find the real </body> — earlier ones may be inside <script> strings
+  const bodyCloseIdx = template.lastIndexOf('</body>')
+  if (bodyCloseIdx !== -1) {
+    return template.slice(0, bodyCloseIdx) + runtime + '\n' + template.slice(bodyCloseIdx)
   }
 
   return template + '\n' + runtime

@@ -25,7 +25,7 @@ describe('stx Streaming', () => {
       <html>
       <head>
         <title>Stream Test</title>
-        <script>
+        <script server>
           module.exports = {
             title: "Hello Streaming",
             subtitle: "Streaming stx"
@@ -73,7 +73,7 @@ describe('stx Streaming', () => {
       <html>
       <head>
         <title>Sections Test</title>
-        <script>
+        <script server>
           module.exports = {
             title: "Dashboard",
             user: { name: "John" },
@@ -169,7 +169,7 @@ describe('stx Streaming', () => {
       <html>
       <head>
         <title>Error Test</title>
-        <script>
+        <script server>
           module.exports = {};
         </script>
       </head>
@@ -203,7 +203,7 @@ describe('stx Streaming', () => {
       <html>
       <head>
         <title>Dynamic Data Test</title>
-        <script>
+        <script server>
           module.exports = {
             title: "Base Data"
           };
@@ -245,7 +245,7 @@ describe('stx Streaming', () => {
       <html>
       <head>
         <title>Default Values Test</title>
-        <script>
+        <script server>
           module.exports = {
             title: "Base Data",
             dynamicTitle: "Default Title",
@@ -281,7 +281,7 @@ describe('stx Streaming', () => {
       <html>
       <head>
         <title>Async Data Test</title>
-        <script>
+        <script server>
           // For testing we'll use predefined data
           module.exports = {
             title: "Async Data Example",
@@ -327,7 +327,7 @@ describe('stx Streaming', () => {
       <html>
       <head>
         <title>Complex Sections Test</title>
-        <script>
+        <script server>
           module.exports = {
             user: {
               name: "Jane",
@@ -586,7 +586,7 @@ describe('stx Streaming - Suspense', () => {
   it('should stream suspense content as separate chunks', async () => {
     const testFile = path.join(SUSPENSE_DIR, 'suspense-stream.stx')
     await Bun.write(testFile, `
-      <script>
+      <script server>
         module.exports = {
           title: "Shell Title",
           heavyData: "Loaded Data"
@@ -628,7 +628,7 @@ else {
   it('should include __stxSuspense.resolve script in streamed chunks', async () => {
     const testFile = path.join(SUSPENSE_DIR, 'resolve-script.stx')
     await Bun.write(testFile, `
-      <script>
+      <script server>
         module.exports = { value: "resolved" };
       </script>
       <div>Shell</div>
@@ -661,7 +661,7 @@ else {
   it('should stream shell content first before suspense', async () => {
     const testFile = path.join(SUSPENSE_DIR, 'shell-first.stx')
     await Bun.write(testFile, `
-      <script>
+      <script server>
         module.exports = { title: "First" };
       </script>
       <h1>{{ title }}</h1>
@@ -783,7 +783,7 @@ describe('stx Streaming - Section-First Chunking', () => {
   it('should produce multiple chunks for sectioned templates', async () => {
     const testFile = path.join(SECTION_STREAM_DIR, 'multi-section.stx')
     await Bun.write(testFile, `
-      <script>
+      <script server>
         module.exports = { greeting: "Hello", info: "World" };
       </script>
       <header>{{ greeting }}</header>
@@ -831,7 +831,7 @@ else {
       <footer>Footer</footer>
     `
     await Bun.write(testFile, `
-      <script>
+      <script server>
         module.exports = {};
       </script>
       ${templateContent}
@@ -863,7 +863,7 @@ else {
   it('should preserve byte-chunking when strategy is manual', async () => {
     const testFile = path.join(SECTION_STREAM_DIR, 'manual-strategy.stx')
     await Bun.write(testFile, `
-      <script>
+      <script server>
         module.exports = { title: "Manual" };
       </script>
       <h1>{{ title }}</h1>
@@ -900,7 +900,7 @@ else {
   it('streamTemplateSimple should also use section-first streaming', async () => {
     const testFile = path.join(SECTION_STREAM_DIR, 'simple-sections.stx')
     await Bun.write(testFile, `
-      <script>
+      <script server>
         module.exports = { a: "Alpha", b: "Beta" };
       </script>
       <div>{{ a }}</div>

@@ -33,7 +33,7 @@ describe('Internal stx Plugin', () => {
 <html>
 <head>
   <title>Plugin Test</title>
-  <script>
+  <script server>
     const title = "Hello from Plugin";
     const count = 42;
     module.exports = { title, count };
@@ -65,7 +65,7 @@ describe('Internal stx Plugin', () => {
 <html>
 <head>
   <title>Conditionals Test</title>
-  <script>
+  <script server>
     const isAdmin = true;
     const username = "Admin User";
     module.exports = { isAdmin, username };
@@ -100,7 +100,7 @@ describe('Internal stx Plugin', () => {
 <html>
 <head>
   <title>Loops Test</title>
-  <script>
+  <script server>
     const items = ["Apple", "Banana", "Cherry"];
     module.exports = { items };
   </script>
@@ -135,7 +135,7 @@ describe('Internal stx Plugin', () => {
 <html>
 <head>
   <title>Client Scripts Test</title>
-  <script>
+  <script server>
     const pageTitle = "My Page";
     module.exports = { pageTitle };
   </script>
@@ -190,7 +190,7 @@ describe('Internal stx Plugin', () => {
 <html>
 <head>
   <title>Objects Test</title>
-  <script>
+  <script server>
     const user = {
       name: "John Doe",
       email: "john@example.com",
@@ -231,7 +231,7 @@ describe('Internal stx Plugin', () => {
 <html>
 <head>
   <title>Functions Test</title>
-  <script>
+  <script server>
     function formatName(first, last) {
       return first + ' ' + last;
     }

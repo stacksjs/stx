@@ -575,9 +575,10 @@ export function injectHeatmap(html: string, options: StxOptions): string {
     return html
   }
 
-  // Check if document has a body tag
-  if (html.includes('</body>')) {
-    return html.replace('</body>', `${heatmapScript}</body>`)
+  // Inject before the LAST </body>
+  const hmBodyIdx = html.lastIndexOf('</body>')
+  if (hmBodyIdx !== -1) {
+    return html.slice(0, hmBodyIdx) + heatmapScript + html.slice(hmBodyIdx)
   }
 
   // Append to end as fallback

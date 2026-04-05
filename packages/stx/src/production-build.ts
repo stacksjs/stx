@@ -579,7 +579,8 @@ export class ProductionBuild {
         sources: [filePath],
       })
 
-      output = output.replace('</body>', `<script src="${this.config.publicPath}${scriptFile}"></script>\n</body>`)
+      const pbBodyIdx = output.lastIndexOf('</body>')
+      if (pbBodyIdx !== -1) { output = output.slice(0, pbBodyIdx) + `<script src="${this.config.publicPath}${scriptFile}"></script>\n` + output.slice(pbBodyIdx) }
     }
 
     // Process and re-inject styles

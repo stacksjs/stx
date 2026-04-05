@@ -77,8 +77,9 @@ function parseTemplate(content: string): {
   signalsScripts: string[]
 } {
   // SFC Support: Extract <template> content if present (balanced matching for nested <template>)
+  // Preserve templates with x-for, x-if, @for, @if, :for, :if — those are client-side elements
   let workingContent = content
-  const templateOpenMatch = content.match(/<template\b[^>]*>/i)
+  const templateOpenMatch = content.match(/<template\b(?![^>]*\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=)[^>]*>/i)
   if (templateOpenMatch && templateOpenMatch.index !== undefined) {
     const openEnd = templateOpenMatch.index + templateOpenMatch[0].length
     let depth = 1

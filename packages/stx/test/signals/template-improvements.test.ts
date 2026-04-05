@@ -129,15 +129,16 @@ describe('Feature #3: @for with @loading and @empty states', () => {
 })
 
 describe('Feature #4: :attr shorthand for dynamic binding', () => {
-  it('should handle :attr as alias for @bind:attr', () => {
+  it('should handle :attr as alias for @bind:attr and x-bind:attr', () => {
     const runtime = generateSignalsRuntimeDev()
     expect(runtime).toContain("name.startsWith(':')")
     expect(runtime).toContain("name.startsWith('@bind:')")
+    expect(runtime).toContain("name.startsWith('x-bind:')")
   })
 
-  it('should extract attribute name correctly for :attr', () => {
+  it('should extract attribute name correctly for :attr, @bind:attr, and x-bind:attr', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain("name.startsWith('@bind:') ? name.slice(6) : name.slice(1)")
+    expect(runtime).toContain("name.startsWith('@bind:') ? name.slice(6) : name.startsWith('x-bind:') ? name.slice(7) : name.slice(1)")
   })
 
   it('should not confuse :: pseudo-elements with :attr', () => {

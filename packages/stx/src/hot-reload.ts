@@ -484,9 +484,10 @@ else {
 export function injectHotReload(html: string, wsPort: number, options: HotReloadOptions = {}): string {
   const script = generateHotReloadScript(wsPort, options)
 
-  // Try to inject before </body>
-  if (html.includes('</body>')) {
-    return html.replace('</body>', `${script}</body>`)
+  // Inject before the LAST </body>
+  const bodyIdx = html.lastIndexOf('</body>')
+  if (bodyIdx !== -1) {
+    return html.slice(0, bodyIdx) + script + html.slice(bodyIdx)
   }
 
   // Try to inject before </html>

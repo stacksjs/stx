@@ -376,9 +376,10 @@ export function processTemplateBindings(html: string): string {
 
   const runtime = generateBindingsRuntime(bindings, stores)
 
-  // Insert runtime before closing </body> tag, or at the end
-  if (processedHtml.includes('</body>')) {
-    return processedHtml.replace('</body>', `${runtime}</body>`)
+  // Insert runtime before the LAST </body> tag (earlier ones may be inside scripts)
+  const bodyIdx = processedHtml.lastIndexOf('</body>')
+  if (bodyIdx !== -1) {
+    return processedHtml.slice(0, bodyIdx) + runtime + processedHtml.slice(bodyIdx)
   }
 
   return processedHtml + runtime

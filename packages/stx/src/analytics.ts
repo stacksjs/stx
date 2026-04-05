@@ -259,9 +259,10 @@ export function injectAnalytics(html: string, options: StxOptions): string {
 
   // Check if document has a head tag
   if (!html.includes('</head>')) {
-    // Try to inject before </body> as fallback
-    if (html.includes('</body>')) {
-      return html.replace('</body>', `${analyticsScript}</body>`)
+    // Try to inject before the LAST </body> as fallback
+    const anBodyIdx = html.lastIndexOf('</body>')
+    if (anBodyIdx !== -1) {
+      return html.slice(0, anBodyIdx) + analyticsScript + html.slice(anBodyIdx)
     }
     // Append to end as last resort
     return html + analyticsScript

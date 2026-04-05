@@ -269,17 +269,15 @@ export async function serve(options: ServeOptions): Promise<void> {
 
     // Strip plain <template> wrapper tags - browsers don't render template content
     // STX uses <template> in source but output should be renderable HTML
-    // PRESERVE <template> tags with reactive directives (@for, @if, :for, :if) - those are
-    // client-side templates processed by the signals runtime
-    const hasDirectiveTemplates = /<template\s[^>]*(?:@for|:for|@if|:if)/.test(output)
+    // PRESERVE <template> tags with reactive directives — those are client-side
+    // templates processed by the signals runtime (x-for, x-if, @for, @if, :for, :if)
+    const directiveTemplateRe = /@for|:for|@if|:if|x-for|x-if/
+    const hasDirectiveTemplates = /<template\s[^>]*(?:@for|:for|@if|:if|x-for|x-if)/.test(output)
     if (hasDirectiveTemplates) {
       // Only strip <template> tags that don't have directive attributes
       output = output.replace(/<template(?:\s[^>]*)?>|<\/template>/gi, (match) => {
-        // Preserve opening tags with reactive directives
-        if (/@for|:for|@if|:if/.test(match)) return match
-        // Preserve closing tags (can't pair them, but they're harmless)
+        if (directiveTemplateRe.test(match)) return match
         if (match === '</template>') return match
-        // Strip plain wrapper <template> tags
         return ''
       })
     }
@@ -525,7 +523,13 @@ export async function serve(options: ServeOptions): Promise<void> {
     // Inject the SPA router
     output = injectRouter(output)
 
-    output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
+    // Strip SFC <template> wrappers but preserve client-side directive templates
+    const directiveTemplateRe2 = /@for|:for|@if|:if|x-for|x-if/
+    output = output.replace(/<template(?:\s[^>]*)?>|<\/template>/gi, (match) => {
+      if (directiveTemplateRe2.test(match)) return match
+      if (match === '</template>') return match
+      return ''
+    })
 
     // Client scripts are already handled by processDirectives (transformed into data-stx-scoped)
     // Crosswind CSS is already injected by processDirectives() — no duplicate injection needed.

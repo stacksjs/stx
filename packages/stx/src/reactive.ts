@@ -177,18 +177,16 @@ function findReactiveScopes(template: string): ReactiveScope[] {
     const closingTag = findClosingTag(template, tagName, startIndex + fullMatch.length)
     const scopeContent = template.slice(startIndex, closingTag.endIndex)
 
-    // Find all bindings within this scope
-    const bindings = findBindingsInScope(scopeContent, startIndex)
-
-    // Find all refs within this scope
+    // Find refs within this scope (for $refs support)
     const refs = findRefsInScope(scopeContent)
 
+    // No need to find bindings — the signals runtime handles all directives
     scopes.push({
       id: scopeId,
       selector: `[data-stx-scope="${scopeId}"]`,
       stateExpr,
       initExpr,
-      bindings,
+      bindings: [],
       refs,
     })
   }
@@ -474,479 +472,185 @@ function generateReactiveRuntime(): string {
 window.__stx_reactive = (function() {
   'use strict';
 
-  // Default transition classes (similar to Alpine.js)
-  var defaultTransition = {
-    enter: 'stx-enter-active stx-enter-to',
-    enterStart: 'stx-enter stx-enter-start',
-    enterEnd: 'stx-enter-active stx-enter-to',
-    leave: 'stx-leave-active stx-leave-to',
-    leaveStart: 'stx-leave stx-leave-start',
-    leaveEnd: 'stx-leave-active stx-leave-to',
-    duration: 150
-  };
-
-  // Apply classes to element
-  function applyClasses(el, classes) {
-    if (!classes) return;
-    // eslint-disable-next-line pickier/no-unused-vars
-    classes.split(/\\s+/).forEach(function(cls) {
-      if (cls) el.classList.add(cls);
-    });
-  }
-
-  // Remove classes from element
-  function removeClasses(el, classes) {
-    if (!classes) return;
-    // eslint-disable-next-line pickier/no-unused-vars
-    classes.split(/\\s+/).forEach(function(cls) {
-      if (cls) el.classList.remove(cls);
-    });
-  }
-
-  // Get transition duration from element's computed style or config
-  function getTransitionDuration(el, config) {
-    if (config && config.duration) return config.duration;
-    var style = window.getComputedStyle(el);
-    var duration = style.transitionDuration || style.animationDuration || '0s';
-    var match = duration.match(/([\\d.]+)(s|ms)/);
-    if (match) {
-      var value = parseFloat(match[1]);
-      return match[2] === 's' ? value * 1000 : value;
-    }
-    return defaultTransition.duration;
-  }
-
-  // Transition element in (show)
-  function transitionIn(el, config, callback) {
-    if (!config || !config.enabled) {
-      el.style.display = '';
-      if (callback) callback();
-      return;
-    }
-
-    var enterClasses = config.enter || defaultTransition.enter;
-    var enterStartClasses = config.enterStart || defaultTransition.enterStart;
-    var enterEndClasses = config.enterEnd || defaultTransition.enterEnd;
-
-    // Apply start classes before showing
-    applyClasses(el, enterStartClasses);
-    el.style.display = '';
-
-    // Force reflow
-    el.offsetHeight;
-
-    // Remove start classes and add end classes
-    requestAnimationFrame(function() {
-      removeClasses(el, enterStartClasses);
-      applyClasses(el, enterClasses);
-      applyClasses(el, enterEndClasses);
-
-      var duration = getTransitionDuration(el, config);
-      setTimeout(function() {
-        removeClasses(el, enterClasses);
-        removeClasses(el, enterEndClasses);
-        if (callback) callback();
-      }, duration);
-    });
-  }
-
-  // Transition element out (hide)
-  function transitionOut(el, config, callback) {
-    if (!config || !config.enabled) {
-      el.style.display = 'none';
-      if (callback) callback();
-      return;
-    }
-
-    var leaveClasses = config.leave || defaultTransition.leave;
-    var leaveStartClasses = config.leaveStart || defaultTransition.leaveStart;
-    var leaveEndClasses = config.leaveEnd || defaultTransition.leaveEnd;
-
-    // Apply start classes
-    applyClasses(el, leaveStartClasses);
-
-    // Force reflow
-    el.offsetHeight;
-
-    // Remove start classes and add end classes
-    requestAnimationFrame(function() {
-      removeClasses(el, leaveStartClasses);
-      applyClasses(el, leaveClasses);
-      applyClasses(el, leaveEndClasses);
-
-      var duration = getTransitionDuration(el, config);
-      setTimeout(function() {
-        removeClasses(el, leaveClasses);
-        removeClasses(el, leaveEndClasses);
-        el.style.display = 'none';
-        if (callback) callback();
-      }, duration);
-    });
-  }
-
-  // Create a reactive proxy that triggers updates on change
+  // Deep reactive proxy that triggers onChange for any mutation
   function reactive(obj, onChange) {
+    if (!obj || typeof obj !== 'object') return obj;
     return new Proxy(obj, {
       get(target, prop) {
         const value = target[prop];
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
+        if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Promise)) {
           return reactive(value, onChange);
         }
         return value;
       },
       set(target, prop, value) {
-        const oldValue = target[prop];
-        if (oldValue !== value) {
-          target[prop] = value;
-          onChange(prop, value, oldValue);
-        }
+        target[prop] = value;
+        onChange(prop, value);
         return true;
       }
     });
   }
 
-  // Safely evaluate an expression in a given context
-  function evaluate(expr, ctx) {
-    try {
-      const keys = Object.keys(ctx);
-      // Bind function values to ctx so 'this' works inside methods
-      const values = keys.map(function(k) {
-        var v = ctx[k];
-        return typeof v === 'function' ? v.bind(ctx) : v;
-      });
-      const fn = new Function(...keys, 'return (' + expr + ')');
-      return fn(...values);
-    }
-catch (e) {
-      console.warn('[stx-reactive] Error evaluating:', expr, e);
-      return undefined;
-    }
-  }
-
-  // Execute a statement in a given context, writing changes back to ctx
-  // eslint-disable-next-line pickier/no-unused-vars
-  function execute(stmt, ctx, $event, $el) {
-    try {
-      var keys = Object.keys(ctx);
-      // Read values into local vars, binding functions so 'this' works inside methods
-      var getVars = keys.map(function(k) { return 'var ' + k + ' = typeof __ctx["' + k + '"] === "function" ? __ctx["' + k + '"].bind(__ctx) : __ctx["' + k + '"]' }).join(';');
-      var stateKeys = keys.filter(function(k) { return k.charAt(0) !== '$' });
-      // After execution, only write back local vars that changed AND weren't
-      // already updated by a bound method (which modifies __ctx directly).
-      // We snapshot __ctx before execution and compare: if __ctx[k] changed,
-      // the method already handled it — don't overwrite with the stale local copy.
-      var saveSnapshot = stateKeys.map(function(k) { return '__snap["' + k + '"] = __ctx["' + k + '"]' }).join(';');
-      var setVars = stateKeys.map(function(k) {
-        return 'if(__ctx["' + k + '"] === __snap["' + k + '"] && ' + k + ' !== __snap["' + k + '"]) __ctx["' + k + '"] = ' + k
-      }).join(';');
-      var body = 'var __snap = {};' + saveSnapshot + ';' + getVars + ';' + stmt + ';' + setVars;
-      var fn = new Function('__ctx', '$event', '$el', body);
-      fn(ctx, $event, $el);
-    }
-catch (e) {
-      console.warn('[stx-reactive] Error executing:', stmt, e);
-    }
-  }
-
-  // Initialize a reactive scope
+  // Initialize an x-data scope: parse state, run init(), register into window.stx._scopes,
+  // then let the signals runtime handle all directive processing (x-for, x-text, :bind, etc.)
   function initScope(scopeEl, initialState, bindings, refs, initExpr) {
-    // Mark this scope as reactive-initialized so signals runtime skips it
-    scopeEl.__stx_reactive_initialized = true;
-
-    // Parse initial state
-    let state;
+    // Parse initial state (may contain methods including async init())
+    var state;
     try {
       state = new Function('return (' + initialState + ')')();
-    }
-catch (e) {
+    } catch (e) {
       console.error('[stx-reactive] Invalid x-data:', initialState, e);
       return;
     }
 
-    // Build refs object
-    // eslint-disable-next-line pickier/no-unused-vars
-    const $refs = {};
-    for (const [name, id] of Object.entries(refs)) {
-      Object.defineProperty($refs, name, {
-        get: () => document.getElementById(id)
-      });
+    // Build $refs object
+    var $refs = {};
+    for (var name in refs) {
+      if (Object.prototype.hasOwnProperty.call(refs, name)) {
+        (function(refName, refId) {
+          Object.defineProperty($refs, refName, {
+            get: function() { return document.getElementById(refId); }
+          });
+        })(name, refs[name]);
+      }
     }
 
-    // Add $refs and $el to state context
-    const ctx = { ...state, $refs, $el: scopeEl };
+    // Extract init method from state if present (Alpine.js convention)
+    var initMethod = state.init;
+    if (typeof initMethod === 'function') {
+      delete state.init;
+    }
 
-    // Update function that re-evaluates all bindings
-    // eslint-disable-next-line pickier/no-unused-vars
-    function update(changedProp) {
-      for (const binding of bindings) {
-        // Skip event bindings — they are only executed when events fire
-        if (binding.type === 'event') continue;
-        const el = document.getElementById(binding.elementId);
-        if (!el) continue;
+    // Make state reactive — mutations trigger re-render via signals
+    var scopeId = scopeEl.getAttribute('data-stx-scope');
+    var stx = window.stx;
 
-        const value = evaluate(binding.expression, ctx);
-
-        switch (binding.type) {
-          case 'text':
-            el.textContent = value ?? '';
-            break;
-
-          case 'html':
-            el.innerHTML = value ?? '';
-            break;
-
-          case 'show':
-            // Track previous state to determine if we need to transition
-            var wasVisible = el.style.display !== 'none';
-            if (value && !wasVisible) {
-              transitionIn(el, binding.transition);
-            }
-else if (!value && wasVisible) {
-              transitionOut(el, binding.transition);
-            }
-            break;
-
-          case 'hide':
-            // Inverse of show
-            var wasHidden = el.style.display === 'none';
-            if (value && !wasHidden) {
-              transitionOut(el, binding.transition);
-            }
-else if (!value && wasHidden) {
-              transitionIn(el, binding.transition);
-            }
-            break;
-
-          case 'class':
-            if (typeof value === 'object') {
-              for (const [cls, active] of Object.entries(value)) {
-                // Handle space-separated classes like 'opacity-50 cursor-not-allowed'
-                // eslint-disable-next-line pickier/no-unused-vars
-                cls.split(/\\s+/).forEach(function(c) {
-                  if (c) el.classList.toggle(c, !!active);
-                });
-              }
-            }
-else if (typeof value === 'string') {
-              el.className = value;
-            }
-            break;
-
-          case 'style':
-            if (typeof value === 'object') {
-              Object.assign(el.style, value);
-            }
-else if (typeof value === 'string') {
-              el.style.cssText = value;
-            }
-            break;
-
-          case 'bind':
-            if (binding.attribute) {
-              if (value === false || value === null || value === undefined) {
-                el.removeAttribute(binding.attribute);
-              }
-else if (value === true) {
-                el.setAttribute(binding.attribute, '');
-              }
-else {
-                el.setAttribute(binding.attribute, value);
-              }
-            }
-            break;
-
-          case 'model':
-            // Only update if value changed externally (not from input)
-            if (document.activeElement !== el) {
-              if (binding.inputType === 'checkbox') {
-                el.checked = !!value;
-              }
-else if (binding.inputType === 'radio') {
-                el.checked = el.value === value;
-              }
-else {
-                el.value = value ?? '';
-              }
-            }
-            break;
+    // Create signals for each state property so the signals runtime can track dependencies
+    var signalState = {};
+    var rawState = {};
+    for (var key in state) {
+      if (Object.prototype.hasOwnProperty.call(state, key)) {
+        if (typeof state[key] === 'function') {
+          // Methods — bind to a proxy so 'this.prop = val' triggers signal updates
+          signalState[key] = state[key];
+        } else {
+          // Data properties — wrap in signals for reactivity
+          signalState[key] = stx.state(state[key]);
+          rawState[key] = true;
         }
       }
     }
 
-    // Create reactive proxy
-    // eslint-disable-next-line pickier/no-unused-vars
-    const reactiveState = reactive(state, (prop, newVal, oldVal) => {
-      // Update context with new values
-      Object.assign(ctx, state);
-      update(prop);
+    // Create a proxy context that auto-unwraps signals and writes back through them.
+    // Methods get 'this' bound to this proxy so this.foo = bar triggers reactivity.
+    var ctx = {};
+    var ctxProxy = new Proxy(ctx, {
+      get: function(target, prop) {
+        if (prop === '$refs') return $refs;
+        if (prop === '$el') return scopeEl;
+        if (prop === '$nextTick') return function(fn) { requestAnimationFrame(fn); };
+        var s = signalState[prop];
+        if (!s) return undefined;
+        if (rawState[prop] && s && typeof s === 'function' && typeof s.value !== 'undefined') {
+          return s.value; // unwrap signal
+        }
+        if (typeof s === 'function' && !rawState[prop]) {
+          return s.bind(ctxProxy); // bind methods to proxy
+        }
+        return s;
+      },
+      set: function(target, prop, value) {
+        var s = signalState[prop];
+        if (rawState[prop] && s && typeof s === 'function') {
+          s.value = value; // write through signal — triggers effects
+        } else {
+          signalState[prop] = value;
+        }
+        return true;
+      },
+      has: function(target, prop) {
+        return prop in signalState || prop === '$refs' || prop === '$el' || prop === '$nextTick';
+      },
+      ownKeys: function() {
+        return Object.keys(signalState).concat(['$refs', '$el', '$nextTick']);
+      },
+      getOwnPropertyDescriptor: function(target, prop) {
+        if (prop in signalState || prop === '$refs' || prop === '$el' || prop === '$nextTick') {
+          return { configurable: true, enumerable: true, writable: true, value: ctxProxy[prop] };
+        }
+        return undefined;
+      }
     });
 
-    // Copy reactive state back to ctx for expression evaluation
-    Object.assign(ctx, reactiveState);
-
-    // Set up x-model event listeners
-    for (const binding of bindings) {
-      if (binding.type !== 'model') continue;
-
-      const el = document.getElementById(binding.elementId);
-      if (!el) continue;
-
-      const eventType = binding.inputType === 'checkbox' || binding.inputType === 'radio'
-        ? 'change'
-        : 'input';
-
-      el.addEventListener(eventType, function(e) {
-        let value;
-        if (binding.inputType === 'checkbox') {
-          value = e.target.checked;
+    // Build scope vars for the signals runtime — it reads these for expression evaluation.
+    // We need to provide getter/setter descriptors so signals track properly.
+    var scopeVars = {};
+    for (var k in signalState) {
+      if (Object.prototype.hasOwnProperty.call(signalState, k)) {
+        if (rawState[k]) {
+          // Data: expose the signal directly so expressions trigger dependency tracking
+          scopeVars[k] = signalState[k];
+        } else {
+          // Method: bind to ctxProxy so 'this' works
+          scopeVars[k] = (typeof signalState[k] === 'function') ? signalState[k].bind(ctxProxy) : signalState[k];
         }
-else if (binding.inputType === 'radio') {
-          value = e.target.value;
-        }
-else if (binding.inputType === 'number' || binding.inputType === 'range') {
-          value = e.target.valueAsNumber;
-        }
-else {
-          value = e.target.value;
-        }
+      }
+    }
+    scopeVars.$refs = $refs;
+    scopeVars.$el = scopeEl;
+    scopeVars.$nextTick = function(fn) { requestAnimationFrame(fn); };
 
-        // Update the reactive state
-        const props = binding.expression.split('.');
-        let target = reactiveState;
-        for (let i = 0; i < props.length - 1; i++) {
-          target = target[props[i]];
+    // Register scope into window.stx._scopes so the signals runtime picks it up
+    if (!stx._scopes) stx._scopes = {};
+    stx._scopes[scopeId] = scopeVars;
+
+    // Store on element for findElementScope
+    scopeEl.__stx_scope = scopeVars;
+
+    // Run init() if present (supports async)
+    function runInit() {
+      var maybePromise;
+      if (initMethod) {
+        maybePromise = initMethod.call(ctxProxy);
+      }
+      if (initExpr) {
+        try {
+          var keys = Object.keys(scopeVars);
+          var vals = keys.map(function(k) { return scopeVars[k]; });
+          var fn = new Function(keys.join(','), initExpr);
+          var result = fn.apply(ctxProxy, vals);
+          if (result && typeof result.then === 'function') maybePromise = result;
+        } catch (e) {
+          console.warn('[stx-reactive] init expression error:', e);
         }
-        target[props[props.length - 1]] = value;
-      });
+      }
+      // If init is async, signal updates will trigger effects automatically
+      // when init() resolves and sets this.prop = value (writes through signal)
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        maybePromise.catch(function(e) {
+          console.error('[stx-reactive] async init() error:', e);
+        });
+      }
     }
 
-    // Set up event listeners (@click, @submit.prevent, etc.)
-    for (const binding of bindings) {
-      if (binding.type !== 'event') continue;
+    // Run init before the signals runtime processes this scope
+    runInit();
 
-      const el = document.getElementById(binding.elementId);
-      if (!el) continue;
-
-      const parts = binding.attribute.split('.');
-      const eventName = parts[0];
-      const modifiers = parts.slice(1);
-
-      const handler = binding.expression;
-      const useCapture = modifiers.includes('capture');
-
-      el.addEventListener(eventName, function(e) {
-        // Auto-prevent default on click for links/buttons with handlers (matches Alpine/Vue behavior)
-        if (eventName === 'click' && (el.tagName === 'A' || el.tagName === 'BUTTON' || el.type === 'submit')) {
-          e.preventDefault();
-        }
-        if (modifiers.includes('prevent')) e.preventDefault();
-        if (modifiers.includes('stop')) e.stopPropagation();
-        if (modifiers.includes('self') && e.target !== el) return;
-
-        // Key modifiers
-        if (eventName === 'keydown' || eventName === 'keyup' || eventName === 'keypress') {
-          var keyMods = modifiers.filter(function(m) { return m !== 'prevent' && m !== 'stop' && m !== 'self' && m !== 'once' && m !== 'capture' && m !== 'passive' });
-          if (keyMods.length > 0) {
-            var keyMap = { enter: 'Enter', escape: 'Escape', space: ' ', tab: 'Tab', delete: 'Delete', backspace: 'Backspace', up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
-            var matched = keyMods.every(function(m) {
-              if (m === 'ctrl') return e.ctrlKey;
-              if (m === 'alt') return e.altKey;
-              if (m === 'shift') return e.shiftKey;
-              if (m === 'meta') return e.metaKey;
-              return e.key === (keyMap[m] || m);
-            });
-            if (!matched) return;
-          }
-        }
-
-        // Execute handler in reactive scope context
-        var execCtx = {};
-        for (var k in state) {
-          if (Object.prototype.hasOwnProperty.call(state, k)) {
-            execCtx[k] = reactiveState[k];
-          }
-        }
-        execCtx.$refs = $refs;
-        execCtx.$el = scopeEl;
-        execute(handler, execCtx, e, el);
-        // Write back ALL state properties — object mutations keep the same
-        // reference but change internal state, so !== would miss them.
-        for (var k in state) {
-          if (Object.prototype.hasOwnProperty.call(state, k)) {
-            reactiveState[k] = execCtx[k];
-          }
-        }
-        Object.assign(ctx, state);
-        update();
-      }, { capture: useCapture, once: modifiers.includes('once'), passive: modifiers.includes('passive') });
-    }
-
-    // Expose execute function for event handlers
-    // eslint-disable-next-line pickier/no-unused-vars
+    // Expose for debugging
+    scopeEl.__stx_state = ctxProxy;
     scopeEl.__stx_execute = function(stmt, $event, $el) {
-      // Build execution context with reactive state + special vars
-      // Writing to reactiveState triggers Proxy setters which fire updates
-      var execCtx = {};
-      for (var k in state) {
-        if (Object.prototype.hasOwnProperty.call(state, k)) {
-          execCtx[k] = reactiveState[k];
-        }
+      try {
+        var keys = Object.keys(scopeVars);
+        var vals = keys.map(function(k) { return scopeVars[k]; });
+        var fn = new Function(keys.join(','), '$event', '$el', stmt);
+        fn.apply(ctxProxy, vals.concat([$event, $el]));
+      } catch (e) {
+        console.warn('[stx-reactive] execute error:', e);
       }
-      execCtx.$refs = $refs;
-      execCtx.$el = scopeEl;
-      execute(stmt, execCtx, $event, $el);
-      // Write back ALL state properties (not just changed references).
-      // Object mutations (e.g. obj[key]=val) keep the same reference but
-      // change internal state — a !== check would miss those.
-      for (var k in state) {
-        if (Object.prototype.hasOwnProperty.call(state, k)) {
-          reactiveState[k] = execCtx[k];
-        }
-      }
-      // Sync ctx for expression evaluation
-      Object.assign(ctx, state);
-      update();
     };
-
-    // Expose state for debugging
-    scopeEl.__stx_state = reactiveState;
-
-    // Run x-init if present
-    if (initExpr) {
-      setTimeout(function() {
-        var initCtx = {};
-        for (var k in state) {
-          if (Object.prototype.hasOwnProperty.call(state, k)) {
-            initCtx[k] = reactiveState[k];
-          }
-        }
-        initCtx.$refs = $refs;
-        initCtx.$el = scopeEl;
-        execute(initExpr, initCtx, null, scopeEl);
-        for (var k in state) {
-          if (Object.prototype.hasOwnProperty.call(state, k) && initCtx[k] !== reactiveState[k]) {
-            reactiveState[k] = initCtx[k];
-          }
-        }
-        Object.assign(ctx, state);
-        update();
-      }, 0);
-    }
-
-    // Initial render
-    update();
-
-    // Remove x-cloak from all elements in scope (reactive system is now initialized)
-    // eslint-disable-next-line pickier/no-unused-vars
-    scopeEl.querySelectorAll('[x-cloak]').forEach(function(el) {
-      el.removeAttribute('x-cloak');
-    });
-    scopeEl.removeAttribute('x-cloak');
-
-    return reactiveState;
   }
 
-  return { initScope, evaluate, execute, reactive, transitionIn, transitionOut };
+  return { initScope: initScope, reactive: reactive };
 })();
 `
 }
@@ -958,20 +662,7 @@ function generateScopeInitializers(scopes: ReactiveScope[]): string {
   if (scopes.length === 0) return ''
 
   const initializers = scopes.map((scope) => {
-    const bindingsJson = JSON.stringify(
-      scope.bindings.map(b => ({
-        elementId: b.elementId,
-        type: b.type,
-        expression: b.expression,
-        attribute: b.attribute,
-        inputType: b.inputType,
-        transition: b.transition,
-      })),
-    )
-
     const refsJson = JSON.stringify(Object.fromEntries(scope.refs))
-
-    // Use JSON.stringify for stateExpr/initExpr to safely handle all quote types and escapes
     const stateExprJson = JSON.stringify(scope.stateExpr)
     const initExprJson = scope.initExpr ? JSON.stringify(scope.initExpr) : 'null'
 
@@ -979,25 +670,15 @@ function generateScopeInitializers(scopes: ReactiveScope[]): string {
   (function() {
     var scopeEl = document.querySelector('${scope.selector}');
     if (!scopeEl) return;
-    var bindings = ${bindingsJson};
     var refs = ${refsJson};
-    __stx_reactive.initScope(scopeEl, ${stateExprJson}, bindings, refs, ${initExprJson});
+    __stx_reactive.initScope(scopeEl, ${stateExprJson}, [], refs, ${initExprJson});
   })();`
   }).join('\n')
 
   return `
 <script data-stx-scoped data-stx-reactive>
 ${generateReactiveRuntime()}
-
-// Initialize all reactive scopes
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-  ${initializers}
-  });
-}
-else {
 ${initializers}
-}
 </script>`
 }
 
@@ -1105,33 +786,32 @@ export function processReactiveDirectives(
 ): string {
   // Reset counters
   scopeCounter = 0
-  elementCounter = 0
 
   // Check if template has any reactive directives
   if (!hasReactiveDirectives(template)) {
     return template
   }
 
-  // First pass: Add IDs to elements that need them (before binding detection)
-  let output = addAllReactiveIds(template)
-
-  // Second pass: Find all reactive scopes and bindings (elements now have IDs)
-  const scopes = findReactiveScopes(output)
+  // Find all x-data scopes (we only need the state expression and init expression)
+  // No need to add IDs or collect bindings — the signals runtime handles all directives
+  const scopes = findReactiveScopes(template)
 
   if (scopes.length === 0) {
     return template
   }
 
-  // Third pass: Add scope markers and remove x- attributes
-  output = finalizeTemplate(output, scopes)
+  // Add scope markers (data-stx-scope) and remove consumed attributes (x-data, x-init)
+  // All other attributes (x-for, x-text, :bind, x-show, @click, etc.) are preserved
+  // for the signals runtime to process
+  let output = finalizeTemplate(template, scopes)
 
-  // Generate and inject the reactive runtime script
+  // Generate and inject the reactive bridge runtime script
   const script = generateScopeInitializers(scopes)
 
-  // Inject before </body> if exists, otherwise at the end
-  // Use function replacer to avoid $-pattern interpretation in the script content
-  if (output.includes('</body>')) {
-    output = output.replace('</body>', () => `${script}\n</body>`)
+  // Inject before the LAST </body> — earlier occurrences may be inside <script> tags
+  const bodyCloseIdx = output.lastIndexOf('</body>')
+  if (bodyCloseIdx !== -1) {
+    output = output.slice(0, bodyCloseIdx) + script + '\n' + output.slice(bodyCloseIdx)
   }
   else {
     output += script
@@ -1193,23 +873,31 @@ function addAllReactiveIds(template: string): string {
 function finalizeTemplate(template: string, scopes: ReactiveScope[]): string {
   let output = template
 
-  // Add data-stx-scope and data-stx-reactive-owner to x-data elements
-  // data-stx-reactive-owner tells the signals runtime to skip these scopes entirely
+  // Add data-stx-scope to x-data elements so the signals runtime processes them.
+  // Do NOT add data-stx-reactive-owner — we WANT the signals runtime to handle
+  // all directives (x-for, x-text, :bind, x-show, etc.) within these scopes.
+  // The reactive bridge runtime will parse x-data, run init(), and register
+  // scope vars into window.stx._scopes for the signals runtime to pick up.
   for (const scope of scopes) {
     // Match x-data with double quotes
     output = output.replace(
       new RegExp(`(<[a-z][a-z0-9-]*\\s+)([^>]*)(x-data\\s*=\\s*"${escapeRegex(scope.stateExpr)}")([^>]*>)`, 'gi'),
-      `$1data-stx-scope="${scope.id}" data-stx-reactive-owner $2$3$4`,
+      `$1data-stx-scope="${scope.id}" $2$3$4`,
     )
     // Match x-data with single quotes
     output = output.replace(
       new RegExp(`(<[a-z][a-z0-9-]*\\s+)([^>]*)(x-data\\s*=\\s*'${escapeRegex(scope.stateExpr)}')([^>]*>)`, 'gi'),
-      `$1data-stx-scope="${scope.id}" data-stx-reactive-owner $2$3$4`,
+      `$1data-stx-scope="${scope.id}" $2$3$4`,
     )
   }
 
-  // Remove x- attributes from output
-  output = removeReactiveAttributes(output)
+  // Rename x-data → data-stx-xdata so the SPA handler can re-initialize scopes
+  // after fragment swap (the bridge <script> only runs on full page load).
+  // Remove x-init since it's consumed by the bridge runtime.
+  output = output.replace(/\s*x-data\s*=\s*"([^"]*)"/g, ' data-stx-xdata="$1"')
+  output = output.replace(/\s*x-data\s*=\s*'([^']*)'/g, " data-stx-xdata='$1'")
+  output = output.replace(/\s*x-init\s*=\s*"[^"]*"/g, '')
+  output = output.replace(/\s*x-init\s*=\s*'[^']*'/g, '')
 
   return output
 }

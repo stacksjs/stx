@@ -639,9 +639,10 @@ export function processEventDirectives(
   // Generate and inject the runtime script
   const script = generateRuntimeScript(elements)
 
-  // Inject before </body> if exists, otherwise at the end
-  if (output.includes('</body>')) {
-    output = output.replace('</body>', `${script}\n</body>`)
+  // Inject before the LAST </body> (earlier ones may be inside script strings)
+  const bodyIdx = output.lastIndexOf('</body>')
+  if (bodyIdx !== -1) {
+    output = output.slice(0, bodyIdx) + script + '\n' + output.slice(bodyIdx)
   }
   else {
     output += script

@@ -40,7 +40,7 @@ title: "Test Page"
 This is a test page with **bold** text.
 `)
 
-    await Bun.write(path.join(TEST_DIR, 'template.stx'), `<script>
+    await Bun.write(path.join(TEST_DIR, 'template.stx'), `<script server>
 module.exports = {
   title: "Test Template",
   items: [1, 2, 3]
@@ -268,7 +268,7 @@ This is in a subdirectory.
     const port = getPort()
 
     // Create a file that will cause an error during processing
-    await Bun.write(path.join(TEST_DIR, 'error.stx'), `<script>
+    await Bun.write(path.join(TEST_DIR, 'error.stx'), `<script server>
 module.exports = {
   getData() {
     throw new Error('Test error');

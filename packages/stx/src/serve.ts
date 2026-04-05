@@ -100,11 +100,9 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     let content = await Bun.file(filePath).text()
 
     // SFC Support: Extract <template> content if present
-    // Only match <template> WITHOUT an id attribute - templates with id are HTML template elements
-    // that should be preserved (used for client-side JS template cloning)
-    // Uses balanced depth tracking to handle nested <template> tags
+    // Preserve templates with id, x-for, x-if, @for, @if, :for, :if — those are client-side elements
     let workingContent = content
-    const templateOpenMatch = content.match(/<template\b(?![^>]*\bid\s*=)[^>]*>/i)
+    const templateOpenMatch = content.match(/<template\b(?![^>]*\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=)[^>]*>/i)
     if (templateOpenMatch && templateOpenMatch.index !== undefined) {
       const contentStart = templateOpenMatch.index + templateOpenMatch[0].length
       let depth = 1

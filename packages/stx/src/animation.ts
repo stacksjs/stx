@@ -605,7 +605,8 @@ export function processAnimationDirectives(
     const hasObserverScript = output.includes('Intersection Observer for scroll animations')
     if (!hasObserverScript) {
       const observerScript = generateIntersectionObserverScript()
-      output = output.replace('</body>', `${observerScript}\n</body>`)
+      const aniBodyIdx = output.lastIndexOf('</body>')
+      if (aniBodyIdx !== -1) { output = output.slice(0, aniBodyIdx) + observerScript + '\n' + output.slice(aniBodyIdx) }
     }
   }
 
