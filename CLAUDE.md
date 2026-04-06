@@ -597,6 +597,20 @@ stx serve <directory> [--port 3000]
 
 25. **Runtime Minification ASI Fix**: After `Bun.Transpiler` minifies the signals runtime with `minifyWhitespace: true`, a post-processing step inserts semicolons at `}var `, `}let `, `}const `, `}function ` boundaries (→ `};var `, `};function `). Browsers in strict mode reject these without semicolons when newlines are stripped, even though Bun's parser accepts them.
 
+26. **SPA Fragment Script Extraction**: When serving page fragments for SPA navigation, `serve.ts` extracts ALL `data-stx-scoped` scripts from the full page response (partial scope IIFEs, setup functions, reactive bridge initScope calls) and appends them to the fragment. The router re-executes these scripts after swapping content. A `_latestSetup=null` clear script is prepended to prevent stale scope from the previous page. Previously, fragments only included `__stx_setup_` scripts, leaving partial scopes uninitialized on SPA navigation.
+
+27. **Partial Signal Scripts Use Real APIs**: `transformSignalScript` in `includes.ts` destructures directly from `window.stx` instead of using polyfill fallbacks. The old polyfills created signals without `._isSignal`, which broke auto-unwrap and effect tracking. The signals runtime is always available (injected in `<head>` before any `data-stx-scoped` script).
+
+28. **Global mountCallbacks Flush After Scope Processing**: The DOMContentLoaded handler flushes the global `mountCallbacks` array after processing all `[data-stx-scope]` elements. Previously, `mountCallbacks` was only flushed inside the `[data-stx]` loop (for setup function pages). Partial `<script client>` blocks that call `onMount()` push to the global array, so it must be flushed regardless of which code path registered the callbacks.
+
+29. **Document Shell Comment Stripping**: `hasDocumentShell` strips HTML comments (like `<!-- stx-layout: ... -->`) before checking if the output starts with `<!DOCTYPE>` or `<html>`. Without this, layout comments caused double `<body>` wrapping — the document shell wrapped the already-complete layout output because it didn't detect the existing document structure.
+
+30. **Known Limitation: Server-Side Component Props in Loops**: Component props (`:prop="expr"`) inside `@foreach` loops do not receive loop variables in their evaluation context. The component renderer creates an isolated context where loop variables like `feature` are not available. Workaround: inline the HTML directly in the `@foreach` loop instead of using a component. This affects server-side rendering only — client-side `:for` with components works correctly.
+
+31. **`<template>` Tag Stripping**: `bun-plugin/src/serve.ts` strips `<template>` wrapper tags from output (browsers don't render template content). Tags with reactive directives (`x-for`, `x-if`, `@for`, `@if`, `:for`, `:if`) are preserved for the client-side runtime. Prefer putting `x-for`/`x-if` directly on elements (`<div x-for="item in items">`) instead of using `<template>` wrappers to avoid stripping issues.
+
+32. **Stacks App Conventions**: Stacks apps use `resources/views/` for stx pages (Mode 1: server-side). Config: `root: 'resources'`, `pagesDir: 'views'`, `componentsDir: 'views/components'`, `layoutsDir: 'views/layouts'`, `partialsDir: 'views/partials'`. Standalone SPA apps (training, bench-review, 11ly) use `pages/` at root (Mode 2: client-side with API). Both modes use the same stx engine — the mode is implicit from which directives and script types are used, not a config flag.
+
 ---
 
 ## Linting
@@ -611,6 +625,7 @@ stx serve <directory> [--port 3000]
 - Use `<script server>` for server-side data fetching — this is the ONLY script type that runs on the server
 - Bare `<script>` tags with browser APIs (`localStorage`, `document`, `window`) are fine — they run client-side
 - Use **crosswind** as the default CSS framework which enables standard Tailwind-like utility classes
+- If you see an abundance of custom styling or utility classes in `<style>` blocks, that's wrong — use Crosswind utility classes in the HTML instead. Custom CSS should be rare (only for things Tailwind can't express).
 
 ## Dependencies
 
