@@ -784,13 +784,25 @@ export async function serve(options: ServeOptions): Promise<void> {
             const mainStart = mainOpenMatch.index! + mainOpenMatch[0].length
             fragment = fragment.slice(mainStart, mainCloseIdx).trim()
           }
-          // Extract page setup scripts (__stx_setup_ functions) from ANYWHERE in the page.
-          // They may be in <head> or <body> depending on whether auto-shell is used.
-          // These are NOT inside <main> but are needed for SPA page hydration.
+          // Extract ALL page-specific scripts from the full page response.
+          // These may be in <head> or before </body> — outside <main>.
+          // Includes: setup functions (__stx_setup_), partial scope IIFEs,
+          // and the reactive bridge (initScope calls).
+          // Excludes: signals runtime IIFE, x-element runtime, router script.
           const pageSetupScripts: string[] = []
-          const setupRe = /<script data-stx-scoped>\s*function __stx_setup_[\s\S]*?<\/script>/gi
+          const allScriptRe = /<script\b[^>]*data-stx-scoped[^>]*>[\s\S]*?<\/script>/gi
           let setupMatch: RegExpExecArray | null
-          while ((setupMatch = setupRe.exec(content)) !== null) {
+          while ((setupMatch = allScriptRe.exec(content)) !== null) {
+            const scriptContent = setupMatch[0]
+            // Skip the signals runtime (huge IIFE starting with early_mounts shim)
+            if (scriptContent.includes('__stx_early_mounts')) continue
+            // Skip the reactive bridge runtime definition (window.__stx_reactive)
+            if (scriptContent.includes('data-stx-reactive') && scriptContent.includes('window.__stx_reactive')) continue
+            pageSetupScripts.push(scriptContent)
+          }
+          // Also include reactive bridge initScope calls (they're in a separate script tag)
+          const bridgeInitRe = /<script\b[^>]*data-stx-reactive[^>]*>(?![\s\S]*window\.__stx_reactive)[\s\S]*?<\/script>/gi
+          while ((setupMatch = bridgeInitRe.exec(content)) !== null) {
             pageSetupScripts.push(setupMatch[0])
           }
 
@@ -800,8 +812,9 @@ export async function serve(options: ServeOptions): Promise<void> {
             '',
           )
 
-          // Prepend styles and append page setup scripts
-          fragment = `${headStyles.join('\n')}\n${fragment}\n${pageSetupScripts.join('\n')}`
+          // Clear stale _latestSetup from previous page, then append new page scripts
+          const clearStale = '<script data-stx-page>if(window.stx)window.stx._latestSetup=null;</script>'
+          fragment = `${headStyles.join('\n')}\n${fragment}\n${clearStale}\n${pageSetupScripts.join('\n')}`
 
           return new Response(fragment, {
             headers: {
