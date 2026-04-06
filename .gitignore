@@ -57,3 +57,4 @@ packages/components/test/visual/__snapshots__/
 /packages/stx/test/out
 /pantry
 /packages/stx/.stx
+.stx
