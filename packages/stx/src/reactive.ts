@@ -469,6 +469,7 @@ function generateReactiveRuntime(): string {
 })();
 
 // STX Reactive Runtime
+/* eslint-disable pickier/no-unused-vars, no-console, prefer-const */
 window.__stx_reactive = (function() {
   'use strict';
 

@@ -801,6 +801,7 @@ export async function serve(options: ServeOptions): Promise<void> {
             pageSetupScripts.push(scriptContent)
           }
           // Also include reactive bridge initScope calls (they're in a separate script tag)
+          // eslint-disable-next-line no-super-linear-backtracking, regexp/no-super-linear-backtracking
           const bridgeInitRe = /<script\b[^>]*data-stx-reactive[^>]*>(?![\s\S]*window\.__stx_reactive)[\s\S]*?<\/script>/gi
           while ((setupMatch = bridgeInitRe.exec(content)) !== null) {
             pageSetupScripts.push(setupMatch[0])

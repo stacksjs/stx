@@ -850,7 +850,6 @@ catch (error: unknown) {
         let scriptContent = scriptMatch[2] || ''
 
         const isServerScript = scriptAttrs.includes('server')
-        const isClientScript = scriptAttrs.includes('client') || scriptAttrs.includes('type="module"')
         const shouldTranspile = shouldTranspileTypeScript(scriptAttrs)
 
         // Transpile TypeScript if needed

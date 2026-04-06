@@ -119,7 +119,13 @@ ${bodyParts.join('\n')}
 export function hasDocumentShell(html: string): boolean {
   // Strip HTML comments before checking — layout markers like <!-- stx-layout: ... -->
   // may precede the DOCTYPE/html tag
-  const trimmed = html.trim().replace(/^(\s*<!--[\s\S]*?-->\s*)+/, '').trim()
+  let trimmed = html.trim()
+  // eslint-disable-next-line no-labels
+  while (trimmed.startsWith('<!--')) {
+    const endIdx = trimmed.indexOf('-->')
+    if (endIdx === -1) break
+    trimmed = trimmed.slice(endIdx + 3).trim()
+  }
   return /^<!DOCTYPE\b/i.test(trimmed) || /^<html[\s>]/i.test(trimmed)
 }
 
