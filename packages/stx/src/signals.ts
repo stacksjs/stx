@@ -51,12 +51,14 @@ export function generateSignalsRuntime(): string {
 export function generateSignalsRuntimeDev(): string {
   return `
 // STX Signals Runtime (Development Build)
+console.log('[stx] signals runtime loading');
 // Pre-initialization shim: capture onMount/onDestroy calls made before the runtime IIFE runs
 // (e.g. from partial scripts that execute before the full runtime is ready)
 if(!window.__stx_early_mounts)window.__stx_early_mounts=[];
 if(!window.__stx_early_destroys)window.__stx_early_destroys=[];
 if(!window.onMount)window.onMount=function(fn){window.__stx_early_mounts.push(fn)};
 if(!window.onDestroy)window.onDestroy=function(fn){window.__stx_early_destroys.push(fn)};
+console.log('[stx] entering IIFE');
 (function() {
   'use strict';
 
@@ -1340,7 +1342,8 @@ else if (part) {
     // Handle @if / :if / x-if (conditional rendering)
     if (el.hasAttribute('@if') || el.hasAttribute(':if') || el.hasAttribute('x-if')) {
       var ifAttr = el.hasAttribute(':if') ? ':if' : el.hasAttribute('x-if') ? 'x-if' : '@if';
-      bindIf(el, ifAttr === 'x-if' ? scope : scope, ifAttr);
+      console.log('[stx] bindIf:', el.getAttribute(ifAttr), 'on', el.tagName, 'scope keys:', Object.keys(scope).slice(0, 8));
+      bindIf(el, scope, ifAttr);
       return;
     }
 
@@ -1944,6 +1947,7 @@ catch (e) {
 
     effect(() => {
       const value = evalExpr(expr);
+      console.log('[stx] bindIf effect:', expr, '→', value, 'isTemplate:', isTemplate, 'isInserted:', isInserted);
 
       if (isTemplate) {
         if (value && !isInserted) {
@@ -2945,7 +2949,9 @@ else {
   // Auto-initialization
   // ==========================================================================
 
+  console.log('[stx] registering DOMContentLoaded handler');
   document.addEventListener('DOMContentLoaded', () => {
+    console.log('[stx] DOMContentLoaded fired — processing scopes');
     // Process mount queue (from stx.mount() calls during loading)
     mountQueue.forEach(function(fn) { fn(); });
     mountQueue = [];
@@ -2976,8 +2982,11 @@ else {
     });
 
     // Process scoped components FIRST (their scripts have already registered scope variables)
-    document.querySelectorAll('[data-stx-scope]').forEach(el => {
+    var allScopes = document.querySelectorAll('[data-stx-scope]');
+    console.log('[stx] found', allScopes.length, 'data-stx-scope elements');
+    allScopes.forEach(el => {
       const scopeId = el.getAttribute('data-stx-scope');
+      console.log('[stx] scope:', scopeId, 'registered:', !!(window.stx._scopes && window.stx._scopes[scopeId]), 'el:', el.tagName);
       processedScopes.add(el);
 
       const scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
@@ -2990,8 +2999,10 @@ else {
         componentScope = { ...componentScope, ...scopeVars };
       }
 
+      console.log('[stx] calling processElement on scope:', scopeId, 'componentScope keys:', Object.keys(componentScope).slice(0, 10));
       var disposeEffects = trackEffects(function() { processElement(el); });
       el.__stx_disposers = disposeEffects;
+      console.log('[stx] scope processed OK:', scopeId);
 
       // Remove x-cloak after bindings are applied
       el.removeAttribute('x-cloak');
@@ -3002,6 +3013,14 @@ else {
         scopeVars.__mountCallbacks.forEach(fn => fn());
       }
     });
+
+    // Run global mount callbacks (from partial <script client> blocks that call onMount)
+    // These are pushed during script execution, before DOMContentLoaded
+    console.log('[stx] running global mountCallbacks:', mountCallbacks.length);
+    mountCallbacks.forEach(function(fn) {
+      try { fn(); } catch(e) { console.error('[stx] onMount error:', e); }
+    });
+    mountCallbacks.length = 0;
 
     // Auto-process elements with data-stx-auto (skip already processed scoped elements)
     document.querySelectorAll('[data-stx-auto]').forEach(el => {

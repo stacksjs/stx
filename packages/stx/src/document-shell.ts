@@ -117,7 +117,9 @@ ${bodyParts.join('\n')}
  * Templates that extend layouts with document shells should not be double-wrapped.
  */
 export function hasDocumentShell(html: string): boolean {
-  const trimmed = html.trim()
+  // Strip HTML comments before checking — layout markers like <!-- stx-layout: ... -->
+  // may precede the DOCTYPE/html tag
+  const trimmed = html.trim().replace(/^(\s*<!--[\s\S]*?-->\s*)+/, '').trim()
   return /^<!DOCTYPE\b/i.test(trimmed) || /^<html[\s>]/i.test(trimmed)
 }
 

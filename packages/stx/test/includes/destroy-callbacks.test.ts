@@ -8,8 +8,8 @@ describe('transformSignalScript destroy callbacks', () => {
     // Verify the transformSignalScript function includes __destroyCallbacks in scope registration
     expect(source).toContain('__destroyCallbacks: __destroyHooks')
 
-    // Verify onDestroy is captured locally
+    // Verify onDestroy is wrapped to capture destroy hooks
     expect(source).toContain('var __destroyHooks = []')
-    expect(source).toContain('var onDestroy = function(fn)')
+    expect(source).toContain('onDestroy = function(fn)')
   })
 })

@@ -249,22 +249,19 @@ function extractExports(setupContent: string): string {
 function transformSignalScript(scriptContent: string, scopeId: string): string {
   const exports = extractExports(scriptContent)
 
+  // Use real window.stx APIs (signals runtime is injected in <head>, runs before this script).
+  // No polyfill fallbacks — they create signals without ._isSignal which breaks auto-unwrap
+  // and effect tracking in the signals runtime.
   return `
 (function() {
-  var __stx = window.stx || {};
-  var state = __stx.state || function(v) { var s = function() { return s._v; }; s._v = v; s.set = function(nv) { s._v = nv; }; s.update = function(fn) { s._v = fn(s._v); }; return s; };
-  var derived = __stx.derived || function(fn) { return fn; };
-  var effect = __stx.effect || function(fn) { fn(); return function() {}; };
-  var batch = __stx.batch || function(fn) { fn(); };
-  var onMount = __stx.onMount || function(fn) { if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', fn); }
-else { fn(); } };
+  var { state, derived, effect, batch, onMount, onDestroy, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect } = window.stx;
   var __destroyHooks = [];
-  var onDestroy = function(fn) { if (__stx.onDestroy) __stx.onDestroy(fn); __destroyHooks.push(fn); };
+  var __origOnDestroy = onDestroy;
+  onDestroy = function(fn) { __origOnDestroy(fn); __destroyHooks.push(fn); };
 
 ${scriptContent}
 
   // Register scope variables for STX runtime
-  if (!window.stx) window.stx = { _scopes: {} };
   if (!window.stx._scopes) window.stx._scopes = {};
   window.stx._scopes['${scopeId}'] = { ${exports}, __destroyCallbacks: __destroyHooks };
 })();
