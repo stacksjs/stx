@@ -601,9 +601,9 @@ window.__stx_reactive = (function() {
     scopeVars.$el = scopeEl;
     scopeVars.$nextTick = function(fn) { requestAnimationFrame(fn); };
 
-    // Register scope into window.stx._scopes so the signals runtime picks it up
+    // Register scope — merge with any existing vars from partial signal scripts
     if (!stx._scopes) stx._scopes = {};
-    stx._scopes[scopeId] = scopeVars;
+    stx._scopes[scopeId] = Object.assign(stx._scopes[scopeId] || {}, scopeVars);
 
     // Store on element for findElementScope
     scopeEl.__stx_scope = scopeVars;
@@ -880,16 +880,36 @@ function finalizeTemplate(template: string, scopes: ReactiveScope[]): string {
   // The reactive bridge runtime will parse x-data, run init(), and register
   // scope vars into window.stx._scopes for the signals runtime to pick up.
   for (const scope of scopes) {
-    // Match x-data with double quotes
-    output = output.replace(
-      new RegExp(`(<[a-z][a-z0-9-]*\\s+)([^>]*)(x-data\\s*=\\s*"${escapeRegex(scope.stateExpr)}")([^>]*>)`, 'gi'),
-      `$1data-stx-scope="${scope.id}" $2$3$4`,
-    )
-    // Match x-data with single quotes
-    output = output.replace(
-      new RegExp(`(<[a-z][a-z0-9-]*\\s+)([^>]*)(x-data\\s*=\\s*'${escapeRegex(scope.stateExpr)}')([^>]*>)`, 'gi'),
-      `$1data-stx-scope="${scope.id}" $2$3$4`,
-    )
+    // Check if the x-data element already has data-stx-scope (from a partial's <script client>).
+    // If so, reuse that scope ID instead of adding a duplicate attribute.
+    const existingCheck = new RegExp(`<[a-z][a-z0-9-]*\\s+[^>]*data-stx-scope="([^"]*)"[^>]*x-data\\s*=\\s*["']${escapeRegex(scope.stateExpr)}["']`, 'gi')
+    const existingMatch = existingCheck.exec(output)
+    if (existingMatch) {
+      // Element already has a scope — use that ID for the bridge initScope call
+      scope.id = existingMatch[1]
+      scope.selector = `[data-stx-scope="${scope.id}"]`
+      // Don't add data-stx-scope — it's already there
+    }
+    else {
+      // Also check reverse order (x-data before data-stx-scope)
+      const reverseCheck = new RegExp(`<[a-z][a-z0-9-]*\\s+[^>]*x-data\\s*=\\s*["']${escapeRegex(scope.stateExpr)}["'][^>]*data-stx-scope="([^"]*)"`, 'gi')
+      const reverseMatch = reverseCheck.exec(output)
+      if (reverseMatch) {
+        scope.id = reverseMatch[1]
+        scope.selector = `[data-stx-scope="${scope.id}"]`
+      }
+      else {
+        // No existing scope — add one
+        output = output.replace(
+          new RegExp(`(<[a-z][a-z0-9-]*\\s+)([^>]*)(x-data\\s*=\\s*"${escapeRegex(scope.stateExpr)}")([^>]*>)`, 'gi'),
+          `$1data-stx-scope="${scope.id}" $2$3$4`,
+        )
+        output = output.replace(
+          new RegExp(`(<[a-z][a-z0-9-]*\\s+)([^>]*)(x-data\\s*=\\s*'${escapeRegex(scope.stateExpr)}')([^>]*>)`, 'gi'),
+          `$1data-stx-scope="${scope.id}" $2$3$4`,
+        )
+      }
+    }
   }
 
   // Rename x-data → data-stx-xdata so the SPA handler can re-initialize scopes

@@ -125,24 +125,37 @@ function parseComponentProps(
       const propName = attrName.slice(1)
       // Shorthand: :propName with no value is equivalent to :propName="propName"
       const expression = attrValue === 'true' ? propName : attrValue
-
       try {
         if (!isExpressionSafe(expression)) {
           if (options.debug) {
             console.error(`Unsafe expression in :${propName} binding: ${expression}`)
           }
-          // Unsafe expressions go to clientReactive as a fallback
           resolved.clientReactive[propName] = expression
           continue
         }
 
-        const valueFn = createSafeFunction(expression, Object.keys(context))
+        const contextKeys = Object.keys(context)
+        const valueFn = createSafeFunction(expression, contextKeys)
         const evaluated = valueFn(...Object.values(context))
+
+        // If evaluation returned undefined, check if the expression references
+        // variables not in the server context — if so, it's a client-side expression
+        // (e.g. loop variables from :for, signal values from <script client>)
+        if (evaluated === undefined) {
+          // Extract identifiers from the expression
+          const exprVars = expression.match(/\b[a-zA-Z_$][a-zA-Z0-9_$]*\b/g) || []
+          const jsKeywords = new Set(['true', 'false', 'null', 'undefined', 'typeof', 'instanceof', 'in', 'of', 'new', 'this', 'return', 'void', 'delete', 'throw', 'if', 'else'])
+          const hasUnresolved = exprVars.some(v => !jsKeywords.has(v) && !contextKeys.includes(v))
+          if (hasUnresolved) {
+            resolved.clientReactive[propName] = expression
+            continue
+          }
+        }
+
         resolved.serverDynamic[propName] = evaluated
       }
       catch {
-        // Evaluation failed — the variable is likely not in the server context
-        // (e.g., it's a signal or client-only expression). Preserve for client.
+        // Evaluation failed — preserve for client
         resolved.clientReactive[propName] = expression
       }
       continue
@@ -590,7 +603,22 @@ async function processCustomElementTags(
         }
 
         // Render the builtin directly
-        const rendered = builtinDef.render(resolvedProps, tag.content, renderCtx)
+        let rendered = builtinDef.render(resolvedProps, tag.content, renderCtx)
+
+        // Emit clientReactive bindings on the rendered output (same as file components)
+        // This preserves :for, :to, :text etc. that couldn't be evaluated server-side
+        if (Object.keys(resolvedProps.clientReactive).length > 0) {
+          rendered = emitClientReactiveAttrs(rendered, resolvedProps.clientReactive)
+        }
+
+        // Forward @event attributes from parent to builtin's root element
+        if (Object.keys(resolvedProps.events).length > 0) {
+          const eventAttrs = Object.entries(resolvedProps.events)
+            .map(([event, handler]) => `${event}="${handler.replace(/"/g, '&quot;')}"`)
+            .join(' ')
+          rendered = rendered.replace(/^(\s*<[a-zA-Z][a-zA-Z0-9-]*)/, `$1 ${eventAttrs}`)
+        }
+
         result = result.substring(0, tag.startIndex) + rendered + result.substring(tag.endIndex)
         continue
       }

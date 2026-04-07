@@ -296,9 +296,8 @@ export async function serve(options: ServeOptions): Promise<void> {
 
   // Function to get or create route
   async function getRoute(requestPath: string): Promise<string | null> {
-    // Check cache first
-    if (routes.has(requestPath))
-      return routes.get(requestPath)!
+    // Dev mode: never cache — always re-process templates so file changes are reflected
+    // Production caching is handled by the production server, not the dev serve path
 
     // Discover files if needed
     const files = await discoverFiles()
@@ -343,9 +342,8 @@ export async function serve(options: ServeOptions): Promise<void> {
         // Normalize file path for comparison
         const normalizedFilePath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
         if (normalizedFilePath === possible || normalizedFilePath.endsWith(`/${possible}`)) {
-          // Process and cache
+          // Process template on every request (dev mode — no caching)
           const output = await processTemplate(filePath)
-          routes.set(requestPath, output)
           return output
         }
       }

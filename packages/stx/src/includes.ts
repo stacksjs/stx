@@ -254,7 +254,7 @@ function transformSignalScript(scriptContent: string, scopeId: string): string {
   // and effect tracking in the signals runtime.
   return `
 (function() {
-  var { state, derived, effect, batch, onMount, onDestroy, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect } = window.stx;
+  var { state, derived, effect, batch, onMount, onDestroy, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect } = window.stx;
   var __destroyHooks = [];
   var __origOnDestroy = onDestroy;
   onDestroy = function(fn) { __origOnDestroy(fn); __destroyHooks.push(fn); };
@@ -271,18 +271,27 @@ ${scriptContent}
 /**
  * Add data-stx-scope attribute to the first element in HTML content
  */
-function addScopeToRootElement(html: string, scopeId: string): string {
+function addScopeToRootElement(html: string, scopeId: string): { html: string, mergedIntoExisting: string | null } {
   // Skip comments, whitespace, and find the first real element
-  const elementMatch = html.match(/^(\s*(?:<!--[\s\S]*?-->\s*)*)(<[a-zA-Z][a-zA-Z0-9-]*)([\s>])/s)
+  const elementMatch = html.match(/^(\s*(?:<!--[\s\S]*?-->\s*)*)(<[a-zA-Z][a-zA-Z0-9-]*)(\s[^>]*>|>)/s)
   if (elementMatch) {
-    const [, before, tagStart, afterTag] = elementMatch
-    // Check if it already has data-stx-scope
-    if (html.includes('data-stx-scope')) {
-      return html
+    const rootTag = elementMatch[2] + elementMatch[3]
+    // Check if root element already has data-stx-scope (from x-data reactive bridge)
+    const existingScope = rootTag.match(/data-stx-scope="([^"]*)"/)
+    if (existingScope) {
+      // Don't add a duplicate — return the existing scope ID so the caller
+      // can register signals under that scope instead
+      return { html, mergedIntoExisting: existingScope[1] }
     }
-    return `${before}${tagStart} data-stx-scope="${scopeId}"${afterTag}${html.slice(elementMatch[0].length)}`
+    const before = elementMatch[1]
+    const tagStart = elementMatch[2]
+    const afterTag = elementMatch[3]
+    return {
+      html: `${before}${tagStart} data-stx-scope="${scopeId}"${afterTag}${html.slice(elementMatch[0].length)}`,
+      mergedIntoExisting: null,
+    }
   }
-  return html
+  return { html, mergedIntoExisting: null }
 }
 
 // Counter for generating unique scope IDs
@@ -786,14 +795,13 @@ catch (error: unknown) {
       dependencies.add(includeFilePath)
 
       // Check if the partial is cached
-      let partialContent = partialsCache.get(includeFilePath)
+      // Always read from disk in dev mode — partials may have changed
+      // The LRU cache is only useful for production builds
+      let partialContent: string | undefined
 
       if (!partialContent) {
-        // Read the file
         try {
           partialContent = await Bun.file(includeFilePath).text()
-          // Cache for future use
-          partialsCache.set(includeFilePath, partialContent)
         }
         catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -899,8 +907,19 @@ catch (e) {
       }
 
       // If we have a signal script, add data-stx-scope to the root element
+      // If the root already has a scope (from x-data), merge into that scope ID
       if (signalScopeId) {
-        workingContent = addScopeToRootElement(workingContent, signalScopeId)
+        const scopeResult = addScopeToRootElement(workingContent, signalScopeId)
+        workingContent = scopeResult.html
+        if (scopeResult.mergedIntoExisting) {
+          // Root element already has a scope — update the script to register
+          // signals under the existing scope ID instead of the new one
+          preservedScript = preservedScript.replace(
+            `window.stx._scopes['${signalScopeId}']`,
+            `window.stx._scopes['${scopeResult.mergedIntoExisting}']`,
+          )
+          signalScopeId = scopeResult.mergedIntoExisting
+        }
       }
 
       // Process the partial content
