@@ -1,0 +1,149 @@
+<script server>
+const coach = {
+  name: 'Pawel Kalinowski',
+  title: 'Endurance Coach & Marathon Specialist',
+  bio: 'USATF-certified distance running coach with 12+ years of experience preparing athletes for marathons, ultramarathons, and multi-sport endurance events. From first-time marathoners to Boston qualifiers.',
+  location: 'Austin, TX',
+  email: 'pawel@endurancelab.co',
+}
+
+const stats = [
+  { value: '340+', label: 'Athletes Coached' },
+  { value: '92%', label: 'Race Completion Rate' },
+  { value: '48', label: 'Boston Qualifiers' },
+  { value: '12', label: 'Years Coaching' },
+]
+
+const achievements = [
+  {
+    year: '2024',
+    items: [
+      { title: 'Austin Marathon — 14 Athletes Qualified for Boston', description: 'Largest single-race BQ group in program history. Average improvement of 18 minutes over previous PR.' },
+      { title: 'Coached First Sub-3:00 Female Marathoner', description: 'Sarah Chen ran 2:58:12 at Chicago Marathon after 16-month build with periodized training.' },
+      { title: 'Launched Group Training Program', description: 'Scaled from 1-on-1 coaching to structured group training. 60 athletes in first cohort, 94% retention.' },
+    ],
+  },
+  {
+    year: '2023',
+    items: [
+      { title: 'Western States 100 — 3 Finishers', description: 'All three athletes finished under 24 hours. First ultra coaching cohort.' },
+      { title: 'USATF Level 2 Endurance Certification', description: 'Completed advanced certification in endurance event training and periodization.' },
+      { title: 'Trail Running Clinic Series', description: '8-week clinic covering terrain, nutrition, and altitude. 45 participants across 3 sessions.' },
+    ],
+  },
+  {
+    year: '2022',
+    items: [
+      { title: 'NYC Marathon — Team of 22 Finishers', description: 'Largest team entry. 8 first-time marathoners, all finished. Average time: 4:12.' },
+      { title: 'Started Online Coaching Platform', description: 'Expanded beyond local Austin market. Athletes in 12 states within first 6 months.' },
+      { title: 'Marathon Training Guide Published', description: '16-week structured plan downloaded 5,000+ times. Featured in RunnersWorld.' },
+    ],
+  },
+  {
+    year: '2021',
+    items: [
+      { title: 'Return to In-Person Coaching', description: 'Post-pandemic rebuild. Grew roster from 15 to 80 athletes in 8 months.' },
+      { title: 'Partnered with Austin Track Club', description: 'Became official marathon prep coach. Access to track facilities and group workouts.' },
+    ],
+  },
+]
+
+const certifications = [
+  'USATF Level 2 — Endurance',
+  'RRCA Certified Running Coach',
+  'NASM Certified Personal Trainer',
+  'Precision Nutrition Level 1',
+  'TrainingPeaks Certified Coach',
+  'First Aid / CPR / AED',
+]
+
+const specialties = [
+  { name: 'Marathon Prep', description: '16–20 week periodized plans for all levels' },
+  { name: 'Boston Qualifying', description: 'Targeted pace work and race strategy' },
+  { name: 'Ultra & Trail', description: '50K to 100-mile event preparation' },
+  { name: 'Injury Comeback', description: 'Gradual return-to-running programs' },
+  { name: 'First Marathon', description: 'Couch-to-marathon in 6–9 months' },
+  { name: 'Group Training', description: 'Structured cohorts with accountability' },
+]
+</script>
+
+<div class="max-w-4xl mx-auto px-6 py-16">
+
+  <!-- Header -->
+  <div class="text-center mb-16">
+    <div class="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 mx-auto mb-6 flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-emerald-500/20">PK</div>
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">{{ coach.name }}</h1>
+    <p class="text-lg text-emerald-600 dark:text-emerald-400 font-medium mb-3">{{ coach.title }}</p>
+    <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">{{ coach.bio }}</p>
+    <div class="flex items-center justify-center gap-4 mt-4 text-sm text-gray-400 dark:text-gray-500">
+      <span>{{ coach.location }}</span>
+      <span>&middot;</span>
+      <a href="mailto:{{ coach.email }}" class="text-emerald-600 dark:text-emerald-400 hover:underline">{{ coach.email }}</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-16">
+    @foreach (stats as stat)
+      <div class="text-center p-5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+        <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ stat.value }}</div>
+        <div class="text-xs uppercase tracking-wide font-medium text-gray-500 dark:text-gray-400 mt-1">{{ stat.label }}</div>
+      </div>
+    @endforeach
+  </div>
+
+  <!-- Specialties -->
+  <div class="mb-16">
+    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">Coaching Specialties</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      @foreach (specialties as s)
+        <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50">
+          <div class="font-semibold text-sm text-gray-900 dark:text-white mb-1">{{ s.name }}</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">{{ s.description }}</div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+
+  <!-- Achievements Timeline -->
+  <div class="mb-16">
+    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-8">Achievements</h2>
+    @foreach (achievements as group)
+      <div class="mb-10">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full">{{ group.year }}</span>
+          <div class="flex-1 h-px bg-gray-200 dark:bg-gray-800"></div>
+        </div>
+        @foreach (group.items as item)
+          <div class="ml-4 pl-4 pb-6 border-l-2 border-gray-200 dark:border-gray-800 last:pb-0">
+            <h3 class="font-semibold text-gray-900 dark:text-white text-sm mb-1">{{ item.title }}</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{{ item.description }}</p>
+          </div>
+        @endforeach
+      </div>
+    @endforeach
+  </div>
+
+  <!-- Certifications -->
+  <div class="mb-16">
+    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Certifications</h2>
+    <div class="flex flex-wrap gap-2">
+      @foreach (certifications as cert)
+        <span class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">{{ cert }}</span>
+      @endforeach
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="text-center p-8 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800/30">
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Ready to train?</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Whether it's your first 5K or your next Boston qualifier, let's build a plan.</p>
+    <a href="mailto:{{ coach.email }}" class="inline-block px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg transition-colors">Get in Touch</a>
+  </div>
+
+  <!-- Footer -->
+  <div class="text-center mt-12 text-xs text-gray-400 dark:text-gray-600">
+    Built with <a href="https://github.com/stacksjs/stx" class="hover:text-emerald-500 transition-colors">STX</a>
+  </div>
+
+</div>
