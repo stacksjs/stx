@@ -1506,8 +1506,12 @@ else if (name.startsWith('@') || name.startsWith(':')) {
             var hasSignals = Object.values(eventCapturedScope).some(function(v) {
               return v && typeof v === 'function' && v._isSignal;
             });
-            if (hasSignals) {
-              // Use read/write proxy: reads unwrap signals, assignments write through signal.set()
+            // Only use signal read/write proxy for DIRECT assignment expressions
+            // like "count = count + 1" or "open = !open". Function calls like
+            // "openModal()" handle their own signal.set() internally — the writeback
+            // would RESET signals to their pre-handler values.
+            var isDirectAssignment = hasSignals && /^[a-zA-Z_$]\w*\s*=/.test(value.trim()) && !value.trim().startsWith('==');
+            if (isDirectAssignment) {
               var getVars = Object.keys(eventCapturedScope).map(function(k) {
                 return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
               }).join(';');
@@ -1520,6 +1524,13 @@ else if (name.startsWith('@') || name.startsWith(':')) {
               var body = getVars + ';' + value + ';' + setVars;
               var fn2 = new Function('__s', '$event', body);
               fn2(eventCapturedScope, event);
+            } else if (hasSignals) {
+              // Function call with signals in scope — unwrap for reading but NO writeback
+              var unwrapVars = Object.keys(eventCapturedScope).map(function(k) {
+                return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
+              }).join(';');
+              var fn3 = new Function('__s', '$event', unwrapVars + ';' + value);
+              fn3(eventCapturedScope, event);
             } else {
               var fn = new Function(...Object.keys(eventCapturedScope), '$event', value);
               fn(...Object.values(eventCapturedScope), event);
@@ -1922,9 +1933,10 @@ else {
     });
   }
 
+  var __bindIfCounter = 0;
   function bindIf(el, passedScope = componentScope, attrName = '@if') {
     // Guard: prevent double-binding on the same element
-    if (el.__stx_if_bound) return;
+    if (el.__stx_if_bound) { console.log('[stx] bindIf SKIPPED (already bound):', el.getAttribute(attrName) || '(attr removed)', 'on', el.tagName); return; }
     el.__stx_if_bound = true;
 
     const expr = el.getAttribute(attrName);
@@ -1994,9 +2006,27 @@ catch (e) {
       childrenProcessed = true;
     };
 
-    effect(() => {
-      const value = evalExpr(expr);
+    // Evaluate the :if expression — use direct signal read for simple refs,
+    // falling back to evalExpr for complex expressions
+    const fullScope = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
+    const directSignal = fullScope[expr];
 
+    if (directSignal) {
+      console.log('[stx] bindIf direct signal for :if=' + expr, 'signal identity:', directSignal === componentScope[expr] ? 'SAME' : 'DIFFERENT', 'signal():', directSignal());
+    }
+    effect(() => {
+      var value;
+      if (directSignal && (directSignal._isSignal || directSignal._isDerived)) {
+        value = directSignal();
+        console.log('[stx] bindIf effect (direct):', expr, '→', value, 'isInserted:', isInserted);
+      } else {
+        // Complex expression: read all signals first for tracking, then evaluate
+        for (var sk in fullScope) {
+          var sv = fullScope[sk];
+          if (sv && typeof sv === 'function' && (sv._isSignal || sv._isDerived)) sv();
+        }
+        value = evalExpr(expr);
+      }
 
       if (isTemplate) {
         if (value && !isInserted) {
@@ -2013,6 +2043,8 @@ catch (e) {
               node.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
             }
           });
+          // Stamp insertion time for click propagation guard
+          currentNodes.forEach(function(n) { if (n.nodeType === 1) n.__stx_shown_at = performance.now(); });
           isInserted = true;
         }
 else if (!value && isInserted) {
@@ -2024,31 +2056,31 @@ else if (!value && isInserted) {
       }
 else {
         if (value && !isInserted) {
+          console.log('[stx] bindIf INSERTING element for :if=' + expr);
           parent.insertBefore(el, placeholder.nextSibling);
+          el.__stx_shown_at = performance.now();
           isInserted = true;
         }
 else if (!value && isInserted) {
+          console.log('[stx] bindIf REMOVING element for :if=' + expr, 'el.isConnected:', el.isConnected, 'parent:', parent.tagName);
           el.remove();
           isInserted = false;
-          childrenProcessed = false; // Reset so children get re-processed on next insert
+          console.log('[stx] bindIf REMOVED, el.isConnected:', el.isConnected);
         }
-        // Process the entire subtree when element is visible and not yet processed
+        // Process the entire subtree when element is visible and not yet processed.
+        // IMPORTANT: defer to next microtask so child effects don't accidentally
+        // subscribe to the parent bindIf's tracked signals (which would cause
+        // the parent effect to re-run and remove/re-insert in an infinite loop).
         if (value && isInserted && !childrenProcessed) {
-          // Use LIVE componentScope (not captured snapshot) so functions added after
-          // initial binding (e.g. from <script client> setup) are available
-          var childScope = { ...componentScope, ...(capturedElementScope || {}), ...globalHelpers };
-          console.log('[stx] bindIf processing subtree for :if=' + expr, 'el:', el.tagName, 'children:', el.childNodes.length, 'connected:', el.isConnected, 'scope funcs:', Object.keys(childScope).filter(function(k) { return typeof childScope[k] === 'function' && !childScope[k]._isSignal; }).slice(0,5));
-          // Process ALL descendants — not just direct children
-          function processSubtree(node, sc) {
-            if (node.nodeType === 1) {
-              processElement(node, sc);
-            } else if (node.nodeType === 3) {
-              processElement(node, sc);
-            }
-          }
-          // Process direct children and let processElement handle recursion
-          Array.from(el.childNodes).forEach(function(child) { processSubtree(child, childScope); });
           childrenProcessed = true;
+          setTimeout(function() {
+            var childScope = { ...componentScope, ...(capturedElementScope || {}), ...globalHelpers };
+            Array.from(el.childNodes).forEach(function(child) {
+              if (child.nodeType === 1 || child.nodeType === 3) {
+                processElement(child, childScope);
+              }
+            });
+          }, 0);
         }
       }
     });
