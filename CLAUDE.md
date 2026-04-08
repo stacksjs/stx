@@ -611,6 +611,16 @@ stx serve <directory> [--port 3000]
 
 32. **Stacks App Conventions**: Stacks apps use `resources/views/` for stx pages (Mode 1: server-side). Config: `root: 'resources'`, `pagesDir: 'views'`, `componentsDir: 'views/components'`, `layoutsDir: 'views/layouts'`, `partialsDir: 'views/partials'`. Standalone SPA apps (training, bench-review, 11ly) use `pages/` at root (Mode 2: client-side with API). Both modes use the same stx engine — the mode is implicit from which directives and script types are used, not a config flag.
 
+33. **CRITICAL: @click Signal Writeback Only for Direct Assignments**: The `@click` handler has a signal writeback mechanism for inline assignment expressions like `@click="count = count + 1"` or `@click="open = !open"`. This MUST NOT run for function call expressions like `@click="openModal()"` — the function internally calls `signal.set()`, and the writeback would reset the signal to its pre-handler value (undoing the function's changes). The writeback is guarded by `isDirectAssignment` check: only fires when the expression matches `/^[a-zA-Z_$]\w*\s*=/` (direct variable assignment).
+
+34. **Directive Double-Bind Guards**: All directive binding functions (`bindIf`, `bindShow`, `bindFor`, `bindModel`, event handlers) have guards (`el.__stx_if_bound`, `el.__stx_show_bound`, `el.__stx_for_bound`, `el.__stx_model_bound`, `el.__stx_evt_*`) to prevent duplicate binding when `processElement` is called multiple times on the same element (e.g., from `:if` subtree re-processing).
+
+35. **bindIf Subtree Processing Deferred**: When `:if` inserts an element and needs to process its children (bind `:text`, `@click`, `:show`, etc.), the processing is deferred via `setTimeout(0)`. This prevents child effects from accidentally subscribing to the parent `bindIf` effect's tracked signals (which would cause cascading re-runs). The `childrenProcessed` flag ensures processing happens only once per element.
+
+36. **Client-side useHead / useSeoMeta**: `useHead({ title, meta, link, script, bodyAttrs, htmlAttrs })` and `useSeoMeta({ title, description, ogTitle, ogImage, ... })` are available in `<script client>` blocks. They update `document.title`, `<meta>` tags, and `<link>` tags at runtime — works on both full page load and SPA navigation (scripts re-execute after fragment swap).
+
+37. **Dev Server No-Cache**: The dev server (`bun-plugin/src/serve.ts`) does NOT cache processed templates or partials. Every request re-reads files from disk and re-processes. This ensures file changes are reflected immediately on browser refresh without restarting the server. Production caching is handled separately.
+
 ---
 
 ## Linting
