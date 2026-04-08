@@ -80,14 +80,14 @@ let _cachedSignalsRuntimeDev: string | null = null
  * Get the signals runtime with module-level caching.
  * The runtime is identical for every page and never changes during a dev session.
  */
-export function getCachedSignalsRuntime(debug = false): string {
+export async function getCachedSignalsRuntime(debug = false): Promise<string> {
   if (debug) {
     // In debug mode, always regenerate to avoid stale runtime issues
-    const { generateSignalsRuntimeDev } = require('./signals')
+    const { generateSignalsRuntimeDev } = await import('./signals')
     return generateSignalsRuntimeDev()
   }
   if (_cachedSignalsRuntime === null) {
-    const { generateSignalsRuntime } = require('./signals')
+    const { generateSignalsRuntime } = await import('./signals')
     _cachedSignalsRuntime = generateSignalsRuntime()
   }
   return _cachedSignalsRuntime!
@@ -101,9 +101,9 @@ let _cachedRouterScript: string | null = null
 /**
  * Get the router script with module-level caching.
  */
-export function getCachedRouterScript(): string {
+export async function getCachedRouterScript(): Promise<string> {
   if (_cachedRouterScript === null) {
-    const { getRouterScript } = require('stx-router')
+    const { getRouterScript } = await import('stx-router')
     _cachedRouterScript = getRouterScript()
   }
   return _cachedRouterScript!

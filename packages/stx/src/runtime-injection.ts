@@ -106,7 +106,7 @@ import '@stacksjs/browser'
  * Inject STX signals runtime into the template.
  * The runtime provides client-side reactivity.
  */
-export function injectSignalsRuntime(template: string, options: StxOptions): string {
+export async function injectSignalsRuntime(template: string, options: StxOptions): Promise<string> {
   // Don't inject if actual signals runtime is already present
   // Check for the runtime's unique signature (state, derived, effect assignment),
   // not just any 'window.stx =' which could be scope registration from includes
@@ -130,8 +130,8 @@ export function injectSignalsRuntime(template: string, options: StxOptions): str
   }
 
   // Use cached runtime (identical for every page, never changes during dev session)
-  const { getCachedSignalsRuntime } = require('./caching')
-  const runtime = getCachedSignalsRuntime(options.debug)
+  const { getCachedSignalsRuntime } = await import('./caching')
+  const runtime = await getCachedSignalsRuntime(options.debug)
   const runtimeScript = `<script data-stx-scoped>${runtime}</script>`
 
   // Inject before the first <script in the ENTIRE document, not just <head>.
@@ -163,7 +163,7 @@ export function injectSignalsRuntime(template: string, options: StxOptions): str
  * The router is provided by the canonical router in packages/router/src/client.ts.
  * It guards against double-initialization so it's safe to inject alongside @stxRouter.
  */
-export function injectRouterScript(template: string, options?: StxOptions): string {
+export async function injectRouterScript(template: string, options?: StxOptions): Promise<string> {
   // Only inject into full HTML pages (not template fragments or components)
   if (!template.includes('</body>')) {
     return template
@@ -190,10 +190,10 @@ export function injectRouterScript(template: string, options?: StxOptions): stri
   }
 
   // Build mode: emit a placeholder reference instead of inlining the full router script.
-  const { getCachedRouterScript } = require('./caching')
+  const { getCachedRouterScript } = await import('./caching')
   const routerScript = options?.buildMode === 'compile'
     ? `<script src="/__stx/router.__STX_HASH__.js"></script>`
-    : `<script>${getCachedRouterScript()}</script>`
+    : `<script>${await getCachedRouterScript()}</script>`
 
   // Use string concatenation to avoid $-interpretation in .replace()
   const bodyCloseIdx = template.lastIndexOf('</body>')

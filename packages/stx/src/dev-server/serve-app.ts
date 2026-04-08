@@ -312,7 +312,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
       // Inject SPA router (skip when using shell — router goes in shell composition)
       if (!shell) {
-        output = injectRouterScript(output)
+        output = await injectRouterScript(output)
       }
 
       // Re-inject client scripts before </body>

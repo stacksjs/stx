@@ -535,7 +535,7 @@ export async function processSignals(template: string, options: StxOptions, file
   output = processedOutput
 
   // Inject the signals runtime
-  output = injectSignalsRuntime(output, options)
+  output = await injectSignalsRuntime(output, options)
 
   // Inject browser runtime if needed (for auto-imports from @stacksjs/browser)
   output = injectBrowserRuntime(output)

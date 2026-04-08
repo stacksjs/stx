@@ -89,10 +89,18 @@ export async function serve(options: ServeOptions): Promise<void> {
         const stat = await fs.stat(pattern).catch(() => null)
 
         if (stat?.isDirectory()) {
+          // Directories to exclude from page routing — these contain non-page .stx files
+          const excludeDirs = ['layouts', 'components', 'partials']
+          if (layoutsDir) excludeDirs.push(layoutsDir.replace(/^.*\//, ''))
+          if (componentsDir) excludeDirs.push(componentsDir.replace(/^.*\//, ''))
+          if (partialsDir) excludeDirs.push(partialsDir.replace(/^.*\//, ''))
+
           for (const ext of ['.stx', '.md', '.html']) {
             const glob = new Glob(`**/*${ext}`)
             const discovered = await Array.fromAsync(glob.scan({ cwd: pattern, followSymlinks: true }))
-            files.push(...discovered.map(f => `${pattern}/${f}`.replace(/\/+/g, '/')))
+            files.push(...discovered
+              .filter(f => !excludeDirs.some(dir => f.startsWith(dir + '/')))
+              .map(f => `${pattern}/${f}`.replace(/\/+/g, '/')))
           }
         }
         else if (pattern.includes('*')) {

@@ -349,7 +349,7 @@ async function renderTemplateString(
   }
 
   // Inject SPA router script for client-side navigation
-  output = injectRouterScript(output)
+  output = await injectRouterScript(output)
 
   // Optionally inject Crosswind CSS from Tailwind utility classes
   if (renderOptions.injectCSS) {
