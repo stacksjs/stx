@@ -1240,6 +1240,9 @@ catch (e) {
   }
 
   function processElement(el, scope = componentScope) {
+    if (el.nodeType === Node.ELEMENT_NODE && el.tagName === 'BUTTON' && el.hasAttribute && el.hasAttribute('@click')) {
+
+    }
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
       // x-data elements: the reactive bridge has registered their scope into window.stx._scopes.
       // Merge that scope into the processing scope and continue — we handle all directives.
@@ -1342,7 +1345,7 @@ else if (part) {
     // Handle @if / :if / x-if (conditional rendering)
     if (el.hasAttribute('@if') || el.hasAttribute(':if') || el.hasAttribute('x-if')) {
       var ifAttr = el.hasAttribute(':if') ? ':if' : el.hasAttribute('x-if') ? 'x-if' : '@if';
-      console.log('[stx] bindIf:', el.getAttribute(ifAttr), 'on', el.tagName, 'scope keys:', Object.keys(scope).slice(0, 8));
+
       bindIf(el, scope, ifAttr);
       return;
     }
@@ -1462,10 +1465,24 @@ else if (name.startsWith('@') || name.startsWith(':')) {
           return;
         }
 
+        // Prevent duplicate event binding on the same element
+        var eventKey = '__stx_evt_' + eventName + '_' + value.substring(0, 20);
+        if (el[eventKey]) { el.removeAttribute(name); return; }
+        el[eventKey] = true;
+
         // Capture scope at setup time so @for loop variables are available when event fires
         const eventCapturedScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
 
         el.addEventListener(eventName, (event) => {
+          // Skip clicks on elements that just became visible in this frame.
+          // Prevents modal backdrop from catching the click that opened the modal.
+          if (eventName === 'click') {
+            var ancestor = el;
+            while (ancestor) {
+              if (ancestor.__stx_shown_at && (performance.now() - ancestor.__stx_shown_at) < 50) return;
+              ancestor = ancestor.parentElement;
+            }
+          }
           // System key modifiers
           if (modifiers.includes('self') && event.target !== el) return;
           if (modifiers.includes('ctrl') && !event.ctrlKey) return;
@@ -1538,29 +1555,55 @@ catch (e) {
   }
 
   function bindShow(el, expr, passedScope = componentScope, attrName = '@show') {
-    const originalDisplay = el.style.display || '';
-    // Capture scope at setup time - use passed scope to preserve context
+    if (el.__stx_show_bound) return;
+    el.__stx_show_bound = true;
+
+    const currentDisplay = el.style.display;
+    const originalDisplay = (currentDisplay && currentDisplay !== 'none') ? currentDisplay : '';
     const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
 
-    const evalExpr = () => {
-      try {
-        const unwrapScope = createAutoUnwrapProxy(capturedScope);
-        const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
-        return fn(...Object.values(unwrapScope));
-      }
-catch (e) {
-        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Show expression error:', expr, e);
-        return false;
-      }
-    };
+    // Check if the expression is a simple signal reference (most common case for :show)
+    const directSignal = capturedScope[expr];
+    if (directSignal && directSignal._isSignal) {
+      // Fast path: directly subscribe to the signal — guaranteed reactive
+      effect(() => {
+        const value = directSignal();
 
-    effect(() => {
-      el.style.display = evalExpr() ? originalDisplay : 'none';
-    });
+        el.style.display = value ? originalDisplay : 'none';
+      });
+    } else {
+      // Complex expression path — evaluate via new Function
+      effect(() => {
+        try {
+          // Read all signals in scope to ensure dependency tracking
+          var scopeValues = {};
+          for (var k in capturedScope) {
+            var v = capturedScope[k];
+            scopeValues[k] = (v && v._isSignal) ? v() : v;
+          }
+          var fn = new Function(...Object.keys(scopeValues), 'return ' + expr);
+          var value = fn(...Object.values(scopeValues));
+          var wasHidden = el.style.display === 'none';
+          el.style.display = value ? originalDisplay : 'none';
+          // When transitioning from hidden to visible, stamp the element so
+          // @click handlers can ignore clicks from the same frame (prevents
+          // modal backdrop from catching the click that opened the modal)
+          if (value && wasHidden) {
+            el.__stx_shown_at = performance.now();
+          }
+        }
+        catch (e) {
+          if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Show expression error:', expr, e);
+          el.style.display = 'none';
+        }
+      });
+    }
     el.removeAttribute(attrName);
   }
 
   function bindModel(el, expr, passedScope = componentScope, attrName = '@model') {
+    if (el.__stx_model_bound) return;
+    el.__stx_model_bound = true;
     const tag = el.tagName.toLowerCase();
     const type = el.type;
 
@@ -1661,7 +1704,8 @@ else if (typeof value === 'string') {
   }
 
   function bindFor(el, passedScope = componentScope, attrName = '@for') {
-    console.log('[stx] bindFor:', el.getAttribute(attrName), 'on', el.tagName, 'scope keys:', Object.keys(passedScope).slice(0, 6));
+    if (el.__stx_for_bound) return;
+    el.__stx_for_bound = true;
     const expr = el.getAttribute(attrName);
     // Support: "item in list", "item, index in list", "(item, index) in list"
     const match = expr.match(/^\\s*\\(?\\s*(\\w+)(?:\\s*,\\s*(\\w+))?\\s*\\)?\\s+(?:in|of)\\s+(.+)\\s*$/);
@@ -1879,6 +1923,10 @@ else {
   }
 
   function bindIf(el, passedScope = componentScope, attrName = '@if') {
+    // Guard: prevent double-binding on the same element
+    if (el.__stx_if_bound) return;
+    el.__stx_if_bound = true;
+
     const expr = el.getAttribute(attrName);
     const parent = el.parentNode;
 
@@ -1938,7 +1986,8 @@ catch (e) {
     const processChildrenWithScope = () => {
       // Build the combined scope for children - no need to modify global componentScope
       // Just pass the scope explicitly to processElement
-      const childScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
+      const childScope = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
+
 
       Array.from(el.childNodes).forEach(child => processElement(child, childScope));
 
@@ -1947,15 +1996,15 @@ catch (e) {
 
     effect(() => {
       const value = evalExpr(expr);
-      console.log('[stx] bindIf effect:', expr, '→', value, 'isTemplate:', isTemplate, 'isInserted:', isInserted);
+
 
       if (isTemplate) {
         if (value && !isInserted) {
           // Re-insert cloned content
           currentNodes = Array.from(el.content.childNodes).map(n => n.cloneNode(true));
           currentNodes.forEach(node => parent.insertBefore(node, placeholder.nextSibling));
-          // Process the new nodes for nested directives with captured scope - pass scope explicitly
-          const childScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
+          // Process the new nodes — use LIVE componentScope so all functions are available
+          const childScope = { ...componentScope, ...(capturedElementScope || {}) };
           currentNodes.forEach(node => {
             if (node.nodeType === 1) {
               processElement(node, childScope);
@@ -1976,19 +2025,30 @@ else if (!value && isInserted) {
 else {
         if (value && !isInserted) {
           parent.insertBefore(el, placeholder.nextSibling);
-          // Process children if not already done
-          if (!childrenProcessed) {
-            processChildrenWithScope();
-          }
           isInserted = true;
         }
 else if (!value && isInserted) {
           el.remove();
           isInserted = false;
+          childrenProcessed = false; // Reset so children get re-processed on next insert
         }
-        // Also process children on initial render if element is visible
+        // Process the entire subtree when element is visible and not yet processed
         if (value && isInserted && !childrenProcessed) {
-          processChildrenWithScope();
+          // Use LIVE componentScope (not captured snapshot) so functions added after
+          // initial binding (e.g. from <script client> setup) are available
+          var childScope = { ...componentScope, ...(capturedElementScope || {}), ...globalHelpers };
+          console.log('[stx] bindIf processing subtree for :if=' + expr, 'el:', el.tagName, 'children:', el.childNodes.length, 'connected:', el.isConnected, 'scope funcs:', Object.keys(childScope).filter(function(k) { return typeof childScope[k] === 'function' && !childScope[k]._isSignal; }).slice(0,5));
+          // Process ALL descendants — not just direct children
+          function processSubtree(node, sc) {
+            if (node.nodeType === 1) {
+              processElement(node, sc);
+            } else if (node.nodeType === 3) {
+              processElement(node, sc);
+            }
+          }
+          // Process direct children and let processElement handle recursion
+          Array.from(el.childNodes).forEach(function(child) { processSubtree(child, childScope); });
+          childrenProcessed = true;
         }
       }
     });
@@ -3082,7 +3142,7 @@ else {
         componentScope = { ...componentScope, ...scopeVars };
       }
 
-      console.log('[stx] calling processElement on scope:', scopeId, 'componentScope keys:', Object.keys(componentScope).slice(0, 10));
+      console.log('[stx] calling processElement on scope:', scopeId, 'componentScope total keys:', Object.keys(componentScope).length, 'has openEventModal:', 'openEventModal' in componentScope, 'scopeVars keys:', Object.keys(scopeVars).length);
       var disposeEffects = trackEffects(function() { processElement(el); });
       el.__stx_disposers = disposeEffects;
       console.log('[stx] scope processed OK:', scopeId);
