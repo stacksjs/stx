@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coaching — Paweł Dregan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .font-display { font-family: 'Bebas Neue', Impact, sans-serif; }
+  </style>
+</head>
+
+<script server>
+import { defineProps } from 'stx'
+
+interface Service {
+  number: string
+  title: string
+  description: string
+  includes: string[]
+}
+
+interface ProcessStep {
+  number: string
+  title: string
+  description: string
+}
+
+const services: Service[] = [
+  {
+    number: '01',
+    title: 'Training Plans',
+    description: 'Custom periodized programs built around your race calendar, lifestyle, and current fitness. From 50K first-timers to 500K+ veterans.',
+    includes: [
+      'Weekly structured training',
+      'Periodization & tapering',
+      'Strength & mobility work',
+      'Altitude preparation'
+    ]
+  },
+  {
+    number: '02',
+    title: 'Race Strategy',
+    description: 'Pacing plans, gear selection, and nutrition protocols tested across hundreds of hours in the mountains. No guesswork, only experience.',
+    includes: [
+      'Course-specific pacing',
+      'Nutrition & hydration plans',
+      'Gear selection & testing',
+      'Mental preparation'
+    ]
+  },
+  {
+    number: '03',
+    title: '1:1 Support',
+    description: 'Weekly check-ins, workout analysis, and direct messaging. You are never alone on the trail or in your preparation.',
+    includes: [
+      'Weekly video calls',
+      'Daily message support',
+      'Workout analysis & feedback',
+      'Race-week guidance'
+    ]
+  }
+]
+
+const steps: ProcessStep[] = [
+  {
+    number: '01',
+    title: 'Initial Assessment',
+    description: 'We start with a deep conversation about your running history, goals, schedule, and the races you want to target. No templates — everything is built from scratch.'
+  },
+  {
+    number: '02',
+    title: 'Plan Design',
+    description: 'I build your training program around your life, not the other way around. Structured weeks that build progressively, with flexibility for when life happens.'
+  },
+  {
+    number: '03',
+    title: 'Execute & Adapt',
+    description: 'Training begins. We review every week together, adjusting intensity, volume, and focus based on how your body responds. The plan evolves with you.'
+  },
+  {
+    number: '04',
+    title: 'Race & Reflect',
+    description: 'Full race-week support: final prep, pacing strategy, nutrition timing, and mental cues. After the race, we debrief and plan what comes next.'
+  }
+]
+</script>
+
+<body class="bg-black text-white font-sans antialiased">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 left-0 right-0 z-50 px-6 lg:px-12 py-4 flex justify-between items-center bg-black/90 backdrop-blur-xl border-b border-white/5">
+    <a href="ultrarunner-paw.html" class="text-xs font-bold tracking-[0.2em] uppercase">Paweł Dregan</a>
+    <ul class="hidden md:flex items-center gap-10">
+      <li><a href="ultrarunner-paw.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">Home</a></li>
+      <li><a href="ultrarunner-paw-about.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">About</a></li>
+      <li><a href="ultrarunner-paw-races.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">Races</a></li>
+      <li><a href="ultrarunner-paw-coaching.html" class="text-xs font-medium tracking-wide text-white transition-colors">Coaching</a></li>
+    </ul>
+    <div class="flex items-center gap-5">
+      <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="text-white/40 hover:text-white transition-colors">
+        <svg class="w-[18px] h-[18px] fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
+      <a href="https://www.youtube.com/channel/UC3BxCTwxiIROpXagOexE9gw" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="text-white/40 hover:text-white transition-colors">
+        <svg class="w-[18px] h-[18px] fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <header class="pt-40 lg:pt-48 pb-16 px-6 lg:px-12 max-w-[1400px] mx-auto">
+    <span class="text-[0.6rem] font-semibold tracking-[0.25em] uppercase text-white/25 block mb-8">1:1 Coaching</span>
+    <h1 class="font-display text-[clamp(4rem,9vw,8rem)] leading-[0.85] tracking-tight">GO FURTHER.</h1>
+    <p class="text-base text-white/35 leading-relaxed max-w-[560px] mt-8">
+      Personalized ultra running coaching built on real experience — not theory.
+      From your first 50K to your biggest dream race.
+    </p>
+  </header>
+
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12">
+    <div class="border-t border-white/5"></div>
+
+    <!-- Philosophy -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 py-16 lg:py-24">
+      <p class="text-2xl lg:text-3xl font-light leading-relaxed text-white/50">
+        I have run <strong class="text-white font-bold">700 km</strong> in a single race. <strong class="text-white font-bold">515 km</strong> through
+        the Arctic at -30°C. The lessons from those experiences <strong class="text-white font-bold">cannot be found in a textbook</strong>.
+      </p>
+      <div>
+        <p class="text-base text-white/35 leading-relaxed mb-6">
+          Every athlete is different. Your training plan should reflect your life, your body,
+          and your goals — not a generic template downloaded from the internet.
+        </p>
+        <p class="text-base text-white/35 leading-relaxed">
+          I coach because I believe everyone deserves the feeling of crossing a finish line
+          they once thought was impossible. That is what ultra running gave me, and it is
+          what I want to give back.
+        </p>
+      </div>
+    </div>
+
+    <div class="border-t border-white/5"></div>
+
+    <!-- Credentials -->
+    <section class="py-16 lg:py-24">
+      <h2 class="font-display text-5xl lg:text-6xl tracking-tight mb-12">WHY TRAIN WITH ME</h2>
+      <div class="grid grid-cols-2 lg:grid-cols-4 border-t border-white/5">
+        <div class="p-8 text-center border-b border-r border-white/5">
+          <div class="text-3xl font-extrabold tracking-tight">700km</div>
+          <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/20 mt-3">Longest Finish</div>
+        </div>
+        <div class="p-8 text-center border-b border-white/5 lg:border-r">
+          <div class="text-3xl font-extrabold tracking-tight">2nd</div>
+          <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/20 mt-3">Lappland 500K</div>
+        </div>
+        <div class="p-8 text-center border-b border-r border-white/5">
+          <div class="text-3xl font-extrabold tracking-tight">8 / 9</div>
+          <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/20 mt-3">UTMB Finish Rate</div>
+        </div>
+        <div class="p-8 text-center border-b border-white/5">
+          <div class="text-3xl font-extrabold tracking-tight">5+</div>
+          <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/20 mt-3">Years Racing</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="border-t border-white/5"></div>
+
+    <!-- Services -->
+    <section class="py-16 lg:py-24">
+      <div class="grid grid-cols-1 lg:grid-cols-3">
+        @foreach (services as service)
+          <div class="border-t border-white/5 lg:border-t-0 lg:border-l lg:first:border-l-0 p-10 lg:p-12 flex flex-col min-h-[360px] hover:bg-white/[0.015] transition-colors">
+            <span class="font-display text-6xl text-white/5 leading-none mb-8">{{ service.number }}</span>
+            <h3 class="text-xl font-extrabold tracking-tight mb-4">{{ service.title }}</h3>
+            <p class="text-sm text-white/35 leading-relaxed mb-auto">{{ service.description }}</p>
+            <ul class="mt-8 pt-6 border-t border-white/5 flex flex-col gap-2">
+              @foreach (service.includes as item)
+                <li class="text-xs text-white/40 flex items-center gap-2">
+                  <span class="text-white/10">—</span> {{ item }}
+                </li>
+              @endforeach
+            </ul>
+          </div>
+        @endforeach
+      </div>
+    </section>
+
+    <div class="border-t border-white/5"></div>
+
+    <!-- Process -->
+    <section class="py-16 lg:py-24">
+      <h2 class="font-display text-5xl lg:text-6xl tracking-tight mb-12">HOW IT WORKS</h2>
+      <div class="flex flex-col">
+        @foreach (steps as step)
+          <div class="flex flex-col lg:flex-row lg:items-baseline gap-2 lg:gap-8 py-6 border-b border-white/5">
+            <span class="text-xs font-semibold text-white/10 tracking-wide lg:w-[60px] shrink-0">{{ step.number }}</span>
+            <span class="text-base font-bold lg:w-[200px] shrink-0">{{ step.title }}</span>
+            <span class="text-sm text-white/35 leading-relaxed">{{ step.description }}</span>
+          </div>
+        @endforeach
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="py-24 lg:py-32 text-center">
+      <h2 class="font-display text-[clamp(3rem,6vw,6rem)] leading-[0.85] tracking-tight mb-6">READY TO START?</h2>
+      <p class="text-base text-white/35 max-w-[480px] mx-auto leading-relaxed mb-12">
+        Send me a DM on Instagram to discuss your goals and how we can work together.
+        No commitment — just a conversation.
+      </p>
+      <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-8 py-4 bg-white text-black text-sm font-semibold tracking-wide hover:bg-white/85 transition-colors">
+        DM on Instagram →
+      </a>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 px-6 lg:px-12 py-8">
+    <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <span class="text-xs text-white/20">© 2026 Paweł Dregan</span>
+      <div class="flex items-center gap-8">
+        <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" rel="noopener noreferrer" class="text-xs text-white/25 hover:text-white transition-colors">Instagram</a>
+        <a href="https://www.youtube.com/channel/UC3BxCTwxiIROpXagOexE9gw" target="_blank" rel="noopener noreferrer" class="text-xs text-white/25 hover:text-white transition-colors">YouTube</a>
+        <a href="ultrarunner-paw-races.html" class="text-xs text-white/25 hover:text-white transition-colors">Races</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

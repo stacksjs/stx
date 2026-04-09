@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Races — Paweł Dregan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .font-display { font-family: 'Bebas Neue', Impact, sans-serif; }
+  </style>
+</head>
+
+<script server>
+import { defineProps } from 'stx'
+
+interface Race {
+  date: string
+  name: string
+  sub: string
+  flag: string
+  category: string
+  distance: string
+  elevation: string
+  time: string
+  rank: string
+  isDnf: boolean
+}
+
+const races: Race[] = [
+  {
+    date: '2025.08',
+    name: 'SwissPeaks Trail 700K',
+    sub: 'SwissPeaks Trail 2025',
+    flag: '🇨🇭',
+    category: '100M',
+    distance: '700 km',
+    elevation: '49,000 m+',
+    time: '175:43:56',
+    rank: '9 / 55',
+    isDnf: false
+  },
+  {
+    date: '2025.07',
+    name: 'PIUT100',
+    sub: 'PIUT 2025',
+    flag: '🇮🇹',
+    category: '100K',
+    distance: '101.1 km',
+    elevation: '6,300 m+',
+    time: '20:21:53',
+    rank: '16 / 23',
+    isDnf: false
+  },
+  {
+    date: '2025.05',
+    name: 'K110 — Masters of Innsbruck',
+    sub: 'Innsbruck Alpine Trailrun Festival 2025',
+    flag: '🇦🇹',
+    category: '100K',
+    distance: '108.3 km',
+    elevation: '5,600 m+',
+    time: '—',
+    rank: 'DNF',
+    isDnf: true
+  },
+  {
+    date: '2024.07',
+    name: 'E250 — UNESCO Trail',
+    sub: 'Eiger Ultra Trail by UTMB 2024',
+    flag: '🇨🇭',
+    category: '100M',
+    distance: '254 km',
+    elevation: '14,945 m+',
+    time: '70:42:49',
+    rank: '17 / 118',
+    isDnf: false
+  },
+  {
+    date: '2023.11',
+    name: 'KoBoLT 140 KM',
+    sub: 'kleiner KoBoLT 2023',
+    flag: '🇩🇪',
+    category: '100M',
+    distance: '140 km',
+    elevation: '4,450 m+',
+    time: '19:57:00',
+    rank: '6 / 30',
+    isDnf: false
+  },
+  {
+    date: '2023.08',
+    name: '100 Miles',
+    sub: 'KAT100 by UTMB 2023',
+    flag: '🇦🇹',
+    category: '100M',
+    distance: '160 km',
+    elevation: '9,820 m+',
+    time: '36:15:50',
+    rank: '40 / 57',
+    isDnf: false
+  },
+  {
+    date: '2023.06',
+    name: 'K85 — Heart of the Alps Ultra',
+    sub: 'Innsbruck Alpine Trailrun Festival 2023',
+    flag: '🇦🇹',
+    category: '100K',
+    distance: '88 km',
+    elevation: '3,490 m+',
+    time: '15:43:01',
+    rank: '38 / 110',
+    isDnf: false
+  },
+  {
+    date: '2022.08',
+    name: 'P105 — Salomon Ultra',
+    sub: 'Pitz Alpine Glacier Trail 2022',
+    flag: '🇦🇹',
+    category: '100M',
+    distance: '106 km',
+    elevation: '6,430 m+',
+    time: '26:31:54',
+    rank: '22 / 22',
+    isDnf: false
+  },
+  {
+    date: '2020.07',
+    name: '100 Mile',
+    sub: 'Chiemgauer 100 2020',
+    flag: '🇩🇪',
+    category: '100M',
+    distance: '160.9 km',
+    elevation: '7,500 m+',
+    time: '31:47:42',
+    rank: '7 / 11',
+    isDnf: false
+  }
+]
+</script>
+
+<body class="bg-black text-white font-sans antialiased">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 left-0 right-0 z-50 px-6 lg:px-12 py-4 flex justify-between items-center bg-black/90 backdrop-blur-xl border-b border-white/5">
+    <a href="ultrarunner-paw.html" class="text-xs font-bold tracking-[0.2em] uppercase">Paweł Dregan</a>
+    <ul class="hidden md:flex items-center gap-10">
+      <li><a href="ultrarunner-paw.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">Home</a></li>
+      <li><a href="ultrarunner-paw-about.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">About</a></li>
+      <li><a href="ultrarunner-paw-races.html" class="text-xs font-medium tracking-wide text-white transition-colors">Races</a></li>
+      <li><a href="ultrarunner-paw-coaching.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">Coaching</a></li>
+    </ul>
+    <div class="flex items-center gap-5">
+      <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="text-white/40 hover:text-white transition-colors">
+        <svg class="w-[18px] h-[18px] fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
+      <a href="https://www.youtube.com/channel/UC3BxCTwxiIROpXagOexE9gw" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="text-white/40 hover:text-white transition-colors">
+        <svg class="w-[18px] h-[18px] fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <header class="pt-40 lg:pt-48 pb-16 px-6 lg:px-12 max-w-[1400px] mx-auto">
+    <span class="text-[0.6rem] font-semibold tracking-[0.25em] uppercase text-white/25 block mb-8">Race Results</span>
+    <h1 class="font-display text-[clamp(4rem,9vw,8rem)] leading-[0.85] tracking-tight">THE RECORD.</h1>
+    <p class="text-base text-white/35 leading-relaxed max-w-[560px] mt-8">
+      UTMB-indexed results from 100K to 700K. Every start line, every finish, every lesson.
+    </p>
+  </header>
+
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12">
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 border-t border-white/5 mb-16">
+      <div class="p-8 border-b border-r border-white/5">
+        <div class="text-3xl font-extrabold tracking-tight">9</div>
+        <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/20 mt-3">UTMB Races</div>
+      </div>
+      <div class="p-8 border-b border-white/5 lg:border-r">
+        <div class="text-3xl font-extrabold tracking-tight">700km</div>
+        <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/20 mt-3">Longest Distance</div>
+      </div>
+      <div class="p-8 border-b border-r border-white/5">
+        <div class="text-3xl font-extrabold tracking-tight">49,000m</div>
+        <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/20 mt-3">Max Elevation</div>
+      </div>
+      <div class="p-8 border-b border-white/5">
+        <div class="text-3xl font-extrabold tracking-tight">8 / 9</div>
+        <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/20 mt-3">Finish Rate</div>
+      </div>
+    </div>
+
+    <!-- Race Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse">
+        <thead>
+          <tr class="border-b border-white/10">
+            <th class="text-left py-4 px-4 text-[0.55rem] font-semibold tracking-[0.15em] uppercase text-white/25">Date</th>
+            <th class="text-left py-4 px-4 text-[0.55rem] font-semibold tracking-[0.15em] uppercase text-white/25">Race</th>
+            <th class="text-left py-4 px-4 text-[0.55rem] font-semibold tracking-[0.15em] uppercase text-white/25 hidden md:table-cell">Cat.</th>
+            <th class="text-left py-4 px-4 text-[0.55rem] font-semibold tracking-[0.15em] uppercase text-white/25">Distance</th>
+            <th class="text-left py-4 px-4 text-[0.55rem] font-semibold tracking-[0.15em] uppercase text-white/25 hidden lg:table-cell">Elevation</th>
+            <th class="text-left py-4 px-4 text-[0.55rem] font-semibold tracking-[0.15em] uppercase text-white/25">Time</th>
+            <th class="text-right py-4 px-4 text-[0.55rem] font-semibold tracking-[0.15em] uppercase text-white/25">Rank</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach (races as race)
+            <tr class="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+              <td class="py-4 px-4 text-sm text-white/30 tabular-nums whitespace-nowrap">{{ race.date }}</td>
+              <td class="py-4 px-4">
+                <div class="text-sm font-semibold">{{ race.flag }} {{ race.name }}</div>
+                <div class="text-xs text-white/25 mt-0.5 hidden md:block">{{ race.sub }}</div>
+              </td>
+              <td class="py-4 px-4 hidden md:table-cell">
+                <span class="inline-block px-2.5 py-1 border border-white/10 text-[0.65rem] font-semibold text-white/50">{{ race.category }}</span>
+              </td>
+              <td class="py-4 px-4 text-sm font-medium tabular-nums">{{ race.distance }}</td>
+              <td class="py-4 px-4 text-sm text-white/35 tabular-nums hidden lg:table-cell">{{ race.elevation }}</td>
+              @if (race.isDnf)
+                <td class="py-4 px-4 text-sm text-white/15 italic">DNF</td>
+                <td class="py-4 px-4 text-sm text-white/15 italic text-right">—</td>
+              @else
+                <td class="py-4 px-4 text-sm font-medium tabular-nums">{{ race.time }}</td>
+                <td class="py-4 px-4 text-sm font-bold tabular-nums text-right">{{ race.rank }}</td>
+              @endif
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 px-6 lg:px-12 py-8 mt-24">
+    <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <span class="text-xs text-white/20">© 2026 Paweł Dregan</span>
+      <div class="flex items-center gap-8">
+        <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" rel="noopener noreferrer" class="text-xs text-white/25 hover:text-white transition-colors">Instagram</a>
+        <a href="https://www.youtube.com/channel/UC3BxCTwxiIROpXagOexE9gw" target="_blank" rel="noopener noreferrer" class="text-xs text-white/25 hover:text-white transition-colors">YouTube</a>
+        <a href="ultrarunner-paw-coaching.html" class="text-xs text-white/25 hover:text-white transition-colors">Coaching</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paweł Dregan — Ultra Runner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .font-display { font-family: 'Bebas Neue', Impact, sans-serif; }
+    @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  </style>
+</head>
+
+<script server>
+import { defineProps } from 'stx'
+
+const marqueeItems = [
+  'SwissPeaks 700K Finisher',
+  'Lappland Arctic Ultra 500K',
+  'Eiger Ultra Trail E250',
+  'Crossing Switzerland 400K',
+  'Rappid.Runs Athlete',
+  'Falke Sport',
+  '1:1 Ultra Coaching',
+]
+</script>
+
+<body class="bg-black text-white font-sans antialiased">
+
+  <!-- Nav -->
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 px-6 lg:px-12 py-5 flex justify-between items-center transition-all duration-300">
+    <a href="ultrarunner-paw.html" class="text-xs font-bold tracking-[0.2em] uppercase">Paweł Dregan</a>
+    <ul class="hidden md:flex items-center gap-10">
+      <li><a href="ultrarunner-paw.html" class="text-xs font-medium tracking-wide text-white transition-colors">Home</a></li>
+      <li><a href="ultrarunner-paw-about.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">About</a></li>
+      <li><a href="ultrarunner-paw-races.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">Races</a></li>
+      <li><a href="ultrarunner-paw-coaching.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">Coaching</a></li>
+    </ul>
+    <div class="flex items-center gap-5">
+      <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="text-white/40 hover:text-white transition-colors">
+        <svg class="w-[18px] h-[18px] fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
+      <a href="https://www.youtube.com/channel/UC3BxCTwxiIROpXagOexE9gw" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="text-white/40 hover:text-white transition-colors">
+        <svg class="w-[18px] h-[18px] fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="min-h-screen flex flex-col justify-center px-6 lg:px-12 pt-32 pb-24 max-w-[1400px] mx-auto">
+    <p class="text-[0.65rem] font-semibold tracking-[0.25em] uppercase text-white/30 mb-8">Ultra Runner · Coach · Husband</p>
+    <h1 class="font-display text-[clamp(5rem,12vw,12rem)] leading-[0.85] tracking-tight mb-12">
+      PAWEŁ
+      <span class="block text-white/10">DREGAN</span>
+    </h1>
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end mt-auto pt-16 gap-12">
+      <p class="text-base font-light text-white/45 leading-relaxed max-w-[420px]">
+        Finisher of SwissPeaks 700K, Lappland Arctic Ultra 500K, and the
+        world's most demanding mountain races. Pushing limits where the
+        trail ends and willpower begins.
+      </p>
+      <div class="flex gap-12 lg:gap-16">
+        <div class="text-right">
+          <div class="text-3xl font-extrabold tracking-tight">700km</div>
+          <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/25 mt-2">Longest Race</div>
+        </div>
+        <div class="text-right">
+          <div class="text-3xl font-extrabold tracking-tight">2nd</div>
+          <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/25 mt-2">Lappland 500K</div>
+        </div>
+        <div class="text-right">
+          <div class="text-3xl font-extrabold tracking-tight">6d 23h</div>
+          <div class="text-[0.6rem] font-medium tracking-[0.15em] uppercase text-white/25 mt-2">Arctic Finish</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Marquee -->
+  <div class="overflow-hidden py-4">
+    <div class="flex gap-12 whitespace-nowrap" style="animation: scroll 30s linear infinite;">
+      @foreach (marqueeItems as item)
+        <span class="text-[0.65rem] font-semibold tracking-[0.15em] uppercase text-white/10 shrink-0">{{ item }}</span>
+        <span class="text-white/[0.05] shrink-0">·</span>
+      @endforeach
+      @foreach (marqueeItems as item)
+        <span class="text-[0.65rem] font-semibold tracking-[0.15em] uppercase text-white/10 shrink-0">{{ item }}</span>
+        <span class="text-white/[0.05] shrink-0">·</span>
+      @endforeach
+    </div>
+  </div>
+
+  <!-- Featured: Lappland -->
+  <section class="max-w-[1400px] mx-auto px-6 lg:px-12 py-24 lg:py-32">
+    <span class="text-[0.6rem] font-semibold tracking-[0.25em] uppercase text-white/25 block mb-12">Latest Achievement</span>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
+      <div>
+        <h2 class="font-display text-[clamp(3rem,6vw,5.5rem)] leading-[0.9] tracking-tight mb-8">LAPPLAND ARCTIC ULTRA 500K</h2>
+        <p class="text-base text-white/40 leading-relaxed max-w-[500px]">
+          515 km through the frozen wilderness of Swedish Lapland. Temperatures
+          dropping well below -30°C, pulling a sled through snow and ice for
+          nearly seven days straight. Silver medal finish.
+        </p>
+      </div>
+      <div class="flex items-end">
+        <div class="grid grid-cols-3 gap-8 w-full pt-8 border-t border-white/5">
+          <div>
+            <div class="text-2xl font-extrabold tracking-tight">515km</div>
+            <div class="text-[0.6rem] font-medium tracking-[0.1em] uppercase text-white/20 mt-1">Distance</div>
+          </div>
+          <div>
+            <div class="text-2xl font-extrabold tracking-tight">6d 23h</div>
+            <div class="text-[0.6rem] font-medium tracking-[0.1em] uppercase text-white/20 mt-1">Finish Time</div>
+          </div>
+          <div>
+            <div class="text-2xl font-extrabold tracking-tight">2nd</div>
+            <div class="text-[0.6rem] font-medium tracking-[0.1em] uppercase text-white/20 mt-1">Overall</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Next Race -->
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12 pb-32">
+    <div class="border border-white/10 p-8 lg:p-12 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 hover:border-white/20 transition-colors">
+      <div>
+        <div class="text-[0.55rem] font-bold tracking-[0.2em] uppercase text-white/25 mb-3">Upcoming</div>
+        <div class="font-display text-4xl lg:text-5xl tracking-tight">CROSSING SWITZERLAND 400K</div>
+        <div class="text-sm text-white/35 mt-2">400 km across the Swiss Alps — the next chapter</div>
+      </div>
+      <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-7 py-3 bg-white text-black text-xs font-semibold tracking-wide shrink-0 hover:bg-white/85 transition-colors">
+        Follow the Journey →
+      </a>
+    </div>
+  </div>
+
+  <!-- Section Previews -->
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12 pb-32">
+    <div class="grid grid-cols-1 md:grid-cols-3">
+      <a href="ultrarunner-paw-about.html" class="group border-t border-r border-white/5 p-10 lg:p-12 flex flex-col min-h-[320px] hover:bg-white/[0.02] transition-colors">
+        <span class="text-[0.6rem] font-semibold text-white/10 tracking-wide">01</span>
+        <h3 class="font-display text-4xl tracking-tight mt-8 mb-4">ABOUT</h3>
+        <p class="text-sm text-white/35 leading-relaxed mb-auto">
+          From first ultra to 700K finisher. The story, the philosophy,
+          and the partnerships that fuel the journey.
+        </p>
+        <span class="text-[0.7rem] font-semibold tracking-[0.1em] uppercase text-white/25 mt-10 group-hover:text-white transition-colors">Learn More →</span>
+      </a>
+      <a href="ultrarunner-paw-races.html" class="group border-t border-r border-white/5 p-10 lg:p-12 flex flex-col min-h-[320px] hover:bg-white/[0.02] transition-colors">
+        <span class="text-[0.6rem] font-semibold text-white/10 tracking-wide">02</span>
+        <h3 class="font-display text-4xl tracking-tight mt-8 mb-4">RACES</h3>
+        <p class="text-sm text-white/35 leading-relaxed mb-auto">
+          Full UTMB-indexed results. From Chiemgauer 100 to SwissPeaks 700K —
+          every start line, every finish.
+        </p>
+        <span class="text-[0.7rem] font-semibold tracking-[0.1em] uppercase text-white/25 mt-10 group-hover:text-white transition-colors">View Results →</span>
+      </a>
+      <a href="ultrarunner-paw-coaching.html" class="group border-t border-white/5 p-10 lg:p-12 flex flex-col min-h-[320px] hover:bg-white/[0.02] transition-colors">
+        <span class="text-[0.6rem] font-semibold text-white/10 tracking-wide">03</span>
+        <h3 class="font-display text-4xl tracking-tight mt-8 mb-4">COACHING</h3>
+        <p class="text-sm text-white/35 leading-relaxed mb-auto">
+          1:1 coaching built on real experience. Personalized plans for
+          athletes ready to go further.
+        </p>
+        <span class="text-[0.7rem] font-semibold tracking-[0.1em] uppercase text-white/25 mt-10 group-hover:text-white transition-colors">Get Started →</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 px-6 lg:px-12 py-8">
+    <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <span class="text-xs text-white/20">© 2026 Paweł Dregan</span>
+      <div class="flex items-center gap-8">
+        <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" rel="noopener noreferrer" class="text-xs text-white/25 hover:text-white transition-colors">Instagram</a>
+        <a href="https://www.youtube.com/channel/UC3BxCTwxiIROpXagOexE9gw" target="_blank" rel="noopener noreferrer" class="text-xs text-white/25 hover:text-white transition-colors">YouTube</a>
+        <a href="ultrarunner-paw-coaching.html" class="text-xs text-white/25 hover:text-white transition-colors">Coaching</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+<script client>
+  const navbar = document.getElementById('navbar')
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) {
+      navbar.style.background = 'rgba(0,0,0,0.9)'
+      navbar.style.backdropFilter = 'blur(20px)'
+      navbar.style.borderBottom = '1px solid rgba(255,255,255,0.06)'
+      navbar.style.paddingTop = '0.75rem'
+      navbar.style.paddingBottom = '0.75rem'
+    } else {
+      navbar.style.background = 'transparent'
+      navbar.style.backdropFilter = 'none'
+      navbar.style.borderBottom = 'none'
+      navbar.style.paddingTop = '1.25rem'
+      navbar.style.paddingBottom = '1.25rem'
+    }
+  })
+</script>
+
+</html>

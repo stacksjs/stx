@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — Paweł Dregan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .font-display { font-family: 'Bebas Neue', Impact, sans-serif; }
+  </style>
+</head>
+
+<script server>
+import { defineProps } from 'stx'
+
+interface Milestone {
+  year: string
+  title: string
+  detail: string
+}
+
+const milestones: Milestone[] = [
+  { year: '2025', title: 'Lappland Arctic Ultra 500K — 2nd Place', detail: '515 km · 6d 23h 27m' },
+  { year: '2025', title: 'SwissPeaks Trail 700K — Finisher', detail: '700 km · 175:43:56' },
+  { year: '2024', title: 'Eiger Ultra Trail E250 by UTMB', detail: '254 km · 70:42:49' },
+  { year: '2023', title: 'KAT100 by UTMB — 100 Miles', detail: '160 km · 36:15:50' },
+  { year: '2023', title: 'KoBoLT 140 KM — 6th Place', detail: '140 km · 19:57:00' },
+  { year: '2022', title: 'Pitz Alpine Glacier Trail P105', detail: '106 km · 26:31:54' },
+  { year: '2020', title: 'Chiemgauer 100 — First 100 Miler', detail: '160.9 km · 31:47:42' },
+]
+
+interface BioDetail {
+  label: string
+  value: string
+}
+
+const bioDetails: BioDetail[] = [
+  { label: 'Based In', value: 'Austria' },
+  { label: 'Specialty', value: 'Ultra Distance (100K–700K)' },
+  { label: 'Longest Finish', value: 'SwissPeaks 700K' },
+  { label: 'Best Result', value: '2nd — Lappland Arctic Ultra 500K' },
+  { label: 'Next Race', value: 'Crossing Switzerland 400K' },
+  { label: 'Coaching', value: '1:1 — DM on Instagram' },
+]
+</script>
+
+<body class="bg-black text-white font-sans antialiased">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 left-0 right-0 z-50 px-6 lg:px-12 py-4 flex justify-between items-center bg-black/90 backdrop-blur-xl border-b border-white/5">
+    <a href="ultrarunner-paw.html" class="text-xs font-bold tracking-[0.2em] uppercase">Paweł Dregan</a>
+    <ul class="hidden md:flex items-center gap-10">
+      <li><a href="ultrarunner-paw.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">Home</a></li>
+      <li><a href="ultrarunner-paw-about.html" class="text-xs font-medium tracking-wide text-white transition-colors">About</a></li>
+      <li><a href="ultrarunner-paw-races.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">Races</a></li>
+      <li><a href="ultrarunner-paw-coaching.html" class="text-xs font-medium tracking-wide text-white/50 hover:text-white transition-colors">Coaching</a></li>
+    </ul>
+    <div class="flex items-center gap-5">
+      <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="text-white/40 hover:text-white transition-colors">
+        <svg class="w-[18px] h-[18px] fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
+      <a href="https://www.youtube.com/channel/UC3BxCTwxiIROpXagOexE9gw" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="text-white/40 hover:text-white transition-colors">
+        <svg class="w-[18px] h-[18px] fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <header class="pt-40 lg:pt-48 pb-16 px-6 lg:px-12 max-w-[1400px] mx-auto">
+    <span class="text-[0.6rem] font-semibold tracking-[0.25em] uppercase text-white/25 block mb-8">About</span>
+    <h1 class="font-display text-[clamp(4rem,9vw,8rem)] leading-[0.85] tracking-tight">BORN TO RUN FAR.</h1>
+  </header>
+
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12">
+    <div class="border-t border-white/5"></div>
+
+    <!-- Bio -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 py-16 lg:py-24">
+      <div>
+        <p class="text-lg text-white/60 leading-relaxed mb-6">
+          I am an ultra runner specializing in the longest, most demanding races on the planet.
+          From the frozen trails of the Lappland Arctic Ultra to the endless alpine ridges of
+          SwissPeaks 700K, I seek out challenges that test every dimension of human endurance.
+        </p>
+        <p class="text-base text-white/40 leading-relaxed mb-6">
+          My journey in ultra running has taught me that the body is capable of far more than
+          the mind believes. Crossing 515 km of frozen Lapland wilderness, pulling a sled at
+          -30°C for nearly seven days — these experiences reshaped my understanding of limits.
+        </p>
+        <p class="text-base text-white/40 leading-relaxed">
+          I carry that philosophy into my coaching, helping athletes of all levels unlock their
+          potential and cross finish lines they once thought impossible. When I am not on the trail,
+          I am a husband and a dedicated coach. Running is not just a sport — it is a way of life.
+        </p>
+      </div>
+      <div>
+        @foreach (bioDetails as detail)
+          <div class="py-5 border-b border-white/5">
+            <div class="text-[0.55rem] font-semibold tracking-[0.2em] uppercase text-white/20 mb-2">{{ detail.label }}</div>
+            <div class="text-sm font-medium">{{ detail.value }}</div>
+          </div>
+        @endforeach
+      </div>
+    </div>
+
+    <div class="border-t border-white/5"></div>
+
+    <!-- Milestones -->
+    <section class="py-16 lg:py-24">
+      <h2 class="font-display text-5xl lg:text-6xl tracking-tight mb-12">MILESTONES</h2>
+      <div class="flex flex-col">
+        @foreach (milestones as milestone)
+          <div class="flex items-baseline justify-between py-5 border-b border-white/5 hover:bg-white/[0.015] -mx-4 px-4 transition-colors">
+            <div class="flex items-baseline gap-8 lg:gap-12">
+              <span class="text-xs font-semibold tracking-wide text-white/20 w-16 shrink-0">{{ milestone.year }}</span>
+              <span class="text-base font-semibold">{{ milestone.title }}</span>
+            </div>
+            <span class="text-sm text-white/30 hidden lg:block shrink-0 ml-8">{{ milestone.detail }}</span>
+          </div>
+        @endforeach
+      </div>
+    </section>
+
+    <div class="border-t border-white/5"></div>
+
+    <!-- Partners -->
+    <section class="py-16 lg:py-24">
+      <h2 class="font-display text-5xl lg:text-6xl tracking-tight mb-12">PARTNERS</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2">
+        <div class="border-t border-r border-white/5 p-10">
+          <div class="text-xl font-bold mb-2">Rappid.Runs</div>
+          <div class="text-sm text-white/30">Team Athlete</div>
+        </div>
+        <div class="border-t border-white/5 p-10">
+          <div class="text-xl font-bold mb-2">Falke Sport</div>
+          <div class="text-sm text-white/30">Apparel Partner</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 px-6 lg:px-12 py-8">
+    <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <span class="text-xs text-white/20">© 2026 Paweł Dregan</span>
+      <div class="flex items-center gap-8">
+        <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" rel="noopener noreferrer" class="text-xs text-white/25 hover:text-white transition-colors">Instagram</a>
+        <a href="https://www.youtube.com/channel/UC3BxCTwxiIROpXagOexE9gw" target="_blank" rel="noopener noreferrer" class="text-xs text-white/25 hover:text-white transition-colors">YouTube</a>
+        <a href="ultrarunner-paw-coaching.html" class="text-xs text-white/25 hover:text-white transition-colors">Coaching</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
