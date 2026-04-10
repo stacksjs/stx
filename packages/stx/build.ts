@@ -1,5 +1,5 @@
 import { dts } from 'bun-plugin-dtsx'
-import { cpSync, mkdirSync } from 'node:fs'
+import { copyFileSync, cpSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 // Build the main library
@@ -64,3 +64,19 @@ await Promise.all(optionalModules.map(mod =>
 // Copy built-in components to dist
 mkdirSync(resolve('./dist/components'), { recursive: true })
 cpSync(resolve('./src/components'), resolve('./dist/components'), { recursive: true })
+
+// Ship ambient global type declarations.
+// stx.d.ts contains module declarations for *.stx/*.md imports AND ambient
+// runtime globals (state, derived, effect, defineStore, useHead, etc.) that
+// the signals runtime injects into <script client> blocks. We copy it into
+// dist/ and prepend a triple-slash reference to dist/index.d.ts so consumers
+// pick the globals up automatically when they install @stacksjs/stx — no
+// per-app stx.d.ts workaround required.
+copyFileSync(resolve('./stx.d.ts'), resolve('./dist/stx.d.ts'))
+
+const indexDtsPath = resolve('./dist/index.d.ts')
+const indexDtsContent = await Bun.file(indexDtsPath).text()
+const referenceLine = '/// <reference path="./stx.d.ts" />'
+if (!indexDtsContent.includes(referenceLine)) {
+  await Bun.write(indexDtsPath, `${referenceLine}\n${indexDtsContent}`)
+}

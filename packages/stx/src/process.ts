@@ -28,6 +28,10 @@ import { injectCspMetaTag, processCspDirectives } from './csp'
 import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
 import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError, StxValidationError } from './error-handling'
+// Use static import for head module so we share the same currentHead instance
+// with variable-extractor.ts. Dynamic await import() can resolve to a separate
+// module instance in some Bun configurations.
+import { getHead as getHeadStatic } from './head'
 import { processExpressions, usesSignalsInScript } from './expressions'
 import { processBasicFormDirectives, processErrorDirective, processFormInputDirectives } from './forms'
 import { processTranslateDirective } from './i18n'
@@ -114,7 +118,24 @@ export async function processDirectives(
       // The serve paths (dev-server.ts, serve.ts) set this when serving pages.
       // Tests and programmatic usage don't set it, so output stays unwrapped.
       if (isTopLevel && options.autoShell && options.buildMode !== 'compile') {
-        const headConfig = (options as any).app?.head || {}
+        const baseHeadConfig = (options as any).app?.head || {}
+        // Merge runtime useHead() state into the static config so per-page
+        // useHead({ title, meta, link, ... }) calls actually affect the
+        // generated <head>. Read from the context-bound copy first (set by
+        // variable-extractor's useHead) and fall back to the head module's
+        // global state. The context path is reliable across module instances;
+        // the module-global path is the historical API.
+        const contextHead = (context.__stx_runtime_head as Record<string, any>) || null
+        const runtimeHead = contextHead ?? getHeadStatic()
+        const headConfig = {
+          ...baseHeadConfig,
+          ...(runtimeHead.title && { title: runtimeHead.title }),
+          meta: [...(baseHeadConfig.meta || []), ...(runtimeHead.meta || [])],
+          link: [...(baseHeadConfig.link || []), ...(runtimeHead.link || [])],
+          script: [...(baseHeadConfig.script || []), ...(runtimeHead.script || [])],
+          ...(runtimeHead.htmlAttrs && { htmlAttrs: { ...(baseHeadConfig.htmlAttrs || {}), ...runtimeHead.htmlAttrs } }),
+          ...(runtimeHead.bodyAttrs && { bodyAttrs: { ...(baseHeadConfig.bodyAttrs || {}), ...runtimeHead.bodyAttrs } }),
+        }
         result = ensureDocumentShell(result, headConfig)
 
         // Inject layout meta tag for SPA layout-change detection
@@ -645,7 +666,12 @@ async function processOtherDirectives(
 
   // Process head directives (@head, @title, @meta)
   const { processHeadDirective, processTitleDirective, processMetaDirective, resetHead } = await import('./head')
-  resetHead() // Reset head state for each page
+  // Reset head state unless the caller has already populated it via useHead()
+  // from a server script (e.g. bun-plugin/serve.ts extracts variables before
+  // calling processDirectives, and useHead writes to module-global state).
+  if (!context.__stx_head_preset) {
+    resetHead()
+  }
   const headResult = processHeadDirective(output)
   output = headResult.content
   output = processTitleDirective(output, context)

@@ -242,10 +242,16 @@ export async function serve(options: ServeOptions): Promise<void> {
       __dirname: path.dirname(filePath),
     }
 
-    const { processDirectives, extractVariables, defaultConfig, generateSpaShell, injectRouterScript } = await import('@stacksjs/stx')
+    const { processDirectives, extractVariables, defaultConfig, generateSpaShell, injectRouterScript, resetHead } = await import('@stacksjs/stx')
+    // Fresh head state per request — server scripts may call useHead() to set
+    // a per-page <title>/meta. We reset BEFORE extracting so each request
+    // starts clean, then mark the context so processDirectives doesn't reset
+    // again and wipe what useHead just populated.
+    resetHead()
     for (const scriptBody of serverScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
+    context.__stx_head_preset = true
 
     // Merge custom options with default config and stx.config.ts settings
     const config = {
@@ -273,7 +279,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     output = await processDirectives(output, context, filePath, config, dependencies)
 
     // Inject the SPA router (auto-initializes, guards against double-init)
-    output = injectRouterScript(output)
+    output = await injectRouterScript(output)
 
     // Strip plain <template> wrapper tags - browsers don't render template content
     // STX uses <template> in source but output should be renderable HTML
@@ -493,10 +499,13 @@ export async function serve(options: ServeOptions): Promise<void> {
       context[paramNames[i]] = paramValues[i]
     }
 
-    const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter } = await import('@stacksjs/stx')
+    const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter, resetHead: resetHeadDyn } = await import('@stacksjs/stx')
+    // Fresh head state per request (see static-route handler above for rationale)
+    resetHeadDyn()
     for (const scriptBody of dynServerScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
+    context.__stx_head_preset = true
 
     const config = {
       ...defaultConfig,
@@ -527,7 +536,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
 
     // Inject the SPA router
-    output = injectRouter(output)
+    output = await injectRouter(output)
 
     // Strip SFC <template> wrappers but preserve client-side directive templates
     const directiveTemplateRe2 = /@for|:for|@if|:if|x-for|x-if/

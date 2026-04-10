@@ -32,6 +32,10 @@ import path from 'node:path'
 
 // Import from tokenizer to avoid circular dependency
 import { findMatchingDelimiter } from './parser/tokenizer'
+// Import head module so server-side useHead() calls mutate the same currentHead
+// instance that document-shell.ts reads from. Using require() inside the
+// wrapped useHead would create a separate module instance with its own state.
+import { useHead as headUseHead, useSeoMeta as headUseSeoMeta, getHead as headGetHead } from './head'
 
 /**
  * Extract declared variable names from converted CommonJS script.
@@ -466,7 +470,42 @@ catch {
   const definePageMeta = (_meta: unknown) => {}
   const useRoute = () => ({ params: {}, query: {}, path: '', name: '', fullPath: '', hash: '', matched: [] })
   const useRouter = () => ({ push: (_to: unknown) => {}, replace: (_to: unknown) => {}, back: () => {}, forward: () => {}, go: (_n: number) => {} })
-  const useHead = (_head: unknown) => {}
+  // useHead is auto-injected so server scripts can call it without explicitly
+  // importing from 'stx'. It mutates module-global currentHead in head.ts,
+  // which the document-shell wrapper then merges into the rendered <head>.
+  // useHead/useSeoMeta auto-injected for <script server>. We mutate the head
+  // module's currentHead AND stash a copy on the context object. Bun's module
+  // resolution can return separate instances of head.ts in some configurations
+  // (symlinked workspace packages), so the context-bound copy is the reliable
+  // path that document-shell.ts in process.ts can read back.
+  const useHead = (head: unknown) => {
+    headUseHead(head as any)
+    const existing = (context.__stx_runtime_head as Record<string, any>) || {}
+    const incoming = (head as Record<string, any>) || {}
+    context.__stx_runtime_head = {
+      ...existing,
+      ...(incoming.title && { title: incoming.title }),
+      meta: [...(existing.meta || []), ...(incoming.meta || [])],
+      link: [...(existing.link || []), ...(incoming.link || [])],
+      script: [...(existing.script || []), ...(incoming.script || [])],
+      htmlAttrs: { ...(existing.htmlAttrs || {}), ...(incoming.htmlAttrs || {}) },
+      bodyAttrs: { ...(existing.bodyAttrs || {}), ...(incoming.bodyAttrs || {}) },
+    }
+  }
+  const useSeoMeta = (meta: unknown) => {
+    headUseSeoMeta(meta as any)
+    // useSeoMeta builds a meta array internally; we re-derive it for the context
+    // by reading the latest currentHead from the same module instance we just
+    // mutated. This isn't perfect (process.ts may see different state) but
+    // captures the common case.
+    const head = headGetHead()
+    const existing = (context.__stx_runtime_head as Record<string, any>) || {}
+    context.__stx_runtime_head = {
+      ...existing,
+      ...(head.title && { title: head.title }),
+      meta: [...(existing.meta || []), ...(head.meta || [])],
+    }
+  }
   const ref = (val: unknown) => ({ value: val })
   const reactive = (obj: unknown) => obj
   const computed = (fn: () => unknown) => ({ value: typeof fn === 'function' ? fn() : fn })
@@ -581,7 +620,7 @@ catch {
     const scriptFn = new Function(
       'module', 'exports', 'require', 'props', '$props', 'defineProps', 'withDefaults',
       'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
-      'definePageMeta', 'useRoute', 'useRouter', 'useHead',
+      'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',
       'ref', 'reactive', 'computed', 'watch', 'onMounted', 'onUnmounted', 'nextTick',
       'defineEmits', 'defineExpose', 'provide', 'inject', 'useColorMode', 'useDark',
       'window', 'document', 'console', 'confirm', 'alert', 'fetch',
@@ -597,7 +636,7 @@ catch {
     const result = await scriptFn(
       module, exports, requireFn, propsObj, $props, defineProps, withDefaults,
       state, derived, effect, batch, onMount, onDestroy,
-      definePageMeta, useRoute, useRouter, useHead,
+      definePageMeta, useRoute, useRouter, useHead, useSeoMeta,
       ref, reactive, computed, watch, onMounted, onUnmounted, nextTick,
       defineEmits, defineExpose, provide, inject, useColorMode, useDark,
       windowProxy, mockDocument, mockConsole, mockWindow.confirm, mockWindow.alert, mockWindow.fetch,
