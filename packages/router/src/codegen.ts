@@ -58,7 +58,7 @@ export function generateRouteManifest(routes: Route[], outputDir: string, pagesD
   }
 
   lines.push('] as const', '')
-  lines.push("export type RouteName = typeof routes[number]['pattern']", '')
+  lines.push('export type RouteName = typeof routes[number][\'pattern\']', '')
 
   fs.mkdirSync(outputDir, { recursive: true })
   fs.writeFileSync(path.join(outputDir, 'routes.ts'), lines.join('\n'))

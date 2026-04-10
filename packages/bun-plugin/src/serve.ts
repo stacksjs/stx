@@ -149,7 +149,7 @@ export async function serve(options: ServeOptions): Promise<void> {
             const glob = new Glob(`**/*${ext}`)
             const discovered = await Array.fromAsync(glob.scan({ cwd: pattern, followSymlinks: true }))
             files.push(...discovered
-              .filter(f => !excludeDirs.some(dir => f.startsWith(dir + '/')))
+              .filter(f => !excludeDirs.some(dir => f.startsWith(`${dir}/`)))
               .map(f => `${pattern}/${f}`.replace(/\/+/g, '/')))
           }
         }
@@ -1025,9 +1025,9 @@ export async function serve(options: ServeOptions): Promise<void> {
           // Resolve and verify the result is still inside publicRoot.
           // path.resolve normalizes .. segments before the prefix check, which
           // is the standard defense against directory traversal.
-          const resolvedPath = nodePathMod.resolve(publicRoot, '.' + safePathname)
+          const resolvedPath = nodePathMod.resolve(publicRoot, `.${safePathname}`)
           const isInsidePublicRoot = resolvedPath === publicRoot
-            || resolvedPath.startsWith(publicRoot + nodePathMod.sep)
+            || resolvedPath.startsWith(`${publicRoot}${nodePathMod.sep}`)
 
           if (isInsidePublicRoot) {
             try {
