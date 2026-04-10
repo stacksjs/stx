@@ -31,22 +31,43 @@ export interface ProductionServerOptions {
 }
 
 /**
- * MIME types for static file serving.
+ * MIME types for static file serving. Matches the dev server's
+ * `staticContentTypes` map in `bun-plugin/src/serve.ts`. Add new entries
+ * to both places (or extract to a shared module if this happens often).
  */
 const MIME_TYPES: Record<string, string> = {
+  // Code
   '.js': 'application/javascript',
+  '.mjs': 'application/javascript',
   '.css': 'text/css',
-  '.html': 'text/html',
   '.json': 'application/json',
+  // Markup / docs
+  '.html': 'text/html',
+  '.txt': 'text/plain',
+  '.xml': 'application/xml',
+  '.pdf': 'application/pdf',
+  // Images
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
+  '.bmp': 'image/bmp',
+  // Audio / video
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.ogg': 'audio/ogg',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  // Fonts
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
   '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+  '.eot': 'application/vnd.ms-fontobject',
 }
 
 /**
@@ -128,22 +149,54 @@ export async function startProductionServer(options: ProductionServerOptions = {
       }
 
       // ── Static assets from public/ ──
-      const publicPath = path.join(outputDir, 'public', pathname)
-      if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
-        const ext = path.extname(pathname)
-        const contentType = MIME_TYPES[ext] || 'application/octet-stream'
+      // Mounted at the URL root: .output/public/images/hero.jpg → /images/hero.jpg
+      // Includes path traversal protection, URI decoding, directory skipping,
+      // and fingerprinted-asset cache hints. Matches the dev server handler
+      // in bun-plugin/src/serve.ts.
+      if ((request.method === 'GET' || request.method === 'HEAD') && pathname !== '/') {
+        const publicRoot = path.resolve(outputDir, 'public')
 
-        // Fingerprinted assets get immutable cache headers
-        const isFingerprinted = pathname.startsWith('/__stx/') || /\.[0-9a-f]{8}\./.test(pathname)
+        // Decode URI components and reject embedded NULs
+        let safePathname: string
+        try {
+          safePathname = decodeURIComponent(pathname)
+        }
+        catch {
+          safePathname = pathname
+        }
 
-        return new Response(Bun.file(publicPath), {
-          headers: {
-            'Content-Type': contentType,
-            'Cache-Control': isFingerprinted
-              ? 'public, max-age=31536000, immutable'
-              : 'public, max-age=3600',
-          },
-        })
+        if (!safePathname.includes('\0')) {
+          // Resolve and verify the result stays inside publicRoot. path.resolve
+          // normalizes .. segments before the prefix check, which is the
+          // standard defense against directory traversal.
+          const resolvedPath = path.resolve(publicRoot, `.${safePathname}`)
+          const isInsidePublicRoot = resolvedPath === publicRoot
+            || resolvedPath.startsWith(`${publicRoot}${path.sep}`)
+
+          if (isInsidePublicRoot) {
+            try {
+              if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
+                const ext = path.extname(resolvedPath).toLowerCase()
+                const contentType = MIME_TYPES[ext] || 'application/octet-stream'
+
+                // Fingerprinted assets get immutable cache headers
+                const isFingerprinted = pathname.startsWith('/__stx/') || /\.[0-9a-f]{8}\./.test(pathname)
+
+                return new Response(Bun.file(resolvedPath), {
+                  headers: {
+                    'Content-Type': contentType,
+                    'Cache-Control': isFingerprinted
+                      ? 'public, max-age=31536000, immutable'
+                      : 'public, max-age=3600',
+                  },
+                })
+              }
+            }
+            catch {
+              // File read failed — fall through
+            }
+          }
+        }
       }
 
       // ── Route matching ──

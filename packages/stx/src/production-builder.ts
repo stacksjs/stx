@@ -25,6 +25,9 @@ import { loadStxConfig } from './config'
 
 /**
  * Production build configuration.
+ *
+ * Most fields are optional and fall back to `stx.config.ts` if not provided.
+ * Resolution order for each field: explicit option → config file → default.
  */
 export interface ProductionBuildOptions {
   /** Project root directory (default: process.cwd()) */
@@ -33,12 +36,19 @@ export interface ProductionBuildOptions {
   outputDir?: string
   /** Enable debug/dev runtime (default: false) */
   debug?: boolean
-  /** Components directory */
+  /** Components directory (default: stx.config componentsDir → 'components') */
   componentsDir?: string
-  /** Partials directory */
+  /** Partials directory (default: stx.config partialsDir → 'partials') */
   partialsDir?: string
-  /** Layouts directory */
+  /** Layouts directory (default: stx.config layoutsDir → 'layouts') */
   layoutsDir?: string
+  /**
+   * Public assets directory. Files in this directory are copied verbatim
+   * into `.output/public/` so the production server can serve them at the
+   * URL root (matching the dev server behavior).
+   * Default: stx.config publicDir → 'public'
+   */
+  publicDir?: string
 }
 
 /**
@@ -56,14 +66,73 @@ export interface ProductionBuildResult {
 }
 
 /**
+ * Files we never want to ship in a production build, regardless of where
+ * they live in the user's `publicDir`. macOS finder metadata, editor
+ * scratch files, and the like.
+ */
+const PUBLIC_ASSET_BLOCKLIST = new Set([
+  '.DS_Store',
+  'Thumbs.db',
+  'desktop.ini',
+  '.gitkeep',
+  '.gitignore',
+])
+
+/**
+ * Recursively copy a directory's contents into a destination, preserving
+ * structure. Skips paths that already exist in the destination so we don't
+ * clobber framework-written files (e.g. __stx/ and assets/), and skips
+ * common junk files (.DS_Store, Thumbs.db, etc).
+ */
+function copyPublicAssets(srcDir: string, destDir: string): { copied: number, bytes: number } {
+  let copied = 0
+  let bytes = 0
+
+  if (!fs.existsSync(srcDir)) {
+    return { copied, bytes }
+  }
+
+  function walk(currentSrc: string, currentDest: string): void {
+    const entries = fs.readdirSync(currentSrc, { withFileTypes: true })
+    for (const entry of entries) {
+      if (PUBLIC_ASSET_BLOCKLIST.has(entry.name)) continue
+
+      const srcPath = path.join(currentSrc, entry.name)
+      const destPath = path.join(currentDest, entry.name)
+
+      if (entry.isDirectory()) {
+        fs.mkdirSync(destPath, { recursive: true })
+        walk(srcPath, destPath)
+      }
+      else if (entry.isFile()) {
+        // Skip if a framework-written file already exists (e.g. __stx/runtime.js)
+        if (fs.existsSync(destPath)) continue
+        fs.copyFileSync(srcPath, destPath)
+        copied++
+        bytes += fs.statSync(destPath).size
+      }
+    }
+  }
+
+  walk(srcDir, destDir)
+  return { copied, bytes }
+}
+
+/**
  * Build the stx application for production.
  *
  * Produces a `.output/` directory with:
  * - `public/__stx/` — fingerprinted runtime and router JS
  * - `public/assets/` — bundled CSS
+ * - `public/<user files>` — copied verbatim from the project's `publicDir`
+ *   (default: `public/`). Source images, fonts, robots.txt, sitemap.xml, etc.
  * - `server/pages/` — compiled template JSON files
  * - `server/fragments/` — SPA navigation fragments
  * - `manifest.json` — route map and asset hashes
+ *
+ * Reads `stx.config.ts` once at the start for `publicDir`, `componentsDir`,
+ * `layoutsDir`, `partialsDir`, and `app.head`. Direct option overrides take
+ * precedence over the config file.
  */
 export async function buildForProduction(options: ProductionBuildOptions = {}): Promise<ProductionBuildResult> {
   const startTime = Date.now()
@@ -71,6 +140,22 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   const outputDir = path.resolve(root, options.outputDir || '.output')
 
   console.log('[stx build] Starting production build...')
+
+  // ── 0. Load stx.config.ts once ──
+  // Resolution order for each setting: explicit option → config file → default
+  let projectConfig: Record<string, any> = {}
+  try {
+    projectConfig = (await loadStxConfig()) as Record<string, any>
+  }
+  catch {
+    // No config file — use defaults
+  }
+
+  const componentsDir = options.componentsDir ?? projectConfig.componentsDir ?? 'components'
+  const partialsDir = options.partialsDir ?? projectConfig.partialsDir ?? 'partials'
+  const layoutsDir = options.layoutsDir ?? projectConfig.layoutsDir ?? 'layouts'
+  const publicDir = options.publicDir ?? projectConfig.publicDir ?? 'public'
+  const headConfigDefault = projectConfig.app?.head || {}
 
   // ── 1. Clean output directory ──
   if (fs.existsSync(outputDir)) {
@@ -125,9 +210,9 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   for (const route of routes) {
     try {
       const compiled = await compileTemplate(route.filePath, route.pattern, {
-        componentsDir: options.componentsDir,
-        partialsDir: options.partialsDir,
-        layoutsDir: options.layoutsDir,
+        componentsDir,
+        partialsDir,
+        layoutsDir,
         debug: options.debug,
       })
 
@@ -138,16 +223,9 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
         .replace(/runtime\.__STX_HASH__\.js/g, runtimeAsset.filename)
         .replace(/router\.__STX_HASH__\.js/g, routerAsset.filename)
 
-      // Load head config for document shell
-      let headConfig = {}
-      try {
-        const projectConfig = await loadStxConfig()
-        headConfig = (projectConfig as any).app?.head || {}
-      }
-      catch { /* no config */ }
-
-      // Wrap in document shell with router script reference
-      compiled.html = ensureDocumentShell(compiled.html, headConfig, {
+      // Wrap in document shell with router script reference.
+      // Uses the head config loaded once at the top of the build (from stx.config.ts).
+      compiled.html = ensureDocumentShell(compiled.html, headConfigDefault, {
         bodyScripts: [`<script src="/__stx/${routerAsset.filename}"></script>`],
       })
 
@@ -183,7 +261,23 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
     }
   }
 
-  // ── 5. Generate manifest ──
+  // ── 5. Copy user public assets ──
+  // Recursively copy `${publicDir}/**` into `.output/public/`. Skips paths
+  // that already exist in the destination, so framework-written files
+  // (`__stx/runtime.*.js`, `__stx/router.*.js`, `assets/*.css`) are
+  // preserved if a user happens to have a conflicting filename.
+  const userPublicSrc = path.resolve(root, publicDir)
+  if (fs.existsSync(userPublicSrc)) {
+    const { copied, bytes } = copyPublicAssets(
+      userPublicSrc,
+      path.join(outputDir, 'public'),
+    )
+    if (copied > 0) {
+      console.log(`[stx build] Copied ${copied} public asset${copied === 1 ? '' : 's'} (${(bytes / 1024).toFixed(1)}KB) from ${publicDir}/`)
+    }
+  }
+
+  // ── 6. Generate manifest ──
   const assets: ManifestAssets = {
     runtime: runtimeAsset.filename,
     router: routerAsset.filename,
