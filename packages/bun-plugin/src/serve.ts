@@ -23,6 +23,14 @@ export interface ServeOptions {
   componentsDir?: string
   layoutsDir?: string
   partialsDir?: string
+  /**
+   * Public directory served at the URL root, like Nuxt/Vite/Next/Astro.
+   * Any file under this directory is reachable at the matching URL path —
+   * `public/images/hero.jpg` → `GET /images/hero.jpg`.
+   *
+   * Resolution order: this option → `stx.config.ts` `publicDir` → `'public'`.
+   */
+  publicDir?: string
   quiet?: boolean
   /** Custom route handlers — checked before page routes */
   routes?: Record<string, (req: Request) => Response | Promise<Response>>
@@ -35,8 +43,49 @@ const defaultStxConfig = {
   partialsDir: 'partials',
   componentsDir: 'components',
   layoutsDir: 'layouts',
+  publicDir: 'public',
   ssr: true as boolean | undefined,
   defaultTitle: 'stx App' as string | undefined,
+}
+
+/**
+ * MIME types for static file serving. Used by both the legacy /assets/*
+ * handler and the publicDir handler. Add new entries here once and they
+ * apply everywhere.
+ */
+const staticContentTypes: Record<string, string> = {
+  // Code
+  css: 'text/css',
+  js: 'application/javascript',
+  mjs: 'application/javascript',
+  json: 'application/json',
+  // Markup / docs
+  html: 'text/html',
+  txt: 'text/plain',
+  xml: 'application/xml',
+  pdf: 'application/pdf',
+  // Images
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  avif: 'image/avif',
+  svg: 'image/svg+xml',
+  ico: 'image/x-icon',
+  bmp: 'image/bmp',
+  // Audio / video
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+  ogg: 'audio/ogg',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  // Fonts
+  woff: 'font/woff',
+  woff2: 'font/woff2',
+  ttf: 'font/ttf',
+  otf: 'font/otf',
+  eot: 'application/vnd.ms-fontobject',
 }
 
 /**
@@ -55,6 +104,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   const componentsDir = options.componentsDir ?? stxConfig.componentsDir ?? defaultStxConfig.componentsDir
   const layoutsDir = options.layoutsDir ?? stxConfig.layoutsDir ?? defaultStxConfig.layoutsDir
   const partialsDir = options.partialsDir ?? stxConfig.partialsDir ?? defaultStxConfig.partialsDir
+  const publicDir = options.publicDir ?? stxConfig.publicDir ?? 'public'
 
   const { patterns, port = 3456 } = options
 
@@ -934,25 +984,9 @@ export async function serve(options: ServeOptions): Promise<void> {
                 })
               }
 
-              const contentTypes: Record<string, string> = {
-                css: 'text/css',
-                js: 'application/javascript',
-                json: 'application/json',
-                png: 'image/png',
-                jpg: 'image/jpeg',
-                jpeg: 'image/jpeg',
-                gif: 'image/gif',
-                svg: 'image/svg+xml',
-                ico: 'image/x-icon',
-                woff: 'font/woff',
-                woff2: 'font/woff2',
-                ttf: 'font/ttf',
-                eot: 'application/vnd.ms-fontobject',
-              }
-
               return new Response(file, {
                 headers: {
-                  'Content-Type': contentTypes[ext || ''] || 'application/octet-stream',
+                  'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
                   'Cache-Control': 'public, max-age=31536000',
                 },
               })
@@ -965,33 +999,67 @@ export async function serve(options: ServeOptions): Promise<void> {
         }
       }
 
-      // Handle favicon.ico requests
-      if (path === '/favicon.ico') {
-        // Try common favicon locations
-        const faviconPaths = [
-          './public/favicon.ico',
-          './resources/assets/favicon.ico',
-          './favicon.ico',
-        ]
+      // Static files from publicDir (Nuxt/Vite/Next/Astro convention).
+      // Anything under publicDir is served at the corresponding URL path:
+      //   public/images/hero.jpg → GET /images/hero.jpg
+      //   public/robots.txt      → GET /robots.txt
+      //   public/favicon.ico     → GET /favicon.ico
+      //
+      // This runs after API routes and the /assets/* legacy handler but
+      // BEFORE the page router and 404 fallback, so a public file can never
+      // shadow a stx page (e.g. public/about.html doesn't override pages/about.stx
+      // because the page handler runs first elsewhere — this fires only when
+      // no page matched).
+      if ((req.method === 'GET' || req.method === 'HEAD') && path !== '/') {
+        const nodePathMod = await import('node:path')
+        const publicRoot = nodePathMod.resolve(process.cwd(), publicDir)
+        // Decode URI components (e.g. %20 → space) and reject embedded NULs
+        let safePathname: string
+        try {
+          safePathname = decodeURIComponent(path)
+        }
+        catch {
+          safePathname = path
+        }
+        if (!safePathname.includes('\0')) {
+          // Resolve and verify the result is still inside publicRoot.
+          // path.resolve normalizes .. segments before the prefix check, which
+          // is the standard defense against directory traversal.
+          const resolvedPath = nodePathMod.resolve(publicRoot, '.' + safePathname)
+          const isInsidePublicRoot = resolvedPath === publicRoot
+            || resolvedPath.startsWith(publicRoot + nodePathMod.sep)
 
-        for (const faviconPath of faviconPaths) {
-          try {
-            const favicon = Bun.file(faviconPath)
-            if (await favicon.exists()) {
-              return new Response(favicon, {
-                headers: {
-                  'Content-Type': 'image/x-icon',
-                  'Cache-Control': 'public, max-age=86400',
-                },
-              })
+          if (isInsidePublicRoot) {
+            try {
+              const file = Bun.file(resolvedPath)
+              if (await file.exists()) {
+                // Skip directories (Bun.file().exists() returns true for dirs in some versions)
+                const stat = await file.stat().catch(() => null)
+                if (stat && !stat.isDirectory()) {
+                  const ext = resolvedPath.split('.').pop()?.toLowerCase()
+                  return new Response(file, {
+                    headers: {
+                      'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
+                      // Dev-friendly cache: short, but not no-cache so the
+                      // browser doesn't refetch on every navigation. Production
+                      // builds copy public/ to dist/ where a CDN handles caching.
+                      'Cache-Control': 'public, max-age=3600',
+                    },
+                  })
+                }
+              }
+            }
+            catch {
+              // File read failed — fall through to 404
             }
           }
-          catch {
-            continue
-          }
         }
+      }
 
-        // Return empty 204 if no favicon found
+      // /favicon.ico fallback — only fires if publicDir didn't have it.
+      // Returns 204 instead of 404 so browsers stop nagging the dev server
+      // when no favicon is configured.
+      if (path === '/favicon.ico') {
         return new Response(null, { status: 204 })
       }
 
