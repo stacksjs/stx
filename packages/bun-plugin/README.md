@@ -539,25 +539,27 @@ Web components support several configuration options:
 
 ## TypeScript Support
 
-stx includes TypeScript declarations for importing .stx files. Make sure your `tsconfig.json` includes the necessary configuration:
+stx ships TypeScript declarations as part of the package — `*.stx` and
+`*.md` module declarations, the runtime globals injected into
+`<script client>` blocks (`state`, `derived`, `useStore`, `useHead`, etc.),
+and the `window.stx` registry interface. They're picked up automatically
+through the package's `types` entry as soon as `@stacksjs/stx` is installed.
+
+You do **not** need to create your own `stx.d.ts` file. Just include
+`.stx` files in your `tsconfig.json`:
 
 ```jsonc
 {
   "compilerOptions": {
-    // ... your other options
-    "types": ["bun"]
+    "types": ["bun"],
+    "moduleResolution": "bundler"
   },
-  "files": ["src/stx.d.ts"],
-  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx"]
+  "include": ["**/*.ts", "**/*.stx"]
 }
 ```
 
-Create a declaration file (`src/stx.d.ts`):
-
-```ts
-// Allow importing .stx files
-declare module '*.stx';
-```
+If you have an old `stx.d.ts` declaring `*.stx` modules or runtime globals
+as a workaround, it's now redundant and can be deleted.
 
 ## Server-Side Rendering Optimizations
 

@@ -307,22 +307,24 @@ serve({
 
 ### TypeScript Support
 
-Create a type declaration file:
+`@stacksjs/stx` ships its TypeScript declarations automatically. As soon as
+the package is installed, TypeScript picks up:
 
-```ts
-// src/stx.d.ts
-declare module '*.stx' {
-  const content: string
-  export default content
-}
-```
+- The `*.stx` and `*.md` module declarations (so `import HomePage from './pages/home.stx'` typechecks)
+- Ambient runtime globals injected into `<script client>` blocks: `state`, `derived`, `effect`, `batch`, `onMount`, `onDestroy`, `defineStore`, `useStore`, `useFetch`, `useQuery`, `useMutation`, `useHead`, `useSeoMeta`, `navigate`, `useRoute`, plus the Vue-compat aliases (`ref`, `computed`, `watch`, `defineProps`, `defineEmits`)
+- The `window.stx` registry interface
 
-Update your `tsconfig.json`:
+You do **not** need to write your own `stx.d.ts` workaround. If a tutorial
+or older project tells you to, that file is no longer required and can be
+deleted.
+
+All you need in `tsconfig.json` is:
 
 ```json
 {
   "compilerOptions": {
-    "types": ["bun"]
+    "types": ["bun"],
+    "moduleResolution": "bundler"
   },
   "include": ["**/*.ts", "**/*.stx"]
 }

@@ -43,6 +43,87 @@ stx provides built-in type declarations. Install the types:
 bun add -D @stacksjs/stx
 ```
 
+The package's main `types` entry references an ambient declaration file
+(`stx.d.ts`) that ships as part of the package. As soon as `@stacksjs/stx`
+is in your `node_modules`, TypeScript automatically picks up:
+
+1. **Module declarations** for `*.stx` and `*.md` imports — so
+   `import HomePage from './pages/home.stx'` typechecks without errors.
+2. **Runtime globals** injected by the signals runtime into `<script client>`
+   blocks (see [Runtime Globals](#runtime-globals) below).
+3. **The `window.stx` registry interface** so `window.stx.state(...)` etc.
+   are typed in browser code.
+
+You should **not** need to write your own `stx.d.ts` file. If you have one
+declaring `state`, `derived`, `useStore`, etc. as a workaround for missing
+types, you can delete it — those declarations are now part of the package.
+The only legitimate reason to keep an `stx.d.ts` in your project is for
+[Module Augmentation](#module-augmentation) — adding your *own* component
+or directive types to stx's interfaces.
+
+## Runtime Globals
+
+Inside `<script client>` blocks, the stx signals runtime auto-injects a set
+of functions and composables so you can use them without explicit imports.
+These are typed automatically through the package's ambient declarations:
+
+```html
+<script client>
+  // Signals — no import needed
+  const count = state(0)
+  const doubled = derived(() => count() * 2)
+  effect(() => console.log('count is', count()))
+
+  // Lifecycle
+  onMount(() => console.log('mounted'))
+  onDestroy(() => console.log('cleanup'))
+
+  // Stores
+  const session = useStore('session')
+
+  // Composables
+  const isMobile = useMediaQuery('(max-width: 768px)')
+  const theme = useLocalStorage('theme', 'light')
+
+  // Routing
+  navigate('/about')
+  const route = useRoute()
+</script>
+```
+
+The full list of auto-injected globals (matches `STX_AUTO_IMPORTS` in the
+runtime):
+
+| Category | Symbols |
+|---|---|
+| Signals | `state`, `derived`, `effect`, `batch`, `untrack`, `peek`, `isSignal`, `isDerived` |
+| Lifecycle | `onMount`, `onDestroy`, `onMounted`, `onUnmounted`, `onBeforeMount`, `onBeforeUnmount`, `onErrorCaptured` |
+| Vue compat | `ref`, `reactive`, `computed`, `watch`, `watchEffect` |
+| Composition API | `defineProps`, `withDefaults`, `defineEmits`, `defineExpose`, `provide`, `inject`, `nextTick` |
+| Stores | `defineStore`, `useStore`, `createStore` |
+| Routing | `navigate`, `goBack`, `goForward`, `useRoute`, `useSearchParams`, `setRouteParams` |
+| Data | `useFetch`, `useQuery`, `useMutation` |
+| DOM | `useRef`, `useEventListener`, `useClickOutside`, `useFocus` |
+| Storage | `useLocalStorage`, `useSessionStorage` |
+| Timers | `useDebounce`, `useThrottle`, `useInterval`, `useTimeout` |
+| State helpers | `useToggle`, `useCounter`, `useAsync` |
+| Color mode | `useColorMode`, `useDark` |
+| Head/SEO | `useHead`, `useSeoMeta` |
+| WebSocket | `useWebSocket` |
+
+You can still write explicit imports if you prefer:
+
+```html
+<script client>
+  import { state, derived } from '@stacksjs/stx'
+  // ...
+</script>
+```
+
+But the imports get rewritten to globals during template compilation
+anyway, so the explicit form is purely for IDE clarity — the auto-injected
+form runs identically.
+
 ## Using TypeScript in Templates
 
 ### Basic Type Usage

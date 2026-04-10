@@ -606,26 +606,31 @@ export default {
 
 ### Type Definitions
 
+stx ships ambient declarations for `*.stx` and `*.md` imports, the runtime
+globals (`state`, `derived`, `useStore`, `useHead`, etc.), and the
+`window.stx` registry — they're picked up automatically when you install
+`@stacksjs/stx`. **You do not need to redeclare `*.stx` yourself.**
+
+If you want to add your *own* augmentations on top, use `declare module`
+to extend stx's interfaces:
+
 ```typescript
-// types/global.d.ts
+// types/app.d.ts
+
+// Extend the Window interface for your app-specific globals
 declare global {
   interface Window {
-    __stx_APP__: stxApp
+    __MY_APP__: { user?: { id: string, name: string } }
   }
 }
 
-declare module '@stacksjs/core' {
+// Extend stx's component instance with your services
+declare module '@stacksjs/stx' {
   interface ComponentInstance {
     $auth: AuthService
     $router: Router
     $i18n: I18nService
   }
-}
-
-declare module '*.stx' {
-  import type { ComponentOptions } from '@stacksjs/core'
-  const component: ComponentOptions
-  export default component
 }
 
 export {}

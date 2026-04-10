@@ -5111,6 +5111,125 @@ useHead({
 
 ---
 
+## Sitemap & robots.txt
+
+stx ships utilities for generating `sitemap.xml` and `robots.txt` from
+either manual entries or by scanning your `pages/` directory. They live in
+the SEO module and are exported from the package root.
+
+### generateSitemap
+
+Build an XML sitemap from a list of entries.
+
+```typescript
+import { generateSitemap } from '@stacksjs/stx'
+
+const sitemap = generateSitemap([
+  { loc: '/', priority: 1.0, changefreq: 'weekly' },
+  { loc: '/about', priority: 0.8, changefreq: 'monthly' },
+  { loc: '/blog/post-1', lastmod: '2026-04-10', priority: 0.6 },
+], {
+  baseUrl: 'https://example.com',
+})
+```
+
+Returns a complete XML string ready to write to disk or return from a
+request handler.
+
+### scanForSitemapEntries
+
+Auto-discover routes by scanning a pages directory. Returns sitemap entries
+with sensible default priorities (`/` = 1.0, top-level pages = 0.8, nested
+= 0.6).
+
+```typescript
+import { generateSitemap, scanForSitemapEntries } from '@stacksjs/stx'
+
+const entries = await scanForSitemapEntries('./pages', {
+  baseUrl: 'https://example.com',
+})
+const sitemap = generateSitemap(entries, {
+  baseUrl: 'https://example.com',
+})
+```
+
+### generateRobotsTxt
+
+Build a `robots.txt` from rules.
+
+```typescript
+import { generateRobotsTxt } from '@stacksjs/stx'
+
+const robots = generateRobotsTxt({
+  rules: [
+    { userAgent: '*', allow: ['/'], disallow: ['/admin', '/api'] },
+    { userAgent: 'Googlebot', allow: ['/'] },
+  ],
+  sitemap: 'https://example.com/sitemap.xml',
+})
+```
+
+### generateDefaultRobotsTxt
+
+Sensible default — allows everything, points to your sitemap.
+
+```typescript
+import { generateDefaultRobotsTxt } from '@stacksjs/stx'
+
+const robots = generateDefaultRobotsTxt('https://example.com/sitemap.xml')
+// User-agent: *
+// Allow: /
+// Sitemap: https://example.com/sitemap.xml
+```
+
+### Wiring as routes
+
+The most common pattern is to expose `/sitemap.xml` and `/robots.txt` as
+API routes via `bun-plugin-stx/serve`'s `routes` option:
+
+```ts
+// serve.ts
+import { serve } from 'bun-plugin-stx/serve'
+import {
+  generateDefaultRobotsTxt,
+  generateSitemap,
+  scanForSitemapEntries,
+} from '@stacksjs/stx'
+
+const SITE_URL = 'https://example.com'
+
+await serve({
+  patterns: ['pages/'],
+  port: 3000,
+  routes: {
+    '/sitemap.xml': async () => {
+      const entries = await scanForSitemapEntries('./pages', { baseUrl: SITE_URL })
+      const xml = generateSitemap(entries, { baseUrl: SITE_URL })
+      return new Response(xml, {
+        headers: { 'Content-Type': 'application/xml' },
+      })
+    },
+    '/robots.txt': async () => {
+      const txt = generateDefaultRobotsTxt(`${SITE_URL}/sitemap.xml`)
+      return new Response(txt, {
+        headers: { 'Content-Type': 'text/plain' },
+      })
+    },
+  },
+})
+```
+
+Both routes are now live in dev and prod, generated dynamically from your
+`pages/` directory. New pages appear in the sitemap as soon as they're
+added — no manual maintenance.
+
+> **Tip:** if you'd rather serve a static sitemap (e.g. you're publishing
+> the same site to a CDN that can't run code), generate it once at build
+> time and write it to `public/sitemap.xml`. The publicDir handler will
+> serve it like any other static file.
+
+---
+
 ## Navigation API
 
 Clean navigation functions that replace raw `window.location` and `window.history` usage. All functions are auto-imported.

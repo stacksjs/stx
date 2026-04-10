@@ -204,7 +204,7 @@ export default defineConfig({
 | `root` | `string` | `.` | Project root directory |
 | `srcDir` | `string` | `src` | Source directory |
 | `outDir` | `string` | `dist` | Build output directory |
-| `publicDir` | `string` | `public` | Public assets directory |
+| `publicDir` | `string` | `public` | Public assets directory. Files are mounted at the URL root — `public/images/hero.jpg` is reachable at `/images/hero.jpg`. Matches the Nuxt/Vite/Next/Astro convention. |
 | `base` | `string` | `/` | Public base path |
 
 ### Server Options
@@ -234,6 +234,67 @@ export default defineConfig({
 | `features.streaming` | `boolean` | `true` | Streaming rendering |
 | `features.components` | `boolean` | `true` | Component system |
 | `features.devtools` | `boolean` | `true` | DevTools support |
+
+## Static Files
+
+Anything you place under `publicDir` (default: `public/`) is served at the
+URL root by the dev server. This matches the Nuxt/Vite/Next/Astro convention:
+
+```
+my-app/
+├── pages/
+│   └── index.stx          → /
+├── public/
+│   ├── favicon.ico        → /favicon.ico
+│   ├── robots.txt         → /robots.txt
+│   ├── images/
+│   │   └── hero.jpg       → /images/hero.jpg
+│   └── fonts/
+│       └── inter.woff2    → /fonts/inter.woff2
+└── stx.config.ts
+```
+
+In your templates, reference them with absolute paths:
+
+```html
+<img src="/images/hero.jpg" alt="Hero">
+<link rel="icon" href="/favicon.ico">
+```
+
+**Notes:**
+
+- Files are served with appropriate `Content-Type` headers — `.jpg` →
+  `image/jpeg`, `.svg` → `image/svg+xml`, `.woff2` → `font/woff2`, etc.
+  Common types covered: images (png, jpg, gif, webp, avif, svg, ico, bmp),
+  fonts (woff, woff2, ttf, otf, eot), media (mp4, webm, mp3, wav, ogg),
+  text (txt, xml, html, json), and `pdf`.
+- Pages take precedence — if you have both `pages/about.stx` and
+  `public/about.html`, the page wins. Public files are only served when
+  no page route matches.
+- Path traversal is blocked: requests like `/../package.json` or
+  `/images/../../secret.json` are rejected, never read.
+- The favicon at `public/favicon.ico` is served automatically. If no
+  favicon exists, `/favicon.ico` returns a 204 to stop the browser nagging.
+
+To override the directory name, set `publicDir` in `stx.config.ts`:
+
+```ts
+export default defineConfig({
+  publicDir: 'static',  // serve from static/ instead of public/
+})
+```
+
+Or override per-server when calling `serve()` programmatically:
+
+```ts
+import { serve } from 'bun-plugin-stx/serve'
+
+await serve({
+  patterns: ['pages/'],
+  publicDir: 'public',  // explicit override
+  port: 3000,
+})
+```
 
 ## Environment Variables
 

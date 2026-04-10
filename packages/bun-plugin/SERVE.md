@@ -235,25 +235,80 @@ bun --watch serve.ts
 
 ### With TypeScript
 
-Create type declarations for .stx files:
+`@stacksjs/stx` ships its TypeScript declarations automatically. As soon
+as the package is installed, TypeScript knows how to type:
 
-```typescript
-// stx.d.ts
-declare module '*.stx' {
-  const content: string
-  export default content
-}
-```
+- `.stx` and `.md` imports
+- The runtime globals injected into `<script client>` blocks
+  (`state`, `derived`, `effect`, `useStore`, `useHead`, etc.)
+- The `window.stx` registry
 
-Add to `tsconfig.json`:
+You do **not** need to write your own `stx.d.ts` file. Just include `.stx`
+files in your `tsconfig.json`:
 
 ```json
 {
-  "include": ["**/*.ts", "**/*.stx", "stx.d.ts"]
+  "compilerOptions": {
+    "moduleResolution": "bundler"
+  },
+  "include": ["**/*.ts", "**/*.stx"]
 }
 ```
 
-Now TypeScript won't complain about .stx imports!
+If you have an old `stx.d.ts` declaring `*.stx` modules or runtime globals
+as a workaround, you can delete it.
+
+### Static Files (publicDir)
+
+The dev server serves files from `public/` at the URL root, matching the
+Nuxt/Vite/Next/Astro convention:
+
+```
+my-app/
+├── pages/
+│   └── index.stx          → /
+├── public/
+│   ├── favicon.ico        → /favicon.ico
+│   ├── robots.txt         → /robots.txt
+│   ├── images/
+│   │   └── hero.jpg       → /images/hero.jpg
+│   └── fonts/
+│       └── inter.woff2    → /fonts/inter.woff2
+└── stx.config.ts
+```
+
+In templates, reference them with absolute paths:
+
+```html
+<img src="/images/hero.jpg" alt="Hero">
+<link rel="icon" href="/favicon.ico">
+```
+
+**Behavior:**
+
+- Files served with appropriate `Content-Type` (jpg, png, webp, avif, svg,
+  woff2, mp4, pdf, etc.)
+- **Page routes win.** `pages/about.stx` always takes precedence over
+  `public/about.html`. Public files only serve when no page route matches.
+- **Path traversal blocked.** Requests like `/../package.json` or
+  `/images/../../secret.json` are rejected.
+- **Favicon fallback.** If no `public/favicon.ico` exists, the server
+  returns 204 to stop browsers nagging.
+
+To use a different directory, set `publicDir` in `stx.config.ts` or pass
+it to `serve()`:
+
+```ts
+import { serve } from 'bun-plugin-stx/serve'
+
+await serve({
+  patterns: ['pages/'],
+  publicDir: 'static',  // serve from static/ instead of public/
+  port: 3000,
+})
+```
+
+If neither is set, the default is `'public'`.
 
 ### Integration with Existing Server
 
