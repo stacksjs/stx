@@ -32,6 +32,47 @@ export function getRouterScript(): string {
   var prefetching={};
   var isNavigating=false;
 
+  // Extract top-level CSS blocks (rules AND @media blocks with nested braces).
+  // The old regex ([^{}]+\{[^{}]*\}) silently dropped @media blocks because
+  // it couldn't handle nested braces — causing responsive classes (lg:, md:)
+  // to vanish after SPA navigation.
+  function extractCssBlocks(css){
+    var blocks=[];
+    var i=0;
+    var len=css.length;
+    while(i<len){
+      // Skip whitespace
+      while(i<len&&(css[i]===' '||css[i]==='\\n'||css[i]==='\\r'||css[i]==='\\t'))i++;
+      if(i>=len)break;
+      // Find the start of a block (first {)
+      var blockStart=i;
+      var bracePos=css.indexOf('{',i);
+      if(bracePos===-1)break;
+      // Walk forward tracking brace depth to find the matching close
+      var depth=0;
+      var j=bracePos;
+      while(j<len){
+        if(css[j]==='{')depth++;
+        else if(css[j]==='}'){depth--;if(depth===0){j++;break}}
+        j++;
+      }
+      if(depth!==0)break;
+      blocks.push(css.slice(blockStart,j).trim());
+      i=j;
+    }
+    return blocks;
+  }
+
+  function mergeCrosswindCSS(existing,incoming){
+    var blocks=extractCssBlocks(incoming);
+    var newBlocks=[];
+    for(var bi=0;bi<blocks.length;bi++){
+      if(existing.indexOf(blocks[bi])===-1)newBlocks.push(blocks[bi]);
+    }
+    if(newBlocks.length>0)return existing+'\\n'+newBlocks.join('\\n');
+    return null;
+  }
+
   function getContainer(){
     return document.querySelector(containerSel)||document.querySelector('[data-stx-content]')||document.querySelector('main');
   }
@@ -167,13 +208,8 @@ else {
         if(fragCrosswindCSS){
           var curCrosswind=document.querySelector('head style[data-crosswind]');
           if(curCrosswind){
-            var existing=curCrosswind.textContent||'';
-            var newRules=[];
-            fragCrosswindCSS.replace(/([^{}]+\{[^{}]*\})/g,function(rule){
-              if(existing.indexOf(rule.trim())===-1)newRules.push(rule);
-              return rule;
-            });
-            if(newRules.length>0)curCrosswind.textContent=existing+'\\n'+newRules.join('\\n');
+            var merged=mergeCrosswindCSS(curCrosswind.textContent||'',fragCrosswindCSS);
+            if(merged)curCrosswind.textContent=merged;
           }else{
             var cw=document.createElement('style');
             cw.setAttribute('data-crosswind','generated');
@@ -242,18 +278,8 @@ else {
       newStyles.forEach(function(s){if(s.getAttribute('data-crosswind'))newCrosswind=s});
 
       if(curCrosswind&&newCrosswind){
-        // Parse existing rules to avoid duplicates
-        var existing=curCrosswind.textContent||'';
-        var incoming_css=newCrosswind.textContent||'';
-        // Extract individual rule blocks from new CSS
-        var newRules=[];
-        incoming_css.replace(/([^{}]+\\{[^{}]*\\})/g,function(m){
-          if(existing.indexOf(m.trim())===-1)newRules.push(m);
-          return m;
-        });
-        if(newRules.length>0){
-          curCrosswind.textContent=existing+'\\n'+newRules.join('\\n');
-        }
+        var merged=mergeCrosswindCSS(curCrosswind.textContent||'',newCrosswind.textContent||'');
+        if(merged)curCrosswind.textContent=merged;
       }
 
       var incoming=[];
@@ -359,18 +385,31 @@ else {
           if(text.indexOf('__stx_setup_')!==-1)scripts.push(text);
         });
       } else {
-        // Same layout: only collect scripts from the container
+        // Same layout: collect scripts from the container
         newContent.querySelectorAll('script').forEach(function(s){
           var text=s.textContent||'';
           if(s.hasAttribute('src'))return;
           if(!text.trim())return;
           scripts.push(text);
         });
-        doc.querySelectorAll('head script').forEach(function(s){
+        // Collect setup scripts from <head> AND <body> (outside container).
+        // SSG builds place the setup function in <body> before <main>, not
+        // in <head>. Without this, SPA navigation on static sites never
+        // runs the setup and reactive data stays empty.
+        var seenSetups={};
+        scripts.forEach(function(t){if(t.indexOf('__stx_setup_')!==-1)seenSetups[t.substring(0,80)]=1});
+        doc.querySelectorAll('script').forEach(function(s){
           var text=s.textContent||'';
           if(s.hasAttribute('src'))return;
           if(!text.trim())return;
-          if(text.indexOf('__stx_setup_')!==-1)scripts.push(text);
+          if(text.indexOf('__stx_setup_')===-1)return;
+          // Skip signals runtime and router (they contain __stx_setup references but aren't setup functions)
+          if(text.indexOf("'use strict';var cloakStyle")!==-1)return;
+          if(text.indexOf('__stxRouter')!==-1)return;
+          var key=text.substring(0,80);
+          if(seenSetups[key])return;
+          seenSetups[key]=1;
+          scripts.push(text);
         });
       }
 

@@ -48,7 +48,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRouter, type Route } from './router'
-import { processDirectives } from './process'
+import { processDirectives, injectRouterScript } from './process'
 import { loadStxConfig } from './config'
 import { injectCrosswindCSS } from './dev-server/crosswind'
 
@@ -610,6 +610,11 @@ async function renderPage(
     stxOptions,
     dependencies
   )
+
+  // Inject the SPA router script so client-side navigation works in the
+  // static build. Without this, links do full page reloads instead of
+  // SPA fragment swaps.
+  html = await injectRouterScript(html)
 
   // Belt-and-suspenders: ensure Crosswind CSS is injected even if a race
   // condition inside processDirectives' parallel chunks skipped it. The

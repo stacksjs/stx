@@ -872,7 +872,12 @@ export async function resolveTemplatePath(
       ? options.layoutsDir
       : path.resolve(process.cwd(), options.layoutsDir)
 
-    const fromLayoutsDir = path.join(resolvedLayoutsDir, templatePath)
+    // Strip 'layouts/' prefix if present — same logic as the directory-walk
+    // layoutsDir resolution above. Without this, @extends('layouts/soon')
+    // with layoutsDir='resources/layouts' would resolve to
+    // 'resources/layouts/layouts/soon' (doubled prefix).
+    const strippedPath = templatePath.startsWith('layouts/') ? templatePath.slice(8) : templatePath
+    const fromLayoutsDir = path.join(resolvedLayoutsDir, strippedPath)
     if (await fileExists(fromLayoutsDir)) {
       if (options.debug) {
         console.log(`Found in options.layoutsDir: ${fromLayoutsDir}`)

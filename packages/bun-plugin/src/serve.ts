@@ -303,13 +303,17 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
     context.__stx_head_preset = true
 
-    // Merge custom options with default config and stx.config.ts settings
+    // Merge custom options with default config and stx.config.ts settings.
+    // Only forward known directive-processing keys from stxConfig — dumping
+    // the whole object (apiRoutes, css path, etc.) into processDirectives
+    // causes unexpected behavior.
     const config = {
       ...defaultConfig,
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
       ...(partialsDir && { partialsDir }),
       autoShell: true,
+      ssr: stxConfig.ssr ?? defaultStxConfig.ssr ?? true,
       app: stxConfig.app || {},
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
       ...('router' in stxConfig && { router: stxConfig.router }),
