@@ -20,7 +20,8 @@ import { buildRuntimeAsset, buildRouterAsset, type BuiltAsset } from './build-as
 import { compileTemplate, type CompiledTemplate } from './template-compiler'
 import { generateManifest, writeManifest, type ManifestRoute, type ManifestAssets } from './manifest'
 import { ensureDocumentShell } from './document-shell'
-import { stripDocumentWrapper } from './app-shell'
+import { extractContainerContent } from './app-shell'
+import { injectCrosswindCSS } from './dev-server/crosswind'
 import { loadStxConfig } from './config'
 
 /**
@@ -156,6 +157,7 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   const layoutsDir = options.layoutsDir ?? projectConfig.layoutsDir ?? 'layouts'
   const publicDir = options.publicDir ?? projectConfig.publicDir ?? 'public'
   const headConfigDefault = projectConfig.app?.head || {}
+  const routerContainer: string = projectConfig.router?.container || 'main'
 
   // ── 1. Clean output directory ──
   if (fs.existsSync(outputDir)) {
@@ -229,8 +231,36 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
         bodyScripts: [`<script src="/__stx/${routerAsset.filename}"></script>`],
       })
 
-      // Extract fragment AFTER shell wrapping (body content without document wrapper)
-      compiled.fragment = stripDocumentWrapper(compiled.html)
+      // Relocate data-stx scope attribute to <body>. processScriptSetup attaches
+      // the scope to the first non-meta element at compile time because <body>
+      // doesn't exist yet. After ensureDocumentShell adds <body>, move the
+      // attribute up so the signals runtime processes the entire page, not
+      // just the first layout element (e.g. <nav>).
+      const bodyHasDataStx = /<body[^>]*\bdata-stx=/.test(compiled.html)
+      if (!bodyHasDataStx) {
+        const dataStxMatch = compiled.html.match(/<(?!body\b)[a-zA-Z][a-zA-Z0-9-]*\b[^>]*?\s(data-stx="[^"]+")[^>]*>/)
+        if (dataStxMatch && dataStxMatch[1]) {
+          const dataStxAttr = dataStxMatch[1]
+          // Remove from original element
+          compiled.html = compiled.html.replace(' ' + dataStxAttr, '')
+          // Add to body
+          compiled.html = compiled.html.replace(/<body([^>]*)>/, `<body$1 ${dataStxAttr}>`)
+        }
+      }
+
+      // Regenerate Crosswind CSS AFTER shell wrapping so classes applied to
+      // <body> (via stx.config.ts `app.head.bodyClass` — e.g. `bg-black
+      // text-white`) get scanned and generated. The initial Crosswind pass
+      // runs during compileTemplate before <body> exists, so body classes are
+      // otherwise missed and the page renders unstyled.
+      compiled.html = compiled.html.replace(/<style data-crosswind="generated">[\s\S]*?<\/style>\s*/g, '')
+      compiled.html = await injectCrosswindCSS(compiled.html)
+
+      // Extract fragment AFTER shell wrapping — must contain ONLY the router
+      // container's inner content, not the full body. The SPA router injects
+      // fragments into the container via innerHTML, so anything outside the
+      // container (nav, footer, etc.) would duplicate on navigation.
+      compiled.fragment = extractContainerContent(compiled.html, routerContainer)
 
       // Write compiled template
       const safeRouteName = route.pattern === '/' ? 'index' : route.pattern.slice(1).replace(/\//g, '-').replace(/[[\]]/g, '_')

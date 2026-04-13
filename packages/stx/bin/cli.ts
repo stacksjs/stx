@@ -932,104 +932,82 @@ else {
           process.exit(1)
         }
 
-        // Production build mode — generates .output/ with compiled templates,
-        // fingerprinted assets, and SPA fragments for the production server
-        if (options.out === '.output' || process.env.NODE_ENV === 'production') {
-          const { buildForProduction } = await import('../src/production-builder')
-          const result = await buildForProduction({
-            root: input ? path.dirname(input) : undefined,
+        // Auto-detect SSG vs SSR from <script server> presence and dispatch
+        const { build } = await import('../src/build')
+
+        const result = await build({
+          root: input ? path.dirname(input) : undefined,
+          debug: options.verbose,
+          ssg: {
+            pagesDir: options.pages,
             outputDir: options.out,
+            domain: options.domain,
+            baseUrl: options.base,
+            sitemap: options.sitemap,
+            rss: options.rss,
+            minify: options.minify,
+            cache: options.cache !== false,
+            cleanOutput: options.clean,
+            concurrency: Number.parseInt(options.concurrency, 10) || 10,
+            publicDir: options.public,
+            trailingSlash: options.trailingSlash,
+            generate404: true,
+            hooks: options.verbose ? {
+              onPageStart: (route: string) => console.log(`    Generating: ${route}`),
+              onPageEnd: (route: string, html: string) => console.log(`    Generated: ${route} (${html.length} bytes)`),
+              onError: (error: Error, route?: string) => console.error(`    Error in ${route}: ${error.message}`),
+            } : undefined,
+          },
+          ssr: {
+            outputDir: options.out === 'dist' ? '.output' : options.out,
             debug: options.verbose,
-          })
-          const buildTime = ((performance.now() - startTime) / 1000).toFixed(2)
-          console.log(`\n  Production build complete!\n`)
-          console.log(`    Pages compiled: ${result.pageCount}`)
-          console.log(`    Output: ${result.outputDir}`)
-          console.log(`    Duration: ${buildTime}s\n`)
-          return
-        }
-
-        console.log('\n  Building static site...\n')
-        if (options.verbose) {
-          console.log(`  Pages directory: ${pagesDir}`)
-          console.log(`  Output directory: ${outputDir}`)
-          if (options.domain) console.log(`  Domain: ${options.domain}`)
-          console.log(`  Sitemap: ${options.sitemap}`)
-          console.log(`  Minify: ${options.minify}`)
-          console.log(`  Concurrency: ${options.concurrency}`)
-          console.log('')
-        }
-
-        // Call generateStaticSite with options (SSG mode)
-        const result = await generateStaticSite({
-          pagesDir: options.pages,
-          outputDir: options.out,
-          domain: options.domain,
-          baseUrl: options.base,
-          sitemap: options.sitemap,
-          rss: options.rss,
-          minify: options.minify,
-          cache: options.cache !== false,
-          cleanOutput: options.clean,
-          concurrency: Number.parseInt(options.concurrency, 10) || 10,
-          publicDir: options.public,
-          trailingSlash: options.trailingSlash,
-          generate404: true,
-          hooks: options.verbose ? {
-            onPageStart: (route) => console.log(`    Generating: ${route}`),
-            onPageEnd: (route, html) => console.log(`    Generated: ${route} (${html.length} bytes)`),
-            onError: (error, route) => console.error(`    Error in ${route}: ${error.message}`),
-          } : undefined,
+          },
         })
 
         const buildTime = ((performance.now() - startTime) / 1000).toFixed(2)
 
-        // Output summary
-        console.log(`\n  Build complete!\n`)
-        console.log(`    Pages generated: ${result.successCount}`)
-        if (result.failedCount > 0) {
-          console.log(`    Failed: ${result.failedCount}`)
+        if (result.mode === 'ssr' && result.ssr) {
+          console.log(`\n  Build complete! (SSR)\n`)
+          console.log(`    Pages compiled: ${result.ssr.pageCount}`)
+          console.log(`    Output: ${result.ssr.outputDir}`)
+          console.log(`    Duration: ${buildTime}s\n`)
         }
-        if (result.cachedCount > 0) {
-          console.log(`    From cache: ${result.cachedCount}`)
-        }
-        if (result.sitemapPath) {
-          console.log(`    Sitemap: ${path.relative(process.cwd(), result.sitemapPath)}`)
-        }
-        if (result.rssPath) {
-          console.log(`    RSS: ${path.relative(process.cwd(), result.rssPath)}`)
-        }
-        console.log(`    Build time: ${buildTime}s`)
-        console.log(`    Output: ${path.relative(process.cwd(), outputDir)}/\n`)
+        else if (result.ssg) {
+          console.log(`\n  Build complete! (SSG)\n`)
+          console.log(`    Pages generated: ${result.ssg.successCount}`)
+          if (result.ssg.failedCount > 0) console.log(`    Failed: ${result.ssg.failedCount}`)
+          if (result.ssg.cachedCount > 0) console.log(`    From cache: ${result.ssg.cachedCount}`)
+          if (result.ssg.sitemapPath) console.log(`    Sitemap: ${path.relative(process.cwd(), result.ssg.sitemapPath)}`)
+          if (result.ssg.rssPath) console.log(`    RSS: ${path.relative(process.cwd(), result.ssg.rssPath)}`)
+          console.log(`    Build time: ${buildTime}s`)
+          console.log(`    Output: ${path.relative(process.cwd(), options.out || 'dist')}/\n`)
 
-        // Show errors if any
-        if (result.errors.length > 0) {
-          console.log('  Errors:')
-          for (const error of result.errors) {
-            console.error(`    ${error.route}: ${error.error}`)
+          if (result.ssg.errors.length > 0) {
+            console.log('  Errors:')
+            for (const error of result.ssg.errors) {
+              console.error(`    ${error.route}: ${error.error}`)
+            }
+            console.log('')
           }
-          console.log('')
-        }
 
-        // Show generated pages if verbose
-        if (options.verbose && result.pages.length > 0 && result.pages.length <= 20) {
-          console.log('  Generated pages:')
-          for (const page of result.pages) {
-            const relativePath = path.relative(process.cwd(), page.outputPath)
-            const sizeKb = (page.size / 1024).toFixed(1)
-            console.log(`    ${relativePath} (${sizeKb} KB)${page.cached ? ' [cached]' : ''}`)
+          if (options.verbose && result.ssg.pages.length > 0 && result.ssg.pages.length <= 20) {
+            console.log('  Generated pages:')
+            for (const page of result.ssg.pages) {
+              const relativePath = path.relative(process.cwd(), page.outputPath)
+              const sizeKb = (page.size / 1024).toFixed(1)
+              console.log(`    ${relativePath} (${sizeKb} KB)${page.cached ? ' [cached]' : ''}`)
+            }
+            console.log('')
           }
-          console.log('')
-        }
 
-        // Exit with error if there were any failures (validation errors are fatal)
-        if (result.failedCount > 0) {
-          console.error(`\n  Build completed with ${result.failedCount} error(s). Fix the issues above and try again.\n`)
-          process.exit(1)
-        }
+          if (result.ssg.failedCount > 0) {
+            console.error(`\n  Build completed with ${result.ssg.failedCount} error(s). Fix the issues above and try again.\n`)
+            process.exit(1)
+          }
 
-        console.log(`  To preview locally:`)
-        console.log(`    cd ${options.out} && npx serve\n`)
+          console.log(`  To preview locally:`)
+          console.log(`    cd ${options.out || 'dist'} && npx serve\n`)
+        }
       }
       catch (error) {
         console.error('\n  Build failed:', error instanceof Error ? error.message : String(error))

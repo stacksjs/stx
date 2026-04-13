@@ -294,3 +294,108 @@ export function stripDocumentWrapper(html: string): string {
 export function isSpaNavigation(request: Request): boolean {
   return request.headers.get('X-STX-Router') === 'true'
 }
+
+/**
+ * Extract the inner content of the router container element from a full HTML
+ * document, preserving any `<style>` tags found in `<head>`.
+ *
+ * This is what fragment files should contain — NOT the whole body. The SPA
+ * router injects fragments directly into the container element via innerHTML,
+ * so the fragment must already match the shape of the container's content.
+ * If you pass it the whole body (nav + main + footer), the router will dump
+ * all of that inside `<main>`, producing a duplicated nav.
+ *
+ * Falls back to `stripDocumentWrapper` if the container cannot be located.
+ *
+ * @param html - Full HTML document (with or without doctype/html/head/body)
+ * @param containerSelector - Tag name or selector for the router container (e.g. `main`)
+ */
+export function extractContainerContent(html: string, containerSelector: string = 'main'): string {
+  const trimmed = html.trim()
+
+  // Preserve <style> tags from <head> so crosswind / scoped styles still apply
+  const headStyles: string[] = []
+  const headMatch = trimmed.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)
+  if (headMatch) {
+    const headContent = headMatch[1]
+    const styleRegex = /<style\b[^>]*>[\s\S]*?<\/style>/gi
+    let m: RegExpExecArray | null
+    while ((m = styleRegex.exec(headContent)) !== null) {
+      headStyles.push(m[0])
+    }
+  }
+
+  // Only support simple tag selectors for now (`main`, `body`, etc.)
+  // This matches the common router.container values.
+  const tag = containerSelector.replace(/^[.#]/, '').toLowerCase()
+  const openRe = new RegExp(`<${tag}\\b[^>]*>`, 'i')
+  const openMatch = trimmed.match(openRe)
+  if (!openMatch || openMatch.index === undefined) {
+    // Container not found — fall back to full body extraction
+    return stripDocumentWrapper(html)
+  }
+
+  const openEnd = openMatch.index + openMatch[0].length
+  // Walk forward looking for balanced close tag of the same name (handles nesting)
+  const openTagRe = new RegExp(`<${tag}\\b[^>]*>`, 'gi')
+  const closeTagRe = new RegExp(`</${tag}\\s*>`, 'gi')
+  openTagRe.lastIndex = openEnd
+  closeTagRe.lastIndex = openEnd
+  let depth = 1
+  let closeIdx = -1
+  while (depth > 0) {
+    const nextOpen = openTagRe.exec(trimmed)
+    const nextClose = closeTagRe.exec(trimmed)
+    if (!nextClose) break
+    if (nextOpen && nextOpen.index < nextClose.index) {
+      depth++
+      closeTagRe.lastIndex = nextOpen.index + nextOpen[0].length
+    }
+    else {
+      depth--
+      closeIdx = nextClose.index
+      if (depth > 0) {
+        openTagRe.lastIndex = nextClose.index + nextClose[0].length
+      }
+    }
+  }
+
+  if (closeIdx === -1) {
+    return stripDocumentWrapper(html)
+  }
+
+  const innerContent = trimmed.slice(openEnd, closeIdx).trim()
+
+  // Preserve <script> tags from the body that live OUTSIDE the container
+  // (e.g. the setup script injected before the layout's <nav>). Without these,
+  // SPA navigation swaps the fragment into <main> but never re-registers the
+  // page's signals, so reactive :for / :text / :if directives find no data.
+  // The router extracts and re-runs scripts from the fragment on navigation.
+  const bodyScripts: string[] = []
+  const bodyOpenMatch = trimmed.match(/<body\b[^>]*>/i)
+  const bodyCloseIdx = trimmed.lastIndexOf('</body>')
+  if (bodyOpenMatch && bodyOpenMatch.index !== undefined && bodyCloseIdx !== -1) {
+    const bodyStart = bodyOpenMatch.index + bodyOpenMatch[0].length
+    // Only scan body regions OUTSIDE the container: [bodyStart, openMatch.index) and (closeIdx + closeTagLength, bodyCloseIdx)
+    const regions: Array<[number, number]> = [
+      [bodyStart, openMatch.index],
+      [closeIdx + `</${tag}>`.length, bodyCloseIdx],
+    ]
+    const scriptRe = /<script\b[^>]*>[\s\S]*?<\/script>/gi
+    for (const [start, end] of regions) {
+      if (start >= end) continue
+      const region = trimmed.slice(start, end)
+      let sm: RegExpExecArray | null
+      scriptRe.lastIndex = 0
+      while ((sm = scriptRe.exec(region)) !== null) {
+        bodyScripts.push(sm[0])
+      }
+    }
+  }
+
+  const parts: string[] = []
+  if (headStyles.length > 0) parts.push(headStyles.join('\n'))
+  if (bodyScripts.length > 0) parts.push(bodyScripts.join('\n'))
+  parts.push(innerContent)
+  return parts.join('\n')
+}

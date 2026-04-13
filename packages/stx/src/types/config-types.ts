@@ -517,9 +517,17 @@ export interface StxConfig {
   defaultImage?: string
 
   /**
-   * Enable server-side rendering. When false, templates are served as a client-side
-   * SPA shell without directive processing (similar to Nuxt's `ssr: false`).
-   * @default true
+   * Enable server-side rendering at request time.
+   *
+   * - `false` (default) → SSG. `<script server>` runs at build time, output
+   *   goes to `dist/` as flat HTML files. Deploy to S3 + CloudFront.
+   * - `true` → SSR. `<script server>` runs per-request on a Bun server,
+   *   output goes to `.output/`. Deploy to EC2 behind CloudFront.
+   *
+   * `<script server>` works in both modes — this flag controls *when* it
+   * runs, not whether it's allowed.
+   *
+   * @default false
    */
   ssr?: boolean
 

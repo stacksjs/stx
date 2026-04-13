@@ -50,6 +50,7 @@ import path from 'node:path'
 import { createRouter, type Route } from './router'
 import { processDirectives } from './process'
 import { loadStxConfig } from './config'
+import { injectCrosswindCSS } from './dev-server/crosswind'
 
 // =============================================================================
 // Types
@@ -587,21 +588,34 @@ async function renderPage(
     },
   }
 
-  // Process the template with proper arguments
+  // Process the template with proper arguments.
+  //
+  // autoShell: true makes processDirectives wrap the output in a full HTML
+  // document (<!doctype>, <html>, <head>, <body>) using the head config from
+  // stx.config.ts. Without it the SSG writes bare fragments to disk, so the
+  // bodyClass (e.g. `bg-black text-white`) never has a <body> to attach to
+  // and pages render with default browser styles.
   const dependencies = new Set<string>()
   const stxOptions = {
     ...stxConfig,
     debug: false,
     cache: false,
+    autoShell: true,
   }
 
-  const html = await processDirectives(
+  let html = await processDirectives(
     content,
     context,
     route.filePath,
     stxOptions,
     dependencies
   )
+
+  // Belt-and-suspenders: ensure Crosswind CSS is injected even if a race
+  // condition inside processDirectives' parallel chunks skipped it. The
+  // function early-returns if <style data-crosswind="generated"> is already
+  // present, so this is a no-op for pages that already have it.
+  html = await injectCrosswindCSS(html)
 
   // Minify if enabled
   if (options.minify !== false) {
@@ -797,6 +811,19 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     const buildCache = new BuildCache(cfg.cacheDir)
     if (cfg.cache) {
       await buildCache.load()
+    }
+
+    // Pre-warm Crosswind config loading. We call generateCrosswindCSS once
+    // on a minimal HTML snippet so its cachedConfig module state is populated
+    // BEFORE the parallel page renders start. Without this, N parallel workers
+    // all race to load the config simultaneously and some end up with empty
+    // CSS, causing random pages to ship without styles.
+    try {
+      const { generateCrosswindCSS: warmCrosswind } = await import('./dev-server/crosswind')
+      await warmCrosswind('<div class="bg-black"></div>')
+    }
+    catch {
+      // If Crosswind isn't installed, proceed without pre-warming
     }
 
     // Discover routes

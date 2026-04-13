@@ -2068,18 +2068,17 @@ else if (!value && isInserted) {
           console.log('[stx] bindIf REMOVED, el.isConnected:', el.isConnected);
         }
         // Process the entire subtree when element is visible and not yet processed.
-        // IMPORTANT: defer to next microtask so child effects don't accidentally
-        // subscribe to the parent bindIf's tracked signals (which would cause
-        // the parent effect to re-run and remove/re-insert in an infinite loop).
+        // Defer to next microtask so child effects do not subscribe to the parent
+        // bindIf tracked signals. Use capturedComponentScope (not global
+        // componentScope) so iteration variables from an enclosing for-loop
+        // remain in scope. Process the element itself, not just children, so
+        // sibling directives on the same element (e.g. text binding alongside
+        // if) fire too. The if attribute was already removed, so no recursion.
         if (value && isInserted && !childrenProcessed) {
           childrenProcessed = true;
           setTimeout(function() {
-            var childScope = { ...componentScope, ...(capturedElementScope || {}), ...globalHelpers };
-            Array.from(el.childNodes).forEach(function(child) {
-              if (child.nodeType === 1 || child.nodeType === 3) {
-                processElement(child, childScope);
-              }
-            });
+            var childScope = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
+            processElement(el, childScope);
           }, 0);
         }
       }

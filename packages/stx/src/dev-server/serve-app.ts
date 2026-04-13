@@ -5,7 +5,7 @@ import type { Route, RouteMatch } from '../router'
 import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
-import { detectShell, processShell, composeShellWithPage, stripDocumentWrapper, isSpaNavigation } from '../app-shell'
+import { detectShell, processShell, composeShellWithPage, stripDocumentWrapper, isSpaNavigation, extractContainerContent } from '../app-shell'
 import {
   getHmrServer,
   injectHotReload,
@@ -565,6 +565,12 @@ catch {
             // Generate Crosswind CSS for this page's utility classes and include in fragment
             // Without this, SPA-navigated pages have no CSS for their utility classes
             content = await injectCrosswindCSS(content)
+            // Extract only the router container's inner content. The processed
+            // template includes the full layout (nav + main + footer). If we
+            // return it all, the router injects nav/footer INSIDE <main>,
+            // causing broken nesting and layout issues.
+            const routerContainer = (projectConfig as any)?.router?.container || 'main'
+            content = extractContainerContent(content, routerContainer)
             return new Response(content, {
               headers: {
                 'Content-Type': 'text/html',
