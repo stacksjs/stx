@@ -1,6 +1,7 @@
 import type { ProductionBuildOptions, ProductionBuildResult } from './production-builder'
 import type { SSGConfig, SSGResult } from './ssg'
 import type { BuildMode } from './build-mode-detector'
+import path from 'node:path'
 import { loadStxConfig } from './config'
 import { validateComponentScripts } from './build-mode-detector'
 
@@ -66,10 +67,15 @@ export async function buildApp(options: UnifiedBuildOptions = {}): Promise<Unifi
   if (mode === 'ssg') {
     const { generateStaticSite } = await import('./ssg')
     ssgResult = await generateStaticSite({
-      outputDir: 'dist',
-      generate404: true,
-      minify: true,
-      cleanOutput: true,
+      // Pull directory mappings from stx.config.ts so Stacks apps
+      // (pagesDir: 'resources/views') and standalone apps (pagesDir: 'pages')
+      // both work without explicit overrides.
+      pagesDir: config.build?.pagesDir || config.pagesDir || 'pages',
+      publicDir: config.build?.publicDir || config.publicDir || 'public',
+      outputDir: config.build?.outputDir || 'dist',
+      generate404: config.build?.generate404 ?? true,
+      minify: config.build?.minify ?? true,
+      cleanOutput: config.build?.cleanOutput ?? true,
       ...options.ssg,
     })
   }
