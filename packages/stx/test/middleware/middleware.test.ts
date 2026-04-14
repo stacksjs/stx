@@ -176,10 +176,10 @@ describe('stx Middleware', () => {
     // Create a middleware that uses context
     const contextAwareMiddleware: Middleware = {
       name: 'context-aware',
-      handler: (template, context) => {
+      handler: (template, context: Record<string, any>) => {
         // Insert the user's name from context
-        if (context.user && context.user.name) {
-          return template.replace('<!-- USER_NAME -->', context.user.name)
+        if (context.user && (context.user as Record<string, any>).name) {
+          return template.replace('<!-- USER_NAME -->', (context.user as Record<string, any>).name)
         }
         return template
       },

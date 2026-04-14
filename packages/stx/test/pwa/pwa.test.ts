@@ -581,7 +581,7 @@ describe('PWA Module', () => {
         pwa: {
           enabled: true,
           manifest: { name: 'Test' },
-          icons: {}, // Missing src
+          icons: {} as any, // Missing src — testing validation
         },
       }
 
@@ -740,6 +740,7 @@ describe('PWA Module', () => {
           enabled: true,
           manifest: { name: 'Test' },
           updates: {
+            enabled: true,
             message: 'Update available!',
           },
         },

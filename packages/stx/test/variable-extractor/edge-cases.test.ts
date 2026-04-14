@@ -178,7 +178,7 @@ describe('Variable extraction edge cases', () => {
         }
       `
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context).toHaveProperty('topLevel')
       expect(context.topLevel).toBe(1)
       expect(context).not.toHaveProperty('nested')
@@ -194,7 +194,7 @@ describe('Variable extraction edge cases', () => {
         }
       `
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context).toHaveProperty('outer')
       expect(context).toHaveProperty('fn')
       expect(context).not.toHaveProperty('inner')
@@ -209,7 +209,7 @@ describe('Variable extraction edge cases', () => {
         }
       `
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context).toHaveProperty('topVar')
       expect(context).toHaveProperty('helper')
       expect(context).not.toHaveProperty('innerVar')
@@ -225,7 +225,7 @@ describe('Variable extraction edge cases', () => {
         }
       `
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context).toHaveProperty('fetchData')
       expect(typeof context.fetchData).toBe('function')
       expect(context).not.toHaveProperty('response')
@@ -239,7 +239,7 @@ describe('Variable extraction edge cases', () => {
         }
       `
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context).toHaveProperty('asyncFn')
       expect(context).not.toHaveProperty('result')
     })
@@ -249,7 +249,7 @@ describe('Variable extraction edge cases', () => {
     it('should handle object destructuring', async () => {
       const code = `const { a, b } = { a: 1, b: 2 }`
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context).toHaveProperty('a')
       expect(context).toHaveProperty('b')
       expect(context.a).toBe(1)
@@ -259,7 +259,7 @@ describe('Variable extraction edge cases', () => {
     it('should handle array destructuring', async () => {
       const code = `const [x, y] = [1, 2]`
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context).toHaveProperty('x')
       expect(context).toHaveProperty('y')
     })
@@ -267,7 +267,7 @@ describe('Variable extraction edge cases', () => {
     it('should handle nested destructuring', async () => {
       const code = `const { outer: { inner } } = { outer: { inner: 1 } }`
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context).toHaveProperty('inner')
       expect(context.inner).toBe(1)
     })
@@ -275,7 +275,7 @@ describe('Variable extraction edge cases', () => {
     it('should handle destructuring with defaults', async () => {
       const code = `const { a = 1, b = 2 } = {}`
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context).toHaveProperty('a')
       expect(context).toHaveProperty('b')
       expect(context.a).toBe(1)
@@ -287,7 +287,7 @@ describe('Variable extraction edge cases', () => {
     it('should extract variables with simple values', async () => {
       const code = `const siteId = 'default'`
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context.siteId).toBe('default')
     })
 
@@ -298,7 +298,7 @@ describe('Variable extraction edge cases', () => {
         const c = true
       `
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context.a).toBe(1)
       expect(context.b).toBe('two')
       expect(context.c).toBe(true)
@@ -310,7 +310,7 @@ describe('Variable extraction edge cases', () => {
         const obj = { name: 'test' }
       `
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(context.items).toEqual([1, 2, 3])
       expect(context.obj).toEqual({ name: 'test' })
     })
@@ -322,7 +322,7 @@ describe('Variable extraction edge cases', () => {
         }
       `
       const context: Record<string, unknown> = {}
-      await extractVariables(code, context)
+      await extractVariables(code, context, '<test>')
       expect(typeof context.helper).toBe('function')
     })
   })

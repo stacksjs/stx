@@ -316,7 +316,7 @@ describe('@foreach with objects', () => {
   it('BUG: should iterate over object entries with key => value syntax', () => {
     const ctx = { items: { a: 1, b: 2, c: 3 } }
     const template = '@foreach(items as key => value){{ key }}={{ value }},@endforeach'
-    const result = processLoops(template, ctx, fp, opts, deps)
+    const result = processLoops(template, ctx, fp, opts)
     expect(result).not.toContain('Error')
     expect(result).toContain('a=1')
     expect(result).toContain('b=2')
@@ -326,7 +326,7 @@ describe('@foreach with objects', () => {
   it('BUG: should iterate over object with simple as syntax', () => {
     const ctx = { config: { host: 'localhost', port: 3000 } }
     const template = '@foreach(config as entry){{ entry }},@endforeach'
-    const result = processLoops(template, ctx, fp, opts, deps)
+    const result = processLoops(template, ctx, fp, opts)
     expect(result).not.toContain('Error')
   })
 })
@@ -339,7 +339,7 @@ describe('@foreach with Map', () => {
   it('BUG: should iterate over Map entries', () => {
     const ctx = { items: new Map([['a', 1], ['b', 2]]) }
     const template = '@foreach(items as item){{ item }},@endforeach'
-    const result = processLoops(template, ctx, fp, opts, deps)
+    const result = processLoops(template, ctx, fp, opts)
     expect(result).not.toContain('Error')
   })
 })
@@ -368,7 +368,7 @@ describe('@foreach robustness', () => {
   it('should handle array of mixed types', () => {
     const ctx = { items: [1, 'two', true, null, { key: 'val' }] }
     const template = '@foreach(items as item){{ item }},@endforeach'
-    const result = processLoops(template, ctx, fp, opts, deps)
+    const result = processLoops(template, ctx, fp, opts)
     expect(result).not.toContain('Error')
     expect(result).toContain('1')
     expect(result).toContain('two')
@@ -377,7 +377,7 @@ describe('@foreach robustness', () => {
   it('should not mutate original array', () => {
     const items = [1, 2, 3]
     const ctx = { items }
-    processLoops('@foreach(items as item){{ item }}@endforeach', ctx, fp, opts, deps)
+    processLoops('@foreach(items as item){{ item }}@endforeach', ctx, fp, opts)
     expect(items).toEqual([1, 2, 3])
     expect(items.length).toBe(3)
   })
@@ -388,7 +388,6 @@ describe('@foreach robustness', () => {
       { items: ['only'] },
       fp,
       opts,
-      deps,
     )
     expect(result).toContain('only')
   })

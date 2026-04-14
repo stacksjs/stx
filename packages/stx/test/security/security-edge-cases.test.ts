@@ -1221,8 +1221,8 @@ describe('safeEvaluate with Edge Case Contexts', () => {
   })
 
   it('should handle context with boolean values', () => {
-    expect(safeEvaluate('flag', { flag: true })).toBe(true)
-    expect(safeEvaluate('flag', { flag: false })).toBe(false)
+    expect(safeEvaluate<boolean>('flag', { flag: true })).toBe(true)
+    expect(safeEvaluate<boolean>('flag', { flag: false })).toBe(false)
   })
 
   it('should handle context with array values', () => {
@@ -1231,8 +1231,8 @@ describe('safeEvaluate with Edge Case Contexts', () => {
   })
 
   it('should handle ternary with string results', () => {
-    expect(safeEvaluate('x ? "yes" : "no"', { x: true })).toBe('yes')
-    expect(safeEvaluate('x ? "yes" : "no"', { x: false })).toBe('no')
+    expect(safeEvaluate<string>('x ? "yes" : "no"', { x: true })).toBe('yes')
+    expect(safeEvaluate<string>('x ? "yes" : "no"', { x: false })).toBe('no')
   })
 
   it('should handle Math operations', () => {

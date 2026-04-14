@@ -330,7 +330,7 @@ describe('signals integration - complex state patterns', () => {
 
     const errors = derived(() => {
       const { username, email, password } = form()
-      const errs: Partial<Record<keyof typeof form extends () => infer T ? keyof T : never, string>> = {}
+      const errs: Partial<Record<'username' | 'email' | 'password', string>> = {}
 
       if (username.length < 3) errs.username = 'Too short'
       if (!email.includes('@')) errs.email = 'Invalid email'

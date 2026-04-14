@@ -933,9 +933,9 @@ else {
         }
 
         // Auto-detect SSG vs SSR from <script server> presence and dispatch
-        const { build } = await import('../src/build')
+        const { buildApp } = await import('../src/build')
 
-        const result = await build({
+        const result = await buildApp({
           root: input ? path.dirname(input) : undefined,
           debug: options.verbose,
           ssg: {

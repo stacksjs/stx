@@ -438,36 +438,36 @@ describe('Safe Evaluator Comprehensive Security Tests', () => {
 
   describe('safeEvaluate()', () => {
     it('evaluates simple arithmetic: 1 + 2', () => {
-      expect(safeEvaluate('1 + 2', {})).toBe(3)
+      expect(safeEvaluate<number>('1 + 2', {})).toBe(3)
     })
 
     it('evaluates string literal', () => {
-      expect(safeEvaluate('"hello"', {})).toBe('hello')
+      expect(safeEvaluate<string>('"hello"', {})).toBe('hello')
     })
 
     it('accesses context variable', () => {
-      expect(safeEvaluate('name', { name: 'Alice' })).toBe('Alice')
+      expect(safeEvaluate<string>('name', { name: 'Alice' })).toBe('Alice')
     })
 
     it('accesses nested property: user.name', () => {
-      expect(safeEvaluate('user.name', { user: { name: 'Bob' } })).toBe('Bob')
+      expect(safeEvaluate<string>('user.name', { user: { name: 'Bob' } })).toBe('Bob')
     })
 
     it('accesses array index: items[0]', () => {
-      expect(safeEvaluate('items[0]', { items: ['first', 'second'] })).toBe('first')
+      expect(safeEvaluate<string>('items[0]', { items: ['first', 'second'] })).toBe('first')
     })
 
     it('calls string method: name.toUpperCase()', () => {
-      expect(safeEvaluate('name.toUpperCase()', { name: 'hello' })).toBe('HELLO')
+      expect(safeEvaluate<string>('name.toUpperCase()', { name: 'hello' })).toBe('HELLO')
     })
 
     it('evaluates Math operations: Math.max(1, 2, 3)', () => {
-      expect(safeEvaluate('Math.max(1, 2, 3)', {})).toBe(3)
+      expect(safeEvaluate<number>('Math.max(1, 2, 3)', {})).toBe(3)
     })
 
     it('evaluates ternary: x > 0 ? "positive" : "negative"', () => {
-      expect(safeEvaluate('x > 0 ? "positive" : "negative"', { x: 5 })).toBe('positive')
-      expect(safeEvaluate('x > 0 ? "positive" : "negative"', { x: -1 })).toBe('negative')
+      expect(safeEvaluate<string>('x > 0 ? "positive" : "negative"', { x: 5 })).toBe('positive')
+      expect(safeEvaluate<string>('x > 0 ? "positive" : "negative"', { x: -1 })).toBe('negative')
     })
 
     it('returns undefined for dangerous expression (does not throw)', () => {
@@ -483,7 +483,7 @@ describe('Safe Evaluator Comprehensive Security Tests', () => {
     })
 
     it('handles null in context gracefully', () => {
-      expect(safeEvaluate('x', { x: null })).toBe(null)
+      expect(safeEvaluate<null>('x', { x: null })).toBe(null)
     })
 
     it('handles undefined in context gracefully', () => {
@@ -491,16 +491,16 @@ describe('Safe Evaluator Comprehensive Security Tests', () => {
     })
 
     it('evaluates boolean expressions', () => {
-      expect(safeEvaluate('a && b', { a: true, b: false })).toBe(false)
+      expect(safeEvaluate<boolean>('a && b', { a: true, b: false })).toBe(false)
     })
 
     it('evaluates comparison operators', () => {
-      expect(safeEvaluate('a === b', { a: 1, b: 1 })).toBe(true)
+      expect(safeEvaluate<boolean>('a === b', { a: 1, b: 1 })).toBe(true)
     })
 
     it('evaluates template literals without dangerous content', () => {
       // Template literals are fine as long as they don't reference dangerous globals
-      expect(safeEvaluate('`${x} world`', { x: 'hello' })).toBe('hello world')
+      expect(safeEvaluate<string>('`${x} world`', { x: 'hello' })).toBe('hello world')
     })
   })
 
@@ -1296,13 +1296,13 @@ describe('Safe Evaluator Comprehensive Security Tests', () => {
     })
 
     it('should handle nullish coalescing', () => {
-      expect(safeEvaluate('val ?? "default"', { val: null })).toBe('default')
-      expect(safeEvaluate('val ?? "default"', { val: 0 })).toBe(0)
+      expect(safeEvaluate<string>('val ?? "default"', { val: null })).toBe('default')
+      expect(safeEvaluate<number>('val ?? "default"', { val: 0 })).toBe(0)
     })
 
     it('should handle optional chaining', () => {
       expect(safeEvaluate('obj?.nested?.value', { obj: {} })).toBeUndefined()
-      expect(safeEvaluate('obj?.nested?.value', { obj: { nested: { value: 42 } } })).toBe(42)
+      expect(safeEvaluate<number>('obj?.nested?.value', { obj: { nested: { value: 42 } } })).toBe(42)
     })
 
     it('should block tagged template literals that could be code execution', () => {

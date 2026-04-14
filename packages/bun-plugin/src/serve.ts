@@ -1132,7 +1132,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   // Print Bun-style startup banner
   if (!options.quiet) {
     const elapsed = (performance.now() - startTime).toFixed(0)
-    const routeCount = sourceFiles?.length || 0
+    const routeCount = (sourceFiles as string[] | null)?.length || 0
     const patternsStr = patterns.join(', ')
 
     console.log()

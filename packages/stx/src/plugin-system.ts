@@ -561,12 +561,7 @@ export const pluginManager: PluginManager = new PluginManager()
 // Helper Functions
 // =============================================================================
 
-/**
- * Create a plugin with type safety
- */
-export function definePlugin(plugin: StxPlugin): StxPlugin {
-  return plugin
-}
+// definePlugin is already exported above (line 272) — removed duplicate
 
 /**
  * Create a simple directive plugin

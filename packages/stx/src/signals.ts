@@ -1775,6 +1775,9 @@ else if (typeof value === 'string') {
     parent.insertBefore(placeholder, el);
     parent.removeChild(el);
 
+    // Capture :key expression BEFORE removing the attribute
+    const keyExpr = el.getAttribute(':key') || el.getAttribute('x-bind:key');
+
     // For <template> elements, use the content; otherwise clone the element
     let templateContent;
     if (isTemplate) {
@@ -1788,16 +1791,20 @@ else {
       wrapper.removeAttribute('@loading');
       wrapper.removeAttribute('@empty');
       wrapper.removeAttribute(':key');
+      wrapper.removeAttribute('x-bind:key');
       // Also remove @if / :if / x-if - we'll handle it inline
       if (ifExpr) { wrapper.removeAttribute('@if'); wrapper.removeAttribute(':if'); wrapper.removeAttribute('x-if'); }
       templateContent = wrapper;
     }
 
     let currentElements = [];
+    let currentKeys = [];
     let loadingElement = null;
     let emptyElement = null;
 
     // Helper to evaluate with captured scope (auto-unwraps signals)
+    // NOTE: This eagerly reads ALL signals in scope — use evalLazy inside effects
+    // to avoid over-broad dependency tracking.
     const evalExpr = (expression, extraScope = {}) => {
       try {
         // Skip placeholder expressions like __TITLE__ (build-time placeholders)
@@ -1811,6 +1818,24 @@ else {
         return fn(...Object.values(unwrapScope));
       }
 catch (e) {
+        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
+        return '';
+      }
+    };
+
+    // Lazy eval: uses with() so only variables ACTUALLY ACCESSED by the expression
+    // trigger signal reads. This prevents unrelated signals (like modalOpen) from
+    // being tracked as dependencies when we only care about the list signal.
+    const evalLazy = (expression, extraScope = {}) => {
+      try {
+        if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
+        const scope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers, ...extraScope };
+        const unwrapScope = createAutoUnwrapProxy(scope);
+        // new Function body is non-strict, so with() works — only accessed
+        // properties trigger the proxy's get trap and register as dependencies
+        const fn = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
+        return fn(unwrapScope);
+      } catch (e) {
         if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
         return '';
       }
@@ -1853,29 +1878,75 @@ catch (e) {
       }
     };
 
-    effect(() => {
-      currentElements.forEach(e => e.remove());
-      currentElements = [];
-      hideLoading();
-      hideEmpty();
+    // Helper: create DOM element(s) for a single list item
+    const createItemElements = (item, index) => {
+      const itemScope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers };
+      itemScope[itemName] = item;
+      if (indexName) itemScope[indexName] = index;
 
+      const elements = [];
+      if (isTemplate) {
+        Array.from(templateContent.childNodes).forEach(node => {
+          const clone = node.cloneNode(true);
+          if (clone.nodeType === 1) {
+            processElement(clone, itemScope);
+            clone.removeAttribute('x-cloak');
+            clone.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
+          }
+          elements.push(clone);
+        });
+      } else {
+        const clone = templateContent.cloneNode(true);
+        processElement(clone, itemScope);
+        clone.removeAttribute('x-cloak');
+        clone.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
+        elements.push(clone);
+      }
+      return elements;
+    };
+
+    // Helper: compute key for an item
+    const getItemKey = (item, index) => {
+      if (!keyExpr) return String(index);
+      try {
+        const scope = { [itemName]: item };
+        if (indexName) scope[indexName] = index;
+        const fn = new Function(itemName, indexName || '_idx', 'return ' + keyExpr);
+        return String(fn(item, index));
+      } catch (e) {
+        return String(index);
+      }
+    };
+
+    effect(() => {
+      // Use evalLazy for the list expression — only tracks the list signal,
+      // not every signal in the component scope. This prevents unrelated
+      // signals (modalOpen, menuOpen, etc.) from triggering a full rebuild.
       // Check loading state if @loading attribute provided (Feature #3)
       if (loadingExpr) {
-        const isLoading = evalExpr(loadingExpr);
+        const isLoading = evalLazy(loadingExpr);
         if (isLoading) {
+          currentElements.forEach(e => e.remove());
+          currentElements = [];
+          currentKeys = [];
           showLoading();
           return;
         }
       }
 
-      // Always evaluate list first to track it as a dependency
-      const list = evalExpr(listExpr);
+      hideLoading();
 
-      // If there's an @if condition, check it (after reading list to ensure dependency tracking)
+      // Evaluate list with LAZY tracking — only the list signal is tracked
+      const list = evalLazy(listExpr);
+
+      // If there's an @if condition, check it
       if (ifExpr) {
-        const ifValue = evalExpr(ifExpr);
+        const ifValue = evalLazy(ifExpr);
         if (!ifValue) {
-          // Condition is false, don't render any items
+          currentElements.forEach(e => e.remove());
+          currentElements = [];
+          currentKeys = [];
+          hideEmpty();
           return;
         }
       }
@@ -1884,52 +1955,67 @@ catch (e) {
 
       // Check empty state (Feature #3)
       if (list.length === 0) {
+        currentElements.forEach(e => e.remove());
+        currentElements = [];
+        currentKeys = [];
         if (emptyExpr) {
-          // If @empty has an expression, evaluate it
-          const emptyContent = evalExpr(emptyExpr);
+          const emptyContent = evalLazy(emptyExpr);
           if (emptyContent && typeof emptyContent === 'string') {
             const textNode = document.createTextNode(emptyContent);
             parent.insertBefore(textNode, placeholder);
             currentElements.push(textNode);
           }
-        }
-else if (emptyTemplate) {
+        } else if (emptyTemplate) {
           showEmpty();
         }
         return;
       }
 
-      list.forEach((item, index) => {
-        // Build item scope using passedScope instead of componentScope
-        const itemScope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers };
-        itemScope[itemName] = item;
-        if (indexName) itemScope[indexName] = index;
+      hideEmpty();
 
-        // Pass scope explicitly to processElement instead of modifying global componentScope
-        if (isTemplate) {
-          // For templates, clone and insert each child node
-          Array.from(templateContent.childNodes).forEach(node => {
-            const clone = node.cloneNode(true);
-            parent.insertBefore(clone, placeholder);
-            if (clone.nodeType === 1) {
-              processElement(clone, itemScope);
-              // Remove x-cloak from processed clones (prevents hidden cells in @for loops)
-              clone.removeAttribute('x-cloak');
-              clone.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
-            }
-            currentElements.push(clone);
-          });
+      // ── Key-based diffing ─────────────────────────────────────────
+      // Build new key list
+      const newKeys = list.map((item, i) => getItemKey(item, i));
+
+      // Build old key → element(s) map
+      const oldKeyMap = new Map();
+      for (let i = 0; i < currentKeys.length; i++) {
+        const k = currentKeys[i];
+        if (!oldKeyMap.has(k)) oldKeyMap.set(k, []);
+        oldKeyMap.get(k).push(currentElements[i]);
+      }
+
+      // Build new element list, reusing existing DOM nodes by key
+      const newElements = [];
+      const usedKeys = new Set();
+
+      for (let i = 0; i < list.length; i++) {
+        const key = newKeys[i];
+        const existing = oldKeyMap.get(key);
+
+        if (existing && existing.length > 0 && !usedKeys.has(key)) {
+          // Reuse existing element — move to correct position
+          const el = existing.shift();
+          parent.insertBefore(el, placeholder);
+          newElements.push(el);
+          usedKeys.add(key);
+        } else {
+          // New item — create DOM elements
+          const elements = createItemElements(list[i], i);
+          elements.forEach(el => parent.insertBefore(el, placeholder));
+          newElements.push(...elements);
         }
-else {
-          const clone = templateContent.cloneNode(true);
-          parent.insertBefore(clone, placeholder);
-          processElement(clone, itemScope);
-          // Remove x-cloak from processed clones
-          clone.removeAttribute('x-cloak');
-          clone.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
-          currentElements.push(clone);
+      }
+
+      // Remove old elements whose keys are no longer in the list
+      for (const [key, elements] of oldKeyMap) {
+        if (!usedKeys.has(key)) {
+          elements.forEach(el => el.remove());
         }
-      });
+      }
+
+      currentElements = newElements;
+      currentKeys = newKeys;
     });
   }
 

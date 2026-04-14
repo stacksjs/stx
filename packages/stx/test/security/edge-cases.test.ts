@@ -137,13 +137,13 @@ describe('Safe evaluator additional attacks', () => {
   })
 
   it('should handle nullish coalescing', () => {
-    expect(safeEvaluate('val ?? "default"', { val: null })).toBe('default')
-    expect(safeEvaluate('val ?? "default"', { val: 0 })).toBe(0)
+    expect(safeEvaluate<string>('val ?? "default"', { val: null })).toBe('default')
+    expect(safeEvaluate<number>('val ?? "default"', { val: 0 })).toBe(0)
   })
 
   it('should handle optional chaining', () => {
     expect(safeEvaluate('obj?.nested?.value', { obj: {} })).toBeUndefined()
-    expect(safeEvaluate('obj?.nested?.value', { obj: { nested: { value: 42 } } })).toBe(42)
+    expect(safeEvaluate<number>('obj?.nested?.value', { obj: { nested: { value: 42 } } })).toBe(42)
   })
 
   it('should block tagged template literals that could be code execution', () => {

@@ -192,10 +192,10 @@ describe('stx Custom Directives', () => {
     // Create a custom directive that accesses context data
     const userInfoDirective: CustomDirective = {
       name: 'userinfo',
-      handler: (content, params, context) => {
+      handler: (content, params, context: Record<string, any>) => {
         const field = params[0] || 'name'
-        if (context.user && context.user[field]) {
-          return context.user[field]
+        if (context.user && (context.user as Record<string, any>)[field]) {
+          return (context.user as Record<string, any>)[field]
         }
         return `[No user ${field} available]`
       },

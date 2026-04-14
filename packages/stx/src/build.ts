@@ -37,7 +37,7 @@ export interface UnifiedBuildResult {
  * `<script server>` works in both modes — the `ssr` flag controls *when* it
  * runs (build time vs request time), not whether it's allowed.
  */
-export async function build(options: UnifiedBuildOptions = {}): Promise<UnifiedBuildResult> {
+export async function buildApp(options: UnifiedBuildOptions = {}): Promise<UnifiedBuildResult> {
   const startTime = performance.now()
   const root = options.root || process.cwd()
 
