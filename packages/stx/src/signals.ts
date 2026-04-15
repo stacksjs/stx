@@ -3221,6 +3221,8 @@ else {
   window.useDark = useDark;
   window.useHead = useHead;
   window.useSeoMeta = useSeoMeta;
+  window.defineStore = window.stx.defineStore;
+  window.useStore = window.stx.useStore;
   window.ref = state;
   window.reactive = state;
   window.computed = derived;
