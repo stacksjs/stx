@@ -631,18 +631,56 @@ async function renderPage(
 }
 
 /**
- * Simple HTML minification
+ * Simple HTML minification.
+ *
+ * IMPORTANT: whitespace inside <script> blocks must NOT be collapsed to
+ * single-space — JavaScript `//` single-line comments rely on newlines to
+ * terminate. Collapsing `\n` into ` ` would make `//` comment out the
+ * entire rest of the script, causing "Unexpected end of input" errors.
  */
 function minifyHtml(html: string): string {
-  return html
-    // Remove HTML comments (except conditional comments)
-    .replace(/<!--(?!\[if)[\s\S]*?-->/g, '')
-    // Collapse whitespace
-    .replace(/\s+/g, ' ')
-    // Remove whitespace between tags
-    .replace(/>\s+</g, '><')
-    // Trim
-    .trim()
+  // Split HTML into script / non-script segments so we can minify them
+  // differently. Non-script HTML gets full whitespace collapsing.
+  // Script content only gets line-comment stripping (// → removed) while
+  // preserving newlines so remaining code stays syntactically valid.
+  const parts: string[] = []
+  let cursor = 0
+
+  // Walk through HTML, finding <script...>...</script> blocks
+  const scriptRe = /(<script[^>]*>)([\s\S]*?)(<\/script>)/gi
+  let match: RegExpExecArray | null
+  while ((match = scriptRe.exec(html)) !== null) {
+    // Minify the HTML BEFORE this script block
+    const htmlBefore = html.slice(cursor, match.index)
+    parts.push(
+      htmlBefore
+        .replace(/<!--(?!\[if)[\s\S]*?-->/g, '')
+        .replace(/\s+/g, ' ')
+        .replace(/>\s+</g, '><'),
+    )
+
+    // For the script block: strip // comments but keep the structure
+    const openTag = match[1]
+    let scriptBody = match[2]
+    const closeTag = match[3]
+
+    // Strip single-line comments (// ...) but not URLs (://), sourcemaps, or regex
+    scriptBody = scriptBody.replace(/([^:"\\'`])\/\/(?!\/)(?![*!])([^\n]*)/g, '$1')
+
+    parts.push(openTag + scriptBody + closeTag)
+    cursor = match.index + match[0].length
+  }
+
+  // Minify any trailing HTML after the last script
+  const remaining = html.slice(cursor)
+  parts.push(
+    remaining
+      .replace(/<!--(?!\[if)[\s\S]*?-->/g, '')
+      .replace(/\s+/g, ' ')
+      .replace(/>\s+</g, '><'),
+  )
+
+  return parts.join('').trim()
 }
 
 /**

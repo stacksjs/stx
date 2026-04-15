@@ -92,8 +92,15 @@ export function getRouterScript(): string {
     var curGroup=getLayoutGroup(curLayoutName);
     var newGroup=getLayoutGroup(newLayout);
     console.log('[router] layout check: current='+curLayoutName+'('+curGroup+') new='+(newLayout||'')+'('+newGroup+')');
+    // Different layout GROUP (e.g. app → auth): full reload
     if(curGroup!==newGroup){
       console.log('[router] layout group change:',curGroup,'→',newGroup,'— full reload to:',targetUrl);
+      return true;
+    }
+    // Same group but different SPECIFIC layout (e.g. layouts/app → layouts/coach):
+    // full body swap so nav, sidebar, and other layout-level elements update
+    if(curLayoutName && newLayout && curLayoutName!==newLayout){
+      console.log('[router] layout name change:',curLayoutName,'→',newLayout,'— full body swap');
       return true;
     }
     return false;

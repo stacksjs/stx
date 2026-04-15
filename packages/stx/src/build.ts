@@ -67,11 +67,12 @@ export async function buildApp(options: UnifiedBuildOptions = {}): Promise<Unifi
   if (mode === 'ssg') {
     const { generateStaticSite } = await import('./ssg')
     ssgResult = await generateStaticSite({
-      // Pull directory mappings from stx.config.ts so Stacks apps
-      // (pagesDir: 'resources/views') and standalone apps (pagesDir: 'pages')
-      // both work without explicit overrides.
-      pagesDir: config.build?.pagesDir || config.pagesDir || 'pages',
-      publicDir: config.build?.publicDir || config.publicDir || 'public',
+      // Pull directory mappings from stx.config.ts. The config loader
+      // may set root (e.g., 'resources') and strip it from pagesDir
+      // (e.g., 'resources/views' → 'views'). Rejoin so generateStaticSite
+      // resolves the correct full path from CWD.
+      pagesDir: path.join(config.root || '.', config.pagesDir || config.build?.pagesDir || 'pages'),
+      publicDir: path.join(config.root || '.', config.publicDir || config.build?.publicDir || 'public'),
       outputDir: config.build?.outputDir || 'dist',
       generate404: config.build?.generate404 ?? true,
       minify: config.build?.minify ?? true,

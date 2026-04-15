@@ -84,9 +84,13 @@ export async function processDirectives(
   options: StxOptions,
   dependencies: Set<string>,
 ): Promise<string> {
-  // When SSR is disabled, skip all directive processing and return the raw template.
-  // The calling code (e.g. serve.ts) is responsible for wrapping it in an SPA shell.
-  if (options.ssr === false) {
+  // When SSR is explicitly disabled AND we're serving (not building),
+  // skip directive processing and return the raw template as an SPA shell.
+  // NOTE: ssr: false in stx.config.ts means SSG mode (build at build time),
+  // NOT "skip processing." SSG still needs full template processing — the
+  // difference is WHEN it runs (build time vs request time), not WHETHER.
+  // This guard only applies to the legacy SPA-shell serving mode.
+  if (options.ssr === false && !options.autoShell && options.buildMode === 'spa') {
     return template
   }
 
