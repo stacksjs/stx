@@ -3,7 +3,6 @@ import type { SSGConfig, SSGResult } from './ssg'
 import type { BuildMode } from './build-mode-detector'
 import path from 'node:path'
 import { loadStxConfig } from './config'
-import { validateComponentScripts } from './build-mode-detector'
 
 export interface UnifiedBuildOptions {
   /** Project root directory (default: process.cwd()) */
@@ -48,19 +47,13 @@ export async function buildApp(options: UnifiedBuildOptions = {}): Promise<Unifi
 
   console.log(`[stx build] Mode: ${mode.toUpperCase()}${config.ssr ? ' (ssr: true in stx.config.ts)' : ' (default — ssr is false)'}`)
 
-  // ── Step 2: Validate component constraints ────────────────────────
-  const violations = await validateComponentScripts(root)
+  // NOTE: Removed the "components must be server OR client" validator.
+  // Mixed <script server> + <script client> is a legitimate pattern:
+  // <script server> for defineProps/withDefaults (compile-time prop
+  // extraction) and <script client> for runtime interactivity. Vue does
+  // the same with <script setup> + <script>.
 
-  if (violations.length > 0) {
-    console.error('\n[stx build] Component validation failed:\n')
-    for (const v of violations) {
-      console.error(`  ✗ ${v.message}`)
-    }
-    console.error('\n  Components must be server OR client — compose them via props/slots.\n')
-    throw new Error(`${violations.length} component(s) have both <script server> and <script client>`)
-  }
-
-  // ── Step 3: Dispatch to the correct builder ───────────────────────
+  // ── Step 2: Dispatch to the correct builder ───────────────────────
   let ssgResult: SSGResult | undefined
   let ssrResult: ProductionBuildResult | undefined
 
