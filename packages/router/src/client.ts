@@ -81,6 +81,19 @@ export function getRouterScript(): string {
   // Layout group detection — layouts in the same group share a <main> container.
   // Only truly different layout groups trigger a full page reload.
   var layoutCache={};
+  // Track executed script hashes to prevent redeclaration errors on navigation.
+  // Layout-level scripts (theme, nav setup) execute on initial page load and
+  // should NOT re-execute when navigating to another page with the same layout.
+  var executedScriptHashes={};
+  function hashScript(code){
+    var h=0;for(var i=0;i<code.length;i++){h=((h<<5)-h)+code.charCodeAt(i);h|=0}
+    return h;
+  }
+  // Record scripts from the initial page load
+  document.querySelectorAll('script').forEach(function(s){
+    var text=s.textContent||'';
+    if(text.trim()&&!s.hasAttribute('src'))executedScriptHashes[hashScript(text)]=1;
+  });
   function getLayoutGroup(layout){
     if(!layout)return 'app';
     if(layout.indexOf('auth')!==-1||layout.indexOf('guest')!==-1)return 'auth';
@@ -440,7 +453,22 @@ else {
       // Execute page scripts FIRST — they define setup functions and set _latestSetup
       function execScripts(){
         scripts.forEach(function(text){
+          // Skip scripts that were already executed (layout-level partials
+          // like theme.stx). Their top-level const/function declarations
+          // would throw "Identifier has already been declared" on re-execution.
+          // Exception: setup functions (__stx_setup_) must always re-execute
+          // because each page has its own setup, and import statements
+          // need special handling.
+          var h=hashScript(text);
+          var isSetup=text.indexOf('__stx_setup_')!==-1;
+          var hasImport=text.indexOf('import ')!==-1;
+          if(!isSetup&&executedScriptHashes[h])return;
+          executedScriptHashes[h]=1;
+          // Wrap scripts with import statements as modules (Bug 3 fix)
           var ns=document.createElement('script');
+          if(hasImport){
+            ns.type='module';
+          }
           ns.textContent=text;
           ns.setAttribute('data-stx-page','');
           document.body.appendChild(ns);
