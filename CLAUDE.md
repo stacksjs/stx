@@ -621,6 +621,8 @@ stx serve <directory> [--port 3000]
 
 37. **Dev Server No-Cache**: The dev server (`bun-plugin/src/serve.ts`) does NOT cache processed templates or partials. Every request re-reads files from disk and re-processes. This ensures file changes are reflected immediately on browser refresh without restarting the server. Production caching is handled separately.
 
+38. **Lazy Hydration (`stx-hydrate`)**: Defer `processElement` for a subtree until a trigger fires. Supported triggers: `visible` (IntersectionObserver, 50px rootMargin), `idle` (requestIdleCallback, 2000ms timeout), `interaction` (mouseenter/click/focusin/touchstart, once), `media:<query>` (matchMedia). Fires `stx:hydrated` CustomEvent on `window` when the subtree activates. Implementation in `signals.ts` `deferHydration()` — runs before the main `processElement` body, short-circuits processing until the trigger. Elements with `stx-hydrate` still ship their HTML immediately (no fetch, unlike `@async`) — only the wire-up is deferred. See `docs/features/lazy-hydration.md`.
+
 ---
 
 ## Linting

@@ -1239,7 +1239,83 @@ catch (e) {
     }
   }
 
+  // Lazy hydration: defer processElement for subtrees marked with stx-hydrate.
+  // Triggers: "visible" (IntersectionObserver), "idle" (requestIdleCallback),
+  // "interaction" (mouseenter/click/focus), "media:<query>" (matchMedia).
+  function deferHydration(el, trigger, scope) {
+    if (el.__stx_hydration_scheduled) return;
+    el.__stx_hydration_scheduled = true;
+
+    var run = function() {
+      if (el.__stx_hydrated) return;
+      el.__stx_hydrated = true;
+      el.removeAttribute('stx-hydrate');
+      // Walk children and process them with the captured scope
+      Array.from(el.children).forEach(function(child) { processElement(child, scope); });
+      // Also process the element itself (attributes/bindings on the host)
+      processAttributesOnly(el, scope);
+      window.dispatchEvent(new CustomEvent('stx:hydrated', { detail: { el: el, trigger: trigger } }));
+    };
+
+    if (trigger === 'idle') {
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2000 });
+      else setTimeout(run, 200);
+    }
+    else if (trigger === 'visible') {
+      if (typeof IntersectionObserver === 'function') {
+        var io = new IntersectionObserver(function(entries) {
+          entries.forEach(function(e) {
+            if (e.isIntersecting) { io.disconnect(); run(); }
+          });
+        }, { rootMargin: '50px' });
+        io.observe(el);
+      } else {
+        run(); // fallback: no IO support, hydrate immediately
+      }
+    }
+    else if (trigger === 'interaction') {
+      var events = ['mouseenter', 'click', 'focusin', 'touchstart'];
+      var handler = function() {
+        events.forEach(function(ev) { el.removeEventListener(ev, handler); });
+        run();
+      };
+      events.forEach(function(ev) { el.addEventListener(ev, handler, { once: true, passive: true }); });
+    }
+    else if (trigger && trigger.indexOf('media:') === 0) {
+      var query = trigger.slice(6);
+      var mql = window.matchMedia(query);
+      if (mql.matches) run();
+      else {
+        var mqHandler = function(e) {
+          if (e.matches) { mql.removeEventListener('change', mqHandler); run(); }
+        };
+        mql.addEventListener('change', mqHandler);
+      }
+    }
+    else {
+      // Unknown trigger — hydrate immediately
+      run();
+    }
+  }
+
+  // Minimal attribute-only pass for the host element of a deferred subtree.
+  // The full walk happens on children via processElement.
+  function processAttributesOnly(el, scope) {
+    // Just call processElement but mark it as already visited to prevent
+    // infinite recursion via the stx-hydrate check below.
+    el.__stx_hydrated = true;
+    processElement(el, scope);
+  }
+
   function processElement(el, scope = componentScope) {
+    // Lazy hydration: if this element has stx-hydrate and hasn't been hydrated
+    // yet, defer its subtree processing until the trigger fires.
+    if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute && el.hasAttribute('stx-hydrate') && !el.__stx_hydrated) {
+      var trigger = el.getAttribute('stx-hydrate') || 'idle';
+      deferHydration(el, trigger, scope);
+      return;
+    }
+
     if (el.nodeType === Node.ELEMENT_NODE && el.tagName === 'BUTTON' && el.hasAttribute && el.hasAttribute('@click')) {
 
     }
