@@ -1885,11 +1885,21 @@ catch (e) {
       }
     };
 
-    // Helper: create DOM element(s) for a single list item
-    const createItemElements = (item, index) => {
+    // Map of key → item signal. When a keyed item is reused and its data
+    // changes, we update the signal — all bindings (:text, :if, :class)
+    // that track it automatically re-evaluate.
+    const itemSignalMap = new Map();
+
+    // Helper: create DOM element(s) for a single list item.
+    // The item is wrapped in a signal so bindings track it reactively.
+    const createItemElements = (item, index, key) => {
+      const itemSignal = state(item);
+      const indexSignal = state(index);
+      if (key) itemSignalMap.set(key, { item: itemSignal, index: indexSignal });
+
       const itemScope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers };
-      itemScope[itemName] = item;
-      if (indexName) itemScope[indexName] = index;
+      itemScope[itemName] = itemSignal;
+      if (indexName) itemScope[indexName] = indexSignal;
 
       const elements = [];
       if (isTemplate) {
@@ -2006,9 +2016,17 @@ catch (e) {
           parent.insertBefore(el, placeholder);
           newElements.push(el);
           usedKeys.add(key);
+          // Update the item signal so bindings re-evaluate with new data.
+          // This is the fix for #1669 — without this, reused elements show
+          // stale data because the old bindings captured the old item via closure.
+          const signals = itemSignalMap.get(key);
+          if (signals) {
+            signals.item.set(list[i]);
+            signals.index.set(i);
+          }
         } else {
-          // New item — create DOM elements
-          const elements = createItemElements(list[i], i);
+          // New item — create DOM elements with a fresh item signal
+          const elements = createItemElements(list[i], i, key);
           elements.forEach(el => parent.insertBefore(el, placeholder));
           newElements.push(...elements);
         }
@@ -2018,6 +2036,7 @@ catch (e) {
       for (const [key, elements] of oldKeyMap) {
         if (!usedKeys.has(key)) {
           elements.forEach(el => el.remove());
+          itemSignalMap.delete(key);
         }
       }
 
