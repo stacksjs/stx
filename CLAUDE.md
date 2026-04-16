@@ -623,6 +623,16 @@ stx serve <directory> [--port 3000]
 
 38. **Lazy Hydration (`stx-hydrate`)**: Defer `processElement` for a subtree until a trigger fires. Supported triggers: `visible` (IntersectionObserver, 50px rootMargin), `idle` (requestIdleCallback, 2000ms timeout), `interaction` (mouseenter/click/focusin/touchstart, once), `media:<query>` (matchMedia). Fires `stx:hydrated` CustomEvent on `window` when the subtree activates. Implementation in `signals.ts` `deferHydration()` — runs before the main `processElement` body, short-circuits processing until the trigger. Elements with `stx-hydrate` still ship their HTML immediately (no fetch, unlike `@async`) — only the wire-up is deferred. See `docs/features/lazy-hydration.md`.
 
+39. **Route Guard Middleware (SSG)**: SSG builds run route middleware before rendering each page. Auto-loads from `middleware/` directory. Pages declare middleware via `definePageMeta({ middleware: ['auth'] })` in `<script server>`. Redirect → generates a static redirect page (`<meta http-equiv="refresh">`). Abort → skips the page. Global middleware via `stx.config.ts` `routeMiddleware.global`. See `packages/stx/src/ssg.ts` middleware integration.
+
+---
+
+## Additional Documentation
+
+- **[Bug Fixes](docs/bug-fixes.md)** — Comprehensive tracking of significant bugs found and fixed, with root causes and commit references
+- **[Lazy Hydration](docs/features/lazy-hydration.md)** — `stx-hydrate` attribute documentation with trigger types and usage examples
+- **[Deployment](docs/features/deployment.md)** — Deployment guide for static sites and SSR apps
+
 ---
 
 ## Linting
