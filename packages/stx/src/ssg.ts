@@ -51,6 +51,14 @@ import { createRouter, type Route } from './router'
 import { processDirectives, injectRouterScript } from './process'
 import { loadStxConfig } from './config'
 import { injectCrosswindCSS } from './dev-server/crosswind'
+import {
+  loadMiddlewareFromDirectory,
+  runMiddleware,
+  createMiddlewareContext,
+  createRouteLocation,
+  clearMiddleware,
+  getMiddlewareNames,
+} from './route-middleware'
 
 // =============================================================================
 // Types
@@ -869,6 +877,16 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
       // If Crosswind isn't installed, proceed without pre-warming
     }
 
+    // Load route middleware from middleware/ directory
+    clearMiddleware()
+    const middlewareDir = (stxConfig as any)?.routeMiddleware?.dir || 'middleware'
+    await loadMiddlewareFromDirectory(process.cwd(), middlewareDir)
+    const loadedMiddleware = getMiddlewareNames()
+    if (loadedMiddleware.length > 0) {
+      console.log(`Loaded ${loadedMiddleware.length} middleware: ${loadedMiddleware.join(', ')}`)
+    }
+    const globalMiddleware: string[] = (stxConfig as any)?.routeMiddleware?.global || []
+
     // Discover routes
     const routes = createRouter('.', { pagesDir: cfg.pagesDir })
     console.log(`Found ${routes.length} routes`)
@@ -914,8 +932,47 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
         try {
           await cfg.hooks.onPageStart?.(url)
 
-          // Run route param validation if defined in page meta
+          // Extract page meta (middleware, validate) from definePageMeta()
           const pageContent = await Bun.file(route.filePath).text()
+          const pageMeta = extractPageMeta(pageContent)
+
+          // Run route middleware (global + page-specific)
+          const pageMiddleware = pageMeta?.middleware
+            ? (Array.isArray(pageMeta.middleware) ? pageMeta.middleware : [pageMeta.middleware])
+            : []
+          const allMiddleware = [...globalMiddleware, ...pageMiddleware]
+
+          if (allMiddleware.length > 0) {
+            const toRoute = createRouteLocation(url, params, pageMeta || {})
+            const ctx = createMiddlewareContext(toRoute, null)
+            const middlewareResult = await runMiddleware(allMiddleware, ctx)
+
+            if (middlewareResult.redirect) {
+              // Generate a static redirect page
+              const redirectUrl = typeof middlewareResult.redirect === 'string'
+                ? middlewareResult.redirect
+                : middlewareResult.redirect.path || middlewareResult.redirect
+              const redirectHtml = generateRedirectPage(String(redirectUrl), url)
+              const outputPath = determineOutputPath(url, cfg)
+              await fs.promises.mkdir(path.dirname(outputPath), { recursive: true })
+              await Bun.write(outputPath, redirectHtml)
+              result.successCount++
+              result.pages.push({ route: url, outputPath, size: Buffer.byteLength(redirectHtml), cached: false })
+              sitemapEntries.push({ url, lastModified: new Date().toISOString() })
+              console.log(`  ↳ ${url} → redirect to ${redirectUrl}`)
+              return
+            }
+
+            if (middlewareResult.abort) {
+              const msg = typeof middlewareResult.abort === 'string'
+                ? middlewareResult.abort
+                : middlewareResult.abort?.error?.message || 'aborted'
+              console.warn(`  ↳ ${url} — middleware aborted: ${msg}`)
+              return
+            }
+          }
+
+          // Run route param validation if defined in page meta
           const metaMatch = pageContent.match(/definePageMeta\s*\(\s*\{[\s\S]*?validate\s*:\s*((?:\([^)]*\)|[^,}])*(?:\{[\s\S]*?\})?)/m)
           if (metaMatch) {
             try {
@@ -1338,6 +1395,61 @@ export function createMarkdownLoader(): ContentLoader {
       return { content: html, data, toc }
     },
   }
+}
+
+// =============================================================================
+// Middleware Helpers
+// =============================================================================
+
+/**
+ * Extract definePageMeta({ middleware, validate, ... }) from page content.
+ * Uses regex + safe eval — middleware names must be static strings.
+ */
+function extractPageMeta(content: string): Record<string, any> | null {
+  const match = content.match(/definePageMeta\s*\(\s*(\{[\s\S]*?\})\s*\)/m)
+  if (!match) return null
+  try {
+    // Only extract simple object literal — no dynamic expressions
+    const fn = new Function(`return ${match[1]}`)
+    return fn()
+  }
+  catch {
+    return null
+  }
+}
+
+/**
+ * Generate a static HTML redirect page.
+ * Works on all static hosts (S3, CloudFront, Netlify, Vercel).
+ */
+function generateRedirectPage(targetUrl: string, _sourceUrl: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="0; url=${targetUrl}">
+<link rel="canonical" href="${targetUrl}">
+<title>Redirecting...</title>
+</head>
+<body>
+<p>Redirecting to <a href="${targetUrl}">${targetUrl}</a>...</p>
+<script>window.location.replace('${targetUrl}')</script>
+</body>
+</html>`
+}
+
+/**
+ * Determine the output file path for a given URL.
+ */
+function determineOutputPath(url: string, cfg: { outputDir: string, trailingSlash: boolean }): string {
+  if (url === '/' || url === '') {
+    return path.join(cfg.outputDir, 'index.html')
+  }
+  const clean = url.replace(/^\/|\/$/g, '')
+  if (cfg.trailingSlash) {
+    return path.join(cfg.outputDir, clean, 'index.html')
+  }
+  return path.join(cfg.outputDir, `${clean}.html`)
 }
 
 // =============================================================================
