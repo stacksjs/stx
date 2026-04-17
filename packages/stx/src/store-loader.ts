@@ -54,6 +54,24 @@ export async function getStoreScript(): Promise<string | null> {
     return null
   }
 
+  // Sort stores by dependency: stores that call useStore() depend on other
+  // stores, so they must load AFTER the stores they reference. Stores with
+  // no useStore() calls (like auth) load first.
+  const filesWithDeps: Array<{ file: string, hasUseStore: boolean }> = []
+  for (const file of storeFiles) {
+    const content = await Bun.file(file).text()
+    filesWithDeps.push({
+      file,
+      hasUseStore: /useStore\s*\(/.test(content),
+    })
+  }
+  // Independent stores first, dependent stores after
+  filesWithDeps.sort((a, b) => {
+    if (a.hasUseStore === b.hasUseStore) return 0
+    return a.hasUseStore ? 1 : -1
+  })
+  const sortedFiles = filesWithDeps.map(f => f.file)
+
   // Read each store file, strip imports/exports, and concatenate.
   // Store files use `import { defineStore, state, derived } from '@stacksjs/stx'`
   // but in the browser these are already globals — just strip the imports.
@@ -61,7 +79,7 @@ export async function getStoreScript(): Promise<string | null> {
 
   const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser' })
 
-  for (const file of storeFiles) {
+  for (const file of sortedFiles) {
     try {
       let code = await Bun.file(file).text()
       const storeName = path.basename(file, '.ts')
