@@ -161,6 +161,24 @@ export async function processDirectives(
         }
       }
 
+      // Auto-inject store definitions from storesDir.
+      // Runs AFTER signals runtime (defineStore/state/derived are globals)
+      // and BEFORE page <script client> blocks that call useStore().
+      if (isTopLevel && result.includes('</head>')) {
+        try {
+          const { getStoreScript } = await import('./store-loader')
+          const storeCode = await getStoreScript()
+          if (storeCode) {
+            const storeTag = `<script data-stx-stores>${storeCode}</script>`
+            const headEnd = result.lastIndexOf('</head>')
+            result = result.slice(0, headEnd) + storeTag + '\n' + result.slice(headEnd)
+          }
+        }
+        catch {
+          // Store loading is optional
+        }
+      }
+
       // Generate and inject Crosswind CSS AFTER document shell wrapping
       // so bodyClass from stx.config.ts (e.g. 'bg-[#0a0a0f]') is included in the scan
       if (isTopLevel) {
