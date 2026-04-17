@@ -31,7 +31,7 @@ interface ButtonProps {
 })
   <button
     class="btn btn-{{ type }} btn-{{ size }}"
-    :disabled="disabled"
+    x-disabled="disabled"
   >
     <slot></slot>
   </button>
@@ -102,7 +102,7 @@ interface CardProps {
       <loading-spinner />
     @else
       @if(image)
-        <img :src="image" :alt="title" />
+        <img x-src="image" x-alt="title" />
       @endif
 
       <div class="card-content">
@@ -165,7 +165,7 @@ Emit and handle component events:
   <div class="search">
     <input
       type="text"
-      :placeholder="placeholder"
+      x-placeholder="placeholder"
       @input="handleInput"
     />
     <button @click="handleClear">Clear</button>

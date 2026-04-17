@@ -94,7 +94,7 @@ test('isAdmin correctly identifies admin users', () => {
 
   <button
     class="btn btn-{{ type }}"
-    :disabled="disabled"
+    x-disabled="disabled"
   >
     <slot></slot>
   </button>

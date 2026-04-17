@@ -95,7 +95,7 @@ const variantOptions = ['primary', 'secondary', 'danger']
       <Button
         :label="state.label"
         :variant="state.variant"
-        :disabled="state.disabled"
+        x-disabled="state.disabled"
       />
     </template>
 

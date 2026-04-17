@@ -190,25 +190,28 @@ document.getElementById('increment').addEventListener('click', () => {
 </template>
 ```
 
-### X-Element Hydration
+### Client-Side Hydration
 
-For reactive components, use x-element directives:
+For reactive components, use `<script client>` with signals:
 
 ```html
 <script server>
 const initialItems = await fetchItems()
 </script>
 
+<script client>
+const items = state(initialItems)
+const newItem = state('')
+</script>
+
 <template>
-  <div x-data="{ items: {{ JSON.stringify(initialItems) }}, newItem: '' }">
+  <div>
     <ul>
-      <template x-for="item in items">
-        <li x-text="item.name"></li>
-      </template>
+      <li :for="item in items" :key="item.name" x-text="item.name"></li>
     </ul>
 
     <input x-model="newItem" placeholder="Add item..." />
-    <button @click="items.push({ name: newItem }); newItem = ''">Add</button>
+    <button @click="items.set([...items(), { name: newItem() }]); newItem.set('')">Add</button>
   </div>
 </template>
 ```

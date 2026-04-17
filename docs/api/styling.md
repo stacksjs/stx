@@ -7,7 +7,7 @@ stx provides a powerful and flexible styling system that combines the best of mo
 ### Inline Styles
 
 ```html
-<div :style="{ color: activeColor, fontSize: fontSize + 'px' }">
+<div x-style="{ color: activeColor, fontSize: fontSize + 'px' }">
   Dynamic Styling
 </div>
 ```
@@ -15,7 +15,7 @@ stx provides a powerful and flexible styling system that combines the best of mo
 ### Class Bindings
 
 ```html
-<div :class="{ active: isActive, 'text-danger': hasError }">
+<div x-class="{ active: isActive, 'text-danger': hasError }">
   Dynamic Classes
 </div>
 ```
@@ -27,7 +27,7 @@ stx provides a powerful and flexible styling system that combines the best of mo
 ```typescript
 import styles from './MyComponent.module.css'
 
-<div :class="styles.container">
+<div x-class="styles.container">
   Scoped Styling
 </div>
 ```
@@ -96,7 +96,7 @@ const theme = reactive({
   fontSize: '16px'
 })
 
-<div :style="theme">
+<div x-style="theme">
   Reactive Styling
 </div>
 ```

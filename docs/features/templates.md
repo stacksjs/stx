@@ -27,9 +27,9 @@ For trusted HTML content, use triple braces:
 Bind dynamic values to attributes:
 
 ```stx
-<img :src="imageUrl" :alt="imageAlt">
-<button :disabled="isLoading" :class="buttonClass">
-<input :value="inputValue" :placeholder="placeholderText">
+<img x-src="imageUrl" x-alt="imageAlt">
+<button x-disabled="isLoading" x-class="buttonClass">
+<input x-value="inputValue" x-placeholder="placeholderText">
 ```
 
 ## Conditional Rendering
@@ -65,7 +65,7 @@ Bind dynamic values to attributes:
 ### Conditional Classes
 
 ```stx
-<div class="card" :class="{
+<div class="card" x-class="{
   'card--active': isActive,
   'card--disabled': isDisabled,
   'card--large': size === 'large'
@@ -184,7 +184,7 @@ Bind dynamic values to attributes:
 ```stx
 <!-- partials/user-card.stx -->
 <div class="user-card">
-  <img :src="user.avatar" :alt="user.name">
+  <img x-src="user.avatar" x-alt="user.name">
   <h3>&#123;&#123; user.name &#125;&#125;</h3>
   <p>&#123;&#123; user.email &#125;&#125;</p>
 </div>
@@ -201,7 +201,7 @@ Bind dynamic values to attributes:
 <form @submit.prevent="handleSubmit">
   <input @model="form.email" type="email" required>
   <input @model="form.password" type="password" required>
-  <button type="submit" :disabled="isSubmitting">
+  <button type="submit" x-disabled="isSubmitting">
     &#123;&#123; isSubmitting ? 'Logging in...' : 'Login' &#125;&#125;
   </button>
 </form>

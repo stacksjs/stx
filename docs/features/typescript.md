@@ -32,7 +32,7 @@ interface ButtonSlots {
 })
   <button
     class="btn btn--&#123;&#123; variant &#125;&#125; btn--&#123;&#123; size &#125;&#125;"
-    :disabled="disabled || loading"
+    x-disabled="disabled || loading"
     @click="$emit('click', $event)"
     {{ $attributes }}
   >
@@ -78,7 +78,7 @@ interface UserListProps {
         @click="$emit('userClick', user)"
         :key="user.id"
       >
-        <img :src="user.avatar" :alt="user.name">
+        <img x-src="user.avatar" x-alt="user.name">
         <div class="user-info">
           <h3>&#123;&#123; user.name &#125;&#125;</h3>
           @if(showEmail)
@@ -359,7 +359,7 @@ interface LoginFormMethods {
         id="email"
         @model="form.email"
         type="email"
-        :class="{ 'error': errors.email }"
+        x-class="{ 'error': errors.email }"
       >
       @if(errors.email)
         <span class="error-message">&#123;&#123; errors.email &#125;&#125;</span>
@@ -372,7 +372,7 @@ interface LoginFormMethods {
         id="password"
         @model="form.password"
         type="password"
-        :class="{ 'error': errors.password }"
+        x-class="{ 'error': errors.password }"
       >
       @if(errors.password)
         <span class="error-message">&#123;&#123; errors.password &#125;&#125;</span>
@@ -390,7 +390,7 @@ interface LoginFormMethods {
       <div class="error-message">&#123;&#123; errors.general &#125;&#125;</div>
     @endif
 
-    <button type="submit" :disabled="isSubmitting">
+    <button type="submit" x-disabled="isSubmitting">
       &#123;&#123; isSubmitting ? 'Logging in...' : 'Login' &#125;&#125;
     </button>
   </form>
@@ -433,7 +433,7 @@ interface DataTableProps<T> {
         @foreach(columns as column)
           <th
             @click="column.sortable && $emit('sort', column.key)"
-            :class="{
+            x-class="{
               'sortable': column.sortable,
               'sorted': sortBy === column.key
             }"
@@ -454,9 +454,9 @@ interface DataTableProps<T> {
           @foreach(columns as column)
             <td>
               <slot
-                :name="column.key"
+                x-name="column.key"
                 :item="item"
-                :value="item[column.key]"
+                x-value="item[column.key]"
                 :index="index"
               >
                 &#123;&#123; column.render ? column.render(item[column.key], item) : item[column.key] &#125;&#125;

@@ -242,28 +242,39 @@ Components can emit custom events to parent templates:
 - Supports loading/error/resolved states with configurable timeout and delay
 - Scripts are re-executed and `stx:load` event fired after component loads
 
-#### Alpine-style x-data Reactivity
+#### Prefix Convention
 
-stx supports Alpine.js-style `x-data` for client-side reactivity without `<script>` tags:
+stx uses three distinct prefixes:
+
+| Prefix | Purpose | Examples |
+|--------|---------|----------|
+| `:` | **Structural directives** (control flow) | `:if`, `:show`, `:for`, `:key` |
+| `x-` | **Attribute bindings & content** | `x-class`, `x-style`, `x-href`, `x-src`, `x-text`, `x-html`, `x-model`, `x-cloak` |
+| `@` | **Event listeners** | `@click`, `@submit`, `@keydown.enter` |
+
+~~`x-data` is deprecated~~ — all client-side state lives in `<script client>` blocks using signals:
 
 ```html
-<div x-data="{ open: false, items: null, async init() { this.items = await fetch('/api').then(r => r.json()) } }">
-  <button @click="open = !open">Toggle</button>
-  <div x-show="open">Content</div>
-  <div x-for="item in items" :key="item.id" class="card">
-    <p x-text="item.name"></p>
-  </div>
+<script client>
+  const open = state(false)
+  const items = state(null)
+
+  onMount(async () => {
+    items.set(await fetch('/api').then(r => r.json()))
+  })
+</script>
+
+<button @click="open.set(!open())">Toggle</button>
+<div :show="open">Content</div>
+<div :for="item in items()" :key="item.id" class="card">
+  <p x-text="item.name"></p>
 </div>
 ```
 
-- **No `<template>` wrappers** — put `x-for`/`x-if` directly on the element. stx strips `<template>` tags during server processing (SFC extraction), so `<template x-for>` breaks. Use `<div x-for>` instead.
-- `x-data` state properties are wrapped in signals for reactivity
-- `init()` method runs automatically (supports async — UI updates when promise resolves)
-- All directives work: `x-for`, `x-if`, `x-show`, `x-text`, `x-html`, `x-model`, `x-bind:attr`, `x-ref`, `@click`, `:class`, `:style`
-- `x-for` supports parenthesized syntax: `(item, index) in array`
-- Expressions that throw TypeError during initial render (before async init resolves) are silently caught and re-evaluated when signals update
-- Avoid `>` operator in attribute expressions (`x-if="count > 0"`) — use `x-if="count"` or `x-if="count >= 1"` instead. The `>` can be parsed as the HTML tag closer by regex-based processors.
-- The reactive bridge (`reactive.ts`) handles scope initialization; the signals runtime handles ALL directive processing
+- **No `<template>` wrappers** — put `:for`/`:if` directly on the element. stx strips `<template>` tags during server processing (SFC extraction), so `<template :for>` breaks. Use `<div :for>` instead.
+- All directives work: `:for`, `:if`, `:show`, `x-text`, `x-html`, `x-model`, `x-class`, `x-style`, `@click`
+- `:for` supports parenthesized syntax: `(item, index) in array`
+- Avoid `>` operator in attribute expressions (`:if="count > 0"`) — use `:if="count"` or `:if="count >= 1"` instead. The `>` can be parsed as the HTML tag closer by regex-based processors.
 
 #### Named Slots
 

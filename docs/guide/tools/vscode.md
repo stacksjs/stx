@@ -31,7 +31,7 @@ The extension provides rich syntax highlighting for stx templates:
   }
 })
   <div class="user-card">
-    <img :src="user.avatar" :alt="user.name">
+    <img x-src="user.avatar" x-alt="user.name">
     <h3>&#123;&#123; user.name &#125;&#125;</h3>
     @if(showEmail)
       <p>&#123;&#123; user.email &#125;&#125;</p>
@@ -232,7 +232,7 @@ const props = defineProps<ButtonProps>()
 <template>
   <button
     class="btn btn-{{ props.variant }}"
-    :disabled="props.disabled"
+    x-disabled="props.disabled"
   >
     {{ props.label }}
   </button>

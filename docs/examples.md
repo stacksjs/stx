@@ -123,7 +123,7 @@ interface TodoListProps {
 
     <ul>
       @foreach(todos as todo)
-        <li :class="{ completed: todo.completed }">
+        <li x-class="{ completed: todo.completed }">
           <input
             type="checkbox"
             :checked="todo.completed"
@@ -439,8 +439,8 @@ interface Props {
         <label :for="field.name">{{ field.label }}</label>
         <input
           :id="field.name"
-          :type="field.type"
-          :name="field.name"
+          x-type="field.type"
+          x-name="field.name"
           v-model="formData[field.name]"
           :required="field.required"
           :pattern="field.pattern"

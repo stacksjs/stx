@@ -163,14 +163,14 @@ See [Markdown API](/api/markdown) for detailed documentation.
 <!-- Select binding -->
 <select @model="selectedOption">
   @foreach(options as option)
-    <option :value="option.value">&#123;&#123; option.label &#125;&#125;</option>
+    <option x-value="option.value">&#123;&#123; option.label &#125;&#125;</option>
   @endforeach
 </select>
 
 <!-- Multiple select -->
 <select @model="selectedItems" multiple>
   @foreach(items as item)
-    <option :value="item.id">&#123;&#123; item.name &#125;&#125;</option>
+    <option x-value="item.id">&#123;&#123; item.name &#125;&#125;</option>
   @endforeach
 </select>
 ```
@@ -203,14 +203,14 @@ See [Markdown API](/api/markdown) for detailed documentation.
 
 ```stx
 <!-- Dynamic attributes -->
-<img :src="imageUrl" :alt="imageAlt">
-<button :disabled="isLoading" :class="buttonClass">
+<img x-src="imageUrl" x-alt="imageAlt">
+<button x-disabled="isLoading" x-class="buttonClass">
 
 <!-- Dynamic attribute names -->
 <input :[attributeName]="attributeValue">
 
 <!-- Class binding -->
-<div :class="{
+<div x-class="{
   'active': isActive,
   'disabled': isDisabled,
   'large': size === 'large'
@@ -218,7 +218,7 @@ See [Markdown API](/api/markdown) for detailed documentation.
 </div>
 
 <!-- Style binding -->
-<div :style="{
+<div x-style="{
   color: textColor,
   fontSize: fontSize + 'px',
   backgroundColor: bgColor

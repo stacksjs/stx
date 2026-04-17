@@ -303,22 +303,22 @@ Create a metrics dashboard:
   <div class="dashboard">
     <metric-card
       title="Page Views"
-      :value="metrics.pageViews"
+      x-value="metrics.pageViews"
       trend="+5.2%"
     />
     <metric-card
       title="Active Users"
-      :value="metrics.activeUsers"
+      x-value="metrics.activeUsers"
       trend="+2.1%"
     />
     <metric-card
       title="Error Rate"
-      :value="metrics.errorRate"
+      x-value="metrics.errorRate"
       trend="-0.5%"
     />
     <metric-card
       title="Avg Load Time"
-      :value="metrics.avgLoadTime"
+      x-value="metrics.avgLoadTime"
       trend="-12.3%"
     />
   </div>

@@ -17,7 +17,7 @@ Use double curly braces for text interpolation:
 Bind attributes using the `:` shorthand:
 
 ```html
-<button :disabled="isLoading">Submit</button>
+<button x-disabled="isLoading">Submit</button>
 ```
 
 ### Raw HTML

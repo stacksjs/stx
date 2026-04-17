@@ -19,7 +19,7 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
   - [Stack & Push](#stack--push)
   - [Forms](#forms)
   - [SEO](#seo)
-- [Two-Way Binding (x-element)](#two-way-binding-x-element)
+- [Prefix Convention](#prefix-convention)
 - [Event Handling](#event-handling)
 - [Icons](#icons)
 - [Custom Directives](#custom-directives)
@@ -553,37 +553,93 @@ Parent listens via CustomEvent:
 
 ---
 
-## Two-Way Binding (x-element)
+## Prefix Convention
 
-STX includes a lightweight Alpine-style reactivity system for inline client-side interactivity. For TypeScript-first components with signals, see [Signals Reactivity](#signals-vs-alpine-style-reactivity) in v2 Features.
+stx uses three prefixes to clearly separate concerns:
 
-> **Which to use?** `x-data` for quick inline interactivity (counters, toggles, form state). Signals (`state`/`derived`/`effect`) for typed components with complex state, derived values, and lifecycle hooks.
+| Prefix | Purpose | Examples |
+|--------|---------|----------|
+| `:` | **Structural directives** — control flow | `:if`, `:show`, `:for`, `:key` |
+| `x-` | **Attribute bindings & content** — dynamic values | `x-class`, `x-style`, `x-href`, `x-src`, `x-text`, `x-html`, `x-model`, `x-cloak` |
+| `@` | **Event listeners** | `@click`, `@submit`, `@keydown.enter`, `@click.prevent` |
 
-### x-data
-Define a reactive scope:
+### Structural Directives (`:` prefix)
+
 ```html
-<div x-data="{ count: 0, message: '' }">
-  <!-- Reactive content here -->
-</div>
+<div :if="isLoggedIn">Welcome back</div>
+<div :show="menuOpen">Menu content</div>
+<div :for="item in items" :key="item.id">{{ item.name }}</div>
+```
+
+### Attribute Bindings (`x-` prefix)
+
+```html
+<!-- Dynamic attributes -->
+<a x-href="'/user/' + userId">Profile</a>
+<img x-src="user.avatar" x-alt="user.name" />
+
+<!-- Dynamic classes and styles -->
+<div x-class="isActive ? 'bg-green-500' : 'bg-gray-200'">Status</div>
+<div x-style="'color: ' + themeColor">Themed</div>
+
+<!-- Content -->
+<span x-text="userName"></span>
+<div x-html="richContent"></div>
+
+<!-- Form binding -->
+<input x-model="email" type="email" placeholder="Email">
+```
+
+### Events (`@` prefix)
+
+```html
+<button @click="handleClick()">Click me</button>
+<button @click="count.set(count() + 1)">Increment</button>
+<form @submit.prevent="submitForm()">...</form>
+<input @keydown.enter="search()">
+```
+
+## Reactivity
+
+All client-side state lives in `<script client>` blocks using signals. ~~`x-data` is deprecated~~ — state belongs in TypeScript, not inline HTML attributes.
+
+```html
+<script client>
+  const count = state(0)
+  const email = state('')
+  const doubled = derived(() => count() * 2)
+</script>
+
+<span x-text="count()"></span>
+<button @click="count.set(count() + 1)">+1</button>
+<p>Doubled: <span x-text="doubled()"></span></p>
+
+<input x-model="email" type="email">
+<p>Email: <span x-text="email()"></span></p>
 ```
 
 ### x-model
 Two-way binding for form inputs:
 ```html
-<div x-data="{ email: '', password: '' }">
-  <input x-model="email" type="email" placeholder="Email">
-  <input x-model="password" type="password" placeholder="Password">
-  <p>Email: <span x-text="email"></span></p>
-</div>
+<script client>
+  const email = state('')
+  const password = state('')
+</script>
+
+<input x-model="email" type="email" placeholder="Email">
+<input x-model="password" type="password" placeholder="Password">
+<p>Email: <span x-text="email()"></span></p>
 ```
 
 ### x-text
 Reactive text content:
 ```html
-<div x-data="{ count: 0 }">
-  <span x-text="count"></span>
-  <button @click="count++">Increment</button>
-</div>
+<script client>
+  const count = state(0)
+</script>
+
+<span x-text="count()"></span>
+<button @click="count.set(count() + 1)">Increment</button>
 ```
 
 ---
@@ -2345,7 +2401,7 @@ defineExpose({
 })
 </script>
 
-<input @ref="inputRef" :value="internalValue" />
+<input @ref="inputRef" x-value="internalValue" />
 ```
 
 Parent can access exposed methods:
@@ -3117,7 +3173,7 @@ Move content to a different location in the DOM. Useful for modals, tooltips, an
 
 <!-- Tooltip teleported to body -->
 @teleport('body')
-  <div class="tooltip" :style="tooltipPosition">
+  <div class="tooltip" x-style="tooltipPosition">
     {{ tooltipText }}
   </div>
 @endteleport
@@ -4925,7 +4981,7 @@ const signupForm = defineForm({
 <form @submit.prevent="signupForm.handleSubmit(onSubmit)">
   <div class="field">
     <label>Username</label>
-    <input name="username" :value="signupForm.values.username" />
+    <input name="username" x-value="signupForm.values.username" />
     @error(signupForm.errors.username)
       <span class="error">{{ message }}</span>
     @enderror
@@ -4939,7 +4995,7 @@ const signupForm = defineForm({
     @enderrors
   </div>
 
-  <button type="submit" :disabled="!signupForm.isValid">
+  <button type="submit" x-disabled="!signupForm.isValid">
     Sign Up
   </button>
 </form>
@@ -5709,36 +5765,34 @@ STX v2 introduces TypeScript-first single-file components with automatic hydrati
 
 ### Signals vs Alpine-Style Reactivity
 
-STX has two client-side reactivity systems. They coexist on the same page but manage separate scopes.
-
-| | Alpine-style (`x-data`) | Signals (`state`/`derived`/`effect`) |
+| | ~~Alpine-style (`x-data`)~~ deprecated | Signals (`state`/`derived`/`effect`) |
 |---|---|---|
-| **Syntax** | `x-data`, `x-model`, `x-show`, `x-text`, `@click` | `state()`, `derived()`, `effect()`, `{{ }}`, `:attr`, `@event` |
-| **TypeScript** | No (inline JS expressions) | Yes (full TS in `<script>` blocks) |
-| **Scope** | Per-element via `x-data="{ ... }"` | Per-component via `<script>` block |
-| **Use case** | Quick inline interactivity | Typed components with complex state |
-| **Lifecycle** | `x-init` only | `onMount`, `onDestroy` |
-| **Derived state** | Manual (recompute in handlers) | `derived(() => ...)` auto-tracks |
-| **Two-way binding** | `x-model="name"` | `@model="name"` |
-| **File** | `reactive.ts` runtime | `signals.ts` runtime |
+| **Syntax** | ~~`x-data`~~ — use `<script client>` with signals | `state()`, `derived()`, `effect()`, `{{ }}`, `:attr`, `@event` |
+| **TypeScript** | ~~No (inline JS expressions)~~ | Yes (full TS in `<script>` blocks) |
+| **Scope** | ~~Per-element via `x-data="{ ... }"`~~ | Per-component via `<script client>` block |
+| **Use case** | ~~Quick inline interactivity~~ | All client-side reactivity |
+| **Lifecycle** | ~~`x-init` only~~ | `onMount`, `onDestroy` |
+| **Derived state** | ~~Manual (recompute in handlers)~~ | `derived(() => ...)` auto-tracks |
+| **Two-way binding** | ~~`x-model="name"`~~ | `x-model="name"` (same) |
+| **File** | ~~`reactive.ts` runtime~~ | `signals.ts` runtime |
 
-**Recommendation:** Use signals for new components. Use `x-data` for quick sprinkles of interactivity where a full component isn't warranted.
-
-**Mixing on the same page** works — an `x-data` section and a signals component can coexist. They just don't share state. Mixing on the **same element** is not supported and will produce a dev warning when `debug: true`.
+**Recommendation:** Use `<script client>` with signals for all client-side reactivity. `x-data` is deprecated.
 
 ```html
-<!-- This works: separate scopes on the same page -->
-<div x-data="{ open: false }">
-  <button @click="open = !open">Toggle</button>
-  <div x-show="open">Alpine-managed</div>
+<!-- Signals-based reactivity -->
+<script client>
+const open = state(false)
+const count = state(0)
+</script>
+
+<div>
+  <button @click="open.set(!open())">Toggle</button>
+  <div :show="open">Signals-managed</div>
 </div>
 
 <div>
-  <script>
-  const count = state(0)
-  </script>
   <p>{{ count() }}</p>
-  <button @click="count.set(count() + 1)">Signals-managed</button>
+  <button @click="count.set(count() + 1)">Increment</button>
 </div>
 ```
 
@@ -5942,7 +5996,7 @@ Built-in navigation component (equivalent to Nuxt's `<NuxtLink>`). Renders an `<
 <StxLink to="/about">About</StxLink>
 
 <!-- Dynamic path (works inside @for loops) -->
-<StxLink :to="'/jobs/' + job.id">View Details</StxLink>
+<StxLink x-to="'/jobs/' + job.id">View Details</StxLink>
 
 <!-- Custom active class -->
 <StxLink to="/jobs" activeClass="nav-active">Jobs</StxLink>

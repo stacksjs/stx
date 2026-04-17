@@ -180,7 +180,7 @@ interface ButtonProps {
 })
   <button
     class="btn btn-{{ type }} btn-{{ size }}"
-    :disabled="disabled"
+    x-disabled="disabled"
     @click="onClick"
   >
     <slot></slot>

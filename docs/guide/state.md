@@ -152,7 +152,7 @@ Access store state in components:
   const { toggleTheme } = store.actions
   @endts
 
-  <header :class="{ 'dark': theme === 'dark' }">
+  <header x-class="{ 'dark': theme === 'dark' }">
     @if(user)
       <user-menu :user="user" />
     @else

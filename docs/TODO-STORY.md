@@ -310,7 +310,7 @@ const sizeOptions = [
       <Button
         :label="state.label"
         :variant="state.variant"
-        :disabled="state.disabled"
+        x-disabled="state.disabled"
         :size="state.size"
       />
     </template>

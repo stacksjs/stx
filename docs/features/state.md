@@ -14,9 +14,9 @@ stx provides powerful state management capabilities for building complex applica
   })
 
   <div class="counter">
-    <button @click="count--" :disabled="isLoading">-</button>
+    <button @click="count--" x-disabled="isLoading">-</button>
     <span>{{ count }}</span>
-    <button @click="count++" :disabled="isLoading">+</button>
+    <button @click="count++" x-disabled="isLoading">+</button>
   </div>
 @endcomponent
 ```
@@ -122,10 +122,10 @@ const store = createStore<AppState>({
 @component('UserHeader')
   @connect(store, ['user', 'theme'])
 
-  <header class="header" :class="theme">
+  <header class="header" x-class="theme">
     @if(user)
       <div class="user-info">
-        <img :src="user.avatar" :alt="user.name">
+        <img x-src="user.avatar" x-alt="user.name">
         <span>{{ user.name }}</span>
       </div>
     @else
@@ -373,7 +373,7 @@ export function useAuth() {
     }
   }
 })
-  <div class="app" :class="theme">
+  <div class="app" x-class="theme">
     <slot />
   </div>
 @endprovider

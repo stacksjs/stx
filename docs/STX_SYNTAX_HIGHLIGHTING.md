@@ -177,17 +177,18 @@ The `@` prefix: `punctuation.definition.event.stx`
 The event name: `entity.other.attribute-name.event.stx`
 The modifier (`.prevent`, `.enter`): `keyword.modifier.event.stx`
 
-### 7. Reactive Directives (x-element)
+### 7. Reactive Directives (Signals)
 
-STX includes lightweight client-side reactivity for two-way binding. Use `@if`, `@for`, `@foreach` for server-side rendering; use `x-*` only for client-side interactivity.
+STX includes lightweight client-side reactivity via `<script client>` with signals. Use `@if`, `@for`, `@foreach` for server-side rendering; use signals for client-side interactivity.
 
-#### x-data (Reactive Scope)
-**Scope:** `entity.other.attribute-name.reactive.stx`
+#### Script Client (Reactive Scope)
+**Scope:** `source.ts.embedded.stx`
 
 ```html
-<div x-data="{ message: '', count: 0 }">
-  <!-- reactive scope -->
-</div>
+<script client>
+const message = state('')
+const count = state(0)
+</script>
 ```
 
 #### x-model (Two-Way Binding)
@@ -426,7 +427,7 @@ function formatName(name) {
           @endforeach
         </ul>
 
-        <Button @click="logout" :disabled="loading">
+        <Button @click="logout" x-disabled="loading">
           <slot />
         </Button>
       </Card>
@@ -436,13 +437,18 @@ function formatName(name) {
 
     {{-- This comment won't be in output --}}
 
-    <!-- Client-side two-way binding -->
-    <div x-data="{ message: '', count: 0 }">
+    <!-- Client-side reactivity with signals -->
+    <script client>
+    const message = state('')
+    const count = state(0)
+    </script>
+
+    <div>
       <input x-model="message" placeholder="Type something..." />
       <p>You typed: <strong x-text="message"></strong></p>
 
-      <button @click="count++">Increment</button>
-      <button @click="count--">Decrement</button>
+      <button @click="count.set(count() + 1)">Increment</button>
+      <button @click="count.set(count() - 1)">Decrement</button>
       <span x-text="count"></span>
     </div>
 

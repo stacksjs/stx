@@ -240,7 +240,7 @@ Memoize expensive computations:
 
 ```stx
 @memo(expensiveValue)
-  <heavy-component :value="expensiveValue" />
+  <heavy-component x-value="expensiveValue" />
 @endmemo
 ```
 

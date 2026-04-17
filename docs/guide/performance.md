@@ -224,17 +224,17 @@ Handle large lists efficiently:
     class="virtual-list"
     ref="containerRef"
     @scroll="handleScroll"
-    :style="{
+    x-style="{
       height: `${visibleItems * itemHeight}px`,
       overflow: 'auto'
     }"
   >
-    <div :style="{
+    <div x-style="{
       height: `${items.length * itemHeight}px`,
       position: 'relative'
     }">
       @foreach(visibleData as item, index)
-        <div :style="{
+        <div x-style="{
           position: 'absolute',
           top: `${(startIndex + index) * itemHeight}px`,
           height: `${itemHeight}px`

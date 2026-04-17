@@ -132,7 +132,7 @@ stx offers various looping constructs:
 
 <div class="grid">
   @foreach(items as item, index)
-    <div class="grid-item" :style="{ order: index }">
+    <div class="grid-item" x-style="{ order: index }">
       {{ item.name }}
     </div>
   @endforeach
@@ -181,7 +181,7 @@ Components help you create reusable UI elements. Create a new file `components/B
 })
   <button
     class="button {{ variants[type] }} {{ sizes[size] }} rounded-md font-medium transition-colors"
-    :disabled="disabled"
+    x-disabled="disabled"
     @click="onClick"
   >
     <slot></slot>
@@ -231,7 +231,7 @@ Import and use components in your templates:
   <Button
     type="danger"
     size="md"
-    :disabled="isLoading"
+    x-disabled="isLoading"
   >
     {{ isLoading ? 'Loading...' : 'Delete' }}
   </Button>

@@ -331,7 +331,7 @@ interface Props {
     }
   }
 })
-  <button :class="['btn', `btn-${type}`, `btn-${size}`]">
+  <button x-class="['btn', `btn-${type}`, `btn-${size}`]">
     <slot></slot>
   </button>
 
