@@ -1485,12 +1485,16 @@ catch (e2) {
       const name = attr.name;
       const value = attr.value;
 
-      // @bind:attr OR :attr OR x-bind:attr (Feature #4) for dynamic attribute binding
-      // Only match :attr that is NOT a known directive and NOT an event name
-      if (name.startsWith('@bind:') || name.startsWith('x-bind:') || (name.startsWith(':') && !name.startsWith('::')
-          && !DIRECTIVE_NAMES[name.slice(1).split('.')[0]]
-          && !EVENT_RE.test(name.slice(1)))) {
-        const attrName = name.startsWith('@bind:') ? name.slice(6) : name.startsWith('x-bind:') ? name.slice(7) : name.slice(1);
+      // Dynamic attribute binding: @bind:attr, x-bind:attr, :attr, OR x-attr
+      // x-attr (e.g. x-class, x-style, x-href, x-src) is the canonical binding prefix.
+      // :attr still works for backward compat but is reserved for structural directives.
+      // x-text, x-html, x-model, x-show, x-if, x-for, x-cloak, x-ref, x-data are
+      // handled by their own code paths below — exclude them here.
+      var X_HANDLED = {'x-text':1,'x-html':1,'x-model':1,'x-show':1,'x-if':1,'x-for':1,'x-cloak':1,'x-ref':1,'x-data':1,'x-bind':1};
+      if (name.startsWith('@bind:') || name.startsWith('x-bind:')
+          || (name.startsWith(':') && !name.startsWith('::') && !DIRECTIVE_NAMES[name.slice(1).split('.')[0]] && !EVENT_RE.test(name.slice(1)))
+          || (name.startsWith('x-') && !X_HANDLED[name.split('.')[0]] && !X_HANDLED[name])) {
+        const attrName = name.startsWith('@bind:') ? name.slice(6) : name.startsWith('x-bind:') ? name.slice(7) : name.startsWith('x-') ? name.slice(2) : name.slice(1);
         effect(() => {
           const v = evalAttrExpr(value);
           if (v === false || v === null || v === undefined) {
@@ -1505,11 +1509,11 @@ else {
         });
         el.removeAttribute(name);
       }
-else if (name === '@class' || name === ':class') {
+else if (name === '@class' || name === ':class' || name === 'x-class') {
         bindClass(el, value, scope);
         el.removeAttribute(name);
       }
-else if (name === '@style' || name === ':style') {
+else if (name === '@style' || name === ':style' || name === 'x-style') {
         bindStyle(el, value, scope);
         el.removeAttribute(name);
       }
