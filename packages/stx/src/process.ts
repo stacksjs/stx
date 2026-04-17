@@ -162,16 +162,27 @@ export async function processDirectives(
       }
 
       // Auto-inject store definitions from storesDir.
-      // Runs AFTER signals runtime (defineStore/state/derived are globals)
-      // and BEFORE page <script client> blocks that call useStore().
-      if (isTopLevel && result.includes('</head>')) {
+      // MUST run AFTER the signals runtime (which defines defineStore/state/derived
+      // as globals) and BEFORE any page scripts that call useStore().
+      // The signals runtime is the first <script data-stx-scoped> — we inject
+      // right after its closing </script> tag.
+      if (isTopLevel) {
         try {
           const { getStoreScript } = await import('./store-loader')
           const storeCode = await getStoreScript()
           if (storeCode) {
             const storeTag = `<script data-stx-stores>${storeCode}</script>`
-            const headEnd = result.lastIndexOf('</head>')
-            result = result.slice(0, headEnd) + storeTag + '\n' + result.slice(headEnd)
+            // Find the signals runtime: first <script data-stx-scoped> block
+            const runtimeStart = result.indexOf('<script data-stx-scoped>')
+            if (runtimeStart !== -1) {
+              // Walk forward to find its </script> (browser-style parsing — the
+              // first </script> after the opening tag closes the block)
+              const runtimeClose = result.indexOf('</script>', runtimeStart + 24)
+              if (runtimeClose !== -1) {
+                const insertPos = runtimeClose + '</script>'.length
+                result = result.slice(0, insertPos) + '\n' + storeTag + result.slice(insertPos)
+              }
+            }
           }
         }
         catch {

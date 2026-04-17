@@ -59,23 +59,24 @@ export async function getStoreScript(): Promise<string | null> {
   // but in the browser these are already globals — just strip the imports.
   const chunks: string[] = []
 
+  const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser' })
+
   for (const file of storeFiles) {
     try {
       let code = await Bun.file(file).text()
       const storeName = path.basename(file, '.ts')
 
-      // Strip import statements (defineStore/state/derived/useStore are globals)
+      // Strip import statements BEFORE transpiling — defineStore/state/derived
+      // are runtime globals, not real modules. If we leave them, the transpiler
+      // converts them to require() calls that fail in the browser.
       code = code.replace(/^import\s+.*from\s+['"][^'"]+['"]\s*;?\s*$/gm, '')
       // Strip export statements (keep the content)
       code = code.replace(/^export\s+(default\s+)?/gm, '')
-      // Strip TypeScript interfaces/types (they don't execute)
-      code = code.replace(/^(export\s+)?(interface|type)\s+\w+[\s\S]*?^\}/gm, '')
-      // Strip standalone type annotations that span a single line
-      code = code.replace(/^(export\s+)?(interface|type)\s+.*$/gm, '')
-      // Strip `as Type` casts
-      code = code.replace(/\s+as\s+\w+(\[\])?/g, '')
-      // Strip generic type params like <string> or <any>
-      code = code.replace(/<\w+(\[\])?>/g, '')
+
+      // Use Bun's transpiler to strip ALL TypeScript syntax properly —
+      // type annotations, interfaces, generics, return types, etc.
+      // This is 100% reliable vs fragile regex stripping.
+      code = transpiler.transformSync(code)
 
       chunks.push(`// Store: ${storeName}\n${code.trim()}`)
     }
