@@ -862,7 +862,11 @@ finally {
   // Navigation API
   // ==========================================================================
 
-  function navigate(url) {
+  function navigate(url, forceReload) {
+    if (forceReload) {
+      window.location.href = url;
+      return;
+    }
     if (window.stxRouter && typeof window.stxRouter.navigate === 'function') {
       window.stxRouter.navigate(url);
     }
