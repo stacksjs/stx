@@ -242,25 +242,107 @@ export async function serve(options: ServeOptions): Promise<void> {
       if (!cw)
         return ''
 
+      // Scan class="" attributes for utility class names
       const classRegex = /class\s*=\s*["']([^"']+)["']/gi
       const classes = new Set<string>()
       let match = classRegex.exec(htmlContent)
       while (match !== null) {
         for (const cls of match[1].split(/\s+/)) {
-          if (cls.trim())
-            classes.add(cls.trim())
+          if (cls.trim()) classes.add(cls.trim())
         }
         match = classRegex.exec(htmlContent)
+      }
+
+      // Scan x-class / :class expressions — extract quoted string literals
+      // Use [^"]+ for double-quoted attrs (content may have single quotes)
+      const dynRegex = /(?:x-class|:class)\s*=\s*"([^"]+)"/gi
+      let dynMatch = dynRegex.exec(htmlContent)
+      while (dynMatch !== null) {
+        // Extract all single-quoted string literals from the expression
+        const strLiterals = dynMatch[1].match(/'([^']+)'/g)
+        if (strLiterals) {
+          for (const lit of strLiterals) {
+            const unquoted = lit.slice(1, -1)
+            for (const cls of unquoted.split(/\s+/)) {
+              if (cls.trim()) classes.add(cls.trim())
+            }
+          }
+        }
+        dynMatch = dynRegex.exec(htmlContent)
       }
 
       if (classes.size === 0)
         return ''
 
-      const generator = new cw.CSSGenerator({ ...cw.config, preflight: true, minify: false })
+      // Load user crosswind config for safelist + shortcuts
+      let userConfig: Record<string, any> = {}
+      try {
+        const nodePath = await import('node:path')
+        const configPath = nodePath.join(process.cwd(), 'crosswind.config.ts')
+        console.log('[crosswind] loading config from:', configPath)
+        userConfig = (await import(configPath)).default || {}
+        console.log('[crosswind] config loaded, keys:', Object.keys(userConfig))
+      }
+      catch (e: any) {
+        console.warn('[crosswind] config load error:', e?.message || e)
+      }
+
+      if (userConfig.safelist) {
+        for (const cls of userConfig.safelist) classes.add(cls)
+        console.log('[crosswind] safelist:', userConfig.safelist)
+      }
+      if (userConfig.shortcuts) {
+        console.log('[crosswind] shortcuts:', Object.keys(userConfig.shortcuts))
+      }
+
+      // Merge user shortcuts into the generator config
+      const generatorConfig: Record<string, any> = { ...cw.config, preflight: true, minify: false }
+      if (userConfig.shortcuts) {
+        generatorConfig.shortcuts = { ...(generatorConfig.shortcuts || {}), ...userConfig.shortcuts }
+      }
+      if (userConfig.theme) {
+        generatorConfig.theme = { ...(generatorConfig.theme || {}), ...userConfig.theme }
+      }
+
+      const generator = new cw.CSSGenerator(generatorConfig)
       for (const className of classes) {
         generator.generate(className)
       }
-      return generator.toCSS(true, false)
+
+      // Generate shortcut CSS rules — CSSGenerator doesn't natively output
+      // grouped .shortcut-name { ... } rules, so we build them manually
+      let shortcutCSS = ''
+      const shortcuts = generatorConfig.shortcuts || {}
+      for (const [name, classStr] of Object.entries(shortcuts)) {
+        if (!classes.has(name)) continue
+        // Generate all utility classes the shortcut references
+        const parts = (classStr as string).split(/\s+/).filter(Boolean)
+        for (const p of parts) generator.generate(p)
+      }
+      const baseCss = generator.toCSS(true, false)
+
+      // Now extract the declarations for each shortcut and build grouped rules
+      for (const [name, classStr] of Object.entries(shortcuts)) {
+        if (!classes.has(name)) continue
+        const parts = (classStr as string).split(/\s+/).filter(Boolean)
+        const decls: string[] = []
+        const darkDecls: string[] = []
+        for (const cls of parts) {
+          const isDark = cls.startsWith('dark:')
+          const actualCls = isDark ? cls.slice(5) : cls
+          const escaped = actualCls.replace(/[/:.[\]%()]/g, c => `\\${c}`)
+          const re = new RegExp(`\\.${escaped}\\s*\\{([^}]+)\\}`)
+          const m = baseCss.match(re)
+          if (m) {
+            if (isDark) darkDecls.push(m[1].trim())
+            else decls.push(m[1].trim())
+          }
+        }
+        if (decls.length) shortcutCSS += `.${name} { ${decls.join(' ')} }\n`
+        if (darkDecls.length) shortcutCSS += `@media (prefers-color-scheme: dark) { .dark .${name} { ${darkDecls.join(' ')} } }\n`
+      }
+
+      return baseCss + shortcutCSS
     }
     catch (error) {
       console.warn('Failed to generate Crosswind CSS:', error)

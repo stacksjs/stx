@@ -421,11 +421,14 @@ else {
     const effects = new Set();
 
     const signal = () => {
-      if (activeEffect) effects.add(activeEffect);
+      if (activeEffect) {
+        effects.add(activeEffect);
+      }
       return value;
     };
 
     signal.set = (newValue) => {
+      console.log('[stx] signal.set:', value, '->', newValue, 'effects:', effects.size);
       if (!Object.is(newValue, value)) {
         const prev = value;
         value = newValue;
@@ -1308,6 +1311,12 @@ catch (e) {
   }
 
   function processElement(el, scope = componentScope) {
+    // Debug: log every element with x-class or @click
+    if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
+      if (el.hasAttribute('x-class') || el.hasAttribute('@click')) {
+        console.log('[stx] processElement:', el.tagName, 'x-class:', el.hasAttribute('x-class'), '@click:', el.hasAttribute('@click'));
+      }
+    }
     // Lazy hydration: if this element has stx-hydrate and hasn't been hydrated
     // yet, defer its subtree processing until the trigger fires.
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute && el.hasAttribute('stx-hydrate') && !el.__stx_hydrated) {
@@ -1481,16 +1490,23 @@ catch (e2) {
     var KEY_MAP = {enter:'Enter', tab:'Tab', escape:'Escape', space:' ', up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight', 'delete':'Delete', backspace:'Backspace'};
 
     // Handle attributes
+    if (el.hasAttribute && (el.hasAttribute('x-class') || el.hasAttribute('@click'))) {
+      console.log('[stx] attr loop entry:', el.tagName, 'attrs:', Array.from(el.attributes).map(a => a.name).join(', '));
+    }
     Array.from(el.attributes).forEach(attr => {
       const name = attr.name;
       const value = attr.value;
+
+      if (el.hasAttribute && (el.hasAttribute('x-class') || el.hasAttribute('@click'))) {
+        console.log('[stx] attr iter:', el.tagName, 'name:', name);
+      }
 
       // Dynamic attribute binding: @bind:attr, x-bind:attr, :attr, OR x-attr
       // x-attr (e.g. x-class, x-style, x-href, x-src) is the canonical binding prefix.
       // :attr still works for backward compat but is reserved for structural directives.
       // x-text, x-html, x-model, x-show, x-if, x-for, x-cloak, x-ref, x-data are
       // handled by their own code paths below — exclude them here.
-      var X_HANDLED = {'x-text':1,'x-html':1,'x-model':1,'x-show':1,'x-if':1,'x-for':1,'x-cloak':1,'x-ref':1,'x-data':1,'x-bind':1};
+      var X_HANDLED = {'x-text':1,'x-html':1,'x-model':1,'x-show':1,'x-if':1,'x-for':1,'x-cloak':1,'x-ref':1,'x-data':1,'x-bind':1,'x-class':1,'x-style':1};
       if (name.startsWith('@bind:') || name.startsWith('x-bind:')
           || (name.startsWith(':') && !name.startsWith('::') && !DIRECTIVE_NAMES[name.slice(1).split('.')[0]] && !EVENT_RE.test(name.slice(1)))
           || (name.startsWith('x-') && !X_HANDLED[name.split('.')[0]] && !X_HANDLED[name])) {
@@ -1510,6 +1526,7 @@ else {
         el.removeAttribute(name);
       }
 else if (name === '@class' || name === ':class' || name === 'x-class') {
+        console.log('[stx] HIT x-class handler:', el.tagName);
         bindClass(el, value, scope);
         el.removeAttribute(name);
       }
@@ -1553,7 +1570,9 @@ else if (name.startsWith('@') || name.startsWith(':')) {
         // Capture scope at setup time so @for loop variables are available when event fires
         const eventCapturedScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
 
+        console.log('[stx] binding event:', eventName, 'on', el.tagName, 'expr:', value.substring(0, 40));
         el.addEventListener(eventName, (event) => {
+          console.log('[stx] event fired:', eventName, 'on', el.tagName);
           // Skip clicks on elements that just became visible in this frame.
           // Prevents modal backdrop from catching the click that opened the modal.
           if (eventName === 'click') {
@@ -1605,8 +1624,14 @@ else if (name.startsWith('@') || name.startsWith(':')) {
               var fn2 = new Function('__s', '$event', body);
               fn2(eventCapturedScope, event);
             } else if (hasSignals) {
-              // Function call with signals in scope — unwrap for reading but NO writeback
+              // Function call with signals in scope — keep signals that have .set()
+              // called on them as raw signal functions, unwrap the rest for reading
               var unwrapVars = Object.keys(eventCapturedScope).map(function(k) {
+                var v = eventCapturedScope[k];
+                // If this signal is used with .set() in the expression, keep it as-is
+                if (v && typeof v === 'function' && v._isSignal && value.includes(k + '.set(')) {
+                  return 'var ' + k + ' = __s["' + k + '"]';
+                }
                 return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
               }).join(';');
               var fn3 = new Function('__s', '$event', unwrapVars + ';' + value);
@@ -1743,23 +1768,37 @@ else {
 
   function bindClass(el, expr, passedScope = componentScope) {
     const originalClasses = el.className;
-    // Capture scope at setup time - use passed scope to preserve context
     const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
+    const keys = Object.keys(capturedScope);
 
-    const evalExpr = () => {
-      try {
-        const unwrapScope = createAutoUnwrapProxy(capturedScope);
-        const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
-        return fn(...Object.values(unwrapScope));
-      }
-catch (e) {
-        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Class expression error:', expr, e);
-        return '';
-      }
-    };
+    // Pre-compile — filter out keys that aren't valid JS identifiers
+    const safeKeys = keys.filter(k => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k));
+    let fn;
+    try {
+      fn = new Function(...safeKeys, 'return ' + expr);
+    } catch (e) {
+      console.warn('[STX] bindClass compile error:', expr, e);
+      return;
+    }
 
     effect(() => {
-      const value = evalExpr();
+      const vals = [];
+      for (let i = 0; i < safeKeys.length; i++) {
+        const v = capturedScope[safeKeys[i]];
+        if (v && typeof v === 'function' && (v._isSignal || v._isDerived)) {
+          vals.push(v());
+        } else {
+          vals.push(v);
+        }
+      }
+
+      let value;
+      try {
+        value = fn.apply(null, vals);
+      } catch (e) {
+        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Class expression error:', expr, e);
+        value = '';
+      }
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         Object.keys(value).forEach(cls => {
           value[cls] ? el.classList.add(cls) : el.classList.remove(cls);

@@ -292,19 +292,31 @@ export function getCachedCSS(): string {
  * Extract all CSS class names from HTML content
  */
 export function extractClassNames(htmlContent: string): Set<string> {
-  const classRegex = /class\s*=\s*["']([^"']+)["']/gi
   const classes = new Set<string>()
 
+  // Scan static class="" attributes
+  const classRegex = /class\s*=\s*["']([^"']+)["']/gi
   let match = classRegex.exec(htmlContent)
   while (match !== null) {
-    const classValue = match[1]
-    // Split by whitespace and add each class
-    for (const cls of classValue.split(/\s+/)) {
-      if (cls.trim()) {
-        classes.add(cls.trim())
-      }
+    for (const cls of match[1].split(/\s+/)) {
+      if (cls.trim()) classes.add(cls.trim())
     }
     match = classRegex.exec(htmlContent)
+  }
+
+  // Scan dynamic x-class / :class expressions — extract quoted string literals
+  const dynRegex = /(?:x-class|:class)\s*=\s*"([^"]+)"/gi
+  let dynMatch = dynRegex.exec(htmlContent)
+  while (dynMatch !== null) {
+    const strLiterals = dynMatch[1].match(/'([^']+)'/g)
+    if (strLiterals) {
+      for (const lit of strLiterals) {
+        for (const cls of lit.slice(1, -1).split(/\s+/)) {
+          if (cls.trim()) classes.add(cls.trim())
+        }
+      }
+    }
+    dynMatch = dynRegex.exec(htmlContent)
   }
 
   return classes
@@ -413,7 +425,58 @@ export async function generateCrosswindCSS(htmlContent: string): Promise<string>
       generator.generate(className)
     }
 
-    return generator.toCSS(true, false)
+    let css = generator.toCSS(true, false)
+
+    // Generate shortcut CSS rules — CSSGenerator expands shortcuts into
+    // individual utility classes but doesn't emit grouped .shortcut { ... } rules
+    const shortcuts = crosswindConfig.shortcuts || (userConfig as any).shortcuts || {}
+    for (const [name, classStr] of Object.entries(shortcuts)) {
+      if (!classes.has(name) && !safelist.includes(name)) continue
+      const parts = (classStr as string).split(/\s+/).filter(Boolean)
+      for (const p of parts) generator.generate(p)
+    }
+    // Re-generate to include any new utility classes from shortcuts
+    css = generator.toCSS(true, false)
+
+    // Build grouped shortcut rules — extract declarations from generated CSS
+    // and combine them under a single .shortcut-name selector
+    const cssLines = css.split('\n')
+    for (const [name, classStr] of Object.entries(shortcuts)) {
+      if (!classes.has(name) && !safelist.includes(name)) continue
+      const parts = (classStr as string).split(/\s+/).filter(Boolean)
+      const decls: string[] = []
+      const darkDecls: string[] = []
+      for (const cls of parts) {
+        const isDark = cls.startsWith('dark:')
+        const actualCls = isDark ? cls.slice(5) : cls
+        // Find the CSS rule by looking for the selector line, then collecting declarations
+        const escapedCls = actualCls.replace(/\//g, '\\/').replace(/:/g, '\\:').replace(/\./g, '\\.').replace(/\[/g, '\\[').replace(/\]/g, '\\]').replace(/%/g, '\\%')
+        const selectorTarget = `.${escapedCls}`
+        for (let i = 0; i < cssLines.length; i++) {
+          const line = cssLines[i].trim()
+          if (line === `${selectorTarget} {` || line.startsWith(`${selectorTarget} {`)) {
+            // Collect declarations until closing brace
+            let j = i
+            let ruleContent = ''
+            while (j < cssLines.length) {
+              ruleContent += cssLines[j]
+              if (cssLines[j].includes('}')) break
+              j++
+            }
+            const declMatch = ruleContent.match(/\{([^}]+)\}/)
+            if (declMatch) {
+              if (isDark) darkDecls.push(declMatch[1].trim())
+              else decls.push(declMatch[1].trim())
+            }
+            break
+          }
+        }
+      }
+      if (decls.length) css += `\n.${name} { ${decls.join(' ')} }`
+      if (darkDecls.length) css += `\n@media (prefers-color-scheme: dark) { .dark .${name} { ${darkDecls.join(' ')} } }`
+    }
+
+    return css
   }
   catch (error) {
     console.warn('Failed to generate Crosswind CSS:', error)
