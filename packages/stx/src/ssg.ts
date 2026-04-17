@@ -864,6 +864,15 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
       await buildCache.load()
     }
 
+    // Pre-load icon collections so <Icon name="house" /> resolves synchronously
+    try {
+      const { preloadIconCollection } = await import('./builtins/icon')
+      await preloadIconCollection('lucide')
+    }
+    catch {
+      // @iconify/json not installed — Icon component will show placeholders
+    }
+
     // Pre-warm Crosswind config loading. We call generateCrosswindCSS once
     // on a minimal HTML snippet so its cachedConfig module state is populated
     // BEFORE the parallel page renders start. Without this, N parallel workers
