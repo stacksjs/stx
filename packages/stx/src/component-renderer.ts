@@ -740,7 +740,15 @@ export async function processComponents(
   output = await processComponentDirectives(output, context, filePath, options, dependencies)
 
   // Step 4: Process custom element tags (builtins + file-based)
-  output = await processCustomElementTags(output, context, filePath, options, dependencies)
+  // Run multiple passes — builtins nested inside other builtins (e.g., <Icon>
+  // inside <StxLink>) aren't resolved in a single pass because the outer
+  // builtin's children are raw HTML during the first pass. Re-scan until
+  // no more unresolved builtins remain (max 3 passes to prevent infinite loops).
+  for (let pass = 0; pass < 3; pass++) {
+    const before = output
+    output = await processCustomElementTags(output, context, filePath, options, dependencies)
+    if (output === before) break // No more changes — all builtins resolved
+  }
 
   return output
 }
