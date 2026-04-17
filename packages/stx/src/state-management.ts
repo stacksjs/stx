@@ -955,6 +955,37 @@ export type DefinedStoreWithGettersAndActions<
  * </script>
  * ```
  */
+/**
+ * Define a store using a setup function (composition API style).
+ * The function receives no arguments and returns an object of signals,
+ * derived values, and action functions.
+ *
+ * ```ts
+ * defineStore('auth', () => {
+ *   const user = state(null)
+ *   const isAuthenticated = derived(() => !!user())
+ *   function login(data) { user.set(data) }
+ *   return { user, isAuthenticated, login }
+ * })
+ * ```
+ */
+export function defineStore<T extends Record<string, any>>(
+  id: string,
+  setup: () => T,
+  options?: { persist?: boolean | { pick?: string[], storage?: string, key?: string } },
+): T
+
+/**
+ * Define a store using an options object (options API style).
+ *
+ * ```ts
+ * defineStore('counter', {
+ *   state: () => ({ count: 0 }),
+ *   getters: { doubled: (s) => s.count * 2 },
+ *   actions: { increment() { this.count++ } },
+ * })
+ * ```
+ */
 export function defineStore<
   S extends object,
   G extends Record<string, (state: S) => any> = Record<string, never>,
@@ -962,11 +993,27 @@ export function defineStore<
 >(
   id: string,
   options: DefineStoreOptions<S, G, A>,
-): DefinedStoreWithGettersAndActions<S, G, A> {
+): DefinedStoreWithGettersAndActions<S, G, A>
+
+// Implementation
+export function defineStore(id: string, setupOrOptions: any, extraOptions?: any): any {
+  // Setup function style — delegate to runtime (signals.ts handles this)
+  if (typeof setupOrOptions === 'function') {
+    // At build time / server side, just call the setup and return the result.
+    // At runtime in the browser, window.stx.defineStore handles persistence,
+    // hydration, and the full store lifecycle.
+    if (typeof window !== 'undefined' && (window as any).stx?.defineStore) {
+      return (window as any).stx.defineStore(id, setupOrOptions, extraOptions)
+    }
+    return setupOrOptions()
+  }
+
+  // Options style — original implementation
+  const options = setupOrOptions as DefineStoreOptions<any, any, any>
   const {
     state: initialState,
-    getters = {} as G,
-    actions = {} as A,
+    getters = {},
+    actions = {},
     persist,
     devtools = true,
   } = options
