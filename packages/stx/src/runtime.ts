@@ -66,20 +66,20 @@ export interface StoreRef<T = unknown> {
  * appStore.setState({ count: appStore.state.count + 1 })
  * ```
  */
-export function useStore<T = unknown>(name: string): StoreRef<T> | null {
+export function useStore<T = unknown>(name: string): StoreRef<T> {
   const stores = getGlobal<Record<string, StoreRef<T>>>(STX_STORES_KEY, {})
-  return stores[name] ?? null
-}
-
-/**
- * Get a store, throwing if not found
- */
-export function useStoreOrThrow<T = unknown>(name: string): StoreRef<T> {
-  const store = useStore<T>(name)
+  const store = stores[name]
   if (!store) {
     throw new Error(`Store "${name}" not found. Make sure it's defined with defineStore().`)
   }
   return store
+}
+
+/**
+ * @deprecated Use `useStore` — it now throws if the store is not found.
+ */
+export function useStoreOrThrow<T = unknown>(name: string): StoreRef<T> {
+  return useStore<T>(name)
 }
 
 /**
