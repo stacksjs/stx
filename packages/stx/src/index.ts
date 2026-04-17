@@ -103,6 +103,7 @@ export * from './component-hmr'
 export * from './hydration'
 // ssg moved to stx/ssg
 export * from './ssr'
+export * from './state-management'
 // visual-testing moved to stx/visual-testing
 export * from './image-optimization'
 export * from './media'
