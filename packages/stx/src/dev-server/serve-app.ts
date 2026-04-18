@@ -109,7 +109,10 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   // Resolve app directory, respecting the stx root config
   const absoluteAppDir = path.resolve(appDir)
   const { loadStxConfig } = await import('../')
-  const projectConfig = await loadStxConfig()
+  // Load config from the APP directory, not process.cwd() — important when
+  // `stx <app-dir>` is run from outside the app. Without this, a stray
+  // stx.config.ts in a parent directory would shadow the app's own config.
+  const projectConfig = await loadStxConfig(absoluteAppDir)
   const stxRoot = projectConfig.root && projectConfig.root !== '.'
     ? path.join(absoluteAppDir, projectConfig.root)
     : absoluteAppDir
@@ -186,7 +189,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   let customRouter: { handleRequest: (request: Request) => Response | Promise<Response> } | null = null
   try {
     const { loadStxConfig } = await import('../')
-    const projectConfig = await loadStxConfig()
+    const projectConfig = await loadStxConfig(absoluteAppDir)
     if (projectConfig?.apiRouter) {
       customRouter = projectConfig?.apiRouter
       console.log(`${colors.blue}Using custom router for API handling${colors.reset}`)
@@ -266,12 +269,21 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   // Build a single page file by processing the template directly
   // This matches the approach used by bun-plugin-stx/serve (which powers buddy dev)
   // instead of using Bun.build() which has issues with HTML asset resolution
-  const buildPage = async (route: Route): Promise<BuiltPage | null> => {
+  /**
+   * Build a page's HTML.
+   *
+   * For static routes this is called once at startup and cached. For dynamic
+   * routes (e.g. `/cars/:id`), it's called per request with `requestParams`
+   * populated from the matched URL — without that, every `<script server>`
+   * that reads `params.id` sees the same fallback value at build time, so
+   * every `/book/:id` URL would render the same data.
+   */
+  const buildPage = async (route: Route, requestParams?: Record<string, string>): Promise<BuiltPage | null> => {
     try {
       const { processDirectives, extractVariables, defaultConfig, loadStxConfig, injectRouterScript } = await import('../')
 
       // Load project stx.config.ts (e.g. partialsDir, componentsDir, layoutsDir)
-      const projectConfig = await loadStxConfig()
+      const projectConfig = await loadStxConfig(absoluteAppDir)
 
       const content = await Bun.file(route.filePath).text()
 
@@ -291,33 +303,58 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         templateContent = templateContent.replace(s.fullTag, '')
       }
 
-      // Create context and extract variables
+      // Create context and extract variables.
+      // `params` is populated for dynamic routes from the request URL so that
+      // server scripts writing `const id = params.id` get the actual slug.
       const context: Record<string, any> = {
         __filename: route.filePath,
         __dirname: path.dirname(route.filePath),
+        params: requestParams ?? {},
       }
 
       for (const scriptBody of serverScripts) {
-        await extractVariables(scriptBody, context, route.filePath)
+        try {
+          await extractVariables(scriptBody, context, route.filePath)
+        }
+        catch (e) {
+          if (options.stxOptions?.debug) console.error('[stx] variable extraction error', route.filePath, (e as any)?.message || e)
+        }
       }
 
       // Process template directives
       const dependencies = new Set<string>()
-      let output = await processDirectives(templateContent, context, route.filePath, {
+      // Resolve component/layout/partial dirs against the APP DIR (not
+      // process.cwd()) so `stx <app-dir>` run from outside the app still
+      // finds the app's own components. process.ts would otherwise resolve
+      // these against cwd, which points at the directory the user invoked
+      // stx from.
+      const resolveRel = (dir: string | undefined): string | undefined => {
+        if (!dir) return dir
+        if (path.isAbsolute(dir)) return dir
+        return path.resolve(absoluteAppDir, dir)
+      }
+      const merged = {
         ...defaultConfig,
         ...projectConfig,
         ...options.stxOptions,
         autoShell: true,
-      }, dependencies)
+      } as any
+      merged.partialsDir = resolveRel(merged.partialsDir)
+      merged.componentsDir = resolveRel(merged.componentsDir)
+      merged.layoutsDir = resolveRel(merged.layoutsDir)
+      let output = await processDirectives(templateContent, context, route.filePath, merged, dependencies)
 
       // Inject SPA router (skip when using shell — router goes in shell composition)
       if (!shell) {
         output = await injectRouterScript(output)
       }
 
-      // Re-inject client scripts before </body>
+      // Re-inject client scripts before </body> — interpolating {{ }} / {!! !!}
+      // in each script body against the server context so pages can write
+      // `const PRICE = {{ car.price }}` directly in <script client> blocks.
       if (clientScripts.length > 0) {
-        const scriptsHtml = clientScripts.join('\n')
+        const { interpolateScriptsInTemplate } = await import('../expressions')
+        const scriptsHtml = interpolateScriptsInTemplate(clientScripts.join('\n'), context)
         const bodyIdx = output.lastIndexOf('</body>')
         if (bodyIdx !== -1) {
           output = output.slice(0, bodyIdx) + scriptsHtml + '\n</body>' + output.slice(bodyIdx + 7)
@@ -482,7 +519,13 @@ catch {
       const routeMatch = matchRoute(url.pathname, routes)
 
       if (routeMatch) {
-        const builtPage = builtPages.get(routeMatch.route.pattern)
+        // Dynamic routes rebuild per request so server scripts see the actual
+        // URL params. Static routes use the cached startup build.
+        let builtPage = builtPages.get(routeMatch.route.pattern)
+        if (routeMatch.route.isDynamic && Object.keys(routeMatch.params).length > 0) {
+          const rebuilt = await buildPage(routeMatch.route, routeMatch.params)
+          if (rebuilt) builtPage = rebuilt
+        }
         if (builtPage) {
           // Get page metadata (middleware, etc.)
           const pageMeta = getPageMeta()

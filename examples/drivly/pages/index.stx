@@ -1,0 +1,285 @@
+<script server>
+import { cars, categories, cities } from '../data/cars'
+
+const pageTitle = 'Drivly — Rent unique cars from real people'
+const pageDescription = 'Skip the rental counter. Book from 350,000+ hosts across 10,000+ cities. Teslas, Jeeps, classic Mustangs, and more.'
+const activePage = 'home'
+
+const featured = cars.slice(0, 4)
+const deals = cars.filter(c => c.originalPrice).slice(0, 3)
+const luxury = cars.filter(c => c.category === 'Luxury' || c.category === 'Sports' || c.category === 'Convertible').slice(0, 4)
+
+const stats = [
+  { label: 'Cities', value: '10,000+' },
+  { label: 'Cars listed', value: '350,000+' },
+  { label: 'Average host earnings', value: '$10,516' },
+  { label: 'Trips completed', value: '14M+' },
+]
+
+const steps = [
+  { num: '01', title: 'Find the perfect car', desc: 'Browse by make, price, or vibe. Filter to exactly what you need — from a grocery-getter to a weekend cruiser.', icon: '🔍' },
+  { num: '02', title: 'Book in a click', desc: 'Instant Book gets you on the road in minutes. No counter, no fine print, no games.', icon: '⚡' },
+  { num: '03', title: 'Meet or unlock & go', desc: 'Hosts hand off keys in person or via contactless unlock with the app. Return the same way.', icon: '🔑' },
+]
+
+const testimonials = [
+  { name: 'Maya L.', role: 'Guest · New York', body: 'Booked a Model 3 for a trip up the Hudson. It was cheaper than renting, cooler than Uber, and the host was a gem.', rating: 5 },
+  { name: 'Darren C.', role: 'Host · Austin',   body: 'I make ~$1,200/mo off my second car. Pays my rent. Guests have been lovely, and Drivly handles everything insurance-wise.', rating: 5 },
+  { name: 'Priya S.',  role: 'Guest · LA',      body: 'Found a convertible AMG for our anniversary. Top down on PCH was unreal. Easily the most memorable date we\'ve had.', rating: 5 },
+]
+
+const popularSearches = ['Tesla', 'Jeep Wrangler', 'Convertible', 'SUVs with 7 seats', 'Under $75/day', 'EVs']
+</script>
+
+@extends('layouts/app.stx')
+
+@section('content')
+
+<!-- ── HERO ── -->
+<section style="position: relative; overflow: hidden; padding: 4.5rem 0 2.5rem">
+  <div style="position: absolute; inset: 0; z-index: -1; pointer-events: none">
+    <div style="position: absolute; top: -100px; right: -80px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(255, 62, 84, 0.18) 0%, transparent 70%); filter: blur(60px)"></div>
+    <div style="position: absolute; bottom: -100px; left: -80px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(147, 51, 234, 0.14) 0%, transparent 70%); filter: blur(60px)"></div>
+  </div>
+
+  <div class="container">
+    <div style="max-width: 820px">
+      <span class="chip chip-brand fade-in" style="margin-bottom: 1.5rem">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--brand); display: inline-block; animation: pulse 2s infinite"></span>
+        Now live in 10,000+ cities
+      </span>
+      <h1 class="serif fade-in" style="font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.03; margin: 0; letter-spacing: -0.025em">
+        Find your <em style="color: var(--brand); font-style: normal; text-decoration: underline; text-decoration-color: var(--brand-soft); text-decoration-thickness: 0.18em; text-underline-offset: 0.08em">drive</em>.<br>
+        Skip the <span style="color: var(--text-muted); text-decoration: line-through">rental counter</span>.
+      </h1>
+      <p class="fade-in" style="font-size: 1.125rem; color: var(--text-secondary); margin: 1.5rem 0 0; max-width: 56ch; line-height: 1.55">
+        Book any car, anywhere, from trusted hosts in your neighborhood. Teslas, Jeeps, vintage Mustangs — or the trusty minivan for the next big family trip.
+      </p>
+    </div>
+
+    <div class="fade-in" style="margin-top: 2.5rem; max-width: 980px">
+      @component('SearchBar', { location: 'San Francisco, CA' })
+      @endcomponent
+    </div>
+
+    <div class="fade-in" style="margin-top: 1.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center">
+      <span style="font-size: 0.8125rem; color: var(--text-muted); margin-right: 0.25rem">Popular:</span>
+      @foreach (popularSearches as term)
+        <a href="/search?q={{ encodeURIComponent(term) }}" class="chip" style="background: var(--bg-elevated); cursor: pointer">{{ term }}</a>
+      @endforeach
+    </div>
+  </div>
+</section>
+
+<style>
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.35 } }
+</style>
+
+<!-- ── CATEGORIES ── -->
+<section style="padding: 2.5rem 0">
+  <div class="container">
+    <div style="overflow-x: auto; padding-bottom: 0.5rem; margin: 0 -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem">
+      <div style="display: flex; gap: 0.75rem; min-width: max-content">
+        @foreach (categories as cat)
+          <a href="/search?category={{ cat.id }}" class="card hover-lift"
+            style="padding: 1rem 1.25rem; min-width: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; text-align: center; text-decoration: none; color: var(--text); flex-shrink: 0">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--bg-subtle); display: flex; align-items: center; justify-content: center">
+              <Icon icon="{{ cat.icon }}" size="22" color="var(--brand)" />
+            </div>
+            <span style="font-size: 0.8125rem; font-weight: 500">{{ cat.label }}</span>
+          </a>
+        @endforeach
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURED CARS ── -->
+<section style="padding: 2rem 0">
+  <div class="container">
+    <div style="display: flex; align-items: end; justify-content: space-between; margin-bottom: 1.75rem; gap: 1rem; flex-wrap: wrap">
+      <div>
+        <span class="chip chip-accent">This week</span>
+        <h2 class="serif" style="font-size: clamp(1.875rem, 3vw, 2.5rem); margin: 0.5rem 0 0.375rem">Featured cars near you</h2>
+        <p class="muted" style="margin: 0; font-size: 0.9375rem">Handpicked by the Drivly team. Fresh listings, stellar reviews.</p>
+      </div>
+      <StxLink to="/search" class="btn btn-ghost" style="color: var(--brand); font-weight: 600">
+        Browse all →
+      </StxLink>
+    </div>
+
+    <div class="grid grid-4">
+      @foreach (featured as car)
+        @component('CarCard', { car: car })
+        @endcomponent
+      @endforeach
+    </div>
+  </div>
+</section>
+
+<!-- ── DEALS STRIP ── -->
+<section style="padding: 3rem 0">
+  <div class="container">
+    <div style="border-radius: var(--radius-xl); overflow: hidden; background: linear-gradient(135deg, #FF3E54 0%, #9333ea 100%); padding: 3rem; color: white; position: relative">
+      <div style="position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 60%); border-radius: 50%"></div>
+      <div style="position: relative; display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: end">
+        <div>
+          <span style="display: inline-block; padding: 0.3125rem 0.75rem; background: rgba(255,255,255,0.2); border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 1rem">DEALS OF THE WEEK</span>
+          <h2 class="serif" style="font-size: clamp(2rem, 4vw, 3rem); margin: 0 0 0.75rem; line-height: 1.05">Up to 30% off · This week only</h2>
+          <p style="opacity: 0.9; margin: 0; max-width: 48ch; font-size: 1.0625rem">Top-rated cars, hosts offering a limited-time rate. No surge pricing, no hidden fees.</p>
+        </div>
+        <StxLink to="/search?deals=1" class="btn btn-lg" style="background: white; color: #0a0a0a; font-weight: 600; white-space: nowrap">
+          Shop deals
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </StxLink>
+      </div>
+    </div>
+
+    <div class="grid grid-3" style="margin-top: 1.5rem">
+      @foreach (deals as car)
+        @component('CarCard', { car: car })
+        @endcomponent
+      @endforeach
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section style="padding: 4rem 0">
+  <div class="container">
+    <div style="text-align: center; max-width: 640px; margin: 0 auto 3rem">
+      <span class="chip">How it works</span>
+      <h2 class="serif" style="font-size: clamp(1.875rem, 3.5vw, 3rem); margin: 1rem 0 0.5rem">The simplest way to rent a car</h2>
+      <p class="muted" style="font-size: 1.0625rem; margin: 0">It takes under 60 seconds. Really.</p>
+    </div>
+
+    <div class="grid grid-3">
+      @foreach (steps as step)
+        <div class="card" style="padding: 2rem; position: relative; overflow: hidden">
+          <div style="position: absolute; top: 1.25rem; right: 1.25rem; font-size: 0.75rem; font-weight: 700; color: var(--text-faint); letter-spacing: 0.05em">{{ step.num }}</div>
+          <div style="width: 56px; height: 56px; border-radius: 16px; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin-bottom: 1.25rem">{{ step.icon }}</div>
+          <h3 class="serif" style="font-size: 1.5rem; margin: 0 0 0.5rem">{{ step.title }}</h3>
+          <p class="muted" style="margin: 0; line-height: 1.55">{{ step.desc }}</p>
+        </div>
+      @endforeach
+    </div>
+  </div>
+</section>
+
+<!-- ── LUXURY / VIBES ── -->
+<section style="padding: 2rem 0 4rem">
+  <div class="container">
+    <div style="display: flex; align-items: end; justify-content: space-between; margin-bottom: 1.75rem; gap: 1rem; flex-wrap: wrap">
+      <div>
+        <span class="chip chip-brand">Luxury & exotic</span>
+        <h2 class="serif" style="font-size: clamp(1.875rem, 3vw, 2.5rem); margin: 0.5rem 0 0.375rem">Drive something special</h2>
+        <p class="muted" style="margin: 0">For the birthday, the anniversary, or just because you earned it.</p>
+      </div>
+      <StxLink to="/search?category=luxury" class="btn btn-ghost" style="color: var(--brand); font-weight: 600">
+        Explore luxury →
+      </StxLink>
+    </div>
+
+    <div class="grid grid-4">
+      @foreach (luxury as car)
+        @component('CarCard', { car: car })
+        @endcomponent
+      @endforeach
+    </div>
+  </div>
+</section>
+
+<!-- ── CITIES ── -->
+<section style="padding: 2rem 0">
+  <div class="container">
+    <h2 class="serif" style="font-size: clamp(1.875rem, 3vw, 2.5rem); margin: 0 0 0.375rem">Popular destinations</h2>
+    <p class="muted" style="margin: 0 0 2rem">Rent anywhere Drivly has cars — which is basically everywhere now.</p>
+
+    <div class="grid grid-3">
+      @foreach (cities as city)
+        <a href="/search?location={{ encodeURIComponent(city.name + ', ' + city.state) }}" class="card hover-lift" style="overflow: hidden; display: block; position: relative; aspect-ratio: 4 / 3">
+          <img src="{{ city.image }}" alt="{{ city.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover">
+          <div style="position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)"></div>
+          <div style="position: absolute; bottom: 1.25rem; left: 1.25rem; right: 1.25rem; color: white">
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700">{{ city.name }}</h3>
+            <p style="margin: 0.25rem 0 0; opacity: 0.85; font-size: 0.875rem">{{ city.listings.toLocaleString() }} cars available</p>
+          </div>
+        </a>
+      @endforeach
+    </div>
+  </div>
+</section>
+
+<!-- ── BECOME A HOST ── -->
+<section style="padding: 4rem 0">
+  <div class="container">
+    <div class="card" style="overflow: hidden; display: grid; grid-template-columns: 1.1fr 1fr; background: var(--bg-elevated); border-radius: var(--radius-xl)">
+      <div style="padding: 3rem; display: flex; flex-direction: column; justify-content: center">
+        <span class="chip chip-brand" style="align-self: flex-start">For hosts</span>
+        <h2 class="serif" style="font-size: clamp(2rem, 4vw, 3.25rem); margin: 1rem 0 0.75rem; line-height: 1.05">Your car could be earning $10,516/year</h2>
+        <p style="font-size: 1.0625rem; color: var(--text-secondary); margin: 0 0 1.5rem; line-height: 1.6">List it in under 10 minutes. We handle insurance (up to $750K), payments, and support. You keep the keys — and the cash.</p>
+
+        <div class="grid grid-2" style="margin: 0.5rem 0 1.5rem; gap: 1rem">
+          @foreach (stats as stat)
+            <div>
+              <p style="font-size: 1.75rem; font-weight: 700; margin: 0; color: var(--text)">{{ stat.value }}</p>
+              <p class="muted" style="font-size: 0.875rem; margin: 0.125rem 0 0">{{ stat.label }}</p>
+            </div>
+          @endforeach
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap">
+          <StxLink to="/host/list" class="btn btn-primary btn-lg">Get started</StxLink>
+          <StxLink to="/about" class="btn btn-outline btn-lg">Learn more</StxLink>
+        </div>
+      </div>
+      <div style="position: relative; min-height: 340px; background-image: url('https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1600&q=70'); background-size: cover; background-position: center">
+        <div style="position: absolute; inset: 0; background: linear-gradient(90deg, var(--bg-elevated) 0%, transparent 20%)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TESTIMONIALS ── -->
+<section style="padding: 3rem 0">
+  <div class="container">
+    <h2 class="serif" style="font-size: clamp(1.875rem, 3vw, 2.5rem); margin: 0 0 0.375rem">Trusted by millions</h2>
+    <p class="muted" style="margin: 0 0 2rem">Average rating: 4.9 ★ across 14M+ completed trips.</p>
+
+    <div class="grid grid-3">
+      @foreach (testimonials as t)
+        <div class="card" style="padding: 1.75rem">
+          <div style="margin-bottom: 0.75rem">
+            @component('Rating', { rating: t.rating })
+            @endcomponent
+          </div>
+          <p class="serif" style="font-size: 1.125rem; line-height: 1.45; margin: 0 0 1.25rem">"{{ t.body }}"</p>
+          <div style="display: flex; align-items: center; gap: 0.75rem">
+            <div class="avatar">{{ t.name.split(' ').map(s => s[0]).join('') }}</div>
+            <div>
+              <p style="margin: 0; font-weight: 600; font-size: 0.875rem">{{ t.name }}</p>
+              <p class="muted" style="margin: 0.125rem 0 0; font-size: 0.8125rem">{{ t.role }}</p>
+            </div>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+</section>
+
+<!-- ── APP CTA ── -->
+<section style="padding: 3rem 0 5rem">
+  <div class="container">
+    <div class="card" style="padding: 3rem; text-align: center; background: var(--bg-subtle); border: 1px dashed var(--border-strong)">
+      <p style="font-size: 3rem; margin: 0 0 0.75rem">📱</p>
+      <h2 class="serif" style="font-size: clamp(1.75rem, 3vw, 2.25rem); margin: 0 0 0.5rem">Get the Drivly app</h2>
+      <p class="muted" style="margin: 0 0 1.5rem; max-width: 48ch; margin-left: auto; margin-right: auto">Unlock cars from your phone, chat with hosts, and manage trips on the go.</p>
+      <div style="display: inline-flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center">
+        <a href="#" class="btn btn-dark btn-lg">iOS · App Store</a>
+        <a href="#" class="btn btn-dark btn-lg">Android · Google Play</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+@endsection

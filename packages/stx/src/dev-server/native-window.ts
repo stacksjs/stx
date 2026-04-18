@@ -1,10 +1,24 @@
 /**
  * Native Window Module
- * Handles opening development windows using the desktop package
+ * Handles opening development windows using the desktop package.
+ *
+ * All `@stacksjs/desktop` imports are lazy: the package is only loaded when
+ * the user actually asks for a native window (`--native`). This keeps the
+ * CLI runnable even if `@stacksjs/desktop` isn't built or installed —
+ * previously a failed import crashed every `stx dev` invocation with
+ * "Cannot find module '@stacksjs/desktop'".
  */
 
-import type { SidebarConfig } from '@stacksjs/desktop'
-import { openDevWindow } from '@stacksjs/desktop'
+// Local type-only mirror of the one exported by @stacksjs/desktop.
+// Kept minimal — stx only reads these fields. If the real type grows, the
+// resolved value is still passed through verbatim to openDevWindow().
+export interface SidebarConfig {
+  sections: Array<{
+    title?: string
+    items?: Array<{ id: string, label: string, icon?: string, badge?: string | number }>
+  }>
+}
+
 import { colors } from './terminal-colors'
 
 /**
@@ -39,6 +53,24 @@ export const DEFAULT_NATIVE_WINDOW_CONFIG: Required<Omit<NativeWindowConfig, 'si
 }
 
 /**
+ * Lazily resolve `openDevWindow` from the optional desktop package.
+ * Returns `null` if the package isn't available — the caller handles fallback.
+ */
+async function loadDesktop(): Promise<
+  | { openDevWindow: (port: number, opts: Record<string, unknown>) => Promise<boolean> }
+  | null
+> {
+  try {
+    const mod = await import('@stacksjs/desktop')
+    if (typeof (mod as any).openDevWindow !== 'function') return null
+    return mod as any
+  }
+  catch {
+    return null
+  }
+}
+
+/**
  * Open a native window for development
  * Uses the desktop package to create a webview window
  *
@@ -55,9 +87,17 @@ export async function openNativeWindow(
     ...config,
   }
 
+  const desktop = await loadDesktop()
+  if (!desktop) {
+    console.log(
+      `${colors.yellow}⚠${colors.reset} Native window requested, but @stacksjs/desktop is not available.`,
+    )
+    console.log(`  Install & build the desktop package to enable --native.`)
+    return false
+  }
+
   try {
-    // Use the desktop package to open the window
-    const success = await openDevWindow(port, {
+    const success = await desktop.openDevWindow(port, {
       title: mergedConfig.title,
       width: mergedConfig.width,
       height: mergedConfig.height,
@@ -85,14 +125,7 @@ export async function openNativeWindow(
  * Returns true if the desktop package can be used
  */
 export async function isNativeWindowSupported(): Promise<boolean> {
-  try {
-    // Try to import the desktop package
-    await import('@stacksjs/desktop')
-    return true
-  }
-  catch {
-    return false
-  }
+  return (await loadDesktop()) !== null
 }
 
 /**

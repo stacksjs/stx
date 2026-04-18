@@ -612,9 +612,56 @@ catch {
     const filteredContextKeys = Object.keys(context).filter(key => !propsKeys.has(key) && key !== 'props')
     const filteredContextValues = filteredContextKeys.map(key => context[key])
 
+    // Expose each prop as a bare identifier (e.g. `car`, `rating`) in the
+    // outer scope of the script IIFE — so components can reference props
+    // directly without `const { car } = $props()` boilerplate. Skipped for
+    // prop names that collide with JS reserved words or built-in globals,
+    // and skipped when the script text already declares a same-named const
+    // (inner `const` legally shadows an outer param, but our convertToCommonJS
+    // pass may reorder declarations, so we play it safe).
+    const jsReserved = new Set([
+      'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default',
+      'delete', 'do', 'else', 'export', 'extends', 'finally', 'for', 'function',
+      'if', 'import', 'in', 'instanceof', 'let', 'new', 'return', 'super', 'switch',
+      'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield',
+      'enum', 'await', 'async', 'module', 'exports', 'require', 'params',
+      'window', 'document', 'console', 'state', 'derived', 'effect',
+    ])
+    const propArgNames: string[] = []
+    const propArgValues: unknown[] = []
+    for (const [key, value] of Object.entries(propsObj)) {
+      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)) continue // must be a valid JS identifier
+      if (jsReserved.has(key)) continue
+      // Skip names the script redeclares at the top level (shadowing would work,
+      // but convertToCommonJS rewrites may leave them at the same scope).
+      const redeclareRegex = new RegExp(`(?:^|[\\s;{])(?:const|let|var|function)\\s+${key}\\b`)
+      if (redeclareRegex.test(convertedScript)) continue
+      propArgNames.push(key)
+      propArgValues.push(value)
+    }
+
     // Extract variable names that need to be re-synced after async operations
     const varNames = extractDeclaredVariableNames(convertedScript)
     const reSyncCode = varNames.map(name => `module.exports.${name} = typeof ${name} !== 'undefined' ? ${name} : module.exports.${name};`).join('\n        ')
+
+    // Ensure `params` is always defined for dynamic route pages — even when
+    // the page is pre-built with no request in flight. Without this, any
+    // `<script server>` that writes `const id = params?.id ?? ...` throws
+    // ReferenceError, which aborts the IIFE and strands every subsequent
+    // declaration in the fallback extractor (which can't execute imports
+    // or function calls). Callers that know the real params pass them via
+    // context; everyone else gets an empty object for safe optional chaining.
+    const paramsObj = (context.params as Record<string, unknown> | undefined) ?? {}
+
+    // Build the filtered context arrays while excluding `params` — we inject
+    // it explicitly so it's always defined even if not in context.
+    const scriptContextKeys: string[] = []
+    const scriptContextValues: unknown[] = []
+    for (let i = 0; i < filteredContextKeys.length; i++) {
+      if (filteredContextKeys[i] === 'params') continue
+      scriptContextKeys.push(filteredContextKeys[i])
+      scriptContextValues.push(filteredContextValues[i])
+    }
 
     // eslint-disable-next-line no-new-func
     const scriptFn = new Function(
@@ -624,7 +671,9 @@ catch {
       'ref', 'reactive', 'computed', 'watch', 'onMounted', 'onUnmounted', 'nextTick',
       'defineEmits', 'defineExpose', 'provide', 'inject', 'useColorMode', 'useDark',
       'window', 'document', 'console', 'confirm', 'alert', 'fetch',
-      ...filteredContextKeys,
+      'params',
+      ...propArgNames,
+      ...scriptContextKeys,
       // Wrap in async IIFE to support top-level await
       // Re-sync variables at end to capture any async reassignments
       `return (async () => {
@@ -640,7 +689,9 @@ catch {
       ref, reactive, computed, watch, onMounted, onUnmounted, nextTick,
       defineEmits, defineExpose, provide, inject, useColorMode, useDark,
       windowProxy, mockDocument, mockConsole, mockWindow.confirm, mockWindow.alert, mockWindow.fetch,
-      ...filteredContextValues
+      paramsObj,
+      ...propArgValues,
+      ...scriptContextValues,
     )
 
     // Copy results to context
@@ -655,7 +706,7 @@ catch {
       }
     }
   }
-  catch (error) {
+  catch {
     // Fallback: Try alternative parsing approaches
     try {
       await fallbackVariableExtraction(jsContent, context, filePath)

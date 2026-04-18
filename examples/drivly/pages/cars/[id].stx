@@ -1,0 +1,488 @@
+<script server>
+import { cars, getCar } from '../../data/cars'
+
+const id = params?.id || 'tesla-model-3-2024'
+const car = getCar(id) || cars[0]
+const pageTitle = car.year + ' ' + car.make + ' ' + car.model + ' · Drivly'
+const pageDescription = car.description.slice(0, 160)
+const activePage = 'search'
+
+const similar = cars.filter(c => c.id !== car.id && c.category === car.category).slice(0, 4)
+if (similar.length < 4) {
+  for (const c of cars) {
+    if (similar.length >= 4) break
+    if (c.id !== car.id && !similar.find(s => s.id === c.id)) similar.push(c)
+  }
+}
+
+const ratingPct = {
+  cleanliness: 4.9,
+  maintenance: 4.95,
+  communication: 4.92,
+  convenience: 4.88,
+  accuracy: 4.94,
+}
+
+const defaultFrom = new Date()
+defaultFrom.setDate(defaultFrom.getDate() + 3)
+const defaultTo = new Date()
+defaultTo.setDate(defaultTo.getDate() + 6)
+const fmtDate = d => d.toISOString().slice(0, 10)
+
+const tripRules = [
+  'No smoking — $250 cleaning fee if violated',
+  'Pets welcome with advance notice',
+  'Off-road driving requires approval',
+  'Return with same fuel/charge level',
+  'Max 200 miles/day (extra miles: $0.40/mi)',
+  'Valid driver\'s license required',
+]
+
+const pickupTimes = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00']
+const ratingMetricEntries = Object.entries(ratingPct)
+const galleryItems = car.gallery.filter((_, i) => i < 5)
+</script>
+
+@extends('layouts/app.stx')
+
+@push('styles')
+  .gallery-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 0.5rem; aspect-ratio: 16/9; border-radius: var(--radius-xl); overflow: hidden; }
+  .gallery-grid > *:nth-child(1) { grid-row: span 2; }
+  .gallery-grid .gallery-cell { width: 100%; height: 100%; cursor: pointer; overflow: hidden; }
+  .gallery-grid img { width: 100%; height: 100%; object-fit: cover; transition: opacity 180ms, transform 400ms; }
+  .gallery-grid .gallery-cell:hover img { opacity: 0.9; transform: scale(1.04); }
+  @media (max-width: 720px) { .gallery-grid { grid-template-columns: 1fr; grid-template-rows: auto; aspect-ratio: auto; } .gallery-grid > * { aspect-ratio: 16/10; } .gallery-grid > *:nth-child(1) { grid-row: auto; } .gallery-grid > *:nth-child(n+4) { display: none; } }
+  .detail-layout { display: grid; grid-template-columns: 1fr 380px; gap: 3rem; margin-top: 2.5rem; align-items: start; }
+  @media (max-width: 980px) { .detail-layout { grid-template-columns: 1fr; } .book-sidebar { position: sticky; bottom: 0; top: auto !important; z-index: 40; } }
+  .book-sidebar { position: sticky; top: 96px; }
+  .rating-bar { position: relative; height: 6px; background: var(--bg-muted); border-radius: 3px; overflow: hidden; }
+  .rating-bar-fill { position: absolute; inset: 0; background: var(--text); border-radius: 3px; }
+  .spec-item { display: flex; gap: 0.75rem; align-items: center; padding: 0.625rem 0; }
+  .spec-item svg { color: var(--text-muted); flex-shrink: 0; }
+  .tab-list { display: flex; border-bottom: 1px solid var(--border); gap: 0.25rem; margin-bottom: 1.75rem; }
+  .tab-btn { padding: 0.875rem 1rem; border: none; background: transparent; color: var(--text-muted); font-size: 0.9375rem; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: inherit; }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--brand); font-weight: 600; }
+  .lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; padding: 2rem; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 100%; }
+  .lightbox-close { position: absolute; top: 1.5rem; right: 1.5rem; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+@endpush
+
+@section('content')
+<div class="container" style="padding: 1.5rem 1.5rem 4rem">
+
+  <!-- Breadcrumbs -->
+  <nav style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1rem">
+    <StxLink to="/" style="color: var(--text-muted)">Home</StxLink>
+    <span>›</span>
+    <StxLink to="/search" style="color: var(--text-muted)">Cars in {{ car.location.split(',')[0] }}</StxLink>
+    <span>›</span>
+    <span style="color: var(--text)">{{ car.year }} {{ car.make }} {{ car.model }}</span>
+  </nav>
+
+  <!-- Title + meta -->
+  <div style="display: flex; justify-content: space-between; gap: 1rem; align-items: start; margin-bottom: 1.5rem; flex-wrap: wrap">
+    <div>
+      <h1 class="serif" style="font-size: clamp(1.875rem, 4vw, 2.75rem); margin: 0 0 0.5rem; line-height: 1.1">{{ car.year }} {{ car.make }} {{ car.model }} {{ car.trim || '' }}</h1>
+      <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: 0.9375rem; color: var(--text-secondary)">
+        @component('Rating', { rating: car.rating, reviews: car.reviewCount })
+        @endcomponent
+        <span style="color: var(--text-muted)">·</span>
+        <span>{{ car.trips }} trips</span>
+        <span style="color: var(--text-muted)">·</span>
+        <span>{{ car.location }}</span>
+        @if (car.badges)
+          @foreach (car.badges as badge)
+            <span class="chip chip-brand">{{ badge }}</span>
+          @endforeach
+        @endif
+      </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem">
+      <button class="btn btn-outline btn-sm" id="shareBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+        Share
+      </button>
+      <button class="btn btn-outline btn-sm detail-fav-btn" data-car-id="{{ car.id }}">
+        <svg class="fav-icon-detail" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span class="fav-label-detail">Save</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <div class="gallery-grid">
+    @foreach (galleryItems as idx => src)
+      <div class="gallery-cell" onclick="openLightbox({{ idx }})">
+        <img src="{{ src }}" alt="{{ car.make }} {{ car.model }} photo {{ idx + 1 }}" loading="{{ idx === 0 ? 'eager' : 'lazy' }}">
+      </div>
+    @endforeach
+  </div>
+
+  <div class="detail-layout">
+
+    <!-- Left column -->
+    <div>
+
+      <!-- Host strip -->
+      <section class="card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap">
+        <div style="display: flex; align-items: center; gap: 1rem">
+          <div class="avatar avatar-lg">{{ car.host.avatar }}</div>
+          <div>
+            <p style="margin: 0; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem">
+              Hosted by {{ car.host.name }}
+              @if (car.host.allStar)
+                <span class="chip chip-brand" style="padding: 0.1875rem 0.5rem; font-size: 0.6875rem">★ All-Star Host</span>
+              @endif
+            </p>
+            <p class="muted" style="margin: 0.125rem 0 0; font-size: 0.8125rem">{{ car.host.trips }} trips · Joined {{ car.host.joined }} · Typically replies {{ car.host.responseTime }}</p>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="window._toast('Message sent to ' + {{ JSON.stringify(car.host.name) }}, 'success')">Message host</button>
+      </section>
+
+      <!-- Tabs -->
+      <div class="tab-list" style="margin-top: 2rem">
+        <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="features">Features</button>
+        <button class="tab-btn" data-tab="rules">Rules</button>
+        <button class="tab-btn" data-tab="reviews">Reviews ({{ car.reviewCount }})</button>
+        <button class="tab-btn" data-tab="location">Location</button>
+      </div>
+
+      <!-- Overview -->
+      <section class="tab-panel" data-panel="overview">
+        <h2 style="font-size: 1.375rem; font-weight: 700; margin: 0 0 1rem">About this car</h2>
+        <p style="line-height: 1.7; color: var(--text-secondary); font-size: 0.9375rem">{{ car.description }}</p>
+
+        <h3 style="font-size: 1.125rem; font-weight: 700; margin: 2rem 0 1rem">Specs</h3>
+        <div class="grid grid-2" style="gap: 0 2rem">
+          <div class="spec-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3-3 3 3m-3-3v12"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            <div><p style="margin: 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em">Transmission</p><p style="margin: 0.125rem 0 0; font-weight: 500">{{ car.transmission }}</p></div>
+          </div>
+          <div class="spec-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <div><p style="margin: 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em">Fuel type</p><p style="margin: 0.125rem 0 0; font-weight: 500">{{ car.fuelType }}</p></div>
+          </div>
+          <div class="spec-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 7a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM20 8v6M17 11h6"/></svg>
+            <div><p style="margin: 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em">Seats</p><p style="margin: 0.125rem 0 0; font-weight: 500">{{ car.seats }} seats</p></div>
+          </div>
+          <div class="spec-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="18" height="18" rx="2"/><path stroke-linecap="round" d="M9 3v18M15 3v18"/></svg>
+            <div><p style="margin: 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em">Doors</p><p style="margin: 0.125rem 0 0; font-weight: 500">{{ car.doors }} doors</p></div>
+          </div>
+          <div class="spec-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M14 4h6l-6 6V4zM16 17v5l6-6h-5l-1 1zM3 3l6 6M3 3v6h6M21 21l-6-6M21 21v-6h-6"/></svg>
+            <div><p style="margin: 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em">MPG / Range</p><p style="margin: 0.125rem 0 0; font-weight: 500">{{ car.mpg }}{{ car.range ? ' · ' + car.range : '' }}</p></div>
+          </div>
+          <div class="spec-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 6v6l4 2"/></svg>
+            <div><p style="margin: 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em">Category</p><p style="margin: 0.125rem 0 0; font-weight: 500">{{ car.category }}</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features -->
+      <section class="tab-panel" data-panel="features" style="display: none">
+        <h2 style="font-size: 1.375rem; font-weight: 700; margin: 0 0 1rem">Features</h2>
+        <p class="muted" style="margin: 0 0 1.5rem">Everything this car comes loaded with.</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+          @foreach (car.features as feat)
+            <span class="chip" style="padding: 0.5rem 0.875rem; font-size: 0.875rem">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              {{ feat }}
+            </span>
+          @endforeach
+        </div>
+      </section>
+
+      <!-- Rules -->
+      <section class="tab-panel" data-panel="rules" style="display: none">
+        <h2 style="font-size: 1.375rem; font-weight: 700; margin: 0 0 1rem">Rules of the road</h2>
+        <p class="muted" style="margin: 0 0 1.5rem">Basic guidelines from the host to keep the trip smooth.</p>
+        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem">
+          @foreach (tripRules as rule)
+            <li style="display: flex; gap: 0.75rem; align-items: flex-start; font-size: 0.9375rem">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="flex-shrink: 0; margin-top: 0.125rem"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v4M12 16h.01"/></svg>
+              <span>{{ rule }}</span>
+            </li>
+          @endforeach
+        </ul>
+      </section>
+
+      <!-- Reviews -->
+      <section class="tab-panel" data-panel="reviews" style="display: none">
+        <h2 style="font-size: 1.375rem; font-weight: 700; margin: 0 0 0.25rem">Reviews</h2>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem">
+          <span style="font-size: 2.5rem; font-weight: 700">{{ car.rating }}</span>
+          <div>
+            @component('Rating', { rating: car.rating })
+            @endcomponent
+            <p class="muted" style="margin: 0.25rem 0 0; font-size: 0.875rem">{{ car.reviewCount }} reviews</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-bottom: 2rem; max-width: 560px">
+          @foreach (ratingMetricEntries as entry)
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; margin-bottom: 0.25rem">
+                <span style="text-transform: capitalize">{{ entry[0] }}</span>
+                <span style="font-weight: 600">{{ entry[1] }}</span>
+              </div>
+              <div class="rating-bar">
+                <div class="rating-bar-fill" style="width: {{ (entry[1] / 5) * 100 }}%"></div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 1.5rem">
+          @foreach (car.reviews as review)
+            <div style="display: flex; gap: 1rem">
+              <div class="avatar avatar-lg">{{ review.avatar }}</div>
+              <div style="flex: 1">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.375rem">
+                  <div>
+                    <p style="margin: 0; font-weight: 600">{{ review.author }}</p>
+                    @component('Rating', { rating: review.rating })
+                    @endcomponent
+                  </div>
+                  <span class="muted" style="font-size: 0.8125rem">{{ review.date }}</span>
+                </div>
+                <p style="margin: 0.5rem 0 0; line-height: 1.6; color: var(--text-secondary)">{{ review.body }}</p>
+              </div>
+            </div>
+          @endforeach
+        </div>
+
+        <button class="btn btn-outline" style="margin-top: 2rem" onclick="window._toast('Loaded more reviews', 'info')">Show all {{ car.reviewCount }} reviews</button>
+      </section>
+
+      <!-- Location -->
+      <section class="tab-panel" data-panel="location" style="display: none">
+        <h2 style="font-size: 1.375rem; font-weight: 700; margin: 0 0 0.5rem">Where you'll pick up</h2>
+        <p class="muted" style="margin: 0 0 1.5rem">{{ car.location }} · {{ car.distance }}</p>
+        <div class="card" style="overflow: hidden; aspect-ratio: 16/10; background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%); position: relative">
+          <div style="position: absolute; inset: 0; background-image: url('https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/-122.4194,37.7749,12/1200x600?access_token=demo'); background-size: cover; filter: saturate(0.8); opacity: 0.6"></div>
+          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center">
+            <div style="background: rgba(255,255,255,0.95); padding: 1rem 1.5rem; border-radius: 0.75rem; backdrop-filter: blur(8px); color: #0a0a0a; box-shadow: var(--shadow-lg)">
+              <p style="margin: 0; font-weight: 700; color: #0a0a0a">📍 {{ car.location }}</p>
+              <p style="margin: 0.25rem 0 0; font-size: 0.875rem; color: #3f3f46">Exact location shared after booking</p>
+            </div>
+          </div>
+        </div>
+        @if (car.deliveryAvailable)
+          <div class="card" style="margin-top: 1rem; padding: 1rem; display: flex; gap: 0.75rem; align-items: center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7h-3V4H3a1 1 0 0 0-1 1v11h2M20 7l3 4v5h-2M20 7v9M6 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+            <div>
+              <p style="margin: 0; font-weight: 600">Delivery available</p>
+              <p class="muted" style="margin: 0.125rem 0 0; font-size: 0.875rem">Host delivers to hotels, airports, and nearby neighborhoods. Fee calculated at booking.</p>
+            </div>
+          </div>
+        @endif
+      </section>
+
+    </div>
+
+    <!-- Booking sidebar -->
+    <aside class="book-sidebar">
+      <div class="card" style="padding: 1.5rem; box-shadow: var(--shadow-lg)">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem">
+          <div>
+            <span class="tabular" style="font-size: 1.875rem; font-weight: 700">${{ car.price }}</span>
+            <span class="muted" style="font-size: 0.875rem"> / day</span>
+            @if (car.originalPrice)
+              <span class="tabular muted" style="font-size: 0.9375rem; text-decoration: line-through; margin-left: 0.5rem">${{ car.originalPrice }}</span>
+            @endif
+          </div>
+          @if (car.instantBook)
+            <span class="chip chip-accent">⚡ Instant</span>
+          @endif
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 0.5rem">
+          <label style="padding: 0.75rem 0.875rem; border-right: 1px solid var(--border); cursor: pointer">
+            <span style="font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: block">Trip start</span>
+            <input type="date" id="fromDate" value="{{ fmtDate(defaultFrom) }}" style="border: none; background: transparent; outline: none; color: var(--text); font-size: 0.875rem; font-family: inherit; width: 100%; padding: 0.125rem 0">
+          </label>
+          <label style="padding: 0.75rem 0.875rem; cursor: pointer">
+            <span style="font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: block">Trip end</span>
+            <input type="date" id="toDate" value="{{ fmtDate(defaultTo) }}" style="border: none; background: transparent; outline: none; color: var(--text); font-size: 0.875rem; font-family: inherit; width: 100%; padding: 0.125rem 0">
+          </label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1rem">
+          <label style="padding: 0.75rem 0.875rem; border-right: 1px solid var(--border); cursor: pointer">
+            <span style="font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: block">Pick up at</span>
+            <select id="fromTime" style="border: none; background: transparent; outline: none; color: var(--text); font-size: 0.875rem; font-family: inherit; width: 100%; padding: 0.125rem 0">
+              @foreach (pickupTimes as t)
+                <option value="{{ t }}" {{ t === '10:00' ? 'selected' : '' }}>{{ t }}</option>
+              @endforeach
+            </select>
+          </label>
+          <label style="padding: 0.75rem 0.875rem; cursor: pointer">
+            <span style="font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: block">Return at</span>
+            <select id="toTime" style="border: none; background: transparent; outline: none; color: var(--text); font-size: 0.875rem; font-family: inherit; width: 100%; padding: 0.125rem 0">
+              @foreach (pickupTimes as t)
+                <option value="{{ t }}" {{ t === '10:00' ? 'selected' : '' }}>{{ t }}</option>
+              @endforeach
+            </select>
+          </label>
+        </div>
+
+        <!-- Price breakdown -->
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem 0; border-top: 1px solid var(--border); font-size: 0.875rem">
+          <div style="display: flex; justify-content: space-between">
+            <span class="muted">${{ car.price }} × <span id="pbDays">3</span> days</span>
+            <span id="pbSubtotal" class="tabular">${{ car.price * 3 }}.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span class="muted">Trip fee (10%)</span>
+            <span id="pbFee" class="tabular">${{ (car.price * 3 * 0.1).toFixed(2) }}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span class="muted">Protection plan <span class="muted" style="font-size:0.75rem">(Minimum)</span></span>
+            <span id="pbProtection" class="tabular">${{ (car.price * 3 * 0.15).toFixed(2) }}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid var(--border); font-weight: 700; font-size: 1rem">
+            <span>Total</span>
+            <span id="pbTotal" class="tabular">${{ (car.price * 3 * 1.25).toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <a href="/book/{{ car.id }}" id="continueBtn" class="btn btn-primary btn-lg btn-block" style="margin-top: 0.5rem">
+          Continue to book
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+
+        <p class="muted" style="text-align: center; margin: 0.75rem 0 0; font-size: 0.8125rem">You won't be charged yet</p>
+      </div>
+
+      <!-- Trust card -->
+      <div class="card" style="padding: 1.25rem; margin-top: 1rem; display: flex; gap: 0.75rem">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="1.75" style="flex-shrink: 0"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <div>
+          <p style="margin: 0; font-weight: 600; font-size: 0.9375rem">Every trip is protected</p>
+          <p class="muted" style="margin: 0.25rem 0 0; font-size: 0.8125rem; line-height: 1.5">Liability insurance up to $750K. 24/7 customer support. Free cancellation up to 24 hours.</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Similar cars -->
+  <section style="margin-top: 4rem">
+    <h2 class="serif" style="font-size: 1.875rem; margin: 0 0 1.5rem">You might also like</h2>
+    <div class="grid grid-4">
+      @foreach (similar as sc)
+        @component('CarCard', { car: sc })
+        @endcomponent
+      @endforeach
+    </div>
+  </section>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<script client>
+  if (!window.__carDetailPage) {
+    window.__carDetailPage = true
+
+    const PRICE = {{ car.price }}
+    const CAR_ID = {{ car.id }}
+    const GALLERY = {{ car.gallery }}
+
+    const favorites = useStore('favorites')
+
+    // ── Favorite toggle ──
+    const favBtn = document.querySelector('.detail-fav-btn')
+    const favIcon = document.querySelector('.fav-icon-detail')
+    const favLabel = document.querySelector('.fav-label-detail')
+    function syncFav() {
+      const on = favorites.has(CAR_ID)
+      if (on) { favIcon.setAttribute('fill', '#FF3E54'); favIcon.style.stroke = '#FF3E54'; favLabel.textContent = 'Saved' }
+      else { favIcon.setAttribute('fill', 'none'); favIcon.style.stroke = 'currentColor'; favLabel.textContent = 'Save' }
+    }
+    syncFav()
+    favBtn.addEventListener('click', function () {
+      favorites.toggle(CAR_ID)
+      syncFav()
+      window._toast && window._toast(favorites.has(CAR_ID) ? 'Saved to favorites' : 'Removed from favorites', 'success')
+    })
+
+    // ── Share ──
+    document.getElementById('shareBtn').addEventListener('click', function () {
+      const url = location.href
+      if (navigator.share) navigator.share({ url, title: document.title }).catch(() => {})
+      else { navigator.clipboard && navigator.clipboard.writeText(url); window._toast('Link copied', 'success') }
+    })
+
+    // ── Tabs ──
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+        this.classList.add('active')
+        const target = this.dataset.tab
+        document.querySelectorAll('.tab-panel').forEach(p => {
+          p.style.display = p.dataset.panel === target ? 'block' : 'none'
+        })
+      })
+    })
+
+    // ── Price breakdown (reactive) ──
+    const fromDate = state(document.getElementById('fromDate').value)
+    const toDate = state(document.getElementById('toDate').value)
+
+    document.getElementById('fromDate').addEventListener('change', function () { fromDate.set(this.value) })
+    document.getElementById('toDate').addEventListener('change', function () { toDate.set(this.value) })
+
+    const days = derived(() => {
+      const f = new Date(fromDate()); const t = new Date(toDate())
+      const ms = Math.max(0, t - f)
+      return Math.max(1, Math.ceil(ms / (24 * 3600 * 1000)))
+    })
+
+    effect(() => {
+      const d = days()
+      const sub = PRICE * d
+      const fee = sub * 0.1
+      const protection = sub * 0.15
+      const total = sub + fee + protection
+      document.getElementById('pbDays').textContent = d
+      document.getElementById('pbSubtotal').textContent = '$' + sub.toFixed(2)
+      document.getElementById('pbFee').textContent = '$' + fee.toFixed(2)
+      document.getElementById('pbProtection').textContent = '$' + protection.toFixed(2)
+      document.getElementById('pbTotal').textContent = '$' + total.toFixed(2)
+      // Sync to URL-state for booking page
+      const btn = document.getElementById('continueBtn')
+      btn.setAttribute('href', '/book/' + CAR_ID + '?from=' + fromDate() + '&to=' + toDate() + '&ft=' + document.getElementById('fromTime').value + '&tt=' + document.getElementById('toTime').value)
+    })
+
+    document.getElementById('fromTime').addEventListener('change', () => fromDate.set(fromDate()))
+    document.getElementById('toTime').addEventListener('change', () => toDate.set(toDate()))
+
+    // ── Lightbox ──
+    window.openLightbox = function (idx) {
+      document.getElementById('lightboxImg').src = GALLERY[idx]
+      document.getElementById('lightbox').classList.add('open')
+      document.body.style.overflow = 'hidden'
+    }
+    window.closeLightbox = function () {
+      document.getElementById('lightbox').classList.remove('open')
+      document.body.style.overflow = ''
+    }
+    document.getElementById('lightbox').addEventListener('click', function (e) {
+      if (e.target === this) closeLightbox()
+    })
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeLightbox()
+    })
+  }
+</script>
+
+@endsection

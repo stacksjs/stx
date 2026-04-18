@@ -18,6 +18,138 @@ import { injectSignalsRuntime, injectBrowserRuntime } from './runtime-injection'
 let signalSetupCounter = 0
 
 /**
+ * Scan a template for `<script>` tags in browser order: each opening tag is
+ * closed by the **first** subsequent `</script>` (case-insensitive), and the
+ * scanner then continues from after that close tag. This matches how HTML
+ * parsers tokenize `<script>` as a RAWTEXT element — they don't re-scan the
+ * body for more `<script` openings.
+ *
+ * A plain regex like `/<script[^>]*>([\s\S]*?)<\/script>/g` doesn't give you
+ * this property: if a script body contains the literal text `<script client>`
+ * (e.g. inside a JS comment), the regex matches it as a fresh script tag,
+ * which breaks downstream TypeScript transpilation and directive parsing.
+ *
+ * `skipAttrs` lets callers drop tags whose attribute string contains certain
+ * patterns (e.g. `server`, `src=`, `data-stx-scoped`).
+ */
+export function scanScriptTags(
+  html: string,
+  opts: { skipAttrs?: RegExp } = {},
+): Array<{ fullMatch: string, attrs: string, body: string, start: number, end: number }> {
+  const out: Array<{ fullMatch: string, attrs: string, body: string, start: number, end: number }> = []
+  const openRe = /<script\b([^>]*)>/gi
+  let m: RegExpExecArray | null
+  while ((m = openRe.exec(html)) !== null) {
+    const attrs = m[1]
+    const bodyStart = m.index + m[0].length
+    const closeIdx = html.toLowerCase().indexOf('</script>', bodyStart)
+    if (closeIdx === -1) break // unclosed — stop scanning
+    const end = closeIdx + '</script>'.length
+    if (opts.skipAttrs && opts.skipAttrs.test(attrs)) {
+      // Still advance past the close tag so we don't match nested openings.
+      openRe.lastIndex = end
+      continue
+    }
+    out.push({
+      fullMatch: html.slice(m.index, end),
+      attrs,
+      body: html.slice(bodyStart, closeIdx),
+      start: m.index,
+      end,
+    })
+    openRe.lastIndex = end
+  }
+  return out
+}
+
+/**
+ * Parsed form of a loop expression (`@for` / `@foreach` argument).
+ *
+ * `style: 'as'` — "iterable as item" / "iterable as idx => item" / "iterable as (item, idx)"
+ * `style: 'in'` — "item in iterable" / "(item, idx) in iterable" / "item of iterable"
+ * `style: 'unknown'` — fell through all parsers; iterable is `null`
+ */
+export interface ParsedLoopExpression {
+  style: 'as' | 'in' | 'unknown'
+  iterable: string | null
+  itemVar: string | null
+  indexVar: string | null
+}
+
+/**
+ * Parse a loop argument — accepts every syntax stx supports at runtime.
+ *
+ * ```
+ * parseLoopExpression('items as item')                → { style:'as', iterable:'items',     itemVar:'item', indexVar:null }
+ * parseLoopExpression('items as idx => item')         → { style:'as', iterable:'items',     itemVar:'item', indexVar:'idx' }
+ * parseLoopExpression('items as item, idx')           → { style:'as', iterable:'items',     itemVar:'item', indexVar:'idx' }
+ * parseLoopExpression('items as (item, idx)')         → { style:'as', iterable:'items',     itemVar:'item', indexVar:'idx' }
+ * parseLoopExpression('obj.list as item')             → { style:'as', iterable:'obj.list',  itemVar:'item', indexVar:null }
+ * parseLoopExpression('item in items')                → { style:'in', iterable:'items',     itemVar:'item', indexVar:null }
+ * parseLoopExpression('(item, idx) in items')         → { style:'in', iterable:'items',     itemVar:'item', indexVar:'idx' }
+ * parseLoopExpression('item of items')                → { style:'in', iterable:'items',     itemVar:'item', indexVar:null }
+ * ```
+ */
+export function parseLoopExpression(expr: string): ParsedLoopExpression {
+  const trimmed = expr.trim()
+
+  // Blade-style: <iterable> as <item-spec>
+  // The item-spec is parsed permissively (anything goes) — we split it afterwards.
+  const asMatch = trimmed.match(/^([\s\S]+?)\s+as\s+(.+)$/)
+  if (asMatch) {
+    const iterable = asMatch[1].trim()
+    const spec = asMatch[2].trim()
+    const { itemVar, indexVar } = parseItemSpec(spec)
+    if (itemVar) {
+      return { style: 'as', iterable, itemVar, indexVar }
+    }
+  }
+
+  // JS-style: <item-spec> in <iterable> | <item-spec> of <iterable>
+  const inMatch = trimmed.match(/^(\([^)]+\)|\w+(?:\s*,\s*\w+)?)\s+(?:in|of)\s+([\s\S]+)$/)
+  if (inMatch) {
+    const spec = inMatch[1].trim()
+    const iterable = inMatch[2].trim()
+    const { itemVar, indexVar } = parseItemSpec(spec)
+    if (itemVar) {
+      return { style: 'in', iterable, itemVar, indexVar }
+    }
+  }
+
+  return { style: 'unknown', iterable: null, itemVar: null, indexVar: null }
+}
+
+/**
+ * Parse the item portion of a loop expression (everything after `as` or before `in`).
+ * Supports:
+ *   - `item`               → { itemVar: 'item', indexVar: null }
+ *   - `idx => item`        → { itemVar: 'item', indexVar: 'idx' }
+ *   - `item, idx`          → { itemVar: 'item', indexVar: 'idx' }
+ *   - `(item, idx)`        → { itemVar: 'item', indexVar: 'idx' }
+ */
+function parseItemSpec(spec: string): { itemVar: string | null, indexVar: string | null } {
+  const trimmed = spec.trim()
+
+  // `idx => item` — Blade-style "key => value"
+  const arrow = trimmed.match(/^(\w+)\s*=>\s*(\w+)$/)
+  if (arrow) return { itemVar: arrow[2], indexVar: arrow[1] }
+
+  // `(item, idx)` — parenthesized
+  const paren = trimmed.match(/^\(\s*(\w+)(?:\s*,\s*(\w+))?\s*\)$/)
+  if (paren) return { itemVar: paren[1], indexVar: paren[2] || null }
+
+  // `item, idx` — JS destructure-ish
+  const pair = trimmed.match(/^(\w+)\s*,\s*(\w+)$/)
+  if (pair) return { itemVar: pair[1], indexVar: pair[2] }
+
+  // `item` — just a name
+  const single = trimmed.match(/^(\w+)$/)
+  if (single) return { itemVar: single[1], indexVar: null }
+
+  return { itemVar: null, indexVar: null }
+}
+
+/**
  * Check if template uses STX signals syntax.
  *
  * STX directives work seamlessly on both server and client:
@@ -199,24 +331,37 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
     let expr = output.substring(exprStart, i - 1).trim()
     const afterExpr = i
 
-    // Check if the iterable comes from server context — if so, leave it for
-    // server-side processLoops() instead of converting to a client-side @for attribute.
-    // "list as item" → iterable is "list"; "item in list" → iterable is "list"
-    const asMatch = expr.match(/^(.+?)\s+as\s+(\w+(?:\s*,\s*\w+)?)\s*$/)
-    const inMatch = !asMatch ? expr.match(/^\w+(?:\s*,\s*\w+)?\s+(?:in|of)\s+(.+)$/) : null
-    const iterableExpr = asMatch ? asMatch[1].trim() : (inMatch ? inMatch[1].trim() : null)
-    if (iterableExpr && context) {
+    // Parse the loop expression to get the iterable side.
+    // Accepts ALL common forms:
+    //   Blade-style "iterable as item"
+    //   Blade-style "iterable as idx => item"
+    //   Blade-style "iterable as (item, idx)"           (Vue/Alpine parenthesized)
+    //   Blade-style "iterable as item, idx"             (JS destructure-ish)
+    //   JS-style    "item in iterable"
+    //   JS-style    "(item, idx) in iterable"
+    //   JS-style    "item of iterable"
+    //
+    // Previously the "as" regex accepted only "item" or "item, idx" — so
+    // `idx => item` / `(item, idx)` fell through to client-side conversion
+    // even when the iterable was server-side data. See tests in
+    // test/signal-processing.test.ts.
+    const parsed = parseLoopExpression(expr)
+
+    if (parsed.iterable && context) {
       // Extract the root variable name (e.g. "items" from "items" or "obj.items")
-      const rootVar = iterableExpr.split(/[.[]/)[0]
+      const rootVar = parsed.iterable.split(/[.[]/)[0]
       if (rootVar && rootVar in context) {
         // This iterable is server-side data — skip conversion, let processLoops handle it
         continue
       }
     }
 
-    // Convert "list as item" (Blade-style) to "item in list" (JS-style) for bindFor
-    if (asMatch) {
-      expr = `${asMatch[2]} in ${asMatch[1]}`
+    // Convert Blade-style "iterable as item" / "iterable as idx => item" to
+    // JS-style "item in iterable" / "(item, idx) in iterable" for the client runtime
+    if (parsed.style === 'as') {
+      expr = parsed.indexVar
+        ? `(${parsed.itemVar}, ${parsed.indexVar}) in ${parsed.iterable}`
+        : `${parsed.itemVar} in ${parsed.iterable}`
     }
 
     // Find matching @endfor or @endforeach
@@ -285,25 +430,27 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
  * ```
  */
 export async function processScriptSetup(template: string, filePath?: string): Promise<{ output: string, setupCode: string | null }> {
-  // Find client-side scripts (not server, not src, not type=module for external, not already scoped)
-  // Scripts with data-stx-scoped are already wrapped by component processing
-  // Capture attributes to check for TypeScript
-  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)(?![^>]*\bdata-stx-router\b)([^>]*)>([\s\S]*?)<\/script>/gi
-  let match: RegExpExecArray | null
+  // Walk the template like a browser: find each `<script>` opening tag, then
+  // the FIRST `</script>` that closes it — don't re-scan for nested `<script`
+  // substrings inside script bodies. This prevents false matches against
+  // literal `<script>` text inside comments or string literals in an
+  // already-emitted signals runtime (e.g. a comment like `// partial <script client> blocks`).
+  const scripts = scanScriptTags(template, {
+    skipAttrs: /\bserver\b|\bsrc\s*=|\bdata-stx-scoped\b|\bdata-stx-router\b/,
+  })
+
   let signalScript: { fullMatch: string, attrs: string, content: string } | null = null
 
-  while ((match = scriptRegex.exec(template)) !== null) {
-    const attrs = match[1]
-    let content = match[2]
-
+  for (const s of scripts) {
+    let content = s.body
     // Transpile TypeScript if needed
-    if (shouldTranspileTypeScript(attrs)) {
+    if (shouldTranspileTypeScript(s.attrs)) {
       content = transpileTypeScript(content)
     }
 
     // Check if this script uses signal APIs
     if (/\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
-      signalScript = { fullMatch: match[0], attrs, content }
+      signalScript = { fullMatch: s.fullMatch, attrs: s.attrs, content }
       break
     }
   }

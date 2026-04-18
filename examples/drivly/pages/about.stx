@@ -1,0 +1,117 @@
+<script server>
+const pageTitle = 'How it works · Drivly'
+const activePage = 'about'
+
+const faq = [
+  { q: 'How does Drivly work?', a: 'Browse cars, book the one you like, meet the host (or have it delivered), and drive. Return the same way. We handle the insurance and payment. You handle the driving.' },
+  { q: 'Is it insured?', a: 'Yes. Every trip comes with up to $750K in liability coverage + physical damage coverage on the car. You can choose from three protection plans at checkout.' },
+  { q: 'What if the host cancels?', a: 'You\'ll be auto-matched with a comparable car. If nothing\'s available, you get a full refund + a $50 travel credit.' },
+  { q: 'Can I cancel my trip?', a: 'Free cancellation up to 24 hours before your trip starts. After that, a partial refund applies.' },
+  { q: 'Who can drive?', a: 'Anyone with a valid driver\'s license who passes our quick ID check. Drivers under 25 may have a young driver fee.' },
+  { q: 'How do I become a host?', a: 'Hit "List your car" in the nav, fill out the 5-step form (takes under 10 minutes), and we publish within 24 hours.' },
+  { q: 'What cars can be listed?', a: 'Most cars 2008 or newer, under 130,000 miles, with a clean title. Exotics, classics, and EVs encouraged.' },
+]
+
+const trustFacts = [
+  { icon: '🛡️', title: 'Up to $750K liability', desc: 'Every trip is backed by a top-tier insurance partner.' },
+  { icon: '🕰️', title: '24/7 support', desc: 'Roadside. Accidents. Questions. We\'re one tap away.' },
+  { icon: '✅', title: 'Verified drivers', desc: 'Every driver passes an ID + license check before their first trip.' },
+  { icon: '💳', title: 'Secure payments', desc: 'Pay only when the host confirms. Refunded within 5–7 days.' },
+]
+</script>
+
+@extends('layouts/app.stx')
+
+@section('content')
+<div class="container" style="padding: 3rem 1.5rem 5rem; max-width: 960px">
+
+  <!-- Hero -->
+  <div style="text-align: center; margin-bottom: 4rem">
+    <span class="chip chip-brand" style="margin-bottom: 1rem">How it works</span>
+    <h1 class="serif" style="font-size: clamp(2.25rem, 5vw, 4rem); margin: 0 auto 1rem; max-width: 20ch; line-height: 1.05">A better way to rent a car.</h1>
+    <p style="font-size: 1.125rem; color: var(--text-secondary); max-width: 52ch; margin: 0 auto; line-height: 1.55">No long lines. No fine print. No upsells. Just you, a car, and the road.</p>
+  </div>
+
+  <!-- 3-step with illustrations -->
+  <section style="margin-bottom: 5rem">
+    <div style="display: flex; flex-direction: column; gap: 4rem">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center">
+        <div>
+          <span class="chip" style="margin-bottom: 0.75rem">01 · Browse</span>
+          <h2 class="serif" style="font-size: 2.25rem; margin: 0 0 0.75rem">Find exactly what you want</h2>
+          <p class="muted" style="font-size: 1rem; line-height: 1.6; margin: 0">Over 350,000 cars from real people. Filter by make, price, features, fuel type — whatever you need. Then zoom in on the photos, reviews, and host info.</p>
+        </div>
+        <div class="card" style="aspect-ratio: 4/3; overflow: hidden; background-image: url('https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1200&q=70'); background-size: cover; background-position: center"></div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center">
+        <div class="card" style="aspect-ratio: 4/3; overflow: hidden; background-image: url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1200&q=70'); background-size: cover; background-position: center; order: -1"></div>
+        <div>
+          <span class="chip" style="margin-bottom: 0.75rem">02 · Book</span>
+          <h2 class="serif" style="font-size: 2.25rem; margin: 0 0 0.75rem">Book in minutes</h2>
+          <p class="muted" style="font-size: 1rem; line-height: 1.6; margin: 0">Instant Book gets you on the road immediately. Otherwise, hosts typically respond in under an hour. Your card isn't charged until the host confirms.</p>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center">
+        <div>
+          <span class="chip" style="margin-bottom: 0.75rem">03 · Drive</span>
+          <h2 class="serif" style="font-size: 2.25rem; margin: 0 0 0.75rem">Meet & go — or unlock with your phone</h2>
+          <p class="muted" style="font-size: 1rem; line-height: 1.6; margin: 0">Hosts either meet you personally or unlock the car remotely via the Drivly app. Return the same way. Take a deep breath and enjoy.</p>
+        </div>
+        <div class="card" style="aspect-ratio: 4/3; overflow: hidden; background-image: url('https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1200&q=70'); background-size: cover; background-position: center"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust -->
+  <section style="margin-bottom: 5rem">
+    <h2 class="serif" style="font-size: 2.5rem; margin: 0 0 0.375rem; text-align: center">Trust & safety built in</h2>
+    <p class="muted" style="text-align: center; margin: 0 0 2.5rem">Every trip backed by real protection.</p>
+
+    <div class="grid grid-4">
+      @foreach (trustFacts as fact)
+        <div class="card" style="padding: 1.5rem; text-align: center">
+          <p style="font-size: 2rem; margin: 0 0 0.5rem">{{ fact.icon }}</p>
+          <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 0.375rem">{{ fact.title }}</h3>
+          <p class="muted" style="margin: 0; font-size: 0.875rem; line-height: 1.55">{{ fact.desc }}</p>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section style="margin-bottom: 5rem">
+    <h2 class="serif" style="font-size: 2.5rem; margin: 0 0 0.375rem; text-align: center">Frequently asked</h2>
+    <p class="muted" style="text-align: center; margin: 0 0 2.5rem">Still have questions? <a href="#" style="color: var(--brand); font-weight: 600">Contact us →</a></p>
+
+    <div style="display: flex; flex-direction: column; gap: 0.625rem">
+      @foreach (faq as item)
+        <details class="card" style="padding: 0; overflow: hidden">
+          <summary style="padding: 1.125rem 1.5rem; font-weight: 600; font-size: 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; list-style: none">
+            <span>{{ item.q }}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 200ms"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div style="padding: 0 1.5rem 1.25rem; color: var(--text-secondary); line-height: 1.65; font-size: 0.9375rem">{{ item.a }}</div>
+        </details>
+      @endforeach
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="card" style="padding: 3rem; text-align: center; background: linear-gradient(135deg, var(--brand-soft) 0%, rgba(147, 51, 234, 0.08) 100%); border-color: var(--brand-border)">
+    <h2 class="serif" style="font-size: 2.5rem; margin: 0 0 0.75rem">Ready to roll?</h2>
+    <p class="muted" style="margin: 0 0 1.5rem; font-size: 1.0625rem">Millions are already driving better. You're next.</p>
+    <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap">
+      <StxLink to="/search" class="btn btn-primary btn-lg">Browse cars</StxLink>
+      <StxLink to="/host/list" class="btn btn-outline btn-lg">List your car</StxLink>
+    </div>
+  </section>
+
+</div>
+
+<style>
+  details[open] summary svg { transform: rotate(180deg); }
+  details[open] summary { border-bottom: 1px solid var(--border); }
+</style>
+@endsection

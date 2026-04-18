@@ -122,7 +122,9 @@ export function transpileTypeScript(code: string): string {
     return result
   }
   catch (e) {
-    console.warn('[STX] TypeScript transpilation error:', e)
+    if (process.env.STX_DEBUG_TS) {
+      console.warn('[STX] TypeScript transpilation error:', e)
+    }
     return code // Return original on error
   }
 }

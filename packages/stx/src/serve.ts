@@ -183,9 +183,12 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       }
     }
 
-    // Add client scripts before </body>
+    // Add client scripts before </body> — interpolating {{ }} / {!! !!} in each
+    // script body so server data can be spliced into client code without manual
+    // data-island plumbing. See interpolateScriptsInTemplate() for the rules.
     if (clientScripts.length > 0) {
-      const scriptsHtml = clientScripts.join('\n')
+      const { interpolateScriptsInTemplate } = await import('./expressions')
+      const scriptsHtml = interpolateScriptsInTemplate(clientScripts.join('\n'), context)
       const bodyEndMatch = output.match(/(<\/body>)/i)
       if (bodyEndMatch) {
         output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)

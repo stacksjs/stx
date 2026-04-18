@@ -1,0 +1,6 @@
+<span class="chip" style="padding: 0.4375rem 0.75rem; background: var(--bg-subtle); font-size: 0.8125rem">
+  @if (icon)
+    <span style="color: var(--brand)">{!! icon !!}</span>
+  @endif
+  {{ label }}
+</span>

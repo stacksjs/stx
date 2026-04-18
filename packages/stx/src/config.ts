@@ -422,19 +422,37 @@ function resolveStxRoot(configRoot?: string, configPagesDir?: string): { root: s
 // Lazy-load config to avoid blocking module initialization
 // This makes imports near-instant instead of taking 2-3 seconds
 let _config: StxConfig | null = null
+const _cwdConfigCache = new Map<string, Promise<StxConfig>>()
 let _configPromise: Promise<StxConfig> | null = null
 
-export async function loadStxConfig(): Promise<StxConfig> {
-  if (_config)
-    return _config
-  if (_configPromise)
-    return _configPromise
+/**
+ * Load the stx config for a project.
+ *
+ * `cwd` lets the caller specify which directory to search in — critical for
+ * the dev server, which may be invoked as `stx <app-dir>` from outside the
+ * app. Without it, `process.cwd()` is used, which can accidentally pick up
+ * a stray `stx.config.ts` / `.config/stx.ts` from a parent directory.
+ *
+ * Results are cached per cwd so repeated calls don't re-read disk.
+ */
+export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
+  // Backwards-compatible path: no cwd → use the module-level cache.
+  if (!cwd) {
+    if (_config)
+      return _config
+    if (_configPromise)
+      return _configPromise
+  }
 
-  _configPromise = (async () => {
+  const effectiveCwd = cwd ? path.resolve(cwd) : process.cwd()
+  const cached = _cwdConfigCache.get(effectiveCwd)
+  if (cached) return cached
+
+  const promise = (async () => {
     const configResult = await loadConfigWithResult({
       name: 'stx',
       alias: 'ui',
-      cwd: process.cwd(), // Load config from the project directory, not the stx package
+      cwd: effectiveCwd, // Load config from the requested directory, not the stx package
       defaultConfig,
       verbose: false,
     })
@@ -534,11 +552,20 @@ export async function loadStxConfig(): Promise<StxConfig> {
       ;(loaded as any)._pluginPageDirs = pluginPageDirs
     }
 
-    _config = loaded
-    return _config
+    return loaded
   })()
 
-  return _configPromise
+  _cwdConfigCache.set(effectiveCwd, promise)
+
+  // Preserve the legacy module-level cache when no explicit cwd was passed,
+  // so callers that rely on `config` proxy / later plain `loadStxConfig()`
+  // calls keep working.
+  if (!cwd) {
+    _configPromise = promise
+    promise.then(c => { _config = c }).catch(() => {})
+  }
+
+  return promise
 }
 
 // Export a synchronous getter that returns defaults immediately, then loads async

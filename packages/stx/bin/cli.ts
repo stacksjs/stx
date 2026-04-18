@@ -606,7 +606,10 @@ else {
           },
         }
 
-        // If no file provided, use file-based routing (serveApp)
+        // If no file provided, use file-based routing (serveApp) on cwd.
+        // If a directory is provided (e.g. `stx dev examples/drivly`), serve
+        // it as an app — same file-based routing, but rooted at that dir.
+        // This is shorthand for `cd <dir> && stx dev`.
         if (!filePattern) {
           const success = await serveApp('.', {
             port: options.port,
@@ -619,6 +622,27 @@ else {
             process.exit(1)
           }
           return
+        }
+
+        // Treat directory arguments as app roots (not as a single file to serve)
+        if (!isGlob(filePattern)) {
+          try {
+            const fs = await import('node:fs')
+            if (fs.existsSync(filePattern) && fs.statSync(filePattern).isDirectory()) {
+              const success = await serveApp(filePattern, {
+                port: options.port,
+                watch: options.watch !== false,
+                native: options.native || false,
+                cache: options.cache !== false,
+              } as DevServerOptions)
+
+              if (!success) {
+                process.exit(1)
+              }
+              return
+            }
+          }
+          catch { /* fall through to file-mode handling below */ }
         }
 
         // Check if the input is a glob pattern
@@ -2550,20 +2574,41 @@ else {
     }
 
     if (!knownCommands.includes(command)) {
-      // Find the closest matching command
-      const distances = knownCommands.map(cmd => ({
-        command: cmd,
-        distance: levenshteinDistance(command, cmd)
-      }))
+      // If the first arg is an existing file or directory, interpret `stx <path>`
+      // as shorthand for `stx dev <path>`. Matches user intuition: running
+      // `./stx examples/drivly` should just work.
+      const fs = require('node:fs')
+      const pathMod = require('node:path')
+      let candidate = command
+      if (!pathMod.isAbsolute(candidate)) candidate = pathMod.resolve(process.cwd(), candidate)
+      if (fs.existsSync(candidate)) {
+        const stat = fs.statSync(candidate)
+        if (stat.isFile() || stat.isDirectory()) {
+          // Rewrite argv so CAC parses this as `dev <path> ...rest`
+          process.argv = [process.argv[0], process.argv[1], 'dev', ...args]
+        }
+      }
+      else {
+        // Find the closest matching command
+        const distances = knownCommands.map(cmd => ({
+          command: cmd,
+          distance: levenshteinDistance(command, cmd)
+        }))
 
-      distances.sort((a, b) => a.distance - b.distance)
+        distances.sort((a, b) => a.distance - b.distance)
 
-      const closest = distances[0]
+        const closest = distances[0]
 
-      // Only suggest if the distance is reasonable (less than 4 edits)
-      if (closest.distance <= 3) {
-        console.error(`❌ Unknown command: ${command}`)
-        console.error(`💡 Did you mean: ${closest.command}?`)
+        // Only suggest if the distance is reasonable (less than 4 edits)
+        if (closest.distance <= 3) {
+          console.error(`❌ Unknown command: ${command}`)
+          console.error(`💡 Did you mean: ${closest.command}?`)
+          console.error(`\nRun 'stx --help' to see available commands.`)
+          process.exit(1)
+        }
+
+        // Unknown command that doesn't look like a path and isn't close to anything known
+        console.error(`❌ Unknown command or path: ${command}`)
         console.error(`\nRun 'stx --help' to see available commands.`)
         process.exit(1)
       }
@@ -2572,5 +2617,5 @@ else {
 
   cli.help()
   cli.version(version)
-  cli.parse()
+  cli.parse(process.argv)
 }

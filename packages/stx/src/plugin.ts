@@ -167,9 +167,12 @@ export const plugin: BunPlugin = {
         // Preserve all script content in final output
         let output = processedTemplate
 
-        // Add all script tags back to the output
+        // Add all script tags back to the output — first interpolating
+        // {{ }} / {!! !!} in each script body so server data can flow into
+        // client code (see interpolateScriptsInTemplate for the rules).
         if (allScripts.length > 0) {
-          const scriptsHtml = allScripts.join('\n')
+          const { interpolateScriptsInTemplate } = await import('./expressions')
+          const scriptsHtml = interpolateScriptsInTemplate(allScripts.join('\n'), context)
           // Use callback to avoid $-interpretation in script content
           const bodyCloseIdx = output.search(/<\/body>/i)
           if (bodyCloseIdx !== -1) {

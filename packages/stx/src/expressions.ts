@@ -494,6 +494,106 @@ function expressionUsesOnlyContextVars(expr: string, context: Record<string, any
 }
 
 /**
+ * Interpolate server-side `{{ expr }}` / `{!! expr !!}` expressions inside a
+ * `<script>` body, using the same evaluator as the main template.
+ *
+ * This makes server data available to client scripts without manual data-island
+ * plumbing — write `const PRICE = {{ car.price }}` and get `const PRICE = 42`.
+ *
+ * JavaScript-aware rules (different from HTML `{{ }}`):
+ *   - `{{ expr }}` → `JSON.stringify(value)`. Strings become valid JS string
+ *     literals, numbers/booleans pass through, objects/arrays become JSON
+ *     literals. Safe to drop into any JS expression position.
+ *   - `{!! expr !!}` → raw `String(value)`. Use when you want the value spliced
+ *     verbatim (e.g. you've already serialized it yourself).
+ *   - Expressions that fail to evaluate (reference a client-only signal, a
+ *     loop variable, or anything not in context) are left **untouched** so the
+ *     client runtime can process them later. This mirrors the "preserve for
+ *     client" semantics of the main expression processor when signals are in use.
+ *
+ * Only the content strictly between `<script>` and `</script>` is touched —
+ * attributes and surrounding HTML are left alone.
+ */
+export function interpolateScriptExpressions(
+  scriptBody: string,
+  context: Record<string, any>,
+): string {
+  let output = scriptBody
+
+  // {!! raw !!} — unescaped raw value (stringified)
+  output = output.replace(/\{!!([\s\S]*?)!!\}/g, (match, expr) => {
+    try {
+      const value = evaluateExpression(expr, context)
+      if (value === undefined) return match
+      return value === null ? '' : String(value)
+    }
+    catch {
+      return match
+    }
+  })
+
+  // {{ expr }} — safe JSON-stringified value (JS-aware, unlike HTML escaping)
+  output = output.replace(/\{\{([\s\S]*?)\}\}/g, (match, expr) => {
+    const trimmed = expr.trim()
+    // Preserve build-time placeholders (e.g. __TITLE__) — they're resolved later
+    if (/^__[A-Z_]+__$/.test(trimmed)) return match
+    try {
+      const value = evaluateExpression(expr, context)
+      if (value === undefined) return match
+      return JSON.stringify(value)
+    }
+    catch {
+      return match
+    }
+  })
+
+  return output
+}
+
+/**
+ * Options for {@link interpolateScriptsInTemplate}.
+ */
+export interface InterpolateScriptsOptions {
+  /**
+   * Skip `<script server>` tags. Useful when the template still contains
+   * unstripped server scripts (e.g. inside `processDirectives`) whose bodies
+   * are executed rather than embedded — running `{{ }}` substitution on
+   * them would produce invalid JS. Default: `false`.
+   */
+  skipServer?: boolean
+}
+
+/**
+ * Interpolate server expressions inside every `<script>` tag in a template,
+ * skipping any script that opts out via `data-raw`, `type="application/json"`,
+ * or a `src=` attribute (external scripts don't have inline content to template).
+ *
+ * Each matched script has its body passed through {@link interpolateScriptExpressions}.
+ * Attributes and tag structure are never modified.
+ */
+export function interpolateScriptsInTemplate(
+  template: string,
+  context: Record<string, any>,
+  options: InterpolateScriptsOptions = {},
+): string {
+  return template.replace(
+    /<script\b([^>]*)>([\s\S]*?)<\/script>/gi,
+    (full, attrs: string, body: string) => {
+      // Skip external scripts (no inline body) and opt-outs
+      if (/\bsrc\s*=/.test(attrs)) return full
+      if (/\bdata-raw\b/.test(attrs)) return full
+      // Don't touch `type="application/json"` — its "body" is data not code
+      if (/\btype\s*=\s*["']application\/json["']/.test(attrs)) return full
+      // Optionally skip server scripts (their body is executed as JS server-side,
+      // so `{{ expr }}` in them would be syntax errors).
+      if (options.skipServer && /\bserver\b/.test(attrs)) return full
+      const interpolated = interpolateScriptExpressions(body, context)
+      return `<script${attrs}>${interpolated}</script>`
+    },
+  )
+}
+
+/**
  * Process template expressions including variables, filters, and operations
  */
 export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {

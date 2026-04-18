@@ -616,6 +616,31 @@ async function processOtherDirectives(
     }
   }
 
+  // Interpolate server-side {{ expr }} / {!! expr !!} inside every non-server
+  // <script> body (client / signals / bare) so pages can splice server data
+  // into client code: `const PRICE = {{ car.price }}` → `const PRICE = 89`.
+  //
+  // Rules (see expressions.ts `interpolateScriptExpressions`):
+  //   - {{ expr }} emits JSON.stringify(value) — safe JS (strings quoted,
+  //     objects/arrays as JSON literals).
+  //   - {!! expr !!} emits raw String(value) — user-serialized splice.
+  //   - Unresolved expressions are preserved for client-side signal handling.
+  //   - Server-side scripts are skipped (they're executed, not embedded).
+  //   - Scripts with data-raw / type="application/json" / src= opt out.
+  //
+  // This must run AFTER server-var extraction so values are in context, and
+  // BEFORE any downstream processing that consumes script bodies (script
+  // setup wrapping, signals transformation, minification).
+  try {
+    const { interpolateScriptsInTemplate } = await import('./expressions')
+    output = interpolateScriptsInTemplate(output, context, { skipServer: true })
+  }
+  catch (e) {
+    if (opts.debug) {
+      console.warn('Script expression interpolation error:', e)
+    }
+  }
+
   // Process JS/TS directives FIRST - these define variables needed by other directives
   // These execute server-side code and populate the context with variables
   output = await processJsDirectives(output, context, filePath)
@@ -974,11 +999,16 @@ else {
   const clientScriptMatches: { match: string, attrs: string, content: string }[] = []
   // Detect : prefix directives in the template output (for stx.mount() decision)
   const hasColonDirectives = /\s:[a-z][\w.-]*\s*=/.test(output)
-  // Match all client scripts: NOT server, NOT external src, NOT already processed (data-stx-scoped)
-  output.replace(/<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)(?![^>]*\bdata-stx-router\b)([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
-    clientScriptMatches.push({ match, attrs: attrs || '', content })
-    return match
-  })
+  // Use a browser-style scanner so we don't false-match `<script>` text inside
+  // OTHER scripts' bodies (e.g. a comment mentioning `<script client>` inside
+  // the signals runtime). A flat regex would hoist that fragment and try to
+  // transpile it as TypeScript.
+  const { scanScriptTags } = await import('./signal-processing')
+  for (const s of scanScriptTags(output, {
+    skipAttrs: /\bserver\b|\bsrc\s*=|\bdata-stx-scoped\b|\bdata-stx-router\b/,
+  })) {
+    clientScriptMatches.push({ match: s.fullMatch, attrs: s.attrs, content: s.body })
+  }
 
   for (const { match, attrs, content } of clientScriptMatches) {
     clientScriptsTransformed = true

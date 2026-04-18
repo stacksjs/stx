@@ -1,0 +1,14 @@
+<div style="display: flex; align-items: center; gap: 0.75rem">
+  <div class="avatar {{ size === 'lg' ? 'avatar-lg' : '' }}">{{ host.avatar }}</div>
+  <div style="min-width: 0">
+    <p style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 0.375rem">
+      {{ host.name }}
+      @if (host.allStar)
+        <span class="chip chip-brand" style="padding: 0.125rem 0.375rem; font-size: 0.625rem">★ All-Star</span>
+      @endif
+    </p>
+    <p style="margin: 0.125rem 0 0; font-size: 0.75rem; color: var(--text-muted)">
+      {{ host.trips }} trips · {{ host.rating }} ★
+    </p>
+  </div>
+</div>
