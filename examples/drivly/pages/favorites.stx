@@ -4,104 +4,89 @@ import { cars } from '../data/cars'
 const pageTitle = 'Favorites · Drivly'
 const activePage = 'favorites'
 
-// Serialize cars for client
-const carsJson = JSON.stringify(cars.map(c => ({
-  id: c.id, make: c.make, model: c.model, year: c.year, trim: c.trim,
-  price: c.price, originalPrice: c.originalPrice, rating: c.rating,
-  reviewCount: c.reviewCount, trips: c.trips, image: c.image,
-  badges: c.badges, instantBook: c.instantBook, deliveryAvailable: c.deliveryAvailable,
-})))
+// Emit ALL cars server-side; JS hides ones not in the favorites store.
+// Matches the pattern we use on /search — no client-side rendering of cards
+// from raw data → no flash-of-empty.
+const allCars = cars
 </script>
 
 @extends('layouts/app.stx')
 
 @section('content')
-<div class="container" style="padding: 2rem 1.5rem 5rem">
-  <div style="display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem">
+<div class="max-w-[1280px] mx-auto px-6 py-8 pb-16">
+  <div class="flex justify-between items-end flex-wrap gap-4 mb-8">
     <div>
-      <h1 class="serif" style="font-size: clamp(2rem, 4vw, 3rem); margin: 0 0 0.375rem">Your favorites</h1>
-      <p class="muted" style="margin: 0"><span id="favCount">0</span> saved cars</p>
+      <h1 class="serif text-4xl sm:text-5xl m-0 mb-1.5">Your favorites</h1>
+      <p class="text-[color:var(--text-muted)] m-0"><span id="favCount">0</span> saved cars</p>
     </div>
-    <button class="btn btn-outline" id="clearFavBtn" style="display: none">Clear all</button>
+    <button id="clearFavBtn" class="hidden py-3 px-5 rounded-xl text-sm font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer">Clear all</button>
   </div>
 
-  <div id="favGrid" class="grid grid-4"></div>
+  <!-- Pre-rendered grid of every car; the store effect below hides non-favorites. -->
+  <div id="favGrid" class="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-5">
+    @foreach (allCars as car)
+      <div data-car-id="{{ car.id }}" hidden>
+        @component('CarCard', { car: car })
+        @endcomponent
+      </div>
+    @endforeach
+  </div>
 
-  <div id="emptyFav" style="text-align: center; padding: 5rem 1rem">
-    <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--brand-soft); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.25rem">
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="1.8"><path stroke-linejoin="round" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+  <div id="emptyFav" class="text-center py-20 px-4">
+    <div class="w-20 h-20 rounded-full bg-[rgba(255,62,84,0.1)] inline-flex items-center justify-center mb-5">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FF3E54" stroke-width="1.8"><path stroke-linejoin="round" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
     </div>
-    <h2 class="serif" style="font-size: 1.75rem; margin: 0 0 0.5rem">No favorites yet</h2>
-    <p class="muted" style="margin: 0 0 1.5rem; max-width: 36ch; margin-left: auto; margin-right: auto">Tap the heart on any car to save it for later. Perfect for planning your next big trip.</p>
-    <StxLink to="/search" class="btn btn-primary btn-lg">Find cars</StxLink>
+    <h2 class="serif text-3xl m-0 mb-2">No favorites yet</h2>
+    <p class="text-[color:var(--text-muted)] m-0 mb-6 max-w-[36ch] mx-auto">Tap the heart on any car to save it for later. Perfect for planning your next big trip.</p>
+    <StxLink to="/search" class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px"
+             style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)">Find cars</StxLink>
   </div>
 </div>
 
 <script client>
   if (!window.__favPage) {
     window.__favPage = true
-    const ALL = {!! carsJson !!}
     const favorites = useStore('favorites')
+    const grid = document.getElementById('favGrid')
+    const empty = document.getElementById('emptyFav')
+    const clearBtn = document.getElementById('clearFavBtn')
+    const items = Array.from(grid.querySelectorAll('[data-car-id]'))
 
     function render() {
       const ids = favorites.ids()
-      const grid = document.getElementById('favGrid')
-      const empty = document.getElementById('emptyFav')
-      const clear = document.getElementById('clearFavBtn')
-
       document.getElementById('favCount').textContent = ids.length
-      if (ids.length === 0) {
-        grid.style.display = 'none'
-        empty.style.display = 'block'
-        clear.style.display = 'none'
-        return
-      }
-      empty.style.display = 'none'
-      grid.style.display = 'grid'
-      clear.style.display = 'inline-flex'
-
-      grid.innerHTML = ''
-      const cars = ids.map(id => ALL.find(c => c.id === id)).filter(Boolean)
-      cars.forEach(car => {
-        const discount = car.originalPrice && car.originalPrice > car.price
-          ? Math.round((1 - car.price / car.originalPrice) * 100) : 0
-
-        const art = document.createElement('article')
-        art.className = 'card hover-lift fade-in'
-        art.style.cssText = 'overflow:hidden; display:flex; flex-direction:column'
-        art.innerHTML = `
-          <div style="position: relative; aspect-ratio: 16 / 11; background: var(--bg-muted); overflow: hidden">
-            <a href="/cars/${car.id}" data-stx-link style="display:block; height: 100%">
-              <img src="${car.image}" alt="${car.year} ${car.make} ${car.model}" loading="lazy" style="width:100%; height:100%; object-fit:cover">
-            </a>
-            <button class="fav-btn" data-id="${car.id}" style="position: absolute; top: 0.75rem; right: 0.75rem; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.9); cursor: pointer; display: flex; align-items: center; justify-content: center" aria-label="Remove favorite">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#FF3E54" stroke="#FF3E54" stroke-width="2.2" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            </button>
-          </div>
-          <a href="/cars/${car.id}" data-stx-link style="padding: 1rem 1.125rem; display: flex; flex-direction: column; gap: 0.625rem; flex: 1">
-            <div>
-              <h3 style="font-size: 0.9375rem; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">${car.year} ${car.make} ${car.model}</h3>
-              ${car.trim ? `<p style="font-size: 0.75rem; color: var(--text-muted); margin: 0.125rem 0 0">${car.trim}</p>` : ''}
-            </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: auto">
-              <div style="display: flex; align-items: baseline; gap: 0.375rem">
-                <span style="font-size: 1.125rem; font-weight: 700" class="tabular">$${car.price}</span>
-                <span style="font-size: 0.75rem; color: var(--text-muted)">/day</span>
-              </div>
-              <span style="font-size:0.8125rem">★ ${car.rating}</span>
-            </div>
-          </a>
-        `
-        art.querySelector('.fav-btn').addEventListener('click', function (e) {
-          e.preventDefault(); e.stopPropagation()
-          favorites.toggle(this.dataset.id)
-          window._toast && window._toast('Removed from favorites', 'info')
-        })
-        grid.appendChild(art)
+      items.forEach(el => {
+        el.hidden = !ids.includes(el.getAttribute('data-car-id'))
       })
+      if (ids.length === 0) {
+        grid.classList.add('hidden')
+        empty.classList.remove('hidden')
+        clearBtn.classList.add('hidden')
+      } else {
+        grid.classList.remove('hidden')
+        empty.classList.add('hidden')
+        clearBtn.classList.remove('hidden')
+      }
     }
 
-    document.getElementById('clearFavBtn').addEventListener('click', function () {
+    // Wire up favorite hearts on the cards
+    items.forEach(el => {
+      const btn = el.querySelector('.fav-btn')
+      const icon = el.querySelector('.fav-icon')
+      const id = el.getAttribute('data-car-id')
+      function sync() {
+        if (favorites.has(id)) { icon.setAttribute('fill', '#FF3E54'); icon.style.stroke = '#FF3E54' }
+        else { icon.setAttribute('fill', 'none'); icon.style.stroke = 'currentColor' }
+      }
+      sync()
+      btn.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation()
+        favorites.toggle(id); sync()
+        window._toast && window._toast('Removed from favorites', 'info')
+      })
+    })
+
+    clearBtn.addEventListener('click', function () {
       if (confirm('Clear all saved cars?')) {
         favorites.clear()
         window._toast && window._toast('Favorites cleared', 'info')

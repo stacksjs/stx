@@ -4,30 +4,41 @@ const discount = car.originalPrice && car.originalPrice > car.price
   : 0
 const carId = car.id
 const carHref = '/cars/' + car.id
+// Smaller preview image for listing grids — loads much faster than the full gallery size
+const thumb = car.image.replace(/[?&]w=\d+/, '') + (car.image.includes('?') ? '&w=600' : '?w=600')
 </script>
 
-<article class="card hover-lift fade-in" style="overflow: hidden; display: flex; flex-direction: column">
-  <div style="position: relative; aspect-ratio: 16 / 11; background: var(--bg-muted); overflow: hidden">
-    <StxLink to="{{ carHref }}" aria-label="{{ car.year }} {{ car.make }} {{ car.model }}">
-      <img src="{{ car.image }}" alt="{{ car.year }} {{ car.make }} {{ car.model }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 420ms ease" onmouseenter="this.style.transform='scale(1.03)'" onmouseleave="this.style.transform='scale(1)'">
+<article class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl overflow-hidden flex flex-col transition-all hover:border-[color:var(--border-strong)] animate-fade-in">
+  <!-- Image container with skeleton placeholder behind it -->
+  <div class="relative overflow-hidden skeleton" style="aspect-ratio: 16 / 11">
+    <StxLink to="{{ carHref }}" aria-label="{{ car.year }} {{ car.make }} {{ car.model }}" class="block h-full">
+      <!-- `eager` loading for the first 4 cards keeps hero + featured-row visible immediately;
+           everything else falls back to browser lazy via `loading="auto"`. `decoding=async`
+           lets Safari/Chrome decode off-main-thread. -->
+      <img src="{{ car.image }}" alt="{{ car.year }} {{ car.make }} {{ car.model }}"
+           loading="{{ eager ? 'eager' : 'lazy' }}" decoding="async" fetchpriority="{{ eager ? 'high' : 'auto' }}"
+           class="w-full h-full object-cover block transition-transform duration-[420ms]"
+           onload="this.parentElement && this.parentElement.classList.remove('skeleton')"
+           onmouseenter="this.style.transform='scale(1.03)'" onmouseleave="this.style.transform='scale(1)'">
     </StxLink>
 
-    <!-- Favorite button -->
-    <button class="fav-btn" data-car-id="{{ carId }}" aria-label="Save to favorites"
-      style="position: absolute; top: 0.75rem; right: 0.75rem; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.9); color: #0a0a0a; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px); transition: transform 180ms">
+    <!-- Favorite heart -->
+    <button class="fav-btn absolute top-3 right-3 w-9 h-9 rounded-full border-0 bg-white/90 text-[#0a0a0a] inline-flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
+            data-car-id="{{ carId }}" aria-label="Save to favorites"
+            style="backdrop-filter: blur(8px)">
       <svg class="fav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
       </svg>
     </button>
 
-    <!-- Badges -->
-    <div style="position: absolute; top: 0.75rem; left: 0.75rem; display: flex; flex-direction: column; gap: 0.375rem; align-items: flex-start">
+    <!-- Top-left badges -->
+    <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
       @if (discount > 0)
-        <span class="chip chip-brand" style="background: #0a0a0a; color: white; border: none; font-weight: 600">-{{ discount }}%</span>
+        <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-semibold text-white bg-[#0a0a0a]">-{{ discount }}%</span>
       @endif
       @if (car.badges)
         @foreach (car.badges as badge)
-          <span class="chip" style="background: rgba(255,255,255,0.95); color: #0a0a0a; border: none; font-weight: 500">
+          <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium text-[#0a0a0a] bg-white/95">
             @if (badge === 'All-Star Host')
               <svg width="10" height="10" viewBox="0 0 24 24" fill="#FF3E54"><path d="M12 1.5l2.854 5.78 6.375.927-4.614 4.498 1.089 6.35L12 15.92l-5.704 3.135 1.089-6.35L1.77 8.207l6.375-.927L12 1.5z"/></svg>
             @endif
@@ -37,37 +48,36 @@ const carHref = '/cars/' + car.id
       @endif
     </div>
 
-    <!-- Delivery pill -->
     @if (car.deliveryAvailable)
-      <span class="chip" style="position: absolute; bottom: 0.75rem; left: 0.75rem; background: rgba(255,255,255,0.95); color: #0a0a0a; border: none; font-weight: 500">
+      <span class="absolute bottom-3 left-3 inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium text-[#0a0a0a] bg-white/95">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7h-3V4H3a1 1 0 0 0-1 1v11h2M20 7l3 4v5h-2M20 7v9M6 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
         Delivery
       </span>
     @endif
   </div>
 
-  <StxLink to="{{ carHref }}" style="padding: 1rem 1.125rem; display: flex; flex-direction: column; gap: 0.625rem; flex: 1">
-    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem">
-      <div style="min-width: 0">
-        <h3 style="font-size: 0.9375rem; font-weight: 600; margin: 0; line-height: 1.3; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ car.year }} {{ car.make }} {{ car.model }}</h3>
+  <StxLink to="{{ carHref }}" class="py-4 px-4.5 flex flex-col gap-2.5 flex-1">
+    <div class="flex items-start justify-between gap-2">
+      <div class="min-w-0">
+        <h3 class="text-[0.9375rem] font-semibold m-0 leading-tight text-[color:var(--text)] whitespace-nowrap overflow-hidden text-ellipsis">{{ car.year }} {{ car.make }} {{ car.model }}</h3>
         @if (car.trim)
-          <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0.125rem 0 0">{{ car.trim }}</p>
+          <p class="text-xs text-[color:var(--text-muted)] m-0 mt-0.5">{{ car.trim }}</p>
         @endif
       </div>
       @component('Rating', { rating: car.rating, reviews: car.trips })
       @endcomponent
     </div>
 
-    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: auto">
-      <div style="display: flex; align-items: baseline; gap: 0.375rem">
-        <span style="font-size: 1.125rem; font-weight: 700; color: var(--text)" class="tabular">${{ car.price }}</span>
-        <span style="font-size: 0.75rem; color: var(--text-muted)">/day</span>
+    <div class="flex items-center justify-between gap-2 mt-auto">
+      <div class="flex items-baseline gap-1.5">
+        <span class="tabular text-lg font-bold text-[color:var(--text)]">${{ car.price }}</span>
+        <span class="text-xs text-[color:var(--text-muted)]">/day</span>
         @if (discount > 0)
-          <span style="font-size: 0.75rem; color: var(--text-muted); text-decoration: line-through" class="tabular">${{ car.originalPrice }}</span>
+          <span class="tabular text-xs text-[color:var(--text-muted)] line-through">${{ car.originalPrice }}</span>
         @endif
       </div>
       @if (car.instantBook)
-        <span class="chip chip-accent" style="font-size: 0.6875rem">
+        <span class="inline-flex items-center gap-1 py-0.5 px-2 rounded-full text-[0.6875rem] font-medium text-[#10B981] bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.25)]">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
           Instant
         </span>

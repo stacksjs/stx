@@ -26,71 +26,61 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
 @extends('layouts/app.stx')
 
 @push('styles')
-  .checkout-layout { display: grid; grid-template-columns: 1fr 420px; gap: 3rem; margin-top: 2rem; align-items: start; }
-  @media (max-width: 980px) { .checkout-layout { grid-template-columns: 1fr; } }
-  .stepper { display: flex; align-items: center; gap: 0; margin-bottom: 2.5rem; }
-  .step { display: flex; align-items: center; gap: 0.625rem; font-size: 0.8125rem; font-weight: 500; color: var(--text-muted); }
-  .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-subtle); color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0; border: 1.5px solid var(--border); transition: all 180ms; }
-  .step.active .step-num { background: var(--brand); color: white; border-color: var(--brand); }
+  .step.active .step-num { background: #FF3E54; color: white; border-color: #FF3E54; }
   .step.active { color: var(--text); }
   .step.done .step-num { background: var(--text); color: var(--bg); border-color: var(--text); }
-  .step-line { flex: 1; height: 1.5px; background: var(--border); margin: 0 0.75rem; min-width: 20px; }
   .step.done + .step-line { background: var(--text); }
-  .pay-method { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 1.5px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all 120ms; }
-  .pay-method.selected { border-color: var(--brand); background: var(--brand-soft); }
-  .pay-method input { accent-color: var(--brand); }
-  .protection-card { padding: 1.25rem; border: 1.5px solid var(--border); border-radius: var(--radius-lg); cursor: pointer; transition: all 120ms; position: relative; }
-  .protection-card.selected { border-color: var(--brand); background: var(--brand-soft); }
-  .protection-card .recommended-badge { position: absolute; top: -8px; right: 1rem; background: var(--brand); color: white; padding: 0.1875rem 0.625rem; border-radius: 999px; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .pay-method.selected { border-color: #FF3E54; background: rgba(255,62,84,0.1); }
+  .protection-card.selected { border-color: #FF3E54; background: rgba(255,62,84,0.1); }
 @endpush
 
 @section('content')
-<div class="container" style="padding: 1.5rem 1.5rem 4rem">
+<div class="max-w-[1280px] mx-auto px-6 py-6 pb-16">
 
-  <h1 class="serif" style="font-size: clamp(1.875rem, 3.5vw, 2.5rem); margin: 0 0 0.5rem">Book your trip</h1>
-  <p class="muted" style="margin: 0 0 2rem">Almost there. Just a few details.</p>
+  <h1 class="serif text-4xl sm:text-5xl m-0 mb-2">Book your trip</h1>
+  <p class="text-[color:var(--text-muted)] m-0 mb-8">Almost there. Just a few details.</p>
 
   <!-- Stepper -->
-  <div class="stepper" id="stepper">
-    <div class="step active" data-step="1"><span class="step-num">1</span> Dates</div>
-    <div class="step-line"></div>
-    <div class="step" data-step="2"><span class="step-num">2</span> Protection</div>
-    <div class="step-line"></div>
-    <div class="step" data-step="3"><span class="step-num">3</span> Extras</div>
-    <div class="step-line"></div>
-    <div class="step" data-step="4"><span class="step-num">4</span> Driver</div>
-    <div class="step-line"></div>
-    <div class="step" data-step="5"><span class="step-num">5</span> Pay</div>
+  <div class="flex items-center gap-0 mb-10" id="stepper">
+    <div class="step flex items-center gap-2.5 text-[0.8125rem] font-medium text-[color:var(--text-muted)] active" data-step="1"><span class="step-num w-7 h-7 rounded-full bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] inline-flex items-center justify-center font-semibold flex-shrink-0 border border-[color:var(--border)] transition-all">1</span> Dates</div>
+    <div class="step-line flex-1 h-[1.5px] bg-[color:var(--border)] mx-3 min-w-5"></div>
+    <div class="step flex items-center gap-2.5 text-[0.8125rem] font-medium text-[color:var(--text-muted)]" data-step="2"><span class="step-num w-7 h-7 rounded-full bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] inline-flex items-center justify-center font-semibold flex-shrink-0 border border-[color:var(--border)] transition-all">2</span> Protection</div>
+    <div class="step-line flex-1 h-[1.5px] bg-[color:var(--border)] mx-3 min-w-5"></div>
+    <div class="step flex items-center gap-2.5 text-[0.8125rem] font-medium text-[color:var(--text-muted)]" data-step="3"><span class="step-num w-7 h-7 rounded-full bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] inline-flex items-center justify-center font-semibold flex-shrink-0 border border-[color:var(--border)] transition-all">3</span> Extras</div>
+    <div class="step-line flex-1 h-[1.5px] bg-[color:var(--border)] mx-3 min-w-5"></div>
+    <div class="step flex items-center gap-2.5 text-[0.8125rem] font-medium text-[color:var(--text-muted)]" data-step="4"><span class="step-num w-7 h-7 rounded-full bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] inline-flex items-center justify-center font-semibold flex-shrink-0 border border-[color:var(--border)] transition-all">4</span> Driver</div>
+    <div class="step-line flex-1 h-[1.5px] bg-[color:var(--border)] mx-3 min-w-5"></div>
+    <div class="step flex items-center gap-2.5 text-[0.8125rem] font-medium text-[color:var(--text-muted)]" data-step="5"><span class="step-num w-7 h-7 rounded-full bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] inline-flex items-center justify-center font-semibold flex-shrink-0 border border-[color:var(--border)] transition-all">5</span> Pay</div>
   </div>
 
-  <div class="checkout-layout">
+  <div class="grid md:grid-cols-[1fr_420px] grid-cols-1 gap-12 mt-8 items-start">
 
     <div>
 
-      <!-- STEP 1 · DATES & PICKUP -->
-      <section class="card step-panel fade-in" data-panel="1" style="padding: 1.75rem">
-        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0 0 1.25rem">When do you need it?</h2>
+      <!-- STEP 1 -->
+      <section class="step-panel animate-fade-in bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" data-panel="1">
+        <h2 class="text-xl font-bold m-0 mb-5">When do you need it?</h2>
 
-        <div class="grid grid-2" style="gap: 1rem">
+        <div class="grid md:grid-cols-2 grid-cols-1 gap-4">
           <label>
-            <span class="label">Trip start</span>
-            <input type="date" class="input" id="from">
+            <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Trip start</span>
+            <input type="date" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" id="from">
           </label>
           <label>
-            <span class="label">Trip end</span>
-            <input type="date" class="input" id="to">
+            <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Trip end</span>
+            <input type="date" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" id="to">
           </label>
           <label>
-            <span class="label">Pick-up time</span>
-            <select class="input" id="ft">
+            <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Pick-up time</span>
+            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" id="ft">
               @foreach (bookTimes as t)
                 <option value="{{ t }}" {{ t === '10:00' ? 'selected' : '' }}>{{ t }}</option>
               @endforeach
             </select>
           </label>
           <label>
-            <span class="label">Return time</span>
-            <select class="input" id="tt">
+            <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Return time</span>
+            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" id="tt">
               @foreach (bookTimes as t)
                 <option value="{{ t }}" {{ t === '10:00' ? 'selected' : '' }}>{{ t }}</option>
               @endforeach
@@ -98,103 +88,108 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
           </label>
         </div>
 
-        <div style="margin-top: 1.75rem">
-          <span class="label">Pick-up & return location</span>
-          <div style="display: flex; flex-direction: column; gap: 0.625rem">
-            <label class="pay-method selected" style="padding: 0.875rem 1rem">
-              <input type="radio" name="pickup" value="host" checked>
+        <div class="mt-7">
+          <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Pick-up & return location</span>
+          <div class="flex flex-col gap-2.5">
+            <label class="pay-method selected flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all">
+              <input type="radio" name="pickup" value="host" checked style="accent-color: #FF3E54">
               <div>
-                <p style="margin: 0; font-weight: 600; font-size: 0.9375rem">Meet the host · Free</p>
-                <p class="muted" style="margin: 0.125rem 0 0; font-size: 0.8125rem">{{ car.location }}</p>
+                <p class="m-0 font-semibold text-[0.9375rem]">Meet the host · Free</p>
+                <p class="text-[color:var(--text-muted)] m-0 mt-0.5 text-[0.8125rem]">{{ car.location }}</p>
               </div>
             </label>
             @if (car.deliveryAvailable)
-              <label class="pay-method" style="padding: 0.875rem 1rem">
-                <input type="radio" name="pickup" value="delivery">
+              <label class="pay-method flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all">
+                <input type="radio" name="pickup" value="delivery" style="accent-color: #FF3E54">
                 <div>
-                  <p style="margin: 0; font-weight: 600; font-size: 0.9375rem">Host delivery · From $49</p>
-                  <p class="muted" style="margin: 0.125rem 0 0; font-size: 0.8125rem">Delivered to your address, hotel, or airport</p>
+                  <p class="m-0 font-semibold text-[0.9375rem]">Host delivery · From $49</p>
+                  <p class="text-[color:var(--text-muted)] m-0 mt-0.5 text-[0.8125rem]">Delivered to your address, hotel, or airport</p>
                 </div>
               </label>
             @endif
           </div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; margin-top: 2rem">
-          <button class="btn btn-primary btn-lg next-btn" data-goto="2">Continue</button>
+        <div class="flex justify-end mt-8">
+          <button class="next-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" data-goto="2">Continue</button>
         </div>
       </section>
 
-      <!-- STEP 2 · PROTECTION -->
-      <section class="card step-panel fade-in" data-panel="2" style="padding: 1.75rem; display: none">
-        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0 0 0.25rem">Choose your protection plan</h2>
-        <p class="muted" style="margin: 0 0 1.5rem">Liability up to $750K on every plan. Deductibles differ.</p>
+      <!-- STEP 2: Protection -->
+      <section class="step-panel animate-fade-in hidden bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" data-panel="2">
+        <h2 class="text-xl font-bold m-0 mb-1">Choose your protection plan</h2>
+        <p class="text-[color:var(--text-muted)] m-0 mb-6">Liability up to $750K on every plan. Deductibles differ.</p>
 
-        <div style="display: flex; flex-direction: column; gap: 0.875rem">
+        <div class="flex flex-col gap-3.5">
           @foreach (protectionPlans as plan)
-            <div class="protection-card {{ plan.recommended ? 'selected' : '' }}" data-plan="{{ plan.id }}" data-multiplier="{{ plan.priceMultiplier }}">
+            <div class="protection-card {{ plan.recommended ? 'selected' : '' }} relative p-5 border-[1.5px] border-[color:var(--border)] rounded-2xl cursor-pointer transition-all"
+                 data-plan="{{ plan.id }}" data-multiplier="{{ plan.priceMultiplier }}">
               @if (plan.recommended)
-                <span class="recommended-badge">Most popular</span>
+                <span class="absolute -top-2 right-4 py-0.5 px-2.5 rounded-full text-[0.6875rem] font-semibold text-white bg-[#FF3E54] uppercase tracking-wider">Most popular</span>
               @endif
-              <div style="display: flex; align-items: start; justify-content: space-between; gap: 1rem">
+              <div class="flex items-start justify-between gap-4">
                 <div>
-                  <p style="margin: 0; font-weight: 700; font-size: 1.125rem">{{ plan.name }}</p>
-                  <p class="muted" style="margin: 0.375rem 0 0; font-size: 0.9375rem; line-height: 1.5">{{ plan.desc }}</p>
-                  <p style="margin: 0.625rem 0 0; font-size: 0.875rem; color: var(--text-secondary); font-weight: 500">Deductible: <span class="tabular">${{ plan.deductible }}</span></p>
+                  <p class="m-0 font-bold text-lg">{{ plan.name }}</p>
+                  <p class="text-[color:var(--text-muted)] m-0 mt-1.5 text-[0.9375rem] leading-relaxed">{{ plan.desc }}</p>
+                  <p class="m-0 mt-2.5 text-sm text-[color:var(--text-secondary)] font-medium">Deductible: <span class="tabular">${{ plan.deductible }}</span></p>
                 </div>
-                <div style="text-align: right; flex-shrink: 0">
-                  <p style="margin: 0; font-size: 1.375rem; font-weight: 700" class="tabular">${{ Math.round(car.price * plan.priceMultiplier) }}</p>
-                  <p class="muted" style="margin: 0; font-size: 0.75rem">/ day</p>
+                <div class="text-right flex-shrink-0">
+                  <p class="m-0 text-xl font-bold tabular">${{ Math.round(car.price * plan.priceMultiplier) }}</p>
+                  <p class="text-[color:var(--text-muted)] m-0 text-xs">/ day</p>
                 </div>
               </div>
             </div>
           @endforeach
         </div>
 
-        <div style="display: flex; justify-content: space-between; margin-top: 2rem">
-          <button class="btn btn-outline btn-lg back-btn" data-goto="1">Back</button>
-          <button class="btn btn-primary btn-lg next-btn" data-goto="3">Continue</button>
+        <div class="flex justify-between mt-8">
+          <button class="back-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" data-goto="1">Back</button>
+          <button class="next-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" data-goto="3">Continue</button>
         </div>
       </section>
 
-      <!-- STEP 3 · EXTRAS -->
-      <section class="card step-panel fade-in" data-panel="3" style="padding: 1.75rem; display: none">
-        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0 0 0.25rem">Add-ons & extras</h2>
-        <p class="muted" style="margin: 0 0 1.5rem">All optional. Skip if you don't need any.</p>
+      <!-- STEP 3: Extras -->
+      <section class="step-panel animate-fade-in hidden bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" data-panel="3">
+        <h2 class="text-xl font-bold m-0 mb-1">Add-ons & extras</h2>
+        <p class="text-[color:var(--text-muted)] m-0 mb-6">All optional. Skip if you don't need any.</p>
 
-        <div style="display: flex; flex-direction: column; gap: 0.75rem">
+        <div class="flex flex-col gap-3">
           @foreach (extras as ex)
-            <label class="pay-method" data-extra="{{ ex.id }}" data-price="{{ ex.price }}">
-              <input type="checkbox">
-              <div style="flex: 1">
-                <p style="margin: 0; font-weight: 600; font-size: 0.9375rem">{{ ex.label }}</p>
-                <p class="muted" style="margin: 0.125rem 0 0; font-size: 0.8125rem">{{ ex.desc }}</p>
+            <label class="pay-method flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all"
+                   data-extra="{{ ex.id }}" data-price="{{ ex.price }}">
+              <input type="checkbox" class="w-4 h-4" style="accent-color: #FF3E54">
+              <div class="flex-1">
+                <p class="m-0 font-semibold text-[0.9375rem]">{{ ex.label }}</p>
+                <p class="text-[color:var(--text-muted)] m-0 mt-0.5 text-[0.8125rem]">{{ ex.desc }}</p>
               </div>
-              <span class="tabular" style="font-weight: 600">${{ ex.price }}/day</span>
+              <span class="tabular font-semibold">${{ ex.price }}/day</span>
             </label>
           @endforeach
         </div>
 
-        <div style="display: flex; justify-content: space-between; margin-top: 2rem">
-          <button class="btn btn-outline btn-lg back-btn" data-goto="2">Back</button>
-          <button class="btn btn-primary btn-lg next-btn" data-goto="4">Continue</button>
+        <div class="flex justify-between mt-8">
+          <button class="back-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" data-goto="2">Back</button>
+          <button class="next-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" data-goto="4">Continue</button>
         </div>
       </section>
 
-      <!-- STEP 4 · DRIVER INFO -->
-      <section class="card step-panel fade-in" data-panel="4" style="padding: 1.75rem; display: none">
-        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0 0 0.25rem">Driver information</h2>
-        <p class="muted" style="margin: 0 0 1.5rem">Required by {{ car.host.name.split(' ')[0] }} and Drivly's insurance partner.</p>
+      <!-- STEP 4: Driver info -->
+      <section class="step-panel animate-fade-in hidden bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" data-panel="4">
+        <h2 class="text-xl font-bold m-0 mb-1">Driver information</h2>
+        <p class="text-[color:var(--text-muted)] m-0 mb-6">Required by {{ car.host.name.split(' ')[0] }} and Drivly's insurance partner.</p>
 
-        <form id="driverForm" onsubmit="return false" autocomplete="on" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
-          <label><span class="label">First name *</span><input type="text" class="input" name="firstName" required></label>
-          <label><span class="label">Last name *</span><input type="text" class="input" name="lastName" required></label>
-          <label style="grid-column: span 2"><span class="label">Email *</span><input type="email" class="input" name="email" required></label>
-          <label><span class="label">Phone *</span><input type="tel" class="input" name="phone" required></label>
-          <label><span class="label">Date of birth *</span><input type="date" class="input" name="dob" required></label>
-          <label><span class="label">License number *</span><input type="text" class="input" name="license" required></label>
-          <label><span class="label">License state *</span>
-            <select class="input" name="state" required>
+        <form id="driverForm" onsubmit="return false" autocomplete="on" class="grid md:grid-cols-2 grid-cols-1 gap-4">
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">First name *</span><input type="text" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="firstName" required></label>
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Last name *</span><input type="text" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="lastName" required></label>
+          <label class="md:col-span-2"><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Email *</span><input type="email" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="email" required></label>
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Phone *</span><input type="tel" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="phone" required></label>
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Date of birth *</span><input type="date" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="dob" required></label>
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">License number *</span><input type="text" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="license" required></label>
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">License state *</span>
+            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="state" required>
               <option value="">Select</option>
               @foreach (usStates as st)
                 <option>{{ st }}</option>
@@ -203,116 +198,119 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
           </label>
         </form>
 
-        <div style="display: flex; justify-content: space-between; margin-top: 2rem">
-          <button class="btn btn-outline btn-lg back-btn" data-goto="3">Back</button>
-          <button class="btn btn-primary btn-lg" id="driverContinue">Continue</button>
+        <div class="flex justify-between mt-8">
+          <button class="back-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" data-goto="3">Back</button>
+          <button class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" id="driverContinue">Continue</button>
         </div>
       </section>
 
-      <!-- STEP 5 · PAYMENT -->
-      <section class="card step-panel fade-in" data-panel="5" style="padding: 1.75rem; display: none">
-        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0 0 1.25rem">Payment method</h2>
+      <!-- STEP 5: Payment -->
+      <section class="step-panel animate-fade-in hidden bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" data-panel="5">
+        <h2 class="text-xl font-bold m-0 mb-5">Payment method</h2>
 
-        <div style="display: flex; flex-direction: column; gap: 0.625rem; margin-bottom: 1.75rem">
-          <label class="pay-method selected">
-            <input type="radio" name="payment" value="card" checked>
+        <div class="flex flex-col gap-2.5 mb-7">
+          <label class="pay-method selected flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all">
+            <input type="radio" name="payment" value="card" checked style="accent-color: #FF3E54">
             <svg width="28" height="20" viewBox="0 0 32 22" fill="none"><rect width="32" height="22" rx="4" fill="#1a1f71"/><text x="16" y="15" font-family="Arial" font-size="9" font-weight="700" fill="white" text-anchor="middle">VISA</text></svg>
-            <div style="flex: 1">
-              <p style="margin: 0; font-weight: 600">Visa ending in 4242</p>
-              <p class="muted" style="margin: 0.125rem 0 0; font-size: 0.8125rem">Default · Expires 05/28</p>
+            <div class="flex-1">
+              <p class="m-0 font-semibold">Visa ending in 4242</p>
+              <p class="text-[color:var(--text-muted)] m-0 mt-0.5 text-[0.8125rem]">Default · Expires 05/28</p>
             </div>
           </label>
-          <label class="pay-method">
-            <input type="radio" name="payment" value="apple">
-            <span style="font-size: 1.25rem"></span>
-            <div style="flex: 1">
-              <p style="margin: 0; font-weight: 600">Apple Pay</p>
+          <label class="pay-method flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all">
+            <input type="radio" name="payment" value="apple" style="accent-color: #FF3E54">
+            <span class="text-xl"></span>
+            <div class="flex-1">
+              <p class="m-0 font-semibold">Apple Pay</p>
             </div>
           </label>
-          <label class="pay-method">
-            <input type="radio" name="payment" value="google">
-            <span style="font-size: 1.25rem">G</span>
-            <div style="flex: 1">
-              <p style="margin: 0; font-weight: 600">Google Pay</p>
+          <label class="pay-method flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all">
+            <input type="radio" name="payment" value="google" style="accent-color: #FF3E54">
+            <span class="text-xl">G</span>
+            <div class="flex-1">
+              <p class="m-0 font-semibold">Google Pay</p>
             </div>
           </label>
-          <button class="btn btn-outline btn-sm" style="align-self: flex-start; margin-top: 0.5rem" onclick="window._toast('Card form would open here', 'info')">+ Add new payment method</button>
+          <button class="self-start mt-2 py-2 px-3.5 rounded-lg text-[0.8125rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer"
+                  onclick="window._toast('Card form would open here', 'info')">+ Add new payment method</button>
         </div>
 
-        <div style="padding: 1rem; background: var(--bg-subtle); border-radius: var(--radius); font-size: 0.875rem; margin-bottom: 1.5rem; display: flex; gap: 0.75rem">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="flex-shrink: 0"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4"/></svg>
+        <div class="p-4 bg-[color:var(--bg-subtle)] rounded-xl text-sm mb-6 flex gap-3">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" class="flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4"/></svg>
           <div>
-            <p style="margin: 0; font-weight: 600">Free cancellation</p>
-            <p class="muted" style="margin: 0.125rem 0 0; font-size: 0.8125rem">Up to 24 hours before trip start. After that, a partial refund applies.</p>
+            <p class="m-0 font-semibold">Free cancellation</p>
+            <p class="text-[color:var(--text-muted)] m-0 mt-0.5 text-[0.8125rem]">Up to 24 hours before trip start. After that, a partial refund applies.</p>
           </div>
         </div>
 
-        <label style="display: flex; align-items: start; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5">
-          <input type="checkbox" id="acceptTerms" style="margin-top: 0.25rem; accent-color: var(--brand)">
-          <span>I agree to Drivly's <a href="/about" style="color: var(--brand)">Terms of Service</a>, the host's trip rules, and understand that my payment method will only be charged once the host confirms. Free cancellation up to 24 hours before pickup.</span>
+        <label class="flex items-start gap-2 mb-6 text-sm text-[color:var(--text-secondary)] leading-relaxed">
+          <input type="checkbox" id="acceptTerms" class="mt-1 w-4 h-4" style="accent-color: #FF3E54">
+          <span>I agree to Drivly's <a href="/about" class="text-[#FF3E54]">Terms of Service</a>, the host's trip rules, and understand that my payment method will only be charged once the host confirms. Free cancellation up to 24 hours before pickup.</span>
         </label>
 
-        <div style="display: flex; justify-content: space-between">
-          <button class="btn btn-outline btn-lg back-btn" data-goto="4">Back</button>
-          <button class="btn btn-primary btn-lg" id="reserveBtn">
+        <div class="flex justify-between">
+          <button class="back-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" data-goto="4">Back</button>
+          <button class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" id="reserveBtn">
             Reserve now
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
         </div>
       </section>
 
-      <!-- STEP 6 · SUCCESS -->
-      <section class="card step-panel fade-in" data-panel="6" style="padding: 3rem 1.75rem; display: none; text-align: center">
-        <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--brand-soft); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.5rem">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      <!-- STEP 6: Success -->
+      <section class="step-panel animate-fade-in hidden bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl py-12 px-7 text-center" data-panel="6">
+        <div class="w-20 h-20 rounded-full bg-[rgba(255,62,84,0.1)] inline-flex items-center justify-center mb-6">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FF3E54" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
         </div>
-        <h2 class="serif" style="font-size: 2rem; margin: 0 0 0.5rem">Trip booked!</h2>
-        <p class="muted" style="margin: 0 0 0.5rem; font-size: 1.0625rem">Reservation <span class="tabular" style="font-weight: 700; color: var(--text)">#DRV-<span id="bookingRef">482913</span></span></p>
-        <p class="muted" style="max-width: 48ch; margin: 0 auto 1.5rem; line-height: 1.6">{{ car.host.name }} is typically {{ car.host.responseTime }} to respond. You'll get pickup details and a trip checklist by email.</p>
+        <h2 class="serif text-3xl m-0 mb-2">Trip booked!</h2>
+        <p class="text-[color:var(--text-muted)] m-0 mb-2 text-lg">Reservation <span class="tabular font-bold text-[color:var(--text)]">#DRV-<span id="bookingRef">482913</span></span></p>
+        <p class="text-[color:var(--text-muted)] max-w-[48ch] mx-auto m-0 mb-6 leading-relaxed">{{ car.host.name }} is typically {{ car.host.responseTime }} to respond. You'll get pickup details and a trip checklist by email.</p>
 
-        <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap">
-          <StxLink to="/trips" class="btn btn-primary btn-lg">View my trips</StxLink>
-          <StxLink to="/search" class="btn btn-outline btn-lg">Browse more cars</StxLink>
+        <div class="flex gap-3 justify-center flex-wrap">
+          <StxLink to="/trips" class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px"
+                   style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)">View my trips</StxLink>
+          <StxLink to="/search" class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors">Browse more cars</StxLink>
         </div>
       </section>
 
     </div>
 
     <!-- Summary sidebar -->
-    <aside style="position: sticky; top: 96px">
-      <div class="card" style="overflow: hidden; box-shadow: var(--shadow)">
-        <div style="position: relative; aspect-ratio: 16/11; background: var(--bg-muted)">
-          <img src="{{ car.image }}" alt="{{ car.make }} {{ car.model }}" style="width: 100%; height: 100%; object-fit: cover">
+    <aside class="md:sticky md:top-24">
+      <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl overflow-hidden"
+           style="box-shadow: 0 4px 16px rgba(0,0,0,0.06)">
+        <div class="relative" style="aspect-ratio: 16/11; background: var(--bg-muted)">
+          <img src="{{ car.image }}" alt="{{ car.make }} {{ car.model }}" loading="eager" decoding="async" class="w-full h-full object-cover">
         </div>
-        <div style="padding: 1.25rem 1.25rem 0.25rem">
-          <p style="margin: 0; font-weight: 700">{{ car.year }} {{ car.make }} {{ car.model }}</p>
-          <p class="muted" style="margin: 0.25rem 0 0; font-size: 0.8125rem">{{ car.trim || '' }}</p>
-          <div style="margin-top: 0.625rem; font-size: 0.8125rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem">
+        <div class="px-5 pt-5 pb-1">
+          <p class="m-0 font-bold">{{ car.year }} {{ car.make }} {{ car.model }}</p>
+          <p class="text-[color:var(--text-muted)] m-0 mt-1 text-[0.8125rem]">{{ car.trim || '' }}</p>
+          <div class="mt-2.5 text-[0.8125rem] text-[color:var(--text-secondary)] flex items-center gap-2">
             @component('Rating', { rating: car.rating, reviews: car.trips })
             @endcomponent
           </div>
         </div>
-        <div class="divider" style="margin: 1rem 1.25rem"></div>
-        <div style="padding: 0 1.25rem 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem">
-          <div style="display: flex; justify-content: space-between">
-            <span class="muted" id="sumDates">— to —</span>
+        <div class="h-px bg-[color:var(--border)] my-4 mx-5"></div>
+        <div class="px-5 pb-3">
+          <span class="text-[color:var(--text-muted)] text-sm" id="sumDates">— to —</span>
+        </div>
+        <div class="h-px bg-[color:var(--border)] my-1 mx-5"></div>
+        <div class="px-5 pb-3 flex flex-col gap-2 text-sm">
+          <div class="flex justify-between"><span class="text-[color:var(--text-muted)]">${{ car.price }} × <span id="sDays">3</span> days</span><span class="tabular" id="sSub">${{ car.price * 3 }}</span></div>
+          <div class="flex justify-between"><span class="text-[color:var(--text-muted)]">Trip fee</span><span class="tabular" id="sFee">$0</span></div>
+          <div class="flex justify-between"><span class="text-[color:var(--text-muted)]">Protection (<span id="sPlan">Premium</span>)</span><span class="tabular" id="sProt">$0</span></div>
+          <div class="flex justify-between" id="sExtrasRow">
+            <span class="text-[color:var(--text-muted)]">Extras</span><span class="tabular" id="sExtras">$0</span>
           </div>
         </div>
-        <div class="divider" style="margin: 0.25rem 1.25rem"></div>
-        <div style="padding: 0 1.25rem 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem">
-          <div style="display: flex; justify-content: space-between"><span class="muted">${{ car.price }} × <span id="sDays">3</span> days</span><span class="tabular" id="sSub">${{ car.price * 3 }}</span></div>
-          <div style="display: flex; justify-content: space-between"><span class="muted">Trip fee</span><span class="tabular" id="sFee">$0</span></div>
-          <div style="display: flex; justify-content: space-between"><span class="muted">Protection (<span id="sPlan">Premium</span>)</span><span class="tabular" id="sProt">$0</span></div>
-          <div style="display: flex; justify-content: space-between" id="sExtrasRow">
-            <span class="muted">Extras</span><span class="tabular" id="sExtras">$0</span>
-          </div>
-        </div>
-        <div style="padding: 1rem 1.25rem; background: var(--bg-subtle); display: flex; justify-content: space-between; align-items: center">
-          <span style="font-weight: 700">Total</span>
-          <span class="tabular" style="font-weight: 700; font-size: 1.25rem" id="sTotal">$0</span>
+        <div class="py-4 px-5 bg-[color:var(--bg-subtle)] flex justify-between items-center">
+          <span class="font-bold">Total</span>
+          <span class="tabular font-bold text-xl" id="sTotal">$0</span>
         </div>
       </div>
-      <p class="muted" style="text-align: center; font-size: 0.75rem; margin-top: 0.75rem">Free cancellation up to 24 hrs before pickup</p>
+      <p class="text-[color:var(--text-muted)] text-center text-xs mt-3">Free cancellation up to 24 hrs before pickup</p>
     </aside>
   </div>
 </div>
@@ -326,7 +324,6 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
     const EXTRAS = {{ extras }}
     const CAR_NAME = {{ car.make + ' ' + car.model }}
 
-    // Read URL params
     const params = new URLSearchParams(location.search)
     const today = new Date()
     const t3 = new Date(); t3.setDate(today.getDate() + 3)
@@ -338,7 +335,6 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
     document.getElementById('ft').value = params.get('ft') || '10:00'
     document.getElementById('tt').value = params.get('tt') || '10:00'
 
-    // ── Reactive booking state ──
     const step = state(1)
     const fromDate = state(document.getElementById('from').value)
     const toDate = state(document.getElementById('to').value)
@@ -354,7 +350,6 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
       return Math.max(1, Math.ceil(ms / (24 * 3600 * 1000)))
     })
 
-    // ── Step navigation ──
     function goto(n) {
       if (n < 1 || n > 6) return
       step.set(n)
@@ -363,11 +358,10 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
 
     effect(() => {
       const n = step()
-      // Panels
       document.querySelectorAll('.step-panel').forEach(p => {
-        p.style.display = Number(p.dataset.panel) === n ? 'block' : 'none'
+        if (Number(p.dataset.panel) === n) p.classList.remove('hidden')
+        else p.classList.add('hidden')
       })
-      // Stepper
       document.querySelectorAll('.step').forEach(s => {
         const num = Number(s.dataset.step)
         s.classList.toggle('active', num === n)
@@ -375,14 +369,9 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
       })
     })
 
-    document.querySelectorAll('.next-btn').forEach(b => {
-      b.addEventListener('click', function () { goto(Number(this.dataset.goto)) })
-    })
-    document.querySelectorAll('.back-btn').forEach(b => {
-      b.addEventListener('click', function () { goto(Number(this.dataset.goto)) })
-    })
+    document.querySelectorAll('.next-btn').forEach(b => { b.addEventListener('click', function () { goto(Number(this.dataset.goto)) }) })
+    document.querySelectorAll('.back-btn').forEach(b => { b.addEventListener('click', function () { goto(Number(this.dataset.goto)) }) })
 
-    // ── Protection ──
     document.querySelectorAll('.protection-card').forEach(c => {
       c.addEventListener('click', function () {
         document.querySelectorAll('.protection-card').forEach(o => o.classList.remove('selected'))
@@ -391,7 +380,6 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
       })
     })
 
-    // ── Extras ──
     document.querySelectorAll('[data-extra]').forEach(el => {
       el.addEventListener('click', function (e) {
         if (e.target.tagName !== 'INPUT') {
@@ -406,26 +394,21 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
       })
     })
 
-    // ── Payment method selection ──
     document.querySelectorAll('input[name="payment"]').forEach(r => {
       r.addEventListener('change', function () {
-        document.querySelectorAll('.pay-method').forEach(l => {
-          if (l.querySelector('input[name="payment"]')) l.classList.toggle('selected', l.querySelector('input').checked)
+        document.querySelectorAll('input[name="payment"]').forEach(input => {
+          const label = input.closest('.pay-method')
+          if (label) label.classList.toggle('selected', input.checked)
         })
       })
     })
 
-    // ── Driver form validation ──
     document.getElementById('driverContinue').addEventListener('click', function () {
       const form = document.getElementById('driverForm')
-      if (!form.checkValidity()) {
-        form.reportValidity()
-        return
-      }
+      if (!form.checkValidity()) { form.reportValidity(); return }
       goto(5)
     })
 
-    // ── Reserve ──
     document.getElementById('reserveBtn').addEventListener('click', function () {
       const terms = document.getElementById('acceptTerms')
       if (!terms.checked) { window._toast('Please accept the terms to continue', 'error'); return }
@@ -439,7 +422,6 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
       }, 1200)
     })
 
-    // ── Summary totals ──
     effect(() => {
       const d = days()
       const plan = PLANS.find(p => p.id === planId())
@@ -458,16 +440,16 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
       document.getElementById('sProt').textContent = '$' + prot.toFixed(2)
       document.getElementById('sPlan').textContent = plan.name
       document.getElementById('sExtras').textContent = '$' + extrasTotal.toFixed(2)
-      document.getElementById('sExtrasRow').style.display = extrasTotal > 0 ? 'flex' : 'none'
+      const extrasRow = document.getElementById('sExtrasRow')
+      if (extrasTotal > 0) extrasRow.classList.remove('hidden')
+      else extrasRow.classList.add('hidden')
       document.getElementById('sTotal').textContent = '$' + total.toFixed(2)
 
-      // Dates summary
       const f = new Date(fromDate()); const t = new Date(toDate())
       const opt = { month: 'short', day: 'numeric' }
       document.getElementById('sumDates').textContent = f.toLocaleDateString(undefined, opt) + ' — ' + t.toLocaleDateString(undefined, opt) + ' (' + d + ' ' + (d === 1 ? 'day' : 'days') + ')'
     })
 
-    // Spinner keyframes
     const styleTag = document.createElement('style')
     styleTag.textContent = '@keyframes spin { to { transform: rotate(360deg); } }'
     document.head.appendChild(styleTag)

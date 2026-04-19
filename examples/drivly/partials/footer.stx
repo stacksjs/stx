@@ -1,8 +1,8 @@
-<footer style="background: var(--bg-subtle); border-top: 1px solid var(--border); margin-top: 5rem; padding: 4rem 0 2rem">
-  <div class="container">
-    <div class="grid grid-4" style="gap: 3rem">
+<footer class="mt-20 pt-16 pb-8 border-t border-[color:var(--border)]" style="background: var(--bg-subtle)">
+  <div class="max-w-[1280px] mx-auto px-6">
+    <div class="grid md:grid-cols-4 grid-cols-2 gap-12">
       <div>
-        <div class="logo" style="margin-bottom: 0.75rem">
+        <div class="flex items-center gap-2 font-extrabold text-2xl tracking-tight text-[#FF3E54] mb-3">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
             <rect x="2" y="10" width="28" height="14" rx="4" fill="currentColor"/>
             <rect x="6" y="6" width="20" height="8" rx="3" fill="currentColor" opacity="0.6"/>
@@ -11,49 +11,49 @@
           </svg>
           drivly
         </div>
-        <p class="muted" style="font-size: 0.875rem; max-width: 22rem; line-height: 1.6">The world's largest car sharing marketplace. Skip the counter — drive something special instead.</p>
+        <p class="text-[color:var(--text-muted)] text-sm max-w-[22rem] leading-relaxed m-0">The world's largest car sharing marketplace. Skip the counter — drive something special instead.</p>
       </div>
 
       <div>
-        <p style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 1rem">Drivly</p>
-        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.625rem">
-          <li><a href="/about" style="font-size: 0.875rem; color: var(--text-secondary)">How it works</a></li>
-          <li><a href="/about" style="font-size: 0.875rem; color: var(--text-secondary)">Trust & safety</a></li>
-          <li><a href="/about" style="font-size: 0.875rem; color: var(--text-secondary)">Careers</a></li>
-          <li><a href="/about" style="font-size: 0.875rem; color: var(--text-secondary)">Press</a></li>
+        <p class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] m-0 mb-4">Drivly</p>
+        <ul class="list-none p-0 m-0 flex flex-col gap-2.5">
+          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">How it works</a></li>
+          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Trust & safety</a></li>
+          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Careers</a></li>
+          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Press</a></li>
         </ul>
       </div>
 
       <div>
-        <p style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 1rem">Hosting</p>
-        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.625rem">
-          <li><a href="/host/list" style="font-size: 0.875rem; color: var(--text-secondary)">List your car</a></li>
-          <li><a href="/host/dashboard" style="font-size: 0.875rem; color: var(--text-secondary)">Host dashboard</a></li>
-          <li><a href="/about" style="font-size: 0.875rem; color: var(--text-secondary)">Protection plans</a></li>
-          <li><a href="/about" style="font-size: 0.875rem; color: var(--text-secondary)">Earnings calculator</a></li>
+        <p class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] m-0 mb-4">Hosting</p>
+        <ul class="list-none p-0 m-0 flex flex-col gap-2.5">
+          <li><a href="/host/list" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">List your car</a></li>
+          <li><a href="/host/dashboard" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Host dashboard</a></li>
+          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Protection plans</a></li>
+          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Earnings calculator</a></li>
         </ul>
       </div>
 
       <div>
-        <p style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 1rem">Support</p>
-        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.625rem">
-          <li><a href="/about" style="font-size: 0.875rem; color: var(--text-secondary)">Help Center</a></li>
-          <li><a href="/about" style="font-size: 0.875rem; color: var(--text-secondary)">Insurance claims</a></li>
-          <li><a href="/about" style="font-size: 0.875rem; color: var(--text-secondary)">Contact us</a></li>
-          <li><a href="/about" style="font-size: 0.875rem; color: var(--text-secondary)">Community guidelines</a></li>
+        <p class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] m-0 mb-4">Support</p>
+        <ul class="list-none p-0 m-0 flex flex-col gap-2.5">
+          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Help Center</a></li>
+          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Insurance claims</a></li>
+          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Contact us</a></li>
+          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Community guidelines</a></li>
         </ul>
       </div>
     </div>
 
-    <div class="divider"></div>
+    <div class="h-px bg-[color:var(--border)] my-6"></div>
 
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem">
-      <p class="muted" style="font-size: 0.8125rem; margin: 0">© 2026 Drivly, Inc. · Built with <a href="https://stacksjs.org/stx" style="color: var(--brand)">stx</a></p>
-      <div style="display: flex; gap: 1rem">
-        <a href="#" class="muted" style="font-size: 0.8125rem">English (US)</a>
-        <a href="#" class="muted" style="font-size: 0.8125rem">USD $</a>
-        <a href="#" class="muted" style="font-size: 0.8125rem">Terms</a>
-        <a href="#" class="muted" style="font-size: 0.8125rem">Privacy</a>
+    <div class="flex items-center justify-between flex-wrap gap-4">
+      <p class="text-[color:var(--text-muted)] text-xs m-0">© 2026 Drivly, Inc. · Built with <a href="https://stacksjs.org/stx" class="text-[#FF3E54]">stx</a></p>
+      <div class="flex gap-4">
+        <a href="#" class="text-[color:var(--text-muted)] text-xs">English (US)</a>
+        <a href="#" class="text-[color:var(--text-muted)] text-xs">USD $</a>
+        <a href="#" class="text-[color:var(--text-muted)] text-xs">Terms</a>
+        <a href="#" class="text-[color:var(--text-muted)] text-xs">Privacy</a>
       </div>
     </div>
   </div>

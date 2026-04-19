@@ -538,7 +538,7 @@ catch {
               const custom404 = await renderErrorPage(404)
               if (custom404) {
                 let content = custom404
-                content = await injectCrosswindCSS(content)
+                content = await injectCrosswindCSS(content, absoluteAppDir)
                 if (hotReload) {
                   content = injectHotReload(content, actualHmrPort)
                 }
@@ -607,7 +607,7 @@ catch {
             }
             // Generate Crosswind CSS for this page's utility classes and include in fragment
             // Without this, SPA-navigated pages have no CSS for their utility classes
-            content = await injectCrosswindCSS(content)
+            content = await injectCrosswindCSS(content, absoluteAppDir)
             // Extract only the router container's inner content. The processed
             // template includes the full layout (nav + main + footer). If we
             // return it all, the router injects nav/footer INSIDE <main>,
@@ -634,7 +634,7 @@ catch {
           }
 
           // Inject Crosswind CSS
-          content = await injectCrosswindCSS(content)
+          content = await injectCrosswindCSS(content, absoluteAppDir)
 
           // Inject HMR client
           if (hotReload) {
@@ -682,7 +682,7 @@ catch {
               content = injectRouteParams(content, pluginMatch.params)
             }
 
-            content = await injectCrosswindCSS(content)
+            content = await injectCrosswindCSS(content, absoluteAppDir)
 
             if (hotReload) {
               content = injectHotReload(content, actualHmrPort)
@@ -709,7 +709,7 @@ catch {
               if (shell) {
                 content = composeShellWithPage(shell, content)
               }
-              content = await injectCrosswindCSS(content)
+              content = await injectCrosswindCSS(content, absoluteAppDir)
               if (hotReload) {
                 content = injectHotReload(content, actualHmrPort)
               }
@@ -730,7 +730,7 @@ catch {
       const indexPage = builtPages.get('/')
       if (indexPage) {
         let content = indexPage.content
-        content = await injectCrosswindCSS(content)
+        content = await injectCrosswindCSS(content, absoluteAppDir)
         if (hotReload) {
           content = injectHotReload(content, actualHmrPort)
         }
@@ -758,7 +758,7 @@ catch {
       const custom404 = await renderErrorPage(404)
       if (custom404) {
         let content = custom404
-        content = await injectCrosswindCSS(content)
+        content = await injectCrosswindCSS(content, absoluteAppDir)
         if (hotReload) {
           content = injectHotReload(content, actualHmrPort)
         }

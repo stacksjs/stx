@@ -5,350 +5,279 @@ const pageTitle = 'Browse cars — Drivly'
 const activePage = 'search'
 
 const makes = Array.from(new Set(cars.map(c => c.make))).sort()
-const allFeatures = Array.from(new Set(cars.flatMap(c => c.features)))
 const totalCount = cars.length
-
 const minPrice = Math.min(...cars.map(c => c.price))
 const maxPrice = Math.max(...cars.map(c => c.price))
 
-// Serialize cars for client-side filtering — only fields we need
-const carsJson = JSON.stringify(cars.map(c => ({
-  id: c.id, make: c.make, model: c.model, year: c.year, trim: c.trim,
-  price: c.price, originalPrice: c.originalPrice,
-  rating: c.rating, reviewCount: c.reviewCount, trips: c.trips,
-  location: c.location, distance: c.distance,
-  transmission: c.transmission, fuelType: c.fuelType,
-  seats: c.seats, category: c.category,
-  image: c.image, badges: c.badges,
-  features: c.features, instantBook: c.instantBook, deliveryAvailable: c.deliveryAvailable,
-})))
+// Embed each car's filter attributes on the server so the grid is populated
+// immediately — the JS only has to hide/show elements on filter change.
+// No `cars.find()` / renderCard() on the client, no flash-of-empty-grid.
+const cardsData = cars.map(c => ({
+  id: c.id,
+  car: c,
+  filterData: JSON.stringify({
+    id: c.id,
+    make: c.make,
+    category: c.category,
+    transmission: c.transmission,
+    fuel: c.fuelType,
+    seats: c.seats,
+    price: c.price,
+    instantBook: !!c.instantBook,
+    deliveryAvailable: !!c.deliveryAvailable,
+    onSale: !!c.originalPrice,
+  }),
+}))
 </script>
 
 @extends('layouts/app.stx')
 
 @push('styles')
-  .search-shell { display: grid; grid-template-columns: 300px 1fr; gap: 2.5rem; }
-  @media (max-width: 1024px) { .search-shell { grid-template-columns: 1fr; } .filters-panel { position: fixed; inset: 0; z-index: 90; background: var(--bg); transform: translateX(-100%); transition: transform var(--transition); padding: 1.5rem; overflow-y: auto; } .filters-panel.open { transform: translateX(0); } .filters-toggle { display: inline-flex !important; } }
-  .filter-group { padding: 1.25rem 0; border-bottom: 1px solid var(--border); }
-  .filter-group:last-child { border-bottom: none; }
-  .filter-group-title { font-size: 0.9375rem; font-weight: 700; margin: 0 0 0.875rem; }
-  .filter-chip { display: inline-flex; align-items: center; padding: 0.4375rem 0.875rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 500; background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--border); cursor: pointer; transition: all 120ms; user-select: none; }
-  .filter-chip:hover { background: var(--bg-muted); }
+  /* Mobile drawer behaviour for the filter panel */
+  @media (max-width: 1024px) {
+    .filters-panel { position: fixed; inset: 0; z-index: 90; background: var(--bg); transform: translateX(-100%); transition: transform 220ms cubic-bezier(0.16,1,0.3,1); padding: 1.5rem; overflow-y: auto; }
+    .filters-panel.open { transform: translateX(0); }
+    .filters-toggle { display: inline-flex !important; }
+  }
+  .filter-chip { user-select: none; }
   .filter-chip.active { background: var(--text); color: var(--bg); border-color: var(--text); }
-  .filter-check { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0; cursor: pointer; font-size: 0.875rem; }
-  .filter-check input { width: 16px; height: 16px; accent-color: var(--brand); }
-  .filters-toggle { display: none; }
-  .sort-select { padding: 0.5rem 0.875rem; border: 1px solid var(--border); border-radius: 0.625rem; background: var(--input-bg); color: var(--text); font-size: 0.8125rem; font-family: inherit; }
-  .view-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 0.625rem; overflow: hidden; background: var(--bg-elevated); }
-  .view-toggle button { padding: 0.5rem 0.75rem; border: none; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; }
-  .view-toggle button.active { background: var(--text); color: var(--bg); }
-  .price-range-bar { position: relative; height: 4px; background: var(--bg-muted); border-radius: 2px; margin: 1.25rem 0 0.75rem; }
-  .price-range-fill { position: absolute; height: 100%; background: var(--brand); border-radius: 2px; }
+  /* Dual-handle price slider */
   .price-range-input { position: absolute; top: -9px; width: 100%; height: 22px; appearance: none; background: none; pointer-events: none; }
-  .price-range-input::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; border-radius: 50%; background: white; border: 2px solid var(--brand); cursor: pointer; pointer-events: auto; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-  .price-range-input::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: white; border: 2px solid var(--brand); cursor: pointer; pointer-events: auto; }
+  .price-range-input::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; border-radius: 50%; background: white; border: 2px solid #FF3E54; cursor: pointer; pointer-events: auto; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+  .price-range-input::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: white; border: 2px solid #FF3E54; cursor: pointer; pointer-events: auto; }
+  .view-list #resultsGrid { display: flex; flex-direction: column; }
+  .view-list #resultsGrid > * { max-width: none; }
 @endpush
 
 @section('content')
-<div class="container" style="padding: 1.5rem 1.5rem 4rem">
+<div class="max-w-[1280px] mx-auto px-6 py-6 pb-16">
 
-  <!-- Compact search bar -->
-  <div style="margin-bottom: 1.75rem">
+  <div class="mb-7">
     @component('SearchBar', { variant: 'compact', location: 'San Francisco, CA' })
     @endcomponent
   </div>
 
-  <div class="search-shell">
+  <div class="grid lg:grid-cols-[300px_1fr] grid-cols-1 gap-10">
 
-    <!-- ── Filters ── -->
-    <aside class="filters-panel card" id="filtersPanel" style="align-self: start; padding: 0 1.25rem; position: sticky; top: 96px; max-height: calc(100vh - 120px); overflow-y: auto">
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 0 0">
-        <h2 style="font-size: 1.125rem; font-weight: 700; margin: 0">Filters</h2>
-        <button class="btn btn-ghost btn-sm" id="resetFilters">Clear all</button>
+    <!-- ── FILTERS PANEL ─────────────────────────── -->
+    <aside id="filtersPanel"
+           class="filters-panel self-start lg:sticky lg:top-24 lg:max-h-[calc(100vh-120px)] overflow-y-auto bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl px-5">
+
+      <div class="flex items-center justify-between pt-5">
+        <h2 class="text-lg font-bold m-0">Filters</h2>
+        <button id="resetFilters" class="py-2 px-3.5 rounded-lg text-[0.8125rem] font-medium text-[color:var(--text)] bg-transparent hover:bg-[color:var(--bg-hover)] transition-colors border-0">Clear all</button>
       </div>
 
-      <div class="filter-group">
-        <h3 class="filter-group-title">Price per day</h3>
-        <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--text-muted)">
+      <div class="py-5 border-b border-[color:var(--border)]">
+        <h3 class="text-[0.9375rem] font-bold m-0 mb-3.5">Price per day</h3>
+        <div class="flex justify-between text-[0.8125rem] text-[color:var(--text-muted)]">
           <span id="priceMinLbl" class="tabular">${{ minPrice }}</span>
           <span id="priceMaxLbl" class="tabular">${{ maxPrice }}+</span>
         </div>
-        <div class="price-range-bar">
-          <div class="price-range-fill" id="priceFill" style="left: 0%; right: 0%"></div>
+        <div class="relative h-1 rounded bg-[color:var(--bg-muted)] mt-5 mb-3">
+          <div id="priceFill" class="absolute h-full rounded bg-[#FF3E54]" style="left: 0%; right: 0%"></div>
           <input type="range" class="price-range-input" id="priceMin" min="{{ minPrice }}" max="{{ maxPrice }}" value="{{ minPrice }}">
           <input type="range" class="price-range-input" id="priceMax" min="{{ minPrice }}" max="{{ maxPrice }}" value="{{ maxPrice }}">
         </div>
       </div>
 
-      <div class="filter-group">
-        <h3 class="filter-group-title">Category</h3>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.375rem">
+      <div class="py-5 border-b border-[color:var(--border)]">
+        <h3 class="text-[0.9375rem] font-bold m-0 mb-3.5">Category</h3>
+        <div class="flex flex-wrap gap-1.5">
           @foreach (categories as cat)
-            <button class="filter-chip" data-filter="category" data-value="{{ cat.label === 'Electric' ? 'EV' : cat.label }}">{{ cat.label }}</button>
+            <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="category" data-value="{{ cat.label === 'Electric' ? 'EV' : cat.label }}">{{ cat.label }}</button>
           @endforeach
         </div>
       </div>
 
-      <div class="filter-group">
-        <h3 class="filter-group-title">Make</h3>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.375rem">
+      <div class="py-5 border-b border-[color:var(--border)]">
+        <h3 class="text-[0.9375rem] font-bold m-0 mb-3.5">Make</h3>
+        <div class="flex flex-wrap gap-1.5">
           @foreach (makes as make)
-            <button class="filter-chip" data-filter="make" data-value="{{ make }}">{{ make }}</button>
+            <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="make" data-value="{{ make }}">{{ make }}</button>
           @endforeach
         </div>
       </div>
 
-      <div class="filter-group">
-        <h3 class="filter-group-title">Transmission</h3>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.375rem">
-          <button class="filter-chip" data-filter="transmission" data-value="Automatic">Automatic</button>
-          <button class="filter-chip" data-filter="transmission" data-value="Manual">Manual</button>
+      <div class="py-5 border-b border-[color:var(--border)]">
+        <h3 class="text-[0.9375rem] font-bold m-0 mb-3.5">Transmission</h3>
+        <div class="flex flex-wrap gap-1.5">
+          <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="transmission" data-value="Automatic">Automatic</button>
+          <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="transmission" data-value="Manual">Manual</button>
         </div>
       </div>
 
-      <div class="filter-group">
-        <h3 class="filter-group-title">Fuel</h3>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.375rem">
-          <button class="filter-chip" data-filter="fuel" data-value="Electric">Electric</button>
-          <button class="filter-chip" data-filter="fuel" data-value="Hybrid">Hybrid</button>
-          <button class="filter-chip" data-filter="fuel" data-value="Gasoline">Gas</button>
-          <button class="filter-chip" data-filter="fuel" data-value="Diesel">Diesel</button>
+      <div class="py-5 border-b border-[color:var(--border)]">
+        <h3 class="text-[0.9375rem] font-bold m-0 mb-3.5">Fuel</h3>
+        <div class="flex flex-wrap gap-1.5">
+          <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="fuel" data-value="Electric">Electric</button>
+          <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="fuel" data-value="Hybrid">Hybrid</button>
+          <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="fuel" data-value="Gasoline">Gas</button>
+          <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="fuel" data-value="Diesel">Diesel</button>
         </div>
       </div>
 
-      <div class="filter-group">
-        <h3 class="filter-group-title">Seats</h3>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.375rem">
-          <button class="filter-chip" data-filter="seats" data-value="2">2+</button>
-          <button class="filter-chip" data-filter="seats" data-value="4">4+</button>
-          <button class="filter-chip" data-filter="seats" data-value="5">5+</button>
-          <button class="filter-chip" data-filter="seats" data-value="7">7+</button>
+      <div class="py-5 border-b border-[color:var(--border)]">
+        <h3 class="text-[0.9375rem] font-bold m-0 mb-3.5">Seats</h3>
+        <div class="flex flex-wrap gap-1.5">
+          <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="seats" data-value="2">2+</button>
+          <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="seats" data-value="4">4+</button>
+          <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="seats" data-value="5">5+</button>
+          <button class="filter-chip py-2 px-3.5 rounded-full text-[0.8125rem] font-medium text-[color:var(--text-secondary)] bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:bg-[color:var(--bg-muted)] cursor-pointer transition-all" data-filter="seats" data-value="7">7+</button>
         </div>
       </div>
 
-      <div class="filter-group">
-        <h3 class="filter-group-title">Booking</h3>
-        <label class="filter-check">
-          <input type="checkbox" id="fInstant"> Instant book only
+      <div class="py-5">
+        <h3 class="text-[0.9375rem] font-bold m-0 mb-3.5">Booking</h3>
+        <label class="flex items-center gap-2 py-1.5 cursor-pointer text-sm">
+          <input type="checkbox" id="fInstant" class="w-4 h-4" style="accent-color: #FF3E54"> Instant book only
         </label>
-        <label class="filter-check">
-          <input type="checkbox" id="fDelivery"> Offers delivery
+        <label class="flex items-center gap-2 py-1.5 cursor-pointer text-sm">
+          <input type="checkbox" id="fDelivery" class="w-4 h-4" style="accent-color: #FF3E54"> Offers delivery
         </label>
-        <label class="filter-check">
-          <input type="checkbox" id="fDeal"> On sale
+        <label class="flex items-center gap-2 py-1.5 cursor-pointer text-sm">
+          <input type="checkbox" id="fDeal" class="w-4 h-4" style="accent-color: #FF3E54"> On sale
         </label>
       </div>
 
-      <div style="padding: 1rem 0 1.5rem">
-        <button class="btn btn-primary btn-block" onclick="document.getElementById('filtersPanel').classList.remove('open'); document.body.style.overflow=''">Show results</button>
+      <div class="pt-4 pb-6">
+        <button class="w-full py-3.5 px-5 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-colors border-0"
+                onclick="document.getElementById('filtersPanel').classList.remove('open'); document.body.style.overflow=''">Show results</button>
       </div>
     </aside>
 
-    <!-- ── Results ── -->
-    <div>
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap">
+    <!-- ── RESULTS ──────────────────────────── -->
+    <div id="searchResults">
+      <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
-          <h1 class="serif" style="font-size: 1.875rem; margin: 0 0 0.25rem">Cars in <span id="locationLabel">San Francisco</span></h1>
-          <p class="muted" style="margin: 0; font-size: 0.9375rem"><span id="resultCount" class="tabular">{{ totalCount }}</span> cars available</p>
+          <h1 class="serif text-3xl m-0 mb-1">Cars in <span id="locationLabel">San Francisco</span></h1>
+          <p class="text-[color:var(--text-muted)] m-0 text-[0.9375rem]"><span id="resultCount" class="tabular">{{ totalCount }}</span> cars available</p>
         </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center">
-          <button class="btn btn-outline btn-sm filters-toggle" id="filtersToggle">
+        <div class="flex gap-2 items-center">
+          <button id="filtersToggle" class="filters-toggle hidden items-center gap-2 py-2 px-3.5 rounded-xl text-[0.8125rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
             Filters
           </button>
-          <select class="sort-select" id="sortSelect">
+          <select id="sortSelect" class="py-2 px-3.5 rounded-lg text-[0.8125rem] bg-[color:var(--input-bg)] border border-[color:var(--border)] text-[color:var(--text)]">
             <option value="featured">Featured</option>
             <option value="price-asc">Price: low to high</option>
             <option value="price-desc">Price: high to low</option>
             <option value="rating">Top-rated</option>
             <option value="trips">Most trips</option>
           </select>
-          <div class="view-toggle">
-            <button id="viewGrid" class="active" aria-label="Grid view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></button>
-            <button id="viewList" aria-label="List view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+          <div class="inline-flex rounded-lg overflow-hidden border border-[color:var(--border)] bg-[color:var(--bg-elevated)]">
+            <button id="viewGrid" class="py-2 px-3 bg-[color:var(--text)] text-[color:var(--bg)] border-0 cursor-pointer flex items-center" aria-label="Grid view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></button>
+            <button id="viewList" class="py-2 px-3 bg-transparent text-[color:var(--text-muted)] border-0 cursor-pointer flex items-center" aria-label="List view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
           </div>
         </div>
       </div>
 
-      <!-- Active filters display -->
-      <div id="activeFilters" style="display: none; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem"></div>
+      <div id="activeFilters" class="hidden flex-wrap gap-2 mb-5"></div>
 
-      <!-- Results grid -->
-      <div id="resultsGrid" class="grid grid-3"></div>
+      <!-- Cars rendered server-side. `data-car` holds a JSON blob the filter reads;
+           hiding is done by toggling `hidden` attribute, never detaching nodes. -->
+      <div id="resultsGrid" class="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-5">
+        @foreach (cardsData as entry)
+          <div data-car='{{ entry.filterData }}'>
+            @component('CarCard', { car: entry.car })
+            @endcomponent
+          </div>
+        @endforeach
+      </div>
 
-      <!-- Empty state -->
-      <div id="emptyState" style="display: none; text-align: center; padding: 4rem 1rem">
-        <p style="font-size: 3rem; margin: 0 0 0.5rem">🚗</p>
-        <h3 class="serif" style="font-size: 1.5rem; margin: 0 0 0.5rem">No cars match your filters</h3>
-        <p class="muted" style="margin: 0 0 1.5rem">Try clearing a filter or expanding your search.</p>
-        <button class="btn btn-primary" onclick="document.getElementById('resetFilters').click()">Clear all filters</button>
+      <div id="emptyState" class="hidden text-center py-16 px-4">
+        <p class="text-5xl m-0 mb-2">🚗</p>
+        <h3 class="serif text-2xl m-0 mb-2">No cars match your filters</h3>
+        <p class="text-[color:var(--text-muted)] m-0 mb-6">Try clearing a filter or expanding your search.</p>
+        <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-colors border-0 cursor-pointer"
+                onclick="document.getElementById('resetFilters').click()">Clear all filters</button>
       </div>
     </div>
   </div>
 </div>
 
-<template id="carTpl">
-  <article class="card hover-lift fade-in" style="overflow: hidden; display: flex; flex-direction: column">
-    <div style="position: relative; aspect-ratio: 16/11; background: var(--bg-muted)">
-      <a data-link style="display: block; height: 100%"><img loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 420ms" onmouseenter="this.style.transform='scale(1.03)'" onmouseleave="this.style.transform='scale(1)'"></a>
-      <button class="fav-btn" style="position: absolute; top: 0.75rem; right: 0.75rem; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.9); cursor: pointer; display: flex; align-items: center; justify-content: center"><svg class="fav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-      <div class="badges-wrap" style="position: absolute; top: 0.75rem; left: 0.75rem; display: flex; flex-direction: column; gap: 0.375rem; align-items: flex-start"></div>
-    </div>
-    <a data-link style="padding: 1rem 1.125rem; display: flex; flex-direction: column; gap: 0.625rem; flex: 1">
-      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem">
-        <div style="min-width: 0">
-          <h3 class="car-name" style="font-size: 0.9375rem; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"></h3>
-          <p class="car-trim" style="font-size: 0.75rem; color: var(--text-muted); margin: 0.125rem 0 0"></p>
-        </div>
-        <span class="car-rating tabular" style="font-size: 0.8125rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0"><svg width="12" height="12" viewBox="0 0 20 20" fill="#f59e0b"><path d="M10 1.5l2.854 5.78 6.375.927-4.614 4.498 1.089 6.35L10 15.92l-5.704 3.135 1.089-6.35L.77 8.207l6.375-.927L10 1.5z"/></svg></span>
-      </div>
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: auto">
-        <div style="display: flex; align-items: baseline; gap: 0.375rem">
-          <span class="car-price tabular" style="font-size: 1.125rem; font-weight: 700"></span>
-          <span style="font-size: 0.75rem; color: var(--text-muted)">/day</span>
-          <span class="car-price-orig tabular" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: line-through; display: none"></span>
-        </div>
-        <span class="car-tags" style="display: flex; gap: 0.25rem"></span>
-      </div>
-    </a>
-  </article>
-</template>
-
 <script client>
   if (!window.__searchPage) {
     window.__searchPage = true
 
-    const ALL_CARS = {!! carsJson !!}
+    const favorites = useStore('favorites')
+
     const MIN_PRICE = {{ minPrice }}
     const MAX_PRICE = {{ maxPrice }}
 
-    const favorites = useStore('favorites')
+    const state_priceMin    = state(MIN_PRICE)
+    const state_priceMax    = state(MAX_PRICE)
+    const state_category    = state('')
+    const state_make        = state('')
+    const state_transmission = state('')
+    const state_fuel        = state('')
+    const state_seats       = state(0)
+    const state_instantBook = state(false)
+    const state_delivery    = state(false)
+    const state_deal        = state(false)
+    const state_sort        = state('featured')
 
-    // ── Reactive filter state ──
-    const filters = {
-      priceMin: state(MIN_PRICE),
-      priceMax: state(MAX_PRICE),
-      category: state(''),
-      make: state(''),
-      transmission: state(''),
-      fuel: state(''),
-      seats: state(0),
-      instantBook: state(false),
-      delivery: state(false),
-      deal: state(false),
-      sort: state('featured'),
-      view: state('grid'),
+    const filters = { priceMin: state_priceMin, priceMax: state_priceMax, category: state_category, make: state_make, transmission: state_transmission, fuel: state_fuel, seats: state_seats, instantBook: state_instantBook, delivery: state_delivery, deal: state_deal, sort: state_sort }
+
+    // Parse URL params
+    const urlParams = new URLSearchParams(location.search)
+    if (urlParams.get('category')) {
+      const v = urlParams.get('category').toLowerCase()
+      const map = { ev: 'EV', suv: 'SUV', luxury: 'Luxury', convertible: 'Convertible', truck: 'Truck', sports: 'Sports', classic: 'Classic', compact: 'Compact', minivan: 'Minivan' }
+      state_category.set(map[v] || urlParams.get('category'))
     }
+    if (urlParams.get('deals') === '1') state_deal.set(true)
+    const loc = urlParams.get('location')
+    if (loc) document.getElementById('locationLabel').textContent = loc.split(',')[0]
 
-    function parseInitial() {
-      const p = new URLSearchParams(location.search)
-      if (p.get('category')) {
-        const v = p.get('category').toLowerCase()
-        const map = { ev: 'EV', suv: 'SUV', luxury: 'Luxury', convertible: 'Convertible', truck: 'Truck', sports: 'Sports', classic: 'Classic', compact: 'Compact', minivan: 'Minivan' }
-        filters.category.set(map[v] || p.get('category'))
-      }
-      if (p.get('deals') === '1') filters.deal.set(true)
-      const loc = p.get('location')
-      if (loc) document.getElementById('locationLabel').textContent = loc.split(',')[0]
-    }
-    parseInitial()
+    // DOM refs
+    const grid = document.getElementById('resultsGrid')
+    const empty = document.getElementById('emptyState')
+    const countEl = document.getElementById('resultCount')
+    const cards = Array.from(grid.querySelectorAll('[data-car]')).map(el => ({ el, data: JSON.parse(el.dataset.car) }))
 
-    function matches(car) {
-      if (car.price < filters.priceMin() || car.price > filters.priceMax()) return false
-      if (filters.category() && car.category !== filters.category()) return false
-      if (filters.make() && car.make !== filters.make()) return false
-      if (filters.transmission() && car.transmission !== filters.transmission()) return false
-      if (filters.fuel() && car.fuelType !== filters.fuel()) return false
-      if (filters.seats() && car.seats < filters.seats()) return false
-      if (filters.instantBook() && !car.instantBook) return false
-      if (filters.delivery() && !car.deliveryAvailable) return false
-      if (filters.deal() && !car.originalPrice) return false
+    function matches(c) {
+      if (c.price < state_priceMin() || c.price > state_priceMax()) return false
+      if (state_category() && c.category !== state_category()) return false
+      if (state_make() && c.make !== state_make()) return false
+      if (state_transmission() && c.transmission !== state_transmission()) return false
+      if (state_fuel() && c.fuel !== state_fuel()) return false
+      if (state_seats() && c.seats < state_seats()) return false
+      if (state_instantBook() && !c.instantBook) return false
+      if (state_delivery() && !c.deliveryAvailable) return false
+      if (state_deal() && !c.onSale) return false
       return true
     }
 
-    function sorted(list) {
-      const s = filters.sort()
-      const out = [...list]
-      if (s === 'price-asc') out.sort((a, b) => a.price - b.price)
-      else if (s === 'price-desc') out.sort((a, b) => b.price - a.price)
-      else if (s === 'rating') out.sort((a, b) => b.rating - a.rating)
-      else if (s === 'trips') out.sort((a, b) => b.trips - a.trips)
-      return out
+    function sortKey(c) {
+      const s = state_sort()
+      if (s === 'price-asc')  return c.price
+      if (s === 'price-desc') return -c.price
+      return 0
     }
 
-    function renderCard(car) {
-      const tpl = document.getElementById('carTpl')
-      const node = tpl.content.cloneNode(true).firstElementChild
-      const links = node.querySelectorAll('[data-link]')
-      links.forEach(a => { a.setAttribute('href', '/cars/' + car.id); a.setAttribute('data-stx-link', '') })
-      const img = node.querySelector('img')
-      img.src = car.image
-      img.alt = car.year + ' ' + car.make + ' ' + car.model
-      node.querySelector('.car-name').textContent = car.year + ' ' + car.make + ' ' + car.model
-      node.querySelector('.car-trim').textContent = car.trim || ''
-      node.querySelector('.car-rating').innerHTML = '<svg width="12" height="12" viewBox="0 0 20 20" fill="#f59e0b"><path d="M10 1.5l2.854 5.78 6.375.927-4.614 4.498 1.089 6.35L10 15.92l-5.704 3.135 1.089-6.35L.77 8.207l6.375-.927L10 1.5z"/></svg> <span>' + car.rating + '</span> <span style="color:var(--text-muted)">(' + car.trips + ')</span>'
-      node.querySelector('.car-price').textContent = '$' + car.price
-      const orig = node.querySelector('.car-price-orig')
-      if (car.originalPrice) { orig.textContent = '$' + car.originalPrice; orig.style.display = 'inline' }
-
-      const badges = node.querySelector('.badges-wrap')
-      if (car.originalPrice) {
-        const pct = Math.round((1 - car.price / car.originalPrice) * 100)
-        const b = document.createElement('span')
-        b.className = 'chip'
-        b.style.cssText = 'background:#0a0a0a;color:#fff;border:none;font-weight:600'
-        b.textContent = '-' + pct + '%'
-        badges.appendChild(b)
+    function render() {
+      // Re-sort by detaching + re-appending in sorted order. Cheap for <1k rows.
+      const visible = cards.filter(c => matches(c.data))
+      if (state_sort() !== 'featured') {
+        visible.sort((a, b) => sortKey(a.data) - sortKey(b.data))
       }
-      if (car.badges) {
-        car.badges.forEach(label => {
-          const b = document.createElement('span')
-          b.className = 'chip'
-          b.style.cssText = 'background:rgba(255,255,255,0.95);color:#0a0a0a;border:none;font-weight:500'
-          b.textContent = label
-          badges.appendChild(b)
-        })
-      }
-
-      const tags = node.querySelector('.car-tags')
-      if (car.instantBook) {
-        const t = document.createElement('span')
-        t.className = 'chip chip-accent'
-        t.style.fontSize = '0.6875rem'
-        t.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> Instant'
-        tags.appendChild(t)
-      }
-
-      // Favorite state
-      const favBtn = node.querySelector('.fav-btn')
-      const favIcon = node.querySelector('.fav-icon')
-      function syncFav() {
-        if (favorites.has(car.id)) { favIcon.setAttribute('fill', '#FF3E54'); favIcon.style.stroke = '#FF3E54' }
-        else { favIcon.setAttribute('fill', 'none'); favIcon.style.stroke = 'currentColor' }
-      }
-      syncFav()
-      favBtn.addEventListener('click', function (e) {
-        e.preventDefault(); e.stopPropagation()
-        favorites.toggle(car.id)
-        syncFav()
-        window._toast && window._toast(favorites.has(car.id) ? 'Added to favorites' : 'Removed from favorites', 'success')
+      // Toggle hidden on every card (preserves DOM), then re-order visible ones.
+      cards.forEach(c => c.el.hidden = true)
+      const frag = document.createDocumentFragment()
+      visible.forEach(c => {
+        c.el.hidden = false
+        frag.appendChild(c.el)
       })
-      return node
-    }
+      grid.appendChild(frag)
 
-    function renderResults() {
-      const filtered = sorted(ALL_CARS.filter(matches))
-      const grid = document.getElementById('resultsGrid')
-      const empty = document.getElementById('emptyState')
-      grid.innerHTML = ''
-      document.getElementById('resultCount').textContent = filtered.length
-      if (filtered.length === 0) {
-        grid.style.display = 'none'
-        empty.style.display = 'block'
+      countEl.textContent = visible.length
+      if (visible.length === 0) {
+        grid.hidden = true
+        empty.classList.remove('hidden')
       } else {
-        grid.style.display = 'grid'
-        empty.style.display = 'none'
-        filtered.forEach(car => grid.appendChild(renderCard(car)))
+        grid.hidden = false
+        empty.classList.add('hidden')
       }
       renderActiveChips()
     }
@@ -357,31 +286,30 @@ const carsJson = JSON.stringify(cars.map(c => ({
       const wrap = document.getElementById('activeFilters')
       wrap.innerHTML = ''
       const active = []
-      if (filters.category()) active.push({ key: 'category', label: filters.category() })
-      if (filters.make()) active.push({ key: 'make', label: filters.make() })
-      if (filters.transmission()) active.push({ key: 'transmission', label: filters.transmission() })
-      if (filters.fuel()) active.push({ key: 'fuel', label: filters.fuel() })
-      if (filters.seats()) active.push({ key: 'seats', label: filters.seats() + '+ seats' })
-      if (filters.instantBook()) active.push({ key: 'instantBook', label: 'Instant book' })
-      if (filters.delivery()) active.push({ key: 'delivery', label: 'Delivery' })
-      if (filters.deal()) active.push({ key: 'deal', label: 'On sale' })
-      if (filters.priceMin() !== MIN_PRICE || filters.priceMax() !== MAX_PRICE) active.push({ key: 'price', label: '$' + filters.priceMin() + '–$' + filters.priceMax() })
+      if (state_category())        active.push({ key: 'category', label: state_category() })
+      if (state_make())            active.push({ key: 'make', label: state_make() })
+      if (state_transmission())    active.push({ key: 'transmission', label: state_transmission() })
+      if (state_fuel())            active.push({ key: 'fuel', label: state_fuel() })
+      if (state_seats())           active.push({ key: 'seats', label: state_seats() + '+ seats' })
+      if (state_instantBook())     active.push({ key: 'instantBook', label: 'Instant book' })
+      if (state_delivery())        active.push({ key: 'delivery', label: 'Delivery' })
+      if (state_deal())            active.push({ key: 'deal', label: 'On sale' })
+      if (state_priceMin() !== MIN_PRICE || state_priceMax() !== MAX_PRICE) active.push({ key: 'price', label: '$' + state_priceMin() + '–$' + state_priceMax() })
 
-      if (active.length === 0) { wrap.style.display = 'none'; return }
-      wrap.style.display = 'flex'
+      if (active.length === 0) { wrap.classList.add('hidden'); return }
+      wrap.classList.remove('hidden')
+      wrap.classList.add('flex')
       active.forEach(a => {
         const chip = document.createElement('button')
-        chip.className = 'chip chip-brand'
-        chip.style.cursor = 'pointer'
-        chip.innerHTML = a.label + ' <span style="margin-left:0.25rem; font-weight:700">×</span>'
+        chip.className = 'inline-flex items-center gap-1.5 py-1.5 px-2.5 rounded-full text-xs font-medium text-[#FF3E54] bg-[rgba(255,62,84,0.1)] border border-[rgba(255,62,84,0.25)] cursor-pointer'
+        chip.innerHTML = a.label + ' <span style="font-weight:700; margin-left:0.25rem">×</span>'
         chip.addEventListener('click', function () {
-          if (a.key === 'price') { filters.priceMin.set(MIN_PRICE); filters.priceMax.set(MAX_PRICE); updatePriceUI() }
-          else if (a.key === 'seats') filters.seats.set(0)
-          else if (a.key === 'instantBook') { filters.instantBook.set(false); document.getElementById('fInstant').checked = false }
-          else if (a.key === 'delivery') { filters.delivery.set(false); document.getElementById('fDelivery').checked = false }
-          else if (a.key === 'deal') { filters.deal.set(false); document.getElementById('fDeal').checked = false }
+          if (a.key === 'price') { state_priceMin.set(MIN_PRICE); state_priceMax.set(MAX_PRICE); updatePriceUI() }
+          else if (a.key === 'seats') state_seats.set(0)
+          else if (a.key === 'instantBook') { state_instantBook.set(false); document.getElementById('fInstant').checked = false }
+          else if (a.key === 'delivery') { state_delivery.set(false); document.getElementById('fDelivery').checked = false }
+          else if (a.key === 'deal') { state_deal.set(false); document.getElementById('fDeal').checked = false }
           else filters[a.key].set('')
-          document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'))
           restoreChipStates()
         })
         wrap.appendChild(chip)
@@ -393,19 +321,19 @@ const carsJson = JSON.stringify(cars.map(c => ({
       document.querySelectorAll('.filter-chip').forEach(c => {
         const f = c.dataset.filter
         const v = c.dataset.value
-        if (f === 'seats' && Number(v) === filters.seats()) c.classList.add('active')
+        if (f === 'seats' && Number(v) === state_seats()) c.classList.add('active')
         else if (filters[f] && filters[f]() === v) c.classList.add('active')
       })
     }
 
-    // Chip click handlers (single-select per filter)
+    // Chip click
     document.querySelectorAll('.filter-chip').forEach(c => {
       c.addEventListener('click', function () {
         const f = this.dataset.filter
         const v = this.dataset.value
         if (f === 'seats') {
           const num = Number(v)
-          filters.seats.set(filters.seats() === num ? 0 : num)
+          state_seats.set(state_seats() === num ? 0 : num)
         } else {
           filters[f].set(filters[f]() === v ? '' : v)
         }
@@ -413,12 +341,10 @@ const carsJson = JSON.stringify(cars.map(c => ({
       })
     })
 
-    // Checkbox filters
-    document.getElementById('fInstant').addEventListener('change', function () { filters.instantBook.set(this.checked) })
-    document.getElementById('fDelivery').addEventListener('change', function () { filters.delivery.set(this.checked) })
-    document.getElementById('fDeal').addEventListener('change', function () { filters.deal.set(this.checked) })
+    document.getElementById('fInstant').addEventListener('change', function () { state_instantBook.set(this.checked) })
+    document.getElementById('fDelivery').addEventListener('change', function () { state_delivery.set(this.checked) })
+    document.getElementById('fDeal').addEventListener('change', function () { state_deal.set(this.checked) })
 
-    // Price slider
     const pmin = document.getElementById('priceMin')
     const pmax = document.getElementById('priceMax')
     const pfill = document.getElementById('priceFill')
@@ -432,43 +358,35 @@ const carsJson = JSON.stringify(cars.map(c => ({
     pmin.addEventListener('input', function () {
       const lo = Math.min(Number(this.value), Number(pmax.value) - 5)
       this.value = lo
-      filters.priceMin.set(lo); updatePriceUI()
+      state_priceMin.set(lo); updatePriceUI()
     })
     pmax.addEventListener('input', function () {
       const hi = Math.max(Number(this.value), Number(pmin.value) + 5)
       this.value = hi
-      filters.priceMax.set(hi); updatePriceUI()
+      state_priceMax.set(hi); updatePriceUI()
     })
     updatePriceUI()
 
-    // Sort
-    document.getElementById('sortSelect').addEventListener('change', function () { filters.sort.set(this.value) })
+    document.getElementById('sortSelect').addEventListener('change', function () { state_sort.set(this.value) })
 
-    // View toggle
     const viewGrid = document.getElementById('viewGrid')
     const viewList = document.getElementById('viewList')
-    viewGrid.addEventListener('click', function () {
-      filters.view.set('grid')
-      viewGrid.classList.add('active'); viewList.classList.remove('active')
-      document.getElementById('resultsGrid').className = 'grid grid-3'
-    })
-    viewList.addEventListener('click', function () {
-      filters.view.set('list')
-      viewList.classList.add('active'); viewGrid.classList.remove('active')
-      document.getElementById('resultsGrid').className = 'grid grid-1'
-    })
+    function setView(mode) {
+      const active = mode === 'grid' ? viewGrid : viewList
+      const inactive = mode === 'grid' ? viewList : viewGrid
+      active.className = 'py-2 px-3 bg-[color:var(--text)] text-[color:var(--bg)] border-0 cursor-pointer flex items-center'
+      inactive.className = 'py-2 px-3 bg-transparent text-[color:var(--text-muted)] border-0 cursor-pointer flex items-center'
+      document.getElementById('searchResults').classList.toggle('view-list', mode === 'list')
+    }
+    viewGrid.addEventListener('click', () => setView('grid'))
+    viewList.addEventListener('click', () => setView('list'))
 
-    // Reset
     document.getElementById('resetFilters').addEventListener('click', function () {
-      Object.keys(filters).forEach(k => {
-        if (k === 'priceMin') filters.priceMin.set(MIN_PRICE)
-        else if (k === 'priceMax') filters.priceMax.set(MAX_PRICE)
-        else if (k === 'seats') filters.seats.set(0)
-        else if (k === 'sort') filters.sort.set('featured')
-        else if (k === 'view') return
-        else if (k === 'instantBook' || k === 'delivery' || k === 'deal') filters[k].set(false)
-        else filters[k].set('')
-      })
+      state_priceMin.set(MIN_PRICE); state_priceMax.set(MAX_PRICE)
+      state_category.set(''); state_make.set(''); state_transmission.set(''); state_fuel.set('')
+      state_seats.set(0)
+      state_instantBook.set(false); state_delivery.set(false); state_deal.set(false)
+      state_sort.set('featured')
       pmin.value = MIN_PRICE; pmax.value = MAX_PRICE
       document.getElementById('fInstant').checked = false
       document.getElementById('fDelivery').checked = false
@@ -478,16 +396,31 @@ const carsJson = JSON.stringify(cars.map(c => ({
       updatePriceUI()
     })
 
-    // Mobile filters toggle
     document.getElementById('filtersToggle').addEventListener('click', function () {
       document.getElementById('filtersPanel').classList.toggle('open')
       document.body.style.overflow = document.getElementById('filtersPanel').classList.contains('open') ? 'hidden' : ''
     })
 
-    // Reactive effect — re-render whenever any filter changes
+    // Wire up favorite buttons (rendered by CarCard) to the store.
+    document.querySelectorAll('.fav-btn').forEach(btn => {
+      const id = btn.getAttribute('data-car-id')
+      const icon = btn.querySelector('.fav-icon')
+      function sync() {
+        if (favorites.has(id)) { icon.setAttribute('fill', '#FF3E54'); icon.style.stroke = '#FF3E54' }
+        else { icon.setAttribute('fill', 'none'); icon.style.stroke = 'currentColor' }
+      }
+      sync()
+      btn.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation()
+        favorites.toggle(id); sync()
+        window._toast && window._toast(favorites.has(id) ? 'Saved to favorites' : 'Removed from favorites', 'success')
+      })
+    })
+
+    // Effect runs once on register + on every filter change → keep grid in sync.
     effect(function () {
-      Object.values(filters).forEach(s => s()) // track all filter signals
-      renderResults()
+      Object.values(filters).forEach(s => s())
+      render()
     })
 
     restoreChipStates()

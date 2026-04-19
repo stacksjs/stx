@@ -1,13 +1,18 @@
-<div style="display: flex; align-items: center; gap: 0.75rem">
-  <div class="avatar {{ size === 'lg' ? 'avatar-lg' : '' }}">{{ host.avatar }}</div>
-  <div style="min-width: 0">
-    <p style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 0.375rem">
+<script server>
+const bigSize = size === 'lg'
+</script>
+
+<div class="flex items-center gap-3">
+  <div class="inline-flex items-center justify-center {{ bigSize ? 'w-12 h-12 text-base' : 'w-8 h-8 text-[0.8125rem]' }} rounded-full text-white font-semibold"
+       style="background: linear-gradient(135deg, #FF3E54 0%, #7c3aed 100%)">{{ host.avatar }}</div>
+  <div class="min-w-0">
+    <p class="m-0 text-sm font-semibold text-[color:var(--text)] flex items-center gap-1.5">
       {{ host.name }}
       @if (host.allStar)
-        <span class="chip chip-brand" style="padding: 0.125rem 0.375rem; font-size: 0.625rem">★ All-Star</span>
+        <span class="inline-flex items-center py-0.5 px-1.5 rounded-full text-[0.625rem] font-medium text-[#FF3E54] bg-[rgba(255,62,84,0.1)] border border-[rgba(255,62,84,0.25)]">★ All-Star</span>
       @endif
     </p>
-    <p style="margin: 0.125rem 0 0; font-size: 0.75rem; color: var(--text-muted)">
+    <p class="m-0 mt-0.5 text-xs text-[color:var(--text-muted)]">
       {{ host.trips }} trips · {{ host.rating }} ★
     </p>
   </div>

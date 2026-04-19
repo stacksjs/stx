@@ -325,7 +325,7 @@ export function extractClassNames(htmlContent: string): Set<string> {
 /**
  * Extract utility classes from HTML content and generate CSS using Crosswind
  */
-export async function generateCrosswindCSS(htmlContent: string): Promise<string> {
+export async function generateCrosswindCSS(htmlContent: string, appDir?: string): Promise<string> {
   try {
     // Load crosswind module
     const hw = await loadCrosswind()
@@ -339,6 +339,11 @@ export async function generateCrosswindCSS(htmlContent: string): Promise<string>
       return ''
     }
 
+    // Resolve config search root — prefer the caller-supplied app dir so
+    // `stx <app-dir>` from outside the app still finds its crosswind.config.
+    // Fallback: `process.cwd()` (legacy behaviour).
+    const resolveRoot = appDir ? path.resolve(appDir) : process.cwd()
+
     // Load the project's crosswind config
     // Priority: 1) stx.config.ts css field, 2) crosswind.config.ts auto-discovery
     if (!cachedConfig) {
@@ -346,11 +351,11 @@ export async function generateCrosswindCSS(htmlContent: string): Promise<string>
       let stxCssConfig: CrosswindConfig | null = null
       try {
         const { loadStxConfig } = await import('../config')
-        const stxConfig = await loadStxConfig()
+        const stxConfig = await loadStxConfig(resolveRoot)
         if (stxConfig.css) {
           if (typeof stxConfig.css === 'string') {
             // Path to crosswind config file
-            const configPath = path.isAbsolute(stxConfig.css) ? stxConfig.css : path.resolve(process.cwd(), stxConfig.css)
+            const configPath = path.isAbsolute(stxConfig.css) ? stxConfig.css : path.resolve(resolveRoot, stxConfig.css)
             if (await Bun.file(configPath).exists()) {
               const mod = await import(configPath)
               stxCssConfig = mod.default || mod
@@ -365,7 +370,7 @@ export async function generateCrosswindCSS(htmlContent: string): Promise<string>
               minify: stxConfig.css.minify ?? false,
             } as CrosswindConfig
             if (stxConfig.css.config) {
-              const configPath = path.isAbsolute(stxConfig.css.config) ? stxConfig.css.config : path.resolve(process.cwd(), stxConfig.css.config)
+              const configPath = path.isAbsolute(stxConfig.css.config) ? stxConfig.css.config : path.resolve(resolveRoot, stxConfig.css.config)
               if (await Bun.file(configPath).exists()) {
                 const mod = await import(configPath)
                 const extConfig = mod.default || mod
@@ -378,7 +383,7 @@ export async function generateCrosswindCSS(htmlContent: string): Promise<string>
       }
       catch {}
 
-      cachedConfig = stxCssConfig || await loadCrosswindConfig(process.cwd())
+      cachedConfig = stxCssConfig || await loadCrosswindConfig(resolveRoot)
     }
 
     const baseConfig = hw.defaultConfig || hw.config
@@ -488,14 +493,14 @@ export async function generateCrosswindCSS(htmlContent: string): Promise<string>
  * Inject generated CSS into HTML content
  * Tries to inject before </head>, falls back to <body> or prepends
  */
-export async function injectCrosswindCSS(htmlContent: string): Promise<string> {
+export async function injectCrosswindCSS(htmlContent: string, appDir?: string): Promise<string> {
   // Skip if Crosswind CSS already injected (prevents duplicate Preflight resets
   // from recursive processDirectives calls via layout resolution)
   if (htmlContent.includes('data-crosswind="generated"')) {
     return htmlContent
   }
 
-  const css = await generateCrosswindCSS(htmlContent)
+  const css = await generateCrosswindCSS(htmlContent, appDir)
 
   if (!css) {
     return htmlContent
