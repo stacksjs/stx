@@ -14,6 +14,9 @@ export default {
   partialsDir: 'partials',
   storesDir: 'stores',
   publicDir: 'public',
+  // Every page calls useSeoMeta() explicitly, so we don't want the auto-SEO
+  // fallback injecting generic "stx Project" tags on top of ours.
+  skipDefaultSeoTags: true,
   debug: false,
   cache: false,
 }

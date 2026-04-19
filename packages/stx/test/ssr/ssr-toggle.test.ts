@@ -15,13 +15,21 @@ async function processTemplate(template: string, context: Record<string, any> = 
 }
 
 describe('SSR Toggle', () => {
-  test('default ssr config is true', () => {
-    expect(defaultConfig.ssr).toBe(true)
+  // `ssr: false` means "render at build time (SSG)" — the flag does NOT skip
+  // template processing on its own. Only the legacy SPA-shell serving mode
+  // (`buildMode: 'spa'`) actually short-circuits processing so the raw
+  // template can be shipped to the client for hydration.
+  test('default ssr config is false (SSG build mode)', () => {
+    expect(defaultConfig.ssr).toBe(false)
   })
 
-  test('ssr: false skips directive processing and returns raw template', async () => {
+  test('ssr: false + buildMode spa returns raw template (SPA shell mode)', async () => {
     const template = '<p>{{ name }}</p>'
-    const result = await processTemplate(template, { name: 'World' }, { ...defaultOptions, ssr: false })
+    const result = await processTemplate(
+      template,
+      { name: 'World' },
+      { ...defaultOptions, ssr: false, buildMode: 'spa' } as StxOptions,
+    )
     expect(result).toBe('<p>{{ name }}</p>')
   })
 
@@ -32,7 +40,7 @@ describe('SSR Toggle', () => {
     expect(result).not.toContain('{{ name }}')
   })
 
-  test('ssr defaults to true (processes directives when not set)', async () => {
+  test('ssr: false (without spa build mode) still processes directives (SSG path)', async () => {
     const template = '@if(true)\n<p>visible</p>\n@endif'
     const result = await processTemplate(template, {}, defaultOptions)
     expect(result).toContain('<p>visible</p>')

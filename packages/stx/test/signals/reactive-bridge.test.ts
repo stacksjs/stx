@@ -224,7 +224,9 @@ describe('Error resilience for async init patterns', () => {
   })
 
   it('should suppress TypeError in show expression', () => {
-    expect(runtime).toContain("!(e instanceof TypeError)) console.warn('[STX] Show expression error:'")
+    // The catch variable name (e vs e2) is an implementation detail — assert
+    // the TypeError guard wraps the warn call regardless.
+    expect(runtime).toMatch(/!\(e2? instanceof TypeError\)\)\s*console\.warn\(['"]\[STX\] Show expression error:/)
   })
 
   it('should suppress TypeError in style expression', () => {

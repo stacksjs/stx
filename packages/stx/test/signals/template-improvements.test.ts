@@ -117,7 +117,10 @@ describe('Feature #3: @for with @loading and @empty states', () => {
   it('should show loading state when loading expression is true', () => {
     const runtime = generateSignalsRuntimeDev()
     expect(runtime).toContain('if (loadingExpr)')
-    expect(runtime).toContain('const isLoading = evalExpr(loadingExpr)')
+    // The runtime evaluates the loading expression via evalLazy/evalExpr and
+    // stores the result in an `isLoading` binding. Assert the pattern, not the
+    // exact evaluator name.
+    expect(runtime).toMatch(/isLoading\s*=\s*eval(Lazy|Expr)\(loadingExpr\)/)
     expect(runtime).toContain('showLoading()')
   })
 
@@ -138,7 +141,11 @@ describe('Feature #4: :attr shorthand for dynamic binding', () => {
 
   it('should extract attribute name correctly for :attr, @bind:attr, and x-bind:attr', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain("name.startsWith('@bind:') ? name.slice(6) : name.startsWith('x-bind:') ? name.slice(7) : name.slice(1)")
+    // The extractor must handle all three prefix forms; the exact ternary
+    // shape is an implementation detail, so assert each branch individually.
+    expect(runtime).toMatch(/name\.startsWith\(['"]@bind:['"]\)[^?]*\?\s*name\.slice\(6\)/)
+    expect(runtime).toMatch(/name\.startsWith\(['"]x-bind:['"]\)[^?]*\?\s*name\.slice\(7\)/)
+    expect(runtime).toContain('name.slice(1)')
   })
 
   it('should not confuse :: pseudo-elements with :attr', () => {

@@ -1503,15 +1503,16 @@ describe('Pipeline: Idempotent Processing', () => {
 // SSR disabled
 // ---------------------------------------------------------------------------
 describe('Pipeline: SSR Disabled', () => {
-  it('should return raw template when ssr is false', async () => {
+  it('should return raw template when ssr is false AND buildMode is spa', async () => {
     const template = '@if(show)<p>{{ value }}</p>@endif'
     const result = await processTemplate(
       template,
       { show: true, value: 'hello' },
       'test.stx',
-      { ...defaultOptions, ssr: false },
+      { ...defaultOptions, ssr: false, buildMode: 'spa' } as any,
     )
-    // With SSR disabled, directives are NOT processed
+    // The `ssr: false + buildMode: 'spa'` combo is the SPA-shell mode where
+    // the server ships the raw template for the client to hydrate.
     expect(result).toContain('@if(show)')
     expect(result).toContain('{{ value }}')
   })

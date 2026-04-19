@@ -169,7 +169,10 @@ export async function processDirectives(
       if (isTopLevel) {
         try {
           const { getStoreScript } = await import('./store-loader')
-          const storeCode = await getStoreScript()
+          // Prefer the resolved storesDir from options (set by serve-app.ts to
+          // point at the real app directory). Fall back to config lookup.
+          const resolvedStoresDir = (options as any).storesDir as string | undefined
+          const storeCode = await getStoreScript(resolvedStoresDir)
           if (storeCode) {
             const storeTag = `<script data-stx-stores>${storeCode}</script>`
             // Find the signals runtime: first <script data-stx-scoped> block
@@ -724,10 +727,12 @@ async function processOtherDirectives(
 
   // Process head directives (@head, @title, @meta)
   const { processHeadDirective, processTitleDirective, processMetaDirective, resetHead } = await import('./head')
-  // Reset head state unless the caller has already populated it via useHead()
-  // from a server script (e.g. bun-plugin/serve.ts extracts variables before
-  // calling processDirectives, and useHead writes to module-global state).
-  if (!context.__stx_head_preset) {
+  // Reset head state unless the caller has already populated it via useHead() /
+  // useSeoMeta() from a server script. variable-extractor stashes both on the
+  // context as `__stx_runtime_head` when these composables fire, so its presence
+  // is a reliable "head was populated by this page" signal — no matter which
+  // entrypoint (bun-plugin, dev-server, custom serve.ts) ran the extraction.
+  if (!context.__stx_head_preset && !context.__stx_runtime_head) {
     resetHead()
   }
   const headResult = processHeadDirective(output)
@@ -861,11 +866,17 @@ async function processOtherDirectives(
     output = injectSeoTags(output, context, opts)
   }
 
-  // Inject rendered head content from useHead/useSeoMeta calls
+  // Inject rendered head content from useHead/useSeoMeta calls. Prefer the
+  // context-bound copy (set by variable-extractor's wrapped composables) over
+  // the module-global — the context copy is per-page and survives even when
+  // Bun's resolution serves a different head.ts instance to the page script.
   const { renderHead, getHead } = await import('./head')
-  const headConfig = getHead()
+  const contextHead = context.__stx_runtime_head as any
+  const headConfig = contextHead && (contextHead.title || contextHead.meta?.length || contextHead.link?.length)
+    ? contextHead
+    : getHead()
   if (headConfig.title || headConfig.meta?.length || headConfig.link?.length) {
-    const renderedHead = renderHead()
+    const renderedHead = renderHead(headConfig)
     if (renderedHead) {
       // Inject before </head> or at start of document
       if (output.includes('</head>')) {

@@ -5,6 +5,23 @@ const pageTitle = 'Drivly — Rent unique cars from real people'
 const pageDescription = 'Skip the rental counter. Book from 350,000+ hosts across 10,000+ cities. Teslas, Jeeps, classic Mustangs, and more.'
 const activePage = 'home'
 
+// Full SEO payload: title, description, Open Graph, Twitter card. stx's
+// `useSeoMeta` merges these into the <head> at render time — the layout
+// picks them up automatically via `@stack('head')` internally.
+useSeoMeta({
+  title: pageTitle,
+  description: pageDescription,
+  ogTitle: 'Drivly — the car marketplace',
+  ogDescription: pageDescription,
+  ogImage: cars[0].image,
+  ogType: 'website',
+  ogUrl: 'https://drivly.example/',
+  twitterCard: 'summary_large_image',
+  twitterTitle: pageTitle,
+  twitterDescription: pageDescription,
+  twitterImage: cars[0].image,
+})
+
 const featured = cars.slice(0, 4)
 const deals = cars.filter(c => c.originalPrice).slice(0, 3)
 const luxury = cars.filter(c => c.category === 'Luxury' || c.category === 'Sports' || c.category === 'Convertible').slice(0, 4)
@@ -151,6 +168,8 @@ const popularSearches = ['Tesla', 'Jeep Wrangler', 'Convertible', 'SUVs with 7 s
 </section>
 
 <!-- ── HOW IT WORKS ────────────────────────────────── -->
+<!-- @memo: pure static marketing content — memoize so SPA nav doesn't re-render. -->
+@memo([])
 <section class="py-16">
   <div class="max-w-[1280px] mx-auto px-6">
     <div class="text-center max-w-[640px] mx-auto mb-12">
@@ -171,6 +190,7 @@ const popularSearches = ['Tesla', 'Jeep Wrangler', 'Convertible', 'SUVs with 7 s
     </div>
   </div>
 </section>
+@endmemo
 
 <!-- ── LUXURY ─────────────────────────────────────── -->
 <section class="py-8 pb-16">

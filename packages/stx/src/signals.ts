@@ -1710,7 +1710,10 @@ catch (e) {
             var fn2 = new Function(...Object.keys(capturedScope), 'return ' + expr);
             value = fn2(...Object.values(capturedScope));
           } catch (e2) {
-            console.warn('[STX] @show expression failed:', expr, e2);
+            // Suppress ReferenceError/TypeError during async init — a signal
+            // or object may not be ready yet on the first effect run, and
+            // the next pass will re-evaluate once data arrives.
+            if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Show expression error:', expr, e2);
             el.style.display = 'none';
             return;
           }

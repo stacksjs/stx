@@ -2,6 +2,17 @@
 const pageTitle = 'How it works · Drivly'
 const activePage = 'about'
 
+// SEO: static page → canonical OG tags. `useSeoMeta` shorthands Open Graph +
+// Twitter card fields so we don't hand-write every `<meta property="og:..">`.
+useSeoMeta({
+  title: 'How Drivly works — car sharing, reimagined',
+  description: 'Skip the rental counter. Understand how Drivly\'s marketplace keeps every trip safe, cheap, and easy.',
+  ogTitle: 'How Drivly works',
+  ogImage: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1200&q=70',
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+})
+
 const faq = [
   { q: 'How does Drivly work?', a: 'Browse cars, book the one you like, meet the host (or have it delivered), and drive. Return the same way. We handle the insurance and payment. You handle the driving.' },
   { q: 'Is it insured?', a: 'Yes. Every trip comes with up to $750K in liability coverage + physical damage coverage on the car. You can choose from three protection plans at checkout.' },
@@ -81,6 +92,10 @@ const trustFacts = [
     <h2 class="serif text-4xl sm:text-5xl m-0 mb-1.5 text-center">Frequently asked</h2>
     <p class="text-[color:var(--text-muted)] text-center m-0 mb-10">Still have questions? <a href="#" class="text-[#FF3E54] font-semibold">Contact us →</a></p>
 
+    <!-- @memo: the FAQ list is static and re-rendering it is wasted work on
+         SPA navigation. @memo caches the subtree once per distinct dep value.
+         Empty deps = never re-render. -->
+    @memo([])
     <div class="flex flex-col gap-2.5">
       @foreach (faq as item)
         <details class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl overflow-hidden">
@@ -92,6 +107,7 @@ const trustFacts = [
         </details>
       @endforeach
     </div>
+    @endmemo
   </section>
 
   <section class="rounded-3xl p-12 text-center border" style="background: linear-gradient(135deg, rgba(255,62,84,0.1) 0%, rgba(147,51,234,0.08) 100%); border-color: rgba(255,62,84,0.25)">

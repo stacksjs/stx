@@ -12,7 +12,7 @@
 import path from 'node:path'
 import { loadStxConfig } from './config'
 
-let _cachedStoreScript: string | null = null
+const _cachedStoreScripts = new Map<string, string>()
 
 /**
  * Discover store files from storesDir and bundle them into a single
@@ -20,22 +20,33 @@ let _cachedStoreScript: string | null = null
  *
  * The bundle runs `defineStore(...)` for each store — since the signals
  * runtime is already loaded, `defineStore`/`state`/`derived` are globals.
+ *
+ * Pass an absolute `storesDir` to look up stores there. When omitted, falls
+ * back to reading `storesDir` from the stx config at the current working
+ * directory — which is only correct when run from the app's own root.
  */
-export async function getStoreScript(): Promise<string | null> {
-  if (_cachedStoreScript !== null) return _cachedStoreScript || null
+export async function getStoreScript(storesDir?: string): Promise<string | null> {
+  let resolvedDir: string
+  if (storesDir) {
+    resolvedDir = path.resolve(storesDir)
+  }
+  else {
+    const config = await loadStxConfig()
+    resolvedDir = path.resolve(
+      config.root || process.cwd(),
+      (config as any).storesDir || 'stores',
+    )
+  }
 
-  const config = await loadStxConfig()
-  const storesDir = path.resolve(
-    config.root || process.cwd(),
-    (config as any).storesDir || 'stores',
-  )
+  const cached = _cachedStoreScripts.get(resolvedDir)
+  if (cached !== undefined) return cached || null
 
   // Discover store .ts files
   const glob = new Bun.Glob('*.ts')
   const storeFiles: string[] = []
 
   try {
-    for await (const file of glob.scan({ cwd: storesDir, absolute: true })) {
+    for await (const file of glob.scan({ cwd: resolvedDir, absolute: true })) {
       // Skip index.ts, type files, and Stacks boilerplate
       const name = path.basename(file, '.ts')
       if (['index', 'types'].includes(name)) continue
@@ -45,12 +56,12 @@ export async function getStoreScript(): Promise<string | null> {
   }
   catch {
     // storesDir doesn't exist — no stores to load
-    _cachedStoreScript = ''
+    _cachedStoreScripts.set(resolvedDir, '')
     return null
   }
 
   if (storeFiles.length === 0) {
-    _cachedStoreScript = ''
+    _cachedStoreScripts.set(resolvedDir, '')
     return null
   }
 
@@ -104,12 +115,12 @@ export async function getStoreScript(): Promise<string | null> {
   }
 
   if (chunks.length === 0) {
-    _cachedStoreScript = ''
+    _cachedStoreScripts.set(resolvedDir, '')
     return null
   }
 
   const code = `;(function(){\n${chunks.join('\n\n')}\n})();`
-  _cachedStoreScript = code
+  _cachedStoreScripts.set(resolvedDir, code)
   return code
 }
 
@@ -117,5 +128,5 @@ export async function getStoreScript(): Promise<string | null> {
  * Clear the cached store script (for dev mode hot reload).
  */
 export function clearStoreCache(): void {
-  _cachedStoreScript = null
+  _cachedStoreScripts.clear()
 }

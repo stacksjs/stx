@@ -7,6 +7,29 @@ const pageTitle = car.year + ' ' + car.make + ' ' + car.model + ' · Drivly'
 const pageDescription = car.description.slice(0, 160)
 const activePage = 'search'
 
+// Route config: validator rejects unknown car IDs (→ 404) at the dev-server
+// level before we even build the page. Runs per request for dynamic routes.
+definePageMeta({
+  validate({ params }) {
+    return getCar(params.id) !== undefined
+  },
+})
+
+// Per-car SEO. The gallery's first photo doubles as the OG image so link
+// previews on Slack/Twitter show the actual car.
+useSeoMeta({
+  title: pageTitle,
+  description: pageDescription,
+  ogTitle: car.year + ' ' + car.make + ' ' + car.model,
+  ogDescription: pageDescription,
+  ogImage: car.gallery[0] || car.image,
+  ogType: 'product',
+  ogUrl: 'https://drivly.example/cars/' + car.id,
+  twitterCard: 'summary_large_image',
+  twitterTitle: pageTitle,
+  twitterImage: car.gallery[0] || car.image,
+})
+
 const similar = cars.filter(c => c.id !== car.id && c.category === car.category).slice(0, 4)
 if (similar.length < 4) {
   for (const c of cars) {
@@ -16,11 +39,7 @@ if (similar.length < 4) {
 }
 
 const ratingPct = {
-  cleanliness: 4.9,
-  maintenance: 4.95,
-  communication: 4.92,
-  convenience: 4.88,
-  accuracy: 4.94,
+  cleanliness: 4.9, maintenance: 4.95, communication: 4.92, convenience: 4.88, accuracy: 4.94,
 }
 const ratingMetricEntries = Object.entries(ratingPct)
 
@@ -41,12 +60,19 @@ const tripRules = [
 
 const pickupTimes = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00']
 const galleryItems = car.gallery.filter((_, i) => i < 5)
+
+const tabs = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'features', label: 'Features' },
+  { id: 'rules', label: 'Rules' },
+  { id: 'reviews', label: 'Reviews (' + car.reviewCount + ')' },
+  { id: 'location', label: 'Location' },
+]
 </script>
 
 @extends('layouts/app.stx')
 
 @push('styles')
-  /* Gallery grid: left hero takes 2 rows, right side has 4 thumbnails in 2x2 */
   .gallery-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 0.5rem; aspect-ratio: 16/9; border-radius: 1.5rem; overflow: hidden; }
   .gallery-grid > *:nth-child(1) { grid-row: span 2; }
   .gallery-cell { width: 100%; height: 100%; cursor: pointer; overflow: hidden; background: var(--bg-muted); }
@@ -58,13 +84,8 @@ const galleryItems = car.gallery.filter((_, i) => i < 5)
     .gallery-grid > *:nth-child(1) { grid-row: auto; }
     .gallery-grid > *:nth-child(n+4) { display: none; }
   }
-  /* Sticky sidebar */
   .book-sidebar { position: sticky; top: 96px; }
   @media (max-width: 980px) { .book-sidebar { position: static; top: auto; } }
-  .tab-btn.active { color: var(--text); border-bottom-color: #FF3E54; font-weight: 600; }
-  .lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; padding: 2rem; }
-  .lightbox.open { display: flex; }
-  .lightbox img { max-width: 100%; max-height: 100%; }
 @endpush
 
 @section('content')
@@ -98,14 +119,15 @@ const galleryItems = car.gallery.filter((_, i) => i < 5)
       </div>
     </div>
     <div class="flex gap-2">
-      <button class="inline-flex items-center gap-2 py-2 px-3.5 rounded-xl text-[0.8125rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors" id="shareBtn">
+      <button class="inline-flex items-center gap-2 py-2 px-3.5 rounded-xl text-[0.8125rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors" @click="share()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
         Share
       </button>
-      <button class="detail-fav-btn inline-flex items-center gap-2 py-2 px-3.5 rounded-xl text-[0.8125rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors"
-              data-car-id="{{ car.id }}">
-        <svg class="fav-icon-detail" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        <span class="fav-label-detail">Save</span>
+      <button class="inline-flex items-center gap-2 py-2 px-3.5 rounded-xl text-[0.8125rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors" @click="toggleFav()">
+        <svg width="14" height="14" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round"
+             :attr:fill="isFav() ? '#FF3E54' : 'none'"
+             :attr:stroke="isFav() ? '#FF3E54' : 'currentColor'"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span :text="favLabel">Save</span>
       </button>
     </div>
   </div>
@@ -113,7 +135,7 @@ const galleryItems = car.gallery.filter((_, i) => i < 5)
   <!-- Gallery -->
   <div class="gallery-grid">
     @foreach (galleryItems as idx => src)
-      <div class="gallery-cell" onclick="openLightbox({{ idx }})">
+      <div class="gallery-cell" @click="openLightbox({{ idx }})">
         <img src="{{ src }}" alt="{{ car.make }} {{ car.model }} photo {{ idx + 1 }}"
              loading="{{ idx === 0 ? 'eager' : 'lazy' }}" decoding="async"
              fetchpriority="{{ idx === 0 ? 'high' : 'auto' }}">
@@ -141,20 +163,20 @@ const galleryItems = car.gallery.filter((_, i) => i < 5)
           </div>
         </div>
         <button class="py-2 px-3.5 rounded-xl text-[0.8125rem] font-semibold bg-[color:var(--bg-subtle)] border border-[color:var(--border)] text-[color:var(--text)] hover:bg-[color:var(--bg-muted)] transition-colors"
-                onclick="window._toast('Message sent to ' + {{ JSON.stringify(car.host.name) }}, 'success')">Message host</button>
+                @click="messageHost()">Message host</button>
       </section>
 
-      <!-- Tabs -->
+      <!-- Tabs — `activeTab` signal drives :class + :show -->
       <div class="flex border-b border-[color:var(--border)] gap-1 mb-7 mt-8">
-        <button class="tab-btn active py-3.5 px-4 bg-transparent text-[color:var(--text-muted)] text-[0.9375rem] font-medium cursor-pointer border-0 border-b-2 border-transparent -mb-px" data-tab="overview">Overview</button>
-        <button class="tab-btn py-3.5 px-4 bg-transparent text-[color:var(--text-muted)] text-[0.9375rem] font-medium cursor-pointer border-0 border-b-2 border-transparent -mb-px" data-tab="features">Features</button>
-        <button class="tab-btn py-3.5 px-4 bg-transparent text-[color:var(--text-muted)] text-[0.9375rem] font-medium cursor-pointer border-0 border-b-2 border-transparent -mb-px" data-tab="rules">Rules</button>
-        <button class="tab-btn py-3.5 px-4 bg-transparent text-[color:var(--text-muted)] text-[0.9375rem] font-medium cursor-pointer border-0 border-b-2 border-transparent -mb-px" data-tab="reviews">Reviews ({{ car.reviewCount }})</button>
-        <button class="tab-btn py-3.5 px-4 bg-transparent text-[color:var(--text-muted)] text-[0.9375rem] font-medium cursor-pointer border-0 border-b-2 border-transparent -mb-px" data-tab="location">Location</button>
+        @foreach (tabs as tab)
+          <button class="py-3.5 px-4 bg-transparent text-[0.9375rem] cursor-pointer border-0 border-b-2 -mb-px transition-colors"
+                  :class="{ 'text-[color:var(--text)] border-b-[#FF3E54] font-semibold': activeTab() === '{{ tab.id }}', 'text-[color:var(--text-muted)] border-b-transparent font-medium': activeTab() !== '{{ tab.id }}' }"
+                  @click="activeTab.set('{{ tab.id }}')">{{ tab.label }}</button>
+        @endforeach
       </div>
 
       <!-- Overview -->
-      <section class="tab-panel" data-panel="overview">
+      <section :show="activeTab() === 'overview'">
         <h2 class="text-xl font-bold m-0 mb-4">About this car</h2>
         <p class="leading-relaxed text-[color:var(--text-secondary)] text-[0.9375rem]">{{ car.description }}</p>
 
@@ -170,7 +192,7 @@ const galleryItems = car.gallery.filter((_, i) => i < 5)
       </section>
 
       <!-- Features -->
-      <section class="tab-panel hidden" data-panel="features">
+      <section :show="activeTab() === 'features'">
         <h2 class="text-xl font-bold m-0 mb-4">Features</h2>
         <p class="text-[color:var(--text-muted)] m-0 mb-6">Everything this car comes loaded with.</p>
         <div class="flex flex-wrap gap-2">
@@ -184,7 +206,7 @@ const galleryItems = car.gallery.filter((_, i) => i < 5)
       </section>
 
       <!-- Rules -->
-      <section class="tab-panel hidden" data-panel="rules">
+      <section :show="activeTab() === 'rules'">
         <h2 class="text-xl font-bold m-0 mb-4">Rules of the road</h2>
         <p class="text-[color:var(--text-muted)] m-0 mb-6">Basic guidelines from the host to keep the trip smooth.</p>
         <ul class="list-none p-0 m-0 flex flex-col gap-3">
@@ -198,7 +220,7 @@ const galleryItems = car.gallery.filter((_, i) => i < 5)
       </section>
 
       <!-- Reviews -->
-      <section class="tab-panel hidden" data-panel="reviews">
+      <section :show="activeTab() === 'reviews'">
         <h2 class="text-xl font-bold m-0 mb-1">Reviews</h2>
         <div class="flex items-center gap-3 mb-8">
           <span class="text-4xl font-bold">{{ car.rating }}</span>
@@ -244,11 +266,11 @@ const galleryItems = car.gallery.filter((_, i) => i < 5)
         </div>
 
         <button class="mt-8 py-3 px-5 rounded-xl text-[0.8125rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer"
-                onclick="window._toast('Loaded more reviews', 'info')">Show all {{ car.reviewCount }} reviews</button>
+                @click="loadMoreReviews()">Show all {{ car.reviewCount }} reviews</button>
       </section>
 
       <!-- Location -->
-      <section class="tab-panel hidden" data-panel="location">
+      <section :show="activeTab() === 'location'">
         <h2 class="text-xl font-bold m-0 mb-2">Where you'll pick up</h2>
         <p class="text-[color:var(--text-muted)] m-0 mb-6">{{ car.location }} · {{ car.distance }}</p>
         <div class="rounded-2xl overflow-hidden relative" style="aspect-ratio: 16/10; background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%)">
@@ -287,56 +309,60 @@ const galleryItems = car.gallery.filter((_, i) => i < 5)
           @endif
         </div>
 
+        <!-- Dates bind to fromDate/toDate signals via x-model -->
         <div class="grid grid-cols-2 border border-[color:var(--border)] rounded-xl overflow-hidden mb-2">
           <label class="p-3 border-r border-[color:var(--border)] cursor-pointer block">
             <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-[color:var(--text-muted)] block">Trip start</span>
-            <input type="date" id="fromDate" value="{{ fmtDate(defaultFrom) }}" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
+            <input type="date" x-model="fromDate" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
           </label>
           <label class="p-3 cursor-pointer block">
             <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-[color:var(--text-muted)] block">Trip end</span>
-            <input type="date" id="toDate" value="{{ fmtDate(defaultTo) }}" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
+            <input type="date" x-model="toDate" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
           </label>
         </div>
 
         <div class="grid grid-cols-2 border border-[color:var(--border)] rounded-xl overflow-hidden mb-4">
           <label class="p-3 border-r border-[color:var(--border)] cursor-pointer block">
             <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-[color:var(--text-muted)] block">Pick up at</span>
-            <select id="fromTime" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
+            <select x-model="pickupTime" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
               @foreach (pickupTimes as t)
-                <option value="{{ t }}" {{ t === '10:00' ? 'selected' : '' }}>{{ t }}</option>
+                <option value="{{ t }}">{{ t }}</option>
               @endforeach
             </select>
           </label>
           <label class="p-3 cursor-pointer block">
             <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-[color:var(--text-muted)] block">Return at</span>
-            <select id="toTime" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
+            <select x-model="returnTime" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
               @foreach (pickupTimes as t)
-                <option value="{{ t }}" {{ t === '10:00' ? 'selected' : '' }}>{{ t }}</option>
+                <option value="{{ t }}">{{ t }}</option>
               @endforeach
             </select>
           </label>
         </div>
 
+        <!-- Price breakdown — every number is a :text binding -->
         <div class="flex flex-col gap-2 py-4 border-t border-[color:var(--border)] text-sm">
           <div class="flex justify-between">
-            <span class="text-[color:var(--text-muted)]">${{ car.price }} × <span id="pbDays">3</span> days</span>
-            <span id="pbSubtotal" class="tabular">${{ car.price * 3 }}.00</span>
+            <span class="text-[color:var(--text-muted)]">${{ car.price }} × <span :text="days">3</span> days</span>
+            <span :text="subtotalLabel" class="tabular">${{ car.price * 3 }}.00</span>
           </div>
           <div class="flex justify-between">
             <span class="text-[color:var(--text-muted)]">Trip fee (10%)</span>
-            <span id="pbFee" class="tabular">${{ (car.price * 3 * 0.1).toFixed(2) }}</span>
+            <span :text="feeLabel" class="tabular">${{ (car.price * 3 * 0.1).toFixed(2) }}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-[color:var(--text-muted)]">Protection plan <span class="text-[color:var(--text-muted)] text-xs">(Minimum)</span></span>
-            <span id="pbProtection" class="tabular">${{ (car.price * 3 * 0.15).toFixed(2) }}</span>
+            <span :text="protLabel" class="tabular">${{ (car.price * 3 * 0.15).toFixed(2) }}</span>
           </div>
           <div class="flex justify-between pt-3 border-t border-[color:var(--border)] font-bold text-base">
             <span>Total</span>
-            <span id="pbTotal" class="tabular">${{ (car.price * 3 * 1.25).toFixed(2) }}</span>
+            <span :text="totalLabel" class="tabular">${{ (car.price * 3 * 1.25).toFixed(2) }}</span>
           </div>
         </div>
 
-        <a href="/book/{{ car.id }}" id="continueBtn" class="inline-flex items-center justify-center gap-2 w-full py-3.5 px-5 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px mt-2"
+        <!-- Anchor href is reactive via :attr:href — builds `/book/:id?from=…` from signals -->
+        <a :attr:href="continueHref()"
+           class="inline-flex items-center justify-center gap-2 w-full py-3.5 px-5 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px mt-2"
            style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)">
           Continue to book
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -367,115 +393,79 @@ const galleryItems = car.gallery.filter((_, i) => i < 5)
   </section>
 </div>
 
-<!-- Lightbox -->
-<div class="lightbox" id="lightbox">
-  <button class="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 text-white text-2xl cursor-pointer border-0" onclick="closeLightbox()">×</button>
-  <img id="lightboxImg" src="" alt="">
+<!-- Lightbox: :show drives display, :attr:src picks the current image from GALLERY -->
+<div class="fixed inset-0 z-[200] items-center justify-center p-8"
+     style="background: rgba(0,0,0,0.92); display: flex"
+     :show="lightboxIdx() !== null"
+     @click="closeLightbox()">
+  <button class="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 text-white text-2xl cursor-pointer border-0" @click.stop="closeLightbox()">×</button>
+  <img class="max-w-full max-h-full" :attr:src="lightboxSrc()">
 </div>
 
 <script client>
-  if (!window.__carDetailPage) {
-    window.__carDetailPage = true
+  const PRICE = {{ car.price }}
+  const CAR_ID = {{ car.id }}
+  const GALLERY = {{ car.gallery }}
+  const DEFAULT_FROM = '{{ fmtDate(defaultFrom) }}'
+  const DEFAULT_TO = '{{ fmtDate(defaultTo) }}'
 
-    const PRICE = {{ car.price }}
-    const CAR_ID = {{ car.id }}
-    const GALLERY = {{ car.gallery }}
+  const favorites = useStore('favorites')
 
-    const favorites = useStore('favorites')
+  // ── Reactive state ──
+  const activeTab   = state('overview')
+  const fromDate    = state(DEFAULT_FROM)
+  const toDate      = state(DEFAULT_TO)
+  const pickupTime  = state('10:00')
+  const returnTime  = state('10:00')
+  const lightboxIdx = state(null)
 
-    const favBtn = document.querySelector('.detail-fav-btn')
-    const favIcon = document.querySelector('.fav-icon-detail')
-    const favLabel = document.querySelector('.fav-label-detail')
-    function syncFav() {
-      const on = favorites.has(CAR_ID)
-      if (on) { favIcon.setAttribute('fill', '#FF3E54'); favIcon.style.stroke = '#FF3E54'; favLabel.textContent = 'Saved' }
-      else { favIcon.setAttribute('fill', 'none'); favIcon.style.stroke = 'currentColor'; favLabel.textContent = 'Save' }
-    }
-    syncFav()
-    favBtn.addEventListener('click', function () {
-      favorites.toggle(CAR_ID); syncFav()
-      window._toast && window._toast(favorites.has(CAR_ID) ? 'Saved to favorites' : 'Removed from favorites', 'success')
-    })
+  // Store signals propagate through derived() directly — reading favorites.ids()
+  // inside the computation subscribes it to ids changes.
+  const isFav     = derived(() => { favorites.ids(); return favorites.has(CAR_ID) })
+  const favLabel  = derived(() => isFav() ? 'Saved' : 'Save')
 
-    document.getElementById('shareBtn').addEventListener('click', function () {
-      const url = location.href
-      if (navigator.share) navigator.share({ url, title: document.title }).catch(() => {})
-      else { navigator.clipboard && navigator.clipboard.writeText(url); window._toast('Link copied', 'success') }
-    })
+  const days = derived(() => {
+    const ms = Math.max(0, new Date(toDate()) - new Date(fromDate()))
+    return Math.max(1, Math.ceil(ms / 86400000))
+  })
+  const subtotal = derived(() => PRICE * days())
+  const fee      = derived(() => subtotal() * 0.1)
+  const protection = derived(() => subtotal() * 0.15)
+  const total    = derived(() => subtotal() + fee() + protection())
 
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', function () {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
-        this.classList.add('active')
-        const target = this.dataset.tab
-        document.querySelectorAll('.tab-panel').forEach(p => {
-          if (p.dataset.panel === target) p.classList.remove('hidden')
-          else p.classList.add('hidden')
-        })
-      })
-    })
+  const fmtMoney = n => '$' + n.toFixed(2)
+  const subtotalLabel = derived(() => fmtMoney(subtotal()))
+  const feeLabel      = derived(() => fmtMoney(fee()))
+  const protLabel     = derived(() => fmtMoney(protection()))
+  const totalLabel    = derived(() => fmtMoney(total()))
 
-    const fromDate = state(document.getElementById('fromDate').value)
-    const toDate = state(document.getElementById('toDate').value)
+  const continueHref = derived(() =>
+    '/book/' + CAR_ID + '?from=' + fromDate() + '&to=' + toDate()
+    + '&ft=' + pickupTime() + '&tt=' + returnTime()
+  )
 
-    document.getElementById('fromDate').addEventListener('change', function () { fromDate.set(this.value) })
-    document.getElementById('toDate').addEventListener('change', function () { toDate.set(this.value) })
+  const lightboxSrc = derived(() => lightboxIdx() === null ? '' : GALLERY[lightboxIdx()])
 
-    const days = derived(() => {
-      const f = new Date(fromDate()); const t = new Date(toDate())
-      const ms = Math.max(0, t - f)
-      return Math.max(1, Math.ceil(ms / (24 * 3600 * 1000)))
-    })
-
-    effect(() => {
-      const d = days()
-      const sub = PRICE * d
-      const fee = sub * 0.1
-      const protection = sub * 0.15
-      const total = sub + fee + protection
-      document.getElementById('pbDays').textContent = d
-      document.getElementById('pbSubtotal').textContent = '$' + sub.toFixed(2)
-      document.getElementById('pbFee').textContent = '$' + fee.toFixed(2)
-      document.getElementById('pbProtection').textContent = '$' + protection.toFixed(2)
-      document.getElementById('pbTotal').textContent = '$' + total.toFixed(2)
-      document.getElementById('continueBtn').setAttribute('href', '/book/' + CAR_ID + '?from=' + fromDate() + '&to=' + toDate() + '&ft=' + document.getElementById('fromTime').value + '&tt=' + document.getElementById('toTime').value)
-    })
-
-    document.getElementById('fromTime').addEventListener('change', () => fromDate.set(fromDate()))
-    document.getElementById('toTime').addEventListener('change', () => toDate.set(toDate()))
-
-    window.openLightbox = function (idx) {
-      document.getElementById('lightboxImg').src = GALLERY[idx]
-      document.getElementById('lightbox').classList.add('open')
-      document.body.style.overflow = 'hidden'
-    }
-    window.closeLightbox = function () {
-      document.getElementById('lightbox').classList.remove('open')
-      document.body.style.overflow = ''
-    }
-    document.getElementById('lightbox').addEventListener('click', function (e) {
-      if (e.target === this) closeLightbox()
-    })
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeLightbox()
-    })
-
-    // Similar-car favorite buttons
-    document.querySelectorAll('.fav-btn').forEach(btn => {
-      const id = btn.getAttribute('data-car-id')
-      if (!id || id === CAR_ID) return
-      const icon = btn.querySelector('.fav-icon')
-      function sync() {
-        if (favorites.has(id)) { icon.setAttribute('fill', '#FF3E54'); icon.style.stroke = '#FF3E54' }
-        else { icon.setAttribute('fill', 'none'); icon.style.stroke = 'currentColor' }
-      }
-      sync()
-      btn.addEventListener('click', function (e) {
-        e.preventDefault(); e.stopPropagation()
-        favorites.toggle(id); sync()
-      })
-    })
+  // ── Actions ──
+  function toggleFav() {
+    favorites.toggle(CAR_ID)
+    window._toast && window._toast(favorites.has(CAR_ID) ? 'Saved to favorites' : 'Removed from favorites', 'success')
   }
+
+  function share() {
+    const url = location.href
+    if (navigator.share) navigator.share({ url, title: document.title }).catch(() => {})
+    else { navigator.clipboard && navigator.clipboard.writeText(url); window._toast('Link copied', 'success') }
+  }
+
+  function messageHost() { window._toast && window._toast('Message sent to ' + {{ car.host.name.split(' ')[0] }}, 'success') }
+  function loadMoreReviews() { window._toast && window._toast('Loaded more reviews', 'info') }
+
+  function openLightbox(idx) { lightboxIdx.set(idx); document.body.style.overflow = 'hidden' }
+  function closeLightbox()   { lightboxIdx.set(null); document.body.style.overflow = '' }
+
+  // Esc closes the lightbox. The one piece of true global-keyboard handling.
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLightbox() })
 </script>
 
 @endsection

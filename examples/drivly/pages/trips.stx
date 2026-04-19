@@ -4,6 +4,9 @@ import { cars } from '../data/cars'
 const pageTitle = 'My trips · Drivly'
 const activePage = 'trips'
 
+definePageMeta({ middleware: ['auth'] })
+useSeoMeta({ title: pageTitle, robots: 'noindex' })
+
 const upcoming = [
   { id: 'DRV-482913', carId: 'tesla-model-3-2024', guest: 'Maya L.', from: '2026-05-14', to: '2026-05-17', total: 432.50, status: 'Confirmed', pickupTime: '10:00 AM' },
   { id: 'DRV-481802', carId: 'jeep-wrangler-2023',  from: '2026-06-02', to: '2026-06-08', total: 946.00, status: 'Awaiting host', pickupTime: '9:00 AM' },
@@ -15,9 +18,14 @@ const past = [
   { id: 'DRV-468013', carId: 'honda-civic-2024',         from: '2025-09-18', to: '2025-09-22', total: 342.00, status: 'Completed', rating: 4 },
 ]
 
-// Pre-resolve car metadata so template doesn't use cars.find() (stx can't eval that in @foreach contexts)
 const upcomingWithCar = upcoming.map(t => ({ ...t, car: cars.find(c => c.id === t.carId) }))
 const pastWithCar = past.map(t => ({ ...t, car: cars.find(c => c.id === t.carId) }))
+
+const tabs = [
+  { id: 'upcoming',  label: 'Upcoming (' + upcoming.length + ')' },
+  { id: 'past',      label: 'Past (' + past.length + ')' },
+  { id: 'cancelled', label: 'Cancelled (0)' },
+]
 </script>
 
 @extends('layouts/app.stx')
@@ -34,15 +42,17 @@ const pastWithCar = past.map(t => ({ ...t, car: cars.find(c => c.id === t.carId)
              style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)">Book another trip</StxLink>
   </div>
 
-  <!-- Tabs -->
+  <!-- Tabs — active state driven by `tab` signal -->
   <div class="flex gap-1 border-b border-[color:var(--border)] mb-8">
-    <button class="tab-btn-trip py-3.5 px-5 bg-transparent text-[color:var(--text)] font-semibold border-0 border-b-2 border-[#FF3E54] -mb-px cursor-pointer" data-tab="upcoming">Upcoming ({{ upcoming.length }})</button>
-    <button class="tab-btn-trip py-3.5 px-5 bg-transparent text-[color:var(--text-muted)] font-medium border-0 border-b-2 border-transparent -mb-px cursor-pointer" data-tab="past">Past ({{ past.length }})</button>
-    <button class="tab-btn-trip py-3.5 px-5 bg-transparent text-[color:var(--text-muted)] font-medium border-0 border-b-2 border-transparent -mb-px cursor-pointer" data-tab="cancelled">Cancelled (0)</button>
+    @foreach (tabs as t)
+      <button class="py-3.5 px-5 bg-transparent border-0 border-b-2 -mb-px cursor-pointer transition-colors"
+              :class="{ 'text-[color:var(--text)] font-semibold border-b-[#FF3E54]': tab() === '{{ t.id }}', 'text-[color:var(--text-muted)] font-medium border-b-transparent': tab() !== '{{ t.id }}' }"
+              @click="tab.set('{{ t.id }}')">{{ t.label }}</button>
+    @endforeach
   </div>
 
   <!-- Upcoming -->
-  <section class="trip-panel" data-panel="upcoming">
+  <section :show="tab() === 'upcoming'">
     @if (upcoming.length === 0)
       <div class="text-center py-16 px-4"><p class="text-5xl m-0 mb-2">🗺️</p><h3 class="serif text-2xl m-0 mb-2">No upcoming trips</h3><p class="text-[color:var(--text-muted)]">Ready for your next adventure?</p><StxLink to="/search" class="inline-flex items-center gap-2 mt-4 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all" style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)">Browse cars</StxLink></div>
     @else
@@ -69,7 +79,7 @@ const pastWithCar = past.map(t => ({ ...t, car: cars.find(c => c.id === t.carId)
               <p class="tabular text-xl font-bold m-0">${{ trip.total.toFixed(2) }}</p>
               <p class="text-[color:var(--text-muted)] text-xs m-0 mt-0.5">total</p>
               <button class="mt-2.5 py-2 px-3.5 rounded-lg text-[0.8125rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer"
-                      onclick="event.preventDefault(); window._toast('Host contacted', 'success')">Message host</button>
+                      @click.prevent="messageHost()">Message host</button>
             </div>
           </a>
         @endforeach
@@ -78,7 +88,7 @@ const pastWithCar = past.map(t => ({ ...t, car: cars.find(c => c.id === t.carId)
   </section>
 
   <!-- Past -->
-  <section class="trip-panel hidden" data-panel="past">
+  <section :show="tab() === 'past'">
     <div class="flex flex-col gap-4">
       @foreach (pastWithCar as trip)
         <a href="/cars/{{ trip.carId }}"
@@ -102,7 +112,7 @@ const pastWithCar = past.map(t => ({ ...t, car: cars.find(c => c.id === t.carId)
           <div class="text-right">
             <p class="tabular font-semibold m-0">${{ trip.total.toFixed(2) }}</p>
             <button class="mt-2.5 py-2 px-3.5 rounded-lg text-[0.8125rem] font-medium text-[color:var(--text)] bg-transparent hover:bg-[color:var(--bg-hover)] transition-colors border-0 cursor-pointer"
-                    onclick="event.preventDefault(); window._toast('Rebooking this car...', 'info')">Rebook</button>
+                    @click.prevent="rebook()">Rebook</button>
           </div>
         </a>
       @endforeach
@@ -110,7 +120,7 @@ const pastWithCar = past.map(t => ({ ...t, car: cars.find(c => c.id === t.carId)
   </section>
 
   <!-- Cancelled -->
-  <section class="trip-panel hidden text-center py-16 px-4" data-panel="cancelled">
+  <section class="text-center py-16 px-4" :show="tab() === 'cancelled'">
     <p class="text-5xl m-0 mb-2">✨</p>
     <h3 class="serif text-2xl m-0">No cancellations. Nice.</h3>
   </section>
@@ -118,19 +128,9 @@ const pastWithCar = past.map(t => ({ ...t, car: cars.find(c => c.id === t.carId)
 </div>
 
 <script client>
-  document.querySelectorAll('.tab-btn-trip').forEach(btn => {
-    btn.addEventListener('click', function () {
-      document.querySelectorAll('.tab-btn-trip').forEach(b => {
-        b.className = 'tab-btn-trip py-3.5 px-5 bg-transparent text-[color:var(--text-muted)] font-medium border-0 border-b-2 border-transparent -mb-px cursor-pointer'
-      })
-      this.className = 'tab-btn-trip py-3.5 px-5 bg-transparent text-[color:var(--text)] font-semibold border-0 border-b-2 border-[#FF3E54] -mb-px cursor-pointer'
-      const tab = this.dataset.tab
-      document.querySelectorAll('.trip-panel').forEach(p => {
-        if (p.dataset.panel === tab) p.classList.remove('hidden')
-        else p.classList.add('hidden')
-      })
-    })
-  })
+  const tab = state('upcoming')
+  function messageHost() { window._toast && window._toast('Host contacted', 'success') }
+  function rebook()      { window._toast && window._toast('Rebooking this car...', 'info') }
 </script>
 
 @endsection

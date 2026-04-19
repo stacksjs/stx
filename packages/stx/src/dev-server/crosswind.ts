@@ -168,28 +168,27 @@ export function resetCrosswindCache(): void {
 }
 
 /**
- * Load crosswind config from the working directory
+ * Load crosswind config from the working directory.
+ *
+ * Uses `bunfig` for resolution so crosswind configs compose the same way as
+ * `stx.config.ts` and other stacks configs — a single source of truth for
+ * config loading across the stack.
  */
 export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig | null> {
-  const configFiles = [
-    'crosswind.config.ts',
-    'crosswind.config.js',
-    'crosswind.config.mjs',
-  ]
-
-  for (const configFile of configFiles) {
-    const configPath = path.join(cwd, configFile)
-    if (await Bun.file(configPath).exists()) {
-      try {
-        const configModule = await import(configPath)
-        const config = configModule.default || configModule
-        console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${configFile}`)
-        return config
-      }
-      catch (error) {
-        console.warn(`${colors.yellow}[Crosswind]${colors.reset} Failed to load ${configFile}:`, error)
-      }
+  try {
+    const { loadConfigWithResult } = await import('bunfig')
+    const result = await loadConfigWithResult<CrosswindConfig>({
+      name: 'crosswind',
+      cwd,
+      defaultConfig: {} as CrosswindConfig,
+    })
+    if (result?.config && result.configPath) {
+      console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${path.relative(cwd, result.configPath) || result.configPath}`)
+      return result.config
     }
+  }
+  catch (error) {
+    console.warn(`${colors.yellow}[Crosswind]${colors.reset} Failed to load config:`, error)
   }
 
   return null

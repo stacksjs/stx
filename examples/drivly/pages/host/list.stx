@@ -2,11 +2,20 @@
 const pageTitle = 'List your car · Drivly'
 const activePage = 'become-host'
 
+useSeoMeta({
+  title: pageTitle,
+  description: 'Become a Drivly host in under 10 minutes. Average host earns $10,516/year. We handle insurance, payments, and support.',
+  ogTitle: 'Earn with your car — list free on Drivly',
+  ogDescription: 'Hosts average $10,516/year. Zero setup fees. Up to $750K in protection on every trip.',
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+})
+
 const benefits = [
   { icon: '💰', title: 'Earn on your schedule', desc: 'Hosts average $10,516/year. Rent your car 2 days/week and cover payment + insurance.' },
-  { icon: '🛡️', title: 'Protection included', desc: 'Up to $750K in liability coverage. Physical damage up to the cash value of your car.' },
+  { icon: '🛡️', title: 'Protection included',  desc: 'Up to $750K in liability coverage. Physical damage up to the cash value of your car.' },
   { icon: '🚘', title: 'You control everything', desc: 'Set the price, availability, rules. Reject trips that don\'t feel right. You own the experience.' },
-  { icon: '✨', title: 'Free to list', desc: 'Zero setup fees. Drivly takes a small cut only when you earn. Keep 75–85% of every trip.' },
+  { icon: '✨', title: 'Free to list',           desc: 'Zero setup fees. Drivly takes a small cut only when you earn. Keep 75–85% of every trip.' },
 ]
 
 const commonMakes = ['Tesla', 'Toyota', 'Honda', 'Ford', 'Chevrolet', 'BMW', 'Mercedes-Benz', 'Jeep', 'Mazda', 'Subaru', 'Audi', 'Porsche', 'Lexus', 'Volvo']
@@ -14,165 +23,187 @@ const years = Array.from({ length: 30 }, (_, i) => 2026 - i)
 const photoSlots = Array.from({ length: 6 }, (_, i) => i)
 const earliestTimes = ['6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM']
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+const stepTitles = {
+  1: 'Tell us about your car',
+  2: 'Add photos',
+  3: 'Set your pricing',
+  4: 'Availability & rules',
+  5: 'Almost there!',
+}
 </script>
 
 @extends('layouts/app.stx')
 
 @section('content')
-<div class="container" style="padding: 2rem 1.5rem 5rem">
+<div class="max-w-[1280px] mx-auto px-6 py-8 pb-16">
 
   <!-- Hero -->
-  <section style="padding: 2rem 0 3rem; text-align: center">
-    <span class="chip chip-brand" style="margin-bottom: 1rem">💸 Start earning</span>
-    <h1 class="serif" style="font-size: clamp(2.25rem, 5vw, 4rem); margin: 0 auto 0.75rem; max-width: 20ch; line-height: 1.03">Your car is an asset. Make it pay you back.</h1>
-    <p style="font-size: 1.125rem; color: var(--text-secondary); margin: 0 auto; max-width: 52ch; line-height: 1.55">Become a Drivly host in under 10 minutes. We handle the insurance, payments, and roadside. You hand off keys.</p>
+  <section class="py-8 pb-12 text-center">
+    <span class="inline-flex items-center gap-1.5 py-1.5 px-2.5 rounded-full text-xs font-medium text-[#FF3E54] bg-[rgba(255,62,84,0.1)] border border-[rgba(255,62,84,0.25)] mb-4">💸 Start earning</span>
+    <h1 class="serif text-5xl sm:text-6xl lg:text-7xl m-0 mx-auto mb-3 max-w-[20ch] leading-[1.03]">Your car is an asset. Make it pay you back.</h1>
+    <p class="text-lg text-[color:var(--text-secondary)] m-0 mx-auto max-w-[52ch] leading-relaxed">Become a Drivly host in under 10 minutes. We handle the insurance, payments, and roadside. You hand off keys.</p>
   </section>
 
   <!-- Benefits -->
-  <section style="margin-bottom: 3rem">
-    <div class="grid grid-4">
+  <section class="mb-12">
+    <div class="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-5">
       @foreach (benefits as b)
-        <div class="card" style="padding: 1.5rem">
-          <div style="font-size: 1.75rem; margin-bottom: 0.75rem">{{ b.icon }}</div>
-          <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 0.375rem">{{ b.title }}</h3>
-          <p class="muted" style="margin: 0; font-size: 0.875rem; line-height: 1.55">{{ b.desc }}</p>
+        <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-6">
+          <div class="text-3xl mb-3">{{ b.icon }}</div>
+          <h3 class="text-base font-bold m-0 mb-1.5">{{ b.title }}</h3>
+          <p class="text-[color:var(--text-muted)] m-0 text-sm leading-relaxed">{{ b.desc }}</p>
         </div>
       @endforeach
     </div>
   </section>
 
   <!-- Wizard -->
-  <section class="card" style="padding: 0; overflow: hidden; max-width: 920px; margin: 0 auto">
-    <div style="padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); background: var(--bg-subtle); display: flex; justify-content: space-between; align-items: center">
+  <section class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-3xl overflow-hidden max-w-[920px] mx-auto">
+    <!-- Wizard header — `step` signal drives title + progress bar -->
+    <div class="py-5 px-8 border-b border-[color:var(--border)] bg-[color:var(--bg-subtle)] flex justify-between items-center">
       <div>
-        <p style="margin: 0; font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em">Step <span id="wizStep">1</span> of 5</p>
-        <h2 class="serif" style="font-size: 1.5rem; margin: 0.125rem 0 0" id="wizTitle">Tell us about your car</h2>
+        <p class="m-0 text-[0.8125rem] font-semibold text-[color:var(--text-muted)] uppercase tracking-wider">Step <span :text="step">1</span> of 5</p>
+        <h2 class="serif text-2xl m-0 mt-0.5" :text="stepTitle">Tell us about your car</h2>
       </div>
-      <div id="earningsEst" style="text-align: right">
-        <p class="muted" style="margin: 0; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em">Estimated monthly earnings</p>
-        <p class="tabular" style="margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--brand)" id="estAmount">$—</p>
+      <div class="text-right">
+        <p class="m-0 text-xs font-semibold text-[color:var(--text-muted)] uppercase tracking-wider">Estimated monthly earnings</p>
+        <p class="tabular m-0 text-2xl font-bold text-[#FF3E54]" :text="earningsEstimate">$—</p>
       </div>
     </div>
 
-    <!-- Progress bar -->
-    <div style="position: relative; height: 3px; background: var(--bg-muted)">
-      <div id="wizProgress" style="position: absolute; top: 0; left: 0; height: 100%; background: var(--brand); transition: width 300ms; width: 20%"></div>
+    <!-- Progress bar — width bound to step signal -->
+    <div class="relative h-[3px] bg-[color:var(--bg-muted)]">
+      <div class="absolute top-0 left-0 h-full bg-[#FF3E54] transition-[width] duration-300"
+           :attr:style="'width: ' + (step() * 20) + '%'"></div>
     </div>
 
-    <div style="padding: 2rem">
+    <div class="p-8">
 
       <!-- STEP 1: Car basics -->
-      <section class="wiz-panel fade-in" data-panel="1">
-        <div class="grid grid-2" style="gap: 1.25rem">
-          <label><span class="label">Year *</span>
-            <select class="input" id="wYear">
+      <section class="animate-fade-in" :show="step() === 1">
+        <div class="grid md:grid-cols-2 grid-cols-1 gap-5">
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Year *</span>
+            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="wYear">
               @foreach (years as y)
                 <option>{{ y }}</option>
               @endforeach
             </select>
           </label>
-          <label><span class="label">Make *</span>
-            <select class="input" id="wMake">
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Make *</span>
+            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="wMake">
               <option value="">Select a make</option>
               @foreach (commonMakes as m)
                 <option>{{ m }}</option>
               @endforeach
             </select>
           </label>
-          <label><span class="label">Model *</span>
-            <input class="input" id="wModel" placeholder="e.g. Model 3">
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Model *</span>
+            <input class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="wModel" placeholder="e.g. Model 3">
           </label>
-          <label><span class="label">Trim (optional)</span>
-            <input class="input" id="wTrim" placeholder="e.g. Long Range">
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Trim (optional)</span>
+            <input class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="wTrim" placeholder="e.g. Long Range">
           </label>
-          <label><span class="label">License plate *</span>
-            <input class="input" id="wPlate" placeholder="e.g. ABC-1234">
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">License plate *</span>
+            <input class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="wPlate" placeholder="e.g. ABC-1234">
           </label>
-          <label><span class="label">VIN (17 chars) *</span>
-            <input class="input" id="wVin" placeholder="1HGBH41JXMN109186" maxlength="17" style="font-family: monospace">
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">VIN (17 chars) *</span>
+            <input class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm font-mono" x-model="wVin" placeholder="1HGBH41JXMN109186" maxlength="17">
           </label>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; margin-top: 2rem">
-          <button class="btn btn-primary btn-lg wiz-next" data-to="2">Next</button>
+        <div class="flex justify-end mt-8">
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)"
+                  @click="nextFromStep1()">Next</button>
         </div>
       </section>
 
-      <!-- STEP 2: Photos -->
-      <section class="wiz-panel fade-in" data-panel="2" style="display: none">
-        <p class="muted" style="margin: 0 0 1.25rem">Great photos get more bookings. Upload at least 4. Outdoor, daylight, clean car.</p>
+      <!-- STEP 2: Photos — uploads stored as blob URLs in photos[] -->
+      <section class="animate-fade-in" :show="step() === 2">
+        <p class="text-[color:var(--text-muted)] m-0 mb-5">Great photos get more bookings. Upload at least 4. Outdoor, daylight, clean car.</p>
 
-        <div class="grid grid-4" style="gap: 0.75rem" id="photoGrid">
+        <div class="grid grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-3">
           @foreach (photoSlots as idx)
-            <label class="photo-slot" style="aspect-ratio: 1; border: 2px dashed var(--border-strong); border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all 120ms; background: var(--bg-subtle)">
-              <input type="file" accept="image/*" style="display: none">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M10 14L21 3M21 14v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/></svg>
-              <span style="font-size: 0.75rem; margin-top: 0.375rem">Upload</span>
+            <label class="relative overflow-hidden rounded-xl cursor-pointer flex flex-col items-center justify-center transition-all bg-[color:var(--bg-subtle)]"
+                   :class="{ 'border-2 border-solid border-[#FF3E54]': photos()[{{ idx }}], 'border-2 border-dashed border-[color:var(--border-strong)] text-[color:var(--text-muted)]': !photos()[{{ idx }}] }"
+                   style="aspect-ratio: 1">
+              <input type="file" accept="image/*" class="hidden" @change="onPhotoPicked({{ idx }}, $event)">
+              <img class="absolute inset-0 w-full h-full object-cover" :show="photos()[{{ idx }}]" :attr:src="photos()[{{ idx }}] || ''">
+              <div class="flex flex-col items-center gap-1.5" :show="!photos()[{{ idx }}]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M10 14L21 3M21 14v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/></svg>
+                <span class="text-xs">Upload</span>
+              </div>
             </label>
           @endforeach
         </div>
 
-        <div style="display: flex; justify-content: space-between; margin-top: 2rem">
-          <button class="btn btn-outline btn-lg wiz-back" data-to="1">Back</button>
-          <button class="btn btn-primary btn-lg wiz-next" data-to="3">Next</button>
+        <div class="flex justify-between mt-8">
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" @click="step.set(1)">Back</button>
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)"
+                  @click="step.set(3)">Next</button>
         </div>
       </section>
 
       <!-- STEP 3: Pricing -->
-      <section class="wiz-panel fade-in" data-panel="3" style="display: none">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center">
+      <section class="animate-fade-in" :show="step() === 3">
+        <div class="grid md:grid-cols-2 grid-cols-1 gap-8 items-center">
           <div>
-            <label><span class="label">Daily rate</span>
-              <div style="position: relative">
-                <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); font-weight: 600; font-size: 1.125rem; color: var(--text-muted)">$</span>
-                <input class="input" type="number" id="wPrice" value="89" style="padding-left: 2rem; font-size: 1.125rem; font-weight: 600; text-align: left">
+            <label class="block"><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Daily rate</span>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 font-semibold text-lg text-[color:var(--text-muted)]">$</span>
+                <input class="w-full py-3 pl-8 pr-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-lg font-semibold"
+                       type="number" x-model="price">
               </div>
             </label>
-            <p class="muted" style="margin: 0.75rem 0 0; font-size: 0.8125rem">Similar cars in your area rent for $72–$108/day. Smart Pricing can auto-adjust your rate for demand.</p>
+            <p class="text-[color:var(--text-muted)] m-0 mt-3 text-[0.8125rem]">Similar cars in your area rent for $72–$108/day. Smart Pricing can auto-adjust your rate for demand.</p>
 
-            <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.875rem">
-              <input type="checkbox" id="wSmart" style="accent-color: var(--brand)"> Enable Smart Pricing
+            <label class="flex items-center gap-2 mt-4 text-sm cursor-pointer">
+              <input type="checkbox" class="w-4 h-4" style="accent-color: #FF3E54" x-model="smartPricing"> Enable Smart Pricing
             </label>
-            <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.625rem; font-size: 0.875rem">
-              <input type="checkbox" id="wInstant" style="accent-color: var(--brand)" checked> Enable Instant Book
+            <label class="flex items-center gap-2 mt-2.5 text-sm cursor-pointer">
+              <input type="checkbox" class="w-4 h-4" style="accent-color: #FF3E54" x-model="instantBook"> Enable Instant Book
             </label>
-            <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.625rem; font-size: 0.875rem">
-              <input type="checkbox" id="wDelivery" style="accent-color: var(--brand)"> Offer delivery (+$49/trip)
+            <label class="flex items-center gap-2 mt-2.5 text-sm cursor-pointer">
+              <input type="checkbox" class="w-4 h-4" style="accent-color: #FF3E54" x-model="offerDelivery"> Offer delivery (+$49/trip)
             </label>
           </div>
-          <div class="card" style="padding: 1.5rem; background: var(--bg-subtle)">
-            <p class="muted" style="margin: 0 0 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em">Projected</p>
-            <p style="margin: 0 0 1rem; font-size: 0.875rem">If you rent <strong>12 days/month</strong>:</p>
-            <div style="display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.5rem">
-              <span class="muted">Gross earnings</span>
-              <span class="tabular" id="projGross">$—</span>
+          <div class="bg-[color:var(--bg-subtle)] rounded-2xl p-6">
+            <p class="text-[color:var(--text-muted)] m-0 mb-2 text-xs font-semibold uppercase tracking-wider">Projected</p>
+            <p class="m-0 mb-4 text-sm">If you rent <strong>12 days/month</strong>:</p>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-[color:var(--text-muted)]">Gross earnings</span>
+              <span class="tabular" :text="projGross">$—</span>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.5rem">
-              <span class="muted">Drivly fee (15%)</span>
-              <span class="tabular" id="projFee">$—</span>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-[color:var(--text-muted)]">Drivly fee (15%)</span>
+              <span class="tabular" :text="projFee">$—</span>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.875rem; padding-top: 0.5rem; margin-top: 0.5rem; border-top: 1px solid var(--border); font-weight: 700">
+            <div class="flex justify-between text-sm pt-2 mt-2 border-t border-[color:var(--border)] font-bold">
               <span>You keep</span>
-              <span class="tabular" id="projNet">$—</span>
+              <span class="tabular" :text="projNet">$—</span>
             </div>
           </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; margin-top: 2rem">
-          <button class="btn btn-outline btn-lg wiz-back" data-to="2">Back</button>
-          <button class="btn btn-primary btn-lg wiz-next" data-to="4">Next</button>
+        <div class="flex justify-between mt-8">
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" @click="step.set(2)">Back</button>
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)"
+                  @click="step.set(4)">Next</button>
         </div>
       </section>
 
       <!-- STEP 4: Availability -->
-      <section class="wiz-panel fade-in" data-panel="4" style="display: none">
-        <p class="muted" style="margin: 0 0 1.25rem">Mark the days you're generally unavailable. You can always update later.</p>
+      <section class="animate-fade-in" :show="step() === 4">
+        <p class="text-[color:var(--text-muted)] m-0 mb-5">Mark the days you're generally unavailable. You can always update later.</p>
 
-        <div class="grid grid-2" style="gap: 1rem">
-          <label><span class="label">Pickup location</span>
-            <input class="input" placeholder="Street address" value="1247 Elm Street, Austin, TX"></label>
-          <label><span class="label">Earliest pickup time</span>
-            <select class="input">
+        <div class="grid md:grid-cols-2 grid-cols-1 gap-4">
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Pickup location</span>
+            <input class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="pickupLoc" placeholder="Street address"></label>
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Earliest pickup time</span>
+            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="earliestTime">
               @foreach (earliestTimes as t)
                 <option>{{ t }}</option>
               @endforeach
@@ -180,39 +211,46 @@ const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
           </label>
         </div>
 
-        <div style="margin-top: 1.5rem">
-          <span class="label">Typical weekly availability</span>
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+        <div class="mt-6">
+          <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Typical weekly availability</span>
+          <div class="flex gap-2 flex-wrap">
             @foreach (daysOfWeek as day)
-              <label class="day-chip" style="padding: 0.625rem 1rem; border: 1.5px solid var(--border); border-radius: var(--radius); cursor: pointer; font-weight: 500; font-size: 0.875rem; user-select: none">
-                <input type="checkbox" checked style="display: none">
-                {{ day }}
-              </label>
+              <button class="py-2.5 px-4 rounded-xl font-medium text-sm cursor-pointer transition-all border-[1.5px] select-none"
+                      :class="{ 'bg-[color:var(--text)] text-[color:var(--bg)] border-[color:var(--text)]': availableDays().has('{{ day }}'), 'bg-transparent text-[color:var(--text)] border-[color:var(--border)] hover:bg-[color:var(--bg-hover)]': !availableDays().has('{{ day }}') }"
+                      @click="toggleDay('{{ day }}')">{{ day }}</button>
             @endforeach
           </div>
         </div>
 
-        <label style="display: block; margin-top: 1.5rem">
-          <span class="label">House rules & notes (optional)</span>
-          <textarea class="input" rows="4" placeholder="e.g. No smoking. Please return with same fuel level."></textarea>
+        <label class="block mt-6">
+          <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">House rules & notes (optional)</span>
+          <textarea class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm"
+                    rows="4" placeholder="e.g. No smoking. Please return with same fuel level." x-model="houseRules"></textarea>
         </label>
 
-        <div style="display: flex; justify-content: space-between; margin-top: 2rem">
-          <button class="btn btn-outline btn-lg wiz-back" data-to="3">Back</button>
-          <button class="btn btn-primary btn-lg wiz-next" data-to="5">Next</button>
+        <div class="flex justify-between mt-8">
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" @click="step.set(3)">Back</button>
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)"
+                  @click="step.set(5)">Next</button>
         </div>
       </section>
 
-      <!-- STEP 5: Review & submit -->
-      <section class="wiz-panel fade-in" data-panel="5" style="display: none">
-        <div style="text-align: center">
-          <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--brand-soft); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      <!-- STEP 5: Review -->
+      <section class="animate-fade-in" :show="step() === 5">
+        <div class="text-center">
+          <div class="w-18 h-18 rounded-full bg-[rgba(255,62,84,0.1)] inline-flex items-center justify-center mb-4" style="width: 72px; height: 72px">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF3E54" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
           </div>
-          <h3 class="serif" style="font-size: 1.75rem; margin: 0 0 0.5rem">You're all set.</h3>
-          <p class="muted" style="margin: 0 0 1.5rem; max-width: 44ch; margin-left: auto; margin-right: auto">We'll verify your info and publish your listing within 24 hours. You can preview it any time from your host dashboard.</p>
-          <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap">
-            <button class="btn btn-primary btn-lg" id="submitWiz">Publish listing</button>
+          <h3 class="serif text-3xl m-0 mb-2">You're all set.</h3>
+          <p class="text-[color:var(--text-muted)] m-0 mb-6 max-w-[44ch] mx-auto">We'll verify your info and publish your listing within 24 hours. You can preview it any time from your host dashboard.</p>
+          <div class="flex gap-2 justify-center flex-wrap">
+            <button class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)"
+                    :disabled="isPublishing()" @click="publish()">
+              <span :show="!isPublishing()">Publish listing</span>
+              <span :show="isPublishing()" class="inline-flex items-center gap-2"><span style="display:inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite"></span> Publishing...</span>
+            </button>
           </div>
         </div>
       </section>
@@ -222,107 +260,97 @@ const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 </div>
 
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
 <script client>
-  if (!window.__listWiz) {
-    window.__listWiz = true
+  // Draft persistence — `useLocalStorage` gives us a signal that syncs to
+  // localStorage, so refreshing mid-wizard preserves form values. Photos
+  // aren't persisted (blob URLs expire on reload) but every text field is.
+  const draft = useLocalStorage('drivly-host-draft', {
+    step: 1, year: 2026, make: '', model: '', trim: '', plate: '', vin: '',
+    price: 89, smartPricing: false, instantBook: true, offerDelivery: false,
+    pickupLoc: '1247 Elm Street, Austin, TX', earliestTime: '8:00 AM',
+    availableDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    houseRules: '',
+  })
+  const d = draft()
 
-    const step = state(1)
-    const price = state(89)
+  // ── All wizard state lives here. Inputs use x-model, the rest derive. ──
+  const step         = state(d.step || 1)
+  const wYear        = state(d.year)
+  const wMake        = state(d.make)
+  const wModel       = state(d.model)
+  const wTrim        = state(d.trim)
+  const wPlate       = state(d.plate)
+  const wVin         = state(d.vin)
+  // File uploads → blob URLs, indexed by slot. Not persisted (blob URLs don't
+  // survive reload); users would re-upload on refresh.
+  const photos       = state(Array(6).fill(null))
+  const price        = state(d.price)
+  const smartPricing = state(d.smartPricing)
+  const instantBook  = state(d.instantBook)
+  const offerDelivery = state(d.offerDelivery)
+  const pickupLoc    = state(d.pickupLoc)
+  const earliestTime = state(d.earliestTime)
+  // Weekdays — Set signal for toggling; serialized as array for localStorage.
+  const availableDays = state(new Set(d.availableDays || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']))
+  const houseRules   = state(d.houseRules)
+  const isPublishing = state(false)
 
-    const titles = {
-      1: 'Tell us about your car',
-      2: 'Add photos',
-      3: 'Set your pricing',
-      4: 'Availability & rules',
-      5: 'Almost there!',
+  // Keep localStorage in sync with every signal change. One effect covers all
+  // fields — useLocalStorage writes are debounced internally.
+  effect(() => {
+    draft.set({
+      step: step(), year: wYear(), make: wMake(), model: wModel(), trim: wTrim(),
+      plate: wPlate(), vin: wVin(), price: price(),
+      smartPricing: smartPricing(), instantBook: instantBook(), offerDelivery: offerDelivery(),
+      pickupLoc: pickupLoc(), earliestTime: earliestTime(),
+      availableDays: Array.from(availableDays()),
+      houseRules: houseRules(),
+    })
+  })
+
+  const STEP_TITLES = {{ stepTitles }}
+
+  // ── Derived labels — every "$123" in the UI comes from one of these. ──
+  const stepTitle        = derived(() => STEP_TITLES[step()] || '')
+  const projGross        = derived(() => '$' + (Number(price()) * 12).toLocaleString())
+  const projFee          = derived(() => '-$' + (Number(price()) * 12 * 0.15).toLocaleString())
+  const projNet          = derived(() => '$' + (Number(price()) * 12 * 0.85).toLocaleString())
+  const earningsEstimate = derived(() => '$' + Math.round(Number(price()) * 12 * 0.85).toLocaleString())
+
+  // ── Actions. ──
+  function nextFromStep1() {
+    if (!wMake() || !wModel() || wVin().length < 11) {
+      window._toast && window._toast('Fill in make, model, and VIN', 'error')
+      return
     }
+    step.set(2)
+  }
 
-    effect(() => {
-      const n = step()
-      document.getElementById('wizStep').textContent = n
-      document.getElementById('wizTitle').textContent = titles[n]
-      document.getElementById('wizProgress').style.width = (n * 20) + '%'
-      document.querySelectorAll('.wiz-panel').forEach(p => {
-        p.style.display = Number(p.dataset.panel) === n ? 'block' : 'none'
-      })
-    })
+  function onPhotoPicked(idx, e) {
+    const f = e.target.files && e.target.files[0]
+    if (!f) return
+    const next = [...photos()]
+    next[idx] = URL.createObjectURL(f)
+    photos.set(next)
+  }
 
-    document.querySelectorAll('.wiz-next').forEach(b => {
-      b.addEventListener('click', function () {
-        const next = Number(this.dataset.to)
-        // Validate step 1
-        if (next === 2) {
-          const make = document.getElementById('wMake').value
-          const model = document.getElementById('wModel').value
-          const vin = document.getElementById('wVin').value
-          if (!make || !model || vin.length < 11) {
-            window._toast && window._toast('Fill in make, model, and VIN', 'error')
-            return
-          }
-        }
-        step.set(next)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      })
-    })
-    document.querySelectorAll('.wiz-back').forEach(b => {
-      b.addEventListener('click', function () { step.set(Number(this.dataset.to)) })
-    })
+  function toggleDay(day) {
+    const s = new Set(availableDays())
+    if (s.has(day)) s.delete(day); else s.add(day)
+    availableDays.set(s)
+  }
 
-    // Pricing reactive
-    document.getElementById('wPrice').addEventListener('input', function () {
-      price.set(Number(this.value) || 0)
-    })
-    effect(() => {
-      const p = price()
-      const gross = p * 12
-      const fee = gross * 0.15
-      const net = gross - fee
-      document.getElementById('projGross').textContent = '$' + gross.toLocaleString()
-      document.getElementById('projFee').textContent = '-$' + fee.toLocaleString()
-      document.getElementById('projNet').textContent = '$' + net.toLocaleString()
-      document.getElementById('estAmount').textContent = '$' + Math.round(net).toLocaleString()
-    })
-
-    // Day chip toggles
-    document.querySelectorAll('.day-chip').forEach(l => {
-      const cb = l.querySelector('input')
-      function sync() {
-        if (cb.checked) { l.style.background = 'var(--text)'; l.style.color = 'var(--bg)'; l.style.borderColor = 'var(--text)' }
-        else { l.style.background = ''; l.style.color = ''; l.style.borderColor = 'var(--border)' }
-      }
-      sync()
-      l.addEventListener('click', function () { cb.checked = !cb.checked; sync() })
-    })
-
-    // Photo slot feedback
-    document.querySelectorAll('.photo-slot input[type="file"]').forEach(input => {
-      input.addEventListener('change', function (e) {
-        const f = e.target.files && e.target.files[0]
-        if (!f) return
-        const label = this.parentElement
-        label.style.borderStyle = 'solid'
-        label.style.borderColor = 'var(--brand)'
-        label.innerHTML = ''
-        label.style.padding = '0'
-        const img = document.createElement('img')
-        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: inherit'
-        img.src = URL.createObjectURL(f)
-        label.appendChild(img)
-      })
-    })
-
-    document.getElementById('submitWiz').addEventListener('click', function () {
-      this.disabled = true
-      this.innerHTML = '<span style="display:inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite"></span> Publishing...'
-      setTimeout(() => {
-        window._toast && window._toast('Listing submitted! We\'ll review within 24h.', 'success')
-        try { window.navigate && window.navigate('/host/dashboard') } catch (e) { location.href = '/host/dashboard' }
-      }, 1400)
-    })
-
-    const style = document.createElement('style')
-    style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }'
-    document.head.appendChild(style)
+  function publish() {
+    isPublishing.set(true)
+    setTimeout(() => {
+      isPublishing.set(false)
+      // Clear the draft — user successfully published, no reason to keep it.
+      try { localStorage.removeItem('drivly-host-draft') } catch {}
+      window._toast && window._toast('Listing submitted! We\'ll review within 24h.', 'success')
+      try { window.navigate && window.navigate('/host/dashboard') } catch (e) { location.href = '/host/dashboard' }
+    }, 1400)
   }
 </script>
 

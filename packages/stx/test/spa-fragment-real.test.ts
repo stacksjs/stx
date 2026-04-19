@@ -4,9 +4,14 @@ import { processDirectives } from '../src/process'
 import { defaultConfig } from '../src/config'
 import { stripDocumentWrapper } from '../src/app-shell'
 
+// This test exercises the real bun-queue devtools fixture when available on
+// the contributor's machine. It's developer-machine specific, so we skip
+// gracefully when the fixture directory isn't present.
 const DEVTOOLS_ROOT = '/Users/glennmichaeltorregosa/Documents/Projects/bun-queue/packages/devtools'
+const FIXTURE_AVAILABLE = fs.existsSync(`${DEVTOOLS_ROOT}/pages/index.stx`)
+const describeIfFixture = FIXTURE_AVAILABLE ? describe : describe.skip
 
-describe('SPA Fragment Extraction — Real bun-queue Dashboard', () => {
+describeIfFixture('SPA Fragment Extraction — Real bun-queue Dashboard', () => {
   test('processes the real dashboard template and extracts a valid SPA fragment', async () => {
     // 1. Read the real devtools files
     const layoutPath = `${DEVTOOLS_ROOT}/pages/layouts/default.stx`

@@ -494,16 +494,15 @@ catch {
   }
   const useSeoMeta = (meta: unknown) => {
     headUseSeoMeta(meta as any)
-    // useSeoMeta builds a meta array internally; we re-derive it for the context
-    // by reading the latest currentHead from the same module instance we just
-    // mutated. This isn't perfect (process.ts may see different state) but
-    // captures the common case.
+    // useSeoMeta builds a meta array internally; read the latest currentHead
+    // and snapshot it onto the context. We REPLACE `meta` (not merge) because
+    // the underlying module-global already accumulates previous calls —
+    // merging again would double every tag that was added before this call.
     const head = headGetHead()
-    const existing = (context.__stx_runtime_head as Record<string, any>) || {}
     context.__stx_runtime_head = {
-      ...existing,
+      ...(context.__stx_runtime_head || {}),
       ...(head.title && { title: head.title }),
-      meta: [...(existing.meta || []), ...(head.meta || [])],
+      meta: head.meta ? [...head.meta] : [],
     }
   }
   const ref = (val: unknown) => ({ value: val })
@@ -750,13 +749,35 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
       continue
     }
 
-    // Strip definePageMeta() calls (metadata only, not runtime)
+    // Strip definePageMeta() calls (metadata only, not runtime).
+    // Paren-aware: the old `includes(')')` heuristic broke on nested parens
+    // like `validate({ params }) { return getCar(params.id) !== undefined }` —
+    // the first `)` in `params)` would end the skip early and leave the
+    // closing `})` at the top level, poisoning the rest of the script.
     if (line.startsWith('definePageMeta(')) {
-      if (!line.includes(')')) {
-        // Multi-line: skip until closing paren
-        while (i < lines.length && !lines[i].includes(')')) i++
+      let depth = 0
+      let done = false
+      for (let j = i; j < lines.length && !done; j++) {
+        let inString: string | null = null
+        let escaped = false
+        const text = lines[j]
+        for (let k = 0; k < text.length; k++) {
+          const ch = text[k]
+          if (escaped) { escaped = false; continue }
+          if (ch === '\\') { escaped = true; continue }
+          if (inString) {
+            if (ch === inString) inString = null
+            continue
+          }
+          if (ch === '"' || ch === "'" || ch === '`') { inString = ch; continue }
+          if (ch === '(') depth++
+          else if (ch === ')') {
+            depth--
+            if (depth === 0) { i = j + 1; done = true; break }
+          }
+        }
       }
-      i++
+      if (!done) i = lines.length
       continue
     }
 

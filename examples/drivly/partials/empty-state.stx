@@ -1,0 +1,13 @@
+<!-- Reusable empty state. Pass: emoji, title, desc, ctaText, ctaHref -->
+<div class="text-center py-20 px-4">
+  <p class="text-5xl m-0 mb-2">{{ emoji || '✨' }}</p>
+  <h3 class="serif text-2xl m-0 mb-2">{{ title }}</h3>
+  @if (desc)
+    <p class="text-[color:var(--text-muted)] m-0 mb-6 max-w-[36ch] mx-auto">{{ desc }}</p>
+  @endif
+  @if (ctaText && ctaHref)
+    <StxLink to="{{ ctaHref }}"
+             class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px"
+             style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)">{{ ctaText }}</StxLink>
+  @endif
+</div>

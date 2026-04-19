@@ -1,81 +1,83 @@
 <script server>
 const pageTitle = 'Sign up · Drivly'
+useSeoMeta({
+  title: pageTitle,
+  description: 'Create a Drivly account in under a minute. Book cars or host yours — same account, no commitments.',
+  ogTitle: 'Join Drivly',
+  twitterCard: 'summary',
+})
 </script>
 
 @extends('layouts/auth.stx')
 
 @section('content')
-<h1 class="serif" style="font-size: 2.25rem; margin: 2rem 0 0.5rem">Create your account</h1>
-<p style="color: var(--text-muted); margin: 0 0 2rem">Drive or host — same account, zero commitments.</p>
+<h1 class="serif text-4xl m-0 mt-8 mb-2">Create your account</h1>
+<p class="text-[color:var(--text-muted)] m-0 mb-8">Drive or host — same account, zero commitments.</p>
 
-<form id="signupForm" onsubmit="return false" autocomplete="on">
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem">
-    <label><span class="label">First name</span><input class="input" name="firstName" required autocomplete="given-name"></label>
-    <label><span class="label">Last name</span><input class="input" name="lastName" required autocomplete="family-name"></label>
+<form onsubmit="return false" autocomplete="on" @submit.prevent="submit()">
+  <div class="grid grid-cols-2 gap-3">
+    <label class="block"><span class="block text-[0.8125rem] font-medium mb-1.5">First name</span><input class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-[0.9375rem]" x-model="firstName" required autocomplete="given-name"></label>
+    <label class="block"><span class="block text-[0.8125rem] font-medium mb-1.5">Last name</span><input class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-[0.9375rem]" x-model="lastName" required autocomplete="family-name"></label>
   </div>
-  <label style="margin-top: 1rem; display: block"><span class="label">Email</span>
-    <input class="input" type="email" name="email" required autocomplete="email" placeholder="you@example.com">
+  <label class="block mt-4">
+    <span class="block text-[0.8125rem] font-medium mb-1.5">Email</span>
+    <input class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-[0.9375rem]" type="email" x-model="email" required autocomplete="email" placeholder="you@example.com">
   </label>
-  <label style="margin-top: 1rem; display: block"><span class="label">Password</span>
-    <input class="input" type="password" name="password" required minlength="8" autocomplete="new-password">
-    <p style="margin: 0.5rem 0 0; font-size: 0.75rem; color: var(--text-muted)">At least 8 characters</p>
+  <label class="block mt-4">
+    <span class="block text-[0.8125rem] font-medium mb-1.5">Password</span>
+    <input class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-[0.9375rem]" type="password" x-model="password" required minlength="8" autocomplete="new-password">
+    <p class="m-0 mt-2 text-xs text-[color:var(--text-muted)]">At least 8 characters</p>
   </label>
 
-  <div style="margin-top: 1.25rem">
-    <span class="label">I'm here to…</span>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem">
-      <label class="role-card" data-role="guest" style="padding: 1rem; border: 1.5px solid var(--brand); border-radius: 0.625rem; cursor: pointer; background: var(--brand-soft)">
-        <input type="radio" name="role" value="guest" checked style="display: none">
-        <p style="margin: 0; font-weight: 600">🚗 Rent a car</p>
-        <p style="margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--text-muted)">Book cars from hosts</p>
+  <div class="mt-5">
+    <span class="block text-[0.8125rem] font-medium mb-1.5">I'm here to…</span>
+    <div class="grid grid-cols-2 gap-2.5">
+      <label class="p-4 border-[1.5px] rounded-xl cursor-pointer transition-all"
+             :class="{ 'border-[#FF3E54] bg-[rgba(255,62,84,0.1)]': role() === 'guest', 'border-[color:var(--border)]': role() !== 'guest' }"
+             @click="role.set('guest')">
+        <input type="radio" name="role" value="guest" :checked="role() === 'guest'" style="display: none">
+        <p class="m-0 font-semibold">🚗 Rent a car</p>
+        <p class="m-0 mt-1 text-[0.8125rem] text-[color:var(--text-muted)]">Book cars from hosts</p>
       </label>
-      <label class="role-card" data-role="host" style="padding: 1rem; border: 1.5px solid var(--border); border-radius: 0.625rem; cursor: pointer">
-        <input type="radio" name="role" value="host" style="display: none">
-        <p style="margin: 0; font-weight: 600">💰 Earn from my car</p>
-        <p style="margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--text-muted)">Become a host</p>
+      <label class="p-4 border-[1.5px] rounded-xl cursor-pointer transition-all"
+             :class="{ 'border-[#FF3E54] bg-[rgba(255,62,84,0.1)]': role() === 'host', 'border-[color:var(--border)]': role() !== 'host' }"
+             @click="role.set('host')">
+        <input type="radio" name="role" value="host" :checked="role() === 'host'" style="display: none">
+        <p class="m-0 font-semibold">💰 Earn from my car</p>
+        <p class="m-0 mt-1 text-[0.8125rem] text-[color:var(--text-muted)]">Become a host</p>
       </label>
     </div>
   </div>
 
-  <label style="display: flex; align-items: start; gap: 0.5rem; margin-top: 1.25rem; font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5">
-    <input type="checkbox" required style="accent-color: var(--brand); margin-top: 0.25rem">
-    <span>I agree to Drivly's <a href="/about" style="color: var(--brand)">Terms</a> and <a href="/about" style="color: var(--brand)">Privacy Policy</a>.</span>
+  <label class="flex items-start gap-2 mt-5 text-[0.8125rem] text-[color:var(--text-muted)] leading-relaxed cursor-pointer">
+    <input type="checkbox" required class="mt-1 w-4 h-4" style="accent-color: #FF3E54" x-model="acceptTerms">
+    <span>I agree to Drivly's <a href="/about" class="text-[#FF3E54]">Terms</a> and <a href="/about" class="text-[#FF3E54]">Privacy Policy</a>.</span>
   </label>
 
-  <button type="submit" class="btn-primary" style="margin-top: 1.5rem">Create account</button>
+  <button type="submit" class="w-full py-3.5 px-5 rounded-xl bg-[#FF3E54] hover:bg-[#e63349] text-white font-semibold cursor-pointer text-[0.9375rem] border-0 mt-6 transition-colors">Create account</button>
 </form>
 
-<p style="margin-top: 1.75rem; text-align: center; color: var(--text-muted)">
-  Already have an account? <StxLink to="/login" style="color: var(--brand); font-weight: 600">Log in →</StxLink>
+<p class="text-center text-[color:var(--text-muted)] mt-7">
+  Already have an account? <StxLink to="/login" class="text-[#FF3E54] font-semibold">Log in →</StxLink>
 </p>
 
 <script client>
-  document.querySelectorAll('.role-card').forEach(c => {
-    c.addEventListener('click', function () {
-      document.querySelectorAll('.role-card').forEach(o => {
-        o.style.borderColor = 'var(--border)'
-        o.style.background = ''
-        o.querySelector('input').checked = false
-      })
-      this.style.borderColor = 'var(--brand)'
-      this.style.background = 'var(--brand-soft)'
-      this.querySelector('input').checked = true
-    })
-  })
+  const firstName    = state('')
+  const lastName     = state('')
+  const email        = state('')
+  const password     = state('')
+  const role         = state('guest')
+  const acceptTerms  = state(false)
 
-  document.getElementById('signupForm').addEventListener('submit', function (e) {
-    e.preventDefault()
-    const form = e.target
-    const name = form.firstName.value + ' ' + form.lastName.value
-    const email = form.email.value
-    const role = form.role.value
-    if (!email) return
+  function submit() {
+    if (!email() || !firstName()) return
+    const name = firstName() + ' ' + lastName()
     const session = useStore('session')
-    session.login(name, email, role)
-    window._toast && window._toast('Welcome to Drivly, ' + form.firstName.value + '!', 'success')
+    session.login(name, email(), role())
+    window._toast && window._toast('Welcome to Drivly, ' + firstName() + '!', 'success')
     setTimeout(() => {
-      try { window.navigate && window.navigate(role === 'host' ? '/host/list' : '/') } catch (_) { location.href = '/' }
+      try { window.navigate && window.navigate(role() === 'host' ? '/host/list' : '/') } catch (_) { location.href = '/' }
     }, 500)
-  })
+  }
 </script>
 @endsection

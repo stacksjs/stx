@@ -4,9 +4,11 @@ import { cars } from '../data/cars'
 const pageTitle = 'Favorites · Drivly'
 const activePage = 'favorites'
 
-// Emit ALL cars server-side; JS hides ones not in the favorites store.
-// Matches the pattern we use on /search — no client-side rendering of cards
-// from raw data → no flash-of-empty.
+definePageMeta({ middleware: ['auth'] })
+useSeoMeta({ title: pageTitle, robots: 'noindex' })
+
+// Emit every car server-side; the :show binding below hides non-favorites.
+// No JS "render from data" step means no flash-of-empty and zero DOM queries.
 const allCars = cars
 </script>
 
@@ -17,22 +19,25 @@ const allCars = cars
   <div class="flex justify-between items-end flex-wrap gap-4 mb-8">
     <div>
       <h1 class="serif text-4xl sm:text-5xl m-0 mb-1.5">Your favorites</h1>
-      <p class="text-[color:var(--text-muted)] m-0"><span id="favCount">0</span> saved cars</p>
+      <p class="text-[color:var(--text-muted)] m-0"><span :text="favCount">0</span> saved cars</p>
     </div>
-    <button id="clearFavBtn" class="hidden py-3 px-5 rounded-xl text-sm font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer">Clear all</button>
+    <button class="py-3 px-5 rounded-xl text-sm font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer"
+            :show="hasFavs()"
+            @click="clear()">Clear all</button>
   </div>
 
-  <!-- Pre-rendered grid of every car; the store effect below hides non-favorites. -->
-  <div id="favGrid" class="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-5">
+  <!-- Grid visible when we have favs; otherwise show the empty state -->
+  <div class="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-5" :show="hasFavs()">
     @foreach (allCars as car)
-      <div data-car-id="{{ car.id }}" hidden>
+      <!-- Each wrapper's visibility is bound to favorites.has(id) -->
+      <div :show="isFav('{{ car.id }}')">
         @component('CarCard', { car: car })
         @endcomponent
       </div>
     @endforeach
   </div>
 
-  <div id="emptyFav" class="text-center py-20 px-4">
+  <div class="text-center py-20 px-4" :show="!hasFavs()">
     <div class="w-20 h-20 rounded-full bg-[rgba(255,62,84,0.1)] inline-flex items-center justify-center mb-5">
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FF3E54" stroke-width="1.8"><path stroke-linejoin="round" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
     </div>
@@ -44,56 +49,25 @@ const allCars = cars
 </div>
 
 <script client>
-  if (!window.__favPage) {
-    window.__favPage = true
-    const favorites = useStore('favorites')
-    const grid = document.getElementById('favGrid')
-    const empty = document.getElementById('emptyFav')
-    const clearBtn = document.getElementById('clearFavBtn')
-    const items = Array.from(grid.querySelectorAll('[data-car-id]'))
+  const favorites = useStore('favorites')
 
-    function render() {
-      const ids = favorites.ids()
-      document.getElementById('favCount').textContent = ids.length
-      items.forEach(el => {
-        el.hidden = !ids.includes(el.getAttribute('data-car-id'))
-      })
-      if (ids.length === 0) {
-        grid.classList.add('hidden')
-        empty.classList.remove('hidden')
-        clearBtn.classList.add('hidden')
-      } else {
-        grid.classList.remove('hidden')
-        empty.classList.add('hidden')
-        clearBtn.classList.remove('hidden')
-      }
+  // Reading favorites.ids()/count() inside a derived() subscribes the
+  // computation to those signals — no explicit version-bump needed.
+  const favCount = derived(() => favorites.count())
+  const hasFavs  = derived(() => favCount() > 0)
+  const isFav    = id => (favorites.ids(), favorites.has(id))
+
+  // Dynamic tab title — `useHead` on the client updates document.title
+  // reactively as the store changes.
+  effect(() => {
+    useHead({ title: favCount() > 0 ? `Favorites (${favCount()}) · Drivly` : 'Favorites · Drivly' })
+  })
+
+  function clear() {
+    if (confirm('Clear all saved cars?')) {
+      favorites.clear()
+      window._toast && window._toast('Favorites cleared', 'info')
     }
-
-    // Wire up favorite hearts on the cards
-    items.forEach(el => {
-      const btn = el.querySelector('.fav-btn')
-      const icon = el.querySelector('.fav-icon')
-      const id = el.getAttribute('data-car-id')
-      function sync() {
-        if (favorites.has(id)) { icon.setAttribute('fill', '#FF3E54'); icon.style.stroke = '#FF3E54' }
-        else { icon.setAttribute('fill', 'none'); icon.style.stroke = 'currentColor' }
-      }
-      sync()
-      btn.addEventListener('click', function (e) {
-        e.preventDefault(); e.stopPropagation()
-        favorites.toggle(id); sync()
-        window._toast && window._toast('Removed from favorites', 'info')
-      })
-    })
-
-    clearBtn.addEventListener('click', function () {
-      if (confirm('Clear all saved cars?')) {
-        favorites.clear()
-        window._toast && window._toast('Favorites cleared', 'info')
-      }
-    })
-
-    effect(render)
   }
 </script>
 

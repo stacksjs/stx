@@ -6,6 +6,23 @@ const car = getCar(id) || cars[0]
 const pageTitle = 'Book your ' + car.make + ' ' + car.model + ' · Drivly'
 const activePage = 'search'
 
+// Gate: booking requires an authed session. The `auth` middleware reads
+// `localStorage.drivly-session` and redirects to /login?next=... if missing.
+// `validate` 404s unknown car IDs.
+definePageMeta({
+  middleware: ['auth'],
+  validate({ params }) {
+    return getCar(params.id) !== undefined
+  },
+})
+
+useSeoMeta({
+  title: pageTitle,
+  description: 'Complete your booking for the ' + car.year + ' ' + car.make + ' ' + car.model + ' — free cancellation up to 24 hours before pickup.',
+  ogType: 'website',
+  robots: 'noindex',   // checkout pages shouldn't be indexed
+})
+
 const protectionPlans = [
   { id: 'premium',  name: 'Premium',  priceMultiplier: 0.35, deductible: 0, desc: 'Zero-deductible. Roadside included. Full peace of mind.', recommended: true },
   { id: 'standard', name: 'Standard', priceMultiplier: 0.25, deductible: 500, desc: '$500 deductible. Roadside included.' },
@@ -21,18 +38,17 @@ const extras = [
 
 const bookTimes = ['08:00', '09:00', '10:00', '11:00', '12:00', '14:00', '16:00', '18:00']
 const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
+
+const steps = [
+  { n: 1, label: 'Dates' },
+  { n: 2, label: 'Protection' },
+  { n: 3, label: 'Extras' },
+  { n: 4, label: 'Driver' },
+  { n: 5, label: 'Pay' },
+]
 </script>
 
 @extends('layouts/app.stx')
-
-@push('styles')
-  .step.active .step-num { background: #FF3E54; color: white; border-color: #FF3E54; }
-  .step.active { color: var(--text); }
-  .step.done .step-num { background: var(--text); color: var(--bg); border-color: var(--text); }
-  .step.done + .step-line { background: var(--text); }
-  .pay-method.selected { border-color: #FF3E54; background: rgba(255,62,84,0.1); }
-  .protection-card.selected { border-color: #FF3E54; background: rgba(255,62,84,0.1); }
-@endpush
 
 @section('content')
 <div class="max-w-[1280px] mx-auto px-6 py-6 pb-16">
@@ -40,49 +56,51 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
   <h1 class="serif text-4xl sm:text-5xl m-0 mb-2">Book your trip</h1>
   <p class="text-[color:var(--text-muted)] m-0 mb-8">Almost there. Just a few details.</p>
 
-  <!-- Stepper -->
-  <div class="flex items-center gap-0 mb-10" id="stepper">
-    <div class="step flex items-center gap-2.5 text-[0.8125rem] font-medium text-[color:var(--text-muted)] active" data-step="1"><span class="step-num w-7 h-7 rounded-full bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] inline-flex items-center justify-center font-semibold flex-shrink-0 border border-[color:var(--border)] transition-all">1</span> Dates</div>
-    <div class="step-line flex-1 h-[1.5px] bg-[color:var(--border)] mx-3 min-w-5"></div>
-    <div class="step flex items-center gap-2.5 text-[0.8125rem] font-medium text-[color:var(--text-muted)]" data-step="2"><span class="step-num w-7 h-7 rounded-full bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] inline-flex items-center justify-center font-semibold flex-shrink-0 border border-[color:var(--border)] transition-all">2</span> Protection</div>
-    <div class="step-line flex-1 h-[1.5px] bg-[color:var(--border)] mx-3 min-w-5"></div>
-    <div class="step flex items-center gap-2.5 text-[0.8125rem] font-medium text-[color:var(--text-muted)]" data-step="3"><span class="step-num w-7 h-7 rounded-full bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] inline-flex items-center justify-center font-semibold flex-shrink-0 border border-[color:var(--border)] transition-all">3</span> Extras</div>
-    <div class="step-line flex-1 h-[1.5px] bg-[color:var(--border)] mx-3 min-w-5"></div>
-    <div class="step flex items-center gap-2.5 text-[0.8125rem] font-medium text-[color:var(--text-muted)]" data-step="4"><span class="step-num w-7 h-7 rounded-full bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] inline-flex items-center justify-center font-semibold flex-shrink-0 border border-[color:var(--border)] transition-all">4</span> Driver</div>
-    <div class="step-line flex-1 h-[1.5px] bg-[color:var(--border)] mx-3 min-w-5"></div>
-    <div class="step flex items-center gap-2.5 text-[0.8125rem] font-medium text-[color:var(--text-muted)]" data-step="5"><span class="step-num w-7 h-7 rounded-full bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] inline-flex items-center justify-center font-semibold flex-shrink-0 border border-[color:var(--border)] transition-all">5</span> Pay</div>
+  <!-- Stepper — active/done state driven by `currentStep` signal via :class -->
+  <div class="flex items-center gap-0 mb-10">
+    @foreach (steps as s)
+      <div class="flex items-center gap-2.5 text-[0.8125rem] font-medium transition-colors"
+           :class="{ 'text-[color:var(--text)]': currentStep() === {{ s.n }}, 'text-[color:var(--text-muted)]': currentStep() !== {{ s.n }} }">
+        <span class="w-7 h-7 rounded-full inline-flex items-center justify-center font-semibold flex-shrink-0 border transition-all"
+              :class="{ 'bg-[#FF3E54] text-white border-[#FF3E54]': currentStep() === {{ s.n }}, 'bg-[color:var(--text)] text-[color:var(--bg)] border-[color:var(--text)]': currentStep() > {{ s.n }}, 'bg-[color:var(--bg-subtle)] text-[color:var(--text-muted)] border-[color:var(--border)]': currentStep() < {{ s.n }} }">{{ s.n }}</span>
+        {{ s.label }}
+      </div>
+      @if (s.n < 5)
+        <div class="flex-1 h-[1.5px] mx-3 min-w-5 transition-colors"
+             :class="{ 'bg-[color:var(--text)]': currentStep() > {{ s.n }}, 'bg-[color:var(--border)]': currentStep() <= {{ s.n }} }"></div>
+      @endif
+    @endforeach
   </div>
 
   <div class="grid md:grid-cols-[1fr_420px] grid-cols-1 gap-12 mt-8 items-start">
 
     <div>
-
-      <!-- STEP 1 -->
-      <section class="step-panel animate-fade-in bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" data-panel="1">
+      <!-- STEP 1: Dates — inputs use x-model so signals sync both ways -->
+      <section class="animate-fade-in bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" :show="currentStep() === 1">
         <h2 class="text-xl font-bold m-0 mb-5">When do you need it?</h2>
 
         <div class="grid md:grid-cols-2 grid-cols-1 gap-4">
           <label>
             <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Trip start</span>
-            <input type="date" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" id="from">
+            <input type="date" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="fromDate">
           </label>
           <label>
             <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Trip end</span>
-            <input type="date" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" id="to">
+            <input type="date" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="toDate">
           </label>
           <label>
             <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Pick-up time</span>
-            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" id="ft">
+            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="pickupTime">
               @foreach (bookTimes as t)
-                <option value="{{ t }}" {{ t === '10:00' ? 'selected' : '' }}>{{ t }}</option>
+                <option value="{{ t }}">{{ t }}</option>
               @endforeach
             </select>
           </label>
           <label>
             <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Return time</span>
-            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" id="tt">
+            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="returnTime">
               @foreach (bookTimes as t)
-                <option value="{{ t }}" {{ t === '10:00' ? 'selected' : '' }}>{{ t }}</option>
+                <option value="{{ t }}">{{ t }}</option>
               @endforeach
             </select>
           </label>
@@ -91,16 +109,18 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
         <div class="mt-7">
           <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Pick-up & return location</span>
           <div class="flex flex-col gap-2.5">
-            <label class="pay-method selected flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all">
-              <input type="radio" name="pickup" value="host" checked style="accent-color: #FF3E54">
+            <label class="flex items-center gap-3 p-4 border-[1.5px] rounded-xl cursor-pointer transition-all"
+                   :class="{ 'border-[#FF3E54] bg-[rgba(255,62,84,0.1)]': pickup() === 'host', 'border-[color:var(--border)]': pickup() !== 'host' }">
+              <input type="radio" name="pickup" value="host" :checked="pickup() === 'host'" @change="pickup.set('host')" style="accent-color: #FF3E54">
               <div>
                 <p class="m-0 font-semibold text-[0.9375rem]">Meet the host · Free</p>
                 <p class="text-[color:var(--text-muted)] m-0 mt-0.5 text-[0.8125rem]">{{ car.location }}</p>
               </div>
             </label>
             @if (car.deliveryAvailable)
-              <label class="pay-method flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all">
-                <input type="radio" name="pickup" value="delivery" style="accent-color: #FF3E54">
+              <label class="flex items-center gap-3 p-4 border-[1.5px] rounded-xl cursor-pointer transition-all"
+                     :class="{ 'border-[#FF3E54] bg-[rgba(255,62,84,0.1)]': pickup() === 'delivery', 'border-[color:var(--border)]': pickup() !== 'delivery' }">
+                <input type="radio" name="pickup" value="delivery" :checked="pickup() === 'delivery'" @change="pickup.set('delivery')" style="accent-color: #FF3E54">
                 <div>
                   <p class="m-0 font-semibold text-[0.9375rem]">Host delivery · From $49</p>
                   <p class="text-[color:var(--text-muted)] m-0 mt-0.5 text-[0.8125rem]">Delivered to your address, hotel, or airport</p>
@@ -111,20 +131,22 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
         </div>
 
         <div class="flex justify-end mt-8">
-          <button class="next-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
-                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" data-goto="2">Continue</button>
+          <button class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)"
+                  @click="goto(2)">Continue</button>
         </div>
       </section>
 
       <!-- STEP 2: Protection -->
-      <section class="step-panel animate-fade-in hidden bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" data-panel="2">
+      <section class="animate-fade-in bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" :show="currentStep() === 2">
         <h2 class="text-xl font-bold m-0 mb-1">Choose your protection plan</h2>
         <p class="text-[color:var(--text-muted)] m-0 mb-6">Liability up to $750K on every plan. Deductibles differ.</p>
 
         <div class="flex flex-col gap-3.5">
           @foreach (protectionPlans as plan)
-            <div class="protection-card {{ plan.recommended ? 'selected' : '' }} relative p-5 border-[1.5px] border-[color:var(--border)] rounded-2xl cursor-pointer transition-all"
-                 data-plan="{{ plan.id }}" data-multiplier="{{ plan.priceMultiplier }}">
+            <div class="relative p-5 border-[1.5px] rounded-2xl cursor-pointer transition-all"
+                 :class="{ 'border-[#FF3E54] bg-[rgba(255,62,84,0.1)]': planId() === '{{ plan.id }}', 'border-[color:var(--border)]': planId() !== '{{ plan.id }}' }"
+                 @click="planId.set('{{ plan.id }}')">
               @if (plan.recommended)
                 <span class="absolute -top-2 right-4 py-0.5 px-2.5 rounded-full text-[0.6875rem] font-semibold text-white bg-[#FF3E54] uppercase tracking-wider">Most popular</span>
               @endif
@@ -144,22 +166,23 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
         </div>
 
         <div class="flex justify-between mt-8">
-          <button class="back-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" data-goto="1">Back</button>
-          <button class="next-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
-                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" data-goto="3">Continue</button>
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" @click="goto(1)">Back</button>
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" @click="goto(3)">Continue</button>
         </div>
       </section>
 
-      <!-- STEP 3: Extras -->
-      <section class="step-panel animate-fade-in hidden bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" data-panel="3">
+      <!-- STEP 3: Extras — each label toggles membership in the extras signal -->
+      <section class="animate-fade-in bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" :show="currentStep() === 3">
         <h2 class="text-xl font-bold m-0 mb-1">Add-ons & extras</h2>
         <p class="text-[color:var(--text-muted)] m-0 mb-6">All optional. Skip if you don't need any.</p>
 
         <div class="flex flex-col gap-3">
           @foreach (extras as ex)
-            <label class="pay-method flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all"
-                   data-extra="{{ ex.id }}" data-price="{{ ex.price }}">
-              <input type="checkbox" class="w-4 h-4" style="accent-color: #FF3E54">
+            <label class="flex items-center gap-3 p-4 border-[1.5px] rounded-xl cursor-pointer transition-all"
+                   :class="{ 'border-[#FF3E54] bg-[rgba(255,62,84,0.1)]': extrasSet().has('{{ ex.id }}'), 'border-[color:var(--border)]': !extrasSet().has('{{ ex.id }}') }"
+                   @click="toggleExtra('{{ ex.id }}')">
+              <input type="checkbox" class="w-4 h-4" style="accent-color: #FF3E54" :checked="extrasSet().has('{{ ex.id }}')">
               <div class="flex-1">
                 <p class="m-0 font-semibold text-[0.9375rem]">{{ ex.label }}</p>
                 <p class="text-[color:var(--text-muted)] m-0 mt-0.5 text-[0.8125rem]">{{ ex.desc }}</p>
@@ -170,70 +193,71 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
         </div>
 
         <div class="flex justify-between mt-8">
-          <button class="back-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" data-goto="2">Back</button>
-          <button class="next-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
-                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" data-goto="4">Continue</button>
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" @click="goto(2)">Back</button>
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" @click="goto(4)">Continue</button>
         </div>
       </section>
 
-      <!-- STEP 4: Driver info -->
-      <section class="step-panel animate-fade-in hidden bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" data-panel="4">
+      <!-- STEP 4: Driver info — inputs wire to signals via x-model -->
+      <section class="animate-fade-in bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" :show="currentStep() === 4">
         <h2 class="text-xl font-bold m-0 mb-1">Driver information</h2>
         <p class="text-[color:var(--text-muted)] m-0 mb-6">Required by {{ car.host.name.split(' ')[0] }} and Drivly's insurance partner.</p>
 
-        <form id="driverForm" onsubmit="return false" autocomplete="on" class="grid md:grid-cols-2 grid-cols-1 gap-4">
-          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">First name *</span><input type="text" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="firstName" required></label>
-          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Last name *</span><input type="text" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="lastName" required></label>
-          <label class="md:col-span-2"><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Email *</span><input type="email" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="email" required></label>
-          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Phone *</span><input type="tel" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="phone" required></label>
-          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Date of birth *</span><input type="date" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="dob" required></label>
-          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">License number *</span><input type="text" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="license" required></label>
+        <div class="grid md:grid-cols-2 grid-cols-1 gap-4">
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">First name *</span><input type="text" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="driver.firstName"></label>
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Last name *</span><input type="text" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="driver.lastName"></label>
+          <label class="md:col-span-2"><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Email *</span><input type="email" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="driver.email"></label>
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Phone *</span><input type="tel" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="driver.phone"></label>
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">Date of birth *</span><input type="date" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="driver.dob"></label>
+          <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">License number *</span><input type="text" class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="driver.license"></label>
           <label><span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-1.5">License state *</span>
-            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" name="state" required>
+            <select class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-sm" x-model="driver.state">
               <option value="">Select</option>
               @foreach (usStates as st)
                 <option>{{ st }}</option>
               @endforeach
             </select>
           </label>
-        </form>
+        </div>
+
+        <p class="mt-4 text-[0.8125rem] text-[#FF3E54]" :show="driverError()">⚠ Please fill every required field before continuing.</p>
 
         <div class="flex justify-between mt-8">
-          <button class="back-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" data-goto="3">Back</button>
-          <button class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
-                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" id="driverContinue">Continue</button>
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" @click="goto(3)">Back</button>
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" @click="validateDriverAndAdvance()">Continue</button>
         </div>
       </section>
 
       <!-- STEP 5: Payment -->
-      <section class="step-panel animate-fade-in hidden bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" data-panel="5">
+      <section class="animate-fade-in bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7" :show="currentStep() === 5">
         <h2 class="text-xl font-bold m-0 mb-5">Payment method</h2>
 
         <div class="flex flex-col gap-2.5 mb-7">
-          <label class="pay-method selected flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all">
-            <input type="radio" name="payment" value="card" checked style="accent-color: #FF3E54">
+          <label class="flex items-center gap-3 p-4 border-[1.5px] rounded-xl cursor-pointer transition-all"
+                 :class="{ 'border-[#FF3E54] bg-[rgba(255,62,84,0.1)]': payMethod() === 'card', 'border-[color:var(--border)]': payMethod() !== 'card' }">
+            <input type="radio" name="payment" value="card" :checked="payMethod() === 'card'" @change="payMethod.set('card')" style="accent-color: #FF3E54">
             <svg width="28" height="20" viewBox="0 0 32 22" fill="none"><rect width="32" height="22" rx="4" fill="#1a1f71"/><text x="16" y="15" font-family="Arial" font-size="9" font-weight="700" fill="white" text-anchor="middle">VISA</text></svg>
             <div class="flex-1">
               <p class="m-0 font-semibold">Visa ending in 4242</p>
               <p class="text-[color:var(--text-muted)] m-0 mt-0.5 text-[0.8125rem]">Default · Expires 05/28</p>
             </div>
           </label>
-          <label class="pay-method flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all">
-            <input type="radio" name="payment" value="apple" style="accent-color: #FF3E54">
+          <label class="flex items-center gap-3 p-4 border-[1.5px] rounded-xl cursor-pointer transition-all"
+                 :class="{ 'border-[#FF3E54] bg-[rgba(255,62,84,0.1)]': payMethod() === 'apple', 'border-[color:var(--border)]': payMethod() !== 'apple' }">
+            <input type="radio" name="payment" value="apple" :checked="payMethod() === 'apple'" @change="payMethod.set('apple')" style="accent-color: #FF3E54">
             <span class="text-xl"></span>
-            <div class="flex-1">
-              <p class="m-0 font-semibold">Apple Pay</p>
-            </div>
+            <div class="flex-1"><p class="m-0 font-semibold">Apple Pay</p></div>
           </label>
-          <label class="pay-method flex items-center gap-3 p-4 border-[1.5px] border-[color:var(--border)] rounded-xl cursor-pointer transition-all">
-            <input type="radio" name="payment" value="google" style="accent-color: #FF3E54">
+          <label class="flex items-center gap-3 p-4 border-[1.5px] rounded-xl cursor-pointer transition-all"
+                 :class="{ 'border-[#FF3E54] bg-[rgba(255,62,84,0.1)]': payMethod() === 'google', 'border-[color:var(--border)]': payMethod() !== 'google' }">
+            <input type="radio" name="payment" value="google" :checked="payMethod() === 'google'" @change="payMethod.set('google')" style="accent-color: #FF3E54">
             <span class="text-xl">G</span>
-            <div class="flex-1">
-              <p class="m-0 font-semibold">Google Pay</p>
-            </div>
+            <div class="flex-1"><p class="m-0 font-semibold">Google Pay</p></div>
           </label>
           <button class="self-start mt-2 py-2 px-3.5 rounded-lg text-[0.8125rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer"
-                  onclick="window._toast('Card form would open here', 'info')">+ Add new payment method</button>
+                  @click="addCardClicked()">+ Add new payment method</button>
         </div>
 
         <div class="p-4 bg-[color:var(--bg-subtle)] rounded-xl text-sm mb-6 flex gap-3">
@@ -244,40 +268,44 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
           </div>
         </div>
 
-        <label class="flex items-start gap-2 mb-6 text-sm text-[color:var(--text-secondary)] leading-relaxed">
-          <input type="checkbox" id="acceptTerms" class="mt-1 w-4 h-4" style="accent-color: #FF3E54">
+        <label class="flex items-start gap-2 mb-6 text-sm text-[color:var(--text-secondary)] leading-relaxed cursor-pointer">
+          <input type="checkbox" class="mt-1 w-4 h-4" style="accent-color: #FF3E54" x-model="acceptTerms">
           <span>I agree to Drivly's <a href="/about" class="text-[#FF3E54]">Terms of Service</a>, the host's trip rules, and understand that my payment method will only be charged once the host confirms. Free cancellation up to 24 hours before pickup.</span>
         </label>
 
+        <p class="mb-4 text-[0.8125rem] text-[#FF3E54]" :show="termsError()">⚠ Please accept the terms to continue.</p>
+
         <div class="flex justify-between">
-          <button class="back-btn inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" data-goto="4">Back</button>
-          <button class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer"
-                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)" id="reserveBtn">
-            Reserve now
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <button class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors cursor-pointer" @click="goto(4)">Back</button>
+          <button class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px border-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)"
+                  :disabled="isProcessing()" @click="reserve()">
+            <span :show="!isProcessing()">Reserve now</span>
+            <span :show="isProcessing()" class="inline-flex items-center gap-2"><span style="display:inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite"></span> Processing...</span>
+            <svg :show="!isProcessing()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
         </div>
       </section>
 
       <!-- STEP 6: Success -->
-      <section class="step-panel animate-fade-in hidden bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl py-12 px-7 text-center" data-panel="6">
+      <section class="animate-fade-in bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl py-12 px-7 text-center" :show="currentStep() === 6">
         <div class="w-20 h-20 rounded-full bg-[rgba(255,62,84,0.1)] inline-flex items-center justify-center mb-6">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FF3E54" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
         </div>
         <h2 class="serif text-3xl m-0 mb-2">Trip booked!</h2>
-        <p class="text-[color:var(--text-muted)] m-0 mb-2 text-lg">Reservation <span class="tabular font-bold text-[color:var(--text)]">#DRV-<span id="bookingRef">482913</span></span></p>
+        <p class="text-[color:var(--text-muted)] m-0 mb-2 text-lg">Reservation <span class="tabular font-bold text-[color:var(--text)]">#DRV-<span :text="bookingRef">482913</span></span></p>
         <p class="text-[color:var(--text-muted)] max-w-[48ch] mx-auto m-0 mb-6 leading-relaxed">{{ car.host.name }} is typically {{ car.host.responseTime }} to respond. You'll get pickup details and a trip checklist by email.</p>
 
         <div class="flex gap-3 justify-center flex-wrap">
           <StxLink to="/trips" class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px"
                    style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)">View my trips</StxLink>
-          <StxLink to="/search" class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors">Browse more cars</StxLink>
+          <StxLink to="/search" class="py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors">Browse more cars</StxLink>
         </div>
       </section>
 
     </div>
 
-    <!-- Summary sidebar -->
+    <!-- Summary sidebar — every number is a :text binding to a derived signal -->
     <aside class="md:sticky md:top-24">
       <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl overflow-hidden"
            style="box-shadow: 0 4px 16px rgba(0,0,0,0.06)">
@@ -294,20 +322,30 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
         </div>
         <div class="h-px bg-[color:var(--border)] my-4 mx-5"></div>
         <div class="px-5 pb-3">
-          <span class="text-[color:var(--text-muted)] text-sm" id="sumDates">— to —</span>
+          <span class="text-[color:var(--text-muted)] text-sm" :text="datesLabel">— to —</span>
         </div>
         <div class="h-px bg-[color:var(--border)] my-1 mx-5"></div>
         <div class="px-5 pb-3 flex flex-col gap-2 text-sm">
-          <div class="flex justify-between"><span class="text-[color:var(--text-muted)]">${{ car.price }} × <span id="sDays">3</span> days</span><span class="tabular" id="sSub">${{ car.price * 3 }}</span></div>
-          <div class="flex justify-between"><span class="text-[color:var(--text-muted)]">Trip fee</span><span class="tabular" id="sFee">$0</span></div>
-          <div class="flex justify-between"><span class="text-[color:var(--text-muted)]">Protection (<span id="sPlan">Premium</span>)</span><span class="tabular" id="sProt">$0</span></div>
-          <div class="flex justify-between" id="sExtrasRow">
-            <span class="text-[color:var(--text-muted)]">Extras</span><span class="tabular" id="sExtras">$0</span>
+          <div class="flex justify-between">
+            <span class="text-[color:var(--text-muted)]">${{ car.price }} × <span :text="days">3</span> days</span>
+            <span class="tabular" :text="subtotalLabel">${{ car.price * 3 }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[color:var(--text-muted)]">Trip fee</span>
+            <span class="tabular" :text="feeLabel">$0</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[color:var(--text-muted)]">Protection (<span :text="planName">Premium</span>)</span>
+            <span class="tabular" :text="protLabel">$0</span>
+          </div>
+          <div class="flex justify-between" :show="extrasTotal() > 0">
+            <span class="text-[color:var(--text-muted)]">Extras</span>
+            <span class="tabular" :text="extrasLabel">$0</span>
           </div>
         </div>
         <div class="py-4 px-5 bg-[color:var(--bg-subtle)] flex justify-between items-center">
           <span class="font-bold">Total</span>
-          <span class="tabular font-bold text-xl" id="sTotal">$0</span>
+          <span class="tabular font-bold text-xl" :text="totalLabel">$0</span>
         </div>
       </div>
       <p class="text-[color:var(--text-muted)] text-center text-xs mt-3">Free cancellation up to 24 hrs before pickup</p>
@@ -315,144 +353,114 @@ const usStates = ['CA','NY','TX','FL','WA','IL','CO','AZ','TN']
   </div>
 </div>
 
+<!-- Spinner keyframe for the Reserve button -->
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
 <script client>
-  if (!window.__bookingPage) {
-    window.__bookingPage = true
+  // ── Server data spliced in via the core interpolation pass (no data islands).
+  const PRICE = {{ car.price }}
+  const PLANS = {{ protectionPlans }}
+  const EXTRAS = {{ extras }}
+  const TODAY = new Date()
 
-    const PRICE = {{ car.price }}
-    const PLANS = {{ protectionPlans }}
-    const EXTRAS = {{ extras }}
-    const CAR_NAME = {{ car.make + ' ' + car.model }}
+  // Reactive URL params — `sp.get(k)` is a plain string but reads happen on
+  // mount so the initial `from`/`to` from the car-detail page carries through.
+  const sp = useSearchParams()
+  const fmt = d => d.toISOString().slice(0, 10)
+  const plus = n => { const d = new Date(); d.setDate(TODAY.getDate() + n); return fmt(d) }
 
-    const params = new URLSearchParams(location.search)
-    const today = new Date()
-    const t3 = new Date(); t3.setDate(today.getDate() + 3)
-    const t6 = new Date(); t6.setDate(today.getDate() + 6)
-    const fmt = d => d.toISOString().slice(0, 10)
+  // ── Reactive state. Every DOM update in this page flows through one of these. ──
+  const currentStep = state(1)
+  const fromDate    = state(sp.get('from') || plus(3))
+  const toDate      = state(sp.get('to')   || plus(6))
+  const pickupTime  = state(sp.get('ft')   || '10:00')
+  const returnTime  = state(sp.get('tt')   || '10:00')
+  const pickup      = state('host')
+  const planId      = state('premium')
+  // `Set` is used because react-style toggleExtra benefits from O(1) membership checks.
+  const extrasSet   = state(new Set())
+  const payMethod   = state('card')
+  const acceptTerms = state(false)
+  const isProcessing = state(false)
+  const bookingRef  = state('482913')
 
-    document.getElementById('from').value = params.get('from') || fmt(t3)
-    document.getElementById('to').value = params.get('to') || fmt(t6)
-    document.getElementById('ft').value = params.get('ft') || '10:00'
-    document.getElementById('tt').value = params.get('tt') || '10:00'
+  // Driver-form state as a single reactive object (simpler than 7 separate signals).
+  const driver = state({ firstName: '', lastName: '', email: '', phone: '', dob: '', license: '', state: '' })
+  const driverError = state(false)
+  const termsError = state(false)
 
-    const step = state(1)
-    const fromDate = state(document.getElementById('from').value)
-    const toDate = state(document.getElementById('to').value)
-    const planId = state('premium')
-    const extrasSelected = state([])
+  // ── Derived values — the summary panel and every total label bind to these. ──
+  const days = derived(() => {
+    const ms = Math.max(0, new Date(toDate()) - new Date(fromDate()))
+    return Math.max(1, Math.ceil(ms / 86400000))
+  })
 
-    document.getElementById('from').addEventListener('change', function () { fromDate.set(this.value) })
-    document.getElementById('to').addEventListener('change', function () { toDate.set(this.value) })
-
-    const days = derived(() => {
-      const f = new Date(fromDate()); const t = new Date(toDate())
-      const ms = Math.max(0, t - f)
-      return Math.max(1, Math.ceil(ms / (24 * 3600 * 1000)))
+  const subtotal     = derived(() => PRICE * days())
+  const fee          = derived(() => subtotal() * 0.1)
+  const plan         = derived(() => PLANS.find(p => p.id === planId()) || PLANS[0])
+  const protection   = derived(() => PRICE * plan().priceMultiplier * days())
+  const extrasTotal  = derived(() => {
+    const d = days()
+    let sum = 0
+    extrasSet().forEach(id => {
+      const e = EXTRAS.find(x => x.id === id)
+      if (e) sum += e.price * d
     })
+    return sum
+  })
+  const total        = derived(() => subtotal() + fee() + protection() + extrasTotal())
 
-    function goto(n) {
-      if (n < 1 || n > 6) return
-      step.set(n)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
+  // ── Display helpers — :text bindings prefer primitive values, so we derive strings here. ──
+  const fmtMoney = n => '$' + n.toFixed(2)
+  const subtotalLabel = derived(() => fmtMoney(subtotal()))
+  const feeLabel      = derived(() => fmtMoney(fee()))
+  const protLabel     = derived(() => fmtMoney(protection()))
+  const extrasLabel   = derived(() => fmtMoney(extrasTotal()))
+  const totalLabel    = derived(() => fmtMoney(total()))
+  const planName      = derived(() => plan().name)
+  const datesLabel    = derived(() => {
+    const f = new Date(fromDate()); const t = new Date(toDate())
+    const opt = { month: 'short', day: 'numeric' }
+    const d = days()
+    return f.toLocaleDateString(undefined, opt) + ' — ' + t.toLocaleDateString(undefined, opt) + ' (' + d + ' ' + (d === 1 ? 'day' : 'days') + ')'
+  })
 
-    effect(() => {
-      const n = step()
-      document.querySelectorAll('.step-panel').forEach(p => {
-        if (Number(p.dataset.panel) === n) p.classList.remove('hidden')
-        else p.classList.add('hidden')
-      })
-      document.querySelectorAll('.step').forEach(s => {
-        const num = Number(s.dataset.step)
-        s.classList.toggle('active', num === n)
-        s.classList.toggle('done', num < n)
-      })
-    })
+  // ── Actions — imperative-looking but they only mutate state. ──
+  function goto(n) {
+    if (n < 1 || n > 6) return
+    currentStep.set(n)
+    // Scroll is the one true DOM side-effect we can't express declaratively.
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
-    document.querySelectorAll('.next-btn').forEach(b => { b.addEventListener('click', function () { goto(Number(this.dataset.goto)) }) })
-    document.querySelectorAll('.back-btn').forEach(b => { b.addEventListener('click', function () { goto(Number(this.dataset.goto)) }) })
+  function toggleExtra(id) {
+    const s = new Set(extrasSet())
+    if (s.has(id)) s.delete(id); else s.add(id)
+    extrasSet.set(s)
+  }
 
-    document.querySelectorAll('.protection-card').forEach(c => {
-      c.addEventListener('click', function () {
-        document.querySelectorAll('.protection-card').forEach(o => o.classList.remove('selected'))
-        this.classList.add('selected')
-        planId.set(this.dataset.plan)
-      })
-    })
+  function validateDriverAndAdvance() {
+    const d = driver()
+    const missing = !d.firstName || !d.lastName || !d.email || !d.phone || !d.dob || !d.license || !d.state
+    if (missing) { driverError.set(true); return }
+    driverError.set(false)
+    goto(5)
+  }
 
-    document.querySelectorAll('[data-extra]').forEach(el => {
-      el.addEventListener('click', function (e) {
-        if (e.target.tagName !== 'INPUT') {
-          const cb = this.querySelector('input')
-          cb.checked = !cb.checked
-        }
-        const checked = this.querySelector('input').checked
-        this.classList.toggle('selected', checked)
-        const current = extrasSelected()
-        if (checked && !current.includes(this.dataset.extra)) extrasSelected.set([...current, this.dataset.extra])
-        else if (!checked) extrasSelected.set(current.filter(x => x !== this.dataset.extra))
-      })
-    })
+  function addCardClicked() {
+    window._toast && window._toast('Card form would open here', 'info')
+  }
 
-    document.querySelectorAll('input[name="payment"]').forEach(r => {
-      r.addEventListener('change', function () {
-        document.querySelectorAll('input[name="payment"]').forEach(input => {
-          const label = input.closest('.pay-method')
-          if (label) label.classList.toggle('selected', input.checked)
-        })
-      })
-    })
-
-    document.getElementById('driverContinue').addEventListener('click', function () {
-      const form = document.getElementById('driverForm')
-      if (!form.checkValidity()) { form.reportValidity(); return }
-      goto(5)
-    })
-
-    document.getElementById('reserveBtn').addEventListener('click', function () {
-      const terms = document.getElementById('acceptTerms')
-      if (!terms.checked) { window._toast('Please accept the terms to continue', 'error'); return }
-      const btn = this
-      btn.disabled = true
-      btn.innerHTML = '<span style="display:inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite"></span> Processing...'
-      setTimeout(() => {
-        goto(6)
-        document.getElementById('bookingRef').textContent = Math.floor(100000 + Math.random() * 900000)
-        window._toast('Trip booked · You\'ll hear from the host soon!', 'success')
-      }, 1200)
-    })
-
-    effect(() => {
-      const d = days()
-      const plan = PLANS.find(p => p.id === planId())
-      const sub = PRICE * d
-      const fee = sub * 0.1
-      const prot = PRICE * plan.priceMultiplier * d
-      const extrasTotal = extrasSelected().reduce((sum, id) => {
-        const e = EXTRAS.find(x => x.id === id)
-        return sum + (e ? e.price * d : 0)
-      }, 0)
-      const total = sub + fee + prot + extrasTotal
-
-      document.getElementById('sDays').textContent = d
-      document.getElementById('sSub').textContent = '$' + sub.toFixed(2)
-      document.getElementById('sFee').textContent = '$' + fee.toFixed(2)
-      document.getElementById('sProt').textContent = '$' + prot.toFixed(2)
-      document.getElementById('sPlan').textContent = plan.name
-      document.getElementById('sExtras').textContent = '$' + extrasTotal.toFixed(2)
-      const extrasRow = document.getElementById('sExtrasRow')
-      if (extrasTotal > 0) extrasRow.classList.remove('hidden')
-      else extrasRow.classList.add('hidden')
-      document.getElementById('sTotal').textContent = '$' + total.toFixed(2)
-
-      const f = new Date(fromDate()); const t = new Date(toDate())
-      const opt = { month: 'short', day: 'numeric' }
-      document.getElementById('sumDates').textContent = f.toLocaleDateString(undefined, opt) + ' — ' + t.toLocaleDateString(undefined, opt) + ' (' + d + ' ' + (d === 1 ? 'day' : 'days') + ')'
-    })
-
-    const styleTag = document.createElement('style')
-    styleTag.textContent = '@keyframes spin { to { transform: rotate(360deg); } }'
-    document.head.appendChild(styleTag)
+  function reserve() {
+    if (!acceptTerms()) { termsError.set(true); return }
+    termsError.set(false)
+    isProcessing.set(true)
+    setTimeout(() => {
+      isProcessing.set(false)
+      bookingRef.set(String(Math.floor(100000 + Math.random() * 900000)))
+      goto(6)
+      window._toast && window._toast('Trip booked · You\'ll hear from the host soon!', 'success')
+    }, 1200)
   }
 </script>
 

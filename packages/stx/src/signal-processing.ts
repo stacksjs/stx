@@ -347,12 +347,20 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
     // test/signal-processing.test.ts.
     const parsed = parseLoopExpression(expr)
 
-    if (parsed.iterable && context) {
-      // Extract the root variable name (e.g. "items" from "items" or "obj.items")
-      const rootVar = parsed.iterable.split(/[.[]/)[0]
-      if (rootVar && rootVar in context) {
-        // This iterable is server-side data — skip conversion, let processLoops handle it
+    if (parsed.iterable) {
+      const iter = parsed.iterable.trim()
+      // Literal iterables (array/object/string/number) are self-contained and
+      // always resolvable server-side — let processLoops handle them.
+      if (iter.startsWith('[') || iter.startsWith('{') || iter.startsWith('\'') || iter.startsWith('"') || iter.startsWith('`') || /^-?\d/.test(iter)) {
         continue
+      }
+      if (context) {
+        // Extract the root variable name (e.g. "items" from "items" or "obj.items")
+        const rootVar = iter.split(/[.[(]/)[0].trim()
+        if (rootVar && rootVar in context) {
+          // This iterable is server-side data — skip conversion, let processLoops handle it
+          continue
+        }
       }
     }
 
