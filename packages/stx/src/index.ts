@@ -103,7 +103,9 @@ export * from './component-hmr'
 export * from './hydration'
 // ssg moved to stx/ssg
 export * from './ssr'
-export * from './state-management'
+// State management — explicit exports to avoid conflicts with runtime.ts and reactivity.ts
+export { defineStore, useStore, createStore, getStore, getStoreNames, hasStore } from './state-management'
+export type { Store, StoreOptions, PersistOptions, DefineStoreOptions } from './state-management'
 // visual-testing moved to stx/visual-testing
 export * from './image-optimization'
 export * from './media'

@@ -967,7 +967,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
               await Bun.write(outputPath, redirectHtml)
               result.successCount++
               result.pages.push({ route: url, outputPath, size: Buffer.byteLength(redirectHtml), cached: false })
-              sitemapEntries.push({ url, lastModified: new Date().toISOString() })
+              sitemapEntries.push({ loc: url, lastmod: new Date().toISOString() })
               console.log(`  ↳ ${url} → redirect to ${redirectUrl}`)
               return
             }

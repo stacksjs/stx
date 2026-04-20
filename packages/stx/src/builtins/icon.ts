@@ -55,7 +55,7 @@ async function loadCollection(prefix: string): Promise<Record<string, { body: st
  */
 function resolveProp(props: ResolvedProps, key: string): string | undefined {
   if (props.serverDynamic[key] !== undefined) return String(props.serverDynamic[key])
-  if (props.static[key] !== undefined) return props.static[key]
+  if (props.static[key] !== undefined) return String(props.static[key])
   if (props.clientReactive[key] !== undefined) return props.clientReactive[key]
   return undefined
 }

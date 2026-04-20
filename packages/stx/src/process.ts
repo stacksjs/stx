@@ -90,7 +90,7 @@ export async function processDirectives(
   // NOT "skip processing." SSG still needs full template processing — the
   // difference is WHEN it runs (build time vs request time), not WHETHER.
   // This guard only applies to the legacy SPA-shell serving mode.
-  if (options.ssr === false && !options.autoShell && options.buildMode === 'spa') {
+  if (options.ssr === false && !options.autoShell && (options.buildMode as string) === 'spa') {
     return template
   }
 
