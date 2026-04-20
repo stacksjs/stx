@@ -65,9 +65,12 @@ export const IconBuiltin: BuiltinComponentDef = {
   aliases: ['icon', 'stx-icon'],
 
   render(props: ResolvedProps, _slotContent: string, _ctx: RenderContext): string {
-    const nameRaw = resolveProp(props, 'name')
+    // Accept either `name=` (internal convention) or `icon=` (the Iconify
+    // web-component convention used across the ecosystem). Both are valid —
+    // drivly-style templates often write `icon="ph:jeep-fill"`.
+    const nameRaw = resolveProp(props, 'name') ?? resolveProp(props, 'icon')
     if (!nameRaw) {
-      return '<!-- Icon: missing name prop -->'
+      return '<!-- Icon: missing name/icon prop -->'
     }
 
     // Parse "collection:icon" or default to "lucide:icon"

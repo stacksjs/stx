@@ -107,14 +107,91 @@ export function processOnceDirective(template: string): string {
 /**
  * Process @memo directive — memoize template subtrees.
  *
- * Transforms @memo="[dep1, dep2]" on elements to data-stx-memo attributes.
- * The signals runtime skips re-processing elements whose memo deps haven't changed.
+ * Two shapes are supported:
  *
- * Usage:
- *   <div @memo="[count(), name()]">Expensive content</div>
+ * 1. Attribute form on an element:
+ *      <div @memo="[count(), name()]">Expensive content</div>
+ *    Transforms to `data-stx-memo="[count(), name()]"`. The signals runtime
+ *    skips re-processing elements whose deps haven't changed.
+ *
+ * 2. Blade-style block form wrapping arbitrary markup:
+ *      @memo([])
+ *        <section>...marketing content...</section>
+ *      @endmemo
+ *    The block is transformed by injecting `data-stx-memo` onto the first
+ *    opening tag inside the block (or wrapping in a <div> if the contents
+ *    don't start with a single element). Both `@memo(...)` and `@endmemo`
+ *    are stripped from the output.
  */
 export function processMemoDirective(template: string): string {
-  return template.replace(/@memo="([^"]*)"/g, 'data-stx-memo="$1"')
+  // 1) Block form first — `@memo(deps)...@endmemo`. Paren-balanced so a deps
+  //    expression like `[count(), name()]` works correctly. We do this
+  //    before the attribute replacement because after attribute rewriting
+  //    the regex below would still match the remaining `@memo(` literal
+  //    and leak it into the DOM.
+  let output = template
+  const openScan = /@memo\s*\(/g
+  let match: RegExpExecArray | null
+  const edits: Array<{ start: number, end: number, replacement: string }> = []
+
+  // eslint-disable-next-line no-cond-assign
+  while ((match = openScan.exec(output)) !== null) {
+    const start = match.index
+    const exprStart = start + match[0].length
+    // Find balanced closing paren for the deps arg
+    let depth = 1
+    let i = exprStart
+    while (i < output.length && depth > 0) {
+      if (output[i] === '(') depth++
+      else if (output[i] === ')') depth--
+      i++
+    }
+    if (depth !== 0) continue
+    const depsExpr = output.slice(exprStart, i - 1).trim()
+    const afterOpen = i
+
+    // Find matching @endmemo (innermost, supports no nesting needs — @memo
+    // doesn't currently nest in practice, but this tolerates future depth).
+    const tail = output.slice(afterOpen)
+    const endIdx = tail.indexOf('@endmemo')
+    if (endIdx === -1) continue
+    const blockInner = tail.slice(0, endIdx)
+    const blockEnd = afterOpen + endIdx + '@endmemo'.length
+
+    // Skip leading whitespace and comments before the first real element
+    const leading = blockInner.match(/^(\s*(?:<!--[\s\S]*?-->\s*)*)/)
+    const leadingLen = leading ? leading[0].length : 0
+    const rest = blockInner.slice(leadingLen)
+    const trailing = blockInner.match(/(\s*)$/)
+    const trailingLen = trailing ? trailing[0].length : 0
+    const body = rest.slice(0, rest.length - trailingLen)
+
+    // If body starts with a single opening tag, splice the data-stx-memo
+    // attribute in there. Otherwise wrap the whole body in a <div>.
+    const firstTagMatch = body.match(/^<([a-zA-Z][a-zA-Z0-9-]*)(\s[^>]*?)?(\/?)>/)
+    let replacement: string
+    if (firstTagMatch) {
+      const [fullMatch, tagName, attrs = '', selfClose] = firstTagMatch
+      const newOpenTag = `<${tagName}${attrs} data-stx-memo="${depsExpr}"${selfClose}>`
+      replacement = blockInner.slice(0, leadingLen) + newOpenTag + body.slice(fullMatch.length) + blockInner.slice(leadingLen + body.length)
+    }
+    else {
+      replacement = `${blockInner.slice(0, leadingLen)}<div data-stx-memo="${depsExpr}">${body}</div>${blockInner.slice(leadingLen + body.length)}`
+    }
+
+    edits.push({ start, end: blockEnd, replacement })
+    // Resume scanning after this block
+    openScan.lastIndex = blockEnd
+  }
+
+  // Apply edits end-to-start to preserve indices
+  for (let k = edits.length - 1; k >= 0; k--) {
+    const e = edits[k]
+    output = output.slice(0, e.start) + e.replacement + output.slice(e.end)
+  }
+
+  // 2) Attribute form — `<div @memo="[...]">` stays as data-stx-memo.
+  return output.replace(/@memo="([^"]*)"/g, 'data-stx-memo="$1"')
 }
 
 /**

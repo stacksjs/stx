@@ -32,6 +32,7 @@ const messages = [
   { guest: 'Rachel K.',  avatar: 'RK', preview: 'Thanks for everything — 5 stars on the way!',                  time: '1d',  unread: false },
   { guest: 'Darren S.',  avatar: 'DS', preview: 'Is the car pet-friendly? Traveling with a golden retriever',   time: '2d',  unread: false },
 ]
+const unreadCount = messages.filter(m => m.unread).length
 
 const recentReviews = [
   { car: '2024 Tesla Model 3', guest: 'Maya L.', rating: 5, body: 'Flawless experience. Super clean, delivery was on time.', date: '2026-03-14' },
@@ -67,42 +68,42 @@ const perfMix = [
 @extends('layouts/app.stx')
 
 @section('content')
-<div class="container" style="padding: 2rem 1.5rem 5rem">
+<div class="max-w-[1280px] mx-auto px-6 py-8 pb-20">
 
-  <div style="display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem">
+  <div class="flex justify-between items-end flex-wrap gap-4 mb-8">
     <div>
-      <h1 class="serif" style="font-size: clamp(2rem, 4vw, 3rem); margin: 0 0 0.375rem">Host dashboard</h1>
-      <p class="muted" style="margin: 0">Welcome back, Alejandro. Here's how things are going.</p>
+      <h1 class="serif text-4xl sm:text-5xl m-0 mb-1.5">Host dashboard</h1>
+      <p class="text-[color:var(--text-muted)] m-0">Welcome back, Alejandro. Here's how things are going.</p>
     </div>
-    <div style="display: flex; gap: 0.5rem">
-      <select class="input" style="width: auto">
+    <div class="flex gap-2 items-center">
+      <select class="py-2 px-3 rounded-lg text-sm bg-[color:var(--input-bg)] border border-[color:var(--border)] text-[color:var(--text)]">
         <option>Last 12 months</option><option>Last 30 days</option><option>Year to date</option>
       </select>
-      <StxLink to="/host/list" class="btn btn-primary">+ Add listing</StxLink>
+      <StxLink to="/host/list" class="inline-flex items-center gap-1.5 py-2 px-4 rounded-lg text-sm font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-colors">+ Add listing</StxLink>
     </div>
   </div>
 
   <!-- KPIs -->
-  <div class="grid grid-4" style="margin-bottom: 2rem">
+  <div class="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-4 mb-8">
     @foreach (kpis as kpi)
-      <div class="card" style="padding: 1.25rem 1.5rem">
-        <p class="muted" style="margin: 0; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em">{{ kpi.label }}</p>
-        <p class="tabular" style="margin: 0.625rem 0 0.25rem; font-size: 1.75rem; font-weight: 700">{{ kpi.value }}</p>
-        <span class="chip chip-accent" style="font-size: 0.6875rem">↑ {{ kpi.delta }}</span>
+      <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-5">
+        <p class="text-[color:var(--text-muted)] m-0 text-xs font-semibold uppercase tracking-wider">{{ kpi.label }}</p>
+        <p class="tabular m-0 mt-2.5 mb-1 text-3xl font-bold">{{ kpi.value }}</p>
+        <span class="inline-flex items-center gap-1 py-0.5 px-2 rounded-full text-[0.6875rem] font-medium text-emerald-500 bg-emerald-500/10 border border-emerald-500/25">↑ {{ kpi.delta }}</span>
       </div>
     @endforeach
   </div>
 
   <!-- Charts + bookings -->
-  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem">
-    <div class="card" style="padding: 1.5rem">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem">
+  <div class="grid md:grid-cols-[2fr_1fr] grid-cols-1 gap-6 mb-8">
+    <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-6">
+      <div class="flex justify-between items-center mb-5">
         <div>
-          <h2 style="font-size: 1.125rem; font-weight: 700; margin: 0">Earnings over time</h2>
-          <p class="muted" style="margin: 0.25rem 0 0; font-size: 0.875rem">Last 12 months · Total <span class="tabular" style="color: var(--text); font-weight: 600">${{ totalE.toLocaleString() }}</span></p>
+          <h2 class="text-lg font-bold m-0">Earnings over time</h2>
+          <p class="text-[color:var(--text-muted)] m-0 mt-1 text-sm">Last 12 months · Total <span class="tabular text-[color:var(--text)] font-semibold">${{ totalE.toLocaleString() }}</span></p>
         </div>
       </div>
-      <svg viewBox="0 0 600 220" style="width: 100%; height: 220px">
+      <svg viewBox="0 0 600 220" class="w-full h-[220px]">
         <defs>
           <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#FF3E54" stop-opacity="0.3"/>
@@ -121,63 +122,67 @@ const perfMix = [
       </svg>
     </div>
 
-    <div class="card" style="padding: 1.5rem">
-      <h2 style="font-size: 1.125rem; font-weight: 700; margin: 0 0 1rem">Performance mix</h2>
-      <div style="display: flex; flex-direction: column; gap: 1rem">
+    <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-6">
+      <h2 class="text-lg font-bold m-0 mb-4">Performance mix</h2>
+      <div class="flex flex-col gap-4">
         @foreach (perfMix as item)
           <div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; margin-bottom: 0.375rem">
-              <span style="color: var(--text-secondary)">{{ item.label }}</span>
-              <span class="tabular" style="font-weight: 600">{{ item.pct }}%</span>
+            <div class="flex justify-between text-[0.8125rem] mb-1.5">
+              <span class="text-[color:var(--text-secondary)]">{{ item.label }}</span>
+              <span class="tabular font-semibold">{{ item.pct }}%</span>
             </div>
-            <div style="height: 6px; background: var(--bg-muted); border-radius: 3px; overflow: hidden">
-              <div style="height: 100%; width: {{ item.pct }}%; background: {{ item.color }}"></div>
+            <div class="h-1.5 bg-[color:var(--bg-muted)] rounded-full overflow-hidden">
+              <div class="h-full rounded-full" style="width: {{ item.pct }}%; background: {{ item.color }}"></div>
             </div>
           </div>
         @endforeach
       </div>
-      <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.875rem">
-        <p class="muted" style="margin: 0 0 0.25rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600">Next payout</p>
-        <p class="tabular" style="margin: 0; font-size: 1.375rem; font-weight: 700">$1,327.55</p>
-        <p class="muted" style="margin: 0.25rem 0 0; font-size: 0.75rem">Expected May 1, 2026</p>
+      <div class="mt-6 pt-4 border-t border-[color:var(--border)] text-sm">
+        <p class="text-[color:var(--text-muted)] m-0 mb-1 text-xs uppercase tracking-wider font-semibold">Next payout</p>
+        <p class="tabular m-0 text-2xl font-bold">$1,327.55</p>
+        <p class="text-[color:var(--text-muted)] m-0 mt-1 text-xs">Expected May 1, 2026</p>
       </div>
     </div>
   </div>
 
   <!-- Upcoming bookings -->
-  <div class="card" style="padding: 1.5rem; margin-bottom: 2rem">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
-      <h2 style="font-size: 1.125rem; font-weight: 700; margin: 0">Upcoming bookings</h2>
-      <a href="#" style="font-size: 0.8125rem; color: var(--brand); font-weight: 600">View all</a>
+  <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-6 mb-8">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold m-0">Upcoming bookings</h2>
+      <a href="#" class="text-[0.8125rem] text-[#FF3E54] font-semibold">View all</a>
     </div>
-    <div style="overflow-x: auto">
-      <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
         <thead>
-          <tr style="border-bottom: 1px solid var(--border)">
-            <th style="text-align: left; padding: 0.625rem 0.75rem; font-weight: 600; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em">Car</th>
-            <th style="text-align: left; padding: 0.625rem 0.75rem; font-weight: 600; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em">Guest</th>
-            <th style="text-align: left; padding: 0.625rem 0.75rem; font-weight: 600; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em">Dates</th>
-            <th style="text-align: right; padding: 0.625rem 0.75rem; font-weight: 600; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em">Payout</th>
-            <th style="text-align: right; padding: 0.625rem 0.75rem; font-weight: 600; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em">Status</th>
+          <tr class="border-b border-[color:var(--border)]">
+            <th class="text-left py-2.5 px-3 font-semibold text-[color:var(--text-muted)] text-xs uppercase tracking-wider">Car</th>
+            <th class="text-left py-2.5 px-3 font-semibold text-[color:var(--text-muted)] text-xs uppercase tracking-wider">Guest</th>
+            <th class="text-left py-2.5 px-3 font-semibold text-[color:var(--text-muted)] text-xs uppercase tracking-wider">Dates</th>
+            <th class="text-right py-2.5 px-3 font-semibold text-[color:var(--text-muted)] text-xs uppercase tracking-wider">Payout</th>
+            <th class="text-right py-2.5 px-3 font-semibold text-[color:var(--text-muted)] text-xs uppercase tracking-wider">Status</th>
           </tr>
         </thead>
         <tbody>
           @foreach (upcomingBookings as b)
-            <tr style="border-bottom: 1px solid var(--border)">
-              <td style="padding: 0.875rem 0.75rem">
-                <div style="display: flex; align-items: center; gap: 0.75rem">
-                  <img src="{{ b.carImage }}" alt="{{ b.carLabel }}" style="width: 48px; height: 32px; object-fit: cover; border-radius: 0.375rem">
+            <tr class="border-b border-[color:var(--border)]">
+              <td class="py-3.5 px-3">
+                <div class="flex items-center gap-3">
+                  <img src="{{ b.carImage }}" alt="{{ b.carLabel }}" class="w-12 h-8 object-cover rounded-md">
                   <div>
-                    <p style="margin: 0; font-weight: 500">{{ b.carLabel }}</p>
-                    <p class="muted" style="margin: 0.125rem 0 0; font-size: 0.75rem">#{{ b.id }}</p>
+                    <p class="m-0 font-medium">{{ b.carLabel }}</p>
+                    <p class="text-[color:var(--text-muted)] m-0 mt-0.5 text-xs">#{{ b.id }}</p>
                   </div>
                 </div>
               </td>
-              <td style="padding: 0.875rem 0.75rem">{{ b.guest }}</td>
-              <td style="padding: 0.875rem 0.75rem" class="tabular">{{ b.from }} → {{ b.to }}</td>
-              <td style="padding: 0.875rem 0.75rem; text-align: right" class="tabular">${{ b.payout.toFixed(2) }}</td>
-              <td style="padding: 0.875rem 0.75rem; text-align: right">
-                <span class="chip {{ b.status === 'Confirmed' ? 'chip-accent' : 'chip-warn' }}">{{ b.status }}</span>
+              <td class="py-3.5 px-3">{{ b.guest }}</td>
+              <td class="py-3.5 px-3 tabular">{{ b.from }} → {{ b.to }}</td>
+              <td class="py-3.5 px-3 text-right tabular">${{ b.payout.toFixed(2) }}</td>
+              <td class="py-3.5 px-3 text-right">
+                @if (b.status === 'Confirmed')
+                  <span class="inline-flex items-center py-0.5 px-2 rounded-full text-[0.6875rem] font-medium text-emerald-500 bg-emerald-500/10 border border-emerald-500/25">{{ b.status }}</span>
+                @else
+                  <span class="inline-flex items-center py-0.5 px-2 rounded-full text-[0.6875rem] font-medium text-amber-500 bg-amber-500/10 border border-amber-500/25">{{ b.status }}</span>
+                @endif
               </td>
             </tr>
           @endforeach
@@ -187,44 +192,48 @@ const perfMix = [
   </div>
 
   <!-- Listings + Messages -->
-  <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem">
-    <div class="card" style="padding: 1.5rem">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
-        <h2 style="font-size: 1.125rem; font-weight: 700; margin: 0">Your listings</h2>
-        <StxLink to="/host/list" class="btn btn-outline btn-sm">+ Add new</StxLink>
+  <div class="grid md:grid-cols-[1.5fr_1fr] grid-cols-1 gap-6">
+    <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold m-0">Your listings</h2>
+        <StxLink to="/host/list" class="inline-flex items-center py-1.5 px-3 rounded-lg text-xs font-semibold text-[color:var(--text)] border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors">+ Add new</StxLink>
       </div>
-      <div style="display: flex; flex-direction: column; gap: 0.75rem">
+      <div class="flex flex-col gap-3">
         @foreach (myListings as car)
-          <a href="/cars/{{ car.id }}" class="card hover-lift" style="padding: 0.875rem; display: flex; align-items: center; gap: 1rem; border-radius: var(--radius); text-decoration: none; color: var(--text)">
-            <img src="{{ car.image }}" style="width: 88px; height: 64px; object-fit: cover; border-radius: var(--radius-sm)">
-            <div style="flex: 1; min-width: 0">
-              <p style="margin: 0; font-weight: 600; font-size: 0.9375rem">{{ car.year }} {{ car.make }} {{ car.model }}</p>
-              <p class="muted" style="margin: 0.25rem 0 0; font-size: 0.8125rem">${{ car.price }}/day · {{ car.rating }}★ ({{ car.reviewCount }}) · {{ car.trips }} trips</p>
+          <a href="/cars/{{ car.id }}" class="flex items-center gap-4 p-3.5 rounded-xl bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:-translate-y-px transition-transform">
+            <img src="{{ car.image }}" class="w-22 h-16 object-cover rounded-lg" style="width: 88px; height: 64px">
+            <div class="flex-1 min-w-0">
+              <p class="m-0 font-semibold text-[0.9375rem]">{{ car.year }} {{ car.make }} {{ car.model }}</p>
+              <p class="text-[color:var(--text-muted)] m-0 mt-1 text-[0.8125rem]">${{ car.price }}/day · {{ car.rating }}★ ({{ car.reviewCount }}) · {{ car.trips }} trips</p>
             </div>
-            <span class="chip chip-accent">Live</span>
+            <span class="inline-flex items-center py-0.5 px-2 rounded-full text-[0.6875rem] font-medium text-emerald-500 bg-emerald-500/10 border border-emerald-500/25">Live</span>
           </a>
         @endforeach
       </div>
     </div>
 
-    <div class="card" style="padding: 1.5rem">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
-        <h2 style="font-size: 1.125rem; font-weight: 700; margin: 0">Inbox</h2>
-        <span class="chip chip-brand">{{ messages.filter(m => m.unread).length }} new</span>
+    <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold m-0">Inbox</h2>
+        <span class="inline-flex items-center py-0.5 px-2 rounded-full text-[0.6875rem] font-medium text-[#FF3E54] bg-[rgba(255,62,84,0.1)] border border-[rgba(255,62,84,0.25)]">{{ unreadCount }} new</span>
       </div>
-      <div style="display: flex; flex-direction: column">
+      <div class="flex flex-col">
         @foreach (messages as m)
-          <a href="#" class="hover-lift" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius); text-decoration: none; color: var(--text); transition: background 120ms" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background=''">
-            <div class="avatar">{{ m.avatar }}</div>
-            <div style="flex: 1; min-width: 0">
-              <div style="display: flex; justify-content: space-between; align-items: center">
-                <p style="margin: 0; font-weight: 600; font-size: 0.875rem">{{ m.guest }}</p>
-                <span class="muted" style="font-size: 0.75rem">{{ m.time }}</span>
+          <a href="#" class="flex items-center gap-3 p-3 rounded-xl hover:bg-[color:var(--bg-hover)] transition-colors">
+            <div class="w-10 h-10 rounded-full bg-[color:var(--bg-muted)] flex items-center justify-center text-xs font-semibold text-[color:var(--text-secondary)] flex-shrink-0">{{ m.avatar }}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-center">
+                <p class="m-0 font-semibold text-sm">{{ m.guest }}</p>
+                <span class="text-[color:var(--text-muted)] text-xs">{{ m.time }}</span>
               </div>
-              <p style="margin: 0.125rem 0 0; font-size: 0.8125rem; color: {{ m.unread ? 'var(--text)' : 'var(--text-muted)' }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ m.preview }}</p>
+              @if (m.unread)
+                <p class="m-0 mt-0.5 text-[0.8125rem] text-[color:var(--text)] overflow-hidden text-ellipsis whitespace-nowrap">{{ m.preview }}</p>
+              @else
+                <p class="m-0 mt-0.5 text-[0.8125rem] text-[color:var(--text-muted)] overflow-hidden text-ellipsis whitespace-nowrap">{{ m.preview }}</p>
+              @endif
             </div>
             @if (m.unread)
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--brand); flex-shrink: 0"></span>
+              <span class="w-2 h-2 rounded-full bg-[#FF3E54] flex-shrink-0"></span>
             @endif
           </a>
         @endforeach
@@ -233,17 +242,17 @@ const perfMix = [
   </div>
 
   <!-- Recent reviews -->
-  <div style="margin-top: 2rem">
-    <h2 class="serif" style="font-size: 1.5rem; margin: 0 0 1rem">Recent reviews</h2>
-    <div class="grid grid-2">
+  <div class="mt-8">
+    <h2 class="serif text-2xl m-0 mb-4">Recent reviews</h2>
+    <div class="grid md:grid-cols-2 grid-cols-1 gap-4">
       @foreach (recentReviews as r)
-        <div class="card" style="padding: 1.25rem">
-          <div style="margin-bottom: 0.5rem">
+        <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-5">
+          <div class="mb-2">
             @component('Rating', { rating: r.rating })
             @endcomponent
           </div>
-          <p style="margin: 0; line-height: 1.5; font-size: 0.9375rem">"{{ r.body }}"</p>
-          <p class="muted" style="margin: 0.75rem 0 0; font-size: 0.8125rem">{{ r.guest }} · {{ r.car }} · {{ r.date }}</p>
+          <p class="m-0 leading-relaxed text-[0.9375rem]">"{{ r.body }}"</p>
+          <p class="text-[color:var(--text-muted)] m-0 mt-3 text-[0.8125rem]">{{ r.guest }} · {{ r.car }} · {{ r.date }}</p>
         </div>
       @endforeach
     </div>

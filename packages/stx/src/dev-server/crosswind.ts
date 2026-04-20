@@ -173,25 +173,73 @@ export function resetCrosswindCache(): void {
  * Uses `bunfig` for resolution so crosswind configs compose the same way as
  * `stx.config.ts` and other stacks configs — a single source of truth for
  * config loading across the stack.
+ *
+ * Pre-check: we only hand off to bunfig once we've confirmed a
+ * `crosswind.config.*` file actually exists in the target directory. When
+ * stx is run from a parent repo root (e.g. running an example from the
+ * monorepo root, or a page rendered before the app dir is known) bunfig's
+ * built-in search would span 250+ paths up the tree and, on miss, log a
+ * large stack-style error dump. The file-existence pre-check keeps the
+ * common "no config file" case silent and fast.
  */
+const CROSSWIND_CONFIG_NAMES = [
+  'crosswind.config.ts',
+  'crosswind.config.js',
+  'crosswind.config.mjs',
+  'crosswind.config.cjs',
+]
+
 export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig | null> {
+  // 1) Does a crosswind config exist at `cwd`? If not, return silently —
+  //    no error, no bunfig, no search spam.
+  let foundPath: string | null = null
+  for (const name of CROSSWIND_CONFIG_NAMES) {
+    const candidate = path.join(cwd, name)
+    if (await Bun.file(candidate).exists()) {
+      foundPath = candidate
+      break
+    }
+  }
+  if (!foundPath) return null
+
+  // 2) Hand off to bunfig for the actual load — merges env vars, applies
+  //    type validation, caches, etc. We pass an explicit `cwd` so bunfig
+  //    doesn't fall back to `process.cwd()` (which would be the repo root
+  //    when stx is run from outside the app directory).
   try {
     const { loadConfigWithResult } = await import('bunfig')
     const result = await loadConfigWithResult<CrosswindConfig>({
       name: 'crosswind',
       cwd,
       defaultConfig: {} as CrosswindConfig,
+      verbose: false,
     })
-    if (result?.config && result.configPath) {
-      console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${path.relative(cwd, result.configPath) || result.configPath}`)
+    if (result?.config && Object.keys(result.config).length > 0) {
+      const rel = result.path ? path.relative(cwd, result.path) : path.relative(cwd, foundPath)
+      console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${rel || foundPath}`)
       return result.config
     }
+    // bunfig returned defaults even though the file exists — fall through to
+    // the direct-import fallback below.
   }
-  catch (error) {
-    console.warn(`${colors.yellow}[Crosswind]${colors.reset} Failed to load config:`, error)
+  catch {
+    // Swallow — fall through to direct import.
   }
 
-  return null
+  // 3) Fallback: plain dynamic import. Used when bunfig returns empty (e.g.
+  //    the config module exports a non-object default), so the user still
+  //    gets their config applied.
+  try {
+    const mod = await import(foundPath)
+    const cfg = (mod.default || mod) as CrosswindConfig
+    const rel = path.relative(cwd, foundPath)
+    console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${rel || foundPath}`)
+    return cfg
+  }
+  catch (error) {
+    console.warn(`${colors.yellow}[Crosswind]${colors.reset} Failed to load ${path.basename(foundPath)}:`, error instanceof Error ? error.message : error)
+    return null
+  }
 }
 
 /**

@@ -110,9 +110,9 @@ const trustFacts = [
     @endmemo
   </section>
 
-  <section class="rounded-3xl p-12 text-center border" style="background: linear-gradient(135deg, rgba(255,62,84,0.1) 0%, rgba(147,51,234,0.08) 100%); border-color: rgba(255,62,84,0.25)">
-    <h2 class="serif text-4xl sm:text-5xl m-0 mb-3">Ready to roll?</h2>
-    <p class="text-[color:var(--text-muted)] m-0 mb-6 text-lg">Millions are already driving better. You're next.</p>
+  <section class="rounded-3xl p-12 sm:p-16 text-center border mb-12" style="background: linear-gradient(135deg, rgba(255,62,84,0.1) 0%, rgba(147,51,234,0.08) 100%); border-color: rgba(255,62,84,0.25)">
+    <h2 class="serif text-4xl sm:text-5xl m-0 mb-4">Ready to roll?</h2>
+    <p class="text-[color:var(--text-muted)] m-0 mb-10 text-lg max-w-[38ch] mx-auto leading-relaxed">Millions are already driving better. You're next.</p>
     <div class="flex gap-3 justify-center flex-wrap">
       <StxLink to="/search" class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px"
                style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)">Browse cars</StxLink>

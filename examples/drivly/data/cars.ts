@@ -307,16 +307,20 @@ export const cars: Car[] = [
   },
 ]
 
+// Inline SVG path data for category icons. Keeping them inline avoids a
+// dependency on @iconify/json (which is ~50MB when installed unfiltered)
+// and guarantees the icons ship with the example with zero setup.
+// Each entry is the `<path>` content for a 24x24 viewBox, stroke-based.
 export const categories = [
-  { id: 'ev',          label: 'Electric',    icon: 'ph:lightning-fill' },
-  { id: 'suv',         label: 'SUV',         icon: 'ph:jeep-fill' },
-  { id: 'luxury',      label: 'Luxury',      icon: 'ph:crown-fill' },
-  { id: 'convertible', label: 'Convertible', icon: 'ph:sun-horizon-fill' },
-  { id: 'truck',       label: 'Truck',       icon: 'ph:truck-fill' },
-  { id: 'sports',      label: 'Sports',      icon: 'ph:speedometer-fill' },
-  { id: 'classic',     label: 'Classic',     icon: 'ph:steering-wheel-fill' },
-  { id: 'compact',     label: 'Compact',     icon: 'ph:car-profile-fill' },
-  { id: 'minivan',     label: 'Minivan',     icon: 'ph:van-fill' },
+  { id: 'ev',          label: 'Electric',    svg: '<path stroke-linecap="round" stroke-linejoin="round" d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>' },
+  { id: 'suv',         label: 'SUV',         svg: '<path stroke-linecap="round" stroke-linejoin="round" d="M3 17h18M3 17v-4a2 2 0 0 1 2-2h3l2-4h6l3 4h3a2 2 0 0 1 0 4v2M3 17h2a2 2 0 1 0 4 0m6 0a2 2 0 1 0 4 0"/>' },
+  { id: 'luxury',      label: 'Luxury',      svg: '<path stroke-linecap="round" stroke-linejoin="round" d="m2 7 5 5 5-8 5 8 5-5-2 13H4L2 7z"/>' },
+  { id: 'convertible', label: 'Convertible', svg: '<path stroke-linecap="round" stroke-linejoin="round" d="M4 18h16M2 14c0-1 .5-2 2-2h2l3-6h7c2 0 3 1 4 2l1 4c1 0 1 1 1 2v1M6 18a2 2 0 1 0 4 0m4 0a2 2 0 1 0 4 0"/>' },
+  { id: 'truck',       label: 'Truck',       svg: '<path stroke-linecap="round" stroke-linejoin="round" d="M3 17V7a1 1 0 0 1 1-1h10v11M14 10h5l2 3v4h-2M7 17a2 2 0 1 0 4 0m6 0a2 2 0 1 0 4 0M3 17h2m6 0h6"/>' },
+  { id: 'sports',      label: 'Sports',      svg: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 2a10 10 0 1 0 10 10M12 12l5-5M12 12l-3 5"/><circle cx="12" cy="12" r="2"/>' },
+  { id: 'classic',     label: 'Classic',     svg: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" d="M12 3v6m0 6v6m9-9h-6m-6 0H3"/>' },
+  { id: 'compact',     label: 'Compact',     svg: '<path stroke-linecap="round" stroke-linejoin="round" d="M3 14h18M4 14l2-5a2 2 0 0 1 2-1h8a2 2 0 0 1 2 1l2 5v4h-2m-12 0H4v-4m4 4a2 2 0 1 0 4 0m4 0a2 2 0 1 0 4 0"/>' },
+  { id: 'minivan',     label: 'Minivan',     svg: '<path stroke-linecap="round" stroke-linejoin="round" d="M3 16h18M3 16V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7M3 12h18M7 16a2 2 0 1 0 4 0m2 0a2 2 0 1 0 4 0"/>' },
 ]
 
 export const cities = [

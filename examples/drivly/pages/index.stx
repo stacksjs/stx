@@ -105,7 +105,7 @@ const popularSearches = ['Tesla', 'Jeep Wrangler', 'Convertible', 'SUVs with 7 s
           <a href="/search?category={{ cat.id }}"
              class="py-4 px-5 min-w-[140px] flex flex-col items-center justify-center gap-2 text-center text-[color:var(--text)] bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl transition-all hover:border-[color:var(--border-strong)] hover:-translate-y-0.5 flex-shrink-0">
             <div class="w-11 h-11 rounded-xl bg-[color:var(--bg-subtle)] flex items-center justify-center">
-              <Icon icon="{{ cat.icon }}" size="22" color="#FF3E54" />
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF3E54" stroke-width="1.75" aria-hidden="true">{!! cat.svg !!}</svg>
             </div>
             <span class="text-[0.8125rem] font-medium">{{ cat.label }}</span>
           </a>
@@ -218,8 +218,8 @@ const popularSearches = ['Tesla', 'Jeep Wrangler', 'Convertible', 'SUVs with 7 s
 <!-- ── CITIES ──────────────────────────────────────── -->
 <section class="py-8">
   <div class="max-w-[1280px] mx-auto px-6">
-    <h2 class="serif text-4xl sm:text-5xl m-0 mb-1.5">Popular destinations</h2>
-    <p class="text-[color:var(--text-muted)] m-0 mb-8">Rent anywhere Drivly has cars — which is basically everywhere now.</p>
+    <h2 class="serif text-4xl sm:text-5xl m-0 mb-2">Popular destinations</h2>
+    <p class="text-[color:var(--text-muted)] m-0 mb-10">Rent anywhere Drivly has cars — which is basically everywhere now.</p>
 
     <div class="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-5">
       @foreach (cities as city)
@@ -298,16 +298,102 @@ const popularSearches = ['Tesla', 'Jeep Wrangler', 'Convertible', 'SUVs with 7 s
   </div>
 </section>
 
-<!-- ── APP CTA ──────────────────────────────────────── -->
+<!-- ── APP CTA ──────────────────────────────────────────
+     Two-column at lg: copy on the left, stylised phone on the right.
+     Sizing is tuned so the copy block and the phone are roughly the same
+     visual height — otherwise `items-center` would leave lots of empty
+     space on one side. Phone stroke is darkened so the frame reads on
+     the light `bg-subtle` panel. -->
 <section class="py-12 pb-20">
   <div class="max-w-[1280px] mx-auto px-6">
-    <div class="p-12 text-center rounded-2xl bg-[color:var(--bg-subtle)] border border-dashed border-[color:var(--border-strong)]">
-      <p class="text-5xl m-0 mb-3">📱</p>
-      <h2 class="serif text-3xl sm:text-4xl m-0 mb-2">Get the Drivly app</h2>
-      <p class="text-[color:var(--text-muted)] m-0 mb-6 max-w-[48ch] mx-auto">Unlock cars from your phone, chat with hosts, and manage trips on the go.</p>
-      <div class="inline-flex gap-3 flex-wrap justify-center">
-        <a href="#" class="inline-flex items-center gap-2 py-4 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--bg)] bg-[color:var(--text)] hover:opacity-90 transition-all hover:-translate-y-px">iOS · App Store</a>
-        <a href="#" class="inline-flex items-center gap-2 py-4 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--bg)] bg-[color:var(--text)] hover:opacity-90 transition-all hover:-translate-y-px">Android · Google Play</a>
+    <div class="grid lg:grid-cols-[1.15fr_1fr] grid-cols-1 gap-12 lg:gap-16 items-center p-10 sm:p-14 lg:p-16 rounded-3xl bg-[color:var(--bg-subtle)] border border-[color:var(--border)] overflow-hidden">
+      <!-- Left: copy + CTAs. Max-width keeps line length readable even
+           when the column grows wide. -->
+      <div class="max-w-[560px]">
+        <span class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-semibold tracking-wide uppercase text-[#FF3E54] bg-[rgba(255,62,84,0.1)] border border-[rgba(255,62,84,0.25)]">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          New · iOS & Android
+        </span>
+        <h2 class="serif text-4xl sm:text-5xl lg:text-6xl m-0 mt-4 mb-4 leading-[1.02] tracking-tight">Drive smarter from your pocket.</h2>
+        <p class="text-[color:var(--text-muted)] text-lg leading-relaxed m-0 mb-8 max-w-[48ch]">Unlock cars without swapping keys, message hosts in-thread, and track pickup times — all from the Drivly app.</p>
+
+        <!-- Store buttons: both fixed-width + same internal row layout so
+             the Apple and Google glyphs optically align. `items-center`
+             on the outer flex vertically centers icon against the
+             two-line label block. -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <a href="#" class="inline-flex items-center gap-3 h-14 px-5 rounded-2xl text-white bg-[#0a0a0a] hover:-translate-y-px transition-transform no-underline">
+            <svg width="24" height="24" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true" class="shrink-0"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zM282.1 87.2c19.7-23.4 29.4-51.6 26.3-80.1-24.9 1.6-52 18-72.8 40.7-18.9 20.5-29.6 49.7-26.1 77.9 24.2 1.5 48-10.3 72.6-38.5z"/></svg>
+            <span class="flex flex-col leading-none">
+              <span class="text-[0.625rem] font-normal opacity-75 mb-1">Download on the</span>
+              <span class="text-base font-semibold tracking-tight">App Store</span>
+            </span>
+          </a>
+          <a href="#" class="inline-flex items-center gap-3 h-14 px-5 rounded-2xl text-white bg-[#0a0a0a] hover:-translate-y-px transition-transform no-underline">
+            <svg width="22" height="24" viewBox="0 0 24 24" aria-hidden="true" class="shrink-0">
+              <path fill="#34a853" d="M3 20.5V3.5c0-.34.09-.66.24-.93l10.5 10.5-10.5 10.46C3.09 21.16 3 20.84 3 20.5z"/>
+              <path fill="#fbbc05" d="M17.47 11.95l-3.73-3.73L4.06 2.36l12.66 9.24.75.35z"/>
+              <path fill="#ea4335" d="M17.47 12.05l-.75.55L4.06 21.64l9.68-5.86 3.73-3.73z"/>
+              <path fill="#4285f4" d="M21.5 10.88l-3.2-1.82-3.56 3.03L18.3 15l3.2-1.82c.96-.55.96-1.75 0-2.3z"/>
+            </svg>
+            <span class="flex flex-col leading-none">
+              <span class="text-[0.625rem] font-normal opacity-75 mb-1">Get it on</span>
+              <span class="text-base font-semibold tracking-tight">Google Play</span>
+            </span>
+          </a>
+        </div>
+
+        <!-- Reviews line, tucked under the buttons with matched rhythm. -->
+        <div class="flex items-center gap-2 mt-6 text-sm text-[color:var(--text-muted)]">
+          <span class="text-[#f5a623] tracking-tight" aria-hidden="true">★★★★★</span>
+          <span><strong class="text-[color:var(--text)]">4.8</strong> · 52k reviews on iOS & Android</span>
+        </div>
+      </div>
+
+      <!-- Right: decorative phone mock. Stroke darkened + drop shadow so
+           the silhouette reads clearly on the light panel. Height tuned
+           to roughly match the copy stack. -->
+      <div class="relative flex items-center justify-center lg:justify-end">
+        <svg viewBox="0 0 280 540" class="w-full max-w-[260px] h-auto drop-shadow-2xl" aria-hidden="true">
+          <defs>
+            <linearGradient id="phone-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#FF3E54"/>
+              <stop offset="100%" stop-color="#7c3aed"/>
+            </linearGradient>
+          </defs>
+          <!-- Outer phone body -->
+          <rect x="10" y="10" width="260" height="520" rx="40" fill="#0a0a0d" stroke="#1a1a1d" stroke-width="1"/>
+          <!-- Inner bezel for depth -->
+          <rect x="18" y="18" width="244" height="504" rx="34" fill="url(#phone-bg)"/>
+          <!-- Dynamic island / notch -->
+          <rect x="112" y="28" width="56" height="16" rx="8" fill="#0a0a0d"/>
+          <!-- Status bar time placeholder -->
+          <rect x="38" y="32" width="28" height="6" rx="3" fill="rgba(255,255,255,0.9)"/>
+          <!-- Heading block -->
+          <rect x="38" y="72" width="120" height="10" rx="5" fill="rgba(255,255,255,0.95)"/>
+          <rect x="38" y="90" width="72" height="8" rx="4" fill="rgba(255,255,255,0.6)"/>
+          <!-- Hero card -->
+          <rect x="38" y="120" width="204" height="140" rx="16" fill="rgba(255,255,255,0.18)"/>
+          <rect x="52" y="220" width="72" height="8" rx="4" fill="rgba(255,255,255,0.85)"/>
+          <rect x="52" y="234" width="48" height="6" rx="3" fill="rgba(255,255,255,0.6)"/>
+          <!-- List row 1 -->
+          <rect x="38" y="282" width="204" height="60" rx="14" fill="rgba(255,255,255,0.12)"/>
+          <circle cx="66" cy="312" r="14" fill="rgba(255,255,255,0.85)"/>
+          <rect x="90" y="302" width="100" height="7" rx="3" fill="rgba(255,255,255,0.85)"/>
+          <rect x="90" y="316" width="64" height="6" rx="3" fill="rgba(255,255,255,0.55)"/>
+          <!-- List row 2 -->
+          <rect x="38" y="354" width="204" height="60" rx="14" fill="rgba(255,255,255,0.12)"/>
+          <circle cx="66" cy="384" r="14" fill="rgba(255,255,255,0.85)"/>
+          <rect x="90" y="374" width="88" height="7" rx="3" fill="rgba(255,255,255,0.85)"/>
+          <rect x="90" y="388" width="72" height="6" rx="3" fill="rgba(255,255,255,0.55)"/>
+          <!-- Bottom tab bar -->
+          <rect x="38" y="450" width="204" height="48" rx="16" fill="rgba(255,255,255,0.95)"/>
+          <circle cx="70" cy="474" r="4" fill="#FF3E54"/>
+          <circle cx="110" cy="474" r="4" fill="rgba(10,10,13,0.3)"/>
+          <circle cx="150" cy="474" r="4" fill="rgba(10,10,13,0.3)"/>
+          <circle cx="190" cy="474" r="4" fill="rgba(10,10,13,0.3)"/>
+          <circle cx="230" cy="474" r="4" fill="rgba(10,10,13,0.3)"/>
+        </svg>
       </div>
     </div>
   </div>

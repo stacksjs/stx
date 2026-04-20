@@ -117,12 +117,22 @@
           <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3E54] border-2 border-[color:var(--bg)]" :show="favCount() > 0"></span>
         </StxLink>
 
-        <!-- User menu — `userMenuOpen` signal drives :show on the panel -->
+        <!-- User menu — `userMenuOpen` signal drives :show on the panel.
+             Avatar swaps between a neutral person icon (guest) and the user's
+             initials (authed) so the control has a visible identity state. -->
         <div class="relative">
-          <button class="flex items-center gap-2 py-1.5 pl-3.5 pr-1.5 rounded-full bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:shadow transition-all text-[color:var(--text)]"
-                  @click.stop="userMenuOpen.set(!userMenuOpen())" aria-haspopup="true">
+          <button class="flex items-center gap-2 py-1.5 pl-3.5 pr-1.5 rounded-full bg-[color:var(--bg-subtle)] border border-[color:var(--border)] hover:shadow hover:border-[color:var(--border-strong)] transition-all text-[color:var(--text)] cursor-pointer"
+                  @click.stop="userMenuOpen.set(!userMenuOpen())" :attr:aria-expanded="userMenuOpen() ? 'true' : 'false'" aria-haspopup="true" aria-label="Open user menu">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M3 6h18M3 12h18M3 18h18"/></svg>
-            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-[0.8125rem] font-semibold text-white" style="background: linear-gradient(135deg, #FF3E54 0%, #7c3aed 100%)" :text="avatar">U</span>
+            <!-- Guest avatar: neutral person icon -->
+            <span :show="!isAuthed()" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[color:var(--bg)] border border-[color:var(--border-strong)] text-[color:var(--text-secondary)]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="4"/>
+                <path stroke-linecap="round" d="M4 21a8 8 0 0 1 16 0"/>
+              </svg>
+            </span>
+            <!-- Authed avatar: user's initials, gradient background -->
+            <span :show="isAuthed()" class="inline-flex items-center justify-center w-8 h-8 rounded-full text-[0.8125rem] font-semibold text-white" style="background: linear-gradient(135deg, #FF3E54 0%, #7c3aed 100%)" :text="avatar"></span>
           </button>
           <div :show="userMenuOpen()" @click.stop
                class="absolute top-[calc(100%+0.5rem)] right-0 min-w-[240px] bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-xl p-1.5 z-50"
@@ -238,6 +248,40 @@
       userMenuOpen.set(false)
       mobileOpen.set(false)
     })
+
+    // Global favorite heart handler — delegated on body so it works on every
+    // page that uses the `CarCard` component (home, search, favorites). Each
+    // card's `.fav-btn` carries the car id; we look up that id in the shared
+    // `favorites` store and flip it. Sync icon state after load + toggle.
+    function syncFavIcon(btn) {
+      const id = btn.getAttribute('data-car-id')
+      const icon = btn.querySelector('.fav-icon')
+      if (!icon || !id) return
+      if (favorites.has(id)) { icon.setAttribute('fill', '#FF3E54'); icon.style.stroke = '#FF3E54' }
+      else { icon.setAttribute('fill', 'none'); icon.style.stroke = 'currentColor' }
+    }
+
+    function syncAllFavIcons() {
+      document.querySelectorAll('.fav-btn').forEach(syncFavIcon)
+    }
+
+    // Click handler uses closest('.fav-btn') so the heart still works if the
+    // click lands on the inner SVG.
+    document.addEventListener('click', function (e) {
+      const btn = e.target && e.target.closest && e.target.closest('.fav-btn')
+      if (!btn) return
+      e.preventDefault()
+      e.stopPropagation()
+      const id = btn.getAttribute('data-car-id')
+      if (!id) return
+      favorites.toggle(id)
+      syncFavIcon(btn)
+      window._toast && window._toast(favorites.has(id) ? 'Saved to favorites' : 'Removed from favorites', 'success')
+    })
+
+    // Sync icons on every load (SPA nav included — stx:load fires after swap)
+    onMount(syncAllFavIcons)
+    window.addEventListener('stx:load', syncAllFavIcons)
 
     // Toast API — one global helper other pages call via `window._toast`.
     // We still create DOM nodes here because toasts are transient visitors

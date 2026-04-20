@@ -1131,13 +1131,16 @@ finally {
       if (pipeResult) {
         // Use auto-unwrap proxy for pipe expressions
         const unwrapScope = enableAutoUnwrap ? createAutoUnwrapProxy(baseScope) : baseScope;
-        return executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
+        const piped = executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
+        return (piped && typeof piped === 'function' && (piped._isSignal || piped._isDerived)) ? piped() : piped;
       }
 
       // Use auto-unwrap proxy if enabled (Feature #1)
       const scope = enableAutoUnwrap ? createAutoUnwrapProxy(baseScope) : baseScope;
       const fn = new Function(...Object.keys(baseScope), 'return ' + expr);
-      return fn(...Object.values(scope));
+      const result = fn(...Object.values(scope));
+      // Post-eval unwrap — see evalAttrExpr note for the reason.
+      return (result && typeof result === 'function' && (result._isSignal || result._isDerived)) ? result() : result;
     }
 catch (e) {
       if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expr, e);
@@ -1455,6 +1458,17 @@ else if (part) {
     // Use the passed scope parameter to preserve context through nested processing
     const attrCapturedScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
 
+    // Post-eval unwrap: if the expression result is a signal function (e.g.
+    // step was resolved via identifier lookup, not via the auto-unwrap
+    // proxy — happens when a client script declares const step = state(...)
+    // at script-realm scope, making it accessible to new Function but not
+    // appearing in the Proxy Object.keys), call it to get the value.
+    // Without this, :text="step" sets textContent to the stringified
+    // signal function instead of the value.
+    const maybeUnwrapSignal = (v) => {
+      if (v && typeof v === 'function' && (v._isSignal || v._isDerived)) return v();
+      return v;
+    };
     const evalAttrExpr = (rawExpr) => {
       // Decode HTML entities that browsers may encode in attribute values
       // e.g. :text="a > b" may be stored as :text="a &gt; b" in HTML
@@ -1466,20 +1480,20 @@ else if (part) {
         const pipeResult = parsePipeExpression(expr, attrCapturedScope);
         if (pipeResult) {
           const unwrapScope = createAutoUnwrapProxy(attrCapturedScope);
-          return executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
+          return maybeUnwrapSignal(executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope));
         }
 
         // Use auto-unwrap proxy (Feature #1)
         const unwrapScope = createAutoUnwrapProxy(attrCapturedScope);
         const fn = new Function(...Object.keys(attrCapturedScope), 'return ' + expr);
-        return fn(...Object.values(unwrapScope));
+        return maybeUnwrapSignal(fn(...Object.values(unwrapScope)));
       }
 catch (e) {
         // Auto-unwrap can break explicit signal calls like errorData().message
         // Retry without auto-unwrap so signal functions remain callable
         try {
           const fn = new Function(...Object.keys(attrCapturedScope), 'return ' + expr);
-          return fn(...Object.values(attrCapturedScope));
+          return maybeUnwrapSignal(fn(...Object.values(attrCapturedScope)));
         }
 catch (e2) {
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Attribute expression error:', expr, e2);
@@ -1807,8 +1821,13 @@ else {
         value = '';
       }
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        // Object form { "cls-a cls-b": cond } — keys may contain multiple
+        // whitespace-separated classes; classList.add/remove can't accept
+        // those as a single token (throws DOMException), so split each key.
         Object.keys(value).forEach(cls => {
-          value[cls] ? el.classList.add(cls) : el.classList.remove(cls);
+          const tokens = cls.split(/\\s+/).filter(Boolean);
+          if (value[cls]) tokens.forEach(t => el.classList.add(t));
+          else tokens.forEach(t => el.classList.remove(t));
         });
       }
 else if (Array.isArray(value)) {

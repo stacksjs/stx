@@ -24,9 +24,46 @@ export function getRouterScript(): string {
   if(window.__stxRouter)return;
 
   // ── Configuration ──
-  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true};
+  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px'};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
+
+  // ── Progress bar (0→100% at top of viewport) ──
+  // Native loading indicator baked into the router. Starts when navigation
+  // begins, trickles up to ~90% during fetch, snaps to 100% + fades on
+  // completion. Opt-out via window.__stxRouterConfig={progress:false}.
+  var progEl=null;
+  var progVal=0;
+  var progTimer=null;
+  function setProgress(v){
+    progVal=v<0?0:(v>100?100:v);
+    if(!progEl)return;
+    progEl.style.opacity=progVal>0?'1':'0';
+    progEl.style.transform='scaleX('+(progVal/100)+')';
+  }
+  function startProgress(){
+    if(!o.progress||!progEl)return;
+    if(progTimer){clearInterval(progTimer);progTimer=null}
+    setProgress(8);
+    progTimer=setInterval(function(){
+      if(progVal>=90)return;
+      // Asymptotic trickle — fast at first, slower near 90%
+      var inc=Math.max(0.4,(90-progVal)*0.08);
+      setProgress(progVal+inc);
+    },160);
+  }
+  function finishProgress(){
+    if(!o.progress||!progEl)return;
+    if(progTimer){clearInterval(progTimer);progTimer=null}
+    setProgress(100);
+    // Fade out, then reset. Delays chosen so the "full" state is briefly
+    // visible before the bar disappears.
+    setTimeout(function(){
+      if(!progEl)return;
+      progEl.style.opacity='0';
+      setTimeout(function(){progVal=0;if(progEl)progEl.style.transform='scaleX(0)'},260);
+    },180);
+  }
 
   var cache={};
   var prefetching={};
@@ -137,12 +174,13 @@ export function getRouterScript(): string {
 
     isNavigating=true;
     document.body.classList.add(o.loadingClass);
+    startProgress();
 
     var targetHref=t.href;
     var targetPath=t.pathname;
     var targetHash=t.hash;
 
-    function done(){isNavigating=false;document.body.classList.remove(o.loadingClass)}
+    function done(){isNavigating=false;document.body.classList.remove(o.loadingClass);finishProgress()}
 
     if(o.cache&&cache[targetPath]&&!force){
       if(checkLayoutChange(layoutCache[targetPath],url)){
@@ -585,12 +623,28 @@ else {
     });
   }
 
-  // ── Loading bar + View Transitions CSS ──
+  // ── Progress bar DOM + style ──
+  // Injects a fixed-position element at the top of the viewport plus the
+  // minimal CSS for its transform/opacity transitions. Kept idempotent so
+  // repeated init() calls (e.g. after full-body swaps) don't duplicate.
   function injectStyles(){
-    if(document.getElementById('stx-r-css'))return;
-    var s=document.createElement('style');s.id='stx-r-css';
-    s.textContent='.stx-navigating{cursor:wait}.stx-navigating *{pointer-events:none}@keyframes stx-l{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}.stx-navigating::before{content:\\'\\';position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#78dce8,transparent);animation:stx-l 1s ease-in-out infinite;z-index:99999}';
-    document.head.appendChild(s);
+    if(!document.getElementById('stx-r-css')){
+      var s=document.createElement('style');s.id='stx-r-css';
+      var pc=String(o.progressColor).replace(/[;{}()]/g,'');
+      var ph=String(o.progressHeight).replace(/[;{}()]/g,'');
+      s.textContent='.stx-navigating{cursor:wait}.stx-navigating a,.stx-navigating button{pointer-events:none}#stx-router-progress{position:fixed;top:0;left:0;right:0;height:'+ph+';background:'+pc+';box-shadow:0 0 8px '+pc+',0 0 4px '+pc+';transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out,opacity .26s ease;opacity:0;pointer-events:none;z-index:999999}';
+      document.head.appendChild(s);
+    }
+    if(o.progress&&!document.getElementById('stx-router-progress')){
+      var el=document.createElement('div');
+      el.id='stx-router-progress';
+      el.setAttribute('role','progressbar');
+      el.setAttribute('aria-hidden','true');
+      (document.body||document.documentElement).appendChild(el);
+      progEl=el;
+    } else if(o.progress){
+      progEl=document.getElementById('stx-router-progress');
+    }
   }
 
   function injectViewTransitionCSS(){

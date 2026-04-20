@@ -15,7 +15,7 @@
  */
 
 import path from 'node:path'
-import { processDirectives } from '../../packages/stx/src/process'
+import { processDirectives, injectRouterScript } from '../../packages/stx/src/process'
 import { extractVariables } from '../../packages/stx/src/variable-extractor'
 import { interpolateScriptsInTemplate } from '../../packages/stx/src/expressions'
 
@@ -137,6 +137,11 @@ async function renderPage(resolved: { file: string, params: Record<string, strin
       ? html.slice(0, idx) + interpolatedScripts + html.slice(idx)
       : html + interpolatedScripts
   }
+
+  // Inject the canonical SPA router. Standalone serve.ts bypasses the
+  // main render pipeline, so we hook it in here — otherwise we miss the
+  // built-in progress bar + click interception on StxLink elements.
+  html = await injectRouterScript(html)
   return html
 }
 
