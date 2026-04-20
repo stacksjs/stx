@@ -192,6 +192,24 @@ export function hasSignalsSyntax(template: string): boolean {
 }
 
 /**
+ * Scan content (the inside of an @if/@endif block) for a top-level @else or
+ * @elseif. Nested @if ... @endif blocks are skipped so their inner @else
+ * doesn't count as a branch for the outer block.
+ */
+function hasTopLevelElseBranch(content: string): boolean {
+  const tokenRegex = /@(if\s*\(|endif|elseif\s*\(|else\b)/g
+  let depth = 0
+  let m: RegExpExecArray | null
+  while ((m = tokenRegex.exec(content)) !== null) {
+    const tok = m[1]
+    if (tok.startsWith('if')) depth++
+    else if (tok === 'endif') depth--
+    else if (depth === 0) return true // @else or @elseif at top level
+  }
+  return false
+}
+
+/**
  * Convert @if(expr)...@endif directive blocks to attribute-style for signal templates.
  *
  * This allows the signals runtime to handle reactive conditionals instead of
@@ -260,6 +278,12 @@ export function convertSignalDirectivesToAttributes(template: string): string {
 
     // Extract content between ) and @endif
     const content = output.substring(afterCondition, endIdx - '@endif'.length).trim()
+
+    // Skip blocks containing @else / @elseif — the reactive attribute form is
+    // a simple boolean show/hide, while branching requires the full server-side
+    // conditional processor. Leave these for `processConditionals` to handle.
+    // We scan at the top level only (ignoring @else inside nested @if blocks).
+    if (hasTopLevelElseBranch(content)) continue
 
     // Check if content is a single element or needs wrapper
     // Handle > in attribute values by matching quoted attrs properly
