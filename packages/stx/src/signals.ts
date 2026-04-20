@@ -1803,22 +1803,33 @@ else {
     }
 
     effect(() => {
-      const vals = [];
+      // Subscribe to signals by reading them, establishing reactive deps.
+      // But pass RAW scope values to the fn so call-expressions like
+      // activeTab() === 'overview' work — if we passed unwrapped values,
+      // the fn would try to invoke a primitive and throw.
       for (let i = 0; i < safeKeys.length; i++) {
         const v = capturedScope[safeKeys[i]];
         if (v && typeof v === 'function' && (v._isSignal || v._isDerived)) {
-          vals.push(v());
-        } else {
-          vals.push(v);
+          v();
         }
       }
 
       let value;
       try {
-        value = fn.apply(null, vals);
-      } catch (e) {
-        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Class expression error:', expr, e);
-        value = '';
+        // First pass: auto-unwrap proxy — handles expressions that read
+        // signals as primitives (e.g. { 'active': count > 5 } where count
+        // is a signal).
+        const unwrapScope = createAutoUnwrapProxy(capturedScope);
+        value = fn.apply(null, safeKeys.map(k => unwrapScope[k]));
+      } catch (e1) {
+        // Retry with raw scope — handles call-expressions like activeTab()
+        // that need the signal function to remain callable.
+        try {
+          value = fn.apply(null, safeKeys.map(k => capturedScope[k]));
+        } catch (e2) {
+          if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Class expression error:', expr, e2);
+          value = '';
+        }
       }
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         // Object form { "cls-a cls-b": cond } — keys may contain multiple
