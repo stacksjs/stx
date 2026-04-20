@@ -93,7 +93,25 @@ function parseComponentProps(
     events: {},
   }
 
-  for (const [attrName, attrValue] of Object.entries(rawProps)) {
+  // Alpine-style element directives that must remain passthrough so the
+  // client-side signals runtime can bind them on the rendered DOM element,
+  // rather than being captured as component prop bindings here.
+  const ALPINE_PASSTHROUGH = new Set([
+    'x-cloak', 'x-show', 'x-if', 'x-for', 'x-data', 'x-init',
+    'x-transition', 'x-ref', 'x-effect', 'x-model',
+    'x-text', 'x-html', 'x-class', 'x-style', 'x-on', 'x-bind',
+  ])
+
+  for (const [rawAttrName, attrValue] of Object.entries(rawProps)) {
+    // Normalize x-propName to :propName for component prop bindings.
+    // Alpine element-level directives stay passthrough.
+    const attrName = (rawAttrName.startsWith('x-')
+      && !ALPINE_PASSTHROUGH.has(rawAttrName)
+      && !rawAttrName.startsWith('x-bind:')
+      && !rawAttrName.startsWith('x-on:'))
+      ? ':' + rawAttrName.slice(2)
+      : rawAttrName
+
     // --- Event attributes: @click, @submit.prevent, etc. ---
     if (attrName.startsWith('@')) {
       resolved.events[attrName] = attrValue

@@ -60,8 +60,71 @@
       "types": "./dist/bundle-analyzer.d.ts",
       "import": "./dist/bundle-analyzer.js"
     },
+    "./composables": {
+      "bun": "./src/composables/index.ts",
+      "types": "./dist/composables/index.d.ts",
+      "import": "./dist/composables/index.js"
+    },
+    "./composables/*": {
+      "bun": "./src/composables/*.ts",
+      "types": "./dist/composables/*.d.ts",
+      "import": "./dist/composables/*.js"
+    },
     "./*": {
       "import": "./dist/*"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./jsx-runtime": {
+        "types": "./dist/jsx-runtime.d.ts",
+        "import": "./dist/jsx-runtime.js"
+      },
+      "./jsx-dev-runtime": {
+        "types": "./dist/jsx-runtime.d.ts",
+        "import": "./dist/jsx-runtime.js"
+      },
+      "./craft": {
+        "types": "./dist/craft-entry.d.ts",
+        "import": "./dist/craft.js"
+      },
+      "./database": {
+        "types": "./dist/database.d.ts",
+        "import": "./dist/database.js"
+      },
+      "./ssg": {
+        "types": "./dist/ssg.d.ts",
+        "import": "./dist/ssg.js"
+      },
+      "./pwa": {
+        "types": "./dist/pwa.d.ts",
+        "import": "./dist/pwa.js"
+      },
+      "./visual-testing": {
+        "types": "./dist/visual-testing.d.ts",
+        "import": "./dist/visual-testing.js"
+      },
+      "./bundle-analyzer": {
+        "types": "./dist/bundle-analyzer.d.ts",
+        "import": "./dist/bundle-analyzer.js"
+      },
+      "./composables": {
+        "bun": "./dist/composables/index.js",
+        "types": "./dist/composables/index.d.ts",
+        "import": "./dist/composables/index.js"
+      },
+      "./composables/*": {
+        "bun": "./dist/composables/*.js",
+        "types": "./dist/composables/*.d.ts",
+        "import": "./dist/composables/*.js"
+      },
+      "./*": {
+        "import": "./dist/*"
+      }
     }
   },
   "module": "./dist/index.js",

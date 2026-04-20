@@ -60,7 +60,7 @@ const staticContentTypes: Record<string, string> = {
   mjs: 'application/javascript',
   json: 'application/json',
   // Markup / docs
-  html: 'text/html',
+  html: 'text/html; charset=utf-8',
   txt: 'text/plain',
   xml: 'application/xml',
   pdf: 'application/pdf',
@@ -742,13 +742,13 @@ export async function serve(options: ServeOptions): Promise<void> {
             }
             const html = await processDirectives(componentTemplate, {}, `${componentsDir}/${componentName}.stx`, componentOpts, new Set())
             return new Response(html, {
-              headers: { 'Content-Type': 'text/html', ...corsHeaders },
+              headers: { 'Content-Type': 'text/html; charset=utf-8', ...corsHeaders },
             })
           }
           catch (e: any) {
             return new Response(`<div class="stx-async-error">${e.message}</div>`, {
               status: 500,
-              headers: { 'Content-Type': 'text/html', ...corsHeaders },
+              headers: { 'Content-Type': 'text/html; charset=utf-8', ...corsHeaders },
             })
           }
         }
@@ -970,7 +970,7 @@ export async function serve(options: ServeOptions): Promise<void> {
 
           return new Response(fragment, {
             headers: {
-              'Content-Type': 'text/html',
+              'Content-Type': 'text/html; charset=utf-8',
               'X-STX-Fragment': 'true',
               'X-STX-Layout': pageLayout,
               'Cache-Control': 'no-cache',
@@ -993,7 +993,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         )
         return new Response(cleaned, {
           headers: {
-            'Content-Type': 'text/html',
+            'Content-Type': 'text/html; charset=utf-8',
             'Cache-Control': 'no-cache',
             ...corsHeaders,
           },
@@ -1005,7 +1005,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       if (contentWithExt) {
         return new Response(contentWithExt, {
           headers: {
-            'Content-Type': 'text/html',
+            'Content-Type': 'text/html; charset=utf-8',
             'Cache-Control': 'no-cache',
             ...corsHeaders,
           },
@@ -1206,7 +1206,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         </html>
       `, {
         status: 404,
-        headers: { 'Content-Type': 'text/html' },
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
       })
     },
   })
