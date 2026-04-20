@@ -619,6 +619,20 @@ async function renderPage(
     dependencies
   )
 
+  // Inject route params for client-side useRoute().params access.
+  // The dev server does this in serve.ts:668 — SSG must mirror it so
+  // dynamic route pages (e.g., trail/[id].stx → dist/trail/2.html)
+  // have params available at runtime.
+  if (Object.keys(params).length > 0) {
+    const paramsScript = `<script>if(window.stx)window.stx._rp=${JSON.stringify(params)};else window.__stx_rp=${JSON.stringify(params)};</script>`
+    if (html.includes('</head>')) {
+      html = html.replace('</head>', `${paramsScript}\n</head>`)
+    }
+    else {
+      html = `${paramsScript}\n${html}`
+    }
+  }
+
   // Inject the SPA router script so client-side navigation works in the
   // static build. Without this, links do full page reloads instead of
   // SPA fragment swaps.
