@@ -181,9 +181,13 @@ export async function injectRouterScript(template: string, options?: StxOptions)
     const configObj: Record<string, any> = {}
     if (routerConfig.container) configObj.container = routerConfig.container
     if (routerConfig.viewTransitions !== undefined) configObj.viewTransitions = routerConfig.viewTransitions
+    if (routerConfig.viewTransitionDuration !== undefined) configObj.viewTransitionDuration = routerConfig.viewTransitionDuration
+    if (routerConfig.viewTransitionEasing !== undefined) configObj.viewTransitionEasing = routerConfig.viewTransitionEasing
     if (routerConfig.scrollToTop !== undefined) configObj.scrollToTop = routerConfig.scrollToTop
     if (routerConfig.prefetch !== undefined) configObj.prefetch = routerConfig.prefetch
     if (routerConfig.cache !== undefined) configObj.cache = routerConfig.cache
+    if (routerConfig.progressColor !== undefined) configObj.progressColor = routerConfig.progressColor
+    if (routerConfig.progressHeight !== undefined) configObj.progressHeight = routerConfig.progressHeight
     if (Object.keys(configObj).length > 0) {
       configScript = `<script>window.__stxRouterConfig=${JSON.stringify(configObj)};</script>\n`
     }

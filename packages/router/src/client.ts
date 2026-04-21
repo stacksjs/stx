@@ -627,12 +627,26 @@ else {
   // Injects a fixed-position element at the top of the viewport plus the
   // minimal CSS for its transform/opacity transitions. Kept idempotent so
   // repeated init() calls (e.g. after full-body swaps) don't duplicate.
+  // Also ships the default View Transitions fade+slide CSS when
+  // viewTransitions is enabled and the browser supports it. Apps can
+  // override by defining more specific ::view-transition-* rules later in
+  // the cascade, or opt out entirely with viewTransitions:false.
   function injectStyles(){
     if(!document.getElementById('stx-r-css')){
       var s=document.createElement('style');s.id='stx-r-css';
       var pc=String(o.progressColor).replace(/[;{}()]/g,'');
       var ph=String(o.progressHeight).replace(/[;{}()]/g,'');
-      s.textContent='.stx-navigating{cursor:wait}.stx-navigating a,.stx-navigating button{pointer-events:none}#stx-router-progress{position:fixed;top:0;left:0;right:0;height:'+ph+';background:'+pc+';box-shadow:0 0 8px '+pc+',0 0 4px '+pc+';transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out,opacity .26s ease;opacity:0;pointer-events:none;z-index:999999}';
+      var css='.stx-navigating{cursor:wait}.stx-navigating a,.stx-navigating button{pointer-events:none}#stx-router-progress{position:fixed;top:0;left:0;right:0;height:'+ph+';background:'+pc+';box-shadow:0 0 8px '+pc+',0 0 4px '+pc+';transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out,opacity .26s ease;opacity:0;pointer-events:none;z-index:999999}';
+      if(o.viewTransitions&&'startViewTransition' in document){
+        var dur=(o.viewTransitionDuration||220)+'ms';
+        var ease=o.viewTransitionEasing||'cubic-bezier(0.16, 1, 0.3, 1)';
+        css+='::view-transition-old(root),::view-transition-new(root){animation-duration:'+dur+';animation-timing-function:'+ease+'}';
+        css+='::view-transition-old(root){animation-name:stx-r-fade-out}::view-transition-new(root){animation-name:stx-r-fade-in}';
+        css+='@keyframes stx-r-fade-out{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-4px)}}';
+        css+='@keyframes stx-r-fade-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}';
+        css+='@media (prefers-reduced-motion: reduce){::view-transition-old(root),::view-transition-new(root){animation-duration:0s;animation-name:none}}';
+      }
+      s.textContent=css;
       document.head.appendChild(s);
     }
     if(o.progress&&!document.getElementById('stx-router-progress')){

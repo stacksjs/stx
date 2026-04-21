@@ -72,37 +72,13 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 5px; border: 2px solid var(--bg); }
 
-    /* SPA page transitions — View Transitions API (Chromium 111+). Falls back
-       to the router's opacity fade on browsers without support. The custom
-       easing keeps the swap feeling snappy without jank on long pages. */
-    @view-transition { navigation: auto; }
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-      animation-duration: 220ms;
-      animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    ::view-transition-old(root) { animation-name: stx-fade-out; }
-    ::view-transition-new(root) { animation-name: stx-fade-in; }
-    @keyframes stx-fade-out {
-      from { opacity: 1; transform: translateY(0); }
-      to   { opacity: 0; transform: translateY(-4px); }
-    }
-    @keyframes stx-fade-in {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    /* Respect reduced-motion preference — instant swap, no slide. */
-    @media (prefers-reduced-motion: reduce) {
-      ::view-transition-old(root),
-      ::view-transition-new(root) { animation-duration: 0s; animation-name: none; }
-    }
-
     @stack('styles')
   </style>
 
-  <!-- Router config — brand color for progress bar, enable view transitions
-       (the router falls back to an opacity fade on browsers without support). -->
-  <script>window.__stxRouterConfig={progressColor:'#FF3E54',progressHeight:'2.5px',viewTransitions:true,scrollToTop:true,prefetch:true};</script>
+  <!-- Router config — brand color for progress bar. View-transition CSS
+       (fade + slight slide, reduced-motion aware) now ships with the router
+       by default; set viewTransitions:false to opt out. -->
+  <script>window.__stxRouterConfig={progressColor:'#FF3E54',progressHeight:'2.5px'};</script>
 </head>
 <body class="min-h-screen">
 

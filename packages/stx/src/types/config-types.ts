@@ -695,12 +695,31 @@ export interface StxConfig {
     container?: string
     linkSelector?: string
     viewTransitions?: boolean
+    /**
+     * Duration of the default View Transitions fade, in milliseconds.
+     * Only applied when viewTransitions is enabled and the browser supports
+     * document.startViewTransition. Default: 220.
+     */
+    viewTransitionDuration?: number
+    /**
+     * Easing curve for the default View Transitions fade. Any valid CSS
+     * animation-timing-function. Default: cubic-bezier(0.16, 1, 0.3, 1).
+     */
+    viewTransitionEasing?: string
     scrollToTop?: boolean
     prefetch?: boolean
     cache?: boolean
     cacheTTL?: number
     skipSelectors?: string
     viewTransitionCSS?: Record<string, string>
+    /**
+     * Progress-bar color (hex, rgb, css var, etc.). Default: '#78dce8'.
+     */
+    progressColor?: string
+    /**
+     * Progress-bar height including units (e.g. '2px', '3px'). Default: '2px'.
+     */
+    progressHeight?: string
   }
 
   /**
