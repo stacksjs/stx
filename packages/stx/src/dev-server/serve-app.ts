@@ -288,19 +288,21 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
       const content = await Bun.file(route.filePath).text()
 
-      // Extract and classify script tags using unified classifier
+      // Extract and classify script tags using unified classifier.
+      // Server scripts are removed (their vars are extracted into context
+      // below). Client scripts stay in place so processDirectives/processSignals
+      // can merge them into the page's single __stx_setup_ function — removing
+      // them here would split the layout's signals from the page's signals into
+      // separate scopes, breaking :text/:show bindings on pages with both
+      // (e.g. /host/list). Before returning, we interpolate {{ }} / {!! !!}
+      // inside client scripts against the server context so pages can still
+      // write `const PRICE = {{ car.price }}` in <script client> blocks.
       const { classifyAllScripts } = await import('../')
       const classified = classifyAllScripts(content)
-      const clientScripts = classified.client.map(s => s.fullTag)
       const serverScripts = classified.server.map(s => s.content)
-      // Signals scripts stay in template — handled by processDirectives/processSignals
 
-      // Remove server and client script tags from template, keep signals scripts
       let templateContent = content
       for (const s of classified.server) {
-        templateContent = templateContent.replace(s.fullTag, '')
-      }
-      for (const s of classified.client) {
         templateContent = templateContent.replace(s.fullTag, '')
       }
 
@@ -358,19 +360,21 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         output = await injectRouterScript(output)
       }
 
-      // Re-inject client scripts before </body> — interpolating {{ }} / {!! !!}
-      // in each script body against the server context so pages can write
-      // `const PRICE = {{ car.price }}` directly in <script client> blocks.
-      if (clientScripts.length > 0) {
-        const { interpolateScriptsInTemplate } = await import('../expressions')
-        const scriptsHtml = interpolateScriptsInTemplate(clientScripts.join('\n'), context)
-        const bodyIdx = output.lastIndexOf('</body>')
-        if (bodyIdx !== -1) {
-          output = output.slice(0, bodyIdx) + scriptsHtml + '\n</body>' + output.slice(bodyIdx + 7)
-        }
-        else {
-          output += `\n${scriptsHtml}`
-        }
+      // Interpolate {{ }} / {!! !!} inside the merged __stx_setup_ function
+      // ONLY. That's the one script containing user `<script client>` bodies
+      // after processScriptSetup's merge. Running the template-wide
+      // interpolator here matched `{{ … }}` sequences inside the signals
+      // runtime's own regex literals (e.g. /{{\s*(.+?)\s*}}/g) and crashed
+      // with "Filter not found: s".
+      {
+        const { interpolateScriptExpressions } = await import('../expressions')
+        output = output.replace(
+          /<script\b([^>]*)>([\s\S]*?)<\/script>/g,
+          (full, attrs: string, body: string) => {
+            if (!/function\s+__stx_setup_/.test(body)) return full
+            return `<script${attrs}>${interpolateScriptExpressions(body, context)}</script>`
+          },
+        )
       }
 
       // Shell mode: strip document wrapper from page output so it doesn't nest

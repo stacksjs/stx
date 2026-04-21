@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, it } from 'bun:test'
-import { convertSignalLoopsToAttributes, parseLoopExpression } from '../src/signal-processing'
+import { convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, parseLoopExpression, processScriptSetup } from '../src/signal-processing'
 
 describe('parseLoopExpression', () => {
   it('parses Blade-style "items as item"', () => {
@@ -172,5 +172,216 @@ describe('convertSignalLoopsToAttributes — server-data detection', () => {
     const output = convertSignalLoopsToAttributes(input, { state: { users: [] } })
     expect(output).toContain('@foreach(state.users as idx => user)')
     expect(output).not.toMatch(/@for\s*=/)
+  })
+})
+
+/**
+ * Regression: `@if (expr) ... @else ... @endif` must NOT be converted into a
+ * reactive `@if="expr"` attribute. The attribute form is a simple boolean
+ * show/hide — it has no concept of else branches. Before the fix, the
+ * converter blindly grabbed everything between `@if(...)` and `@endif` as the
+ * element's content, leaving `@else` and the second branch as raw tokens in
+ * the final DOM. The converter must skip branched blocks so the server-side
+ * `processConditionals` can handle them instead.
+ *
+ * Seen in the drivly host/dashboard page rendering literal "@else" text in
+ * the DOM next to the status chips and inbox previews.
+ */
+describe('convertSignalDirectivesToAttributes — @if/@else/@endif skip', () => {
+  it('does NOT convert @if/@else/@endif to an attribute form', () => {
+    const input = `
+      @if(b.status === 'Confirmed')
+        <span class="good">{{ b.status }}</span>
+      @else
+        <span class="bad">{{ b.status }}</span>
+      @endif
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+
+    // Whole block is left intact for processConditionals to handle.
+    expect(output).toContain("@if(b.status === 'Confirmed')")
+    expect(output).toContain('@else')
+    expect(output).toContain('@endif')
+
+    // No attribute form should appear — the `@if="..."` attribute and any
+    // leaked `@else` text were the two halves of the original bug.
+    expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
+    expect(output).not.toContain('<template @if=')
+  })
+
+  it('does NOT convert @if/@elseif/@endif either', () => {
+    const input = `
+      @if(status === 'a')
+        <span>A</span>
+      @elseif(status === 'b')
+        <span>B</span>
+      @endif
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+    expect(output).toContain('@if(')
+    expect(output).toContain('@elseif(')
+    expect(output).toContain('@endif')
+    expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
+  })
+
+  it('still converts simple @if/@endif (no else) to the attribute form', () => {
+    // Simple reactive blocks are what the converter is supposed to handle.
+    const input = `
+      @if(loading())
+        <div class="spinner">Loading…</div>
+      @endif
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+    expect(output).toMatch(/<div[^>]*\s@if="loading\(\)"/)
+    expect(output).not.toContain('@if(loading())')
+    expect(output).not.toContain('@endif')
+  })
+
+  it('outer @if/@else is left untouched when it wraps a simple @if/@endif', () => {
+    // The OUTER block has @else at top level — it must stay as a textual
+    // directive block for processConditionals to handle. (The inner block
+    // without @else is a separate story: it's a simple reactive conditional
+    // and the converter MAY convert it — that's fine because processConditionals
+    // still picks the outer branch correctly at build time.)
+    const input = `
+      @if(a)
+        @if(b)
+          <span>inner</span>
+        @endif
+      @else
+        <span>else</span>
+      @endif
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+    // Outer directives survive as text.
+    expect(output).toContain('@if(a)')
+    expect(output).toContain('@else')
+    // Outer @endif survives (the inner @endif may or may not, depending on
+    // whether the inner got attribute-converted).
+    expect(output).toContain('@endif')
+  })
+
+  it('regression — dashboard status chip with @if/@else inside @foreach', () => {
+    // Reproduces the exact shape from drivly/pages/host/dashboard.stx where
+    // literal "@else" was rendering to the DOM next to the status chips.
+    const input = `
+      @foreach (upcomingBookings as b)
+        <tr>
+          <td>
+            @if (b.status === 'Confirmed')
+              <span class="good">{{ b.status }}</span>
+            @else
+              <span class="warn">{{ b.status }}</span>
+            @endif
+          </td>
+        </tr>
+      @endforeach
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+    // The @if-branch block must remain textual so processConditionals can
+    // pick a single branch server-side. No attribute-form leak.
+    expect(output).toContain("@if (b.status === 'Confirmed')")
+    expect(output).toContain('@else')
+    expect(output).toContain('@endif')
+    expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
+  })
+})
+
+/**
+ * Regression: when a page merges with a layout that ALSO has a signal
+ * script (state/useStore/etc.), both must end up in the same single
+ * __stx_setup_ function. The prior implementation picked only the first
+ * script and let the rest fall through to processClientScript, which
+ * wrapped them in stx.mount() — setting __stx_scope on <main> and blocking
+ * processElement from walking the page tree. Symptom: `:text="step"` stuck
+ * at its fallback value, wizard forms unresponsive.
+ */
+describe('processScriptSetup — multi-script merge', () => {
+  it('merges multiple signal scripts into a single setup function', async () => {
+    const layout = `<script client>
+      const session = useStore('session')
+      const mobileOpen = state(false)
+    </script>`
+    const page = `<script client>
+      const step = state(1)
+      const draft = useLocalStorage('app-draft', {})
+    </script>`
+    const template = `<!DOCTYPE html>\n<html><body>\n${layout}\n<main>content</main>\n${page}\n</body></html>`
+
+    const result = await processScriptSetup(template)
+    expect(result.setupCode).not.toBeNull()
+    const code = result.setupCode!
+
+    // Both scripts ended up inside ONE __stx_setup_ function.
+    const setupMatches = code.match(/function __stx_setup_/g) || []
+    expect(setupMatches.length).toBe(1)
+
+    // Both scripts' declarations are present. transformStoreImports may
+    // normalize single quotes to double quotes, so match on the key tokens.
+    expect(code).toMatch(/const\s+session\s*=\s*useStore\(["']session["']\)/)
+    expect(code).toContain('const mobileOpen = state(false)')
+    expect(code).toContain('const step = state(1)')
+    expect(code).toMatch(/const\s+draft\s*=\s*useLocalStorage\(["']app-draft["']/)
+
+    // The merged return object exports BOTH scripts' top-level declarations
+    // so the DOMContentLoaded handler can assign them to componentScope in
+    // one shot.
+    expect(code).toMatch(/return\s*\{[^}]*session/)
+    expect(code).toMatch(/return\s*\{[^}]*step/)
+
+    // The merge markers are present so developers inspecting generated code
+    // can tell where each script came from.
+    expect(code).toContain('merged signal script #1')
+    expect(code).toContain('merged signal script #2')
+
+    // Both originals are gone from the HTML template — we don't want
+    // duplicate execution when processClientScript runs later.
+    const scriptMatches = result.output.match(/<script\s+client\s*>/g) || []
+    expect(scriptMatches.length).toBe(0)
+  })
+
+  it('deduplicates top-level const declarations across scripts', async () => {
+    // Layout and page both call `useStore('favorites')` — without dedup the
+    // concatenation throws "Identifier 'favorites' has already been declared".
+    const layout = `<script client>
+      const favorites = useStore('favorites')
+      const session = useStore('session')
+    </script>`
+    const page = `<script client>
+      const favorites = useStore('favorites')
+      const step = state(1)
+    </script>`
+    const template = `<body>\n${layout}\n<main></main>\n${page}\n</body>`
+
+    const result = await processScriptSetup(template)
+    const code = result.setupCode!
+
+    // Only ONE `const favorites = ...` remains.
+    const favDecls = code.match(/const\s+favorites\s*=/g) || []
+    expect(favDecls.length).toBe(1)
+
+    // The dedup marker replaces the second declaration.
+    expect(code).toContain('stx: deduped const favorites')
+
+    // Other declarations from both scripts survive.
+    expect(code).toMatch(/const\s+session\s*=\s*useStore\(["']session["']\)/)
+    expect(code).toContain('const step = state(1)')
+  })
+
+  it('does nothing when no scripts use signal APIs', async () => {
+    const template = `<body><script client>console.log('just logging')</script></body>`
+    const result = await processScriptSetup(template)
+    expect(result.setupCode).toBeNull()
+    expect(result.output).toBe(template)
+  })
+
+  it('still works with a single signal script (backward compat)', async () => {
+    const template = `<body><script client>const count = state(0)</script><main></main></body>`
+    const result = await processScriptSetup(template)
+    expect(result.setupCode).not.toBeNull()
+    expect(result.setupCode).toContain('const count = state(0)')
+    expect(result.setupCode).toMatch(/return\s*\{[^}]*count/)
+    // Body tagged with data-stx="__stx_setup_..."
+    expect(result.output).toMatch(/<body[^>]*\sdata-stx="__stx_setup_/)
   })
 })

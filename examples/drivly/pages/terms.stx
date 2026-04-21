@@ -1,0 +1,80 @@
+<script server>
+const pageTitle = 'Terms of Service · Drivly'
+const activePage = 'terms'
+
+useSeoMeta({
+  title: 'Terms of Service — Drivly',
+  description: 'The terms you agree to when you use Drivly as a guest or a host.',
+  robots: 'index,follow',
+})
+
+const sections = [
+  {
+    heading: '1. Who we are',
+    body: 'Drivly is a peer-to-peer car sharing marketplace. We connect vehicle owners (hosts) with drivers (guests). We are not a rental car company, we do not own the vehicles listed on the platform, and we are not a party to any rental agreement.',
+  },
+  {
+    heading: '2. Eligibility',
+    body: 'You must be at least 18 years old, hold a valid driver\'s license, and pass our identity verification. Drivers under 25 may be subject to a young driver fee.',
+  },
+  {
+    heading: '3. Booking and payment',
+    body: 'When you book a trip, your payment method is authorized but not charged until the host confirms the booking. Hosts typically respond within one hour. If the host does not respond within 24 hours, your booking is automatically canceled and your authorization released.',
+  },
+  {
+    heading: '4. Cancellation',
+    body: 'You may cancel for free up to 24 hours before trip start. Cancellations within 24 hours of trip start incur a partial fee. Hosts who cancel confirmed trips may be penalized; guests affected by host cancellations receive a full refund and a $50 travel credit.',
+  },
+  {
+    heading: '5. Insurance',
+    body: 'Every trip includes up to $750,000 in liability coverage, plus physical damage protection based on the plan you choose at checkout. See our Insurance page for policy details, exclusions, and claims.',
+  },
+  {
+    heading: '6. Host responsibilities',
+    body: 'Hosts must list accurate vehicle information, maintain their vehicle in safe and legal condition, and meet guests at the agreed pickup time. Hosts retain full control over pricing, availability, and trip rules.',
+  },
+  {
+    heading: '7. Guest responsibilities',
+    body: 'Guests must return the vehicle at the agreed time and location, with at least the same fuel level. Late returns, unauthorized drivers, and rule violations may result in additional charges and account restrictions.',
+  },
+  {
+    heading: '8. Prohibited uses',
+    body: 'Drivly vehicles may not be used for ride-share or food-delivery services, commercial use without host approval, off-road use outside designated areas, or any illegal activity. Smoking is prohibited in all vehicles unless the host explicitly allows it.',
+  },
+  {
+    heading: '9. Disputes',
+    body: 'Most issues can be resolved through our 24/7 support team. If a dispute cannot be resolved informally, it will be handled by binding arbitration under the laws of the State of California. You waive the right to participate in class actions.',
+  },
+  {
+    heading: '10. Changes to these terms',
+    body: 'We may update these terms from time to time. Material changes will be announced by email to all account holders at least 14 days before taking effect. Continued use of Drivly after an update constitutes acceptance of the new terms.',
+  },
+]
+</script>
+
+@extends('layouts/app.stx')
+
+@section('content')
+<div class="max-w-[840px] mx-auto px-6 py-12 pb-20">
+
+  <div class="mb-12">
+    <p class="text-[color:var(--text-muted)] text-sm uppercase tracking-wider font-semibold m-0 mb-2">Legal</p>
+    <h1 class="serif text-5xl sm:text-6xl m-0 mb-3">Terms of Service</h1>
+    <p class="text-[color:var(--text-muted)] text-lg m-0">Last updated April 1, 2026 · Effective immediately for all users.</p>
+  </div>
+
+  <div class="flex flex-col gap-10">
+    @foreach (sections as s)
+      <section>
+        <h2 class="serif text-2xl sm:text-3xl m-0 mb-3">{{ s.heading }}</h2>
+        <p class="text-[color:var(--text-secondary)] leading-relaxed m-0">{{ s.body }}</p>
+      </section>
+    @endforeach
+  </div>
+
+  <div class="mt-16 p-6 bg-[color:var(--bg-subtle)] border border-[color:var(--border)] rounded-2xl">
+    <p class="m-0 text-sm text-[color:var(--text-secondary)] leading-relaxed">Questions about these terms? Reach out to <a href="/contact" class="text-[#FF3E54] font-semibold">our support team</a> — we read every message.</p>
+  </div>
+
+</div>
+@endsection

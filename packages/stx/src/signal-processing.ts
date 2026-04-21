@@ -461,6 +461,149 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
  * </script>
  * ```
  */
+// Strip duplicate top-level const/let/var declarations. When merging multiple
+// signal scripts (layout + page), the same name can be declared twice — e.g.
+// both calling useStore('favorites'). We keep the first occurrence and
+// replace later duplicates with a marker comment so `const` doesn't clash.
+// The scanner walks brace depth (so `const x` inside a function body isn't
+// counted as top-level), tracks string literals, and skips entire statements
+// it has already seen at top level.
+function dedupeTopLevelDeclarations(code: string): string {
+  const seen = new Set<string>()
+  const out: string[] = []
+
+  let i = 0
+  let depth = 0 // brace depth — top-level means depth === 0
+  const len = code.length
+
+  const skipString = (quote: string): number => {
+    let j = i + 1
+    while (j < len) {
+      const ch = code[j]
+      if (ch === '\\') { j += 2; continue }
+      if (ch === quote) return j + 1
+      j++
+    }
+    return len
+  }
+
+  const skipLineComment = (): number => {
+    let j = i + 2
+    while (j < len && code[j] !== '\n') j++
+    return j
+  }
+
+  const skipBlockComment = (): number => {
+    let j = i + 2
+    while (j < len - 1) {
+      if (code[j] === '*' && code[j + 1] === '/') return j + 2
+      j++
+    }
+    return len
+  }
+
+  // Finds the end of a statement starting at `i` (just past the declarator
+  // keyword). Walks until a top-level `;` or a newline that looks safe —
+  // matching braces/brackets/parens and skipping strings and comments along
+  // the way so function expressions and object literals inside the value
+  // don't fool us.
+  const findStatementEnd = (start: number): number => {
+    let j = start
+    let d = 0 // local depth for (), [], {}
+    while (j < len) {
+      const ch = code[j]
+      if (ch === '/' && code[j + 1] === '/') {
+        let k = j + 2
+        while (k < len && code[k] !== '\n') k++
+        j = k; continue
+      }
+      if (ch === '/' && code[j + 1] === '*') {
+        let k = j + 2
+        while (k < len - 1 && !(code[k] === '*' && code[k + 1] === '/')) k++
+        j = k + 2; continue
+      }
+      if (ch === '"' || ch === '\'' || ch === '`') {
+        let k = j + 1
+        while (k < len) {
+          if (code[k] === '\\') { k += 2; continue }
+          if (code[k] === ch) { k++; break }
+          k++
+        }
+        j = k; continue
+      }
+      if (ch === '(' || ch === '[' || ch === '{') { d++; j++; continue }
+      if (ch === ')' || ch === ']' || ch === '}') { d--; j++; continue }
+      if (ch === ';' && d === 0) return j + 1
+      // Avoid false-positives on newlines — the statement might span lines
+      // (e.g. a multi-line object literal). Only terminate on ';' at d === 0.
+      j++
+    }
+    return len
+  }
+
+  while (i < len) {
+    const ch = code[i]
+
+    // Comments
+    if (ch === '/' && code[i + 1] === '/') {
+      const end = skipLineComment()
+      out.push(code.slice(i, end))
+      i = end
+      continue
+    }
+    if (ch === '/' && code[i + 1] === '*') {
+      const end = skipBlockComment()
+      out.push(code.slice(i, end))
+      i = end
+      continue
+    }
+
+    // Strings — treat as opaque so `const x = "foo"` doesn't get confused.
+    if (ch === '"' || ch === '\'' || ch === '`') {
+      const end = skipString(ch)
+      out.push(code.slice(i, end))
+      i = end
+      continue
+    }
+
+    // Brace depth
+    if (ch === '{') { depth++; out.push(ch); i++; continue }
+    if (ch === '}') { depth--; out.push(ch); i++; continue }
+
+    // Only handle declarators at top level.
+    if (depth === 0) {
+      // Must be at a statement boundary — previous non-whitespace char is ;, {, } or start of file
+      // Simplest: require word boundary (previous char is whitespace or nothing).
+      const prev = i > 0 ? code[i - 1] : ''
+      const atBoundary = prev === '' || /\s/.test(prev) || prev === ';' || prev === '}' || prev === '{'
+
+      if (atBoundary) {
+        const m = code.slice(i).match(/^(const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=/)
+        if (m) {
+          const name = m[2]
+          const stmtEnd = findStatementEnd(i + m[0].length)
+          if (seen.has(name)) {
+            // Strip the whole statement, replacing with a comment so source
+            // maps and line counts stay roughly stable.
+            out.push(`/* stx: deduped const ${name} */`)
+            i = stmtEnd
+            continue
+          }
+          seen.add(name)
+          out.push(code.slice(i, stmtEnd))
+          i = stmtEnd
+          continue
+        }
+      }
+    }
+
+    out.push(ch)
+    i++
+  }
+
+  return out.join('')
+}
+
 export async function processScriptSetup(template: string, filePath?: string): Promise<{ output: string, setupCode: string | null }> {
   // Walk the template like a browser: find each `<script>` opening tag, then
   // the FIRST `</script>` that closes it — don't re-scan for nested `<script`
@@ -471,68 +614,90 @@ export async function processScriptSetup(template: string, filePath?: string): P
     skipAttrs: /\bserver\b|\bsrc\s*=|\bdata-stx-scoped\b|\bdata-stx-router\b/,
   })
 
-  let signalScript: { fullMatch: string, attrs: string, content: string } | null = null
+  // Broader signal-API detection — layout scripts may use store/composable
+  // APIs without bare state/derived calls, and we still want those merged
+  // into the single setup function so their reactivity wires into the same
+  // componentScope as the page's bindings.
+  const SIGNAL_API_RE = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useStore|useLocalStorage|useSessionStorage|useFetch|useRef|useEventListener|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useWebSocket|useRoute|useSearchParams|onMount|onDestroy)\s*(?:<[^>]*>)?\s*\(/
+
+  // Collect every signal-using script in document order (layout first, page
+  // last). They'll all be merged into a single __stx_setup_ function so every
+  // signal declaration ends up in the same componentScope. This replaces the
+  // old first-script-only behavior that left subsequent signal scripts for
+  // processClientScript to stx.mount() wrap — which set __stx_scope on the
+  // sibling <main> and blocked processElement from walking page content.
+  const signalScripts: { fullMatch: string, attrs: string, content: string }[] = []
 
   for (const s of scripts) {
     let content = s.body
-    // Transpile TypeScript if needed
     if (shouldTranspileTypeScript(s.attrs)) {
       content = transpileTypeScript(content)
     }
-
-    // Check if this script uses signal APIs
-    if (/\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
-      signalScript = { fullMatch: s.fullMatch, attrs: s.attrs, content }
-      break
+    if (SIGNAL_API_RE.test(content)) {
+      signalScripts.push({ fullMatch: s.fullMatch, attrs: s.attrs, content })
     }
   }
 
-  if (!signalScript) {
+  if (signalScripts.length === 0) {
     return { output: template, setupCode: null }
   }
 
   const setupFnName = `__stx_setup_${Date.now()}_${signalSetupCounter++}`
 
-  // Bundle user imports before wrapping (import statements can't be inside functions)
-  let scriptContent = signalScript.content
+  // Bundle user imports and resolve store imports for each script, then
+  // concatenate. Scripts are processed in document order, so later scripts
+  // (usually the page) can see earlier declarations (usually the layout).
   const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
-  if (hasUserImports(scriptContent)) {
-    console.log('[stx:bundler] bundling signal script imports')
-    scriptContent = await bundleClientScript(scriptContent, filePath || '', {
-      projectRoot: process.cwd(),
-    })
+  const resolvedParts: string[] = []
+  for (let i = 0; i < signalScripts.length; i++) {
+    let scriptContent = signalScripts[i].content
+    if (hasUserImports(scriptContent)) {
+      console.log('[stx:bundler] bundling signal script imports')
+      scriptContent = await bundleClientScript(scriptContent, filePath || '', {
+        projectRoot: process.cwd(),
+      })
+    }
+    const resolved = transformStoreImports(scriptContent)
+    resolvedParts.push(`// ── merged signal script #${i + 1} ──\n${resolved}`)
   }
+  let mergedContent = resolvedParts.join('\n\n')
 
-  // Transform store imports before wrapping in function
-  const resolvedContent = transformStoreImports(scriptContent)
+  // Dedup top-level `const/let/var NAME = …` across merged scripts. When
+  // layout and page both declare `const favorites = useStore('favorites')`,
+  // plain concatenation would throw "Identifier 'favorites' has already been
+  // declared". We keep the first declaration and strip later duplicates —
+  // this is safe for the common useStore()/useLocalStorage() case where both
+  // sides resolve to the same singleton. (Intentional shadowing across
+  // scripts is a user anti-pattern; name them differently.)
+  mergedContent = dedupeTopLevelDeclarations(mergedContent)
+  const mergedExports = extractExports(mergedContent)
 
-  // Generate the setup function that provides signal APIs
-  // Mark with data-stx-scoped so the client script processing loop skips it
+  // Generate the setup function that provides signal APIs. Mark the script
+  // with data-stx-scoped so the client-script loop skips it.
   const setupCode = `
 <script data-stx-scoped>
 function ${setupFnName}() {
   const { state, derived, effect, batch, onMount, onDestroy, defineStore, useStore, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect } = window.stx;
-${resolvedContent}
-  return { ${extractExports(resolvedContent)} };
+${mergedContent}
+  return { ${mergedExports} };
 }
 if(window.stx)window.stx._latestSetup=${setupFnName};
 </script>`
 
-  // Remove the original script and add data-stx attribute to the root element
-  // Use split/join to replace ALL occurrences, not just the first
-  let output = template.split(signalScript.fullMatch).join('')
+  // Remove ALL matched original scripts, then tag body with data-stx so the
+  // runtime invokes the merged setup once on DOMContentLoaded.
+  let output = template
+  for (const s of signalScripts) {
+    output = output.split(s.fullMatch).join('')
+  }
 
-  // Try to add data-stx to body or first content element
   if (output.includes('<body')) {
     output = output.replace(/<body([^>]*)>/, `<body$1 data-stx="${setupFnName}">`)
   }
   else {
-    // Find the first non-meta element and add data-stx
     const skipTags = ['script', 'style', 'html', 'head', 'meta', 'link', 'title', '!doctype']
     output = output.replace(/<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/i, (match, tag, attrs) => {
-      if (skipTags.includes(tag.toLowerCase())) {
-        return match
-      }
+      if (skipTags.includes(tag.toLowerCase())) return match
       return `<${tag}${attrs} data-stx="${setupFnName}">`
     })
   }

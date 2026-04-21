@@ -51,7 +51,7 @@ useSeoMeta({
 
   <label class="flex items-start gap-2 mt-5 text-[0.8125rem] text-[color:var(--text-muted)] leading-relaxed cursor-pointer">
     <input type="checkbox" required class="mt-1 w-4 h-4" style="accent-color: #FF3E54" x-model="acceptTerms">
-    <span>I agree to Drivly's <a href="/about" class="text-[#FF3E54]">Terms</a> and <a href="/about" class="text-[#FF3E54]">Privacy Policy</a>.</span>
+    <span>I agree to Drivly's <StxLink to="/terms" class="text-[#FF3E54]">Terms</StxLink> and <StxLink to="/privacy" class="text-[#FF3E54]">Privacy Policy</StxLink>.</span>
   </label>
 
   <button type="submit" class="w-full py-3.5 px-5 rounded-xl bg-[#FF3E54] hover:bg-[#e63349] text-white font-semibold cursor-pointer text-[0.9375rem] border-0 mt-6 transition-colors">Create account</button>

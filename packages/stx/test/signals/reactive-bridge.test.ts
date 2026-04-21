@@ -238,6 +238,22 @@ describe('Error resilience for async init patterns', () => {
     // the TypeError guard wraps the warn call regardless.
     expect(runtime).toMatch(/!\(e2? instanceof TypeError\)\)\s*console\.warn\(['"]\[STX\] Class expression error:/)
   })
+
+  // Regression: :class="{ 'cls': activeTab() === 'x' }" — the expression uses
+  // signal call-syntax, so bindClass needs a retry path that passes raw
+  // (non-unwrapped) scope values. Without the retry, calling the unwrapped
+  // primitive throws TypeError, the error gets swallowed, and no classes are
+  // added or removed — producing the "all tabs look identical" bug seen on
+  // the car-detail and trips pages.
+  it('bindClass should fall back to raw scope when auto-unwrap throws', () => {
+    // Two Function constructor calls inside bindClass's effect — first with
+    // unwrapScope, then a retry with the raw capturedScope.
+    const fnCalls = runtime.match(/fn\.apply\(null, safeKeys\.map\(/g) || []
+    expect(fnCalls.length).toBeGreaterThanOrEqual(2)
+    // The retry branch uses capturedScope (not unwrapScope), so call-expression
+    // expressions like `activeTab()` can execute against the signal function.
+    expect(runtime).toMatch(/fn\.apply\(null, safeKeys\.map\(\(?k\)? => capturedScope\[k\]\)\)/)
+  })
 })
 
 // =============================================================================

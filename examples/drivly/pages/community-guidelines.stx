@@ -1,0 +1,87 @@
+<script server>
+const pageTitle = 'Community guidelines · Drivly'
+const activePage = 'community'
+
+useSeoMeta({
+  title: 'Community Guidelines — Drivly',
+  description: 'The rules of the road for Drivly guests and hosts.',
+})
+
+const dos = [
+  'Communicate respectfully — hosts and guests are real people',
+  'Treat the car like it\'s your own: return it clean, on time, with the agreed fuel level',
+  'Report anything that feels off — in-app, or by tapping the red help button',
+  'Leave honest reviews. Future guests and hosts rely on them',
+  'Follow local traffic laws, speed limits, and parking rules',
+]
+
+const donts = [
+  'Don\'t smoke in vehicles unless the host explicitly allows it',
+  'Don\'t use the car for ride-share or food delivery services',
+  'Don\'t let unapproved drivers behind the wheel',
+  'Don\'t drive off-road or on unpaved surfaces unless the host allows',
+  'Don\'t discriminate based on race, religion, gender, sexual orientation, or any protected characteristic',
+  'Don\'t harass, threaten, or intimidate anyone on the platform',
+]
+
+const enforcement = [
+  { level: 'First violation',    body: 'Usually a friendly heads-up from our trust team. Most issues end here.' },
+  { level: 'Repeated violations', body: 'Temporary suspension (1–30 days). Your active trips are protected; no new bookings allowed during suspension.' },
+  { level: 'Severe violations',   body: 'Immediate, permanent ban. Severe means: fraud, physical assault, DUI, significant intentional damage.' },
+]
+</script>
+
+@extends('layouts/app.stx')
+
+@section('content')
+<div class="max-w-[880px] mx-auto px-6 py-12 pb-20">
+
+  <div class="mb-12">
+    <p class="text-[color:var(--text-muted)] text-sm uppercase tracking-wider font-semibold m-0 mb-2">Community</p>
+    <h1 class="serif text-5xl sm:text-6xl m-0 mb-3">Guidelines</h1>
+    <p class="text-[color:var(--text-muted)] text-lg max-w-[54ch] m-0 leading-relaxed">Drivly works because people trust each other. These are the standards that keep that trust intact — for everyone.</p>
+  </div>
+
+  <section class="mb-14">
+    <h2 class="serif text-3xl m-0 mb-6">The basics — do these</h2>
+    <div class="flex flex-col gap-3">
+      @foreach (dos as d)
+        <div class="flex items-start gap-3 p-4 bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-xl">
+          <svg class="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span class="text-[color:var(--text-secondary)] leading-relaxed">{{ d }}</span>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
+  <section class="mb-14">
+    <h2 class="serif text-3xl m-0 mb-6">Please don't</h2>
+    <div class="flex flex-col gap-3">
+      @foreach (donts as d)
+        <div class="flex items-start gap-3 p-4 bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-xl">
+          <svg class="w-5 h-5 text-[#FF3E54] flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M15 9l-6 6M9 9l6 6"/></svg>
+          <span class="text-[color:var(--text-secondary)] leading-relaxed">{{ d }}</span>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
+  <section class="mb-14">
+    <h2 class="serif text-3xl m-0 mb-6">When things go wrong</h2>
+    <p class="text-[color:var(--text-muted)] m-0 mb-6 leading-relaxed">We\'d rather coach than punish — most first-time issues get a gentle correction. Enforcement escalates like this:</p>
+    <div class="flex flex-col gap-3">
+      @foreach (enforcement as e)
+        <div class="p-5 bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl">
+          <p class="text-xs font-bold uppercase tracking-wider text-[#FF3E54] m-0 mb-2">{{ e.level }}</p>
+          <p class="text-[color:var(--text-secondary)] m-0 leading-relaxed">{{ e.body }}</p>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
+  <div class="p-6 bg-[color:var(--bg-subtle)] border border-[color:var(--border)] rounded-2xl">
+    <p class="m-0 text-sm text-[color:var(--text-secondary)] leading-relaxed">See something that violates these guidelines? <a href="/contact" class="text-[#FF3E54] font-semibold">Tell us</a> — reports are confidential and reviewed within hours.</p>
+  </div>
+
+</div>
+@endsection

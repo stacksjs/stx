@@ -4,7 +4,6 @@ import { cars } from '../data/cars'
 const pageTitle = 'My trips · Drivly'
 const activePage = 'trips'
 
-definePageMeta({ middleware: ['auth'] })
 useSeoMeta({ title: pageTitle, robots: 'noindex' })
 
 const upcoming = [
@@ -61,7 +60,7 @@ const tabs = [
           <a href="/cars/{{ trip.carId }}"
              class="grid sm:grid-cols-[200px_1fr_auto] grid-cols-1 gap-6 p-4 items-center bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl transition-all hover:border-[color:var(--border-strong)] hover:-translate-y-0.5 text-[color:var(--text)]">
             <div class="rounded-xl overflow-hidden bg-[color:var(--bg-muted)]" style="aspect-ratio: 16/11">
-              <img src="{{ trip.car.image }}" alt="" loading="lazy" decoding="async" class="w-full h-full object-cover">
+              <img src="{{ trip.car.image }}" alt="{{ trip.car.year }} {{ trip.car.make }} {{ trip.car.model }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
             </div>
             <div>
               <div class="flex items-center gap-2 mb-1 flex-wrap">
@@ -94,7 +93,7 @@ const tabs = [
         <a href="/cars/{{ trip.carId }}"
            class="grid sm:grid-cols-[200px_1fr_auto] grid-cols-1 gap-6 p-4 items-center bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl transition-all hover:border-[color:var(--border-strong)] hover:-translate-y-0.5 text-[color:var(--text)]">
           <div class="rounded-xl overflow-hidden bg-[color:var(--bg-muted)]" style="aspect-ratio: 16/11">
-            <img src="{{ trip.car.image }}" alt="" loading="lazy" decoding="async" class="w-full h-full object-cover" style="filter: saturate(0.8)">
+            <img src="{{ trip.car.image }}" alt="{{ trip.car.year }} {{ trip.car.make }} {{ trip.car.model }}" loading="lazy" decoding="async" class="w-full h-full object-cover" style="filter: saturate(0.8)">
           </div>
           <div>
             <div class="flex items-center gap-2 mb-1 flex-wrap">

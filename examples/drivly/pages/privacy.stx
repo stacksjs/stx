@@ -1,0 +1,80 @@
+<script server>
+const pageTitle = 'Privacy Policy · Drivly'
+const activePage = 'privacy'
+
+useSeoMeta({
+  title: 'Privacy Policy — Drivly',
+  description: 'What personal data Drivly collects, how we use it, and the controls you have over it.',
+  robots: 'index,follow',
+})
+
+const sections = [
+  {
+    heading: '1. What we collect',
+    body: 'We collect information you provide directly (name, email, phone, driver\'s license, payment method, trip messages), information collected automatically (device type, IP address, browser, approximate location, pages viewed), and information from third parties (identity verification, driving record, fraud checks).',
+  },
+  {
+    heading: '2. How we use it',
+    body: 'To match guests with hosts, process payments, verify identity, prevent fraud, handle insurance claims, and send trip updates. We also use aggregated and anonymized data to improve our matching algorithms and platform reliability.',
+  },
+  {
+    heading: '3. Who we share with',
+    body: 'Hosts see your first name, photo, ratings, and review history before approving a booking. Our insurance partner sees claim-relevant data. Our payment processor sees transaction details. We do not sell your personal data to advertisers.',
+  },
+  {
+    heading: '4. Your controls',
+    body: 'You can download a copy of your data, correct inaccurate information, or delete your account from Settings → Privacy. Requests are fulfilled within 30 days. Hosts with active listings may be asked to first deactivate them.',
+  },
+  {
+    heading: '5. Cookies and tracking',
+    body: 'We use strictly necessary cookies for auth and session management, plus optional analytics cookies to understand aggregate usage. You can opt out of analytics in Settings → Privacy, or via your browser\'s Do Not Track signal.',
+  },
+  {
+    heading: '6. Children',
+    body: 'Drivly is not intended for children under 18. We do not knowingly collect data from minors. If you believe a minor has provided information to us, contact our privacy team and we will delete the account.',
+  },
+  {
+    heading: '7. International transfers',
+    body: 'If you are outside the United States, your data will be transferred to and processed in the US. We comply with GDPR and CCPA where applicable, and use standard contractual clauses for cross-border transfers.',
+  },
+  {
+    heading: '8. Security',
+    body: 'We encrypt data in transit (TLS 1.3) and at rest (AES-256). Payment methods are tokenized by our PCI-compliant payment processor. We run regular third-party security audits and maintain a bug bounty program.',
+  },
+  {
+    heading: '9. Retention',
+    body: 'Trip and message data is kept for 7 years to support insurance claims and legal holds. Account profile data is kept until you delete your account, after which it is purged within 90 days except where law requires longer retention.',
+  },
+  {
+    heading: '10. Contact',
+    body: 'Privacy questions, data requests, and complaints: privacy@drivly.example. Our Data Protection Officer reads every message and replies within 5 business days.',
+  },
+]
+</script>
+
+@extends('layouts/app.stx')
+
+@section('content')
+<div class="max-w-[840px] mx-auto px-6 py-12 pb-20">
+
+  <div class="mb-12">
+    <p class="text-[color:var(--text-muted)] text-sm uppercase tracking-wider font-semibold m-0 mb-2">Legal</p>
+    <h1 class="serif text-5xl sm:text-6xl m-0 mb-3">Privacy Policy</h1>
+    <p class="text-[color:var(--text-muted)] text-lg m-0">Last updated April 1, 2026 · We keep this page plain-English on purpose.</p>
+  </div>
+
+  <div class="flex flex-col gap-10">
+    @foreach (sections as s)
+      <section>
+        <h2 class="serif text-2xl sm:text-3xl m-0 mb-3">{{ s.heading }}</h2>
+        <p class="text-[color:var(--text-secondary)] leading-relaxed m-0">{{ s.body }}</p>
+      </section>
+    @endforeach
+  </div>
+
+  <div class="mt-16 p-6 bg-[color:var(--bg-subtle)] border border-[color:var(--border)] rounded-2xl">
+    <p class="m-0 text-sm text-[color:var(--text-secondary)] leading-relaxed">Want to download your data or delete your account? Visit <a href="/contact" class="text-[#FF3E54] font-semibold">our support page</a> — we handle every request personally.</p>
+  </div>
+
+</div>
+@endsection

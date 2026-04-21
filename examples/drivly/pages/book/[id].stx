@@ -6,11 +6,9 @@ const car = getCar(id) || cars[0]
 const pageTitle = 'Book your ' + car.make + ' ' + car.model + ' · Drivly'
 const activePage = 'search'
 
-// Gate: booking requires an authed session. The `auth` middleware reads
-// `localStorage.drivly-session` and redirects to /login?next=... if missing.
-// `validate` 404s unknown car IDs.
+// `validate` 404s unknown car IDs. Auth is not required — the framework will
+// handle session/gating end-to-end when it lands.
 definePageMeta({
-  middleware: ['auth'],
   validate({ params }) {
     return getCar(params.id) !== undefined
   },

@@ -4,7 +4,6 @@ import { cars } from '../../data/cars'
 const pageTitle = 'Host dashboard · Drivly'
 const activePage = 'host-dashboard'
 
-definePageMeta({ middleware: ['auth'] })
 useSeoMeta({ title: pageTitle, robots: 'noindex' })
 
 // Pretend the current host owns these cars

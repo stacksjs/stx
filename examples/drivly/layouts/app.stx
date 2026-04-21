@@ -72,8 +72,37 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 5px; border: 2px solid var(--bg); }
 
+    /* SPA page transitions — View Transitions API (Chromium 111+). Falls back
+       to the router's opacity fade on browsers without support. The custom
+       easing keeps the swap feeling snappy without jank on long pages. */
+    @view-transition { navigation: auto; }
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 220ms;
+      animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    ::view-transition-old(root) { animation-name: stx-fade-out; }
+    ::view-transition-new(root) { animation-name: stx-fade-in; }
+    @keyframes stx-fade-out {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-4px); }
+    }
+    @keyframes stx-fade-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    /* Respect reduced-motion preference — instant swap, no slide. */
+    @media (prefers-reduced-motion: reduce) {
+      ::view-transition-old(root),
+      ::view-transition-new(root) { animation-duration: 0s; animation-name: none; }
+    }
+
     @stack('styles')
   </style>
+
+  <!-- Router config — brand color for progress bar, enable view transitions
+       (the router falls back to an opacity fade on browsers without support). -->
+  <script>window.__stxRouterConfig={progressColor:'#FF3E54',progressHeight:'2.5px',viewTransitions:true,scrollToTop:true,prefetch:true};</script>
 </head>
 <body class="min-h-screen">
 
@@ -151,7 +180,7 @@
               <StxLink to="/host/dashboard" class="flex items-center gap-3 py-2.5 px-3 rounded text-sm text-[color:var(--text)] hover:bg-[color:var(--bg-hover)] transition-colors"><svg class="w-4 h-4 text-[color:var(--text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"/></svg>Host dashboard</StxLink>
               <div class="h-px bg-[color:var(--border)] my-1.5"></div>
               <StxLink to="/host/list" class="flex items-center gap-3 py-2.5 px-3 rounded text-sm text-[color:var(--text)] hover:bg-[color:var(--bg-hover)] transition-colors">List your car</StxLink>
-              <a href="#" class="flex items-center gap-3 py-2.5 px-3 rounded text-sm text-[color:var(--text)] hover:bg-[color:var(--bg-hover)] transition-colors" @click.prevent="logout()"><svg class="w-4 h-4 text-[color:var(--text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</a>
+              <button type="button" class="w-full text-left flex items-center gap-3 py-2.5 px-3 rounded text-sm text-[color:var(--text)] hover:bg-[color:var(--bg-hover)] transition-colors bg-transparent border-0 cursor-pointer" @click="logout()"><svg class="w-4 h-4 text-[color:var(--text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</button>
             </div>
           </div>
         </div>
@@ -211,6 +240,15 @@
 
     const userMenuOpen = state(false)
     const mobileOpen   = state(false)
+
+    // ── Footer locale/currency pickers. Persisted to localStorage so the
+    //    selection survives refresh. A production build would also push this
+    //    to the server via a Set-Cookie so SSR renders in the right locale. ──
+    const uiLocale   = useLocalStorage('drivly-locale', 'en-US')
+    const uiCurrency = useLocalStorage('drivly-currency', 'USD')
+    effect(() => {
+      document.documentElement.setAttribute('lang', uiLocale().split('-')[0])
+    })
 
     // Store signals propagate through derived() directly — no version-bump
     // shim needed. Reading session.user() inside derived() subscribes this

@@ -1,0 +1,129 @@
+<script server>
+const pageTitle = 'Insurance claims · Drivly'
+const activePage = 'claims'
+
+useSeoMeta({
+  title: 'File an insurance claim — Drivly',
+  description: 'How to file a damage, accident, or liability claim. What to expect at every step.',
+})
+
+const steps = [
+  {
+    n: '01',
+    title: 'Document everything',
+    body: 'Photos of all damage (wide + close-up), the other vehicle if involved, license plates, and the scene. The more you share, the faster we pay out.',
+  },
+  {
+    n: '02',
+    title: 'Call 911 if needed',
+    body: 'Any injury, heavy damage, or suspected DUI — call 911 first. Drivly\'s insurance handles everything downstream but law enforcement must be on the scene.',
+  },
+  {
+    n: '03',
+    title: 'Report inside the app',
+    body: 'Open the trip, tap "Report an incident". Upload your photos and a short description. Our claims team picks it up within 15 minutes, 24/7.',
+  },
+  {
+    n: '04',
+    title: 'Stay with the vehicle',
+    body: 'If it\'s not driveable, wait for the tow truck our team dispatches. If it is, return it to the agreed location or wait for instructions.',
+  },
+  {
+    n: '05',
+    title: 'We handle the rest',
+    body: 'Drivly\'s insurance partner works directly with hosts and any other parties. You\'ll get status updates every 2 business days until the claim closes.',
+  },
+]
+
+const covers = [
+  { title: 'Collision damage',   body: 'Repair up to the car\'s cash value, backed by Drivly\'s protection plan. Your deductible depends on the plan you selected at booking.' },
+  { title: 'Liability',          body: 'Up to $750,000 per incident for bodily injury and property damage to third parties. Included on every single trip.' },
+  { title: 'Theft',              body: 'Covered when reasonable care was taken (keys in possession, car parked legally). Police report required within 24 hours.' },
+  { title: 'Roadside assistance','body: Lockouts, flat tires, jump starts, fuel delivery, and towing up to 50 miles — $0 cost, any trip, 24/7.' },
+]
+
+const notCovers = [
+  'Wear-and-tear (brake pads, tires, windshield chips from road debris)',
+  'Interior deep-cleaning beyond the $250 cleaning credit',
+  'Damage caused by an unauthorized driver (anyone not added to the trip)',
+  'Incidents during off-road use or on unpaved trails not allowed by the host',
+  'Traffic tickets, toll violations, and parking tickets (charged back to the guest)',
+]
+</script>
+
+@extends('layouts/app.stx')
+
+@section('content')
+<div class="max-w-[1000px] mx-auto px-6 py-12 pb-20">
+
+  <div class="text-center mb-14">
+    <p class="text-[color:var(--text-muted)] text-sm uppercase tracking-wider font-semibold m-0 mb-2">Insurance</p>
+    <h1 class="serif text-5xl sm:text-6xl m-0 mb-4">File a claim</h1>
+    <p class="text-lg text-[color:var(--text-muted)] max-w-[52ch] mx-auto m-0 leading-relaxed">Something happened. It's OK. We've handled this hundreds of thousands of times — here's what comes next.</p>
+  </div>
+
+  <section class="rounded-3xl p-8 border mb-16" style="background: linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.04) 100%); border-color: rgba(239,68,68,0.3)">
+    <div class="flex items-start gap-4">
+      <div class="text-3xl flex-shrink-0">🚨</div>
+      <div>
+        <h2 class="text-xl font-bold m-0 mb-2">Emergency? Call first.</h2>
+        <p class="text-[color:var(--text-secondary)] m-0 mb-4 leading-relaxed">If there\'s an injury, severe damage, or a suspected drunk driver — call 911 before doing anything else. Then open Drivly and tap "Report an incident". We\'ll take it from there.</p>
+        <a href="tel:911" class="inline-flex items-center gap-2 py-3 px-5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors">Call 911</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="mb-20">
+    <h2 class="serif text-4xl m-0 mb-1.5 text-center">Step-by-step</h2>
+    <p class="text-[color:var(--text-muted)] text-center m-0 mb-10">Five steps, from the scene to settlement.</p>
+    <div class="flex flex-col gap-5">
+      @foreach (steps as s)
+        <div class="flex gap-5 p-6 bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl">
+          <div class="serif text-4xl font-normal text-[#FF3E54] flex-shrink-0">{{ s.n }}</div>
+          <div>
+            <h3 class="text-lg font-bold m-0 mb-2">{{ s.title }}</h3>
+            <p class="text-[color:var(--text-muted)] m-0 leading-relaxed">{{ s.body }}</p>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
+  <section class="mb-20">
+    <h2 class="serif text-4xl m-0 mb-8 text-center">What's covered</h2>
+    <div class="grid md:grid-cols-2 grid-cols-1 gap-5">
+      @foreach (covers as c)
+        <div class="p-6 bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl">
+          <div class="flex items-center gap-3 mb-2">
+            <svg class="w-5 h-5 text-emerald-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            <h3 class="text-base font-bold m-0">{{ c.title }}</h3>
+          </div>
+          <p class="text-[color:var(--text-muted)] m-0 text-sm leading-relaxed">{{ c.body }}</p>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="serif text-3xl m-0 mb-6 text-center">What's not covered</h2>
+    <div class="max-w-[680px] mx-auto flex flex-col gap-3">
+      @foreach (notCovers as item)
+        <div class="flex items-start gap-3 p-4 bg-[color:var(--bg-subtle)] border border-[color:var(--border)] rounded-xl">
+          <svg class="w-5 h-5 text-[color:var(--text-muted)] flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M15 9l-6 6M9 9l6 6"/></svg>
+          <span class="text-[color:var(--text-secondary)] text-sm leading-relaxed">{{ item }}</span>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
+  <section class="rounded-3xl p-12 text-center border" style="background: linear-gradient(135deg, rgba(255,62,84,0.1) 0%, rgba(147,51,234,0.08) 100%); border-color: rgba(255,62,84,0.25)">
+    <h2 class="serif text-3xl sm:text-4xl m-0 mb-3">Still need help?</h2>
+    <p class="text-[color:var(--text-muted)] m-0 mb-6 max-w-[44ch] mx-auto leading-relaxed">Our claims team is on call 24/7. Average first response: under 15 minutes.</p>
+    <div class="flex gap-3 justify-center flex-wrap">
+      <a href="tel:+18883748591" class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-colors">Call claims: 1-888-DRIVLY-1</a>
+      <StxLink to="/contact" class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-[color:var(--text)] bg-transparent border border-[color:var(--border-strong)] hover:bg-[color:var(--bg-subtle)] transition-colors">Or send a message</StxLink>
+    </div>
+  </section>
+
+</div>
+@endsection

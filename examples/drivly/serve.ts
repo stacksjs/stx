@@ -17,7 +17,7 @@
 import path from 'node:path'
 import { processDirectives, injectRouterScript } from '../../packages/stx/src/process'
 import { extractVariables } from '../../packages/stx/src/variable-extractor'
-import { interpolateScriptsInTemplate } from '../../packages/stx/src/expressions'
+import { interpolateScriptExpressions } from '../../packages/stx/src/expressions'
 
 const ROOT = path.resolve(import.meta.dir)
 const PAGES = path.join(ROOT, 'pages')
@@ -88,26 +88,23 @@ const STX_OPTIONS = {
 async function renderPage(resolved: { file: string, params: Record<string, string> }): Promise<string> {
   const raw = await Bun.file(resolved.file).text()
 
+  // Extract ONLY <script server> blocks — they run here for variable extraction
+  // and must not leak into the rendered HTML. Every other script type
+  // (<script>, <script client>, type="module", signal-using) stays in the
+  // template so processDirectives/processSignals can consolidate them into a
+  // single __stx_setup_ function. Removing them here splits layout signals
+  // from page signals into separate scopes and breaks :text/:show bindings
+  // on pages where both exist (e.g. /host/list).
   const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-  const SIGNALS_PATTERN = /\b(state|derived|effect|batch|onMount|onDestroy|useStore|defineStore)\s*\(/
   const serverScripts: string[] = []
-  const clientBlocks: string[] = []
+  let template = raw
   let m: RegExpExecArray | null
   while ((m = scriptRegex.exec(raw)) !== null) {
-    const attrs = m[1]
-    const body = m[2]
-    const full = m[0]
-    // Matches stx's classifier: explicit server, then signals, then explicit client markers
-    if (/\bserver\b/.test(attrs)) serverScripts.push(body)
-    else if (SIGNALS_PATTERN.test(body)) clientBlocks.push(full)
-    else if (/\bclient\b/.test(attrs) || /\btype\s*=\s*["']module["']/.test(attrs) || /\bsrc\s*=/.test(attrs)) clientBlocks.push(full)
-    else serverScripts.push(body)
+    if (/\bserver\b/.test(m[1])) {
+      serverScripts.push(m[2])
+      template = template.replace(m[0], '')
+    }
   }
-
-  const styleMatches = raw.match(/<style\b[^>]*>[\s\S]*?<\/style>/gi) || []
-  const template = raw
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
 
   const ctx: Record<string, any> = {
     __filename: resolved.file,
@@ -119,24 +116,20 @@ async function renderPage(resolved: { file: string, params: Record<string, strin
   }
 
   const deps = new Set<string>()
-  const processed = await processDirectives(template, ctx, resolved.file, STX_OPTIONS, deps)
+  let html = await processDirectives(template, ctx, resolved.file, STX_OPTIONS, deps)
 
-  let html = processed
-  if (styleMatches.length) {
-    html = html.includes('</head>')
-      ? html.replace('</head>', styleMatches.join('\n') + '\n</head>')
-      : styleMatches.join('\n') + html
-  }
-  if (clientBlocks.length) {
-    // Interpolate {{ expr }} / {!! expr !!} in script bodies using the
-    // server-side context before injecting. Lets pages write
-    // `const PRICE = {{ car.price }}` in <script client> blocks directly.
-    const interpolatedScripts = interpolateScriptsInTemplate(clientBlocks.join('\n'), ctx)
-    const idx = html.lastIndexOf('</body>')
-    html = idx >= 0
-      ? html.slice(0, idx) + interpolatedScripts + html.slice(idx)
-      : html + interpolatedScripts
-  }
+  // Interpolate {{ expr }} / {!! expr !!} only inside the merged __stx_setup_
+  // function. A template-wide interpolation would match `{{ … }}` inside the
+  // signals runtime's own regex literals (e.g. /{{\s*(.+?)\s*}}/) and crash
+  // on evaluation. The setup function is the one place user `<script client>`
+  // bodies live after processScriptSetup's merge.
+  html = html.replace(
+    /<script\b([^>]*)>([\s\S]*?)<\/script>/g,
+    (full, attrs: string, body: string) => {
+      if (!/function\s+__stx_setup_/.test(body)) return full
+      return `<script${attrs}>${interpolateScriptExpressions(body, ctx)}</script>`
+    },
+  )
 
   // Inject the canonical SPA router. Standalone serve.ts bypasses the
   // main render pipeline, so we hook it in here — otherwise we miss the

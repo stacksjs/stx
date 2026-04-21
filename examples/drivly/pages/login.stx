@@ -34,7 +34,7 @@ useSeoMeta({ title: pageTitle, robots: 'noindex' })
            type="email" x-model="email" required placeholder="you@example.com" autocomplete="email">
   </label>
   <label class="block mt-4">
-    <span class="flex justify-between text-[0.8125rem] font-medium mb-1.5"><span>Password</span><a href="#" class="text-xs text-[#FF3E54] normal-case tracking-normal">Forgot?</a></span>
+    <span class="flex justify-between text-[0.8125rem] font-medium mb-1.5"><span>Password</span><StxLink to="/forgot" class="text-xs text-[#FF3E54] normal-case tracking-normal">Forgot?</StxLink></span>
     <input class="w-full py-3 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-[0.9375rem]"
            type="password" x-model="password" required autocomplete="current-password">
   </label>

@@ -4,7 +4,6 @@ import { cars } from '../data/cars'
 const pageTitle = 'Favorites · Drivly'
 const activePage = 'favorites'
 
-definePageMeta({ middleware: ['auth'] })
 useSeoMeta({ title: pageTitle, robots: 'noindex' })
 
 // Emit every car server-side; the :show binding below hides non-favorites.

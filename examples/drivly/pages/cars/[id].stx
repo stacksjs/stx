@@ -309,17 +309,20 @@ const tabs = [
           @endif
         </div>
 
-        <!-- Dates bind to fromDate/toDate signals via x-model -->
+        <!-- Dates bind to fromDate/toDate signals via x-model. `min` on start
+             prevents booking in the past; `:attr:min` on end binds to fromDate
+             so end-before-start is unselectable in the native picker. -->
         <div class="grid grid-cols-2 border border-[color:var(--border)] rounded-xl overflow-hidden mb-2">
           <label class="p-3 border-r border-[color:var(--border)] cursor-pointer block">
             <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-[color:var(--text-muted)] block">Trip start</span>
-            <input type="date" x-model="fromDate" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
+            <input type="date" x-model="fromDate" :attr:min="todayStr" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
           </label>
           <label class="p-3 cursor-pointer block">
             <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-[color:var(--text-muted)] block">Trip end</span>
-            <input type="date" x-model="toDate" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
+            <input type="date" x-model="toDate" :attr:min="fromDate" class="border-0 bg-transparent outline-0 text-[color:var(--text)] text-sm w-full py-0.5">
           </label>
         </div>
+        <p class="m-0 mb-2 text-[0.8125rem] text-[#FF3E54]" :show="dateError()" :text="dateError"></p>
 
         <div class="grid grid-cols-2 border border-[color:var(--border)] rounded-xl overflow-hidden mb-4">
           <label class="p-3 border-r border-[color:var(--border)] cursor-pointer block">
@@ -418,6 +421,26 @@ const tabs = [
   const pickupTime  = state('10:00')
   const returnTime  = state('10:00')
   const lightboxIdx = state(null)
+
+  // Today's date in YYYY-MM-DD format — feeds the `min` attribute on the
+  // trip-start input so past dates can't be selected. A derived signal
+  // would re-evaluate only on date changes, but Date.now() changes by the
+  // millisecond, so a plain computed value at mount is fine here.
+  const todayStr = (() => {
+    const d = new Date()
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+  })()
+
+  // Inline date validation — surfaces a friendly message under the picker
+  // if the user somehow lands on an invalid range (e.g. end before start
+  // due to timezone math or a manual keyboard edit).
+  const dateError = derived(() => {
+    const f = fromDate(), t = toDate()
+    if (!f || !t) return ''
+    if (new Date(t) < new Date(f)) return 'Return date must be on or after pickup.'
+    if (new Date(f) < new Date(todayStr)) return 'Pickup date can\'t be in the past.'
+    return ''
+  })
 
   // Store signals propagate through derived() directly — reading favorites.ids()
   // inside the computation subscribes it to ids changes.

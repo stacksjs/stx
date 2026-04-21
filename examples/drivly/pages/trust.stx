@@ -1,0 +1,119 @@
+<script server>
+const pageTitle = 'Trust & Safety · Drivly'
+const activePage = 'trust'
+
+useSeoMeta({
+  title: 'Trust & Safety — Drivly',
+  description: 'How we verify drivers, protect hosts, and keep every trip safe.',
+})
+
+const pillars = [
+  {
+    icon: '🪪',
+    title: 'Every driver, verified',
+    body: 'Government ID, selfie match, driving record check, and a fraud screen — before the first trip. Red flags auto-escalate to our trust team.',
+  },
+  {
+    icon: '🛡️',
+    title: 'Up to $750K protection',
+    body: 'Every trip is backed by a top-tier liability policy plus physical-damage coverage. Hosts choose the daily price; Drivly handles the paperwork.',
+  },
+  {
+    icon: '📞',
+    title: '24/7 human support',
+    body: 'Break down at 2am? Tap the red button in-app. Our roadside partners are dispatched immediately, and a trust specialist joins the call within 60 seconds.',
+  },
+  {
+    icon: '🎯',
+    title: 'Real-time risk scoring',
+    body: 'Every booking runs through 150+ signals — device, behavior, history, payment. High-risk trips get additional verification before the keys move.',
+  },
+]
+
+const stats = [
+  { n: '99.97%', l: 'Trips completed without incident (2025)' },
+  { n: '<60s',   l: 'Avg response time for urgent tickets' },
+  { n: '$18M',   l: 'Paid out in host damage claims last year' },
+  { n: '12 min', l: 'Avg resolution time for lockouts' },
+]
+
+const forDrivers = [
+  'Clear photos and accurate info on every listing',
+  'Verified host reviews — can\'t be gamed',
+  'Free cancellation up to 24 hours before trip',
+  'Roadside assistance included in every trip',
+  '24/7 support in English, Spanish, French, Portuguese',
+]
+
+const forHosts = [
+  'Guest ID and license verified before booking',
+  'Up to $750K liability coverage on every trip',
+  'Physical damage coverage up to cash value',
+  'Host Protection Plan covers mechanical wear',
+  'Three-strike policy keeps bad actors off the platform',
+]
+</script>
+
+@extends('layouts/app.stx')
+
+@section('content')
+<div class="max-w-[1080px] mx-auto px-6 py-12 pb-20">
+
+  <div class="text-center mb-16">
+    <span class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-semibold text-[#FF3E54] bg-[rgba(255,62,84,0.1)] border border-[rgba(255,62,84,0.25)] mb-4">Trust & Safety</span>
+    <h1 class="serif text-5xl sm:text-6xl lg:text-7xl m-0 mb-4 leading-[1.05]">Every trip, backed by real protection.</h1>
+    <p class="text-lg text-[color:var(--text-secondary)] max-w-[58ch] mx-auto leading-relaxed m-0">We don't cross our fingers and hope it goes well — we verify every driver, insure every trip, and put a human on the line 24/7.</p>
+  </div>
+
+  <section class="grid md:grid-cols-2 grid-cols-1 gap-5 mb-20">
+    @foreach (pillars as p)
+      <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-7">
+        <p class="text-4xl m-0 mb-3">{{ p.icon }}</p>
+        <h2 class="text-xl font-bold m-0 mb-2">{{ p.title }}</h2>
+        <p class="text-[color:var(--text-muted)] m-0 leading-relaxed">{{ p.body }}</p>
+      </div>
+    @endforeach
+  </section>
+
+  <section class="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-2 gap-6 mb-20 py-10 border-y border-[color:var(--border)]">
+    @foreach (stats as s)
+      <div class="text-center">
+        <p class="serif text-4xl sm:text-5xl m-0 mb-2 text-[#FF3E54]">{{ s.n }}</p>
+        <p class="text-[color:var(--text-muted)] text-sm m-0 leading-snug">{{ s.l }}</p>
+      </div>
+    @endforeach
+  </section>
+
+  <section class="grid md:grid-cols-2 grid-cols-1 gap-10 mb-20">
+    <div>
+      <h2 class="serif text-3xl m-0 mb-4">What drivers get</h2>
+      <ul class="list-none p-0 m-0 flex flex-col gap-3">
+        @foreach (forDrivers as item)
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-[#FF3E54] flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            <span class="text-[color:var(--text-secondary)] leading-relaxed">{{ item }}</span>
+          </li>
+        @endforeach
+      </ul>
+    </div>
+    <div>
+      <h2 class="serif text-3xl m-0 mb-4">What hosts get</h2>
+      <ul class="list-none p-0 m-0 flex flex-col gap-3">
+        @foreach (forHosts as item)
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-[#FF3E54] flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            <span class="text-[color:var(--text-secondary)] leading-relaxed">{{ item }}</span>
+          </li>
+        @endforeach
+      </ul>
+    </div>
+  </section>
+
+  <section class="rounded-3xl p-12 text-center border" style="background: linear-gradient(135deg, rgba(255,62,84,0.1) 0%, rgba(147,51,234,0.08) 100%); border-color: rgba(255,62,84,0.25)">
+    <h2 class="serif text-4xl sm:text-5xl m-0 mb-3">Read the full report</h2>
+    <p class="text-[color:var(--text-muted)] m-0 mb-8 text-lg max-w-[48ch] mx-auto leading-relaxed">Our 2025 Trust & Safety report breaks down every incident, claim, and response — published annually.</p>
+    <StxLink to="/press" class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-colors">View in Newsroom →</StxLink>
+  </section>
+
+</div>
+@endsection

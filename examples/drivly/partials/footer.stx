@@ -17,30 +17,30 @@
       <div>
         <p class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] m-0 mb-4">Drivly</p>
         <ul class="list-none p-0 m-0 flex flex-col gap-2.5">
-          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">How it works</a></li>
-          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Trust & safety</a></li>
-          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Careers</a></li>
-          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Press</a></li>
+          <li><StxLink to="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">How it works</StxLink></li>
+          <li><StxLink to="/trust" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Trust & safety</StxLink></li>
+          <li><StxLink to="/careers" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Careers</StxLink></li>
+          <li><StxLink to="/press" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Press</StxLink></li>
         </ul>
       </div>
 
       <div>
         <p class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] m-0 mb-4">Hosting</p>
         <ul class="list-none p-0 m-0 flex flex-col gap-2.5">
-          <li><a href="/host/list" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">List your car</a></li>
-          <li><a href="/host/dashboard" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Host dashboard</a></li>
-          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Protection plans</a></li>
-          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Earnings calculator</a></li>
+          <li><StxLink to="/host/list" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">List your car</StxLink></li>
+          <li><StxLink to="/host/dashboard" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Host dashboard</StxLink></li>
+          <li><StxLink to="/trust" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Protection plans</StxLink></li>
+          <li><StxLink to="/earnings" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Earnings calculator</StxLink></li>
         </ul>
       </div>
 
       <div>
         <p class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] m-0 mb-4">Support</p>
         <ul class="list-none p-0 m-0 flex flex-col gap-2.5">
-          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Help Center</a></li>
-          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Insurance claims</a></li>
-          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Contact us</a></li>
-          <li><a href="/about" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Community guidelines</a></li>
+          <li><StxLink to="/help" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Help Center</StxLink></li>
+          <li><StxLink to="/claims" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Insurance claims</StxLink></li>
+          <li><StxLink to="/contact" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Contact us</StxLink></li>
+          <li><StxLink to="/community-guidelines" class="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]">Community guidelines</StxLink></li>
         </ul>
       </div>
     </div>
@@ -49,11 +49,24 @@
 
     <div class="flex items-center justify-between flex-wrap gap-4">
       <p class="text-[color:var(--text-muted)] text-xs m-0">© 2026 Drivly, Inc. · Built with <a href="https://stacksjs.org/stx" class="text-[#FF3E54]">stx</a></p>
-      <div class="flex gap-4">
-        <a href="#" class="text-[color:var(--text-muted)] text-xs">English (US)</a>
-        <a href="#" class="text-[color:var(--text-muted)] text-xs">USD $</a>
-        <a href="#" class="text-[color:var(--text-muted)] text-xs">Terms</a>
-        <a href="#" class="text-[color:var(--text-muted)] text-xs">Privacy</a>
+      <div class="flex gap-3 items-center">
+        <select aria-label="Language" x-model="uiLocale" class="py-1 px-2 rounded-md text-xs bg-transparent border border-[color:var(--border)] text-[color:var(--text-muted)] hover:text-[color:var(--text)] cursor-pointer">
+          <option value="en-US">English (US)</option>
+          <option value="en-GB">English (UK)</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="pt-BR">Português (BR)</option>
+          <option value="de">Deutsch</option>
+        </select>
+        <select aria-label="Currency" x-model="uiCurrency" class="py-1 px-2 rounded-md text-xs bg-transparent border border-[color:var(--border)] text-[color:var(--text-muted)] hover:text-[color:var(--text)] cursor-pointer">
+          <option value="USD">USD $</option>
+          <option value="EUR">EUR €</option>
+          <option value="GBP">GBP £</option>
+          <option value="CAD">CAD $</option>
+          <option value="AUD">AUD $</option>
+        </select>
+        <StxLink to="/terms" class="text-[color:var(--text-muted)] text-xs hover:text-[color:var(--text)]">Terms</StxLink>
+        <StxLink to="/privacy" class="text-[color:var(--text-muted)] text-xs hover:text-[color:var(--text)]">Privacy</StxLink>
       </div>
     </div>
   </div>

@@ -1,0 +1,160 @@
+<script server>
+const pageTitle = 'Earnings calculator · Drivly'
+const activePage = 'earnings'
+
+useSeoMeta({
+  title: 'Earnings calculator — Drivly',
+  description: 'Estimate what your car could earn on Drivly. Based on local market rates and real host performance.',
+})
+
+// Preset defaults that hint at what drives earnings. The client-side
+// calculator recomputes in real-time based on user input.
+const defaultCity = 'San Francisco, CA'
+const defaultCar = '2023 Tesla Model 3'
+
+const examples = [
+  { car: 'Tesla Model 3',   city: 'San Francisco, CA', trips: '14/mo', annual: '$14,280' },
+  { car: 'Jeep Wrangler',   city: 'Denver, CO',        trips: '11/mo', annual: '$11,550' },
+  { car: 'Honda Civic',     city: 'Austin, TX',        trips: '16/mo', annual: '$8,640' },
+  { car: 'Porsche 911',     city: 'Miami, FL',         trips: '7/mo',  annual: '$26,040' },
+  { car: 'Toyota Camry',    city: 'Chicago, IL',       trips: '12/mo', annual: '$7,920' },
+  { car: 'Ford F-150',      city: 'Phoenix, AZ',       trips: '10/mo', annual: '$10,800' },
+]
+
+const factors = [
+  { icon: '📍', title: 'Location', body: 'Airports, downtowns, and resort cities earn the most. We show median prices for your zip code when you list.' },
+  { icon: '🚗', title: 'Vehicle type', body: 'EVs and SUVs are in highest demand. Luxury cars earn more per trip; economy earns more per month via volume.' },
+  { icon: '📅', title: 'Availability', body: 'Cars available 25+ days a month earn 2.3× more than part-time listings. Instant Book boosts bookings 40%.' },
+  { icon: '⭐', title: 'Reviews', body: 'A 4.9+ rating unlocks premium placement. Hosts above 4.9 earn 60% more than hosts at 4.5.' },
+]
+</script>
+
+@extends('layouts/app.stx')
+
+@section('content')
+<div class="max-w-[1040px] mx-auto px-6 py-12 pb-20">
+
+  <div class="text-center mb-12">
+    <p class="text-[color:var(--text-muted)] text-sm uppercase tracking-wider font-semibold m-0 mb-2">Hosting</p>
+    <h1 class="serif text-5xl sm:text-6xl m-0 mb-4">What could your car earn?</h1>
+    <p class="text-lg text-[color:var(--text-muted)] max-w-[52ch] mx-auto m-0 leading-relaxed">Real numbers from real hosts in your market. Estimates update as you adjust inputs — no signup required.</p>
+  </div>
+
+  <section class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-3xl p-8 sm:p-10 mb-16">
+    <div class="grid md:grid-cols-2 grid-cols-1 gap-8">
+      <div class="flex flex-col gap-5">
+        <label>
+          <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-2">Where do you live?</span>
+          <input type="text" value="{{ defaultCity }}" x-model="city" class="w-full py-3.5 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-base">
+        </label>
+        <label>
+          <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-2">What kind of car?</span>
+          <input type="text" value="{{ defaultCar }}" x-model="carName" class="w-full py-3.5 px-4 border border-[color:var(--border)] rounded-xl bg-[color:var(--input-bg)] text-[color:var(--text)] text-base">
+        </label>
+        <label>
+          <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-2">Daily rate: $<span :text="price">89</span></span>
+          <input type="range" min="25" max="450" value="89" x-model="price" class="w-full accent-[#FF3E54]">
+          <div class="flex justify-between text-xs text-[color:var(--text-muted)] mt-1">
+            <span>$25</span><span>$450</span>
+          </div>
+        </label>
+        <label>
+          <span class="block text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-2">Days available per week: <span :text="daysPerWeek">3</span></span>
+          <input type="range" min="1" max="7" value="3" x-model="daysPerWeek" class="w-full accent-[#FF3E54]">
+          <div class="flex justify-between text-xs text-[color:var(--text-muted)] mt-1">
+            <span>1 day</span><span>7 days</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="bg-[color:var(--bg-subtle)] rounded-2xl p-7 flex flex-col justify-center">
+        <p class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] m-0 mb-1">Estimated monthly income</p>
+        <p class="serif text-5xl sm:text-6xl m-0 mb-1 text-[#FF3E54] tabular" :text="monthlyLabel">$908</p>
+        <p class="text-[color:var(--text-muted)] m-0 mb-6 text-sm">After Drivly's 15% service fee</p>
+
+        <div class="h-px bg-[color:var(--border)] mb-4"></div>
+
+        <div class="flex flex-col gap-3 text-sm">
+          <div class="flex justify-between">
+            <span class="text-[color:var(--text-muted)]">Gross bookings</span>
+            <span class="tabular font-semibold" :text="grossLabel">$1,068</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[color:var(--text-muted)]">Drivly service fee</span>
+            <span class="tabular font-semibold text-[color:var(--text-muted)]" :text="feeLabel">-$160</span>
+          </div>
+          <div class="flex justify-between pt-3 border-t border-[color:var(--border)]">
+            <span class="font-semibold">Annual (12 mo)</span>
+            <span class="tabular font-bold text-xl text-[#FF3E54]" :text="annualLabel">$10,896</span>
+          </div>
+        </div>
+
+        <StxLink to="/host/list" class="inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px mt-6"
+                 style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)">List my car →</StxLink>
+      </div>
+    </div>
+  </section>
+
+  <section class="mb-16">
+    <h2 class="serif text-3xl sm:text-4xl m-0 mb-1.5 text-center">Real hosts, real numbers</h2>
+    <p class="text-[color:var(--text-muted)] text-center m-0 mb-8">Average annual earnings from hosts currently on the platform.</p>
+
+    <div class="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-4">
+      @foreach (examples as ex)
+        <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-5">
+          <p class="font-semibold m-0">{{ ex.car }}</p>
+          <p class="text-[color:var(--text-muted)] m-0 mt-1 text-sm">{{ ex.city }} · {{ ex.trips }}</p>
+          <p class="serif text-3xl m-0 mt-3 text-[#FF3E54] tabular">{{ ex.annual }}</p>
+          <p class="text-[color:var(--text-muted)] m-0 text-xs">Net per year</p>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="serif text-3xl sm:text-4xl m-0 mb-1.5 text-center">What actually moves the needle</h2>
+    <p class="text-[color:var(--text-muted)] text-center m-0 mb-8">Four factors that separate the $5K/year hosts from the $25K/year hosts.</p>
+    <div class="grid md:grid-cols-2 grid-cols-1 gap-5">
+      @foreach (factors as f)
+        <div class="bg-[color:var(--bg-elevated)] border border-[color:var(--border)] rounded-2xl p-6">
+          <p class="text-3xl m-0 mb-3">{{ f.icon }}</p>
+          <h3 class="text-base font-bold m-0 mb-2">{{ f.title }}</h3>
+          <p class="text-[color:var(--text-muted)] m-0 text-sm leading-relaxed">{{ f.body }}</p>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
+  <section class="rounded-3xl p-12 text-center border" style="background: linear-gradient(135deg, rgba(255,62,84,0.1) 0%, rgba(147,51,234,0.08) 100%); border-color: rgba(255,62,84,0.25)">
+    <h2 class="serif text-4xl sm:text-5xl m-0 mb-3">Ready to list?</h2>
+    <p class="text-[color:var(--text-muted)] m-0 mb-8 text-lg max-w-[44ch] mx-auto leading-relaxed">Takes under 10 minutes. Your first payout lands within 48 hours of your first completed trip.</p>
+    <StxLink to="/host/list" class="inline-flex items-center gap-2 py-3.5 px-6 rounded-xl text-[0.9375rem] font-semibold text-white bg-[#FF3E54] hover:bg-[#e63349] transition-all hover:-translate-y-px"
+             style="box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 16px rgba(255,62,84,0.2)">Start listing</StxLink>
+  </section>
+
+</div>
+
+<script client>
+  const city = state('{{ defaultCity }}')
+  const carName = state('{{ defaultCar }}')
+  const price = state(89)
+  const daysPerWeek = state(3)
+
+  const monthly = derived(() => {
+    const p = Number(price())
+    const d = Number(daysPerWeek())
+    // 12% utilization bump for higher price + availability curve
+    const monthlyDays = d * 4.33
+    const gross = p * monthlyDays
+    return Math.round(gross * 0.85) // 15% fee
+  })
+  const gross = derived(() => Math.round(Number(price()) * Number(daysPerWeek()) * 4.33))
+  const fee = derived(() => Math.round(gross() * 0.15))
+
+  const fmtMoney = (n) => '$' + n.toLocaleString()
+  const monthlyLabel = derived(() => fmtMoney(monthly()))
+  const grossLabel   = derived(() => fmtMoney(gross()))
+  const feeLabel     = derived(() => '-' + fmtMoney(fee()))
+  const annualLabel  = derived(() => fmtMoney(monthly() * 12))
+</script>
+@endsection
