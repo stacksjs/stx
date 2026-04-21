@@ -648,6 +648,9 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
       ...(partialsDir && { partialsDir }),
+      autoShell: true,
+      ssr: stxConfig.ssr ?? defaultStxConfig.ssr ?? true,
+      app: stxConfig.app || {},
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
       ...('router' in stxConfig && { router: stxConfig.router }),
     }

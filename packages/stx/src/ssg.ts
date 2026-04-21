@@ -403,8 +403,10 @@ async function extractStaticPaths(filePath: string): Promise<StaticPathsResult |
     if (!scriptContent.includes('getStaticPaths')) return null
 
     // Extract and evaluate the function
+    // Allow optional leading whitespace before the closing `}` so indented
+    // functions inside <script server> blocks are matched.
     const fnMatch = scriptContent.match(
-      /(?:export\s+)?(?:async\s+)?function\s+getStaticPaths\s*\([^)]*\)\s*\{([\s\S]*?)\n\}/
+      /(?:export\s+)?(?:async\s+)?function\s+getStaticPaths\s*\([^)]*\)\s*\{([\s\S]*?)\n[\t ]*\}/
     )
     if (!fnMatch) return null
 

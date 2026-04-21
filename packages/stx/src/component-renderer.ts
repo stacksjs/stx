@@ -109,7 +109,7 @@ function parseComponentProps(
       && !ALPINE_PASSTHROUGH.has(rawAttrName)
       && !rawAttrName.startsWith('x-bind:')
       && !rawAttrName.startsWith('x-on:'))
-      ? ':' + rawAttrName.slice(2)
+      ? `:${rawAttrName.slice(2)}`
       : rawAttrName
 
     // --- Event attributes: @click, @submit.prevent, etc. ---
@@ -556,6 +556,7 @@ async function processCustomElementTags(
   options: StxOptions,
   dependencies: Set<string>,
 ): Promise<string> {
+  if (!template) return template
   let output = template
   const componentsDir = options.componentsDir || 'components'
 
@@ -588,6 +589,7 @@ async function processCustomElementTags(
     isPascalCase: boolean,
     skipTags?: Set<string>,
   ): Promise<string> {
+    if (!html) return html
     let result = html
 
     // Find all matching component tags
