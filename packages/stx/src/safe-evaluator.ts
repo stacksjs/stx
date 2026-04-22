@@ -12,7 +12,16 @@
 export interface SafeEvaluatorConfig {
   /** Maximum depth for object sanitization (default: 10) */
   maxSanitizeDepth: number
-  /** Allow bracket notation with string literals like obj["key"] (default: false) */
+  /**
+   * Allow bracket notation with string literals like `obj["key"]` (default: false).
+   *
+   * SECURITY WARNING: Enabling bracket notation broadens the attack surface.
+   * Bracket notation can access properties that dot-notation filters block
+   * (e.g. `obj["__proto__"]`, `obj["constructor"]`), and a dynamic key path
+   * assembled at runtime (`obj[userInput]`) cannot be statically proven safe.
+   * Only enable when all bracket keys are known string literals authored by
+   * the template writer — never based on untrusted input.
+   */
   allowBracketNotation: boolean
 }
 
@@ -188,10 +197,13 @@ export function sanitizeExpression(expression: string): string {
   // e.g., "__proto__" as a string value should be allowed
   const stripped = stripStringLiterals(trimmed)
 
-  // Check for dangerous patterns on the stripped expression
+  // Check for dangerous patterns on the stripped expression. Including the
+  // matched pattern in the error message makes it straightforward for devs
+  // to identify WHICH rule rejected their expression instead of guessing —
+  // e.g. whether they tripped the `eval` filter or the `__proto__` filter.
   for (const pattern of DANGEROUS_PATTERNS) {
     if (pattern.test(stripped)) {
-      throw new Error(`Potentially unsafe expression: ${trimmed}`)
+      throw new Error(`Potentially unsafe expression (matched /${pattern.source}/): ${trimmed}`)
     }
   }
 
@@ -345,6 +357,25 @@ export function isExpressionSafe(expression: string): boolean {
   }
 }
 
+/**
+ * Return the reason an expression is unsafe, or `null` if it passes all
+ * sanitization checks. Useful for tooling and debugging — lets callers
+ * report a structured reason without `try/catch`ing sanitize errors.
+ *
+ * @example
+ * getExpressionSafetyReason('eval(x)') // → 'matched pattern /\\beval\\b/'
+ * getExpressionSafetyReason('a + b')   // → null
+ */
+export function getExpressionSafetyReason(expression: string): string | null {
+  try {
+    sanitizeExpression(expression)
+    return null
+  }
+  catch (e) {
+    return e instanceof Error ? e.message : String(e)
+  }
+}
+
 // =============================================================================
 // Safe Evaluation Functions
 // =============================================================================
@@ -381,9 +412,15 @@ export function safeEvaluateArray(expression: string, context: Record<string, un
     if (Array.isArray(result)) {
       return result
     }
-    // Handle array-like objects
-    if (result && typeof result === 'object' && 'length' in result && typeof (result as any).length === 'number') {
-      return Array.from(result as ArrayLike<unknown>)
+    // Handle array-like objects. Length must be a non-negative, finite
+    // integer — `Array.from({ length: Infinity })` throws RangeError and
+    // `Array.from({ length: NaN })` silently produces an empty-but-wrong
+    // array; reject both so callers get a predictable `[]`.
+    if (result && typeof result === 'object' && 'length' in result) {
+      const len = (result as any).length
+      if (typeof len === 'number' && Number.isFinite(len) && len >= 0 && Number.isInteger(len)) {
+        return Array.from(result as ArrayLike<unknown>)
+      }
     }
     return []
   }
@@ -459,8 +496,23 @@ catch (e) {
  * @param context - Variables available during evaluation
  * @returns The result of the code execution
  */
+// Maximum characters accepted by `safeEvaluateCode`. At ~64KB of inline
+// template code you're almost certainly looking at minified output or
+// adversarial input; the pattern-scan step would otherwise pay linear cost
+// per regex on pathological input. Apps that legitimately need longer
+// inline code can call the lower-level evaluators directly.
+const MAX_SAFE_EVAL_CODE_LENGTH = 64 * 1024
+
 export function safeEvaluateCode(code: string, context: Record<string, unknown>): unknown {
   try {
+    if (typeof code !== 'string') return undefined
+    if (code.length > MAX_SAFE_EVAL_CODE_LENGTH) {
+      // Silent failure via the outer try/catch, but make the reason visible
+      // in debug logs so developers with huge inline blocks aren't left
+      // guessing why their directive went dark.
+      throw new Error(`safeEvaluateCode: input exceeds ${MAX_SAFE_EVAL_CODE_LENGTH} chars`)
+    }
+
     // Check for dangerous patterns in the full code
     for (const pattern of DANGEROUS_PATTERNS) {
       if (pattern.test(code)) {
@@ -578,8 +630,14 @@ export function createSafeLoopFunction(
         __safeCounter++;
         result += \`${processedBody}\`;
       }
+      // Surface the truncation both inline (for end users) and via
+      // console.warn (for developers running \`stx dev\`). A silent cut-off
+      // made pages render half a list with no breadcrumb.
       if (__safeCounter >= __maxIterations) {
         result += '<!-- [Loop Error]: Maximum iterations exceeded -->';
+        if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+          console.warn('[stx] @while loop hit max iterations (' + __maxIterations + '); template output was truncated. Raise via createSafeForLoop(..., maxIterations) if intentional.');
+        }
       }
       return result;
     // eslint-disable-next-line pickier/no-unused-vars

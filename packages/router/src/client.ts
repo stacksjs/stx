@@ -634,8 +634,13 @@ else {
   function injectStyles(){
     if(!document.getElementById('stx-r-css')){
       var s=document.createElement('style');s.id='stx-r-css';
-      var pc=String(o.progressColor).replace(/[;{}()]/g,'');
-      var ph=String(o.progressHeight).replace(/[;{}()]/g,'');
+      // Strip characters that could escape our CSS block and inject new
+      // declarations: ; { } ( ) " ' \\ < > plus whitespace control chars.
+      // This keeps the value safe to concat into a stylesheet even if a
+      // caller wires the config from an untrusted source.
+      var sanitize=function(v){return String(v).replace(/[;{}()"'\\\\<>\\n\\r\\t]/g,'')};
+      var pc=sanitize(o.progressColor);
+      var ph=sanitize(o.progressHeight);
       var css='.stx-navigating{cursor:wait}.stx-navigating a,.stx-navigating button{pointer-events:none}#stx-router-progress{position:fixed;top:0;left:0;right:0;height:'+ph+';background:'+pc+';box-shadow:0 0 8px '+pc+',0 0 4px '+pc+';transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out,opacity .26s ease;opacity:0;pointer-events:none;z-index:999999}';
       if(o.viewTransitions&&'startViewTransition' in document){
         var dur=(o.viewTransitionDuration||220)+'ms';

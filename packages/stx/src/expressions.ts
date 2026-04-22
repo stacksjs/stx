@@ -48,6 +48,25 @@ export type FilterFunction = (value: any, context: Record<string, any>, ...args:
  */
 const customFilters: Record<string, FilterFunction> = {}
 
+// Translation-placeholder regex cache. `translate` is called once per string
+// with `:key` substitutions, but the same keys reappear across most keys in a
+// page (`:user`, `:count`, etc.). Compiling the regex once per distinct key
+// saves ~O(params × calls) allocations on i18n-heavy pages.
+const translateRegexCache = new Map<string, RegExp>()
+function getTranslateRegex(key: string): RegExp {
+  let re = translateRegexCache.get(key)
+  if (!re) {
+    const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    // `(?!\w)` prevents `:user` from matching inside `:userName` — a Laravel
+    // placeholder ends at the first non-word char.
+    re = new RegExp(`:${escaped}(?!\\w)`, 'g')
+    translateRegexCache.set(key, re)
+  }
+  // Reset lastIndex because the cached regex is shared across calls.
+  re.lastIndex = 0
+  return re
+}
+
 // =============================================================================
 // Built-in Filters
 // =============================================================================
@@ -140,11 +159,14 @@ export const defaultFilters: Record<string, FilterFunction> = {
     // Replace parameters in the translation string
     let result = String(translation)
 
-    // Replace :parameter style placeholders
+    // Replace :parameter style placeholders. The `(?!\w)` lookahead prevents
+    // `:user` from also matching inside `:userName` — previously, passing
+    // `{ user: 'Alice' }` with a string containing `:userName` produced
+    // `AliceName`. The negative-word-char lookahead honors the Laravel-style
+    // placeholder convention where `:key` ends at the first non-word char.
     Object.entries(params).forEach(([paramKey, paramValue]) => {
-      const escapedKey = paramKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       result = result.replace(
-        new RegExp(`:${escapedKey}`, 'g'),
+        getTranslateRegex(paramKey),
         String(paramValue),
       )
     })
@@ -236,7 +258,9 @@ export const defaultFilters: Record<string, FilterFunction> = {
     if (value === undefined || value === null)
       return ''
     if (Array.isArray(value))
-      return value[0]
+      // Empty array → '' for template consistency (avoids `undefined`
+      // rendering in interpolations and matches the null/undefined case).
+      return value.length === 0 ? '' : value[0]
     return String(value).charAt(0)
   },
 
@@ -245,17 +269,22 @@ export const defaultFilters: Record<string, FilterFunction> = {
     if (value === undefined || value === null)
       return ''
     if (Array.isArray(value))
-      return value[value.length - 1]
+      return value.length === 0 ? '' : value[value.length - 1]
     const str = String(value)
     return str.charAt(str.length - 1)
   },
 
-  // Get length of array or string
+  // Get length of array, string, Map, Set, or plain object.
+  // Map/Set expose `.size`; without this branch the `typeof === 'object'`
+  // fallback would return `Object.keys(value).length` — which is always 0
+  // for a Map or Set, silently hiding the real cardinality.
   length: (value: any, _context: Record<string, any>) => {
     if (value === undefined || value === null)
       return 0
     if (Array.isArray(value) || typeof value === 'string')
       return value.length
+    if (value instanceof Map || value instanceof Set)
+      return value.size
     if (typeof value === 'object')
       return Object.keys(value).length
     return 0

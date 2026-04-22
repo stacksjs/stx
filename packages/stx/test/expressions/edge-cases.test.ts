@@ -105,14 +105,14 @@ describe('Expression Filter Stress Tests', () => {
     expect(result).toContain('5')
   })
 
-  it('first on empty array returns undefined', () => {
+  it('first on empty array returns empty string (template-safe)', () => {
     const result = defaultFilters.first([], ctx)
-    expect(result).toBeUndefined()
+    expect(result).toBe('')
   })
 
-  it('last on empty array returns undefined', () => {
+  it('last on empty array returns empty string (template-safe)', () => {
     const result = defaultFilters.last([], ctx)
-    expect(result).toBeUndefined()
+    expect(result).toBe('')
   })
 
   it('reverse on very long array (10000 items)', () => {

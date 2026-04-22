@@ -1855,14 +1855,26 @@ else {
     const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
 
     const evalExpr = () => {
+      // Mirror bindClass: first try the auto-unwrap proxy (so an expression
+      // like { active: count > 5 } reads signals as primitives), then retry
+      // with the raw scope so call-syntax expressions like
+      // { color: theme() } still work — the proxy unwraps signals to
+      // values, which would make theme() try to call a primitive and
+      // throw TypeError.
       try {
         const unwrapScope = createAutoUnwrapProxy(capturedScope);
         const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
         return fn(...Object.values(unwrapScope));
       }
-catch (e) {
-        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Style expression error:', expr, e);
-        return {};
+catch (e1) {
+        try {
+          const fn2 = new Function(...Object.keys(capturedScope), 'return ' + expr);
+          return fn2(...Object.values(capturedScope));
+        }
+catch (e2) {
+          if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Style expression error:', expr, e2);
+          return {};
+        }
       }
     };
 

@@ -44,30 +44,43 @@ export interface ParsedConditional {
 /**
  * Extract a parenthesized expression from a string, handling nested parens
  * e.g., "func(a, fn(b, c))" -> { expression: "func(a, fn(b, c))", endPos: 17 }
+ *
+ * Returns `null` for the legacy callers; use `extractParenthesizedExpressionDetailed`
+ * when you need to know WHY extraction failed (helpful for directive error
+ * messages pointing at the source location of a malformed `@if(`).
  */
 export function extractParenthesizedExpression(source: string, startPos: number): {
   expression: string
   endPos: number
 } | null {
-  // Skip whitespace
+  const result = extractParenthesizedExpressionDetailed(source, startPos)
+  return result.ok ? { expression: result.expression, endPos: result.endPos } : null
+}
+
+/**
+ * Structured variant of `extractParenthesizedExpression` — returns either a
+ * successful parse or a `{ ok: false, reason, pos }` record explaining the
+ * failure. Use this when emitting user-facing errors ("missing opening
+ * paren", "unclosed paren at column N", etc.).
+ */
+export type ExtractParenResult =
+  | { ok: true, expression: string, endPos: number }
+  | { ok: false, reason: 'missing-open-paren' | 'unclosed-paren', pos: number }
+
+export function extractParenthesizedExpressionDetailed(source: string, startPos: number): ExtractParenResult {
   let pos = startPos
-  while (pos < source.length && /\s/.test(source[pos])) {
-    pos++
-  }
+  while (pos < source.length && /\s/.test(source[pos])) pos++
 
   if (source[pos] !== '(') {
-    return null
+    return { ok: false, reason: 'missing-open-paren', pos }
   }
 
   const closePos = findMatchingDelimiter(source, '(', ')', pos)
   if (closePos === -1) {
-    return null
+    return { ok: false, reason: 'unclosed-paren', pos }
   }
 
-  return {
-    expression: source.slice(pos + 1, closePos),
-    endPos: closePos + 1,
-  }
+  return { ok: true, expression: source.slice(pos + 1, closePos), endPos: closePos + 1 }
 }
 
 // =============================================================================

@@ -491,8 +491,10 @@ describe('Built-in Filters: Array', () => {
       expect(defaultFilters.first('hello', ctx)).toBe('h')
     })
 
-    it('returns undefined for empty array', () => {
-      expect(defaultFilters.first([], ctx)).toBeUndefined()
+    it('returns empty string for empty array', () => {
+      // Template-safe: empty array yields '' so interpolations don't render
+      // `undefined`. Matches the null/undefined/empty-string behavior.
+      expect(defaultFilters.first([], ctx)).toBe('')
     })
 
     it('returns empty string for empty string', () => {
@@ -524,8 +526,9 @@ describe('Built-in Filters: Array', () => {
       expect(defaultFilters.last('hello', ctx)).toBe('o')
     })
 
-    it('returns undefined for empty array', () => {
-      expect(defaultFilters.last([], ctx)).toBeUndefined()
+    it('returns empty string for empty array', () => {
+      // Consistent with first([]) and null/undefined handling.
+      expect(defaultFilters.last([], ctx)).toBe('')
     })
 
     it('returns empty string for empty string', () => {
@@ -1915,14 +1918,14 @@ describe('Filter Stress Tests', () => {
     expect(result).toContain('5')
   })
 
-  it('first on empty array returns undefined', () => {
+  it('first on empty array returns empty string (template-safe)', () => {
     const result = defaultFilters.first([], ctx)
-    expect(result).toBeUndefined()
+    expect(result).toBe('')
   })
 
-  it('last on empty array returns undefined', () => {
+  it('last on empty array returns empty string (template-safe)', () => {
     const result = defaultFilters.last([], ctx)
-    expect(result).toBeUndefined()
+    expect(result).toBe('')
   })
 
   it('reverse on very long array (10000 items)', () => {

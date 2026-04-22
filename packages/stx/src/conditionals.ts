@@ -225,7 +225,10 @@ export function processConditionals(template: string, context: Record<string, an
 
       const contentStart = exprResult.endPos
       const endPos = findMatchingEndTag(output, 'unless', 'endunless', contentStart)
-      if (endPos === -1) break
+      if (endPos === -1) {
+        console.warn(`[stx] @unless directive at position ${startPos} has no matching @endunless — the block was skipped. Check for typos or missing closers.`)
+        break
+      }
 
       const content = output.slice(contentStart, endPos)
       const condition = exprResult.expression
@@ -428,6 +431,45 @@ export function processConditionals(template: string, context: Record<string, an
 // =============================================================================
 
 /**
+ * Parse `(  '…'  )` or `(  "…"  )` at the start of `src`, with support for
+ * backslash-escaped quotes inside the string. Returns `null` if the leading
+ * token doesn't match.
+ *
+ * @returns `{ value, consumed }` — the unescaped guard name and the number
+ * of characters consumed from `src` (including parens and whitespace).
+ */
+function parseQuotedGuard(src: string): { value: string, consumed: number } | null {
+  let i = 0
+  while (i < src.length && /\s/.test(src[i])) i++
+  if (src[i] !== '(') return null
+  i++
+  while (i < src.length && /\s/.test(src[i])) i++
+
+  const quote = src[i]
+  if (quote !== '\'' && quote !== '"') return null
+  i++
+
+  const chunks: string[] = []
+  while (i < src.length) {
+    const ch = src[i]
+    if (ch === '\\' && i + 1 < src.length) {
+      chunks.push(src[i + 1])
+      i += 2
+      continue
+    }
+    if (ch === quote) { i++; break }
+    chunks.push(ch)
+    i++
+  }
+
+  while (i < src.length && /\s/.test(src[i])) i++
+  if (src[i] !== ')') return null
+  i++
+
+  return { value: chunks.join(''), consumed: i }
+}
+
+/**
  * Process @auth and permissions directives
  *
  * @see Authentication Directive Documentation above for required context shapes
@@ -498,17 +540,24 @@ else if (nextClose < Infinity) {
       let contentStart: number
 
       const afterAuth = output.slice(startPos + '@auth'.length)
-      const guardMatch = afterAuth.match(/^\s*\(\s*(['"])(.*?)\1\s*\)/)
-      if (guardMatch) {
-        guard = guardMatch[2]
-        contentStart = startPos + '@auth'.length + guardMatch[0].length
+      // Quote-aware guard extraction: the opening quote (single or double)
+      // closes on the NEXT un-escaped matching quote. The prior lazy
+      // regex `/^\s*\(\s*(['"])(.*?)\1\s*\)/` misparsed values like
+      // `@auth('admin\'s')` because `\1` matched the first inner quote.
+      const parsedGuard = parseQuotedGuard(afterAuth)
+      if (parsedGuard) {
+        guard = parsedGuard.value
+        contentStart = startPos + '@auth'.length + parsedGuard.consumed
       }
 else {
         contentStart = startPos + '@auth'.length
       }
 
       const endPos = findEndTag(output, 'auth', 'endauth', contentStart)
-      if (endPos === -1) break
+      if (endPos === -1) {
+        console.warn(`[stx] @auth directive at position ${startPos} has no matching @endauth — the block was skipped.`)
+        break
+      }
 
       const fullContent = output.slice(contentStart, endPos)
       const elsePos = findTopLevelElse(fullContent, 'auth', 'endauth')
@@ -551,17 +600,21 @@ else {
       let contentStart: number
 
       const afterGuest = output.slice(startPos + '@guest'.length)
-      const guardMatch = afterGuest.match(/^\s*\(\s*(['"])(.*?)\1\s*\)/)
-      if (guardMatch) {
-        guard = guardMatch[2]
-        contentStart = startPos + '@guest'.length + guardMatch[0].length
+      // Same quote-aware parser as @auth so embedded quotes work.
+      const parsedGuestGuard = parseQuotedGuard(afterGuest)
+      if (parsedGuestGuard) {
+        guard = parsedGuestGuard.value
+        contentStart = startPos + '@guest'.length + parsedGuestGuard.consumed
       }
 else {
         contentStart = startPos + '@guest'.length
       }
 
       const endPos = findEndTag(output, 'guest', 'endguest', contentStart)
-      if (endPos === -1) break
+      if (endPos === -1) {
+        console.warn(`[stx] @guest directive at position ${startPos} has no matching @endguest — the block was skipped.`)
+        break
+      }
 
       const fullContent = output.slice(contentStart, endPos)
       const elsePos = findTopLevelElse(fullContent, 'guest', 'endguest')
@@ -637,7 +690,10 @@ else {
 
       const contentStart = startPos + `@${directive}`.length + parsed.paramsEnd
       const endPos = findEndTag(output, directive, endDirective, contentStart)
-      if (endPos === -1) break
+      if (endPos === -1) {
+        console.warn(`[stx] @${directive} directive at position ${startPos} has no matching @${endDirective} — the block was skipped.`)
+        break
+      }
 
       const fullContent = output.slice(contentStart, endPos)
 
@@ -773,7 +829,10 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
 
       const contentStart = exprResult.endPos
       const endPos = findMatchingEndTag(output, directiveName, endDirectiveName, contentStart)
-      if (endPos === -1) break
+      if (endPos === -1) {
+        console.warn(`[stx] @${directiveName} directive at position ${startPos} has no matching @${endDirectiveName} — the block was skipped.`)
+        break
+      }
 
       const fullContent = output.slice(contentStart, endPos)
       const variable = exprResult.expression
@@ -890,7 +949,10 @@ else if (nextClose < Infinity) {
           searchPos = nextClose + nextCloseMatch![0].length
         } else break
       }
-      if (endPos === -1) break
+      if (endPos === -1) {
+        console.warn(`[stx] @${directiveName} directive at position ${startPos} has no matching @${endDirectiveName} — the block was skipped.`)
+        break
+      }
 
       const fullContent = result.substring(contentStart, endPos)
 

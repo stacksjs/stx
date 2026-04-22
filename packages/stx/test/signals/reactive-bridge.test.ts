@@ -230,7 +230,10 @@ describe('Error resilience for async init patterns', () => {
   })
 
   it('should suppress TypeError in style expression', () => {
-    expect(runtime).toContain("!(e instanceof TypeError)) console.warn('[STX] Style expression error:'")
+    // Catch variable name (e / e1 / e2) is an implementation detail — assert
+    // the TypeError guard wraps the Style warn regardless. bindStyle now has
+    // a retry pattern (same as bindClass) and uses e2 in the inner catch.
+    expect(runtime).toMatch(/!\(e2? instanceof TypeError\)\)\s*console\.warn\(['"]\[STX\] Style expression error:/)
   })
 
   it('should suppress TypeError in class expression', () => {

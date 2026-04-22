@@ -301,6 +301,12 @@ export class Tokenizer {
     this.advance() // skip opening backtick
     let depth = 0
 
+    // Cap nesting at a defensive depth. Hand-authored templates rarely go
+    // beyond 3–4 levels of `${`; thousands of levels are either a bug or
+    // adversarial input designed to stack-overflow the consumer. We bail
+    // out of the loop rather than throw so the tokenizer stays forgiving.
+    const MAX_TEMPLATE_NESTING = 256
+
     while (this.pos < this.source.length) {
       const char = this.source[this.pos]
 
@@ -311,6 +317,13 @@ export class Tokenizer {
 
       // Handle nested template expressions ${...}
       if (char === '$' && this.peek(1) === '{') {
+        if (depth >= MAX_TEMPLATE_NESTING) {
+          // Walk to end-of-source and bail — the result token captures what
+          // we saw, and downstream parsers get a well-formed "template
+          // string" that simply stopped scanning.
+          this.pos = this.source.length
+          break
+        }
         this.advance(2)
         depth++
         continue
@@ -775,17 +788,29 @@ export function splitByPipe(expression: string): string[] {
       depth.brace--
     }
 
-    // Check for pipe when balanced and not || (logical OR)
+    // Check for pipe when balanced and not || (logical OR). Skip when the
+    // pipe is backslash-escaped (`\|`) outside a string — this lets filter
+    // arguments include literal pipe characters without accidentally
+    // starting a new filter segment. We strip the escape from `current` so
+    // the caller sees a clean `|`.
     if (
       char === '|'
       && expression[i + 1] !== '|'
       && (i === 0 || expression[i - 1] !== '|')
+      && expression[i - 1] !== '\\'
       && depth.paren === 0
       && depth.bracket === 0
       && depth.brace === 0
     ) {
       parts.push(current.trim())
       current = ''
+      continue
+    }
+
+    // If previous char was the escape for `\|`, drop the backslash so the
+    // emitted segment contains the intended literal pipe.
+    if (char === '|' && expression[i - 1] === '\\' && !inString) {
+      current = current.slice(0, -1) + char
       continue
     }
 
