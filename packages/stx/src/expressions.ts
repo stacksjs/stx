@@ -628,18 +628,25 @@ export function interpolateScriptsInTemplate(
 export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {
   let output = template
 
-  // Protect <style> blocks from expression processing. CSS often contains
-  // patterns like `\s*` or `{content}` that look like template expressions
-  // but aren't. Replace them with placeholders, process expressions on the
-  // rest, then restore.
+  // Protect <style> and <script> blocks that contain NO stx template
+  // expressions from expression processing.  CSS often contains patterns
+  // like `\s*` or `{content}` that look like template expressions but
+  // aren't, and <script> blocks have their own processing pipeline.
+  // However, layout templates may legitimately embed `{!! var !!}` or
+  // `{{ var }}` inside these tags (e.g. `{!! customCSS !!}` in a <style>),
+  // so only protect blocks without stx expressions.
   const styleBlocks: string[] = []
   output = output.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, (match) => {
+    // If the block contains stx expressions, let them be processed
+    if (/\{\{[\s\S]*?\}\}|\{!![\s\S]*?!!\}/.test(match)) return match
     const idx = styleBlocks.length
     styleBlocks.push(match)
     return `<!--__STX_STYLE_${idx}__-->`
   })
 
-  // Also protect <script> blocks (they have their own processing pipeline)
+  // Always protect <script> blocks — they have their own processing
+  // pipeline (interpolateScriptExpressions) and may contain regex
+  // patterns like /{{s*|s*}}/g that look like template expressions.
   const scriptBlocks: string[] = []
   output = output.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, (match) => {
     const idx = scriptBlocks.length
@@ -697,6 +704,26 @@ export function processExpressions(template: string, context: Record<string, any
         match,
       )
     }
+  })
+
+  // After {!! !!} replacement, newly injected content may contain
+  // <script> or <style> blocks (e.g. {!! content !!} injects the signals
+  // runtime which has regex patterns like /^{{\s*|\s*}}$/g that look like
+  // template expressions). Protect them before {{ }} processing.
+  output = output.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, (match) => {
+    // Skip already-protected blocks
+    if (match.startsWith('<!--__STX_SCRIPT_EXPR_')) return match
+    const idx = scriptBlocks.length
+    scriptBlocks.push(match)
+    return `<!--__STX_SCRIPT_EXPR_${idx}__-->`
+  })
+  output = output.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, (match) => {
+    if (match.startsWith('<!--__STX_STYLE_')) return match
+    // Still allow style blocks with remaining stx expressions
+    if (/\{\{[\s\S]*?\}\}|\{!![\s\S]*?!!\}/.test(match)) return match
+    const idx = styleBlocks.length
+    styleBlocks.push(match)
+    return `<!--__STX_STYLE_${idx}__-->`
   })
 
   // Replace {{ expr }} with escaped expressions
