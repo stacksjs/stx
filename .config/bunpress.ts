@@ -10,7 +10,7 @@ export default {
     { text: 'Guide', link: '/guide/getting-started' },
     { text: 'Features', link: '/features/components' },
     { text: 'API', link: '/api/' },
-    { text: 'Tools', link: '/guide/tools/vscode' },
+    { text: 'Examples', link: '/examples/patterns' },
     { text: 'Community', link: '/community/' },
     { text: 'GitHub', link: 'https://github.com/stacksjs/stx' },
   ],
@@ -38,10 +38,20 @@ export default {
           text: 'Core Concepts',
           collapsed: false,
           items: [
+            { text: 'Script Types', link: '/guide/script-types' },
+            { text: 'SSG vs SSR', link: '/guide/ssg-vs-ssr' },
+            { text: 'Prefix Convention', link: '/guide/prefix-convention' },
             { text: 'Templates', link: '/guide/templates' },
             { text: 'Directives', link: '/guide/directives' },
             { text: 'Components', link: '/guide/components' },
-            { text: 'State Management', link: '/guide/state' },
+          ],
+        },
+        {
+          text: 'State & Composables',
+          collapsed: false,
+          items: [
+            { text: 'State Management', link: '/guide/state-management' },
+            { text: 'Composables', link: '/guide/composables' },
             { text: 'TypeScript', link: '/guide/typescript' },
           ],
         },
@@ -50,6 +60,7 @@ export default {
           collapsed: false,
           items: [
             { text: 'Server-Side Rendering', link: '/guide/ssr' },
+            { text: 'Lazy Hydration', link: '/features/lazy-hydration' },
             { text: 'Desktop Apps', link: '/guide/desktop' },
             { text: 'Performance', link: '/guide/performance' },
             { text: 'Security', link: '/guide/security' },
@@ -58,11 +69,11 @@ export default {
           ],
         },
         {
-          text: 'Tools',
+          text: 'Why stx',
           collapsed: false,
           items: [
-            { text: 'VS Code Extension', link: '/guide/tools/vscode' },
-            { text: 'CLI', link: '/api/cli' },
+            { text: 'The Bun Advantage', link: '/guide/bun-advantage' },
+            { text: 'Benchmarks', link: '/guide/benchmarks' },
           ],
         },
         {
@@ -72,7 +83,14 @@ export default {
             { text: 'Best Practices', link: '/guide/best-practices' },
             { text: 'Migration from Blade', link: '/guide/migration-from-blade' },
             { text: 'Internationalization', link: '/guide/i18n' },
-            { text: 'Benchmarks', link: '/guide/benchmarks' },
+          ],
+        },
+        {
+          text: 'Tools',
+          collapsed: true,
+          items: [
+            { text: 'VS Code Extension', link: '/guide/tools/vscode' },
+            { text: 'CLI', link: '/api/cli' },
           ],
         },
       ],
@@ -120,30 +138,52 @@ export default {
           items: [
             { text: 'Overview', link: '/api/' },
             { text: 'Template Syntax', link: '/api/template-syntax' },
+            { text: 'Directives', link: '/api/directives' },
             { text: 'Configuration', link: '/api/config' },
             { text: 'CLI', link: '/api/cli' },
           ],
         },
         {
-          text: 'Core APIs',
+          text: 'Reactivity',
           collapsed: false,
           items: [
-            { text: 'Components', link: '/api/components' },
-            { text: 'Component API', link: '/api/component' },
-            { text: 'State', link: '/api/state' },
-            { text: 'Styling', link: '/api/styling' },
-            { text: 'TypeScript', link: '/api/typescript' },
+            { text: 'Bindings (x-*)', link: '/api/bindings' },
+            { text: 'Events (@)', link: '/api/events' },
+            { text: 'Stores', link: '/api/stores' },
+            { text: 'Composables', link: '/api/composables-ref' },
           ],
         },
         {
-          text: 'Utilities',
+          text: 'Components',
+          collapsed: false,
+          items: [
+            { text: 'Builtin Components', link: '/api/builtins' },
+            { text: 'Component API', link: '/api/component' },
+            { text: 'Components', link: '/api/components' },
+          ],
+        },
+        {
+          text: 'More',
           collapsed: true,
           items: [
-            { text: 'Utilities', link: '/api/utilities' },
-            { text: 'Helpers', link: '/api/helpers' },
-            { text: 'Core', link: '/api/core' },
+            { text: 'State', link: '/api/state' },
+            { text: 'Router', link: '/api/router' },
             { text: 'Plugins', link: '/api/plugins' },
+            { text: 'Styling', link: '/api/styling' },
+            { text: 'Error Handling', link: '/api/error-handling' },
+            { text: 'Caching', link: '/api/caching' },
             { text: 'Testing', link: '/api/testing' },
+          ],
+        },
+      ],
+
+      '/examples/': [
+        {
+          text: 'Examples',
+          collapsed: false,
+          items: [
+            { text: 'Code Patterns', link: '/examples/patterns' },
+            { text: 'Anti-Patterns', link: '/examples/anti-patterns' },
           ],
         },
       ],
