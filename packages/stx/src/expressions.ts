@@ -628,6 +628,25 @@ export function interpolateScriptsInTemplate(
 export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {
   let output = template
 
+  // Protect <style> blocks from expression processing. CSS often contains
+  // patterns like `\s*` or `{content}` that look like template expressions
+  // but aren't. Replace them with placeholders, process expressions on the
+  // rest, then restore.
+  const styleBlocks: string[] = []
+  output = output.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, (match) => {
+    const idx = styleBlocks.length
+    styleBlocks.push(match)
+    return `<!--__STX_STYLE_${idx}__-->`
+  })
+
+  // Also protect <script> blocks (they have their own processing pipeline)
+  const scriptBlocks: string[] = []
+  output = output.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, (match) => {
+    const idx = scriptBlocks.length
+    scriptBlocks.push(match)
+    return `<!--__STX_SCRIPT_EXPR_${idx}__-->`
+  })
+
   // Check if this template uses signals - if so, we need to preserve expressions
   // that reference runtime variables (like loop variables or signal calls)
   const hasSignals = usesSignalsInScript(template)
@@ -755,6 +774,16 @@ export function processExpressions(template: string, context: Record<string, any
       )
     }
   })
+
+  // Restore protected <script> blocks
+  for (let i = 0; i < scriptBlocks.length; i++) {
+    output = output.replace(`<!--__STX_SCRIPT_EXPR_${i}__-->`, scriptBlocks[i])
+  }
+
+  // Restore protected <style> blocks
+  for (let i = 0; i < styleBlocks.length; i++) {
+    output = output.replace(`<!--__STX_STYLE_${i}__-->`, styleBlocks[i])
+  }
 
   return output
 }
