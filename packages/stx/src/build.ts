@@ -65,7 +65,10 @@ export async function buildApp(options: UnifiedBuildOptions = {}): Promise<Unifi
       // (e.g., 'resources/views' → 'views'). Rejoin so generateStaticSite
       // resolves the correct full path from CWD.
       pagesDir: path.join(config.root || '.', config.pagesDir || config.build?.pagesDir || 'pages'),
-      publicDir: path.join(config.root || '.', config.publicDir || config.build?.publicDir || 'public'),
+      // publicDir is project-wide (like Nuxt/Vite/Next public/) — resolve from
+      // CWD, NOT from config.root. A Stacks layout puts .stx pages under
+      // `resources/views` but keeps `public/` at the repo root.
+      publicDir: config.publicDir || config.build?.publicDir || 'public',
       outputDir: config.build?.outputDir || 'dist',
       generate404: config.build?.generate404 ?? true,
       minify: config.build?.minify ?? true,
