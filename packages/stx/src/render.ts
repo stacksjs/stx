@@ -324,12 +324,12 @@ async function renderTemplateString(
   // Process client scripts
   if (renderOptions.processClientScripts !== false && clientScripts.length > 0) {
     const eventBindings = (context.__stx_event_bindings || []) as any[]
-    const transformedScripts = clientScripts.map((fullScript: string) => {
+    const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
       const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
       if (!contentMatch)
         return fullScript
-      return processClientScript(contentMatch[1], { eventBindings, templateContent: output })
-    })
+      return await processClientScript(contentMatch[1], { eventBindings, templateContent: output })
+    }))
     const scriptsHtml = transformedScripts.join('\n')
     const bodyEndMatch = output.match(/(<\/body>)/i)
     if (bodyEndMatch) {
