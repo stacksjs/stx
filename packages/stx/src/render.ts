@@ -64,6 +64,12 @@ export interface RenderOptions {
    * ```
    */
   layout?: string
+  /**
+   * Template-only mode: only process directives and expressions.
+   * Skips signals runtime, SPA router, and client script wrapping.
+   * Ideal for non-SPA consumers like documentation engines.
+   */
+  templateOnly?: boolean
 }
 
 // ============================================================================
@@ -276,8 +282,9 @@ export async function renderTemplate(
 export async function renderString(
   template: string,
   context: Record<string, unknown> = {},
+  options?: { templateOnly?: boolean },
 ): Promise<string> {
-  return renderTemplateString(template, process.cwd(), { context })
+  return renderTemplateString(template, process.cwd(), { context, ...options })
 }
 
 /**
@@ -321,23 +328,37 @@ async function renderTemplateString(
   let output = templateContent
   output = await processDirectives(output, context, filePath, options, dependencies)
 
-  // Process client scripts
-  if (renderOptions.processClientScripts !== false && clientScripts.length > 0) {
-    const eventBindings = (context.__stx_event_bindings || []) as any[]
-    const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
-      const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
-      if (!contentMatch)
-        return fullScript
-      return await processClientScript(contentMatch[1], { eventBindings, templateContent: output })
-    }))
-    const scriptsHtml = transformedScripts.join('\n')
-    const bodyEndMatch = output.match(/(<\/body>)/i)
-    if (bodyEndMatch) {
-      output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
+  if (renderOptions.templateOnly) {
+    // Template-only mode: strip injected runtimes (signals, router, SEO tags).
+    // Keep only the processed template HTML + any raw client scripts.
+    output = output.replace(/<script data-stx-scoped>[\s\S]*?<\/script>\s*/gi, '')
+    output = output.replace(/<!-- stx SEO Tags -->[\s\S]*?(?=<)/i, '')
+    if (clientScripts.length > 0) {
+      output += `\n${clientScripts.join('\n')}`
     }
-    else {
-      output += `\n${scriptsHtml}`
+  }
+  else {
+    // Process client scripts
+    if (renderOptions.processClientScripts !== false && clientScripts.length > 0) {
+      const eventBindings = (context.__stx_event_bindings || []) as any[]
+      const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
+        const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
+        if (!contentMatch)
+          return fullScript
+        return await processClientScript(contentMatch[1], { eventBindings, templateContent: output })
+      }))
+      const scriptsHtml = transformedScripts.join('\n')
+      const bodyEndMatch = output.match(/(<\/body>)/i)
+      if (bodyEndMatch) {
+        output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
+      }
+      else {
+        output += `\n${scriptsHtml}`
+      }
     }
+
+    // Inject SPA router script for client-side navigation
+    output = await injectRouterScript(output)
   }
 
   // Optionally wrap in full HTML document
@@ -347,9 +368,6 @@ async function renderTemplateString(
       output = wrapInHtmlDocument(output, renderOptions.title)
     }
   }
-
-  // Inject SPA router script for client-side navigation
-  output = await injectRouterScript(output)
 
   // Optionally inject Crosswind CSS from Tailwind utility classes
   if (renderOptions.injectCSS) {
