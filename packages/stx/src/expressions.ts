@@ -803,13 +803,14 @@ export function processExpressions(template: string, context: Record<string, any
   })
 
   // Restore protected <script> blocks
+  // Use a function replacement to avoid $& / $` / $' special patterns
   for (let i = 0; i < scriptBlocks.length; i++) {
-    output = output.replace(`<!--__STX_SCRIPT_EXPR_${i}__-->`, scriptBlocks[i])
+    output = output.replace(`<!--__STX_SCRIPT_EXPR_${i}__-->`, () => scriptBlocks[i])
   }
 
   // Restore protected <style> blocks
   for (let i = 0; i < styleBlocks.length; i++) {
-    output = output.replace(`<!--__STX_STYLE_${i}__-->`, styleBlocks[i])
+    output = output.replace(`<!--__STX_STYLE_${i}__-->`, () => styleBlocks[i])
   }
 
   return output
