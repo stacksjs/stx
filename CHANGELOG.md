@@ -1,4 +1,485 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.10...v0.2.11)
+
+### 🚀 Features
+
+- **StxImage**: NuxtImage-level image optimization ([1fc91b3](https://github.com/stacksjs/stx/commit/1fc91b3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- auto-discover and inject stores from storesDir ([ed28f59](https://github.com/stacksjs/stx/commit/ed28f59)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- navigate(url, forceReload) — second arg forces full page reload ([cfa928e](https://github.com/stacksjs/stx/commit/cfa928e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- <Icon> builtin component with Lucide icons ([00d87e1](https://github.com/stacksjs/stx/commit/00d87e1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: support x- prefix for dynamic attribute bindings ([615faa7](https://github.com/stacksjs/stx/commit/615faa7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **ssg**: route guard middleware support ([00ad5bc](https://github.com/stacksjs/stx/commit/00ad5bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: stx-hydrate attribute for lazy hydration ([32e950c](https://github.com/stacksjs/stx/commit/32e950c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- unified build with SSG/SSR config flag (ssr: false default) ([7bc12b2](https://github.com/stacksjs/stx/commit/7bc12b2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- ship runtime globals as ambient type declarations ([59585d9](https://github.com/stacksjs/stx/commit/59585d9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- client-side useHead/useSeoMeta, fix StxLink in :for loops, dev caching ([93e5a05](https://github.com/stacksjs/stx/commit/93e5a05)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add achievements.stx example — single-file coach profile site ([3bc2fb5](https://github.com/stacksjs/stx/commit/3bc2fb5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Alpine x-data reactive bridge, x-for scoping, runtime fixes ([7772178](https://github.com/stacksjs/stx/commit/7772178)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add publicDir, envFile, envPrefix config fields ([cba6866](https://github.com/stacksjs/stx/commit/cba6866)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- css config field in stx.config.ts for explicit Crosswind config path ([13e7541](https://github.com/stacksjs/stx/commit/13e7541)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- stx plugin/module system with definePlugin and auto-loading ([c7b6d60](https://github.com/stacksjs/stx/commit/c7b6d60)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- complete v-memo, error boundaries, and lazy route support ([2a4a7c0](https://github.com/stacksjs/stx/commit/2a4a7c0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wire async components — /_stx/component/ endpoint + signal processing ([3909b95](https://github.com/stacksjs/stx/commit/3909b95)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- forward @event attributes from parent to component root element ([2972d96](https://github.com/stacksjs/stx/commit/2972d96)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- full body swap on layout change — true SPA across layouts ([1f29719](https://github.com/stacksjs/stx/commit/1f29719)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Bun-style dev server output with interactive shortcuts ([a348a6f](https://github.com/stacksjs/stx/commit/a348a6f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- support slot="name" attribute for named slots (Web Component style) ([c8dc6a1](https://github.com/stacksjs/stx/commit/c8dc6a1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- generate route manifest from bun-plugin serve path ([36e625a](https://github.com/stacksjs/stx/commit/36e625a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- generate route manifest (.stx/routes.ts) on startup ([a40d4b7](https://github.com/stacksjs/stx/commit/a40d4b7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Bun.build-powered client script bundling with import resolution ([1577095](https://github.com/stacksjs/stx/commit/1577095)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- signals-based store system with defineStore/useStore ([46cbe1a](https://github.com/stacksjs/stx/commit/46cbe1a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- proper component system with registry, builtins, and unified renderer ([a721216](https://github.com/stacksjs/stx/commit/a721216)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- built-in StxLink and StxImage components, fix link behavior ([93daeb2](https://github.com/stacksjs/stx/commit/93daeb2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add pagesDir config for Stacks resources/ convention ([b8abbbf](https://github.com/stacksjs/stx/commit/b8abbbf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- make useRoute().params work with reactive state ([62c2f4e](https://github.com/stacksjs/stx/commit/62c2f4e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- inject router config from stx.config.ts automatically ([50df2b5](https://github.com/stacksjs/stx/commit/50df2b5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add root config for embedded stx (Stacks resources/views support) ([050ec38](https://github.com/stacksjs/stx/commit/050ec38)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wire autoShell into serve paths, deprecate app.stx shell pattern ([ad6f222](https://github.com/stacksjs/stx/commit/ad6f222)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- auto-generated document shell — no HTML boilerplate in .stx files ([4acade8](https://github.com/stacksjs/stx/commit/4acade8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Phase 5 — dev mode caching improvements ([b790d05](https://github.com/stacksjs/stx/commit/b790d05)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Phase 4 — production server for pre-built stx apps ([a918db4](https://github.com/stacksjs/stx/commit/a918db4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Phase 3 — production builder and manifest system ([ad6d952](https://github.com/stacksjs/stx/commit/ad6d952)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Phase 2 — template pre-compilation and hydration system ([63119ab](https://github.com/stacksjs/stx/commit/63119ab)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Phase 1 — externalize shared runtimes for production builds ([b0655fc](https://github.com/stacksjs/stx/commit/b0655fc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **expressions**: use function replacement to preserve {{description}} in script blocks ([8ebb172](https://github.com/stacksjs/stx/commit/8ebb172)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **render**: await async processClientScript to prevent [object Promise] in output ([824be5d](https://github.com/stacksjs/stx/commit/824be5d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **expressions**: two-pass script/style protection for injected content ([20509da](https://github.com/stacksjs/stx/commit/20509da)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- protect style/script blocks from expression processing ([a3f5355](https://github.com/stacksjs/stx/commit/a3f5355)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **build**: resolve publicDir from CWD, not config.root ([c4266ba](https://github.com/stacksjs/stx/commit/c4266ba)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- dev-server head injection, SSG getStaticPaths indent, misc hardening ([21b82e2](https://github.com/stacksjs/stx/commit/21b82e2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **ssg**: inject route params for dynamic pages (#1670) ([9bd2aba](https://github.com/stacksjs/stx/commit/9bd2aba)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1670](https://github.com/stacksjs/stx/issues/1670), [#1670](https://github.com/stacksjs/stx/issues/1670))
+- utf-8 charset, x-prop component bindings, publishConfig for npm ([6ff37d4](https://github.com/stacksjs/stx/commit/6ff37d4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve all typecheck errors ([540535d](https://github.com/stacksjs/stx/commit/540535d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve nested builtins (Icon inside StxLink, etc.) ([789edca](https://github.com/stacksjs/stx/commit/789edca)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- sort stores by dependency — independent stores load first ([778e304](https://github.com/stacksjs/stx/commit/778e304)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- store auto-loader — use Bun.Transpiler + correct injection order ([4884b76](https://github.com/stacksjs/stx/commit/4884b76)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- useStore now throws instead of returning null ([a25b9e3](https://github.com/stacksjs/stx/commit/a25b9e3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add setup-function overload to defineStore ([72b228d](https://github.com/stacksjs/stx/commit/72b228d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- export defineStore and useStore from @stacksjs/stx ([43461a0](https://github.com/stacksjs/stx/commit/43461a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **build**: remove overly strict component validation ([77a2b6c](https://github.com/stacksjs/stx/commit/77a2b6c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: expose defineStore and useStore as globals ([3064af8](https://github.com/stacksjs/stx/commit/3064af8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: :for keyed items re-evaluate bindings when data changes (#1669) ([c2cad94](https://github.com/stacksjs/stx/commit/c2cad94)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1669](https://github.com/stacksjs/stx/issues/1669), [#1669](https://github.com/stacksjs/stx/issues/1669))
+- **router**: prevent redeclaration errors + import failures on SPA navigation (#1668 bugs 2+3) ([29a3f6f](https://github.com/stacksjs/stx/commit/29a3f6f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1668](https://github.com/stacksjs/stx/issues/1668), [#1668](https://github.com/stacksjs/stx/issues/1668))
+- **signals**: bindShow silently corrupts siblings on call expressions (#1668 bug 1+5) ([67ff69f](https://github.com/stacksjs/stx/commit/67ff69f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1668](https://github.com/stacksjs/stx/issues/1668), [#1668](https://github.com/stacksjs/stx/issues/1668))
+- SSG build pipeline + SPA router layout detection ([a645a91](https://github.com/stacksjs/stx/commit/a645a91)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **prod**: copy publicDir to .output and harden static handler ([d516498](https://github.com/stacksjs/stx/commit/d516498)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **bun-plugin**: serve static files from publicDir at URL root ([b7b3015](https://github.com/stacksjs/stx/commit/b7b3015)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- production build — convert require() to await import() in caching/runtime-injection ([18f6043](https://github.com/stacksjs/stx/commit/18f6043)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- signal writeback resetting signals changed by function calls ([39ca492](https://github.com/stacksjs/stx/commit/39ca492)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- modal pattern — double-bind guards, show reactivity, click propagation ([faeaf4b](https://github.com/stacksjs/stx/commit/faeaf4b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- lint errors, document shell comment stripping, signal polyfill removal ([2fcb827](https://github.com/stacksjs/stx/commit/2fcb827)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- include page scripts in SPA fragments, fix document shell double-wrap ([b11d047](https://github.com/stacksjs/stx/commit/b11d047)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add useStore to auto-import symbol list ([f608eb7](https://github.com/stacksjs/stx/commit/f608eb7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- cache path must fetch full page on layout change, not just return ([052dc74](https://github.com/stacksjs/stx/commit/052dc74)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- collect all body scripts on layout change, not just container ([ee79f1c](https://github.com/stacksjs/stx/commit/ee79f1c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- move layoutCache/getLayoutGroup to outer scope ([5aa7a1c](https://github.com/stacksjs/stx/commit/5aa7a1c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- check layout in click handler BEFORE preventDefault ([9f57775](https://github.com/stacksjs/stx/commit/9f57775)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- prefetch layout fallback must be empty string, not 'default' ([4ae118e](https://github.com/stacksjs/stx/commit/4ae118e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- skip stale cache when layout info is missing ([b80d69c](https://github.com/stacksjs/stx/commit/b80d69c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- check layout before reading response body — prevent race with swap ([e042a41](https://github.com/stacksjs/stx/commit/e042a41)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- empty layout should map to 'app' group, not 'default' ([b878d3c](https://github.com/stacksjs/stx/commit/b878d3c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- use layout groups for SPA navigation — not exact name matching ([fb09ff5](https://github.com/stacksjs/stx/commit/fb09ff5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- unify <script> and <script client> — both are client-side ([b8dcc3d](https://github.com/stacksjs/stx/commit/b8dcc3d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- layout change detection handles missing/undefined layouts ([0235b0c](https://github.com/stacksjs/stx/commit/0235b0c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- layout change detection for cached and prefetched routes ([a7a4d41](https://github.com/stacksjs/stx/commit/a7a4d41)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- detect layout changes during SPA navigation — full reload on mismatch ([0899b85](https://github.com/stacksjs/stx/commit/0899b85)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- prevent Bun.build from tree-shaking page declarations ([a207619](https://github.com/stacksjs/stx/commit/a207619)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- await async processClientScript in component rendering ([ee3f58a](https://github.com/stacksjs/stx/commit/ee3f58a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve typecheck and lint errors ([76c62e8](https://github.com/stacksjs/stx/commit/76c62e8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- expose all composables in <script> setup function context ([699c660](https://github.com/stacksjs/stx/commit/699c660)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- include Crosswind utility CSS (without Preflight) in SPA fragments ([4be647d](https://github.com/stacksjs/stx/commit/4be647d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- router click handler must target [data-stx-link] not <stx-link> ([fb65982](https://github.com/stacksjs/stx/commit/fb65982)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- exclude Crosswind CSS from SPA fragments ([1d1f32b](https://github.com/stacksjs/stx/commit/1d1f32b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- inject Crosswind CSS after document shell so bodyClass is scanned ([032d634](https://github.com/stacksjs/stx/commit/032d634)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- inject Crosswind CSS only at top level — not per-component ([7767278](https://github.com/stacksjs/stx/commit/7767278)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- prevent duplicate Crosswind CSS injection from recursive layout processing ([b59a45c](https://github.com/stacksjs/stx/commit/b59a45c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove duplicate Crosswind CSS injection in serve.ts ([a8c3754](https://github.com/stacksjs/stx/commit/a8c3754)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- run processComponents after includes to expand StxLink in partials ([976b987](https://github.com/stacksjs/stx/commit/976b987)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- chain pantry publish:commit calls for single-arg CLI ([a7667d1](https://github.com/stacksjs/stx/commit/a7667d1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve all pickier lint errors in new modules ([0acf35c](https://github.com/stacksjs/stx/commit/0acf35c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve typecheck errors — dead StxLink code and missing fs import ([a99c8cb](https://github.com/stacksjs/stx/commit/a99c8cb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wire placeholder system into expression processor for production builds ([40e8444](https://github.com/stacksjs/stx/commit/40e8444)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- stop stripping @for/@if/@show/@model attributes from templates ([f2613dd](https://github.com/stacksjs/stx/commit/f2613dd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- ensure data-stx is on <body> after auto-shell wrapping ([8e08fd7](https://github.com/stacksjs/stx/commit/8e08fd7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve all typecheck errors ([4586092](https://github.com/stacksjs/stx/commit/4586092)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- extract setup scripts from full page, not just <head> ([b9737c4](https://github.com/stacksjs/stx/commit/b9737c4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- dynamic route handler was stripping client scripts ([b9be47d](https://github.com/stacksjs/stx/commit/b9be47d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- dynamic route params available client-side via useRoute().params ([0d78041](https://github.com/stacksjs/stx/commit/0d78041)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- layout resolution walks up directory tree for nested pages ([09ce86c](https://github.com/stacksjs/stx/commit/09ce86c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- production build — filter non-page routes, add document shell ([a341cf1](https://github.com/stacksjs/stx/commit/a341cf1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add start and deploy to knownCommands list in CLI ([3da1cab](https://github.com/stacksjs/stx/commit/3da1cab)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove redundant ts-broadcasting type declaration ([290fa99](https://github.com/stacksjs/stx/commit/290fa99)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- scope lint to source files only — pickier was scanning node_modules ([2d56647](https://github.com/stacksjs/stx/commit/2d56647)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- use published ts-broadcasting package instead of broken link ([189b6a1](https://github.com/stacksjs/stx/commit/189b6a1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve all typecheck errors ([0b34ca2](https://github.com/stacksjs/stx/commit/0b34ca2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- router injection guard was matching __stxRouterConfig as false positive ([7bcecb3](https://github.com/stacksjs/stx/commit/7bcecb3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- split section extraction into inline and block passes ([4c0c593](https://github.com/stacksjs/stx/commit/4c0c593)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- include page setup scripts in SPA fragments from bun-plugin/serve ([c857753](https://github.com/stacksjs/stx/commit/c857753)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- skip mount()-processed elements in stx:load body walk ([31ab859](https://github.com/stacksjs/stx/commit/31ab859)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- SPA navigation rendering — minifier, scope binding, and stx:load lifecycle ([833a986](https://github.com/stacksjs/stx/commit/833a986)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve typecheck errors ([1a6df42](https://github.com/stacksjs/stx/commit/1a6df42)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve typecheck error in precompiler ([54ca8de](https://github.com/stacksjs/stx/commit/54ca8de)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- use Bun APIs in client-script-bundler ([ee6d6dd](https://github.com/stacksjs/stx/commit/ee6d6dd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- clean state management architecture with debug logging ([2498ec0](https://github.com/stacksjs/stx/commit/2498ec0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- use Bun APIs instead of Node.js imports across codebase ([107840e](https://github.com/stacksjs/stx/commit/107840e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- split signals.ts and dev-server.ts into focused modules ([51406ad](https://github.com/stacksjs/stx/commit/51406ad)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- split process.ts into focused modules (3188 → 920 lines) ([266220c](https://github.com/stacksjs/stx/commit/266220c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- update bunpress sidebar with all new doc pages ([d9308e2](https://github.com/stacksjs/stx/commit/d9308e2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- comprehensive documentation overhaul (13 new files, 5200+ lines) ([70bdf5e](https://github.com/stacksjs/stx/commit/70bdf5e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update all docs for new prefix convention ([e5df7ad](https://github.com/stacksjs/stx/commit/e5df7ad)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add bug-fixes.md and update CLAUDE.md references ([3d0d3c5](https://github.com/stacksjs/stx/commit/3d0d3c5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- ambient declarations, publicDir, sitemap/robots, runtime globals ([9c01649](https://github.com/stacksjs/stx/commit/9c01649)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add signal writeback, double-bind guards, useHead, dev no-cache ([2a85122](https://github.com/stacksjs/stx/commit/2a85122)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add SPA fragment scripts, partial signals, mountCallbacks, template stripping ([582afbf](https://github.com/stacksjs/stx/commit/582afbf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add plugin system, config conventions, env vars, public dir ([aa52841](https://github.com/stacksjs/stx/commit/aa52841)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update CLAUDE.md and ARCHITECTURE.md with all recent features ([662160e](https://github.com/stacksjs/stx/commit/662160e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update CLAUDE.md and ARCHITECTURE.md for all recent changes ([52fd56e](https://github.com/stacksjs/stx/commit/52fd56e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update CLAUDE.md and ARCHITECTURE.md for new architecture ([0bd6e52](https://github.com/stacksjs/stx/commit/0bd6e52)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update API.md and ARCHITECTURE.md for StxLink/StxImage ([acb1bc2](https://github.com/stacksjs/stx/commit/acb1bc2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update ARCHITECTURE.md and API.md with new conventions ([739787e](https://github.com/stacksjs/stx/commit/739787e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.11 ([cdbc0c8](https://github.com/stacksjs/stx/commit/cdbc0c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([3113343](https://github.com/stacksjs/stx/commit/3113343)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- several minor improvements ([f440790](https://github.com/stacksjs/stx/commit/f440790)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([84aae9b](https://github.com/stacksjs/stx/commit/84aae9b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f9264f8](https://github.com/stacksjs/stx/commit/f9264f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([2640365](https://github.com/stacksjs/stx/commit/2640365)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f4f78f7](https://github.com/stacksjs/stx/commit/f4f78f7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([e744968](https://github.com/stacksjs/stx/commit/e744968)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([690e90c](https://github.com/stacksjs/stx/commit/690e90c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f9a1ca9](https://github.com/stacksjs/stx/commit/f9a1ca9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([09cd321](https://github.com/stacksjs/stx/commit/09cd321)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([24c40e5](https://github.com/stacksjs/stx/commit/24c40e5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- gitignore pantry directory ([edcaf4b](https://github.com/stacksjs/stx/commit/edcaf4b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- minor updates ([85bab13](https://github.com/stacksjs/stx/commit/85bab13)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([ec1712c](https://github.com/stacksjs/stx/commit/ec1712c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([1f529be](https://github.com/stacksjs/stx/commit/1f529be)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wire pickier config so lint scripts actually load it ([4b16205](https://github.com/stacksjs/stx/commit/4b16205)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([a65836d](https://github.com/stacksjs/stx/commit/a65836d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([02d25d2](https://github.com/stacksjs/stx/commit/02d25d2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gitignore .stx directory ([96833c1](https://github.com/stacksjs/stx/commit/96833c1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([457034b](https://github.com/stacksjs/stx/commit/457034b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- minor updates ([7d521bc](https://github.com/stacksjs/stx/commit/7d521bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([a277b11](https://github.com/stacksjs/stx/commit/a277b11)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([46c5adf](https://github.com/stacksjs/stx/commit/46c5adf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([3d3e37d](https://github.com/stacksjs/stx/commit/3d3e37d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update dependency jsdom to 29.0.1 (rebased) (#1653) ([9c894f1](https://github.com/stacksjs/stx/commit/9c894f1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1653](https://github.com/stacksjs/stx/issues/1653), [#1653](https://github.com/stacksjs/stx/issues/1653))
+- **deps**: update dependency @vscode/vsce to 3.7.2-12 (rebased) (#1655) ([d329f81](https://github.com/stacksjs/stx/commit/d329f81)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1655](https://github.com/stacksjs/stx/issues/1655), [#1655](https://github.com/stacksjs/stx/issues/1655))
+- **deps**: update dependency typescript to 6.0.2 (rebased) (#1659) ([e6eff49](https://github.com/stacksjs/stx/commit/e6eff49)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1659](https://github.com/stacksjs/stx/issues/1659), [#1659](https://github.com/stacksjs/stx/issues/1659))
+- **deps**: update all non-major dependencies (rebased) (#1660) ([5c920ac](https://github.com/stacksjs/stx/commit/5c920ac)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1660](https://github.com/stacksjs/stx/issues/1660), [#1660](https://github.com/stacksjs/stx/issues/1660))
+- wip ([ab9878c](https://github.com/stacksjs/stx/commit/ab9878c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([22a088c](https://github.com/stacksjs/stx/commit/22a088c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: update all non-major dependencies (updated) (#1657) ([2dfdb08](https://github.com/stacksjs/stx/commit/2dfdb08)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1657](https://github.com/stacksjs/stx/issues/1657), [#1657](https://github.com/stacksjs/stx/issues/1657))
+- wip ([dad2227](https://github.com/stacksjs/stx/commit/dad2227)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([c603a3c](https://github.com/stacksjs/stx/commit/c603a3c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([f11079f](https://github.com/stacksjs/stx/commit/f11079f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([9b121ef](https://github.com/stacksjs/stx/commit/9b121ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([8aa588a](https://github.com/stacksjs/stx/commit/8aa588a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove debug console.logs from signals runtime and router ([3816fe6](https://github.com/stacksjs/stx/commit/3816fe6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove debug logs from processSignals/processScriptSetup ([0e6608d](https://github.com/stacksjs/stx/commit/0e6608d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- standardize project structure — stx dirs at root, no src/ prefix ([3af2695](https://github.com/stacksjs/stx/commit/3af2695)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([2d78b62](https://github.com/stacksjs/stx/commit/2d78b62)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([eb6458e](https://github.com/stacksjs/stx/commit/eb6458e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([26276cc](https://github.com/stacksjs/stx/commit/26276cc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([04c8f9a](https://github.com/stacksjs/stx/commit/04c8f9a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([11282a9](https://github.com/stacksjs/stx/commit/11282a9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([ec38aea](https://github.com/stacksjs/stx/commit/ec38aea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9b44328](https://github.com/stacksjs/stx/commit/9b44328)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([3aab6c6](https://github.com/stacksjs/stx/commit/3aab6c6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([ad07b86](https://github.com/stacksjs/stx/commit/ad07b86)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f3e72ed](https://github.com/stacksjs/stx/commit/f3e72ed)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([9491c0d](https://github.com/stacksjs/stx/commit/9491c0d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d8d0269](https://github.com/stacksjs/stx/commit/d8d0269)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([83b92b4](https://github.com/stacksjs/stx/commit/83b92b4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([953be2e](https://github.com/stacksjs/stx/commit/953be2e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([a1fd21c](https://github.com/stacksjs/stx/commit/a1fd21c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- repo cleanup and modernization ([da6e29f](https://github.com/stacksjs/stx/commit/da6e29f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove unocss ([5183cb7](https://github.com/stacksjs/stx/commit/5183cb7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([96658f1](https://github.com/stacksjs/stx/commit/96658f1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d9a168a](https://github.com/stacksjs/stx/commit/d9a168a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([87cd750](https://github.com/stacksjs/stx/commit/87cd750)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d25e45a](https://github.com/stacksjs/stx/commit/d25e45a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([bf5e491](https://github.com/stacksjs/stx/commit/bf5e491)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use Pantry action for publish-commit and add job dependencies ([6d34389](https://github.com/stacksjs/stx/commit/6d34389)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7abb5cf](https://github.com/stacksjs/stx/commit/7abb5cf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([b483f2a](https://github.com/stacksjs/stx/commit/b483f2a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update all non-major dependencies (rebased) (#1652) ([0339dd4](https://github.com/stacksjs/stx/commit/0339dd4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1652](https://github.com/stacksjs/stx/issues/1652), [#1652](https://github.com/stacksjs/stx/issues/1652))
+- wip ([8df9358](https://github.com/stacksjs/stx/commit/8df9358)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([bd3f29e](https://github.com/stacksjs/stx/commit/bd3f29e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([2a957cb](https://github.com/stacksjs/stx/commit/2a957cb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([460adf6](https://github.com/stacksjs/stx/commit/460adf6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([447f1b1](https://github.com/stacksjs/stx/commit/447f1b1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a3f345a](https://github.com/stacksjs/stx/commit/a3f345a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([c2fe0d4](https://github.com/stacksjs/stx/commit/c2fe0d4)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- fix lint warnings ([717890f](https://github.com/stacksjs/stx/commit/717890f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- fix lint warnings ([ac56e48](https://github.com/stacksjs/stx/commit/ac56e48)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove .pickierignore ([801ec93](https://github.com/stacksjs/stx/commit/801ec93)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### debug
+
+- add full-page fetch and error logging ([03048d0](https://github.com/stacksjs/stx/commit/03048d0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add swap logging ([a17e11c](https://github.com/stacksjs/stx/commit/a17e11c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- more router click/navigate logging ([30c7526](https://github.com/stacksjs/stx/commit/30c7526)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add click interception log to router ([27a572e](https://github.com/stacksjs/stx/commit/27a572e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add layout check logging to router ([fb807f7](https://github.com/stacksjs/stx/commit/fb807f7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _[devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind)_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.10...HEAD)
+
+### 🚀 Features
+
+- **StxImage**: NuxtImage-level image optimization ([1fc91b3](https://github.com/stacksjs/stx/commit/1fc91b3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- auto-discover and inject stores from storesDir ([ed28f59](https://github.com/stacksjs/stx/commit/ed28f59)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- navigate(url, forceReload) — second arg forces full page reload ([cfa928e](https://github.com/stacksjs/stx/commit/cfa928e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- <Icon> builtin component with Lucide icons ([00d87e1](https://github.com/stacksjs/stx/commit/00d87e1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: support x- prefix for dynamic attribute bindings ([615faa7](https://github.com/stacksjs/stx/commit/615faa7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **ssg**: route guard middleware support ([00ad5bc](https://github.com/stacksjs/stx/commit/00ad5bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: stx-hydrate attribute for lazy hydration ([32e950c](https://github.com/stacksjs/stx/commit/32e950c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- unified build with SSG/SSR config flag (ssr: false default) ([7bc12b2](https://github.com/stacksjs/stx/commit/7bc12b2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- ship runtime globals as ambient type declarations ([59585d9](https://github.com/stacksjs/stx/commit/59585d9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- client-side useHead/useSeoMeta, fix StxLink in :for loops, dev caching ([93e5a05](https://github.com/stacksjs/stx/commit/93e5a05)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add achievements.stx example — single-file coach profile site ([3bc2fb5](https://github.com/stacksjs/stx/commit/3bc2fb5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Alpine x-data reactive bridge, x-for scoping, runtime fixes ([7772178](https://github.com/stacksjs/stx/commit/7772178)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add publicDir, envFile, envPrefix config fields ([cba6866](https://github.com/stacksjs/stx/commit/cba6866)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- css config field in stx.config.ts for explicit Crosswind config path ([13e7541](https://github.com/stacksjs/stx/commit/13e7541)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- stx plugin/module system with definePlugin and auto-loading ([c7b6d60](https://github.com/stacksjs/stx/commit/c7b6d60)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- complete v-memo, error boundaries, and lazy route support ([2a4a7c0](https://github.com/stacksjs/stx/commit/2a4a7c0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wire async components — /_stx/component/ endpoint + signal processing ([3909b95](https://github.com/stacksjs/stx/commit/3909b95)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- forward @event attributes from parent to component root element ([2972d96](https://github.com/stacksjs/stx/commit/2972d96)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- full body swap on layout change — true SPA across layouts ([1f29719](https://github.com/stacksjs/stx/commit/1f29719)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Bun-style dev server output with interactive shortcuts ([a348a6f](https://github.com/stacksjs/stx/commit/a348a6f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- support slot="name" attribute for named slots (Web Component style) ([c8dc6a1](https://github.com/stacksjs/stx/commit/c8dc6a1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- generate route manifest from bun-plugin serve path ([36e625a](https://github.com/stacksjs/stx/commit/36e625a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- generate route manifest (.stx/routes.ts) on startup ([a40d4b7](https://github.com/stacksjs/stx/commit/a40d4b7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Bun.build-powered client script bundling with import resolution ([1577095](https://github.com/stacksjs/stx/commit/1577095)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- signals-based store system with defineStore/useStore ([46cbe1a](https://github.com/stacksjs/stx/commit/46cbe1a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- proper component system with registry, builtins, and unified renderer ([a721216](https://github.com/stacksjs/stx/commit/a721216)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- built-in StxLink and StxImage components, fix link behavior ([93daeb2](https://github.com/stacksjs/stx/commit/93daeb2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add pagesDir config for Stacks resources/ convention ([b8abbbf](https://github.com/stacksjs/stx/commit/b8abbbf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- make useRoute().params work with reactive state ([62c2f4e](https://github.com/stacksjs/stx/commit/62c2f4e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- inject router config from stx.config.ts automatically ([50df2b5](https://github.com/stacksjs/stx/commit/50df2b5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add root config for embedded stx (Stacks resources/views support) ([050ec38](https://github.com/stacksjs/stx/commit/050ec38)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wire autoShell into serve paths, deprecate app.stx shell pattern ([ad6f222](https://github.com/stacksjs/stx/commit/ad6f222)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- auto-generated document shell — no HTML boilerplate in .stx files ([4acade8](https://github.com/stacksjs/stx/commit/4acade8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Phase 5 — dev mode caching improvements ([b790d05](https://github.com/stacksjs/stx/commit/b790d05)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Phase 4 — production server for pre-built stx apps ([a918db4](https://github.com/stacksjs/stx/commit/a918db4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Phase 3 — production builder and manifest system ([ad6d952](https://github.com/stacksjs/stx/commit/ad6d952)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Phase 2 — template pre-compilation and hydration system ([63119ab](https://github.com/stacksjs/stx/commit/63119ab)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Phase 1 — externalize shared runtimes for production builds ([b0655fc](https://github.com/stacksjs/stx/commit/b0655fc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **expressions**: use function replacement to preserve {{description}} in script blocks ([8ebb172](https://github.com/stacksjs/stx/commit/8ebb172)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **render**: await async processClientScript to prevent [object Promise] in output ([824be5d](https://github.com/stacksjs/stx/commit/824be5d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **expressions**: two-pass script/style protection for injected content ([20509da](https://github.com/stacksjs/stx/commit/20509da)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- protect style/script blocks from expression processing ([a3f5355](https://github.com/stacksjs/stx/commit/a3f5355)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **build**: resolve publicDir from CWD, not config.root ([c4266ba](https://github.com/stacksjs/stx/commit/c4266ba)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- dev-server head injection, SSG getStaticPaths indent, misc hardening ([21b82e2](https://github.com/stacksjs/stx/commit/21b82e2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **ssg**: inject route params for dynamic pages (#1670) ([9bd2aba](https://github.com/stacksjs/stx/commit/9bd2aba)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1670](https://github.com/stacksjs/stx/issues/1670), [#1670](https://github.com/stacksjs/stx/issues/1670))
+- utf-8 charset, x-prop component bindings, publishConfig for npm ([6ff37d4](https://github.com/stacksjs/stx/commit/6ff37d4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve all typecheck errors ([540535d](https://github.com/stacksjs/stx/commit/540535d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve nested builtins (Icon inside StxLink, etc.) ([789edca](https://github.com/stacksjs/stx/commit/789edca)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- sort stores by dependency — independent stores load first ([778e304](https://github.com/stacksjs/stx/commit/778e304)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- store auto-loader — use Bun.Transpiler + correct injection order ([4884b76](https://github.com/stacksjs/stx/commit/4884b76)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- useStore now throws instead of returning null ([a25b9e3](https://github.com/stacksjs/stx/commit/a25b9e3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add setup-function overload to defineStore ([72b228d](https://github.com/stacksjs/stx/commit/72b228d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- export defineStore and useStore from @stacksjs/stx ([43461a0](https://github.com/stacksjs/stx/commit/43461a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **build**: remove overly strict component validation ([77a2b6c](https://github.com/stacksjs/stx/commit/77a2b6c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: expose defineStore and useStore as globals ([3064af8](https://github.com/stacksjs/stx/commit/3064af8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: :for keyed items re-evaluate bindings when data changes (#1669) ([c2cad94](https://github.com/stacksjs/stx/commit/c2cad94)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1669](https://github.com/stacksjs/stx/issues/1669), [#1669](https://github.com/stacksjs/stx/issues/1669))
+- **router**: prevent redeclaration errors + import failures on SPA navigation (#1668 bugs 2+3) ([29a3f6f](https://github.com/stacksjs/stx/commit/29a3f6f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1668](https://github.com/stacksjs/stx/issues/1668), [#1668](https://github.com/stacksjs/stx/issues/1668))
+- **signals**: bindShow silently corrupts siblings on call expressions (#1668 bug 1+5) ([67ff69f](https://github.com/stacksjs/stx/commit/67ff69f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1668](https://github.com/stacksjs/stx/issues/1668), [#1668](https://github.com/stacksjs/stx/issues/1668))
+- SSG build pipeline + SPA router layout detection ([a645a91](https://github.com/stacksjs/stx/commit/a645a91)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **prod**: copy publicDir to .output and harden static handler ([d516498](https://github.com/stacksjs/stx/commit/d516498)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **bun-plugin**: serve static files from publicDir at URL root ([b7b3015](https://github.com/stacksjs/stx/commit/b7b3015)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- production build — convert require() to await import() in caching/runtime-injection ([18f6043](https://github.com/stacksjs/stx/commit/18f6043)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- signal writeback resetting signals changed by function calls ([39ca492](https://github.com/stacksjs/stx/commit/39ca492)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- modal pattern — double-bind guards, show reactivity, click propagation ([faeaf4b](https://github.com/stacksjs/stx/commit/faeaf4b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- lint errors, document shell comment stripping, signal polyfill removal ([2fcb827](https://github.com/stacksjs/stx/commit/2fcb827)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- include page scripts in SPA fragments, fix document shell double-wrap ([b11d047](https://github.com/stacksjs/stx/commit/b11d047)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add useStore to auto-import symbol list ([f608eb7](https://github.com/stacksjs/stx/commit/f608eb7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- cache path must fetch full page on layout change, not just return ([052dc74](https://github.com/stacksjs/stx/commit/052dc74)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- collect all body scripts on layout change, not just container ([ee79f1c](https://github.com/stacksjs/stx/commit/ee79f1c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- move layoutCache/getLayoutGroup to outer scope ([5aa7a1c](https://github.com/stacksjs/stx/commit/5aa7a1c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- check layout in click handler BEFORE preventDefault ([9f57775](https://github.com/stacksjs/stx/commit/9f57775)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- prefetch layout fallback must be empty string, not 'default' ([4ae118e](https://github.com/stacksjs/stx/commit/4ae118e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- skip stale cache when layout info is missing ([b80d69c](https://github.com/stacksjs/stx/commit/b80d69c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- check layout before reading response body — prevent race with swap ([e042a41](https://github.com/stacksjs/stx/commit/e042a41)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- empty layout should map to 'app' group, not 'default' ([b878d3c](https://github.com/stacksjs/stx/commit/b878d3c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- use layout groups for SPA navigation — not exact name matching ([fb09ff5](https://github.com/stacksjs/stx/commit/fb09ff5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- unify <script> and <script client> — both are client-side ([b8dcc3d](https://github.com/stacksjs/stx/commit/b8dcc3d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- layout change detection handles missing/undefined layouts ([0235b0c](https://github.com/stacksjs/stx/commit/0235b0c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- layout change detection for cached and prefetched routes ([a7a4d41](https://github.com/stacksjs/stx/commit/a7a4d41)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- detect layout changes during SPA navigation — full reload on mismatch ([0899b85](https://github.com/stacksjs/stx/commit/0899b85)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- prevent Bun.build from tree-shaking page declarations ([a207619](https://github.com/stacksjs/stx/commit/a207619)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- await async processClientScript in component rendering ([ee3f58a](https://github.com/stacksjs/stx/commit/ee3f58a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve typecheck and lint errors ([76c62e8](https://github.com/stacksjs/stx/commit/76c62e8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- expose all composables in <script> setup function context ([699c660](https://github.com/stacksjs/stx/commit/699c660)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- include Crosswind utility CSS (without Preflight) in SPA fragments ([4be647d](https://github.com/stacksjs/stx/commit/4be647d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- router click handler must target [data-stx-link] not <stx-link> ([fb65982](https://github.com/stacksjs/stx/commit/fb65982)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- exclude Crosswind CSS from SPA fragments ([1d1f32b](https://github.com/stacksjs/stx/commit/1d1f32b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- inject Crosswind CSS after document shell so bodyClass is scanned ([032d634](https://github.com/stacksjs/stx/commit/032d634)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- inject Crosswind CSS only at top level — not per-component ([7767278](https://github.com/stacksjs/stx/commit/7767278)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- prevent duplicate Crosswind CSS injection from recursive layout processing ([b59a45c](https://github.com/stacksjs/stx/commit/b59a45c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove duplicate Crosswind CSS injection in serve.ts ([a8c3754](https://github.com/stacksjs/stx/commit/a8c3754)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- run processComponents after includes to expand StxLink in partials ([976b987](https://github.com/stacksjs/stx/commit/976b987)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- chain pantry publish:commit calls for single-arg CLI ([a7667d1](https://github.com/stacksjs/stx/commit/a7667d1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve all pickier lint errors in new modules ([0acf35c](https://github.com/stacksjs/stx/commit/0acf35c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve typecheck errors — dead StxLink code and missing fs import ([a99c8cb](https://github.com/stacksjs/stx/commit/a99c8cb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wire placeholder system into expression processor for production builds ([40e8444](https://github.com/stacksjs/stx/commit/40e8444)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- stop stripping @for/@if/@show/@model attributes from templates ([f2613dd](https://github.com/stacksjs/stx/commit/f2613dd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- ensure data-stx is on <body> after auto-shell wrapping ([8e08fd7](https://github.com/stacksjs/stx/commit/8e08fd7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve all typecheck errors ([4586092](https://github.com/stacksjs/stx/commit/4586092)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- extract setup scripts from full page, not just <head> ([b9737c4](https://github.com/stacksjs/stx/commit/b9737c4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- dynamic route handler was stripping client scripts ([b9be47d](https://github.com/stacksjs/stx/commit/b9be47d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- dynamic route params available client-side via useRoute().params ([0d78041](https://github.com/stacksjs/stx/commit/0d78041)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- layout resolution walks up directory tree for nested pages ([09ce86c](https://github.com/stacksjs/stx/commit/09ce86c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- production build — filter non-page routes, add document shell ([a341cf1](https://github.com/stacksjs/stx/commit/a341cf1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add start and deploy to knownCommands list in CLI ([3da1cab](https://github.com/stacksjs/stx/commit/3da1cab)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove redundant ts-broadcasting type declaration ([290fa99](https://github.com/stacksjs/stx/commit/290fa99)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- scope lint to source files only — pickier was scanning node_modules ([2d56647](https://github.com/stacksjs/stx/commit/2d56647)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- use published ts-broadcasting package instead of broken link ([189b6a1](https://github.com/stacksjs/stx/commit/189b6a1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve all typecheck errors ([0b34ca2](https://github.com/stacksjs/stx/commit/0b34ca2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- router injection guard was matching __stxRouterConfig as false positive ([7bcecb3](https://github.com/stacksjs/stx/commit/7bcecb3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- split section extraction into inline and block passes ([4c0c593](https://github.com/stacksjs/stx/commit/4c0c593)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- include page setup scripts in SPA fragments from bun-plugin/serve ([c857753](https://github.com/stacksjs/stx/commit/c857753)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- skip mount()-processed elements in stx:load body walk ([31ab859](https://github.com/stacksjs/stx/commit/31ab859)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- SPA navigation rendering — minifier, scope binding, and stx:load lifecycle ([833a986](https://github.com/stacksjs/stx/commit/833a986)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve typecheck errors ([1a6df42](https://github.com/stacksjs/stx/commit/1a6df42)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve typecheck error in precompiler ([54ca8de](https://github.com/stacksjs/stx/commit/54ca8de)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- use Bun APIs in client-script-bundler ([ee6d6dd](https://github.com/stacksjs/stx/commit/ee6d6dd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- clean state management architecture with debug logging ([2498ec0](https://github.com/stacksjs/stx/commit/2498ec0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- use Bun APIs instead of Node.js imports across codebase ([107840e](https://github.com/stacksjs/stx/commit/107840e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- split signals.ts and dev-server.ts into focused modules ([51406ad](https://github.com/stacksjs/stx/commit/51406ad)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- split process.ts into focused modules (3188 → 920 lines) ([266220c](https://github.com/stacksjs/stx/commit/266220c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- update bunpress sidebar with all new doc pages ([d9308e2](https://github.com/stacksjs/stx/commit/d9308e2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- comprehensive documentation overhaul (13 new files, 5200+ lines) ([70bdf5e](https://github.com/stacksjs/stx/commit/70bdf5e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update all docs for new prefix convention ([e5df7ad](https://github.com/stacksjs/stx/commit/e5df7ad)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add bug-fixes.md and update CLAUDE.md references ([3d0d3c5](https://github.com/stacksjs/stx/commit/3d0d3c5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- ambient declarations, publicDir, sitemap/robots, runtime globals ([9c01649](https://github.com/stacksjs/stx/commit/9c01649)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add signal writeback, double-bind guards, useHead, dev no-cache ([2a85122](https://github.com/stacksjs/stx/commit/2a85122)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add SPA fragment scripts, partial signals, mountCallbacks, template stripping ([582afbf](https://github.com/stacksjs/stx/commit/582afbf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add plugin system, config conventions, env vars, public dir ([aa52841](https://github.com/stacksjs/stx/commit/aa52841)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update CLAUDE.md and ARCHITECTURE.md with all recent features ([662160e](https://github.com/stacksjs/stx/commit/662160e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update CLAUDE.md and ARCHITECTURE.md for all recent changes ([52fd56e](https://github.com/stacksjs/stx/commit/52fd56e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update CLAUDE.md and ARCHITECTURE.md for new architecture ([0bd6e52](https://github.com/stacksjs/stx/commit/0bd6e52)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update API.md and ARCHITECTURE.md for StxLink/StxImage ([acb1bc2](https://github.com/stacksjs/stx/commit/acb1bc2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update ARCHITECTURE.md and API.md with new conventions ([739787e](https://github.com/stacksjs/stx/commit/739787e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([3113343](https://github.com/stacksjs/stx/commit/3113343)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- several minor improvements ([f440790](https://github.com/stacksjs/stx/commit/f440790)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([84aae9b](https://github.com/stacksjs/stx/commit/84aae9b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f9264f8](https://github.com/stacksjs/stx/commit/f9264f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([2640365](https://github.com/stacksjs/stx/commit/2640365)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f4f78f7](https://github.com/stacksjs/stx/commit/f4f78f7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([e744968](https://github.com/stacksjs/stx/commit/e744968)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([690e90c](https://github.com/stacksjs/stx/commit/690e90c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f9a1ca9](https://github.com/stacksjs/stx/commit/f9a1ca9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([09cd321](https://github.com/stacksjs/stx/commit/09cd321)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([24c40e5](https://github.com/stacksjs/stx/commit/24c40e5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- gitignore pantry directory ([edcaf4b](https://github.com/stacksjs/stx/commit/edcaf4b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- minor updates ([85bab13](https://github.com/stacksjs/stx/commit/85bab13)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([ec1712c](https://github.com/stacksjs/stx/commit/ec1712c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([1f529be](https://github.com/stacksjs/stx/commit/1f529be)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wire pickier config so lint scripts actually load it ([4b16205](https://github.com/stacksjs/stx/commit/4b16205)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([a65836d](https://github.com/stacksjs/stx/commit/a65836d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([02d25d2](https://github.com/stacksjs/stx/commit/02d25d2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gitignore .stx directory ([96833c1](https://github.com/stacksjs/stx/commit/96833c1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([457034b](https://github.com/stacksjs/stx/commit/457034b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- minor updates ([7d521bc](https://github.com/stacksjs/stx/commit/7d521bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([a277b11](https://github.com/stacksjs/stx/commit/a277b11)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([46c5adf](https://github.com/stacksjs/stx/commit/46c5adf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([3d3e37d](https://github.com/stacksjs/stx/commit/3d3e37d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update dependency jsdom to 29.0.1 (rebased) (#1653) ([9c894f1](https://github.com/stacksjs/stx/commit/9c894f1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1653](https://github.com/stacksjs/stx/issues/1653), [#1653](https://github.com/stacksjs/stx/issues/1653))
+- **deps**: update dependency @vscode/vsce to 3.7.2-12 (rebased) (#1655) ([d329f81](https://github.com/stacksjs/stx/commit/d329f81)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1655](https://github.com/stacksjs/stx/issues/1655), [#1655](https://github.com/stacksjs/stx/issues/1655))
+- **deps**: update dependency typescript to 6.0.2 (rebased) (#1659) ([e6eff49](https://github.com/stacksjs/stx/commit/e6eff49)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1659](https://github.com/stacksjs/stx/issues/1659), [#1659](https://github.com/stacksjs/stx/issues/1659))
+- **deps**: update all non-major dependencies (rebased) (#1660) ([5c920ac](https://github.com/stacksjs/stx/commit/5c920ac)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1660](https://github.com/stacksjs/stx/issues/1660), [#1660](https://github.com/stacksjs/stx/issues/1660))
+- wip ([ab9878c](https://github.com/stacksjs/stx/commit/ab9878c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([22a088c](https://github.com/stacksjs/stx/commit/22a088c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: update all non-major dependencies (updated) (#1657) ([2dfdb08](https://github.com/stacksjs/stx/commit/2dfdb08)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1657](https://github.com/stacksjs/stx/issues/1657), [#1657](https://github.com/stacksjs/stx/issues/1657))
+- wip ([dad2227](https://github.com/stacksjs/stx/commit/dad2227)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([c603a3c](https://github.com/stacksjs/stx/commit/c603a3c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([f11079f](https://github.com/stacksjs/stx/commit/f11079f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([9b121ef](https://github.com/stacksjs/stx/commit/9b121ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([8aa588a](https://github.com/stacksjs/stx/commit/8aa588a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove debug console.logs from signals runtime and router ([3816fe6](https://github.com/stacksjs/stx/commit/3816fe6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove debug logs from processSignals/processScriptSetup ([0e6608d](https://github.com/stacksjs/stx/commit/0e6608d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- standardize project structure — stx dirs at root, no src/ prefix ([3af2695](https://github.com/stacksjs/stx/commit/3af2695)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([2d78b62](https://github.com/stacksjs/stx/commit/2d78b62)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([eb6458e](https://github.com/stacksjs/stx/commit/eb6458e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([26276cc](https://github.com/stacksjs/stx/commit/26276cc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([04c8f9a](https://github.com/stacksjs/stx/commit/04c8f9a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([11282a9](https://github.com/stacksjs/stx/commit/11282a9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([ec38aea](https://github.com/stacksjs/stx/commit/ec38aea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9b44328](https://github.com/stacksjs/stx/commit/9b44328)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([3aab6c6](https://github.com/stacksjs/stx/commit/3aab6c6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([ad07b86](https://github.com/stacksjs/stx/commit/ad07b86)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f3e72ed](https://github.com/stacksjs/stx/commit/f3e72ed)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([9491c0d](https://github.com/stacksjs/stx/commit/9491c0d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d8d0269](https://github.com/stacksjs/stx/commit/d8d0269)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([83b92b4](https://github.com/stacksjs/stx/commit/83b92b4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([953be2e](https://github.com/stacksjs/stx/commit/953be2e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([a1fd21c](https://github.com/stacksjs/stx/commit/a1fd21c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- repo cleanup and modernization ([da6e29f](https://github.com/stacksjs/stx/commit/da6e29f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove unocss ([5183cb7](https://github.com/stacksjs/stx/commit/5183cb7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([96658f1](https://github.com/stacksjs/stx/commit/96658f1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d9a168a](https://github.com/stacksjs/stx/commit/d9a168a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([87cd750](https://github.com/stacksjs/stx/commit/87cd750)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d25e45a](https://github.com/stacksjs/stx/commit/d25e45a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([bf5e491](https://github.com/stacksjs/stx/commit/bf5e491)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use Pantry action for publish-commit and add job dependencies ([6d34389](https://github.com/stacksjs/stx/commit/6d34389)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7abb5cf](https://github.com/stacksjs/stx/commit/7abb5cf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([b483f2a](https://github.com/stacksjs/stx/commit/b483f2a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update all non-major dependencies (rebased) (#1652) ([0339dd4](https://github.com/stacksjs/stx/commit/0339dd4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1652](https://github.com/stacksjs/stx/issues/1652), [#1652](https://github.com/stacksjs/stx/issues/1652))
+- wip ([8df9358](https://github.com/stacksjs/stx/commit/8df9358)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([bd3f29e](https://github.com/stacksjs/stx/commit/bd3f29e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([2a957cb](https://github.com/stacksjs/stx/commit/2a957cb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([460adf6](https://github.com/stacksjs/stx/commit/460adf6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([447f1b1](https://github.com/stacksjs/stx/commit/447f1b1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a3f345a](https://github.com/stacksjs/stx/commit/a3f345a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([c2fe0d4](https://github.com/stacksjs/stx/commit/c2fe0d4)) _(by [devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind))_
+- fix lint warnings ([717890f](https://github.com/stacksjs/stx/commit/717890f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- fix lint warnings ([ac56e48](https://github.com/stacksjs/stx/commit/ac56e48)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove .pickierignore ([801ec93](https://github.com/stacksjs/stx/commit/801ec93)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### debug
+
+- add full-page fetch and error logging ([03048d0](https://github.com/stacksjs/stx/commit/03048d0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add swap logging ([a17e11c](https://github.com/stacksjs/stx/commit/a17e11c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- more router click/navigate logging ([30c7526](https://github.com/stacksjs/stx/commit/30c7526)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add click interception log to router ([27a572e](https://github.com/stacksjs/stx/commit/27a572e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add layout check logging to router ([fb807f7](https://github.com/stacksjs/stx/commit/fb807f7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _[devjan <37568966+fingersandmind@users.noreply.github.com>](https://github.com/fingersandmind)_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.9...v0.2.10)
 
 ### 🐛 Bug Fixes
