@@ -1,4 +1,43 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.11...v0.2.12)
+
+### 🚀 Features
+
+- **render**: add templateOnly option to renderString ([c651578](https://github.com/stacksjs/stx/commit/c651578)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **ci**: add build step before tests and fix cache key ([a8d381a](https://github.com/stacksjs/stx/commit/a8d381a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: wrap re-executed scripts in block scope to prevent const/let collisions ([129086b](https://github.com/stacksjs/stx/commit/129086b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.12 ([7d23f23](https://github.com/stacksjs/stx/commit/7d23f23)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([603a6a6](https://github.com/stacksjs/stx/commit/603a6a6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.11...HEAD)
+
+### 🚀 Features
+
+- **render**: add templateOnly option to renderString ([c651578](https://github.com/stacksjs/stx/commit/c651578)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **ci**: add build step before tests and fix cache key ([a8d381a](https://github.com/stacksjs/stx/commit/a8d381a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: wrap re-executed scripts in block scope to prevent const/let collisions ([129086b](https://github.com/stacksjs/stx/commit/129086b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([603a6a6](https://github.com/stacksjs/stx/commit/603a6a6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.10...v0.2.11)
 
 ### 🚀 Features
