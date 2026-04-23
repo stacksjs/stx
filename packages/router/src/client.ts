@@ -298,7 +298,12 @@ else {
         fragScripts.forEach(function(code){
           console.log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
           var ns=document.createElement('script');
-          ns.textContent=code;
+          // Wrap in block scope to prevent const/let collisions on re-navigation.
+          // Without this, navigating away and back throws "Identifier has already
+          // been declared" because the previous page's top-level const/let are
+          // still in the global scope.
+          var isAlreadyScoped=code.trimStart().charAt(0)==='('||code.trimStart().charAt(0)===';'||code.indexOf('window.stx.mount')>-1;
+          ns.textContent=isAlreadyScoped?code:'{'+code+'}';
           ns.setAttribute('data-stx-page','');
           document.body.appendChild(ns);
         });
@@ -507,7 +512,11 @@ else {
           if(hasImport){
             ns.type='module';
           }
-          ns.textContent=text;
+          // Wrap in block scope to prevent const/let collisions on re-navigation.
+          // Top-level const/let in <script> tags are global-scoped in browsers
+          // and throw "Identifier has already been declared" on re-execution.
+          var alreadyScoped=text.trimStart().charAt(0)==='('||text.trimStart().charAt(0)===';'||text.indexOf('window.stx.mount')>-1;
+          ns.textContent=alreadyScoped?text:'{'+text+'}';
           ns.setAttribute('data-stx-page','');
           document.body.appendChild(ns);
         });
