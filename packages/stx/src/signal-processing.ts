@@ -657,6 +657,15 @@ export async function processScriptSetup(template: string, filePath?: string): P
         projectRoot: process.cwd(),
       })
     }
+    // Strip `import ... from 'stx'|'@stacksjs/stx'|'@stacksjs/browser'` lines
+    // that survive the bundle (stx runtime is external). The merged output is
+    // wrapped in `function __stx_setup_XXX() { ... }` where top-level `import`
+    // is a SyntaxError, and the symbols are already destructured from
+    // window.stx at the top of that setup function.
+    scriptContent = scriptContent.replace(
+      /^\s*import\s+(?:type\s+)?\{[^}]*\}\s+from\s+['"](?:stx|@stacksjs\/stx|@stacksjs\/browser)['"]\s*;?\s*$/gm,
+      '// [stx import stripped — resolved via window.stx in __stx_setup]',
+    )
     const resolved = transformStoreImports(scriptContent)
     resolvedParts.push(`// ── merged signal script #${i + 1} ──\n${resolved}`)
   }

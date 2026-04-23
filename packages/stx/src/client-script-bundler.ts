@@ -159,20 +159,24 @@ export async function bundleClientScript(
 
   // Prevent tree-shaking: Bun.build with format:'esm' removes unexported declarations.
   // Add a catch-all export so all top-level const/let/var/function survive bundling.
-  // We strip the exports from the output after bundling.
+  // We strip the exports from the output after bundling. Skip names that are
+  // already exported — re-exporting them causes `Multiple exports with the same
+  // name` errors at bundle time.
   const declNames: string[] = []
-  const declRegex = /^(?:export\s+)?(?:const|let|var)\s+(?:\{([^}]+)\}|(\w+))/gm
-  const funcRegex = /^(?:export\s+)?(?:async\s+)?function\s+(\w+)/gm
+  const declRegex = /^(export\s+)?(?:const|let|var)\s+(?:\{([^}]+)\}|(\w+))/gm
+  const funcRegex = /^(export\s+)?(?:async\s+)?function\s+(\w+)/gm
   let dm: RegExpExecArray | null
   while ((dm = declRegex.exec(code)) !== null) {
-    if (dm[1]) {
+    if (dm[1]) continue // already exported — don't duplicate
+    if (dm[2]) {
       // Destructured: const { a, b } = ...
-      dm[1].split(',').forEach(n => { const t = n.split(':')[0].trim(); if (t) declNames.push(t) })
+      dm[2].split(',').forEach(n => { const t = n.split(':')[0].trim(); if (t) declNames.push(t) })
     }
-    else if (dm[2]) declNames.push(dm[2])
+    else if (dm[3]) declNames.push(dm[3])
   }
   while ((dm = funcRegex.exec(code)) !== null) {
-    declNames.push(dm[1])
+    if (dm[1]) continue // already exported
+    declNames.push(dm[2])
   }
   const exportLine = declNames.length > 0 ? `\nexport { ${declNames.join(', ')} }` : ''
 

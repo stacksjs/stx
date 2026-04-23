@@ -25,52 +25,26 @@
   ],
   "exports": {
     ".": {
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./client": {
-      "bun": "./src/client.ts",
+      "bun": "./dist/client.js",
       "types": "./dist/client.d.ts",
       "import": "./dist/client.js"
     },
     "./preload": {
-      "bun": "./src/preload.ts",
+      "bun": "./dist/preload.js",
       "import": "./dist/preload.js"
     },
     "./serve": {
-      "bun": "./src/serve.ts",
+      "bun": "./dist/serve.js",
       "import": "./dist/serve.js"
     },
     "./*": {
-      "bun": "./src/*",
+      "bun": "./dist/*",
       "import": "./dist/*"
-    }
-  },
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "bun": "./dist/index.js",
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
-      },
-      "./client": {
-        "bun": "./dist/client.js",
-        "types": "./dist/client.d.ts",
-        "import": "./dist/client.js"
-      },
-      "./preload": {
-        "bun": "./dist/preload.js",
-        "import": "./dist/preload.js"
-      },
-      "./serve": {
-        "bun": "./dist/serve.js",
-        "import": "./dist/serve.js"
-      },
-      "./*": {
-        "bun": "./dist/*",
-        "import": "./dist/*"
-      }
     }
   },
   "module": "./dist/index.js",
