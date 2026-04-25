@@ -2886,6 +2886,125 @@ catch (e) {}
     useHead({ title: config.title || config.ogTitle, meta: meta });
   }
 
+  // ==========================================================================
+  // Toast notification system
+  // ==========================================================================
+
+  var _toastId = 0;
+  var _toastIcons = {
+    success: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fill="#16a34a"/></svg>',
+    error: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" fill="#dc2626"/></svg>',
+    info: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0 1 1 0 002 0zm-1 3a1 1 0 00-1 1v3a1 1 0 102 0v-3a1 1 0 00-1-1z" fill="#2563eb"/></svg>',
+    warning: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 10-2 0 1 1 0 002 0zm-1-5a1 1 0 00-1 1v2a1 1 0 102 0V9a1 1 0 00-1-1z" fill="#d97706"/></svg>'
+  };
+  var _toastColors = {
+    success: '#16a34a',
+    error: '#dc2626',
+    info: '#2563eb',
+    warning: '#d97706'
+  };
+
+  function _getToastContainer() {
+    return document.getElementById('stx-toast-container');
+  }
+
+  function _getToastAnimClass(container) {
+    if (!container) return { inAnim: 'stx-toast-in', outAnim: 'stx-toast-out' };
+    var pos = container.getAttribute('data-stx-toast-position') || 'top-right';
+    if (pos.indexOf('left') !== -1) return { inAnim: 'stx-toast-in-left', outAnim: 'stx-toast-out-left' };
+    if (pos.indexOf('center') !== -1) return { inAnim: 'stx-toast-in-center', outAnim: 'stx-toast-out-center' };
+    return { inAnim: 'stx-toast-in', outAnim: 'stx-toast-out' };
+  }
+
+  function removeToast(id) {
+    var el = document.getElementById('stx-toast-' + id);
+    if (!el) return;
+    var container = _getToastContainer();
+    var anims = _getToastAnimClass(container);
+    el.style.animation = anims.outAnim + ' 0.3s ease forwards';
+    setTimeout(function() {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 300);
+  }
+
+  function addToast(type, message, options) {
+    var container = _getToastContainer();
+    if (!container) {
+      console.warn('[stx:toast] No <StxToast /> container found. Add <StxToast /> to your layout.');
+      return -1;
+    }
+    var opts = options || {};
+    var duration = opts.duration !== undefined ? opts.duration : 3000;
+    var id = ++_toastId;
+    var maxToasts = parseInt(container.getAttribute('data-stx-toast-max') || '5', 10);
+
+    // Enforce max toasts — remove oldest
+    var existing = container.querySelectorAll('[data-stx-toast]');
+    while (existing.length >= maxToasts && existing.length > 0) {
+      var oldId = existing[0].getAttribute('data-stx-toast');
+      removeToast(oldId);
+      existing = container.querySelectorAll('[data-stx-toast]');
+    }
+
+    var anims = _getToastAnimClass(container);
+    var borderColor = _toastColors[type] || _toastColors.info;
+    var icon = _toastIcons[type] || _toastIcons.info;
+    var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var bg = isDark ? '#1f2937' : '#ffffff';
+    var textColor = isDark ? '#f3f4f6' : '#1f2937';
+    var shadow = isDark ? '0 4px 12px rgba(0,0,0,0.4)' : '0 4px 12px rgba(0,0,0,0.15)';
+
+    var el = document.createElement('div');
+    el.id = 'stx-toast-' + id;
+    el.setAttribute('data-stx-toast', String(id));
+    el.setAttribute('role', 'alert');
+    el.setAttribute('aria-live', 'assertive');
+    el.style.cssText = 'pointer-events:auto;display:flex;align-items:flex-start;gap:0.75rem;padding:0.875rem 1rem;border-radius:0.5rem;border-left:4px solid ' + borderColor + ';background:' + bg + ';color:' + textColor + ';box-shadow:' + shadow + ';animation:' + anims.inAnim + ' 0.3s ease;font-family:system-ui,-apple-system,sans-serif;font-size:0.875rem;line-height:1.4;max-width:100%';
+
+    var iconSpan = document.createElement('span');
+    iconSpan.style.cssText = 'flex-shrink:0;display:flex;align-items:center;margin-top:1px';
+    iconSpan.innerHTML = icon;
+
+    var msgSpan = document.createElement('span');
+    msgSpan.style.cssText = 'flex:1;word-wrap:break-word';
+    msgSpan.textContent = message;
+
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Dismiss notification');
+    closeBtn.style.cssText = 'flex-shrink:0;background:none;border:none;cursor:pointer;padding:0;color:' + (isDark ? '#9ca3af' : '#6b7280') + ';font-size:1.125rem;line-height:1;display:flex;align-items:center';
+    closeBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/></svg>';
+    closeBtn.onclick = function() { removeToast(id); };
+
+    el.appendChild(iconSpan);
+    el.appendChild(msgSpan);
+    el.appendChild(closeBtn);
+    container.appendChild(el);
+
+    if (duration > 0) {
+      setTimeout(function() { removeToast(id); }, duration);
+    }
+
+    return id;
+  }
+
+  var toast = {
+    success: function(message, options) { return addToast('success', message, options); },
+    error: function(message, options) { return addToast('error', message, options); },
+    info: function(message, options) { return addToast('info', message, options); },
+    warning: function(message, options) { return addToast('warning', message, options); },
+    dismiss: function(id) {
+      if (id !== undefined) { removeToast(id); return; }
+      var container = _getToastContainer();
+      if (!container) return;
+      var all = container.querySelectorAll('[data-stx-toast]');
+      for (var i = 0; i < all.length; i++) {
+        var tid = all[i].getAttribute('data-stx-toast');
+        removeToast(tid);
+      }
+    }
+  };
+
   // Component mount system
   var mountQueue = [];
 
@@ -2934,6 +3053,7 @@ catch (e) {}
     useDark,
     useHead,
     useSeoMeta,
+    toast,
     helpers: globalHelpers,
 
     // Component composition API (Phase 4)
@@ -3389,6 +3509,7 @@ else {
   window.useDark = useDark;
   window.useHead = useHead;
   window.useSeoMeta = useSeoMeta;
+  window.toast = toast;
   window.defineStore = window.stx.defineStore;
   window.useStore = window.stx.useStore;
   window.ref = state;

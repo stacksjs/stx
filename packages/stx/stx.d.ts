@@ -302,6 +302,30 @@ declare function $watch<T>(
 ): StxCleanup
 
 // ============================================================================
+// Toast notifications
+// ============================================================================
+
+interface StxToastOptions {
+  /** Auto-dismiss duration in ms. 0 = persistent. Default: 3000 */
+  duration?: number
+}
+
+interface StxToast {
+  /** Show a success toast (green) */
+  success: (message: string, options?: StxToastOptions) => number
+  /** Show an error toast (red) */
+  error: (message: string, options?: StxToastOptions) => number
+  /** Show an info toast (blue) */
+  info: (message: string, options?: StxToastOptions) => number
+  /** Show a warning toast (yellow) */
+  warning: (message: string, options?: StxToastOptions) => number
+  /** Dismiss a toast by id, or all toasts if no id is given */
+  dismiss: (id?: number) => void
+}
+
+declare const toast: StxToast
+
+// ============================================================================
 // Stores (Pinia-inspired, signals-based)
 // ============================================================================
 
@@ -411,6 +435,9 @@ interface StxRuntimeRegistry {
   // Stores
   defineStore: typeof defineStore
   useStore: typeof useStore
+
+  // Toast
+  toast: StxToast
 
   // Mount API
   mount: (setupFn: () => any) => void
