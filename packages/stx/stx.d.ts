@@ -326,6 +326,42 @@ interface StxToast {
 declare const toast: StxToast
 
 // ============================================================================
+// Modal system
+// ============================================================================
+
+interface StxModal {
+  /** Open a modal by its id */
+  open: (id: string) => void
+  /** Close a modal by its id */
+  close: (id: string) => void
+  /** Toggle a modal by its id */
+  toggle: (id: string) => void
+}
+
+declare const modal: StxModal
+
+// ============================================================================
+// Alert & Confirm dialogs
+// ============================================================================
+
+interface StxDialogOptions {
+  /** Dialog title displayed above the message */
+  title?: string
+  /** Icon type: 'info' | 'warning' | 'error' | 'success' | 'question' */
+  type?: 'info' | 'warning' | 'error' | 'success' | 'question'
+  /** Text for the confirm/OK button (default: 'OK') */
+  confirmText?: string
+  /** Text for the cancel button — confirm only (default: 'Cancel') */
+  cancelText?: string
+}
+
+/** Styled replacement for window.alert(). Returns a Promise that resolves when dismissed. */
+declare function stxAlert(message: string, options?: StxDialogOptions): Promise<void>
+
+/** Styled replacement for window.confirm(). Returns a Promise<boolean>. */
+declare function stxConfirm(message: string, options?: StxDialogOptions): Promise<boolean>
+
+// ============================================================================
 // Stores (Pinia-inspired, signals-based)
 // ============================================================================
 
@@ -438,6 +474,13 @@ interface StxRuntimeRegistry {
 
   // Toast
   toast: StxToast
+
+  // Modal
+  modal: StxModal
+
+  // Dialogs
+  alert: typeof stxAlert
+  confirm: typeof stxConfirm
 
   // Mount API
   mount: (setupFn: () => any) => void

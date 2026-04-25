@@ -3005,6 +3005,158 @@ catch (e) {}
     }
   };
 
+  // ── Modal system ──────────────────────────────────────────────────
+  var modal = {
+    open: function(id) {
+      var el = document.querySelector('[data-stx-modal="' + id + '"]');
+      if (!el) { console.warn('[stx:modal] Modal "' + id + '" not found'); return; }
+      el.style.display = 'flex';
+      // Force reflow then animate
+      void el.offsetHeight;
+      el.setAttribute('data-stx-modal-open', '');
+      document.body.style.overflow = 'hidden';
+      // Escape key handler
+      if (el.getAttribute('data-close-escape') !== 'false') {
+        var escHandler = function(e) {
+          if (e.key === 'Escape') { modal.close(id); document.removeEventListener('keydown', escHandler); }
+        };
+        document.addEventListener('keydown', escHandler);
+        el._stxEscHandler = escHandler;
+      }
+      // Backdrop click
+      if (el.getAttribute('data-close-backdrop') !== 'false') {
+        el.onclick = function(e) { if (e.target === el) modal.close(id); };
+      }
+    },
+    close: function(id) {
+      var el = document.querySelector('[data-stx-modal="' + id + '"]');
+      if (!el) return;
+      el.removeAttribute('data-stx-modal-open');
+      if (el._stxEscHandler) { document.removeEventListener('keydown', el._stxEscHandler); el._stxEscHandler = null; }
+      el.onclick = null;
+      setTimeout(function() {
+        el.style.display = 'none';
+        // Restore scroll if no other modals are open
+        if (!document.querySelector('[data-stx-modal-open]')) document.body.style.overflow = '';
+      }, 200);
+    },
+    toggle: function(id) {
+      var el = document.querySelector('[data-stx-modal="' + id + '"]');
+      if (el && el.hasAttribute('data-stx-modal-open')) modal.close(id);
+      else modal.open(id);
+    }
+  };
+
+  // ── Alert & Confirm dialogs ─────────────────────────────────────
+  // Styled replacements for window.alert() and window.confirm().
+  // Both return Promises and render into a temporary modal overlay.
+
+  var _dialogId = 0;
+  var _dialogIcons = {
+    info: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    warning: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    error: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    success: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>',
+    question: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+  };
+
+  function _createDialog(message, options, isConfirm) {
+    var opts = options || {};
+    var type = opts.type || (isConfirm ? 'question' : 'info');
+    var title = opts.title || '';
+    var confirmText = opts.confirmText || 'OK';
+    var cancelText = opts.cancelText || 'Cancel';
+    var id = 'stx-dialog-' + (++_dialogId);
+    var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var bg = isDark ? '#1f2937' : '#ffffff';
+    var textColor = isDark ? '#f3f4f6' : '#1f2937';
+    var subColor = isDark ? '#9ca3af' : '#6b7280';
+    var icon = _dialogIcons[type] || _dialogIcons.info;
+
+    return new Promise(function(resolve) {
+      var backdrop = document.createElement('div');
+      backdrop.id = id;
+      backdrop.style.cssText = 'position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);opacity:0;transition:opacity 0.2s ease;font-family:system-ui,-apple-system,sans-serif';
+      backdrop.setAttribute('role', 'alertdialog');
+      backdrop.setAttribute('aria-modal', 'true');
+
+      var panel = document.createElement('div');
+      panel.style.cssText = 'max-width:24rem;width:calc(100% - 2rem);border-radius:0.75rem;padding:1.5rem;background:' + bg + ';color:' + textColor + ';box-shadow:0 20px 60px rgba(0,0,0,0.3);transform:scale(0.95);transition:transform 0.2s ease;text-align:center';
+
+      var iconDiv = document.createElement('div');
+      iconDiv.style.cssText = 'display:flex;justify-content:center;margin-bottom:1rem';
+      iconDiv.innerHTML = icon;
+      panel.appendChild(iconDiv);
+
+      if (title) {
+        var titleEl = document.createElement('h3');
+        titleEl.style.cssText = 'margin:0 0 0.5rem;font-size:1.125rem;font-weight:600';
+        titleEl.textContent = title;
+        panel.appendChild(titleEl);
+      }
+
+      var msgEl = document.createElement('p');
+      msgEl.style.cssText = 'margin:0 0 1.25rem;font-size:0.875rem;line-height:1.5;color:' + subColor;
+      msgEl.textContent = message;
+      panel.appendChild(msgEl);
+
+      var btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:0.75rem;justify-content:center';
+
+      function cleanup(result) {
+        backdrop.style.opacity = '0';
+        panel.style.transform = 'scale(0.95)';
+        setTimeout(function() { backdrop.remove(); }, 200);
+        resolve(result);
+      }
+
+      if (isConfirm) {
+        var cancelBtn = document.createElement('button');
+        cancelBtn.textContent = cancelText;
+        cancelBtn.style.cssText = 'padding:0.5rem 1.25rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;cursor:pointer;border:1px solid ' + (isDark ? '#374151' : '#d1d5db') + ';background:transparent;color:' + textColor + ';transition:background 0.15s';
+        cancelBtn.onmouseover = function() { this.style.background = isDark ? '#374151' : '#f3f4f6'; };
+        cancelBtn.onmouseout = function() { this.style.background = 'transparent'; };
+        cancelBtn.onclick = function() { cleanup(false); };
+        btnRow.appendChild(cancelBtn);
+      }
+
+      var okBtn = document.createElement('button');
+      okBtn.textContent = confirmText;
+      var btnColor = type === 'error' ? '#dc2626' : type === 'warning' ? '#d97706' : '#5672cd';
+      okBtn.style.cssText = 'padding:0.5rem 1.25rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;cursor:pointer;border:none;background:' + btnColor + ';color:#fff;transition:opacity 0.15s';
+      okBtn.onmouseover = function() { this.style.opacity = '0.9'; };
+      okBtn.onmouseout = function() { this.style.opacity = '1'; };
+      okBtn.onclick = function() { cleanup(isConfirm ? true : undefined); };
+      btnRow.appendChild(okBtn);
+
+      panel.appendChild(btnRow);
+      backdrop.appendChild(panel);
+      document.body.appendChild(backdrop);
+
+      // Animate in
+      void backdrop.offsetHeight;
+      backdrop.style.opacity = '1';
+      panel.style.transform = 'scale(1)';
+
+      // Escape key
+      var escHandler = function(e) {
+        if (e.key === 'Escape') { cleanup(isConfirm ? false : undefined); document.removeEventListener('keydown', escHandler); }
+      };
+      document.addEventListener('keydown', escHandler);
+
+      // Focus the primary button
+      okBtn.focus();
+    });
+  }
+
+  function stxAlert(message, options) {
+    return _createDialog(message, options, false);
+  }
+
+  function stxConfirm(message, options) {
+    return _createDialog(message, options, true);
+  }
+
   // Component mount system
   var mountQueue = [];
 
@@ -3054,6 +3206,9 @@ catch (e) {}
     useHead,
     useSeoMeta,
     toast,
+    modal,
+    alert: stxAlert,
+    confirm: stxConfirm,
     helpers: globalHelpers,
 
     // Component composition API (Phase 4)
@@ -3510,6 +3665,9 @@ else {
   window.useHead = useHead;
   window.useSeoMeta = useSeoMeta;
   window.toast = toast;
+  window.modal = modal;
+  window.stxAlert = stxAlert;
+  window.stxConfirm = stxConfirm;
   window.defineStore = window.stx.defineStore;
   window.useStore = window.stx.useStore;
   window.ref = state;

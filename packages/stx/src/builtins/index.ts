@@ -11,6 +11,7 @@ export { StxLinkBuiltin } from './stx-link'
 export { StxImageBuiltin } from './stx-image'
 export { StxLoadingIndicatorBuiltin } from './stx-loading-indicator'
 export { StxToastBuiltin } from './toast'
+export { StxModalBuiltin } from './modal'
 export { IconBuiltin, preloadIconCollection } from './icon'
 
 import { registry } from '../component-registry'
@@ -18,6 +19,7 @@ import { StxLinkBuiltin } from './stx-link'
 import { StxImageBuiltin } from './stx-image'
 import { StxLoadingIndicatorBuiltin } from './stx-loading-indicator'
 import { StxToastBuiltin } from './toast'
+import { StxModalBuiltin } from './modal'
 import { IconBuiltin } from './icon'
 
 /**
@@ -29,5 +31,6 @@ export function registerBuiltins(): void {
   registry.registerBuiltin(StxImageBuiltin)
   registry.registerBuiltin(StxLoadingIndicatorBuiltin)
   registry.registerBuiltin(StxToastBuiltin)
+  registry.registerBuiltin(StxModalBuiltin)
   registry.registerBuiltin(IconBuiltin)
 }
