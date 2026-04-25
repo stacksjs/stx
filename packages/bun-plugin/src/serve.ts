@@ -36,6 +36,87 @@ export interface ServeOptions {
   routes?: Record<string, (req: Request) => Response | Promise<Response>>
   /** Custom request handler — called for every request, return Response to short-circuit, or null/undefined to continue */
   onRequest?: (req: Request) => Response | Promise<Response> | null | undefined
+
+  /**
+   * **Page middleware.** Modelled on Laravel's named-route middleware.
+   *
+   * stx pages opt into middleware with frontmatter:
+   *
+   * ```stx
+   * <script server>
+   *   definePageMeta({ middleware: ['auth', 'verified'] })
+   * </script>
+   * ```
+   *
+   * Discovery scans every `.stx`/`.md`/`.html` page once at startup,
+   * extracts the `middleware:` list, and at request time runs them in
+   * declaration order before SSR. The first middleware that returns a
+   * `Response` (e.g. a redirect) short-circuits the chain — same
+   * contract as Laravel's `handle($request, $next)`.
+   *
+   * `globalMiddleware` runs on every page request.
+   * `groups` lets you alias a list of names (Laravel's middleware groups,
+   * e.g. `web` / `api`).
+   *
+   * Two middleware names ship by default — `auth` and `guest` — wired
+   * to `auth.cookieName` / `auth.redirectTo` so the most common app
+   * shape (gate authed pages → /login, redirect logged-in users away
+   * from /login → /) needs zero registration.
+   */
+  middleware?: Record<string, MiddlewareHandler>
+
+  /** Names that run on every page request, before per-page middleware. */
+  globalMiddleware?: string[]
+
+  /** Aliases — `web: ['session', 'csrf']` lets pages declare `middleware: ['web']`. */
+  middlewareGroups?: Record<string, string[]>
+
+  /**
+   * Convenience knobs for the bundled `auth` and `guest` middleware.
+   * Set to `false` to opt out of the bundled middleware entirely.
+   */
+  auth?: false | {
+    /** Cookie that signals "logged in". Default: `auth-token`. */
+    cookieName?: string
+    /** Where to send unauthenticated users hitting `auth` pages. Default: `/login`. */
+    redirectTo?: string
+    /** Where to send already-logged-in users hitting `guest` pages. Default: `/`. */
+    home?: string
+    /**
+     * Extra prefixes to gate without needing `definePageMeta` — useful
+     * for proxied paths or static files served by `routes`.
+     */
+    protectedPaths?: string[]
+  }
+}
+
+/**
+ * Middleware handler — a Laravel-style gate that either passes through
+ * (returns `void`/`null`/`undefined`) or terminates the pipeline by
+ * returning a `Response`.
+ *
+ * The third argument is the colon-separated arg list, so a page that
+ * declares `middleware: ['auth:admin']` invokes the `auth` handler
+ * with `args = ['admin']` — the same shape as Laravel's
+ * `handle($request, $next, ...$args)`.
+ */
+export type MiddlewareHandler = (
+  req: Request,
+  ctx: MiddlewareContext,
+  ...args: string[]
+) => Response | null | undefined | void | Promise<Response | null | undefined | void>
+
+export interface MiddlewareContext {
+  /** Current URL pathname, e.g. `/host/dashboard`. */
+  path: string
+  /** Parsed URL — useful for query strings, hash, etc. */
+  url: URL
+  /** Path params extracted from a dynamic segment, e.g. `{ id: 'tesla-…' }`. */
+  params: Record<string, string>
+  /** Cookies already parsed from the request. */
+  cookies: Record<string, string>
+  /** Build a 302 to `to`, preserving the original target as `?next=…`. */
+  redirect: (to: string, status?: number) => Response
 }
 
 // Default STX config for serving - matches @stacksjs/stx defaults
@@ -125,7 +206,166 @@ export async function serve(options: ServeOptions): Promise<void> {
   let sourceFiles: string[] | null = null
   let assetsInitialized = false
 
-  // Lazy file discovery function
+  // ── Page middleware registry ─────────────────────────────────────────
+  //
+  // Mirrors Laravel's named middleware + middleware-group pattern. Each
+  // page declares which named middleware it needs via `definePageMeta`.
+  // Discovery extracts the list once and stores it per route, so the
+  // request hot path is just an O(1) lookup + a quick chain run.
+
+  /** Static `/host/dashboard` → ['auth'], etc. */
+  const pageMiddlewareByPath = new Map<string, string[]>()
+  /** Dynamic `/book/[id]` → { regex, paramNames, middleware }. */
+  const pageMiddlewarePatterns: { re: RegExp, names: string[], middleware: string[] }[] = []
+
+  function compileRoutePattern(urlPath: string): { re: RegExp, names: string[] } {
+    const names: string[] = []
+    const re = urlPath.split('/').map((seg) => {
+      if (!seg) return ''
+      const catchAll = seg.match(/^\[\.\.\.(.+)\]$/)
+      if (catchAll) {
+        names.push(catchAll[1])
+        return '(.+)'
+      }
+      const param = seg.match(/^\[(.+)\]$/)
+      if (param) {
+        names.push(param[1])
+        return '([^/]+)'
+      }
+      return seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }).join('/')
+    return { re: new RegExp(`^${re}/?$`), names }
+  }
+
+  function urlPathFromFile(file: string): string {
+    let rel = file
+    for (const pattern of patterns) {
+      const base = pattern.replace(/\/$/, '')
+      if (rel.startsWith(`${base}/`)) {
+        rel = rel.slice(base.length + 1)
+        break
+      }
+    }
+    rel = rel.replace(/\.(stx|md|html)$/, '')
+    if (rel === 'index' || rel.endsWith('/index')) rel = rel.replace(/\/?index$/, '')
+    return rel.startsWith('/') ? rel : `/${rel}`
+  }
+
+  /**
+   * Scan a page source for `definePageMeta({ middleware: [...] })` and
+   * record the named middleware for that route. Cheap regex parse —
+   * runs once at startup, not on every request.
+   */
+  async function detectPageMiddleware(file: string) {
+    try {
+      const fs = await import('node:fs/promises')
+      const src = await fs.readFile(file, 'utf-8')
+      const meta = src.match(/definePageMeta\s*\(\s*\{[\s\S]*?\}\s*\)/)
+      if (!meta) return
+      const mw = meta[0].match(/middleware\s*:\s*(\[[^\]]*\]|['"][^'"]+['"])/)
+      if (!mw) return
+      const names = mw[1].startsWith('[')
+        ? Array.from(mw[1].matchAll(/['"]([^'"]+)['"]/g)).map(m => m[1])
+        : [mw[1].replace(/['"]/g, '')]
+      if (names.length === 0) return
+      const urlPath = urlPathFromFile(file)
+      if (urlPath.includes('[')) {
+        const { re, names: paramNames } = compileRoutePattern(urlPath)
+        pageMiddlewarePatterns.push({ re, names: paramNames, middleware: names })
+      }
+      else {
+        pageMiddlewareByPath.set(urlPath, names)
+      }
+    }
+    catch { /* unreadable file — skip */ }
+  }
+
+  function resolveRouteMiddleware(path: string): { names: string[], params: Record<string, string> } {
+    const exact = pageMiddlewareByPath.get(path)
+    if (exact) return { names: exact, params: {} }
+    const trimmed = path.replace(/\/$/, '')
+    if (trimmed !== path) {
+      const exactTrim = pageMiddlewareByPath.get(trimmed)
+      if (exactTrim) return { names: exactTrim, params: {} }
+    }
+    for (const entry of pageMiddlewarePatterns) {
+      const m = entry.re.exec(path)
+      if (m) {
+        const params: Record<string, string> = {}
+        entry.names.forEach((n, i) => { params[n] = decodeURIComponent(m[i + 1] ?? '') })
+        return { names: entry.middleware, params }
+      }
+    }
+    return { names: [], params: {} }
+  }
+
+  // ── Cookie + redirect helpers ────────────────────────────────────────
+  function parseCookies(req: Request): Record<string, string> {
+    const out: Record<string, string> = {}
+    const header = req.headers.get('cookie') || ''
+    if (!header) return out
+    for (const part of header.split(/;\s*/)) {
+      const eq = part.indexOf('=')
+      if (eq === -1) continue
+      const k = part.slice(0, eq)
+      if (!k) continue
+      try { out[k] = decodeURIComponent(part.slice(eq + 1)) }
+      catch { out[k] = part.slice(eq + 1) }
+    }
+    return out
+  }
+
+  function redirectWithNext(target: string, originalPath: string, search = ''): Response {
+    const sep = target.includes('?') ? '&' : '?'
+    const next = encodeURIComponent(originalPath + search)
+    return Response.redirect(`${target}${sep}next=${next}`, 302)
+  }
+
+  // ── Bundled middleware (auth, guest) ─────────────────────────────────
+  // Mirrors Laravel's `Authenticate` and `RedirectIfAuthenticated` —
+  // ships out of the box, fully replaceable by passing your own handler
+  // under `options.middleware.auth` / `options.middleware.guest`.
+  const authConfig = options.auth === false ? null : (options.auth ?? {})
+  const authCookieName = authConfig?.cookieName ?? 'auth-token'
+  const authRedirectTo = authConfig?.redirectTo ?? '/login'
+  const authHome = authConfig?.home ?? '/'
+  const extraProtectedPrefixes = authConfig?.protectedPaths ?? []
+
+  const builtInMiddleware: Record<string, MiddlewareHandler> = authConfig === null ? {} : {
+    auth: (_req, ctx) => {
+      const tok = ctx.cookies[authCookieName]
+      if (!tok) return ctx.redirect(authRedirectTo)
+      return null
+    },
+    guest: (_req, ctx) => {
+      const tok = ctx.cookies[authCookieName]
+      if (tok) return Response.redirect(authHome, 302)
+      return null
+    },
+  }
+
+  const middlewareRegistry: Record<string, MiddlewareHandler> = {
+    ...builtInMiddleware,
+    ...(options.middleware ?? {}),
+  }
+
+  function expandMiddlewareNames(names: string[]): string[] {
+    const out: string[] = []
+    const groups = options.middlewareGroups ?? {}
+    const seen = new Set<string>()
+    const visit = (name: string) => {
+      if (seen.has(name)) return
+      seen.add(name)
+      const group = groups[name]
+      if (group) group.forEach(visit)
+      else out.push(name)
+    }
+    names.forEach(visit)
+    return out
+  }
+
+  const globalMiddlewareNames = options.globalMiddleware ?? []
+
   async function discoverFiles() {
     if (sourceFiles !== null)
       return sourceFiles
@@ -169,6 +409,11 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
 
     sourceFiles = files
+
+    // Build the page-middleware index (Laravel-style named middleware).
+    pageMiddlewareByPath.clear()
+    pageMiddlewarePatterns.length = 0
+    await Promise.all(files.map(f => detectPageMiddleware(f)))
 
     // Generate route manifest and type declarations into .stx/
     try {
@@ -720,6 +965,55 @@ export async function serve(options: ServeOptions): Promise<void> {
         const customResponse = await options.onRequest(req)
         if (customResponse) return customResponse
       }
+
+      // ── Page middleware pipeline ────────────────────────────────────
+      //
+      // Resolves the named middleware for this route (global +
+      // page-declared + extra `auth.protectedPaths`), expands any
+      // middleware groups, then runs the handlers in order. The first
+      // one that returns a `Response` short-circuits the chain — the
+      // same shape Laravel's `handle($request, $next)` produces.
+      const route = resolveRouteMiddleware(path)
+      const extraNames = extraProtectedPrefixes.some(p => path === p || path.startsWith(p.endsWith('/') ? p : `${p}/`))
+        ? ['auth']
+        : []
+      const requested = [...globalMiddlewareNames, ...route.names, ...extraNames]
+      if (requested.length > 0) {
+        const expanded = expandMiddlewareNames(requested)
+        const cookies = parseCookies(req)
+        const ctx: MiddlewareContext = {
+          path,
+          url,
+          params: route.params,
+          cookies,
+          redirect: (to, status = 302) => {
+            const sep = to.includes('?') ? '&' : '?'
+            const next = encodeURIComponent(path + (url.search || ''))
+            return new Response(null, {
+              status,
+              headers: { Location: `${to}${sep}next=${next}` },
+            })
+          },
+        }
+        for (const entry of expanded) {
+          // Laravel-style `auth:admin,owner` → handler('auth') called
+          // with args = ['admin', 'owner'].
+          const colon = entry.indexOf(':')
+          const name = colon === -1 ? entry : entry.slice(0, colon)
+          const args = colon === -1 ? [] : entry.slice(colon + 1).split(',')
+          const handler = middlewareRegistry[name]
+          if (!handler) {
+            console.warn(`[stx serve] unknown middleware "${name}" on ${path}`)
+            continue
+          }
+          const result = await handler(req, ctx, ...args)
+          if (result instanceof Response) return result
+        }
+      }
+      // Silence the `redirectWithNext` helper unused-warning — kept
+      // around as part of the public-ish surface for callers that
+      // want the same shape from a custom onRequest hook.
+      void redirectWithNext
 
       // Custom route handlers — matched by exact path
       if (options.routes) {
