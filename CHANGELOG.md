@@ -1,4 +1,47 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.12...v0.2.13)
+
+### 🚀 Features
+
+- **bun-plugin/serve**: Laravel-style middleware pipeline ([6269d9c](https://github.com/stacksjs/stx/commit/6269d9c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add <StxModal>, stxAlert(), and stxConfirm() builtins ([98a048e](https://github.com/stacksjs/stx/commit/98a048e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **toast**: add <StxToast /> builtin and toast() runtime global (#1671) ([1401a4c](https://github.com/stacksjs/stx/commit/1401a4c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1671](https://github.com/stacksjs/stx/issues/1671), [#1671](https://github.com/stacksjs/stx/issues/1671))
+
+### 🐛 Bug Fixes
+
+- **toast**: use stroked SVG icons instead of filled paths ([51adeef](https://github.com/stacksjs/stx/commit/51adeef)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.13 ([9ec1887](https://github.com/stacksjs/stx/commit/9ec1887)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([bc9c09c](https://github.com/stacksjs/stx/commit/bc9c09c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.12...HEAD)
+
+### 🚀 Features
+
+- **bun-plugin/serve**: Laravel-style middleware pipeline ([6269d9c](https://github.com/stacksjs/stx/commit/6269d9c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add <StxModal>, stxAlert(), and stxConfirm() builtins ([98a048e](https://github.com/stacksjs/stx/commit/98a048e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **toast**: add <StxToast /> builtin and toast() runtime global (#1671) ([1401a4c](https://github.com/stacksjs/stx/commit/1401a4c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1671](https://github.com/stacksjs/stx/issues/1671), [#1671](https://github.com/stacksjs/stx/issues/1671))
+
+### 🐛 Bug Fixes
+
+- **toast**: use stroked SVG icons instead of filled paths ([51adeef](https://github.com/stacksjs/stx/commit/51adeef)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([bc9c09c](https://github.com/stacksjs/stx/commit/bc9c09c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.11...v0.2.12)
 
 ### 🚀 Features
