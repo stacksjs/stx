@@ -22,18 +22,16 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Setup Pantry
-        uses: home-lang/pantry/packages/action@main
-
       - name: Install Dependencies
         run: bun install
 
       - name: Publish
-        run: pantry publish --npm --access public --skip collections,iconify-core,iconify-generator,vscode
+        uses: home-lang/pantry/packages/action@main
+        with:
+          install: false
+          publish: npm
+          release: true
+          release-changelog: CHANGELOG.md
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Create GitHub Release
-        uses: stacksjs/action-releaser@v1.2.9
-        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

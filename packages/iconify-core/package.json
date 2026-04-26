@@ -2,7 +2,6 @@
   "name": "@stacksjs/iconify-core",
   "type": "module",
   "version": "0.2.13",
-  "private": true,
   "description": "Core utilities for Iconify SVG icons in stx",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
