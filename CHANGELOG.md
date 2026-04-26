@@ -1,4 +1,14 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.16...v0.2.17)
+
+### 🧹 Chores
+
+- release v0.2.17 ([2e29096](https://github.com/stacksjs/stx/commit/2e29096)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.15...v0.2.16)
 
 ### 🧹 Chores
