@@ -1,4 +1,4 @@
-export { default as 2hearts } from './2hearts.js'
+export { default as _2hearts } from './2hearts.js'
 export { default as acorn } from './acorn.js'
 export { default as admissiontickets } from './admissiontickets.js'
 export { default as aerialtramway } from './aerialtramway.js'

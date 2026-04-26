@@ -1,5 +1,5 @@
-export { default as 3dGlasses } from './3d-glasses.js'
-export { default as 3dSync } from './3d-sync.js'
+export { default as _3dGlasses } from './3d-glasses.js'
+export { default as _3dSync } from './3d-sync.js'
 export { default as account } from './account.js'
 export { default as accountGroup1 } from './account-group-1.js'
 export { default as accountHexagon } from './account-hexagon.js'

@@ -1,5 +1,5 @@
-export { default as 3d } from './3d.js'
-export { default as 3dDuo } from './3d-duo.js'
+export { default as _3d } from './3d.js'
+export { default as _3dDuo } from './3d-duo.js'
 export { default as addDevice } from './add-device.js'
 export { default as addDeviceDuo } from './add-device-duo.js'
 export { default as airportRailroad } from './airport-railroad.js'

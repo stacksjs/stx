@@ -1,5 +1,5 @@
-export { default as 3dCoordinateAxis } from './3d-coordinate-axis.js'
-export { default as 3dCoordinateAxisFlat } from './3d-coordinate-axis-flat.js'
+export { default as _3dCoordinateAxis } from './3d-coordinate-axis.js'
+export { default as _3dCoordinateAxisFlat } from './3d-coordinate-axis-flat.js'
 export { default as addBellNotification } from './add-bell-notification.js'
 export { default as addBellNotificationFlat } from './add-bell-notification-flat.js'
 export { default as addLayer2 } from './add-layer-2.js'

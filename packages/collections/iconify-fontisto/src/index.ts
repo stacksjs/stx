@@ -1,4 +1,4 @@
-export { default as 500px } from './500px.js'
+export { default as _500px } from './500px.js'
 export { default as acrobatReader } from './acrobat-reader.js'
 export { default as adjust } from './adjust.js'
 export { default as adobe } from './adobe.js'

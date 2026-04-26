@@ -1,5 +1,5 @@
-export { default as 360 } from './360.js'
-export { default as 404 } from './404.js'
+export { default as _360 } from './360.js'
+export { default as _404 } from './404.js'
 export { default as alarmClock } from './alarm-clock.js'
 export { default as arrangeList } from './arrange-list.js'
 export { default as arrowDown } from './arrow-down.js'

@@ -1,4 +1,4 @@
-export { default as 500px } from './500px.js'
+export { default as _500px } from './500px.js'
 export { default as addFiles } from './add-files.js'
 export { default as adobe } from './adobe.js'
 export { default as adonis } from './adonis.js'

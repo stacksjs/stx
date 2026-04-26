@@ -1,4 +1,4 @@
-export { default as 3d } from './3d.js'
+export { default as _3d } from './3d.js'
 export { default as adobeAe } from './adobe-ae.js'
 export { default as adobeAi } from './adobe-ai.js'
 export { default as adobeId } from './adobe-id.js'

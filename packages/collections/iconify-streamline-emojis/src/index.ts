@@ -1,4 +1,4 @@
-export { default as 2 } from './2.js'
+export { default as _2 } from './2.js'
 export { default as airplane } from './airplane.js'
 export { default as alien } from './alien.js'
 export { default as amazedFace } from './amazed-face.js'

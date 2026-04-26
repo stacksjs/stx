@@ -1,4 +1,4 @@
-export { default as 3d } from './3d.js'
+export { default as _3d } from './3d.js'
 export { default as abap } from './abap.js'
 export { default as abc } from './abc.js'
 export { default as actionscript } from './actionscript.js'

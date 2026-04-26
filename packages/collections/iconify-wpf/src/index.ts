@@ -1,5 +1,5 @@
-export { default as 2fSwipeDown } from './2f-swipe-down.js'
-export { default as 2fSwipeRight } from './2f-swipe-right.js'
+export { default as _2fSwipeDown } from './2f-swipe-down.js'
+export { default as _2fSwipeRight } from './2f-swipe-right.js'
 export { default as addImage } from './add-image.js'
 export { default as addUser } from './add-user.js'
 export { default as administrator } from './administrator.js'

@@ -1,5 +1,5 @@
-export { default as 3d } from './3d.js'
-export { default as 4k } from './4k.js'
+export { default as _3d } from './3d.js'
+export { default as _4k } from './4k.js'
 export { default as accountLogout } from './account-logout.js'
 export { default as actionRedo } from './action-redo.js'
 export { default as actionUndo } from './action-undo.js'

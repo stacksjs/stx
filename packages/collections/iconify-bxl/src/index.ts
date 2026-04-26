@@ -1,5 +1,5 @@
-export { default as 500px } from './500px.js'
-export { default as 99designs } from './99designs.js'
+export { default as _500px } from './500px.js'
+export { default as _99designs } from './99designs.js'
 export { default as adobe } from './adobe.js'
 export { default as airbnb } from './airbnb.js'
 export { default as algolia } from './algolia.js'

@@ -809,10 +809,19 @@ export async function generatePackage(
 }
 
 /**
- * Convert kebab-case to camelCase
+ * Convert kebab-case to a valid JS identifier in camelCase form.
+ * Iconify allows names that start with digits (e.g. "2", "3d-move") and
+ * names containing dots/slashes — none of which are legal JS identifiers.
+ * Prefix with `_` when the first char isn't [A-Za-z_$], and replace any
+ * remaining illegal chars with `_` so downstream `export { default as X }`
+ * always parses.
  */
 export function toCamelCase(str: string): string {
-  return str.replace(/-([a-z0-9])/g, g => g[1].toUpperCase())
+  let camel = str.replace(/-([a-z0-9])/g, g => g[1].toUpperCase())
+  camel = camel.replace(/[^a-zA-Z0-9_$]/g, '_')
+  if (/^[0-9]/.test(camel))
+    camel = `_${camel}`
+  return camel
 }
 
 /**

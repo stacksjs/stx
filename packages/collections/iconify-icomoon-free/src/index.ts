@@ -1,4 +1,4 @@
-export { default as 500px } from './500px.js'
+export { default as _500px } from './500px.js'
 export { default as accessibility } from './accessibility.js'
 export { default as addressBook } from './address-book.js'
 export { default as aidKit } from './aid-kit.js'

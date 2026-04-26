@@ -1,5 +1,5 @@
-export { default as 500px } from './500px.js'
-export { default as 500pxWithCircle } from './500px-with-circle.js'
+export { default as _500px } from './500px.js'
+export { default as _500pxWithCircle } from './500px-with-circle.js'
 export { default as basecamp } from './basecamp.js'
 export { default as behance } from './behance.js'
 export { default as creativeCloud } from './creative-cloud.js'

@@ -1,5 +1,5 @@
-export { default as 500px } from './500px.js'
-export { default as 500px5 } from './500px-5.js'
+export { default as _500px } from './500px.js'
+export { default as _500px5 } from './500px-5.js'
 export { default as aboutMe } from './about-me.js'
 export { default as abstract } from './abstract.js'
 export { default as acm } from './acm.js'

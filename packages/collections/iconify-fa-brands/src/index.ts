@@ -1,4 +1,4 @@
-export { default as 500px } from './500px.js'
+export { default as _500px } from './500px.js'
 export { default as accessibleIcon } from './accessible-icon.js'
 export { default as accusoft } from './accusoft.js'
 export { default as acquisitionsIncorporated } from './acquisitions-incorporated.js'

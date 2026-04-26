@@ -1,4 +1,4 @@
-export { default as 24Hours } from './24-hours.js'
+export { default as _24Hours } from './24-hours.js'
 export { default as accesibleRestroom } from './accesible-restroom.js'
 export { default as accessForHearingLoss } from './access-for-hearing-loss.js'
 export { default as accessToLowVision } from './access-to-low-vision.js'

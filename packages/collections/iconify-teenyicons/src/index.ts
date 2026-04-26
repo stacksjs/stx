@@ -1,5 +1,5 @@
-export { default as 360Outline } from './360-outline.js'
-export { default as 360Solid } from './360-solid.js'
+export { default as _360Outline } from './360-outline.js'
+export { default as _360Solid } from './360-solid.js'
 export { default as abTestingOutline } from './ab-testing-outline.js'
 export { default as abTestingSolid } from './ab-testing-solid.js'
 export { default as addOutline } from './add-outline.js'

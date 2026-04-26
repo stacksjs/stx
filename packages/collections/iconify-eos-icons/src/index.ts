@@ -1,4 +1,4 @@
-export { default as 3dPrint } from './3d-print.js'
+export { default as _3dPrint } from './3d-print.js'
 export { default as abstract } from './abstract.js'
 export { default as abstractIncomplete } from './abstract-incomplete.js'
 export { default as abstractInstance } from './abstract-instance.js'
