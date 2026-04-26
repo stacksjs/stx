@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.20...v0.2.21)
+
+### 🐛 Bug Fixes
+
+- **iconify**: dedupe colliding camelCase identifiers ([b5d9c9b](https://github.com/stacksjs/stx/commit/b5d9c9b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.21 ([8211d07](https://github.com/stacksjs/stx/commit/8211d07)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.20...HEAD)
+
+### 🐛 Bug Fixes
+
+- **iconify**: dedupe colliding camelCase identifiers ([b5d9c9b](https://github.com/stacksjs/stx/commit/b5d9c9b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.19...v0.2.20)
 
 ### 🐛 Bug Fixes
