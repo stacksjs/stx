@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.19...v0.2.20)
+
+### 🐛 Bug Fixes
+
+- **iconify**: sanitize JS identifiers (digits, dots, slashes) ([4b67d60](https://github.com/stacksjs/stx/commit/4b67d60)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.20 ([051e937](https://github.com/stacksjs/stx/commit/051e937)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.19...HEAD)
+
+### 🐛 Bug Fixes
+
+- **iconify**: sanitize JS identifiers (digits, dots, slashes) ([4b67d60](https://github.com/stacksjs/stx/commit/4b67d60)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.18...v0.2.19)
 
 ### 🐛 Bug Fixes
