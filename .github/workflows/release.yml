@@ -26,12 +26,13 @@ jobs:
         run: bun install
 
       - name: Pre-build icon collections (parallel)
-        # Building dist/ for ~218 icon collections serially during the
-        # publish step is the dominant cost (~30 min of an ~80 min run).
-        # Run the builds concurrently here using xargs -P; each build.ts
-        # short-circuits on subsequent calls because dist/ is already
-        # fresh, so prepublishOnly during pantry's publish becomes a
-        # ~50ms no-op per package.
+        # Each Bun build is fast (~0.3-1.6s, even for the 7640-icon mdi
+        # package), so 218 serial builds during pantry's publish step is
+        # only ~2 min — not the dominant release cost. Doing them in
+        # parallel here cuts that to ~30s; the bigger win is that
+        # prepublishOnly becomes a ~50ms no-op for each package because
+        # build.ts short-circuits on a fresh dist/, simplifying the
+        # publish-step output.
         run: |
           set -e
           ls -d packages/collections/iconify-*/ 2>/dev/null \
