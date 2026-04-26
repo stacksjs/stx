@@ -1,4 +1,25 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.14...v0.2.15)
+
+### 🧹 Chores
+
+- release v0.2.15 ([8204d6e](https://github.com/stacksjs/stx/commit/8204d6e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add release:patch script ([fbcb48a](https://github.com/stacksjs/stx/commit/fbcb48a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.14...HEAD)
+
+### 🧹 Chores
+
+- add release:patch script ([fbcb48a](https://github.com/stacksjs/stx/commit/fbcb48a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.13...v0.2.14)
 
 ### 🧹 Chores
