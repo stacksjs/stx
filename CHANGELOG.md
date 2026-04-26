@@ -1,4 +1,38 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.21...v0.2.22)
+
+### ⚡ Performance Improvements
+
+- **release**: pre-build icons in parallel; --only-changed-since ([beb1423](https://github.com/stacksjs/stx/commit/beb1423)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.22 ([5a61342](https://github.com/stacksjs/stx/commit/5a61342)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.21...HEAD)
+
+### ⚡ Performance Improvements
+
+- **release**: pre-build icons in parallel; --only-changed-since ([beb1423](https://github.com/stacksjs/stx/commit/beb1423)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.21...HEAD)
+
+### ⚡ Performance Improvements
+
+- **release**: pre-build icons in parallel; --only-changed-since ([beb1423](https://github.com/stacksjs/stx/commit/beb1423)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.20...v0.2.21)
 
 ### 🐛 Bug Fixes
