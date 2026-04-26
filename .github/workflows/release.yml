@@ -25,6 +25,19 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
+      - name: Pre-build icon collections (parallel)
+        # Building dist/ for ~218 icon collections serially during the
+        # publish step is the dominant cost (~30 min of an ~80 min run).
+        # Run the builds concurrently here using xargs -P; each build.ts
+        # short-circuits on subsequent calls because dist/ is already
+        # fresh, so prepublishOnly during pantry's publish becomes a
+        # ~50ms no-op per package.
+        run: |
+          set -e
+          ls -d packages/collections/iconify-*/ 2>/dev/null \
+            | xargs -P 8 -I {} bash -c 'cd "{}" && bun build.ts' \
+            || echo "::warning::Some icon pre-builds failed; pantry will retry via prepublishOnly"
+
       - name: Publish
         uses: home-lang/pantry/packages/action@main
         with:
