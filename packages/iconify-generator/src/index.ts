@@ -260,6 +260,7 @@ export function generatePackageJson(
     ],
     scripts: {
       build: 'bun build.ts',
+      prepublishOnly: 'bun build.ts',
     },
     dependencies: {
       '@stacksjs/iconify-core': 'workspace:*',

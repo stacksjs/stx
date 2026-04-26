@@ -19,7 +19,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build.ts"
+    "build": "bun build.ts",
+    "prepublishOnly": "bun build.ts"
   },
   "dependencies": {
     "@stacksjs/iconify-core": "workspace:*"
