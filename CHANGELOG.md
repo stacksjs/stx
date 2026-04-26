@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.18...v0.2.19)
+
+### 🐛 Bug Fixes
+
+- **iconify**: add prepublishOnly to all icon packages ([6e8f035](https://github.com/stacksjs/stx/commit/6e8f035)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.19 ([3a1d2d4](https://github.com/stacksjs/stx/commit/3a1d2d4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.18...HEAD)
+
+### 🐛 Bug Fixes
+
+- **iconify**: add prepublishOnly to all icon packages ([6e8f035](https://github.com/stacksjs/stx/commit/6e8f035)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.17...v0.2.18)
 
 ### 🧹 Chores
