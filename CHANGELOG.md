@@ -1,4 +1,29 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.13...v0.2.14)
+
+### 🧹 Chores
+
+- release v0.2.14 ([2d5cf36](https://github.com/stacksjs/stx/commit/2d5cf36)) _(by Chris <chrisbreuer93@gmail.com>)_
+- rename lint action ([418601d](https://github.com/stacksjs/stx/commit/418601d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove unused file ([5321928](https://github.com/stacksjs/stx/commit/5321928)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use pantry action automation ([8403cc1](https://github.com/stacksjs/stx/commit/8403cc1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.13...HEAD)
+
+### 🧹 Chores
+
+- rename lint action ([418601d](https://github.com/stacksjs/stx/commit/418601d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove unused file ([5321928](https://github.com/stacksjs/stx/commit/5321928)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use pantry action automation ([8403cc1](https://github.com/stacksjs/stx/commit/8403cc1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.12...v0.2.13)
 
 ### 🚀 Features
