@@ -192,9 +192,27 @@ const svg = \`<svg xmlns="http://www.w3.org/2000/svg" width="\${iconWidth}" heig
  * Generate index file for a collection
  */
 export function generateIndexFile(iconNames: string[]): string {
+  // toCamelCase can produce collisions across distinct kebab names
+  // (e.g. "mp-401" and "mp-4-01" both → "mp401"). Track used identifiers
+  // and disambiguate later occurrences with a fully-sanitized form of the
+  // original kebab name, then a numeric suffix as a final fallback.
+  const used = new Set<string>()
   const dataExports = iconNames.map((name) => {
-    const camelCaseName = toCamelCase(name)
-    return `export { default as ${camelCaseName} } from './${name}.js'`
+    const primary = toCamelCase(name)
+    let id = primary
+    if (used.has(id)) {
+      let candidate = name.replace(/[^a-zA-Z0-9]/g, '_')
+      if (/^[0-9]/.test(candidate))
+        candidate = `_${candidate}`
+      id = candidate
+      let n = 2
+      while (used.has(id)) {
+        id = `${candidate}_${n}`
+        n++
+      }
+    }
+    used.add(id)
+    return `export { default as ${id} } from './${name}.js'`
   }).join('\n')
 
   return `// Icon data exports
