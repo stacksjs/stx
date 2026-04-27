@@ -28,26 +28,56 @@ const fileContentCache = new Map<string, { content: string, mtime: number }>()
 /**
  * Read a file with mtime-based caching.
  * Returns cached content if file hasn't been modified since last read.
+ *
+ * Race-safe: stats → reads → re-stats. If the mtime moved between the
+ * initial stat and the read, the content we just got may not match the
+ * mtime we'd cache it under, so we retry up to 3 times. Without this,
+ * a writer flushing the file between our stat() and our read() would
+ * have us cache the *new* content under the *old* mtime — and the
+ * subsequent invalidation never fires because the cached mtime already
+ * "matches" the new file mtime on the next cache-hit check.
  */
 export async function readFileCached(filePath: string): Promise<string> {
-  try {
-    const stats = await fs.promises.stat(filePath)
-    const mtime = stats.mtime.getTime()
-    const cached = fileContentCache.get(filePath)
+  const MAX_ATTEMPTS = 3
+  let lastErr: unknown
 
-    if (cached && cached.mtime === mtime) {
-      return cached.content
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    try {
+      const stats1 = await fs.promises.stat(filePath)
+      const mtime1 = stats1.mtime.getTime()
+
+      const cached = fileContentCache.get(filePath)
+      if (cached && cached.mtime === mtime1) {
+        return cached.content
+      }
+
+      const content = await Bun.file(filePath).text()
+
+      // Re-stat after read; if the file was rewritten in between, the
+      // content we just read may correspond to a *newer* mtime than the
+      // one we observed first. Cache under the post-read mtime so the
+      // next mtime-changed write actually invalidates us.
+      const stats2 = await fs.promises.stat(filePath)
+      const mtime2 = stats2.mtime.getTime()
+
+      if (mtime2 !== mtime1) {
+        // The file moved under us — we can't be sure `content` and
+        // `mtime2` correspond. Retry to get a consistent snapshot.
+        continue
+      }
+
+      fileContentCache.set(filePath, { content, mtime: mtime2 })
+      return content
     }
+    catch (err) {
+      lastErr = err
+      // ENOENT / permission errors aren't worth retrying
+      break
+    }
+  }
 
-    const content = await Bun.file(filePath).text()
-    fileContentCache.set(filePath, { content, mtime })
-    return content
-  }
-  catch {
-    // File doesn't exist or can't be read — remove from cache
-    fileContentCache.delete(filePath)
-    throw new Error(`File not found: ${filePath}`)
-  }
+  fileContentCache.delete(filePath)
+  throw new Error(`File not found: ${filePath}${lastErr ? ` (${(lastErr as Error).message})` : ''}`)
 }
 
 /**

@@ -1122,6 +1122,21 @@ export function evaluateExpression(expression: string, context: Record<string, a
     }
   }
   catch (error: unknown) {
+    // ReferenceError: <name> is not defined — almost always a typo. Try
+    // to suggest the closest defined name in the current scope so the
+    // template author doesn't have to scan the whole file. Only mutate
+    // the message; preserve the original stack and prototype.
+    if (error instanceof ReferenceError) {
+      const m = /(\b\w+)\s+is not defined/.exec(error.message)
+      if (m) {
+        const missing = m[1]
+        const suggestion = closestKey(missing, Object.keys(context))
+        if (suggestion && suggestion !== missing) {
+          error.message = `${error.message} — did you mean '${suggestion}'?`
+        }
+      }
+    }
+
     if (!silent) {
       console.error(`Error evaluating expression: ${expression}`, error)
     }
@@ -1130,6 +1145,52 @@ export function evaluateExpression(expression: string, context: Record<string, a
     // This will be caught by the calling function and included in the error message
     throw error
   }
+}
+
+/**
+ * Return the candidate from `keys` with the smallest Levenshtein
+ * distance to `name`, or null if no candidate is close enough.
+ *
+ * "Close enough" = distance ≤ 2 OR ≤ 35% of the longer string.
+ * Tighter than ratio-only because for very short names (3-4 chars) the
+ * ratio threshold lets in nonsense suggestions; for long names the
+ * absolute cap of 2 is too strict.
+ */
+function closestKey(name: string, keys: string[]): string | null {
+  let best: { key: string, dist: number } | null = null
+  for (const k of keys) {
+    if (k === name) continue
+    const d = levenshtein(name, k)
+    if (best === null || d < best.dist) best = { key: k, dist: d }
+  }
+  if (!best) return null
+  const longer = Math.max(name.length, best.key.length)
+  if (best.dist <= 2 || best.dist / longer <= 0.35) return best.key
+  return null
+}
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0
+  if (a.length === 0) return b.length
+  if (b.length === 0) return a.length
+  // Two-row dynamic programming — O(min(a,b)) memory.
+  const [shorter, longer] = a.length < b.length ? [a, b] : [b, a]
+  const prev = new Array<number>(shorter.length + 1)
+  const curr = new Array<number>(shorter.length + 1)
+  for (let i = 0; i <= shorter.length; i++) prev[i] = i
+  for (let j = 1; j <= longer.length; j++) {
+    curr[0] = j
+    for (let i = 1; i <= shorter.length; i++) {
+      const cost = shorter[i - 1] === longer[j - 1] ? 0 : 1
+      curr[i] = Math.min(
+        curr[i - 1] + 1, // insertion
+        prev[i] + 1, // deletion
+        prev[i - 1] + cost, // substitution
+      )
+    }
+    for (let i = 0; i <= shorter.length; i++) prev[i] = curr[i]
+  }
+  return prev[shorter.length]
 }
 
 /**

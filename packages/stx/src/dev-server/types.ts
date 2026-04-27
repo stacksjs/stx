@@ -42,6 +42,17 @@ export interface DevServerOptions {
   hotReload?: boolean
   /** Port for WebSocket HMR server (default: HTTP port + 1) */
   hmrPort?: number
+  /**
+   * Print per-page rendering timings collected by performanceMonitor.
+   * Surfaces directive-level cost so you can see where slow pages
+   * actually spend their time without instrumenting code.
+   */
+  profile?: boolean
+  /**
+   * Log directive ordering and intermediate template state for every
+   * render. Verbose — intended for diagnosing directive-pipeline bugs.
+   */
+  debugDirectives?: boolean
 }
 
 /**
@@ -125,4 +136,6 @@ export const DEFAULT_DEV_OPTIONS: Required<Omit<DevServerOptions, 'stxOptions' |
   cache: false,
   hotReload: true,
   hmrPort: 3001,
+  profile: false,
+  debugDirectives: false,
 }

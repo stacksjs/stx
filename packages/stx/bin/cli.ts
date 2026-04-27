@@ -571,6 +571,9 @@ else {
     .option('--no-highlight', 'Disable syntax highlighting for Markdown code blocks')
     .option('--no-highlight-unknown', 'Disable syntax highlighting for unknown languages in Markdown')
     .option('--no-cache', 'Disable caching of parsed files')
+    .option('--no-hmr', 'Disable HMR / live-reload script injection (useful for clean network traces)')
+    .option('--profile', 'Print per-directive timing for every page render via performanceMonitor')
+    .option('--debug-directives', 'Log directive ordering and intermediate template state during rendering')
     .example('stx dev')
     .example('stx dev --port 8080')
     .example('stx dev template.stx')
@@ -616,6 +619,9 @@ else {
             watch: options.watch !== false,
             native: options.native || false,
             cache: options.cache !== false,
+            hotReload: options.hmr !== false,
+            profile: options.profile === true,
+            debugDirectives: options.debugDirectives === true,
           } as DevServerOptions)
 
           if (!success) {
@@ -634,6 +640,9 @@ else {
                 watch: options.watch !== false,
                 native: options.native || false,
                 cache: options.cache !== false,
+                hotReload: options.hmr !== false,
+                profile: options.profile === true,
+                debugDirectives: options.debugDirectives === true,
               } as DevServerOptions)
 
               if (!success) {

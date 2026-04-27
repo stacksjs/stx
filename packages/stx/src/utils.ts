@@ -759,9 +759,55 @@ export async function fileExists(filePath: string): Promise<boolean> {
 // =============================================================================
 
 /**
+ * Reject paths that would resolve outside the project root.
+ *
+ * Templates legitimately use `../partials/foo.stx`-style relative paths,
+ * so we can't ban `..` outright — but the *resolved* path must stay
+ * inside the project root. This is the cheapest defense against
+ * `@layout('/etc/passwd')` or `@include('../../../../etc/passwd')`
+ * from a template that interpolates user-controlled data into a
+ * directive argument.
+ *
+ * Returns the resolved path on success, or null if the path escapes
+ * the project. Callers treat null the same as "not found" so the
+ * usual fallback chain still runs.
+ */
+function assertInsideRoot(resolvedAbsolute: string, root: string): string | null {
+  const r = path.resolve(root)
+  const p = path.resolve(resolvedAbsolute)
+  // Add a trailing separator so /foo doesn't match /foo-bar
+  const rWithSep = r.endsWith(path.sep) ? r : r + path.sep
+  if (p === r || p.startsWith(rWithSep)) return p
+  return null
+}
+
+/**
  * Resolve a template path based on the current file path
  */
 export async function resolveTemplatePath(
+  templatePath: string,
+  currentFilePath: string,
+  options: StxOptions,
+  dependencies?: Set<string>,
+): Promise<string | null> {
+  const result = await resolveTemplatePathInner(templatePath, currentFilePath, options, dependencies)
+  if (result === null) return null
+  // Final guard: every path the resolver returns must stay inside the
+  // project root. Any escape (a malformed include path, an interpolated
+  // user-controlled directive argument, ...) gets rejected here so the
+  // caller treats it as "not found" rather than serving an arbitrary
+  // file. We don't try to confine to layouts/components/partials
+  // specifically — too easy to break legitimate setups — but the
+  // project-root boundary is non-negotiable.
+  const safe = assertInsideRoot(result, process.cwd())
+  if (!safe) {
+    console.warn(`[stx] rejected resolved template path that escapes project root: ${result} (template: ${templatePath}, from: ${currentFilePath})`)
+    return null
+  }
+  return safe
+}
+
+async function resolveTemplatePathInner(
   templatePath: string,
   currentFilePath: string,
   options: StxOptions,
@@ -775,18 +821,27 @@ export async function resolveTemplatePath(
   // Try relative to current file
   const dirPath = path.dirname(currentFilePath)
 
+  const projectRoot = process.cwd()
+
   // Handle common paths
-  // 1. Absolute path (starts with /)
+  // 1. Absolute path (starts with /) — interpreted as project-rooted
+  // (e.g. `/components/foo.stx`), NOT as a filesystem absolute path.
+  // Reject any `..` escapes from the project root.
   if (templatePath.startsWith('/')) {
-    const absolutePath = path.join(process.cwd(), templatePath)
+    const absolutePath = path.join(projectRoot, templatePath)
+    const safe = assertInsideRoot(absolutePath, projectRoot)
+    if (!safe) {
+      console.warn(`[stx] rejected template path that escapes project root: ${templatePath} (from ${currentFilePath})`)
+      return null
+    }
     if (options.debug) {
-      console.log(`Checking absolute path: ${absolutePath}`)
+      console.log(`Checking absolute path: ${safe}`)
     }
     // Track dependency if found
-    if (await fileExists(absolutePath) && dependencies) {
-      dependencies.add(absolutePath)
+    if (await fileExists(safe) && dependencies) {
+      dependencies.add(safe)
     }
-    return absolutePath
+    return safe
   }
 
   // 2. Direct path relative to current file
@@ -1136,8 +1191,25 @@ export function createDetailedErrorMessage(
   const { lineNumber, context } = getSourceLineInfo(template, errorPosition, errorPattern)
   const fileName = filePath.split('/').pop()
 
-  // Create a beautiful error message with colors
-  let detailedMessage = `\n${colors.bold}${colors.red}╭──────────────────────────────────────────────────────────────╮${colors.reset}\n`
+  // Compute column when we have an offset so the leading machine-parseable
+  // "path:line:col:" prefix gives editors / log scrapers a clickable
+  // jump target — matters more than the pretty box for actually fixing
+  // the error.
+  let column = 0
+  if (typeof errorPosition === 'number' && errorPosition >= 0 && template) {
+    const lastNl = template.lastIndexOf('\n', Math.max(0, errorPosition - 1))
+    column = errorPosition - (lastNl + 1) + 1 // 1-based
+  }
+
+  // Machine-parseable prefix first (no colors): editors and most log
+  // tooling expect `path:line:col:` at the start of the line.
+  let detailedMessage = ''
+  if (lineNumber > 0) {
+    detailedMessage += `\n${filePath}:${lineNumber}${column > 0 ? `:${column}` : ''}: ${errorType.toLowerCase()} error: ${errorMessage}\n`
+  }
+
+  // Then the pretty banner for humans
+  detailedMessage += `\n${colors.bold}${colors.red}╭──────────────────────────────────────────────────────────────╮${colors.reset}\n`
   detailedMessage += `${colors.bold}${colors.red}│${colors.reset} ${colors.bold}${colors.bgRed} ERROR ${colors.reset} ${colors.red}${errorType} Error${colors.reset}${' '.repeat(Math.max(0, 43 - errorType.length))}${colors.bold}${colors.red}│${colors.reset}\n`
   detailedMessage += `${colors.bold}${colors.red}╰──────────────────────────────────────────────────────────────╯${colors.reset}\n`
 
@@ -1145,7 +1217,7 @@ export function createDetailedErrorMessage(
   detailedMessage += `\n${colors.cyan}${colors.bold}File:${colors.reset} ${colors.dim}${fileName}${colors.reset}`
 
   if (lineNumber > 0) {
-    detailedMessage += ` ${colors.gray}(line ${lineNumber})${colors.reset}`
+    detailedMessage += ` ${colors.gray}(line ${lineNumber}${column > 0 ? `, col ${column}` : ''})${colors.reset}`
   }
 
   // Error message

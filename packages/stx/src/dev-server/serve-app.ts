@@ -349,11 +349,28 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         ...options.stxOptions,
         autoShell: true,
       } as any
+      // CLI flags: --debug-directives flips on debug logging from the
+      // template processor (forwarded to options.debug); --profile wraps
+      // the processDirectives call with performanceMonitor so per-page
+      // timings are recorded and can be inspected in the dev overlay.
+      if (options.debugDirectives) merged.debug = true
       merged.partialsDir = resolveRel(merged.partialsDir)
       merged.componentsDir = resolveRel(merged.componentsDir)
       merged.layoutsDir = resolveRel(merged.layoutsDir)
       merged.storesDir = resolveRel(merged.storesDir || 'stores')
-      let output = await processDirectives(templateContent, context, route.filePath, merged, dependencies)
+      let output: string
+      if (options.profile) {
+        const t0 = performance.now()
+        output = await processDirectives(templateContent, context, route.filePath, merged, dependencies)
+        const ms = performance.now() - t0
+        // Print directly so the timing is visible alongside the request
+        // log without users having to fish into the perf monitor.
+        const rel = path.relative(absoluteAppDir, route.filePath) || route.filePath
+        console.log(`[stx:profile] ${rel} → ${ms.toFixed(2)}ms`)
+      }
+      else {
+        output = await processDirectives(templateContent, context, route.filePath, merged, dependencies)
+      }
 
       // Inject SPA router (skip when using shell — router goes in shell composition)
       if (!shell) {
@@ -467,24 +484,28 @@ catch {
     async fetch(request) {
       const url = new URL(request.url)
 
-      // Serve static files from public/ (configurable via publicDir)
+      // Static-file routing across the three search roots (public/, the
+      // app dir for Crosswind dist output, and outputDir).
+      //
+      // Previously this did three sequential `existsSync + statSync`
+      // pairs — six sync syscalls on the request thread, ~3ms of added
+      // latency per request even when the file lived in `output/`.
+      // Now each candidate is stat'd asynchronously and concurrently;
+      // we resolve to the first one that exists as a file, in priority
+      // order. The async `.stat()` failure path is "not found" so we
+      // catch and treat as null.
       const publicDirName = projectConfig?.publicDir || 'public'
       const publicPath = path.join(absoluteAppDir, publicDirName, url.pathname)
-      if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
-        return serveStaticFile(publicPath)
-      }
-
-      // Serve static files from dist/ (for Crosswind CSS etc.)
       const distPath = path.join(absoluteAppDir, url.pathname)
-      if (fs.existsSync(distPath) && fs.statSync(distPath).isFile()) {
-        return serveStaticFile(distPath)
-      }
-
-      // Serve files from output directory
       const outputPath = path.join(outputDir, url.pathname)
-      if (fs.existsSync(outputPath) && fs.statSync(outputPath).isFile()) {
-        return serveStaticFile(outputPath)
-      }
+      const [publicStat, distStat, outputStat] = await Promise.all([
+        fs.promises.stat(publicPath).catch(() => null),
+        fs.promises.stat(distPath).catch(() => null),
+        fs.promises.stat(outputPath).catch(() => null),
+      ])
+      if (publicStat?.isFile()) return serveStaticFile(publicPath)
+      if (distStat?.isFile()) return serveStaticFile(distPath)
+      if (outputStat?.isFile()) return serveStaticFile(outputPath)
 
       // Serve async components — renders a component and returns HTML fragment
       if (url.pathname.startsWith('/_stx/component/')) {

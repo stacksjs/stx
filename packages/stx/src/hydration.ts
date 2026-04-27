@@ -634,7 +634,26 @@ catch (error) {
   }
 
   /**
-   * Resolve handler from string expression
+   * Resolve handler from string expression.
+   *
+   * SECURITY: This compiles directive expressions like `@click="x = y + 1"`
+   * and `@click="doThing(arg)"` to JS at runtime via `new Function()`.
+   * That is by design — it's how stx supports inline expressions in
+   * template attributes — but it imposes a hard contract: the
+   * `handlerStr` string is JS code that will execute on the client.
+   *
+   *   - Author-written templates (the normal case): no risk — you
+   *     wrote the code yourself.
+   *   - User data flowing into a template attribute UNESCAPED: risk —
+   *     equivalent to inline `<script>` injection. Always escape user
+   *     content via the standard expression form (`{{ x }}` HTML-escapes;
+   *     `{!! x !!}` does NOT). Never let user data populate the body
+   *     of an `@event` attribute.
+   *
+   * If you need a CSP-friendly stack (no `'unsafe-eval'`), pre-compile
+   * handlers in your build to named functions and reference them by
+   * name (`@click="onSubmit"`) — the named-function path above does
+   * not call `new Function()` and is safe under strict CSP.
    */
   private resolveHandler(handlerStr: string): ((e: Event) => void) | null {
     const stx = (window as any).stx

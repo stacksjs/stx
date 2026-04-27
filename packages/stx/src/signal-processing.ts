@@ -17,6 +17,19 @@ import { injectSignalsRuntime, injectBrowserRuntime } from './runtime-injection'
 // Counter for unique signal setup function names (avoids Date.now() collisions)
 let signalSetupCounter = 0
 
+// Module-level regex constants for patterns used in non-nested
+// iteration contexts. The `g` flag makes them stateful (lastIndex), so
+// they're only safe to hoist when each function reads through them
+// linearly without sharing the iterator across nested loops. Patterns
+// used in nested-loop contexts (e.g. inner @endif scan inside outer @if
+// scan in convertSignalDirectivesToAttributes) intentionally stay local
+// because two iterators on the same regex object would trample each
+// other's lastIndex.
+//
+// The non-`g` SINGLE_ELEMENT_RE is fully safe to hoist.
+const SCRIPT_OPEN_RE = /<script\b([^>]*)>/gi
+const SINGLE_ELEMENT_RE = /^<([a-zA-Z][a-zA-Z0-9-]*)\b((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s*)>([\s\S]*)<\/\1>$/s
+
 /**
  * Scan a template for `<script>` tags in browser order: each opening tag is
  * closed by the **first** subsequent `</script>` (case-insensitive), and the
@@ -37,9 +50,10 @@ export function scanScriptTags(
   opts: { skipAttrs?: RegExp } = {},
 ): Array<{ fullMatch: string, attrs: string, body: string, start: number, end: number }> {
   const out: Array<{ fullMatch: string, attrs: string, body: string, start: number, end: number }> = []
-  const openRe = /<script\b([^>]*)>/gi
+  // Reset shared stateful regex; inner loop drives `.lastIndex` itself.
+  SCRIPT_OPEN_RE.lastIndex = 0
   let m: RegExpExecArray | null
-  while ((m = openRe.exec(html)) !== null) {
+  while ((m = SCRIPT_OPEN_RE.exec(html)) !== null) {
     const attrs = m[1]
     const bodyStart = m.index + m[0].length
     const closeIdx = html.toLowerCase().indexOf('</script>', bodyStart)
@@ -47,7 +61,7 @@ export function scanScriptTags(
     const end = closeIdx + '</script>'.length
     if (opts.skipAttrs && opts.skipAttrs.test(attrs)) {
       // Still advance past the close tag so we don't match nested openings.
-      openRe.lastIndex = end
+      SCRIPT_OPEN_RE.lastIndex = end
       continue
     }
     out.push({
@@ -57,7 +71,7 @@ export function scanScriptTags(
       start: m.index,
       end,
     })
-    openRe.lastIndex = end
+    SCRIPT_OPEN_RE.lastIndex = end
   }
   return out
 }
@@ -287,7 +301,7 @@ export function convertSignalDirectivesToAttributes(template: string): string {
 
     // Check if content is a single element or needs wrapper
     // Handle > in attribute values by matching quoted attrs properly
-    const singleElementMatch = content.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s*)>([\s\S]*)<\/\1>$/s)
+    const singleElementMatch = content.match(SINGLE_ELEMENT_RE)
 
     let replacement: string
     if (singleElementMatch) {
@@ -425,7 +439,7 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
 
     // Check for single root element
     // Handle > in attribute values by matching quoted attrs properly
-    const singleElementMatch = content.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s*)>([\s\S]*)<\/\1>$/s)
+    const singleElementMatch = content.match(SINGLE_ELEMENT_RE)
 
     let replacement: string
     if (singleElementMatch) {

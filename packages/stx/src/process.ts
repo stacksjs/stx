@@ -64,6 +64,187 @@ export { injectRouterScript } from './runtime-injection'
 export { processJsonDirective, processOnceDirective } from './misc-directives'
 export { validateClientScript } from './script-validation'
 
+/**
+ * Marker substituted for `@parent` inside an extracted section so the
+ * parent layout's content can be spliced in later. Hand-rolled instead
+ * of a Symbol because we operate on raw template strings.
+ *
+ * Defined once because three call sites have to agree on the exact
+ * literal — a typo in any of them silently breaks @parent merging in
+ * nested layouts (no error thrown, just missing parent content).
+ */
+const PARENT_PLACEHOLDER = '<!--PARENT_CONTENT_PLACEHOLDER-->'
+
+/**
+ * Find the end of a `<script>` body that started at `from` (i.e. just
+ * after the opening tag's `>`). Returns the byte index of the matching
+ * `</script>` or -1 if none exists.
+ *
+ * Walks the body as JavaScript so `</script>` occurrences inside
+ * strings, template literals, regex literals, or comments don't
+ * terminate the scan. This matters most for server scripts: the body
+ * is real JS and may contain the literal text "</script>" — naive
+ * matching closes the tag early and leaks the tail to the client.
+ *
+ * Not a full JS parser. We track:
+ *   - single/double quoted strings  ('...' / "...")
+ *   - template literals             (`...`, including nested ${...} blocks)
+ *   - line comments                 (// to end of line)
+ *   - block comments                (/* ... *\/)
+ *   - regex literals                (/.../flags) — distinguished from division
+ *     by looking at the previous non-whitespace token, since `/` after a
+ *     value (identifier, ), ], digit, ...) is division and after most
+ *     punctuation (`=`, `(`, `,`, `;`, `!`, `?`, `:`, etc.) is a regex.
+ *
+ * Edge cases we accept being slightly wrong about (regex-vs-division
+ * heuristic isn't perfect) all bias toward *finding* the close tag too
+ * eagerly, which is the safer failure mode — a missing close is loud
+ * (output looks broken in dev) while a leaked tail is silent.
+ */
+function findScriptBodyEnd(src: string, from: number): number {
+  const len = src.length
+  let i = from
+  // Track whether the next `/` should be parsed as a regex literal vs
+  // division. Start as "expects expression" because a script body can
+  // begin with `/regex/`.
+  let allowRegex = true
+  // Stack tracks whether we're inside a template-literal `${...}` block;
+  // top of stack holds the current "outer template literal" flag so we
+  // know to switch back to template-literal mode after the closing `}`.
+  const tmplStack: boolean[] = []
+
+  const isCloseHere = (pos: number) =>
+    pos + 9 <= len
+    && src[pos] === '<'
+    && src[pos + 1] === '/'
+    && (src[pos + 2] === 's' || src[pos + 2] === 'S')
+    && (src[pos + 3] === 'c' || src[pos + 3] === 'C')
+    && (src[pos + 4] === 'r' || src[pos + 4] === 'R')
+    && (src[pos + 5] === 'i' || src[pos + 5] === 'I')
+    && (src[pos + 6] === 'p' || src[pos + 6] === 'P')
+    && (src[pos + 7] === 't' || src[pos + 7] === 'T')
+    && (src[pos + 8] === '>' || /\s/.test(src[pos + 8]))
+
+  while (i < len) {
+    const c = src[i]
+
+    // Closing tag check — only valid in code context (not inside a
+    // string/comment/regex). Reaching this point means we are.
+    if (isCloseHere(i)) return i
+
+    // Line comment: // ...\n
+    if (c === '/' && src[i + 1] === '/') {
+      i = src.indexOf('\n', i + 2)
+      if (i === -1) return -1
+      i += 1
+      allowRegex = true
+      continue
+    }
+
+    // Block comment: /* ... */
+    if (c === '/' && src[i + 1] === '*') {
+      const end = src.indexOf('*/', i + 2)
+      if (end === -1) return -1
+      i = end + 2
+      allowRegex = true
+      continue
+    }
+
+    // Regex literal: /.../flags — but only if the previous token
+    // suggests an expression context.
+    if (c === '/' && allowRegex) {
+      let j = i + 1
+      let inClass = false
+      while (j < len) {
+        const cc = src[j]
+        if (cc === '\\') { j += 2; continue }
+        if (cc === '[') inClass = true
+        else if (cc === ']') inClass = false
+        else if (cc === '/' && !inClass) { j++; break }
+        else if (cc === '\n') { j = -1; break }
+        j++
+      }
+      if (j === -1) {
+        // Wasn't actually a regex — fall through and treat as division.
+        i++
+        allowRegex = false
+        continue
+      }
+      // Skip flags
+      while (j < len && /[a-z]/.test(src[j])) j++
+      i = j
+      allowRegex = false
+      continue
+    }
+
+    // String literal: '...' or "..."
+    if (c === '\'' || c === '"') {
+      const quote = c
+      i++
+      while (i < len) {
+        if (src[i] === '\\') { i += 2; continue }
+        if (src[i] === quote) { i++; break }
+        if (src[i] === '\n') break // unterminated — treat as ended for safety
+        i++
+      }
+      allowRegex = false
+      continue
+    }
+
+    // Template literal
+    if (c === '`') {
+      i++
+      while (i < len) {
+        if (src[i] === '\\') { i += 2; continue }
+        if (src[i] === '`') { i++; break }
+        if (src[i] === '$' && src[i + 1] === '{') {
+          // Enter ${...} expression — recurse via stack
+          tmplStack.push(true)
+          i += 2
+          allowRegex = true
+          break
+        }
+        i++
+      }
+      if (tmplStack.length === 0) allowRegex = false
+      continue
+    }
+
+    // Closing brace might exit a template `${...}` — check stack
+    if (c === '}' && tmplStack.length > 0) {
+      tmplStack.pop()
+      i++
+      // Back to template-literal mode: scan to end of this template
+      while (i < len) {
+        if (src[i] === '\\') { i += 2; continue }
+        if (src[i] === '`') { i++; allowRegex = false; break }
+        if (src[i] === '$' && src[i + 1] === '{') {
+          tmplStack.push(true)
+          i += 2
+          allowRegex = true
+          break
+        }
+        i++
+      }
+      continue
+    }
+
+    // Update allowRegex based on this char (rough heuristic — see docstring).
+    if (/\s/.test(c)) {
+      // whitespace doesn't change context
+    } else if (/[)\].\w$]/.test(c)) {
+      // identifier-like / closing bracket / number-ish → division comes next
+      allowRegex = false
+    } else {
+      // most other punctuation → regex comes next
+      allowRegex = true
+    }
+    i++
+  }
+
+  return -1
+}
+
 // =============================================================================
 // CORE TEMPLATE PROCESSING PIPELINE
 // =============================================================================
@@ -368,7 +549,7 @@ async function processDirectivesInternal(
   output = output.replace(/@section\(\s*['"]([^'"]+)['"]\s*\)([\s\S]*?)(?:@endsection|@show)/g, (_, name, content) => {
     // Process @parent directive in sections
     if (content.includes('@parent')) {
-      sections[name] = content.replace('@parent', '<!--PARENT_CONTENT_PLACEHOLDER-->')
+      sections[name] = content.replace('@parent', PARENT_PLACEHOLDER)
     }
     else {
       sections[name] = content.trim()
@@ -462,9 +643,9 @@ async function processDirectivesInternal(
         // Merge current sections with layout sections, handling @parent
         // This is important for nested layouts
         for (const [name, content] of Object.entries(layoutSections)) {
-          if (sections[name] && sections[name].includes('<!--PARENT_CONTENT_PLACEHOLDER-->')) {
-            const idx = sections[name].indexOf('<!--PARENT_CONTENT_PLACEHOLDER-->')
-            sections[name] = sections[name].slice(0, idx) + content + sections[name].slice(idx + '<!--PARENT_CONTENT_PLACEHOLDER-->'.length)
+          if (sections[name] && sections[name].includes(PARENT_PLACEHOLDER)) {
+            const idx = sections[name].indexOf(PARENT_PLACEHOLDER)
+            sections[name] = sections[name].slice(0, idx) + content + sections[name].slice(idx + PARENT_PLACEHOLDER.length)
           }
           else if (!sections[name]) {
             sections[name] = content
@@ -498,10 +679,10 @@ async function processDirectivesInternal(
         if (sections[sectionName]) {
           // If the section has a parent placeholder, replace it with the parent content
           let sectionContent = sections[sectionName]
-          if (sectionContent.includes('<!--PARENT_CONTENT_PLACEHOLDER-->')) {
+          if (sectionContent.includes(PARENT_PLACEHOLDER)) {
             const parentContent = layoutSections[sectionName] || ''
-            const idx = sectionContent.indexOf('<!--PARENT_CONTENT_PLACEHOLDER-->')
-            sectionContent = sectionContent.slice(0, idx) + parentContent + sectionContent.slice(idx + '<!--PARENT_CONTENT_PLACEHOLDER-->'.length)
+            const idx = sectionContent.indexOf(PARENT_PLACEHOLDER)
+            sectionContent = sectionContent.slice(0, idx) + parentContent + sectionContent.slice(idx + PARENT_PLACEHOLDER.length)
           }
           return sectionContent
         }
@@ -552,14 +733,18 @@ async function processOtherDirectives(
   // Use opts as alias for options (consistent with processDirectivesInternal)
   const opts = options
 
-  // Run view composers for the current view with error handling
+  // Run view composers for the current view with error handling.
+  // Failures are non-fatal (page renders without the composer's data),
+  // but they ALWAYS get logged — silent composer failures used to mean
+  // a production page would render with `undefined` variables and no
+  // signal anywhere that something went wrong. The errorLogger record
+  // also lets debug overlays / log forwarders surface it.
   await safeExecuteAsync(
     () => runComposers(filePath, context),
     undefined,
     (error) => {
-      if (opts.debug) {
-        console.warn(`View composer error for ${filePath}:`, error.message)
-      }
+      errorLogger.log(error, { filePath, phase: 'view-composer' }, 'warning')
+      console.warn(`[stx] view composer failed for ${filePath}: ${error.message}`)
     },
   )
 
@@ -582,14 +767,14 @@ async function processOtherDirectives(
   }
   context.$env = publicEnv
 
-  // Run pre-processing middleware with error handling
+  // Run pre-processing middleware with error handling.
+  // Always logged — same reasoning as view composers above.
   output = await safeExecuteAsync(
     () => runPreProcessingMiddleware(output, context, filePath, opts),
     output,
     (error) => {
-      if (opts.debug) {
-        console.warn(`Pre-processing middleware error:`, error.message)
-      }
+      errorLogger.log(error, { filePath, phase: 'pre-processing-middleware' }, 'warning')
+      console.warn(`[stx] pre-processing middleware failed for ${filePath}: ${error.message}`)
     },
   )
 
@@ -611,10 +796,14 @@ async function processOtherDirectives(
         await extractVariables(scriptContent, context, filePath)
       }
       catch (e) {
-        // Script may contain browser-only code, skip
-        if (opts.debug) {
-          console.warn('Script extraction error:', e)
-        }
+        // Server-script variable extraction failed. Most often this is a
+        // syntax error or a reference to a server-only API — either way
+        // the page renders without those vars in scope. Always surface
+        // the failure so the developer notices instead of seeing
+        // mysteriously-undefined values in production.
+        const err = e instanceof Error ? e : new Error(String(e))
+        errorLogger.log(err, { filePath, phase: 'server-script-extraction' }, 'warning')
+        console.warn(`[stx] server <script> extraction failed in ${filePath}: ${err.message}`)
       }
     }
   }
@@ -639,9 +828,9 @@ async function processOtherDirectives(
     output = interpolateScriptsInTemplate(output, context, { skipServer: true })
   }
   catch (e) {
-    if (opts.debug) {
-      console.warn('Script expression interpolation error:', e)
-    }
+    const err = e instanceof Error ? e : new Error(String(e))
+    errorLogger.log(err, { filePath, phase: 'script-expression-interpolation' }, 'warning')
+    console.warn(`[stx] script expression interpolation failed in ${filePath}: ${err.message}`)
   }
 
   // Process JS/TS directives FIRST - these define variables needed by other directives
@@ -956,37 +1145,37 @@ else {
     }
   }
 
-  // Strip server-only scripts (marked with 'server' attribute)
-  // These are used for SSR variable extraction and shouldn't appear in client output
-  // Use balanced </script> matching to handle scripts containing </script> in string literals
+  // Strip server-only scripts (marked with 'server' attribute).
+  //
+  // These are used for SSR variable extraction and shouldn't appear in
+  // the client output. Finding the matching `</script>` is non-trivial
+  // because the body is JavaScript: the literal `</script>` can legally
+  // appear inside a string, template literal, line/block comment, or
+  // regex literal — e.g. `const x = "</script>"`. A naive
+  // `indexOf('</script>')` would terminate the script early there,
+  // leaving the real tail (including any subsequent code) leaked into
+  // the client-visible output.
+  //
+  // findScriptBodyEnd walks the body as JS, tracking string/comment/regex
+  // state, and returns the index of the *real* close tag.
   {
     const serverScriptRe = /<script\s+server\b[^>]*>/gi
     let serverMatch: RegExpExecArray | null
     const serverRemoveRanges: { start: number, end: number }[] = []
     while ((serverMatch = serverScriptRe.exec(output)) !== null) {
       const tagEnd = serverMatch.index + serverMatch[0].length
-      let sDepth = 1
-      let sPos = tagEnd
-      while (sPos < output.length && sDepth > 0) {
-        const nextOpen = output.indexOf('<script', sPos)
-        const nextClose = output.indexOf('</script>', sPos)
-        if (nextClose === -1) break
-        if (nextOpen !== -1 && nextOpen < nextClose) {
-          sDepth++
-          sPos = nextOpen + '<script'.length
-        }
-else {
-          sDepth--
-          if (sDepth === 0) {
-            let rangeEnd = nextClose + '</script>'.length
-            // Also consume trailing whitespace
-            while (rangeEnd < output.length && /\s/.test(output[rangeEnd])) rangeEnd++
-            serverRemoveRanges.push({ start: serverMatch.index, end: rangeEnd })
-            break
-          }
-          sPos = nextClose + '</script>'.length
-        }
+      const closeIdx = findScriptBodyEnd(output, tagEnd)
+      if (closeIdx === -1) {
+        // Unclosed server script — don't strip a partial range, just
+        // skip it and let the (broken) output surface so the author sees
+        // the problem in their template rather than silently swallowing
+        // half the file.
+        continue
       }
+      let rangeEnd = closeIdx + '</script>'.length
+      // Also consume trailing whitespace
+      while (rangeEnd < output.length && /\s/.test(output[rangeEnd])) rangeEnd++
+      serverRemoveRanges.push({ start: serverMatch.index, end: rangeEnd })
     }
     // Remove in reverse order to preserve indices
     for (let ri = serverRemoveRanges.length - 1; ri >= 0; ri--) {

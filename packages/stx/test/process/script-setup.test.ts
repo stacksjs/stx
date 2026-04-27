@@ -542,4 +542,41 @@ const count = state(0)
       expect(result).toContain('return {')
     })
   })
+
+  describe('Server script stripping with </script> in source', () => {
+    // Regression for the server-script stripper bug: a literal `</script>`
+    // inside a JS string would terminate the close-tag scan early,
+    // leaking the tail of the server block (or subsequent code) to the
+    // client output.
+    it('does not terminate early on </script> inside a double-quoted string', async () => {
+      const html = `<script server>const tag = "</script>"; const visible = 1;</script><div>after</div>`
+      const result = await processTemplate(html, {})
+      // Whole server block must be stripped — neither the string literal
+      // nor the var declaration may leak.
+      expect(result).not.toContain('tag = "</script>"')
+      expect(result).not.toContain('const visible = 1')
+      expect(result).toContain('<div>after</div>')
+    })
+
+    it('does not terminate early on </script> inside a single-quoted string', async () => {
+      const html = `<script server>const html = '<script>x</script>'; const v = 2;</script><p>tail</p>`
+      const result = await processTemplate(html, {})
+      expect(result).not.toContain('const v = 2')
+      expect(result).toContain('<p>tail</p>')
+    })
+
+    it('does not terminate early on </script> inside a line comment', async () => {
+      const html = `<script server>// </script>\nconst v = 3;</script><p>x</p>`
+      const result = await processTemplate(html, {})
+      expect(result).not.toContain('const v = 3')
+      expect(result).toContain('<p>x</p>')
+    })
+
+    it('does not terminate early on </script> inside a block comment', async () => {
+      const html = `<script server>/* </script> */ const v = 4;</script><p>y</p>`
+      const result = await processTemplate(html, {})
+      expect(result).not.toContain('const v = 4')
+      expect(result).toContain('<p>y</p>')
+    })
+  })
 })
