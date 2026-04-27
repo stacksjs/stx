@@ -341,6 +341,21 @@ interface StxModal {
 declare const modal: StxModal
 
 // ============================================================================
+// Drawer system
+// ============================================================================
+
+interface StxDrawer {
+  /** Open a drawer by its id */
+  open: (id: string) => void
+  /** Close a drawer by its id */
+  close: (id: string) => void
+  /** Toggle a drawer by its id */
+  toggle: (id: string) => void
+}
+
+declare const drawer: StxDrawer
+
+// ============================================================================
 // Alert & Confirm dialogs
 // ============================================================================
 
@@ -477,6 +492,9 @@ interface StxRuntimeRegistry {
 
   // Modal
   modal: StxModal
+
+  // Drawer
+  drawer: StxDrawer
 
   // Dialogs
   alert: typeof stxAlert
