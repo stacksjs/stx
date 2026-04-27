@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const to = $props.to || 'body'
 export const disabled = $props.disabled || false
 export const defer = $props.defer || false

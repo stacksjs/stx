@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const variant = $props.variant || 'default'
 export const size = $props.size || 'md'
 export const dot = $props.dot || false
@@ -50,7 +50,7 @@ export const removeButtonClasses = `ml-0.5 -mr-1 text-current hover:bg-black hov
   @if(removable && onRemove)
     <button
       type="button"
-      onclick="handleRemove()"
+      @click="handleRemove()"
       class="{{ removeButtonClasses }}"
       aria-label="Remove"
     >

@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const items = $props.items || []
 export const separator = $props.separator || '/'
 export const maxItems = $props.maxItems || 0

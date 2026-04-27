@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const tabs = $props.tabs || []
 export const defaultTab = $props.defaultTab || 0
 export const orientation = $props.orientation || 'horizontal'
@@ -71,7 +71,7 @@ export const tabPanelClasses = `p-4 focus:outline-none`.trim()
         aria-controls="tab-panel-{{ $loop.index }}"
         id="tab-{{ $loop.index }}"
         tabindex="{{ activeTab === $loop.index ? '0' : '-1' }}"
-        onclick="selectTab({{ $loop.index }})"
+        @click="selectTab({{ $loop.index }})"
         onkeydown="handleKeyDown(event, {{ $loop.index }})"
       >
         @if(tab.icon)

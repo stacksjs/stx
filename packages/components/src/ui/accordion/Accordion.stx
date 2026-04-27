@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const items = $props.items || []
 export const allowMultiple = $props.allowMultiple || false
 export const defaultOpen = $props.defaultOpen || []
@@ -49,7 +49,7 @@ export const contentClasses = `px-4 py-3 text-gray-700 dark:text-gray-300`.trim(
       <button
         type="button"
         class="{{ headerClasses }}"
-        onclick="toggleItem({{ $loop.index }})"
+        @click="toggleItem({{ $loop.index }})"
         aria-expanded="{{ isOpen($loop.index) ? 'true' : 'false' }}"
         aria-controls="accordion-content-{{ $loop.index }}"
       >

@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const src = $props.src || ''
 export const alt = $props.alt || ''
 export const initials = $props.initials || ''

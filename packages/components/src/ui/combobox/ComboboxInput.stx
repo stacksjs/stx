@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const displayValue = $props.displayValue
 export const onChange = $props.onChange
 export const className = $props.className || ''

@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const variant = $props.variant || 'primary'
 export const size = $props.size || 'md'
 export const disabled = $props.disabled || false
@@ -56,7 +56,7 @@ export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
   type="{{ type }}"
   class="{{ buttonClasses }}"
   @if(isDisabled)disabled@endif
-  @if(onClick)onclick="handleClick(event)"@endif
+  @if(onClick)@click="handleClick(event)"@endif
   aria-busy="{{ loading ? 'true' : 'false' }}"
 >
   @if(loading)

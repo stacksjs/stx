@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const paymentMethod = $props.paymentMethod
 export const isLoading = $props.isLoading || false
 export const className = $props.className || ''

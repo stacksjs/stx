@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const value = $props.value || ''
 export const onChange = $props.onChange || (() => {})
 export const placeholder = $props.placeholder || '0'
@@ -76,7 +76,7 @@ export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red
       <div class="absolute inset-y-0 right-0 flex flex-col">
         <button
           type="button"
-          onclick="handleIncrement()"
+          @click="handleIncrement()"
           class="flex items-center justify-center w-8 h-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none border-b border-gray-300 dark:border-gray-600"
           aria-label="Increment"
         >
@@ -86,7 +86,7 @@ export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red
         </button>
         <button
           type="button"
-          onclick="handleDecrement()"
+          @click="handleDecrement()"
           class="flex items-center justify-center w-8 h-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
           aria-label="Decrement"
         >

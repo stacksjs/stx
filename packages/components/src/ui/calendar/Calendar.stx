@@ -1,4 +1,4 @@
-<script>
+<script server>
 // Calendar Component Props
 export const value = $props.value || new Date()
 export const onChange = $props.onChange
@@ -170,7 +170,7 @@ const calendarDays = getCalendarDays()
     <button
       type="button"
       class="{{ buttonClasses }}"
-      onclick="previousMonth()"
+      @click="previousMonth()"
       aria-label="Previous month"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,7 +185,7 @@ const calendarDays = getCalendarDays()
     <button
       type="button"
       class="{{ buttonClasses }}"
-      onclick="nextMonth()"
+      @click="nextMonth()"
       aria-label="Next month"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,7 +207,7 @@ const calendarDays = getCalendarDays()
       <button
         type="button"
         class="{{ getDayClasses(day) }}"
-        onclick="selectDate(day.date)"
+        @click="selectDate(day.date)"
         aria-label="{{ day.date.toLocaleDateString(locale) }}"
         @if(isDisabled(day.date))
           disabled
@@ -223,7 +223,7 @@ const calendarDays = getCalendarDays()
       <button
         type="button"
         class="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-md transition-colors"
-        onclick="goToToday()"
+        @click="goToToday()"
       >
         Today
       </button>

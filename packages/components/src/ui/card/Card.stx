@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const variant = $props.variant || 'default'
 export const padding = $props.padding || 'default'
 export const hover = $props.hover || false
@@ -37,7 +37,7 @@ export const contentClasses = `${image ? paddingClasses[padding] : ''}`.trim()
 </script>
 
 @if(onClick)
-  <div class="{{ cardClasses }}" onclick="handleClick(event)" role="button" tabindex="0" onkeydown="handleKeyDown(event)">
+  <div class="{{ cardClasses }}" @click="handleClick(event)" role="button" tabindex="0" onkeydown="handleKeyDown(event)">
     @if(image)
       <img src="{{ image }}" alt="{{ imageAlt }}" class="{{ imageClasses }}" />
     @endif

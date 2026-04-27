@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const columns = $props.columns || []
 export const data = $props.data || []
 export const rowHeight = $props.rowHeight || 48

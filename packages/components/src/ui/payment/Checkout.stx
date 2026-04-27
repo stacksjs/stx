@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const products = $props.products || []
 export const redirectUrl = $props.redirectUrl || ''
 export const mode = $props.mode || 'subscription'

@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const show = $props.show !== false
 export const title = $props.title || ''
 export const message = $props.message || ''

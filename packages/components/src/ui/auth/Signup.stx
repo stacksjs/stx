@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const headingText = $props.headingText || 'Sign up for Stacks'
 export const showSocialSignup = $props.showSocialSignup ?? true
 export const onSubmit = $props.onSubmit || (() => {})

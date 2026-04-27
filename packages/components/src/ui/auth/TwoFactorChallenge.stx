@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const headingText = $props.headingText || 'Two Factor Authentication'
 export const labelText = $props.labelText || 'Authentication code'
 export const instructionText = $props.instructionText || 'Open your Symantec 2FA app to view your authentication code.'
@@ -57,7 +57,7 @@ export const codes = Array(codeLength).fill('')
             </p>
             <a
               href="#"
-              onclick="event.preventDefault(); handleRecoveryCode()"
+              @click="event.preventDefault(); handleRecoveryCode()"
               class="text-xs text-blue-500 hover:underline"
             >
               Use recovery code instead

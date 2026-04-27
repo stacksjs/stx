@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const open = $props.open ?? false
 export const onClose = $props.onClose || (() => {})
 export const position = $props.position || 'right'
@@ -60,7 +60,7 @@ export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position
   <div
     class="fixed inset-0 z-50 bg-gray-500/75 dark:bg-gray-900/75 transition-opacity duration-500"
     style="animation: fadeIn 0.5s ease-in-out"
-    onclick="handleBackdropClick()"
+    @click="handleBackdropClick()"
   ></div>
 
   <!-- Drawer Container -->
@@ -77,7 +77,7 @@ export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position
             <button
               type="button"
               class="relative rounded-md text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              onclick="handleClose()"
+              @click="handleClose()"
             >
               <span class="absolute -inset-2.5"></span>
               <span class="sr-only">Close panel</span>

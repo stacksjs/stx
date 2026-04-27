@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const className = $props.className || ''
 
 const baseClasses = 'bg-white divide-y divide-neutral-200 dark:bg-neutral-900 dark:divide-neutral-700'

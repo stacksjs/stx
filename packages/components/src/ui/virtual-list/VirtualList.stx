@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const items = $props.items || []
 export const itemHeight = $props.itemHeight || 50
 export const height = $props.height || 400

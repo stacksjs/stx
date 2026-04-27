@@ -1,4 +1,4 @@
-<script>
+<script server>
 // Navigator Component Props
 export const items = $props.items || []
 export const active = $props.active || ''
@@ -94,7 +94,7 @@ function handleClick(item, event) {
       <a
         href="{{ item.href }}"
         class="{{ getItemClasses(item) }}"
-        onclick="handleClick(item, event)"
+        @click="handleClick(item, event)"
         @if(isActive(item))
           aria-current="page"
         @endif
@@ -117,7 +117,7 @@ function handleClick(item, event) {
       <button
         type="button"
         class="{{ getItemClasses(item) }}"
-        onclick="handleClick(item, event)"
+        @click="handleClick(item, event)"
         @if(item.disabled)
           disabled
           aria-disabled="true"

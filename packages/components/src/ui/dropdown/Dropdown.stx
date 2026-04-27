@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const className = $props.className || ''
 export const as = $props.as || 'div'
 export let isOpen = false
