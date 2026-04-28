@@ -471,6 +471,21 @@ export interface StxConfig {
    */
   app?: {
     head?: AppHeadConfig
+    /**
+     * Defaults for the native dev window (`stx dev --native`).
+     * Only used when the user passes `--native`. Sensible per-app sizes
+     * keep the window from opening at a one-size-fits-all 1400×900.
+     */
+    window?: {
+      /** Window width in points/pixels. Default: 1400. */
+      width?: number
+      /** Window height in points/pixels. Default: 900. */
+      height?: number
+      /** Open with the system dark theme. Default: true. */
+      darkMode?: boolean
+      /** Enable hot-reload bridge inside the webview. Default: true. */
+      hotReload?: boolean
+    }
   }
 
   /**

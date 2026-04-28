@@ -331,21 +331,17 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
 export async function openDevWindow(port: number, options: WindowOptions = {}): Promise<boolean> {
   const url = `http://localhost:${port}/`
 
-  // Try to open with ts-craft first
+  // Path 1 — `ts-craft` package, when it's actually installed in the host
+  // workspace. This is the original path; we keep it for projects that
+  // depend on `ts-craft` for richer typings / sidebar config.
   try {
     const { createApp } = await import('ts-craft')
 
-    console.log('⚡ Opening native window...')
-
-    // Try to find craft binary in common locations
-    const craftPath = getCraftBinaryPath()
-
-    // When native sidebar is enabled, don't use system tray (they're mutually exclusive in Craft)
+    console.log('⚡ Opening native window via ts-craft…')
     const useSystemTray = !options.nativeSidebar
-
     const app = createApp({
       url,
-      craftPath,
+      craftPath: getCraftBinaryPath(),
       window: {
         title: options.title || 'stx Development',
         width: options.width || 1400,
@@ -355,7 +351,6 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
         darkMode: options.darkMode ?? true,
         hotReload: options.hotReload ?? true,
         devTools: true,
-        // Native sidebar support (macOS Tahoe style)
         nativeSidebar: options.nativeSidebar ?? false,
         sidebarWidth: options.sidebarWidth ?? 260,
         sidebarConfig: options.sidebarConfig as Record<string, unknown> | undefined,
@@ -364,45 +359,63 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
 
     const id = `dev-window-${port}`
     activeWindows.set(id, { app, url, options })
-
     await app.show()
     console.log(`✓ Native window opened at ${url}`)
-    console.log(`📌 Look for the "stx Development" icon in your menubar`)
     return true
   }
-  catch (error) {
-    console.warn('⚠  Could not open native window:', (error as Error).message)
+  catch (tsCraftErr) {
+    // Path 2 — native binary spawned directly. ts-craft is just a thin
+    // wrapper around this; if it isn't installed we can still drive Craft
+    // via `craft --url … --title … --width … --height …`. In practice this
+    // is the path most monorepo users hit, since they have the `craft`
+    // binary in `~/.bun/bin` but no JS package.
+    const craftPath = getCraftBinaryPath()
+    if (craftPath) {
+      try {
+        console.log(`⚡ Opening native window via craft binary (${craftPath})…`)
+        const { spawn } = await import('node:child_process')
+        const args: string[] = [
+          '--url', url,
+          '--title', options.title || 'stx Development',
+          '--width', String(options.width || 1400),
+          '--height', String(options.height || 900),
+        ]
+        if (options.darkMode) args.push('--dark')
+        if (options.hotReload ?? true) args.push('--hot-reload')
 
-    // Skip browser fallback in test environment
+        const child = spawn(craftPath, args, { stdio: 'inherit' })
+
+        // Bridge the child's lifetime to the host process so closing the
+        // window cleanly exits the dev server (matches `bun --bun … --native`
+        // expectations).
+        child.on('exit', () => process.exit(0))
+        child.on('error', err => console.warn('craft child error:', err.message))
+
+        const id = `dev-window-${port}`
+        activeWindows.set(id, { app: { close: () => child.kill() }, url, options })
+        console.log(`✓ Native window opened at ${url}`)
+        return true
+      }
+      catch (binaryErr) {
+        console.warn('⚠  Could not spawn craft binary:', (binaryErr as Error).message)
+      }
+    }
+    else {
+      console.warn('⚠  ts-craft not installed and no craft binary found')
+      console.warn(`    (ts-craft error: ${(tsCraftErr as Error).message})`)
+    }
+
+    // Path 3 — give up on native, open the system browser. Skipped in test.
     if (process.env.NODE_ENV === 'test' || process.env.BUN_TEST) {
       console.log('(Skipping browser fallback in test environment)')
       return false
     }
-
-    console.log('📱 Opening in browser instead...')
-
-    // Fallback: Open in default browser
+    console.log('📱 Opening in browser instead…')
     try {
       const { spawn } = await import('node:child_process')
       const platform = process.platform
-
-      let command: string
-      let args: string[]
-
-      if (platform === 'darwin') {
-        command = 'open'
-        args = [url]
-      }
-      else if (platform === 'win32') {
-        command = 'cmd'
-        args = ['/c', 'start', url]
-      }
-      else {
-        // Linux
-        command = 'xdg-open'
-        args = [url]
-      }
-
+      const command = platform === 'darwin' ? 'open' : platform === 'win32' ? 'cmd' : 'xdg-open'
+      const args = platform === 'win32' ? ['/c', 'start', url] : [url]
       spawn(command, args, { detached: true, stdio: 'ignore' }).unref()
       console.log(`✓ Browser opened at ${url}`)
       return true

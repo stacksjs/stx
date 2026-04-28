@@ -15,8 +15,16 @@
 
 import { serve as bunServe, Glob } from 'bun'
 import { watch as fsWatch } from 'node:fs'
+import nodeFs from 'node:fs/promises'
+import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
+
+// Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
+// load instead of inside every request handler. The promise is cached, so the
+// many `await stxModule` reads downstream cost a microtask each, not a full
+// resolution roundtrip.
+const stxModule = import('@stacksjs/stx')
 
 export interface ServeOptions {
   patterns: string[]
@@ -209,8 +217,8 @@ export async function serve(options: ServeOptions): Promise<void> {
 
   // Watch pattern directories so adding/removing a view file (e.g. a brand
   // new `resources/views/<feature>/index.stx`) invalidates the discovered-
-  // files cache without a server restart. Without this, the file glob is
-  // cached at startup and new pages 404 until the user kills the dev
+  // files cache without a server restart. Without this, the file glob
+  // is cached at startup and new pages 404 until the user kills the dev
   // server. We also clear `routes` so any stale rendered HTML for a now-
   // missing file is dropped.
   const watchersStarted = new Set<string>()
@@ -282,8 +290,8 @@ export async function serve(options: ServeOptions): Promise<void> {
    */
   async function detectPageMiddleware(file: string) {
     try {
-      const fs = await import('node:fs/promises')
-      const src = await fs.readFile(file, 'utf-8')
+      
+      const src = await nodeFs.readFile(file, 'utf-8')
       const meta = src.match(/definePageMeta\s*\(\s*\{[\s\S]*?\}\s*\)/)
       if (!meta) return
       const mw = meta[0].match(/middleware\s*:\s*(\[[^\]]*\]|['"][^'"]+['"])/)
@@ -399,8 +407,8 @@ export async function serve(options: ServeOptions): Promise<void> {
 
     for (const pattern of patterns) {
       try {
-        const fs = await import('node:fs/promises')
-        const stat = await fs.stat(pattern).catch(() => null)
+
+        const stat = await nodeFs.stat(pattern).catch(() => null)
 
         if (stat?.isDirectory()) {
           // Watch this directory tree once so subsequent file changes
@@ -462,15 +470,15 @@ export async function serve(options: ServeOptions): Promise<void> {
       return
 
     assetsInitialized = true
-    const fs = await import('node:fs/promises')
+    
     const assetsDir = './resources/assets'
     const targetAssetsDir = './.stx/assets'
 
     try {
-      const assetsExist = await fs.stat(assetsDir).then(() => true).catch(() => false)
+      const assetsExist = await nodeFs.stat(assetsDir).then(() => true).catch(() => false)
       if (assetsExist) {
-        await fs.rm(targetAssetsDir, { recursive: true, force: true })
-        await fs.cp(assetsDir, targetAssetsDir, { recursive: true })
+        await nodeFs.rm(targetAssetsDir, { recursive: true, force: true })
+        await nodeFs.cp(assetsDir, targetAssetsDir, { recursive: true })
       }
     }
     catch {
@@ -478,9 +486,64 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
   }
 
+  // ── Rendered-HTML cache (static routes only). ───────────────────────
+  //
+  // Keyed by template file path. Each entry remembers the mtimes of the
+  // template AND every dependency it accumulated during the last render
+  // (layout, components, partials). On every request we re-stat that
+  // signature; any mismatch — including a deleted file — busts the cache
+  // and forces a fresh render. That's how this stays compatible with hot
+  // reload: editing any source file bumps the mtime and invalidates cleanly.
+  //
+  // Skipped for `processTemplateDynamic` (routes like `/cars/[id]`) since
+  // those depend on per-request URL params, not just file content. Pages
+  // that read fully-dynamic data in `<script server>` (e.g. live DB rows
+  // that change between requests with no file edit) can opt out with
+  // `definePageMeta({ cache: false })` — the user script sets
+  // `context.__stx_skip_cache` and we honour it before storing.
+  interface HtmlCacheEntry {
+    html: string
+    signature: Map<string, number>
+  }
+  const htmlCache = new Map<string, HtmlCacheEntry>()
+
+  async function templateSignatureFresh(sig: Map<string, number>): Promise<boolean> {
+    for (const [p, expected] of sig) {
+      const stat = await nodeFs.stat(p).catch(() => null)
+      if (!stat || stat.mtimeMs !== expected)
+        return false
+    }
+    return true
+  }
+
+  async function buildTemplateSignature(filePath: string, deps: Set<string>): Promise<Map<string, number>> {
+    const sig = new Map<string, number>()
+    // Stat the entry template + all accumulated dependencies in parallel —
+    // a single round of fs.stat() per file, fanned out concurrently.
+    const allPaths = [filePath, ...deps]
+    const stats = await Promise.all(allPaths.map(p => nodeFs.stat(p).catch(() => null)))
+    for (let i = 0; i < allPaths.length; i++) {
+      const stat = stats[i]
+      if (stat)
+        sig.set(allPaths[i], stat.mtimeMs)
+    }
+    return sig
+  }
+
   // Crosswind CSS lazy loading
   let crosswindModule: { CSSGenerator: any, config: any } | null = null
   let crosswindLoadAttempted = false
+
+  // Crosswind user config + computed-CSS caches. The dev server runs under
+  // `bun --watch` which kills the process on `crosswind.config.ts` /
+  // `config/crosswind.ts` / `.stx` changes, so the natural process lifetime
+  // doubles as our invalidation boundary — no manual watcher needed here.
+  let crosswindUserConfigPromise: Promise<Record<string, any>> | null = null
+  // Memoize generated CSS by sorted class-set string. Same set of classes
+  // always produces identical CSS (theme + safelist + shortcuts come from
+  // the cached userConfig), so re-rendering the same template hits the cache
+  // instead of re-running the scanner + generator.
+  const crosswindCssCache = new Map<string, string>()
 
   async function loadCrosswind(): Promise<{ CSSGenerator: any, config: any } | null> {
     if (crosswindLoadAttempted)
@@ -496,7 +559,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     catch {
       try {
         // Fallback to local development path
-        const nodePath = await import('node:path')
+        
         const localPath = nodePath.join(process.env.HOME || '', 'Code/Tools/crosswind/packages/crosswind/src/index.ts')
         const mod = await import(localPath)
         crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
@@ -546,26 +609,30 @@ export async function serve(options: ServeOptions): Promise<void> {
       if (classes.size === 0)
         return ''
 
-      // Load user crosswind config for safelist + shortcuts
-      let userConfig: Record<string, any> = {}
-      try {
-        const nodePath = await import('node:path')
-        const configPath = nodePath.join(process.cwd(), 'crosswind.config.ts')
-        console.log('[crosswind] loading config from:', configPath)
-        userConfig = (await import(configPath)).default || {}
-        console.log('[crosswind] config loaded, keys:', Object.keys(userConfig))
+      // Load user crosswind config via bunfig — picks up `config/crosswind.ts`,
+      // `crosswind.config.ts`, `.config/crosswind.ts`, and other standard
+      // bunfig locations. Cached for the lifetime of the dev process; bun's
+      // --watch process restart bust the cache when the config file changes.
+      if (!crosswindUserConfigPromise) {
+        crosswindUserConfigPromise = loadConfig({
+          name: 'crosswind',
+          cwd: process.cwd(),
+          defaultConfig: {} as Record<string, any>,
+        }) as Promise<Record<string, any>>
       }
-      catch (e: any) {
-        console.warn('[crosswind] config load error:', e?.message || e)
-      }
+      const userConfig = await crosswindUserConfigPromise
 
       if (userConfig.safelist) {
         for (const cls of userConfig.safelist) classes.add(cls)
-        console.log('[crosswind] safelist:', userConfig.safelist)
       }
-      if (userConfig.shortcuts) {
-        console.log('[crosswind] shortcuts:', Object.keys(userConfig.shortcuts))
-      }
+
+      // Cache key — sorted class names plus the safelist (already folded in
+      // above). Same set → same CSS, so we can short-circuit the entire
+      // generator pipeline below for repeat renders of the same template.
+      const cacheKey = [...classes].sort().join(' ')
+      const cached = crosswindCssCache.get(cacheKey)
+      if (cached !== undefined)
+        return cached
 
       // Merge user shortcuts into the generator config
       const generatorConfig: Record<string, any> = { ...cw.config, preflight: true, minify: false }
@@ -614,7 +681,9 @@ export async function serve(options: ServeOptions): Promise<void> {
         if (darkDecls.length) shortcutCSS += `@media (prefers-color-scheme: dark) { .dark .${name} { ${darkDecls.join(' ')} } }\n`
       }
 
-      return baseCss + shortcutCSS
+      const finalCss = baseCss + shortcutCSS
+      crosswindCssCache.set(cacheKey, finalCss)
+      return finalCss
     }
     catch (error) {
       console.warn('Failed to generate Crosswind CSS:', error)
@@ -624,7 +693,14 @@ export async function serve(options: ServeOptions): Promise<void> {
 
   // Lazy template processing function
   async function processTemplate(filePath: string): Promise<string> {
-    const path = await import('node:path')
+    // Cache fast path — if every dependency mtime matches the previous
+    // render, return the cached HTML. The stat fan-out is ~1ms total for a
+    // typical 5-dep page; a fresh render is ~50ms, so even on miss we only
+    // pay the stat cost once.
+    const cachedEntry = htmlCache.get(filePath)
+    if (cachedEntry && await templateSignatureFresh(cachedEntry.signature))
+      return cachedEntry.html
+
     const content = await Bun.file(filePath).text()
 
     // Extract server script bodies for variable extraction, and remove only
@@ -643,10 +719,10 @@ export async function serve(options: ServeOptions): Promise<void> {
 
     const context: Record<string, any> = {
       __filename: filePath,
-      __dirname: path.dirname(filePath),
+      __dirname: nodePath.dirname(filePath),
     }
 
-    const { processDirectives, extractVariables, defaultConfig, generateSpaShell, injectRouterScript, resetHead } = await import('@stacksjs/stx')
+    const { processDirectives, extractVariables, defaultConfig, generateSpaShell, injectRouterScript, resetHead } = await stxModule
     // Fresh head state per request — server scripts may call useHead() to set
     // a per-page <title>/meta. We reset BEFORE extracting so each request
     // starts clean, then mark the context so processDirectives doesn't reset
@@ -671,6 +747,13 @@ export async function serve(options: ServeOptions): Promise<void> {
       app: stxConfig.app || {},
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
       ...('router' in stxConfig && { router: stxConfig.router }),
+      // Forward SEO/head defaults so stx.config.ts can suppress the auto-injected
+      // "stx Project" fallback tags and override the project-wide title/description/image.
+      ...('skipDefaultSeoTags' in stxConfig && { skipDefaultSeoTags: stxConfig.skipDefaultSeoTags }),
+      ...('defaultTitle' in stxConfig && { defaultTitle: stxConfig.defaultTitle }),
+      ...('defaultDescription' in stxConfig && { defaultDescription: stxConfig.defaultDescription }),
+      ...('defaultImage' in stxConfig && { defaultImage: stxConfig.defaultImage }),
+      ...('seo' in stxConfig && { seo: stxConfig.seo }),
     }
 
     // When SSR is disabled, serve a client-side SPA shell instead of processing directives
@@ -713,6 +796,16 @@ export async function serve(options: ServeOptions): Promise<void> {
     // Crosswind CSS is already injected by processDirectives() (injectCrosswindCSS at top level).
     // Do NOT generate it again here — duplicate Preflight resets would strip all utility styles.
 
+    // Store in the render cache unless the page opted out (e.g. a server
+    // script that reads request-specific or fully-dynamic data set
+    // `context.__stx_skip_cache = true`). The dependency set was populated
+    // by processDirectives — every layout / component / partial it pulled
+    // in is now part of the invalidation signature.
+    if (!context.__stx_skip_cache) {
+      const signature = await buildTemplateSignature(filePath, dependencies)
+      htmlCache.set(filePath, { html: output, signature })
+    }
+
     return output
   }
 
@@ -723,7 +816,7 @@ export async function serve(options: ServeOptions): Promise<void> {
 
     // Discover files if needed
     const files = await discoverFiles()
-    const nodePath = await import('node:path')
+    
 
     // Normalize the request path
     let normalizedPath = requestPath.startsWith('/') ? requestPath.slice(1) : requestPath
@@ -758,12 +851,29 @@ export async function serve(options: ServeOptions): Promise<void> {
       possibleFiles.push(`${filename}.html`)
     }
 
-    // Find a matching file from discovered files
+    // Find a matching file from discovered files. Match by *relative* path
+    // (after stripping the pattern dir) so a request for `/relocations`
+    // doesn't accidentally serve `host/relocations.stx` via a suffix match.
+    // Previously a `endsWith('/${possible}')` fallback meant any deeper file
+    // whose basename matched would win — we now require an exact path match
+    // relative to the configured `patterns` directories.
     for (const possible of possibleFiles) {
       for (const filePath of files) {
-        // Normalize file path for comparison
         const normalizedFilePath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
-        if (normalizedFilePath === possible || normalizedFilePath.endsWith(`/${possible}`)) {
+
+        // Compute the file's path relative to whichever pattern dir contains
+        // it, so `resources/views/relocations/index.stx` becomes
+        // `relocations/index.stx` for matching against `possibleFiles`.
+        let relativeFilePath = normalizedFilePath
+        for (const pattern of patterns) {
+          const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
+          if (normalizedFilePath.startsWith(`${normalizedPattern}/`)) {
+            relativeFilePath = normalizedFilePath.slice(normalizedPattern.length + 1)
+            break
+          }
+        }
+
+        if (normalizedFilePath === possible || relativeFilePath === possible) {
           // Process template on every request (dev mode — no caching)
           const output = await processTemplate(filePath)
           return output
@@ -880,7 +990,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     paramValues: string[],
     routePath: string,
   ): Promise<string> {
-    const path = await import('node:path')
+    
     const content = await Bun.file(filePath).text()
 
     // Extract server scripts only — client scripts stay for processDirectives to transform
@@ -898,7 +1008,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     // Build context with dynamic params
     const context: Record<string, any> = {
       __filename: filePath,
-      __dirname: path.dirname(filePath),
+      __dirname: nodePath.dirname(filePath),
       __route: routePath,
     }
 
@@ -907,7 +1017,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       context[paramNames[i]] = paramValues[i]
     }
 
-    const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter, resetHead: resetHeadDyn } = await import('@stacksjs/stx')
+    const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter, resetHead: resetHeadDyn } = await stxModule
     // Fresh head state per request (see static-route handler above for rationale)
     resetHeadDyn()
     for (const scriptBody of dynServerScripts) {
@@ -925,6 +1035,11 @@ export async function serve(options: ServeOptions): Promise<void> {
       app: stxConfig.app || {},
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
       ...('router' in stxConfig && { router: stxConfig.router }),
+      ...('skipDefaultSeoTags' in stxConfig && { skipDefaultSeoTags: stxConfig.skipDefaultSeoTags }),
+      ...('defaultTitle' in stxConfig && { defaultTitle: stxConfig.defaultTitle }),
+      ...('defaultDescription' in stxConfig && { defaultDescription: stxConfig.defaultDescription }),
+      ...('defaultImage' in stxConfig && { defaultImage: stxConfig.defaultImage }),
+      ...('seo' in stxConfig && { seo: stxConfig.seo }),
     }
 
     let output = templateContent
@@ -1055,7 +1170,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         const componentName = decodeURIComponent(path.slice('/_stx/component/'.length))
         if (componentName) {
           try {
-            const { processDirectives, defaultConfig } = await import('@stacksjs/stx')
+            const { processDirectives, defaultConfig } = await stxModule
             const componentTemplate = `<${componentName} />`
             const componentOpts = {
               ...defaultConfig,
@@ -1098,7 +1213,7 @@ export async function serve(options: ServeOptions): Promise<void> {
           }
 
           const body = await req.json()
-          const nodePath = await import('node:path')
+          
 
           // Import bun:sqlite for database operations
           const { Database } = await import('bun:sqlite')
@@ -1421,8 +1536,8 @@ export async function serve(options: ServeOptions): Promise<void> {
       // because the page handler runs first elsewhere — this fires only when
       // no page matched).
       if ((req.method === 'GET' || req.method === 'HEAD') && path !== '/') {
-        const nodePathMod = await import('node:path')
-        const publicRoot = nodePathMod.resolve(process.cwd(), publicDir)
+        
+        const publicRoot = nodePath.resolve(process.cwd(), publicDir)
         // Decode URI components (e.g. %20 → space) and reject embedded NULs
         let safePathname: string
         try {
@@ -1435,9 +1550,9 @@ export async function serve(options: ServeOptions): Promise<void> {
           // Resolve and verify the result is still inside publicRoot.
           // path.resolve normalizes .. segments before the prefix check, which
           // is the standard defense against directory traversal.
-          const resolvedPath = nodePathMod.resolve(publicRoot, `.${safePathname}`)
+          const resolvedPath = nodePath.resolve(publicRoot, `.${safePathname}`)
           const isInsidePublicRoot = resolvedPath === publicRoot
-            || resolvedPath.startsWith(`${publicRoot}${nodePathMod.sep}`)
+            || resolvedPath.startsWith(`${publicRoot}${nodePath.sep}`)
 
           if (isInsidePublicRoot) {
             try {

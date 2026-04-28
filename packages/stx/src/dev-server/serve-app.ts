@@ -862,8 +862,16 @@ catch {
       sidebarConfig = extractSidebarConfig(templateContent)
     }
 
+    // Read app.window from stx.config.ts so each app can pick a sensible
+    // default size (e.g. ImageOptim wants ~640×480, not 1400×900).
+    const appWindow = (projectConfig as any)?.app?.window ?? {}
+
     await openNativeWindow(actualPort, {
-      title: path.basename(absoluteAppDir) || 'stx App',
+      title: (projectConfig as any)?.app?.head?.title || path.basename(absoluteAppDir) || 'stx App',
+      width: appWindow.width,
+      height: appWindow.height,
+      darkMode: appWindow.darkMode,
+      hotReload: appWindow.hotReload,
       nativeSidebar: !!sidebarConfig,
       sidebarConfig,
     })

@@ -46,6 +46,13 @@ let cachedConfig: CrosswindConfig | null = null
 let cachedCSS: string = ''
 let isBuilding = false
 
+// Memoize generateCrosswindCSS output by sorted class-set string. The dev
+// server runs under `bun --watch`; any source/config edit restarts the
+// process, which naturally drops this cache — so we don't need a watcher
+// here. Same set of classes + same cached config → identical CSS, so this
+// turns the second-and-later renders of the same page into a Map lookup.
+const cssByClassSet = new Map<string, string>()
+
 /**
  * Try to dynamically import crosswind from a given path
  */
@@ -160,11 +167,16 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
 /**
  * Reset the Crosswind module cache (useful for testing)
  */
+export function resetCssCache(): void {
+  cssByClassSet.clear()
+}
+
 export function resetCrosswindCache(): void {
   crosswindModule = null
   crosswindLoadAttempted = false
   cachedConfig = null
   cachedCSS = ''
+  cssByClassSet.clear()
 }
 
 /**
@@ -182,62 +194,37 @@ export function resetCrosswindCache(): void {
  * large stack-style error dump. The file-existence pre-check keeps the
  * common "no config file" case silent and fast.
  */
-const CROSSWIND_CONFIG_NAMES = [
-  'crosswind.config.ts',
-  'crosswind.config.js',
-  'crosswind.config.mjs',
-  'crosswind.config.cjs',
-]
-
+/**
+ * Load the user's crosswind config via bunfig — our shared config loader.
+ * bunfig's name-based search already covers `config/crosswind.ts`,
+ * `.config/crosswind.ts`, and root-level `crosswind.config.{ts,js,mjs,cjs}`,
+ * so we don't need to maintain a parallel list of paths here. Returns `null`
+ * when no config file is present, so callers can fall through to defaults
+ * without surfacing a "not found" warning to the user.
+ */
 export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig | null> {
-  // 1) Does a crosswind config exist at `cwd`? If not, return silently —
-  //    no error, no bunfig, no search spam.
-  let foundPath: string | null = null
-  for (const name of CROSSWIND_CONFIG_NAMES) {
-    const candidate = path.join(cwd, name)
-    if (await Bun.file(candidate).exists()) {
-      foundPath = candidate
-      break
-    }
-  }
-  if (!foundPath) return null
-
-  // 2) Hand off to bunfig for the actual load — merges env vars, applies
-  //    type validation, caches, etc. We pass an explicit `cwd` so bunfig
-  //    doesn't fall back to `process.cwd()` (which would be the repo root
-  //    when stx is run from outside the app directory).
   try {
     const { loadConfigWithResult } = await import('bunfig')
     const result = await loadConfigWithResult<CrosswindConfig>({
       name: 'crosswind',
       cwd,
       defaultConfig: {} as CrosswindConfig,
+      checkEnv: false,
       verbose: false,
     })
-    if (result?.config && Object.keys(result.config).length > 0) {
-      const rel = result.path ? path.relative(cwd, result.path) : path.relative(cwd, foundPath)
-      console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${rel || foundPath}`)
-      return result.config
-    }
-    // bunfig returned defaults even though the file exists — fall through to
-    // the direct-import fallback below.
-  }
-  catch {
-    // Swallow — fall through to direct import.
-  }
 
-  // 3) Fallback: plain dynamic import. Used when bunfig returns empty (e.g.
-  //    the config module exports a non-object default), so the user still
-  //    gets their config applied.
-  try {
-    const mod = await import(foundPath)
-    const cfg = (mod.default || mod) as CrosswindConfig
-    const rel = path.relative(cwd, foundPath)
-    console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${rel || foundPath}`)
-    return cfg
+    // bunfig returns the resolved file path on `result.path` when it found a
+    // real file (vs. defaults). Treat a missing path or an empty config as
+    // "no user config" — either way the caller falls through to defaults.
+    if (!result?.path || !result.config || Object.keys(result.config).length === 0)
+      return null
+
+    const rel = path.relative(cwd, result.path)
+    console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${rel || result.path}`)
+    return result.config
   }
   catch (error) {
-    console.warn(`${colors.yellow}[Crosswind]${colors.reset} Failed to load ${path.basename(foundPath)}:`, error instanceof Error ? error.message : error)
+    console.warn(`${colors.yellow}[Crosswind]${colors.reset} Failed to load crosswind config:`, error instanceof Error ? error.message : error)
     return null
   }
 }
@@ -386,6 +373,15 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
       return ''
     }
 
+    // Cache lookup — same class set always produces the same CSS as long as
+    // the cached config + safelist haven't changed. `bun --watch` restarts
+    // the process on config/source edits, which clears this map for free.
+    const cacheKey = [...classes].sort().join(' ')
+    const cached = cssByClassSet.get(cacheKey)
+    if (cached !== undefined) {
+      return cached
+    }
+
     // Resolve config search root — prefer the caller-supplied app dir so
     // `stx <app-dir>` from outside the app still finds its crosswind.config.
     // Fallback: `process.cwd()` (legacy behaviour).
@@ -528,6 +524,7 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
       if (darkDecls.length) css += `\n@media (prefers-color-scheme: dark) { .dark .${name} { ${darkDecls.join(' ')} } }`
     }
 
+    cssByClassSet.set(cacheKey, css)
     return css
   }
   catch (error) {
