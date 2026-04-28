@@ -14,6 +14,7 @@
  */
 
 import { serve as bunServe, Glob } from 'bun'
+import { watch as fsWatch } from 'node:fs'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
 
@@ -206,6 +207,29 @@ export async function serve(options: ServeOptions): Promise<void> {
   let sourceFiles: string[] | null = null
   let assetsInitialized = false
 
+  // Watch pattern directories so adding/removing a view file (e.g. a brand
+  // new `resources/views/<feature>/index.stx`) invalidates the discovered-
+  // files cache without a server restart. Without this, the file glob is
+  // cached at startup and new pages 404 until the user kills the dev
+  // server. We also clear `routes` so any stale rendered HTML for a now-
+  // missing file is dropped.
+  const watchersStarted = new Set<string>()
+  const startWatcher = (dir: string) => {
+    if (watchersStarted.has(dir)) return
+    try {
+      const watcher = fsWatch(dir, { recursive: true }, (_event, filename) => {
+        if (!filename) return
+        const f = String(filename)
+        if (!f.endsWith('.stx') && !f.endsWith('.md') && !f.endsWith('.html')) return
+        sourceFiles = null
+        routes.clear()
+      })
+      watcher.on('error', () => { /* ignore — best-effort */ })
+      watchersStarted.add(dir)
+    }
+    catch { /* directory missing or unwatchable — ignore */ }
+  }
+
   // ── Page middleware registry ─────────────────────────────────────────
   //
   // Mirrors Laravel's named middleware + middleware-group pattern. Each
@@ -379,6 +403,9 @@ export async function serve(options: ServeOptions): Promise<void> {
         const stat = await fs.stat(pattern).catch(() => null)
 
         if (stat?.isDirectory()) {
+          // Watch this directory tree once so subsequent file changes
+          // invalidate the cache (recursive watch picks up new sub-dirs).
+          startWatcher(pattern)
           // Directories to exclude from page routing — these contain non-page .stx files
           const excludeDirs = ['layouts', 'components', 'partials']
           if (layoutsDir) excludeDirs.push(layoutsDir.replace(/^.*\//, ''))
