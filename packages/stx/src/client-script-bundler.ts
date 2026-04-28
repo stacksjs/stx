@@ -12,6 +12,7 @@
 import path from 'node:path'
 import fs from 'node:fs' // kept for mkdir/rmSync (no Bun equivalent for dir ops)
 import type { BunPlugin } from 'bun'
+import { getPublicEnvDefine } from './public-env'
 
 // Known imports that are NOT user imports — handled by other transforms
 const EXTERNAL_PATTERNS = [
@@ -194,6 +195,7 @@ export async function bundleClientScript(
       plugins: [createBundlePlugin(projectRoot)],
       define: {
         'process.env.NODE_ENV': minify ? '"production"' : '"development"',
+        ...getPublicEnvDefine(),
       },
       // Resolve relative imports from the template's directory
       root: templateDir,

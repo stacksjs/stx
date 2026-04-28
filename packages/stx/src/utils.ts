@@ -21,6 +21,7 @@ import { unescapeHtml } from './expressions'
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
+import { getPublicEnvDefine } from './public-env'
 import { processScopedStyles } from './style-scoping'
 
 // Re-export from extracted modules for backward compatibility
@@ -109,6 +110,7 @@ export function transpileTypeScript(code: string): string {
     const transpiler = new Bun.Transpiler({
       loader: 'ts',
       target: 'browser',
+      define: getPublicEnvDefine(),
     })
     let result = transpiler.transformSync(processedCode)
 

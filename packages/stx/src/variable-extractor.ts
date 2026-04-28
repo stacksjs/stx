@@ -36,6 +36,7 @@ import { findMatchingDelimiter } from './parser/tokenizer'
 // instance that document-shell.ts reads from. Using require() inside the
 // wrapped useHead would create a separate module instance with its own state.
 import { useHead as headUseHead, useSeoMeta as headUseSeoMeta, getHead as headGetHead } from './head'
+import { getPublicEnvDefine } from './public-env'
 
 /**
  * Extract declared variable names from converted CommonJS script.
@@ -324,7 +325,7 @@ export async function extractVariables(
   // Strip TypeScript syntax using Bun.Transpiler for full TS support
   let jsContent: string
   try {
-    const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser' })
+    const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
     // Strip .stx component imports before transpiling
     let processedCode = scriptContent.replace(/^\s*import\s+\w+\s+from\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
     processedCode = processedCode.replace(/^\s*import\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')

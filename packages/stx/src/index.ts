@@ -27,6 +27,7 @@ export * from './forms'
 
 // Core modules
 export * from './env'
+export { getPublicEnv, getPublicEnvDefine } from './public-env'
 export * from './a11y'
 export * from './analytics'
 export * from './analyzer'

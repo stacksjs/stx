@@ -11,6 +11,7 @@
 
 import path from 'node:path'
 import { loadStxConfig } from './config'
+import { getPublicEnvDefine } from './public-env'
 
 const _cachedStoreScripts = new Map<string, string>()
 
@@ -88,7 +89,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   // but in the browser these are already globals — just strip the imports.
   const chunks: string[] = []
 
-  const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser' })
+  const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
 
   for (const file of sortedFiles) {
     try {

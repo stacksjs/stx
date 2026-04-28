@@ -6,6 +6,7 @@
  * replacing them with inline <script> and <style> blocks.
  */
 import path from 'node:path'
+import { getPublicEnvDefine } from './public-env'
 
 /**
  * Check if a URL is external (http, https, or protocol-relative)
@@ -109,6 +110,7 @@ export async function processInlineAssets(
             entrypoints: [resolvedPath],
             target: 'browser',
             minify: false,
+            define: getPublicEnvDefine(),
           })
           if (result.outputs.length > 0) {
             fileContent = await result.outputs[0].text()
