@@ -2359,6 +2359,12 @@ else if (!value && isInserted) {
           setTimeout(function() {
             var childScope = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
             processElement(el, childScope);
+            // Remove x-cloak from the inserted subtree — the initial
+            // cloak removal (after processElement on the root) already
+            // ran before this deferred processing, so newly-inserted
+            // :if children still have x-cloak and stay hidden.
+            el.removeAttribute('x-cloak');
+            el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
           }, 0);
         }
       }
