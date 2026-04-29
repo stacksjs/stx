@@ -24,7 +24,12 @@ import { loadConfig } from 'bunfig'
 // load instead of inside every request handler. The promise is cached, so the
 // many `await stxModule` reads downstream cost a microtask each, not a full
 // resolution roundtrip.
-const stxModule = import('@stacksjs/stx')
+//
+// Callers can override this by passing `stxModule` in ServeOptions — useful
+// when the calling app vendors a newer stx (e.g. a `pantry/` directory) that
+// the bare-specifier resolver wouldn't find, because Bun walks `node_modules`
+// from the importer's location and a stale copy there beats the vendored one.
+const defaultStxModule = import('@stacksjs/stx')
 
 export interface ServeOptions {
   patterns: string[]
@@ -41,6 +46,17 @@ export interface ServeOptions {
    */
   publicDir?: string
   quiet?: boolean
+  /**
+   * Pre-resolved `@stacksjs/stx` module. When set, `serve()` uses this
+   * instead of the bare-specifier `import('@stacksjs/stx')` it would
+   * normally do. Callers should pass this when they ship a vendored stx
+   * (e.g. a `pantry/@stacksjs/stx` copy) that lives outside the importer's
+   * `node_modules` chain — Bun resolves bare specifiers relative to the
+   * file doing the import, so a stale `node_modules/@stacksjs/stx` would
+   * otherwise win against the vendored copy. Accepts a module object or
+   * a Promise of one (e.g. `import('/abs/path/to/stx')`).
+   */
+  stxModule?: typeof import('@stacksjs/stx') | Promise<typeof import('@stacksjs/stx')>
   /** Custom route handlers — checked before page routes */
   routes?: Record<string, (req: Request) => Response | Promise<Response>>
   /** Custom request handler — called for every request, return Response to short-circuit, or null/undefined to continue */
@@ -195,6 +211,14 @@ export async function serve(options: ServeOptions): Promise<void> {
   const layoutsDir = options.layoutsDir ?? stxConfig.layoutsDir ?? defaultStxConfig.layoutsDir
   const partialsDir = options.partialsDir ?? stxConfig.partialsDir ?? defaultStxConfig.partialsDir
   const publicDir = options.publicDir ?? stxConfig.publicDir ?? 'public'
+
+  // The stx module to use for processDirectives / extractVariables / etc.
+  // When the caller passed an explicit override, prefer it — it's how a
+  // framework with a vendored copy (pantry, etc.) makes sure we use *its*
+  // stx instead of whatever the bare-specifier resolver finds first.
+  const stxModule = options.stxModule
+    ? Promise.resolve(options.stxModule)
+    : defaultStxModule
 
   const { patterns, port = 3456 } = options
 

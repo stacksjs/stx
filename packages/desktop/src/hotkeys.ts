@@ -1,23 +1,25 @@
 /**
- * Global Hotkey API
+ * Hotkey API (in-window, document-level)
  *
- * Register global keyboard shortcuts that work even when the app is not focused.
- * Communicates with Craft's native side to register system-wide hotkeys.
- * Falls back to document-level listeners in web/non-native mode.
+ * Register keyboard shortcuts via document-level listeners. These fire
+ * **only while a Craft window has focus** — a thin wrapper around
+ * `keydown`. Use this for app-internal shortcuts like
+ * "Cmd+K opens the command palette."
+ *
+ * **For system-wide shortcuts** that fire even when the app isn't
+ * focused (e.g. global "Cmd+Shift+V to bring up your clipboard
+ * manager"), use `globalShortcuts` from `./global-shortcuts` — that
+ * talks to the native `RegisterEventHotKey` / `RegisterHotKey` APIs.
  *
  * @example
  * ```typescript
  * import { registerHotkey, unregisterAllHotkeys } from '@stacksjs/desktop'
  *
- * // Register a global shortcut
  * const reg = registerHotkey('Cmd+Shift+C', () => {
  *   console.log('Hotkey triggered!')
  * })
  *
- * // Unregister a specific shortcut
  * reg.unregister()
- *
- * // Unregister all shortcuts
  * unregisterAllHotkeys()
  * ```
  */

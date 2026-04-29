@@ -304,3 +304,144 @@ export type {
   Timer,
   TimerOptions,
 } from './timer'
+
+// =============================================================================
+// Clipboard
+// =============================================================================
+export { clipboard } from './clipboard'
+export type { Clipboard } from './clipboard'
+
+// =============================================================================
+// System Notifications (banner + badge — distinct from in-app toasts in alerts.ts)
+// =============================================================================
+export { notifications } from './notifications'
+export type { NotificationOptions, SystemNotifications } from './notifications'
+
+// =============================================================================
+// Filesystem
+// =============================================================================
+export { fs } from './fs'
+export type { DirEntry, FileStat, FS, MkdirOptions, RmdirOptions } from './fs'
+
+// =============================================================================
+// Shell — open URLs/paths, spawn subprocesses
+// =============================================================================
+export { shell } from './shell'
+export type { Shell, SpawnOptions } from './shell'
+
+// =============================================================================
+// Global Shortcuts (system-wide hotkeys — distinct from in-window hotkeys.ts)
+// =============================================================================
+export { globalShortcuts } from './global-shortcuts'
+export type {
+  GlobalShortcutOptions,
+  GlobalShortcuts,
+  ShortcutFireEvent,
+} from './global-shortcuts'
+
+// =============================================================================
+// System Theme (light/dark)
+// =============================================================================
+export { theme } from './theme'
+export type { Appearance, SystemTheme, ThemeInfo } from './theme'
+
+// =============================================================================
+// Native Drag-Out
+// =============================================================================
+export { dragOut, isDragOutAvailable } from './drag-out'
+export type { DragOutOptions } from './drag-out'
+
+// =============================================================================
+// Deep Links (custom URL schemes)
+// =============================================================================
+export { deepLinks } from './deep-link'
+export type { DeepLinkEvent, DeepLinks } from './deep-link'
+
+// =============================================================================
+// Battery / Power State (system-level metrics — distinct from caffeinate in power.ts)
+// =============================================================================
+export { battery } from './battery'
+export type { BatteryAPI, ThermalState } from './battery'
+
+// =============================================================================
+// Network / Reachability
+// =============================================================================
+export { network } from './network'
+export type {
+  ConnectionType,
+  NetworkAPI,
+  NetworkInterface,
+  ProxySettings,
+} from './network'
+
+// =============================================================================
+// Auto-Updater
+// =============================================================================
+export { updater } from './updater'
+export type { UpdateInfo, Updater } from './updater'
+
+// =============================================================================
+// Window Lifecycle Events
+// =============================================================================
+export { windowEvents } from './window-events'
+export type { WindowEvents, WindowPosition, WindowSize } from './window-events'
+
+// =============================================================================
+// App Metadata + Process Controls
+// =============================================================================
+export { app as appInfo } from './app-info'
+export type { AppAPI, AppInfo, AppNotifyOptions } from './app-info'
+
+// =============================================================================
+// Native Application Menu (macOS menubar + dock menu)
+// =============================================================================
+export { menu } from './menu'
+export type { MenuActionEvent, MenuAPI, MenuItem } from './menu'
+
+// =============================================================================
+// System / Host Info
+// =============================================================================
+export { system } from './system'
+export type { SystemInfo } from './system'
+
+// =============================================================================
+// Display / Multi-Monitor
+// =============================================================================
+export { screen } from './screen'
+export type { Display, ScreenAPI } from './screen'
+
+// =============================================================================
+// Keychain — Secure Secret Storage
+// =============================================================================
+export { keychain } from './keychain'
+export type { KeychainAPI } from './keychain'
+
+// =============================================================================
+// Privacy Permissions (camera/mic/screen-recording/etc)
+// =============================================================================
+export { permissions } from './permissions'
+export type { PermissionName, PermissionsAPI, PermissionStatus } from './permissions'
+
+// =============================================================================
+// Printing / Save-as-PDF
+// =============================================================================
+export { printing } from './printing'
+export type { PrintingAPI, PrintToPDFResult } from './printing'
+
+// =============================================================================
+// Native Auto-Launch (SMAppService — distinct from autolaunch.ts)
+// =============================================================================
+export { nativeAutoLaunch } from './native-autolaunch'
+export type { NativeAutoLaunchAPI } from './native-autolaunch'
+
+// =============================================================================
+// Touch Bar (legacy macOS hardware)
+// =============================================================================
+export { touchbar } from './touchbar'
+export type { TouchBarActionEvent, TouchBarAPI, TouchBarItem, TouchBarItemType } from './touchbar'
+
+// =============================================================================
+// Bluetooth
+// =============================================================================
+export { bluetooth } from './bluetooth'
+export type { BluetoothAPI, BluetoothDevice, BluetoothPowerState } from './bluetooth'

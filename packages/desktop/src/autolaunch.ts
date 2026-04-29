@@ -1,11 +1,17 @@
 /**
- * Auto-Launch / Login Items API
+ * Auto-Launch / Login Items (subprocess-based)
  *
- * Manages application auto-start behavior on system login.
- * Uses platform-appropriate mechanisms:
+ * Manages auto-start by writing platform-specific config files:
  * - macOS: LaunchAgents plist files
  * - Linux: XDG autostart .desktop files
  * - Windows: Registry entries
+ *
+ * **Choosing between this and `nativeAutoLaunch`:** prefer
+ * `nativeAutoLaunch` when running inside a Craft window — it uses
+ * `SMAppService` (the modern Apple-recommended API) and doesn't write
+ * any files of its own. This module exists for environments without a
+ * Craft bridge, or apps that need the LaunchAgent file as a side
+ * effect (some launchers honour those even when SMAppService doesn't).
  *
  * @example
  * ```typescript
