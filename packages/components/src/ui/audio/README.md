@@ -11,12 +11,11 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-@component('Audio', {
-  src: '/audio/podcast.mp3',
-  title: 'Episode 42: Building with STX',
-  controls: true
-})
-@endcomponent
+<Audio
+  src="/audio/podcast.mp3"
+  title="Episode 42: Building with STX"
+  controls
+/>
 ```
 
 ## Props

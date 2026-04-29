@@ -11,20 +11,14 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-@component('Dropdown')
-  @component('DropdownButton', { className: 'btn-primary' })
-    Options
-  @endcomponent
+<Dropdown>
+  <DropdownButton className="btn-primary">Options</DropdownButton>
 
-  @component('DropdownItems')
-    @component('DropdownItem')
-      Edit
-    @endcomponent
-    @component('DropdownItem')
-      Delete
-    @endcomponent
-  @endcomponent
-@endcomponent
+  <DropdownItems>
+    <DropdownItem>Edit</DropdownItem>
+    <DropdownItem>Delete</DropdownItem>
+  </DropdownItems>
+</Dropdown>
 ```
 
 ## Props
@@ -63,71 +57,49 @@ bun add @stacksjs/components
 ### Basic Dropdown
 
 ```stx
-@component('Dropdown')
-  @component('DropdownButton', {
-    className: 'px-4 py-2 bg-blue-500 text-white rounded-md'
-  })
+<Dropdown>
+  <DropdownButton className="px-4 py-2 bg-blue-500 text-white rounded-md">
     Actions
-  @endcomponent
+  </DropdownButton>
 
-  @component('DropdownItems', {
-    className: 'w-56'
-  })
-    @component('DropdownItem')
-      Edit
-    @endcomponent
-    @component('DropdownItem')
-      Duplicate
-    @endcomponent
-    @component('DropdownItem', { disabled: true })
-      Archive (coming soon)
-    @endcomponent
-    @component('DropdownItem')
-      Delete
-    @endcomponent
-  @endcomponent
-@endcomponent
+  <DropdownItems className="w-56">
+    <DropdownItem>Edit</DropdownItem>
+    <DropdownItem>Duplicate</DropdownItem>
+    <DropdownItem disabled>Archive (coming soon)</DropdownItem>
+    <DropdownItem>Delete</DropdownItem>
+  </DropdownItems>
+</Dropdown>
 ```
 
 ### With Icons
 
 ```stx
-@component('DropdownItem')
+<DropdownItem>
   <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
   </svg>
   Edit
-@endcomponent
+</DropdownItem>
 ```
 
 ### Grouped Items
 
 ```stx
-@component('DropdownItems')
+<DropdownItems>
   <div class="px-1 py-1">
-    @component('DropdownItem')
-      Edit
-    @endcomponent
-    @component('DropdownItem')
-      Duplicate
-    @endcomponent
+    <DropdownItem>Edit</DropdownItem>
+    <DropdownItem>Duplicate</DropdownItem>
   </div>
 
   <div class="px-1 py-1">
-    @component('DropdownItem')
-      Archive
-    @endcomponent
-    @component('DropdownItem')
-      Move
-    @endcomponent
+    <DropdownItem>Archive</DropdownItem>
+    <DropdownItem>Move</DropdownItem>
   </div>
 
   <div class="px-1 py-1">
-    @component('DropdownItem')
-      Delete
-    @endcomponent
+    <DropdownItem>Delete</DropdownItem>
   </div>
-@endcomponent
+</DropdownItems>
 ```
 
 ## Features

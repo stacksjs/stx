@@ -11,19 +11,19 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-@component('Popover')
-  @component('PopoverButton', { className: 'px-4 py-2 bg-blue-500 text-white rounded' })
+<Popover>
+  <PopoverButton className="px-4 py-2 bg-blue-500 text-white rounded">
     Solutions
-  @endcomponent
+  </PopoverButton>
 
-  @component('PopoverPanel', { className: 'w-64' })
+  <PopoverPanel className="w-64">
     <div class="grid gap-4">
       <a href="/analytics">Analytics</a>
       <a href="/engagement">Engagement</a>
       <a href="/security">Security</a>
     </div>
-  @endcomponent
-@endcomponent
+  </PopoverPanel>
+</Popover>
 ```
 
 ## Props
@@ -55,7 +55,7 @@ bun add @stacksjs/components
 ### Solutions Menu
 
 ```stx
-@component('PopoverPanel', { className: 'w-80' })
+<PopoverPanel className="w-80">
   <div class="grid gap-8">
     <a href="/analytics" class="flex items-start gap-4 group">
       <div class="shrink-0 text-blue-500">
@@ -69,19 +69,15 @@ bun add @stacksjs/components
       </div>
     </a>
   </div>
-@endcomponent
+</PopoverPanel>
 ```
 
 ### Different Positions
 
 ```stx
-@component('PopoverPanel', { position: 'top' })
-  Content appears above
-@endcomponent
+<PopoverPanel position="top">Content appears above</PopoverPanel>
 
-@component('PopoverPanel', { position: 'left' })
-  Content appears to the left
-@endcomponent
+<PopoverPanel position="left">Content appears to the left</PopoverPanel>
 ```
 
 ## Features

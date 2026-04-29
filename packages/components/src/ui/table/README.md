@@ -11,23 +11,23 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-@component('Table')
-  @component('TableHead')
-    @component('TableRow')
-      @component('TableHeader') Name @endcomponent
-      @component('TableHeader') Email @endcomponent
-      @component('TableHeader') Role @endcomponent
-    @endcomponent
-  @endcomponent
+<Table>
+  <TableHead>
+    <TableRow>
+      <TableHeader>Name</TableHeader>
+      <TableHeader>Email</TableHeader>
+      <TableHeader>Role</TableHeader>
+    </TableRow>
+  </TableHead>
 
-  @component('TableBody')
-    @component('TableRow')
-      @component('TableCell') John Doe @endcomponent
-      @component('TableCell') john@example.com @endcomponent
-      @component('TableCell') Admin @endcomponent
-    @endcomponent
-  @endcomponent
-@endcomponent
+  <TableBody>
+    <TableRow>
+      <TableCell>John Doe</TableCell>
+      <TableCell>john@example.com</TableCell>
+      <TableCell>Admin</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
 ```
 
 ## Features

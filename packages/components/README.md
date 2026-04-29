@@ -94,112 +94,71 @@ yarn add @stacksjs/components
 
 ## Component Syntax
 
-stx provides multiple ways to use components, giving you flexibility to choose the syntax that best fits your project:
+Both `<Component>` JSX-style tags and `@component('Name', {...})` Blade-style directives work. **The JSX form is preferred** — it's cleaner, matches the rest of the stx ecosystem (`<StxLink>`, `<Icon>`, etc.), and reads like standard HTML.
 
-### 1. @component Directive with Object Shorthand (Recommended)
-
-The most concise syntax using ES6 object shorthand:
+### Static props
 
 ```stx
-<script>
-export const title = 'Welcome'
-export const variant = 'primary'
-export const onClick = () => console.log('clicked')
+<Button variant="primary" size="lg">Save Changes</Button>
+```
+
+### Dynamic props (server-side)
+
+Use `:prop` to bind server-side expressions:
+
+```stx
+<script server>
+const variant = isAdmin ? 'danger' : 'primary'
 </script>
 
-@component('Button', {
-  title,
-  variant,
-  onClick
-})
+<Button :variant="variant">Delete</Button>
+```
+
+### Self-closing
+
+```stx
+<Switch checked label="Enable notifications" />
+<Avatar src="/photo.jpg" alt="Glenn" size="md" />
+```
+
+### Slots
+
+```stx
+<Dialog :open="isOpen" @close="handleClose">
+  <DialogBackdrop />
+  <DialogPanel className="max-w-md">
+    <DialogTitle>Confirm delete</DialogTitle>
+    <p>This action cannot be undone.</p>
+  </DialogPanel>
+</Dialog>
+```
+
+### Blade-compat alternative
+
+The `@component` directive also works if you prefer the Blade style:
+
+```stx
+@component('Button', { variant: 'primary' })
+  Save Changes
 @endcomponent
 ```
-
-### 2. @component Directive with Full Props
-
-Traditional explicit prop mapping:
-
-```stx
-@component('Button', {
-  title: title,
-  variant: variant,
-  onClick: onClick
-})
-@endcomponent
-```
-
-### 3. PascalCase Component Tags with Dynamic Binding (Vue-like)
-
-Use `:prop` syntax for dynamic values from context:
-
-```stx
-<script>
-export const title = 'Welcome'
-export const variant = 'primary'
-</script>
-
-<Button
-  :title="title"
-  :variant="variant"
-  :onClick="onClick"
-/>
-```
-
-### 4. PascalCase Component Tags with Static Values
-
-Use regular attributes for static strings:
-
-```stx
-<Button
-  title="Welcome"
-  variant="primary"
-/>
-```
-
-### 5. Mixed Static and Dynamic Props
-
-Combine static strings and dynamic bindings:
-
-```stx
-<Button
-  title="Static Title"
-  :variant="dynamicVariant"
-  size="large"
-/>
-```
-
-All these syntaxes are equivalent and fully interchangeable. Choose the one that fits your coding style!
 
 ## Usage
 
 ### Basic Example
 
 ```stx
-<script>
-import { Button, Switch } from '@stacksjs/components'
-
-let notifications = true
-
-function handleNotificationChange(checked) {
-  notifications = checked
-}
-
-module.exports = { notifications, handleNotificationChange }
+<script server>
+const notifications = true
 </script>
 
 <div class="p-6">
   <h1 class="text-2xl font-bold mb-4">Settings</h1>
 
-  @component('Switch', {
-    checked: notifications,
-    label: 'Enable notifications',
-    onChange: handleNotificationChange
-  })
+  <Switch :checked="notifications" label="Enable notifications" />
 
   <div class="mt-4">
-    @component('Button', { variant: 'primary' })
-      Save Changes
-    @endcomponent
+    <Button variant="primary">Save Changes</Button>
   </div>
 </div>
 ```
@@ -207,42 +166,27 @@ module.exports = { notifications, handleNotificationChange }
 ### With Code Highlighting
 
 ```stx
-<script>
-import { CodeBlock } from '@stacksjs/components'
-
+<script server>
 const code = `
 function greet(name: string) {
   console.log(\`Hello, \${name}!\`)
 }
 `
-
-module.exports = { code }
 </script>
 
-@component('CodeBlock', {
-  code: code,
-  language: 'typescript',
-  copyable: true
-})
+<CodeBlock :code="code" language="typescript" copyable />
 ```
 
 ### Using Composables
 
 ```stx
-<script>
-import { useDarkMode, useCopyCode } from '@stacksjs/components'
-
+<script client>
 const { isDark, toggle } = useDarkMode()
-
-module.exports = { isDark, toggle }
 </script>
 
-<button @click="toggle">
-  @if(isDark)
-    Switch to Light Mode
-  @else
-    Switch to Dark Mode
-  @endif
+<button @click="toggle()">
+  <span :if="isDark()">Switch to Light Mode</span>
+  <span :if="!isDark()">Switch to Dark Mode</span>
 </button>
 ```
 

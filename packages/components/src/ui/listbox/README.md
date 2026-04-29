@@ -11,41 +11,33 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-<script>
-export const people = [
+<script server>
+const people = [
   { id: 1, name: 'Wade Cooper' },
   { id: 2, name: 'Arlene Mccoy' },
   { id: 3, name: 'Devon Webb' }
 ]
 
-export let selected = people[0]
+let selected = people[0]
 
-export function handleChange(person) {
+function handleChange(person) {
   selected = person
 }
 </script>
 
-@component('Listbox', { value: selected, onChange: handleChange })
-  @component('ListboxLabel')
-    Assign to
-  @endcomponent
+<Listbox :value="selected" :onChange="handleChange">
+  <ListboxLabel>Assign to</ListboxLabel>
 
-  @component('ListboxButton')
-    {{ selected.name }}
-  @endcomponent
+  <ListboxButton>{{ selected.name }}</ListboxButton>
 
-  @component('ListboxOptions')
+  <ListboxOptions>
     @foreach(person in people)
-      @component('ListboxOption', {
-        value: person,
-        currentValue: selected,
-        onChange: handleChange
-      })
+      <ListboxOption :value="person" :currentValue="selected" :onChange="handleChange">
         {{ person.name }}
-      @endcomponent
+      </ListboxOption>
     @endforeach
-  @endcomponent
-@endcomponent
+  </ListboxOptions>
+</Listbox>
 ```
 
 ## Props
@@ -94,10 +86,10 @@ export function handleChange(person) {
 ### Multiple Selection
 
 ```stx
-<script>
-export let selectedPeople = [people[0], people[1]]
+<script server>
+let selectedPeople = [people[0], people[1]]
 
-export function handleChange(person) {
+function handleChange(person) {
   if (selectedPeople.includes(person)) {
     selectedPeople = selectedPeople.filter(p => p !== person)
   } else {
@@ -106,28 +98,28 @@ export function handleChange(person) {
 }
 </script>
 
-@component('Listbox', { value: selectedPeople, onChange: handleChange, multiple: true })
+<Listbox :value="selectedPeople" :onChange="handleChange" multiple>
   <!-- ... -->
-@endcomponent
+</Listbox>
 ```
 
 ### With Avatars
 
 ```stx
-@component('ListboxOption', { value: person })
+<ListboxOption :value="person">
   <div class="flex items-center">
     <img src="{{ person.avatar }}" alt="" class="h-6 w-6 rounded-full mr-2" />
     {{ person.name }}
   </div>
-@endcomponent
+</ListboxOption>
 ```
 
 ### Disabled Option
 
 ```stx
-@component('ListboxOption', { value: person, disabled: true })
+<ListboxOption :value="person" disabled>
   {{ person.name }} (unavailable)
-@endcomponent
+</ListboxOption>
 ```
 
 ## Features

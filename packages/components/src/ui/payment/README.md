@@ -2,50 +2,6 @@
 
 Comprehensive payment components for Stripe integration, including payment method management and checkout flows.
 
-## Component Syntax
-
-stx supports multiple ways to use components:
-
-### 1. @component Directive with Object Shorthand (Recommended)
-```stx
-@component('Checkout', {
-  products,
-  stripePublicKey,
-  apiUrl
-})
-@endcomponent
-```
-
-### 2. @component Directive with Full Props
-```stx
-@component('Checkout', {
-  products: products,
-  stripePublicKey: stripePublicKey,
-  apiUrl: apiUrl
-})
-@endcomponent
-```
-
-### 3. PascalCase Component Tags (Vue-like)
-```stx
-<Checkout
-  :products="products"
-  :stripePublicKey="stripePublicKey"
-  :apiUrl="apiUrl"
-/>
-```
-
-### 4. PascalCase with Static Values
-```stx
-<Checkout
-  products="[]"
-  stripePublicKey="pk_test_..."
-  apiUrl="https://api.example.com"
-/>
-```
-
-All syntaxes are equivalent and can be used interchangeably based on your preference.
-
 ## Installation
 
 ```bash
@@ -68,13 +24,11 @@ Display the default payment method with a badge.
 
 ## Usage
 
-### Checkout Component (Recommended)
-
-**Using @component directive with object shorthand:**
+### Checkout Component
 
 ```stx
-<script>
-export const products = [
+<script server>
+const products = [
   {
     id: 1,
     name: 'Premium Subscription',
@@ -84,58 +38,34 @@ export const products = [
   }
 ]
 
-export const mode = 'subscription'
-export const stripePublicKey = 'pk_test_...'
-export const apiUrl = 'https://api.example.com'
-export const redirectUrl = '/thank-you'
-export const shipping = 4500
-export const taxes = 552
+const mode = 'subscription'
+const stripePublicKey = 'pk_test_...'
+const apiUrl = 'https://api.example.com'
+const redirectUrl = '/thank-you'
+const shipping = 4500
+const taxes = 552
 
-export const onSubmit = (result) => {
+const onSubmit = (result) => {
   if (result.success) {
     console.log('Payment successful!')
     window.location.href = redirectUrl
   }
 }
 
-export const onRemoveProduct = (productId) => {
+const onRemoveProduct = (productId) => {
   console.log('Remove product:', productId)
   // Update cart state
 }
 </script>
 
-@component('Checkout', {
-  products,
-  mode,
-  stripePublicKey,
-  apiUrl,
-  redirectUrl,
-  shipping,
-  taxes,
-  onSubmit,
-  onRemoveProduct
-})
-@endcomponent
-```
-
-**Or using Vue-like PascalCase syntax:**
-
-```stx
-<script>
-export const products = [...]
-export const stripePublicKey = 'pk_test_...'
-export const apiUrl = 'https://api.example.com'
-// ... other exports
-</script>
-
 <Checkout
   :products="products"
-  mode="subscription"
+  :mode="mode"
   :stripePublicKey="stripePublicKey"
   :apiUrl="apiUrl"
-  redirectUrl="/thank-you"
-  :shipping="4500"
-  :taxes="552"
+  :redirectUrl="redirectUrl"
+  :shipping="shipping"
+  :taxes="taxes"
   :onSubmit="onSubmit"
   :onRemoveProduct="onRemoveProduct"
 />
@@ -144,8 +74,8 @@ export const apiUrl = 'https://api.example.com'
 ### PaymentMethods Component
 
 ```stx
-<script>
-export const methods = [
+<script server>
+const methods = [
   {
     id: 1,
     brand: 'Visa',
@@ -162,31 +92,29 @@ export const methods = [
   }
 ]
 
-export const handleDelete = (id) => {
+const handleDelete = (id) => {
   console.log('Delete payment method:', id)
   // Call your API to delete
 }
 
-export const handleMakeDefault = (id) => {
+const handleMakeDefault = (id) => {
   console.log('Make default:', id)
   // Call your API to set as default
 }
 </script>
 
-@component('PaymentMethods', {
-  paymentMethods: methods,
-  onDeletePaymentMethod: handleDelete,
-  onMakeDefault: handleMakeDefault,
-  isLoading: false
-})
-@endcomponent
+<PaymentMethods
+  :paymentMethods="methods"
+  :onDeletePaymentMethod="handleDelete"
+  :onMakeDefault="handleMakeDefault"
+/>
 ```
 
 ### DefaultPaymentMethod Component
 
 ```stx
-<script>
-export const defaultMethod = {
+<script server>
+const defaultMethod = {
   id: 1,
   brand: 'Visa',
   last_four: '4242',
@@ -195,18 +123,14 @@ export const defaultMethod = {
 }
 </script>
 
-@component('DefaultPaymentMethod', {
-  paymentMethod: defaultMethod,
-  isLoading: false
-})
-@endcomponent
+<DefaultPaymentMethod :paymentMethod="defaultMethod" />
 ```
 
 ### SubscriptionCheckout Component
 
 ```stx
-<script>
-export const cartProducts = [
+<script server>
+const cartProducts = [
   {
     id: 1,
     name: 'Premium Subscription',
@@ -216,7 +140,7 @@ export const cartProducts = [
   }
 ]
 
-export const handleCheckoutComplete = (result) => {
+const handleCheckoutComplete = (result) => {
   if (result.success) {
     console.log('Payment successful!')
     // Redirect to success page
@@ -224,15 +148,14 @@ export const handleCheckoutComplete = (result) => {
 }
 </script>
 
-@component('SubscriptionCheckout', {
-  products: cartProducts,
-  stripePublicKey: 'pk_test_...',
-  apiUrl: 'https://api.example.com/payments',
-  shipping: 4500, // $45.00 in cents
-  taxes: 552, // $5.52 in cents
-  onSubmit: handleCheckoutComplete
-})
-@endcomponent
+<SubscriptionCheckout
+  :products="cartProducts"
+  stripePublicKey="pk_test_..."
+  apiUrl="https://api.example.com/payments"
+  :shipping="4500"
+  :taxes="552"
+  :onSubmit="handleCheckoutComplete"
+/>
 ```
 
 ## Props
@@ -362,30 +285,30 @@ Use any future expiration date and any 3-digit CVC.
 ## Example: Full Payment Flow
 
 ```stx
-<script>
+<script server>
 // Fetch payment methods
-export const paymentMethods = await fetch('/api/payment-methods').then(r => r.json())
+const paymentMethods = await fetch('/api/payment-methods').then(r => r.json())
 
 // Fetch default payment method
-export const defaultMethod = paymentMethods.find(m => m.is_default)
+const defaultMethod = paymentMethods.find(m => m.is_default)
 
 // Cart products
-export const cart = [
+const cart = [
   { id: 1, name: 'Product 1', price: 5000, quantity: 2 },
   { id: 2, name: 'Product 2', price: 3000, quantity: 1 },
 ]
 
-export const handleDelete = async (id) => {
+const handleDelete = async (id) => {
   await fetch(`/api/payment-methods/${id}`, { method: 'DELETE' })
   // Refetch payment methods
 }
 
-export const handleMakeDefault = async (id) => {
+const handleMakeDefault = async (id) => {
   await fetch(`/api/payment-methods/${id}/default`, { method: 'POST' })
   // Refetch payment methods
 }
 
-export const handleCheckout = (result) => {
+const handleCheckout = (result) => {
   if (result.success) {
     window.location.href = '/thank-you'
   }
@@ -393,29 +316,24 @@ export const handleCheckout = (result) => {
 </script>
 
 <!-- Default Payment Method -->
-@component('DefaultPaymentMethod', {
-  paymentMethod: defaultMethod
-})
-@endcomponent
+<DefaultPaymentMethod :paymentMethod="defaultMethod" />
 
 <!-- All Payment Methods -->
-@component('PaymentMethods', {
-  paymentMethods: paymentMethods,
-  onDeletePaymentMethod: handleDelete,
-  onMakeDefault: handleMakeDefault
-})
-@endcomponent
+<PaymentMethods
+  :paymentMethods="paymentMethods"
+  :onDeletePaymentMethod="handleDelete"
+  :onMakeDefault="handleMakeDefault"
+/>
 
 <!-- Checkout Form -->
-@component('SubscriptionCheckout', {
-  products: cart,
-  stripePublicKey: 'pk_test_...',
-  apiUrl: 'https://api.example.com/payments',
-  shipping: 1000,
-  taxes: 800,
-  onSubmit: handleCheckout
-})
-@endcomponent
+<SubscriptionCheckout
+  :products="cart"
+  stripePublicKey="pk_test_..."
+  apiUrl="https://api.example.com/payments"
+  :shipping="1000"
+  :taxes="800"
+  :onSubmit="handleCheckout"
+/>
 ```
 
 ## Security Notes

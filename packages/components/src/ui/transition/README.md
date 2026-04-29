@@ -11,15 +11,15 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-<script>
-export let isOpen = true
+<script server>
+let isOpen = true
 </script>
 
-@component('Transition', { show: isOpen })
+<Transition :show="isOpen">
   <div class="p-4 bg-white rounded-lg shadow-lg">
     Content with fade transition
   </div>
-@endcomponent
+</Transition>
 ```
 
 ## Features

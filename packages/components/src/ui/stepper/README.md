@@ -11,19 +11,19 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-<script>
-export let currentStep = 0
+<script server>
+let currentStep = 0
 
-export function handleStepClick(step) {
+function handleStepClick(step) {
   currentStep = step
 }
 </script>
 
-@component('Stepper', { currentStep })
-  @component('StepperStep', { stepNumber: 0, currentStep, label: 'Account', onClick: handleStepClick })
-  @component('StepperStep', { stepNumber: 1, currentStep, label: 'Profile', onClick: handleStepClick })
-  @component('StepperStep', { stepNumber: 2, currentStep, label: 'Confirmation', onClick: handleStepClick })
-@endcomponent
+<Stepper :currentStep="currentStep">
+  <StepperStep :stepNumber="0" :currentStep="currentStep" label="Account" :onClick="handleStepClick" />
+  <StepperStep :stepNumber="1" :currentStep="currentStep" label="Profile" :onClick="handleStepClick" />
+  <StepperStep :stepNumber="2" :currentStep="currentStep" label="Confirmation" :onClick="handleStepClick" />
+</Stepper>
 ```
 
 ## Features

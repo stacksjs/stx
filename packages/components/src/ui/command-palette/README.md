@@ -11,27 +11,27 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-<script>
-export let open = false
-export let query = ''
+<script server>
+let open = false
+let query = ''
 
 const commands = [
   { name: 'Create new file', action: () => console.log('create') },
   { name: 'Open settings', action: () => console.log('settings') }
 ]
 
-export const filtered = query === ''
+const filtered = query === ''
   ? commands
   : commands.filter(cmd => cmd.name.toLowerCase().includes(query.toLowerCase()))
 </script>
 
-@component('CommandPalette', { open, onClose: () => open = false, query, onQueryChange: (q) => query = q })
+<CommandPalette :open="open" :onClose="() => open = false" :query="query" :onQueryChange="(q) => query = q">
   @foreach(command in filtered)
-    @component('CommandPaletteItem', { onClick: command.action })
+    <CommandPaletteItem :onClick="command.action">
       {{ command.name }}
-    @endcomponent
+    </CommandPaletteItem>
   @endforeach
-@endcomponent
+</CommandPalette>
 ```
 
 ## Features

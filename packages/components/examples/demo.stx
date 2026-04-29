@@ -8,18 +8,16 @@
 <body class="min-h-screen bg-neutral-50 dark:bg-neutral-900">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Hero Section -->
-    @component('Hero', {
-      title: '@stacksjs/components',
-      description: 'A modern component library built with STX, headwind, and TypeScript',
-      githubUrl: 'https://github.com/stacksjs/stx/tree/main/packages/components'
-    })
+    <Hero
+      title="@stacksjs/components"
+      description="A modern component library built with STX, headwind, and TypeScript"
+      githubUrl="https://github.com/stacksjs/stx/tree/main/packages/components"
+    >
       <!-- Custom demo in hero slot -->
       <div class="flex gap-2">
-        @component('Button', { variant: 'primary', size: 'md' })
-          Get Started
-        @endcomponent
+        <Button variant="primary" size="md">Get Started</Button>
       </div>
-    @endcomponent
+    </Hero>
 
     <!-- Main Content -->
     <main class="mt-16 space-y-16">
@@ -32,25 +30,15 @@
           <div>
             <h3 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-200">Variants</h3>
             <div class="flex flex-wrap gap-4">
-              @component('Button', { variant: 'primary' })
-                Primary
-              @endcomponent
+              <Button variant="primary">Primary</Button>
 
-              @component('Button', { variant: 'secondary' })
-                Secondary
-              @endcomponent
+              <Button variant="secondary">Secondary</Button>
 
-              @component('Button', { variant: 'outline' })
-                Outline
-              @endcomponent
+              <Button variant="outline">Outline</Button>
 
-              @component('Button', { variant: 'ghost' })
-                Ghost
-              @endcomponent
+              <Button variant="ghost">Ghost</Button>
 
-              @component('Button', { variant: 'danger' })
-                Danger
-              @endcomponent
+              <Button variant="danger">Danger</Button>
             </div>
           </div>
 
@@ -58,17 +46,11 @@
           <div>
             <h3 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-200">Sizes</h3>
             <div class="flex items-center flex-wrap gap-4">
-              @component('Button', { variant: 'primary', size: 'sm' })
-                Small
-              @endcomponent
+              <Button variant="primary" size="sm">Small</Button>
 
-              @component('Button', { variant: 'primary', size: 'md' })
-                Medium
-              @endcomponent
+              <Button variant="primary" size="md">Medium</Button>
 
-              @component('Button', { variant: 'primary', size: 'lg' })
-                Large
-              @endcomponent
+              <Button variant="primary" size="lg">Large</Button>
             </div>
           </div>
 
@@ -76,9 +58,7 @@
           <div>
             <h3 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-200">Disabled State</h3>
             <div class="flex flex-wrap gap-4">
-              @component('Button', { variant: 'primary', disabled: true })
-                Disabled
-              @endcomponent
+              <Button variant="primary" disabled>Disabled</Button>
             </div>
           </div>
         </div>
@@ -93,8 +73,8 @@
           <div>
             <h3 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-200">Basic Switch</h3>
             <div class="space-y-4">
-              @component('Switch', { checked: true, label: 'Enable notifications' })
-              @component('Switch', { checked: false, label: 'Email updates' })
+              <Switch checked label="Enable notifications" />
+              <Switch label="Email updates" />
             </div>
           </div>
 
@@ -102,9 +82,9 @@
           <div>
             <h3 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-200">Sizes</h3>
             <div class="space-y-4">
-              @component('Switch', { checked: true, size: 'sm', label: 'Small' })
-              @component('Switch', { checked: true, size: 'md', label: 'Medium' })
-              @component('Switch', { checked: true, size: 'lg', label: 'Large' })
+              <Switch checked size="sm" label="Small" />
+              <Switch checked size="md" label="Medium" />
+              <Switch checked size="lg" label="Large" />
             </div>
           </div>
 
@@ -112,8 +92,8 @@
           <div>
             <h3 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-200">Disabled State</h3>
             <div class="space-y-4">
-              @component('Switch', { checked: true, disabled: true, label: 'Cannot toggle (enabled)' })
-              @component('Switch', { checked: false, disabled: true, label: 'Cannot toggle (disabled)' })
+              <Switch checked disabled label="Cannot toggle (enabled)" />
+              <Switch disabled label="Cannot toggle (disabled)" />
             </div>
           </div>
         </div>
@@ -126,8 +106,8 @@
         <div class="space-y-6">
           <div>
             <h3 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-200">TypeScript Example</h3>
-            @component('CodeBlock', {
-              code: `import { Button, Switch } from '@stacksjs/components'
+            <CodeBlock
+              :code="`import { Button, Switch } from '@stacksjs/components'
 
 function App() {
   const handleClick = () => {
@@ -136,20 +116,20 @@ function App() {
 
   return (
     <div>
-      <Button variant="primary" onClick={handleClick}>
+      <Button variant='primary' onClick={handleClick}>
         Click me
       </Button>
     </div>
   )
-}`,
-              language: 'typescript',
-              copyable: true
-            })
+}`"
+              language="typescript"
+              copyable
+            />
           </div>
 
           <div>
             <h3 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-200">Installation</h3>
-            @component('Installation', { packageName: '@stacksjs/components' })
+            <Installation packageName="@stacksjs/components" />
           </div>
         </div>
       </section>
@@ -157,12 +137,12 @@ function App() {
 
     <!-- Footer -->
     <div class="mt-24">
-      @component('Footer', {
-        author: '@chrisbbreuer',
-        authorUrl: 'https://github.com/chrisbbreuer',
-        project: '@stacksjs',
-        projectUrl: 'https://github.com/stacksjs/stx'
-      })
+      <Footer
+        author="@chrisbbreuer"
+        authorUrl="https://github.com/chrisbbreuer"
+        project="@stacksjs"
+        projectUrl="https://github.com/stacksjs/stx"
+      />
     </div>
   </div>
 </body>

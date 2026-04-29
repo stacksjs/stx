@@ -13,79 +13,73 @@ bun add @stacksjs/components
 ### Basic Image
 
 ```stx
-@component('Image', {
-  src: '/path/to/image.jpg',
-  alt: 'Description of image',
-  width: 400,
-  height: 300
-})
-@endcomponent
+<Image
+  src="/path/to/image.jpg"
+  alt="Description of image"
+  :width="400"
+  :height="300"
+/>
 ```
 
 ### Lazy Loading (default)
 
 ```stx
-@component('Image', {
-  src: '/large-image.jpg',
-  alt: 'Large image',
-  lazy: true,
-  placeholder: '/thumbnail.jpg'
-})
-@endcomponent
+<Image
+  src="/large-image.jpg"
+  alt="Large image"
+  lazy
+  placeholder="/thumbnail.jpg"
+/>
 ```
 
 ### Aspect Ratio
 
 ```stx
-@component('Image', {
-  src: '/hero.jpg',
-  alt: 'Hero image',
-  aspectRatio: 16/9,
-  objectFit: 'cover'
-})
-@endcomponent
+<Image
+  src="/hero.jpg"
+  alt="Hero image"
+  :aspectRatio="16/9"
+  objectFit="cover"
+/>
 ```
 
 ### Rounded Images
 
 ```stx
 <!-- Rounded corners -->
-@component('Image', {
-  src: '/avatar.jpg',
-  alt: 'Avatar',
-  rounded: true
-})
-@endcomponent
+<Image
+  src="/avatar.jpg"
+  alt="Avatar"
+  rounded
+/>
 
 <!-- Circular -->
-@component('Image', {
-  src: '/profile.jpg',
-  alt: 'Profile',
-  rounded: 'full'
-})
-@endcomponent
+<Image
+  src="/profile.jpg"
+  alt="Profile"
+  rounded="full"
+/>
 ```
 
 ### With Callbacks
 
 ```stx
-<script>
-export const handleLoad = () => {
+<script server>
+const handleLoad = () => {
   console.log('Image loaded!')
 }
 
-export const handleError = () => {
+const handleError = () => {
   console.error('Failed to load image')
 }
 </script>
 
-@component('Image', {
-  src: '/photo.jpg',
-  alt: 'Photo',
-  onLoad: handleLoad,
-  onError: handleError
-})
-@endcomponent
+<Image
+  src="/photo.jpg"
+  alt="Photo"
+  :onLoad="handleLoad"
+  :onError="handleError"
+/>
 ```
 
 ## Props
@@ -157,15 +151,14 @@ export const handleError = () => {
 ```stx
 <div class="grid grid-cols-3 gap-4">
   @foreach(image in images)
-    @component('Image', {
-      src: image.url,
-      alt: image.description,
-      aspectRatio: 1,
-      objectFit: 'cover',
-      rounded: true,
-      lazy: true
-    })
-    @endcomponent
+    <Image
+      :src="image.url"
+      :alt="image.description"
+      :aspectRatio="1"
+      objectFit="cover"
+      rounded
+      lazy
+    />
   @endforeach
 </div>
 ```

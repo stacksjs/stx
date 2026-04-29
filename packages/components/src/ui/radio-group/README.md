@@ -11,27 +11,25 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-<script>
-export let selected = 'option1'
+<script server>
+let selected = 'option1'
 
-export function handleChange(value) {
+function handleChange(value) {
   selected = value
 }
 </script>
 
-@component('RadioGroup', { value: selected, onChange: handleChange })
-  @component('RadioGroupLabel')
-    Choose an option
-  @endcomponent
+<RadioGroup :value="selected" :onChange="handleChange">
+  <RadioGroupLabel>Choose an option</RadioGroupLabel>
 
-  @component('RadioGroupOption', { value: 'option1', currentValue: selected, onChange: handleChange })
+  <RadioGroupOption value="option1" :currentValue="selected" :onChange="handleChange">
     Option 1
-  @endcomponent
+  </RadioGroupOption>
 
-  @component('RadioGroupOption', { value: 'option2', currentValue: selected, onChange: handleChange })
+  <RadioGroupOption value="option2" :currentValue="selected" :onChange="handleChange">
     Option 2
-  @endcomponent
-@endcomponent
+  </RadioGroupOption>
+</RadioGroup>
 ```
 
 ## Props
@@ -71,44 +69,40 @@ export function handleChange(value) {
 ### Server Plans
 
 ```stx
-<script>
-export const plans = [
+<script server>
+const plans = [
   { name: 'Startup', ram: '12GB', cpus: '6 CPUs', disk: '160 GB SSD' },
   { name: 'Business', ram: '16GB', cpus: '8 CPUs', disk: '512 GB SSD' },
   { name: 'Enterprise', ram: '32GB', cpus: '12 CPUs', disk: '1024 GB SSD' }
 ]
 
-export let selected = plans[0]
+let selected = plans[0]
 
-export function handleChange(plan) {
+function handleChange(plan) {
   selected = plan
 }
 </script>
 
-@component('RadioGroup', { value: selected, onChange: handleChange })
-  @component('RadioGroupLabel', { className: 'sr-only' })
-    Server size
-  @endcomponent
+<RadioGroup :value="selected" :onChange="handleChange">
+  <RadioGroupLabel className="sr-only">Server size</RadioGroupLabel>
 
   <div class="space-y-2">
     @foreach(plan in plans)
-      @component('RadioGroupOption', {
-        value: plan,
-        currentValue: selected,
-        onChange: handleChange
-      })
+      <RadioGroupOption
+        :value="plan"
+        :currentValue="selected"
+        :onChange="handleChange"
+      >
         <div class="w-full flex items-center justify-between">
           <div class="flex items-center">
             <div class="text-sm">
-              @component('RadioGroupLabel', {
-                className: 'font-medium'
-              })
+              <RadioGroupLabel className="font-medium">
                 {{ plan.name }}
-              @endcomponent
+              </RadioGroupLabel>
 
-              @component('RadioGroupDescription')
+              <RadioGroupDescription>
                 {{ plan.ram }}/{{ plan.cpus }} · {{ plan.disk }}
-              @endcomponent
+              </RadioGroupDescription>
             </div>
           </div>
 
@@ -119,18 +113,18 @@ export function handleChange(plan) {
             </svg>
           @endif
         </div>
-      @endcomponent
+      </RadioGroupOption>
     @endforeach
   </div>
-@endcomponent
+</RadioGroup>
 ```
 
 ### With Disabled Option
 
 ```stx
-@component('RadioGroupOption', { value: 'disabled', disabled: true })
+<RadioGroupOption value="disabled" disabled>
   This option is disabled
-@endcomponent
+</RadioGroupOption>
 ```
 
 ## Features

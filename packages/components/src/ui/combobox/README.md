@@ -11,61 +11,57 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-<script>
-export const people = [
+<script server>
+const people = [
   { id: 1, name: 'Wade Cooper' },
   { id: 2, name: 'Arlene Mccoy' },
   { id: 3, name: 'Devon Webb' }
 ]
 
-export let selected = people[0]
-export let query = ''
+let selected = people[0]
+let query = ''
 
-export const filtered = query === ''
+const filtered = query === ''
   ? people
   : people.filter(person =>
       person.name.toLowerCase().includes(query.toLowerCase())
     )
 
-export function handleChange(person) {
+function handleChange(person) {
   selected = person
   query = ''
 }
 
-export function handleQueryChange(value) {
+function handleQueryChange(value) {
   query = value
 }
 </script>
 
-@component('Combobox', { value: selected, onChange: handleChange })
+<Combobox :value="selected" :onChange="handleChange">
   <div class="relative mt-1">
-    @component('ComboboxInput', {
-      displayValue: selected.name,
-      onChange: handleQueryChange,
-      placeholder: 'Search people...'
-    })
+    <ComboboxInput
+      :displayValue="selected.name"
+      :onChange="handleQueryChange"
+      placeholder="Search people..."
+    />
 
-    @component('ComboboxButton')
+    <ComboboxButton />
 
-    @component('ComboboxOptions')
+    <ComboboxOptions>
       @if(filtered.length === 0 && query !== '')
         <div class="relative cursor-default select-none py-2 px-4 text-neutral-700 dark:text-neutral-300">
           Nothing found.
         </div>
       @else
         @foreach(person in filtered)
-          @component('ComboboxOption', {
-            value: person,
-            currentValue: selected,
-            onChange: handleChange
-          })
+          <ComboboxOption :value="person" :currentValue="selected" :onChange="handleChange">
             {{ person.name }}
-          @endcomponent
+          </ComboboxOption>
         @endforeach
       @endif
-    @endcomponent
+    </ComboboxOptions>
   </div>
-@endcomponent
+</Combobox>
 ```
 
 ## Props
@@ -115,30 +111,30 @@ export function handleQueryChange(value) {
 ### With Empty State
 
 ```stx
-@component('ComboboxOptions')
+<ComboboxOptions>
   @if(filtered.length === 0)
     <div class="py-2 px-4 text-neutral-500 dark:text-neutral-400">
       No results found for "{{ query }}"
     </div>
   @else
     @foreach(item in filtered)
-      @component('ComboboxOption', { value: item })
+      <ComboboxOption :value="item">
         {{ item.name }}
-      @endcomponent
+      </ComboboxOption>
     @endforeach
   @endif
-@endcomponent
+</ComboboxOptions>
 ```
 
 ### With Avatars
 
 ```stx
-@component('ComboboxOption', { value: person })
+<ComboboxOption :value="person">
   <div class="flex items-center gap-2">
     <img src="{{ person.avatar }}" alt="" class="h-6 w-6 rounded-full" />
     <span>{{ person.name }}</span>
   </div>
-@endcomponent
+</ComboboxOption>
 ```
 
 ## Features

@@ -11,9 +11,7 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-@component('Button', { variant: 'primary', size: 'md' })
-  Click me
-@endcomponent
+<Button variant="primary" size="md">Click me</Button>
 ```
 
 ## Props
@@ -32,60 +30,42 @@ bun add @stacksjs/components
 ### Variants
 
 ```stx
-@component('Button', { variant: 'primary' })
-  Primary Button
-@endcomponent
+<Button variant="primary">Primary Button</Button>
 
-@component('Button', { variant: 'secondary' })
-  Secondary Button
-@endcomponent
+<Button variant="secondary">Secondary Button</Button>
 
-@component('Button', { variant: 'outline' })
-  Outline Button
-@endcomponent
+<Button variant="outline">Outline Button</Button>
 
-@component('Button', { variant: 'ghost' })
-  Ghost Button
-@endcomponent
+<Button variant="ghost">Ghost Button</Button>
 
-@component('Button', { variant: 'danger' })
-  Danger Button
-@endcomponent
+<Button variant="danger">Danger Button</Button>
 ```
 
 ### Sizes
 
 ```stx
-@component('Button', { size: 'sm' })
-  Small Button
-@endcomponent
+<Button size="sm">Small Button</Button>
 
-@component('Button', { size: 'md' })
-  Medium Button
-@endcomponent
+<Button size="md">Medium Button</Button>
 
-@component('Button', { size: 'lg' })
-  Large Button
-@endcomponent
+<Button size="lg">Large Button</Button>
 ```
 
 ### Disabled State
 
 ```stx
-@component('Button', { disabled: true })
-  Disabled Button
-@endcomponent
+<Button disabled>Disabled Button</Button>
 ```
 
 ### With Icon
 
 ```stx
-@component('Button', { variant: 'primary' })
+<Button variant="primary">
   <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
   </svg>
   Add Item
-@endcomponent
+</Button>
 ```
 
 ## Features

@@ -11,8 +11,8 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-<script>
-export let drawerOpen = false
+<script server>
+let drawerOpen = false
 </script>
 
 <button
@@ -22,16 +22,16 @@ export let drawerOpen = false
   Open drawer
 </button>
 
-@component('Drawer', {
-  open: drawerOpen,
-  onClose: () => drawerOpen = false,
-  position: 'right',
-  title: 'Panel title'
-})
+<Drawer
+  :open="drawerOpen"
+  :onClose="() => drawerOpen = false"
+  position="right"
+  title="Panel title"
+>
   <p class="text-sm text-gray-500 dark:text-gray-400">
     Your drawer content goes here.
   </p>
-@endcomponent
+</Drawer>
 ```
 
 ## Props
@@ -48,42 +48,22 @@ export let drawerOpen = false
 
 ### Right (default)
 ```stx
-@component('Drawer', {
-  open: true,
-  position: 'right'
-})
-  Content
-@endcomponent
+<Drawer open position="right">Content</Drawer>
 ```
 
 ### Left
 ```stx
-@component('Drawer', {
-  open: true,
-  position: 'left'
-})
-  Content
-@endcomponent
+<Drawer open position="left">Content</Drawer>
 ```
 
 ### Top
 ```stx
-@component('Drawer', {
-  open: true,
-  position: 'top'
-})
-  Content
-@endcomponent
+<Drawer open position="top">Content</Drawer>
 ```
 
 ### Bottom
 ```stx
-@component('Drawer', {
-  open: true,
-  position: 'bottom'
-})
-  Content
-@endcomponent
+<Drawer open position="bottom">Content</Drawer>
 ```
 
 ## Features

@@ -11,7 +11,7 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-@component('Switch', { checked: true, label: 'Enable notifications' })
+<Switch checked label="Enable notifications" />
 ```
 
 ## Props
@@ -30,60 +30,44 @@ bun add @stacksjs/components
 ### Basic Switch
 
 ```stx
-<script>
+<script server>
 let enabled = false
 
 function handleChange(checked) {
   enabled = checked
   console.log('Switch is now:', checked)
 }
-
-module.exports = { enabled, handleChange }
 </script>
 
-@component('Switch', {
-  checked: enabled,
-  onChange: handleChange
-})
+<Switch :checked="enabled" :onChange="handleChange" />
 ```
 
 ### With Label
 
 ```stx
-@component('Switch', {
-  checked: true,
-  label: 'Enable notifications',
-  onChange: handleChange
-})
+<Switch checked label="Enable notifications" :onChange="handleChange" />
 ```
 
 ### Sizes
 
 ```stx
-@component('Switch', { size: 'sm', checked: true })
+<Switch size="sm" checked />
 
-@component('Switch', { size: 'md', checked: true })
+<Switch size="md" checked />
 
-@component('Switch', { size: 'lg', checked: true })
+<Switch size="lg" checked />
 ```
 
 ### Disabled State
 
 ```stx
-@component('Switch', {
-  checked: true,
-  disabled: true,
-  label: 'Cannot toggle'
-})
+<Switch checked disabled label="Cannot toggle" />
 ```
 
 ### Custom Styling
 
 ```stx
-@component('Switch', {
-  checked: true,
-  className: 'my-4'
-})
+<Switch checked className="my-4" />
 ```
 
 ## Accessibility
@@ -126,8 +110,5 @@ To customize colors, you can:
 
 Example:
 ```stx
-@component('Switch', {
-  checked: true,
-  className: '!bg-green-500'
-})
+<Switch checked className="!bg-green-500" />
 ```

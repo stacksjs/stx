@@ -11,14 +11,13 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-@component('Video', {
-  src: '/videos/demo.mp4',
-  poster: '/images/video-thumbnail.jpg',
-  title: 'Product Demo',
-  aspectRatio: '16/9',
-  controls: true
-})
-@endcomponent
+<Video
+  src="/videos/demo.mp4"
+  poster="/images/video-thumbnail.jpg"
+  title="Product Demo"
+  aspectRatio="16/9"
+  controls
+/>
 ```
 
 ## Props

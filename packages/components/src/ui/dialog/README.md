@@ -11,37 +11,33 @@ bun add @stacksjs/components
 ## Usage
 
 ```stx
-<script>
-export let isOpen = false
+<script server>
+let isOpen = false
 
-export function closeModal() {
+function closeModal() {
   isOpen = false
 }
 
-export function openModal() {
+function openModal() {
   isOpen = true
 }
 </script>
 
-@component('Dialog', { open: isOpen, onClose: closeModal })
-  @component('DialogBackdrop')
+<Dialog :open="isOpen" :onClose="closeModal">
+  <DialogBackdrop />
 
-  @component('DialogPanel', { className: 'max-w-md' })
-    @component('DialogTitle')
-      Payment successful
-    @endcomponent
+  <DialogPanel className="max-w-md">
+    <DialogTitle>Payment successful</DialogTitle>
 
-    @component('DialogDescription')
+    <DialogDescription>
       Your payment has been successfully submitted.
-    @endcomponent
+    </DialogDescription>
 
     <div class="mt-4">
-      @component('Button', { onClick: closeModal })
-        Got it, thanks!
-      @endcomponent
+      <Button :onClick="closeModal">Got it, thanks!</Button>
     </div>
-  @endcomponent
-@endcomponent
+  </DialogPanel>
+</Dialog>
 ```
 
 ## Props
@@ -83,42 +79,34 @@ export function openModal() {
 ### Confirmation Dialog
 
 ```stx
-@component('Dialog', { open: isOpen, onClose: closeModal })
-  @component('DialogBackdrop')
+<Dialog :open="isOpen" :onClose="closeModal">
+  <DialogBackdrop />
 
-  @component('DialogPanel', { className: 'max-w-md' })
-    @component('DialogTitle')
-      Delete account
-    @endcomponent
+  <DialogPanel className="max-w-md">
+    <DialogTitle>Delete account</DialogTitle>
 
-    @component('DialogDescription')
+    <DialogDescription>
       Are you sure you want to delete your account? This action cannot be undone.
-    @endcomponent
+    </DialogDescription>
 
     <div class="mt-4 flex gap-2">
-      @component('Button', { variant: 'danger', onClick: handleDelete })
-        Delete
-      @endcomponent
-      @component('Button', { variant: 'secondary', onClick: closeModal })
-        Cancel
-      @endcomponent
+      <Button variant="danger" :onClick="handleDelete">Delete</Button>
+      <Button variant="secondary" :onClick="closeModal">Cancel</Button>
     </div>
-  @endcomponent
-@endcomponent
+  </DialogPanel>
+</Dialog>
 ```
 
 ### Large Dialog
 
 ```stx
-@component('DialogPanel', { className: 'max-w-4xl' })
-  @component('DialogTitle')
-    Terms and Conditions
-  @endcomponent
+<DialogPanel className="max-w-4xl">
+  <DialogTitle>Terms and Conditions</DialogTitle>
 
   <div class="mt-4 max-h-96 overflow-y-auto">
     <!-- Long content -->
   </div>
-@endcomponent
+</DialogPanel>
 ```
 
 ## Features

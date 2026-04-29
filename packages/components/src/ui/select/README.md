@@ -13,110 +13,87 @@ bun add @stacksjs/components
 ### Basic Select
 
 ```stx
-<script>
-export const options = [
+<script server>
+const options = [
   { value: 'option1', label: 'Option 1' },
   { value: 'option2', label: 'Option 2' },
   { value: 'option3', label: 'Option 3' },
 ]
 
-export const selected = 'option1'
+const selected = 'option1'
 
-export const handleChange = (value) => {
+const handleChange = (value) => {
   console.log('Selected:', value)
   selected = value
 }
 </script>
 
-@component('Select', {
-  value: selected,
-  onChange: handleChange,
-  options: options,
-  placeholder: 'Choose an option'
-})
-@endcomponent
+<Select
+  :value="selected"
+  :onChange="handleChange"
+  :options="options"
+  placeholder="Choose an option"
+/>
 ```
 
 ### With Label and Helper Text
 
 ```stx
-@component('Select', {
-  label: 'Country',
-  helperText: 'Select your country of residence',
-  value: country,
-  onChange: (val) => country = val,
-  options: countries,
-  required: true
-})
-@endcomponent
+<Select
+  label="Country"
+  helperText="Select your country of residence"
+  :value="country"
+  :onChange="(val) => country = val"
+  :options="countries"
+  required
+/>
 ```
 
 ### With Error State
 
 ```stx
-@component('Select', {
-  label: 'Category',
-  value: category,
-  onChange: (val) => category = val,
-  options: categories,
-  error: true,
-  helperText: 'Please select a valid category',
-  required: true
-})
-@endcomponent
+<Select
+  label="Category"
+  :value="category"
+  :onChange="(val) => category = val"
+  :options="categories"
+  error
+  helperText="Please select a valid category"
+  required
+/>
 ```
 
 ### Different Sizes
 
 ```stx
 <!-- Small -->
-@component('Select', {
-  size: 'sm',
-  options: options
-})
-@endcomponent
+<Select size="sm" :options="options" />
 
 <!-- Medium (default) -->
-@component('Select', {
-  size: 'md',
-  options: options
-})
-@endcomponent
+<Select size="md" :options="options" />
 
 <!-- Large -->
-@component('Select', {
-  size: 'lg',
-  options: options
-})
-@endcomponent
+<Select size="lg" :options="options" />
 ```
 
 ### Disabled State
 
 ```stx
-@component('Select', {
-  disabled: true,
-  value: 'locked',
-  options: options
-})
-@endcomponent
+<Select disabled value="locked" :options="options" />
 ```
 
 ### With Disabled Options
 
 ```stx
-<script>
-export const options = [
+<script server>
+const options = [
   { value: '1', label: 'Available Option' },
   { value: '2', label: 'Disabled Option', disabled: true },
   { value: '3', label: 'Another Available' },
 ]
 </script>
 
-@component('Select', {
-  options: options
-})
-@endcomponent
+<Select :options="options" />
 ```
 
 ## Props
@@ -170,8 +147,8 @@ interface SelectOption {
 ## Example: Form Select
 
 ```stx
-<script>
-export const countries = [
+<script server>
+const countries = [
   { value: 'us', label: 'United States' },
   { value: 'ca', label: 'Canada' },
   { value: 'mx', label: 'Mexico' },
@@ -179,26 +156,25 @@ export const countries = [
   { value: 'de', label: 'Germany' },
 ]
 
-export let selectedCountry = ''
-export let hasError = false
+let selectedCountry = ''
+let hasError = false
 
-export const handleCountryChange = (value) => {
+const handleCountryChange = (value) => {
   selectedCountry = value
   hasError = !value
 }
 </script>
 
 <form>
-  @component('Select', {
-    label: 'Country',
-    value: selectedCountry,
-    onChange: handleCountryChange,
-    options: countries,
-    placeholder: 'Select your country',
-    required: true,
-    error: hasError,
-    helperText: hasError ? 'Country is required' : 'Choose your country'
-  })
-  @endcomponent
+  <Select
+    label="Country"
+    :value="selectedCountry"
+    :onChange="handleCountryChange"
+    :options="countries"
+    placeholder="Select your country"
+    required
+    :error="hasError"
+    :helperText="hasError ? 'Country is required' : 'Choose your country'"
+  />
 </form>
 ```

@@ -24,64 +24,61 @@ bun add @stacksjs/components
 ### Login Component
 
 ```stx
-<script>
-export const handleLogin = (data) => {
+<script server>
+const handleLogin = (data) => {
   console.log('Login:', data.email, data.password)
 }
 </script>
 
-@component('Login', {
-  showLogo: true,
-  headingText: 'Sign in to your account',
-  showSocialLogin: true,
-  showRememberMe: true,
-  showForgotPassword: true,
-  showSignup: true,
-  signupText: 'Start a 14 day free trial',
-  onSubmit: handleLogin
-})
-@endcomponent
+<Login
+  showLogo
+  headingText="Sign in to your account"
+  showSocialLogin
+  showRememberMe
+  showForgotPassword
+  showSignup
+  signupText="Start a 14 day free trial"
+  :onSubmit="handleLogin"
+/>
 ```
 
 ### Signup Component
 
 ```stx
-<script>
-export const handleSignup = (data) => {
+<script server>
+const handleSignup = (data) => {
   console.log('Signup:', data.name, data.email, data.password)
 }
 </script>
 
-@component('Signup', {
-  headingText: 'Sign up for Stacks',
-  showSocialSignup: true,
-  onSubmit: handleSignup
-})
-@endcomponent
+<Signup
+  headingText="Sign up for Stacks"
+  showSocialSignup
+  :onSubmit="handleSignup"
+/>
 ```
 
 ### TwoFactorChallenge Component
 
 ```stx
-<script>
-export const handleVerify = (code) => {
+<script server>
+const handleVerify = (code) => {
   console.log('2FA Code:', code)
 }
 
-export const handleRecoveryCode = () => {
+const handleRecoveryCode = () => {
   console.log('Using recovery code')
 }
 </script>
 
-@component('TwoFactorChallenge', {
-  headingText: 'Two Factor Authentication',
-  labelText: 'Authentication code',
-  instructionText: 'Open your 2FA app to view your authentication code.',
-  codeLength: 6,
-  onSubmit: handleVerify,
-  onUseRecoveryCode: handleRecoveryCode
-})
-@endcomponent
+<TwoFactorChallenge
+  headingText="Two Factor Authentication"
+  labelText="Authentication code"
+  instructionText="Open your 2FA app to view your authentication code."
+  :codeLength="6"
+  :onSubmit="handleVerify"
+  :onUseRecoveryCode="handleRecoveryCode"
+/>
 ```
 
 ## Props
