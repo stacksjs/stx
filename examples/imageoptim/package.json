@@ -1,0 +1,11 @@
+{
+  "name": "stx-imageoptim-example",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "description": "ImageOptim-style native app built with stx + Craft + our own image libs",
+  "scripts": {
+    "dev": "../../bin/stx examples/imageoptim",
+    "dev:native": "../../bin/stx examples/imageoptim --native"
+  }
+}

@@ -1,0 +1,15 @@
+<div
+  data-drop-zone
+  class="absolute inset-0 m-6 flex items-center justify-center rounded-2xl border-[3px] border-dashed border-neutral-400/60 transition-colors duration-150"
+>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.5"
+    class="h-32 w-32 text-neutral-400/70 pointer-events-none select-none"
+    aria-hidden="true"
+  >
+    <path d="M12 4 L12 17 M5 11 L12 18 L19 11" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+</div>

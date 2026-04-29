@@ -1,0 +1,11 @@
+<template id="file-row-template">
+  <div class="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-b border-neutral-200 px-4 py-2 text-[13px]">
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="text-neutral-400 shrink-0" data-status>·</span>
+      <span class="truncate text-neutral-800" data-name></span>
+    </div>
+    <span class="tabular-nums text-neutral-500" data-before></span>
+    <span class="tabular-nums text-neutral-700" data-after>—</span>
+    <span class="tabular-nums font-medium text-emerald-600" data-savings>—</span>
+  </div>
+</template>
