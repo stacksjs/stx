@@ -12,7 +12,7 @@
  * browser builds.
  */
 
-import { requireBridge } from './_bridge'
+import { onCraftEvent, requireBridge } from './_bridge'
 
 export interface FileStat {
   /** True if the path points at a regular file. */
@@ -25,6 +25,15 @@ export interface FileStat {
   size: number
   /** Last-modified time in epoch ms. */
   modifiedAt: number
+}
+
+export interface FSChangeEvent {
+  /** The watcher id passed to `watch()`. */
+  id: string
+  /** The path that triggered the event. */
+  path: string
+  /** Kind of change: created / modified / deleted / renamed / unknown. */
+  kind?: 'created' | 'modified' | 'deleted' | 'renamed' | 'unknown'
 }
 
 export interface DirEntry {
@@ -89,6 +98,13 @@ export interface FS {
   watch: (path: string, id?: string) => Promise<void>
   /** Stop watching. */
   unwatch: (id: string) => Promise<void>
+  /**
+   * Subscribe to file-system change events. The native watcher fires
+   * for every modification (creation, deletion, rename, content
+   * change) under any path passed to `watch()`. Subscribers get the
+   * event detail; payload shape depends on the platform watcher.
+   */
+  onChange: (cb: (event: FSChangeEvent) => void) => () => void
   /** Path to the user's home directory. */
   homeDir: () => Promise<string>
   /** Path to the system's temp directory. */
@@ -126,7 +142,27 @@ export const fs: FS = {
     // bridge can detect. Apps that need true binary today should chunk
     // smaller payloads or use shell + tempfile flows.
     const b64 = bytesToBase64(data)
-    await requireBridge('fs').writeFile(path, b64)
+    // Pass the base64 marker so a future bridge_fs.writeFile can decode
+    // before writing; current bridge ignores extra fields and writes
+    // the literal base64 to disk (consistent with readBuffer's mirror
+    // path that re-decodes on read). When the native gains a
+    // `writeFileBytes` action this becomes a single-hop call.
+    const bridge = requireBridge('fs')
+    if (typeof bridge.writeFileBytes === 'function') {
+      await bridge.writeFileBytes(path, b64)
+    }
+    else {
+      await bridge.writeFile(path, b64)
+    }
+  },
+
+  async copy(from, to) {
+    if (from === to) throw new Error('fs.copy: source and destination must differ')
+    await requireBridge('fs').copy(from, to)
+  },
+  async move(from, to) {
+    if (from === to) throw new Error('fs.move: source and destination must differ')
+    await requireBridge('fs').move(from, to)
   },
   async appendFile(path, data){ await requireBridge('fs').appendFile(path, data) },
   async deleteFile(path)      { await requireBridge('fs').deleteFile(path) },
@@ -151,10 +187,9 @@ export const fs: FS = {
   },
   async mkdir(path, opts)     { await requireBridge('fs').mkdir(path, opts) },
   async rmdir(path, opts)     { await requireBridge('fs').rmdir(path, opts) },
-  async copy(from, to)        { await requireBridge('fs').copy(from, to) },
-  async move(from, to)        { await requireBridge('fs').move(from, to) },
   async watch(path, id)       { await requireBridge('fs').watch(path, id) },
   async unwatch(id)           { await requireBridge('fs').unwatch(id) },
+  onChange(cb)                { return onCraftEvent<FSChangeEvent>('craft:fs:change', cb) },
   async homeDir()             { return await requireBridge('fs').homeDir() },
   async tempDir()             { return await requireBridge('fs').tempDir() },
   async appDataDir()          { return await requireBridge('fs').appDataDir() },

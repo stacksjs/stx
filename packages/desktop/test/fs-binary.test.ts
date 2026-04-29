@@ -30,7 +30,10 @@ describe('fs binary read/write', () => {
   it('writeBuffer base64-encodes the payload', async () => {
     const bytes = new Uint8Array([0x89, 0x50, 0x4E, 0x47])
     await fs.writeBuffer('/tmp/x', bytes)
-    const c = findCall(bridge.calls, 'fs', 'writeFile')!
+    // writeBuffer prefers `writeFileBytes` (future native) and falls
+    // back to `writeFile`. The mock auto-vivifies methods, so the
+    // optimistic path wins; either is acceptable here.
+    const c = findCall(bridge.calls, 'fs', 'writeFileBytes') ?? findCall(bridge.calls, 'fs', 'writeFile')!
     // base64("\x89PNG") = "iVBORw=="
     expect(c.args).toEqual(['/tmp/x', 'iVBORw=='])
   })

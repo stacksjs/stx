@@ -445,3 +445,173 @@ export type { TouchBarActionEvent, TouchBarAPI, TouchBarItem, TouchBarItemType }
 // =============================================================================
 export { bluetooth } from './bluetooth'
 export type { BluetoothAPI, BluetoothDevice, BluetoothPowerState } from './bluetooth'
+
+// =============================================================================
+// Text-to-Speech
+// =============================================================================
+export { speech } from './speech'
+export type { SpeakOptions, SpeechAPI, SpeechVoice } from './speech'
+
+// =============================================================================
+// Crash Reporter
+// =============================================================================
+export { crashReporter } from './crash-reporter'
+export type { CrashReport, CrashReporterAPI, CrashSeverity, StoredCrashEntry } from './crash-reporter'
+
+// =============================================================================
+// In-App Purchases
+// =============================================================================
+export { iap } from './iap'
+export type {
+  IAPAPI,
+  IAPFailureEvent,
+  IAPProduct,
+  IAPPurchaseResult,
+  IAPTransactionEvent,
+} from './iap'
+
+// =============================================================================
+// Handoff (Apple Continuity / NSUserActivity)
+// =============================================================================
+export { handoff } from './handoff'
+export type {
+  HandoffActivityOptions,
+  HandoffAPI,
+  HandoffIncomingEvent,
+  HandoffSnapshot,
+} from './handoff'
+
+// =============================================================================
+// Live Activities (macOS Handoff-backed approximation of iOS ActivityKit)
+// =============================================================================
+export { liveActivities } from './live-activities'
+export type { LiveActivitiesAPI, LiveActivityState } from './live-activities'
+
+// =============================================================================
+// Geolocation (CoreLocation)
+// =============================================================================
+export { location } from './location'
+export type {
+  LocationAPI,
+  LocationAuthStatus,
+  LocationCoordinate,
+  LocationWatchOptions,
+} from './location'
+
+// =============================================================================
+// Screen Capture (programmatic screenshots)
+// =============================================================================
+export { screenCapture } from './screen-capture'
+export type { CapturableWindow, ScreenCaptureAPI } from './screen-capture'
+
+// =============================================================================
+// Local HTTP Server (OAuth callbacks)
+// =============================================================================
+export { localServer } from './local-server'
+export type {
+  LocalServerAPI,
+  LocalServerRequestEvent,
+  LocalServerRespondOptions,
+  LocalServerStartResult,
+} from './local-server'
+
+// =============================================================================
+// Biometric Authentication (TouchID / FaceID)
+// =============================================================================
+export { biometric } from './biometric'
+export type {
+  BiometricAPI,
+  BiometricEvaluateOptions,
+  BiometricEvaluateResult,
+  BiometryType,
+} from './biometric'
+
+// =============================================================================
+// Audio Playback + Recording
+// =============================================================================
+export { audio } from './audio'
+export type { AudioAPI, AudioPlayOptions, AudioRecordOptions } from './audio'
+
+// =============================================================================
+// AppleScript Executor
+// =============================================================================
+export { appleScript } from './apple-script'
+export type { AppleScriptAPI, AppleScriptResult } from './apple-script'
+
+// =============================================================================
+// File Associations (LaunchServices)
+// =============================================================================
+export { fileAssociations } from './file-associations'
+export type { FileAssociationsAPI } from './file-associations'
+
+// =============================================================================
+// Finder Tags
+// =============================================================================
+export { tags } from './tags'
+export type { TagsAPI } from './tags'
+
+// =============================================================================
+// PDF Reader (PDFKit)
+// =============================================================================
+export { pdf } from './pdf'
+export type { PDFAPI } from './pdf'
+
+// =============================================================================
+// Unified System Log
+// =============================================================================
+export { log } from './log'
+export type { LogAPI } from './log'
+
+// =============================================================================
+// mDNS / Bonjour
+// =============================================================================
+export { bonjour } from './bonjour'
+export type { BonjourAPI, BonjourService } from './bonjour'
+
+// =============================================================================
+// Spotlight Indexing
+// =============================================================================
+export { spotlight } from './spotlight'
+export type { SpotlightAPI, SpotlightItem } from './spotlight'
+
+// =============================================================================
+// Speech Recognition (SFSpeechRecognizer)
+// =============================================================================
+export { speechRecognition } from './speech-recognition'
+export type { SpeechRecognitionAPI, SpeechRecognitionStartOptions } from './speech-recognition'
+
+// =============================================================================
+// Vision Framework (OCR / Faces / Barcodes)
+// =============================================================================
+export { vision } from './vision'
+export type { VisionAPI, VisionBarcodeResult, VisionFaceResult, VisionTextResult } from './vision'
+
+// =============================================================================
+// CoreMIDI
+// =============================================================================
+export { midi } from './midi'
+export type { MIDIAPI, MIDIEndpoint, MIDIMessageEvent } from './midi'
+
+// =============================================================================
+// CoreML — on-device inference
+// =============================================================================
+export { coreml } from './coreml'
+export type { CoreMLAPI } from './coreml'
+
+// =============================================================================
+// Continuity Camera
+// =============================================================================
+export { continuityCamera } from './continuity-camera'
+export type { ContinuityCameraAPI, ContinuityCameraDevice } from './continuity-camera'
+
+// =============================================================================
+// macOS Services Menu
+// =============================================================================
+export { serviceMenu } from './service-menu'
+export type { ServiceMenuAPI, ServiceMenuInvokedEvent } from './service-menu'
+
+// =============================================================================
+// Serial Ports
+// =============================================================================
+export { serial } from './serial'
+export type { SerialAPI, SerialDataEvent, SerialPort } from './serial'
