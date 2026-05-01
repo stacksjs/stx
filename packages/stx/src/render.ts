@@ -310,6 +310,14 @@ async function renderTemplateString(
     __stx: {},
     __stx_options: options,
     __stx_sfc_mode: true,
+    // Propagate the renderOptions.injectCSS choice down to processDirectives
+    // so its top-level auto-inject (process.ts) can be skipped on the inner
+    // page render of a layout-wrapped template — otherwise injection happens
+    // before the layout wraps the content, the early-return guard fires on
+    // the outer layout render, and any utility classes that only appear in
+    // the layout (sticky, z-50, w-60, backdrop-blur-xl, …) silently drop
+    // out of the generated CSS.
+    __stx_inject_css: renderOptions.injectCSS !== false,
     ...(renderOptions.context || {}),
   }
 

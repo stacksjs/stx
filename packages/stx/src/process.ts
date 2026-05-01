@@ -375,8 +375,14 @@ export async function processDirectives(
       }
 
       // Generate and inject Crosswind CSS AFTER document shell wrapping
-      // so bodyClass from stx.config.ts (e.g. 'bg-[#0a0a0f]') is included in the scan
-      if (isTopLevel) {
+      // so bodyClass from stx.config.ts (e.g. 'bg-[#0a0a0f]') is included in the scan.
+      // Skip when the caller has opted out via renderOptions.injectCSS=false —
+      // renderTemplate sets __stx_inject_css=false on the inner page render of a
+      // layout-wrapped template so injection only fires once, on the outer layout
+      // render, after the page content has been embedded. Without this guard the
+      // page render injects first, the early-return in injectCrosswindCSS fires on
+      // the outer render, and layout-only utility classes never get scanned.
+      if (isTopLevel && context.__stx_inject_css !== false) {
         result = await injectCrosswindCSS(result)
       }
 
