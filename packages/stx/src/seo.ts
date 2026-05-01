@@ -407,6 +407,38 @@ export function injectSeoTags(
     return html
   }
 
+  // Skip default injection when the page already produced its own SEO tags
+  // via `useSeoMeta()` / `useHead()`. Without this, every page rendered with
+  // useSeoMeta ends up with two <title> tags and two <meta property="og:title">
+  // tags: the default injector runs first (this function), then renderHead
+  // appends user values, so browsers see "stx Project" first and use it.
+  // Two checks because useHead may not have rendered into the html yet at this
+  // stage — `context.__stx_runtime_head` is the per-render staging area
+  // populated by useSeoMeta(), and is the source-of-truth before renderHead
+  // emits the final tags into <head>.
+  const runtimeHead = context.__stx_runtime_head as
+    | { title?: string, meta?: Array<Record<string, string>> }
+    | undefined
+  const hasUserSeo = !!(
+    runtimeHead?.title
+    || runtimeHead?.meta?.some(m =>
+      m.property === 'og:title'
+      || m.name === 'og:title'
+      || m.name === 'twitter:title'
+      || m.name === 'description',
+    )
+  )
+  if (hasUserSeo) {
+    return html
+  }
+  if (
+    /<meta\s+(?:[^>]*\s)?property=["']og:title["']/i.test(html)
+    || /<meta\s+(?:[^>]*\s)?name=["']og:title["']/i.test(html)
+    || /<meta\s+(?:[^>]*\s)?name=["']twitter:title["']/i.test(html)
+  ) {
+    return html
+  }
+
   // Check if document has a head tag
   if (!html.includes('<head>') && !html.includes('<head ')) {
     return html

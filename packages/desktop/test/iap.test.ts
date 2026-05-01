@@ -115,4 +115,86 @@ describe('iap (no bridge)', () => {
   it('getReceiptData returns null', async () => {
     expect(await iap.getReceiptData()).toBeNull()
   })
+
+  it('getActiveSubscriptions returns []', async () => {
+    expect(await iap.getActiveSubscriptions()).toEqual([])
+  })
+
+  it('isEligibleForIntroOffer returns false', async () => {
+    expect(await iap.isEligibleForIntroOffer('pro.monthly')).toBe(false)
+  })
+})
+
+describe('iap — subscriptions, refunds, intro offers', () => {
+  let bridge: ReturnType<typeof installMockBridge>
+
+  beforeEach(() => { bridge = installMockBridge(['iap']) })
+  afterEach(() => { bridge.uninstall() })
+
+  it('onRefunded surfaces craft:iap:refunded events', () => {
+    const events: any[] = []
+    const off = iap.onRefunded(e => events.push(e))
+    window.dispatchEvent(new CustomEvent('craft:iap:refunded', {
+      detail: { productId: 'pro.monthly', transactionId: 't-99', refundedAt: '2026-04-01T00:00:00Z', reason: 'voluntary' },
+    }))
+    expect(events[0].productId).toBe('pro.monthly')
+    expect(events[0].reason).toBe('voluntary')
+    off()
+  })
+
+  it('onSubscriptionStatusChanged surfaces lifecycle transitions', () => {
+    const events: any[] = []
+    const off = iap.onSubscriptionStatusChanged(e => events.push(e))
+    window.dispatchEvent(new CustomEvent('craft:iap:subscriptionStatusChanged', {
+      detail: { productId: 'pro.monthly', status: 'in-grace-period', expiresAt: '2026-05-01T00:00:00Z' },
+    }))
+    expect(events[0].status).toBe('in-grace-period')
+    off()
+  })
+
+  it('getActiveSubscriptions returns the bridge response', async () => {
+    bridge.whenCalled('iap', 'getActiveSubscriptions', [
+      { productId: 'pro.monthly', status: 'active', expiresAt: '2026-05-01T00:00:00Z' },
+    ])
+    const subs = await iap.getActiveSubscriptions()
+    expect(subs).toHaveLength(1)
+    expect(subs[0].productId).toBe('pro.monthly')
+    expect(subs[0].status).toBe('active')
+  })
+
+  it('getActiveSubscriptions returns [] when bridge omits the method', async () => {
+    // Don't queue a response — proxy returns a function, but it resolves
+    // to undefined which should be coerced to [].
+    bridge.whenCalled('iap', 'getActiveSubscriptions', undefined)
+    expect(await iap.getActiveSubscriptions()).toEqual([])
+  })
+
+  it('isEligibleForIntroOffer forwards productId and coerces to boolean', async () => {
+    bridge.whenCalled('iap', 'isEligibleForIntroOffer', 1)
+    expect(await iap.isEligibleForIntroOffer('pro.monthly')).toBe(true)
+    expect(findCall(bridge.calls, 'iap', 'isEligibleForIntroOffer')!.args).toEqual(['pro.monthly'])
+
+    bridge.whenCalled('iap', 'isEligibleForIntroOffer', 0)
+    expect(await iap.isEligibleForIntroOffer('pro.monthly')).toBe(false)
+  })
+
+  it('IAPTransactionEvent shape carries family-share + intro flags through', () => {
+    const events: any[] = []
+    const off = iap.onPurchased(e => events.push(e))
+    window.dispatchEvent(new CustomEvent('craft:iap:purchased', {
+      detail: {
+        productId: 'pro.monthly',
+        transactionId: 't-1',
+        originalTransactionId: 't-0',
+        familyShared: true,
+        inIntroPeriod: true,
+        autoRenewing: true,
+        expiresAt: '2026-05-01T00:00:00Z',
+      },
+    }))
+    expect(events[0].familyShared).toBe(true)
+    expect(events[0].inIntroPeriod).toBe(true)
+    expect(events[0].originalTransactionId).toBe('t-0')
+    off()
+  })
 })

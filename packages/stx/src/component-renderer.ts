@@ -102,6 +102,20 @@ function parseComponentProps(
     'x-text', 'x-html', 'x-class', 'x-style', 'x-on', 'x-bind',
   ])
 
+  // Vue-aligned: `<MyComp :nav-html="…" />` should arrive as `props.navHtml`
+  // inside the component (and `const { navHtml } = defineProps()` must work).
+  // HTML normalizes attribute names to lowercase, so authors writing
+  // PascalCase / camelCase props on a kebab-cased element get kebab-case keys
+  // back. Without this normalization the kebab key is unreachable from a JS
+  // destructure (you can't write `const { nav-html } = …`) and silently
+  // becomes undefined — which used to force userland workarounds like
+  // pre-rendering the component's HTML and dropping it via `{{{ raw }}}`.
+  const kebabToCamel = (key: string): string => {
+    if (!key.includes('-') || key.startsWith('@') || key.startsWith(':') || key.startsWith('x-') || key.startsWith('__'))
+      return key
+    return key.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase())
+  }
+
   for (const [rawAttrName, attrValue] of Object.entries(rawProps)) {
     // Normalize x-propName to :propName for component prop bindings.
     // Alpine element-level directives stay passthrough.
@@ -120,7 +134,7 @@ function parseComponentProps(
 
     // --- Pre-evaluated props from loop processing: __stx_propName ---
     if (attrName.startsWith('__stx_')) {
-      const propName = attrName.slice(6) // Remove __stx_ prefix
+      const propName = kebabToCamel(attrName.slice(6)) // Remove __stx_ prefix
       try {
         const unescaped = (attrValue as string)
           .replace(/&quot;/g, '"')
@@ -140,7 +154,7 @@ function parseComponentProps(
 
     // --- Dynamic binding: :prop="expression" or :prop (shorthand) ---
     if (attrName.startsWith(':')) {
-      const propName = attrName.slice(1)
+      const propName = kebabToCamel(attrName.slice(1))
       // Shorthand: :propName with no value is equivalent to :propName="propName"
       const expression = attrValue === 'true' ? propName : attrValue
       try {

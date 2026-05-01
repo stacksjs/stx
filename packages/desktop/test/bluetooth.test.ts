@@ -75,4 +75,94 @@ describe('bluetooth (no bridge)', () => {
   it('powerState defaults to "unknown"', async () => {
     expect(await bluetooth.powerState()).toBe('unknown')
   })
+
+  it('GATT methods return bridge-unavailable shapes when no bridge', async () => {
+    expect(await bluetooth.discoverServices('a')).toEqual([])
+    expect(await bluetooth.discoverCharacteristics('a', 'b')).toEqual([])
+    expect((await bluetooth.readCharacteristic('a', 'b', 'c')).ok).toBe(false)
+    expect((await bluetooth.writeCharacteristic('a', 'b', 'c', '01')).ok).toBe(false)
+    expect((await bluetooth.setCharacteristicNotify('a', 'b', 'c', true)).ok).toBe(false)
+  })
+})
+
+describe('bluetooth — GATT services & characteristics', () => {
+  let bridge: ReturnType<typeof installMockBridge>
+
+  beforeEach(() => { bridge = installMockBridge(['bluetooth']) })
+  afterEach(() => { bridge.uninstall() })
+
+  it('discoverServices forwards deviceId and returns array', async () => {
+    bridge.whenCalled('bluetooth', 'discoverServices', [
+      { uuid: '180D', primary: true },
+      { uuid: '180F', primary: true },
+    ])
+    const r = await bluetooth.discoverServices('dev-1')
+    expect(r).toHaveLength(2)
+    expect(r[0].uuid).toBe('180D')
+    expect(findCall(bridge.calls, 'bluetooth', 'discoverServices')!.args).toEqual(['dev-1'])
+  })
+
+  it('discoverServices throws when deviceId is empty', async () => {
+    await expect(bluetooth.discoverServices('')).rejects.toThrow(/deviceId/)
+  })
+
+  it('discoverCharacteristics returns the bridge response', async () => {
+    bridge.whenCalled('bluetooth', 'discoverCharacteristics', [
+      { uuid: '2A37', serviceUuid: '180D', properties: ['notify'] },
+    ])
+    const r = await bluetooth.discoverCharacteristics('dev-1', '180D')
+    expect(r[0].properties).toEqual(['notify'])
+    const c = findCall(bridge.calls, 'bluetooth', 'discoverCharacteristics')!
+    expect(c.args).toEqual(['dev-1', '180D'])
+  })
+
+  it('readCharacteristic returns hex bytes from native', async () => {
+    bridge.whenCalled('bluetooth', 'readCharacteristic', { ok: true, valueHex: 'deadbeef' })
+    const r = await bluetooth.readCharacteristic('dev-1', '180D', '2A37')
+    expect(r.ok).toBe(true)
+    expect(r.valueHex).toBe('deadbeef')
+  })
+
+  it('writeCharacteristic forwards default mode (with-response)', async () => {
+    bridge.whenCalled('bluetooth', 'writeCharacteristic', { ok: true })
+    const r = await bluetooth.writeCharacteristic('dev-1', '180D', '2A37', '01ff')
+    expect(r.ok).toBe(true)
+    expect(findCall(bridge.calls, 'bluetooth', 'writeCharacteristic')!.args).toEqual([
+      'dev-1', '180D', '2A37', '01ff', 'with-response',
+    ])
+  })
+
+  it('writeCharacteristic forwards explicit without-response mode', async () => {
+    bridge.whenCalled('bluetooth', 'writeCharacteristic', { ok: true })
+    await bluetooth.writeCharacteristic('dev-1', '180D', '2A37', '00', 'without-response')
+    expect(findCall(bridge.calls, 'bluetooth', 'writeCharacteristic')!.args[4]).toBe('without-response')
+  })
+
+  it('writeCharacteristic rejects malformed hex', async () => {
+    await expect(bluetooth.writeCharacteristic('dev-1', '180D', '2A37', 'zzz')).rejects.toThrow(/hex/)
+    await expect(bluetooth.writeCharacteristic('dev-1', '180D', '2A37', 'aaa')).rejects.toThrow(/even length/)
+  })
+
+  it('writeCharacteristic accepts empty hex (zero-length write)', async () => {
+    bridge.whenCalled('bluetooth', 'writeCharacteristic', { ok: true })
+    await bluetooth.writeCharacteristic('dev-1', '180D', '2A37', '')
+  })
+
+  it('setCharacteristicNotify forwards on-flag', async () => {
+    bridge.whenCalled('bluetooth', 'setCharacteristicNotify', { ok: true })
+    await bluetooth.setCharacteristicNotify('dev-1', '180D', '2A37', true)
+    expect(findCall(bridge.calls, 'bluetooth', 'setCharacteristicNotify')!.args).toEqual([
+      'dev-1', '180D', '2A37', true,
+    ])
+  })
+
+  it('onCharacteristicValue surfaces native notification events', () => {
+    const events: any[] = []
+    const off = bluetooth.onCharacteristicValue(e => events.push(e))
+    window.dispatchEvent(new CustomEvent('craft:bluetooth:characteristicValue', {
+      detail: { deviceId: 'dev-1', serviceUuid: '180D', characteristicUuid: '2A37', valueHex: 'cafe' },
+    }))
+    expect(events[0].valueHex).toBe('cafe')
+    off()
+  })
 })

@@ -64,4 +64,95 @@ describe('notifications (no bridge)', () => {
     await expect(notifications.cancel('x')).resolves.toBeUndefined()
     await expect(notifications.cancelAll()).resolves.toBeUndefined()
   })
+
+  it('registerCategories no-ops without a bridge', async () => {
+    await expect(notifications.registerCategories([{ id: 'mail', actions: [] }])).resolves.toBeUndefined()
+  })
+})
+
+describe('notifications — rich attachments and actions', () => {
+  let bridge: ReturnType<typeof installMockBridge>
+
+  beforeEach(() => { bridge = installMockBridge(['notifications']) })
+  afterEach(() => { bridge.uninstall() })
+
+  it('forwards attachments to the bridge', async () => {
+    await notifications.show({
+      title: 'New photo',
+      body: 'tap to view',
+      attachments: [{ id: 'thumb', url: 'file:///tmp/thumb.png', type: 'image' }],
+    })
+    const c = findCall(bridge.calls, 'notifications', 'show')!
+    const opt = c.args[0] as any
+    expect(opt.attachments).toHaveLength(1)
+    expect(opt.attachments[0].url).toBe('file:///tmp/thumb.png')
+  })
+
+  it('forwards actions and a category id', async () => {
+    await notifications.show({
+      title: 'Friend request',
+      categoryId: 'social.friend_request',
+      actions: [
+        { id: 'accept', title: 'Accept', style: 'foreground' },
+        { id: 'block', title: 'Block', style: 'destructive' },
+      ],
+    })
+    const c = findCall(bridge.calls, 'notifications', 'show')!
+    const opt = c.args[0] as any
+    expect(opt.categoryId).toBe('social.friend_request')
+    expect(opt.actions).toHaveLength(2)
+    expect(opt.actions[0].style).toBe('foreground')
+    expect(opt.actions[1].style).toBe('destructive')
+  })
+
+  it('forwards inline reply config', async () => {
+    await notifications.show({
+      title: 'New message',
+      reply: { placeholder: 'Reply…', sendButtonTitle: 'Send' },
+    })
+    const c = findCall(bridge.calls, 'notifications', 'show')!
+    const opt = c.args[0] as any
+    expect(opt.reply.placeholder).toBe('Reply…')
+  })
+
+  it('registerCategories forwards the array to native', async () => {
+    await notifications.registerCategories([
+      { id: 'mail', actions: [{ id: 'archive', title: 'Archive' }] },
+    ])
+    const c = findCall(bridge.calls, 'notifications', 'registerCategories')!
+    const arr = c.args[0] as any[]
+    expect(arr).toHaveLength(1)
+    expect(arr[0].id).toBe('mail')
+  })
+
+  it('registerCategories ignores empty arrays without calling the bridge', async () => {
+    await notifications.registerCategories([])
+    expect(findCall(bridge.calls, 'notifications', 'registerCategories')).toBeUndefined()
+  })
+
+  it('onActionClicked surfaces taps with action id', () => {
+    const events: any[] = []
+    const off = notifications.onActionClicked(e => events.push(e))
+    window.dispatchEvent(new CustomEvent('craft:notification:actionClicked', {
+      detail: { notificationId: 'n-1', actionId: 'accept' },
+    }))
+    expect(events[0].actionId).toBe('accept')
+    off()
+  })
+
+  it('onReply surfaces inline reply text', () => {
+    const events: any[] = []
+    const off = notifications.onReply(e => events.push(e))
+    window.dispatchEvent(new CustomEvent('craft:notification:reply', {
+      detail: { notificationId: 'n-1', text: 'On my way!' },
+    }))
+    expect(events[0].text).toBe('On my way!')
+    off()
+  })
+
+  it('threadId is forwarded for grouping', async () => {
+    await notifications.show({ title: 'Msg 1', threadId: 'chat-42' })
+    const opt = (findCall(bridge.calls, 'notifications', 'show')!.args[0] as any)
+    expect(opt.threadId).toBe('chat-42')
+  })
 })

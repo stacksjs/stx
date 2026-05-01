@@ -59,3 +59,4 @@ packages/components/test/visual/__snapshots__/
 /packages/stx/.stx
 .stx
 pantry
+.claude/scheduled_tasks.lock

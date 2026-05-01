@@ -315,13 +315,30 @@ export type { Clipboard } from './clipboard'
 // System Notifications (banner + badge — distinct from in-app toasts in alerts.ts)
 // =============================================================================
 export { notifications } from './notifications'
-export type { NotificationOptions, SystemNotifications } from './notifications'
+export type {
+  NotificationAction,
+  NotificationActionEvent,
+  NotificationAttachment,
+  NotificationCategory,
+  NotificationOptions,
+  NotificationReplyEvent,
+  SystemNotifications,
+} from './notifications'
 
 // =============================================================================
 // Filesystem
 // =============================================================================
 export { fs } from './fs'
-export type { DirEntry, FileStat, FS, MkdirOptions, RmdirOptions } from './fs'
+export type {
+  DirEntry,
+  FileStat,
+  FS,
+  FSChangeEvent,
+  MkdirOptions,
+  RmdirOptions,
+  WatchHandle,
+  WatchOptions,
+} from './fs'
 
 // =============================================================================
 // Shell — open URLs/paths, spawn subprocesses
@@ -378,7 +395,13 @@ export type {
 // Auto-Updater
 // =============================================================================
 export { updater } from './updater'
-export type { UpdateInfo, Updater } from './updater'
+export type {
+  UpdateInfo,
+  Updater,
+  VerifyDownloadOptions,
+  VerifyDownloadResult,
+  VerifyOptions,
+} from './updater'
 
 // =============================================================================
 // Window Lifecycle Events
@@ -444,7 +467,15 @@ export type { TouchBarActionEvent, TouchBarAPI, TouchBarItem, TouchBarItemType }
 // Bluetooth
 // =============================================================================
 export { bluetooth } from './bluetooth'
-export type { BluetoothAPI, BluetoothDevice, BluetoothPowerState } from './bluetooth'
+export type {
+  BluetoothAPI,
+  BluetoothCharacteristic,
+  BluetoothCharacteristicValueEvent,
+  BluetoothDevice,
+  BluetoothPowerState,
+  BluetoothService,
+  BluetoothWriteMode,
+} from './bluetooth'
 
 // =============================================================================
 // Text-to-Speech
@@ -455,8 +486,15 @@ export type { SpeakOptions, SpeechAPI, SpeechVoice } from './speech'
 // =============================================================================
 // Crash Reporter
 // =============================================================================
-export { crashReporter } from './crash-reporter'
-export type { CrashReport, CrashReporterAPI, CrashSeverity, StoredCrashEntry } from './crash-reporter'
+export { crashReporter, redactPII, signPayload } from './crash-reporter'
+export type {
+  CrashForwarderHandle,
+  CrashForwarderOptions,
+  CrashReport,
+  CrashReporterAPI,
+  CrashSeverity,
+  StoredCrashEntry,
+} from './crash-reporter'
 
 // =============================================================================
 // In-App Purchases
@@ -465,8 +503,14 @@ export { iap } from './iap'
 export type {
   IAPAPI,
   IAPFailureEvent,
+  IAPIntroductoryOffer,
   IAPProduct,
+  IAPProductType,
   IAPPurchaseResult,
+  IAPRefundEvent,
+  IAPSubscriptionInfo,
+  IAPSubscriptionPeriod,
+  IAPSubscriptionStatusEvent,
   IAPTransactionEvent,
 } from './iap'
 
@@ -615,3 +659,18 @@ export type { ServiceMenuAPI, ServiceMenuInvokedEvent } from './service-menu'
 // =============================================================================
 export { serial } from './serial'
 export type { SerialAPI, SerialDataEvent, SerialPort } from './serial'
+
+// =============================================================================
+// Event surface
+// =============================================================================
+// The `CraftEventMap` lists every `craft:*` window event the SDK ships
+// today, mapped to its payload type. App code typically doesn't subscribe
+// directly — modules expose `onXxx(cb)` wrappers — but the type is here
+// for advanced use, e.g. forwarding all events to telemetry.
+export type { CraftEventMap } from './_bridge'
+
+// =============================================================================
+// Capabilities (bridge availability)
+// =============================================================================
+export { getCapabilities, getCapability, isAvailable } from './capabilities'
+export type { BridgeCapability, BridgePlatformSupport } from './capabilities'

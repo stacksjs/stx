@@ -11,7 +11,36 @@
  * which persists in Notification Center / Action Center / etc.
  */
 
-import { hasBridge } from './_bridge'
+import { hasBridge, onCraftEvent } from './_bridge'
+
+export interface NotificationAttachment {
+  /** Stable id within the notification. Optional — UNNotificationAttachment auto-generates one when omitted. */
+  id?: string
+  /** Local file URL or absolute path. UNNotificationAttachment requires a file URL. */
+  url: string
+  /**
+   * MIME-ish hint. UNNotificationAttachment infers from the file
+   * extension when absent; pass when the extension is missing or
+   * ambiguous.
+   */
+  type?: 'image' | 'audio' | 'video' | string
+}
+
+export interface NotificationAction {
+  /** Stable id sent back via `onActionClicked`. */
+  id: string
+  /** Visible label on the action button. */
+  title: string
+  /**
+   * UNNotificationActionOptions — `'destructive'` shows the action in
+   * red (delete-style), `'foreground'` brings the app to the foreground
+   * after handling. Default is the standard non-destructive background
+   * action.
+   */
+  style?: 'default' | 'destructive' | 'foreground'
+  /** When present, hide the action behind FaceID / Touch ID before firing. */
+  authenticationRequired?: boolean
+}
 
 export interface NotificationOptions {
   /** Required title shown in bold at the top. */
@@ -32,6 +61,62 @@ export interface NotificationOptions {
   badge?: number
   /** Custom data passed back to your `onClick` handler. */
   data?: unknown
+  /**
+   * Image / audio / video attachments shown alongside the notification
+   * (UNNotificationAttachment on macOS, image-payload on Linux/Windows
+   * where supported). Each entry needs a file URL or absolute path that
+   * the OS can read.
+   */
+  attachments?: NotificationAttachment[]
+  /**
+   * Custom buttons added to the notification. macOS lets you ship up to
+   * four; users see "More" if more are present. The `id` you set here
+   * comes back via `onActionClicked` when the user taps the action.
+   */
+  actions?: NotificationAction[]
+  /**
+   * Inline reply text-field (macOS only). When set, the notification
+   * shows a reply field; the user's text comes back via `onReply`.
+   */
+  reply?: {
+    /** Placeholder text inside the reply box. */
+    placeholder?: string
+    /** Submit button label. Defaults to the system's "Send". */
+    sendButtonTitle?: string
+  }
+  /**
+   * Category identifier — pre-registered via UNUserNotificationCenter
+   * before sending. When present, the notification reuses the actions
+   * registered against that category instead of repeating them inline.
+   */
+  categoryId?: string
+  /**
+   * Replace any earlier notifications with the same thread id (groups
+   * them in macOS's notification center; behaves as a "bucket" elsewhere).
+   */
+  threadId?: string
+}
+
+export interface NotificationActionEvent {
+  /** Notification id (`options.id`). */
+  notificationId?: string
+  /** Action id (matches `NotificationAction.id`). */
+  actionId: string
+  /** When `actionId` is the system-supplied "default" tap action. */
+  isDefault?: boolean
+}
+
+export interface NotificationReplyEvent {
+  notificationId?: string
+  /** Text the user typed into the inline reply field. */
+  text: string
+}
+
+export interface NotificationCategory {
+  /** Stable id referenced via `NotificationOptions.categoryId`. */
+  id: string
+  /** Default actions attached to every notification of this category. */
+  actions: NotificationAction[]
 }
 
 export interface SystemNotifications {
@@ -52,6 +137,23 @@ export interface SystemNotifications {
    * Returns `true` if granted (or already granted).
    */
   requestPermission: () => Promise<boolean>
+  /**
+   * Pre-register a category — same shape as `actions` on a single
+   * notification, but reusable across many. Apps generally do this once
+   * at boot so the notification center has the actions ready before any
+   * notification fires.
+   */
+  registerCategories: (categories: NotificationCategory[]) => Promise<void>
+  /**
+   * Subscribe to user taps on actions (including the default tap on the
+   * notification body — `event.isDefault === true` for that case).
+   */
+  onActionClicked: (cb: (event: NotificationActionEvent) => void) => () => void
+  /**
+   * Subscribe to inline-reply submissions. Only fires for notifications
+   * that opted into `reply`.
+   */
+  onReply: (cb: (event: NotificationReplyEvent) => void) => () => void
 }
 
 export const notifications: SystemNotifications = {
@@ -141,6 +243,18 @@ export const notifications: SystemNotifications = {
     }
     return false
   },
+
+  async registerCategories(categories) {
+    if (!Array.isArray(categories) || categories.length === 0) return
+    if (hasBridge('notifications')) {
+      const fn = window.craft!.notifications.registerCategories
+      if (typeof fn === 'function') await fn(categories)
+    }
+    // No web fallback — the standard Notification API has no equivalent.
+  },
+
+  onActionClicked(cb)  { return onCraftEvent<NotificationActionEvent>('craft:notification:actionClicked', cb) },
+  onReply(cb)          { return onCraftEvent<NotificationReplyEvent>('craft:notification:reply', cb) },
 }
 
 function toEpochMs(t: string | number | Date | undefined): number {

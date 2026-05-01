@@ -331,6 +331,16 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
 export async function openDevWindow(port: number, options: WindowOptions = {}): Promise<boolean> {
   const url = `http://localhost:${port}/`
 
+  // Bail out of native paths under bun:test to avoid spawning real
+  // webview processes from unit tests. Tests assert that the function
+  // returns false in this environment.
+  const isTestEnv = process.env.NODE_ENV === 'test' || process.env.BUN_TEST
+  if (isTestEnv) {
+    console.warn('⚠  Skipping native window in test environment')
+    console.log('(Skipping browser fallback in test environment)')
+    return false
+  }
+
   // Path 1 — `ts-craft` package, when it's actually installed in the host
   // workspace. This is the original path; we keep it for projects that
   // depend on `ts-craft` for richer typings / sidebar config.

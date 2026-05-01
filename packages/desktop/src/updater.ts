@@ -23,6 +23,36 @@ export interface UpdateInfo {
   downloadUrl?: string
 }
 
+export interface VerifyOptions {
+  /** Raw bytes of the update bundle (zip / dmg / msi / appimage). */
+  payload: Uint8Array | ArrayBuffer
+  /** Base64-encoded Ed25519 signature over `payload`. */
+  signatureB64: string
+  /** Base64-encoded raw Ed25519 public key (32 bytes). */
+  publicKeyB64: string
+}
+
+export interface VerifyDownloadOptions {
+  /** Where to fetch the bundle from. */
+  url: string
+  /** Base64-encoded Ed25519 signature over the bundle bytes. */
+  signatureB64: string
+  /** Base64-encoded raw Ed25519 public key (32 bytes). */
+  publicKeyB64: string
+  /** Optional fetch init (timeout / auth headers / etc.). */
+  fetchInit?: RequestInit
+}
+
+export interface VerifyDownloadResult {
+  ok: boolean
+  /** The downloaded bytes — only populated when `ok === true`. */
+  payload?: Uint8Array
+  /** When `ok === false`, why. */
+  reason?: 'fetch-failed' | 'http-error' | 'bad-signature' | 'bad-key'
+  /** HTTP status when applicable. */
+  status?: number
+}
+
 export interface Updater {
   /** Show the updater UI and check for updates. */
   checkForUpdates: () => Promise<void>
@@ -42,6 +72,19 @@ export interface Updater {
   onAvailable: (cb: (info: UpdateInfo) => void) => () => void
   /** Subscribe to "update downloaded and ready to install" events. */
   onDownloaded: (cb: (info: UpdateInfo) => void) => () => void
+  /**
+   * Verify an in-memory bundle against an Ed25519 signature. Sparkle-style:
+   * publisher signs the file with their Ed25519 private key, the app pins
+   * the matching public key, and rejects bundles whose signature doesn't
+   * verify before staging the install.
+   */
+  verifySignature: (options: VerifyOptions) => Promise<boolean>
+  /**
+   * Fetch a bundle and verify its signature in one shot. On success the
+   * downloaded bytes come back so the caller can hand them to the native
+   * installer; on failure the `reason` says why so the UI can surface it.
+   */
+  verifyDownload: (options: VerifyDownloadOptions) => Promise<VerifyDownloadResult>
 }
 
 export const updater: Updater = {
@@ -94,4 +137,99 @@ export const updater: Updater = {
   onDownloaded(cb) {
     return onCraftEvent<UpdateInfo>('craft:updateDownloaded', cb)
   },
+
+  async verifySignature({ payload, signatureB64, publicKeyB64 }) {
+    const data = toArrayBufferBytes(payload)
+    let publicKey: CryptoKey
+    try {
+      publicKey = await crypto.subtle.importKey(
+        'raw',
+        base64ToBytes(publicKeyB64),
+        { name: 'Ed25519' },
+        false,
+        ['verify'],
+      )
+    }
+    catch {
+      return false
+    }
+    try {
+      return await crypto.subtle.verify('Ed25519', publicKey, base64ToBytes(signatureB64), data)
+    }
+    catch {
+      return false
+    }
+  },
+
+  async verifyDownload({ url, signatureB64, publicKeyB64, fetchInit }) {
+    let response: Response
+    try {
+      response = await fetch(url, fetchInit)
+    }
+    catch {
+      return { ok: false, reason: 'fetch-failed' }
+    }
+    if (!response.ok) {
+      return { ok: false, reason: 'http-error', status: response.status }
+    }
+    const buffer = new Uint8Array(await response.arrayBuffer())
+
+    let publicKey: CryptoKey
+    try {
+      publicKey = await crypto.subtle.importKey(
+        'raw',
+        base64ToBytes(publicKeyB64),
+        { name: 'Ed25519' },
+        false,
+        ['verify'],
+      )
+    }
+    catch {
+      return { ok: false, reason: 'bad-key' }
+    }
+
+    let valid = false
+    try {
+      valid = await crypto.subtle.verify('Ed25519', publicKey, base64ToBytes(signatureB64), toArrayBufferBytes(buffer))
+    }
+    catch {
+      valid = false
+    }
+    if (!valid) return { ok: false, reason: 'bad-signature' }
+    return { ok: true, payload: buffer }
+  },
+}
+
+/**
+ * Coerce arbitrary `BufferSource`-ish input into a `Uint8Array` whose
+ * underlying storage is a plain `ArrayBuffer`. The Web Crypto types
+ * insist on `ArrayBufferView<ArrayBuffer>`, which excludes the looser
+ * `ArrayBufferLike` (covers `SharedArrayBuffer`) you get back from
+ * `Response.arrayBuffer()` under TS strict mode.
+ */
+function toArrayBufferBytes(input: Uint8Array | ArrayBuffer): Uint8Array<ArrayBuffer> {
+  if (input instanceof ArrayBuffer) return new Uint8Array(input)
+  // Copy into a fresh ArrayBuffer to satisfy the strict crypto types
+  // even when the source view points at a SharedArrayBuffer.
+  const out = new ArrayBuffer(input.byteLength)
+  const view = new Uint8Array(out)
+  view.set(input)
+  return view
+}
+
+function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
+  // atob exists in webview + Bun; if neither (older Node test runner), fall
+  // back to a hand-rolled decoder so this module loads everywhere.
+  if (typeof atob === 'function') {
+    const bin = atob(b64)
+    const buffer = new ArrayBuffer(bin.length)
+    const out = new Uint8Array(buffer)
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+    return out
+  }
+  // eslint-disable-next-line node/prefer-global/buffer
+  const node = Buffer.from(b64, 'base64')
+  const buf = new ArrayBuffer(node.length)
+  new Uint8Array(buf).set(node)
+  return new Uint8Array(buf)
 }

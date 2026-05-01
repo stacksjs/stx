@@ -36,6 +36,33 @@ export interface FSChangeEvent {
   kind?: 'created' | 'modified' | 'deleted' | 'renamed' | 'unknown'
 }
 
+export interface WatchOptions {
+  /**
+   * Watch the path and all its descendants. On macOS this maps directly
+   * to `FSEventStreamCreate` with `kFSEventStreamCreateFlagWatchRoot`;
+   * on Linux/Windows the native side walks the tree.
+   */
+  recursive?: boolean
+  /**
+   * Buffer events for `coalesceMs` then fire them as a single batch.
+   * Defaults to `0` (no coalescing). Useful for editors that save +
+   * rename + chmod three times within a few milliseconds.
+   */
+  coalesceMs?: number
+  /**
+   * Only deliver events whose `kind` is in this set. Defaults to all
+   * kinds.
+   */
+  kinds?: Array<NonNullable<FSChangeEvent['kind']>>
+}
+
+export interface WatchHandle {
+  /** Stop the watcher. Idempotent — calling multiple times is safe. */
+  stop: () => Promise<void>
+  /** Stable id assigned to this watcher (matches the native id). */
+  id: string
+}
+
 export interface DirEntry {
   /** Entry name (no path). */
   name: string
@@ -105,6 +132,18 @@ export interface FS {
    * event detail; payload shape depends on the platform watcher.
    */
   onChange: (cb: (event: FSChangeEvent) => void) => () => void
+  /**
+   * Watch a tree with coalescing + filtering. Returns a `WatchHandle`
+   * with a `stop()` that detaches the listener AND unwatches the
+   * native side. When `coalesceMs` is set, events that arrive within
+   * the window are buffered and delivered to `cb` as one batch — handy
+   * for editors that emit many events for a single save.
+   */
+  watchTree: (
+    path: string,
+    options: WatchOptions,
+    cb: (events: FSChangeEvent[]) => void,
+  ) => Promise<WatchHandle>
   /** Path to the user's home directory. */
   homeDir: () => Promise<string>
   /** Path to the system's temp directory. */
@@ -190,6 +229,65 @@ export const fs: FS = {
   async watch(path, id)       { await requireBridge('fs').watch(path, id) },
   async unwatch(id)           { await requireBridge('fs').unwatch(id) },
   onChange(cb)                { return onCraftEvent<FSChangeEvent>('craft:fs:change', cb) },
+
+  async watchTree(path, options, cb) {
+    const id = `watch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+    const bridge = requireBridge('fs')
+    // Always call the basic `watch(path, id, options)` — newer Craft
+    // versions interpret a third `options` arg (`{ recursive: true }`)
+    // and route to FSEvents/RDCW; older versions ignore it and watch
+    // the immediate path only. This keeps a single bridge surface.
+    await bridge.watch(path, id, { recursive: !!options.recursive })
+
+    const allowed = options.kinds && options.kinds.length > 0 ? new Set(options.kinds) : null
+    const coalesceMs = Math.max(0, Math.floor(options.coalesceMs ?? 0))
+
+    let buffer: FSChangeEvent[] = []
+    let flushTimer: ReturnType<typeof setTimeout> | null = null
+    let stopped = false
+
+    const flush = (): void => {
+      flushTimer = null
+      if (buffer.length === 0) return
+      const batch = buffer
+      buffer = []
+      try { cb(batch) }
+      catch { /* user callback errors mustn't break the watcher */ }
+    }
+
+    const off = onCraftEvent<FSChangeEvent>('craft:fs:change', (e) => {
+      if (stopped) return
+      if (e.id !== id) return
+      if (allowed && e.kind && !allowed.has(e.kind)) return
+      buffer.push(e)
+      if (coalesceMs === 0) {
+        flush()
+        return
+      }
+      if (flushTimer == null) {
+        flushTimer = setTimeout(flush, coalesceMs)
+      }
+    })
+
+    return {
+      id,
+      async stop() {
+        if (stopped) return
+        stopped = true
+        off()
+        if (flushTimer) {
+          clearTimeout(flushTimer)
+          flushTimer = null
+        }
+        // Drain any pending buffered events before tearing down the
+        // native watcher — otherwise stop() racing with the timer can
+        // silently drop events that arrived right before stop().
+        if (buffer.length > 0) flush()
+        try { await bridge.unwatch(id) }
+        catch { /* native may already be gone — ignore */ }
+      },
+    }
+  },
   async homeDir()             { return await requireBridge('fs').homeDir() },
   async tempDir()             { return await requireBridge('fs').tempDir() },
   async appDataDir()          { return await requireBridge('fs').appDataDir() },
