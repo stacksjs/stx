@@ -73,7 +73,7 @@
     "changelog": "bunx logsmith --verbose",
     "changelog:generate": "bunx logsmith --output CHANGELOG.md",
     "release": "bun --bun run changelog:generate && bunx --bun bumpx prompt --recursive --only-changed-since",
-    "release:patch": "bun --bun run changelog:generate && bunx --bun bumpx patch --recursive --yes --only-changed-since",
+    "release:patch": "bun --bun run changelog:generate && bunx --bun bumpx patch --recursive --yes",
     "release:all": "bun --bun run changelog:generate && bunx --bun bumpx patch --recursive --yes",
     "dev:docs": "bun --bun bunpress dev docs",
     "build:docs": "bun --bun bunpress build docs",
