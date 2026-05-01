@@ -224,6 +224,16 @@ export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig 
     return result.config
   }
   catch (error) {
+    // bunfig's strict-mode loader throws ConfigNotFoundError when the project
+    // simply doesn't ship a `config/crosswind.ts` (or any other matching name).
+    // That is the normal case — the caller falls through to Crosswind's
+    // built-in defaults and there's nothing for the user to fix. Don't spam
+    // the console with a "Failed to load" warning every time CSS regenerates.
+    // Only surface the warning when something genuinely went wrong (syntax
+    // error in the user's config, permission denied, etc.).
+    if (error instanceof Error && error.name === 'ConfigNotFoundError')
+      return null
+
     console.warn(`${colors.yellow}[Crosswind]${colors.reset} Failed to load crosswind config:`, error instanceof Error ? error.message : error)
     return null
   }
