@@ -1,4 +1,83 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.22...v0.2.23)
+
+### 🚀 Features
+
+- build-time substitution for `import.meta.env.STX_PUBLIC_*` in client bundles ([c85b28d](https://github.com/stacksjs/stx/commit/c85b28d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add 20 builtin components — forms, layout, display, feedback, nav ([435b581](https://github.com/stacksjs/stx/commit/435b581)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- silence ConfigNotFoundError in crosswind config loader ([e79685f](https://github.com/stacksjs/stx/commit/e79685f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: add `bun` condition to package exports ([b93559a](https://github.com/stacksjs/stx/commit/b93559a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: remove x-cloak from :if subtrees after deferred processing (#1689) ([0016332](https://github.com/stacksjs/stx/commit/0016332)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1689](https://github.com/stacksjs/stx/issues/1689), [#1689](https://github.com/stacksjs/stx/issues/1689))
+- **bun-plugin/serve**: invalidate route cache when view files are added ([c72f512](https://github.com/stacksjs/stx/commit/c72f512)) _(by Chris <chrisbreuer93@gmail.com>)_
+- 12 audit-driven correctness, perf, and DX improvements ([1a215a7](https://github.com/stacksjs/stx/commit/1a215a7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: correct misleading comment on pre-build step ([f8aea24](https://github.com/stacksjs/stx/commit/f8aea24)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- move presentational builtins to packages/components, fix syntax ([0a09f70](https://github.com/stacksjs/stx/commit/0a09f70)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- **components**: lead with JSX-tag syntax, not @component directives (#1688) ([3fca27d](https://github.com/stacksjs/stx/commit/3fca27d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1688](https://github.com/stacksjs/stx/issues/1688), [#1688](https://github.com/stacksjs/stx/issues/1688))
+
+### 🧹 Chores
+
+- release v0.2.23 ([ba0b01b](https://github.com/stacksjs/stx/commit/ba0b01b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- drop --only-changed-since (unsupported in bumpx 0.2.4) ([0d1aca7](https://github.com/stacksjs/stx/commit/0d1aca7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a8420aa](https://github.com/stacksjs/stx/commit/a8420aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- refresh bun.lock to pick up latest pickier ([8f541c4](https://github.com/stacksjs/stx/commit/8f541c4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([362746c](https://github.com/stacksjs/stx/commit/362746c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([c7011db](https://github.com/stacksjs/stx/commit/c7011db)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4d245d4](https://github.com/stacksjs/stx/commit/4d245d4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d064b66](https://github.com/stacksjs/stx/commit/d064b66)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.22...HEAD)
+
+### 🚀 Features
+
+- build-time substitution for `import.meta.env.STX_PUBLIC_*` in client bundles ([c85b28d](https://github.com/stacksjs/stx/commit/c85b28d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add 20 builtin components — forms, layout, display, feedback, nav ([435b581](https://github.com/stacksjs/stx/commit/435b581)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- silence ConfigNotFoundError in crosswind config loader ([e79685f](https://github.com/stacksjs/stx/commit/e79685f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: add `bun` condition to package exports ([b93559a](https://github.com/stacksjs/stx/commit/b93559a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: remove x-cloak from :if subtrees after deferred processing (#1689) ([0016332](https://github.com/stacksjs/stx/commit/0016332)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1689](https://github.com/stacksjs/stx/issues/1689), [#1689](https://github.com/stacksjs/stx/issues/1689))
+- **bun-plugin/serve**: invalidate route cache when view files are added ([c72f512](https://github.com/stacksjs/stx/commit/c72f512)) _(by Chris <chrisbreuer93@gmail.com>)_
+- 12 audit-driven correctness, perf, and DX improvements ([1a215a7](https://github.com/stacksjs/stx/commit/1a215a7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: correct misleading comment on pre-build step ([f8aea24](https://github.com/stacksjs/stx/commit/f8aea24)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- move presentational builtins to packages/components, fix syntax ([0a09f70](https://github.com/stacksjs/stx/commit/0a09f70)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- **components**: lead with JSX-tag syntax, not @component directives (#1688) ([3fca27d](https://github.com/stacksjs/stx/commit/3fca27d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1688](https://github.com/stacksjs/stx/issues/1688), [#1688](https://github.com/stacksjs/stx/issues/1688))
+
+### 🧹 Chores
+
+- drop --only-changed-since (unsupported in bumpx 0.2.4) ([0d1aca7](https://github.com/stacksjs/stx/commit/0d1aca7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a8420aa](https://github.com/stacksjs/stx/commit/a8420aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- refresh bun.lock to pick up latest pickier ([8f541c4](https://github.com/stacksjs/stx/commit/8f541c4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([362746c](https://github.com/stacksjs/stx/commit/362746c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([c7011db](https://github.com/stacksjs/stx/commit/c7011db)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4d245d4](https://github.com/stacksjs/stx/commit/4d245d4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d064b66](https://github.com/stacksjs/stx/commit/d064b66)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.21...v0.2.22)
 
 ### ⚡ Performance Improvements
