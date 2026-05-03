@@ -1,4 +1,36 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.25...v0.2.26)
+
+### ♻️ Code Refactoring
+
+- **stx-site**: tighter regex for empty chunk pruning ([ae5611c](https://github.com/stacksjs/stx/commit/ae5611c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.26 ([a2b70b7](https://github.com/stacksjs/stx/commit/a2b70b7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ⏪ Reverts
+
+- pin very-happy-dom back to ^0.0.9 ([a3ee640](https://github.com/stacksjs/stx/commit/a3ee640)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.25...HEAD)
+
+### ♻️ Code Refactoring
+
+- **stx-site**: tighter regex for empty chunk pruning ([ae5611c](https://github.com/stacksjs/stx/commit/ae5611c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ⏪ Reverts
+
+- pin very-happy-dom back to ^0.0.9 ([a3ee640](https://github.com/stacksjs/stx/commit/a3ee640)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.24...v0.2.25)
 
 ### 🚀 Features

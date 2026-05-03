@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/stx-site",
   "type": "module",
-  "version": "0.2.25",
+  "version": "0.2.26",
   "description": "Build + deploy helpers for static stx marketing sites: SEO, sitemap, robots, 404, public assets, AWS deploy via Porkbun/Route53.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
