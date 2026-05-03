@@ -4,7 +4,14 @@ export { cloudAdapter } from './adapters/cloud'
 export { staticAdapter } from './adapters/static'
 export { detectRuntime, isEdgeRuntime } from './runtime'
 
-export type { CloudAdapterConfig } from './adapters/cloud'
+export type {
+  CloudAdapterConfig,
+  DnsProviderConfig,
+  DnsProviderName,
+  GoDaddyDnsConfig,
+  PorkbunDnsConfig,
+  Route53DnsConfig,
+} from './adapters/cloud'
 export type {
   AdapterBuildConfig,
   AdapterBuildResult,
