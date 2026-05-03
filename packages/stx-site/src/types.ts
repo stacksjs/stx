@@ -1,0 +1,114 @@
+export interface SiteSeo {
+  /** Default <title> when a page doesn't override it */
+  title?: string
+  /** Default meta description and og:description */
+  description?: string
+  /** Site name used for og:site_name */
+  siteName?: string
+  /** Default og:image / twitter:image (absolute URL preferred) */
+  image?: string
+  /** Twitter handle without @, used for twitter:site / twitter:creator */
+  twitter?: string
+  /** og:locale (e.g. "en_US") */
+  locale?: string
+  /** og:type (e.g. "website", "profile") */
+  type?: string
+}
+
+export interface SiteSocial {
+  twitter?: string
+  instagram?: string
+  youtube?: string
+  github?: string
+  linkedin?: string
+  [k: string]: string | undefined
+}
+
+export interface SiteConfig {
+  /** Display name (used for sitemap, structured data, etc.) */
+  name: string
+  /** Canonical URL with no trailing slash, e.g. "https://paweldregan.com" */
+  url: string
+  /** Description for SEO defaults */
+  description?: string
+  /** Optional social links */
+  social?: SiteSocial
+  /** SEO defaults applied to every built page */
+  seo?: SiteSeo
+  /** Pages directory (default: "pages") */
+  pagesDir?: string
+  /** Public assets directory copied verbatim into outDir (default: "public") */
+  publicDir?: string
+  /** Output directory (default: "dist") */
+  outDir?: string
+  /** Don't generate sitemap.xml when false (default: true) */
+  sitemap?: boolean
+  /**
+   * robots.txt mode:
+   *   - true / "allow": Allow all (default)
+   *   - "disallow": Disallow all (use for staging)
+   *   - false: Don't generate one
+   *   - string: Use the provided robots.txt content verbatim
+   */
+  robots?: boolean | 'allow' | 'disallow' | string
+  /** Page-specific overrides keyed by output path (e.g. "/about") */
+  pages?: Record<string, PageMeta>
+}
+
+export interface PageMeta {
+  title?: string
+  description?: string
+  image?: string
+  /** When false, this page is excluded from sitemap.xml */
+  sitemap?: boolean
+  /** Sitemap priority (0–1) */
+  priority?: number
+  /** Sitemap change frequency */
+  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'
+}
+
+export interface BuildOptions extends SiteConfig {
+  /** Skip cleaning outDir before build (default: false) */
+  noClean?: boolean
+}
+
+export interface DeployOptions {
+  /** Site name used for AWS resource naming */
+  siteName: string
+  /** Apex or subdomain (e.g. "paweldregan.com") */
+  domain: string
+  /** AWS region (default: us-east-1) */
+  region?: string
+  /** Output directory containing built files (default: "dist") */
+  outDir?: string
+  /** DNS provider — defaults to Porkbun (reads PORKBUN_API_KEY / PORKBUN_SECRET_KEY) */
+  dnsProvider?: 'porkbun' | { provider: 'porkbun', apiKey?: string, secretKey?: string }
+  /**
+   * Single-page-app mode. Defaults to false.
+   * Set to true if your stx site is purely client-side routed (rare).
+   */
+  singlePageApp?: boolean
+  /**
+   * Empty the bucket before uploading (default: false). Use this if you've
+   * removed pages and want orphans cleaned up.
+   */
+  cleanBucket?: boolean
+  /** CloudFormation stack name override */
+  stackName?: string
+  /** Default cache control header (default: "max-age=3600, public") */
+  cacheControl?: string
+  /** AWS resource tags */
+  tags?: Record<string, string>
+}
+
+export interface DeployResult {
+  success: boolean
+  domain?: string
+  url?: string
+  bucket?: string
+  distributionDomain?: string
+  filesUploaded?: number
+  filesSkipped?: number
+  message?: string
+  durationMs: number
+}
