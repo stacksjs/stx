@@ -1,4 +1,33 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.26...v0.2.27)
+
+### 🐛 Bug Fixes
+
+- **stx-site**: pin sibling stx deps to real versions ([afe1d38](https://github.com/stacksjs/stx/commit/afe1d38)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.27 ([d577af8](https://github.com/stacksjs/stx/commit/d577af8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bump very-happy-dom to ^0.1.4 — picks up dtsx fixes for correct .d.ts output ([2fc4506](https://github.com/stacksjs/stx/commit/2fc4506)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.26...HEAD)
+
+### 🐛 Bug Fixes
+
+- **stx-site**: pin sibling stx deps to real versions ([afe1d38](https://github.com/stacksjs/stx/commit/afe1d38)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- bump very-happy-dom to ^0.1.4 — picks up dtsx fixes for correct .d.ts output ([2fc4506](https://github.com/stacksjs/stx/commit/2fc4506)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.25...v0.2.26)
 
 ### ♻️ Code Refactoring
