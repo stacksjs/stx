@@ -42,12 +42,12 @@
     "dist"
   ],
   "dependencies": {
-    "@stacksjs/stx": "workspace:*",
+    "@stacksjs/stx": "^0.2.26",
     "@stacksjs/ts-cloud": "^0.2.8",
-    "bun-plugin-stx": "workspace:*"
+    "bun-plugin-stx": "^0.2.26"
   },
   "devDependencies": {
-    "bun-plugin-dtsx": "^0.21.5"
+    "bun-plugin-dtsx": "^0.9.17"
   },
   "scripts": {
     "build": "bun --bun build.ts",
