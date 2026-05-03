@@ -1,4 +1,32 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.24...v0.2.25)
+
+### 🚀 Features
+
+- **deploy**: cloudAdapter supports external DNS providers ([ecaccfc](https://github.com/stacksjs/stx/commit/ecaccfc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx-site**: new package for static stx marketing sites ([7e10a98](https://github.com/stacksjs/stx/commit/7e10a98)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **crosswind**: scan layout classes when rendering layout-wrapped templates ([b71ad35](https://github.com/stacksjs/stx/commit/b71ad35)) _(by Chris <chrisbreuer93@gmail.com>)_
+- silence ConfigNotFoundError in crosswind config loader ([cadab72](https://github.com/stacksjs/stx/commit/cadab72)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.25 ([d8e3142](https://github.com/stacksjs/stx/commit/d8e3142)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bump very-happy-dom to ^0.1.2 ([7d81552](https://github.com/stacksjs/stx/commit/7d81552)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([2dece2c](https://github.com/stacksjs/stx/commit/2dece2c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.24 ([c80202c](https://github.com/stacksjs/stx/commit/c80202c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.23 ([2fa68ee](https://github.com/stacksjs/stx/commit/2fa68ee)) _(by Chris <chrisbreuer93@gmail.com>)_
+- drop --only-changed-since (unsupported in bumpx 0.2.4) ([4401380](https://github.com/stacksjs/stx/commit/4401380)) _(by Chris <chrisbreuer93@gmail.com>)_
+- refresh bun.lock and apply pickier --fix ([bc191cd](https://github.com/stacksjs/stx/commit/bc191cd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- refresh bun.lock ([a8e7991](https://github.com/stacksjs/stx/commit/a8e7991)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.23...v0.2.24)
 
 ### 🐛 Bug Fixes
