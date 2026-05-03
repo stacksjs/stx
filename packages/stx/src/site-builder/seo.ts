@@ -16,7 +16,13 @@ export function injectSeo(html: string, site: SiteConfig, page: PageMeta = {}, p
   const ogType = seo.type ?? 'website'
   const locale = seo.locale ?? 'en_US'
 
-  const tags: string[] = [
+  const tags: string[] = []
+  if (seo.favicon) {
+    const ext = seo.favicon.toLowerCase().split('.').pop()
+    const mime = ext === 'svg' ? 'image/svg+xml' : ext === 'ico' ? 'image/x-icon' : ext === 'png' ? 'image/png' : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ''
+    tags.push(`<link rel="icon"${mime ? ` type="${mime}"` : ''} href="${escapeAttr(seo.favicon)}">`)
+  }
+  tags.push(
     `<link rel="canonical" href="${escapeAttr(url)}">`,
     `<meta name="description" content="${escapeAttr(description)}">`,
     `<meta property="og:title" content="${escapeAttr(title)}">`,
@@ -28,7 +34,7 @@ export function injectSeo(html: string, site: SiteConfig, page: PageMeta = {}, p
     `<meta name="twitter:card" content="${image ? 'summary_large_image' : 'summary'}">`,
     `<meta name="twitter:title" content="${escapeAttr(title)}">`,
     `<meta name="twitter:description" content="${escapeAttr(description)}">`,
-  ]
+  )
   if (image) {
     tags.push(`<meta property="og:image" content="${escapeAttr(image)}">`)
     tags.push(`<meta name="twitter:image" content="${escapeAttr(image)}">`)

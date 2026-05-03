@@ -13,7 +13,7 @@ import {
 import { join, relative } from 'node:path'
 import process from 'node:process'
 import stxPlugin from 'bun-plugin-stx'
-import { injectCrosswindCSS } from '@stacksjs/stx'
+import { injectCrosswindCSS } from '../dev-server/crosswind'
 import { injectSeo } from './seo'
 import { generateSitemap, type SitemapEntry } from './sitemap'
 import { generateRobots } from './robots'
@@ -35,7 +35,7 @@ export interface BuildResult {
  * 6. Synthesize 404.html (uses pages/404.stx if present, else clones index)
  * 7. Generate sitemap.xml and robots.txt
  */
-export async function buildSite(options: BuildOptions): Promise<BuildResult> {
+export async function buildStaticSite(options: BuildOptions): Promise<BuildResult> {
   const start = Date.now()
   const pagesDir = options.pagesDir ?? 'pages'
   const outDir = options.outDir ?? 'dist'

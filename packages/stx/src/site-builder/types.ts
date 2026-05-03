@@ -13,6 +13,11 @@ export interface SiteSeo {
   locale?: string
   /** og:type (e.g. "website", "profile") */
   type?: string
+  /**
+   * Favicon path (relative to site root, e.g. "/favicon.svg") — auto-injected
+   * into every page's <head>. Type is inferred from extension (.svg, .ico, .png).
+   */
+  favicon?: string
 }
 
 export interface SiteSocial {
@@ -70,45 +75,4 @@ export interface PageMeta {
 export interface BuildOptions extends SiteConfig {
   /** Skip cleaning outDir before build (default: false) */
   noClean?: boolean
-}
-
-export interface DeployOptions {
-  /** Site name used for AWS resource naming */
-  siteName: string
-  /** Apex or subdomain (e.g. "paweldregan.com") */
-  domain: string
-  /** AWS region (default: us-east-1) */
-  region?: string
-  /** Output directory containing built files (default: "dist") */
-  outDir?: string
-  /** DNS provider — defaults to Porkbun (reads PORKBUN_API_KEY / PORKBUN_SECRET_KEY) */
-  dnsProvider?: 'porkbun' | { provider: 'porkbun', apiKey?: string, secretKey?: string }
-  /**
-   * Single-page-app mode. Defaults to false.
-   * Set to true if your stx site is purely client-side routed (rare).
-   */
-  singlePageApp?: boolean
-  /**
-   * Empty the bucket before uploading (default: false). Use this if you've
-   * removed pages and want orphans cleaned up.
-   */
-  cleanBucket?: boolean
-  /** CloudFormation stack name override */
-  stackName?: string
-  /** Default cache control header (default: "max-age=3600, public") */
-  cacheControl?: string
-  /** AWS resource tags */
-  tags?: Record<string, string>
-}
-
-export interface DeployResult {
-  success: boolean
-  domain?: string
-  url?: string
-  bucket?: string
-  distributionDomain?: string
-  filesUploaded?: number
-  filesSkipped?: number
-  message?: string
-  durationMs: number
 }

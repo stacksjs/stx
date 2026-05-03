@@ -131,6 +131,20 @@ export type { StxPlugin, PluginContext, PluginSetupContext } from './plugin-syst
 // These modules are exported first to establish their types
 export * from './render'
 export { generateCrosswindCSS, injectCrosswindCSS, extractClassNames } from './dev-server/crosswind'
+export {
+  buildStaticSite,
+  defineSiteConfig,
+  generateRobots,
+  generateSitemap,
+  injectSeo,
+  type BuildOptions,
+  type BuildResult,
+  type PageMeta,
+  type SiteConfig,
+  type SiteSeo,
+  type SiteSocial,
+  type SitemapEntry,
+} from './site-builder'
 export * from './utils'
 export * from './slots'
 
