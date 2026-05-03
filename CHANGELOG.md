@@ -1,4 +1,36 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.27...v0.2.28)
+
+### 🚀 Features
+
+- **stx**: integrate site-builder helpers into core ([bd022ab](https://github.com/stacksjs/stx/commit/bd022ab)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ⚡ Performance Improvements
+
+- **release**: release:patch now only bumps packages changed since last tag ([81f2ace](https://github.com/stacksjs/stx/commit/81f2ace)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.28 ([1494ac2](https://github.com/stacksjs/stx/commit/1494ac2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.27...HEAD)
+
+### 🚀 Features
+
+- **stx**: integrate site-builder helpers into core ([bd022ab](https://github.com/stacksjs/stx/commit/bd022ab)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ⚡ Performance Improvements
+
+- **release**: release:patch now only bumps packages changed since last tag ([81f2ace](https://github.com/stacksjs/stx/commit/81f2ace)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.26...v0.2.27)
 
 ### 🐛 Bug Fixes
