@@ -10,7 +10,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
-import { extname, join, relative } from 'node:path'
+import { join, relative } from 'node:path'
 import process from 'node:process'
 import stxPlugin from 'bun-plugin-stx'
 import { injectCrosswindCSS } from '@stacksjs/stx'
@@ -133,7 +133,7 @@ function listFiles(dir: string, base: string = dir): string[] {
 
 function pruneEmptyJsChunks(outDir: string): void {
   for (const file of listFiles(outDir)) {
-    if (!/^chunk-.*\.js$/.test(file) && extname(file) !== '.js') continue
+    if (!/^chunk-.*\.js(?:\.map)?$/.test(file)) continue
     const full = join(outDir, file)
     try {
       const stat = statSync(full)
