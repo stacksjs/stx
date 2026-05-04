@@ -365,6 +365,66 @@ export default {
 }
 ```
 
+## Programmatic Rendering
+
+For consumers who need stx's template processing without the full SPA shell — documentation engines, email templates, snippet rendering, etc. — `renderString` and `render` are the entry points.
+
+### `renderString` — Inline Template
+
+```typescript
+import { renderString } from '@stacksjs/stx'
+
+const html = await renderString(
+  '<h1>{{ title }}</h1>',
+  { title: 'Hello' }
+)
+// → <h1>Hello</h1>
+```
+
+### `templateOnly` Mode
+
+Pass `{ templateOnly: true }` to skip injecting the signals runtime, SPA router, and client-script IIFE wrapping. The output is just the processed template — useful when you're embedding stx-rendered fragments inside another runtime that already provides reactivity, or when you only need server-side directives like `{{ }}`, `@if`, `@foreach`, `@include`, expressions, and includes.
+
+```typescript
+import { renderString } from '@stacksjs/stx'
+
+const fragment = await renderString(
+  `
+  @foreach(item in items)
+    <li>{{ item.name }}</li>
+  @endforeach
+  `,
+  { items: [{ name: 'Apple' }, { name: 'Pear' }] },
+  { templateOnly: true }
+)
+// → <li>Apple</li><li>Pear</li>
+//   No <script data-stx-scoped>, no SEO injection, no router setup.
+```
+
+What `templateOnly` strips after directive processing:
+
+- `<script data-stx-scoped>` blocks (signals runtime + setup IIFE)
+- SEO injection that targets full-document output
+- Client script IIFE wrapping — `<script client>` blocks remain as-is for the consumer to handle
+
+What it keeps:
+
+- All directive expansion (`{{ }}`, `{!! !!}`, `@if`, `@foreach`, `@include`, layouts, components)
+- Static class strings, attribute interpolation
+- Inline `<script>` content (passed through unwrapped)
+
+### `render` — From a File
+
+```typescript
+import { render } from '@stacksjs/stx'
+
+const html = await render('./pages/index.stx', {
+  context: { user: { name: 'Alice' } },
+})
+```
+
+`render` accepts the same options object as `renderString`, plus a file path. It walks layout/component dependencies for cache invalidation.
+
 ## Production Deployment
 
 ### Build for Production

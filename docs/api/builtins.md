@@ -1,6 +1,27 @@
 # Builtin Components Reference
 
-stx ships with four builtin components that are always available without import. They render directly to HTML at build time with zero client-side component overhead.
+stx ships with seven builtin components and a handful of runtime globals. Builtins are always available without import — they render to HTML at build time with no client-side component overhead. Runtime globals (`toast`, `modal`, `drawer`, `stxAlert`, `stxConfirm`) are attached to `window` by the signals runtime and can be called from any `<script client>` block.
+
+| Builtin | Purpose |
+|---------|---------|
+| [`<StxLink>`](#stxlink) | SPA-aware anchor |
+| [`<StxImage>`](#stximage) | Optimized `<img>` with srcset / lazy / blur |
+| [`<Icon>`](#icon) | Iconify icon renderer |
+| [`<StxLoadingIndicator>`](#stxloadingindicator) | Top-of-page progress bar |
+| [`<StxToast>`](#stxtoast) | Toast notification container |
+| [`<StxModal>`](#stxmodal) | Imperative modal dialog |
+| [`<StxDrawer>`](#stxdrawer) | Imperative slide-in panel |
+
+| Runtime API | Where it lives |
+|-------------|----------------|
+| `toast.success / error / info / warning / dismiss` | `window.toast` |
+| `modal.open(id) / close(id) / toggle(id)` | `window.modal` |
+| `drawer.open(id) / close(id) / toggle(id)` | `window.drawer` |
+| `stxAlert(message, opts?)` | Promise-returning replacement for `window.alert` |
+| `stxConfirm(message, opts?)` | Promise-returning replacement for `window.confirm` |
+| `x-tooltip="text"` directive | Event-delegated tooltip with auto-flip positioning |
+
+Presentational components (Button, Card, Switch, Tabs, etc.) live in [`@stacksjs/components`](https://github.com/stacksjs/stx/tree/main/packages/components), not here.
 
 ## StxLink
 
@@ -383,3 +404,192 @@ window.stxLoading.clear()
 When using the stx SPA router, call `stxLoading.start()` before navigation and `stxLoading.finish()` after the new page loads. The router's `stx:navigate` event or the `@async` component loading states pair well with this indicator.
 
 **Aliases:** `<stx-loading-indicator>`
+
+## StxToast
+
+Renders a fixed-position container that the runtime `toast()` API populates with notification cards. Drop one `<StxToast />` into your layout — typically once per app — and trigger toasts from anywhere with `toast.success(...)`, `toast.error(...)`, etc.
+
+```html
+<StxToast />
+<StxToast position="top-right" max="5" />
+<StxToast position="bottom-center" />
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `position` | `'top-right' \| 'top-left' \| 'top-center' \| 'bottom-right' \| 'bottom-left' \| 'bottom-center'` | `'top-right'` | Where the stack appears |
+| `max` | `number` | `5` | Visible toast cap. New toasts past the cap evict the oldest. |
+
+### Runtime API — `window.toast`
+
+The signals runtime registers `toast` on `window` so any `<script client>` block can call it without imports.
+
+```html
+<script client>
+  toast.success('Saved!')
+  toast.error('Something went wrong', { duration: 5000 })
+  toast.info('FYI', { title: 'Heads up' })
+  toast.warning('This is risky')
+  toast.dismiss()           // dismiss all
+  toast.dismiss(toastId)    // dismiss a specific toast (return value of toast.*)
+</script>
+```
+
+Each call returns the new toast's id (a number). Defaults: `duration: 3000ms`, slide-in/out animation matched to the container's `position`, dark mode via `prefers-color-scheme`, `role="alert"`, close button.
+
+**Aliases:** `<stx-toast>`
+
+## StxModal
+
+Renders a hidden, animated modal dialog with the slot as content. Open and close imperatively via `modal.open(id)` / `modal.close(id)` / `modal.toggle(id)` from a `<script client>` block.
+
+```html
+<button @click="modal.open('settings')">Open</button>
+
+<StxModal id="settings">
+  <h2>Settings</h2>
+  <p>Modal content here.</p>
+  <button @click="modal.close('settings')">Done</button>
+</StxModal>
+
+<StxModal id="confirm-delete" size="sm" closeOnBackdrop="false">
+  <h3>Delete this item?</h3>
+  <button @click="modal.close('confirm-delete')">Cancel</button>
+</StxModal>
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `id` | `string` | — *(required)* | Unique identifier; passed to `modal.open(id)` |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'xl' \| 'full'` | `'md'` | Max-width preset |
+| `closeOnBackdrop` | `boolean` | `true` | Click outside the panel closes the modal |
+| `closeOnEscape` | `boolean` | `true` | <kbd>Esc</kbd> closes the modal |
+
+### Runtime API — `window.modal`
+
+```ts
+modal.open(id: string): void
+modal.close(id: string): void
+modal.toggle(id: string): void
+```
+
+Open behavior: locks `document.body` scroll, sets `data-stx-modal-open` for the CSS transition, registers an Escape handler (if enabled). Close reverses everything; body scroll restores once no other modals are still open.
+
+Both backdrop click and Escape can be opted out of via the `closeOnBackdrop` / `closeOnEscape` props.
+
+**Aliases:** `<stx-modal>`
+
+## StxDrawer
+
+Slide-in panel from the left or right edge. Same imperative model as `<StxModal>` — call `drawer.open(id)` to slide in, `drawer.close(id)` to dismiss.
+
+```html
+<button @click="drawer.open('nav')">Menu</button>
+
+<StxDrawer id="nav" side="left" size="md">
+  <nav>
+    <StxLink to="/">Home</StxLink>
+    <StxLink to="/about">About</StxLink>
+  </nav>
+</StxDrawer>
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `id` | `string` | — *(required)* | Unique identifier |
+| `side` | `'left' \| 'right'` | `'right'` | Edge to slide in from |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Panel width preset (16/24/32/40 rem) |
+| `closeOnBackdrop` | `boolean` | `true` | Click outside closes |
+| `closeOnEscape` | `boolean` | `true` | <kbd>Esc</kbd> closes |
+| `overlay` | `boolean` | `true` | Show a dimmed backdrop. Set `false` for a non-modal drawer (clicks outside still hit the page). |
+
+### Runtime API — `window.drawer`
+
+```ts
+drawer.open(id: string): void
+drawer.close(id: string): void
+drawer.toggle(id: string): void
+```
+
+Same locking/restore semantics as `modal` — body scroll is locked while any drawer or modal is open.
+
+**Aliases:** `<stx-drawer>`
+
+## stxAlert / stxConfirm
+
+Styled, Promise-returning replacements for the synchronous `window.alert` and `window.confirm`. They render the same dialog primitive used for `<StxModal>` but build the markup imperatively, so they don't require a builtin in the page.
+
+```html
+<script client>
+  await stxAlert('Saved successfully', { type: 'success', title: 'Done' })
+
+  const confirmed = await stxConfirm('Delete this draft?', {
+    type: 'warning',
+    confirmText: 'Delete',
+    cancelText: 'Keep',
+  })
+  if (confirmed) deleteDraft()
+</script>
+```
+
+### Signatures
+
+```ts
+stxAlert(message: string, options?: AlertOptions): Promise<void>
+stxConfirm(message: string, options?: ConfirmOptions): Promise<boolean>
+
+interface AlertOptions {
+  title?: string
+  type?: 'info' | 'warning' | 'error' | 'success' | 'question' // default: 'info'
+  confirmText?: string  // default: 'OK'
+}
+
+interface ConfirmOptions extends AlertOptions {
+  cancelText?: string   // default: 'Cancel'
+  type?: 'info' | 'warning' | 'error' | 'success' | 'question' // default: 'question'
+}
+```
+
+Behavior:
+
+- Animates in with a backdrop blur and panel scale.
+- Auto-focuses the primary button.
+- <kbd>Esc</kbd> resolves with `false` (confirm) or `undefined` (alert).
+- Each `type` swaps the icon and primary button color.
+- Supports dark mode via `prefers-color-scheme`.
+
+## x-tooltip Directive
+
+A single, shared, event-delegated tooltip element handles every element with an `x-tooltip` attribute on the page. There's no per-element JS, no per-call DOM creation — the runtime listens once on `document` and shows/hides one shared tooltip node on hover or focus.
+
+```html
+<button x-tooltip="Save the document">💾</button>
+<a href="#" x-tooltip="Read more about pricing" x-tooltip-position="bottom">Pricing</a>
+<input x-tooltip="Your full name" />
+```
+
+### Attributes
+
+| Attribute | Values | Default | Description |
+|-----------|--------|---------|-------------|
+| `x-tooltip` | string | — | Tooltip text. Required to activate. |
+| `x-tooltip-position` | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'` | Preferred position. The runtime auto-flips to fit the viewport. |
+
+### Triggers
+
+The runtime activates on:
+
+- `mouseover` / `mouseout`
+- `focusin` / `focusout` (so keyboard navigation gets tooltips too)
+
+### Notes
+
+- Multiline text: use `\n` in the attribute, the tooltip preserves whitespace via `white-space: pre-wrap`.
+- Tooltips don't capture pointer events (`pointer-events: none`), so they never block clicks on neighbors.
+- The shared element lives at `document.body` with `z-index: 999999`; if you nest your app inside a `transform` or `contain: paint` ancestor, the tooltip still positions correctly because it uses `position: absolute` with viewport coordinates derived from `getBoundingClientRect`.

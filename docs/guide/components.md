@@ -2,61 +2,78 @@
 
 stx components are reusable UI elements that encapsulate template, logic, and styling. This guide covers everything you need to know about creating and using components.
 
+> **Looking for the component library?** See the [Component Library reference](../api/component-library.md) for the engine builtins / `@stacksjs/components` split, the JSX-tag syntax, and an index of all shipped components.
+
 ## Component Basics
 
 ### Component Structure
 
-A basic component consists of:
+A `.stx` component file has up to three parts:
 
-1. TypeScript interfaces (optional)
-2. Component definition
-3. Template
-4. Styles (optional)
+1. `<script server>` — server-side prop normalization and class string assembly
+2. The template HTML
+3. `<script client>` — client-side reactivity (signals, event handlers, exposed methods)
 
-```stx
-@ts
-interface ButtonProps {
-  type?: 'primary' | 'secondary'
-  size?: 'sm' | 'md' | 'lg'
-  disabled?: boolean
-}
-@endts
+```html
+<!-- components/MyButton.stx -->
+<script server>
+  export const variant = $props.variant || 'primary'
+  export const size = $props.size || 'md'
+  export const disabled = !!$props.disabled
+  export const buttonClass = `btn btn-${variant} btn-${size}`
+</script>
 
-@component('Button', {
-  props: {
-    type: 'primary',
-    size: 'md',
-    disabled: false
+<button
+  class="{{ buttonClass }}"
+  @if(disabled)disabled@endif
+  @click="onClick($event)"
+>
+  <slot />
+</button>
+
+<script client>
+  const emit = defineEmits(['click'])
+  const disabled = {{ disabled }}
+
+  function onClick(event) {
+    if (disabled) return
+    emit('click', event)
   }
-})
-  <button
-    class="btn btn-{{ type }} btn-{{ size }}"
-    x-disabled="disabled"
-  >
-    <slot></slot>
-  </button>
-
-  <style>
-    .btn {
-      @apply rounded font-medium;
-    }
-    .btn-primary {
-      @apply bg-blue-500 text-white;
-    }
-    .btn-secondary {
-      @apply bg-gray-500 text-white;
-    }
-  </style>
-@endcomponent
+</script>
 ```
+
+Drop the file into your `componentsDir` (default `components/`) and it's auto-registered. The file name (PascalCase) becomes the tag.
 
 ### Using Components
 
-Import and use components in your templates:
+The canonical syntax is JSX tags. No imports — components are resolved by tag name from `componentsDir` and the engine builtins.
+
+```html
+<div class="actions">
+  <MyButton variant="primary" @click="save()">Save</MyButton>
+  <MyButton variant="secondary" @click="cancel()">Cancel</MyButton>
+  <MyButton variant="danger" :disabled="isDeleting" @click="del()">Delete</MyButton>
+</div>
+```
+
+Static props pass strings (`variant="primary"`). Dynamic props bind expressions (`:disabled="isDeleting"`). Event listeners use `@event` (`@click="save()"`).
+
+### `@component` Directive (Blade-Compat)
+
+The Blade-style directive form still works for cases where you need to pass props that don't fit cleanly into HTML attributes (functions, complex objects):
+
+```html
+@component('MyButton', {
+  variant: 'primary',
+  onClick: () => save(),
+})
+  Save
+@endcomponent
+```
+
+For typical use, prefer the JSX form.
 
 ```stx
-@import { Button } from '../components/Button'
-
 <div class="actions">
   <Button
     type="primary"
