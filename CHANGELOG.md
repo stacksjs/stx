@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.33...v0.2.34)
+
+### 🐛 Bug Fixes
+
+- **router**: mount progress bar on <html> so it survives body swaps ([be48577](https://github.com/stacksjs/stx/commit/be48577)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.34 ([5463dc8](https://github.com/stacksjs/stx/commit/5463dc8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.33...HEAD)
+
+### 🐛 Bug Fixes
+
+- **router**: mount progress bar on <html> so it survives body swaps ([be48577](https://github.com/stacksjs/stx/commit/be48577)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.32...v0.2.33)
 
 ### 🚀 Features
