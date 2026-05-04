@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.35...v0.2.36)
+
+### 🚀 Features
+
+- **site-builder + router**: magic SPA view transitions — no markup needed ([93fcb56](https://github.com/stacksjs/stx/commit/93fcb56)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.36 ([ecc5a14](https://github.com/stacksjs/stx/commit/ecc5a14)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.35...HEAD)
+
+### 🚀 Features
+
+- **site-builder + router**: magic SPA view transitions — no markup needed ([93fcb56](https://github.com/stacksjs/stx/commit/93fcb56)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.34...v0.2.35)
 
 ### 🧹 Chores
