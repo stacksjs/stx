@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.36...v0.2.37)
+
+### 🐛 Bug Fixes
+
+- **site-builder**: only treat <nav> as above-main chrome, keep <header> inside ([2a7d428](https://github.com/stacksjs/stx/commit/2a7d428)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.37 ([93abe8d](https://github.com/stacksjs/stx/commit/93abe8d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.36...HEAD)
+
+### 🐛 Bug Fixes
+
+- **site-builder**: only treat <nav> as above-main chrome, keep <header> inside ([2a7d428](https://github.com/stacksjs/stx/commit/2a7d428)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.35...v0.2.36)
 
 ### 🚀 Features
