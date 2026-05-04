@@ -1,4 +1,14 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.34...v0.2.35)
+
+### 🧹 Chores
+
+- release v0.2.35 ([c39570b](https://github.com/stacksjs/stx/commit/c39570b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.33...v0.2.34)
 
 ### 🐛 Bug Fixes
