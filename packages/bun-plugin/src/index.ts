@@ -161,6 +161,20 @@ export function stxPlugin(userOptions?: StxOptions): BunPlugin {
         }
       }
 
+      // Treat root-relative URLs (e.g. /favicon.svg, /images/og.jpg) as
+      // runtime references rather than module imports. Bun's HTML loader
+      // walks <link>, <script src>, <img src>, etc. and tries to resolve
+      // each href as a module — but pages frequently point at static
+      // public assets (served verbatim from CDN or copied from public/)
+      // whose absolute URL is exactly what the browser needs at runtime.
+      // Marking them external keeps them in the emitted HTML untouched.
+      build.onResolve({ filter: /^\// }, (args) => {
+        // Bare absolute paths only — don't intercept Windows drive paths
+        // or schemeless URLs (//cdn.example.com/...).
+        if (args.path.startsWith('//')) return null
+        return { external: true, path: args.path }
+      })
+
       // Handler for .md files
       build.onLoad({ filter: /\.md$/ }, async (args) => {
         const filePath = args.path
