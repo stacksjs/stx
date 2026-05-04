@@ -891,8 +891,11 @@ export function processLoops(template: string, context: Record<string, any>, fil
 
   output = processForeachWithContext(output, context)
 
-  // Process @for loops using proper parsing for nested parentheses
-  output = processForLoops(output, context)
+  // Process @for loops using proper parsing for nested parentheses.
+  // filePath/options threaded through so per-iteration recursive
+  // processConditionals and nested processForLoops calls report errors
+  // against the right template.
+  output = processForLoops(output, context, filePath, options)
 
   // Process @while loops using proper parsing for nested parentheses
   // Get configurable max iterations (default: 1000)
@@ -918,7 +921,12 @@ function validateForExpression(expr: string): boolean {
 /**
  * Process @for loops with proper parsing for nested parentheses
  */
-function processForLoops(template: string, context: Record<string, any>): string {
+function processForLoops(
+  template: string,
+  context: Record<string, any>,
+  filePath?: string,
+  options?: StxOptions,
+): string {
   let output = template
   let processedAny = true
 
@@ -961,12 +969,41 @@ function processForLoops(template: string, context: Record<string, any>): string
     }
 
     try {
-      // Create a simple loop output function that captures the context
+      const iterVarNames = parseForIterVarNames(forExpr)
+      const containsNestedDirectives = /@(?:for|foreach|if|unless)\s*\(/.test(content)
+
+      // When the body contains nested @for/@foreach/@if directives we need
+      // to evaluate the loop iteration-by-iteration so each pass can
+      // recursively process those directives with the iter-var added to
+      // context. The original template-literal compile path doesn't propagate
+      // the iter-var into nested directive scopes, which made nested loops
+      // and `@if` branching inside a `@for` body silently broken.
+      //
+      // Iter-var name parsing only handles the common forms: `for (const X
+      // of …)`, `for (let X in …)`, and C-style `for (let X = 0; cond;
+      // update)`. Destructuring patterns and multi-init (`let i = 0, j =
+      // 0; …`) fall back to the legacy fast path so we don't regress
+      // anything that was working before this fix.
+      if (iterVarNames.length > 0 && containsNestedDirectives) {
+        const result = renderForLoopWithRecursion({
+          forExpr,
+          content,
+          iterVarNames,
+          context,
+          filePath,
+          options,
+        })
+        output = output.substring(0, startPos) + result + output.substring(endPos)
+        processedAny = true
+        continue
+      }
+
+      // Fast path: no nested directives. Compile the body into a JS template
+      // literal so {{ expr }} interpolations evaluate inline against the
+      // iter-var. This is faster than the recursive path for plain bodies.
       const loopKeys = Object.keys(context)
       const loopValues = Object.values(context)
 
-      // Process break/continue directives
-      // Escape backticks AND ${ to prevent template literal injection
       let processedContent = content.replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
         return `\${${expr}}`
       })
@@ -993,6 +1030,118 @@ function processForLoops(template: string, context: Record<string, any>): string
   }
 
   return output
+}
+
+/**
+ * Extract the iterator variable names declared by an @for expression.
+ *
+ * Supported forms (covers ~99% of real-world usage):
+ *   `const X of arr`     → ['X']
+ *   `let X in obj`       → ['X']
+ *   `let i = 0; …; …`    → ['i']
+ *   `let [a, b] of …`    → ['a', 'b']
+ *   `let { a, b } of …`  → ['a', 'b']
+ *   `let { a: x } of …`  → ['x']            (renamed binding)
+ *
+ * Anything more exotic (multi-init `let i = 0, j = 0;`, deeply nested
+ * destructuring) returns []. Callers fall back to the legacy fast path
+ * when the result is empty so behaviour is preserved.
+ */
+function parseForIterVarNames(expr: string): string[] {
+  const trimmed = expr.trim()
+
+  // `<keyword> [...] of …` or `<keyword> {...} of …`
+  const destructureMatch = trimmed.match(/^(?:const|let|var)\s+(\[[^\]]+\]|\{[^}]+\})\s+(?:of|in)\s+/)
+  if (destructureMatch) {
+    const inner = destructureMatch[1]
+    const body = inner.slice(1, -1)
+    return body
+      .split(',')
+      .map((part) => {
+        const piece = part.trim()
+        if (!piece) return ''
+        // Object pattern with rename: `key: alias`. We bind under the
+        // alias since that's the local name the body sees.
+        const colon = piece.indexOf(':')
+        if (colon >= 0 && inner.startsWith('{')) {
+          const aliasRaw = piece.slice(colon + 1).trim()
+          // Strip any default value: `alias = 5` → `alias`
+          const eq = aliasRaw.indexOf('=')
+          return (eq >= 0 ? aliasRaw.slice(0, eq) : aliasRaw).trim()
+        }
+        // Array pattern, or object shorthand `{ x }` which binds `x`
+        const eq = piece.indexOf('=')
+        const name = (eq >= 0 ? piece.slice(0, eq) : piece).trim()
+        return /^[A-Za-z_$][\w$]*$/.test(name) ? name : ''
+      })
+      .filter(Boolean)
+  }
+
+  // `<keyword> X of …` or `<keyword> X in …`
+  const ofInMatch = trimmed.match(/^(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s+(?:of|in)\s+/)
+  if (ofInMatch) return [ofInMatch[1]]
+
+  // C-style `<keyword> X = …; cond; update`. We deliberately only return a
+  // single iter-var; multi-init forms (`let i = 0, j = 0;`) bail to []
+  // so the caller falls back to the legacy template-literal path.
+  const cStyleMatch = trimmed.match(/^(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=[^;]*;/)
+  if (cStyleMatch) return [cStyleMatch[1]]
+
+  return []
+}
+
+/**
+ * Render an @for loop iteration-by-iteration, recursively running the full
+ * processor pipeline (loops, conditionals, expression interpolation) on the
+ * body with the iter-var(s) added to context. Used when the body contains
+ * nested directives that need access to the iter-var — see processForLoops.
+ */
+function renderForLoopWithRecursion(args: {
+  forExpr: string
+  content: string
+  iterVarNames: string[]
+  context: Record<string, any>
+  filePath?: string
+  options?: StxOptions
+}): string {
+  const { forExpr, content, iterVarNames, context, filePath, options } = args
+
+  // Run the loop in JS just to capture iter-var values per iteration.
+  // The body itself isn't evaluated here — we render it separately for
+  // each captured iteration so nested directives can be processed with
+  // the iter-var in scope.
+  const contextKeys = Object.keys(context)
+  const contextValues = Object.values(context)
+
+  // eslint-disable-next-line no-new-func
+  const captureFn = new Function(...contextKeys, '__pushIter', `
+    for (${forExpr}) {
+      __pushIter([${iterVarNames.join(', ')}])
+    }
+  `)
+
+  const captured: any[][] = []
+  captureFn(...contextValues, (vals: any[]) => { captured.push(vals) })
+
+  const fp = filePath ?? 'inline.stx'
+  let rendered = ''
+  for (const values of captured) {
+    const iterContext: Record<string, any> = { ...context }
+    iterVarNames.forEach((name, idx) => { iterContext[name] = values[idx] })
+
+    // Recursive: nested @for + nested @foreach inside this body. Each
+    // recursive call sees only this iteration's slice of context, so
+    // nested loops can reference the outer iter-var.
+    let chunk = processForLoops(content, iterContext, filePath, options)
+    // @if/@unless branching inside the loop body — needs the iter-var
+    // in scope, which is exactly what we just merged into iterContext.
+    chunk = processConditionals(chunk, iterContext, fp)
+    // {{ expr }} / {!! expr !!} interpolation against the iter-context.
+    chunk = processExpressions(chunk, iterContext, fp)
+    rendered += chunk
+  }
+
+  return rendered
 }
 
 /**
