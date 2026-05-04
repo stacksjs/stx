@@ -16,12 +16,10 @@ export type RouterOptions = SiteRouterOptions
 
 let _cachedRouterScript: string | null = null
 
-function getRouterScript(): string {
+async function getRouterScript(): Promise<string> {
   if (_cachedRouterScript !== null) return _cachedRouterScript
   try {
-    // Lazy require so we don't take a runtime dep on stx-router for non-SPA builds.
-    // eslint-disable-next-line ts/no-require-imports
-    const mod = require('stx-router') as { getRouterScript?: () => string }
+    const mod = await import('stx-router') as { getRouterScript?: () => string }
     if (typeof mod.getRouterScript === 'function')
       _cachedRouterScript = mod.getRouterScript()
     else
@@ -40,8 +38,8 @@ function getRouterScript(): string {
  * `window.__stxRouterConfig` ahead of the runtime so the runtime picks
  * it up on init.
  */
-export function injectRouterScript(html: string, options?: RouterOptions): string {
-  const script = getRouterScript()
+export async function injectRouterScript(html: string, options?: RouterOptions): Promise<string> {
+  const script = await getRouterScript()
   if (!script) return html
 
   const configBlock = options

@@ -83,7 +83,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
     html = await injectCrosswindCSS(html, process.cwd())
     html = injectSeo(html, options, options.pages?.[pathFromFile(file)], pathFromFile(file))
     if (options.spa !== false)
-      html = injectRouterScript(html, options.router)
+      html = await injectRouterScript(html, options.router)
 
     writeFileSync(fullPath, html)
   }
