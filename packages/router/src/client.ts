@@ -24,7 +24,7 @@ export function getRouterScript(): string {
   if(window.__stxRouter)return;
 
   // ── Configuration ──
-  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px'};
+  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
 
@@ -560,13 +560,19 @@ else {
     return true;
   }
 
-  // SPA click handling — only [data-stx-link] elements get SPA navigation.
-  // Regular <a href> does native full page reload (no interception).
-  // StxLink builtin renders <a data-stx-link href="...">, so we intercept those.
+  // SPA click handling. By default only [data-stx-link] elements get
+  // SPA navigation; regular <a href> does native full page reload. Set
+  // interceptAllLinks:true (window.__stxRouterConfig or build-time
+  // config) to intercept any same-origin anchor — used by static-site
+  // mode where every page is part of the same SPA shell.
   document.addEventListener('click',function(e){
     if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0)return;
     if(!e.target||!e.target.closest)return;
     var link=e.target.closest('[data-stx-link]');
+    if(!link&&o.interceptAllLinks){
+      var anchor=e.target.closest('a[href]');
+      if(anchor&&shouldIntercept(anchor))link=anchor;
+    }
     if(!link){return}
     var href=link.getAttribute('href');
     console.log('[router] click intercepted:',href,'container:',!!getContainer(),'defaultPrevented:',e.defaultPrevented);

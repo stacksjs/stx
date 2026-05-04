@@ -109,4 +109,10 @@ export interface SiteRouterOptions {
   progress?: boolean
   prefetch?: boolean
   cache?: boolean
+  /**
+   * Intercept any same-origin <a href="...">, not just elements with
+   * `data-stx-link`. Defaults to true for static-site builds because
+   * every page is part of the same SPA shell.
+   */
+  interceptAllLinks?: boolean
 }
