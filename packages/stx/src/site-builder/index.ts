@@ -3,6 +3,7 @@ export { injectSeo } from './seo'
 export { generateSitemap, type SitemapEntry } from './sitemap'
 export { generateRobots } from './robots'
 export { injectRouterScript, type RouterOptions } from './router'
+export { injectThemeBootstrap, type ThemeOptions } from './theme'
 export type {
   BuildOptions,
   PageMeta,
@@ -10,4 +11,5 @@ export type {
   SiteRouterOptions,
   SiteSeo,
   SiteSocial,
+  SiteThemeOptions,
 } from './types'

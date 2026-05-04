@@ -18,6 +18,7 @@ import { injectSeo } from './seo'
 import { generateSitemap, type SitemapEntry } from './sitemap'
 import { generateRobots } from './robots'
 import { injectRouterScript } from './router'
+import { injectThemeBootstrap } from './theme'
 import type { BuildOptions, SiteConfig } from './types'
 
 export interface BuildResult {
@@ -82,6 +83,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
 
     html = await injectCrosswindCSS(html, process.cwd())
     html = injectSeo(html, options, options.pages?.[pathFromFile(file)], pathFromFile(file))
+    html = injectThemeBootstrap(html, options)
     if (options.spa !== false)
       html = await injectRouterScript(html, options.router)
 

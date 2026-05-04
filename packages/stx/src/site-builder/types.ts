@@ -67,6 +67,20 @@ export interface SiteConfig {
   spa?: boolean
   /** SPA router options (color, prefetch, cache, etc.) */
   router?: SiteRouterOptions
+  /**
+   * Light / dark theme bootstrap. Defaults to enabled with `default:
+   * "dark"`; pass `false` to opt out, or an options object to tune the
+   * starting theme and localStorage key. Pages need a `id="theme-toggle"`
+   * element somewhere — the framework wires the click handler.
+   */
+  theme?: false | SiteThemeOptions
+}
+
+export interface SiteThemeOptions {
+  /** Default theme on first visit. "auto" picks from prefers-color-scheme. */
+  default?: 'dark' | 'light' | 'auto'
+  /** localStorage key. Default: "theme". */
+  storageKey?: string
 }
 
 export interface PageMeta {

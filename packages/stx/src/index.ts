@@ -138,6 +138,7 @@ export {
   generateSitemap,
   injectRouterScript,
   injectSeo,
+  injectThemeBootstrap,
   type BuildOptions,
   type BuildResult,
   type PageMeta,
@@ -146,7 +147,9 @@ export {
   type SiteRouterOptions,
   type SiteSeo,
   type SiteSocial,
+  type SiteThemeOptions,
   type SitemapEntry,
+  type ThemeOptions,
 } from './site-builder'
 export * from './utils'
 export * from './slots'
