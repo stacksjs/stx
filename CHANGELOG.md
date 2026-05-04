@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.29...v0.2.30)
+
+### 🐛 Bug Fixes
+
+- **site-builder**: use dynamic import for stx-router (ESM-compat) ([721fb58](https://github.com/stacksjs/stx/commit/721fb58)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.30 ([61fa294](https://github.com/stacksjs/stx/commit/61fa294)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.29...HEAD)
+
+### 🐛 Bug Fixes
+
+- **site-builder**: use dynamic import for stx-router (ESM-compat) ([721fb58](https://github.com/stacksjs/stx/commit/721fb58)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.28...v0.2.29)
 
 ### 🐛 Bug Fixes
