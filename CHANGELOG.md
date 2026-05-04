@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.39...v0.2.40)
+
+### 🐛 Bug Fixes
+
+- **site-builder**: browser chrome no longer flashes through wrong theme on SPA hop ([300cbe3](https://github.com/stacksjs/stx/commit/300cbe3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.40 ([e22f247](https://github.com/stacksjs/stx/commit/e22f247)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.39...HEAD)
+
+### 🐛 Bug Fixes
+
+- **site-builder**: browser chrome no longer flashes through wrong theme on SPA hop ([300cbe3](https://github.com/stacksjs/stx/commit/300cbe3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.38...v0.2.39)
 
 ### 🐛 Bug Fixes
