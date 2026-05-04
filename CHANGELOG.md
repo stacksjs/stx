@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.32...v0.2.33)
+
+### 🚀 Features
+
+- **theme**: inject theme-color meta + sync on toggle to stop browser-chrome flicker ([49b2da7](https://github.com/stacksjs/stx/commit/49b2da7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.33 ([069fee3](https://github.com/stacksjs/stx/commit/069fee3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.32...HEAD)
+
+### 🚀 Features
+
+- **theme**: inject theme-color meta + sync on toggle to stop browser-chrome flicker ([49b2da7](https://github.com/stacksjs/stx/commit/49b2da7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.31...v0.2.32)
 
 ### 🐛 Bug Fixes
