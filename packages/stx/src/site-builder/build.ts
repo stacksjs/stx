@@ -81,6 +81,10 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   // chunks too) so we can rewrite them with SEO + Crosswind CSS.
   const htmlFiles = listFiles(outDir).filter(f => f.endsWith('.html'))
   const i18n = resolveI18n(options, process.cwd())
+  // Used for locale-aware <a href> rewrites — any internal href that
+  // matches one of these paths gets the current locale's prefix in
+  // non-default-locale builds, so navigation stays within the locale.
+  const knownPaths = new Set(htmlFiles.map(pathFromFile))
 
   for (const file of htmlFiles) {
     const fullPath = join(outDir, file)
@@ -108,6 +112,12 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
         // canonical pointing at the *localized* URL (overriding the
         // default-locale canonical injectSeo just wrote).
         html = applyLocaleHead(html, options, i18n, locale, basePath)
+        // Rewrite any internal `<a href="/...">` that points at a known
+        // page so non-default-locale visitors stay inside their locale
+        // when they click around. Without this, every nav click on a
+        // /de/ page would yank the visitor back to the English version
+        // even though the link text was localized.
+        html = localizeInternalLinks(html, locale, i18n.defaultLocale, knownPaths)
       }
 
       html = injectThemeBootstrap(html, options)
@@ -273,6 +283,41 @@ function applyLocaleHead(
 
 function escapeAttr(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+/**
+ * Rewrite `<a href="/...">` on a non-default-locale page so internal
+ * links point at the same locale, not the default locale's version.
+ *
+ * Matches only hrefs whose *path* portion is in `knownPaths` — query
+ * strings and fragments are preserved on the rewritten URL. Hrefs that
+ * already start with the locale prefix, that target external sites
+ * (`https://`, `mailto:`, `tel:`, schemeless `//`), or that are pure
+ * fragments (`#section`) are left alone. The default locale skips this
+ * step entirely; its pages already live at the unprefixed paths.
+ */
+function localizeInternalLinks(
+  html: string,
+  locale: string,
+  defaultLocale: string,
+  knownPaths: Set<string>,
+): string {
+  if (locale === defaultLocale) return html
+  return html.replace(
+    /<a\b([^>]*?)\bhref="(\/[^"]*)"([^>]*)>/gi,
+    (full, before, href, after) => {
+      if (href.startsWith('//')) return full
+      if (href === `/${locale}` || href === `/${locale}/` || href.startsWith(`/${locale}/`))
+        return full
+      const m = href.match(/^(\/[^?#]*)(.*)$/)
+      if (!m) return full
+      const [, pathOnly, rest] = m
+      const normalized = pathOnly === '/' ? '/' : pathOnly.replace(/\/$/, '')
+      if (!knownPaths.has(normalized)) return full
+      const localized = normalized === '/' ? `/${locale}/` : `/${locale}${normalized}`
+      return `<a${before}href="${localized}${rest}"${after}>`
+    },
+  )
 }
 
 /**
