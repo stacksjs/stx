@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.37...v0.2.38)
+
+### 🚀 Features
+
+- **site-builder**: multi-locale builds with {t:key} translations + lang picker ([3aa312a](https://github.com/stacksjs/stx/commit/3aa312a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.38 ([e57df75](https://github.com/stacksjs/stx/commit/e57df75)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.37...HEAD)
+
+### 🚀 Features
+
+- **site-builder**: multi-locale builds with {t:key} translations + lang picker ([3aa312a](https://github.com/stacksjs/stx/commit/3aa312a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.36...v0.2.37)
 
 ### 🐛 Bug Fixes
