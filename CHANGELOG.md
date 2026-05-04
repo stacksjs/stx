@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.28...v0.2.29)
+
+### 🐛 Bug Fixes
+
+- **bun-plugin**: await processClientScript so [object Promise] doesn't land in HTML ([b369a4a](https://github.com/stacksjs/stx/commit/b369a4a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.29 ([7652016](https://github.com/stacksjs/stx/commit/7652016)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.28...HEAD)
+
+### 🐛 Bug Fixes
+
+- **bun-plugin**: await processClientScript so [object Promise] doesn't land in HTML ([b369a4a](https://github.com/stacksjs/stx/commit/b369a4a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.27...v0.2.28)
 
 ### 🚀 Features
