@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.40...v0.2.41)
+
+### 🐛 Bug Fixes
+
+- **site-builder + bun-plugin**: keep visitors inside their locale + don't bundle absolute asset URLs ([1e51b1c](https://github.com/stacksjs/stx/commit/1e51b1c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.41 ([a164b06](https://github.com/stacksjs/stx/commit/a164b06)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.40...HEAD)
+
+### 🐛 Bug Fixes
+
+- **site-builder + bun-plugin**: keep visitors inside their locale + don't bundle absolute asset URLs ([1e51b1c](https://github.com/stacksjs/stx/commit/1e51b1c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.39...v0.2.40)
 
 ### 🐛 Bug Fixes
