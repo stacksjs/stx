@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.43...v0.2.44)
+
+### 🐛 Bug Fixes
+
+- **stx**: drop invalid identifier keys before binding context to functions ([ba58d0a](https://github.com/stacksjs/stx/commit/ba58d0a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.44 ([26302ce](https://github.com/stacksjs/stx/commit/26302ce)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.43...HEAD)
+
+### 🐛 Bug Fixes
+
+- **stx**: drop invalid identifier keys before binding context to functions ([ba58d0a](https://github.com/stacksjs/stx/commit/ba58d0a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.42...v0.2.43)
 
 ### 🐛 Bug Fixes
