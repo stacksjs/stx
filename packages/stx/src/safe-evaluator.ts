@@ -469,9 +469,29 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
   // Validate the expression first
   const sanitizedExpr = sanitizeExpression(expression)
 
+  // Drop context keys that aren't valid JS identifiers BEFORE handing them
+  // to `new Function(...keys, body)` — JS rejects param names like
+  // `passed-class`, `data-id`, `1bad`, `foo.bar` with "Unexpected token
+  // '-'" / "Unexpected number". Real templates regularly spread HTML-style
+  // kebab-case attribute keys into the evaluator (component prop bags,
+  // dataset entries, model rows with hyphenated columns); a single
+  // hyphenated key used to silently break every `@if` / `{{ }}` directive
+  // in the template. They can't be referenced from the expression anyway
+  // — JS has no syntax to read `passed-class` directly — so dropping is
+  // both safe and what callers expect.
+  const validIdent = /^[A-Za-z_$][\w$]*$/
+  const validIndices: number[] = []
+  const filteredKeys: string[] = []
+  for (let i = 0; i < contextKeys.length; i++) {
+    if (validIdent.test(contextKeys[i])) {
+      validIndices.push(i)
+      filteredKeys.push(contextKeys[i])
+    }
+  }
+
   // Create the function with strict mode
   // eslint-disable-next-line no-new-func
-  const func = new Function(...contextKeys, `
+  const func = new Function(...filteredKeys, `
     'use strict';
     try {
       return ${sanitizedExpr};
@@ -484,8 +504,20 @@ catch (e) {
     }
   `)
 
-  // eslint-disable-next-line pickier/no-unused-vars
-  return func as (...args: unknown[]) => unknown
+  // Fast path when nothing was filtered: skip the value-projection pass.
+  if (filteredKeys.length === contextKeys.length) {
+    // eslint-disable-next-line pickier/no-unused-vars
+    return func as (...args: unknown[]) => unknown
+  }
+
+  // Project the caller's values down to the columns that survived the
+  // identifier filter. Callers pass values positionally aligned with the
+  // ORIGINAL contextKeys, so we read each surviving slot and forward it.
+  return ((...args: unknown[]) => {
+    const projected = new Array(validIndices.length)
+    for (let i = 0; i < validIndices.length; i++) projected[i] = args[validIndices[i]]
+    return func(...projected)
+  }) as (...args: unknown[]) => unknown
 }
 
 /**
