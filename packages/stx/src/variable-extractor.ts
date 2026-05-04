@@ -923,7 +923,133 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
     }
   }
 
-  return convertedLines.join('\n')
+  return resolveDynamicImports(convertedLines.join('\n'), templateDir)
+}
+
+/**
+ * Rewrite `await import('./relative')` calls to absolute paths so the
+ * bundled stx serve.js resolves them against the template's directory
+ * (mirroring what convertToCommonJS already does for static `import`
+ * statements at lines 786–826).
+ *
+ * Why a post-pass: dynamic imports show up in a lot of expression
+ * contexts — destructured top-level (`const { x } = await import('./y')`),
+ * default top-level (`const m = await import('./y')`), function bodies,
+ * chained access like `(await import('./y')).default`, and ternaries.
+ * Trying to detect every shape during the line-by-line conversion above
+ * leaves gaps; a single string-aware sweep at the end catches them all.
+ *
+ * Bare specifiers (`'node:fs'`, `'@stacksjs/foo'`), absolute paths, and
+ * URLs are passed through unchanged. String/comment boundaries are
+ * tracked so a literal `"await import('./foo')"` inside JS source
+ * stays untouched.
+ */
+function resolveDynamicImports(source: string, templateDir: string): string {
+  const len = source.length
+  let out = ''
+  let i = 0
+  let inString: string | null = null
+  let inLineComment = false
+  let inBlockComment = false
+  let inTemplateExpr = 0
+
+  while (i < len) {
+    const ch = source[i]
+    const next = source[i + 1]
+
+    // Comment handling
+    if (inLineComment) {
+      out += ch
+      if (ch === '\n') inLineComment = false
+      i++
+      continue
+    }
+    if (inBlockComment) {
+      out += ch
+      if (ch === '*' && next === '/') { out += next; i += 2; inBlockComment = false; continue }
+      i++
+      continue
+    }
+    if (!inString && ch === '/' && next === '/') { inLineComment = true; out += ch; i++; continue }
+    if (!inString && ch === '/' && next === '*') { inBlockComment = true; out += ch; i++; continue }
+
+    // String handling
+    if (inString) {
+      out += ch
+      if (ch === '\\') { out += next; i += 2; continue }
+      if (ch === inString && inString !== '`') { inString = null; i++; continue }
+      if (inString === '`') {
+        if (ch === '$' && next === '{') { inTemplateExpr++; out += next; i += 2; continue }
+        if (ch === '`') { inString = null; i++; continue }
+      }
+      i++
+      continue
+    }
+    if (inTemplateExpr > 0) {
+      if (ch === '{') inTemplateExpr++
+      else if (ch === '}') inTemplateExpr--
+    }
+    if (ch === '"' || ch === '\'' || ch === '`') {
+      inString = ch
+      out += ch
+      i++
+      continue
+    }
+
+    // Look for `await import(<quote><path><quote>)` at the current position.
+    // We require the `await` keyword (rather than just `import(`) to avoid
+    // accidentally rewriting an unrelated function call named `import`.
+    if (ch === 'a' && source.startsWith('await', i)) {
+      const match = matchDynamicImportAt(source, i)
+      if (match) {
+        const { quote, path: importPath, end } = match
+        if (importPath.startsWith('.')) {
+          const resolved = path.resolve(templateDir, importPath)
+          out += `await import(${quote}${resolved}${quote})`
+          i = end
+          continue
+        }
+      }
+    }
+
+    out += ch
+    i++
+  }
+
+  return out
+}
+
+/**
+ * Match `await<ws>import<ws>(<quote><path><quote>)` starting at position
+ * `start`. Returns the parsed quote, path, and end index (the position
+ * just past the closing paren) on success, or null on no match.
+ */
+function matchDynamicImportAt(src: string, start: number): { quote: string, path: string, end: number } | null {
+  let pos = start + 'await'.length
+  if (pos >= src.length) return null
+  // Require whitespace separator (so `awaiting` doesn't match `await`)
+  if (!/\s/.test(src[pos])) return null
+  while (pos < src.length && /\s/.test(src[pos])) pos++
+  if (!src.startsWith('import', pos)) return null
+  pos += 'import'.length
+  while (pos < src.length && /\s/.test(src[pos])) pos++
+  if (src[pos] !== '(') return null
+  pos++
+  while (pos < src.length && /\s/.test(src[pos])) pos++
+  const quote = src[pos]
+  if (quote !== '\'' && quote !== '"') return null
+  pos++
+  const pathStart = pos
+  while (pos < src.length && src[pos] !== quote) {
+    if (src[pos] === '\\') pos += 2
+    else pos++
+  }
+  if (pos >= src.length) return null
+  const importPath = src.slice(pathStart, pos)
+  pos++ // closing quote
+  while (pos < src.length && /\s/.test(src[pos])) pos++
+  if (src[pos] !== ')') return null
+  return { quote, path: importPath, end: pos + 1 }
 }
 
 /**
