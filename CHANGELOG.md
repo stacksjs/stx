@@ -1,4 +1,51 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.41...v0.2.42)
+
+### 💥 Breaking Changes
+
+- **site-builder**: {t!:key} raw token for translations with inline markup ([328254f](https://github.com/stacksjs/stx/commit/328254f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **site-builder + bun-plugin**: keep visitors inside their locale + don't bundle absolute asset URLs ([c147c78](https://github.com/stacksjs/stx/commit/c147c78)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📚 Documentation
+
+- cover site-builder, new builtins, middleware, env substitution ([922f702](https://github.com/stacksjs/stx/commit/922f702)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.42 ([32559a5](https://github.com/stacksjs/stx/commit/32559a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.41 ([95eeb85](https://github.com/stacksjs/stx/commit/95eeb85)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.40...HEAD)
+
+### 💥 Breaking Changes
+
+- **site-builder**: {t!:key} raw token for translations with inline markup ([328254f](https://github.com/stacksjs/stx/commit/328254f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **site-builder + bun-plugin**: keep visitors inside their locale + don't bundle absolute asset URLs ([c147c78](https://github.com/stacksjs/stx/commit/c147c78)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📚 Documentation
+
+- cover site-builder, new builtins, middleware, env substitution ([922f702](https://github.com/stacksjs/stx/commit/922f702)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.41 ([95eeb85](https://github.com/stacksjs/stx/commit/95eeb85)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.40...v0.2.41)
 
 ### 🐛 Bug Fixes
