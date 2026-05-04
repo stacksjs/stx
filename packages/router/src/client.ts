@@ -491,6 +491,13 @@ else {
       var newTitle=doc.querySelector('title');
       if(newTitle)document.title=newTitle.textContent;
 
+      // Update <html lang> from the destination doc so screen readers,
+      // CSS :lang() selectors, and any i18n picker that mirrors
+      // document.documentElement.lang stay accurate after SPA hops.
+      if(doc.documentElement&&doc.documentElement.lang){
+        document.documentElement.lang=doc.documentElement.lang;
+      }
+
       window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
 
       // Execute page scripts FIRST — they define setup functions and set _latestSetup

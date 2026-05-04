@@ -132,6 +132,9 @@ export type { StxPlugin, PluginContext, PluginSetupContext } from './plugin-syst
 export * from './render'
 export { generateCrosswindCSS, injectCrosswindCSS, extractClassNames } from './dev-server/crosswind'
 export {
+  applyTranslations,
+  buildAlternateLinks,
+  buildLangPickerScript,
   buildStaticSite,
   defineSiteConfig,
   generateRobots,
@@ -139,11 +142,16 @@ export {
   injectRouterScript,
   injectSeo,
   injectThemeBootstrap,
+  localizePath,
+  resolveI18n,
+  stripLocalePrefix,
+  translate,
   type BuildOptions,
   type BuildResult,
   type PageMeta,
   type RouterOptions,
   type SiteConfig,
+  type SiteI18nOptions,
   type SiteRouterOptions,
   type SiteSeo,
   type SiteSocial,

@@ -10,7 +10,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
-import { join, relative } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 import process from 'node:process'
 import stxPlugin from 'bun-plugin-stx'
 import { injectCrosswindCSS } from '../dev-server/crosswind'
@@ -19,6 +19,13 @@ import { generateSitemap, type SitemapEntry } from './sitemap'
 import { generateRobots } from './robots'
 import { injectRouterScript } from './router'
 import { injectThemeBootstrap } from './theme'
+import {
+  applyTranslations,
+  buildAlternateLinks,
+  buildLangPickerScript,
+  localizePath,
+  resolveI18n,
+} from './i18n'
 import type { BuildOptions, SiteConfig } from './types'
 
 export interface BuildResult {
@@ -73,22 +80,57 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   // Walk the actual emitted .html files (not the build result, which lists
   // chunks too) so we can rewrite them with SEO + Crosswind CSS.
   const htmlFiles = listFiles(outDir).filter(f => f.endsWith('.html'))
+  const i18n = resolveI18n(options, process.cwd())
 
   for (const file of htmlFiles) {
     const fullPath = join(outDir, file)
-    let html = readFileSync(fullPath, 'utf8')
+    const sourceHtml = readFileSync(fullPath, 'utf8')
+    const basePath = pathFromFile(file)
 
-    // Strip references to the empty chunk files we just deleted.
-    html = stripDeadScriptTags(html)
+    // Single-locale (default) build: rewrite the file in place.
+    const localesToEmit = i18n ? i18n.locales : [options.seo?.locale?.split(/[_-]/)[0] ?? 'en']
 
-    html = await injectCrosswindCSS(html, process.cwd())
-    html = injectSeo(html, options, options.pages?.[pathFromFile(file)], pathFromFile(file))
-    html = injectThemeBootstrap(html, options)
-    html = autoWrapContent(html)
-    if (options.spa !== false)
-      html = await injectRouterScript(html, options.router)
+    for (const locale of localesToEmit) {
+      let html = sourceHtml
 
-    writeFileSync(fullPath, html)
+      // Strip references to the empty chunk files we just deleted.
+      html = stripDeadScriptTags(html)
+
+      // Translation tokens — must run before SEO because page meta may use them.
+      if (i18n)
+        html = applyTranslations(html, i18n, locale)
+
+      html = await injectCrosswindCSS(html, process.cwd())
+      html = injectSeo(html, options, options.pages?.[basePath], basePath)
+
+      if (i18n) {
+        // Per-locale: <html lang>, hreflang alternates, og:locale,
+        // canonical pointing at the *localized* URL (overriding the
+        // default-locale canonical injectSeo just wrote).
+        html = applyLocaleHead(html, options, i18n, locale, basePath)
+      }
+
+      html = injectThemeBootstrap(html, options)
+      html = autoWrapContent(html)
+
+      if (i18n)
+        html = html.replace(/<\/body>/i, `${buildLangPickerScript(i18n, locale)}\n</body>`)
+
+      if (options.spa !== false)
+        html = await injectRouterScript(html, options.router)
+
+      const targetFile = i18n ? localePathToFile(basePath, locale, i18n.defaultLocale) : file
+      const targetPath = join(outDir, targetFile)
+      mkdirSync(dirnameOf(targetPath), { recursive: true })
+      writeFileSync(targetPath, html)
+
+      // Default-locale: keep the original file name. Non-default: the
+      // original file might still be present from the bun build pass —
+      // remove it so we don't ship dupes.
+      if (i18n && locale !== i18n.defaultLocale && targetFile !== file) {
+        // (no-op: targetFile is under /<code>/, original file stays for default-locale pass)
+      }
+    }
   }
 
   // Public assets — copied last so they overwrite any same-named files
@@ -121,6 +163,24 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   return { outDir, pages: builtPages, durationMs: Date.now() - start }
 }
 
+function dirnameOf(p: string): string { return dirname(p) }
+
+/** Reverse of pathFromFile, scoped to a locale. */
+function localePathToFile(basePath: string, locale: string, defaultLocale: string): string {
+  const localized = localizePath(basePath, locale, defaultLocale)
+  if (localized === '/') return 'index.html'
+  // /about → about.html, /de → de/index.html, /de/about → de/about.html
+  const trimmed = localized.replace(/^\//, '')
+  if (!trimmed.includes('/')) {
+    // Just a top-level segment like "/about" or "/de"
+    if (locale !== defaultLocale && trimmed === locale)
+      return `${locale}/index.html`
+    return `${trimmed}.html`
+  }
+  // Nested: /de/about → de/about.html (or /de/404.html)
+  return `${trimmed}.html`.replace(/\.html\.html$/, '.html')
+}
+
 function pathFromFile(file: string): string {
   if (file === 'index.html') return '/'
   return `/${file.replace(/\.html$/, '').replace(/\/index$/, '')}`
@@ -151,6 +211,55 @@ function pruneEmptyJsChunks(outDir: string): void {
 
 function stripDeadScriptTags(html: string): string {
   return html.replace(/<script[^>]*src=["']\.\/chunk-[^"']*\.js["'][^>]*><\/script>\s*/g, '')
+}
+
+/**
+ * Apply per-locale `<html lang>`, hreflang alternates, og:locale, and
+ * a localized canonical URL. Runs after `injectSeo` so it can overwrite
+ * the canonical that step wrote with one that points at the actual
+ * URL the user is on (with the locale prefix).
+ */
+function applyLocaleHead(
+  html: string,
+  site: SiteConfig,
+  i18n: ReturnType<typeof resolveI18n>,
+  locale: string,
+  basePath: string,
+): string {
+  if (!i18n) return html
+
+  // <html lang="…">
+  if (/<html\b[^>]*\blang=/i.test(html))
+    html = html.replace(/<html\b([^>]*)\blang="[^"]*"/i, `<html$1lang="${locale}"`)
+  else
+    html = html.replace(/<html\b([^>]*)>/i, `<html$1 lang="${locale}">`)
+
+  const localizedUrl = `${site.url.replace(/\/$/, '')}${localizePath(basePath, locale, i18n.defaultLocale)}`
+
+  // Replace canonical
+  if (/<link rel="canonical"/.test(html)) {
+    html = html.replace(/<link rel="canonical"[^>]*>/, `<link rel="canonical" href="${escapeAttr(localizedUrl)}">`)
+  }
+
+  // Replace og:locale
+  const ogLocale = locale.includes('_') || locale.includes('-') ? locale : locale.toLowerCase()
+  if (/<meta property="og:locale"/.test(html))
+    html = html.replace(/<meta property="og:locale"[^>]*>/, `<meta property="og:locale" content="${escapeAttr(ogLocale)}">`)
+
+  // Replace og:url with the localized URL
+  if (/<meta property="og:url"/.test(html))
+    html = html.replace(/<meta property="og:url"[^>]*>/, `<meta property="og:url" content="${escapeAttr(localizedUrl)}">`)
+
+  // hreflang alternates
+  const alternates = buildAlternateLinks(site.url, basePath, i18n)
+  if (!html.includes('hreflang='))
+    html = html.replace(/<link rel="canonical"[^>]*>/, m => `${alternates}\n  ${m}`)
+
+  return html
+}
+
+function escapeAttr(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 /**
