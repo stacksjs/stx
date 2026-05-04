@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.31...v0.2.32)
+
+### 🐛 Bug Fixes
+
+- **router+site-builder**: default to interceptAllLinks + body container for static-site mode ([3844743](https://github.com/stacksjs/stx/commit/3844743)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.32 ([59c2842](https://github.com/stacksjs/stx/commit/59c2842)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.31...HEAD)
+
+### 🐛 Bug Fixes
+
+- **router+site-builder**: default to interceptAllLinks + body container for static-site mode ([3844743](https://github.com/stacksjs/stx/commit/3844743)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.30...v0.2.31)
 
 ### 🚀 Features
