@@ -58,6 +58,15 @@ export interface SiteConfig {
   robots?: boolean | 'allow' | 'disallow' | string
   /** Page-specific overrides keyed by output path (e.g. "/about") */
   pages?: Record<string, PageMeta>
+  /**
+   * Inject the stx SPA router into every page so client-side navigation
+   * skips the full reload. Pages are still pre-rendered to static HTML
+   * (so SEO crawlers and the initial load see real content); the router
+   * just upgrades subsequent navigation. Default: true.
+   */
+  spa?: boolean
+  /** SPA router options (color, prefetch, cache, etc.) */
+  router?: SiteRouterOptions
 }
 
 export interface PageMeta {
@@ -75,4 +84,15 @@ export interface PageMeta {
 export interface BuildOptions extends SiteConfig {
   /** Skip cleaning outDir before build (default: false) */
   noClean?: boolean
+}
+
+/**
+ * SPA router options (subset — see RouterOptions in router.ts).
+ * Inlined to avoid a circular import in this types file.
+ */
+export interface SiteRouterOptions {
+  color?: string
+  progress?: boolean
+  prefetch?: boolean
+  cache?: boolean
 }

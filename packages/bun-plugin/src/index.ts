@@ -330,11 +330,14 @@ export { content as default };
           // bindings into the script scope, and auto-wraps in a scoped IIFE
           if (clientScripts.length > 0) {
             const eventBindings = (context.__stx_event_bindings || []) as any[]
-            const transformedScripts = clientScripts.map((fullScript: string) => {
+            // processClientScript is async (resolves @stores imports, etc.) — must
+            // await each one before joining, otherwise `[object Promise]` ends up
+            // stringified into the rendered HTML.
+            const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
               const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
               if (!contentMatch) return fullScript
               return processClientScript(contentMatch[1], { eventBindings, templateContent: output })
-            })
+            }))
             const scriptsHtml = transformedScripts.join('\n')
             const bodyEndMatch = output.match(/(<\/body>)/i)
             if (bodyEndMatch) {
