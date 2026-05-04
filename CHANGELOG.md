@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.30...v0.2.31)
+
+### 🚀 Features
+
+- **site-builder**: theme bootstrap with FOUC guard + toggle handler ([8127907](https://github.com/stacksjs/stx/commit/8127907)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.31 ([f7dae21](https://github.com/stacksjs/stx/commit/f7dae21)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.30...HEAD)
+
+### 🚀 Features
+
+- **site-builder**: theme bootstrap with FOUC guard + toggle handler ([8127907](https://github.com/stacksjs/stx/commit/8127907)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.29...v0.2.30)
 
 ### 🐛 Bug Fixes
