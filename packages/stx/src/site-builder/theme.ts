@@ -34,7 +34,17 @@ export interface ThemeOptions {
   colors?: { light?: string, dark?: string }
 }
 
-const FOUC_SCRIPT = (defaultTheme: string, storageKey: string, lightColor: string, darkColor: string) => `(function(){try{var k=${JSON.stringify(storageKey)};var t=localStorage.getItem(k);var html=document.documentElement;var isDark=t===null?(${JSON.stringify(defaultTheme)}==='dark'||(${JSON.stringify(defaultTheme)}==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches)):t==='dark';html.classList[isDark?'add':'remove']('dark');var tc=document.querySelector('meta[name="theme-color"]:not([media])');if(tc)tc.setAttribute('content',isDark?${JSON.stringify(darkColor)}:${JSON.stringify(lightColor)})}catch(e){}})();`
+// The FOUC guard owns the unmediated theme-color meta end-to-end:
+//   - Reads stored / default / OS preference to pick light vs dark.
+//   - Creates the unmediated meta if missing and PREPENDS it to <head>
+//     so it wins HTML's first-match priority over any media-queried
+//     alternates the framework also ships for the (sub-millisecond)
+//     window before this script runs.
+//   - On SPA hops it re-asserts the meta on `stx:navigate` and after a
+//     `popstate` so the URL bar tint stays locked to the user's
+//     selection — view-transitions or destination-doc differences
+//     can't flash the chrome through the wrong color.
+const FOUC_SCRIPT = (defaultTheme: string, storageKey: string, lightColor: string, darkColor: string) => `(function(){function read(){try{var k=${JSON.stringify(storageKey)};var t=localStorage.getItem(k);return t===null?(${JSON.stringify(defaultTheme)}==='dark'||(${JSON.stringify(defaultTheme)}==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches)):t==='dark'}catch(e){return ${JSON.stringify(defaultTheme)}==='dark'}}function apply(){var isDark=read();var html=document.documentElement;html.classList[isDark?'add':'remove']('dark');var color=isDark?${JSON.stringify(darkColor)}:${JSON.stringify(lightColor)};var tc=document.querySelector('meta[name="theme-color"]:not([media])');if(tc){tc.setAttribute('content',color)}else if(document.head){tc=document.createElement('meta');tc.setAttribute('name','theme-color');tc.setAttribute('content',color);tc.setAttribute('data-stx-theme-meta','1');document.head.insertBefore(tc,document.head.firstChild)}}apply();window.addEventListener('stx:navigate',apply);window.addEventListener('popstate',apply)})();`
 
 const TOGGLE_HANDLER = (storageKey: string, lightColor: string, darkColor: string) => `document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#theme-toggle');if(!t)return;var html=document.documentElement;var isDark=html.classList.toggle('dark');try{localStorage.setItem(${JSON.stringify(storageKey)},isDark?'dark':'light')}catch(e){}var tc=document.querySelector('meta[name="theme-color"]:not([media])');if(tc)tc.setAttribute('content',isDark?${JSON.stringify(darkColor)}:${JSON.stringify(lightColor)})});`
 
@@ -60,20 +70,25 @@ export function injectThemeBootstrap(html: string, site: SiteConfig): string {
       html = html.replace(/<html\b([^>]*\bclass=")([^"]*)(")/i, '<html$1$2 dark$3')
   }
 
-  // 2) Browser-chrome color sync. Three meta tags work together:
-  //   - <meta name="color-scheme">  tells the UA we render correctly in
+  // 2) Browser-chrome color sync. Two static meta tags + a JS-managed
+  //    one work together:
+  //   - <meta name="color-scheme"> tells the UA we render correctly in
   //     either mode (no automatic form-control inversion).
-  //   - <meta name="theme-color" media="..."> per mode lets the UA pick
-  //     the right tint when JS hasn't run yet (initial paint).
-  //   - The unmediated <meta name="theme-color"> is the live one — the
-  //     FOUC guard + toggle handler keep its content in sync with the
-  //     class on <html>, which is what user toggles flip. Without this,
-  //     the URL bar flashed white on every nav in dark mode.
+  //   - <meta name="theme-color" media="..."> per mode handles the
+  //     sub-millisecond window before the FOUC guard runs, mapping URL
+  //     bar tint to the OS preference.
+  //   - The unmediated <meta name="theme-color"> is the source of
+  //     truth post-paint. The FOUC guard CREATES it (not the static
+  //     HTML) and prepends it so first-match-wins picks the JS value
+  //     even though media-queried metas are technically present. We
+  //     skip a static unmediated meta on purpose: setting it at build
+  //     time means baking in the *default* theme's color, which causes
+  //     a one-frame chrome flash for users whose stored preference is
+  //     the other theme — the URL bar tints from the build-time
+  //     default to the JS-set user value as the guard runs.
   if (!html.includes('data-stx-theme-meta') && /<head\b[^>]*>/i.test(html)) {
-    const initialColor = defaultTheme === 'dark' ? darkColor : lightColor
     const metas = [
       `<meta name="color-scheme" content="dark light" data-stx-theme-meta="1">`,
-      `<meta name="theme-color" content="${initialColor}" data-stx-theme-meta="1">`,
       `<meta name="theme-color" media="(prefers-color-scheme: light)" content="${lightColor}" data-stx-theme-meta="1">`,
       `<meta name="theme-color" media="(prefers-color-scheme: dark)" content="${darkColor}" data-stx-theme-meta="1">`,
     ].join('\n  ')
