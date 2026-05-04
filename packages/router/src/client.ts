@@ -674,7 +674,11 @@ else {
       el.id='stx-router-progress';
       el.setAttribute('role','progressbar');
       el.setAttribute('aria-hidden','true');
-      (document.body||document.documentElement).appendChild(el);
+      // Append to <html>, not <body>: when the router swaps the body
+      // (container:'body' for full-page static-site SPAs) the progress
+      // element gets wiped along with it. <html> stays put across
+      // swaps, so the bar survives multi-hop navigation.
+      document.documentElement.appendChild(el);
       progEl=el;
     } else if(o.progress){
       progEl=document.getElementById('stx-router-progress');
