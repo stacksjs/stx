@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.38...v0.2.39)
+
+### 🐛 Bug Fixes
+
+- **site-builder**: use trailing slash for non-default locale roots ([92ad580](https://github.com/stacksjs/stx/commit/92ad580)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.39 ([b6d359e](https://github.com/stacksjs/stx/commit/b6d359e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.38...HEAD)
+
+### 🐛 Bug Fixes
+
+- **site-builder**: use trailing slash for non-default locale roots ([92ad580](https://github.com/stacksjs/stx/commit/92ad580)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.37...v0.2.38)
 
 ### 🚀 Features
