@@ -84,6 +84,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
     html = await injectCrosswindCSS(html, process.cwd())
     html = injectSeo(html, options, options.pages?.[pathFromFile(file)], pathFromFile(file))
     html = injectThemeBootstrap(html, options)
+    html = autoWrapContent(html)
     if (options.spa !== false)
       html = await injectRouterScript(html, options.router)
 
@@ -150,6 +151,54 @@ function pruneEmptyJsChunks(outDir: string): void {
 
 function stripDeadScriptTags(html: string): string {
   return html.replace(/<script[^>]*src=["']\.\/chunk-[^"']*\.js["'][^>]*><\/script>\s*/g, '')
+}
+
+/**
+ * Wrap the page's body content in `<main>` if it isn't already, so the
+ * SPA router's view-transition CSS (which targets `main, #app-content,
+ * [data-stx-content]`) animates the content while leaving `<nav>`,
+ * `<header>`, `<footer>`, and any other top-level elements stable
+ * across navigation.
+ *
+ * Skips: pages already containing `<main>` or `[data-stx-content]`,
+ * pages without a `<body>`. Wraps the run between the last
+ * `<nav>...</nav>` / `<header>...</header>` close tag (if any) and the
+ * first `<footer` open tag (if any), defaulting to the entire body
+ * content. Trailing `</body>`-adjacent scripts (theme guard, router)
+ * stay outside the wrap.
+ */
+function autoWrapContent(html: string): string {
+  if (/<main\b/i.test(html) || /\bdata-stx-content\b/i.test(html))
+    return html
+
+  const bodyOpenMatch = html.match(/<body\b[^>]*>/i)
+  const bodyCloseIdx = html.search(/<\/body\s*>/i)
+  if (!bodyOpenMatch || bodyCloseIdx < 0) return html
+
+  const bodyContentStart = bodyOpenMatch.index! + bodyOpenMatch[0].length
+  const inner = html.slice(bodyContentStart, bodyCloseIdx)
+
+  let wrapStart = 0
+  const navOrHeaderClose = [...inner.matchAll(/<\/(?:nav|header)>/gi)]
+  if (navOrHeaderClose.length > 0) {
+    const last = navOrHeaderClose[navOrHeaderClose.length - 1]
+    wrapStart = last.index! + last[0].length
+  }
+
+  let wrapEnd = inner.length
+  const footerOpen = inner.search(/<footer\b/i)
+  if (footerOpen !== -1)
+    wrapEnd = Math.min(wrapEnd, footerOpen)
+  const trailingScript = inner.search(/<script\b[^>]*data-stx-(?:theme-toggle|reparent-progress)\b/i)
+  if (trailingScript !== -1)
+    wrapEnd = Math.min(wrapEnd, trailingScript)
+
+  if (wrapEnd <= wrapStart) return html
+  const middle = inner.slice(wrapStart, wrapEnd)
+  if (!middle.trim()) return html
+
+  const newInner = `${inner.slice(0, wrapStart)}\n  <main>${middle}</main>\n${inner.slice(wrapEnd)}`
+  return `${html.slice(0, bodyContentStart)}${newInner}${html.slice(bodyCloseIdx)}`
 }
 
 function escapeText(s: string): string {
