@@ -192,12 +192,21 @@ export function applyTranslations(
 
 /**
  * URL path for a built page in the given locale.
- * `/` stays `/` for the default locale; otherwise it's `/<code>/`.
- * `/about` becomes `/<code>/about` for non-default locales.
+ *
+ * - `/` stays `/` for the default locale; for non-default locales it
+ *   becomes `/<code>/` (with the trailing slash). The slash matters
+ *   because most static hosts (S3+CloudFront, GitHub Pages, etc.)
+ *   only serve the directory's `index.html` when the URL ends in `/`
+ *   — `/de` 404s, `/de/` resolves. Linking with the slash avoids a
+ *   client-side redirect dance and lets SPA hops succeed without
+ *   falling back to a full page load.
+ * - `/about` becomes `/<code>/about` for non-default locales (no
+ *   trailing slash — those map to `<code>/about.html`).
+ * - `/404.html` keeps its filename and lives under the locale prefix.
  */
 export function localizePath(path: string, locale: string, defaultLocale: string): string {
   if (locale === defaultLocale) return path
-  if (path === '/') return `/${locale}`
+  if (path === '/') return `/${locale}/`
   if (path === '/404.html') return `/${locale}/404.html`
   return `/${locale}${path}`
 }
@@ -256,7 +265,7 @@ export function buildLangPickerScript(
     current: currentLocale,
     pickerSelector: i18n.pickerSelector,
   })
-  return `<script data-stx-lang-picker="1">window.__stxI18n=${data};(function(){var d=window.__stxI18n;function localeFromPath(p){for(var i=0;i<d.locales.length;i++){var c=d.locales[i];if(p==='/'+c||p==='/'+c+'/')return c;if(p.indexOf('/'+c+'/')===0)return c}return d.defaultLocale}function localePathFor(loc,p){var stripped=p;for(var i=0;i<d.locales.length;i++){var c=d.locales[i];if(p==='/'+c||p==='/'+c+'/'){stripped='/';break}if(p.indexOf('/'+c+'/')===0){stripped=p.slice(c.length+1);break}}if(loc===d.defaultLocale)return stripped;if(stripped==='/')return '/'+loc;return '/'+loc+stripped}function syncFromUrl(){var loc=localeFromPath(location.pathname);d.current=loc;var picker=document.querySelector(d.pickerSelector);if(picker){var btns=picker.querySelectorAll('[data-lang]');for(var i=0;i<btns.length;i++){if(btns[i].getAttribute('data-lang')===loc)btns[i].setAttribute('aria-current','true');else btns[i].removeAttribute('aria-current')}}if(document.documentElement.lang!==loc)document.documentElement.lang=loc}syncFromUrl();window.addEventListener('stx:navigate',syncFromUrl);window.addEventListener('popstate',syncFromUrl);document.addEventListener('click',function(e){var btn=e.target&&e.target.closest&&e.target.closest('['+'data-lang'+']');if(!btn)return;var picker=document.querySelector(d.pickerSelector);if(!picker||!picker.contains(btn))return;e.preventDefault();var loc=btn.getAttribute('data-lang');var dest=localePathFor(loc,location.pathname);if(window.__stxRouter&&window.__stxRouter.navigate)window.__stxRouter.navigate(dest);else location.assign(dest)});})();</script>`
+  return `<script data-stx-lang-picker="1">window.__stxI18n=${data};(function(){var d=window.__stxI18n;function localeFromPath(p){for(var i=0;i<d.locales.length;i++){var c=d.locales[i];if(p==='/'+c||p==='/'+c+'/')return c;if(p.indexOf('/'+c+'/')===0)return c}return d.defaultLocale}function localePathFor(loc,p){var stripped=p;for(var i=0;i<d.locales.length;i++){var c=d.locales[i];if(p==='/'+c||p==='/'+c+'/'){stripped='/';break}if(p.indexOf('/'+c+'/')===0){stripped=p.slice(c.length+1);break}}if(loc===d.defaultLocale)return stripped;if(stripped==='/')return '/'+loc+'/';return '/'+loc+stripped}function syncFromUrl(){var loc=localeFromPath(location.pathname);d.current=loc;var picker=document.querySelector(d.pickerSelector);if(picker){var btns=picker.querySelectorAll('[data-lang]');for(var i=0;i<btns.length;i++){if(btns[i].getAttribute('data-lang')===loc)btns[i].setAttribute('aria-current','true');else btns[i].removeAttribute('aria-current')}}if(document.documentElement.lang!==loc)document.documentElement.lang=loc}syncFromUrl();window.addEventListener('stx:navigate',syncFromUrl);window.addEventListener('popstate',syncFromUrl);document.addEventListener('click',function(e){var btn=e.target&&e.target.closest&&e.target.closest('['+'data-lang'+']');if(!btn)return;var picker=document.querySelector(d.pickerSelector);if(!picker||!picker.contains(btn))return;e.preventDefault();var loc=btn.getAttribute('data-lang');var dest=localePathFor(loc,location.pathname);if(window.__stxRouter&&window.__stxRouter.navigate)window.__stxRouter.navigate(dest);else location.assign(dest)});})();</script>`
 }
 
 function escapeAttr(s: string): string {

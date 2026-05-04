@@ -146,11 +146,23 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
     writeFileSync(fourOhFourSrc, fallback)
   }
 
-  // sitemap.xml
+  // sitemap.xml — for multi-locale builds, emit one entry per
+  // (page, locale) combination so search engines can crawl every
+  // translation. Page-level metadata (priority, changefreq) carries
+  // over from the base path config.
   if (options.sitemap !== false) {
-    const entries: SitemapEntry[] = htmlFiles
+    const entries: SitemapEntry[] = []
+    const basePaths = htmlFiles
       .filter(f => f !== '404.html')
-      .map(f => ({ path: pathFromFile(f), page: options.pages?.[pathFromFile(f)] }))
+      .map(pathFromFile)
+    const sitemapLocales = i18n ? i18n.locales : [null]
+    for (const basePath of basePaths) {
+      const meta = options.pages?.[basePath]
+      for (const loc of sitemapLocales) {
+        const path = (loc && i18n) ? localizePath(basePath, loc, i18n.defaultLocale) : basePath
+        entries.push({ path, page: meta })
+      }
+    }
     writeFileSync(join(outDir, 'sitemap.xml'), generateSitemap(options, entries))
   }
 
@@ -169,8 +181,9 @@ function dirnameOf(p: string): string { return dirname(p) }
 function localePathToFile(basePath: string, locale: string, defaultLocale: string): string {
   const localized = localizePath(basePath, locale, defaultLocale)
   if (localized === '/') return 'index.html'
-  // /about → about.html, /de → de/index.html, /de/about → de/about.html
-  const trimmed = localized.replace(/^\//, '')
+  // Strip leading and trailing slashes — trailing slash on a locale root
+  // (`/de/`) is for URL routing, not a path component.
+  const trimmed = localized.replace(/^\//, '').replace(/\/$/, '')
   if (!trimmed.includes('/')) {
     // Just a top-level segment like "/about" or "/de"
     if (locale !== defaultLocale && trimmed === locale)
