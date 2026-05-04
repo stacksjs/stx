@@ -1,4 +1,30 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.42...v0.2.43)
+
+### 🐛 Bug Fixes
+
+- **stx**: support nested @for and @if branching inside @for bodies ([f59c0c4](https://github.com/stacksjs/stx/commit/f59c0c4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: resolve relative paths in dynamic await import() calls ([cf7da13](https://github.com/stacksjs/stx/commit/cf7da13)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.43 ([c559954](https://github.com/stacksjs/stx/commit/c559954)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.42...HEAD)
+
+### 🐛 Bug Fixes
+
+- **stx**: support nested @for and @if branching inside @for bodies ([f59c0c4](https://github.com/stacksjs/stx/commit/f59c0c4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: resolve relative paths in dynamic await import() calls ([cf7da13](https://github.com/stacksjs/stx/commit/cf7da13)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.41...v0.2.42)
 
 ### 💥 Breaking Changes
