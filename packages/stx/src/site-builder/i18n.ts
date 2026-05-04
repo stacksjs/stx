@@ -170,10 +170,21 @@ export function translate(
 }
 
 /**
- * Replace `{t:key}` markers in HTML with the translated string for
- * the given locale. The key syntax sidesteps stx's `{{ ... }}`
- * templating (which evaluates as JS at build time and would render
- * `t(...)` calls as empty when no `t` binding exists in scope).
+ * Replace `{t:key}` and `{t!:key}` markers in HTML with the translated
+ * string for the given locale. The key syntax sidesteps stx's
+ * `{{ ... }}` templating (which evaluates as JS at build time and
+ * would render `t(...)` calls as empty when no `t` binding exists
+ * in scope).
+ *
+ * Two variants:
+ *   - `{t:key}`  — value is HTML-escaped before substitution. Default
+ *     for ordinary text. Safe for any translator-supplied string.
+ *   - `{t!:key}` — value is substituted *raw*, without escaping. Use
+ *     this when the translation needs inline markup (e.g. `<strong>`,
+ *     `<a>`, `<br>`) so different languages can place emphasis where
+ *     their grammar requires. Translation values for these keys live
+ *     in the project's own translation files, so the trust boundary
+ *     is the same as the page template itself.
  *
  * Keys may use letters, digits, `_`, `.`, `-`. Anything that doesn't
  * match the pattern is left alone — runs after stx has finished its
@@ -185,8 +196,11 @@ export function applyTranslations(
   locale: string,
 ): string {
   return html.replace(
-    /\{t:([a-zA-Z][\w.-]*)\}/g,
-    (_match, key) => escapeHtml(translate(i18n, locale, key)),
+    /\{t(!?):([a-zA-Z][\w.-]*)\}/g,
+    (_match, raw, key) => {
+      const value = translate(i18n, locale, key)
+      return raw === '!' ? value : escapeHtml(value)
+    },
   )
 }
 
