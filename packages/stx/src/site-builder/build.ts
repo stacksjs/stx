@@ -178,10 +178,15 @@ function autoWrapContent(html: string): string {
   const bodyContentStart = bodyOpenMatch.index! + bodyOpenMatch[0].length
   const inner = html.slice(bodyContentStart, bodyCloseIdx)
 
+  // Only treat <nav> as the "chrome above main" boundary. <header> is
+  // ambiguous — it commonly holds the page's title/lede, which the
+  // user expects to fade with the rest of the content on navigation.
+  // Wrapping past it would leave the page hero static across hops and
+  // make the transition feel partial.
   let wrapStart = 0
-  const navOrHeaderClose = [...inner.matchAll(/<\/(?:nav|header)>/gi)]
-  if (navOrHeaderClose.length > 0) {
-    const last = navOrHeaderClose[navOrHeaderClose.length - 1]
+  const navClose = [...inner.matchAll(/<\/nav>/gi)]
+  if (navClose.length > 0) {
+    const last = navClose[navClose.length - 1]
     wrapStart = last.index! + last[0].length
   }
 
