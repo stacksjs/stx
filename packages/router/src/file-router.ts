@@ -45,29 +45,51 @@ function scanDirectory(dir: string, extensions: string[]): string[] {
 export class Router {
   routes: Route[]
   private pagesDir: string
+  private pagesDirs: string[]
   private config: RouterConfig
 
   constructor(baseDir: string, config: RouterConfig = {}) {
     this.config = config
-    this.pagesDir = path.resolve(baseDir, config.pagesDir || 'pages')
+
+    // Resolve the stack of page roots. `pagesDirs` wins when both are
+    // set; otherwise fall back to the single-root `pagesDir`. Each
+    // entry is resolved relative to `baseDir`.
+    const rawDirs = (config.pagesDirs && config.pagesDirs.length > 0)
+      ? config.pagesDirs
+      : [config.pagesDir || 'pages']
+    this.pagesDirs = rawDirs.map(d => path.resolve(baseDir, d))
+    // For backwards compatibility, `pagesDir` keeps pointing at the
+    // first root — that's the user-facing root for codegen output.
+    this.pagesDir = this.pagesDirs[0]
+
     const extensions = config.extensions || ['.stx']
 
-    const files = scanDirectory(this.pagesDir, extensions)
+    // Scan each root and bucket files by their resulting URL pattern.
+    // Earlier roots win, so a user's `resources/views/cart.stx` shadows
+    // the framework's `storage/framework/defaults/resources/views/cart.stx`.
+    const seenPatterns = new Set<string>()
+    this.routes = []
+    for (const dir of this.pagesDirs) {
+      const files = scanDirectory(dir, extensions)
+      for (const filePath of files) {
+        const pattern = filePathToPattern(filePath, dir)
+        if (seenPatterns.has(pattern))
+          continue
+        seenPatterns.add(pattern)
 
-    this.routes = files.map((filePath) => {
-      const pattern = filePathToPattern(filePath, this.pagesDir)
-      const { regex, params } = patternToRegex(pattern)
-      const layouts = config.layouts !== false ? resolveLayoutChain(filePath, this.pagesDir) : []
+        const { regex, params } = patternToRegex(pattern)
+        const layouts = config.layouts !== false ? resolveLayoutChain(filePath, dir) : []
 
-      return {
-        pattern,
-        regex,
-        params,
-        filePath,
-        isDynamic: params.length > 0,
-        layout: layouts.length > 0 ? layouts[layouts.length - 1] : undefined,
+        this.routes.push({
+          pattern,
+          regex,
+          params,
+          filePath,
+          isDynamic: params.length > 0,
+          layout: layouts.length > 0 ? layouts[layouts.length - 1] : undefined,
+        })
       }
-    })
+    }
 
     // Sort: static before dynamic, more segments first
     this.routes.sort((a, b) => {

@@ -474,11 +474,15 @@ export async function serve(options: ServeOptions): Promise<void> {
     pageMiddlewarePatterns.length = 0
     await Promise.all(files.map(f => detectPageMiddleware(f)))
 
-    // Generate route manifest and type declarations into .stx/
+    // Generate route manifest and type declarations into .stx/.
+    // Pass ALL patterns as a stack of page roots so frameworks can ship
+    // default views (e.g. cart, checkout, orders) and apps can override
+    // any of them by dropping a file with the same path into their own
+    // `resources/views`. The first matching root wins per pattern.
     try {
       const { Router } = await import('stx-router')
-      const pagesDir = patterns[0]?.replace(/\/$/, '') || 'pages'
-      const router = new Router(process.cwd(), { pagesDir })
+      const pagesDirs = patterns.map(p => p.replace(/\/$/, '')).filter(Boolean)
+      const router = new Router(process.cwd(), { pagesDirs })
       console.log(`[stx] Generated ${router.routes.length} routes → .stx/routes.ts`)
     }
     catch (e) {

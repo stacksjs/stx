@@ -15,7 +15,24 @@ export interface RouteMatch {
 }
 
 export interface RouterConfig {
+  /**
+   * Single page root. Resolved relative to `baseDir`. Default: `'pages'`.
+   *
+   * Use `pagesDirs` instead when you want a stack of roots (e.g. user
+   * views on top, framework defaults underneath).
+   */
   pagesDir?: string
+  /**
+   * Stack of page roots, scanned in order. The first match for any
+   * given route pattern wins, so earlier entries override later ones.
+   *
+   * Useful for app frameworks that ship default views (cart, checkout,
+   * orders) but want apps to override individual pages by dropping a
+   * file with the same name into their own views directory.
+   *
+   * If both `pagesDir` and `pagesDirs` are set, `pagesDirs` takes precedence.
+   */
+  pagesDirs?: string[]
   extensions?: string[]
   layouts?: boolean
   middleware?: boolean
