@@ -7,11 +7,11 @@ stx splits its components into two layers, registered the same way and called th
 | **Engine builtins** | `@stacksjs/stx` | Components that need deep template-processor integration or inject runtime globals — `<StxLink>`, `<StxImage>`, `<Icon>`, `<StxLoadingIndicator>`, `<StxToast>`, `<StxModal>`, `<StxDrawer>`. See [Builtin Components](./builtins.md). |
 | **Presentational** | `@stacksjs/components` | Plain `.stx` components for the bulk of a UI — Button, Card, Switch, Tabs, Accordion, form inputs, etc. Installed separately. |
 
-Both layers are invoked with the same JSX-tag syntax. There's no special import for builtins; presentational components come from `@stacksjs/components` and are auto-discovered when installed.
+Both layers can be invoked two equivalent ways: as a JSX-style tag or via the Blade-style `@component` directive. Pick whichever fits the situation; they compile to the same thing.
 
-## JSX-Tag Syntax (Preferred)
+## JSX-Tag Syntax
 
-Use the JSX-tag form for every component invocation:
+The tag form reads naturally for the common case and looks like every other modern templating engine.
 
 ```html
 <script server>
@@ -33,9 +33,9 @@ Use the JSX-tag form for every component invocation:
 
 Static props (`title="Hello"`) pass strings. Dynamic props (`:variant="variant"`) evaluate the expression server-side. Boolean shorthand (`hover` = `hover="true"`) works.
 
-## `@component` Directive (Blade-Compat)
+## `@component` Directive
 
-The Blade-style directive form still works, mostly for cases where you need to pass props that don't fit cleanly into HTML attributes (e.g. functions, complex objects):
+The Blade-style directive form is equally first-class — it pairs naturally with the rest of the `@`-prefixed server directives (`@if`, `@foreach`, `@include`, etc.) and is the easiest way to pass props that don't fit cleanly into HTML attributes (functions, deeply nested objects, etc.).
 
 ```html
 @component('Button', {
@@ -46,7 +46,7 @@ The Blade-style directive form still works, mostly for cases where you need to p
 @endcomponent
 ```
 
-For typical use, prefer the JSX form — it reads more naturally and matches how every other modern templating engine works.
+Use whichever feels right per call site. A typical page mixes both: JSX tags for the bulk of UI invocations, `@component` for cases where the props get awkward as attributes.
 
 ## How Components Are Resolved
 
@@ -150,8 +150,88 @@ Use it anywhere:
 
 - **`<script server>`** — runs on the server. Compute class strings, normalize props, fetch data. All `export const` / `export function` declarations (and unexported `const`/`let`/`var`) become available to the template.
 - **`<script client>`** — runs on the client. Declare signals via `state()`, register event handlers, expose imperative methods via `defineExpose()`, emit events via `defineEmits()`.
-- **Events** — use `@click` / `@input` / `@change` / `@keydown` / etc. Never `onclick=`. Inline DOM event attributes are valid HTML but bypass the signals runtime.
+- **Reactive event handlers** — use `@click` / `@input` / `@change` / `@keydown` / etc. when the handler needs to read or update signals declared in `<script client>`. The signals runtime evaluates these in the component's scope. Plain `onclick="..."` HTML attributes also work for simple inline JS that doesn't need the reactive scope — both are valid; pick whichever fits.
 - **Reactive bindings** — use `:show="visible()"` for visibility, `:class="active() ? 'on' : 'off'"` for class toggling, `:value="state()"` to bind state to inputs, `x-model="state"` for two-way binding on form controls.
-- **No `x-data`** — client state lives in `<script client>` blocks via `state()`, not in `x-data` attributes.
+- **Client state** — lives in `<script client>` blocks via `state()`. The Alpine-style `x-data` attribute also works (it bridges into the same signals runtime), so existing Alpine-shaped code keeps running.
+
+## Two Directive Families, Same Page
+
+stx ships two parallel sets of directives that compose freely. They cover different lifetimes and you'll typically use both on the same page.
+
+### Server Directives (`@`-prefixed, Blade-style)
+
+Evaluated at server render time. Expand into static HTML before the response is sent. Use these for control flow over data your server already has.
+
+| Directive | Purpose |
+|-----------|---------|
+| `@if` / `@elseif` / `@else` / `@endif` | Conditional rendering |
+| `@foreach` / `@endforeach`, `@for` / `@endfor`, `@forelse` / `@empty` / `@endforelse` | Loops with optional empty branch |
+| `@switch` / `@case` / `@default` / `@endswitch` | Multi-branch conditional |
+| `@auth` / `@guest` / `@env` | Conditional rendering by auth/env state |
+| `@translate` | i18n key lookup (pairs with `{t:key}` in static-site builds) |
+| `@push` / `@stack` / `@prepend` | Slot content into named stacks (e.g. `@push('head')`) |
+| `@include` / `@layout` / `@extends` / `@section` / `@yield` | Template composition |
+| `@component` / `@endcomponent` | Invoke a component (alternative to JSX tags) |
+| `@csrf` / `@method` / `@error` | Form helpers |
+| `@meta` / `@seo` / `@title` | Per-page SEO metadata |
+| `@js` / `@ts` | Embedded server JS/TS that contributes to the template scope |
+| `@once` | Render-once guard (de-dupe across includes) |
+| `@memo` / `@enderrorBoundary` / `@fallback` / `@async` | Optimization & async loading |
+
+### Client Directives (`:` and `@event`, signals runtime)
+
+Wired into the client signals runtime. React to signal changes and DOM events at runtime.
+
+| Directive | Purpose |
+|-----------|---------|
+| `:if` / `:show` / `:for` / `:key` | Reactive control flow on a single element |
+| `:class` / `:style` | Reactive class / style bindings (object or string forms) |
+| `:href` / `:src` / `:value` / `:disabled` / `:any-attr` | Reactive attribute bindings |
+| `@click` / `@input` / `@change` / `@submit` / `@keydown` / `@<event>` | Event listeners with optional modifiers (`.prevent`, `.stop`, `.outside`, `.window`, `.once`, `.debounce.300`, key qualifiers like `.enter` / `.escape`) |
+| `x-model` | Two-way binding for form controls |
+| `x-text` / `x-html` | Reactive text / HTML content |
+| `x-cloak` | Hide until processed (avoids FOUC for `:show`-gated subtrees) |
+| `x-ref` | Template ref accessible via `useRef()` |
+| `stx-hydrate="visible \| idle \| interaction \| media:..."` | Defer client wire-up until trigger fires |
+
+### Mixing Them
+
+A typical page uses server directives to render the initial DOM and client directives to wire reactivity onto it:
+
+```html
+<script server>
+  const items = await db.query('SELECT * FROM tasks WHERE owner = ?', userId)
+</script>
+
+<script client>
+  const filter = state('all')
+  function visible(item) {
+    return filter() === 'all' || item.status === filter()
+  }
+</script>
+
+<div class="filter">
+  <button @click="filter.set('all')" :class="filter() === 'all' ? 'active' : ''">All</button>
+  <button @click="filter.set('done')" :class="filter() === 'done' ? 'active' : ''">Done</button>
+</div>
+
+<ul>
+  @foreach(item in items)
+    <li :show="visible({{ JSON.stringify(item) }})">
+      {{ item.title }}
+    </li>
+  @endforeach
+</ul>
+```
+
+The `@foreach` runs once at server render and emits the `<li>` for every task. The `:show` runs on the client and toggles each `<li>` reactively as `filter` changes. Neither directive interferes with the other — they live in different lifetimes.
+
+For purely client-driven loops (data fetched after mount, or where the row count itself is reactive), use `:for` instead:
+
+```html
+<ul>
+  <li :for="item in items()" :key="item.id">{{ item.title }}</li>
+</ul>
+```
 
 See [Components Guide](../guide/components.md) for the full lifecycle and props story.

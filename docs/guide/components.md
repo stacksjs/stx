@@ -58,9 +58,9 @@ The canonical syntax is JSX tags. No imports — components are resolved by tag 
 
 Static props pass strings (`variant="primary"`). Dynamic props bind expressions (`:disabled="isDeleting"`). Event listeners use `@event` (`@click="save()"`).
 
-### `@component` Directive (Blade-Compat)
+### `@component` Directive
 
-The Blade-style directive form still works for cases where you need to pass props that don't fit cleanly into HTML attributes (functions, complex objects):
+The Blade-style directive form is the other equally first-class way to invoke a component. It pairs naturally with the rest of the `@`-prefixed server directives (`@if`, `@foreach`, `@include`, etc.) and is the easiest way to pass props that don't fit cleanly into HTML attributes (functions, deeply nested objects):
 
 ```html
 @component('MyButton', {
@@ -71,7 +71,7 @@ The Blade-style directive form still works for cases where you need to pass prop
 @endcomponent
 ```
 
-For typical use, prefer the JSX form.
+Both forms compile to the same thing. Use whichever fits the call site.
 
 ```stx
 <div class="actions">
