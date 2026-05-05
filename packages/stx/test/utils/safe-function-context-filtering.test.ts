@@ -38,6 +38,37 @@ describe('createSafeFunction — context key filtering', () => {
     const fn = createSafeFunction('$x + _y', ['$x', '_y'])
     expect(fn(2, 3)).toBe(5)
   })
+
+  it('drops `class` (reserved word) — common HTML attribute name', () => {
+    const fn = createSafeFunction('disabled', ['disabled', 'class', 'for'])
+    expect(fn(true, 'btn-primary', 'email-input')).toBe(true)
+    expect(fn(false, 'btn-primary', 'email-input')).toBe(false)
+  })
+
+  it('drops every other reserved word that shows up as a context key', () => {
+    // A grab-bag of names that real templates use as bag keys but that
+    // JS rejects in parameter position.
+    const reservedKeys = ['if', 'for', 'class', 'new', 'this', 'super', 'let', 'const', 'return']
+    const allKeys = ['name', ...reservedKeys, 'count']
+    const fn = createSafeFunction('name + ":" + count', allKeys)
+    const values = ['ok', 1, 2, 3, 4, 5, 6, 7, 8, 9, 42]
+    expect(fn(...values)).toBe('ok:42')
+  })
+
+  it('drops `arguments` and `eval` (strict-mode-only reserved param names)', () => {
+    const fn = createSafeFunction('x', ['x', 'arguments', 'eval'])
+    expect(fn(7, [], () => 0)).toBe(7)
+  })
+
+  it('@if condition still evaluates when context has a `class` key (the real-world AppButton case)', () => {
+    const result = processConditionals(
+      '<button @if(disabled) disabled @endif>x</button>',
+      { disabled: true, class: 'btn-primary', for: 'email' },
+      'test.stx',
+    )
+    expect(result).not.toContain('If Error')
+    expect(result).toContain('disabled')
+  })
 })
 
 describe('processConditionals — robust to hyphenated context keys', () => {

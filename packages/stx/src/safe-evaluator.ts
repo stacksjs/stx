@@ -451,6 +451,32 @@ export function safeEvaluateObject(expression: string, context: Record<string, u
 }
 
 /**
+ * Names that JavaScript rejects as function parameters even when they look
+ * like valid identifiers. Built from the spec's reserved word set plus the
+ * strict-mode-only reserved words (we always emit `'use strict'` in the
+ * generated function body) plus the two names — `arguments` and `eval` —
+ * that strict mode forbids in parameter position. Used by createSafeFunction
+ * to filter incoming context keys so a single bad name (`class`, `for`,
+ * `let`, …) doesn't crash the entire @if / {{ }} / safe-evaluation pipeline.
+ */
+const RESERVED_PARAM_NAMES = new Set([
+  // Reserved words (ES2015+)
+  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
+  'default', 'delete', 'do', 'else', 'enum', 'export', 'extends', 'false',
+  'finally', 'for', 'function', 'if', 'import', 'in', 'instanceof', 'new',
+  'null', 'return', 'super', 'switch', 'this', 'throw', 'true', 'try',
+  'typeof', 'var', 'void', 'while', 'with', 'yield',
+  // Strict-mode-reserved
+  'let', 'static', 'implements', 'interface', 'package', 'private',
+  'protected', 'public',
+  // Always banned in strict-mode parameter position
+  'arguments', 'eval',
+  // `await` is reserved inside async functions; we wrap the body in async
+  // semantics via try/catch in callers, so be conservative.
+  'await',
+])
+
+/**
  * Create a sandboxed function that can only access the provided context
  * This is a safer alternative to `new Function()` that validates expressions first
  *
@@ -469,24 +495,34 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
   // Validate the expression first
   const sanitizedExpr = sanitizeExpression(expression)
 
-  // Drop context keys that aren't valid JS identifiers BEFORE handing them
-  // to `new Function(...keys, body)` — JS rejects param names like
-  // `passed-class`, `data-id`, `1bad`, `foo.bar` with "Unexpected token
-  // '-'" / "Unexpected number". Real templates regularly spread HTML-style
-  // kebab-case attribute keys into the evaluator (component prop bags,
-  // dataset entries, model rows with hyphenated columns); a single
-  // hyphenated key used to silently break every `@if` / `{{ }}` directive
-  // in the template. They can't be referenced from the expression anyway
-  // — JS has no syntax to read `passed-class` directly — so dropping is
-  // both safe and what callers expect.
+  // Drop context keys that JS rejects as function-parameter names BEFORE
+  // handing them to `new Function(...keys, body)`. Three classes of
+  // rejected names:
+  //
+  //  1. Non-identifiers: `passed-class`, `data-id`, `1bad`, `foo.bar`
+  //     ("Unexpected token '-'" / "Unexpected number").
+  //  2. Reserved words: `class`, `const`, `function`, `if`, `for`, …
+  //     ("Cannot use the keyword 'class' as a parameter name").
+  //  3. Strict-mode-reserved words: `let`, `static`, `implements`, …
+  //     (we always emit `'use strict'` in the function body).
+  //
+  // Real templates spread HTML-style attribute names into the evaluator
+  // constantly — Vue-/Tailwind-style components use `class`, `style`,
+  // `for`, `data-*`, `aria-*`, etc. as prop bag keys. A single offender
+  // used to crash every `@if` / `{{ }}` evaluation in the template; this
+  // filter makes the evaluator survive whatever the caller spreads in.
+  // Dropped keys can't be referenced from the expression anyway — JS has
+  // no syntax to read `class` or `passed-class` as identifiers in user
+  // code — so dropping is both safe and what callers expect.
   const validIdent = /^[A-Za-z_$][\w$]*$/
   const validIndices: number[] = []
   const filteredKeys: string[] = []
   for (let i = 0; i < contextKeys.length; i++) {
-    if (validIdent.test(contextKeys[i])) {
-      validIndices.push(i)
-      filteredKeys.push(contextKeys[i])
-    }
+    const key = contextKeys[i]
+    if (!validIdent.test(key)) continue
+    if (RESERVED_PARAM_NAMES.has(key)) continue
+    validIndices.push(i)
+    filteredKeys.push(key)
   }
 
   // Create the function with strict mode
