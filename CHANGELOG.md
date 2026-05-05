@@ -1,4 +1,36 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.46...v0.2.47)
+
+### 🚀 Features
+
+- **router**: layered pagesDirs so frameworks can ship default views ([fdc35cb](https://github.com/stacksjs/stx/commit/fdc35cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧪 Tests
+
+- **stx**: pin down recursive componentsDir walk ([8a6559c](https://github.com/stacksjs/stx/commit/8a6559c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.47 ([04f16d3](https://github.com/stacksjs/stx/commit/04f16d3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.46...HEAD)
+
+### 🚀 Features
+
+- **router**: layered pagesDirs so frameworks can ship default views ([fdc35cb](https://github.com/stacksjs/stx/commit/fdc35cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧪 Tests
+
+- **stx**: pin down recursive componentsDir walk ([8a6559c](https://github.com/stacksjs/stx/commit/8a6559c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.45...v0.2.46)
 
 ### 🚀 Features
