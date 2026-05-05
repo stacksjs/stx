@@ -817,6 +817,38 @@ export function extractExports(setupContent: string): string {
       return
     }
 
+    // Object destructuring: const { a, b: alias, c = default } = ...
+    const destructMatch = code.slice(i).match(/^(?:const|let|var)\s+\{([^}]+)\}\s*=/)
+    if (destructMatch) {
+      destructMatch[1].split(',').forEach((s) => {
+        const trimmed = s.trim()
+        if (!trimmed) return
+        const colonIdx = trimmed.indexOf(':')
+        const namePart = colonIdx >= 0 ? trimmed.slice(colonIdx + 1).trim() : trimmed
+        const name = namePart.split(/[\s=]/)[0]
+        if (name && !seen.has(name)) {
+          names.push(name)
+          seen.add(name)
+        }
+      })
+      return
+    }
+
+    // Array destructuring: const [a, b, ...rest] = ...
+    const arrayDestructMatch = code.slice(i).match(/^(?:const|let|var)\s+\[([^\]]+)\]\s*=/)
+    if (arrayDestructMatch) {
+      arrayDestructMatch[1].split(',').forEach((s) => {
+        const trimmed = s.trim().replace(/^\.\.\./, '')
+        if (!trimmed) return
+        const name = trimmed.split(/[\s=]/)[0]
+        if (name && !seen.has(name)) {
+          names.push(name)
+          seen.add(name)
+        }
+      })
+      return
+    }
+
     // Check for function declarations
     const funcMatch = code.slice(i).match(/^function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/)
     if (funcMatch) {

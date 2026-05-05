@@ -220,7 +220,12 @@ else {
   // Auto-unwrap Signals (Feature #1)
   // ==========================================================================
 
-  // Create a proxy that auto-unwraps signals when accessed
+  // Create a proxy that auto-unwraps signals when accessed.
+  // For stx stores (objects with _isStxStore), recursively wrap so nested
+  // signal properties auto-unwrap too — this is what makes template
+  // expressions like store.someSignal (no parens) and store.x === 'y'
+  // resolve to the value. Action methods on the store pass through as
+  // functions because they don't carry _isSignal/_isDerived markers.
   function createAutoUnwrapProxy(scope) {
     return new Proxy(scope, {
       get(target, prop) {
@@ -229,7 +234,21 @@ else {
         if (val && typeof val === 'function' && (val._isSignal || val._isDerived)) {
           return val();
         }
+        // If it's an stx store, return a recursively-unwrapping wrapper so
+        // store.signalProp resolves to the value in template expressions
+        if (val && typeof val === 'object' && val._isStxStore) {
+          return createAutoUnwrapProxy(val);
+        }
         return val;
+      },
+      set(target, prop, value) {
+        const cur = target[prop];
+        if (cur && typeof cur === 'function' && cur._isSignal && typeof cur.set === 'function') {
+          cur.set(value);
+          return true;
+        }
+        target[prop] = value;
+        return true;
       }
     });
   }
@@ -3528,6 +3547,12 @@ catch (e) {}
         });
         activeDisposers = prevPersistDisposers;
       }
+
+      // Marker so the template-scope auto-unwrap proxy knows to recursively
+      // unwrap signal-valued properties on this object. Script-level callers
+      // still see the bare store (so existing patterns like store.someSignal()
+      // keep working); only template expression evaluation auto-unwraps.
+      result._isStxStore = true;
 
       // Register globally
       window.stx._stores.set(id, result);
