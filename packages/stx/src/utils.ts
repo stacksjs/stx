@@ -438,18 +438,37 @@ export async function renderComponentWithSlot(
           }
           if (componentFilePath) break
 
-          // Also search subdirectories (one level deep)
+          // Also search subdirectories recursively. Components routinely live
+          // in nested folders (e.g. `components/Dashboard/UI/PageLayout.stx`),
+          // and limiting the walk to a single level meant only direct children
+          // of `componentsDir` could be auto-resolved by tag name. Walking the
+          // tree (with a depth cap to keep pathological layouts from blowing
+          // up startup time) lets `<PageLayout />` find the right file without
+          // forcing every page to add an explicit import.
           if (!componentFilePath) {
             try {
               const fs = await import('node:fs')
-              // Check if directory exists before reading
               const dirStat = fs.statSync(dir, { throwIfNoEntry: false })
               if (!dirStat?.isDirectory()) continue
 
-              const entries = fs.readdirSync(dir, { withFileTypes: true })
-              for (const entry of entries) {
-                if (entry.isDirectory()) {
-                  const subDir = path.join(dir, entry.name)
+              const MAX_DEPTH = 8
+              const stack: Array<{ path: string, depth: number }> = [{ path: dir, depth: 0 }]
+              while (stack.length > 0 && !componentFilePath) {
+                const current = stack.pop()!
+                if (current.depth >= MAX_DEPTH) continue
+                let entries: import('node:fs').Dirent[]
+                try {
+                  entries = fs.readdirSync(current.path, { withFileTypes: true })
+                }
+                catch {
+                  continue
+                }
+                for (const entry of entries) {
+                  if (!entry.isDirectory()) continue
+                  // Skip dirs that are unlikely to hold STX components and that
+                  // can be huge (node_modules) or hidden (dotdirs).
+                  if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue
+                  const subDir = path.join(current.path, entry.name)
                   for (const variant of uniqueVariants) {
                     const tryPath = path.join(subDir, variant)
                     triedPaths.push(tryPath)
@@ -459,10 +478,11 @@ export async function renderComponentWithSlot(
                     }
                   }
                   if (componentFilePath) break
+                  stack.push({ path: subDir, depth: current.depth + 1 })
                 }
               }
             }
-catch {
+            catch {
               // Ignore directory read errors
             }
           }
