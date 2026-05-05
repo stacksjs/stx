@@ -67,10 +67,51 @@ export function hasUserImports(code: string): boolean {
 }
 
 /**
- * Create the Bun.build plugin that marks stx/stores as external
- * and resolves @/ paths to the project root.
+ * Create the Bun.build plugin that marks stx/stores as external,
+ * resolves @/ paths to the project root, and — critically — rebases
+ * `./` and `../` imports against the original `<script client>`
+ * file's directory rather than the temp entry file's directory.
+ *
+ * Without the relative-import rebase, every `import { useFoo } from
+ * '../../functions/foo'` in a feature page fails to resolve at
+ * bundle time because the temp entry file lives under
+ * `.stx/bundle-tmp/`, not next to the page source.
  */
-function createBundlePlugin(projectRoot: string): BunPlugin {
+function createBundlePlugin(projectRoot: string, templateDir: string, tmpEntry: string): BunPlugin {
+  // Resolve a relative import against `templateDir`, returning the
+  // first existing file with one of the standard JS/TS extensions or
+  // an `index.{ts,js}` fallback. Falls back to the bare path so
+  // Bun.build can surface a normal "module not found" if nothing
+  // matches.
+  const resolveRelative = (importer: string, request: string): string => {
+    // The temp entry's importer is itself, so any `./x` from the
+    // page-originated body should resolve from `templateDir`. For
+    // imports inside a transitively-bundled module we honor the
+    // module's own dirname — only the entry's relatives get rebased.
+    const fromDir = importer === tmpEntry ? templateDir : path.dirname(importer)
+    const resolved = path.resolve(fromDir, request)
+    const candidates = [
+      resolved,
+      `${resolved}.ts`,
+      `${resolved}.tsx`,
+      `${resolved}.js`,
+      `${resolved}.mjs`,
+      `${resolved}.jsx`,
+      path.join(resolved, 'index.ts'),
+      path.join(resolved, 'index.tsx'),
+      path.join(resolved, 'index.js'),
+      path.join(resolved, 'index.mjs'),
+    ]
+    for (const candidate of candidates) {
+      try {
+        if (fs.existsSync(candidate) && fs.statSync(candidate, { throwIfNoEntry: false })?.isFile())
+          return candidate
+      }
+      catch {}
+    }
+    return resolved
+  }
+
   return {
     name: 'stx-client-bundle',
     setup(build) {
@@ -85,6 +126,13 @@ function createBundlePlugin(projectRoot: string): BunPlugin {
         path: args.path,
         external: true,
       }))
+
+      // Relative imports (`./x`, `../x`) — rebase against the original
+      // `<script client>` source file, not the temp entry's directory.
+      build.onResolve({ filter: /^\.\.?\// }, (args) => {
+        const resolved = resolveRelative(args.importer, args.path)
+        return { path: resolved }
+      })
 
       // @/ path alias → project root
       build.onResolve({ filter: /^@\// }, (args) => {
@@ -192,13 +240,19 @@ export async function bundleClientScript(
       target: 'browser',
       format: 'esm',
       minify,
-      plugins: [createBundlePlugin(projectRoot)],
+      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry)],
       define: {
         'process.env.NODE_ENV': minify ? '"production"' : '"development"',
         ...getPublicEnvDefine(),
       },
-      // Resolve relative imports from the template's directory
-      root: templateDir,
+      // Anchor the bundler at the project root. The plugin above is
+      // what actually rebases `./` and `../` imports against the
+      // page source dir, so `root` only needs to keep the chunk
+      // output path inside the project — pointing it at templateDir
+      // produced "AccessDenied creating outdir
+      // ../../../../../.stx/bundle-tmp" because Bun computed the out
+      // dir relative to that deep template directory.
+      root: projectRoot,
     })
 
     if (!result.success) {
@@ -237,7 +291,15 @@ export async function bundleClientScript(
     return bundled
   }
   catch (error) {
-    console.warn('[stx:bundler] error:', error instanceof Error ? error.message : error)
+    // Bun.build throws an AggregateError-like with `errors[]` for
+    // resolution / compile failures; surface those messages so the
+    // caller has something better than "Bundle failed" in the log.
+    const msg = error instanceof Error ? error.message : String(error)
+    const bunErrors = (error as { errors?: Array<{ message?: string }> })?.errors
+    const detail = Array.isArray(bunErrors) && bunErrors.length > 0
+      ? `\n  ${bunErrors.map(e => `- ${e?.message ?? e}`).join('\n  ')}`
+      : ''
+    console.warn(`[stx:bundler] error: ${msg}${detail}`)
     // Fall back to original code
     return code
   }

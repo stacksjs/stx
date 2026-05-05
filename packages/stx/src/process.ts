@@ -1050,8 +1050,12 @@ async function processOtherDirectives(
   output = processXElementDirectives(output)
 
   // Process STX signals for reactive UI (state, derived, effect, :if, :for, :model, etc.)
-  // This injects the signals runtime and processes <script setup> blocks
-  output = await processSignals(output, opts, filePath)
+  // This injects the signals runtime and processes <script setup> blocks.
+  // Prefer the original page's filePath (when present) over the layout's so
+  // the client-script bundler can rebase relative `import './...'` lines
+  // against the page directory rather than the layout's directory.
+  const pageFilePath = (context.__originalFilePath as string | undefined) || filePath
+  output = await processSignals(output, opts, pageFilePath)
 
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, opts)
