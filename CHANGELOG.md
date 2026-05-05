@@ -1,4 +1,53 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.45...v0.2.46)
+
+### 🚀 Features
+
+- **stx**: walk componentsDir recursively when resolving by tag name ([d914f3a](https://github.com/stacksjs/stx/commit/d914f3a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **stx**: resolve relative imports in client-script bundler against page dir ([66e98ac](https://github.com/stacksjs/stx/commit/66e98ac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- typecheck + test stability across plugin, signals, and visuals ([a49aaad](https://github.com/stacksjs/stx/commit/a49aaad)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- frame Blade and signals directives as coexisting peers ([833c349](https://github.com/stacksjs/stx/commit/833c349)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.46 ([c098591](https://github.com/stacksjs/stx/commit/c098591)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([13704ae](https://github.com/stacksjs/stx/commit/13704ae)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.45...HEAD)
+
+### 🚀 Features
+
+- **stx**: walk componentsDir recursively when resolving by tag name ([d914f3a](https://github.com/stacksjs/stx/commit/d914f3a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **stx**: resolve relative imports in client-script bundler against page dir ([66e98ac](https://github.com/stacksjs/stx/commit/66e98ac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- typecheck + test stability across plugin, signals, and visuals ([a49aaad](https://github.com/stacksjs/stx/commit/a49aaad)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- frame Blade and signals directives as coexisting peers ([833c349](https://github.com/stacksjs/stx/commit/833c349)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([13704ae](https://github.com/stacksjs/stx/commit/13704ae)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.44...v0.2.45)
 
 ### 🐛 Bug Fixes
