@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.44...v0.2.45)
+
+### 🐛 Bug Fixes
+
+- **stx**: also drop reserved keywords from createSafeFunction params ([ccc2dcb](https://github.com/stacksjs/stx/commit/ccc2dcb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.45 ([c962718](https://github.com/stacksjs/stx/commit/c962718)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.44...HEAD)
+
+### 🐛 Bug Fixes
+
+- **stx**: also drop reserved keywords from createSafeFunction params ([ccc2dcb](https://github.com/stacksjs/stx/commit/ccc2dcb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.43...v0.2.44)
 
 ### 🐛 Bug Fixes
