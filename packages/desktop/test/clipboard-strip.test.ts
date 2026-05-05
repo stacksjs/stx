@@ -9,10 +9,26 @@ import { clipboard } from '../src/clipboard'
 
 describe('clipboard.writeHTML stripHtml fallback', () => {
   let writes: Array<{ html: string, text: string }>
+  // Save originals so we can restore them after each test. Bun ships a
+  // real `Blob` global, and other tests in the suite (e.g. the
+  // build-optimizer optimizeTemplate suite) rely on it. A bare
+  // `delete globalThis.Blob` in afterEach would wipe Bun's built-in and
+  // poison every subsequent test in the run.
+  let origWindowBlob: any
+  let origWindowClipboardItem: any
+  let origGlobalBlob: any
+  let origGlobalClipboardItem: any
+  let origNavigatorClipboard: any
 
   beforeEach(() => {
     delete (window as any).craft
     writes = []
+
+    origWindowBlob = (window as any).Blob
+    origWindowClipboardItem = (window as any).ClipboardItem
+    origGlobalBlob = (globalThis as any).Blob
+    origGlobalClipboardItem = (globalThis as any).ClipboardItem
+    origNavigatorClipboard = (navigator as any).clipboard
 
     // very-happy-dom doesn't ship Blob/ClipboardItem; stub minimal
     // versions that capture the bytes the production code feeds in.
@@ -37,11 +53,20 @@ describe('clipboard.writeHTML stripHtml fallback', () => {
   })
 
   afterEach(() => {
-    delete (navigator as any).clipboard
-    delete (window as any).Blob
-    delete (window as any).ClipboardItem
-    delete (globalThis as any).Blob
-    delete (globalThis as any).ClipboardItem
+    if (origNavigatorClipboard === undefined) delete (navigator as any).clipboard
+    else (navigator as any).clipboard = origNavigatorClipboard
+
+    if (origWindowBlob === undefined) delete (window as any).Blob
+    else (window as any).Blob = origWindowBlob
+
+    if (origWindowClipboardItem === undefined) delete (window as any).ClipboardItem
+    else (window as any).ClipboardItem = origWindowClipboardItem
+
+    if (origGlobalBlob === undefined) delete (globalThis as any).Blob
+    else (globalThis as any).Blob = origGlobalBlob
+
+    if (origGlobalClipboardItem === undefined) delete (globalThis as any).ClipboardItem
+    else (globalThis as any).ClipboardItem = origGlobalClipboardItem
   })
 
   it('strips simple HTML tags from the plaintext alt', async () => {

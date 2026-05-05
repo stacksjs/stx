@@ -172,6 +172,12 @@ export function stxPlugin(userOptions?: StxOptions): BunPlugin {
         // Bare absolute paths only — don't intercept Windows drive paths
         // or schemeless URLs (//cdn.example.com/...).
         if (args.path.startsWith('//')) return null
+        // Don't intercept entrypoints — when entrypoints are passed as
+        // absolute paths (common in tests and tooling), they have no
+        // importer. Marking those external would tell Bun to skip them
+        // entirely and emit no output. We only want to externalize
+        // *imports* originating from inside another module.
+        if (!args.importer) return null
         return { external: true, path: args.path }
       })
 

@@ -147,7 +147,7 @@ export {
   stripLocalePrefix,
   translate,
   type BuildOptions,
-  type BuildResult,
+  type BuildResult as SiteBuildResult,
   type PageMeta,
   type RouterOptions,
   type SiteConfig,

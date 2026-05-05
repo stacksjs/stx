@@ -23,6 +23,7 @@ export function injectSeo(html: string, site: SiteConfig, page: PageMeta = {}, p
     tags.push(`<link rel="icon"${mime ? ` type="${mime}"` : ''} href="${escapeAttr(seo.favicon)}">`)
   }
   tags.push(
+    `<title>${escapeText(title)}</title>`,
     `<link rel="canonical" href="${escapeAttr(url)}">`,
     `<meta name="description" content="${escapeAttr(description)}">`,
     `<meta property="og:title" content="${escapeAttr(title)}">`,
@@ -54,6 +55,12 @@ export function injectSeo(html: string, site: SiteConfig, page: PageMeta = {}, p
   // Strip any existing block we previously injected (idempotent rebuilds)
   html = html.replace(/<!--\s*SEO\s*-->[\s\S]*?<!--\s*\/SEO\s*-->\s*/g, '')
 
+  // Strip any existing <title> — site.config.ts pages[*].title is the
+  // source of truth. Without this, stx's default `<title>stx Project</title>`
+  // (or a stale per-page title) survives and the browser shows it instead
+  // of the SEO block's title.
+  html = html.replace(/<title>[\s\S]*?<\/title>\s*/i, '')
+
   // Strip stale tags emitted by stx's defaults that aren't in the marker block
   html = html
     .replace(/<meta\s+name="title"\s+content="stx Project"[^>]*>\s*/g, '')
@@ -76,6 +83,13 @@ function escapeAttr(s: string): string {
   return s
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+function escapeText(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 }

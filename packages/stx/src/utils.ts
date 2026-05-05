@@ -794,19 +794,27 @@ export async function resolveTemplatePath(
 ): Promise<string | null> {
   const result = await resolveTemplatePathInner(templatePath, currentFilePath, options, dependencies)
   if (result === null) return null
-  // Final guard: every path the resolver returns must stay inside the
-  // project root. Any escape (a malformed include path, an interpolated
-  // user-controlled directive argument, ...) gets rejected here so the
-  // caller treats it as "not found" rather than serving an arbitrary
-  // file. We don't try to confine to layouts/components/partials
-  // specifically — too easy to break legitimate setups — but the
-  // project-root boundary is non-negotiable.
-  const safe = assertInsideRoot(result, process.cwd())
-  if (!safe) {
-    console.warn(`[stx] rejected resolved template path that escapes project root: ${result} (template: ${templatePath}, from: ${currentFilePath})`)
-    return null
+  // Final guard: every path the resolver returns must stay inside a
+  // trusted directory. Any escape (a malformed include path, an
+  // interpolated user-controlled directive argument, ...) gets rejected
+  // here so the caller treats it as "not found" rather than serving an
+  // arbitrary file. The project root is the primary boundary, but
+  // explicit `root`/`layoutsDir`/`componentsDir`/`partialsDir`/`pagesDir`
+  // values are also trusted — they may legitimately point outside cwd
+  // (e.g. tests using a fixture in another repo, monorepos pointing at
+  // sibling packages). The guard is non-negotiable: if the path is
+  // inside *none* of those, it gets rejected.
+  const safeUnderCwd = assertInsideRoot(result, process.cwd())
+  if (safeUnderCwd) return safeUnderCwd
+
+  const trustedDirs = [options.root, options.layoutsDir, options.componentsDir, options.partialsDir, options.pagesDir]
+    .filter((d): d is string => typeof d === 'string' && d.length > 0)
+  for (const dir of trustedDirs) {
+    const resolvedDir = path.isAbsolute(dir) ? dir : path.resolve(process.cwd(), dir)
+    if (assertInsideRoot(result, resolvedDir)) return path.resolve(result)
   }
-  return safe
+  console.warn(`[stx] rejected resolved template path that escapes project root: ${result} (template: ${templatePath}, from: ${currentFilePath})`)
+  return null
 }
 
 async function resolveTemplatePathInner(
