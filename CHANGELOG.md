@@ -1,4 +1,14 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.48...v0.2.49)
+
+### 🧹 Chores
+
+- release v0.2.49 ([d5d70c4](https://github.com/stacksjs/stx/commit/d5d70c4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.47...v0.2.48)
 
 ### 🐛 Bug Fixes
