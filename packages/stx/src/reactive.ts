@@ -1,4 +1,6 @@
 /* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
+import { evaluateExpression } from './expressions'
+
 /**
  * Reactive Directives Module
  *
@@ -641,10 +643,13 @@ window.__stx_reactive = (function() {
     scopeEl.__stx_state = ctxProxy;
     scopeEl.__stx_execute = function(stmt, $event, $el) {
       try {
-        var keys = Object.keys(scopeVars);
-        var vals = keys.map(function(k) { return scopeVars[k]; });
-        var fn = new Function(keys.join(','), '$event', '$el', stmt);
-        fn.apply(ctxProxy, vals.concat([$event, $el]));
+        // Run the statement with the reactive proxy as the lexical scope.
+        // Wrapping in a with-block on the proxy makes bare reads/writes go
+        // through it (so foo = bar triggers signal.set()) instead of treating
+        // each state key as a local function parameter — bare assignments
+        // would otherwise just rebind the local and never reach the signal.
+        var fn = new Function('$event', '$el', 'with(this){' + stmt + ';}');
+        fn.call(ctxProxy, $event, $el);
       } catch (e) {
         console.warn('[stx-reactive] execute error:', e);
       }
@@ -657,15 +662,68 @@ window.__stx_reactive = (function() {
 }
 
 /**
+ * Substitute `{{ expr }}` and `{!! expr !!}` patterns inside an expression
+ * string (an x-data or x-init JavaScript snippet) using the server-side
+ * context.
+ *
+ * Why: Reactive directives are processed BEFORE `processExpressions` runs, so
+ * the raw `stateExpr` we capture here still contains `{{ }}` placeholders.
+ * The outer attribute is fixed up later by `processExpressions`, but the
+ * value we embed into the runtime `__stx_reactive.initScope(...)` script is
+ * a JS string literal — `processExpressions` won't reach inside it. Without
+ * this pass, a line like `disabledItems: {{ ids }}` ends up in the runtime
+ * as the literal `disabledItems: {{ ids }}` and crashes the reactivity
+ * engine with a syntax error on the `{`.
+ *
+ * Substitution rules mirror script-body interpolation:
+ *   - `{{ expr }}` emits `JSON.stringify(value)` so the result is always a
+ *     valid JS literal (string→quoted, array/object→JSON literal,
+ *     number→bare).
+ *   - `{!! expr !!}` emits raw `String(value)` for callers that want to
+ *     splice a pre-formatted JS expression.
+ *   - Unresolved expressions are left as-is so client-side signal handling
+ *     can pick them up later if applicable.
+ */
+function substituteExpressionsInExpr(expr: string, context: Record<string, any>): string {
+  // {!! expr !!} — raw splice
+  let out = expr.replace(/\{!!([\s\S]*?)!!\}/g, (match, inner) => {
+    try {
+      const value = evaluateExpression(inner, context, true)
+      if (value === undefined) return match
+      return String(value)
+    }
+    catch {
+      return match
+    }
+  })
+
+  // {{ expr }} — JSON-safe splice (so the result is a valid JS expression)
+  out = out.replace(/\{\{([\s\S]*?)\}\}/g, (match, inner) => {
+    try {
+      const value = evaluateExpression(inner, context, true)
+      if (value === undefined) return match
+      return JSON.stringify(value)
+    }
+    catch {
+      return match
+    }
+  })
+
+  return out
+}
+
+/**
  * Generate initialization code for all scopes
  */
-function generateScopeInitializers(scopes: ReactiveScope[]): string {
+function generateScopeInitializers(scopes: ReactiveScope[], context: Record<string, any>): string {
   if (scopes.length === 0) return ''
 
   const initializers = scopes.map((scope) => {
     const refsJson = JSON.stringify(Object.fromEntries(scope.refs))
-    const stateExprJson = JSON.stringify(scope.stateExpr)
-    const initExprJson = scope.initExpr ? JSON.stringify(scope.initExpr) : 'null'
+    const resolvedStateExpr = substituteExpressionsInExpr(scope.stateExpr, context)
+    const resolvedInitExpr = scope.initExpr ? substituteExpressionsInExpr(scope.initExpr, context) : null
+    const stateExprJson = JSON.stringify(resolvedStateExpr)
+    const initExprJson = resolvedInitExpr ? JSON.stringify(resolvedInitExpr) : 'null'
 
     return `
   (function() {
@@ -782,7 +840,7 @@ function removeReactiveAttributes(template: string): string {
  */
 export function processReactiveDirectives(
   template: string,
-  _context: Record<string, unknown>,
+  context: Record<string, unknown>,
   _filePath: string,
 ): string {
   // Reset counters
@@ -806,8 +864,13 @@ export function processReactiveDirectives(
   // for the signals runtime to process
   let output = finalizeTemplate(template, scopes)
 
-  // Generate and inject the reactive bridge runtime script
-  const script = generateScopeInitializers(scopes)
+  // Generate and inject the reactive bridge runtime script. Pass context so
+  // server-side {{ expr }} placeholders inside x-data / x-init expressions
+  // get substituted before being embedded in the runtime script — otherwise
+  // the unsubstituted `{{ }}` ends up inside a string literal that
+  // `processExpressions` (which runs later, on attribute values) never
+  // reaches.
+  const script = generateScopeInitializers(scopes, context as Record<string, any>)
 
   // Inject before the LAST </body> — earlier occurrences may be inside <script> tags
   const bodyCloseIdx = output.lastIndexOf('</body>')

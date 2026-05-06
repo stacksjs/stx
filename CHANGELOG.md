@@ -1,4 +1,37 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.47...v0.2.48)
+
+### 🐛 Bug Fixes
+
+- **stx**: coerce --port CLI flag to a number so dev server doesn't roll ports ([81660f4](https://github.com/stacksjs/stx/commit/81660f4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: back button now restores the previous page content ([fc73a82](https://github.com/stacksjs/stx/commit/fc73a82)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.48 ([8d95004](https://github.com/stacksjs/stx/commit/8d95004)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([839ab0e](https://github.com/stacksjs/stx/commit/839ab0e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.47...HEAD)
+
+### 🐛 Bug Fixes
+
+- **stx**: coerce --port CLI flag to a number so dev server doesn't roll ports ([81660f4](https://github.com/stacksjs/stx/commit/81660f4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: back button now restores the previous page content ([fc73a82](https://github.com/stacksjs/stx/commit/fc73a82)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([839ab0e](https://github.com/stacksjs/stx/commit/839ab0e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.46...v0.2.47)
 
 ### 🚀 Features
