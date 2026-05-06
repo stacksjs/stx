@@ -170,7 +170,13 @@ export function getRouterScript(): string {
       return;
     }
 
-    if(t.href===location.href&&!t.hash&&!force)return;
+    // Skip if user clicks a link to the page they're already on. We
+    // deliberately allow popstate (pushState===false) through because
+    // the browser has already updated location.href to the popped
+    // entry — without this allowance, hitting back would early-return
+    // and the visible page content would be left frozen on the
+    // forward-navigation page.
+    if(pushState!==false&&t.href===location.href&&!t.hash&&!force)return;
 
     isNavigating=true;
     document.body.classList.add(o.loadingClass);
