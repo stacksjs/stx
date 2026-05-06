@@ -1543,7 +1543,7 @@ catch (e2) {
       // :attr still works for backward compat but is reserved for structural directives.
       // x-text, x-html, x-model, x-show, x-if, x-for, x-cloak, x-ref, x-data are
       // handled by their own code paths below — exclude them here.
-      var X_HANDLED = {'x-text':1,'x-html':1,'x-model':1,'x-show':1,'x-if':1,'x-for':1,'x-cloak':1,'x-ref':1,'x-data':1,'x-bind':1,'x-class':1,'x-style':1};
+      var X_HANDLED = {'x-text':1,'x-html':1,'x-model':1,'x-show':1,'x-if':1,'x-for':1,'x-cloak':1,'x-ref':1,'x-data':1,'x-bind':1,'x-class':1,'x-style':1,'x-tooltip':1,'x-tooltip-position':1};
       if (name.startsWith('@bind:') || name.startsWith('x-bind:')
           || (name.startsWith(':') && !name.startsWith('::') && !DIRECTIVE_NAMES[name.slice(1).split('.')[0]] && !EVENT_RE.test(name.slice(1)))
           || (name.startsWith('x-') && !X_HANDLED[name.split('.')[0]] && !X_HANDLED[name])) {
@@ -4032,6 +4032,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     var routerOpts = window.STX_ROUTER_OPTIONS || window.__stxRouterConfig || {};
     var container = document.querySelector('[data-stx-content]')
       || (routerOpts.container ? document.querySelector(routerOpts.container) : null)
+      || document.querySelector('main')
       || document.querySelector('#main-content')
       || document.body;
 

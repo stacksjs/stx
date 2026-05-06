@@ -139,7 +139,13 @@ export {
   defineSiteConfig,
   generateRobots,
   generateSitemap,
-  injectRouterScript,
+  // injectRouterScript intentionally NOT re-exported here — it would collide
+  // with the canonical runtime-injection one (re-exported via `./render` →
+  // `./process` → `./runtime-injection`). The site-builder version hardcodes
+  // `container:'body'` for static-site builds and would silently override
+  // the dev-server's main-container injection. Static-site callers should
+  // import it directly from '@stacksjs/stx/site-builder' or the explicit
+  // module path if needed.
   injectSeo,
   injectThemeBootstrap,
   localizePath,

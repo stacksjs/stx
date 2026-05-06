@@ -243,7 +243,7 @@ else {
     var isFragment=html.indexOf('<!--stx-fragment-->')===0;
     if(isFragment)html=html.slice('<!--stx-fragment-->'.length);
     var currentContent=getContainer();
-    console.log('[router] swap: isFragment='+isFragment+' container='+!!currentContent+' htmlLen='+html.length);
+    console.log('[router] swap: isFragment='+isFragment+' container='+!!currentContent+' tag='+(currentContent&&currentContent.tagName)+' selector='+containerSel+' htmlLen='+html.length);
     if(!currentContent){console.log('[router] no container — falling back');location.href=url;return}
 
     // Fragment mode: server returned just the page content (no document wrapper)
@@ -303,6 +303,18 @@ else {
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
         fragScripts.forEach(function(code){
           console.log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
+          // Skip scripts that were already executed (layout-level partials
+          // like theme.stx, stores.stx, nav.stx). Their top-level const/let
+          // declarations would throw "Identifier has already been declared"
+          // on re-execution. Setup functions (__stx_setup_) must always
+          // re-execute because each page has its own setup.
+          var h=hashScript(code);
+          var isSetup=code.indexOf('__stx_setup_')!==-1;
+          if(!isSetup&&executedScriptHashes[h]){
+            console.log('[router] skipping already-executed script (hash dedup)');
+            return;
+          }
+          executedScriptHashes[h]=1;
           var ns=document.createElement('script');
           // Wrap in block scope to prevent const/let collisions on re-navigation.
           // Without this, navigating away and back throws "Identifier has already
