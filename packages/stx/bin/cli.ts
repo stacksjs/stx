@@ -589,6 +589,12 @@ else {
           if (!portValidation.isValid) {
             reportValidationError(portValidation)
           }
+          // clapp passes `--port 3456` through as the string "3456".
+          // Downstream, findAvailablePort does `startPort + i`, which becomes
+          // string concatenation and rolls every port to port * 10 (e.g.
+          // "3456" + 0 = "34560"). Coerce once here so all serve* call sites
+          // receive a real number.
+          options.port = Number.parseInt(String(options.port), 10)
         }
 
         // Validate timeout if provided

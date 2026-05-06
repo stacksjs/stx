@@ -59,6 +59,12 @@ export async function isPortAvailable(port: number): Promise<boolean> {
  * @throws Error if no available port is found within maxAttempts
  */
 export async function findAvailablePort(startPort: number, maxAttempts = 20): Promise<number> {
+  // Defensive coercion: this used to be called with a string when the CLI
+  // passed `--port 3456` through unchanged, which made `startPort + i` a
+  // string concat ("3456" + 0 = "34560") so every port appeared "busy" and
+  // the server rolled to port * 10. Coerce here so the bug can't resurface
+  // if a future caller forgets to parseInt.
+  startPort = Number(startPort)
   for (let i = 0; i < maxAttempts; i++) {
     const port = startPort + i
     const available = await isPortAvailable(port)
