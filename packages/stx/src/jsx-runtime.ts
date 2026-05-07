@@ -24,7 +24,7 @@
 
 /** Virtual DOM node representation */
 export interface VNode {
-  type: string | ComponentFunction | typeof Fragment
+  type: string | ComponentFunction<any> | typeof Fragment
   props: Record<string, any> | null
   children: Array<VNode | string>
   key?: string | number | null
@@ -34,7 +34,7 @@ export interface VNode {
 
 /** Function component type */
 // eslint-disable-next-line pickier/no-unused-vars
-export type ComponentFunction = (props: Record<string, any>) => VNode | string | null
+export type ComponentFunction<P extends Record<string, any> = Record<string, any>> = (props: P) => VNode | string | null
 
 /** Fragment symbol - renders children without a wrapper element */
 export const Fragment: unique symbol = Symbol.for('stx.Fragment')
@@ -150,7 +150,7 @@ function normalizeChild(child: any): VNode | string {
  * @param props - Props object (may include children)
  * @param key - Optional key for list reconciliation
  */
-export function jsx(type: string | ComponentFunction | typeof Fragment, props: Record<string, any> | null, key?: string | number | null): VNode {
+export function jsx(type: string | ComponentFunction<any> | typeof Fragment, props: Record<string, any> | null, key?: string | number | null): VNode {
   const { children, ref, key: _key, ...restProps } = props || {} as any
   return {
     type,

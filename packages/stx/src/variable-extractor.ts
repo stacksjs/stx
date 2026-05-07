@@ -37,6 +37,7 @@ import { findMatchingDelimiter } from './parser/tokenizer'
 // wrapped useHead would create a separate module instance with its own state.
 import { useHead as headUseHead, useSeoMeta as headUseSeoMeta, getHead as headGetHead } from './head'
 import { getPublicEnvDefine } from './public-env'
+import { safeEvaluate } from './safe-evaluator'
 
 /**
  * Extract declared variable names from converted CommonJS script.
@@ -1488,16 +1489,16 @@ async function fallbackVariableExtraction(
 
     try {
       const cleanValue = value.trim().replace(/;$/, '')
-      // eslint-disable-next-line no-new-func
-      const evalFn = new Function(`return ${cleanValue}`)
-      context[name] = evalFn()
+      const evaluated = safeEvaluate(cleanValue, context) ?? safeEvaluate(`(${cleanValue})`, context)
+      if (evaluated !== undefined)
+        context[name] = evaluated
     }
     catch {
       try {
         const cleanValue = value.trim().replace(/;$/, '')
-        // eslint-disable-next-line no-new-func
-        const evalFn = new Function(`return (${cleanValue})`)
-        context[name] = evalFn()
+        const evaluated = safeEvaluate(`(${cleanValue})`, context)
+        if (evaluated !== undefined)
+          context[name] = evaluated
       }
       catch (e2) {
         console.warn(`Failed to parse export ${name} in fallback:`, e2)
@@ -1515,39 +1516,14 @@ async function fallbackVariableExtraction(
     if (!(name in context)) {
       try {
         const cleanValue = value.trim().replace(/;$/, '')
-        // eslint-disable-next-line no-new-func
-        const evalFn = new Function(`return ${cleanValue}`)
-        context[name] = evalFn()
+        const evaluated = safeEvaluate(cleanValue, context) ?? safeEvaluate(`(${cleanValue})`, context)
+        if (evaluated !== undefined)
+          context[name] = evaluated
       }
       catch {
         // Ignore individual failures in fallback
       }
     }
-  }
-
-  // Approach 3: Try removing exports and executing directly
-  try {
-    const directScript = scriptContent.replace(/^export\s+/gm, '')
-
-    // eslint-disable-next-line no-new-func
-    const directFn = new Function(`
-      ${directScript}
-      const result = {};
-      ${Array.from(scriptContent.matchAll(/(?:const|let|var)\s+(\w+)\s*=/g))
-        .map(match => `if (typeof ${match[1]} !== 'undefined') result.${match[1]} = ${match[1]};`)
-        .join('\n')}
-      return result;
-    `)
-
-    const vars = directFn() as Record<string, unknown>
-    Object.entries(vars).forEach(([key, value]) => {
-      if (value !== undefined && !(key in context)) {
-        context[key] = value
-      }
-    })
-  }
-  catch {
-    // Final fallback failed - expected for some complex patterns
   }
 }
 

@@ -343,6 +343,14 @@ function parseAllAttributes(attributesStr: string): Record<string, string> {
   return props
 }
 
+function escapeAttribute(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 /**
  * Process @import directives.
  *
@@ -648,7 +656,7 @@ async function processCustomElementTags(
         // Forward @event attributes from parent to builtin's root element
         if (Object.keys(resolvedProps.events).length > 0) {
           const eventAttrs = Object.entries(resolvedProps.events)
-            .map(([event, handler]) => `${event}="${handler.replace(/"/g, '&quot;')}"`)
+            .map(([event, handler]) => `${event}="${escapeAttribute(handler)}"`)
             .join(' ')
           rendered = rendered.replace(/^(\s*<[a-zA-Z][a-zA-Z0-9-]*)/, `$1 ${eventAttrs}`)
         }
@@ -698,7 +706,7 @@ async function processCustomElementTags(
         const firstTagMatch = finalContent.match(/^(\s*<)([a-zA-Z][a-zA-Z0-9-]*)(\s|>|\/)/s)
         if (firstTagMatch) {
           const eventAttrs = Object.entries(resolvedProps.events)
-            .map(([event, handler]) => `${event}="${handler}"`)
+            .map(([event, handler]) => `${event}="${escapeAttribute(handler)}"`)
             .join(' ')
           const insertPos = firstTagMatch[1].length + firstTagMatch[2].length
           finalContent = finalContent.substring(0, insertPos) + ' ' + eventAttrs + finalContent.substring(insertPos)

@@ -318,25 +318,12 @@ function sanitizeObject(obj: unknown, depth = 0): unknown {
  */
 export function safeEvaluate<T = unknown>(expression: string, context: Record<string, unknown>): T | undefined {
   try {
-    const sanitizedExpr = sanitizeExpression(expression)
     const safeContext = createSafeContext(context)
+    const keys = Object.keys(safeContext)
+    const values = Object.values(safeContext)
+    const func = createSafeFunction(expression, keys)
 
-    // Create function with safe context
-    // eslint-disable-next-line no-new-func
-    const func = new Function(...Object.keys(safeContext), `
-      'use strict';
-      try {
-        return ${sanitizedExpr};
-      }
-catch (e) {
-        if (e instanceof ReferenceError || e instanceof TypeError) {
-          return undefined;
-        }
-        throw e;
-      }
-    `)
-
-    return func(...Object.values(safeContext))
+    return func(...values) as T
   }
   catch {
     // Return undefined for evaluation errors instead of throwing

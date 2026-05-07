@@ -200,6 +200,32 @@ if (elementProto) {
     })
   }
 
+  // very-happy-dom does not currently evaluate stateful form pseudo classes
+  // such as `:checked`. A lot of browser-facing tests and user code use the
+  // standard selector `input[name="x"]:checked`, so keep the selector API
+  // browser-compatible instead of forcing callers to manually filter nodes.
+  const patchCheckedQuerySelectorAll = (target: any) => {
+    const original = target?.querySelectorAll
+    if (!original || original.__stx_checked_patch)
+      return
+
+    const patched = function (this: Element | Document, selector: string) {
+      if (typeof selector !== 'string' || !selector.includes(':checked')) {
+        return original.call(this, selector)
+      }
+
+      const baseSelector = selector.replace(/:checked\b/g, '')
+      const candidates = original.call(this, baseSelector || '*')
+      return Array.from(candidates).filter((el: any) => el?.checked === true)
+    }
+
+    patched.__stx_checked_patch = true
+    target.querySelectorAll = patched
+  }
+
+  patchCheckedQuerySelectorAll(elementProto)
+  patchCheckedQuerySelectorAll(Object.getPrototypeOf(document))
+
   // Add __dispatchEvent_safe method to Element prototype for tests
   // This is a safer version of dispatchEvent that handles errors gracefully
   if (!elementProto.__dispatchEvent_safe) {

@@ -104,13 +104,13 @@ describe('CLI Validation', () => {
       expect(result.stderr).toContain('Similar files')
     })
 
-    it('should reject directories when expecting files', async () => {
+    it('should treat directory arguments as app roots', async () => {
       await fs.promises.mkdir(path.join(TEMP_DIR, 'directory'), { recursive: true })
 
       const result = await runCLI(['dev', 'directory'], { expectError: true })
 
       expect(result.exitCode).toBe(1)
-      expect(result.stderr).toContain('Expected file but got directory')
+      expect(result.stderr).toContain("No 'pages' directory found")
     })
   })
 
