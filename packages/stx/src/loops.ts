@@ -745,25 +745,64 @@ export function processLoops(template: string, context: Record<string, any>, fil
         // Get loop configuration (useAltLoopVar reserved for future use when exclusively using $loop)
         const _useAltLoopVar = options?.loops?.useAltLoopVariable ?? DEFAULT_USE_ALT_LOOP_VARIABLE
 
-        // Parse itemVar to check for index syntax: "index => item" or just "item"
+        // Parse itemVar to detect the binding form. Three are supported:
+        //   - `items as item`              → single binding
+        //   - `items as index => item`     → Blade-style "key => value"
+        //                                    (for arrays, key is numeric;
+        //                                    for objects/Maps, key is the
+        //                                    entry key — see entry-swap below)
+        //   - `items as item, index`       → Vue/v-for-style "value, idx"
+        //                                    Always treats `index` as the
+        //                                    numeric position, regardless
+        //                                    of whether the source is an
+        //                                    object/Map (that would invert
+        //                                    the variable order).
+        // Plus `items as [a, b]` array destructuring, which is detected
+        // by the `[` prefix and short-circuits past the comma split.
         const trimmedItemVar = itemVar.trim()
         let indexName: string | null = null
         let itemName: string
+        // `commaIsValueIndex` distinguishes the Vue-style `item, index`
+        // form (true) from `index => item` (false). Used below to decide
+        // whether the entry-key swap for object/Map iteration applies.
+        let commaIsValueIndex = false
 
         if (trimmedItemVar.includes('=>')) {
           // Syntax: @foreach (items as index => item)
           const parts = trimmedItemVar.split('=>').map(p => p.trim())
-          if (parts.length === 2) {
+          if (parts.length === 2 && parts[0] && parts[1]) {
             indexName = parts[0]
             itemName = parts[1]
           }
           else {
-            // Invalid syntax, use the whole thing as item name
+            itemName = trimmedItemVar
+          }
+        }
+        else if (
+          !trimmedItemVar.startsWith('[')
+          && !trimmedItemVar.startsWith('{')
+          && trimmedItemVar.includes(',')
+        ) {
+          // Syntax: @foreach (items as item, index)
+          // Skipped when the binding starts with `[` or `{` so we don't
+          // misread an array-destructure `[a, b]` or object-destructure
+          // `{a, b}` (the latter isn't supported but `{` is reserved so
+          // we don't accidentally claim it).
+          const parts = trimmedItemVar.split(',').map(p => p.trim())
+          if (parts.length === 2 && parts[0] && parts[1]) {
+            itemName = parts[0]
+            indexName = parts[1]
+            commaIsValueIndex = true
+          }
+          else {
+            // Three+ parts or empty parts — surface a clearer error than
+            // silently treating the whole binding as one identifier.
             itemName = trimmedItemVar
           }
         }
         else {
-          // Syntax: @foreach (items as item)
+          // Syntax: @foreach (items as item) — or destructure `[a, b]`,
+          // handled later in itemContext setup.
           itemName = trimmedItemVar
         }
 
@@ -805,10 +844,16 @@ export function processLoops(template: string, context: Record<string, any>, fil
             itemContext[itemName] = item
           }
 
-          // Add index variable if using "index => item" syntax
+          // Add index variable if using "index => item" or "item, index"
+          // syntax.
+          //   - For `index => item` over object/Map entries, the binding
+          //     names follow Blade semantics: index = entry key, item =
+          //     entry value.
+          //   - For `item, index`, the user has asked for the numeric
+          //     position regardless of source — Vue v-for compat — so
+          //     skip the entry swap and just stamp the loop counter.
           if (indexName) {
-            // For object/Map entries, use the entry key as index and entry value as item
-            if (isObjectEntries && Array.isArray(item) && item.length === 2) {
+            if (!commaIsValueIndex && isObjectEntries && Array.isArray(item) && item.length === 2) {
               itemContext[indexName] = item[0]
               itemContext[itemName] = item[1]
             }

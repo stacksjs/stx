@@ -1114,6 +1114,25 @@ describe('Loops Comprehensive', () => {
       expect(result).toContain('a=1')
       expect(result).toContain('b=2')
     })
+
+    it('should expose both bindings with Vue-style "item, index" syntax', () => {
+      const result = run(
+        '@foreach(items as item, i){{ i }}:{{ item }};@endforeach',
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toContain('0:a;')
+      expect(result).toContain('1:b;')
+      expect(result).toContain('2:c;')
+    })
+
+    it('should give "item, index" a numeric index even on Map/object sources', () => {
+      const result = run(
+        '@foreach(rows as row, n){{ n }}:{{ row.title }};@endforeach',
+        { rows: [{ title: 'one' }, { title: 'two' }] },
+      )
+      expect(result).toContain('0:one;')
+      expect(result).toContain('1:two;')
+    })
   })
 
   // ===========================================================================
