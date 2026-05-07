@@ -8,7 +8,9 @@
     "moduleResolution": "bundler",
     "paths": {
       "stx": ["./packages/stx/src/index.ts"],
+      "stx/*": ["./packages/stx/src/*"],
       "@stacksjs/stx": ["./packages/stx/src/index.ts"],
+      "@stacksjs/stx/*": ["./packages/stx/src/*"],
       "@stacksjs/desktop": ["./packages/desktop/src/index.ts"],
       "@stacksjs/sanitizer": ["./packages/sanitizer/src/index.ts"],
       "@stacksjs/iconify-core": ["./packages/iconify-core/src/index.ts"],
@@ -41,6 +43,7 @@
     "packages/benchmarks/**/*",
     "packages/create-stx/**/*",
     "packages/stx-native/**/*",
+    "pantry/**/*",
     "examples/**/*",
     "test-install/**/*",
     "node_modules",

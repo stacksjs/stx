@@ -71,7 +71,8 @@
       "import": "./dist/composables/*.js"
     },
     "./*": {
-      "import": "./dist/*"
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
     }
   },
   "module": "./dist/index.js",
@@ -111,7 +112,7 @@
     "test": "bun test --preload ./happy-dom.ts",
     "test:watch": "bun test --watch --preload ./happy-dom.ts",
     "test:coverage": "bun test --coverage --preload ./happy-dom.ts",
-    "typecheck": "bun tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.src.json --noEmit"
   },
   "dependencies": {
     "@cwcss/crosswind": "^0.2.0",

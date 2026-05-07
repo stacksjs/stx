@@ -29,7 +29,8 @@
       "import": "./dist/index.js"
     },
     "./*": {
-      "import": "./dist/*"
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
     }
   },
   "module": "./dist/index.js",
