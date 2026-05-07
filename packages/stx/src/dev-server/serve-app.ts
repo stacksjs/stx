@@ -5,7 +5,7 @@ import type { Route, RouteMatch } from '../router'
 import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
-import { detectShell, processShell, composeShellWithPage, stripDocumentWrapper, isSpaNavigation, extractContainerContent } from '../app-shell'
+import { detectShell, processShell, composeShellWithPage, stripDocumentWrapper, isSpaNavigation, extractContainerContent, extractLayoutMetadata } from '../app-shell'
 import {
   getHmrServer,
   injectHotReload,
@@ -635,6 +635,7 @@ catch {
 
           // Shell mode: SPA navigation returns page fragment only
           if (shell && isSpaNavigation(request)) {
+            const layoutMetadata = extractLayoutMetadata(content)
             // Inject route params into fragment
             if (Object.keys(routeMatch.params).length > 0) {
               content = injectRouteParams(content, routeMatch.params)
@@ -652,6 +653,8 @@ catch {
               headers: {
                 'Content-Type': 'text/html',
                 'X-STX-Fragment': 'true',
+                'X-STX-Layout': layoutMetadata.layout,
+                'X-STX-Layout-Group': layoutMetadata.group,
                 'Cache-Control': 'no-store, no-cache, must-revalidate',
               },
             })

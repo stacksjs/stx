@@ -652,7 +652,7 @@ export interface StxConfig {
    * - `'compile'`: build mode, emit asset reference placeholders instead of inline code
    * - `'serve'`: production serve mode, hydrate pre-compiled templates
    */
-  buildMode?: 'compile' | 'serve'
+  buildMode?: 'compile' | 'serve' | 'spa'
 
   /**
    * Auto-generate document shell (<!DOCTYPE>, <html>, <head>, <body>) around output.

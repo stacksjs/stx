@@ -15,6 +15,7 @@ import { serve } from 'bun'
 import { loadManifest, type BuildManifest, type ManifestRoute } from './manifest'
 import { hydrateTemplate, hydrateFragment } from './template-hydrator'
 import type { CompiledTemplate } from './template-compiler'
+import { extractLayoutMetadata, type LayoutMetadata } from './app-shell'
 
 /**
  * Production server configuration.
@@ -95,12 +96,14 @@ export async function startProductionServer(options: ProductionServerOptions = {
   // Pre-load compiled templates into memory
   const compiledTemplates = new Map<string, CompiledTemplate>()
   const fragmentCache = new Map<string, string>()
+  const layoutMetadataCache = new Map<string, LayoutMetadata>()
 
   for (const route of manifest.routes) {
     try {
       const compiledPath = path.join(outputDir, route.compiledPath)
       const compiled = JSON.parse(await Bun.file(compiledPath).text()) as CompiledTemplate
       compiledTemplates.set(route.pattern, compiled)
+      layoutMetadataCache.set(route.pattern, extractLayoutMetadata(compiled.html))
 
       // Pre-load fragments
       const fragmentPath = path.join(outputDir, route.fragmentPath)
@@ -240,10 +243,17 @@ export async function startProductionServer(options: ProductionServerOptions = {
       if (isSpaNav) {
         const fragment = fragmentCache.get(matchedRoute.pattern)
         if (fragment) {
+          const layoutMetadata = layoutMetadataCache.get(matchedRoute.pattern)
           return new Response(fragment, {
             headers: {
               'Content-Type': 'text/html',
               'X-STX-Fragment': 'true',
+              ...(layoutMetadata
+                ? {
+                    'X-STX-Layout': layoutMetadata.layout,
+                    'X-STX-Layout-Group': layoutMetadata.group,
+                  }
+                : {}),
               'Cache-Control': 'no-cache',
             },
           })

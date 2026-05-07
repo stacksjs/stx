@@ -27,6 +27,8 @@ export function getRouterScript(): string {
   var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
+  var debug=!!o.debug;
+  function log(){if(debug&&typeof console!=='undefined'&&console.log)console.log.apply(console,arguments)}
 
   // ── Progress bar (0→100% at top of viewport) ──
   // Native loading indicator baked into the router. Starts when navigation
@@ -118,6 +120,7 @@ export function getRouterScript(): string {
   // Layout group detection — layouts in the same group share a <main> container.
   // Only truly different layout groups trigger a full page reload.
   var layoutCache={};
+  var layoutGroupCache={};
   // Track executed script hashes to prevent redeclaration errors on navigation.
   // Layout-level scripts (theme, nav setup) execute on initial page load and
   // should NOT re-execute when navigating to another page with the same layout.
@@ -131,33 +134,50 @@ export function getRouterScript(): string {
     var text=s.textContent||'';
     if(text.trim()&&!s.hasAttribute('src'))executedScriptHashes[hashScript(text)]=1;
   });
-  function getLayoutGroup(layout){
-    if(!layout)return 'app';
-    if(layout.indexOf('auth')!==-1||layout.indexOf('guest')!==-1)return 'auth';
-    return 'app';
+  function cacheKey(url){
+    var u=new URL(url,location.origin);
+    return u.pathname+u.search;
   }
-  function checkLayoutChange(newLayout,targetUrl){
+  function defaultLayoutGroup(layout){
+    if(!layout)return 'app';
+    var clean=String(layout).replace(/\\\\/g,'/');
+    var parts=clean.split('/').filter(Boolean);
+    var idx=parts.lastIndexOf('layouts');
+    var part=idx>=0?parts[idx+1]:parts[parts.length-1];
+    return part?part.replace(/\\.stx$/i,''):'app';
+  }
+  function getCurrentLayoutGroup(){
+    var meta=document.querySelector('meta[name="stx-layout-group"]');
+    if(meta&&meta.getAttribute('content'))return meta.getAttribute('content');
+    var layout=document.querySelector('meta[name="stx-layout"]');
+    return defaultLayoutGroup(layout?layout.getAttribute('content'):'');
+  }
+  function getDocLayoutGroup(doc,layout){
+    var meta=doc&&doc.querySelector?doc.querySelector('meta[name="stx-layout-group"]'):null;
+    return meta&&meta.getAttribute('content')?meta.getAttribute('content'):defaultLayoutGroup(layout||'');
+  }
+  function checkLayoutChange(newLayout,targetUrl,newGroup){
     var currentLayout=document.querySelector('meta[name="stx-layout"]');
     var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'';
-    var curGroup=getLayoutGroup(curLayoutName);
-    var newGroup=getLayoutGroup(newLayout);
-    console.log('[router] layout check: current='+curLayoutName+'('+curGroup+') new='+(newLayout||'')+'('+newGroup+')');
+    var curGroup=getCurrentLayoutGroup();
+    var nextGroup=newGroup||defaultLayoutGroup(newLayout);
+    log('[router] layout check: current='+curLayoutName+'('+curGroup+') new='+(newLayout||'')+'('+nextGroup+')');
     // Different layout GROUP (e.g. app → auth): full reload
-    if(curGroup!==newGroup){
-      console.log('[router] layout group change:',curGroup,'→',newGroup,'— full reload to:',targetUrl);
+    if(curGroup!==nextGroup){
+      log('[router] layout group change:',curGroup,'→',nextGroup,'— full reload to:',targetUrl);
       return true;
     }
     // Same group but different SPECIFIC layout (e.g. layouts/app → layouts/coach):
     // full body swap so nav, sidebar, and other layout-level elements update
     if(curLayoutName && newLayout && curLayoutName!==newLayout){
-      console.log('[router] layout name change:',curLayoutName,'→',newLayout,'— full body swap');
+      log('[router] layout name change:',curLayoutName,'→',newLayout,'— full body swap');
       return true;
     }
     return false;
   }
 
   function navigate(url,pushState,force){
-    console.log('[router] navigate() called:',url,'isNavigating:',isNavigating);
+    log('[router] navigate() called:',url,'isNavigating:',isNavigating);
     if(isNavigating)return;
     var t=new URL(url,location.origin);
 
@@ -183,20 +203,20 @@ export function getRouterScript(): string {
     startProgress();
 
     var targetHref=t.href;
-    var targetPath=t.pathname;
+    var targetPath=cacheKey(url);
     var targetHash=t.hash;
 
     function done(){isNavigating=false;document.body.classList.remove(o.loadingClass);finishProgress()}
 
     if(o.cache&&cache[targetPath]&&!force){
-      if(checkLayoutChange(layoutCache[targetPath],url)){
+      if(checkLayoutChange(layoutCache[targetPath],url,layoutGroupCache[targetPath])){
         // Layout changed — fetch full page and do full document swap
-        console.log('[router] cache hit but layout changed — fetching full page');
+        log('[router] cache hit but layout changed — fetching full page');
         fetch(url,{headers:{'Accept':'text/html'}}).then(function(r){
           if(!r.ok)throw new Error(r.status);
           return r.text();
         }).then(function(html){
-          console.log('[router] full page fetched from cache path, len:',html.length);
+          log('[router] full page fetched from cache path, len:',html.length);
           swap(html,targetPath,pushState,targetHash);
         }).catch(function(err){
           console.error('[router] full page fetch error:',err);
@@ -214,23 +234,24 @@ else {
         if(!r.ok)throw new Error(r.status);
         var isFragment=r.headers.get('X-STX-Fragment')==='true';
         var newLayout=r.headers.get('X-STX-Layout')||'';
+        var newGroup=r.headers.get('X-STX-Layout-Group')||'';
         // Layout change? Fetch the FULL page (no X-STX-Router header) and do full document swap
-        if(isFragment&&checkLayoutChange(newLayout,url)){
-          console.log('[router] layout change — fetching full page for document swap');
+        if(isFragment&&checkLayoutChange(newLayout,url,newGroup)){
+          log('[router] layout change — fetching full page for document swap');
           return fetch(url,{headers:{'Accept':'text/html'}}).then(function(fullRes){
-            console.log('[router] full page fetched:',fullRes.status,'ok:',fullRes.ok);
+            log('[router] full page fetched:',fullRes.status,'ok:',fullRes.ok);
             if(!fullRes.ok)throw new Error(fullRes.status);
             return fullRes.text().then(function(html){
-              console.log('[router] full page html length:',html.length);
-              return{html:html,isFragment:false,layout:newLayout};
+              log('[router] full page html length:',html.length);
+              return{html:html,isFragment:false,layout:newLayout,layoutGroup:newGroup};
             });
           });
         }
-        return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout}});
+        return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout,layoutGroup:newGroup}});
       }).then(function(result){
         if(!result)return;
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
-        if(o.cache){cache[targetPath]=result.html;layoutCache[targetPath]=result.layout}
+        if(o.cache){cache[targetPath]=result.html;layoutCache[targetPath]=result.layout;layoutGroupCache[targetPath]=result.layoutGroup}
         swap(result.html,targetPath,pushState,targetHash);
       }).catch(function(err){
         console.error('[router] fetch error:',err);
@@ -243,8 +264,8 @@ else {
     var isFragment=html.indexOf('<!--stx-fragment-->')===0;
     if(isFragment)html=html.slice('<!--stx-fragment-->'.length);
     var currentContent=getContainer();
-    console.log('[router] swap: isFragment='+isFragment+' container='+!!currentContent+' tag='+(currentContent&&currentContent.tagName)+' selector='+containerSel+' htmlLen='+html.length);
-    if(!currentContent){console.log('[router] no container — falling back');location.href=url;return}
+    log('[router] swap: isFragment='+isFragment+' container='+!!currentContent+' tag='+(currentContent&&currentContent.tagName)+' selector='+containerSel+' htmlLen='+html.length);
+    if(!currentContent){log('[router] no container — falling back');location.href=url;return}
 
     // Fragment mode: server returned just the page content (no document wrapper)
     if(isFragment){
@@ -299,10 +320,10 @@ else {
         else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
         window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
         // Execute page scripts FIRST — they define setup functions and set _latestSetup
-        console.log('[router] frag scripts:', fragScripts.length);
+        log('[router] frag scripts:', fragScripts.length);
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
         fragScripts.forEach(function(code){
-          console.log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
+          log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
           // Skip scripts that were already executed (layout-level partials
           // like theme.stx, stores.stx, nav.stx). Their top-level const/let
           // declarations would throw "Identifier has already been declared"
@@ -311,7 +332,7 @@ else {
           var h=hashScript(code);
           var isSetup=code.indexOf('__stx_setup_')!==-1;
           if(!isSetup&&executedScriptHashes[h]){
-            console.log('[router] skipping already-executed script (hash dedup)');
+            log('[router] skipping already-executed script (hash dedup)');
             return;
           }
           executedScriptHashes[h]=1;
@@ -325,7 +346,7 @@ else {
           ns.setAttribute('data-stx-page','');
           document.body.appendChild(ns);
         });
-        console.log('[router] scripts done. _latestSetup:', !!window.stx._latestSetup);
+        log('[router] scripts done. _latestSetup:', !!window.stx._latestSetup);
         // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
         window.dispatchEvent(new Event('stx:load'));
       }
@@ -397,12 +418,14 @@ else {
       if(newBody){
         var newMeta=doc.querySelector('meta[name="stx-layout"]');
         var curMeta=document.querySelector('meta[name="stx-layout"]');
-        var curGroup=getLayoutGroup(curMeta?curMeta.getAttribute('content'):'');
-        var newGroup=getLayoutGroup(newMeta?newMeta.getAttribute('content'):'');
-        isLayoutChange=curGroup!==newGroup;
+        var curLayout=curMeta?curMeta.getAttribute('content'):'';
+        var newLayout=newMeta?newMeta.getAttribute('content'):'';
+        var curGroup=getCurrentLayoutGroup();
+        var newGroup=getDocLayoutGroup(doc,newLayout);
+        isLayoutChange=curGroup!==newGroup||(curLayout&&newLayout&&curLayout!==newLayout);
       }
       if(isLayoutChange&&newBody){
-        console.log('[router] full body swap for layout change');
+        log('[router] full body swap for layout change');
         // Replace entire body content — layout chrome and all
         var bodyHTML=newBody.innerHTML.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt\\\\s*>','gi'),'');
         document.body.innerHTML=bodyHTML;
@@ -413,6 +436,10 @@ else {
         var freshMeta=doc.querySelector('meta[name="stx-layout"]');
         if(oldMeta&&freshMeta)oldMeta.setAttribute('content',freshMeta.getAttribute('content')||'');
         else if(freshMeta){var m=document.createElement('meta');m.name='stx-layout';m.content=freshMeta.getAttribute('content')||'';document.head.appendChild(m)}
+        var oldGroupMeta=document.querySelector('meta[name="stx-layout-group"]');
+        var freshGroupMeta=doc.querySelector('meta[name="stx-layout-group"]');
+        if(oldGroupMeta&&freshGroupMeta)oldGroupMeta.setAttribute('content',freshGroupMeta.getAttribute('content')||'');
+        else if(freshGroupMeta){var gm=document.createElement('meta');gm.name='stx-layout-group';gm.content=freshGroupMeta.getAttribute('content')||'';document.head.appendChild(gm)}
         // Update container reference for script execution below
         currentContent=document.querySelector(containerSel)||document.querySelector('main')||document.body;
       } else {
@@ -600,12 +627,12 @@ else {
     }
     if(!link){return}
     var href=link.getAttribute('href');
-    console.log('[router] click intercepted:',href,'container:',!!getContainer(),'defaultPrevented:',e.defaultPrevented);
-    if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:')){console.log('[router] skipped:',href);return}
+    log('[router] click intercepted:',href,'container:',!!getContainer(),'defaultPrevented:',e.defaultPrevented);
+    if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:')){log('[router] skipped:',href);return}
     if(link.target==='_blank'||link.hasAttribute('download'))return;
     e.preventDefault();
     e.stopPropagation();
-    console.log('[router] navigating to:',href);
+    log('[router] navigating to:',href);
     navigate(href);
   },true);
 
@@ -621,15 +648,17 @@ else {
       var link=e.target.closest('[data-stx-link]');
       if(!link)return;
       var href=link.getAttribute('href');
-      if(cache[href]||prefetching[href])return;
-      prefetching[href]=true;
+      var key=cacheKey(href);
+      if(cache[key]||prefetching[key])return;
+      prefetching[key]=true;
       fetch(href,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
         var isFrag=r.headers.get('X-STX-Fragment')==='true';
         var pLayout=r.headers.get('X-STX-Layout')||'';
-        return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout}});
+        var pGroup=r.headers.get('X-STX-Layout-Group')||'';
+        return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup}});
       }).then(function(result){
-        if(o.cache){cache[href]=result.html;layoutCache[href]=result.layout}
-      }).catch(function(){}).finally(function(){delete prefetching[href]});
+        if(o.cache){cache[key]=result.html;layoutCache[key]=result.layout;layoutGroupCache[key]=result.layoutGroup}
+      }).catch(function(){}).finally(function(){delete prefetching[key]});
     },true);
   }
 
@@ -722,11 +751,12 @@ else {
     navigate:navigate,
     navigateTo:navigate,
     prefetch:function(url){
-      if(!cache[url]){
-        fetch(url,{headers:{'X-STX-Router':'true'}}).then(function(r){var isFrag=r.headers.get('X-STX-Fragment')==='true';return r.text().then(function(html){return isFrag?'<!--stx-fragment-->'+html:html})}).then(function(html){cache[url]=html}).catch(function(){});
+      var key=cacheKey(url);
+      if(!cache[key]){
+        fetch(url,{headers:{'X-STX-Router':'true'}}).then(function(r){var isFrag=r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup}})}).then(function(result){cache[key]=result.html;layoutCache[key]=result.layout;layoutGroupCache[key]=result.layoutGroup}).catch(function(){});
       }
     },
-    clearCache:function(){for(var k in cache)delete cache[k]},
+    clearCache:function(){for(var k in cache)delete cache[k];for(var lk in layoutCache)delete layoutCache[lk];for(var gk in layoutGroupCache)delete layoutGroupCache[gk]},
     cache:cache,
     swap:swap,
     updateNav:updateNav

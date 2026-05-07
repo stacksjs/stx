@@ -31,6 +31,18 @@ import { loadConfig } from 'bunfig'
 // from the importer's location and a stale copy there beats the vendored one.
 const defaultStxModule = import('@stacksjs/stx')
 
+function getLayoutGroup(layoutPath: string): string {
+  const normalized = layoutPath.replace(/\\/g, '/')
+  const segments = normalized.split('/').filter(Boolean)
+  const layoutsIndex = segments.lastIndexOf('layouts')
+  const layoutSegment = layoutsIndex >= 0 ? segments[layoutsIndex + 1] : segments.at(-1)
+
+  if (!layoutSegment)
+    return 'app'
+
+  return layoutSegment.replace(/\.stx$/i, '') || 'app'
+}
+
 export interface ServeOptions {
   patterns: string[]
   port?: number
@@ -1348,6 +1360,7 @@ export async function serve(options: ServeOptions): Promise<void> {
           // so the router does a full document swap instead of just swapping <main>
           const layoutMatch = content.match(/<!-- stx-layout: ([^ ]+) -->/)
           const pageLayout = layoutMatch ? layoutMatch[1] : 'default'
+          const pageLayoutGroup = getLayoutGroup(pageLayout)
 
           let fragment = content
 
@@ -1440,6 +1453,7 @@ export async function serve(options: ServeOptions): Promise<void> {
               'Content-Type': 'text/html; charset=utf-8',
               'X-STX-Fragment': 'true',
               'X-STX-Layout': pageLayout,
+              'X-STX-Layout-Group': pageLayoutGroup,
               'Cache-Control': 'no-cache',
               ...corsHeaders,
             },

@@ -76,6 +76,26 @@ export { validateClientScript } from './script-validation'
  */
 const PARENT_PLACEHOLDER = '<!--PARENT_CONTENT_PLACEHOLDER-->'
 
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+function getLayoutGroup(layoutPath: string): string {
+  const normalized = layoutPath.replace(/\\/g, '/')
+  const segments = normalized.split('/').filter(Boolean)
+  const layoutsIndex = segments.lastIndexOf('layouts')
+  const layoutSegment = layoutsIndex >= 0 ? segments[layoutsIndex + 1] : segments.at(-1)
+
+  if (!layoutSegment)
+    return 'app'
+
+  return layoutSegment.replace(/\.stx$/i, '') || 'app'
+}
+
 /**
  * Find the end of a `<script>` body that started at `from` (i.e. just
  * after the opening tag's `>`). Returns the byte index of the matching
@@ -328,7 +348,11 @@ export async function processDirectives(
         const layoutComment = result.match(/<!-- stx-layout: ([^ ]+) -->/)
         if (layoutComment && result.includes('<head')) {
           const layoutName = layoutComment[1]
-          result = result.replace('<head>', `<head>\n  <meta name="stx-layout" content="${layoutName}">`)
+          const layoutGroup = getLayoutGroup(layoutName)
+          result = result.replace(
+            '<head>',
+            `<head>\n  <meta name="stx-layout" content="${escapeHtmlAttribute(layoutName)}">\n  <meta name="stx-layout-group" content="${escapeHtmlAttribute(layoutGroup)}">`,
+          )
         }
 
         // Ensure data-stx attribute is on <body> for __stx_setup functions.
@@ -1315,4 +1339,3 @@ else {
 
   return output
 }
-

@@ -45,6 +45,40 @@ export interface ProcessedShell {
   shellStyles: string[]
 }
 
+export interface LayoutMetadata {
+  layout: string
+  group: string
+}
+
+function defaultLayoutGroup(layout: string): string {
+  const normalized = layout.replace(/\\/g, '/')
+  const segments = normalized.split('/').filter(Boolean)
+  const layoutsIndex = segments.lastIndexOf('layouts')
+  const layoutSegment = layoutsIndex >= 0 ? segments[layoutsIndex + 1] : segments.at(-1)
+
+  if (!layoutSegment)
+    return 'app'
+
+  return layoutSegment.replace(/\.stx$/i, '') || 'app'
+}
+
+/**
+ * Extract layout identity from a processed page. The router uses this metadata
+ * to decide whether a navigation can swap just the page container or needs the
+ * complete layout chrome.
+ */
+export function extractLayoutMetadata(html: string): LayoutMetadata {
+  const layoutMeta = html.match(/<meta\b[^>]*name=["']stx-layout["'][^>]*content=["']([^"']+)["'][^>]*>/i)
+  const groupMeta = html.match(/<meta\b[^>]*name=["']stx-layout-group["'][^>]*content=["']([^"']+)["'][^>]*>/i)
+  const layoutComment = html.match(/<!--\s*stx-layout:\s*([^ ]+)\s*-->/i)
+  const layout = layoutMeta?.[1] || layoutComment?.[1] || ''
+
+  return {
+    layout,
+    group: groupMeta?.[1] || defaultLayoutGroup(layout),
+  }
+}
+
 /**
  * Detect an app shell file in the given directory.
  *
