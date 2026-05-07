@@ -114,19 +114,21 @@ ${bodyParts.join('\n')}
 
 /**
  * Check if HTML already has a document shell (<!DOCTYPE> or <html>).
- * Templates that extend layouts with document shells should not be double-wrapped.
+ * Templates that extend layouts with document shells should not be
+ * double-wrapped — the visible artifact of a double-wrap is the user's
+ * `<title>` getting nested under the auto-shell's default `stx App`,
+ * which then wins for `document.title` because it appears first.
+ *
+ * The check is permissive on placement: if the rendered output contains
+ * a `<!DOCTYPE>` or `<html>` ANYWHERE, the user has supplied a shell.
+ * Earlier this only checked the leading bytes after stripping comments,
+ * but other directives (signals runtime, scoped scripts, theme guards)
+ * happily prepend their own `<script>` tags before any layout markup,
+ * which made the check spuriously fail and auto-shell wrap the user's
+ * complete HTML doc as if it were just body content.
  */
 export function hasDocumentShell(html: string): boolean {
-  // Strip HTML comments before checking — layout markers like <!-- stx-layout: ... -->
-  // may precede the DOCTYPE/html tag
-  let trimmed = html.trim()
-  // eslint-disable-next-line no-labels
-  while (trimmed.startsWith('<!--')) {
-    const endIdx = trimmed.indexOf('-->')
-    if (endIdx === -1) break
-    trimmed = trimmed.slice(endIdx + 3).trim()
-  }
-  return /^<!DOCTYPE\b/i.test(trimmed) || /^<html[\s>]/i.test(trimmed)
+  return /<!DOCTYPE\b/i.test(html) || /<html[\s>]/i.test(html)
 }
 
 /**

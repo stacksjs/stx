@@ -24,6 +24,22 @@ describe('Document Shell', () => {
       expect(hasDocumentShell('  <!DOCTYPE html>')).toBe(true)
       expect(hasDocumentShell('\n<html>')).toBe(true)
     })
+
+    it('should detect <!DOCTYPE> after a prepended scoped script', () => {
+      // The signals runtime, theme guard, and other one-shot setup
+      // scripts can render before the user's layout markup. The check
+      // used to look only at the leading bytes (after stripping
+      // comments) and missed this case, which produced double-wrapped
+      // documents with two <html>, two <body>, and the auto-shell's
+      // "stx App" <title> winning over the user's layout title.
+      const html = `<script data-stx-scoped>console.log("setup")</script>\n<!DOCTYPE html><html><head><title>Real Title</title></head><body></body></html>`
+      expect(hasDocumentShell(html)).toBe(true)
+    })
+
+    it('should detect <html> later in the document', () => {
+      const html = `<style>body{margin:0}</style><html><body></body></html>`
+      expect(hasDocumentShell(html)).toBe(true)
+    })
   })
 
   describe('generateDocumentShell', () => {

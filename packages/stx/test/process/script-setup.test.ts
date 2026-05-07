@@ -628,4 +628,55 @@ const count = state(0)
       }
     })
   })
+
+  // The inline @section('name', value) form historically only
+  // accepted a quoted string literal as the second arg, which made
+  // dynamic per-page meta impossible — pages had to either inline
+  // their entire title in a string literal or fall back to the layout
+  // default. We now also accept an expression there, evaluated against
+  // the script-server context, so views can do
+  //
+  //   <script server>
+  //   const seoTitle = `${product.name} · PetStore`
+  //   </script>
+  //   @section('title', seoTitle)
+  //
+  // and have the layout's `@yield('title')` pick up the dynamic value.
+  describe('Inline @section with an expression as value', () => {
+    it('accepts a bare identifier and evaluates against context', async () => {
+      const html = `@section('title', seoTitle)<title>@yield('title', 'fallback')</title>`
+      const result = await processTemplate(html, { seoTitle: 'Hello, world' })
+      expect(result).toContain('<title>Hello, world</title>')
+    })
+
+    it('accepts a member-access expression', async () => {
+      const html = `@section('og_image', product.image)<meta property="og:image" content="@yield('og_image', '/default.jpg')">`
+      const result = await processTemplate(html, { product: { image: '/p/leberwurst.jpg' } })
+      expect(result).toContain('content="/p/leberwurst.jpg"')
+    })
+
+    it('accepts a template literal', async () => {
+      // Using a backtick literal as the expression argument is the
+      // ergonomic shape pet-store views land on.
+      const html = `@section('title', \`\${product.name} · Shop\`)<h1>@yield('title')</h1>`
+      const result = await processTemplate(html, { product: { name: 'Beef Liver' } })
+      expect(result).toContain('<h1>Beef Liver · Shop</h1>')
+    })
+
+    it('still accepts a quoted string literal (back-compat with the existing form)', async () => {
+      const html = `@section('title', 'Fixed value')<title>@yield('title', 'fallback')</title>`
+      const result = await processTemplate(html, {})
+      expect(result).toContain('<title>Fixed value</title>')
+    })
+
+    it('falls back to the @yield default when the expression is undefined', async () => {
+      // Identifier not in the script-server scope: we leave the
+      // directive in place rather than emit an empty section, so the
+      // missed binding shows up in the rendered HTML and the bug is
+      // visible at a glance instead of being silent.
+      const html = `@section('title', missingVar)<title>@yield('title', 'fallback')</title>`
+      const result = await processTemplate(html, {})
+      expect(result).toContain('<title>fallback</title>')
+    })
+  })
 })

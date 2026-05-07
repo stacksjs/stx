@@ -58,6 +58,7 @@ import { processComponents } from './component-renderer'
 import { processInlineAssets } from './inline-assets'
 import { addCloakToUnresolvedExpressions, processJsonDirective, processMemoDirective, processOnceDirective, processRefAttributes } from './misc-directives'
 import { validateClientScript } from './script-validation'
+import { safeEvaluate } from './safe-evaluator'
 
 // Re-export public API from extracted modules (preserves backwards compatibility)
 export { injectRouterScript } from './runtime-injection'
@@ -544,14 +545,73 @@ async function processDirectivesInternal(
     }
   }
 
-  // Extract sections — two passes to avoid inline sections consuming block sections
-  // Pass 1: Extract inline sections: @section('name', 'value')
+  // Extract sections — three passes:
+  //  1. inline form with a quoted string literal:    @section('title', 'My page')
+  //  2. inline form with an expression:              @section('title', seoTitle)
+  //  3. block form:                                  @section('title')…@endsection
+  //
+  // Order matters. We run the literal pass first because a literal is
+  // strictly a special case of the expression form — but the expression
+  // pass uses safeEvaluate, which would re-quote a quoted string back
+  // into a quoted string with extra escaping work. Catching the
+  // literal case up-front keeps the hot path cheap and avoids
+  // round-tripping the value through the expression evaluator.
+  //
+  // The expression pass is the new bit — it lets per-page views set
+  // dynamic title/description/og_image/etc. from <script server>
+  // values:
+  //
+  //     <script server>
+  //     const seoTitle = `${product.name} · PetStore`
+  //     </script>
+  //     @section('title', seoTitle)
+  //
+  // Without this, that line was silently a no-op (the regex required
+  // both args to be quoted strings) and the layout's @yield('title',
+  // default) would always fall through to its default — visible bug
+  // report on pet-store: every product page had the same generic
+  // <title> and og:title.
+  // Pass 1: Extract inline sections with a quoted string literal:
+  //   @section('name', 'value')
   output = output.replace(/@section\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)/g, (_, name, value) => {
     sections[name] = value
     return ''
   })
 
-  // Pass 2: Extract block sections: @section('name')...@endsection
+  // Pass 2: Extract inline sections with an expression as the second arg.
+  // The capture greedily takes everything between the comma and the
+  // closing paren so identifiers, member accesses (`product.name`),
+  // template literals, ternaries, and function calls all flow through
+  // — anything `safeEvaluate` can interpret. We only run this when
+  // the body has at least one non-quoted character, so a malformed
+  // `@section('title', '…)` (mismatched quotes, unlikely but possible)
+  // doesn't get force-evaluated.
+  output = output.replace(/@section\(\s*['"]([^'"]+)['"]\s*,\s*([^)]+?)\s*\)/g, (full, name, expr) => {
+    // Skip strings already wrapped in matching quotes — those were the
+    // shape pass 1 should have caught; if we see one here it means
+    // pass 1's regex didn't match for some reason (e.g. mismatched
+    // quote characters). Don't try to evaluate it as an expression.
+    if (/^(['"]).*\1$/.test(expr.trim()))
+      return full
+    try {
+      const value = safeEvaluate(expr.trim(), context)
+      // safeEvaluate returns undefined for an unrecognized identifier;
+      // leave the directive in place rather than silently emitting an
+      // empty section, so the missed reference is debuggable.
+      if (value === undefined)
+        return full
+      sections[name] = String(value ?? '')
+      return ''
+    }
+    catch {
+      // Evaluation failure — fall back to leaving the directive in
+      // place. The unprocessed `@section(…)` is a clearer signal in
+      // the rendered HTML than a silently empty value.
+      return full
+    }
+  })
+
+  // Pass 3: Extract block sections: @section('name')...@endsection
   output = output.replace(/@section\(\s*['"]([^'"]+)['"]\s*\)([\s\S]*?)(?:@endsection|@show)/g, (_, name, content) => {
     // Process @parent directive in sections
     if (content.includes('@parent')) {
