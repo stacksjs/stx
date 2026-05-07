@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.49...v0.2.50)
+
+### 🚀 Features
+
+- **stx/foreach**: support Vue-style "as item, index" two-binding form ([d422435](https://github.com/stacksjs/stx/commit/d422435)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.50 ([22f9998](https://github.com/stacksjs/stx/commit/22f9998)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.49...HEAD)
+
+### 🚀 Features
+
+- **stx/foreach**: support Vue-style "as item, index" two-binding form ([d422435](https://github.com/stacksjs/stx/commit/d422435)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.48...v0.2.49)
 
 ### 🧹 Chores
