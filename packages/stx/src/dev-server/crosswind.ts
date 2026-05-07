@@ -46,12 +46,66 @@ let cachedConfig: CrosswindConfig | null = null
 let cachedCSS: string = ''
 let isBuilding = false
 
-// Memoize generateCrosswindCSS output by sorted class-set string. The dev
-// server runs under `bun --watch`; any source/config edit restarts the
-// process, which naturally drops this cache — so we don't need a watcher
-// here. Same set of classes + same cached config → identical CSS, so this
-// turns the second-and-later renders of the same page into a Map lookup.
+// Memoize generateCrosswindCSS output by sorted class-set string.
+//
+// In-memory: a Map keyed on the sorted class set, capped at MAX_CACHE
+// entries with LRU eviction (Map iteration order is insertion order,
+// so we delete + re-set on hit to refresh recency).
+//
+// On-disk: each (class set, config-fingerprint) pair gets a deterministic
+// hash → `<cwd>/.stx/cache/cw-<hash>.css`. Persisting the result means
+// the cache survives `bun --watch` restarts, fresh `git pull`s, and
+// CI builds — turning the cold-start CSS regeneration penalty (~50KB
+// of utilities, ~30-60ms) into a single file read.
+//
+// Eviction: 256 entries × ~50KB each ≈ 12MB upper bound. Plenty for a
+// real app's distinct page shapes; trims unbounded growth in long-lived
+// dev sessions where every navigation adds a new class signature.
+const MAX_CACHE = 256
 const cssByClassSet = new Map<string, string>()
+let diskCacheRoot: string | null = null
+let configFingerprint: string | null = null
+
+/**
+ * Compute a stable short hash of a string. Used as the cache file
+ * name so different (classes, config) pairs don't collide.
+ */
+function shortHash(input: string): string {
+  // Bun.hash is fast (xxHash64) and deterministic across runs.
+  const h = Bun.hash(input).toString(16)
+  return h.padStart(16, '0').slice(0, 16)
+}
+
+function setLruCache(key: string, value: string): void {
+  if (cssByClassSet.has(key))
+    cssByClassSet.delete(key)
+  else if (cssByClassSet.size >= MAX_CACHE)
+    cssByClassSet.delete(cssByClassSet.keys().next().value as string)
+  cssByClassSet.set(key, value)
+}
+
+async function readDiskCache(key: string): Promise<string | null> {
+  if (!diskCacheRoot) return null
+  try {
+    const file = Bun.file(path.join(diskCacheRoot, `cw-${shortHash(key)}.css`))
+    if (!(await file.exists())) return null
+    return await file.text()
+  }
+  catch {
+    return null
+  }
+}
+
+async function writeDiskCache(key: string, css: string): Promise<void> {
+  if (!diskCacheRoot) return
+  try {
+    if (!fs.existsSync(diskCacheRoot)) fs.mkdirSync(diskCacheRoot, { recursive: true })
+    await Bun.write(path.join(diskCacheRoot, `cw-${shortHash(key)}.css`), css)
+  }
+  catch {
+    // Read-only FS, race, etc. — disk cache is opportunistic.
+  }
+}
 
 /**
  * Try to dynamically import crosswind from a given path
@@ -177,6 +231,12 @@ export function resetCrosswindCache(): void {
   cachedConfig = null
   cachedCSS = ''
   cssByClassSet.clear()
+  // Don't blow away the on-disk cache here — tests reach for this
+  // function to clear in-process state, and nuking the disk cache
+  // every time would force every test to re-pay the regen cost. The
+  // disk cache invalidates implicitly via configFingerprint in the
+  // generator path.
+  configFingerprint = null
 }
 
 /**
@@ -383,19 +443,35 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
       return ''
     }
 
-    // Cache lookup — same class set always produces the same CSS as long as
-    // the cached config + safelist haven't changed. `bun --watch` restarts
-    // the process on config/source edits, which clears this map for free.
-    const cacheKey = [...classes].sort().join(' ')
-    const cached = cssByClassSet.get(cacheKey)
-    if (cached !== undefined) {
-      return cached
-    }
-
     // Resolve config search root — prefer the caller-supplied app dir so
     // `stx <app-dir>` from outside the app still finds its crosswind.config.
     // Fallback: `process.cwd()` (legacy behaviour).
     const resolveRoot = appDir ? path.resolve(appDir) : process.cwd()
+
+    // Wire up the on-disk cache root once we know the app directory.
+    // Putting it in `.stx/cache/` keeps it alongside the existing stx
+    // page cache and behaves the same way under .gitignore conventions.
+    if (!diskCacheRoot)
+      diskCacheRoot = path.join(resolveRoot, '.stx/cache')
+
+    // Cache lookup — keyed on the sorted class set + a fingerprint of
+    // the loaded crosswind config. Different config (theme tokens,
+    // safelist, shortcuts) needs a different cache slot even with the
+    // same class set, otherwise a stale CSS file outlives the config
+    // edit that produced it.
+    const classSetKey = [...classes].sort().join(' ')
+    const cacheKey = `${configFingerprint || 'default'}::${classSetKey}`
+    const cached = cssByClassSet.get(cacheKey)
+    if (cached !== undefined) {
+      // LRU bump — re-insert to mark as most-recently-used.
+      setLruCache(cacheKey, cached)
+      return cached
+    }
+    const onDisk = await readDiskCache(cacheKey)
+    if (onDisk !== null) {
+      setLruCache(cacheKey, onDisk)
+      return onDisk
+    }
 
     // Load the project's crosswind config
     // Priority: 1) stx.config.ts css field, 2) crosswind.config.ts auto-discovery
@@ -437,6 +513,17 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
       catch {}
 
       cachedConfig = stxCssConfig || await loadCrosswindConfig(resolveRoot)
+      // Compute a fingerprint of the loaded config so cache keys
+      // invalidate when the user edits crosswind.config.ts. JSON-stringify
+      // is good enough — circular refs would have already broken the
+      // config loader, and the fingerprint just needs to change when any
+      // theme / safelist / shortcut edit changes.
+      try {
+        configFingerprint = shortHash(JSON.stringify(cachedConfig ?? {}))
+      }
+      catch {
+        configFingerprint = 'unhashable'
+      }
     }
 
     const baseConfig = hw.defaultConfig || hw.config
@@ -534,7 +621,10 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
       if (darkDecls.length) css += `\n@media (prefers-color-scheme: dark) { .dark .${name} { ${darkDecls.join(' ')} } }`
     }
 
-    cssByClassSet.set(cacheKey, css)
+    setLruCache(cacheKey, css)
+    // Best-effort persistence so the next request after a server
+    // restart (or the next CI build) skips the regeneration cost.
+    void writeDiskCache(cacheKey, css)
     return css
   }
   catch (error) {
