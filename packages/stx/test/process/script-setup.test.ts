@@ -579,4 +579,53 @@ const count = state(0)
       expect(result).toContain('<p>y</p>')
     })
   })
+
+  // Browser only executes <script> with no type, type=text/javascript,
+  // type=application/javascript, or type=module. Anything else is data
+  // (JSON-LD for SEO, importmap, embedded JSON config, …) and must pass
+  // through verbatim — wrapping it in `;(function(){ 'use strict'; … })()`
+  // strips the type attribute and corrupts the body.
+  describe('Non-JS script types pass through unchanged', () => {
+    it('preserves application/ld+json including its body', async () => {
+      const json = JSON.stringify({ '@context': 'https://schema.org', '@type': 'Product', name: 'X' })
+      const html = `<div>before</div><script type="application/ld+json">${json}</script><div>after</div>`
+      const result = await processTemplate(html, {})
+      expect(result).toContain('<script type="application/ld+json">')
+      expect(result).toContain('"@type":"Product"')
+      expect(result).not.toContain('data-stx-scoped')
+      expect(result).not.toContain('use strict')
+    })
+
+    it('preserves importmap', async () => {
+      const html = `<script type="importmap">{"imports": {"foo": "/foo.js"}}</script>`
+      const result = await processTemplate(html, {})
+      expect(result).toContain('<script type="importmap">')
+      expect(result).toContain('"imports"')
+      expect(result).not.toContain('data-stx-scoped')
+    })
+
+    it('preserves application/json data blocks', async () => {
+      const html = `<script type="application/json" id="cfg">{"k":1}</script>`
+      const result = await processTemplate(html, {})
+      expect(result).toContain('<script type="application/json"')
+      expect(result).toContain('"k":1')
+      expect(result).not.toContain('use strict')
+    })
+
+    it('still wraps real client JS (no type, type=text/javascript, type=module)', async () => {
+      // Each of these IS executable JS — the rewriter should still
+      // attach data-stx-scoped and IIFE-wrap them, otherwise we'd
+      // regress the SPA scope.
+      const cases = [
+        '<script>var a = 1</script>',
+        '<script type="text/javascript">var b = 2</script>',
+        '<script type="application/javascript">var c = 3</script>',
+        '<script type="module">var d = 4</script>',
+      ]
+      for (const html of cases) {
+        const result = await processTemplate(html, {})
+        expect(result).toContain('data-stx-scoped')
+      }
+    })
+  })
 })

@@ -1213,9 +1213,19 @@ else {
   // OTHER scripts' bodies (e.g. a comment mentioning `<script client>` inside
   // the signals runtime). A flat regex would hoist that fragment and try to
   // transpile it as TypeScript.
+  //
+  // Non-JS script types are skipped entirely. The browser only executes
+  //   `<script>`, `<script type="text/javascript">`, `<script type="application/javascript">`,
+  //   `<script type="module">`
+  // — anything else is a data block (`application/ld+json` for SEO,
+  // `application/json` for embedded config, `importmap`, `text/template`,
+  // `speculationrules`, …) and must pass through verbatim. Wrapping a
+  // JSON-LD block in `;(function(){'use strict'; …}())` corrupts it and
+  // strips the type, which is what surfaced the original report (Google
+  // never saw the Product schema).
   const { scanScriptTags } = await import('./signal-processing')
   for (const s of scanScriptTags(output, {
-    skipAttrs: /\bserver\b|\bsrc\s*=|\bdata-stx-scoped\b|\bdata-stx-router\b/,
+    skipAttrs: /\bserver\b|\bsrc\s*=|\bdata-stx-scoped\b|\bdata-stx-router\b|\btype\s*=\s*["'](?!(?:text\/javascript|application\/javascript|module)["'])[^"']*["']/,
   })) {
     clientScriptMatches.push({ match: s.fullMatch, attrs: s.attrs, content: s.body })
   }
