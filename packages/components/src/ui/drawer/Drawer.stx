@@ -1,11 +1,9 @@
 <script server>
 export const open = $props.open ?? false
-export const onClose = $props.onClose || (() => {})
 export const position = $props.position || 'right'
 export const title = $props.title || ''
 export const className = $props.className || ''
 
-// Position classes
 const positionClasses = {
   right: 'inset-y-0 right-0 pl-10 sm:pl-16',
   left: 'inset-y-0 left-0 pr-10 sm:pr-16',
@@ -13,27 +11,6 @@ const positionClasses = {
   bottom: 'inset-x-0 bottom-0 pt-10',
 }
 
-// Slide animation classes
-const slideClasses = {
-  right: {
-    enter: 'translate-x-full',
-    leave: 'translate-x-0',
-  },
-  left: {
-    enter: '-translate-x-full',
-    leave: 'translate-x-0',
-  },
-  top: {
-    enter: '-translate-y-full',
-    leave: 'translate-y-0',
-  },
-  bottom: {
-    enter: 'translate-y-full',
-    leave: 'translate-y-0',
-  },
-}
-
-// Size classes based on position
 const sizeClasses = {
   right: 'max-w-md w-screen',
   left: 'max-w-md w-screen',
@@ -41,7 +18,6 @@ const sizeClasses = {
   bottom: 'max-h-[90vh] w-full',
 }
 
-// Close button position
 const closeButtonPosition = {
   right: 'left-0 -ml-8 sm:-ml-10',
   left: 'right-0 -mr-8 sm:-mr-10',
@@ -51,33 +27,52 @@ const closeButtonPosition = {
 
 export const containerClasses = `pointer-events-none fixed ${positionClasses[position]} flex max-w-full`.trim()
 export const panelClasses = `pointer-events-auto relative ${sizeClasses[position]} ${className}`.trim()
-export const slideAnimation = slideClasses[position]
 export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position]} flex pt-4 pr-2 sm:pr-4`.trim()
 </script>
 
-@if(open)
-  <!-- Backdrop -->
+<script client>
+const emit = defineEmits()
+const isOpen = state({{ open }})
+
+function close() {
+  isOpen.set(false)
+  emit('close')
+}
+
+function onBackdropClick() {
+  close()
+}
+
+function onPanelKey(event) {
+  if (event.key === 'Escape') close()
+}
+
+defineExpose({
+  open: () => isOpen.set(true),
+  close,
+  isOpen,
+})
+</script>
+
+<div :show="isOpen()">
   <div
     class="fixed inset-0 z-50 bg-gray-500/75 dark:bg-gray-900/75 transition-opacity duration-500"
     style="animation: fadeIn 0.5s ease-in-out"
-    @click="handleBackdropClick()"
+    @click="onBackdropClick()"
   ></div>
 
-  <!-- Drawer Container -->
-  <div class="fixed inset-0 z-50 overflow-hidden">
+  <div class="fixed inset-0 z-50 overflow-hidden" @keydown="onPanelKey($event)">
     <div class="absolute inset-0 overflow-hidden">
       <div class="{{ containerClasses }}">
-        <!-- Drawer Panel -->
         <div
           class="{{ panelClasses }}"
           style="animation: slideIn 0.5s ease-in-out"
         >
-          <!-- Close Button -->
           <div class="{{ closeButtonClasses }}">
             <button
               type="button"
               class="relative rounded-md text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              @click="handleClose()"
+              @click="close()"
             >
               <span class="absolute -inset-2.5"></span>
               <span class="sr-only">Close panel</span>
@@ -87,7 +82,6 @@ export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position
             </button>
           </div>
 
-          <!-- Drawer Content -->
           <div class="relative flex h-full flex-col overflow-y-auto bg-white dark:bg-blue-gray-800 py-6 shadow-xl">
             @if(title)
               <div class="px-4 sm:px-6">
@@ -104,7 +98,7 @@ export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position
       </div>
     </div>
   </div>
-@endif
+</div>
 
 <style>
 @keyframes fadeIn {
@@ -121,17 +115,3 @@ export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position
   }
 }
 </style>
-
-<script>
-function handleClose() {
-  if (onClose) {
-    onClose()
-  }
-}
-
-function handleBackdropClick() {
-  if (onClose) {
-    onClose()
-  }
-}
-</script>

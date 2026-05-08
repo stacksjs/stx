@@ -1,6 +1,5 @@
 <script server>
 export const checked = $props.checked || false
-export const onChange = $props.onChange || (() => {})
 export const disabled = $props.disabled || false
 export const indeterminate = $props.indeterminate || false
 export const size = $props.size || 'md'
@@ -12,42 +11,55 @@ export const value = $props.value || ''
 export const name = $props.name || ''
 export const className = $props.className || ''
 
-// Size classes
-const sizeClasses = {
-  sm: 'h-4 w-4',
-  md: 'h-5 w-5',
-  lg: 'h-6 w-6',
-}
-
-// Base classes for checkbox
+const sizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
 const baseClasses = 'rounded border-gray-300 dark:border-gray-600 text-indigo-600 dark:text-indigo-500 focus:ring-indigo-600 dark:focus:ring-indigo-500 focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-colors'
-
-const stateClasses = error
-  ? 'border-red-300 dark:border-red-600 text-red-600 dark:text-red-500 focus:ring-red-500 dark:focus:ring-red-400'
-  : ''
-
-const disabledClasses = disabled
-  ? 'opacity-50 cursor-not-allowed'
-  : 'cursor-pointer'
+const stateClasses = error ? 'border-red-300 dark:border-red-600 text-red-600 dark:text-red-500 focus:ring-red-500 dark:focus:ring-red-400' : ''
+const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
 
 export const checkboxClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses}`.trim()
 export const labelClasses = `text-sm font-medium ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`.trim()
 export const descriptionClasses = `text-sm ${error ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`.trim()
+export const inputId = `checkbox-${value || label}`
+</script>
+
+<script client>
+const emit = defineEmits()
+const isDisabled = {{ disabled }}
+const isIndeterminate = {{ indeterminate }}
+const isChecked = state({{ checked }})
+
+function onInputChange(event) {
+  if (isDisabled) {
+    event.target.checked = isChecked()
+    return
+  }
+  isChecked.set(event.target.checked)
+  emit('change', isChecked())
+}
+
+onMount(() => {
+  if (isIndeterminate) {
+    const el = document.getElementById({{ inputId }})
+    if (el) el.indeterminate = true
+  }
+})
+
+defineExpose({ isChecked })
 </script>
 
 <div class="relative flex items-start {{ className }}">
   <div class="flex h-6 items-center">
     <input
-      id="checkbox-{{ value || label }}"
+      id="{{ inputId }}"
       type="checkbox"
       name="{{ name }}"
       value="{{ value }}"
-      checked="{{ checked }}"
-      disabled="{{ disabled }}"
-      required="{{ required }}"
+      :checked="isChecked()"
+      @if(disabled)disabled@endif
+      @if(required)required@endif
       class="{{ checkboxClasses }}"
-      onchange="handleChange(event)"
-      aria-invalid="{{ error ? 'true' : 'false' }}"
+      @change="onInputChange($event)"
+      :aria-invalid="{{ error ? 'true' : 'false' }}"
       @if(description)aria-describedby="checkbox-description"@endif
     />
   </div>
@@ -55,7 +67,7 @@ export const descriptionClasses = `text-sm ${error ? 'text-red-500 dark:text-red
   @if(label || description)
     <div class="ml-3 text-sm leading-6">
       @if(label)
-        <label for="checkbox-{{ value || label }}" class="{{ labelClasses }}">
+        <label for="{{ inputId }}" class="{{ labelClasses }}">
           {{ label }}
           @if(required)
             <span class="text-red-500 ml-1">*</span>
@@ -70,23 +82,3 @@ export const descriptionClasses = `text-sm ${error ? 'text-red-500 dark:text-red
     </div>
   @endif
 </div>
-
-<script>
-function handleChange(event) {
-  const isChecked = event.target.checked
-
-  if (!disabled && onChange) {
-    onChange(isChecked)
-  }
-}
-
-// Handle indeterminate state
-if (indeterminate && typeof window !== 'undefined') {
-  window.addEventListener('DOMContentLoaded', () => {
-    const checkbox = document.getElementById('checkbox-{{ value || label }}')
-    if (checkbox) {
-      checkbox.indeterminate = true
-    }
-  })
-}
-</script>

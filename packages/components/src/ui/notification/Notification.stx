@@ -5,7 +5,6 @@ export const message = $props.message || ''
 export const type = $props.type || 'info'
 export const position = $props.position || 'top-right'
 export const duration = $props.duration || 5000
-export const onClose = $props.onClose
 export const className = $props.className || ''
 
 const typeColors = {
@@ -25,47 +24,55 @@ const positions = {
 }
 
 const baseClasses = 'fixed z-50 m-4 max-w-md w-full pointer-events-auto rounded-lg p-4 shadow-lg ring-1 ring-black ring-opacity-5 transition-all'
-const notificationClasses = `${baseClasses} ${typeColors[type]} ${positions[position]} ${className}`.trim()
-
-export function handleClose() {
-  onClose?.()
-}
+export const notificationClasses = `${baseClasses} ${typeColors[type]} ${positions[position]} ${className}`.trim()
 </script>
 
-@if(show)
-  <div class="{{ notificationClasses }}" role="alert">
-    <div class="flex items-start">
-      <div class="flex-1">
-        @if(title)
-          <p class="text-sm font-medium">{{ title }}</p>
-        @endif
-        @if(message)
-          <p class="mt-1 text-sm {{ title ? 'opacity-90' : '' }}">{{ message }}</p>
-        @endif
-        @if(!title && !message)
-          <slot />
-        @endif
-      </div>
+<script client>
+const emit = defineEmits()
+const duration = {{ duration }}
+const isVisible = state({{ show }})
 
-      <button
-        type="button"
-        @click="handleClose"
-        class="ml-4 inline-flex rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
-      >
-        <span class="sr-only">Close</span>
-        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-        </svg>
-      </button>
-    </div>
-  </div>
+function close() {
+  isVisible.set(false)
+  emit('close')
+}
 
-  <script>
-  // Auto-hide after duration (client-side only)
-  if (typeof window !== 'undefined' && duration > 0) {
-    setTimeout(() => {
-      handleClose()
-    }, duration)
+onMount(() => {
+  if (duration > 0 && isVisible()) {
+    setTimeout(close, duration)
   }
-  </script>
-@endif
+})
+
+defineExpose({
+  show: () => isVisible.set(true),
+  close,
+  isVisible,
+})
+</script>
+
+<div :show="isVisible()" class="{{ notificationClasses }}" role="alert">
+  <div class="flex items-start">
+    <div class="flex-1">
+      @if(title)
+        <p class="text-sm font-medium">{{ title }}</p>
+      @endif
+      @if(message)
+        <p class="mt-1 text-sm {{ title ? 'opacity-90' : '' }}">{{ message }}</p>
+      @endif
+      @if(!title && !message)
+        <slot />
+      @endif
+    </div>
+
+    <button
+      type="button"
+      @click="close()"
+      class="ml-4 inline-flex rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+    >
+      <span class="sr-only">Close</span>
+      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+      </svg>
+    </button>
+  </div>
+</div>
