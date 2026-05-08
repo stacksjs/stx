@@ -528,8 +528,12 @@ async function loadTranslationInternal(
     ...options.i18n,
   }
 
-  // Determine the path to the translation file
-  const translationsDir = path.resolve(import.meta.dir, '..', i18nConfig.translationsDir)
+  // Determine the path to the translation file. Relative translation dirs
+  // belong to the consuming project, not to the installed @stacksjs/stx
+  // package directory.
+  const translationsDir = path.isAbsolute(i18nConfig.translationsDir)
+    ? i18nConfig.translationsDir
+    : path.resolve(options.root || process.cwd(), i18nConfig.translationsDir)
   const fileExtension = getFileExtension(i18nConfig.format)
   const translationFile = path.join(translationsDir, `${locale}${fileExtension}`)
 

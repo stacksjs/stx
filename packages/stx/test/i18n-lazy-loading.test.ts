@@ -1,5 +1,8 @@
 import type { StxOptions } from '../src/types'
 import { beforeEach, describe, expect, test } from 'bun:test'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import {
   cancelPendingLoads,
   clearTranslationCache,
@@ -18,6 +21,7 @@ import {
 // Mock options for testing
 const mockOptions: StxOptions = {
   debug: false,
+  root: path.resolve('packages/stx'),
   i18n: {
     cache: true,
     translationsDir: 'test/fixtures/translations',
@@ -75,6 +79,25 @@ describe('i18n lazy loading', () => {
   })
 
   describe('loadTranslationLazy', () => {
+    test('resolves relative translationsDir from the project root', async () => {
+      const root = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-i18n-root-'))
+      await fs.promises.mkdir(path.join(root, 'translations'), { recursive: true })
+      await fs.promises.writeFile(path.join(root, 'translations', 'en.json'), JSON.stringify({ greeting: 'Hello from app' }))
+
+      const translations = await loadTranslationLazy('en', {
+        ...mockOptions,
+        root,
+        i18n: {
+          ...mockOptions.i18n!,
+          translationsDir: 'translations',
+        },
+      })
+
+      await fs.promises.rm(root, { recursive: true, force: true })
+
+      expect(translations.greeting).toBe('Hello from app')
+    })
+
     test('loads and caches translations', async () => {
       const translations = await loadTranslationLazy('en', mockOptions)
       expect(translations).toBeDefined()
