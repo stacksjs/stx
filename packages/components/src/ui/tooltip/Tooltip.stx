@@ -6,7 +6,6 @@ export const className = $props.className || ''
 export const show = $props.show || false
 export const disabled = $props.disabled || false
 
-// Position classes
 const positionClasses = {
   top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
   bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
@@ -14,7 +13,6 @@ const positionClasses = {
   right: 'left-full top-1/2 -translate-y-1/2 ml-2',
 }
 
-// Arrow classes
 const arrowClasses = {
   top: 'top-full left-1/2 -translate-x-1/2 border-t-gray-900 dark:border-t-gray-700',
   bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-gray-900 dark:border-b-gray-700',
@@ -22,55 +20,51 @@ const arrowClasses = {
   right: 'right-full top-1/2 -translate-y-1/2 border-r-gray-900 dark:border-r-gray-700',
 }
 
-export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-lg shadow-lg whitespace-nowrap pointer-events-none opacity-0 transition-opacity duration-200 ${positionClasses[position]} ${className}`.trim()
+export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-lg shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-200 ${positionClasses[position]} ${className}`.trim()
 export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position]}`.trim()
-
-let isVisible = show
-let timeoutId = null
 </script>
 
-<div class="relative inline-block {{ disabled ? 'cursor-not-allowed' : '' }}">
-  <!-- Trigger element (slot) -->
-  <div
-    onmouseenter="handleMouseEnter()"
-    onmouseleave="handleMouseLeave()"
-    onfocus="handleMouseEnter()"
-    onblur="handleMouseLeave()"
-  >
-    <slot />
-  </div>
+<script client>
+const delay = {{ delay }}
+const isDisabled = {{ disabled }}
+const isVisible = state({{ show }})
+let timeoutId = null
 
-  <!-- Tooltip -->
-  @if(isVisible && !disabled)
-    <div
-      class="{{ tooltipClasses }}"
-      role="tooltip"
-      style="opacity: 1"
-    >
-      {{ content }}
-      <div class="{{ arrowClass }}"></div>
-    </div>
-  @endif
-</div>
-
-<script>
-function handleMouseEnter() {
-  if (disabled) return
-
+function showTooltip() {
+  if (isDisabled) return
   if (delay > 0) {
-    timeoutId = setTimeout(() => {
-      isVisible = true
-    }, delay)
-  } else {
-    isVisible = true
+    timeoutId = setTimeout(() => isVisible.set(true), delay)
+  }
+  else {
+    isVisible.set(true)
   }
 }
 
-function handleMouseLeave() {
+function hideTooltip() {
   if (timeoutId) {
     clearTimeout(timeoutId)
     timeoutId = null
   }
-  isVisible = false
+  isVisible.set(false)
 }
 </script>
+
+<div class="relative inline-block {{ disabled ? 'cursor-not-allowed' : '' }}">
+  <div
+    @mouseenter="showTooltip()"
+    @mouseleave="hideTooltip()"
+    @focusin="showTooltip()"
+    @focusout="hideTooltip()"
+  >
+    <slot />
+  </div>
+
+  <div
+    :show="isVisible() && !{{ disabled }}"
+    class="{{ tooltipClasses }}"
+    role="tooltip"
+  >
+    {{ content }}
+    <div class="{{ arrowClass }}"></div>
+  </div>
+</div>

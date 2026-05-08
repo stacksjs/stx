@@ -5,24 +5,28 @@ export const label = $props.label || ''
 export const description = $props.description || ''
 export const className = $props.className || ''
 export const as = $props.as || 'div'
-export const onClick = $props.onClick
 
 export const isComplete = stepNumber < currentStep
 export const isCurrent = stepNumber === currentStep
 export const isUpcoming = stepNumber > currentStep
 
 const baseClasses = 'flex items-center'
-const stepClasses = `${baseClasses} ${className}`.trim()
+export const stepClasses = `${baseClasses} ${className}`.trim()
+</script>
 
-export function handleClick() {
-  onClick?.(stepNumber)
+<script client>
+const emit = defineEmits()
+const stepNumber = {{ stepNumber }}
+
+function onClick() {
+  emit('click', stepNumber)
 }
 </script>
 
 <component :is="{{ as }}" class="{{ stepClasses }}">
   <button
     type="button"
-    @click="handleClick"
+    @click="onClick()"
     class="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-2"
   >
     <div class="{{ isComplete ? 'bg-blue-600 dark:bg-blue-500' : isCurrent ? 'bg-blue-600 dark:bg-blue-500 ring-4 ring-blue-200 dark:ring-blue-800' : 'bg-neutral-300 dark:bg-neutral-600' }} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold transition-all">

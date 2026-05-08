@@ -4,9 +4,7 @@ export const size = $props.size || 'md'
 export const dot = $props.dot || false
 export const removable = $props.removable || false
 export const className = $props.className || ''
-export const onRemove = $props.onRemove
 
-// Variant classes
 const variantClasses = {
   default: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
   primary: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
@@ -17,14 +15,8 @@ const variantClasses = {
   info: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
 }
 
-// Size classes
-const sizeClasses = {
-  sm: 'px-2 py-0.5 text-xs',
-  md: 'px-2.5 py-0.5 text-sm',
-  lg: 'px-3 py-1 text-base',
-}
+const sizeClasses = { sm: 'px-2 py-0.5 text-xs', md: 'px-2.5 py-0.5 text-sm', lg: 'px-3 py-1 text-base' }
 
-// Dot color classes
 const dotColorClasses = {
   default: 'bg-gray-500 dark:bg-gray-400',
   primary: 'bg-blue-500 dark:bg-blue-400',
@@ -40,6 +32,14 @@ export const dotClasses = `w-2 h-2 rounded-full ${dotColorClasses[variant]}`.tri
 export const removeButtonClasses = `ml-0.5 -mr-1 text-current hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 rounded-full p-0.5 transition-colors duration-150`.trim()
 </script>
 
+<script client>
+const emit = defineEmits()
+
+function onRemove() {
+  emit('remove')
+}
+</script>
+
 <span class="{{ badgeClasses }}" role="status">
   @if(dot)
     <span class="{{ dotClasses }}" aria-hidden="true"></span>
@@ -47,10 +47,10 @@ export const removeButtonClasses = `ml-0.5 -mr-1 text-current hover:bg-black hov
 
   <slot />
 
-  @if(removable && onRemove)
+  @if(removable)
     <button
       type="button"
-      @click="handleRemove()"
+      @click="onRemove()"
       class="{{ removeButtonClasses }}"
       aria-label="Remove"
     >
@@ -60,11 +60,3 @@ export const removeButtonClasses = `ml-0.5 -mr-1 text-current hover:bg-black hov
     </button>
   @endif
 </span>
-
-<script>
-function handleRemove() {
-  if (onRemove) {
-    onRemove()
-  }
-}
-</script>
