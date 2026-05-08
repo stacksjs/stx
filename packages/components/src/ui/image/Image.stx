@@ -10,18 +10,14 @@ export const height = $props.height
 export const lazy = $props.lazy ?? true
 export const placeholder = $props.placeholder || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3C/svg%3E'
 export const blurDataURL = $props.blurDataURL || ''
-export const onLoad = $props.onLoad
-export const onError = $props.onError
 export const aspectRatio = $props.aspectRatio
 export const objectFit = $props.objectFit || 'cover'
 export const rounded = $props.rounded ?? false
 export const zoomOnHover = $props.zoomOnHover || false
 export const className = $props.className || ''
 
-// Has WebP support
-export const hasWebP = webpSrc || webpSrcSet
+export const hasWebP = !!(webpSrc || webpSrcSet)
 
-// Object fit classes
 const objectFitClasses = {
   contain: 'object-contain',
   cover: 'object-cover',
@@ -30,23 +26,69 @@ const objectFitClasses = {
   'scale-down': 'object-scale-down',
 }
 
-// Rounded classes
 const roundedClass = rounded === true ? 'rounded-lg' : rounded === 'full' ? 'rounded-full' : rounded ? `rounded-${rounded}` : ''
-
 const zoomClasses = zoomOnHover ? 'transform hover:scale-110 transition-transform duration-300 ease-in-out cursor-zoom-in' : ''
 
 export const containerClasses = `relative overflow-hidden ${roundedClass} ${className}`.trim()
 export const imageClasses = `w-full h-full transition-opacity duration-300 ${objectFitClasses[objectFit]} ${zoomClasses}`.trim()
-export const placeholderClasses = `absolute inset-0 bg-gray-200 dark:bg-gray-700 ${roundedClass}`.trim()
 export const blurPlaceholderClasses = `absolute inset-0 ${roundedClass} filter blur-lg scale-110`.trim()
-
-// Generate aspect ratio padding if provided
-export const paddingBottom = aspectRatio ? `${(1 / aspectRatio) * 100}%` : undefined
+export const containerStyle = aspectRatio ? `padding-bottom: ${(1 / aspectRatio) * 100}%` : ''
 </script>
 
-<div class="{{ containerClasses }}" style="{{ paddingBottom ? `padding-bottom: ${paddingBottom}` : '' }}">
+<script client>
+const emit = defineEmits()
+const lazy = {{ lazy }}
+const realSrc = {{ src }}
+const realSrcSet = {{ srcSet }}
+const errorPlaceholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" fill="%239ca3af" font-size="16" text-anchor="middle" dominant-baseline="middle"%3EImage not found%3C/text%3E%3C/svg%3E'
+
+function onImageLoad(event) {
+  const img = event.target
+  img.classList.remove('opacity-0')
+  img.classList.add('opacity-100')
+  emit('load', event)
+}
+
+function onImageError(event) {
+  const img = event.target
+  img.src = errorPlaceholder
+  emit('error', event)
+}
+
+onMount(() => {
+  if (!lazy) return
+  if (typeof IntersectionObserver === 'undefined') return
+  const lazyImages = document.querySelectorAll('.lazy-image:not([data-stx-img-loaded])')
+  const observer = new IntersectionObserver((entries, obs) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue
+      const img = entry.target
+      img.setAttribute('data-stx-img-loaded', '1')
+      const dataSrc = img.getAttribute('data-src')
+      const dataSrcSet = img.getAttribute('data-srcset')
+      if (!dataSrc) continue
+      const probe = new Image()
+      probe.onload = () => {
+        img.src = dataSrc
+        if (dataSrcSet) img.srcset = dataSrcSet
+        img.classList.remove('opacity-0')
+        img.classList.add('opacity-100')
+        obs.unobserve(img)
+      }
+      probe.onerror = () => {
+        onImageError({ target: img })
+        obs.unobserve(img)
+      }
+      probe.src = dataSrc
+      if (dataSrcSet) probe.srcset = dataSrcSet
+    }
+  }, { rootMargin: '50px' })
+  for (const img of lazyImages) observer.observe(img)
+})
+</script>
+
+<div class="{{ containerClasses }}" style="{{ containerStyle }}">
   @if(blurDataURL)
-    <!-- Blur placeholder -->
     <img
       src="{{ blurDataURL }}"
       alt=""
@@ -56,17 +98,13 @@ export const paddingBottom = aspectRatio ? `${(1 / aspectRatio) * 100}%` : undef
   @endif
 
   @if(hasWebP)
-    <!-- Picture element with WebP support -->
     <picture>
-      @if(webpSrcSet || webpSrc)
-        <source
-          type="image/webp"
-          @if(webpSrcSet)srcset="{{ webpSrcSet }}"@endif
-          @if(webpSrc && !webpSrcSet)srcset="{{ webpSrc }}"@endif
-          @if(sizes)sizes="{{ sizes }}"@endif
-        />
-      @endif
-
+      <source
+        type="image/webp"
+        @if(webpSrcSet)srcset="{{ webpSrcSet }}"@endif
+        @if(webpSrc && !webpSrcSet)srcset="{{ webpSrc }}"@endif
+        @if(sizes)sizes="{{ sizes }}"@endif
+      />
       @if(lazy)
         <img
           src="{{ placeholder }}"
@@ -78,8 +116,8 @@ export const paddingBottom = aspectRatio ? `${(1 / aspectRatio) * 100}%` : undef
           width="{{ width }}"
           height="{{ height }}"
           loading="lazy"
-          onload="handleImageLoad(event)"
-          onerror="handleImageError(event)"
+          @load="onImageLoad($event)"
+          @error="onImageError($event)"
         />
       @else
         <img
@@ -90,13 +128,12 @@ export const paddingBottom = aspectRatio ? `${(1 / aspectRatio) * 100}%` : undef
           class="{{ imageClasses }}"
           width="{{ width }}"
           height="{{ height }}"
-          onload="handleImageLoad(event)"
-          onerror="handleImageError(event)"
+          @load="onImageLoad($event)"
+          @error="onImageError($event)"
         />
       @endif
     </picture>
   @else
-    <!-- Regular img element -->
     @if(lazy)
       <img
         src="{{ placeholder }}"
@@ -108,8 +145,8 @@ export const paddingBottom = aspectRatio ? `${(1 / aspectRatio) * 100}%` : undef
         width="{{ width }}"
         height="{{ height }}"
         loading="lazy"
-        onload="handleImageLoad(event)"
-        onerror="handleImageError(event)"
+        @load="onImageLoad($event)"
+        @error="onImageError($event)"
       />
     @else
       <img
@@ -120,78 +157,9 @@ export const paddingBottom = aspectRatio ? `${(1 / aspectRatio) * 100}%` : undef
         class="{{ imageClasses }}"
         width="{{ width }}"
         height="{{ height }}"
-        onload="handleImageLoad(event)"
-        onerror="handleImageError(event)"
+        @load="onImageLoad($event)"
+        @error="onImageError($event)"
       />
     @endif
   @endif
-
-  <!-- Loading skeleton -->
-  <div class="{{ placeholderClasses }} skeleton" style="display: none;">
-    <div class="animate-pulse w-full h-full bg-gray-300 dark:bg-gray-600"></div>
-  </div>
 </div>
-
-<script>
-// Intersection Observer for lazy loading
-if (lazy && typeof window !== 'undefined' && 'IntersectionObserver' in window) {
-  const lazyImages = document.querySelectorAll('.lazy-image')
-
-  const imageObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const img = entry.target
-        const realSrc = img.getAttribute('data-src')
-        const realSrcSet = img.getAttribute('data-srcset')
-
-        if (realSrc) {
-          // Load the real image
-          const tempImg = new Image()
-          tempImg.onload = () => {
-            img.src = realSrc
-            if (realSrcSet) {
-              img.srcset = realSrcSet
-            }
-            img.classList.remove('opacity-0')
-            img.classList.add('opacity-100')
-            observer.unobserve(img)
-          }
-          tempImg.onerror = () => {
-            handleImageError({ target: img })
-            observer.unobserve(img)
-          }
-          tempImg.src = realSrc
-          if (realSrcSet) {
-            tempImg.srcset = realSrcSet
-          }
-        }
-      }
-    })
-  }, {
-    rootMargin: '50px', // Start loading 50px before entering viewport
-  })
-
-  lazyImages.forEach(img => imageObserver.observe(img))
-}
-
-function handleImageLoad(event) {
-  const img = event.target
-  img.classList.remove('opacity-0')
-  img.classList.add('opacity-100')
-
-  if (onLoad) {
-    onLoad(event)
-  }
-}
-
-function handleImageError(event) {
-  const img = event.target
-
-  // Show a broken image placeholder
-  img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" fill="%239ca3af" font-size="16" text-anchor="middle" dominant-baseline="middle"%3EImage not found%3C/text%3E%3C/svg%3E'
-
-  if (onError) {
-    onError(event)
-  }
-}
-</script>

@@ -1,18 +1,4 @@
 <script server>
-/**
- * SidebarHeader Component
- *
- * A header component for the sidebar with logo, title, and optional search.
- *
- * @example
- * <SidebarHeader
- *   title="My App"
- *   subtitle="Professional"
- *   :showSearch="true"
- * />
- */
-
-// Props
 export const title = $props.title || ''
 export const subtitle = $props.subtitle || ''
 export const logo = $props.logo || ''
@@ -21,13 +7,13 @@ export const showSearch = $props.showSearch ?? false
 export const searchPlaceholder = $props.searchPlaceholder || 'Search...'
 export const searchValue = $props.searchValue || ''
 export const collapsed = $props.collapsed ?? false
-export const onSearch = $props.onSearch
+</script>
 
-// Handle search input
-function handleSearchInput(event) {
-  if (onSearch) {
-    onSearch(event.target.value)
-  }
+<script client>
+const emit = defineEmits()
+
+function onSearchInput(event) {
+  emit('search', event.target.value)
 }
 </script>
 
@@ -92,7 +78,7 @@ function handleSearchInput(event) {
           placeholder="{{ searchPlaceholder }}"
           value="{{ searchValue }}"
           class="w-full pl-9 pr-3 py-2 text-sm bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 rounded-lg text-black/90 dark:text-white placeholder:text-black/40 dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400/50 transition-colors"
-          @input="handleSearchInput"
+          @input="onSearchInput($event)"
         />
       </div>
     </div>

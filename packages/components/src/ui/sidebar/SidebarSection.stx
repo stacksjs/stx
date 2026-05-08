@@ -1,21 +1,4 @@
 <script server>
-/**
- * SidebarSection Component
- *
- * A collapsible section within the sidebar containing navigation items.
- * Follows macOS Finder sidebar conventions.
- *
- * @example
- * <SidebarSection
- *   id="favorites"
- *   label="Favorites"
- *   icon="i-hugeicons-star"
- *   :items="favoriteItems"
- *   :expanded="true"
- * />
- */
-
-// Props
 export const id = $props.id || ''
 export const label = $props.label || ''
 export const icon = $props.icon || ''
@@ -23,40 +6,44 @@ export const items = $props.items || []
 export const expanded = $props.expanded ?? true
 export const collapsible = $props.collapsible ?? true
 export const showLabel = $props.showLabel ?? true
-export const onToggle = $props.onToggle
-export const onItemClick = $props.onItemClick
 
-// Handle section header click
-function handleHeaderClick() {
-  if (collapsible && onToggle) {
-    onToggle(id)
-  }
-}
-
-// Handle item click
-function handleItemClick(item, event) {
-  if (onItemClick) {
-    onItemClick(item, event)
-  }
-}
-
-// Section header classes - macOS Finder style
 const headerClasses = [
   'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left',
   'transition-all duration-150',
   'text-black/60 dark:text-white/60',
-  collapsible ? 'hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer' : ''
+  collapsible ? 'hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer' : '',
 ].filter(Boolean).join(' ')
+export const headerClassesValue = headerClasses
+</script>
+
+<script client>
+const emit = defineEmits()
+const sectionId = {{ id }}
+const collapsibleProp = {{ collapsible }}
+const isExpanded = state({{ expanded }})
+
+function onHeaderClick() {
+  if (!collapsibleProp) return
+  isExpanded.set(!isExpanded())
+  emit('toggle', sectionId)
+}
+
+function onItemClick(event) {
+  emit('itemClick', event.detail)
+}
+
+const arrowClass = derived(() => `i-hugeicons-arrow-right-01 w-3 h-3 transition-transform duration-200 opacity-50 ${isExpanded() ? 'rotate-90' : ''}`)
+
+defineExpose({ isExpanded })
 </script>
 
 <div class="py-1">
-  <!-- Section header -->
   @if(collapsible)
     <button
       type="button"
-      class="{{ headerClasses }}"
-      @click="handleHeaderClick"
-      aria-expanded="{{ expanded }}"
+      class="{{ headerClassesValue }}"
+      @click="onHeaderClick()"
+      :aria-expanded="isExpanded() ? 'true' : 'false'"
       aria-controls="sidebar-section-{{ id }}"
     >
       @if(icon)
@@ -66,11 +53,11 @@ const headerClasses = [
         <span class="flex-1 text-[13px] font-semibold tracking-tight truncate">
           {{ label }}
         </span>
-        <div class="i-hugeicons-arrow-right-01 w-3 h-3 transition-transform duration-200 opacity-50 {{ expanded ? 'rotate-90' : '' }}"></div>
+        <div :class="arrowClass()"></div>
       @endif
     </button>
   @else
-    <div class="{{ headerClasses }}">
+    <div class="{{ headerClassesValue }}">
       @if(icon)
         <div class="{{ icon }} w-4 h-4 flex-shrink-0 opacity-70"></div>
       @endif
@@ -82,15 +69,15 @@ const headerClasses = [
     </div>
   @endif
 
-  <!-- Section items -->
-  @if(expanded && showLabel && items.length > 0)
+  @if(showLabel && items.length > 0)
     <div
+      :show="isExpanded()"
       id="sidebar-section-{{ id }}"
       class="mt-1 space-y-0.5 overflow-hidden"
       role="group"
       aria-label="{{ label }}"
     >
-      @foreach(items as item)
+      @foreach(item in items)
         <SidebarItem
           :id="item.id"
           :label="item.label"
@@ -100,7 +87,7 @@ const headerClasses = [
           :active="item.active"
           :disabled="item.disabled"
           :indent="true"
-          @click="handleItemClick(item, $event)"
+          @click="onItemClick($event)"
         />
       @endforeach
     </div>
