@@ -16,6 +16,7 @@
       "@stacksjs/iconify-core": ["./packages/iconify-core/src/index.ts"],
       "@stacksjs/iconify-generator": ["./packages/iconify-generator/src/index.ts"],
       "stx-router": ["./packages/router/src/index.ts"],
+      "stx-router/*": ["./packages/router/src/*"],
       "@stx/deploy": ["./packages/deploy/src/index.ts"],
       "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
       "bun-plugin-stx/client": ["./packages/bun-plugin/src/client.ts"]

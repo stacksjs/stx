@@ -19,6 +19,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
+import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 
 // Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
 // load instead of inside every request handler. The promise is cached, so the
@@ -30,18 +31,6 @@ import { loadConfig } from 'bunfig'
 // the bare-specifier resolver wouldn't find, because Bun walks `node_modules`
 // from the importer's location and a stale copy there beats the vendored one.
 const defaultStxModule = import('@stacksjs/stx')
-
-function getLayoutGroup(layoutPath: string): string {
-  const normalized = layoutPath.replace(/\\/g, '/')
-  const segments = normalized.split('/').filter(Boolean)
-  const layoutsIndex = segments.lastIndexOf('layouts')
-  const layoutSegment = layoutsIndex >= 0 ? segments[layoutsIndex + 1] : segments.at(-1)
-
-  if (!layoutSegment)
-    return 'app'
-
-  return layoutSegment.replace(/\.stx$/i, '') || 'app'
-}
 
 export interface ServeOptions {
   patterns: string[]
@@ -1360,7 +1349,7 @@ export async function serve(options: ServeOptions): Promise<void> {
           // so the router does a full document swap instead of just swapping <main>
           const layoutMatch = content.match(/<!-- stx-layout: ([^ ]+) -->/)
           const pageLayout = layoutMatch ? layoutMatch[1] : 'default'
-          const pageLayoutGroup = getLayoutGroup(pageLayout)
+          const pageLayoutGroup = deriveLayoutGroup(pageLayout)
 
           let fragment = content
 

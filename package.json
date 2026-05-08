@@ -79,7 +79,11 @@
     "dev:docs": "bun --bun bunpress dev docs",
     "build:docs": "bun --bun bunpress build docs",
     "preview:docs": "bun --bun bunpress preview docs",
-    "typecheck": "bun --bun tsc --noEmit"
+    "typecheck": "bun --bun tsc --noEmit",
+    "validate:exports": "bun --bun scripts/validate-package-exports.ts",
+    "smoke:install": "bun --bun scripts/installed-package-smoke.ts",
+    "bench:budgets": "bun --bun scripts/performance-budgets.ts",
+    "preflight:release": "bun --bun scripts/release-preflight.ts"
   },
   "git-hooks": {
     "pre-commit": {

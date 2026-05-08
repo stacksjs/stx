@@ -28,6 +28,8 @@ export {
 
 // Nested layouts
 export { resolveLayoutChain } from './nested-layouts'
+export { deriveLayoutGroup, extractLayoutMetadata } from './layout-metadata'
+export type { LayoutMetadata } from './layout-metadata'
 
 // Route type generation
 export { generateRouteTypes, generateRouteManifest } from './codegen'

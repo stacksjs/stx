@@ -43,8 +43,9 @@
       "import": "./dist/serve.js"
     },
     "./*": {
-      "bun": "./dist/*",
-      "import": "./dist/*"
+      "bun": "./dist/*.js",
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
     }
   },
   "module": "./dist/index.js",
@@ -72,6 +73,7 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
-    "@stacksjs/stx": "workspace:*"
+    "@stacksjs/stx": "workspace:*",
+    "stx-router": "workspace:*"
   }
 }

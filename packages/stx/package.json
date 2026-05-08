@@ -57,7 +57,7 @@
       "import": "./dist/visual-testing.js"
     },
     "./bundle-analyzer": {
-      "types": "./dist/bundle-analyzer.d.ts",
+      "types": "./dist/bundle-analyzer/index.d.ts",
       "import": "./dist/bundle-analyzer.js"
     },
     "./composables": {

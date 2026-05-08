@@ -59,6 +59,7 @@ import { processInlineAssets } from './inline-assets'
 import { addCloakToUnresolvedExpressions, processJsonDirective, processMemoDirective, processOnceDirective, processRefAttributes } from './misc-directives'
 import { validateClientScript } from './script-validation'
 import { safeEvaluate } from './safe-evaluator'
+import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 
 // Re-export public API from extracted modules (preserves backwards compatibility)
 export { injectRouterScript } from './runtime-injection'
@@ -82,18 +83,6 @@ function escapeHtmlAttribute(value: string): string {
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-}
-
-function getLayoutGroup(layoutPath: string): string {
-  const normalized = layoutPath.replace(/\\/g, '/')
-  const segments = normalized.split('/').filter(Boolean)
-  const layoutsIndex = segments.lastIndexOf('layouts')
-  const layoutSegment = layoutsIndex >= 0 ? segments[layoutsIndex + 1] : segments.at(-1)
-
-  if (!layoutSegment)
-    return 'app'
-
-  return layoutSegment.replace(/\.stx$/i, '') || 'app'
 }
 
 /**
@@ -348,7 +337,7 @@ export async function processDirectives(
         const layoutComment = result.match(/<!-- stx-layout: ([^ ]+) -->/)
         if (layoutComment && result.includes('<head')) {
           const layoutName = layoutComment[1]
-          const layoutGroup = getLayoutGroup(layoutName)
+          const layoutGroup = deriveLayoutGroup(layoutName)
           result = result.replace(
             '<head>',
             `<head>\n  <meta name="stx-layout" content="${escapeHtmlAttribute(layoutName)}">\n  <meta name="stx-layout-group" content="${escapeHtmlAttribute(layoutGroup)}">`,
@@ -807,6 +796,70 @@ async function processDirectivesInternal(
   return await processOtherDirectives(output, context, filePath, resolvedOptions, dependencies)
 }
 
+function prepareDirectiveContext(context: Record<string, any>, opts: StxOptions): void {
+  context.__stx_sfc_mode = true
+  context.__stx_options = opts
+
+  if (opts.buildMode)
+    context.__stx_buildMode = opts.buildMode
+
+  const envPrefix = opts.envPrefix || 'STX_PUBLIC_'
+  const publicEnv: Record<string, string> = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    if (key.startsWith(envPrefix) && value !== undefined)
+      publicEnv[key] = value
+  }
+  context.$env = publicEnv
+}
+
+async function runViewComposersForTemplate(filePath: string, context: Record<string, any>): Promise<void> {
+  await safeExecuteAsync(
+    () => runComposers(filePath, context),
+    undefined,
+    (error) => {
+      errorLogger.log(error, { filePath, phase: 'view-composer' }, 'warning')
+      console.warn(`[stx] view composer failed for ${filePath}: ${error.message}`)
+    },
+  )
+}
+
+async function extractServerScriptVariables(output: string, context: Record<string, any>, filePath: string): Promise<void> {
+  const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+  let scriptMatch: RegExpExecArray | null
+
+  while ((scriptMatch = scriptRegex.exec(output)) !== null) {
+    const attrs = scriptMatch[1]
+    const scriptContent = scriptMatch[2]
+    const isServerScript = /\bserver\b/.test(attrs)
+
+    if (!isServerScript || !scriptContent.trim())
+      continue
+
+    try {
+      const { extractVariables } = await import('./variable-extractor')
+      await extractVariables(scriptContent, context, filePath)
+    }
+    catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e))
+      errorLogger.log(err, { filePath, phase: 'server-script-extraction' }, 'warning')
+      console.warn(`[stx] server <script> extraction failed in ${filePath}: ${err.message}`)
+    }
+  }
+}
+
+async function interpolateClientScriptExpressions(output: string, context: Record<string, any>, filePath: string): Promise<string> {
+  try {
+    const { interpolateScriptsInTemplate } = await import('./expressions')
+    return interpolateScriptsInTemplate(output, context, { skipServer: true })
+  }
+  catch (e) {
+    const err = e instanceof Error ? e : new Error(String(e))
+    errorLogger.log(err, { filePath, phase: 'script-expression-interpolation' }, 'warning')
+    console.warn(`[stx] script expression interpolation failed in ${filePath}: ${err.message}`)
+    return output
+  }
+}
+
 // Helper function to process all non-layout directives
 async function processOtherDirectives(
   template: string,
@@ -817,9 +870,6 @@ async function processOtherDirectives(
 ): Promise<string> {
   let output = template
 
-  // Enable SFC mode so events.ts collects bindings instead of generating standalone scripts
-  context.__stx_sfc_mode = true
-
   // Use opts as alias for options (consistent with processDirectivesInternal)
   const opts = options
 
@@ -829,33 +879,8 @@ async function processOtherDirectives(
   // a production page would render with `undefined` variables and no
   // signal anywhere that something went wrong. The errorLogger record
   // also lets debug overlays / log forwarders surface it.
-  await safeExecuteAsync(
-    () => runComposers(filePath, context),
-    undefined,
-    (error) => {
-      errorLogger.log(error, { filePath, phase: 'view-composer' }, 'warning')
-      console.warn(`[stx] view composer failed for ${filePath}: ${error.message}`)
-    },
-  )
-
-  // Add options to context for component processing
-  context.__stx_options = opts
-
-  // Pass buildMode to context so expressions.ts can emit placeholders in compile mode
-  if (opts.buildMode) {
-    context.__stx_buildMode = opts.buildMode
-  }
-
-  // Expose public environment variables to template context
-  // Variables matching envPrefix (default: 'STX_PUBLIC_') are available as $env.VAR_NAME
-  const envPrefix = opts.envPrefix || 'STX_PUBLIC_'
-  const publicEnv: Record<string, string> = {}
-  for (const [key, value] of Object.entries(process.env)) {
-    if (key.startsWith(envPrefix) && value !== undefined) {
-      publicEnv[key] = value
-    }
-  }
-  context.$env = publicEnv
+  await runViewComposersForTemplate(filePath, context)
+  prepareDirectiveContext(context, opts)
 
   // Run pre-processing middleware with error handling.
   // Always logged — same reasoning as view composers above.
@@ -871,32 +896,7 @@ async function processOtherDirectives(
   // Extract variables from <script server> tags (SFC support)
   // Only scripts with explicit 'server' attribute are executed server-side
   // All other scripts (no attribute, 'client', 'type="module"', 'src=') are client-side
-  const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-  let scriptMatch: RegExpExecArray | null
-  while ((scriptMatch = scriptRegex.exec(output)) !== null) {
-    const attrs = scriptMatch[1]
-    const scriptContent = scriptMatch[2]
-
-    // Only process scripts with explicit 'server' attribute
-    // This prevents executing client-side code (document, window, etc.) on the server
-    const isServerScript = /\bserver\b/.test(attrs)
-    if (isServerScript && scriptContent.trim()) {
-      try {
-        const { extractVariables } = await import('./variable-extractor')
-        await extractVariables(scriptContent, context, filePath)
-      }
-      catch (e) {
-        // Server-script variable extraction failed. Most often this is a
-        // syntax error or a reference to a server-only API — either way
-        // the page renders without those vars in scope. Always surface
-        // the failure so the developer notices instead of seeing
-        // mysteriously-undefined values in production.
-        const err = e instanceof Error ? e : new Error(String(e))
-        errorLogger.log(err, { filePath, phase: 'server-script-extraction' }, 'warning')
-        console.warn(`[stx] server <script> extraction failed in ${filePath}: ${err.message}`)
-      }
-    }
-  }
+  await extractServerScriptVariables(output, context, filePath)
 
   // Interpolate server-side {{ expr }} / {!! expr !!} inside every non-server
   // <script> body (client / signals / bare) so pages can splice server data
@@ -913,15 +913,7 @@ async function processOtherDirectives(
   // This must run AFTER server-var extraction so values are in context, and
   // BEFORE any downstream processing that consumes script bodies (script
   // setup wrapping, signals transformation, minification).
-  try {
-    const { interpolateScriptsInTemplate } = await import('./expressions')
-    output = interpolateScriptsInTemplate(output, context, { skipServer: true })
-  }
-  catch (e) {
-    const err = e instanceof Error ? e : new Error(String(e))
-    errorLogger.log(err, { filePath, phase: 'script-expression-interpolation' }, 'warning')
-    console.warn(`[stx] script expression interpolation failed in ${filePath}: ${err.message}`)
-  }
+  output = await interpolateClientScriptExpressions(output, context, filePath)
 
   // Process JS/TS directives FIRST - these define variables needed by other directives
   // These execute server-side code and populate the context with variables

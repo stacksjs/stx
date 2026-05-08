@@ -35,6 +35,35 @@ function assertBuild(result: Awaited<ReturnType<typeof Bun.build>>, label: strin
   throw new Error(`${label} failed${logs ? `:\n${logs}` : ''}`)
 }
 
+function emitTscDeclaration(entrypoint: string): void {
+  const result = Bun.spawnSync([
+    'bun',
+    '--bun',
+    'tsc',
+    '--ignoreConfig',
+    '--declaration',
+    '--emitDeclarationOnly',
+    '--moduleResolution',
+    'bundler',
+    '--module',
+    'esnext',
+    '--target',
+    'esnext',
+    '--skipLibCheck',
+    '--outDir',
+    'dist',
+    entrypoint,
+  ], {
+    cwd: process.cwd(),
+    stdout: 'pipe',
+    stderr: 'pipe',
+  })
+
+  if (result.exitCode !== 0) {
+    throw new Error(`declaration emit failed for ${entrypoint}:\n${result.stdout.toString()}\n${result.stderr.toString()}`)
+  }
+}
+
 rmSync('./dist', { recursive: true, force: true })
 
 const sourceEntrypoints = collectEntrypoints('./src')
@@ -119,6 +148,12 @@ await Promise.all(optionalModules.map(async (mod) => {
     packages: 'external',
   }), `stx optional build for ${mod.name}`)
 }))
+
+// dtsx can truncate declarations for a few standalone public modules when
+// bundling the full source graph in one call. Re-emit those public declaration
+// files with TypeScript itself after every dtsx build so subpath consumers get
+// the complete surface.
+emitTscDeclaration('./src/safe-evaluator.ts')
 
 // Copy built-in components to dist
 mkdirSync(resolve('./dist/components'), { recursive: true })
