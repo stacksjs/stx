@@ -1,24 +1,82 @@
 <script server>
 export const className = $props.className || ''
 export const as = $props.as || 'div'
-export let isOpen = false
-
-export function toggle() {
-  isOpen = !isOpen
-}
-
-export function close() {
-  isOpen = false
-}
-
-export function open() {
-  isOpen = true
-}
 
 const baseClasses = 'relative inline-block text-left'
-const dropdownClasses = `${baseClasses} ${className}`.trim()
+export const dropdownClasses = `${baseClasses} ${className}`.trim()
+export const dropdownInstanceId = `stx-dd-${Math.random().toString(36).slice(2, 11)}`
 </script>
 
-<component :is="{{ as }}" class="{{ dropdownClasses }}">
-  <slot :isOpen="isOpen" :toggle="toggle" :close="close" :open="open" />
+<script client>
+const emit = defineEmits()
+const dropdownInstanceId = {{ dropdownInstanceId }}
+const isOpen = state(false)
+let rootEl = null
+let outsideHandler = null
+
+function toggle() {
+  isOpen.set(!isOpen())
+  emit('change', isOpen())
+}
+
+function open() {
+  if (isOpen()) return
+  isOpen.set(true)
+  emit('change', true)
+}
+
+function close() {
+  if (!isOpen()) return
+  isOpen.set(false)
+  emit('change', false)
+}
+
+function onItemSelect(event) {
+  event.stopPropagation()
+  emit('select', event.detail)
+  close()
+}
+
+function onToggle(event) { event.stopPropagation(); toggle() }
+function onOpen(event) { event.stopPropagation(); open() }
+function onClose(event) { event.stopPropagation(); close() }
+
+onMount(() => {
+  rootEl = document.querySelector(`[data-dropdown-id="${dropdownInstanceId}"]`)
+  outsideHandler = (event) => {
+    if (!isOpen()) return
+    if (rootEl && !rootEl.contains(event.target)) close()
+  }
+  document.addEventListener('click', outsideHandler, true)
+})
+
+onDestroy(() => {
+  if (outsideHandler) document.removeEventListener('click', outsideHandler, true)
+})
+
+const dataState = derived(() => isOpen() ? 'open' : 'closed')
+const dataExpanded = derived(() => isOpen() ? 'true' : 'false')
+
+defineExpose({ isOpen, toggle, open, close })
+</script>
+
+<component
+  :is="{{ as }}"
+  class="{{ dropdownClasses }}"
+  data-stx-dropdown
+  data-dropdown-id="{{ dropdownInstanceId }}"
+  :data-state="dataState()"
+  :data-expanded="dataExpanded()"
+  @stx:dropdown-toggle="onToggle($event)"
+  @stx:dropdown-open="onOpen($event)"
+  @stx:dropdown-close="onClose($event)"
+  @stx:dropdown-select="onItemSelect($event)"
+>
+  <slot />
 </component>
+
+<style>
+[data-stx-dropdown][data-state="closed"] [data-stx-dropdown-items] {
+  display: none;
+}
+</style>

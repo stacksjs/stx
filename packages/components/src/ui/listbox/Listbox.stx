@@ -1,14 +1,101 @@
 <script server>
 export const value = $props.value
-export const onChange = $props.onChange
 export const multiple = $props.multiple || false
 export const className = $props.className || ''
 export const as = $props.as || 'div'
 
 const baseClasses = 'relative'
-const listboxClasses = `${baseClasses} ${className}`.trim()
+export const listboxClasses = `${baseClasses} ${className}`.trim()
+export const listboxInstanceId = `stx-lb-${Math.random().toString(36).slice(2, 11)}`
 </script>
 
-<component :is="{{ as }}" class="{{ listboxClasses }}">
-  <slot :value="value" :onChange="onChange" :multiple="multiple" />
+<script client>
+const emit = defineEmits()
+const listboxInstanceId = {{ listboxInstanceId }}
+const multiple = {{ multiple }}
+const initialValue = {{ value === undefined ? 'null' : value }}
+
+const isOpen = state(false)
+const selected = state(initialValue)
+let rootEl = null
+let outsideHandler = null
+
+function isSelectedValue(v) {
+  const cur = selected()
+  if (multiple && Array.isArray(cur)) return cur.includes(v)
+  return cur === v
+}
+
+function selectValue(v) {
+  if (multiple) {
+    const cur = Array.isArray(selected()) ? selected() : []
+    selected.set(cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v])
+  }
+  else {
+    selected.set(v)
+    isOpen.set(false)
+  }
+  syncOptionStates()
+  emit('change', selected())
+}
+
+function syncOptionStates() {
+  if (!rootEl) return
+  const options = rootEl.querySelectorAll('[data-stx-listbox-option]')
+  for (const opt of options) {
+    const raw = opt.dataset.optionValue
+    let v
+    try { v = JSON.parse(raw ?? 'null') }
+    catch { v = raw }
+    const sel = isSelectedValue(v)
+    opt.setAttribute('aria-selected', sel ? 'true' : 'false')
+    opt.setAttribute('data-selected', sel ? 'true' : 'false')
+  }
+}
+
+function open() { if (!isOpen()) { isOpen.set(true); emit('change', selected()) } }
+function close() { if (isOpen()) { isOpen.set(false) } }
+function toggle() { isOpen() ? close() : open() }
+
+function onToggle(event) { event.stopPropagation(); toggle() }
+function onSelect(event) {
+  event.stopPropagation()
+  selectValue(event.detail)
+}
+
+onMount(() => {
+  rootEl = document.querySelector(`[data-listbox-id="${listboxInstanceId}"]`)
+  syncOptionStates()
+  outsideHandler = (event) => {
+    if (!isOpen()) return
+    if (rootEl && !rootEl.contains(event.target)) close()
+  }
+  document.addEventListener('click', outsideHandler, true)
+})
+
+onDestroy(() => {
+  if (outsideHandler) document.removeEventListener('click', outsideHandler, true)
+})
+
+const dataState = derived(() => isOpen() ? 'open' : 'closed')
+
+defineExpose({ isOpen, selected, toggle, open, close, selectValue })
+</script>
+
+<component
+  :is="{{ as }}"
+  class="{{ listboxClasses }}"
+  data-stx-listbox
+  data-listbox-id="{{ listboxInstanceId }}"
+  :data-state="dataState()"
+  @stx:listbox-toggle="onToggle($event)"
+  @stx:listbox-select="onSelect($event)"
+>
+  <slot />
 </component>
+
+<style>
+[data-stx-listbox][data-state="closed"] [data-stx-listbox-options] {
+  display: none;
+}
+</style>

@@ -5,13 +5,24 @@ export const disabled = $props.disabled || false
 
 const baseClasses = 'relative w-full cursor-pointer rounded-lg bg-white dark:bg-neutral-800 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-300'
 const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : ''
-const buttonClasses = `${baseClasses} ${disabledClasses} ${className}`.trim()
+export const buttonClasses = `${baseClasses} ${disabledClasses} ${className}`.trim()
+</script>
+
+<script client>
+const isDisabled = {{ disabled }}
+
+function onClick(event) {
+  if (isDisabled) return
+  event.currentTarget.dispatchEvent(new CustomEvent('stx:listbox-toggle', { bubbles: true }))
+}
 </script>
 
 <component
   :is="{{ as }}"
   class="{{ buttonClasses }}"
+  data-stx-listbox-button
   @if(disabled)disabled aria-disabled="true"@endif
+  @click="onClick($event)"
 >
   <slot />
 </component>

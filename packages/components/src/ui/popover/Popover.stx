@@ -1,24 +1,60 @@
 <script server>
 export const className = $props.className || ''
 export const as = $props.as || 'div'
-export let isOpen = false
-
-export function toggle() {
-  isOpen = !isOpen
-}
-
-export function close() {
-  isOpen = false
-}
-
-export function open() {
-  isOpen = true
-}
 
 const baseClasses = 'relative'
-const popoverClasses = `${baseClasses} ${className}`.trim()
+export const popoverClasses = `${baseClasses} ${className}`.trim()
+export const popoverInstanceId = `stx-pop-${Math.random().toString(36).slice(2, 11)}`
 </script>
 
-<component :is="{{ as }}" class="{{ popoverClasses }}">
-  <slot :isOpen="isOpen" :toggle="toggle" :close="close" :open="open" />
+<script client>
+const emit = defineEmits()
+const popoverInstanceId = {{ popoverInstanceId }}
+const isOpen = state(false)
+let rootEl = null
+let outsideHandler = null
+
+function open() { if (!isOpen()) { isOpen.set(true); emit('change', true) } }
+function close() { if (isOpen()) { isOpen.set(false); emit('change', false) } }
+function toggle() { isOpen() ? close() : open() }
+
+function onToggle(event) { event.stopPropagation(); toggle() }
+function onClose(event) { event.stopPropagation(); close() }
+function onOpen(event) { event.stopPropagation(); open() }
+
+onMount(() => {
+  rootEl = document.querySelector(`[data-popover-id="${popoverInstanceId}"]`)
+  outsideHandler = (event) => {
+    if (!isOpen()) return
+    if (rootEl && !rootEl.contains(event.target)) close()
+  }
+  document.addEventListener('click', outsideHandler, true)
+})
+
+onDestroy(() => {
+  if (outsideHandler) document.removeEventListener('click', outsideHandler, true)
+})
+
+const dataState = derived(() => isOpen() ? 'open' : 'closed')
+
+defineExpose({ isOpen, toggle, open, close })
+</script>
+
+<component
+  :is="{{ as }}"
+  class="{{ popoverClasses }}"
+  data-stx-popover
+  data-popover-id="{{ popoverInstanceId }}"
+  :data-state="dataState()"
+  @stx:popover-toggle="onToggle($event)"
+  @stx:popover-open="onOpen($event)"
+  @stx:popover-close="onClose($event)"
+>
+  <slot />
 </component>
+
+<style>
+[data-stx-popover][data-state="closed"] [data-stx-popover-panel] {
+  display: none;
+}
+</style>

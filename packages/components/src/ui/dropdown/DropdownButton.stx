@@ -2,22 +2,28 @@
 export const className = $props.className || ''
 export const as = $props.as || 'button'
 export const disabled = $props.disabled || false
-export const onClick = $props.onClick
 
 const baseClasses = 'inline-flex justify-center items-center rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75'
-const buttonClasses = `${baseClasses} ${className}`.trim()
+export const buttonClasses = `${baseClasses} ${className}`.trim()
+</script>
 
-export function handleClick(e) {
-  if (disabled) return
-  onClick?.(e)
+<script client>
+const emit = defineEmits()
+const isDisabled = {{ disabled }}
+
+function onClick(event) {
+  if (isDisabled) return
+  emit('click', event)
+  event.currentTarget.dispatchEvent(new CustomEvent('stx:dropdown-toggle', { bubbles: true }))
 }
 </script>
 
 <component
   :is="{{ as }}"
   class="{{ buttonClasses }}"
+  data-stx-dropdown-button
   @if(disabled)disabled aria-disabled="true"@endif
-  @click="handleClick"
+  @click="onClick($event)"
 >
   <slot />
 </component>
