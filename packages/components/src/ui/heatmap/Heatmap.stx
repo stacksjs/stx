@@ -1,46 +1,25 @@
-<script>
-/**
- * Heatmap Component
- *
- * A privacy-compliant heatmap visualization component that displays user interaction data.
- * Can be used to show click heatmaps, movement heatmaps, or scroll depth visualizations.
- *
- * Props:
- * @prop {string} id - Unique identifier for the heatmap container
- * @prop {string} mode - Visualization mode: 'overlay' | 'standalone' | 'thumbnail' (default: 'overlay')
- * @prop {number} width - Width in pixels (default: 100% of container)
- * @prop {number} height - Height in pixels (default: 100% of container)
- * @prop {number} radius - Heat point radius (default: 20)
- * @prop {number} blur - Blur amount for heatmap (default: 15)
- * @prop {number} opacity - Maximum opacity (default: 0.6)
- * @prop {boolean} showLegend - Show color legend (default: true)
- * @prop {boolean} interactive - Enable zoom/pan interactions (default: false)
- * @prop {string} dataSource - Source of data: 'auto' | 'manual' | 'endpoint' (default: 'auto')
- * @prop {string} endpoint - API endpoint for fetching heatmap data
- * @prop {string} colorScheme - Color scheme: 'default' | 'fire' | 'cool' | 'grayscale' (default: 'default')
- */
-const id = props.id || 'stx-heatmap-' + Math.random().toString(36).slice(2, 8)
-const mode = props.mode || 'overlay'
-const width = props.width || null
-const height = props.height || null
-const radius = props.radius || 20
-const blur = props.blur || 15
-const opacity = props.opacity || 0.6
-const showLegend = props.showLegend !== false
-const interactive = props.interactive || false
-const dataSource = props.dataSource || 'auto'
-const endpoint = props.endpoint || ''
-const colorScheme = props.colorScheme || 'default'
+<script server>
+export const id = $props.id || `stx-heatmap-${Math.random().toString(36).slice(2, 8)}`
+export const mode = $props.mode || 'overlay'
+export const width = $props.width || null
+export const height = $props.height || null
+export const radius = $props.radius || 20
+export const blur = $props.blur || 15
+export const opacity = $props.opacity || 0.6
+export const showLegend = $props.showLegend !== false
+export const interactive = $props.interactive || false
+export const dataSource = $props.dataSource || 'auto'
+export const endpoint = $props.endpoint || ''
+export const colorScheme = $props.colorScheme || 'default'
 
-// Color schemes
 const colorSchemes = {
   default: ['#0000ff', '#00ffff', '#00ff00', '#ffff00', '#ff0000'],
   fire: ['#000000', '#ff0000', '#ffff00', '#ffffff'],
   cool: ['#000033', '#0066ff', '#00ccff', '#ffffff'],
-  grayscale: ['#000000', '#444444', '#888888', '#cccccc', '#ffffff']
+  grayscale: ['#000000', '#444444', '#888888', '#cccccc', '#ffffff'],
 }
 
-const colors = colorSchemes[colorScheme] || colorSchemes.default
+export const colors = colorSchemes[colorScheme] || colorSchemes.default
 </script>
 
 <div
