@@ -1,19 +1,37 @@
 <script server>
 export const open = $props.open || false
-export const onClose = $props.onClose
 export const className = $props.className || ''
-export const as = $props.as || 'div'
 
 const baseClasses = 'relative z-50'
-const dialogClasses = `${baseClasses} ${className}`.trim()
-
-export function handleClose() {
-  onClose?.(false)
-}
+export const dialogClasses = `${baseClasses} ${className}`.trim()
 </script>
 
-@if(open)
-  <div class="{{ dialogClasses }}" role="dialog" aria-modal="true">
-    <slot />
-  </div>
-@endif
+<script client>
+const emit = defineEmits()
+const isOpen = state({{ open }})
+
+function close() {
+  isOpen.set(false)
+  emit('close')
+}
+
+function onBackdropKey(event) {
+  if (event.key === 'Escape') close()
+}
+
+defineExpose({
+  open: () => isOpen.set(true),
+  close,
+  isOpen,
+})
+</script>
+
+<div
+  :show="isOpen()"
+  class="{{ dialogClasses }}"
+  role="dialog"
+  aria-modal="true"
+  @keydown="onBackdropKey($event)"
+>
+  <slot />
+</div>
