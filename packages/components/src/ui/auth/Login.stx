@@ -6,10 +6,25 @@ export const showRememberMe = $props.showRememberMe ?? true
 export const showForgotPassword = $props.showForgotPassword ?? true
 export const showSignup = $props.showSignup ?? true
 export const signupText = $props.signupText || 'Start a 14 day free trial'
-export const onSubmit = $props.onSubmit || (() => {})
 export const className = $props.className || ''
 
 export const containerClasses = `min-h-full flex flex-col justify-center py-12 lg:px-8 sm:px-6 dark:bg-blue-gray-900 ${className}`.trim()
+</script>
+
+<script client>
+const emit = defineEmits()
+
+function onSubmit(event) {
+  event.preventDefault()
+  const formData = new FormData(event.target)
+  const email = formData.get('email')
+  const password = formData.get('password')
+  emit('submit', { email, password })
+  setTimeout(() => {
+    const pw = event.target.querySelector('#password')
+    if (pw) pw.value = ''
+  }, 1000)
+}
 </script>
 
 <div class="{{ containerClasses }}">
@@ -22,7 +37,7 @@ export const containerClasses = `min-h-full flex flex-col justify-center py-12 l
     </h2>
   </div>
 
-  <form onsubmit="event.preventDefault(); handleSubmit(event)">
+  <form @submit="onSubmit($event)">
     <div class="mt-10 sm:mx-auto sm:max-w-[480px] sm:w-full">
       <div class="bg-white dark:bg-blue-gray-800 px-6 py-12 shadow sm:rounded-lg sm:px-12">
         <div class="space-y-6">
@@ -144,20 +159,3 @@ export const containerClasses = `min-h-full flex flex-col justify-center py-12 l
     </div>
   </form>
 </div>
-
-<script>
-function handleSubmit(event) {
-  const formData = new FormData(event.target)
-  const email = formData.get('email')
-  const password = formData.get('password')
-
-  if (onSubmit) {
-    onSubmit({ email, password })
-  }
-
-  // Clear password after submission
-  setTimeout(() => {
-    event.target.querySelector('#password').value = ''
-  }, 1000)
-}
-</script>

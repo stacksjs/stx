@@ -1,10 +1,34 @@
 <script server>
 export const headingText = $props.headingText || 'Sign up for Stacks'
 export const showSocialSignup = $props.showSocialSignup ?? true
-export const onSubmit = $props.onSubmit || (() => {})
 export const className = $props.className || ''
 
 export const containerClasses = `min-h-full flex flex-col justify-center py-12 lg:px-8 sm:px-6 dark:bg-blue-gray-900 ${className}`.trim()
+</script>
+
+<script client>
+const emit = defineEmits()
+
+function onSubmit(event) {
+  event.preventDefault()
+  const formData = new FormData(event.target)
+  const name = formData.get('name')
+  const email = formData.get('email')
+  const confirmEmail = formData.get('confirm_email')
+  const password = formData.get('password')
+
+  if (email !== confirmEmail) {
+    emit('error', { message: 'Emails do not match' })
+    return
+  }
+
+  emit('submit', { name, email, password })
+
+  setTimeout(() => {
+    event.target.querySelector('#password')?.setAttribute('value', '')
+    event.target.querySelector('#confirm_email')?.setAttribute('value', '')
+  }, 1000)
+}
 </script>
 
 <div class="{{ containerClasses }}">
@@ -16,7 +40,7 @@ export const containerClasses = `min-h-full flex flex-col justify-center py-12 l
 
   <div class="mt-10 sm:mx-auto sm:max-w-[480px] sm:w-full">
     <div class="bg-white dark:bg-blue-gray-800 px-6 py-12 shadow sm:rounded-lg sm:px-12">
-      <form class="space-y-6" onsubmit="event.preventDefault(); handleSubmit(event)">
+      <form class="space-y-6" @submit="onSubmit($event)">
         <div>
           <label for="name" class="block text-sm text-gray-900 dark:text-gray-100 font-medium leading-6">
             Full Name
@@ -133,29 +157,3 @@ export const containerClasses = `min-h-full flex flex-col justify-center py-12 l
     </div>
   </div>
 </div>
-
-<script>
-function handleSubmit(event) {
-  const formData = new FormData(event.target)
-  const name = formData.get('name')
-  const email = formData.get('email')
-  const confirmEmail = formData.get('confirm_email')
-  const password = formData.get('password')
-
-  // Basic email confirmation validation
-  if (email !== confirmEmail) {
-    alert('Emails do not match!')
-    return
-  }
-
-  if (onSubmit) {
-    onSubmit({ name, email, password })
-  }
-
-  // Clear sensitive fields after submission
-  setTimeout(() => {
-    event.target.querySelector('#password').value = ''
-    event.target.querySelector('#confirm_email').value = ''
-  }, 1000)
-}
-</script>

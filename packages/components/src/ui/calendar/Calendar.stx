@@ -1,171 +1,137 @@
 <script server>
-// Calendar Component Props
-export const value = $props.value || new Date()
-export const onChange = $props.onChange
-export const minDate = $props.minDate
-export const maxDate = $props.maxDate
+export const value = $props.value || null
+export const minDate = $props.minDate || null
+export const maxDate = $props.maxDate || null
 export const disabledDates = $props.disabledDates || []
 export const locale = $props.locale || 'en-US'
-export const firstDayOfWeek = $props.firstDayOfWeek || 0 // 0 = Sunday, 1 = Monday
+export const firstDayOfWeek = $props.firstDayOfWeek || 0
 export const showToday = $props.showToday !== false
 export const className = $props.className || ''
 export const highlightToday = $props.highlightToday !== false
 
-// State
-let currentMonth = value ? new Date(value) : new Date()
-let selectedDate = value ? new Date(value) : null
+const baseClasses = 'bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-full max-w-sm'
+export const calendarClasses = `${baseClasses} ${className}`.trim()
+export const headerClasses = 'flex items-center justify-between mb-4'
+export const monthYearClasses = 'text-lg font-semibold text-gray-900 dark:text-gray-100'
+export const buttonClasses = 'p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors'
+export const weekdaysClasses = 'grid grid-cols-7 gap-1 mb-2'
+export const weekdayClasses = 'text-center text-xs font-medium text-gray-600 dark:text-gray-400 py-2'
+export const daysGridClasses = 'grid grid-cols-7 gap-1'
+
+const valueIso = value ? new Date(value).toISOString() : null
+export const initialValueIso = valueIso
+const minIso = minDate ? new Date(minDate).toISOString() : null
+const maxIso = maxDate ? new Date(maxDate).toISOString() : null
+export const minIsoValue = minIso
+export const maxIsoValue = maxIso
+export const disabledIsoList = disabledDates.map(d => new Date(d).toISOString())
+</script>
+
+<script client>
+const emit = defineEmits()
+const locale = {{ locale }}
+const firstDayOfWeek = {{ firstDayOfWeek }}
+const highlightToday = {{ highlightToday }}
+const minDate = {{ minIsoValue === null ? 'null' : minIsoValue }} ? new Date({{ minIsoValue === null ? 'null' : minIsoValue }}) : null
+const maxDate = {{ maxIsoValue === null ? 'null' : maxIsoValue }} ? new Date({{ maxIsoValue === null ? 'null' : maxIsoValue }}) : null
+const disabledDates = ({{ disabledIsoList }}).map(s => new Date(s))
+const initialValue = {{ initialValueIso === null ? 'null' : initialValueIso }} ? new Date({{ initialValueIso === null ? 'null' : initialValueIso }}) : null
+
 const today = new Date()
+const currentMonth = state(initialValue ? new Date(initialValue) : new Date())
+const selectedDate = state(initialValue)
 
-// Helper functions
-function getDaysInMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+function isSameDay(d1, d2) {
+  if (!d1 || !d2) return false
+  return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
 }
 
-function getFirstDayOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+function isToday(d) { return isSameDay(d, today) }
+
+function isDisabled(d) {
+  if (minDate && d < minDate) return true
+  if (maxDate && d > maxDate) return true
+  return disabledDates.some(x => isSameDay(x, d))
 }
 
-function isSameDay(date1, date2) {
-  if (!date1 || !date2) return false
-  return date1.getFullYear() === date2.getFullYear() &&
-         date1.getMonth() === date2.getMonth() &&
-         date1.getDate() === date2.getDate()
-}
+function getDaysInMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() }
+function getFirstDayOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1).getDay() }
 
-function isToday(date) {
-  return isSameDay(date, today)
-}
+const monthYearLabel = derived(() => {
+  const m = currentMonth()
+  return `${m.toLocaleDateString(locale, { month: 'long' })} ${m.getFullYear()}`
+})
 
-function isDisabled(date) {
-  if (minDate && date < minDate) return true
-  if (maxDate && date > maxDate) return true
-  return disabledDates.some(d => isSameDay(d, date))
-}
-
-function getMonthName(date) {
-  return date.toLocaleDateString(locale, { month: 'long' })
-}
-
-function getYear(date) {
-  return date.getFullYear()
-}
-
-function getDayNames() {
+const dayNames = (() => {
   const days = []
-  const baseDate = new Date(2024, 0, firstDayOfWeek) // Jan 2024 started on Monday
+  const baseDate = new Date(2024, 0, firstDayOfWeek)
   for (let i = 0; i < 7; i++) {
     const day = new Date(baseDate)
     day.setDate(baseDate.getDate() + i)
     days.push(day.toLocaleDateString(locale, { weekday: 'short' }))
   }
   return days
-}
+})()
 
-function getCalendarDays() {
-  const daysInMonth = getDaysInMonth(currentMonth)
-  const firstDay = (getFirstDayOfMonth(currentMonth) - firstDayOfWeek + 7) % 7
+const calendarDays = derived(() => {
+  const month = currentMonth()
+  const daysInMonth = getDaysInMonth(month)
+  const firstDay = (getFirstDayOfMonth(month) - firstDayOfWeek + 7) % 7
   const days = []
-
-  // Previous month days
-  const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
-  const daysInPrevMonth = getDaysInMonth(prevMonth)
+  const prev = new Date(month.getFullYear(), month.getMonth() - 1, 1)
+  const daysInPrev = getDaysInMonth(prev)
   for (let i = firstDay - 1; i >= 0; i--) {
-    days.push({
-      date: new Date(prevMonth.getFullYear(), prevMonth.getMonth(), daysInPrevMonth - i),
-      isCurrentMonth: false,
-    })
+    days.push({ date: new Date(prev.getFullYear(), prev.getMonth(), daysInPrev - i), isCurrentMonth: false })
   }
-
-  // Current month days
   for (let i = 1; i <= daysInMonth; i++) {
-    days.push({
-      date: new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i),
-      isCurrentMonth: true,
-    })
+    days.push({ date: new Date(month.getFullYear(), month.getMonth(), i), isCurrentMonth: true })
   }
-
-  // Next month days to fill the grid
-  const remainingDays = 42 - days.length // 6 rows * 7 days
-  const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
-  for (let i = 1; i <= remainingDays; i++) {
-    days.push({
-      date: new Date(nextMonth.getFullYear(), nextMonth.getMonth(), i),
-      isCurrentMonth: false,
-    })
+  const remaining = 42 - days.length
+  const next = new Date(month.getFullYear(), month.getMonth() + 1, 1)
+  for (let i = 1; i <= remaining; i++) {
+    days.push({ date: new Date(next.getFullYear(), next.getMonth(), i), isCurrentMonth: false })
   }
-
   return days
-}
+})
 
 function previousMonth() {
-  currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
+  const m = currentMonth()
+  currentMonth.set(new Date(m.getFullYear(), m.getMonth() - 1, 1))
 }
 
-function nextMonth() {
-  currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
+function nextMonthFn() {
+  const m = currentMonth()
+  currentMonth.set(new Date(m.getFullYear(), m.getMonth() + 1, 1))
 }
 
 function selectDate(date) {
   if (isDisabled(date)) return
-  selectedDate = date
-  onChange?.(date)
+  selectedDate.set(date)
+  emit('change', date)
 }
 
 function goToToday() {
-  currentMonth = new Date(today)
+  currentMonth.set(new Date(today))
   selectDate(today)
 }
 
-// Base classes
-const baseClasses = 'bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-full max-w-sm'
-const calendarClasses = `${baseClasses} ${className}`.trim()
-
-const headerClasses = 'flex items-center justify-between mb-4'
-const monthYearClasses = 'text-lg font-semibold text-gray-900 dark:text-gray-100'
-const buttonClasses = 'p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors'
-
-const weekdaysClasses = 'grid grid-cols-7 gap-1 mb-2'
-const weekdayClasses = 'text-center text-xs font-medium text-gray-600 dark:text-gray-400 py-2'
-
-const daysGridClasses = 'grid grid-cols-7 gap-1'
-
-function getDayClasses(day) {
+function dayClasses(day) {
   const base = 'flex items-center justify-center h-10 w-10 rounded-md text-sm transition-colors'
-  const isSelected = isSameDay(day.date, selectedDate)
+  const isSelected = isSameDay(day.date, selectedDate())
   const isTodayDate = isToday(day.date)
   const disabled = isDisabled(day.date)
-
-  let classes = base
-
-  if (!day.isCurrentMonth) {
-    classes += ' text-gray-400 dark:text-gray-600'
-  } else {
-    classes += ' text-gray-900 dark:text-gray-100'
-  }
-
-  if (disabled) {
-    classes += ' opacity-50 cursor-not-allowed'
-  } else {
-    classes += ' cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'
-  }
-
-  if (isSelected) {
-    classes += ' bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
-  }
-
-  if (isTodayDate && highlightToday && !isSelected) {
-    classes += ' border-2 border-blue-600 dark:border-blue-400'
-  }
-
-  return classes
+  let cls = base
+  cls += day.isCurrentMonth ? ' text-gray-900 dark:text-gray-100' : ' text-gray-400 dark:text-gray-600'
+  cls += disabled ? ' opacity-50 cursor-not-allowed' : ' cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'
+  if (isSelected) cls += ' bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
+  if (isTodayDate && highlightToday && !isSelected) cls += ' border-2 border-blue-600 dark:border-blue-400'
+  return cls
 }
 
-const dayNames = getDayNames()
-const calendarDays = getCalendarDays()
+defineExpose({ selectedDate, currentMonth, selectDate })
 </script>
 
 <div class="{{ calendarClasses }}">
-  <!-- Header -->
   <div class="{{ headerClasses }}">
     <button
       type="button"
@@ -178,14 +144,12 @@ const calendarDays = getCalendarDays()
       </svg>
     </button>
 
-    <div class="{{ monthYearClasses }}">
-      {{ getMonthName(currentMonth) }} {{ getYear(currentMonth) }}
-    </div>
+    <div class="{{ monthYearClasses }}" x-text="monthYearLabel()"></div>
 
     <button
       type="button"
       class="{{ buttonClasses }}"
-      @click="nextMonth()"
+      @click="nextMonthFn()"
       aria-label="Next month"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,28 +158,21 @@ const calendarDays = getCalendarDays()
     </button>
   </div>
 
-  <!-- Weekday names -->
   <div class="{{ weekdaysClasses }}">
-    @foreach(dayNames as day)
-      <div class="{{ weekdayClasses }}">{{ day }}</div>
-    @endforeach
+    <div :for="d in dayNames" :key="d" class="{{ weekdayClasses }}" x-text="d"></div>
   </div>
 
-  <!-- Calendar grid -->
   <div class="{{ daysGridClasses }}">
-    @foreach(calendarDays as day)
-      <button
-        type="button"
-        class="{{ getDayClasses(day) }}"
-        @click="selectDate(day.date)"
-        aria-label="{{ day.date.toLocaleDateString(locale) }}"
-        @if(isDisabled(day.date))
-          disabled
-        @endif
-      >
-        {{ day.date.getDate() }}
-      </button>
-    @endforeach
+    <button
+      :for="day in calendarDays()"
+      :key="day.date.toISOString()"
+      type="button"
+      :class="dayClasses(day)"
+      @click="selectDate(day.date)"
+      :aria-label="day.date.toLocaleDateString(locale)"
+      :disabled="isDisabled(day.date)"
+      x-text="day.date.getDate()"
+    ></button>
   </div>
 
   @if(showToday)
