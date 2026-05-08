@@ -12,6 +12,13 @@ import { renderComponentWithSlot, resolveTemplatePath } from './utils'
 import { safeEvaluate } from './safe-evaluator'
 import type { StxOptions } from './types'
 
+function escapeHtmlComment(value: string): string {
+  return value
+    .replace(/--/g, '- -')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 // =============================================================================
 // Server-Side Processing
 // =============================================================================
@@ -69,7 +76,7 @@ export async function processDynamicComponents(
 
       if (!componentName || typeof componentName !== 'string') {
         // Could not resolve — leave a placeholder comment
-        const replacement = `<!-- dynamic component: could not resolve "${m.expr}" -->`
+        const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(m.expr)}" -->`
         result = result.slice(0, m.index) + replacement + result.slice(m.index + m.full.length)
         continue
       }
@@ -116,7 +123,7 @@ export async function processDynamicComponents(
     }
     catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
-      const replacement = `<!-- dynamic component error: ${errorMsg} -->`
+      const replacement = `<!-- dynamic component error: ${escapeHtmlComment(errorMsg)} -->`
       result = result.slice(0, m.index) + replacement + result.slice(m.index + m.full.length)
     }
   }
@@ -160,7 +167,7 @@ async function processSelfClosingDynamicComponents(
       const componentName = safeEvaluate<string>(m.expr, context)
 
       if (!componentName || typeof componentName !== 'string') {
-        const replacement = `<!-- dynamic component: could not resolve "${m.expr}" -->`
+        const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(m.expr)}" -->`
         result = result.slice(0, m.index) + replacement + result.slice(m.index + m.full.length)
         continue
       }
@@ -182,7 +189,7 @@ async function processSelfClosingDynamicComponents(
     }
     catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
-      const replacement = `<!-- dynamic component error: ${errorMsg} -->`
+      const replacement = `<!-- dynamic component error: ${escapeHtmlComment(errorMsg)} -->`
       result = result.slice(0, m.index) + replacement + result.slice(m.index + m.full.length)
     }
   }

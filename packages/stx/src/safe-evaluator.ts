@@ -143,6 +143,42 @@ const DANGEROUS_PATTERNS = [
   /\bthis\b/,
 ]
 
+const DANGEROUS_IDENTIFIERS = new Set([
+  'eval',
+  'Function',
+  'setTimeout',
+  'setInterval',
+  'setImmediate',
+  'process',
+  'require',
+  'import',
+  'exports',
+  'module',
+  'window',
+  'document',
+  'global',
+  'globalThis',
+  'constructor',
+  'prototype',
+  'Reflect',
+  'Proxy',
+  'Symbol',
+  'WeakMap',
+  'WeakSet',
+  'WeakRef',
+  'FinalizationRegistry',
+  'Generator',
+  'AsyncGenerator',
+  'delete',
+  'this',
+])
+
+const DANGEROUS_BRACKET_KEYS = new Set([
+  '__proto__',
+  'constructor',
+  'prototype',
+])
+
 /**
  * Pattern for bracket notation property access with strings - checked separately based on config.
  * Only matches bracket notation when preceded by a word char, ), or ] (property access context).
@@ -187,6 +223,43 @@ function stripStringLiterals(expr: string): string {
   return result
 }
 
+function assertNoUnsafeIdentifierTokens(strippedExpression: string, originalExpression: string): void {
+  const identifierRe = /[$A-Z_a-z][$\w]*/g
+  let match: RegExpExecArray | null
+
+  while ((match = identifierRe.exec(strippedExpression)) !== null) {
+    const identifier = match[0]
+    const previous = strippedExpression[match.index - 1]
+
+    if (DANGEROUS_IDENTIFIERS.has(identifier)) {
+      throw new Error(`Potentially unsafe expression (identifier ${identifier}): ${originalExpression}`)
+    }
+
+    if (previous === '.' && DANGEROUS_BRACKET_KEYS.has(identifier)) {
+      throw new Error(`Potentially unsafe expression (property ${identifier}): ${originalExpression}`)
+    }
+  }
+}
+
+function assertSafeBracketLiteralKeys(expression: string): void {
+  const bracketLiteralRe = /\[\s*(['"])(.*?)\1\s*\]/g
+  let match: RegExpExecArray | null
+
+  while ((match = bracketLiteralRe.exec(expression)) !== null) {
+    const key = match[2]
+    if (!DANGEROUS_BRACKET_KEYS.has(key))
+      continue
+
+    const previousNonSpace = expression.slice(0, match.index).match(/\S(?=\s*$)/)?.[0]
+    const nextNonSpace = expression.slice(match.index + match[0].length).match(/^\s*(\S)/)?.[1]
+    const isComputedObjectKey = (previousNonSpace === '{' || previousNonSpace === ',') && nextNonSpace === ':'
+
+    if (!isComputedObjectKey) {
+      throw new Error(`Potentially unsafe expression (bracket key ${match[2]}): ${expression}`)
+    }
+  }
+}
+
 /**
  * Sanitize an expression by checking for dangerous patterns
  */
@@ -196,6 +269,8 @@ export function sanitizeExpression(expression: string): string {
   // Strip string literals before checking patterns to avoid false positives
   // e.g., "__proto__" as a string value should be allowed
   const stripped = stripStringLiterals(trimmed)
+  assertNoUnsafeIdentifierTokens(stripped, trimmed)
+  assertSafeBracketLiteralKeys(trimmed)
 
   // Check for dangerous patterns on the stripped expression. Including the
   // matched pattern in the error message makes it straightforward for devs

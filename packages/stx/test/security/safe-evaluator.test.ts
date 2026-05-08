@@ -100,6 +100,13 @@ describe('Safe Evaluator Comprehensive Security Tests', () => {
       expect(() => sanitizeExpression('obj["key"]')).not.toThrow()
     })
 
+    it('still blocks dangerous bracket literal keys when bracket notation is enabled', () => {
+      configureSafeEvaluator({ allowBracketNotation: true })
+      expect(() => sanitizeExpression('obj["constructor"]')).toThrow()
+      expect(() => sanitizeExpression('obj["__proto__"]')).toThrow()
+      expect(() => sanitizeExpression('obj["prototype"]')).toThrow()
+    })
+
     it('allows bracket notation with numbers regardless of setting', () => {
       expect(() => sanitizeExpression('items[0]')).not.toThrow()
     })
@@ -1082,6 +1089,11 @@ describe('Safe Evaluator Comprehensive Security Tests', () => {
 
     it('sanitizeExpression blocks expressions with exports keyword', () => {
       expect(() => sanitizeExpression('exports.secret')).toThrow()
+    })
+
+    it('blocks unsafe identifiers through token-aware scanning', () => {
+      expect(() => sanitizeExpression('globalThis["process"]')).toThrow()
+      expect(() => sanitizeExpression('user.constructor.name')).toThrow()
     })
 
     it('blocks Object.assign with constructor', () => {

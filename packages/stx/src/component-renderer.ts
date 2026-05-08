@@ -351,6 +351,20 @@ function escapeAttribute(value: string): string {
     .replace(/>/g, '&gt;')
 }
 
+function findUnresolvedBuiltinTags(template: string): string[] {
+  const unresolved = new Set<string>()
+  const tagRegex = /<([A-Z][A-Za-z0-9]*|stx-[a-z0-9-]+)\b[^>]*>/g
+  let match: RegExpExecArray | null
+
+  while ((match = tagRegex.exec(template)) !== null) {
+    const name = match[1]
+    if (registry.isBuiltin(name))
+      unresolved.add(name)
+  }
+
+  return [...unresolved].sort()
+}
+
 /**
  * Process @import directives.
  *
@@ -790,6 +804,16 @@ export async function processComponents(
     const before = output
     output = await processCustomElementTags(output, context, filePath, options, dependencies)
     if (output === before) break // No more changes — all builtins resolved
+  }
+
+  if (options.debug) {
+    const unresolved = findUnresolvedBuiltinTags(output)
+    if (unresolved.length > 0) {
+      console.warn(
+        `[stx] ${filePath}: unresolved component tag(s) after render passes: ${unresolved.join(', ')}. `
+        + 'Check nested component output for malformed root tags or recursive component markup.',
+      )
+    }
   }
 
   return output

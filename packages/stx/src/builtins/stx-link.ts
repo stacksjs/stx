@@ -92,11 +92,6 @@ export const StxLinkBuiltin: BuiltinComponentDef = {
       attrs.push('data-stx-prefetch')
     }
 
-    // Preserve event bindings
-    for (const [event, handler] of Object.entries(props.events)) {
-      attrs.push(`@${escapeAttr(event)}="${escapeAttr(handler)}"`)
-    }
-
     // Forward any extra static attributes that are not consumed props
     const consumedStatic = new Set(['to', 'class', 'className', 'activeClass', 'exactActiveClass', 'prefetch'])
     for (const [key, value] of Object.entries(props.static)) {

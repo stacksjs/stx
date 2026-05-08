@@ -40,7 +40,7 @@ const CLIENT_SCRIPT_RE = /<script\b[^>]*\bclient\b/i
  */
 export async function detectBuildMode(root?: string): Promise<BuildModeDetectionResult> {
   const start = performance.now()
-  const config = await loadStxConfig()
+  const config = await loadStxConfig(root)
 
   const projectRoot = root || config.root || process.cwd()
   const dirs = [
@@ -82,7 +82,7 @@ export async function detectBuildMode(root?: string): Promise<BuildModeDetection
  * `<script client>` for interactivity).
  */
 export async function validateComponentScripts(root?: string): Promise<ComponentValidationError[]> {
-  const config = await loadStxConfig()
+  const config = await loadStxConfig(root)
   const projectRoot = root || config.root || process.cwd()
   const componentsDir = path.resolve(projectRoot, config.componentsDir || 'components')
 

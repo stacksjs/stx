@@ -34,7 +34,7 @@ export interface VNode {
 
 /** Function component type */
 // eslint-disable-next-line pickier/no-unused-vars
-export type ComponentFunction<P extends Record<string, any> = Record<string, any>> = (props: P) => VNode | string | null
+export type ComponentFunction<P = Record<string, any>> = (props: P) => VNode | string | null
 
 /** Fragment symbol - renders children without a wrapper element */
 export const Fragment: unique symbol = Symbol.for('stx.Fragment')
