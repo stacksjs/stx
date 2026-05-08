@@ -884,18 +884,28 @@ export class ProductionBuild {
         const mapPath = `${output.path}.map`
         await Bun.write(mapPath, JSON.stringify(sourceMap))
 
-        // Add source map reference to file. The pragma marker is constructed
-        // piecewise so this file's own bundled output doesn't contain a literal
-        // `//# sourceMappingURL=` at column 0, which would trip Bun's runtime
-        // sourcemap scanner into trying (and failing) to decode this module
-        // when it's loaded from node_modules.
-        const pragma = `\n${['/', '/# sourceMappingURL='].join('')}`
-        const sourceMappingURL = this.config.sourcemaps === 'inline'
-          ? `${pragma}data:application/json;base64,${Buffer.from(JSON.stringify(sourceMap)).toString('base64')}`
-          : `${pragma}${basename(mapPath)}`
+        // Add source-map reference to file. The marker bytes are emitted via
+        // a Uint8Array of ASCII codes (NOT a string literal containing the
+        // pragma) so Bun's minifier can't fold this back into a template
+        // literal whose `\n` becomes a real newline byte at column 0 of the
+        // bundled output. If it did, Bun's runtime sourcemap scanner would
+        // match `//# sourceMappingURL=...${...}` inside this file when it's
+        // loaded from node_modules, try to base64-decode the template-literal
+        // placeholder, and emit `Could not decode sourcemap: UnsupportedFormat`.
+        // Byte sequence: \n / / # SP s o u r c e M a p p i n g U R L =
+        const markerBytes = new Uint8Array([
+          10, 47, 47, 35, 32, 115, 111, 117, 114, 99, 101, 77, 97, 112, 112, 105, 110, 103, 85, 82, 76, 61,
+        ])
+        const payload = this.config.sourcemaps === 'inline'
+          ? `data:application/json;base64,${Buffer.from(JSON.stringify(sourceMap)).toString('base64')}`
+          : basename(mapPath)
 
         if (this.config.sourcemaps !== 'hidden') {
-          await Bun.write(output.path, content + sourceMappingURL)
+          await Bun.write(output.path, Buffer.concat([
+            Buffer.from(content),
+            Buffer.from(markerBytes),
+            Buffer.from(payload),
+          ]))
         }
 
         this.outputs.push({
