@@ -3,49 +3,56 @@ export const value = $props.value
 export const disabled = $props.disabled || false
 export const className = $props.className || ''
 export const as = $props.as || 'div'
-export const currentValue = $props.currentValue
-export const onChange = $props.onChange
 
-export let active = false
-export const checked = currentValue === value
+const baseClasses = 'relative flex cursor-pointer rounded-lg px-5 py-4 shadow-md focus:outline-none transition-all bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-60 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-300 dark:focus-visible:ring-offset-blue-700'
+const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : ''
+export const optionClasses = `${baseClasses} ${disabledClasses} ${className}`.trim()
+export const valueJson = JSON.stringify(value === undefined ? null : value)
+</script>
 
-const baseClasses = 'relative flex cursor-pointer rounded-lg px-5 py-4 shadow-md focus:outline-none transition-all'
-const stateClasses = checked
-  ? 'bg-blue-900 bg-opacity-75 text-white dark:bg-blue-800'
-  : 'bg-white dark:bg-neutral-800'
-const activeClasses = active
-  ? 'ring-2 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-300 dark:ring-offset-blue-700'
-  : ''
-const disabledClasses = disabled
-  ? 'opacity-50 cursor-not-allowed'
-  : ''
+<script client>
+const isDisabled = {{ disabled }}
+const optionValue = {{ value === undefined ? 'null' : value }}
 
-const optionClasses = `${baseClasses} ${stateClasses} ${activeClasses} ${disabledClasses} ${className}`.trim()
-
-export function handleClick() {
-  if (disabled) return
-  onChange?.(value)
+function onClick(event) {
+  if (isDisabled) return
+  event.currentTarget.dispatchEvent(
+    new CustomEvent('stx:radio-select', { bubbles: true, detail: optionValue }),
+  )
 }
 
-export function handleFocus() {
-  if (!disabled) active = true
-}
-
-export function handleBlur() {
-  active = false
+function onKey(event) {
+  if (isDisabled) return
+  if (event.key === ' ' || event.key === 'Enter') {
+    event.preventDefault()
+    event.currentTarget.dispatchEvent(
+      new CustomEvent('stx:radio-select', { bubbles: true, detail: optionValue }),
+    )
+  }
 }
 </script>
 
 <component
   :is="{{ as }}"
   class="{{ optionClasses }}"
+  data-stx-radio-option
+  data-option-value="{{ valueJson }}"
   role="radio"
-  aria-checked="{{ checked ? 'true' : 'false' }}"
+  aria-checked="false"
   @if(disabled)aria-disabled="true"@endif
   tabindex="{{ disabled ? '-1' : '0' }}"
-  @click="handleClick"
-  @focus="handleFocus"
-  @blur="handleBlur"
+  @click="onClick($event)"
+  @keydown="onKey($event)"
 >
-  <slot :active="active" :checked="checked" :disabled="disabled" />
+  <slot :disabled="disabled" />
 </component>
+
+<style>
+[data-stx-radio-option][data-checked="true"] {
+  background-color: rgb(30 58 138 / 0.75);
+  color: white;
+}
+.dark [data-stx-radio-option][data-checked="true"] {
+  background-color: rgb(30 64 175 / 1);
+}
+</style>

@@ -1,13 +1,96 @@
 <script server>
 export const value = $props.value
-export const onChange = $props.onChange
 export const className = $props.className || ''
 export const as = $props.as || 'div'
 
 const baseClasses = 'relative'
-const comboboxClasses = `${baseClasses} ${className}`.trim()
+export const comboboxClasses = `${baseClasses} ${className}`.trim()
+export const comboboxInstanceId = `stx-cb-${Math.random().toString(36).slice(2, 11)}`
 </script>
 
-<component :is="{{ as }}" class="{{ comboboxClasses }}">
-  <slot :value="value" :onChange="onChange" />
+<script client>
+const emit = defineEmits()
+const comboboxInstanceId = {{ comboboxInstanceId }}
+const initialValue = {{ value === undefined ? 'null' : value }}
+
+const isOpen = state(false)
+const selected = state(initialValue)
+const query = state('')
+let rootEl = null
+let outsideHandler = null
+
+function isSelectedValue(v) {
+  return selected() === v
+}
+
+function selectValue(v) {
+  selected.set(v)
+  isOpen.set(false)
+  syncOptionStates()
+  emit('change', v)
+}
+
+function syncOptionStates() {
+  if (!rootEl) return
+  const options = rootEl.querySelectorAll('[data-stx-combobox-option]')
+  for (const opt of options) {
+    const raw = opt.dataset.optionValue
+    let v
+    try { v = JSON.parse(raw ?? 'null') }
+    catch { v = raw }
+    const sel = isSelectedValue(v)
+    opt.setAttribute('aria-selected', sel ? 'true' : 'false')
+    opt.setAttribute('data-selected', sel ? 'true' : 'false')
+  }
+}
+
+function open() { if (!isOpen()) { isOpen.set(true) } }
+function close() { if (isOpen()) isOpen.set(false) }
+function toggle() { isOpen() ? close() : open() }
+
+function onToggle(event) { event.stopPropagation(); toggle() }
+function onSelect(event) { event.stopPropagation(); selectValue(event.detail) }
+function onQuery(event) {
+  event.stopPropagation()
+  query.set(event.detail)
+  if (!isOpen()) open()
+  emit('query', event.detail)
+}
+
+onMount(() => {
+  rootEl = document.querySelector(`[data-combobox-id="${comboboxInstanceId}"]`)
+  syncOptionStates()
+  outsideHandler = (event) => {
+    if (!isOpen()) return
+    if (rootEl && !rootEl.contains(event.target)) close()
+  }
+  document.addEventListener('click', outsideHandler, true)
+})
+
+onDestroy(() => {
+  if (outsideHandler) document.removeEventListener('click', outsideHandler, true)
+})
+
+const dataState = derived(() => isOpen() ? 'open' : 'closed')
+
+defineExpose({ isOpen, selected, query, toggle, open, close, selectValue })
+</script>
+
+<component
+  :is="{{ as }}"
+  class="{{ comboboxClasses }}"
+  data-stx-combobox
+  data-combobox-id="{{ comboboxInstanceId }}"
+  :data-state="dataState()"
+  @stx:combobox-toggle="onToggle($event)"
+  @stx:combobox-select="onSelect($event)"
+  @stx:combobox-query="onQuery($event)"
+>
+  <slot />
 </component>
+
+<style>
+[data-stx-combobox][data-state="closed"] [data-stx-combobox-options] {
+  display: none;
+}
+</style>

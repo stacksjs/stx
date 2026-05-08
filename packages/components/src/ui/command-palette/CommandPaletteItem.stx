@@ -1,32 +1,27 @@
 <script server>
 export const className = $props.className || ''
-export const onClick = $props.onClick
-export let active = false
+export const value = $props.value
 
-const baseClasses = 'flex cursor-pointer select-none items-center px-4 py-2'
-const activeClasses = active
-  ? 'bg-blue-600 text-white'
-  : 'text-neutral-900 dark:text-neutral-100'
-const itemClasses = `${baseClasses} ${activeClasses} ${className}`.trim()
+const baseClasses = 'flex cursor-pointer select-none items-center px-4 py-2 text-neutral-900 dark:text-neutral-100 hover:bg-blue-600 hover:text-white'
+export const itemClasses = `${baseClasses} ${className}`.trim()
+</script>
 
-export function handleClick() {
-  onClick?.()
-}
+<script client>
+const emit = defineEmits()
+const itemValue = {{ value === undefined ? 'null' : value }}
 
-export function handleMouseEnter() {
-  active = true
-}
-
-export function handleMouseLeave() {
-  active = false
+function onClick(event) {
+  emit('click', event)
+  event.currentTarget.dispatchEvent(
+    new CustomEvent('stx:command-select', { bubbles: true, detail: itemValue }),
+  )
 }
 </script>
 
 <div
   class="{{ itemClasses }}"
-  @click="handleClick"
-  @mouseenter="handleMouseEnter"
-  @mouseleave="handleMouseLeave"
+  data-stx-command-item
+  @click="onClick($event)"
 >
-  <slot :active="active" />
+  <slot />
 </div>

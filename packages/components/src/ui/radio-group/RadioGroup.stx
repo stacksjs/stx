@@ -1,13 +1,60 @@
 <script server>
 export const value = $props.value
-export const onChange = $props.onChange
 export const className = $props.className || ''
 export const as = $props.as || 'div'
 
 const baseClasses = 'w-full'
-const groupClasses = `${baseClasses} ${className}`.trim()
+export const groupClasses = `${baseClasses} ${className}`.trim()
+export const radioGroupInstanceId = `stx-rg-${Math.random().toString(36).slice(2, 11)}`
 </script>
 
-<component :is="{{ as }}" class="{{ groupClasses }}" role="radiogroup">
-  <slot :value="value" :onChange="onChange" />
+<script client>
+const emit = defineEmits()
+const radioGroupInstanceId = {{ radioGroupInstanceId }}
+const initialValue = {{ value === undefined ? 'null' : value }}
+const selected = state(initialValue)
+let rootEl = null
+
+function selectValue(v) {
+  selected.set(v)
+  syncOptionStates()
+  emit('change', v)
+}
+
+function syncOptionStates() {
+  if (!rootEl) return
+  const options = rootEl.querySelectorAll('[data-stx-radio-option]')
+  for (const opt of options) {
+    const raw = opt.dataset.optionValue
+    let v
+    try { v = JSON.parse(raw ?? 'null') }
+    catch { v = raw }
+    const checked = selected() === v
+    opt.setAttribute('aria-checked', checked ? 'true' : 'false')
+    opt.setAttribute('data-checked', checked ? 'true' : 'false')
+  }
+}
+
+function onSelect(event) {
+  event.stopPropagation()
+  selectValue(event.detail)
+}
+
+onMount(() => {
+  rootEl = document.querySelector(`[data-radio-group-id="${radioGroupInstanceId}"]`)
+  syncOptionStates()
+})
+
+defineExpose({ selected, selectValue })
+</script>
+
+<component
+  :is="{{ as }}"
+  class="{{ groupClasses }}"
+  data-stx-radio-group
+  data-radio-group-id="{{ radioGroupInstanceId }}"
+  role="radiogroup"
+  @stx:radio-select="onSelect($event)"
+>
+  <slot />
 </component>
