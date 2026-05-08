@@ -1,4 +1,62 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.50...v0.2.51)
+
+### 🚀 Features
+
+- add release preflight guardrails ([03b2c13](https://github.com/stacksjs/stx/commit/03b2c13)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: per-page meta override + tighter document-shell detection ([5f36fe9](https://github.com/stacksjs/stx/commit/5f36fe9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- harden evaluator and component diagnostics ([b543a4a](https://github.com/stacksjs/stx/commit/b543a4a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- tighten evaluator and component edge cases ([87db386](https://github.com/stacksjs/stx/commit/87db386)) _(by Chris <chrisbreuer93@gmail.com>)_
+- make spa layout swaps metadata driven ([f384854](https://github.com/stacksjs/stx/commit/f384854)) _(by Chris <chrisbreuer93@gmail.com>)_
+- harden stx package exports ([f74a02b](https://github.com/stacksjs/stx/commit/f74a02b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx/scripts**: pass non-JS script types through unchanged ([5508195](https://github.com/stacksjs/stx/commit/5508195)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ⚡ Performance Improvements
+
+- **crosswind**: persist CSS cache to disk + LRU eviction ([2e4bf99](https://github.com/stacksjs/stx/commit/2e4bf99)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📚 Documentation
+
+- expand Blade and Vue syntax examples ([d2427f3](https://github.com/stacksjs/stx/commit/d2427f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.51 ([6ef7de5](https://github.com/stacksjs/stx/commit/6ef7de5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.50...HEAD)
+
+### 🚀 Features
+
+- add release preflight guardrails ([03b2c13](https://github.com/stacksjs/stx/commit/03b2c13)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: per-page meta override + tighter document-shell detection ([5f36fe9](https://github.com/stacksjs/stx/commit/5f36fe9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- harden evaluator and component diagnostics ([b543a4a](https://github.com/stacksjs/stx/commit/b543a4a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- tighten evaluator and component edge cases ([87db386](https://github.com/stacksjs/stx/commit/87db386)) _(by Chris <chrisbreuer93@gmail.com>)_
+- make spa layout swaps metadata driven ([f384854](https://github.com/stacksjs/stx/commit/f384854)) _(by Chris <chrisbreuer93@gmail.com>)_
+- harden stx package exports ([f74a02b](https://github.com/stacksjs/stx/commit/f74a02b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx/scripts**: pass non-JS script types through unchanged ([5508195](https://github.com/stacksjs/stx/commit/5508195)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ⚡ Performance Improvements
+
+- **crosswind**: persist CSS cache to disk + LRU eviction ([2e4bf99](https://github.com/stacksjs/stx/commit/2e4bf99)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📚 Documentation
+
+- expand Blade and Vue syntax examples ([d2427f3](https://github.com/stacksjs/stx/commit/d2427f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.49...v0.2.50)
 
 ### 🚀 Features
