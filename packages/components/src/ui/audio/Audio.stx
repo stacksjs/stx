@@ -25,10 +25,10 @@ export const audioClasses = 'w-full rounded-md bg-gray-100 dark:bg-gray-800'
   <audio
     class="{{ audioClasses }}"
     src="{{ src }}"
-    controls="{{ controls }}"
-    autoplay="{{ autoplay }}"
-    loop="{{ loop }}"
-    muted="{{ muted }}"
+    @if(controls)controls@endif
+    @if(autoplay)autoplay@endif
+    @if(loop)loop@endif
+    @if(muted)muted@endif
     preload="{{ preload }}"
   >
     Your browser does not support the audio element.

@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const title = $props.title || 'Component'
 export const description = $props.description || 'A modern component built with STX'
 export const githubUrl = $props.githubUrl || '#'

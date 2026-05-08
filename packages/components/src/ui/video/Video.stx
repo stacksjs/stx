@@ -31,10 +31,10 @@ export const aspectRatioClass = aspectRatio === '16/9' ? 'aspect-video' : aspect
       class="{{ videoClasses }}"
       src="{{ src }}"
       poster="{{ poster }}"
-      controls="{{ controls }}"
-      autoplay="{{ autoplay }}"
-      loop="{{ loop }}"
-      muted="{{ muted }}"
+      @if(controls)controls@endif
+      @if(autoplay)autoplay@endif
+      @if(loop)loop@endif
+      @if(muted)muted@endif
       preload="{{ preload }}"
       width="{{ width }}"
       height="{{ height }}"

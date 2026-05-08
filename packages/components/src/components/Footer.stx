@@ -1,4 +1,4 @@
-<script>
+<script server>
 export const author = $props.author || '@chrisbbreuer'
 export const authorUrl = $props.authorUrl || 'https://github.com/chrisbbreuer'
 export const project = $props.project || '@stacksjs'

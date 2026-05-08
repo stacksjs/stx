@@ -1,91 +1,74 @@
 <script server>
-// Navigator Component Props
 export const items = $props.items || []
 export const active = $props.active || ''
-export const orientation = $props.orientation || 'horizontal' // 'horizontal' | 'vertical'
-export const variant = $props.variant || 'default' // 'default' | 'pills' | 'underline' | 'sidebar'
-export const size = $props.size || 'md' // 'sm' | 'md' | 'lg'
-export const onNavigate = $props.onNavigate
+export const orientation = $props.orientation || 'horizontal'
+export const variant = $props.variant || 'default'
+export const size = $props.size || 'md'
 export const className = $props.className || ''
 
-// Helper function to check if item is active
+const containerBaseClasses = orientation === 'horizontal' ? 'flex items-center' : 'flex flex-col'
+export const containerClasses = `${containerBaseClasses} ${className}`.trim()
+export const gapClasses = orientation === 'horizontal' ? 'gap-1' : 'gap-0.5'
+</script>
+
+<script client>
+const emit = defineEmits()
+const items = {{ items }}
+const variant = {{ variant }}
+const size = {{ size }}
+const initialActive = {{ active }}
+const activeKey = state(initialActive)
+
 function isActive(item) {
-  if (typeof item.href === 'string' && typeof active === 'string') {
-    // Exact match
-    if (item.href === active) return true
-    // Match with query params/hash
-    if (active.startsWith(item.href)) return true
+  const a = activeKey()
+  if (typeof item.href === 'string' && typeof a === 'string') {
+    if (item.href === a) return true
+    if (a.startsWith(item.href)) return true
   }
-  if (item.id && item.id === active) return true
+  if (item.id && item.id === a) return true
   return false
 }
 
-// Base classes
-const containerBaseClasses = orientation === 'horizontal'
-  ? 'flex items-center'
-  : 'flex flex-col'
-
-const containerClasses = `${containerBaseClasses} ${className}`.trim()
-
-// Item classes based on variant and size
 function getItemClasses(item) {
-  const active = isActive(item)
-  let classes = ''
-
-  // Size classes
-  const sizeClasses = {
-    sm: 'px-2 py-1 text-sm',
-    md: 'px-3 py-2 text-base',
-    lg: 'px-4 py-3 text-lg',
-  }
-
-  classes += sizeClasses[size] || sizeClasses.md
-
-  // Variant classes
+  const isActiveItem = isActive(item)
+  const sizeClasses = { sm: 'px-2 py-1 text-sm', md: 'px-3 py-2 text-base', lg: 'px-4 py-3 text-lg' }
+  let cls = sizeClasses[size] || sizeClasses.md
   if (variant === 'default') {
-    classes += active
+    cls += isActiveItem
       ? ' text-gray-900 dark:text-gray-100 font-medium'
       : ' text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-  } else if (variant === 'pills') {
-    classes += active
+  }
+  else if (variant === 'pills') {
+    cls += isActiveItem
       ? ' bg-blue-600 text-white font-medium rounded-full'
       : ' text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full'
-  } else if (variant === 'underline') {
-    classes += active
+  }
+  else if (variant === 'underline') {
+    cls += isActiveItem
       ? ' text-blue-600 dark:text-blue-400 font-medium border-b-2 border-blue-600 dark:border-blue-400'
       : ' text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent'
-  } else if (variant === 'sidebar') {
-    classes += active
+  }
+  else if (variant === 'sidebar') {
+    cls += isActiveItem
       ? ' bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium border-l-4 border-blue-600 dark:border-blue-400'
       : ' text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-l-4 border-transparent'
   }
-
-  // Common classes
-  classes += ' transition-all duration-200 cursor-pointer flex items-center gap-2'
-
-  if (item.disabled) {
-    classes += ' opacity-50 cursor-not-allowed pointer-events-none'
-  }
-
-  return classes.trim()
+  cls += ' transition-all duration-200 cursor-pointer flex items-center gap-2'
+  if (item.disabled) cls += ' opacity-50 cursor-not-allowed pointer-events-none'
+  return cls.trim()
 }
 
-// Gap classes between items
-const gapClasses = orientation === 'horizontal'
-  ? 'gap-1'
-  : 'gap-0.5'
-
-function handleClick(item, event) {
+function onClickItem(item, event) {
   if (item.disabled) {
     event.preventDefault()
     return
   }
-
-  if (onNavigate) {
-    event.preventDefault()
-    onNavigate(item)
-  }
+  event.preventDefault()
+  activeKey.set(item.href || item.id || activeKey())
+  emit('navigate', item)
 }
+
+defineExpose({ activeKey })
 </script>
 
 <nav class="{{ containerClasses }} {{ gapClasses }}" role="navigation" aria-label="Main navigation">
@@ -93,18 +76,13 @@ function handleClick(item, event) {
     @if(item.href)
       <a
         href="{{ item.href }}"
-        class="{{ getItemClasses(item) }}"
-        @click="handleClick(item, event)"
-        @if(isActive(item))
-          aria-current="page"
-        @endif
-        @if(item.disabled)
-          aria-disabled="true"
-          tabindex="-1"
-        @endif
+        :class="getItemClasses({{ JSON.stringify(item) }})"
+        @click="onClickItem({{ JSON.stringify(item) }}, $event)"
+        :aria-current="isActive({{ JSON.stringify(item) }}) ? 'page' : null"
+        @if(item.disabled)aria-disabled="true" tabindex="-1"@endif
       >
         @if(item.icon)
-          <span class="flex-shrink-0" innerHTML="{!! item.icon !!}"></span>
+          <span class="flex-shrink-0">{!! item.icon !!}</span>
         @endif
         <span>{{ item.label }}</span>
         @if(item.badge)
@@ -116,15 +94,12 @@ function handleClick(item, event) {
     @else
       <button
         type="button"
-        class="{{ getItemClasses(item) }}"
-        @click="handleClick(item, event)"
-        @if(item.disabled)
-          disabled
-          aria-disabled="true"
-        @endif
+        :class="getItemClasses({{ JSON.stringify(item) }})"
+        @click="onClickItem({{ JSON.stringify(item) }}, $event)"
+        @if(item.disabled)disabled aria-disabled="true"@endif
       >
         @if(item.icon)
-          <span class="flex-shrink-0" innerHTML="{!! item.icon !!}"></span>
+          <span class="flex-shrink-0">{!! item.icon !!}</span>
         @endif
         <span>{{ item.label }}</span>
         @if(item.badge)

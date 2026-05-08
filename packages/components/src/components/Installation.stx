@@ -1,6 +1,4 @@
-<script>
-import { CodeBlock } from './CodeBlock.stx'
-
+<script server>
 export const packageName = $props.packageName || '@stacksjs/component'
 export const installCode = `bun add ${packageName}`
 export const npmCode = `npm install ${packageName}`
@@ -18,22 +16,22 @@ export const yarnCode = `yarn add ${packageName}`
   <div class="space-y-4">
     <div>
       <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">Bun (recommended)</h3>
-      @component('CodeBlock', { code: installCode, language: 'bash' })
+      <CodeBlock :code="installCode" language="bash" />
     </div>
 
     <div>
       <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">npm</h3>
-      @component('CodeBlock', { code: npmCode, language: 'bash' })
+      <CodeBlock :code="npmCode" language="bash" />
     </div>
 
     <div>
       <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">pnpm</h3>
-      @component('CodeBlock', { code: pnpmCode, language: 'bash' })
+      <CodeBlock :code="pnpmCode" language="bash" />
     </div>
 
     <div>
       <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">Yarn</h3>
-      @component('CodeBlock', { code: yarnCode, language: 'bash' })
+      <CodeBlock :code="yarnCode" language="bash" />
     </div>
   </div>
 </div>
