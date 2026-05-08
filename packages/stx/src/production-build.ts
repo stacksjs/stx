@@ -884,10 +884,15 @@ export class ProductionBuild {
         const mapPath = `${output.path}.map`
         await Bun.write(mapPath, JSON.stringify(sourceMap))
 
-        // Add source map reference to file
+        // Add source map reference to file. The pragma marker is constructed
+        // piecewise so this file's own bundled output doesn't contain a literal
+        // `//# sourceMappingURL=` at column 0, which would trip Bun's runtime
+        // sourcemap scanner into trying (and failing) to decode this module
+        // when it's loaded from node_modules.
+        const pragma = `\n${['/', '/# sourceMappingURL='].join('')}`
         const sourceMappingURL = this.config.sourcemaps === 'inline'
-          ? `\n//# sourceMappingURL=data:application/json;base64,${Buffer.from(JSON.stringify(sourceMap)).toString('base64')}`
-          : `\n//# sourceMappingURL=${basename(mapPath)}`
+          ? `${pragma}data:application/json;base64,${Buffer.from(JSON.stringify(sourceMap)).toString('base64')}`
+          : `${pragma}${basename(mapPath)}`
 
         if (this.config.sourcemaps !== 'hidden') {
           await Bun.write(output.path, content + sourceMappingURL)

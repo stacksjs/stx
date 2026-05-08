@@ -333,21 +333,24 @@ export class SourceMapGenerator {
    * Generate as inline comment for HTML
    */
   toInlineComment(): string {
-    return `<!--# sourceMappingURL=${this.toDataURL()} -->`
+    return `<!--${['#', ' sourceMappingURL='].join('')}${this.toDataURL()} -->`
   }
 
   /**
-   * Generate as inline comment for JavaScript
+   * Generate as inline comment for JavaScript.
+   * The `//#` marker is built piecewise so this module's own bundled output
+   * doesn't ship a literal sourcemap pragma that downstream sourcemap scanners
+   * would try (and fail) to decode.
    */
   toJSInlineComment(): string {
-    return `//# sourceMappingURL=${this.toDataURL()}`
+    return `${['/', '/# sourceMappingURL='].join('')}${this.toDataURL()}`
   }
 
   /**
    * Generate as inline comment for CSS
    */
   toCSSInlineComment(): string {
-    return `/*# sourceMappingURL=${this.toDataURL()} */`
+    return `/*${['#', ' sourceMappingURL='].join('')}${this.toDataURL()} */`
   }
 }
 

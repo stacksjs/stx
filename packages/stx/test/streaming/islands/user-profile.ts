@@ -206,7 +206,7 @@ function setupNotifications(element: HTMLElement): void {
 
   // Setup notification panel
   const panel = document.createElement('div')
-  panel.className = 'notification-panel hidden'
+  panel.className = 'hidden notification-panel'
   panel.innerHTML = `
     <h4>Notifications</h4>
     <ul class="notification-list">

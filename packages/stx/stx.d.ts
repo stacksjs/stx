@@ -59,40 +59,40 @@ type StxCleanup = () => void
 // Signals (modern reactivity)
 // ============================================================================
 
-declare function state<T>(initial: T): StxSignal<T>
-declare function derived<T>(compute: () => T): StxDerivedSignal<T>
-declare function effect(fn: () => void | StxCleanup): StxCleanup
-declare function batch(fn: () => void): void
-declare function untrack<T>(value: T | StxSignal<T> | StxDerivedSignal<T>): T
-declare function peek<T>(fn: () => T): T
-declare function isSignal(value: unknown): value is StxSignal<unknown>
-declare function isDerived(value: unknown): value is StxDerivedSignal<unknown>
+declare function state<T>(_initial: T): StxSignal<T>
+declare function derived<T>(_compute: () => T): StxDerivedSignal<T>
+declare function effect(_fn: () => void | StxCleanup): StxCleanup
+declare function batch(_fn: () => void): void
+declare function untrack<T>(_value: T | StxSignal<T> | StxDerivedSignal<T>): T
+declare function peek<T>(_fn: () => T): T
+declare function isSignal(_value: unknown): value is StxSignal<unknown>
+declare function isDerived(_value: unknown): value is StxDerivedSignal<unknown>
 
 // ============================================================================
 // Lifecycle
 // ============================================================================
 
-declare function onMount(fn: () => void | StxCleanup): void
-declare function onDestroy(fn: () => void): void
-declare function onBeforeMount(fn: () => void): void
-declare function onMounted(fn: () => void | StxCleanup): void
-declare function onBeforeUpdate(fn: () => void): void
-declare function onUpdated(fn: () => void): void
-declare function onBeforeUnmount(fn: () => void): void
-declare function onUnmounted(fn: () => void): void
-declare function onErrorCaptured(fn: (error: unknown, instance: any, info: string) => boolean | void): void
+declare function onMount(_fn: () => void | StxCleanup): void
+declare function onDestroy(_fn: () => void): void
+declare function onBeforeMount(_fn: () => void): void
+declare function onMounted(_fn: () => void | StxCleanup): void
+declare function onBeforeUpdate(_fn: () => void): void
+declare function onUpdated(_fn: () => void): void
+declare function onBeforeUnmount(_fn: () => void): void
+declare function onUnmounted(_fn: () => void): void
+declare function onErrorCaptured(_fn: (error: unknown, instance: any, info: string) => boolean | void): void
 
 // ============================================================================
 // Template refs
 // ============================================================================
 
-declare function useRef<T = HTMLElement>(name: string): { current: T | null }
+declare function useRef<T = HTMLElement>(_name: string): { current: T | null }
 
 // ============================================================================
 // Routing / navigation
 // ============================================================================
 
-declare function navigate(url: string, options?: { replace?: boolean }): void
+declare function navigate(_url: string, options?: { replace?: boolean }): void
 declare function goBack(): void
 declare function goForward(): void
 declare function useRoute(): {
@@ -101,7 +101,7 @@ declare function useRoute(): {
   query: Record<string, string>
   hash: string
 }
-declare function setRouteParams(params: Record<string, string>): void
+declare function setRouteParams(_params: Record<string, string>): void
 declare function useSearchParams(): {
   get: (key: string) => string | null
   set: (key: string, value: string) => void
@@ -127,9 +127,9 @@ interface StxMutationResult<T> {
   mutate: (body?: any) => Promise<T>
 }
 
-declare function useFetch<T = any>(url: string, options?: any): StxQueryResult<T>
-declare function useQuery<T = any>(url: string, options?: any): StxQueryResult<T>
-declare function useMutation<T = any>(url: string, options?: any): StxMutationResult<T>
+declare function useFetch<T = any>(_url: string, options?: any): StxQueryResult<T>
+declare function useQuery<T = any>(_url: string, options?: any): StxQueryResult<T>
+declare function useMutation<T = any>(_url: string, options?: any): StxMutationResult<T>
 
 // ============================================================================
 // DOM utilities
@@ -147,23 +147,23 @@ declare function useEventListener(
   handler: (event: Event) => void,
   options?: boolean | AddEventListenerOptions,
 ): StxCleanup
-declare function useMeta(meta: Record<string, string>): void
-declare function useClickOutside(target: any, handler: (event: MouseEvent) => void): StxCleanup
-declare function useFocus(target: any): { focused: StxSignal<boolean>, focus: () => void, blur: () => void }
+declare function useMeta(_meta: Record<string, string>): void
+declare function useClickOutside(_target: any, _handler: (event: MouseEvent) => void): StxCleanup
+declare function useFocus(_target: any): { focused: StxSignal<boolean>, focus: () => void, blur: () => void }
 
 // ============================================================================
 // Timers / scheduling
 // ============================================================================
 
 declare function useDebounce<T extends (...args: any[]) => any>(fn: T, delay: number): T
-declare function useDebouncedValue<T>(value: StxSignal<T>, delay: number): StxSignal<T>
+declare function useDebouncedValue<T>(_value: StxSignal<T>, _delay: number): StxSignal<T>
 declare function useThrottle<T extends (...args: any[]) => any>(fn: T, delay: number): T
-declare function useInterval(fn: () => void, ms: number, options?: { immediate?: boolean }): {
+declare function useInterval(_fn: () => void, ms: number, options?: { immediate?: boolean }): {
   start: () => void
   stop: () => void
   isActive: StxSignal<boolean>
 }
-declare function useTimeout(fn: () => void, ms: number): {
+declare function useTimeout(_fn: () => void, ms: number): {
   start: () => void
   stop: () => void
   isPending: StxSignal<boolean>
@@ -182,7 +182,7 @@ declare function useCounter(initial?: number, options?: { min?: number, max?: nu
   set: (n: number) => void
   reset: () => void
 }
-declare function useAsync<T>(fn: () => Promise<T>): {
+declare function useAsync<T>(_fn: () => Promise<T>): {
   data: StxSignal<T | null>
   loading: StxSignal<boolean>
   error: StxSignal<Error | null>
@@ -193,14 +193,14 @@ declare function useAsync<T>(fn: () => Promise<T>): {
 // Storage
 // ============================================================================
 
-declare function useLocalStorage<T>(key: string, defaultValue: T): StxSignal<T>
-declare function useSessionStorage<T>(key: string, defaultValue: T): StxSignal<T>
+declare function useLocalStorage<T>(_key: string, _defaultValue: T): StxSignal<T>
+declare function useSessionStorage<T>(_key: string, _defaultValue: T): StxSignal<T>
 
 // ============================================================================
 // WebSocket
 // ============================================================================
 
-declare function useWebSocket(url: string, options?: {
+declare function useWebSocket(_url: string, options?: {
   immediate?: boolean
   autoReconnect?: boolean | { retries?: number, delay?: number }
   onMessage?: (event: MessageEvent) => void
@@ -259,22 +259,22 @@ interface StxSeoMetaConfig {
   canonical?: string
 }
 
-declare function useHead(config: StxHeadConfig): void
-declare function useSeoMeta(config: StxSeoMetaConfig): void
+declare function useHead(_config: StxHeadConfig): void
+declare function useSeoMeta(_config: StxSeoMetaConfig): void
 
 // ============================================================================
 // Vue-style reactivity (alternative API)
 // ============================================================================
 
-declare function ref<T>(value: T): StxRef<T>
-declare function reactive<T extends object>(target: T): T
-declare function computed<T>(getter: () => T): StxRef<T>
+declare function ref<T>(_value: T): StxRef<T>
+declare function reactive<T extends object>(_target: T): T
+declare function computed<T>(_getter: () => T): StxRef<T>
 declare function watch<T>(
   source: (() => T) | StxRef<T> | StxSignal<T>,
   callback: (value: T, oldValue: T) => void,
   options?: { immediate?: boolean, deep?: boolean },
 ): StxCleanup
-declare function watchEffect(fn: () => void): StxCleanup
+declare function watchEffect(_fn: () => void): StxCleanup
 declare function watchMultiple(
   sources: Array<() => any>,
   callback: (values: any[], oldValues: any[]) => void,
@@ -286,15 +286,15 @@ declare function watchMultiple(
 // ============================================================================
 
 declare function defineProps<T extends Record<string, any> = Record<string, any>>(definitions?: any): T
-declare function withDefaults<T extends Record<string, any>>(props: T, defaults: Partial<T>): T
+declare function withDefaults<T extends Record<string, any>>(_props: T, _defaults: Partial<T>): T
 declare function defineEmits<T extends string = string>(): (event: T, payload?: any) => void
-declare function defineExpose<T extends Record<string, any>>(exposed: T): void
-declare function provide<T>(key: string | symbol, value: T): void
-declare function inject<T>(key: string | symbol, defaultValue?: T): T | undefined
+declare function defineExpose<T extends Record<string, any>>(_exposed: T): void
+declare function provide<T>(_key: string | symbol, _value: T): void
+declare function inject<T>(_key: string | symbol, defaultValue?: T): T | undefined
 declare function getCurrentInstance(): any
 declare function useSlots(): Record<string, any>
 declare function useAttrs(): Record<string, any>
-declare function $computed<T>(getter: () => T): StxRef<T>
+declare function $computed<T>(_getter: () => T): StxRef<T>
 declare function $watch<T>(
   source: (() => T) | StxRef<T> | StxSignal<T>,
   callback: (value: T, oldValue: T) => void,
@@ -371,10 +371,10 @@ interface StxDialogOptions {
 }
 
 /** Styled replacement for window.alert(). Returns a Promise that resolves when dismissed. */
-declare function stxAlert(message: string, options?: StxDialogOptions): Promise<void>
+declare function stxAlert(_message: string, options?: StxDialogOptions): Promise<void>
 
 /** Styled replacement for window.confirm(). Returns a Promise<boolean>. */
-declare function stxConfirm(message: string, options?: StxDialogOptions): Promise<boolean>
+declare function stxConfirm(_message: string, options?: StxDialogOptions): Promise<boolean>
 
 // ============================================================================
 // Stores (Pinia-inspired, signals-based)
@@ -404,8 +404,8 @@ declare function defineStore<S extends Record<string, any>, G extends Record<str
     persist?: boolean | StxStorePersistOptions
   },
 ): () => S & G & A
-declare function useStore<T = any>(id: string): T
-declare function createStore<T>(setup: () => T, options?: StxStoreOptions): () => T
+declare function useStore<T = any>(_id: string): T
+declare function createStore<T>(_setup: () => T, options?: StxStoreOptions): () => T
 declare function action<T extends (...args: any[]) => any>(fn: T): T
 declare function createSelector<T, R>(selector: (state: T) => R): (state: T) => R
 
@@ -413,7 +413,7 @@ declare function createSelector<T, R>(selector: (state: T) => R): (state: T) => 
 // JSX runtime (Vue/React style)
 // ============================================================================
 
-declare function h(tag: string | Function, props?: Record<string, any> | null, ...children: any[]): any
+declare function h(_tag: string | Function, props?: Record<string, any> | null, ...children: any[]): any
 declare const Fragment: unique symbol
 
 // ============================================================================

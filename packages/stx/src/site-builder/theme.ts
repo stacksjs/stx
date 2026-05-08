@@ -40,11 +40,15 @@ export interface ThemeOptions {
 //     so it wins HTML's first-match priority over any media-queried
 //     alternates the framework also ships for the (sub-millisecond)
 //     window before this script runs.
-//   - On SPA hops it re-asserts the meta on `stx:navigate` and after a
-//     `popstate` so the URL bar tint stays locked to the user's
-//     selection — view-transitions or destination-doc differences
-//     can't flash the chrome through the wrong color.
-const FOUC_SCRIPT = (defaultTheme: string, storageKey: string, lightColor: string, darkColor: string) => `(function(){function read(){try{var k=${JSON.stringify(storageKey)};var t=localStorage.getItem(k);return t===null?(${JSON.stringify(defaultTheme)}==='dark'||(${JSON.stringify(defaultTheme)}==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches)):t==='dark'}catch(e){return ${JSON.stringify(defaultTheme)}==='dark'}}function apply(){var isDark=read();var html=document.documentElement;html.classList[isDark?'add':'remove']('dark');var color=isDark?${JSON.stringify(darkColor)}:${JSON.stringify(lightColor)};var tc=document.querySelector('meta[name="theme-color"]:not([media])');if(tc){tc.setAttribute('content',color)}else if(document.head){tc=document.createElement('meta');tc.setAttribute('name','theme-color');tc.setAttribute('content',color);tc.setAttribute('data-stx-theme-meta','1');document.head.insertBefore(tc,document.head.firstChild)}}apply();window.addEventListener('stx:navigate',apply);window.addEventListener('popstate',apply)})();`
+//   - On SPA hops it re-asserts BOTH the content AND the position of
+//     the meta on `stx:navigate` and `popstate`. Re-prepending (not
+//     just updating content) defends against any future code path —
+//     router-side mutations, third-party scripts, view-transition
+//     snapshot quirks — that might reorder head children and let a
+//     media-queried sibling win the first-match-wins ordering, which
+//     would briefly tint the URL bar to the OS preference instead of
+//     the stored selection.
+const FOUC_SCRIPT = (defaultTheme: string, storageKey: string, lightColor: string, darkColor: string) => `(function(){function read(){try{var k=${JSON.stringify(storageKey)};var t=localStorage.getItem(k);return t===null?(${JSON.stringify(defaultTheme)}==='dark'||(${JSON.stringify(defaultTheme)}==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches)):t==='dark'}catch(e){return ${JSON.stringify(defaultTheme)}==='dark'}}function apply(){var isDark=read();var html=document.documentElement;html.classList[isDark?'add':'remove']('dark');var color=isDark?${JSON.stringify(darkColor)}:${JSON.stringify(lightColor)};if(!document.head)return;var tc=document.querySelector('meta[name="theme-color"]:not([media])');if(!tc){tc=document.createElement('meta');tc.setAttribute('name','theme-color');tc.setAttribute('data-stx-theme-meta','1')}tc.setAttribute('content',color);if(tc!==document.head.firstChild){document.head.insertBefore(tc,document.head.firstChild)}}apply();window.addEventListener('stx:navigate',apply);window.addEventListener('popstate',apply)})();`
 
 const TOGGLE_HANDLER = (storageKey: string, lightColor: string, darkColor: string) => `document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#theme-toggle');if(!t)return;var html=document.documentElement;var isDark=html.classList.toggle('dark');try{localStorage.setItem(${JSON.stringify(storageKey)},isDark?'dark':'light')}catch(e){}var tc=document.querySelector('meta[name="theme-color"]:not([media])');if(tc)tc.setAttribute('content',isDark?${JSON.stringify(darkColor)}:${JSON.stringify(lightColor)})});`
 

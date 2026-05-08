@@ -25,6 +25,7 @@ import { registerBuiltins } from './builtins'
 import { findComponentTags, parseMultilineAttributes, pascalToKebab } from './component-processing'
 import { renderComponentWithSlot } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
+import fs from 'node:fs'
 import path from 'node:path'
 
 /** Guard flag to ensure builtins are registered exactly once. */
@@ -363,6 +364,221 @@ function findUnresolvedBuiltinTags(template: string): string[] {
   }
 
   return [...unresolved].sort()
+}
+
+/**
+ * Resolve a `.stx` file inside a package directory by component name.
+ *
+ * Looks for `<Name>.stx` (PascalCase) anywhere under `pkgDir/src/` or `pkgDir/dist/`,
+ * preferring shallower matches. Returns the absolute path or null.
+ *
+ * Cache keyed by pkgDir so repeated lookups don't re-walk the tree.
+ */
+const pkgStxIndexCache = new Map<string, Map<string, string>>()
+
+function buildStxIndex(pkgDir: string): Map<string, string> {
+  const cached = pkgStxIndexCache.get(pkgDir)
+  if (cached) return cached
+
+  const index = new Map<string, string>()
+  const roots = [path.join(pkgDir, 'src'), path.join(pkgDir, 'dist'), pkgDir]
+
+  function walk(dir: string, depth: number) {
+    if (depth > 6) return
+    let entries: fs.Dirent[]
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    }
+    catch {
+      return
+    }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue
+        walk(full, depth + 1)
+      }
+      else if (entry.isFile() && entry.name.endsWith('.stx')) {
+        const base = entry.name.slice(0, -4)
+        // Prefer shallower matches — only set if not already present
+        if (!index.has(base)) index.set(base, full)
+        const lower = base.toLowerCase()
+        if (!index.has(lower)) index.set(lower, full)
+        const kebab = base.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+        if (!index.has(kebab)) index.set(kebab, full)
+      }
+    }
+  }
+
+  for (const root of roots) {
+    walk(root, 0)
+    if (index.size > 0) break
+  }
+
+  pkgStxIndexCache.set(pkgDir, index)
+  return index
+}
+
+/**
+ * Resolve a module specifier (e.g. '@stacksjs/components' or './foo') to a
+ * package directory on disk, walking up node_modules from `fromDir`.
+ */
+function resolvePackageDir(spec: string, fromDir: string): string | null {
+  // Handle relative paths — caller should resolve those before calling here
+  if (spec.startsWith('.') || spec.startsWith('/')) return null
+
+  // Walk up looking for node_modules/<spec>
+  let dir = fromDir
+  while (true) {
+    const candidate = path.join(dir, 'node_modules', spec)
+    try {
+      if (fs.statSync(candidate).isDirectory()) return candidate
+    }
+    catch {
+      // Not here — keep walking
+    }
+    const parent = path.dirname(dir)
+    if (parent === dir) return null
+    dir = parent
+  }
+}
+
+/**
+ * Process ES `import { A, B } from '<spec>'` statements inside `<script>` tags
+ * for component tag registration. Registers each named import as a tag pointing
+ * at the matching `.stx` file (resolved by component name within the package or
+ * relative directory) and strips the import line from the script body so it
+ * doesn't run as JS at template runtime.
+ *
+ * - `<spec>` may be a bare module specifier (resolved via node_modules walk) or
+ *   a relative path to a directory or a single `.stx` file.
+ * - Default imports (`import Foo from '...'`) are also supported when `<spec>`
+ *   resolves to a single `.stx` file.
+ * - Named imports referencing non-`.stx` exports are left untouched in the script.
+ */
+async function processESImports(
+  template: string,
+  context: Record<string, any>,
+  filePath: string,
+  options: StxOptions,
+  dependencies: Set<string>,
+): Promise<string> {
+  if (!template.includes('import')) return template
+
+  if (!context.__importedComponents) {
+    context.__importedComponents = new Map<string, string>()
+  }
+  const registered = context.__importedComponents as Map<string, string>
+
+  const fromDir = path.dirname(filePath)
+  let output = template
+
+  // Find all <script ...>...</script> blocks
+  const scriptRe = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+  output = output.replace(scriptRe, (full, attrs: string, body: string) => {
+    // import { A, B as C } from 'spec'
+    // import Default from 'spec'
+    // (also matches multi-line forms)
+    const importRe = /import\s+(?:(\{[^}]*\})|([A-Za-z_$][\w$]*))\s+from\s+['"]([^'"]+)['"]\s*;?\s*\n?/g
+    let newBody = body
+    let m: RegExpExecArray | null
+    const removals: Array<{ start: number; end: number }> = []
+
+    while ((m = importRe.exec(body)) !== null) {
+      const [matchStr, namedBlock, defaultName, spec] = m
+
+      // Resolve the spec to a directory or single file
+      let pkgDir: string | null = null
+      let singleFile: string | null = null
+
+      if (spec.startsWith('.') || spec.startsWith('/')) {
+        const abs = path.resolve(fromDir, spec)
+        if (abs.endsWith('.stx')) {
+          singleFile = abs
+        }
+        else {
+          // Try as a single .stx file with extension
+          const withExt = `${abs}.stx`
+          try {
+            if (fs.statSync(withExt).isFile()) singleFile = withExt
+          }
+          catch {
+            // Not a file — try as directory
+            try {
+              if (fs.statSync(abs).isDirectory()) pkgDir = abs
+            }
+            catch {
+              // Skip
+            }
+          }
+        }
+      }
+      else {
+        pkgDir = resolvePackageDir(spec, fromDir)
+      }
+
+      if (!pkgDir && !singleFile) continue // Leave as-is (regular JS import)
+
+      let consumedAny = false
+
+      const register = (name: string, file: string) => {
+        registered.set(name, file)
+        registered.set(name.toLowerCase(), file)
+        const kebab = name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+        registered.set(kebab, file)
+        dependencies.add(file)
+      }
+
+      if (defaultName && singleFile) {
+        register(defaultName, singleFile)
+        consumedAny = true
+      }
+      else if (namedBlock) {
+        // Parse "{ A, B as C, D }" — capture identifier and optional alias
+        const names = namedBlock
+          .slice(1, -1)
+          .split(',')
+          .map(n => n.trim())
+          .filter(Boolean)
+          .map((n) => {
+            const asMatch = n.match(/^([A-Za-z_$][\w$]*)\s+as\s+([A-Za-z_$][\w$]*)$/)
+            if (asMatch) return { source: asMatch[1], local: asMatch[2] }
+            return { source: n, local: n }
+          })
+
+        const index = pkgDir ? buildStxIndex(pkgDir) : null
+        for (const { source, local } of names) {
+          let file: string | null = null
+          if (singleFile) {
+            file = singleFile
+          }
+          else if (index) {
+            file = index.get(source)
+              ?? index.get(source.toLowerCase())
+              ?? index.get(source.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase())
+              ?? null
+          }
+          if (file) {
+            register(local, file)
+            consumedAny = true
+          }
+        }
+      }
+
+      if (consumedAny) {
+        removals.push({ start: m.index, end: m.index + matchStr.length })
+      }
+    }
+
+    // Remove consumed imports from script body (in reverse to preserve indices)
+    if (removals.length === 0) return full
+    for (let i = removals.length - 1; i >= 0; i--) {
+      newBody = newBody.slice(0, removals[i].start) + newBody.slice(removals[i].end)
+    }
+    return `<script${attrs}>${newBody}</script>`
+  })
+
+  return output
 }
 
 /**
@@ -789,8 +1005,12 @@ export async function processComponents(
     builtinsRegistered = true
   }
 
-  // Step 2: Process @import directives
-  let output = await processImports(template, context, filePath, options, dependencies)
+  // Step 2: Process ES `import { X } from 'pkg'` statements in <script> blocks
+  // and register matching .stx files as component tags.
+  let output = await processESImports(template, context, filePath, options, dependencies)
+
+  // Step 3: Process @import directives
+  output = await processImports(output, context, filePath, options, dependencies)
 
   // Step 3: Process @component directives
   output = await processComponentDirectives(output, context, filePath, options, dependencies)
