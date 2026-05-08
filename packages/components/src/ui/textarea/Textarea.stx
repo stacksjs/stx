@@ -1,6 +1,5 @@
 <script server>
 export const value = $props.value || ''
-export const onChange = $props.onChange || (() => {})
 export const placeholder = $props.placeholder || ''
 export const disabled = $props.disabled || false
 export const readonly = $props.readonly || false
@@ -13,24 +12,14 @@ export const helperText = $props.helperText || ''
 export const required = $props.required || false
 export const maxLength = $props.maxLength
 export const showCount = $props.showCount || false
-export const resize = $props.resize || 'vertical' // 'none' | 'vertical' | 'horizontal' | 'both'
+export const resize = $props.resize || 'vertical'
 export const className = $props.className || ''
 
-// Resize classes
-const resizeClasses = {
-  none: 'resize-none',
-  vertical: 'resize-y',
-  horizontal: 'resize-x',
-  both: 'resize',
-}
-
-// Base and state classes
+const resizeClasses = { none: 'resize-none', vertical: 'resize-y', horizontal: 'resize-x', both: 'resize' }
 const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset px-4 py-2 text-base dark:bg-blue-gray-700 dark:text-gray-100'
-
 const stateClasses = error
   ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
   : 'ring-gray-300 dark:ring-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-indigo-600 dark:focus:ring-indigo-400'
-
 const disabledClasses = disabled
   ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
   : readonly
@@ -40,6 +29,40 @@ const disabledClasses = disabled
 export const textareaClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${resizeClasses[resize]} ${className}`.trim()
 export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}`.trim()
 export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`.trim()
+</script>
+
+<script client>
+const emit = defineEmits()
+const autoResize = {{ autoResize }}
+const maxRows = {{ maxRows }}
+const inputValue = state({{ value }})
+
+function resizeTextarea(el) {
+  if (!autoResize) return
+  el.style.height = 'auto'
+  const scrollHeight = el.scrollHeight
+  const lineHeight = Number.parseInt(window.getComputedStyle(el).lineHeight) || 20
+  const maxHeight = lineHeight * maxRows
+  el.style.height = `${Math.min(scrollHeight, maxHeight)}px`
+  el.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden'
+}
+
+function onInput(event) {
+  inputValue.set(event.target.value)
+  resizeTextarea(event.target)
+  emit('input', inputValue())
+}
+
+onMount(() => {
+  if (autoResize) {
+    const el = document.getElementById('textarea-input')
+    if (el) resizeTextarea(el)
+  }
+})
+
+const charCount = derived(() => `${inputValue().length} / {{ maxLength || 0 }}`)
+
+defineExpose({ value: inputValue })
 </script>
 
 <div class="w-full">
@@ -57,12 +80,12 @@ export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red
     class="{{ textareaClasses }}"
     rows="{{ rows }}"
     placeholder="{{ placeholder }}"
-    disabled="{{ disabled }}"
-    readonly="{{ readonly }}"
-    required="{{ required }}"
+    @if(disabled)disabled@endif
+    @if(readonly)readonly@endif
+    @if(required)required@endif
     @if(maxLength)maxlength="{{ maxLength }}"@endif
-    oninput="handleInput(event)"
-    aria-invalid="{{ error ? 'true' : 'false' }}"
+    @input="onInput($event)"
+    :aria-invalid="{{ error ? 'true' : 'false' }}"
     @if(helperText)aria-describedby="helper-text"@endif
   >{{ value }}</textarea>
 
@@ -77,43 +100,8 @@ export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red
       @endif
 
       @if(showCount && maxLength)
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          {{ value.length }} / {{ maxLength }}
-        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-400" x-text="charCount()"></p>
       @endif
     </div>
   @endif
 </div>
-
-<script>
-function handleInput(event) {
-  const textarea = event.target
-  const newValue = textarea.value
-
-  if (autoResize && typeof window !== 'undefined') {
-    // Auto-resize functionality
-    textarea.style.height = 'auto'
-    const scrollHeight = textarea.scrollHeight
-    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight)
-    const maxHeight = lineHeight * maxRows
-
-    textarea.style.height = Math.min(scrollHeight, maxHeight) + 'px'
-    textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden'
-  }
-
-  if (onChange) {
-    onChange(newValue)
-  }
-}
-
-// Initialize auto-resize on mount
-if (autoResize && typeof window !== 'undefined') {
-  window.addEventListener('DOMContentLoaded', () => {
-    const textarea = document.getElementById('textarea-input')
-    if (textarea && value) {
-      // Trigger initial resize
-      textarea.dispatchEvent(new Event('input'))
-    }
-  })
-}
-</script>

@@ -1,6 +1,5 @@
 <script server>
 export const value = $props.value || ''
-export const onChange = $props.onChange || (() => {})
 export const placeholder = $props.placeholder || '0'
 export const disabled = $props.disabled || false
 export const readonly = $props.readonly || false
@@ -16,31 +15,52 @@ export const showControls = $props.showControls ?? true
 export const className = $props.className || ''
 export const inputClassName = $props.inputClassName || ''
 
-// Size classes
-const sizeClasses = {
-  sm: 'px-3 py-1.5 text-sm h-8',
-  md: 'px-4 py-2 text-base h-10',
-  lg: 'px-5 py-3 text-lg h-12',
-}
-
-// Base and state classes
+const sizeClasses = { sm: 'px-3 py-1.5 text-sm h-8', md: 'px-4 py-2 text-base h-10', lg: 'px-5 py-3 text-lg h-12' }
 const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-blue-gray-700 dark:text-gray-100'
-
 const stateClasses = error
   ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
   : 'ring-gray-300 dark:ring-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-indigo-600 dark:focus:ring-indigo-400'
-
 const disabledClasses = disabled
   ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
   : readonly
     ? 'bg-gray-50 dark:bg-gray-800 cursor-default'
     : 'bg-white dark:bg-blue-gray-700'
-
 const paddingClasses = showControls ? 'pr-10' : ''
 
 export const inputClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses} ${paddingClasses} ${inputClassName}`.trim()
 export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}`.trim()
 export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`.trim()
+</script>
+
+<script client>
+const emit = defineEmits()
+const stepSize = {{ step }}
+const minVal = {{ min === undefined ? 'undefined' : min }}
+const maxVal = {{ max === undefined ? 'undefined' : max }}
+const inputValue = state({{ value }})
+
+function onInput(event) {
+  inputValue.set(event.target.value)
+  emit('input', inputValue())
+}
+
+function increment() {
+  const current = Number.parseFloat(inputValue()) || 0
+  const next = current + stepSize
+  if (maxVal !== undefined && next > maxVal) return
+  inputValue.set(String(next))
+  emit('input', String(next))
+}
+
+function decrement() {
+  const current = Number.parseFloat(inputValue()) || 0
+  const next = current - stepSize
+  if (minVal !== undefined && next < minVal) return
+  inputValue.set(String(next))
+  emit('input', String(next))
+}
+
+defineExpose({ value: inputValue, increment, decrement })
 </script>
 
 <div class="w-full {{ className }}">
@@ -58,25 +78,24 @@ export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red
       type="number"
       id="number-input"
       class="{{ inputClasses }}"
-      value="{{ value }}"
+      :value="inputValue()"
       placeholder="{{ placeholder }}"
-      disabled="{{ disabled }}"
-      readonly="{{ readonly }}"
-      required="{{ required }}"
+      @if(disabled)disabled@endif
+      @if(readonly)readonly@endif
+      @if(required)required@endif
       @if(min !== undefined)min="{{ min }}"@endif
       @if(max !== undefined)max="{{ max }}"@endif
       step="{{ step }}"
-      oninput="handleInput(event)"
-      aria-invalid="{{ error ? 'true' : 'false' }}"
+      @input="onInput($event)"
+      :aria-invalid="{{ error ? 'true' : 'false' }}"
       @if(helperText)aria-describedby="helper-text"@endif
     />
 
     @if(showControls && !disabled && !readonly)
-      <!-- Increment/Decrement controls -->
       <div class="absolute inset-y-0 right-0 flex flex-col">
         <button
           type="button"
-          @click="handleIncrement()"
+          @click="increment()"
           class="flex items-center justify-center w-8 h-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none border-b border-gray-300 dark:border-gray-600"
           aria-label="Increment"
         >
@@ -86,7 +105,7 @@ export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red
         </button>
         <button
           type="button"
-          @click="handleDecrement()"
+          @click="decrement()"
           class="flex items-center justify-center w-8 h-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
           aria-label="Decrement"
         >
@@ -104,35 +123,3 @@ export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red
     </p>
   @endif
 </div>
-
-<script>
-function handleInput(event) {
-  const newValue = event.target.value
-
-  if (onChange) {
-    onChange(newValue)
-  }
-}
-
-function handleIncrement() {
-  const currentValue = parseFloat(value) || 0
-  const newValue = currentValue + step
-
-  if (max !== undefined && newValue > max) return
-
-  if (onChange) {
-    onChange(String(newValue))
-  }
-}
-
-function handleDecrement() {
-  const currentValue = parseFloat(value) || 0
-  const newValue = currentValue - step
-
-  if (min !== undefined && newValue < min) return
-
-  if (onChange) {
-    onChange(String(newValue))
-  }
-}
-</script>
