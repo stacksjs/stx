@@ -9,45 +9,63 @@ export const striped = $props.striped || false
 export const hoverable = $props.hoverable ?? true
 export const className = $props.className || ''
 
-// Calculate visible range
-let scrollTop = 0
-const visibleCount = Math.ceil((height - headerHeight) / rowHeight)
-const totalHeight = data.length * rowHeight
-
-function getVisibleRange() {
-  const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan)
-  const endIndex = Math.min(data.length - 1, Math.floor((scrollTop + height - headerHeight) / rowHeight) + overscan)
-  return { startIndex, endIndex }
-}
-
-const { startIndex, endIndex } = getVisibleRange()
-const visibleRows = data.slice(startIndex, endIndex + 1)
-const offsetY = startIndex * rowHeight
-
-function handleScroll(event) {
-  const target = event.target
-  scrollTop = target.scrollTop
-}
-
-// Get cell value
-function getCellValue(row, column) {
-  if (column.render) {
-    return column.render(row[column.key], row)
-  }
-  return row[column.key]
-}
-
+export const totalHeight = data.length * rowHeight
 export const containerClasses = `border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden ${className}`.trim()
 export const headerClasses = `bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex`.trim()
 export const headerCellClasses = `px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider`.trim()
 export const bodyClasses = `overflow-auto bg-white dark:bg-gray-900`.trim()
-export const innerClasses = `relative`.trim()
 export const rowClasses = `absolute left-0 right-0 flex border-b border-gray-200 dark:border-gray-700 ${hoverable ? 'hover:bg-gray-50 dark:hover:bg-gray-800' : ''}`.trim()
 export const cellClasses = `px-6 py-4 text-sm text-gray-900 dark:text-gray-100`.trim()
 </script>
 
+<script client>
+const data = {{ data }}
+const columns = {{ columns }}
+const rowHeight = {{ rowHeight }}
+const height = {{ height }}
+const headerHeight = {{ headerHeight }}
+const overscan = {{ overscan }}
+const striped = {{ striped }}
+
+const scrollTop = state(0)
+
+const visibleRows = derived(() => {
+  const top = scrollTop()
+  const startIndex = Math.max(0, Math.floor(top / rowHeight) - overscan)
+  const endIndex = Math.min(data.length - 1, Math.floor((top + height - headerHeight) / rowHeight) + overscan)
+  const out = []
+  for (let i = startIndex; i <= endIndex; i++) {
+    out.push({
+      row: data[i],
+      index: i,
+      top: i * rowHeight,
+      striped: striped && (i % 2 === 1),
+    })
+  }
+  return out
+})
+
+function getCellValue(row, column) {
+  if (column.render) return column.render(row[column.key], row)
+  return row[column.key]
+}
+
+let ticking = false
+function onScroll(event) {
+  const target = event.target
+  if (!ticking) {
+    requestAnimationFrame(() => {
+      scrollTop.set(target.scrollTop)
+      ticking = false
+    })
+    ticking = true
+  }
+}
+
+defineExpose({ scrollTop })
+</script>
+
 <div class="{{ containerClasses }}">
-  <!-- Header -->
   <div class="{{ headerClasses }}" style="height: {{ headerHeight }}px">
     @foreach(column in columns)
       <div
@@ -59,55 +77,27 @@ export const cellClasses = `px-6 py-4 text-sm text-gray-900 dark:text-gray-100`.
     @endforeach
   </div>
 
-  <!-- Body -->
   <div
     class="{{ bodyClasses }}"
     style="height: {{ height - headerHeight }}px"
-    onscroll="handleScroll(event)"
+    @scroll="onScroll($event)"
   >
-    <div
-      class="{{ innerClasses }}"
-      style="height: {{ totalHeight }}px"
-    >
-      @foreach(row in visibleRows)
+    <div class="relative" style="height: {{ totalHeight }}px">
+      <div
+        :for="entry in visibleRows()"
+        :key="entry.index"
+        :class="entry.striped ? '{{ rowClasses }} bg-gray-50 dark:bg-gray-800' : '{{ rowClasses }}'"
+        :style="`top: ${entry.top}px; height: {{ rowHeight }}px`"
+        :data-index="entry.index"
+      >
         <div
-          class="{{ rowClasses }} {{ striped && ($loop.index % 2 === 1) ? 'bg-gray-50 dark:bg-gray-800' : '' }}"
-          style="top: {{ (startIndex + $loop.index) * rowHeight }}px; height: {{ rowHeight }}px"
-          data-index="{{ startIndex + $loop.index }}"
-        >
-          @foreach(column in columns)
-            <div
-              class="{{ cellClasses }}"
-              style="flex: {{ column.width || 1 }}; min-width: {{ column.minWidth || 'auto' }}"
-            >
-              {!! getCellValue(row, column) !!}
-            </div>
-          @endforeach
-        </div>
-      @endforeach
+          :for="column in columns"
+          :key="column.key"
+          class="{{ cellClasses }}"
+          :style="`flex: ${column.width || 1}; min-width: ${column.minWidth || 'auto'}`"
+          x-html="getCellValue(entry.row, column)"
+        ></div>
+      </div>
     </div>
   </div>
 </div>
-
-<script>
-// Re-render on scroll (simplified reactivity)
-if (typeof window !== 'undefined') {
-  let ticking = false
-
-  function updateVisibleRows() {
-    const range = getVisibleRange()
-    // Trigger re-render
-    ticking = false
-  }
-
-  const bodyContainer = document.querySelector('.overflow-auto')
-  if (bodyContainer) {
-    bodyContainer.addEventListener('scroll', () => {
-      if (!ticking) {
-        window.requestAnimationFrame(updateVisibleRows)
-        ticking = true
-      }
-    })
-  }
-}
-</script>
