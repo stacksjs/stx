@@ -30,20 +30,40 @@ Use `&#123;&#123;&#123; &#125;&#125;&#125;` for raw HTML interpolation (use with
 
 ## Directives
 
+stx accepts both Blade-style block directives and Vue-style attribute aliases.
+Use the style that best matches the template you are writing, but keep a single
+component consistent when possible.
+
 ### Conditional Rendering
 
 ```html
+@if(user)
+  <p>Welcome, {{ user.name }}</p>
+@else
+  <p>Welcome, guest</p>
+@endif
+
 <div @if="condition">Shown if true</div>
 <div @else-if="otherCondition">Alternative</div>
 <div @else>Fallback</div>
+
+<div v-if="condition">Vue-style alias</div>
 ```
 
 ### List Rendering
 
 ```html
 <ul>
+  @foreach(products as product)
+    <li>{{ product.name }}</li>
+  @endforeach
+
   <li @each="item in items" :key="item.id">
     &#123;&#123; item.name &#125;&#125;
+  </li>
+
+  <li v-for="item in items" :key="item.id">
+    {{ item.name }}
   </li>
 </ul>
 ```
@@ -59,6 +79,28 @@ Use `&#123;&#123;&#123; &#125;&#125;&#125;` for raw HTML interpolation (use with
 
 ```html
 <input @model="searchText">
+<input v-model="searchText">
+```
+
+### Server Data
+
+Use `<script server>` for server-side data that should be evaluated during
+rendering. Bare `<script>` and `<script client>` are preserved for the browser.
+
+```html
+<script server>
+export const products = [
+  { name: 'Cedar Wick Candle', price: 28 },
+  { name: 'Mineral Bath Salts', price: 18 },
+]
+</script>
+
+@foreach(products as product)
+  <article>
+    <h2>{{ product.name }}</h2>
+    <p>${{ product.price }}</p>
+  </article>
+@endforeach
 ```
 
 ## Advanced Features
