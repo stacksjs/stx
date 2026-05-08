@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.51...v0.2.52)
+
+### 🐛 Bug Fixes
+
+- resolve app translation directories from project root ([dcd5e47](https://github.com/stacksjs/stx/commit/dcd5e47)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.52 ([3371b57](https://github.com/stacksjs/stx/commit/3371b57)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.51...HEAD)
+
+### 🐛 Bug Fixes
+
+- resolve app translation directories from project root ([dcd5e47](https://github.com/stacksjs/stx/commit/dcd5e47)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.50...v0.2.51)
 
 ### 🚀 Features
