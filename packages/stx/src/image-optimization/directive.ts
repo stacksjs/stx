@@ -54,7 +54,7 @@ export interface ImageDirectiveOptions {
   /** Preload (high priority) */
   priority?: boolean
   /** Placeholder type */
-  placeholder?: 'blur' | 'color' | 'none'
+  placeholder?: 'blur' | 'color' | 'thumbhash' | 'none'
 }
 
 // ============================================================================
@@ -370,7 +370,9 @@ function renderOptimizedImage(
   if (options.placeholder && placeholder) {
     const wrapperId = `stx-img-${Math.random().toString(36).slice(2, 8)}`
 
-    if (options.placeholder === 'blur') {
+    if (options.placeholder === 'blur' || options.placeholder === 'thumbhash') {
+      // Both render the same way: a dataURL set as a CSS background that the
+      // browser scales over the slot until the real image fills it.
       const safeUrl = placeholder.replace(/'/g, '%27').replace(/"/g, '%22')
       html = `<div id="${wrapperId}" class="stx-image-placeholder" style="background-image: url('${safeUrl}'); background-size: cover;">\n${html}\n</div>`
     }

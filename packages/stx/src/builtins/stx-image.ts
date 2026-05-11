@@ -19,6 +19,7 @@
  *   <StxImage src="/images/hero.jpg" alt="Hero" densities="1x 2x" />
  *   <StxImage src="/images/hero.jpg" alt="Hero" format="webp" />
  *   <StxImage src="/images/hero.jpg" alt="Hero" placeholder="blur" />
+ *   <StxImage src="/images/hero.jpg" alt="Hero" placeholder="thumbhash" />
  *   <StxImage src="/images/hero.jpg" alt="Hero" preload />
  *   <StxImage src="/images/hero.jpg" alt="Hero" provider="cloudinary" />
  *
@@ -247,7 +248,14 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     }
 
     // ── Placeholder ──────────────────────────────────────────────
-    if (placeholder === 'blur' || placeholder === 'color') {
+    // `blur`, `color`, and `thumbhash` all fall through to a synthetic CSS
+    // gradient at component-render time — the builtin doesn't have access
+    // to actual source pixel data here. For a real per-image thumbhash
+    // dataURL, run images through the @image directive (or build plugin)
+    // which calls `generatePlaceholder({ placeholder: 'thumbhash' })` on
+    // the actual source and stores the result; alternatively pass a
+    // pre-computed `placeholder="data:image/png;base64,…"` URL directly.
+    if (placeholder === 'blur' || placeholder === 'color' || placeholder === 'thumbhash') {
       const placeholderUrl = generateBlurPlaceholder(
         numWidth || 16,
         numHeight || 9,
@@ -258,7 +266,9 @@ export const StxImageBuiltin: BuiltinComponentDef = {
       styles.push('background-repeat:no-repeat')
     }
     else if (placeholder && placeholder !== 'empty' && placeholder !== 'none') {
-      // Custom placeholder URL
+      // Custom placeholder URL — accept any dataURL the consumer pre-computed
+      // (e.g. a real thumbhash run through ts-images' `generatePlaceholder`
+      // at build time).
       styles.push(`background-image:url(${escapeAttr(placeholder)})`)
       styles.push('background-size:cover')
       styles.push('background-repeat:no-repeat')

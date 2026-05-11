@@ -39,8 +39,10 @@ export interface ImageComponentProps {
   priority?: boolean
   /** Output quality (1-100) */
   quality?: number
-  /** Placeholder type */
-  placeholder?: 'blur' | 'color' | 'none'
+  /** Placeholder type. `thumbhash` produces a ~1KB visualized thumbhash
+   *  PNG dataURL with smoother gradients and better color fidelity than
+   *  `blur`. */
+  placeholder?: 'blur' | 'color' | 'thumbhash' | 'none'
   /** Output formats */
   formats?: ImageFormat[]
   /** Output widths */

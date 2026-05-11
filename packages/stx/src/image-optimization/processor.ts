@@ -28,7 +28,7 @@ export interface ImageOptions {
   /** Fit mode */
   fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside'
   /** Placeholder generation */
-  placeholder?: 'blur' | 'dominant-color' | 'none'
+  placeholder?: 'blur' | 'dominant-color' | 'thumbhash' | 'none'
   /** Output directory */
   outputDir?: string
   /** Base URL for generated paths */
@@ -406,16 +406,23 @@ async function resizeAndConvert(
 }
 
 /**
- * Generate placeholder (blur or dominant color).
+ * Generate placeholder (blur, dominant color, or thumbhash).
  *
  * Sharp fast-path when available; otherwise delegates to `ts-images`'s
- * `generatePlaceholder` which writes its temp output natively. Both paths
+ * `generatePlaceholder` which writes its temp output natively. All paths
  * return a string the consumer can drop straight into a CSS background
- * or img placeholder (data URL for blur, rgb(...) for dominant color).
+ * or img placeholder:
+ *   - `blur`           → `data:image/jpeg;base64,…` (~400-800 bytes)
+ *   - `dominant-color` → `rgb(r, g, b)`
+ *   - `thumbhash`      → `data:image/png;base64,…` (~1KB, smoother gradient
+ *                        than blur, better color fidelity — visualized
+ *                        thumbhash via ts-images. Raw 24-byte wire-size
+ *                        variant is a future enhancement gated on a raw-
+ *                        RGBA decode path.)
  */
 async function generatePlaceholder(
   buffer: Buffer,
-  type: 'blur' | 'dominant-color',
+  type: 'blur' | 'dominant-color' | 'thumbhash',
 ): Promise<string> {
   const s = await loadSharp()
 
@@ -433,7 +440,7 @@ async function generatePlaceholder(
   }
 
   // Dominant color extraction via sharp
-  if (s) {
+  if (type === 'dominant-color' && s) {
     const { dominant } = await s(buffer)
       .resize(1, 1)
       .toBuffer()
@@ -456,13 +463,21 @@ async function generatePlaceholder(
   )
   try {
     await Bun.write(tempIn, buffer)
+    // Map our public strategy names to ts-images' internal strategy names.
+    // `blur` → its tiny blurred PNG, `thumbhash` → the visualized thumbhash
+    // PNG (~1KB), `dominant-color` → its `dominant-color` mode.
+    const tsStrategy: 'blur' | 'thumbhash' | 'dominant-color' = type === 'blur'
+      ? 'blur'
+      : type === 'thumbhash'
+        ? 'thumbhash'
+        : 'dominant-color'
     const result = await tsGeneratePlaceholder(tempIn, {
-      strategy: type === 'blur' ? 'blur' : 'dominant-color',
-      width: 32,
+      strategy: tsStrategy,
+      width: tsStrategy === 'thumbhash' ? undefined : 32,
     } as Parameters<typeof tsGeneratePlaceholder>[1])
-    // PlaceholderResult: { dataURL, width, height, ... }
-    const ph = result as unknown as { dataURL?: string, color?: string }
-    if (type === 'dominant-color' && ph.color) return ph.color
+    // PlaceholderResult: { dataURL, width, height, dominantColor?, ... }
+    const ph = result as unknown as { dataURL?: string, dominantColor?: string }
+    if (type === 'dominant-color' && ph.dominantColor) return ph.dominantColor
     if (ph.dataURL) return ph.dataURL
     return 'rgb(128, 128, 128)'
   }
