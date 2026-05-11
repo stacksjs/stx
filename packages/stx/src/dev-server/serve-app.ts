@@ -523,6 +523,17 @@ catch {
         }
       }
 
+      // Runtime image transform endpoint — `/_stx/img?src=…&w=…&f=webp` etc.
+      // Lazy import keeps this off the cold path of pages that never call it.
+      if (url.pathname === '/_stx/img') {
+        const { handleImageRequest } = await import('../image-optimization/serve')
+        const imgResponse = await handleImageRequest(request, {
+          publicDir: path.join(absoluteAppDir, publicDirName),
+          cacheDir: path.join(absoluteAppDir, '.stx/cache/img'),
+        })
+        if (imgResponse) return imgResponse
+      }
+
       // Handle requests via custom router (e.g. @stacksjs/bun-router)
       // Supports both API routes (routes/api.ts) and web routes (routes/web.ts)
       if (customRouter) {

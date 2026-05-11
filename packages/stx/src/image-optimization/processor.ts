@@ -348,7 +348,7 @@ function parseImageHeaders(buffer: Buffer): ImageMetadata {
  * `ts-images` (pure-TS codecs, always available). `ts-images` is file-
  * oriented so we route the output through a temp file and read it back.
  */
-async function resizeAndConvert(
+export async function resizeAndConvert(
   buffer: Buffer,
   options: {
     width: number
