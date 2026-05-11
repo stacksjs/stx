@@ -808,6 +808,20 @@ export interface MediaImageConfig {
   defaultDpr?: number[]
   /** ts-images integration configuration */
   tsImages?: Record<string, unknown>
+  /**
+   * Auto-discover .webp / .avif siblings next to plain <img src="*.jpg">
+   * references in rendered HTML and wrap them in <picture> with <source>
+   * entries for each format that actually exists on disk. Works for ANY
+   * <img> tag without consumers having to change anything — drop the
+   * optimized format next to the original asset and capable browsers
+   * pick it up.
+   *
+   * Disabled by default (off-spec content negotiation has a non-zero cost
+   * on every render). Opt in via:
+   *
+   *   media: { image: { autoSiblings: true } }
+   */
+  autoSiblings?: boolean
 }
 
 /**

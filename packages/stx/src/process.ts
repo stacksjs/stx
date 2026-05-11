@@ -1136,6 +1136,15 @@ async function processOtherDirectives(
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, opts)
 
+  // Auto-discover .webp/.avif siblings next to plain <img src="*.jpg|png">
+  // refs and wrap them in <picture>. Opt-in via media.image.autoSiblings —
+  // off by default because every render adds an FS stat call per <img>.
+  if (opts.media?.image?.autoSiblings) {
+    const publicDir = opts.publicDir || 'public'
+    const { rewriteImagesWithSiblings } = await import('./image-optimization/auto-sibling')
+    output = await rewriteImagesWithSiblings(output, { publicDir })
+  }
+
   // Auto-inject SEO tags if enabled
   if (opts.seo?.enabled) {
     output = injectSeoTags(output, context, opts)
