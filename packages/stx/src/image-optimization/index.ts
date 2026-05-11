@@ -50,6 +50,7 @@ export {
   processImage,
   getImageMetadata,
   isSharpAvailable,
+  isImageBackendAvailable,
 
   // HTML helpers
   generateSrcSet,

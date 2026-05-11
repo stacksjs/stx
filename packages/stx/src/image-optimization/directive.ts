@@ -25,7 +25,7 @@ import {
   generateSrcSet,
   getMimeType,
   isImageFile,
-  isSharpAvailable,
+  isImageBackendAvailable,
 } from './processor'
 
 // ============================================================================
@@ -127,11 +127,10 @@ export function createImageDirective(): CustomDirective {
         placeholder: (options.placeholder === 'color' ? 'dominant-color' : options.placeholder) || 'none',
       }
 
-      // Check if sharp is available for full optimization
-      const hasSharp = await isSharpAvailable()
-
-      // In development or without sharp, render simple img
-      if (!hasSharp) {
+      // ts-images is bundled — backend is always available. The fallback to
+      // a plain <img> stays around for the rare "headless build" scenario.
+      const hasBackend = await isImageBackendAvailable()
+      if (!hasBackend) {
         return renderSimpleImage(src, alt || '', options)
       }
 

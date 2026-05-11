@@ -124,6 +124,7 @@
     "bunfig": "^0.15.6",
     "stx-router": "workspace:*",
     "ts-broadcasting": "^0.0.4",
+    "ts-images": "^0.1.7",
     "ts-syntax-highlighter": "^0.2.1"
   }
 }

@@ -1,12 +1,18 @@
 /**
  * STX Image Processor
  *
- * Core image processing with sharp (when available) or graceful fallback.
+ * Pure-TypeScript image processing via `ts-images` (default), with `sharp`
+ * as an optional native fast-path when installed. `ts-images` ships its own
+ * codecs (no native deps), so optimization works out of the box; `sharp`
+ * is ~5-10× faster on large images and gets picked up automatically if the
+ * host has it.
  */
 
 import fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 import crypto from 'node:crypto'
+import { generatePlaceholder as tsGeneratePlaceholder, processImage as tsProcessImage } from 'ts-images'
 
 // ============================================================================
 // Types
@@ -127,11 +133,25 @@ async function loadSharp(): Promise<SharpModule | null> {
 }
 
 /**
- * Check if sharp is available
+ * Check if sharp is available (returns true only if sharp is installed).
+ *
+ * Note: image processing always works now via `ts-images`; this only reports
+ * whether the optional sharp fast-path is present. Use {@link isImageBackendAvailable}
+ * to gate "can we optimize at all" — the answer is always yes.
  */
 export async function isSharpAvailable(): Promise<boolean> {
   const s = await loadSharp()
   return s !== null
+}
+
+/**
+ * Whether any image-processing backend is available. Always true now that
+ * `ts-images` is bundled as a hard dependency — kept as a function for
+ * symmetry with `isSharpAvailable` and so callers can future-proof against
+ * a hypothetical "headless" build that strips ts-images.
+ */
+export async function isImageBackendAvailable(): Promise<boolean> {
+  return true
 }
 
 // ============================================================================
@@ -322,7 +342,11 @@ function parseImageHeaders(buffer: Buffer): ImageMetadata {
 }
 
 /**
- * Resize and convert image
+ * Resize and convert image.
+ *
+ * Tries sharp first if installed (faster on large images), falls back to
+ * `ts-images` (pure-TS codecs, always available). `ts-images` is file-
+ * oriented so we route the output through a temp file and read it back.
  */
 async function resizeAndConvert(
   buffer: Buffer,
@@ -358,13 +382,36 @@ async function resizeAndConvert(
     return instance.toBuffer()
   }
 
-  // Fallback: return original buffer (no processing without sharp)
-  console.warn('sharp not available, returning original image without optimization')
-  return buffer
+  const tempOut = path.join(
+    os.tmpdir(),
+    `stx-img-${crypto.randomBytes(8).toString('hex')}.${options.format}`,
+  )
+  try {
+    await tsProcessImage({
+      input: buffer,
+      output: tempOut,
+      format: options.format,
+      quality: options.quality,
+      resize: {
+        width: options.width,
+        height: options.height,
+        fit: options.fit as 'cover' | 'contain' | 'fill' | 'inside' | 'outside',
+      },
+    })
+    return Buffer.from(await Bun.file(tempOut).arrayBuffer())
+  }
+  finally {
+    await fs.promises.unlink(tempOut).catch(() => {})
+  }
 }
 
 /**
- * Generate placeholder (blur or dominant color)
+ * Generate placeholder (blur or dominant color).
+ *
+ * Sharp fast-path when available; otherwise delegates to `ts-images`'s
+ * `generatePlaceholder` which writes its temp output natively. Both paths
+ * return a string the consumer can drop straight into a CSS background
+ * or img placeholder (data URL for blur, rgb(...) for dominant color).
  */
 async function generatePlaceholder(
   buffer: Buffer,
@@ -385,7 +432,7 @@ async function generatePlaceholder(
     return `data:${mimeType};base64,${base64}`
   }
 
-  // Dominant color extraction
+  // Dominant color extraction via sharp
   if (s) {
     const { dominant } = await s(buffer)
       .resize(1, 1)
@@ -400,8 +447,31 @@ async function generatePlaceholder(
     return `rgb(${dominant.r}, ${dominant.g}, ${dominant.b})`
   }
 
-  // Fallback: return neutral gray
-  return 'rgb(128, 128, 128)'
+  // ts-images fallback. It only takes file paths, so write the buffer to a
+  // temp file, call generatePlaceholder, parse the dataURL out of the result.
+  const meta = await getImageMetadata(buffer)
+  const tempIn = path.join(
+    os.tmpdir(),
+    `stx-ph-${crypto.randomBytes(8).toString('hex')}.${meta.format === 'unknown' ? 'bin' : meta.format}`,
+  )
+  try {
+    await Bun.write(tempIn, buffer)
+    const result = await tsGeneratePlaceholder(tempIn, {
+      strategy: type === 'blur' ? 'blur' : 'dominant-color',
+      width: 32,
+    } as Parameters<typeof tsGeneratePlaceholder>[1])
+    // PlaceholderResult: { dataURL, width, height, ... }
+    const ph = result as unknown as { dataURL?: string, color?: string }
+    if (type === 'dominant-color' && ph.color) return ph.color
+    if (ph.dataURL) return ph.dataURL
+    return 'rgb(128, 128, 128)'
+  }
+  catch {
+    return 'rgb(128, 128, 128)'
+  }
+  finally {
+    await fs.promises.unlink(tempIn).catch(() => {})
+  }
 }
 
 // ============================================================================

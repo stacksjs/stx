@@ -17,6 +17,7 @@ import {
   DEFAULT_WIDTHS,
   processImage,
   isImageFile,
+  isImageBackendAvailable,
   isSharpAvailable,
   formatSize,
   getTotalSize,
@@ -108,10 +109,11 @@ export function createImagePlugin(options: ImageBuildOptions = {}): BuildPlugin 
     name: 'stx-image-optimization',
 
     async setup(build) {
-      // Check if sharp is available
-      const hasSharp = await isSharpAvailable()
-      if (!hasSharp) {
-        console.warn('[stx-images] sharp not available, image optimization disabled')
+      // ts-images is bundled — optimization is always available. We still
+      // detect sharp so we can advertise the fast path in verbose logs.
+      const hasBackend = await isImageBackendAvailable()
+      if (!hasBackend) {
+        console.warn('[stx-images] no image backend available, optimization disabled')
         return
       }
 
@@ -121,8 +123,10 @@ export function createImagePlugin(options: ImageBuildOptions = {}): BuildPlugin 
       }
 
       if (verbose) {
+        const hasSharp = await isSharpAvailable()
         // eslint-disable-next-line no-console
         console.log('[stx-images] Plugin initialized')
+        console.log(`  Backend: ${hasSharp ? 'sharp (native fast path) + ts-images' : 'ts-images (pure TS)'}`)
         console.log(`  Input dirs: ${inputDirs.join(', ')}`)
         console.log(`  Output dir: ${outputDir}`)
         console.log(`  Formats: ${formats.join(', ')}`)
@@ -167,8 +171,9 @@ export function createImagePlugin(options: ImageBuildOptions = {}): BuildPlugin 
     },
 
     async buildEnd(result) {
-      const hasSharp = await isSharpAvailable()
-      if (!hasSharp) return
+      // ts-images is bundled; backend is always available.
+      const hasBackend = await isImageBackendAvailable()
+      if (!hasBackend) return
 
       // Ensure output directory exists
       await fs.promises.mkdir(outputDir, { recursive: true })
@@ -362,9 +367,9 @@ export async function optimizeImage(
   outputDir: string,
   options: ImageOptions = {},
 ): Promise<ProcessedImage> {
-  const hasSharp = await isSharpAvailable()
-  if (!hasSharp) {
-    throw new Error('sharp is required for image optimization')
+  const hasBackend = await isImageBackendAvailable()
+  if (!hasBackend) {
+    throw new Error('No image backend available — install sharp or ensure ts-images is bundled')
   }
 
   return processImage(inputPath, {
@@ -394,9 +399,9 @@ export async function optimizeDirectory(
     verbose = false,
   } = options
 
-  const hasSharp = await isSharpAvailable()
-  if (!hasSharp) {
-    throw new Error('sharp is required for image optimization')
+  const hasBackend = await isImageBackendAvailable()
+  if (!hasBackend) {
+    throw new Error('No image backend available — install sharp or ensure ts-images is bundled')
   }
 
   // Ensure output directory
