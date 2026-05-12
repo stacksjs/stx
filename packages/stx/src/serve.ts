@@ -23,8 +23,22 @@ export interface ServeOptions {
   stxOptions?: StxOptions
   /** Enable file watching and hot reload */
   watch?: boolean
-  /** Custom request handler */
-  onRequest?: (request: Request) => Response | Promise<Response> | null | undefined
+  /**
+   * Custom request handler. Return a Response to short-circuit the default
+   * pipeline; return `null` / `undefined` (sync or async) to fall through to
+   * the rest of the routing chain.
+   *
+   * The async-fall-through shape (`Promise<Response | null | undefined>`) is
+   * intentional — it makes `handleImageRequest` and other chainable handlers
+   * plug in directly without a wrapper:
+   *
+   *   serve({ onRequest: (req) => handleImageRequest(req, options) })
+   */
+  onRequest?: (request: Request) =>
+    | Response
+    | null
+    | undefined
+    | Promise<Response | null | undefined>
   /** Custom route handlers */
   routes?: Record<string, (request: Request) => Response | Promise<Response>>
   /** Middleware functions */
