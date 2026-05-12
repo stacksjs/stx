@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.54...v0.2.55)
+
+### 🧪 Tests
+
+- **desktop**: isolate craft bridge fixture ([7ca0941](https://github.com/stacksjs/stx/commit/7ca0941)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.55 ([ba43c5a](https://github.com/stacksjs/stx/commit/ba43c5a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.54...HEAD)
+
+### 🧪 Tests
+
+- **desktop**: isolate craft bridge fixture ([7ca0941](https://github.com/stacksjs/stx/commit/7ca0941)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.53...v0.2.54)
 
 ### 🧹 Chores
