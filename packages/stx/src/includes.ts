@@ -872,8 +872,29 @@ catch (error: unknown) {
           // Generate unique scope ID for this component
           signalScopeId = `stx_scope_${path.basename(includeFilePath, '.stx').replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}`
 
-          // Transform store imports before IIFE wrapping (import statements can't be inside functions)
-          const resolvedContent = transformStoreImports(scriptContent)
+          // Bundle user imports (e.g. `import x from '~/...' / '@/...' / npm packages`)
+          // BEFORE the IIFE wrap. Top-level `import` is illegal inside a function,
+          // so any bare-spec import that survives here lands inside the wrapper
+          // body and crashes the browser with `Cannot use import statement
+          // outside a module`. The bundler inlines those imports; framework
+          // imports (`stx`, `@stacksjs/stx`, `@stores`, `@composables`) are
+          // marked external and stripped/handled by later transforms.
+          let bundledScript = scriptContent
+          try {
+            const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
+            if (hasUserImports(bundledScript)) {
+              bundledScript = await bundleClientScript(bundledScript, includeFilePath, {
+                projectRoot: process.cwd(),
+              })
+            }
+          }
+          catch (err) {
+            if (options.debug)
+              console.warn(`[stx] bundler skipped for ${includeFilePath}:`, err instanceof Error ? err.message : err)
+          }
+          // Transform store imports after bundling (the bundler leaves @stores
+          // imports external; this rewrites them to the runtime store accessor).
+          const resolvedContent = transformStoreImports(bundledScript)
           // Transform the script to register scope variables
           // Add data-stx-scoped attribute to prevent re-processing by processScriptSetup
           const transformedScript = transformSignalScript(resolvedContent, signalScopeId)
