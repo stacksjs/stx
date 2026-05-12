@@ -45,7 +45,21 @@ export interface SidebarSection {
 /**
  * Native sidebar configuration
  */
+export type SidebarVariant = 'tahoe' | 'vibrancy' | 'solid' | 'transparent' | 'workspace' | 'desktop'
+
+export type SidebarMaterial = 'auto' | 'sidebar' | 'hud' | 'popover' | 'content'
+
+export type SidebarBackgroundEffect = 'none' | 'vibrancy' | 'shimmer'
+
 export interface SidebarConfig {
+  /** Visual style variant shared with STX web sidebars */
+  variant?: SidebarVariant
+  /** Native material used by Craft when rendering desktop sidebars */
+  material?: SidebarMaterial
+  /** Native background effect */
+  backgroundEffect?: SidebarBackgroundEffect
+  /** Let the desktop background shimmer through the sidebar material */
+  allowsVibrancy?: boolean
   /** Sidebar sections */
   sections: SidebarSection[]
   /** Minimum width in pixels */

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import type { WindowInstance, WindowOptions } from './types'
+import type { SidebarConfig, WindowInstance, WindowOptions } from './types'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
@@ -68,6 +68,19 @@ export function getDesktopConfig(): DesktopConfig {
  */
 export function resetDesktopConfig(): void {
   currentConfig = {}
+}
+
+function prepareSidebarConfig(options: WindowOptions): SidebarConfig | undefined {
+  if (!options.sidebarConfig) return undefined
+
+  const config: SidebarConfig = { ...options.sidebarConfig }
+  if (config.variant === 'desktop') {
+    config.material = config.material ?? 'sidebar'
+    config.backgroundEffect = config.backgroundEffect ?? 'shimmer'
+    config.allowsVibrancy = config.allowsVibrancy ?? true
+  }
+
+  return config
 }
 
 // =============================================================================
@@ -349,6 +362,7 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
 
     console.log('⚡ Opening native window via ts-craft…')
     const useSystemTray = !options.nativeSidebar
+    const sidebarConfig = prepareSidebarConfig(options)
     const app = createApp({
       url,
       craftPath: getCraftBinaryPath(),
@@ -363,7 +377,7 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
         devTools: true,
         nativeSidebar: options.nativeSidebar ?? false,
         sidebarWidth: options.sidebarWidth ?? 260,
-        sidebarConfig: options.sidebarConfig as Record<string, unknown> | undefined,
+        sidebarConfig: sidebarConfig as Record<string, unknown> | undefined,
       },
     })
 

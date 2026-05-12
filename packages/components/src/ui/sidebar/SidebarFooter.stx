@@ -5,6 +5,34 @@ export const settingsHref = $props.settingsHref || '/settings'
 export const settingsLabel = $props.settingsLabel || 'Settings'
 export const collapsed = $props.collapsed ?? false
 export const actions = $props.actions || []
+export const variant = $props.variant || 'tahoe'
+
+const footerVariants = {
+  workspace: {
+    container: 'p-5 space-y-2',
+    action: 'flex-1 flex items-center gap-3 rounded-[18px] px-4 py-3 text-[17px] text-zinc-700 transition-colors hover:bg-[#ececea] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10',
+    icon: 'w-5 h-5 text-zinc-500 dark:text-zinc-400',
+  },
+  desktop: {
+    container: 'p-4 space-y-2',
+    action: 'flex-1 flex items-center gap-3 rounded-[16px] px-3.5 py-2.5 text-[15px] text-zinc-700 transition-colors hover:bg-white/34 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10',
+    icon: 'w-5 h-5 text-zinc-500 dark:text-zinc-400',
+  },
+  default: {
+    container: 'border-t border-black/5 dark:border-white/10 p-3 space-y-2',
+    action: 'flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors',
+    icon: 'w-4 h-4',
+  },
+}
+
+const footerStyle = footerVariants[variant] || footerVariants.default
+export const footerClasses = footerStyle.container
+export const actionClasses = footerStyle.action
+export const footerIconClasses = footerStyle.icon
+export const settingsIconClasses = `i-hugeicons-settings-02 ${footerStyle.icon}`
+export const themeButtonClasses = variant === 'workspace' || variant === 'desktop'
+  ? 'p-3 rounded-[16px] text-zinc-500 hover:text-zinc-900 hover:bg-white/50 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors'
+  : 'p-2 rounded-lg text-black/50 hover:text-black/80 hover:bg-black/5 dark:text-white/50 dark:hover:text-white/80 dark:hover:bg-white/10 transition-colors'
 </script>
 
 <script client>
@@ -20,7 +48,7 @@ function onActionClick(index) {
 }
 </script>
 
-<div class="border-t border-black/5 dark:border-white/10 p-3 space-y-2">
+<div class="{{ footerClasses }}">
   <!-- Custom actions slot -->
   <slot />
 
@@ -31,21 +59,21 @@ function onActionClick(index) {
         @if(action.href)
           <a
             href="{{ action.href }}"
-            class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            class="{{ actionClasses }}"
           >
             @if(action.icon)
-              <div class="{{ action.icon }} w-4 h-4"></div>
+              <div class="{{ action.icon }} {{ footerIconClasses }}"></div>
             @endif
             <span>{{ action.label }}</span>
           </a>
         @else
           <button
             type="button"
-            class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            class="{{ actionClasses }}"
             @click="onActionClick({{ $loop.index }})"
           >
             @if(action.icon)
-              <div class="{{ action.icon }} w-4 h-4"></div>
+              <div class="{{ action.icon }} {{ footerIconClasses }}"></div>
             @endif
             <span>{{ action.label }}</span>
           </button>
@@ -55,7 +83,7 @@ function onActionClick(index) {
       @if(showThemeToggle)
         <button
           type="button"
-          class="p-2 rounded-lg text-black/50 hover:text-black/80 hover:bg-black/5 dark:text-white/50 dark:hover:text-white/80 dark:hover:bg-white/10 transition-colors"
+          class="{{ themeButtonClasses }}"
           @click="onThemeToggle()"
           aria-label="Toggle dark mode"
         >
@@ -70,9 +98,9 @@ function onActionClick(index) {
   @if(showSettings)
     <a
       href="{{ settingsHref }}"
-      class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-150 text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/10"
+      class="{{ actionClasses }}"
     >
-      <div class="i-hugeicons-settings-02 w-5 h-5 text-black/50 dark:text-white/50"></div>
+      <div class="{{ settingsIconClasses }}"></div>
       @if(!collapsed)
         <span>{{ settingsLabel }}</span>
       @endif

@@ -6,6 +6,7 @@ export const width = $props.width || 240
 export const minWidth = $props.minWidth || 64
 export const variant = $props.variant || 'tahoe'
 export const position = $props.position || 'left'
+export const placement = $props.placement || 'fixed'
 export const bordered = $props.bordered ?? true
 export const className = $props.className || ''
 
@@ -34,26 +35,51 @@ const variantStyles = {
     backdrop: '',
     tint: false,
   },
+  workspace: {
+    bg: 'bg-[#f4f4f3] dark:bg-neutral-950',
+    border: 'border-transparent',
+    backdrop: '',
+    tint: false,
+    nav: 'px-5 py-5 space-y-1',
+    slot: 'px-5 py-5',
+  },
+  desktop: {
+    bg: 'bg-white/42 dark:bg-black/32',
+    border: 'border-white/30 dark:border-white/10',
+    backdrop: 'backdrop-blur-3xl backdrop-saturate-200',
+    tint: false,
+    shimmer: true,
+    nav: 'px-4 py-4 space-y-1',
+    slot: 'px-4 py-4',
+  },
 }
 
 const style = variantStyles[variant] || variantStyles.tahoe
 export const variantTint = style.tint
+export const variantShimmer = style.shimmer
 const borderSide = position === 'left' ? 'border-r' : 'border-l'
 const borderClasses = bordered ? `${borderSide} ${style.border}` : ''
 const positionClass = position === 'left' ? 'left-0' : 'right-0'
+const placementClasses = {
+  fixed: `fixed inset-y-0 z-50 ${positionClass}`,
+  sticky: 'sticky top-0 h-screen',
+  static: 'relative h-full',
+}
 
 export const containerClasses = [
-  'fixed inset-y-0 z-50 flex flex-col',
+  placementClasses[placement] || placementClasses.fixed,
+  'flex flex-col',
   'transition-all duration-300 ease-out',
   'overflow-hidden',
   style.bg,
   style.backdrop,
   borderClasses,
-  positionClass,
   className,
 ].filter(Boolean).join(' ')
 
 export const collapseBtnPosition = position === 'left' ? 'right-2' : 'left-2'
+export const navClasses = style.nav || 'px-3 py-2 space-y-1'
+export const slotClasses = style.slot || 'px-3 py-2'
 </script>
 
 <script client>
@@ -64,6 +90,7 @@ const widthProp = {{ width }}
 const minWidthProp = {{ minWidth }}
 const sectionsProp = {{ sections }}
 const positionProp = {{ position }}
+const variantProp = {{ variant }}
 
 const collapsed = state(collapsedProp)
 const isHovered = state(false)
@@ -111,6 +138,10 @@ onMount(async () => {
         width: widthProp,
         minWidth: minWidthProp,
         collapsible: collapsibleProp,
+        variant: variantProp,
+        material: variantProp === 'desktop' ? 'sidebar' : undefined,
+        backgroundEffect: variantProp === 'desktop' ? 'shimmer' : undefined,
+        allowsVibrancy: variantProp === 'desktop' || variantProp === 'vibrancy' || variantProp === 'tahoe',
         sections: sectionsProp.map(s => ({
           id: s.id,
           label: s.label,
@@ -139,6 +170,9 @@ defineExpose({ collapsed, toggle: toggleCollapse })
   @if(variantTint)
     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-amber-50/30 via-orange-50/20 to-stone-100/30 dark:from-neutral-800/20 dark:via-neutral-900/10 dark:to-neutral-800/20 mix-blend-overlay"></div>
   @endif
+  @if(variantShimmer)
+    <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_18%_12%,rgba(255,255,255,0.46),transparent_28%),linear-gradient(120deg,rgba(255,255,255,0.22),rgba(255,255,255,0.04)_42%,rgba(255,255,255,0.18))] dark:bg-[radial-gradient(circle_at_18%_12%,rgba(255,255,255,0.12),transparent_30%),linear-gradient(120deg,rgba(255,255,255,0.10),rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08))]"></div>
+  @endif
 
   @if($slots.header)
     <div class="flex-shrink-0 relative z-10">
@@ -148,7 +182,7 @@ defineExpose({ collapsed, toggle: toggleCollapse })
 
   <div class="flex-1 overflow-y-auto overflow-x-hidden relative z-10">
     @if(sections.length > 0)
-      <nav class="px-3 py-2 space-y-1">
+      <nav class="{{ navClasses }}">
         @foreach(section in sections)
           <SidebarSection
             :id="section.id"
@@ -158,13 +192,14 @@ defineExpose({ collapsed, toggle: toggleCollapse })
             :expanded="section.expanded !== false"
             :collapsible="section.collapsible !== false"
             :showLabel="showExpanded()"
+            :variant="variant"
             @toggle="onSectionToggle(section.id)"
             @itemClick="onItemClick($event)"
           />
         @endforeach
       </nav>
     @else
-      <div class="px-3 py-2">
+      <div class="{{ slotClasses }}">
         <slot />
       </div>
     @endif

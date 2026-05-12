@@ -140,7 +140,7 @@ export async function handleImageRequest(
     const outputBuffer = await resizeAndConvert(sourceBuffer, { width, height, format, quality, fit })
     await Bun.write(cachePath, outputBuffer)
     headers['X-Stx-Image-Cache'] = 'MISS'
-    return new Response(outputBuffer, { headers })
+    return new Response(new Uint8Array(outputBuffer), { headers })
   }
   catch (err) {
     const msg = (err as Error).message

@@ -176,6 +176,10 @@ export function getRouterScript(): string {
     return false;
   }
 
+  function shouldUseFragmentResponse(){
+    return containerSel==='main'||containerSel==='[data-stx-content]';
+  }
+
   function navigate(url,pushState,force){
     log('[router] navigate() called:',url,'isNavigating:',isNavigating);
     if(isNavigating)return;
@@ -229,10 +233,13 @@ export function getRouterScript(): string {
     }
 else {
       if(force&&cache[targetPath])delete cache[targetPath];
-      // First fetch as fragment (SPA mode)
-      fetch(url,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
+      // First fetch as fragment (SPA mode) when the configured container is
+      // the page content. Custom app-shell containers need full documents so
+      // the router does not inject a <main> fragment into the wrong element.
+      var wantsFragment=shouldUseFragmentResponse();
+      fetch(url,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
         if(!r.ok)throw new Error(r.status);
-        var isFragment=r.headers.get('X-STX-Fragment')==='true';
+        var isFragment=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
         var newLayout=r.headers.get('X-STX-Layout')||'';
         var newGroup=r.headers.get('X-STX-Layout-Group')||'';
         // Layout change? Fetch the FULL page (no X-STX-Router header) and do full document swap
@@ -470,6 +477,9 @@ else {
       document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
 
       var scripts=[];
+      function addScript(text, runAlways){
+        scripts.push({text:text,runAlways:!!runAlways});
+      }
       if(isLayoutChange){
         // Layout change: collect ALL scripts from the new document body
         // (layout scripts, component mounts, setup functions — everything)
@@ -482,7 +492,7 @@ else {
             // Skip the signals runtime IIFE — it's already loaded
             if(text.indexOf("'use strict';var cloakStyle")!==-1)return;
             if(text.indexOf('__stxRouter')!==-1)return;
-            scripts.push(text);
+            addScript(text,true);
           });
         }
         // Also collect setup functions from <head>
@@ -490,7 +500,7 @@ else {
           var text=s.textContent||'';
           if(s.hasAttribute('src'))return;
           if(!text.trim())return;
-          if(text.indexOf('__stx_setup_')!==-1)scripts.push(text);
+          if(text.indexOf('__stx_setup_')!==-1)addScript(text,true);
         });
       } else {
         // Same layout: collect scripts from the container
@@ -498,26 +508,27 @@ else {
           var text=s.textContent||'';
           if(s.hasAttribute('src'))return;
           if(!text.trim())return;
-          scripts.push(text);
+          addScript(text,true);
         });
-        // Collect setup scripts from <head> AND <body> (outside container).
+        // Collect page scripts from <head> AND <body> (outside container).
         // SSG builds place the setup function in <body> before <main>, not
         // in <head>. Without this, SPA navigation on static sites never
         // runs the setup and reactive data stays empty.
         var seenSetups={};
-        scripts.forEach(function(t){if(t.indexOf('__stx_setup_')!==-1)seenSetups[t.substring(0,80)]=1});
+        scripts.forEach(function(entry){var t=entry.text;if(t.indexOf('__stx_setup_')!==-1)seenSetups[t.substring(0,80)]=1});
         doc.querySelectorAll('script').forEach(function(s){
           var text=s.textContent||'';
           if(s.hasAttribute('src'))return;
           if(!text.trim())return;
-          if(text.indexOf('__stx_setup_')===-1)return;
           // Skip signals runtime and router (they contain __stx_setup references but aren't setup functions)
           if(text.indexOf("'use strict';var cloakStyle")!==-1)return;
           if(text.indexOf('__stxRouter')!==-1)return;
+          if(newContent.contains(s))return;
+          if(text.indexOf('__stx_setup_')===-1&&!s.hasAttribute('data-stx-scoped')&&!s.hasAttribute('data-stx-page'))return;
           var key=text.substring(0,80);
           if(seenSetups[key])return;
           seenSetups[key]=1;
-          scripts.push(text);
+          addScript(text,true);
         });
       }
 
@@ -547,7 +558,9 @@ else {
 
       // Execute page scripts FIRST — they define setup functions and set _latestSetup
       function execScripts(){
-        scripts.forEach(function(text){
+        scripts.forEach(function(entry){
+          var text=typeof entry==='string'?entry:entry.text;
+          var runAlways=typeof entry==='string'?false:entry.runAlways;
           // Skip scripts that were already executed (layout-level partials
           // like theme.stx). Their top-level const/function declarations
           // would throw "Identifier has already been declared" on re-execution.
@@ -557,7 +570,7 @@ else {
           var h=hashScript(text);
           var isSetup=text.indexOf('__stx_setup_')!==-1;
           var hasImport=text.indexOf('import ')!==-1;
-          if(!isSetup&&executedScriptHashes[h])return;
+          if(!runAlways&&!isSetup&&executedScriptHashes[h])return;
           executedScriptHashes[h]=1;
           // Wrap scripts with import statements as modules (Bug 3 fix)
           var ns=document.createElement('script');
@@ -651,8 +664,9 @@ else {
       var key=cacheKey(href);
       if(cache[key]||prefetching[key])return;
       prefetching[key]=true;
-      fetch(href,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
-        var isFrag=r.headers.get('X-STX-Fragment')==='true';
+      var wantsFragment=shouldUseFragmentResponse();
+      fetch(href,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
+        var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
         var pLayout=r.headers.get('X-STX-Layout')||'';
         var pGroup=r.headers.get('X-STX-Layout-Group')||'';
         return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup}});
@@ -753,7 +767,8 @@ else {
     prefetch:function(url){
       var key=cacheKey(url);
       if(!cache[key]){
-        fetch(url,{headers:{'X-STX-Router':'true'}}).then(function(r){var isFrag=r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup}})}).then(function(result){cache[key]=result.html;layoutCache[key]=result.layout;layoutGroupCache[key]=result.layoutGroup}).catch(function(){});
+        var wantsFragment=shouldUseFragmentResponse();
+        fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup}})}).then(function(result){cache[key]=result.html;layoutCache[key]=result.layout;layoutGroupCache[key]=result.layoutGroup}).catch(function(){});
       }
     },
     clearCache:function(){for(var k in cache)delete cache[k];for(var lk in layoutCache)delete layoutCache[lk];for(var gk in layoutGroupCache)delete layoutGroupCache[gk]},

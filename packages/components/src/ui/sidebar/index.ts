@@ -36,7 +36,9 @@ export interface SidebarProps {
   /** Minimum width when collapsed in pixels */
   minWidth?: number
   /** Visual style variant */
-  variant?: 'tahoe' | 'vibrancy' | 'solid' | 'transparent'
+  variant?: SidebarVariant
+  /** Layout placement for app shells and native-like sidebars */
+  placement?: 'fixed' | 'sticky' | 'static'
   /** Position of the sidebar */
   position?: 'left' | 'right'
   /** Whether to show border */
@@ -59,6 +61,7 @@ export interface SidebarSectionProps {
   expanded?: boolean
   collapsible?: boolean
   showLabel?: boolean
+  variant?: SidebarVariant
   onToggle?: (id: string) => void
   onItemClick?: (item: SidebarItemData, event: Event) => void
 }
@@ -72,6 +75,7 @@ export interface SidebarItemProps {
   active?: boolean
   disabled?: boolean
   indent?: boolean
+  variant?: SidebarVariant
   onClick?: (event: Event) => void
 }
 
@@ -84,6 +88,7 @@ export interface SidebarHeaderProps {
   searchPlaceholder?: string
   searchValue?: string
   collapsed?: boolean
+  variant?: SidebarVariant
   onSearch?: (value: string) => void
 }
 
@@ -93,6 +98,7 @@ export interface SidebarFooterProps {
   settingsHref?: string
   settingsLabel?: string
   collapsed?: boolean
+  variant?: SidebarVariant
   actions?: Array<{
     label: string
     icon?: string
@@ -102,6 +108,12 @@ export interface SidebarFooterProps {
   onThemeToggle?: () => void
 }
 
+export type SidebarVariant = 'tahoe' | 'vibrancy' | 'solid' | 'transparent' | 'workspace' | 'desktop'
+
+export type SidebarMaterial = 'auto' | 'sidebar' | 'hud' | 'popover' | 'content'
+
+export type SidebarBackgroundEffect = 'none' | 'vibrancy' | 'shimmer'
+
 /**
  * Native Sidebar Configuration
  *
@@ -109,6 +121,14 @@ export interface SidebarFooterProps {
  * The sidebar uses NSOutlineView with vibrancy for a true Tahoe-style appearance.
  */
 export interface NativeSidebarConfig {
+  /** Visual style variant shared with the web fallback */
+  variant?: SidebarVariant
+  /** Native material used by Craft desktop sidebars */
+  material?: SidebarMaterial
+  /** Native background treatment */
+  backgroundEffect?: SidebarBackgroundEffect
+  /** Whether the native sidebar should let the window background show through */
+  allowsVibrancy?: boolean
   /** Header configuration */
   header?: {
     title?: string

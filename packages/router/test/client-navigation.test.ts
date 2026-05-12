@@ -17,7 +17,7 @@ afterEach(() => {
   Object.assign(globalThis, originalGlobals)
 })
 
-function installRouter(html: string, fetchImpl: typeof fetch) {
+function installRouter(html: string, fetchImpl: typeof fetch, config: Record<string, unknown> = {}) {
   const window = new Window({ url: 'http://localhost/' })
   window.document.write(html)
   ;(window as any).stx = {}
@@ -26,6 +26,7 @@ function installRouter(html: string, fetchImpl: typeof fetch) {
     prefetch: true,
     progress: false,
     viewTransitions: false,
+    ...config,
   }
 
   Object.assign(globalThis, {
@@ -124,6 +125,93 @@ describe('router browser navigation behavior', () => {
     expect(calls.length).toBe(2)
     expect(window.document.querySelector('nav')?.textContent).toBe('Product nav')
     expect(window.document.querySelector('main')?.textContent).toContain('Product full page')
+  })
+
+  it('fetches full pages for custom app-shell containers', async () => {
+    const calls: string[] = []
+    const window = installRouter(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app.stx">
+          <meta name="stx-layout-group" content="app">
+        </head>
+        <body>
+          <div data-shell>
+            <nav>Home nav</nav>
+            <main>Home</main>
+          </div>
+        </body>
+      </html>
+    `, async (url, init) => {
+      calls.push(JSON.stringify((init as RequestInit | undefined)?.headers || {}))
+      return response(`
+        <html>
+          <head>
+            <meta name="stx-layout" content="layouts/app.stx">
+            <meta name="stx-layout-group" content="app">
+          </head>
+          <body>
+            <div data-shell>
+              <nav>Queue nav</nav>
+              <main>Queue full page</main>
+            </div>
+          </body>
+        </html>
+      `)
+    }, { container: '[data-shell]' })
+
+    await window.stxRouter.navigate('/queue')
+    await waitForRouterSwap()
+
+    expect(calls.length).toBe(1)
+    expect(calls[0]).not.toContain('X-STX-Router')
+    expect(window.document.querySelector('[data-shell] nav')?.textContent).toBe('Queue nav')
+    expect(window.document.querySelector('[data-shell] main')?.textContent).toContain('Queue full page')
+  })
+
+  it('reruns scoped page scripts that live outside custom app-shell containers', async () => {
+    const window = installRouter(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app.stx">
+          <meta name="stx-layout-group" content="app">
+        </head>
+        <body>
+          <div data-shell>
+            <nav>Home nav</nav>
+            <main>Home</main>
+          </div>
+        </body>
+      </html>
+    `, async () => response(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app.stx">
+          <meta name="stx-layout-group" content="app">
+        </head>
+        <body>
+          <div data-shell>
+            <nav>Composer nav</nav>
+            <main><button id="add-post">Add</button><span id="count">0</span></main>
+          </div>
+          <script data-stx-scoped>
+            document.getElementById('add-post')?.addEventListener('click', () => {
+              const count = document.getElementById('count')
+              count.textContent = String(Number(count.textContent || '0') + 1)
+            })
+          </script>
+        </body>
+      </html>
+    `), { container: '[data-shell]' })
+
+    await window.stxRouter.navigate('/composer')
+    await waitForRouterSwap()
+
+    const injectedScripts = [...window.document.querySelectorAll('script[data-stx-page]')]
+      .map(script => script.textContent || '')
+      .join('\n')
+
+    expect(injectedScripts).toContain('add-post')
   })
 
   it('uses query-aware keys for prefetch cache entries', async () => {

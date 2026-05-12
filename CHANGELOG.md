@@ -1,4 +1,90 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.52...v0.2.53)
+
+### 🚀 Features
+
+- **image-optimization**: runtime /_stx/img transform endpoint (IPX-equivalent) ([d3b09d4](https://github.com/stacksjs/stx/commit/d3b09d4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **image-optimization**: thumbhash placeholder strategy (v1: visualized) ([25ff8ea](https://github.com/stacksjs/stx/commit/25ff8ea)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **image-optimization**: NuxtImage-style auto-discovery of .webp/.avif siblings ([5e1761b](https://github.com/stacksjs/stx/commit/5e1761b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **image-optimization**: make ts-images the default backend, sharp the fast path ([e3671eb](https://github.com/stacksjs/stx/commit/e3671eb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **stx**: emit sourceMappingURL marker via Buffer.concat ([8137f83](https://github.com/stacksjs/stx/commit/8137f83)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- re-pin theme meta on SPA nav; sourcemap pragma piecewise; component renderer + tests ([b183bc4](https://github.com/stacksjs/stx/commit/b183bc4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- **components**: migrate Form to submit-validation wrapper ([b726107](https://github.com/stacksjs/stx/commit/b726107)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Combobox/RadioGroup/CommandPalette via custom-event bus ([d62ba55](https://github.com/stacksjs/stx/commit/d62ba55)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Dropdown/Listbox/Popover families via custom-event bus ([10d846c](https://github.com/stacksjs/stx/commit/10d846c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: normalize Heatmap server-side prop extraction ([04ccdc5](https://github.com/stacksjs/stx/commit/04ccdc5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate TableHeader/Transition/Teleport/Portal ([98e6a11](https://github.com/stacksjs/stx/commit/98e6a11)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Payment + VirtualList/VirtualTable ([8b28955](https://github.com/stacksjs/stx/commit/8b28955)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Navigator/Audio/Video/CodeBlock + top-level Hero/Footer/Installation ([3208b78](https://github.com/stacksjs/stx/commit/3208b78)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Image + Sidebar family ([a1938d1](https://github.com/stacksjs/stx/commit/a1938d1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Pagination/Calendar/Login/Signup/TwoFactorChallenge ([1aed19e](https://github.com/stacksjs/stx/commit/1aed19e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate form inputs (Text/Number/Password/Email/Search/Textarea/Select) ([a87bbc2](https://github.com/stacksjs/stx/commit/a87bbc2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate StepperStep/Badge/Progress/Tooltip/Avatar ([546a65f](https://github.com/stacksjs/stx/commit/546a65f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Tabs/Drawer/Switch/Checkbox/Radio/Notification/Button/Card ([e61ffee](https://github.com/stacksjs/stx/commit/e61ffee)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Accordion + Dialog to script client + signals ([3588aa1](https://github.com/stacksjs/stx/commit/3588aa1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.53 ([dfb5050](https://github.com/stacksjs/stx/commit/dfb5050)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: revert manual version bump to 0.2.52 ([dd4735b](https://github.com/stacksjs/stx/commit/dd4735b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### ⏪ Reverts
+
+- keep staged-lint kebab + bunx gitlint shorthand ([07c8d83](https://github.com/stacksjs/stx/commit/07c8d83)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.52...HEAD)
+
+### 🚀 Features
+
+- **image-optimization**: runtime /_stx/img transform endpoint (IPX-equivalent) ([d3b09d4](https://github.com/stacksjs/stx/commit/d3b09d4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **image-optimization**: thumbhash placeholder strategy (v1: visualized) ([25ff8ea](https://github.com/stacksjs/stx/commit/25ff8ea)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **image-optimization**: NuxtImage-style auto-discovery of .webp/.avif siblings ([5e1761b](https://github.com/stacksjs/stx/commit/5e1761b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **image-optimization**: make ts-images the default backend, sharp the fast path ([e3671eb](https://github.com/stacksjs/stx/commit/e3671eb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **stx**: emit sourceMappingURL marker via Buffer.concat ([8137f83](https://github.com/stacksjs/stx/commit/8137f83)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- re-pin theme meta on SPA nav; sourcemap pragma piecewise; component renderer + tests ([b183bc4](https://github.com/stacksjs/stx/commit/b183bc4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- **components**: migrate Form to submit-validation wrapper ([b726107](https://github.com/stacksjs/stx/commit/b726107)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Combobox/RadioGroup/CommandPalette via custom-event bus ([d62ba55](https://github.com/stacksjs/stx/commit/d62ba55)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Dropdown/Listbox/Popover families via custom-event bus ([10d846c](https://github.com/stacksjs/stx/commit/10d846c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: normalize Heatmap server-side prop extraction ([04ccdc5](https://github.com/stacksjs/stx/commit/04ccdc5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate TableHeader/Transition/Teleport/Portal ([98e6a11](https://github.com/stacksjs/stx/commit/98e6a11)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Payment + VirtualList/VirtualTable ([8b28955](https://github.com/stacksjs/stx/commit/8b28955)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Navigator/Audio/Video/CodeBlock + top-level Hero/Footer/Installation ([3208b78](https://github.com/stacksjs/stx/commit/3208b78)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Image + Sidebar family ([a1938d1](https://github.com/stacksjs/stx/commit/a1938d1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Pagination/Calendar/Login/Signup/TwoFactorChallenge ([1aed19e](https://github.com/stacksjs/stx/commit/1aed19e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate form inputs (Text/Number/Password/Email/Search/Textarea/Select) ([a87bbc2](https://github.com/stacksjs/stx/commit/a87bbc2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate StepperStep/Badge/Progress/Tooltip/Avatar ([546a65f](https://github.com/stacksjs/stx/commit/546a65f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Tabs/Drawer/Switch/Checkbox/Radio/Notification/Button/Card ([e61ffee](https://github.com/stacksjs/stx/commit/e61ffee)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: migrate Accordion + Dialog to script client + signals ([3588aa1](https://github.com/stacksjs/stx/commit/3588aa1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- **stx**: revert manual version bump to 0.2.52 ([dd4735b](https://github.com/stacksjs/stx/commit/dd4735b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### ⏪ Reverts
+
+- keep staged-lint kebab + bunx gitlint shorthand ([07c8d83](https://github.com/stacksjs/stx/commit/07c8d83)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.51...v0.2.52)
 
 ### 🐛 Bug Fixes

@@ -7,6 +7,42 @@ export const showSearch = $props.showSearch ?? false
 export const searchPlaceholder = $props.searchPlaceholder || 'Search...'
 export const searchValue = $props.searchValue || ''
 export const collapsed = $props.collapsed ?? false
+export const variant = $props.variant || 'tahoe'
+
+const headerVariants = {
+  workspace: {
+    titlebar: 'h-18 flex items-center justify-between px-5',
+    logo: 'w-9 h-9 rounded-[12px] bg-black text-white flex items-center justify-center font-semibold text-sm',
+    title: 'text-[18px] font-semibold text-zinc-950 dark:text-white truncate',
+    subtitle: 'text-sm text-zinc-500 dark:text-zinc-400 truncate',
+    searchWrap: 'px-5 pb-4',
+    searchInput: 'w-full rounded-[16px] border border-zinc-200/70 bg-white/70 px-10 py-2.5 text-[15px] text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-300/80 dark:border-white/10 dark:bg-white/10 dark:text-white',
+  },
+  desktop: {
+    titlebar: 'h-16 flex items-center justify-between px-4',
+    logo: 'w-9 h-9 rounded-[12px] bg-black/80 text-white flex items-center justify-center font-semibold text-sm shadow-sm dark:bg-white/14',
+    title: 'text-[17px] font-semibold text-zinc-950 dark:text-white truncate',
+    subtitle: 'text-sm text-zinc-500 dark:text-zinc-400 truncate',
+    searchWrap: 'px-4 pb-4',
+    searchInput: 'w-full rounded-[16px] border border-white/40 bg-white/45 px-10 py-2.5 text-[15px] text-zinc-900 placeholder:text-zinc-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/70 dark:border-white/10 dark:bg-white/10 dark:text-white',
+  },
+  default: {
+    titlebar: 'h-13 flex items-center justify-between px-4 border-b border-black/5 dark:border-white/10',
+    logo: 'w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm',
+    title: 'text-sm font-semibold text-black/90 dark:text-white truncate',
+    subtitle: 'text-xs text-black/50 dark:text-white/50 truncate',
+    searchWrap: 'px-3 py-3',
+    searchInput: 'w-full pl-9 pr-3 py-2 text-sm bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 rounded-lg text-black/90 dark:text-white placeholder:text-black/40 dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400/50 transition-colors',
+  },
+}
+
+const headerStyle = headerVariants[variant] || headerVariants.default
+export const titlebarClasses = headerStyle.titlebar
+export const logoClasses = headerStyle.logo
+export const titleClasses = headerStyle.title
+export const subtitleClasses = headerStyle.subtitle
+export const searchWrapClasses = headerStyle.searchWrap
+export const searchInputClasses = headerStyle.searchInput
 </script>
 
 <script client>
@@ -19,18 +55,18 @@ function onSearchInput(event) {
 
 <div class="flex-shrink-0">
   <!-- Title bar area -->
-  <div class="h-13 flex items-center justify-between px-4 border-b border-black/5 dark:border-white/10">
+  <div class="{{ titlebarClasses }}">
     @if(!collapsed)
       <div class="flex items-center gap-3 min-w-0">
         <!-- Logo -->
         @if(logo)
           <img src="{{ logo }}" alt="{{ title }}" class="w-8 h-8 rounded-lg object-cover" />
         @elseif(logoIcon)
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+          <div class="{{ logoClasses }}">
             <div class="{{ logoIcon }} w-5 h-5 text-white"></div>
           </div>
         @else
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+          <div class="{{ logoClasses }}">
             {{ title.charAt(0) }}
           </div>
         @endif
@@ -38,12 +74,12 @@ function onSearchInput(event) {
         <!-- Title & Subtitle -->
         <div class="min-w-0">
           @if(title)
-            <div class="text-sm font-semibold text-black/90 dark:text-white truncate">
+            <div class="{{ titleClasses }}">
               {{ title }}
             </div>
           @endif
           @if(subtitle)
-            <div class="text-xs text-black/50 dark:text-white/50 truncate">
+            <div class="{{ subtitleClasses }}">
               {{ subtitle }}
             </div>
           @endif
@@ -54,11 +90,11 @@ function onSearchInput(event) {
       @if(logo)
         <img src="{{ logo }}" alt="{{ title }}" class="w-8 h-8 rounded-lg object-cover mx-auto" />
       @elseif(logoIcon)
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mx-auto">
+        <div class="{{ logoClasses }} mx-auto">
           <div class="{{ logoIcon }} w-5 h-5 text-white"></div>
         </div>
       @else
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm mx-auto">
+        <div class="{{ logoClasses }} mx-auto">
           {{ title.charAt(0) }}
         </div>
       @endif
@@ -70,14 +106,14 @@ function onSearchInput(event) {
 
   <!-- Search (only when expanded) -->
   @if(showSearch && !collapsed)
-    <div class="px-3 py-3">
+    <div class="{{ searchWrapClasses }}">
       <div class="relative">
         <div class="i-hugeicons-search-01 absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 dark:text-white/40"></div>
         <input
           type="text"
           placeholder="{{ searchPlaceholder }}"
           value="{{ searchValue }}"
-          class="w-full pl-9 pr-3 py-2 text-sm bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 rounded-lg text-black/90 dark:text-white placeholder:text-black/40 dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400/50 transition-colors"
+          class="{{ searchInputClasses }}"
           @input="onSearchInput($event)"
         />
       </div>

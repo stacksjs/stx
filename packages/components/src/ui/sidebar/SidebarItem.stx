@@ -7,21 +7,42 @@ export const badge = $props.badge || ''
 export const active = $props.active ?? false
 export const disabled = $props.disabled ?? false
 export const indent = $props.indent ?? false
+export const variant = $props.variant || 'tahoe'
 
-const baseItemList = [
-  'flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px]',
-  'transition-all duration-150',
-  indent ? 'ml-2' : '',
-]
-const stateClasses = disabled
-  ? 'opacity-50 cursor-not-allowed'
-  : active
-    ? 'bg-blue-500/20 text-blue-600 dark:bg-blue-400/25 dark:text-blue-300 font-medium'
-    : 'text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10'
+const itemVariants = {
+  workspace: {
+    base: 'flex w-full items-center gap-3 rounded-[18px] px-4 py-3 text-[17px] leading-tight transition-colors duration-150',
+    indent: '',
+    active: 'bg-[#e7e7e5] text-zinc-950',
+    inactive: 'text-zinc-700 hover:bg-[#ececea] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10',
+    icon: active ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 dark:text-zinc-500',
+    badge: 'ml-auto rounded-full bg-white/70 px-2.5 py-0.5 text-[13px] font-medium text-zinc-500 shadow-sm dark:bg-white/10 dark:text-zinc-400',
+  },
+  desktop: {
+    base: 'flex w-full items-center gap-3 rounded-[16px] px-3.5 py-2.5 text-[15px] leading-tight transition-colors duration-150',
+    indent: '',
+    active: 'bg-white/55 text-zinc-950 shadow-sm ring-1 ring-white/50 dark:bg-white/12 dark:text-white dark:ring-white/10',
+    inactive: 'text-zinc-700 hover:bg-white/34 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10',
+    icon: active ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400',
+    badge: 'ml-auto rounded-full bg-white/55 px-2.5 py-0.5 text-xs font-medium text-zinc-500 shadow-sm dark:bg-white/10 dark:text-zinc-400',
+  },
+  default: {
+    base: 'flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-all duration-150',
+    indent: indent ? 'ml-2' : '',
+    active: 'bg-blue-500/20 text-blue-600 dark:bg-blue-400/25 dark:text-blue-300 font-medium',
+    inactive: 'text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10',
+    icon: active ? 'text-blue-600 dark:text-blue-300' : 'text-black/50 dark:text-white/50',
+    badge: 'ml-auto px-2 py-0.5 text-xs font-medium rounded-full bg-black/10 text-black/70 dark:bg-white/15 dark:text-white/70',
+  },
+}
+
+const itemStyle = itemVariants[variant] || itemVariants.default
+const baseItemList = [itemStyle.base, itemStyle.indent]
+const stateClasses = disabled ? 'opacity-50 cursor-not-allowed' : active ? itemStyle.active : itemStyle.inactive
 
 export const itemClasses = [...baseItemList, stateClasses].filter(Boolean).join(' ')
-export const iconClasses = `${icon} w-4 h-4 flex-shrink-0 ${active ? 'text-blue-600 dark:text-blue-300' : 'text-black/50 dark:text-white/50'}`
-export const badgeClasses = 'ml-auto px-2 py-0.5 text-xs font-medium rounded-full bg-black/10 text-black/70 dark:bg-white/15 dark:text-white/70'
+export const iconClasses = `${icon} w-5 h-5 flex-shrink-0 ${itemStyle.icon}`
+export const badgeClasses = itemStyle.badge
 </script>
 
 <script client>

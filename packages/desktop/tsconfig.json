@@ -2,8 +2,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "composite": true,
+    "rootDir": "../..",
     "outDir": "./dist"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../stx/src/jsx-runtime.ts"],
   "exclude": ["node_modules", "dist", "test"]
 }
