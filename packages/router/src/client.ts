@@ -344,12 +344,18 @@ else {
           }
           executedScriptHashes[h]=1;
           var ns=document.createElement('script');
+          var hasImport=code.indexOf('import ')!==-1;
+          if(hasImport){
+            ns.type='module';
+          }
           // Wrap in block scope to prevent const/let collisions on re-navigation.
           // Without this, navigating away and back throws "Identifier has already
           // been declared" because the previous page's top-level const/let are
-          // still in the global scope.
+          // still in the global scope. Skip the wrap for module scripts —
+          // they get their own scope from ESM, and top-level 'import' is
+          // illegal inside a block, which would throw SyntaxError.
           var isAlreadyScoped=code.trimStart().charAt(0)==='('||code.trimStart().charAt(0)===';'||code.indexOf('window.stx.mount')>-1;
-          ns.textContent=isAlreadyScoped?code:'{'+code+'}';
+          ns.textContent=(hasImport||isAlreadyScoped)?code:'{'+code+'}';
           ns.setAttribute('data-stx-page','');
           document.body.appendChild(ns);
         });
@@ -580,8 +586,11 @@ else {
           // Wrap in block scope to prevent const/let collisions on re-navigation.
           // Top-level const/let in <script> tags are global-scoped in browsers
           // and throw "Identifier has already been declared" on re-execution.
+          // Skip the wrap for module scripts — they get their own scope from
+          // ESM, and top-level 'import' is illegal inside a block, which
+          // would throw SyntaxError before the script ever runs.
           var alreadyScoped=text.trimStart().charAt(0)==='('||text.trimStart().charAt(0)===';'||text.indexOf('window.stx.mount')>-1;
-          ns.textContent=alreadyScoped?text:'{'+text+'}';
+          ns.textContent=(hasImport||alreadyScoped)?text:'{'+text+'}';
           ns.setAttribute('data-stx-page','');
           document.body.appendChild(ns);
         });
