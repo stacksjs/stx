@@ -403,6 +403,19 @@ export async function renderComponentWithSlot(
         searchDirs.push(options.componentsDir)
       }
 
+      // Plugin-registered component directories (e.g. `@stacksjs/components`'s
+      // `src/ui/` exposed by a stx plugin shim). Populated by config.ts when
+      // each plugin is loaded; consume it here so `<Notification>` etc.
+      // resolve out of installed packages without forcing the project to
+      // copy or re-export them.
+      const pluginDirs = (options as any)._pluginComponentDirs
+      if (Array.isArray(pluginDirs)) {
+        for (const dir of pluginDirs) {
+          if (typeof dir === 'string' && !searchDirs.includes(dir))
+            searchDirs.push(dir)
+        }
+      }
+
       // Also search common project component directories as fallbacks
       // This handles cases where the caller (e.g., bun-router) passes a viewsDir-relative
       // componentsDir but actual components live at the project-level src/components
