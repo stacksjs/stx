@@ -8,20 +8,11 @@
  * against the test's `window` so we can drive the translator inputs
  * synthetically — no Craft binary required.
  */
-import { afterEach, beforeAll, describe, expect, it } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { afterEach, describe, expect, it } from 'bun:test'
 import './_mock-bridge'
+import { installCraftBridgeFixture } from './_craft-bridge-fixture'
 
-const BRIDGE_PATH = `${__dirname}/../../../../craft/packages/zig/src/js/craft-bridge.js`
-
-beforeAll(() => {
-  const code = readFileSync(BRIDGE_PATH, 'utf8')
-  // The bridge file is an IIFE that mutates `window`. Eval it in this
-  // test's window context. It's defensive about the missing webkit
-  // bridge so it won't throw at install time.
-  // eslint-disable-next-line no-eval
-  ;(0, eval)(code)
-})
+const describeWithCraftBridge = installCraftBridgeFixture() ? describe : describe.skip
 
 afterEach(() => {
   // Drain any pending queues left over from prior tests so each it() is
@@ -37,7 +28,7 @@ function captureResult(action: string): Promise<any> {
   })
 }
 
-describe('FS callback translator', () => {
+describeWithCraftBridge('FS callback translator', () => {
   it('wraps getHomeDir payload into {path}', async () => {
     const promise = captureResult('getHomeDir')
     ;(window as any).__craftFSCallback('', 'getHomeDir', '/Users/me')
@@ -54,7 +45,7 @@ describe('FS callback translator', () => {
   })
 })
 
-describe('System callback translator', () => {
+describeWithCraftBridge('System callback translator', () => {
   it('wraps language string into {language}', async () => {
     const promise = captureResult('getLanguage')
     ;(window as any).__craftSystemCallback('', 'getLanguage', 'en')
@@ -68,7 +59,7 @@ describe('System callback translator', () => {
   })
 })
 
-describe('Power callback translator', () => {
+describeWithCraftBridge('Power callback translator', () => {
   it('wraps battery level into {level}', async () => {
     const promise = captureResult('getBatteryLevel')
     ;(window as any).__craftPowerCallback('', 'getBatteryLevel', 0.85)
@@ -88,7 +79,7 @@ describe('Power callback translator', () => {
   })
 })
 
-describe('Network callback translator', () => {
+describeWithCraftBridge('Network callback translator', () => {
   it('wraps connection type into {type}', async () => {
     const promise = captureResult('getConnectionType')
     ;(window as any).__craftNetworkCallback('', 'getConnectionType', 'wifi')
@@ -108,7 +99,7 @@ describe('Network callback translator', () => {
   })
 })
 
-describe('Bluetooth callback translator', () => {
+describeWithCraftBridge('Bluetooth callback translator', () => {
   it('wraps array payloads into {devices}', async () => {
     const promise = captureResult('getConnectedDevices')
     ;(window as any).__craftBluetoothCallback('', 'getConnectedDevices', [{ id: 'a' }])
@@ -116,7 +107,7 @@ describe('Bluetooth callback translator', () => {
   })
 })
 
-describe('Menu callback translator', () => {
+describeWithCraftBridge('Menu callback translator', () => {
   it('re-emits as craft:menu:action event', () => {
     let received: string | null = null
     const handler = (e: Event) => { received = (e as CustomEvent).detail.id }

@@ -6,16 +6,10 @@
  * geometry into AppKit (worst case).
  */
 import { afterEach, beforeAll, describe, expect, it } from 'bun:test'
-import { readFileSync } from 'node:fs'
 import './_mock-bridge'
+import { installCraftBridgeFixture } from './_craft-bridge-fixture'
 
-const BRIDGE_PATH = `${__dirname}/../../../../craft/packages/zig/src/js/craft-bridge.js`
-
-beforeAll(() => {
-  const code = readFileSync(BRIDGE_PATH, 'utf8')
-  // eslint-disable-next-line no-eval
-  ;(0, eval)(code)
-})
+const describeWithCraftBridge = installCraftBridgeFixture() ? describe : describe.skip
 
 let posted: Array<{ t: string, a: string, d: string }>
 beforeAll(() => {
@@ -41,7 +35,7 @@ function lastPosted(action: string): any {
   return null
 }
 
-describe('window.setSize finite coercion', () => {
+describeWithCraftBridge('window.setSize finite coercion', () => {
   it('passes valid integers through unchanged', async () => {
     await (window as any).craft.window.setSize(1024, 768)
     expect(lastPosted('setSize')).toEqual({ width: 1024, height: 768 })
@@ -68,7 +62,7 @@ describe('window.setSize finite coercion', () => {
   })
 })
 
-describe('window.setPosition finite coercion', () => {
+describeWithCraftBridge('window.setPosition finite coercion', () => {
   it('accepts negative coordinates (off-screen positioning)', async () => {
     await (window as any).craft.window.setPosition(-100, 50)
     expect(lastPosted('setPosition')).toEqual({ x: -100, y: 50 })
@@ -80,7 +74,7 @@ describe('window.setPosition finite coercion', () => {
   })
 })
 
-describe('window.setAspectRatio finite coercion', () => {
+describeWithCraftBridge('window.setAspectRatio finite coercion', () => {
   it('uses 1 as the default for invalid sides', async () => {
     await (window as any).craft.window.setAspectRatio(Number.NaN, 0)
     expect(lastPosted('setAspectRatio')).toEqual({ width: 1, height: 0 })
