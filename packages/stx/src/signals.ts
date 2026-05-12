@@ -3309,6 +3309,12 @@ catch (e) {}
     useDark,
     useHead,
     useSeoMeta,
+    // Client-side no-op for definePageMeta — the real implementation registers
+    // page metadata (middleware / validate / etc.) at SSR/SSG time. Pages that
+    // call it inside a bare <script> or <script client> would otherwise hit
+    // ReferenceError on hydration; this shim lets shared client/server code
+    // call it safely.
+    definePageMeta: function() {},
     toast,
     modal,
     drawer,

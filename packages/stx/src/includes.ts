@@ -254,7 +254,7 @@ function transformSignalScript(scriptContent: string, scopeId: string): string {
   // and effect tracking in the signals runtime.
   return `
 (function() {
-  var { state, derived, effect, batch, onMount, onDestroy, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect } = window.stx;
+  var { state, derived, effect, batch, onMount, onDestroy, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect } = window.stx;
   var __destroyHooks = [];
   var __origOnDestroy = onDestroy;
   onDestroy = function(fn) { __origOnDestroy(fn); __destroyHooks.push(fn); };
