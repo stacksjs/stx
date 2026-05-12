@@ -50,6 +50,13 @@ describe('getRouterScript — injected CSS defaults', () => {
     expect(script).toMatch(/o\.viewTransitions\s*&&\s*['"]startViewTransition['"]\s+in\s+document/)
   })
 
+  it('observes View Transition promise rejections', () => {
+    // Browser View Transitions can abort when DOM work takes too long. The
+    // router should keep navigation stable instead of leaking unhandled errors.
+    expect(script).toContain('transition.finished.catch')
+    expect(script).toContain('transition.updateCallbackDone.catch')
+  })
+
   it('progress-bar color and height come from the config', () => {
     // Apps set progressColor + progressHeight via stx.config.ts or
     // window.__stxRouterConfig. Defaults are defined in the IIFE.

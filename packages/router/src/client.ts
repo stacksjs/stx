@@ -29,6 +29,19 @@ export function getRouterScript(): string {
   var containerSel=o.container;
   var debug=!!o.debug;
   function log(){if(debug&&typeof console!=='undefined'&&console.log)console.log.apply(console,arguments)}
+  function runViewTransition(callback){
+    if(!o.viewTransitions||!document.startViewTransition)return false;
+    try{
+      var transition=document.startViewTransition(callback);
+      var onAbort=function(err){log('[router] view transition aborted:',err&&err.message?err.message:err)};
+      if(transition&&transition.finished&&transition.finished.catch)transition.finished.catch(onAbort);
+      if(transition&&transition.updateCallbackDone&&transition.updateCallbackDone.catch)transition.updateCallbackDone.catch(onAbort);
+      return true;
+    }catch(err){
+      log('[router] view transition unavailable:',err&&err.message?err.message:err);
+      return false;
+    }
+  }
 
   // ── Progress bar (0→100% at top of viewport) ──
   // Native loading indicator baked into the router. Starts when navigation
@@ -363,7 +376,7 @@ else {
         // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
         window.dispatchEvent(new Event('stx:load'));
       }
-      if(o.viewTransitions&&document.startViewTransition){document.startViewTransition(doFragSwap)}
+      if(runViewTransition(doFragSwap)){}
       else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){doFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
       return;
     }
@@ -606,8 +619,7 @@ else {
       }
     }
 
-    if(o.viewTransitions&&document.startViewTransition){
-      document.startViewTransition(doSwap);
+    if(runViewTransition(doSwap)){
     }
 else {
       // Fallback fade for browsers without View Transitions API
