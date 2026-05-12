@@ -226,6 +226,26 @@ export async function serve(options: ServeOptions): Promise<void> {
     defaultConfig: defaultStxConfig,
   }) as Record<string, any>
 
+  // Plugin discovery is a separate concern: stx's own `loadStxConfig`
+  // is the function that processes the `plugins` array and populates
+  // `_pluginComponentDirs` on the loaded config. Bunfig's `loadConfig`
+  // above only reads the raw object, so without this second call the
+  // component resolver never gets a search-dir entry for plugin-
+  // contributed tags (e.g. `<Notification>` from a stx shim around
+  // `@stacksjs/components`). Merge the resulting plugin dirs onto
+  // `stxConfig` so the existing config-forwarding logic picks them up.
+  try {
+    const stxMod = options.stxModule ? options.stxModule : await defaultStxModule
+    if (stxMod && typeof (stxMod as any).loadStxConfig === 'function') {
+      const pluginLoaded = await (stxMod as any).loadStxConfig() as Record<string, any>
+      if (pluginLoaded?._pluginComponentDirs)
+        stxConfig._pluginComponentDirs = pluginLoaded._pluginComponentDirs
+      if (pluginLoaded?._pluginPageDirs)
+        stxConfig._pluginPageDirs = pluginLoaded._pluginPageDirs
+    }
+  }
+  catch { /* plugin discovery best-effort — fall through with what bunfig gave us */ }
+
   // Options passed directly take precedence, then bunfig config, then defaults
   const componentsDir = options.componentsDir ?? stxConfig.componentsDir ?? defaultStxConfig.componentsDir
   const layoutsDir = options.layoutsDir ?? stxConfig.layoutsDir ?? defaultStxConfig.layoutsDir
@@ -802,6 +822,12 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...('defaultDescription' in stxConfig && { defaultDescription: stxConfig.defaultDescription }),
       ...('defaultImage' in stxConfig && { defaultImage: stxConfig.defaultImage }),
       ...('seo' in stxConfig && { seo: stxConfig.seo }),
+      // Forward plugin-registered component dirs so renderComponentWithSlot
+      // can resolve tags exposed by stx plugins (e.g. `<Notification>` from
+      // `@stacksjs/components` via a stx plugin shim). Populated by
+      // `loadStxConfig` when each plugin is loaded.
+      ...('_pluginComponentDirs' in stxConfig && { _pluginComponentDirs: stxConfig._pluginComponentDirs }),
+      ...('_pluginPageDirs' in stxConfig && { _pluginPageDirs: stxConfig._pluginPageDirs }),
     }
 
     // When SSR is disabled, serve a client-side SPA shell instead of processing directives
@@ -1088,6 +1114,10 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...('defaultDescription' in stxConfig && { defaultDescription: stxConfig.defaultDescription }),
       ...('defaultImage' in stxConfig && { defaultImage: stxConfig.defaultImage }),
       ...('seo' in stxConfig && { seo: stxConfig.seo }),
+      // Mirror the static-route config: forward plugin-registered component
+      // dirs so dynamic routes also resolve `<Notification>` etc.
+      ...('_pluginComponentDirs' in stxConfig && { _pluginComponentDirs: stxConfig._pluginComponentDirs }),
+      ...('_pluginPageDirs' in stxConfig && { _pluginPageDirs: stxConfig._pluginPageDirs }),
     }
 
     let output = templateContent
