@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/components",
   "type": "module",
-  "version": "0.2.53",
+  "version": "0.2.54",
   "description": "A modern component library built with STX, featuring headwind utility classes and TypeScript syntax highlighting.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
@@ -51,8 +51,8 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
-    "lint": "bunx --bun pickier lint",
-    "lint:fix": "bunx --bun pickier lint --fix",
+    "lint": "bun x --bun pickier lint",
+    "lint:fix": "bun x --bun pickier lint --fix",
     "typecheck": "bun tsc --noEmit",
     "prepublishOnly": "bun run build"
   },

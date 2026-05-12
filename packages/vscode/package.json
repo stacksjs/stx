@@ -3,7 +3,7 @@
   "name": "vscode-stacks",
   "private": true,
   "displayName": "Stacks",
-  "version": "0.2.35",
+  "version": "0.2.54",
   "description": "A modern Stacks development environment, including stx language support.",
   "license": "MIT",
   "funding": "https://github.com/sponsors/chrisbbreuer",
@@ -607,8 +607,8 @@
     ]
   },
   "scripts": {
-    "package": "bunx --bun vsce package",
-    "release": "bunx --bun vsce publish",
+    "package": "bun x --bun vsce package",
+    "release": "bun x --bun vsce publish",
     "build": "bun build.ts"
   },
   "galleryBanner": {

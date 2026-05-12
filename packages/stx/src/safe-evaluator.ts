@@ -232,11 +232,11 @@ function assertNoUnsafeIdentifierTokens(strippedExpression: string, originalExpr
     const previous = strippedExpression[match.index - 1]
 
     if (DANGEROUS_IDENTIFIERS.has(identifier)) {
-      throw new Error(`Potentially unsafe expression (identifier ${identifier}): ${originalExpression}`)
+      throw new Error(`Potentially unsafe expression (matched /\\b${identifier}\\b/; identifier ${identifier}): ${originalExpression}`)
     }
 
     if (previous === '.' && DANGEROUS_BRACKET_KEYS.has(identifier)) {
-      throw new Error(`Potentially unsafe expression (property ${identifier}): ${originalExpression}`)
+      throw new Error(`Potentially unsafe expression (matched /.${identifier}/; property ${identifier}): ${originalExpression}`)
     }
   }
 }

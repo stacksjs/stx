@@ -1,7 +1,7 @@
 {
   "name": "stx",
   "type": "module",
-  "version": "0.2.53",
+  "version": "0.2.54",
   "private": true,
   "description": "A fast & powerful UI / templating engine. Laravel Blade & Vue-inspired. Powered by Bun.",
   "author": "Chris Breuer <chris@stacksjs.org>",
@@ -62,20 +62,20 @@
     "zip:windows-x64": "zip -j bin/stx-windows-x64.zip bin/stx-windows-x64.exe",
     "zip:darwin-x64": "zip -j bin/stx-darwin-x64.zip bin/stx-darwin-x64",
     "zip:darwin-arm64": "zip -j bin/stx-darwin-arm64.zip bin/stx-darwin-arm64",
-    "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
+    "fresh": "bun x rimraf node_modules/ bun.lock && bun i",
     "prepublishOnly": "bun run build",
     "setup": "bun run scripts/setup.ts",
     "test": "bun test",
-    "lint": "bunx --bun pickier 'packages/*/src/**/*.ts' --config .config/code-style.ts",
-    "lint:fix": "bunx --bun pickier 'packages/*/src/**/*.ts' --fix --config .config/code-style.ts",
-    "format": "bunx --bun pickier . --format --config .config/code-style.ts",
-    "format:fix": "bunx --bun pickier . --format --write --config .config/code-style.ts",
-    "format:check": "bunx --bun pickier run --mode format --check --config .config/code-style.ts",
-    "changelog": "bunx logsmith --verbose",
-    "changelog:generate": "bunx logsmith --output CHANGELOG.md",
-    "release": "bun --bun run changelog:generate && bunx --bun bumpx prompt --recursive --only-changed-since",
-    "release:patch": "bun --bun run changelog:generate && bunx --bun bumpx patch --recursive --yes --only-changed-since",
-    "release:all": "bun --bun run changelog:generate && bunx --bun bumpx patch --recursive --yes",
+    "lint": "bun x --bun pickier 'packages/*/src/**/*.ts' --config .config/code-style.ts",
+    "lint:fix": "bun x --bun pickier 'packages/*/src/**/*.ts' --fix --config .config/code-style.ts",
+    "format": "bun x --bun pickier . --format --config .config/code-style.ts",
+    "format:fix": "bun x --bun pickier . --format --write --config .config/code-style.ts",
+    "format:check": "bun x --bun pickier run --mode format --check --config .config/code-style.ts",
+    "changelog": "bun x logsmith --verbose",
+    "changelog:generate": "bun x logsmith --output CHANGELOG.md",
+    "release": "bun --bun run changelog:generate && bun x --bun bumpx prompt --recursive --only-changed-since",
+    "release:patch": "bun --bun run changelog:generate && bun x --bun bumpx patch --recursive --yes --only-changed-since",
+    "release:all": "bun --bun run changelog:generate && bun x --bun bumpx patch --recursive --yes",
     "dev:docs": "bun --bun bunpress dev docs",
     "build:docs": "bun --bun bunpress build docs",
     "preview:docs": "bun --bun bunpress preview docs",
@@ -88,7 +88,7 @@
   "git-hooks": {
     "pre-commit": {
       "staged-lint": {
-        "*.{js,ts,json,yaml,yml,md}": "bunx --bun pickier run --mode lint --fix"
+        "*.{js,ts,json,yaml,yml,md}": "bun x --bun pickier run --mode lint --fix"
       }
     }
   },

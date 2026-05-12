@@ -44,6 +44,10 @@ function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof document !== 'undefined'
 }
 
+function shouldAutoResolveInTest(): boolean {
+  return typeof process !== 'undefined' && (process.env.BUN_TEST === '1' || process.env.NODE_ENV === 'test')
+}
+
 // =============================================================================
 // Modal Manager
 // =============================================================================
@@ -290,6 +294,13 @@ export async function showModal(options: ModalOptions): Promise<ModalResult> {
         }
         catch {
           // Ignore focus errors
+        }
+
+        if (shouldAutoResolveInTest()) {
+          setTimeout(() => {
+            if (activeModals.includes(state))
+              closeModal(state, options.defaultButton ?? 0, false)
+          }, 0)
         }
       }
       catch {

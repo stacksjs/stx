@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/desktop",
   "type": "module",
-  "version": "0.2.53",
+  "version": "0.2.54",
   "description": "Native desktop application framework for stx (powered by Craft)",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
@@ -45,9 +45,9 @@
   ],
   "scripts": {
     "build": "bun --bun build.ts",
-    "lint": "bunx --bun pickier lint",
-    "lint:fix": "bunx --bun pickier lint --fix",
-    "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
+    "lint": "bun x --bun pickier lint",
+    "lint:fix": "bun x --bun pickier lint --fix",
+    "fresh": "bun x rimraf node_modules/ bun.lock && bun i",
     "prepublishOnly": "bun run build",
     "test": "bun test --preload ../../test-utils/happy-dom.ts",
     "test:watch": "bun test --watch --preload ../../test-utils/happy-dom.ts",

@@ -1073,12 +1073,11 @@ describe('sanitizeExpression Bracket Notation Configuration', () => {
     expect(() => sanitizeExpression('obj["key"]')).not.toThrow()
   })
 
-  it('should allow string-keyed bracket access with bracket notation enabled (safe in strict mode)', () => {
+  it('should block dangerous string-keyed bracket access with bracket notation enabled', () => {
     configureSafeEvaluator({ allowBracketNotation: true })
-    // String keys like "constructor" and "__proto__" are safe in strict mode when inside string literals
-    // The string literal stripping means these pass the pattern check, but strict mode prevents exploitation
-    expect(() => sanitizeExpression('obj["constructor"]')).not.toThrow()
-    expect(() => sanitizeExpression('obj["__proto__"]')).not.toThrow()
+    // Enabling bracket notation should not reopen prototype/constructor access.
+    expect(() => sanitizeExpression('obj["constructor"]')).toThrow('Potentially unsafe')
+    expect(() => sanitizeExpression('obj["__proto__"]')).toThrow('Potentially unsafe')
     // Direct (non-string) access to dangerous properties is still blocked
     expect(() => sanitizeExpression('obj.constructor')).toThrow('Potentially unsafe')
     expect(() => sanitizeExpression('obj.__proto__')).toThrow('Potentially unsafe')
