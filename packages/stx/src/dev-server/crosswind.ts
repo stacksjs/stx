@@ -135,14 +135,20 @@ function findCrosswindPaths(): string[] {
   const paths: string[] = []
   const homeDir = process.env.HOME || process.env.USERPROFILE || ''
 
-  // Search from current working directory up
+  // Search from current working directory up. Check pantry/ as well as
+  // node_modules/ at each level — pantry is Stacks' vendored package
+  // store and the only place crosswind lives in pantry-managed projects
+  // with no node_modules.
   let currentDir = process.cwd()
   while (currentDir !== path.dirname(currentDir)) {
-    // Try @cwcss/crosswind first (new package name)
+    // Try @cwcss/crosswind first (new package name), in both stores
     paths.push(path.join(currentDir, 'node_modules', '@cwcss', 'crosswind', 'dist', 'index.js'))
     paths.push(path.join(currentDir, 'node_modules', '@cwcss', 'crosswind', 'src', 'index.ts'))
+    paths.push(path.join(currentDir, 'pantry', '@cwcss', 'crosswind', 'dist', 'index.js'))
+    paths.push(path.join(currentDir, 'pantry', '@cwcss', 'crosswind', 'src', 'index.ts'))
     // Also try @stacksjs/crosswind (legacy package name)
     paths.push(path.join(currentDir, 'node_modules', '@stacksjs', 'crosswind', 'dist', 'index.js'))
+    paths.push(path.join(currentDir, 'pantry', '@stacksjs', 'crosswind', 'dist', 'index.js'))
     currentDir = path.dirname(currentDir)
   }
 
