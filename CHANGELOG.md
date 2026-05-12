@@ -1,4 +1,65 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.55...v0.2.56)
+
+### 🚀 Features
+
+- **image-optimization**: createImageHandler() — handler-shaped wrapper ([1f40a10](https://github.com/stacksjs/stx/commit/1f40a10)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **router**: tolerate aborted view transitions ([c810910](https://github.com/stacksjs/stx/commit/c810910)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **includes**: bundle user imports in signal scripts before IIFE wrap ([24946fe](https://github.com/stacksjs/stx/commit/24946fe)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **bundler**: resolve ~/ alias alongside @/ in client-script imports ([71ad3b1](https://github.com/stacksjs/stx/commit/71ad3b1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: don't block-wrap page scripts that contain top-level imports ([cc96cb6](https://github.com/stacksjs/stx/commit/cc96cb6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **crosswind**: probe pantry/ alongside node_modules/ in the cwd walk ([8ab15a0](https://github.com/stacksjs/stx/commit/8ab15a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **bun-plugin**: mirror ServeOptions.onRequest widening in bun-plugin-stx ([a389e8d](https://github.com/stacksjs/stx/commit/a389e8d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: widen ServeOptions.onRequest to allow async fall-through ([bf1875e](https://github.com/stacksjs/stx/commit/bf1875e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: shim definePageMeta in client setup so hydration doesn't crash ([ab65910](https://github.com/stacksjs/stx/commit/ab65910)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- **claude.md**: codify logic ↔ UI separation for stx apps ([6c697d6](https://github.com/stacksjs/stx/commit/6c697d6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.56 ([374551b](https://github.com/stacksjs/stx/commit/374551b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([514a20b](https://github.com/stacksjs/stx/commit/514a20b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.55...HEAD)
+
+### 🚀 Features
+
+- **image-optimization**: createImageHandler() — handler-shaped wrapper ([1f40a10](https://github.com/stacksjs/stx/commit/1f40a10)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **router**: tolerate aborted view transitions ([c810910](https://github.com/stacksjs/stx/commit/c810910)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **includes**: bundle user imports in signal scripts before IIFE wrap ([24946fe](https://github.com/stacksjs/stx/commit/24946fe)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **bundler**: resolve ~/ alias alongside @/ in client-script imports ([71ad3b1](https://github.com/stacksjs/stx/commit/71ad3b1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: don't block-wrap page scripts that contain top-level imports ([cc96cb6](https://github.com/stacksjs/stx/commit/cc96cb6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **crosswind**: probe pantry/ alongside node_modules/ in the cwd walk ([8ab15a0](https://github.com/stacksjs/stx/commit/8ab15a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **bun-plugin**: mirror ServeOptions.onRequest widening in bun-plugin-stx ([a389e8d](https://github.com/stacksjs/stx/commit/a389e8d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: widen ServeOptions.onRequest to allow async fall-through ([bf1875e](https://github.com/stacksjs/stx/commit/bf1875e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: shim definePageMeta in client setup so hydration doesn't crash ([ab65910](https://github.com/stacksjs/stx/commit/ab65910)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- **claude.md**: codify logic ↔ UI separation for stx apps ([6c697d6](https://github.com/stacksjs/stx/commit/6c697d6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([514a20b](https://github.com/stacksjs/stx/commit/514a20b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.54...v0.2.55)
 
 ### 🧪 Tests
