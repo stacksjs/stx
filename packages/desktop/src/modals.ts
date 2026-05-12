@@ -44,10 +44,6 @@ function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof document !== 'undefined'
 }
 
-function shouldAutoResolveInTest(): boolean {
-  return typeof process !== 'undefined' && (process.env.BUN_TEST === '1' || process.env.NODE_ENV === 'test')
-}
-
 // =============================================================================
 // Modal Manager
 // =============================================================================
@@ -296,10 +292,11 @@ export async function showModal(options: ModalOptions): Promise<ModalResult> {
           // Ignore focus errors
         }
 
-        if (shouldAutoResolveInTest()) {
+        // In test environments (no real user to click) auto-resolve with the
+        // default button so tests asserting ModalResult shape don't hang.
+        if (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.BUN_TEST)) {
           setTimeout(() => {
-            if (activeModals.includes(state))
-              closeModal(state, options.defaultButton ?? 0, false)
+            closeModal(state, options.defaultButton ?? 0, false)
           }, 0)
         }
       }

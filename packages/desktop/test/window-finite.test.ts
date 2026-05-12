@@ -6,10 +6,22 @@
  * geometry into AppKit (worst case).
  */
 import { afterEach, beforeAll, describe, expect, it } from 'bun:test'
+import { existsSync, readFileSync } from 'node:fs'
 import './_mock-bridge'
-import { installCraftBridgeFixture } from './_craft-bridge-fixture'
 
-const describeWithCraftBridge = installCraftBridgeFixture() ? describe : describe.skip
+const BRIDGE_PATH = `${__dirname}/../../../../craft/packages/zig/src/js/craft-bridge.js`
+// Bridge tests need the sibling craft repo checked out at ../../../../craft.
+// On CI (or any clone-without-craft) skip the suite cleanly instead of
+// throwing in beforeAll.
+const HAS_BRIDGE = existsSync(BRIDGE_PATH)
+const describeIfBridge = HAS_BRIDGE ? describe : describe.skip
+
+beforeAll(() => {
+  if (!HAS_BRIDGE) return
+  const code = readFileSync(BRIDGE_PATH, 'utf8')
+  // eslint-disable-next-line no-eval
+  ;(0, eval)(code)
+})
 
 let posted: Array<{ t: string, a: string, d: string }>
 beforeAll(() => {
@@ -35,7 +47,7 @@ function lastPosted(action: string): any {
   return null
 }
 
-describeWithCraftBridge('window.setSize finite coercion', () => {
+describeIfBridge('window.setSize finite coercion', () => {
   it('passes valid integers through unchanged', async () => {
     await (window as any).craft.window.setSize(1024, 768)
     expect(lastPosted('setSize')).toEqual({ width: 1024, height: 768 })
@@ -62,7 +74,7 @@ describeWithCraftBridge('window.setSize finite coercion', () => {
   })
 })
 
-describeWithCraftBridge('window.setPosition finite coercion', () => {
+describeIfBridge('window.setPosition finite coercion', () => {
   it('accepts negative coordinates (off-screen positioning)', async () => {
     await (window as any).craft.window.setPosition(-100, 50)
     expect(lastPosted('setPosition')).toEqual({ x: -100, y: 50 })
@@ -74,7 +86,7 @@ describeWithCraftBridge('window.setPosition finite coercion', () => {
   })
 })
 
-describeWithCraftBridge('window.setAspectRatio finite coercion', () => {
+describeIfBridge('window.setAspectRatio finite coercion', () => {
   it('uses 1 as the default for invalid sides', async () => {
     await (window as any).craft.window.setAspectRatio(Number.NaN, 0)
     expect(lastPosted('setAspectRatio')).toEqual({ width: 1, height: 0 })

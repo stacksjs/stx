@@ -8,13 +8,22 @@
  * everything before it reaches the facade. These tests drive the
  * translators directly to lock the shape in.
  */
-import { afterEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeAll, describe, expect, it } from 'bun:test'
+import { existsSync, readFileSync } from 'node:fs'
 // Side-effect import to install the window.addEventListener / dispatchEvent
 // polyfill — the bridge IIFE's `fireReady()` needs them.
 import './_mock-bridge'
-import { installCraftBridgeFixture } from './_craft-bridge-fixture'
 
-const describeWithCraftBridge = installCraftBridgeFixture() ? describe : describe.skip
+const BRIDGE_PATH = `${__dirname}/../../../../craft/packages/zig/src/js/craft-bridge.js`
+const HAS_BRIDGE = existsSync(BRIDGE_PATH)
+const describeIfBridge = HAS_BRIDGE ? describe : describe.skip
+
+beforeAll(() => {
+  if (!HAS_BRIDGE) return
+  const code = readFileSync(BRIDGE_PATH, 'utf8')
+  // eslint-disable-next-line no-eval
+  ;(0, eval)(code)
+})
 
 afterEach(() => {
   ;(window as any).__craftBridgePending = {}
@@ -27,7 +36,7 @@ function captureResult(action: string): Promise<any> {
   })
 }
 
-describeWithCraftBridge('System colour translator (RGB → hex)', () => {
+describeIfBridge('System colour translator (RGB → hex)', () => {
   it('converts {r,g,b} to a 6-digit hex string', async () => {
     const promise = captureResult('getAccentColor')
     ;(window as any).__craftSystemCallback('', 'getAccentColor', { r: 0.039, g: 0.518, b: 1.0 })
@@ -53,7 +62,7 @@ describeWithCraftBridge('System colour translator (RGB → hex)', () => {
   })
 })
 
-describeWithCraftBridge('FS readDir translator (bare array → {entries})', () => {
+describeIfBridge('FS readDir translator (bare array → {entries})', () => {
   it('wraps array payload', async () => {
     const promise = captureResult('readDir')
     ;(window as any).__craftFSCallback('', 'readDir', [
@@ -72,7 +81,7 @@ describeWithCraftBridge('FS readDir translator (bare array → {entries})', () =
   })
 })
 
-describeWithCraftBridge('FS stat translator (mtime → modifiedAt + ms)', () => {
+describeIfBridge('FS stat translator (mtime → modifiedAt + ms)', () => {
   it('renames mtime field to modifiedAt', async () => {
     const promise = captureResult('stat')
     ;(window as any).__craftFSCallback('', 'stat', {
@@ -106,7 +115,7 @@ describeWithCraftBridge('FS stat translator (mtime → modifiedAt + ms)', () => 
   })
 })
 
-describeWithCraftBridge('_req timeout', () => {
+describeIfBridge('_req timeout', () => {
   it('rejects with timeout error after the configured deadline', async () => {
     // Drop the timeout to something we can wait through synchronously.
     const previous = (window as any).__craftBridgeRequestTimeoutMs
