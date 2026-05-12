@@ -94,6 +94,7 @@ export {
 // ============================================================================
 
 export {
+  createImageHandler,
   handleImageRequest,
   type ImageServeOptions,
 } from './serve'

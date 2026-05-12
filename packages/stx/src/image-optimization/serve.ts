@@ -152,6 +152,37 @@ export async function handleImageRequest(
 }
 
 // ============================================================================
+// Self-contained handler factory
+// ============================================================================
+
+/**
+ * Wrap {@link handleImageRequest} into a self-contained route handler.
+ *
+ * Most router slots type their handlers as `(req: Request) => Promise<Response>`
+ * — they don't accept `null` inside the Promise the way the chainable
+ * `handleImageRequest` returns it. Use this factory when plugging into a
+ * router slot of that shape:
+ *
+ *   const handler = createImageHandler({ publicDir: 'public' })
+ *   router.get('/_stx/img', handler)
+ *
+ * When the request URL doesn't match the configured route path, the
+ * returned handler responds with `404 Not Found`. Use the lower-level
+ * `handleImageRequest` directly if you want to chain to a fallback.
+ */
+export function createImageHandler(
+  options: ImageServeOptions,
+): (request: Request) => Promise<Response> {
+  return async (request) => {
+    const response = await handleImageRequest(request, options)
+    return response ?? new Response('Not Found', {
+      status: 404,
+      headers: { 'Content-Type': 'text/plain' },
+    })
+  }
+}
+
+// ============================================================================
 // Parsing & validation
 // ============================================================================
 
