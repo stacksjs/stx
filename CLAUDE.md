@@ -660,6 +660,140 @@ stx serve <directory> [--port 3000]
 - Use **crosswind** as the default CSS framework which enables standard Tailwind-like utility classes
 - If you see an abundance of custom styling or utility classes in `<style>` blocks, that's wrong — use Crosswind utility classes in the HTML instead. Custom CSS should be rare (only for things Tailwind can't express).
 
+## App Architecture (logic ↔ UI separation)
+
+**stx apps separate logic from UI.** Components are presentation; everything else lives in composables or stores. This is the *default* — only deviate when a piece of code is genuinely single-use and trivial.
+
+When writing or editing components, follow this layout:
+
+| Concern | Lives in | Imported by |
+|---|---|---|
+| Network calls (fetch, GraphQL, websocket) | `functions/` (composables) or `stores/` | Components, other composables |
+| Persistent client state (auth, cart, theme, current filter) | `stores/` (`defineStore`) | Components |
+| Domain logic (validation, formatting, transforms, business rules) | `functions/` (composables) | Components, stores |
+| Browser API access (localStorage, IntersectionObserver, geolocation) | `functions/` (composables) | Components |
+| Local ephemeral UI state (a single dropdown's open flag, hover state) | inline in the component's `<script client>` | n/a |
+
+The mapping is mechanical: if it has *any* of {persistence, reuse potential, side effects that aren't pure DOM, more than ~15 lines of logic}, factor it out.
+
+**Components import composables/stores. Composables/stores never import components.** Anything in the table's right column flows to the left, not the other way.
+
+### What "right" looks like
+
+```html
+<!-- pages/products/[id].stx -->
+<script client>
+  // Compose: store for shared state, composable for the fetch.
+  const cart = useStore('cart')
+  const { product, loading, error } = useProduct(route.params.id)
+
+  function addToCart() {
+    cart.add(product())
+  }
+</script>
+
+<div :if="loading()">Loading…</div>
+<div :if="error()" x-text="error().message"></div>
+<article :if="product()">
+  <h1 x-text="product().name"></h1>
+  <button @click="addToCart()">Add to cart</button>
+</article>
+```
+
+```ts
+// functions/useProduct.ts — composable owns the fetch + retry + caching
+import { state, derived } from 'stx'
+
+export function useProduct(id: string) {
+  const product = state(null)
+  const loading = state(true)
+  const error = state(null)
+
+  ;(async () => {
+    try {
+      const res = await fetch(`/api/products/${id}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      product.set(await res.json())
+    }
+    catch (e) {
+      error.set(e)
+    }
+    finally {
+      loading.set(false)
+    }
+  })()
+
+  return { product, loading, error }
+}
+```
+
+```ts
+// stores/cart.ts — store owns the shared cross-page state
+import { defineStore, state, derived } from 'stx'
+
+export const useCart = defineStore('cart', () => {
+  const items = state([])
+  const total = derived(() => items().reduce((sum, x) => sum + x.price, 0))
+
+  function add(product) { items.set([...items(), product]) }
+  function remove(id) { items.set(items().filter(x => x.id !== id)) }
+
+  return { items, total, add, remove }
+}, { persist: true })
+```
+
+### What "wrong" looks like (don't do this)
+
+```html
+<!-- ❌ Component crammed with fetch + retry + cart state + business rules -->
+<script client>
+  const product = state(null)
+  const loading = state(true)
+  const cart = state(JSON.parse(localStorage.getItem('cart') || '[]'))
+
+  ;(async () => {
+    let attempt = 0
+    while (attempt < 3) {
+      try {
+        const res = await fetch(`/api/products/${id}`)
+        product.set(await res.json())
+        loading.set(false)
+        return
+      }
+      catch (e) {
+        attempt++
+        await new Promise(r => setTimeout(r, 1000 * attempt))
+      }
+    }
+  })()
+
+  function addToCart() {
+    const next = [...cart(), { ...product(), addedAt: Date.now() }]
+    cart.set(next)
+    localStorage.setItem('cart', JSON.stringify(next))
+    fetch('/api/cart/sync', { method: 'POST', body: JSON.stringify(next) })
+  }
+</script>
+```
+
+Three composables/stores got fused into one component. Now nothing's testable in isolation, the cart isn't shared across pages, the retry logic can't be reused for other endpoints, and the next person to touch this file has to read the whole thing to find the actual UI.
+
+### Why this matters
+
+- **Testability** — composables are plain functions, trivially unit-testable. Components are templates, not.
+- **Reuse** — `useProduct(id)` works on every page that shows a product. Inline fetch logic doesn't.
+- **State sharing** — stores survive SPA navigation (see "Important Implementation Notes" item 9). Component-local state doesn't.
+- **Discoverability** — `grep -r 'fetch(' functions/` finds every API call. `grep -r 'fetch(' .` is noise.
+- **Agent output quality** — without this rule, agents (this one included) tend to cram fetch + state + handlers + UI into a single file because it's the shortest path to "something on the screen". The result compiles but is unmaintainable. Forcing the separation up front produces code that survives review.
+
+### When inlining IS fine
+
+- Single-purpose UI state with no domain coupling: a tooltip's hover flag, a modal's open boolean, a form input's focused state. Keep those in the component's `<script client>`.
+- Trivial event handlers that just call a composable/store method: `@click="cart.add(product())"` is fine, no need to wrap.
+- One-off layout-level calculations (e.g., computing CSS classes from props).
+
+If you're unsure: factor it out. It's much cheaper to inline a small composable later than to disentangle a 200-line component.
+
 ## Dependencies
 
 - **buddy-bot** handles dependency updates — not renovatebot
