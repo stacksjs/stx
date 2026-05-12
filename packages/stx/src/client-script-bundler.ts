@@ -134,24 +134,32 @@ function createBundlePlugin(projectRoot: string, templateDir: string, tmpEntry: 
         return { path: resolved }
       })
 
-      // @/ path alias → project root
-      build.onResolve({ filter: /^@\// }, (args) => {
+      // @/ and ~/ path aliases → project root. Both prefixes are
+      // common in Vite/Stacks-style configs; tsconfig path mappings
+      // are not picked up automatically by Bun.build for temp entry
+      // files generated under `.stx/bundle-tmp/`, so the plugin
+      // resolves them explicitly here.
+      build.onResolve({ filter: /^[@~]\// }, (args) => {
         const resolved = path.resolve(projectRoot, args.path.slice(2))
-        // Try .ts, .js, /index.ts, /index.js
         const candidates = [
           resolved,
           `${resolved}.ts`,
+          `${resolved}.tsx`,
           `${resolved}.js`,
+          `${resolved}.mjs`,
+          `${resolved}.jsx`,
           path.join(resolved, 'index.ts'),
+          path.join(resolved, 'index.tsx'),
           path.join(resolved, 'index.js'),
+          path.join(resolved, 'index.mjs'),
         ]
         for (const candidate of candidates) {
           if (fs.existsSync(candidate) && fs.statSync(candidate, { throwIfNoEntry: false })?.isFile()) {
-            console.log('[stx:bundler] resolved @/ import:', args.path, '→', candidate)
+            console.log(`[stx:bundler] resolved ${args.path[0]}/ import:`, args.path, '→', candidate)
             return { path: candidate }
           }
         }
-        console.warn('[stx:bundler] could not resolve @/ import:', args.path)
+        console.warn(`[stx:bundler] could not resolve ${args.path[0]}/ import:`, args.path)
         return { path: resolved }
       })
     },
