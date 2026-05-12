@@ -60,8 +60,27 @@ export interface ServeOptions {
   stxModule?: typeof import('@stacksjs/stx') | Promise<typeof import('@stacksjs/stx')>
   /** Custom route handlers — checked before page routes */
   routes?: Record<string, (req: Request) => Response | Promise<Response>>
-  /** Custom request handler — called for every request, return Response to short-circuit, or null/undefined to continue */
-  onRequest?: (req: Request) => Response | Promise<Response> | null | undefined
+  /**
+   * Custom request handler — called for every request. Return a Response to
+   * short-circuit the default pipeline; return `null` / `undefined` (sync or
+   * async) to fall through to the rest of the routing chain.
+   *
+   * The async-fall-through shape (`Promise<Response | null>`) is the natural
+   * way to write proxies / chainable handlers like `handleImageRequest`:
+   *
+   *   async onRequest(req) {
+   *     if (!isApiRequest(req)) return null  // not mine, fall through
+   *     return await proxyToApi(req)
+   *   }
+   *
+   * The runtime awaits the return and only short-circuits on a truthy value,
+   * so both sync and async null/undefined behave identically.
+   */
+  onRequest?: (req: Request) =>
+    | Response
+    | null
+    | undefined
+    | Promise<Response | null | undefined>
 
   /**
    * **Page middleware.** Modelled on Laravel's named-route middleware.
