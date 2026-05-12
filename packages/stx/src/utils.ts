@@ -17,7 +17,7 @@ import path from 'node:path'
 
 // Import from expressions
 import { processClientScript } from './client-script'
-import { unescapeHtml } from './expressions'
+import { processExpressions, unescapeHtml } from './expressions'
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
@@ -599,6 +599,14 @@ export async function renderComponentWithSlot(
       if (!isServerScript) {
         // Strip any existing signal destructuring - it will be added by the scope wrapper
         let cleanContent = content.replace(/^\s*const\s*\{[^}]+\}\s*=\s*window\.stx\s*;?\s*\n?/gm, '')
+        // Interpolate `{{ name }}` references in the client script body against
+        // the server-script's extracted exports. SFCs use this to bridge
+        // server-side prop normalization into client code (e.g.
+        // `const duration = {{ duration }}` in `<script client>`). Without
+        // this substitution the literal `{{ ... }}` survives into the
+        // emitted <script> tag and crashes with `Unexpected token '{'`.
+        if (cleanContent.includes('{{') && cleanContent.includes('}}'))
+          cleanContent = processExpressions(cleanContent, componentContext, componentFilePath)
         // Remove ts/lang attributes from output since it's now JavaScript
         const cleanAttrs = attrs.replace(/\s*\bts\b/g, '').replace(/\s*\blang\s*=\s*["']?(ts|typescript)["']?/gi, '')
         clientScripts.push(`<script${cleanAttrs}>${cleanContent}</script>`)
