@@ -43,6 +43,10 @@ export interface SidebarProps {
   position?: 'left' | 'right'
   /** Whether to show border */
   bordered?: boolean
+  /** Light-mode tint opacity over sidebar material. Higher values reduce vibrancy. */
+  materialOpacity?: number
+  /** Dark-mode tint opacity over sidebar material. Higher values reduce vibrancy. */
+  materialDarkOpacity?: number
   /** Additional CSS classes */
   className?: string
   /** Callback when collapse state changes */
@@ -135,6 +139,10 @@ export interface NativeSidebarConfig {
   backgroundEffect?: SidebarBackgroundEffect
   /** Whether the native sidebar should let the window background show through */
   allowsVibrancy?: boolean
+  /** Light-mode tint opacity over sidebar material */
+  materialOpacity?: number
+  /** Dark-mode tint opacity over sidebar material */
+  materialDarkOpacity?: number
   /** Header configuration */
   header?: {
     title?: string

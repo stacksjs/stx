@@ -8,6 +8,8 @@ export const variant = $props.variant || 'tahoe'
 export const position = $props.position || 'left'
 export const placement = $props.placement || 'fixed'
 export const bordered = $props.bordered ?? true
+export const materialOpacity = $props.materialOpacity ?? (variant === 'desktop' ? 0.9 : 0.7)
+export const materialDarkOpacity = $props.materialDarkOpacity ?? (variant === 'desktop' ? 0.88 : materialOpacity)
 export const className = $props.className || ''
 
 const variantStyles = {
@@ -93,6 +95,8 @@ const minWidthProp = {{ minWidth }}
 const sectionsProp = {{ sections }}
 const positionProp = {{ position }}
 const variantProp = {{ variant }}
+const materialOpacityProp = {{ materialOpacity }}
+const materialDarkOpacityProp = {{ materialDarkOpacity }}
 
 const collapsed = state(collapsedProp)
 const isHovered = state(false)
@@ -157,6 +161,8 @@ onMount(async () => {
         variant: variantProp,
         material: variantProp === 'desktop' ? 'sidebar' : undefined,
         backgroundEffect: variantProp === 'desktop' ? 'vibrancy' : undefined,
+        materialOpacity: materialOpacityProp,
+        materialDarkOpacity: materialDarkOpacityProp,
         allowsVibrancy: variantProp === 'desktop' || variantProp === 'vibrancy' || variantProp === 'tahoe',
         sections: sectionsProp.map(s => ({
           id: s.id,
@@ -177,7 +183,8 @@ defineExpose({ collapsed, toggle: toggleCollapse })
 <aside
   :show="!hasNativeSidebar()"
   class="{{ containerClasses }} sidebar-container"
-  :style="`width: ${sidebarWidth()}`"
+  data-sidebar-variant="{{ variant }}"
+  :style="`width: ${sidebarWidth()}; --stx-sidebar-material-opacity: ${materialOpacityProp}; --stx-sidebar-material-dark-opacity: ${materialDarkOpacityProp}`"
   @mouseenter="onMouseEnter()"
   @mouseleave="onMouseLeave()"
   role="navigation"
@@ -246,7 +253,15 @@ defineExpose({ collapsed, toggle: toggleCollapse })
 .overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
 .overflow-y-auto::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.15); border-radius: 3px; }
 .overflow-y-auto::-webkit-scrollbar-thumb:hover { background-color: rgba(0, 0, 0, 0.25); }
+.sidebar-container[data-sidebar-variant="desktop"] {
+  background-color: rgba(246, 246, 244, var(--stx-sidebar-material-opacity, 0.9));
+  backdrop-filter: blur(24px) saturate(1.08);
+  -webkit-backdrop-filter: blur(24px) saturate(1.08);
+}
 @media (prefers-color-scheme: dark) {
+  .sidebar-container[data-sidebar-variant="desktop"] {
+    background-color: rgba(24, 24, 23, var(--stx-sidebar-material-dark-opacity, 0.88));
+  }
   .overflow-y-auto::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.15); }
   .overflow-y-auto::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.25); }
 }
