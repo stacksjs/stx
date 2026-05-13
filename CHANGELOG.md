@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.60...v0.2.61)
+
+### 🧪 Tests
+
+- **stx**: isolate validation and lifecycle suites ([8c6788e](https://github.com/stacksjs/stx/commit/8c6788e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.61 ([4abe2cf](https://github.com/stacksjs/stx/commit/4abe2cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.60...HEAD)
+
+### 🧪 Tests
+
+- **stx**: isolate validation and lifecycle suites ([8c6788e](https://github.com/stacksjs/stx/commit/8c6788e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.59...v0.2.60)
 
 ### 🧪 Tests
