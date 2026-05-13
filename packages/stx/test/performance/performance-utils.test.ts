@@ -526,42 +526,33 @@ describe('Performance Utils', () => {
       expect(result2).toBe('DLROW')
     })
 
-    it('should handle throttling for high-frequency operations', () => {
+    it('should handle throttling for high-frequency operations', async () => {
       let executionCount = 0
       const operation = () => {
         executionCount++
         return executionCount
       }
 
-      const originalNow = Date.now
-      let now = 1_000
-      Date.now = () => now
+      const throttledOperation = throttle(operation, 200)
 
-      try {
-        const throttledOperation = throttle(operation, 100)
-
-        // Rapid consecutive calls
-        const results = []
-        for (let i = 0; i < 10; i++) {
-          results.push(throttledOperation())
-        }
-
-        // Should execute immediately for first call
-        expect(results[0]).toBe(1)
-
-        // Subsequent calls should be throttled
-        for (let i = 1; i < 10; i++) {
-          expect(results[i]).toBe(1) // Same result as first call
-        }
-
-        now += 100
-
-        const nextResult = throttledOperation()
-        expect(nextResult).toBe(2) // New execution
+      // Rapid consecutive calls
+      const results = []
+      for (let i = 0; i < 10; i++) {
+        results.push(throttledOperation())
       }
-      finally {
-        Date.now = originalNow
+
+      // Should execute immediately for first call
+      expect(results[0]).toBe(1)
+
+      // Subsequent calls should be throttled
+      for (let i = 1; i < 10; i++) {
+        expect(results[i]).toBe(1) // Same result as first call
       }
+
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      const nextResult = throttledOperation()
+      expect(nextResult).toBe(2) // New execution
     })
 
     it('should handle debouncing for batching operations', async () => {

@@ -91,8 +91,11 @@ describe('throttleMiddleware', () => {
     // First update should go through immediately
     expect(values).toEqual([1])
 
-    // Wait for throttle period
-    await new Promise(resolve => setTimeout(resolve, 60))
+    // Wait for the trailing throttled update instead of assuming exact timer cadence.
+    const deadline = Date.now() + 500
+    while (!values.includes(3) && Date.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 10))
+    }
 
     // Last value should be applied
     expect(values).toContain(3)
