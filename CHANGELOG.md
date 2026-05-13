@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.61...v0.2.62)
+
+### 🤖 Continuous Integration
+
+- **stx**: run unit suite serially ([10c3a90](https://github.com/stacksjs/stx/commit/10c3a90)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.62 ([b120d47](https://github.com/stacksjs/stx/commit/b120d47)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.61...HEAD)
+
+### 🤖 Continuous Integration
+
+- **stx**: run unit suite serially ([10c3a90](https://github.com/stacksjs/stx/commit/10c3a90)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.60...v0.2.61)
 
 ### 🧪 Tests
