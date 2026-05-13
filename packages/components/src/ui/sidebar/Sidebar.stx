@@ -44,8 +44,8 @@ const variantStyles = {
     slot: 'px-5 py-5',
   },
   desktop: {
-    bg: 'bg-[#f3f3f1]/72 dark:bg-neutral-950/40',
-    border: 'border-white/25 dark:border-white/10',
+    bg: 'bg-[#f3f3f1]/48 dark:bg-neutral-950/32',
+    border: 'border-white/15 dark:border-white/10',
     backdrop: 'backdrop-blur-3xl backdrop-saturate-150',
     tint: false,
     shimmer: true,
@@ -180,7 +180,7 @@ defineExpose({ collapsed, toggle: toggleCollapse })
     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-amber-50/30 via-orange-50/20 to-stone-100/30 dark:from-neutral-800/20 dark:via-neutral-900/10 dark:to-neutral-800/20 mix-blend-overlay"></div>
   @endif
   @if(variantShimmer)
-    <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(112deg,rgba(255,255,255,0.42)_0%,rgba(255,255,255,0.10)_42%,rgba(226,226,222,0.34)_100%)] dark:bg-[linear-gradient(112deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.03)_46%,rgba(255,255,255,0.08)_100%)]"></div>
+    <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(112deg,rgba(255,255,255,0.20)_0%,rgba(255,255,255,0.04)_45%,rgba(226,226,222,0.16)_100%)] dark:bg-[linear-gradient(112deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.02)_46%,rgba(255,255,255,0.06)_100%)]"></div>
   @endif
 
   @if($slots.header)
