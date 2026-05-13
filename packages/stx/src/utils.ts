@@ -630,6 +630,33 @@ export async function renderComponentWithSlot(
       templateContent = templateContent.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
     }
 
+    // Absorb `@push('styles')...@endpush` blocks from the component body.
+    // Components author CSS this way when they want it hoisted to the
+    // page's <head>; the page-level @push processor (process.ts:495,
+    // 747) does that hoisting at the top level. Component rendering
+    // doesn't reach that pass — without this absorb step the inner
+    // <style> gets stripped above but the bare `@push('styles')` /
+    // `@endpush` markers leak through to the page as literal text.
+    // Strip the markers; pull any `<style>` content out and merge it
+    // into the component's preservedStyle so the rules still apply.
+    {
+      const pushStyleRe = /@push\s*\(\s*['"]styles['"]\s*\)([\s\S]*?)@endpush/gi
+      const collectedStyles: string[] = []
+      templateContent = templateContent.replace(pushStyleRe, (_full, inner) => {
+        const styleInPush = (inner as string).match(/<style\b([^>]*)>([\s\S]*?)<\/style>/i)
+        if (styleInPush)
+          collectedStyles.push(`<style${styleInPush[1]}>${styleInPush[2]}</style>`)
+        return ''
+      })
+      // Also strip any other `@push('<name>')...@endpush` blocks (e.g.
+      // scripts) so their wrappers don't leak — content is dropped at
+      // this level; if needed, plumb a `stacks` reference through
+      // renderComponentWithSlot in a follow-up.
+      templateContent = templateContent.replace(/@push\s*\(\s*['"][^'"]+['"]\s*\)[\s\S]*?@endpush/gi, '')
+      if (collectedStyles.length > 0)
+        preservedStyle = `${preservedStyle}${collectedStyles.join('\n')}`
+    }
+
     // Find and replace any direct references to {{ text || slot }} with the actual value
     if (slotContent && templateContent.includes('{{ text || slot }}')) {
       // Use callback to avoid $-interpretation in slot content
