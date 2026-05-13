@@ -693,7 +693,7 @@ describe('reactivity - edge cases', () => {
 
     setCurrentInstance(instance)
     onMounted(async () => {
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await Promise.resolve()
       asyncCompleted = true
     })
     setCurrentInstance(null)

@@ -6,7 +6,7 @@ import { clearOnceStore } from '../../src/includes'
 import { processDirectives } from '../../src/process'
 
 const TEST_DIR = import.meta.dir
-const TEMP_DIR = path.join(TEST_DIR, 'temp')
+const TEMP_DIR = path.join(TEST_DIR, '.tmp-html-validation')
 
 const defaultOptions: StxOptions = {
   debug: false,
