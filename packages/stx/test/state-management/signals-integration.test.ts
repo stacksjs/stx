@@ -408,22 +408,25 @@ describe('signals integration - async patterns', () => {
     const searchQuery = state('')
     const results = state<string[]>([])
     let searchCount = 0
+    let searchVersion = 0
+    let resolveSearched!: () => void
+    const searched = new Promise<void>((resolve) => {
+      resolveSearched = resolve
+    })
 
-    // Simulate debounced search
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null
-
+    // Simulate debounced search without shared wall-clock timers.
     effect(() => {
       const query = searchQuery()
 
-      if (debounceTimer) {
-        clearTimeout(debounceTimer)
-      }
-
       if (query.length > 0) {
-        debounceTimer = setTimeout(() => {
+        const version = ++searchVersion
+        queueMicrotask(() => {
+          if (version !== searchVersion) return
+
           searchCount++
           results.set([`Result for: ${query}`])
-        }, 50)
+          resolveSearched()
+        })
       }
     })
 
@@ -432,8 +435,7 @@ describe('signals integration - async patterns', () => {
     searchQuery.set('ab')
     searchQuery.set('abc')
 
-    // Wait for debounce
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await searched
 
     // Should only search once for final value
     expect(searchCount).toBe(1)
