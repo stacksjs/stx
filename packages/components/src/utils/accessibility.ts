@@ -265,7 +265,7 @@ export function announceToScreenReader(message: string, priority: AriaLive = 'po
 
   // Clean up after announcement
   setTimeout(() => {
-    document.body.removeChild(announcement)
+    announcement.parentNode?.removeChild(announcement)
   }, 1000)
 }
 
