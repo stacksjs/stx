@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.58...v0.2.59)
+
+### 🧪 Tests
+
+- **stx**: avoid global clock in async suites ([3b725dd](https://github.com/stacksjs/stx/commit/3b725dd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.59 ([0959f56](https://github.com/stacksjs/stx/commit/0959f56)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.58...HEAD)
+
+### 🧪 Tests
+
+- **stx**: avoid global clock in async suites ([3b725dd](https://github.com/stacksjs/stx/commit/3b725dd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.57...v0.2.58)
 
 ### 🧪 Tests
