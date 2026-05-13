@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.59...v0.2.60)
+
+### 🧪 Tests
+
+- **stx**: decouple async tests from timers ([53d42f3](https://github.com/stacksjs/stx/commit/53d42f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.60 ([f7c6141](https://github.com/stacksjs/stx/commit/f7c6141)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.59...HEAD)
+
+### 🧪 Tests
+
+- **stx**: decouple async tests from timers ([53d42f3](https://github.com/stacksjs/stx/commit/53d42f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.58...v0.2.59)
 
 ### 🧪 Tests
