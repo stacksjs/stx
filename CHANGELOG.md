@@ -1,4 +1,62 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.56...v0.2.57)
+
+### 🚀 Features
+
+- **bun-plugin**: forward _pluginComponentDirs from loadStxConfig ([ce3efb5](https://github.com/stacksjs/stx/commit/ce3efb5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: consume plugin-registered component directories in resolver ([fe935d2](https://github.com/stacksjs/stx/commit/fe935d2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **router**: tolerate aborted view transitions ([a2b0997](https://github.com/stacksjs/stx/commit/a2b0997)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **utils**: interpolate {{ var }} in <script client> blocks of components ([d411bf8](https://github.com/stacksjs/stx/commit/d411bf8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.57 ([33617d4](https://github.com/stacksjs/stx/commit/33617d4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: update ts-images ([d44c18c](https://github.com/stacksjs/stx/commit/d44c18c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.56 ([21dd897](https://github.com/stacksjs/stx/commit/21dd897)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.55...HEAD)
+
+### 🚀 Features
+
+- **bun-plugin**: forward _pluginComponentDirs from loadStxConfig ([ce3efb5](https://github.com/stacksjs/stx/commit/ce3efb5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: consume plugin-registered component directories in resolver ([fe935d2](https://github.com/stacksjs/stx/commit/fe935d2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **image-optimization**: createImageHandler() — handler-shaped wrapper ([1f40a10](https://github.com/stacksjs/stx/commit/1f40a10)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **router**: tolerate aborted view transitions ([a2b0997](https://github.com/stacksjs/stx/commit/a2b0997)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **utils**: interpolate {{ var }} in <script client> blocks of components ([d411bf8](https://github.com/stacksjs/stx/commit/d411bf8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **includes**: bundle user imports in signal scripts before IIFE wrap ([24946fe](https://github.com/stacksjs/stx/commit/24946fe)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **bundler**: resolve ~/ alias alongside @/ in client-script imports ([71ad3b1](https://github.com/stacksjs/stx/commit/71ad3b1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: don't block-wrap page scripts that contain top-level imports ([cc96cb6](https://github.com/stacksjs/stx/commit/cc96cb6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **crosswind**: probe pantry/ alongside node_modules/ in the cwd walk ([8ab15a0](https://github.com/stacksjs/stx/commit/8ab15a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **bun-plugin**: mirror ServeOptions.onRequest widening in bun-plugin-stx ([a389e8d](https://github.com/stacksjs/stx/commit/a389e8d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: widen ServeOptions.onRequest to allow async fall-through ([bf1875e](https://github.com/stacksjs/stx/commit/bf1875e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: shim definePageMeta in client setup so hydration doesn't crash ([ab65910](https://github.com/stacksjs/stx/commit/ab65910)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- **claude.md**: codify logic ↔ UI separation for stx apps ([6c697d6](https://github.com/stacksjs/stx/commit/6c697d6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- **deps**: update ts-images ([d44c18c](https://github.com/stacksjs/stx/commit/d44c18c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.56 ([21dd897](https://github.com/stacksjs/stx/commit/21dd897)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([514a20b](https://github.com/stacksjs/stx/commit/514a20b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.55...v0.2.56)
 
 ### 🚀 Features
