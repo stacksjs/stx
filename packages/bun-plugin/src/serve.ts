@@ -243,8 +243,16 @@ export async function serve(options: ServeOptions): Promise<void> {
       if (pluginLoaded?._pluginPageDirs)
         stxConfig._pluginPageDirs = pluginLoaded._pluginPageDirs
     }
+    // Preload the default icon collection so <Icon name="..." /> resolves on
+    // the FIRST page render. Without this preload, the IconBuiltin returns
+    // `<!-- Icon: collection "lucide" not loaded -->` for the initial
+    // request and only starts emitting SVGs after the async load completes —
+    // which can take longer than a typical request cycle. ssg.ts does this
+    // for production builds; mirror it for the dev server here.
+    if (stxMod && typeof (stxMod as any).preloadIconCollection === 'function')
+      await (stxMod as any).preloadIconCollection('lucide')
   }
-  catch { /* plugin discovery best-effort — fall through with what bunfig gave us */ }
+  catch { /* best-effort — fall through with what bunfig gave us */ }
 
   // Options passed directly take precedence, then bunfig config, then defaults
   const componentsDir = options.componentsDir ?? stxConfig.componentsDir ?? defaultStxConfig.componentsDir

@@ -1029,6 +1029,16 @@ async function processOtherDirectives(
   // Second component pass — catch components introduced by @include (e.g. StxLink in sidebar partials)
   output = await processComponents(output, context, filePath, opts, dependencies)
 
+  // Strip any `@push(...) ... @endpush` markers that survived past
+  // include resolution. The page-level push pass at line 495 ran
+  // BEFORE includes were resolved, so push directives inside
+  // included partials (e.g. RichTextEditor's `@push('styles')`)
+  // never got harvested by the stack collector and leak through as
+  // literal text on the rendered page. Any `<style>` inside the
+  // block has already moved to a sibling position via the SFC
+  // style-extraction pass; we just need to nuke the bare wrappers.
+  output = output.replace(/@push\s*\(\s*['"][^'"]+['"]\s*\)[\s\S]*?@endpush/g, '')
+
   // Process @ref attributes for DOM references
   // Must run AFTER processIncludes so ref= attributes in partials/components are transformed
   output = processRefAttributes(output)

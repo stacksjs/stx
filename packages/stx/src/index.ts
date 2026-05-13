@@ -18,6 +18,12 @@ export { fileExists } from './utils'
 export { type StreamingConfig } from './types'
 export { type Middleware } from './ssr'
 
+// Re-export the Icon-collection preloader so dev servers (e.g.
+// bun-plugin-stx/serve) can warm the @iconify/json cache at boot. Without
+// it the IconBuiltin returns a "collection not loaded" placeholder on
+// the first render of every page after server start.
+export { preloadIconCollection } from './builtins'
+
 // Core functionality - these are the primary modules
 export * from './reactivity'
 export * from './head'
