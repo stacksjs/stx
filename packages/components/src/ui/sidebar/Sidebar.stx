@@ -134,6 +134,11 @@ function isCraftRuntime() {
 }
 
 onMount(async () => {
+  if (variantProp === 'desktop' && isCraftRuntime()) {
+    document.documentElement.classList.add('has-stx-sidebar-material')
+    if (document.body?.dataset) document.body.dataset.sidebarMaterial = 'desktop'
+  }
+
   hasNativeSidebar.set(
     isCraftRuntime()
     && (
@@ -151,7 +156,7 @@ onMount(async () => {
         collapsible: collapsibleProp,
         variant: variantProp,
         material: variantProp === 'desktop' ? 'sidebar' : undefined,
-        backgroundEffect: variantProp === 'desktop' ? 'shimmer' : undefined,
+        backgroundEffect: variantProp === 'desktop' ? 'vibrancy' : undefined,
         allowsVibrancy: variantProp === 'desktop' || variantProp === 'vibrancy' || variantProp === 'tahoe',
         sections: sectionsProp.map(s => ({
           id: s.id,
