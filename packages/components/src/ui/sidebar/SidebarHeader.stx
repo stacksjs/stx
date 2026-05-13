@@ -8,6 +8,8 @@ export const searchPlaceholder = $props.searchPlaceholder || 'Search...'
 export const searchValue = $props.searchValue || ''
 export const collapsed = $props.collapsed ?? false
 export const variant = $props.variant || 'tahoe'
+export const showWindowControls = $props.showWindowControls ?? (variant === 'desktop' ? 'auto' : false)
+export const showNavigationControls = $props.showNavigationControls ?? variant === 'desktop'
 
 const headerVariants = {
   workspace: {
@@ -19,7 +21,10 @@ const headerVariants = {
     searchInput: 'w-full rounded-[16px] border border-zinc-200/70 bg-white/70 px-10 py-2.5 text-[15px] text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-300/80 dark:border-white/10 dark:bg-white/10 dark:text-white',
   },
   desktop: {
-    titlebar: 'h-16 flex items-center justify-between px-4',
+    titlebar: 'flex flex-col gap-5 px-5 pt-4 pb-4',
+    chrome: 'flex items-center justify-between min-h-7',
+    trafficLight: 'h-3.5 w-3.5 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]',
+    navButton: 'inline-flex h-7 w-7 items-center justify-center rounded-full text-zinc-500/80 transition-colors hover:bg-white/35 hover:text-zinc-900 disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-zinc-500/80 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white',
     logo: 'w-9 h-9 rounded-[12px] bg-black/80 text-white flex items-center justify-center font-semibold text-sm shadow-sm dark:bg-white/14',
     title: 'text-[17px] font-semibold text-zinc-950 dark:text-white truncate',
     subtitle: 'text-sm text-zinc-500 dark:text-zinc-400 truncate',
@@ -38,24 +43,96 @@ const headerVariants = {
 
 const headerStyle = headerVariants[variant] || headerVariants.default
 export const titlebarClasses = headerStyle.titlebar
+export const chromeClasses = headerStyle.chrome || ''
+export const trafficLightClasses = headerStyle.trafficLight || ''
+export const navButtonClasses = headerStyle.navButton || ''
 export const logoClasses = headerStyle.logo
 export const titleClasses = headerStyle.title
 export const subtitleClasses = headerStyle.subtitle
 export const searchWrapClasses = headerStyle.searchWrap
 export const searchInputClasses = headerStyle.searchInput
+export const hasDesktopChrome = variant === 'desktop' && (showWindowControls || showNavigationControls)
+export const windowControlsClasses = showWindowControls === 'auto' ? 'hidden items-center gap-2' : 'flex items-center gap-2'
 </script>
 
 <script client>
 const emit = defineEmits()
 
+function isCraftRuntime() {
+  return window.__craftNativeSidebar === true
+    || window.craft?.__craft_bridge_loaded === true
+    || !!window.craft?.window
+    || !!window.webkit?.messageHandlers?.craft
+}
+
+function usesCustomWindowControls() {
+  return window.__craftCustomWindowControls === true
+    || document.documentElement.classList.contains('has-custom-window-controls')
+    || document.body?.dataset?.customWindowControls === 'true'
+}
+
+function syncWindowControls() {
+  document.querySelectorAll('[data-stx-native-window-controls]').forEach((element) => {
+    const show = element.dataset.stxNativeWindowControls === 'auto'
+      ? isCraftRuntime() && usesCustomWindowControls()
+      : true
+    element.classList.toggle('hidden', !show)
+    element.classList.toggle('flex', show)
+  })
+}
+
 function onSearchInput(event) {
   emit('search', event.target.value)
 }
+
+function goBack() {
+  window.history.back()
+  emit('back')
+}
+
+function goForward() {
+  window.history.forward()
+  emit('forward')
+}
+
+onMount(() => {
+  syncWindowControls()
+  window.addEventListener('craft:ready', syncWindowControls)
+  window.addEventListener('stx:load', syncWindowControls)
+
+  return () => {
+    window.removeEventListener('craft:ready', syncWindowControls)
+    window.removeEventListener('stx:load', syncWindowControls)
+  }
+})
 </script>
 
 <div class="flex-shrink-0">
   <!-- Title bar area -->
   <div class="{{ titlebarClasses }}">
+    @if(hasDesktopChrome)
+      <div class="{{ chromeClasses }}">
+        @if(showWindowControls)
+          <div class="{{ windowControlsClasses }}" aria-hidden="true" data-stx-native-window-controls="{{ showWindowControls === 'auto' ? 'auto' : 'always' }}">
+            <span class="{{ trafficLightClasses }} bg-[#ff5f57]"></span>
+            <span class="{{ trafficLightClasses }} bg-[#ffbd2e]"></span>
+            <span class="{{ trafficLightClasses }} bg-[#28c840]"></span>
+          </div>
+        @endif
+
+        @if(showNavigationControls)
+          <div class="flex items-center gap-2">
+            <button type="button" class="{{ navButtonClasses }}" @click="goBack()" aria-label="Go back">
+              <span class="h-5 w-5 i-hugeicons-arrow-left-02" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="{{ navButtonClasses }}" @click="goForward()" aria-label="Go forward">
+              <span class="h-5 w-5 i-hugeicons-arrow-right-02" aria-hidden="true"></span>
+            </button>
+          </div>
+        @endif
+      </div>
+    @endif
+
     @if(!collapsed)
       <div class="flex items-center gap-3 min-w-0">
         <!-- Logo -->

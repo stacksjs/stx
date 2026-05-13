@@ -84,6 +84,12 @@ export interface SidebarHeaderProps {
   subtitle?: string
   logo?: string
   logoIcon?: string
+  /**
+   * Show macOS-style window controls. `auto` only renders them when Craft
+   * exposes a custom-window-controls marker, avoiding duplicate native chrome.
+   */
+  showWindowControls?: boolean | 'auto'
+  showNavigationControls?: boolean
   showSearch?: boolean
   searchPlaceholder?: string
   searchValue?: string

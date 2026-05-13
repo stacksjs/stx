@@ -44,13 +44,13 @@ const variantStyles = {
     slot: 'px-5 py-5',
   },
   desktop: {
-    bg: 'bg-white/42 dark:bg-black/32',
-    border: 'border-white/30 dark:border-white/10',
-    backdrop: 'backdrop-blur-3xl backdrop-saturate-200',
+    bg: 'bg-[#f3f3f1]/72 dark:bg-neutral-950/40',
+    border: 'border-white/25 dark:border-white/10',
+    backdrop: 'backdrop-blur-3xl backdrop-saturate-150',
     tint: false,
     shimmer: true,
-    nav: 'px-4 py-4 space-y-1',
-    slot: 'px-4 py-4',
+    nav: 'px-5 py-3 space-y-1.5',
+    slot: 'px-5 py-3',
   },
 }
 
@@ -102,7 +102,6 @@ const sidebarWidth = derived(() => {
   return `${widthProp}px`
 })
 const collapseAriaLabel = derived(() => collapsed() ? 'Expand sidebar' : 'Collapse sidebar')
-const collapseIconClass = derived(() => collapsed() ? 'i-hugeicons-sidebar-right' : 'i-hugeicons-sidebar-left')
 
 function onMouseEnter() {
   if (collapsed() && collapsibleProp) isHovered.set(true)
@@ -125,13 +124,23 @@ function onItemClick(event) {
   emit('itemClick', event.detail)
 }
 
+function isCraftRuntime() {
+  return window.__craftNativeSidebar === true
+    || window.craft?.__craft_bridge_loaded === true
+    || !!window.craft?.window
+    || !!window.webkit?.messageHandlers?.craft
+}
+
 onMount(async () => {
   hasNativeSidebar.set(
-    window.__craftNativeSidebar === true
-    || window.craft?.hasNativeSidebar?.()
-    || (window.webkit?.messageHandlers?.craft && document.body?.dataset?.nativeSidebar === 'true'),
+    isCraftRuntime()
+    && (
+      window.__craftNativeSidebar === true
+      || window.craft?.hasNativeSidebar?.()
+      || document.body?.dataset?.nativeSidebar === 'true'
+    ),
   )
-  if (window.craft?.isCraft?.() && window.craft?.components?.createSidebar) {
+  if (isCraftRuntime() && window.craft?.components?.createSidebar) {
     try {
       await window.craft.components.createSidebar({
         position: positionProp,
@@ -171,7 +180,7 @@ defineExpose({ collapsed, toggle: toggleCollapse })
     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-amber-50/30 via-orange-50/20 to-stone-100/30 dark:from-neutral-800/20 dark:via-neutral-900/10 dark:to-neutral-800/20 mix-blend-overlay"></div>
   @endif
   @if(variantShimmer)
-    <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_18%_12%,rgba(255,255,255,0.46),transparent_28%),linear-gradient(120deg,rgba(255,255,255,0.22),rgba(255,255,255,0.04)_42%,rgba(255,255,255,0.18))] dark:bg-[radial-gradient(circle_at_18%_12%,rgba(255,255,255,0.12),transparent_30%),linear-gradient(120deg,rgba(255,255,255,0.10),rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08))]"></div>
+    <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(112deg,rgba(255,255,255,0.42)_0%,rgba(255,255,255,0.10)_42%,rgba(226,226,222,0.34)_100%)] dark:bg-[linear-gradient(112deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.03)_46%,rgba(255,255,255,0.08)_100%)]"></div>
   @endif
 
   @if($slots.header)
@@ -219,7 +228,8 @@ defineExpose({ collapsed, toggle: toggleCollapse })
       @click="toggleCollapse()"
       :aria-label="collapseAriaLabel()"
     >
-      <div :class="`${collapseIconClass()} w-5 h-5`"></div>
+      <div :show="!collapsed()" class="i-hugeicons-sidebar-left w-5 h-5"></div>
+      <div :show="collapsed()" class="i-hugeicons-sidebar-right w-5 h-5"></div>
     </button>
   @endif
 </aside>

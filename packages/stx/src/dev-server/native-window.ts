@@ -131,14 +131,14 @@ export async function isNativeWindowSupported(): Promise<boolean> {
 /**
  * Extract sidebar configuration from template content
  * Looks for:
- * 1. <Sidebar variant="tahoe"> component with props
+ * 1. <Sidebar> component with a native-capable variant
  * 2. @nativeSidebar directive
  * 3. <script native-sidebar> (deprecated)
  */
 export function extractSidebarConfig(templateContent: string): SidebarConfig | undefined {
-  // Look for <Sidebar> component with variant="tahoe"
+  // Look for <Sidebar> component with a native-capable variant.
   // Use [\s\S] instead of [^>] to match newlines in multi-line component tags
-  const sidebarMatch = templateContent.match(/<Sidebar[\s\S]*?variant=["']tahoe["'][\s\S]*?\/>/i)
+  const sidebarMatch = templateContent.match(/<Sidebar[\s\S]*?variant=["'](?:tahoe|vibrancy|desktop)["'][\s\S]*?\/>/i)
   if (sidebarMatch) {
     // Find the server script to evaluate the full context
     const scriptMatch = templateContent.match(/<script\s+server[^>]*>([\s\S]*?)<\/script>/i)
