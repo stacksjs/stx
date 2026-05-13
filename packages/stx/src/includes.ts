@@ -180,8 +180,8 @@ function extractExports(setupContent: string): string {
         i += 2
         let templateDepth = 1
         while (i < len && templateDepth > 0) {
-          if (code[i] === '{') templateDepth++
-          else if (code[i] === '}') templateDepth--
+          if (code[i] === '{') { templateDepth++; i++ }
+          else if (code[i] === '}') { templateDepth--; i++ }
           else if (code[i] === '\'' || code[i] === '"') skipString(code[i])
           else if (code[i] === '`') skipTemplateLiteral()
           else i++

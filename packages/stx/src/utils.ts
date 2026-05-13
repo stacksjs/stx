@@ -176,8 +176,8 @@ function extractVariableNames(code: string): string[] {
         i += 2
         let templateDepth = 1
         while (i < len && templateDepth > 0) {
-          if (code[i] === '{') templateDepth++
-          else if (code[i] === '}') templateDepth--
+          if (code[i] === '{') { templateDepth++; i++ }
+          else if (code[i] === '}') { templateDepth--; i++ }
           else if (code[i] === '\'' || code[i] === '"') skipString(code[i])
           else if (code[i] === '`') skipTemplateLiteral()
           else i++
@@ -742,9 +742,18 @@ export async function renderComponentWithSlot(
         const content = transformStoreImports(rawContent)
         // Wrap script content to register in scope
         // Add data-stx-scoped attribute to prevent double-processing by processScriptSetup
+        // Pull the full component-system API into scope, not just the
+        // reactivity primitives. Components shipped from @stacksjs/components
+        // (Notification, Dropdown, Tabs, Sidebar, Transition, …) call
+        // `defineEmits()` / `defineExpose()` at the top of their
+        // `<script client>` blocks; if those identifiers aren't bound here
+        // the very first line throws `defineEmits is not defined`,
+        // tearing down the whole inline IIFE before any reactive binding
+        // gets a chance to wire up. Mirrors the destructure the page-level
+        // setup uses in signal-processing.ts.
         const wrappedContent = `
 (function() {
-  const { state, derived, effect, batch } = window.stx;
+  const { state, derived, effect, batch, defineEmits, defineExpose, defineProps, withDefaults, useStore, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, inject, ref, reactive, computed, watch, watchEffect, nextTick } = window.stx;
   const __scope = window.stx._scopes = window.stx._scopes || {};
   const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
 
