@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.57...v0.2.58)
+
+### 🧪 Tests
+
+- **stx**: stabilize timing-sensitive suites ([3dfb398](https://github.com/stacksjs/stx/commit/3dfb398)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.58 ([6323bbf](https://github.com/stacksjs/stx/commit/6323bbf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.57...HEAD)
+
+### 🧪 Tests
+
+- **stx**: stabilize timing-sensitive suites ([3dfb398](https://github.com/stacksjs/stx/commit/3dfb398)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.56...v0.2.57)
 
 ### 🚀 Features
