@@ -571,7 +571,11 @@ export function processEventDirectives(
 ): string {
   // When signals are used, skip event processing - the signals runtime handles events
   // Note: data-stx-ref (from @ref) should NOT trigger this — only data-stx or data-stx-auto
-  const usesSignals = /\b(?:state|derived|effect)\s*\(/.test(template)
+  // The `(?:<[^<>()]*>)?` segment lets TypeScript-typed calls like
+  // `state<string>('')` still register as signal usage; without it the regex
+  // only matches the untyped form and TS-first templates fall through to the
+  // event-stripping path, dropping @submit/@click bindings on the form.
+  const usesSignals = /\b(?:state|derived|effect)\s*(?:<[^<>()]*>)?\s*\(/.test(template)
     || /@(?:model|show|for|if)\s*=/.test(template)
     || /data-stx(?:-auto)?(?![-\w])/.test(template)
 

@@ -146,7 +146,7 @@ function replaceDirectiveBalanced(template: string, directive: string, newName: 
  * Check if script content uses signal APIs (state, derived, effect)
  */
 function hasSignalApis(scriptContent: string): boolean {
-  return /\b(state|derived|effect)\s*\(/.test(scriptContent)
+  return /\b(state|derived|effect)\s*(?:<[^<>()]*>)?\s*\(/.test(scriptContent)
 }
 
 /**

@@ -119,7 +119,7 @@ else {
   const serverScripts: string[] = []
   const signalsScripts: string[] = []
 
-  const usesSignalsAPI = (scriptContent: string) => /\b(?:state|derived|effect|batch)\s*\(/.test(scriptContent)
+  const usesSignalsAPI = (scriptContent: string) => /\b(?:state|derived|effect|batch)\s*(?:<[^<>()]*>)?\s*\(/.test(scriptContent)
 
   let scriptMatch: RegExpExecArray | null
   while ((scriptMatch = scriptRegex.exec(content)) !== null) {

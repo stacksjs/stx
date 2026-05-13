@@ -688,7 +688,7 @@ export async function renderComponentWithSlot(
 
     // Check if component has signal scripts - if so, skip event directive processing
     // because the runtime will handle @click, @keydown etc. via processElement()
-    const hasSignalScripts = clientScripts.some(s => /\b(state|derived|effect)\s*\(/.test(s))
+    const hasSignalScripts = clientScripts.some(s => /\b(state|derived|effect)\s*(?:<[^<>()]*>)?\s*\(/.test(s))
 
     // First, process any nested components in this component
     const componentOptions = {
