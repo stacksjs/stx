@@ -54,7 +54,7 @@
     },
     "packages/bun-plugin": {
       "name": "bun-plugin-stx",
-      "version": "0.2.51",
+      "version": "0.2.56",
       "bin": {
         "serve": "./dist/serve.js",
         "stx-serve": "./dist/serve.js",
@@ -1592,7 +1592,7 @@
     },
     "packages/components": {
       "name": "@stacksjs/components",
-      "version": "0.2.35",
+      "version": "0.2.54",
       "dependencies": {
         "@cwcss/crosswind": "^0.2.0",
         "@stacksjs/stx": "workspace:*",
@@ -1622,7 +1622,7 @@
     },
     "packages/desktop": {
       "name": "@stacksjs/desktop",
-      "version": "0.2.46",
+      "version": "0.2.56",
       "peerDependencies": {
         "craft": "*",
       },
@@ -1653,7 +1653,7 @@
     },
     "packages/router": {
       "name": "stx-router",
-      "version": "0.2.51",
+      "version": "0.2.56",
     },
     "packages/sanitizer": {
       "name": "@stacksjs/sanitizer",
@@ -1661,7 +1661,7 @@
     },
     "packages/stx": {
       "name": "@stacksjs/stx",
-      "version": "0.2.52",
+      "version": "0.2.56",
       "bin": {
         "stx": "./dist/cli.js",
       },
@@ -1675,7 +1675,7 @@
         "bunfig": "^0.15.6",
         "stx-router": "workspace:*",
         "ts-broadcasting": "^0.0.4",
-        "ts-images": "^0.1.7",
+        "ts-images": "^0.1.8",
         "ts-syntax-highlighter": "^0.2.1",
       },
     },
@@ -2962,7 +2962,7 @@
 
     "ts-gif": ["ts-gif@0.1.2", "", { "dependencies": { "data-uri-to-buffer": "^6.0.2" } }, "sha512-jbraplO1qqJtrtkFeepNPUGPad7w8FQHWIQFsn1OJbHeWKUbdqdkrX18XzNXI5Fw7+s6A3nbNTdj+Ukn4d3f8g=="],
 
-    "ts-images": ["ts-images@0.1.7", "", { "dependencies": { "@stacksjs/ts-avif": "^0.1.0", "@stacksjs/ts-bmp": "^0.1.0", "@stacksjs/ts-png": "^0.1.2", "@stacksjs/ts-svg": "^0.1.1", "@stacksjs/ts-webp": "^0.1.0", "ts-gif": "^0.1.2", "ts-jpeg": "^0.3.1" }, "bin": { "imgx": "./dist/bin/cli.js" } }, "sha512-v2gb6Ea1T/DPmc753ApRO1MhLfHu/2PzB9FIwiTBZW53dVsvSc6GzQT0+QCBrwfi8K96RynCNooP3+dCvUyvZg=="],
+    "ts-images": ["ts-images@0.1.8", "", { "dependencies": { "@stacksjs/ts-avif": "^0.1.0", "@stacksjs/ts-bmp": "^0.1.0", "@stacksjs/ts-png": "^0.1.2", "@stacksjs/ts-svg": "^0.1.1", "@stacksjs/ts-webp": "^0.1.0", "ts-gif": "^0.1.2", "ts-jpeg": "^0.3.1" }, "bin": { "imgx": "./dist/bin/cli.js" } }, "sha512-z1S9gRanhORW6/N6QOtRwx2E/jTwIsJMh1KIRm31MEVulq5nsoNI3YFVWdkYnrLnRc3s2A83ptY4DeEPtY7Sqg=="],
 
     "ts-jpeg": ["ts-jpeg@0.3.1", "", {}, "sha512-KIGTJj4UIlkGoCFEofx8jHHQEkJfSLFJY0MHz60Mu4Scjrcj7K/0UJGCbL9QvfIaFGAOGdf0xNFpYSuzUpimwA=="],
 
