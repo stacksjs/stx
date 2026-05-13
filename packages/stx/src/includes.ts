@@ -248,6 +248,20 @@ function extractExports(setupContent: string): string {
  */
 function transformSignalScript(scriptContent: string, scopeId: string): string {
   const exports = extractExports(scriptContent)
+  const exportNames = exports.split(',').map(s => s.trim()).filter(Boolean)
+
+  // Build the scope assignment defensively. `extractExports` is a
+  // heuristic walker — when client scripts include bundled third-party
+  // sources (e.g. `ts-medium-editor` inlined via Bun.build) the depth
+  // tracker can mis-identify inner-scope vars as top-level, putting
+  // names like `message`, `parent`, `frag` into the export list. Doing
+  // `{ message, ... }` then throws `ReferenceError: message is not
+  // defined` at hydration and kills the whole scope's registration.
+  // Wrap each property in a try/catch so a stray harvested name turns
+  // into `undefined` instead of a fatal ReferenceError.
+  const scopeAssign = exportNames.map(name =>
+    `  try { __scopeRegistration[${JSON.stringify(name)}] = ${name}; } catch (e) { /* not actually top-level */ }`,
+  ).join('\n')
 
   // Use real window.stx APIs (signals runtime is injected in <head>, runs before this script).
   // No polyfill fallbacks — they create signals without ._isSignal which breaks auto-unwrap
@@ -263,7 +277,9 @@ ${scriptContent}
 
   // Register scope variables for STX runtime
   if (!window.stx._scopes) window.stx._scopes = {};
-  window.stx._scopes['${scopeId}'] = { ${exports}, __destroyCallbacks: __destroyHooks };
+  var __scopeRegistration = { __destroyCallbacks: __destroyHooks };
+${scopeAssign}
+  window.stx._scopes['${scopeId}'] = __scopeRegistration;
 })();
 `
 }
