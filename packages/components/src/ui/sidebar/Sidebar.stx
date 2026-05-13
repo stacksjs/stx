@@ -77,7 +77,9 @@ export const containerClasses = [
   className,
 ].filter(Boolean).join(' ')
 
-export const collapseBtnPosition = position === 'left' ? 'right-2' : 'left-2'
+export const collapseBtnPosition = variant === 'desktop'
+  ? (position === 'left' ? 'left-[174px]' : 'right-[174px]')
+  : (position === 'left' ? 'right-2' : 'left-2')
 export const navClasses = style.nav || 'px-3 py-2 space-y-1'
 export const slotClasses = style.slot || 'px-3 py-2'
 </script>
