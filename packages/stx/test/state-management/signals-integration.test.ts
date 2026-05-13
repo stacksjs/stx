@@ -375,6 +375,10 @@ describe('signals integration - async patterns', () => {
     const userId = state<number | null>(null)
     const userData = state<{ name: string } | null>(null)
     const loading = state(false)
+    let resolveFetched!: () => void
+    const fetched = new Promise<void>((resolve) => {
+      resolveFetched = resolve
+    })
 
     // Simulate async data fetching
     effect(() => {
@@ -384,6 +388,7 @@ describe('signals integration - async patterns', () => {
         setTimeout(() => {
           userData.set({ name: `User ${id}` })
           loading.set(false)
+          resolveFetched()
         }, 10)
       }
     })
@@ -392,7 +397,7 @@ describe('signals integration - async patterns', () => {
 
     expect(loading()).toBe(true)
 
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await fetched
 
     expect(loading()).toBe(false)
     expect(userData()?.name).toBe('User 1')
