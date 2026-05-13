@@ -953,13 +953,43 @@ export async function processSignals(template: string, options: StxOptions, file
   }
 
   // If no setup code but has signals syntax, add data-stx-auto to body for auto-processing
-  // Check if body already has data-stx attribute (not just any occurrence in the template)
-  const bodyMatch = output.match(/<body([^>]*)>/i)
+  // Check if body already has data-stx attribute (not just any occurrence in the template).
+  // Crucially, scan for `<body` only outside of <script> and <style> blocks — embedded
+  // JS often contains regex literals like `/<body[^>]*>/` and corrupting those into
+  // `<body data-stx-auto[^>]*>` breaks the entire page (the malformed character class
+  // throws "Invalid regular expression: Range out of order in character class").
+  const stripped = output.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/<style\b[\s\S]*?<\/style>/gi, '')
+  const bodyMatch = stripped.match(/<body([^>]*)>/i)
   const bodyHasDataStx = bodyMatch && /data-stx/.test(bodyMatch[1])
 
-  if (!setupCode && !bodyHasDataStx) {
-    if (output.includes('<body') && bodyMatch && !/data-stx-auto/.test(bodyMatch[1])) {
-      output = output.replace(/<body([^>]*)>/, '<body$1 data-stx-auto>')
+  if (!setupCode && !bodyHasDataStx && bodyMatch && !/data-stx-auto/.test(bodyMatch[1])) {
+    // Locate the actual body tag in the original output to replace. Find the
+    // first <body in `stripped`, then find the equivalent position in `output`
+    // by walking forward and skipping over <script>/<style> regions, so we
+    // don't replace a regex literal inside a script.
+    const bodyTagRe = /<body[^>]*>/i
+    const scriptOrStyleRe = /<(script|style)\b[\s\S]*?<\/\1>/gi
+    const skipRanges: Array<[number, number]> = []
+    let m: RegExpExecArray | null
+    while ((m = scriptOrStyleRe.exec(output)) !== null)
+      skipRanges.push([m.index, m.index + m[0].length])
+
+    let searchFrom = 0
+    let bodyIdx = -1
+    while (searchFrom < output.length) {
+      bodyTagRe.lastIndex = searchFrom
+      const hit = bodyTagRe.exec(output.slice(searchFrom))
+      if (!hit) break
+      const absIdx = searchFrom + hit.index
+      const insideSkip = skipRanges.some(([s, e]) => absIdx >= s && absIdx < e)
+      if (!insideSkip) { bodyIdx = absIdx; break }
+      searchFrom = absIdx + hit[0].length
+    }
+
+    if (bodyIdx !== -1) {
+      const before = output.slice(0, bodyIdx)
+      const after = output.slice(bodyIdx).replace(bodyTagRe, m => m.replace(/^<body([^>]*)>$/i, '<body$1 data-stx-auto>'))
+      output = before + after
     }
   }
 
