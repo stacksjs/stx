@@ -12,6 +12,11 @@ export const bordered = $props.bordered ?? true
 export const materialOpacity = $props.materialOpacity ?? (variant === 'desktop' ? 0.78 : 0.7)
 export const materialDarkOpacity = $props.materialDarkOpacity ?? (variant === 'desktop' ? 0.8 : materialOpacity)
 export const materialScheme = $props.materialScheme || 'system'
+export const persistKey = $props.persistKey || ''
+export const shellSelector = $props.shellSelector || ''
+export const widthVar = $props.widthVar || '--stx-sidebar-width'
+export const collapsedClass = $props.collapsedClass || ''
+export const nativeMaterialCollapse = $props.nativeMaterialCollapse ?? (variant === 'desktop' && collapseMode === 'hidden')
 export const className = $props.className || ''
 
 const variantStyles = {
@@ -101,6 +106,11 @@ const variantProp = {{ variant }}
 const materialOpacityProp = {{ materialOpacity }}
 const materialDarkOpacityProp = {{ materialDarkOpacity }}
 const materialSchemeProp = {{ materialScheme }}
+const persistKeyProp = {{ persistKey }}
+const shellSelectorProp = {{ shellSelector }}
+const widthVarProp = {{ widthVar }}
+const collapsedClassProp = {{ collapsedClass }}
+const nativeMaterialCollapseProp = {{ nativeMaterialCollapse }}
 
 const collapsed = state(collapsedProp)
 const isHovered = state(false)
@@ -114,6 +124,37 @@ const sidebarWidth = derived(() => {
 })
 const collapseAriaLabel = derived(() => collapsed() ? 'Expand sidebar' : 'Collapse sidebar')
 
+function applyCollapseEffects(nextCollapsed) {
+  if (persistKeyProp) {
+    try {
+      window.localStorage?.setItem(persistKeyProp, nextCollapsed ? 'true' : 'false')
+    }
+    catch {}
+  }
+
+  if (shellSelectorProp) {
+    document.querySelectorAll(shellSelectorProp).forEach((shell) => {
+      shell.style?.setProperty?.(widthVarProp, nextCollapsed && collapseModeProp === 'hidden' ? '0px' : `${widthProp}px`)
+      if (shell.dataset) shell.dataset.sidebarCollapsed = nextCollapsed ? 'true' : 'false'
+    })
+  }
+
+  document.documentElement.dataset.stxSidebarCollapsed = nextCollapsed ? 'true' : 'false'
+  if (collapsedClassProp) {
+    document.documentElement.classList.toggle(collapsedClassProp, nextCollapsed)
+  }
+
+  if (nativeMaterialCollapseProp) {
+    window.craft?.window?.setWebSidebarCollapsed?.(nextCollapsed).catch?.(() => {})
+  }
+}
+
+function setCollapsed(nextCollapsed, shouldEmit = true) {
+  collapsed.set(nextCollapsed)
+  applyCollapseEffects(nextCollapsed)
+  if (shouldEmit) emit('collapse', nextCollapsed)
+}
+
 function onMouseEnter() {
   if (collapsed() && collapsibleProp && collapseModeProp !== 'hidden') isHovered.set(true)
 }
@@ -123,8 +164,7 @@ function onMouseLeave() {
 }
 
 function toggleCollapse() {
-  collapsed.set(!collapsed())
-  emit('collapse', collapsed())
+  setCollapsed(!collapsed())
 }
 
 function onSectionToggle(sectionId) {
@@ -143,6 +183,16 @@ function isCraftRuntime() {
 }
 
 onMount(async () => {
+  if (persistKeyProp) {
+    try {
+      const saved = window.localStorage?.getItem(persistKeyProp)
+      if (saved === 'true' || saved === 'false') collapsed.set(saved === 'true')
+    }
+    catch {}
+  }
+
+  applyCollapseEffects(collapsed())
+
   if (variantProp === 'desktop' && isCraftRuntime()) {
     document.documentElement.classList.add('has-stx-sidebar-material')
     if (document.body?.dataset) document.body.dataset.sidebarMaterial = 'desktop'
@@ -188,6 +238,7 @@ defineExpose({ collapsed, toggle: toggleCollapse })
   class="{{ containerClasses }} sidebar-container"
   data-sidebar-variant="{{ variant }}"
   data-sidebar-material-scheme="{{ materialScheme }}"
+  :aria-hidden="String(collapsed() && collapseModeProp === 'hidden')"
   :style="`width: ${sidebarWidth()}; --stx-sidebar-material-opacity: ${materialOpacityProp}; --stx-sidebar-material-dark-opacity: ${materialDarkOpacityProp}`"
   @mouseenter="onMouseEnter()"
   @mouseleave="onMouseLeave()"

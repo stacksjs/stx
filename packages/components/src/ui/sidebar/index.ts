@@ -51,6 +51,16 @@ export interface SidebarProps {
   materialDarkOpacity?: number
   /** Force native/sidebar material appearance instead of following system mode */
   materialScheme?: 'system' | 'light' | 'dark'
+  /** localStorage key used to persist collapse state */
+  persistKey?: string
+  /** Optional app shell selector whose sidebar width CSS variable should be synced */
+  shellSelector?: string
+  /** CSS variable written on shellSelector when the sidebar collapses or expands */
+  widthVar?: string
+  /** Optional class toggled on the document element while collapsed */
+  collapsedClass?: string
+  /** Whether hidden desktop collapse should notify Craft's web sidebar material */
+  nativeMaterialCollapse?: boolean
   /** Additional CSS classes */
   className?: string
   /** Callback when collapse state changes */
