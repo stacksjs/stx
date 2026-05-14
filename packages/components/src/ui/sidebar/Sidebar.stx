@@ -87,7 +87,7 @@ export const containerClasses = [
 ].filter(Boolean).join(' ')
 
 export const collapseBtnPosition = variant === 'desktop'
-  ? (position === 'left' ? 'left-[88px]' : 'right-[88px]')
+  ? (position === 'left' ? 'left-[166px]' : 'right-[166px]')
   : (position === 'left' ? 'right-2' : 'left-2')
 export const navClasses = style.nav || 'px-3 py-2 space-y-1'
 export const slotClasses = style.slot || 'px-3 py-2'
@@ -314,9 +314,11 @@ defineExpose({ collapsed, toggle: toggleCollapse })
   backdrop-filter: blur(24px) saturate(1.08);
   -webkit-backdrop-filter: blur(24px) saturate(1.08);
 }
-html.has-native-sidebar [data-stx-sidebar-web-chrome],
-html.has-native-sidebar [data-stx-sidebar-collapse-button] {
+html.has-native-sidebar [data-stx-native-window-controls] {
   display: none;
+}
+html.has-native-sidebar [data-stx-sidebar-web-chrome] {
+  margin-left: 202px;
 }
 @media (prefers-color-scheme: dark) {
   .sidebar-container[data-sidebar-variant="desktop"]:not([data-sidebar-material-scheme="light"]) {
