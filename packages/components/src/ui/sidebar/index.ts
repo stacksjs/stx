@@ -35,6 +35,8 @@ export interface SidebarProps {
   width?: number
   /** Minimum width when collapsed in pixels */
   minWidth?: number
+  /** Collapse behavior: keep a compact rail or hide the sidebar entirely */
+  collapseMode?: 'rail' | 'hidden'
   /** Visual style variant */
   variant?: SidebarVariant
   /** Layout placement for app shells and native-like sidebars */
@@ -47,6 +49,8 @@ export interface SidebarProps {
   materialOpacity?: number
   /** Dark-mode tint opacity over sidebar material. Higher values reduce vibrancy. */
   materialDarkOpacity?: number
+  /** Force native/sidebar material appearance instead of following system mode */
+  materialScheme?: 'system' | 'light' | 'dark'
   /** Additional CSS classes */
   className?: string
   /** Callback when collapse state changes */
@@ -143,6 +147,8 @@ export interface NativeSidebarConfig {
   materialOpacity?: number
   /** Dark-mode tint opacity over sidebar material */
   materialDarkOpacity?: number
+  /** Force native/sidebar material appearance instead of following system mode */
+  materialScheme?: 'system' | 'light' | 'dark'
   /** Header configuration */
   header?: {
     title?: string

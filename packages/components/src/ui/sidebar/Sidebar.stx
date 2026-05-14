@@ -4,12 +4,14 @@ export const collapsed = $props.collapsed ?? false
 export const collapsible = $props.collapsible ?? true
 export const width = $props.width || 240
 export const minWidth = $props.minWidth || 64
+export const collapseMode = $props.collapseMode || 'rail'
 export const variant = $props.variant || 'tahoe'
 export const position = $props.position || 'left'
 export const placement = $props.placement || 'fixed'
 export const bordered = $props.bordered ?? true
 export const materialOpacity = $props.materialOpacity ?? (variant === 'desktop' ? 0.78 : 0.7)
 export const materialDarkOpacity = $props.materialDarkOpacity ?? (variant === 'desktop' ? 0.8 : materialOpacity)
+export const materialScheme = $props.materialScheme || 'system'
 export const className = $props.className || ''
 
 const variantStyles = {
@@ -92,11 +94,13 @@ const collapsedProp = {{ collapsed }}
 const collapsibleProp = {{ collapsible }}
 const widthProp = {{ width }}
 const minWidthProp = {{ minWidth }}
+const collapseModeProp = {{ collapseMode }}
 const sectionsProp = {{ sections }}
 const positionProp = {{ position }}
 const variantProp = {{ variant }}
 const materialOpacityProp = {{ materialOpacity }}
 const materialDarkOpacityProp = {{ materialDarkOpacity }}
+const materialSchemeProp = {{ materialScheme }}
 
 const collapsed = state(collapsedProp)
 const isHovered = state(false)
@@ -104,13 +108,14 @@ const hasNativeSidebar = state(false)
 
 const showExpanded = derived(() => !collapsed() || isHovered())
 const sidebarWidth = derived(() => {
+  if (collapsed() && collapseModeProp === 'hidden') return '0px'
   if (collapsed() && !isHovered()) return `${minWidthProp}px`
   return `${widthProp}px`
 })
 const collapseAriaLabel = derived(() => collapsed() ? 'Expand sidebar' : 'Collapse sidebar')
 
 function onMouseEnter() {
-  if (collapsed() && collapsibleProp) isHovered.set(true)
+  if (collapsed() && collapsibleProp && collapseModeProp !== 'hidden') isHovered.set(true)
 }
 
 function onMouseLeave() {
@@ -143,26 +148,23 @@ onMount(async () => {
     if (document.body?.dataset) document.body.dataset.sidebarMaterial = 'desktop'
   }
 
-  hasNativeSidebar.set(
-    isCraftRuntime()
-    && (
-      window.__craftNativeSidebar === true
-      || window.craft?.hasNativeSidebar?.()
-      || document.body?.dataset?.nativeSidebar === 'true'
-    ),
-  )
-  if (isCraftRuntime() && window.craft?.components?.createSidebar) {
+  hasNativeSidebar.set(isCraftRuntime() && window.craft?.hasNativeSidebar?.() === true)
+
+  const nativeSidebarApi = window.craft?.nativeUI || window.craft?.components
+  if (isCraftRuntime() && nativeSidebarApi?.createSidebar) {
     try {
-      await window.craft.components.createSidebar({
+      const sidebar = await nativeSidebarApi.createSidebar({
         position: positionProp,
         width: widthProp,
         minWidth: minWidthProp,
+        collapseMode: collapseModeProp,
         collapsible: collapsibleProp,
         variant: variantProp,
         material: variantProp === 'desktop' ? 'sidebar' : undefined,
         backgroundEffect: variantProp === 'desktop' ? 'vibrancy' : undefined,
         materialOpacity: materialOpacityProp,
         materialDarkOpacity: materialDarkOpacityProp,
+        materialScheme: materialSchemeProp,
         allowsVibrancy: variantProp === 'desktop' || variantProp === 'vibrancy' || variantProp === 'tahoe',
         sections: sectionsProp.map(s => ({
           id: s.id,
@@ -170,6 +172,7 @@ onMount(async () => {
           items: s.items?.map(i => ({ id: i.id, label: i.label, icon: i.icon, href: i.href, badge: i.badge })),
         })),
       })
+      if (sidebar) hasNativeSidebar.set(true)
     }
     catch (err) {
       console.warn('[Sidebar] Failed to create native sidebar, using web fallback:', err)
@@ -184,6 +187,7 @@ defineExpose({ collapsed, toggle: toggleCollapse })
   :show="!hasNativeSidebar()"
   class="{{ containerClasses }} sidebar-container"
   data-sidebar-variant="{{ variant }}"
+  data-sidebar-material-scheme="{{ materialScheme }}"
   :style="`width: ${sidebarWidth()}; --stx-sidebar-material-opacity: ${materialOpacityProp}; --stx-sidebar-material-dark-opacity: ${materialDarkOpacityProp}`"
   @mouseenter="onMouseEnter()"
   @mouseleave="onMouseLeave()"
@@ -264,7 +268,7 @@ html.has-native-sidebar [data-stx-sidebar-collapse-button] {
   display: none;
 }
 @media (prefers-color-scheme: dark) {
-  .sidebar-container[data-sidebar-variant="desktop"] {
+  .sidebar-container[data-sidebar-variant="desktop"]:not([data-sidebar-material-scheme="light"]) {
     background-color: rgba(24, 24, 23, var(--stx-sidebar-material-dark-opacity, 0.8));
   }
   .overflow-y-auto::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.15); }
