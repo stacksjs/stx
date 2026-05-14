@@ -1264,7 +1264,10 @@ catch (e) {
       fn(...Object.values(scope), event);
     }
 catch (e) {
-      if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Handler error:', expr, e);
+      // Event handlers fire on user interaction, not reactive re-runs — there's no
+      // async-hydration race to silence. Surfacing TypeError/ReferenceError is what
+      // turns "@click does nothing, no warning" into a 5-second debug. See #1694.
+      console.warn('[STX] Handler error:', expr, e);
     }
   }
 
@@ -1679,7 +1682,11 @@ else if (name.startsWith('@') || name.startsWith(':')) {
             }
           }
 catch (e) {
-            if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Handler error:', value, e);
+            // See #1694: dropping the TypeError/ReferenceError carve-out for inline
+            // handlers — same reason as executeHandler above. Silencing these hid
+            // the substring-detector bug (auto-unwrap missing .set( inside helper
+            // calls) for ~30min of bisecting in the field.
+            console.warn('[STX] Handler error:', value, e);
           }
         }, {
           capture: modifiers.includes('capture'),

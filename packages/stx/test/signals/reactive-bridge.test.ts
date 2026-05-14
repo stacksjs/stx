@@ -257,6 +257,26 @@ describe('Error resilience for async init patterns', () => {
     // expressions like `activeTab()` can execute against the signal function.
     expect(runtime).toMatch(/fn\.apply\(null, safeKeys\.map\(\(?k\)? => capturedScope\[k\]\)\)/)
   })
+
+  // Regression for #1694: the TypeError/ReferenceError carve-out exists for
+  // *effect* catches (bindShow/bindClass/bindStyle re-run during async init,
+  // so silencing pre-hydration null-prop access is intentional). It must NOT
+  // exist for *event-handler* dispatch — handlers fire on user interaction,
+  // and silencing their TypeError hides real bugs like the substring-detector
+  // failing to keep signals raw when `.set()` is called inside a helper. The
+  // symptom is "click does nothing, no warning" — the very class of bug we
+  // can't afford to swallow.
+  it('event-handler dispatch should NOT suppress TypeError/ReferenceError', () => {
+    // Both handler catches (executeHandler + inline @event dispatch) must warn
+    // unconditionally. Assert each "Handler error:" warn is preceded by an
+    // unguarded console.warn — i.e., NOT wrapped in an `instanceof TypeError`
+    // check.
+    const handlerErrorWarnings = runtime.match(/console\.warn\(['"]\[STX\] Handler error:/g) || []
+    expect(handlerErrorWarnings.length).toBeGreaterThanOrEqual(2)
+    // The forbidden shape: `if (!(e instanceof TypeError)) console.warn('[STX] Handler error:` —
+    // if this pattern reappears anywhere, the regression is back.
+    expect(runtime).not.toMatch(/instanceof\s+(TypeError|ReferenceError)\s*\)\s*\)\s*console\.warn\(['"]\[STX\] Handler error:/)
+  })
 })
 
 // =============================================================================
