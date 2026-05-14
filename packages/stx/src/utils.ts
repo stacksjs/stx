@@ -432,6 +432,17 @@ export async function renderComponentWithSlot(
         }
       }
 
+      const normalizedSearchDirs = [...new Set(searchDirs.map((dir) => {
+        if (!dir)
+          return dir
+
+        return path.isAbsolute(dir)
+          ? dir
+          : path.resolve(projectRoot, dir)
+      }))]
+      searchDirs.length = 0
+      searchDirs.push(...normalizedSearchDirs)
+
       // If path starts with ./ or ../, resolve from current template directory
       if (baseName.startsWith('./') || baseName.startsWith('../')) {
         componentFilePath = path.resolve(path.dirname(parentFilePath), `${baseName}.stx`)
