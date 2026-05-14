@@ -80,7 +80,7 @@ export const containerClasses = [
 ].filter(Boolean).join(' ')
 
 export const collapseBtnPosition = variant === 'desktop'
-  ? (position === 'left' ? 'left-[174px]' : 'right-[174px]')
+  ? (position === 'left' ? 'left-[88px]' : 'right-[88px]')
   : (position === 'left' ? 'right-2' : 'left-2')
 export const navClasses = style.nav || 'px-3 py-2 space-y-1'
 export const slotClasses = style.slot || 'px-3 py-2'
@@ -240,6 +240,8 @@ defineExpose({ collapsed, toggle: toggleCollapse })
       class="absolute top-4 {{ collapseBtnPosition }} p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-black/5 dark:hover:text-neutral-300 dark:hover:bg-white/10 transition-colors z-20"
       @click="toggleCollapse()"
       :aria-label="collapseAriaLabel()"
+      data-sidebar-collapse
+      data-stx-sidebar-collapse-button
     >
       <div :show="!collapsed()" class="i-hugeicons-sidebar-left w-5 h-5"></div>
       <div :show="collapsed()" class="i-hugeicons-sidebar-right w-5 h-5"></div>
@@ -256,6 +258,10 @@ defineExpose({ collapsed, toggle: toggleCollapse })
   background-color: rgba(246, 246, 244, var(--stx-sidebar-material-opacity, 0.78));
   backdrop-filter: blur(24px) saturate(1.08);
   -webkit-backdrop-filter: blur(24px) saturate(1.08);
+}
+html.has-native-sidebar [data-stx-sidebar-web-chrome],
+html.has-native-sidebar [data-stx-sidebar-collapse-button] {
+  display: none;
 }
 @media (prefers-color-scheme: dark) {
   .sidebar-container[data-sidebar-variant="desktop"] {
