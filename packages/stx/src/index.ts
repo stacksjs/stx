@@ -161,6 +161,7 @@ export {
   type BuildOptions,
   type BuildResult as SiteBuildResult,
   type PageMeta,
+  type ResolvedI18n,
   type RouterOptions,
   type SiteConfig,
   type SiteI18nOptions,

@@ -13,6 +13,7 @@ export {
   stripLocalePrefix,
   translate,
 } from './i18n'
+export type { ResolvedI18n } from './i18n'
 export type {
   BuildOptions,
   PageMeta,

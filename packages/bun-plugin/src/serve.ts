@@ -58,6 +58,39 @@ export interface ServeOptions {
    * a Promise of one (e.g. `import('/abs/path/to/stx')`).
    */
   stxModule?: typeof import('@stacksjs/stx') | Promise<typeof import('@stacksjs/stx')>
+
+  /**
+   * Multi-locale i18n config. Pass a `ResolvedI18n` (obtained via
+   * `resolveI18n(site)` from `@stacksjs/stx/site-builder`) to enable
+   * locale-prefix routing + automatic `{t:key}` substitution in
+   * rendered HTML.
+   *
+   * If `site` is also passed, this is derived automatically from
+   * `site.i18n` — explicit `i18n` here wins if both are set.
+   */
+  i18n?: import('@stacksjs/stx').ResolvedI18n
+
+  /**
+   * Site config object (the `defineSiteConfig({…})` default export of
+   * a project's `site.config.ts`). When set, every rendered HTML
+   * response runs through the same site-builder injectors that
+   * `buildStaticSite()` uses for the production build, so dev mode
+   * matches prod:
+   *
+   * 1. `injectThemeBootstrap(html, site)` — FOUC-free dark/light toggle
+   *    + the click handler the `<ThemeToggle />` component depends on.
+   * 2. `injectSeo(html, site, page, path)` — per-page `<title>`,
+   *    description, OpenGraph, Twitter, hreflang. Page meta is read
+   *    from `site.pages[path]` keyed by the request's normalized path.
+   * 3. `applyTranslations(html, i18n, locale)` — same as `i18n` above,
+   *    derived from `site.i18n` if `i18n` isn't explicitly passed.
+   *
+   * Apps that don't have a `site.config.ts` (or want the legacy
+   * "untouched HTML" behaviour) leave this unset; serve() falls back
+   * to the i18n-only path or no post-processing at all.
+   */
+  site?: import('@stacksjs/stx').SiteConfig
+
   /** Custom route handlers — checked before page routes */
   routes?: Record<string, (req: Request) => Response | Promise<Response>>
   /**
@@ -1177,11 +1210,167 @@ export async function serve(options: ServeOptions): Promise<void> {
     'Access-Control-Allow-Headers': 'Content-Type',
   }
 
+  // ── Site-aware response post-processing ────────────────────────
+  // When `options.site` (or `options.i18n`) is set, we run the same
+  // injector chain `buildStaticSite()` uses for prod builds against
+  // every text/html response — so dev mode renders identically to a
+  // built+served page (theme bootstrap, per-page SEO, locale-prefixed
+  // routing, `{t:key}` substitution). When neither option is set,
+  // everything below is a no-op and HTML ships untouched.
+  const siteConfig = options.site
+  const siteStxPromise: Promise<typeof import('@stacksjs/stx')> | null = (siteConfig || options.i18n)
+    ? (options.stxModule ? Promise.resolve(options.stxModule) : defaultStxModule)
+    : null
+
+  // Resolve i18n once at startup. Explicit `options.i18n` wins; else
+  // we derive from site.i18n via `resolveI18n` (returns null when
+  // site has no i18n block, which is fine).
+  let i18nConfig: import('@stacksjs/stx').ResolvedI18n | null = options.i18n ?? null
+  if (!i18nConfig && siteConfig && siteStxPromise) {
+    try {
+      const { resolveI18n } = await siteStxPromise
+      i18nConfig = resolveI18n(siteConfig) ?? null
+    }
+    catch { /* fall through — no translations */ }
+  }
+
+  // Strip a locale prefix from a path and return both. Falls back to
+  // `defaultLocale` when no prefix matches — that way every page gets
+  // translated (untouched markers would leak `{t:nav.home}` text).
+  function localeFromPath(pathname: string): { locale: string, path: string } {
+    if (!i18nConfig) return { locale: 'en', path: pathname }
+    for (const loc of i18nConfig.locales) {
+      if (pathname === `/${loc}` || pathname === `/${loc}/`)
+        return { locale: loc, path: '/' }
+      if (pathname.startsWith(`/${loc}/`))
+        return { locale: loc, path: pathname.slice(loc.length + 1) }
+    }
+    return { locale: i18nConfig.defaultLocale, path: pathname }
+  }
+
+  async function applyI18nToResponse(res: Response, locale: string, normalizedPath: string): Promise<Response> {
+    if (!siteStxPromise) return res
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('text/html')) return res
+
+    const stx = await siteStxPromise
+    let html = await res.text()
+
+    // Theme bootstrap — FOUC guard + dark-mode toggle handler. The
+    // <ThemeToggle /> component's click handler is part of this
+    // injection; without it, the button is a no-op.
+    if (siteConfig && stx.injectThemeBootstrap)
+      html = stx.injectThemeBootstrap(html, siteConfig)
+
+    // Per-page SEO — <title>, description, OG, hreflang. Page meta
+    // comes from site.pages[normalizedPath]; defaults gracefully when
+    // the path isn't registered.
+    if (siteConfig && stx.injectSeo) {
+      const pageMeta = (siteConfig.pages ?? {})[normalizedPath] ?? {}
+      html = stx.injectSeo(html, siteConfig, pageMeta, normalizedPath)
+    }
+
+    // Lang-picker bootstrap — wires `data-lang="<code>"` button clicks
+    // inside `#lang-picker` to navigate between locales (no `@click`
+    // handlers in the component itself; this script intercepts via
+    // event delegation). Without this, the language picker is a
+    // visual-only no-op. Inject before `</body>` so the picker DOM
+    // exists when the script runs.
+    if (i18nConfig && stx.buildLangPickerScript) {
+      const pickerScript = stx.buildLangPickerScript(i18nConfig, locale)
+      html = /<\/body>/i.test(html)
+        ? html.replace(/<\/body>/i, `${pickerScript}\n</body>`)
+        : html + pickerScript
+    }
+
+    // Tag each rendered page with its locale via the SPA router's
+    // "layout group" meta. When the user clicks the lang picker and
+    // navigates from /about to /de/about, the router sees the group
+    // change ('en' → 'de') and triggers a full-body swap instead of
+    // the default container-only swap — so <nav> and <footer> (which
+    // hold `{t:key}` text the server already translated on the new
+    // request) get swapped in too. Without this, only `<main>` would
+    // update and the chrome would keep displaying the previous
+    // locale until a hard reload.
+    if (i18nConfig) {
+      const groupMeta = `<meta name="stx-layout-group" content="i18n:${locale}">`
+      if (/<meta name="stx-layout-group"[^>]*>/i.test(html))
+        html = html.replace(/<meta name="stx-layout-group"[^>]*>/i, groupMeta)
+      else if (/<\/head>/i.test(html))
+        html = html.replace(/<\/head>/i, `${groupMeta}\n</head>`)
+      else
+        html = `${groupMeta}\n${html}`
+    }
+
+    // Localize internal links — without this every <a href="/about">
+    // in a /de page still points at /about (the English page), so
+    // clicking any nav link kicks the visitor out of their locale.
+    // Mirrors `localizeInternalLinks` from build.ts. Only rewrites
+    // paths the project declared in `site.pages` so we don't
+    // accidentally prefix static assets or unknown deep links.
+    if (i18nConfig && locale !== i18nConfig.defaultLocale && siteConfig?.pages) {
+      const knownPaths = new Set(Object.keys(siteConfig.pages))
+      html = html.replace(
+        /<a\b([^>]*?)\bhref="(\/[^"]*)"([^>]*)>/gi,
+        (full, before, href, after) => {
+          if (href.startsWith('//')) return full
+          if (href === `/${locale}` || href === `/${locale}/` || href.startsWith(`/${locale}/`)) return full
+          const m = href.match(/^(\/[^?#]*)(.*)$/)
+          if (!m) return full
+          const [, pathOnly, rest] = m
+          const normalized = pathOnly === '/' ? '/' : pathOnly.replace(/\/$/, '')
+          if (!knownPaths.has(normalized)) return full
+          const localized = normalized === '/' ? `/${locale}/` : `/${locale}${normalized}`
+          return `<a${before}href="${localized}${rest}"${after}>`
+        },
+      )
+    }
+
+    // Translations — applied LAST so {t:key} markers inside any
+    // injected content (e.g. SEO tags reading from translations)
+    // resolve.
+    if (i18nConfig && stx.applyTranslations)
+      html = stx.applyTranslations(html, i18nConfig, locale)
+
+    const headers = new Headers(res.headers)
+    headers.delete('content-length')
+    return new Response(html, {
+      status: res.status,
+      statusText: res.statusText,
+      headers,
+    })
+  }
+
   const _server = bunServe({
     port,
     async fetch(req) {
       const url = new URL(req.url)
       let path = url.pathname
+
+      // i18n: detect + strip locale prefix BEFORE any other routing
+      // decision so downstream sees the unprefixed path. Records the
+      // resolved locale so the post-render translation pass below uses
+      // the right table. /api/** and other non-page routes pass through
+      // because the prefix wouldn't match them.
+      let i18nLocale: string | null = null
+      if (i18nConfig && !url.pathname.startsWith('/api/')) {
+        const stripped = localeFromPath(url.pathname)
+        i18nLocale = stripped.locale
+        if (stripped.path !== url.pathname) {
+          // Rewrite the Request so downstream routing (route table,
+          // discoverFiles, page resolution) sees the unprefixed path.
+          const rewritten = new URL(req.url)
+          rewritten.pathname = stripped.path
+          req = new Request(rewritten, req)
+          path = stripped.path
+        }
+      }
+
+      // Wrap the rest of the handler in an IIFE so we can post-process
+      // its Response (translation pass) at a single exit point. When
+      // i18n is disabled, the IIFE body is the original handler 1:1
+      // and `applyI18nToResponse` returns the response untouched.
+      const _i18nResp: Response = await (async (): Promise<Response> => {
 
       // Handle CORS preflight
       if (req.method === 'OPTIONS') {
@@ -1735,6 +1924,9 @@ export async function serve(options: ServeOptions): Promise<void> {
         status: 404,
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       })
+
+      })() // ─── end IIFE — single exit for translation post-process
+      return applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
     },
   })
 

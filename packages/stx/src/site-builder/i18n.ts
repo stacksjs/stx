@@ -279,6 +279,15 @@ export function buildLangPickerScript(
     current: currentLocale,
     pickerSelector: i18n.pickerSelector,
   })
+  // The router's container-only swap leaves <nav>/<footer> at the
+  // previous locale's text. For SPA hops between locales to swap
+  // those too, the destination's `<meta name="stx-layout-group">`
+  // must differ from the current one — that's the router's signal
+  // for "full body swap." We inject a per-locale group meta at build
+  // time (see post-process in bun-plugin-stx/serve.ts and the static
+  // build pipeline), and the router picks it up automatically. So
+  // here we can keep the click handler on the SPA path with no
+  // special-casing.
   return `<script data-stx-lang-picker="1">window.__stxI18n=${data};(function(){var d=window.__stxI18n;function localeFromPath(p){for(var i=0;i<d.locales.length;i++){var c=d.locales[i];if(p==='/'+c||p==='/'+c+'/')return c;if(p.indexOf('/'+c+'/')===0)return c}return d.defaultLocale}function localePathFor(loc,p){var stripped=p;for(var i=0;i<d.locales.length;i++){var c=d.locales[i];if(p==='/'+c||p==='/'+c+'/'){stripped='/';break}if(p.indexOf('/'+c+'/')===0){stripped=p.slice(c.length+1);break}}if(loc===d.defaultLocale)return stripped;if(stripped==='/')return '/'+loc+'/';return '/'+loc+stripped}function syncFromUrl(){var loc=localeFromPath(location.pathname);d.current=loc;var picker=document.querySelector(d.pickerSelector);if(picker){var btns=picker.querySelectorAll('[data-lang]');for(var i=0;i<btns.length;i++){if(btns[i].getAttribute('data-lang')===loc)btns[i].setAttribute('aria-current','true');else btns[i].removeAttribute('aria-current')}}if(document.documentElement.lang!==loc)document.documentElement.lang=loc}syncFromUrl();window.addEventListener('stx:navigate',syncFromUrl);window.addEventListener('popstate',syncFromUrl);document.addEventListener('click',function(e){var btn=e.target&&e.target.closest&&e.target.closest('['+'data-lang'+']');if(!btn)return;var picker=document.querySelector(d.pickerSelector);if(!picker||!picker.contains(btn))return;e.preventDefault();var loc=btn.getAttribute('data-lang');var dest=localePathFor(loc,location.pathname);if(window.__stxRouter&&window.__stxRouter.navigate)window.__stxRouter.navigate(dest);else location.assign(dest)});})();</script>`
 }
 
