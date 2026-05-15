@@ -1,4 +1,85 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.62...v0.2.63)
+
+### 🚀 Features
+
+- **bun-plugin**: auto-increment dev port when in use ([7e2969c](https://github.com/stacksjs/stx/commit/7e2969c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: expose material opacity controls ([ab0c01b](https://github.com/stacksjs/stx/commit/ab0c01b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: refine desktop sidebar chrome ([a939bd5](https://github.com/stacksjs/stx/commit/a939bd5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **sidebar**: tighten desktop density ([414e4cb](https://github.com/stacksjs/stx/commit/414e4cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: default desktop sidebar chrome ([de98c45](https://github.com/stacksjs/stx/commit/de98c45)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: resolve component directories from project root ([34b60a3](https://github.com/stacksjs/stx/commit/34b60a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: persist hidden desktop collapse ([75969f7](https://github.com/stacksjs/stx/commit/75969f7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: align native craft integration ([d768de1](https://github.com/stacksjs/stx/commit/d768de1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: defer desktop chrome to native controls ([d2ef2ec](https://github.com/stacksjs/stx/commit/d2ef2ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: compact desktop item chrome ([56286ae](https://github.com/stacksjs/stx/commit/56286ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: tighten desktop item density ([f90bc1e](https://github.com/stacksjs/stx/commit/f90bc1e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: keep collapse control reachable ([f943aea](https://github.com/stacksjs/stx/commit/f943aea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: request native sidebar vibrancy ([0bff575](https://github.com/stacksjs/stx/commit/0bff575)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: align desktop sidebar chrome ([b425914](https://github.com/stacksjs/stx/commit/b425914)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: soften desktop sidebar glass ([3058bbc](https://github.com/stacksjs/stx/commit/3058bbc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: surface TypeError/ReferenceError from event-handler dispatch ([1988a32](https://github.com/stacksjs/stx/commit/1988a32)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **parser**: advance index after brace match in template-literal scanner ([6da28e3](https://github.com/stacksjs/stx/commit/6da28e3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: detect TypeScript-typed state/derived/effect calls ([73e907e](https://github.com/stacksjs/stx/commit/73e907e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **utils**: absorb @push('styles') in component render path too ([06d452f](https://github.com/stacksjs/stx/commit/06d452f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **includes,icons**: strip leaked @push markers and preload icon collection ([f5a9883](https://github.com/stacksjs/stx/commit/f5a9883)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **includes**: defensively register scope vars to survive harvest mis-hits ([8adf441](https://github.com/stacksjs/stx/commit/8adf441)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signal-processing**: don't rewrite <body in script/style content ([bc03a5a](https://github.com/stacksjs/stx/commit/bc03a5a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: guard screen reader cleanup ([89e233f](https://github.com/stacksjs/stx/commit/89e233f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.63 ([77ef5a6](https://github.com/stacksjs/stx/commit/77ef5a6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([29a2d8e](https://github.com/stacksjs/stx/commit/29a2d8e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.62...HEAD)
+
+### 🚀 Features
+
+- **bun-plugin**: auto-increment dev port when in use ([7e2969c](https://github.com/stacksjs/stx/commit/7e2969c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: expose material opacity controls ([ab0c01b](https://github.com/stacksjs/stx/commit/ab0c01b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: refine desktop sidebar chrome ([a939bd5](https://github.com/stacksjs/stx/commit/a939bd5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **sidebar**: tighten desktop density ([414e4cb](https://github.com/stacksjs/stx/commit/414e4cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: default desktop sidebar chrome ([de98c45](https://github.com/stacksjs/stx/commit/de98c45)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: resolve component directories from project root ([34b60a3](https://github.com/stacksjs/stx/commit/34b60a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: persist hidden desktop collapse ([75969f7](https://github.com/stacksjs/stx/commit/75969f7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: align native craft integration ([d768de1](https://github.com/stacksjs/stx/commit/d768de1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: defer desktop chrome to native controls ([d2ef2ec](https://github.com/stacksjs/stx/commit/d2ef2ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: compact desktop item chrome ([56286ae](https://github.com/stacksjs/stx/commit/56286ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: tighten desktop item density ([f90bc1e](https://github.com/stacksjs/stx/commit/f90bc1e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: keep collapse control reachable ([f943aea](https://github.com/stacksjs/stx/commit/f943aea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: request native sidebar vibrancy ([0bff575](https://github.com/stacksjs/stx/commit/0bff575)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: align desktop sidebar chrome ([b425914](https://github.com/stacksjs/stx/commit/b425914)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: soften desktop sidebar glass ([3058bbc](https://github.com/stacksjs/stx/commit/3058bbc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: surface TypeError/ReferenceError from event-handler dispatch ([1988a32](https://github.com/stacksjs/stx/commit/1988a32)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **parser**: advance index after brace match in template-literal scanner ([6da28e3](https://github.com/stacksjs/stx/commit/6da28e3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: detect TypeScript-typed state/derived/effect calls ([73e907e](https://github.com/stacksjs/stx/commit/73e907e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **utils**: absorb @push('styles') in component render path too ([06d452f](https://github.com/stacksjs/stx/commit/06d452f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **includes,icons**: strip leaked @push markers and preload icon collection ([f5a9883](https://github.com/stacksjs/stx/commit/f5a9883)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **includes**: defensively register scope vars to survive harvest mis-hits ([8adf441](https://github.com/stacksjs/stx/commit/8adf441)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signal-processing**: don't rewrite <body in script/style content ([bc03a5a](https://github.com/stacksjs/stx/commit/bc03a5a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: guard screen reader cleanup ([89e233f](https://github.com/stacksjs/stx/commit/89e233f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([29a2d8e](https://github.com/stacksjs/stx/commit/29a2d8e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.61...v0.2.62)
 
 ### 🤖 Continuous Integration
