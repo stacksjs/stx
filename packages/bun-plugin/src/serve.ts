@@ -48,6 +48,18 @@ export interface ServeOptions {
   publicDir?: string
   quiet?: boolean
   /**
+   * When the requested `port` is already in use, probe the next ports
+   * in sequence (`port + 1`, `port + 2`, …) and bind to the first one
+   * that's free — matching Vite / Next dev-server behaviour.
+   *
+   * Set to `false` to fail fast with a clear error instead. The number
+   * of additional ports to try (default: `10`) can be passed as the
+   * value, e.g. `autoIncrementPort: 20`.
+   *
+   * Default: `true` (10 attempts).
+   */
+  autoIncrementPort?: boolean | number
+  /**
    * Pre-resolved `@stacksjs/stx` module. When set, `serve()` uses this
    * instead of the bare-specifier `import('@stacksjs/stx')` it would
    * normally do. Callers should pass this when they ship a vendored stx
@@ -1341,8 +1353,21 @@ export async function serve(options: ServeOptions): Promise<void> {
     })
   }
 
-  const _server = bunServe({
-    port,
+  // Allow callers to disable port auto-increment (Vite-style) — when the
+  // requested port is in use, probe `port + 1`, `port + 2`, … and bind to
+  // the first free one. Defaults to 10 attempts.
+  const portAutoIncrement = options.autoIncrementPort ?? true
+  const maxPortAttempts = portAutoIncrement === false
+    ? 1
+    : (typeof portAutoIncrement === 'number' ? Math.max(1, portAutoIncrement) : 10)
+
+  let actualPort = port
+  let _server: ReturnType<typeof bunServe> | undefined
+  let lastServeError: unknown
+  for (let attempt = 0; attempt < maxPortAttempts; attempt++) {
+    try {
+      _server = bunServe({
+        port: actualPort,
     async fetch(req) {
       const url = new URL(req.url)
       let path = url.pathname
@@ -1928,7 +1953,35 @@ export async function serve(options: ServeOptions): Promise<void> {
       })() // ─── end IIFE — single exit for translation post-process
       return applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
     },
-  })
+      })
+      break
+    }
+    catch (err) {
+      lastServeError = err
+      const code = (err as { code?: string } | null)?.code
+      const message = String((err as { message?: string } | null)?.message ?? err ?? '')
+      const portConflict = code === 'EADDRINUSE'
+        || /EADDRINUSE/i.test(message)
+        || /port \d+ (?:is |already )?in use/i.test(message)
+        || /Failed to start server\. Is port \d+ in use\?/i.test(message)
+      if (portConflict && attempt < maxPortAttempts - 1) {
+        actualPort += 1
+        continue
+      }
+      throw err
+    }
+  }
+  if (!_server) {
+    const tried = maxPortAttempts === 1
+      ? `port ${port}`
+      : `ports ${port}..${port + maxPortAttempts - 1}`
+    console.error(`\x1b[31m[stx]\x1b[0m no free port available (tried ${tried}).`)
+    console.error(`\x1b[2m       set autoIncrementPort to a larger value, or free the port (lsof -nP -i :${port})\x1b[0m`)
+    throw lastServeError ?? new Error(`stx serve: no free port in range ${port}..${port + maxPortAttempts - 1}`)
+  }
+  if (actualPort !== port && !options.quiet) {
+    console.warn(`\x1b[33m[stx]\x1b[0m port ${port} in use — using \x1b[1m${actualPort}\x1b[0m instead`)
+  }
 
   // Print Bun-style startup banner
   if (!options.quiet) {
@@ -1939,7 +1992,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     console.log()
     console.log(`  \x1b[36m\x1b[1mstx\x1b[0m`)
     console.log()
-    console.log(`  \x1b[32m➜\x1b[0m  \x1b[1mLocal\x1b[0m:   \x1b[36mhttp://localhost:${port}/\x1b[0m`)
+    console.log(`  \x1b[32m➜\x1b[0m  \x1b[1mLocal\x1b[0m:   \x1b[36mhttp://localhost:${actualPort}/\x1b[0m`)
     console.log(`  \x1b[32m➜\x1b[0m  \x1b[1mRoutes\x1b[0m:  \x1b[2m${routeCount} files from ${patternsStr}\x1b[0m`)
     console.log()
     console.log(`  \x1b[2mready in ${elapsed}ms\x1b[0m`)
@@ -1957,7 +2010,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         const cmd = line.trim().toLowerCase()
         if (cmd === 'o') {
           const openCmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open'
-          Bun.spawn([openCmd, `http://localhost:${port}/`])
+          Bun.spawn([openCmd, `http://localhost:${actualPort}/`])
         }
         else if (cmd === 'q') {
           process.exit(0)
