@@ -14,7 +14,7 @@ const headerVariants = {
     hover: 'hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer',
   },
   desktop: {
-    base: 'w-full flex items-center gap-2.5 px-3.5 pb-2 pt-4 rounded-[14px] text-left transition-colors duration-150 text-[12px] font-semibold uppercase tracking-[0.10em] text-zinc-500/80 dark:text-zinc-400/80',
+    base: 'w-full flex items-center gap-2.5 px-3 pb-1.5 pt-3 rounded-[14px] text-left transition-colors duration-150 text-[12px] font-semibold uppercase tracking-[0.10em] text-zinc-500/80 dark:text-zinc-400/80',
     hover: 'hover:bg-white/25 dark:hover:bg-white/10 cursor-pointer',
   },
   default: {
@@ -26,7 +26,7 @@ const headerVariants = {
 const headerStyle = headerVariants[variant] || headerVariants.default
 const headerClasses = [headerStyle.base, collapsible ? headerStyle.hover : ''].filter(Boolean).join(' ')
 export const headerClassesValue = headerClasses
-export const sectionClasses = variant === 'workspace' || variant === 'desktop' ? 'py-1.5' : 'py-1'
+export const sectionClasses = variant === 'workspace' ? 'py-1.5' : variant === 'desktop' ? 'py-1' : 'py-1'
 export const groupClasses = variant === 'workspace' || variant === 'desktop' ? 'space-y-1 overflow-hidden' : 'mt-1 space-y-0.5 overflow-hidden'
 export const labelClasses = variant === 'workspace' || variant === 'desktop'
   ? 'flex-1 truncate'

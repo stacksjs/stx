@@ -19,7 +19,7 @@ const itemVariants = {
     badge: 'ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-white/70 px-1.5 text-[11px] font-medium text-zinc-500 shadow-sm dark:bg-white/10 dark:text-zinc-400',
   },
   desktop: {
-    base: 'flex w-full items-center gap-3 rounded-[16px] px-3.5 py-2 text-[14px] leading-tight transition-colors duration-150',
+    base: 'flex w-full items-center gap-3 rounded-[14px] px-3 py-1.5 text-[13.5px] leading-tight transition-colors duration-150',
     indent: '',
     active: 'bg-[#e8e8e6]/90 text-zinc-950 dark:bg-white/12 dark:text-white',
     inactive: 'text-zinc-700 hover:bg-white/38 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10',

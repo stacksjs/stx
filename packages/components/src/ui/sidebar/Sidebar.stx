@@ -58,8 +58,8 @@ const variantStyles = {
     backdrop: 'backdrop-blur-3xl backdrop-saturate-150',
     tint: false,
     shimmer: true,
-    nav: 'px-5 py-3 space-y-1.5',
-    slot: 'px-5 py-3',
+    nav: 'px-5 py-2 space-y-1',
+    slot: 'px-5 py-2',
   },
 }
 
