@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.63...v0.2.64)
+
+### 🐛 Bug Fixes
+
+- **stx**: page-level <script server> wins over layout's ([d99e635](https://github.com/stacksjs/stx/commit/d99e635)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.64 ([af4b325](https://github.com/stacksjs/stx/commit/af4b325)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.63...HEAD)
+
+### 🐛 Bug Fixes
+
+- **stx**: page-level <script server> wins over layout's ([d99e635](https://github.com/stacksjs/stx/commit/d99e635)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.62...v0.2.63)
 
 ### 🚀 Features
