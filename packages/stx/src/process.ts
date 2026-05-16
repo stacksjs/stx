@@ -837,7 +837,12 @@ async function extractServerScriptVariables(output: string, context: Record<stri
 
     try {
       const { extractVariables } = await import('./variable-extractor')
-      await extractVariables(scriptContent, context, filePath)
+      /* Layouts and partials extracted here run AFTER the child page's
+         `<script server>` has populated context (in render.ts). Passing
+         `preserveExisting` means a layout-level stub like
+         `const user = { avatarInitials: 'JD' }` no longer clobbers the
+         full object the page declared on the same name. */
+      await extractVariables(scriptContent, context, filePath, { preserveExisting: true })
     }
     catch (e) {
       const err = e instanceof Error ? e : new Error(String(e))

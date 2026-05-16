@@ -315,10 +315,27 @@ export function stripTypeScript(scriptContent: string): string {
  * @param context - The context object to populate with extracted variables
  * @param filePath - Path to the file (for error messages)
  */
+export interface ExtractVariablesOptions {
+  /**
+   * Don't overwrite a context key that already has a value. Use this
+   * when extracting from a LAYOUT or PARTIAL `<script server>` so the
+   * child page's identifier wins — layouts can declare stubs/defaults
+   * (`const user = { avatarInitials: 'JD' }`) without clobbering the
+   * full object the page set on the same name.
+   *
+   * Off by default: page-level extraction (in render.ts) still
+   * overrides caller-supplied context values, matching pre-flag
+   * behaviour. Only the layout/partial extraction path in process.ts
+   * passes this flag on.
+   */
+  preserveExisting?: boolean
+}
+
 export async function extractVariables(
   scriptContent: string,
   context: Record<string, unknown>,
   filePath: string,
+  options: ExtractVariablesOptions = {},
 ): Promise<void> {
   if (!scriptContent.trim())
     return
@@ -695,8 +712,21 @@ catch {
       ...scriptContextValues,
     )
 
-    // Copy results to context
-    Object.assign(context, result)
+    // Copy results to context. `preserveExisting` is set by the
+    // layout/partial extraction path so a stub like
+    // `const user = { avatarInitials: 'JD' }` in the layout doesn't
+    // overwrite the full object the child page already extracted on
+    // the same name. Without it the layout's last-write wins because
+    // it runs AFTER the page's extraction in the rendering pipeline.
+    if (options.preserveExisting) {
+      for (const [key, value] of Object.entries(result)) {
+        if (!(key in context) || context[key] === undefined)
+          context[key] = value
+      }
+    }
+    else {
+      Object.assign(context, result)
+    }
 
     // Also spread props directly into context for simplest usage
     // This allows: {{ siteName }} (from props) without any ceremony
