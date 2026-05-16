@@ -1,4 +1,25 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.64...v0.2.65)
+
+### 🧹 Chores
+
+- release v0.2.65 ([8ef7748](https://github.com/stacksjs/stx/commit/8ef7748)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bun-plugin**: bump to pull in stx@0.2.64 layout fix ([60f2f07](https://github.com/stacksjs/stx/commit/60f2f07)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.64...HEAD)
+
+### 🧹 Chores
+
+- **bun-plugin**: bump to pull in stx@0.2.64 layout fix ([60f2f07](https://github.com/stacksjs/stx/commit/60f2f07)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.63...v0.2.64)
 
 ### 🐛 Bug Fixes
