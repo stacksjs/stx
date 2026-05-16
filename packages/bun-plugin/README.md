@@ -1076,3 +1076,4 @@ The documentation will include:
 - Usage examples
 
 This makes it easy for developers to understand how to use your web components in their HTML.
+
