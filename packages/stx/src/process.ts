@@ -661,22 +661,33 @@ async function processDirectivesInternal(
     try {
 
 
-      // If layoutPath is already absolute (from auto-layout), use it directly
-      const layoutFullPath = path.isAbsolute(layoutPath)
-        ? layoutPath
-        : await safeExecuteAsync(
-            () => resolveTemplatePath(layoutPath, filePath, resolvedOptions, dependencies),
-            null,
-            () => {
-              throw new StxRuntimeError(
-                `Failed to resolve layout path: ${layoutPath}`,
-                filePath,
-                undefined,
-                undefined,
-                `Layout referenced from ${filePath}`,
-              )
-            },
-          )
+      // If layoutPath is already absolute (from auto-layout: `_layout.stx`
+      // walked up the page's directory tree, or the `defaultLayout` in
+      // `layoutsDir`), use it directly. Add it to `dependencies` manually —
+      // the absolute branch skips `resolveTemplatePath`, which is what
+      // normally tracks the layout file. Without this, the dev-server
+      // htmlCache wouldn't invalidate when a layout was edited and pages
+      // would keep rendering with the stale layout until a server restart.
+      let layoutFullPath: string | null
+      if (path.isAbsolute(layoutPath)) {
+        layoutFullPath = layoutPath
+        dependencies.add(layoutPath)
+      }
+      else {
+        layoutFullPath = await safeExecuteAsync(
+          () => resolveTemplatePath(layoutPath, filePath, resolvedOptions, dependencies),
+          null,
+          () => {
+            throw new StxRuntimeError(
+              `Failed to resolve layout path: ${layoutPath}`,
+              filePath,
+              undefined,
+              undefined,
+              `Layout referenced from ${filePath}`,
+            )
+          },
+        )
+      }
 
       if (!layoutFullPath) {
         const warning = `Layout not found: ${layoutPath} (referenced from ${filePath})`

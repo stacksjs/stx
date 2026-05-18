@@ -332,12 +332,69 @@ export async function serve(options: ServeOptions): Promise<void> {
   let sourceFiles: string[] | null = null
   let assetsInitialized = false
 
+  // Rendered-HTML cache. Declared here (rather than inside the route handler)
+  // so the file watcher above it can clear the cache on every source change —
+  // the signature-mtime check is still authoritative on a hit, but clearing
+  // up front means a missed dependency in the previous render can never
+  // produce a stale response.
+  interface HtmlCacheEntry {
+    html: string
+    signature: Map<string, number>
+  }
+  const htmlCache = new Map<string, HtmlCacheEntry>()
+  // Crosswind-generated CSS cache, keyed by sorted class-set. Lives here for
+  // the same reason as `htmlCache`: so the watcher can wipe it on a source
+  // edit and pick up a new utility's CSS the next render.
+  const crosswindCssCache = new Map<string, string>()
+
+  // ── HMR: live-reload via Server-Sent Events. ────────────────────────
+  //
+  // We hold an open `text/event-stream` per connected browser and push a
+  // `{type:'reload'}` message every time the watcher sees a source change.
+  // The injected client script reloads the page. No bundler integration,
+  // no module graph — full page reload is enough for the stx model where
+  // every request re-runs the template pipeline anyway. Belt-and-suspenders
+  // with the htmlCache signature check: even if a dependency slipped past
+  // the dep-tracker, the cache also gets cleared on every watch event.
+  type HmrEvent = { type: 'reload', file?: string } | { type: 'css', file?: string }
+  const hmrClients = new Set<ReadableStreamDefaultController<Uint8Array>>()
+  const hmrEncoder = new TextEncoder()
+  function broadcastHmr(event: HmrEvent): void {
+    const payload = hmrEncoder.encode(`data: ${JSON.stringify(event)}\n\n`)
+    for (const c of hmrClients) {
+      try { c.enqueue(payload) }
+      catch { hmrClients.delete(c) }
+    }
+  }
+  // Client-side HMR. Single-init via `__stxHmr` so a SPA fragment swap that
+  // executes this script again doesn't open a second EventSource. For
+  // `type:'reload'` events we just reload. For `type:'css'` we walk
+  // `<link rel=stylesheet>` and rewrite the `?v=` query string so the
+  // browser re-fetches without dropping JS state. EventSource auto-reconnects
+  // for transient failures; the `onerror` guard also reloads if the server
+  // restarted entirely (readyState transitions to CLOSED).
+  const HMR_CLIENT_SCRIPT = `<script data-stx-hmr>(()=>{if(window.__stxHmr)return;window.__stxHmr=1;function bust(){var ls=document.querySelectorAll('link[rel="stylesheet"]');for(var i=0;i<ls.length;i++){var l=ls[i];var u=new URL(l.href,location.href);u.searchParams.set('v',Date.now().toString(36));l.href=u.toString()}}var es=new EventSource('/_stx/hmr');es.onmessage=function(e){try{var m=JSON.parse(e.data);if(m.type==='reload')location.reload();else if(m.type==='css')bust()}catch(_){}};es.onerror=function(){if(es.readyState===2){setTimeout(function(){location.reload()},400)}}})()</script>`
+  // Append the HMR client just before </body>. Uses `lastIndexOf` per
+  // CLAUDE.md item 24 — the first `</body>` in the document can live inside
+  // a `<script>` string (e.g. the router/runtime bundle) and `replace` would
+  // inject into the middle of that script.
+  function injectHmrClient(html: string): string {
+    if (!html) return html
+    const closeBody = html.lastIndexOf('</body>')
+    if (closeBody === -1) {
+      // No `</body>` (fragment / non-document response). Append.
+      return html + HMR_CLIENT_SCRIPT
+    }
+    return html.slice(0, closeBody) + HMR_CLIENT_SCRIPT + html.slice(closeBody)
+  }
+
   // Watch pattern directories so adding/removing a view file (e.g. a brand
   // new `resources/views/<feature>/index.stx`) invalidates the discovered-
   // files cache without a server restart. Without this, the file glob
   // is cached at startup and new pages 404 until the user kills the dev
   // server. We also clear `routes` so any stale rendered HTML for a now-
-  // missing file is dropped.
+  // missing file is dropped, AND fire an HMR reload event so any open
+  // browser session refreshes without the user lifting a finger.
   const watchersStarted = new Set<string>()
   const startWatcher = (dir: string) => {
     if (watchersStarted.has(dir)) return
@@ -345,14 +402,66 @@ export async function serve(options: ServeOptions): Promise<void> {
       const watcher = fsWatch(dir, { recursive: true }, (_event, filename) => {
         if (!filename) return
         const f = String(filename)
-        if (!f.endsWith('.stx') && !f.endsWith('.md') && !f.endsWith('.html')) return
-        sourceFiles = null
-        routes.clear()
+        // Source files that affect rendered HTML.
+        const isStxLike = f.endsWith('.stx') || f.endsWith('.md') || f.endsWith('.html')
+        // Asset files served straight to the browser. They don't change
+        // server-rendered HTML, so we skip the routes/htmlCache reset for
+        // them — but we still need to fire HMR so the browser drops its
+        // cached copy and re-fetches.
+        const isCss = f.endsWith('.css')
+        const isAsset = isCss
+          || f.endsWith('.js') || f.endsWith('.ts')
+          || f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.png')
+          || f.endsWith('.gif') || f.endsWith('.svg') || f.endsWith('.webp') || f.endsWith('.avif')
+          || f.endsWith('.woff') || f.endsWith('.woff2') || f.endsWith('.ttf') || f.endsWith('.otf')
+        if (!isStxLike && !isAsset) return
+
+        if (isStxLike) {
+          sourceFiles = null
+          routes.clear()
+          // Wipe the rendered-HTML cache and Crosswind CSS cache too. The
+          // signature check should catch most edits, but it relies on every
+          // dependency being tracked correctly during the previous render —
+          // a single missed dep is enough for a page to render stale. Clearing
+          // on watch is the simple, correct fallback for dev.
+          htmlCache.clear()
+          crosswindCssCache.clear()
+        }
+        // For CSS-only changes, prefer a stylesheet hot-swap over a full
+        // reload — the script side just re-fingerprints `<link>` hrefs.
+        broadcastHmr(isCss && !isStxLike ? { type: 'css', file: f } : { type: 'reload', file: f })
       })
       watcher.on('error', () => { /* ignore — best-effort */ })
       watchersStarted.add(dir)
     }
     catch { /* directory missing or unwatchable — ignore */ }
+  }
+
+  // Eagerly watch the auxiliary source roots. The pattern dirs are watched
+  // lazily inside `discoverFiles()` — but edits in these auxiliary dirs are
+  // exactly what users complain about when "HMR doesn't work": you change a
+  // class inside a component or edit a CSS file under `resources/assets/`,
+  // hit reload, and the page still shows the old markup. Wiring the
+  // watchers up front (best-effort — silently skipped if the dir doesn't
+  // exist) closes that gap.
+  //
+  // `resources/assets` is the Stacks/Laravel-style asset root the
+  // smart-asset handler below reads from when a request hits `/assets/*`
+  // or `/resources/assets/*`. The dir itself isn't a config option (the
+  // asset paths are URL-shaped, resolved at request time), so we watch
+  // the conventional location directly. We deliberately do NOT also
+  // watch `resources/` — `componentsDir`/`layoutsDir`/`partialsDir`
+  // already cover the .stx subdirs under it, and overlapping recursive
+  // watchers fire duplicate events for every nested edit.
+  for (const dir of [
+    componentsDir,
+    layoutsDir,
+    partialsDir,
+    publicDir,
+    'resources/assets',
+  ]) {
+    if (!dir) continue
+    startWatcher(dir)
   }
 
   // ── Page middleware registry ─────────────────────────────────────────
@@ -609,12 +718,13 @@ export async function serve(options: ServeOptions): Promise<void> {
 
   // ── Rendered-HTML cache (static routes only). ───────────────────────
   //
-  // Keyed by template file path. Each entry remembers the mtimes of the
-  // template AND every dependency it accumulated during the last render
-  // (layout, components, partials). On every request we re-stat that
-  // signature; any mismatch — including a deleted file — busts the cache
-  // and forces a fresh render. That's how this stays compatible with hot
-  // reload: editing any source file bumps the mtime and invalidates cleanly.
+  // `htmlCache` itself is declared with the other top-level caches above
+  // (alongside `routes`/`crosswindCssCache`) so the file watcher can wipe
+  // it on every source change. Keyed by template file path; each entry
+  // remembers the mtimes of the template AND every dependency it
+  // accumulated during the last render (layout, components, partials).
+  // On every request we re-stat that signature; any mismatch — including
+  // a deleted file — busts the cache and forces a fresh render.
   //
   // Skipped for `processTemplateDynamic` (routes like `/cars/[id]`) since
   // those depend on per-request URL params, not just file content. Pages
@@ -622,11 +732,6 @@ export async function serve(options: ServeOptions): Promise<void> {
   // that change between requests with no file edit) can opt out with
   // `definePageMeta({ cache: false })` — the user script sets
   // `context.__stx_skip_cache` and we honour it before storing.
-  interface HtmlCacheEntry {
-    html: string
-    signature: Map<string, number>
-  }
-  const htmlCache = new Map<string, HtmlCacheEntry>()
 
   async function templateSignatureFresh(sig: Map<string, number>): Promise<boolean> {
     for (const [p, expected] of sig) {
@@ -655,16 +760,13 @@ export async function serve(options: ServeOptions): Promise<void> {
   let crosswindModule: { CSSGenerator: any, config: any } | null = null
   let crosswindLoadAttempted = false
 
-  // Crosswind user config + computed-CSS caches. The dev server runs under
-  // `bun --watch` which kills the process on `crosswind.config.ts` /
-  // `config/crosswind.ts` / `.stx` changes, so the natural process lifetime
-  // doubles as our invalidation boundary — no manual watcher needed here.
+  // Crosswind user config cache. Process lifetime is the invalidation
+  // boundary for the *config* itself (config changes require a restart).
   let crosswindUserConfigPromise: Promise<Record<string, any>> | null = null
-  // Memoize generated CSS by sorted class-set string. Same set of classes
-  // always produces identical CSS (theme + safelist + shortcuts come from
-  // the cached userConfig), so re-rendering the same template hits the cache
-  // instead of re-running the scanner + generator.
-  const crosswindCssCache = new Map<string, string>()
+  // `crosswindCssCache` itself (sorted class-set → CSS) lives with the
+  // other top-level caches above so the file watcher wipes it on every
+  // source change. Re-running the generator for a touched template picks
+  // up newly added utility classes that weren't in the previous render.
 
   async function loadCrosswind(): Promise<{ CSSGenerator: any, config: any } | null> {
     if (crosswindLoadAttempted)
@@ -1402,6 +1504,37 @@ export async function serve(options: ServeOptions): Promise<void> {
         return new Response(null, { headers: corsHeaders })
       }
 
+      // ── HMR event stream ────────────────────────────────────────────
+      // The injected HMR client (see `HMR_CLIENT_SCRIPT` below) opens an
+      // EventSource against this URL on every page load. We keep the
+      // controller around and the file watcher pushes `data: …` lines into
+      // every connected stream when a source file changes. The browser
+      // either does `location.reload()` or swaps `<link rel=stylesheet>`
+      // hrefs in place — see the client below for which.
+      if (path === '/_stx/hmr') {
+        let controller: ReadableStreamDefaultController<Uint8Array> | undefined
+        const stream = new ReadableStream<Uint8Array>({
+          start(c) {
+            controller = c
+            hmrClients.add(c)
+            // Initial line — proves the connection is live to the browser
+            // and gives the readyState a definite "open" before any change.
+            c.enqueue(hmrEncoder.encode('data: {"type":"connected"}\n\n'))
+          },
+          cancel() {
+            if (controller) hmrClients.delete(controller)
+          },
+        })
+        return new Response(stream, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache, no-transform',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no', // proxies (rpx, nginx) — don't buffer
+          },
+        })
+      }
+
       // Custom onRequest handler — short-circuits if a Response is returned
       if (options.onRequest) {
         const customResponse = await options.onRequest(req)
@@ -1732,7 +1865,7 @@ export async function serve(options: ServeOptions): Promise<void> {
             return runtimeCount === 1 ? match : '' // keep first, drop duplicates
           },
         )
-        return new Response(cleaned, {
+        return new Response(injectHmrClient(cleaned), {
           headers: {
             'Content-Type': 'text/html; charset=utf-8',
             'Cache-Control': 'no-cache',
@@ -1744,7 +1877,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       // Try without extension
       const contentWithExt = await getRoute(`${path}.html`)
       if (contentWithExt) {
-        return new Response(contentWithExt, {
+        return new Response(injectHmrClient(contentWithExt), {
           headers: {
             'Content-Type': 'text/html; charset=utf-8',
             'Cache-Control': 'no-cache',
@@ -1814,7 +1947,14 @@ export async function serve(options: ServeOptions): Promise<void> {
               return new Response(file, {
                 headers: {
                   'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
-                  'Cache-Control': 'public, max-age=31536000',
+                  // Dev mode: `no-cache` not `max-age=31536000`. The previous year-long
+                  // cache header forced users to hard-reload (Cmd+Shift+R) after every
+                  // edit to a stylesheet / asset under `resources/assets/` — the server
+                  // re-read the source file on each request, but the browser served the
+                  // stale copy from disk cache without revalidating. The build path (in
+                  // `build-views.ts` / SSG) is what stamps long-lived cache headers on
+                  // production output; the dev server should never set them.
+                  'Cache-Control': 'no-cache',
                 },
               })
             }
@@ -1867,10 +2007,12 @@ export async function serve(options: ServeOptions): Promise<void> {
                   return new Response(file, {
                     headers: {
                       'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
-                      // Dev-friendly cache: short, but not no-cache so the
-                      // browser doesn't refetch on every navigation. Production
-                      // builds copy public/ to dist/ where a CDN handles caching.
-                      'Cache-Control': 'public, max-age=3600',
+                      // Dev mode: `no-cache` so edits to anything in publicDir
+                      // (favicons, hero images, robots.txt, fonts during a redesign)
+                      // appear on the next normal reload. The previous `max-age=3600`
+                      // meant up to an hour of stale assets after a swap. Production
+                      // builds copy public/ to dist/ where a CDN stamps long caching.
+                      'Cache-Control': 'no-cache',
                     },
                   })
                 }
@@ -1918,7 +2060,7 @@ export async function serve(options: ServeOptions): Promise<void> {
 
       const routesList = availableRoutes.join('\n')
 
-      return new Response(`
+      return new Response(injectHmrClient(`
         <!DOCTYPE html>
         <html>
           <head>
@@ -1945,7 +2087,7 @@ export async function serve(options: ServeOptions): Promise<void> {
             <ul>${routesList}</ul>
           </body>
         </html>
-      `, {
+      `), {
         status: 404,
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       })
