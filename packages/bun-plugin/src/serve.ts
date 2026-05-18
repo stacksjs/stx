@@ -1470,6 +1470,13 @@ export async function serve(options: ServeOptions): Promise<void> {
     try {
       _server = bunServe({
         port: actualPort,
+        // Disable Bun's per-request idle timeout. The HMR SSE stream is the
+        // primary case — it sits open for the lifetime of the dev session
+        // and the default 10s idle kills it with
+        // `ERR_INCOMPLETE_CHUNKED_ENCODING`. Other long-lived dev requests
+        // (debug websockets, slow downloads) benefit too. A dev server has
+        // no good reason to enforce request timeouts.
+        idleTimeout: 0,
     async fetch(req) {
       const url = new URL(req.url)
       let path = url.pathname
@@ -1513,6 +1520,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       // hrefs in place — see the client below for which.
       if (path === '/_stx/hmr') {
         let controller: ReadableStreamDefaultController<Uint8Array> | undefined
+        let keepalive: ReturnType<typeof setInterval> | undefined
         const stream = new ReadableStream<Uint8Array>({
           start(c) {
             controller = c
@@ -1520,8 +1528,20 @@ export async function serve(options: ServeOptions): Promise<void> {
             // Initial line — proves the connection is live to the browser
             // and gives the readyState a definite "open" before any change.
             c.enqueue(hmrEncoder.encode('data: {"type":"connected"}\n\n'))
+            // Keepalive ping. Without traffic, the stream idles and gets
+            // killed by Bun.serve's `idleTimeout` (default 10s) — the browser
+            // sees `ERR_INCOMPLETE_CHUNKED_ENCODING` and falls into a
+            // reconnect loop that mostly hides the HMR being broken. A
+            // 15s comment line (the leading `:` is the SSE comment syntax,
+            // ignored by the EventSource API) is well under any sane idle
+            // timeout (Bun's, reverse proxy's, browser's) and costs nothing.
+            keepalive = setInterval(() => {
+              try { c.enqueue(hmrEncoder.encode(': keepalive\n\n')) }
+              catch { /* stream closed — cancel handler clears the timer */ }
+            }, 15_000)
           },
           cancel() {
+            if (keepalive) clearInterval(keepalive)
             if (controller) hmrClients.delete(controller)
           },
         })
