@@ -15,39 +15,76 @@
  */
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
+import { existsSync, readFileSync } from 'node:fs'
+
+type IconCollection = Record<string, { body: string, width?: number, height?: number }>
 
 // Cache loaded icon collections to avoid re-reading JSON files
-const collectionCache = new Map<string, Record<string, { body: string, width?: number, height?: number }>>()
+const collectionCache = new Map<string, IconCollection>()
 
 /**
- * Load an icon collection from @iconify/json
+ * Resolve the on-disk path of an icon collection JSON, checking the
+ * standard locations: the package resolver, then `node_modules/`, then
+ * Stacks-style `pantry/` (which sits parallel to node_modules in apps
+ * that use pantry as their vendor directory).
  */
-async function loadCollection(prefix: string): Promise<Record<string, { body: string, width?: number, height?: number }> | null> {
+function resolveCollectionPath(prefix: string): string | null {
+  try {
+    return require.resolve(`@iconify/json/json/${prefix}.json`)
+  }
+  catch { /* fall through */ }
+
+  const cwd = process.cwd()
+  for (const candidate of [
+    `${cwd}/node_modules/@iconify/json/json/${prefix}.json`,
+    `${cwd}/pantry/@iconify/json/json/${prefix}.json`,
+  ]) {
+    if (existsSync(candidate)) return candidate
+  }
+  return null
+}
+
+/**
+ * Load an icon collection synchronously. Used inside `render()` so the
+ * first hit for a collection doesn't return a placeholder comment that
+ * the user then sees as a missing icon — the JSON is small enough
+ * (~550KB for lucide, parses in <10ms) that a blocking read on cache
+ * miss is the right trade-off for correct SSR output.
+ */
+function loadCollectionSync(prefix: string): IconCollection | null {
   if (collectionCache.has(prefix)) return collectionCache.get(prefix)!
 
+  const jsonPath = resolveCollectionPath(prefix)
+  if (!jsonPath) return null
+
   try {
-    // Try @iconify/json first (local)
-    const jsonPath = require.resolve(`@iconify/json/json/${prefix}.json`)
+    const data = JSON.parse(readFileSync(jsonPath, 'utf8'))
+    collectionCache.set(prefix, data.icons)
+    return data.icons
+  }
+  catch {
+    return null
+  }
+}
+
+/**
+ * Async loader — kept for `preloadIconCollection()` and tests, since
+ * batch preloads benefit from non-blocking IO.
+ */
+async function loadCollection(prefix: string): Promise<IconCollection | null> {
+  if (collectionCache.has(prefix)) return collectionCache.get(prefix)!
+
+  const jsonPath = resolveCollectionPath(prefix)
+  if (!jsonPath) return null
+
+  try {
     const data = await Bun.file(jsonPath).json()
     collectionCache.set(prefix, data.icons)
     return data.icons
   }
   catch {
-    try {
-      // Fallback: try from node_modules in CWD
-      const cwd = process.cwd()
-      const localPath = `${cwd}/node_modules/@iconify/json/json/${prefix}.json`
-      const file = Bun.file(localPath)
-      if (await file.exists()) {
-        const data = await file.json()
-        collectionCache.set(prefix, data.icons)
-        return data.icons
-      }
-    }
-    catch {}
+    return null
   }
-
-  return null
 }
 
 /**
@@ -87,12 +124,15 @@ export const IconBuiltin: BuiltinComponentDef = {
     const className = resolveProp(props, 'class') || ''
     const style = resolveProp(props, 'style') || ''
 
-    // Synchronous lookup from cache — collections are pre-loaded
-    const icons = collectionCache.get(collection)
+    // Lookup from cache, falling through to a synchronous on-disk load
+    // when the collection hasn't been preloaded yet. Previously this
+    // fired an async load and returned an HTML comment, which left the
+    // first SSR pass with a missing icon — the user would see the
+    // surrounding wrapper div (typically a colored circle) without
+    // anything inside it. Sync read on first miss keeps the render
+    // self-healing.
+    const icons = collectionCache.get(collection) ?? loadCollectionSync(collection)
     if (!icons) {
-      // Try to load synchronously — if not cached, return placeholder
-      // The icon will be resolved on next render after async load
-      loadCollection(collection) // fire-and-forget for next render
       return `<!-- Icon: collection "${collection}" not loaded -->`
     }
 
