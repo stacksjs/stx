@@ -2842,6 +2842,44 @@ catch (e) {}
     return s;
   }
 
+  // Reactive cookie binding. Mirrors useLocalStorage's shape: returns a string-
+  // valued signal, writes on .set(), and respects cookie attributes via opts.
+  // Setting the signal to '' deletes the cookie (max-age=0). Cookies don't fire
+  // a 'storage' event, so cross-tab updates aren't auto-reflected; consumers
+  // that need that can poll on 'visibilitychange' themselves. See issue #1701.
+  function useCookie(name, opts) {
+    opts = opts || {};
+    var encode = opts.encode || encodeURIComponent;
+    var decode = opts.decode || decodeURIComponent;
+    // Escape cookie name so dots/brackets/etc. read safely through the matcher.
+    var escapedName = name.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&');
+    var nameRe = new RegExp('(?:^|; )' + escapedName + '=([^;]*)');
+    function read() {
+      if (typeof document === 'undefined') return opts.defaultValue || '';
+      var m = document.cookie.match(nameRe);
+      return m ? decode(m[1]) : (opts.defaultValue || '');
+    }
+    var s = state(read());
+    function serialise(value) {
+      var parts = [name + '=' + (value ? encode(value) : '')];
+      parts.push('path=' + (opts.path || '/'));
+      if (opts.domain) parts.push('domain=' + opts.domain);
+      if (value === '') parts.push('max-age=0');
+      else if (typeof opts.maxAge === 'number') parts.push('max-age=' + opts.maxAge);
+      else if (opts.expires) parts.push('expires=' + opts.expires.toUTCString());
+      parts.push('SameSite=' + (opts.sameSite || 'Lax'));
+      var secure = opts.secure;
+      if (secure === undefined) secure = typeof location !== 'undefined' && location.protocol === 'https:';
+      if (secure) parts.push('Secure');
+      return parts.join('; ');
+    }
+    effect(function() {
+      if (typeof document === 'undefined') return;
+      document.cookie = serialise(s());
+    });
+    return s;
+  }
+
   function useEventListener(event, handler, options) {
     var target = (options && options.target) || window;
     if (typeof target === 'string') target = document.querySelector(target);
@@ -3322,6 +3360,7 @@ catch (e) {}
     useFocus,
     useAsync,
     useLocalStorage,
+    useCookie,
     useEventListener,
     useWebSocket,
     useColorMode,

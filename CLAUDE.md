@@ -656,9 +656,81 @@ stx serve <directory> [--port 3000]
 
 - Use **stx** for templating — use signals/composables in `<script>` or `<script client>` tags
 - Use `<script server>` for server-side data fetching — this is the ONLY script type that runs on the server
-- Bare `<script>` tags with browser APIs (`localStorage`, `document`, `window`) are fine — they run client-side
+- Bare `<script>` and `<script client>` blocks run client-side. Browser APIs (`localStorage`, `document`, `window`) work here — but **reach for an stx primitive first**; see "Reach for stx primitives before vanilla JS" below for the cheat sheet
 - Use **crosswind** as the default CSS framework which enables standard Tailwind-like utility classes
 - If you see an abundance of custom styling or utility classes in `<style>` blocks, that's wrong — use Crosswind utility classes in the HTML instead. Custom CSS should be rare (only for things Tailwind can't express).
+
+## Reach for stx primitives before vanilla JS
+
+Agents (this one included) repeatedly write code that the framework already gives them — reinventing a Toast component, hand-rolling `addEventListener` plumbing, hard-coding `localStorage` reads, plain `<a href>` for SPA-eligible links, plain `<img>` for local assets. Before adding any of those, check the four sources below.
+
+### 1. `@stacksjs/components` — ~50 ready-made components
+
+Shipped with every stx app via `node_modules/@stacksjs/components`. Each `.stx` file's basename is the tag name (PascalCase) and tags are globally available in `.stx` files — no import needed. Run `ls node_modules/@stacksjs/components/src/ui/` to refresh the inventory before you build anything UI-shaped. As of writing:
+
+`Accordion`, `Audio`, `Avatar`, `Badge`, `Breadcrumb`, `Button`, `Calendar`, `Card`, `Checkbox`, `Combobox`, `CommandPalette` (+ `CommandPaletteItem`), `Dialog` (+ `DialogBackdrop` / `DialogPanel` / `DialogTitle` / `DialogDescription`), `Drawer`, `Dropdown`, `Form`, `Heatmap`, `Image`, `EmailInput` / `NumberInput` / `PasswordInput` / `SearchInput` / `TextInput`, `Listbox`, `Login` / `Signup` / `TwoFactorChallenge` (under `ui/auth/`), `Navigator`, `Notification`, `Pagination`, `Payment`, `Popover`, `Portal`, `Progress`, `Radio` (+ `RadioGroup`), `Select`, `Sidebar`, `Skeleton`, `Spinner`, `Stepper`, `Storage`, `Switch`, `Table` (+ `TableHead` / `TableBody` / `TableRow` / `TableCell` / `TableHeader`), `Tabs`, `Teleport`, `Textarea`, `Tooltip`, `Transition`, `Video`, `VirtualList`, `VirtualTable`. Plus standalones `CodeBlock`, `Hero`, `Footer`, `Installation`.
+
+Before writing a Toast/Modal/Dropdown/Tabs/Pagination/Skeleton/etc. from scratch, look here. If you need an option the bundled component doesn't expose, extend it (or open an issue against `@stacksjs/components`) rather than inlining a one-off.
+
+### 2. `<StxLink>` and `<StxImage>` — never write a plain internal `<a>` or local `<img>`
+
+**`<StxLink>` instead of `<a href>` for every internal link.** A plain `<a href>` triggers a full page reload — losing stores, scroll position, and any client-side state. The router only intercepts `[data-stx-link]`, which `<StxLink>` emits.
+
+- `to="/path"` (static) or `:to="someSignal()"` / `` x-to="`/judges/${id}/profile`" `` (reactive)
+- `prefetch` — hover-prefetches the route HTML
+- `activeClass="bg-red-500 text-white"` / `exactActiveClass="…"` — applied on route match (space-separated classes are supported)
+- Any other static attributes (`class`, `target`, `rel`, `aria-*`) pass through to the underlying `<a>`
+
+External links (`http://`, `https://`, `mailto:`, `tel:`) stay as `<a href>` — the router doesn't handle those.
+
+**`<StxImage>` instead of `<img>` for every local image.** It lazy-loads by default, emits a responsive `srcset`, adds `aspect-ratio` to prevent layout shift, and optionally swaps to AVIF/WebP via `<picture>`.
+
+- `src="/images/foo.png"` + `alt="…"` — minimum
+- `width="800" height="600"` — strongly recommended (sets `aspect-ratio`, prevents CLS)
+- `sizes="sm:100vw md:50vw lg:33vw"` — auto-generates `srcset` across 320 / 640 / 768 / 1024 / 1280 / 1536 / 1920px
+- `format="auto"` or `picture` — emits a `<picture>` element with AVIF + WebP sources
+- `placeholder="blur"` (default) — inline SVG blur placeholder while loading; `placeholder="color"` + `placeholderColor="#…"` for a solid fill
+- `lazy={false}` — opt out of lazy loading for above-the-fold heroes
+- `preload` — emits a `<link rel="preload">` hint
+- `provider="cloudinary"` / `"imgix"` / `"bunny"` — CDN URL rewriting; `quality` and `densities="1x 2x 3x"` are also accepted
+
+For genuinely dynamic URLs with no transforms, `x-src` / `x-alt` on a plain `<img>` is acceptable. Otherwise prefer `<StxImage>`.
+
+### 3. State — `window.stx` exposes everything globally, no imports needed
+
+Every reactive primitive, composable, and lifecycle hook is attached to `window.stx` and callable as a bare identifier inside any `<script>` / `<script client>` block. Full surface (see `packages/stx/src/signals.ts:3286`):
+
+- **Reactivity:** `state`, `derived`, `effect`, `batch`, `peek`, `untrack`, `isSignal`, `computed`, `watch`, `watchEffect`, `ref`, `reactive`, `useRef`
+- **Lifecycle:** `onMount`, `onDestroy`
+- **Stores:** `defineStore`, `useStore` (also exposed as `window.defineStore` / `window.useStore`)
+- **Routing:** `navigate`, `goBack`, `goForward`, `useRoute`, `setRouteParams`, `useSearchParams`
+- **Data fetching:** `useFetch(urlOrFn, opts)`, `useQuery`, `useMutation` — all return signal-shaped `{ data, loading, error, ... }`
+- **Storage:** `useLocalStorage(key, defaultValue)` — reactive read/write, syncs across browser tabs via the `storage` event; `useCookie(name, opts?)` — reactive string-valued cookie binding (supports `path` / `domain` / `maxAge` / `expires` / `sameSite` / `secure` / `encode` / `decode`; `.set('')` deletes)
+- **Browser composables:** `useEventListener(event, handler, { target?, passive?, capture?, once? })`, `useWebSocket`, `useClickOutside`, `useFocus`, `useColorMode`, `useDark`, `useInterval`, `useTimeout`, `useDebounce`, `useDebouncedValue`, `useThrottle`, `useToggle`, `useCounter`, `useAsync`
+- **Meta:** `useHead`, `useSeoMeta`, `definePageMeta` (client-side no-op; the real one runs at SSR/SSG)
+- **UI primitives:** `toast`, `modal`, `drawer`, `alert`, `confirm` (imperative calls); plus the `<Notification>` / `<Dialog>` / `<Drawer>` template components from `@stacksjs/components`
+- **Component API:** `defineProps`, `withDefaults`, `defineEmits`, `defineExpose`
+
+**State scope rule:** if two pages or two components need to read or write the same data, it's a store (`defineStore`), not a component-local `state()`. Stores survive SPA navigation (they live on `window.stx._stores` — not cleaned up by `cleanupContainer`). Persist to localStorage with `{ persist: true }` or `{ persist: { pick: ['items'], storage: 'localStorage', key: 'cart' } }`. See "App Architecture" below for the broader logic / UI split.
+
+### 4. Vanilla-JS anti-patterns — reach for the stx primitive first
+
+| Don't write | Use instead | Why |
+|---|---|---|
+| `document.querySelector('#el')` / `getElementById` | `const myRef = ref()` + `x-ref="myRef"` on the element | `ref()` is reactive and scope-aware; manual queries break on nested scopes, re-renders, and SPA nav |
+| `el.addEventListener('click', handler)` | `@click="handler($event)"` in the markup | Auto-removed on scope teardown; tracked by signals; works under SPA nav |
+| `window.addEventListener('scroll', handler, { passive: true })` | `useEventListener('scroll', handler, { passive: true })` (defaults to `window`; pass `{ target: el }` to bind elsewhere) | Auto-cleanup on unmount; HMR-safe |
+| `localStorage.getItem('foo')` / `setItem` | `useLocalStorage('foo', defaultValue)` for one signal, or `defineStore(..., { persist: true })` for a whole store | Reactive — writes propagate to every reader; syncs across tabs |
+| `document.cookie.match(/(?:^\|; )name=([^;]*)/)` (read) / `document.cookie = \`name=value; path=/; ...\`` (write) | `useCookie('name', { maxAge: …, sameSite: 'Lax' })` | Reactive string signal; handles encode/decode, `Max-Age=0` deletion on `.set('')`, and all standard cookie attributes |
+| `window.location.href = '/x'` / `location.replace('/x')` | `navigate('/x')` (or `navigate('/x', { replace: true })`) | SPA transition; preserves stores and scroll |
+| `<a href="/internal">` | `<StxLink to="/internal">` | SPA nav, hover-prefetch, active-class binding |
+| `<img src="/local.png">` | `<StxImage src="/local.png" width=… height=…>` | Responsive `srcset`, lazy, blur placeholder, CLS-safe |
+| `fetch('/api/x').then(r => r.json())` directly in a component | A composable in `functions/` that wraps `useFetch('/api/x')` and exposes `{ data, loading, error }` | Signal-shaped; loading / error already wired; composable is testable in isolation; reusable across pages |
+| Toast / Modal / Tabs / Dropdown reinvented inline | `<Notification>`, `<Dialog>`, `<Tabs>`, `<Dropdown>` from `@stacksjs/components` (or imperative `toast(...)` / `modal(...)` on `window.stx`) | Already styled, accessible, and battle-tested across other Stacks apps |
+
+**When vanilla IS the right answer:** integrating third-party libraries that own the DOM (MediumEditor, Chart.js, Mapbox, Mermaid), one-shot reads from a non-reactive DOM when the library doesn't emit events (e.g., reading a `contenteditable`'s `innerHTML` at submit because MediumEditor doesn't bubble `input` reliably — see `ReviewForm.stx` for the legitimate case), or feature detection (`'IntersectionObserver' in window`). The rule is: **try the stx primitive first; drop to vanilla only with a reason you'd defend in code review.** If you're reaching for `querySelector` because "it's just easier," that's the signal to use a signal.
+
+**When you hit a bug instead of a missing primitive:** if the symptom looks like "the stx binding didn't fire" or "the directive doesn't propagate" — the bug is in stx, not your component. Don't paper over it with `querySelector` / `addEventListener`. File it (or fix it — the framework lives at `~/Documents/Projects/stx`).
 
 ## App Architecture (logic ↔ UI separation)
 
