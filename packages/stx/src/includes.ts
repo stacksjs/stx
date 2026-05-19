@@ -246,6 +246,33 @@ function extractExports(setupContent: string): string {
  * Transform a signal script into a scope-registering IIFE.
  * This allows the STX runtime to pick up component variables.
  */
+/**
+ * Wrap user client-script content in the standard stx IIFE shell:
+ * destructure the stx runtime globals from `window.stx` (so user code
+ * can write `useRef(...)` / `onMount(...)` without explicit imports),
+ * stage a `__destroyHooks` channel so framework cleanup runs at
+ * teardown, and isolate everything in an IIFE so multiple component
+ * scripts on the same page don't collide on top-level identifiers.
+ *
+ * Returns the bare wrapper — used by both `transformSignalScript`
+ * (which then appends scope registration) and the non-signal branch
+ * (which just needs the runtime globals available). Keeping the
+ * destructure list in one place means a new global only needs to be
+ * added here, not in two parallel sites.
+ */
+function wrapClientScript(scriptContent: string, tail = ''): string {
+  return `
+(function() {
+  var { state, derived, effect, batch, onMount, onDestroy, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect } = window.stx;
+  var __destroyHooks = [];
+  var __origOnDestroy = onDestroy;
+  onDestroy = function(fn) { __origOnDestroy(fn); __destroyHooks.push(fn); };
+
+${scriptContent}
+${tail}})();
+`
+}
+
 function transformSignalScript(scriptContent: string, scopeId: string): string {
   const exports = extractExports(scriptContent)
   const exportNames = exports.split(',').map(s => s.trim()).filter(Boolean)
@@ -266,22 +293,14 @@ function transformSignalScript(scriptContent: string, scopeId: string): string {
   // Use real window.stx APIs (signals runtime is injected in <head>, runs before this script).
   // No polyfill fallbacks — they create signals without ._isSignal which breaks auto-unwrap
   // and effect tracking in the signals runtime.
-  return `
-(function() {
-  var { state, derived, effect, batch, onMount, onDestroy, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect } = window.stx;
-  var __destroyHooks = [];
-  var __origOnDestroy = onDestroy;
-  onDestroy = function(fn) { __origOnDestroy(fn); __destroyHooks.push(fn); };
-
-${scriptContent}
-
+  const tail = `
   // Register scope variables for STX runtime
   if (!window.stx._scopes) window.stx._scopes = {};
   var __scopeRegistration = { __destroyCallbacks: __destroyHooks };
 ${scopeAssign}
   window.stx._scopes['${scopeId}'] = __scopeRegistration;
-})();
 `
+  return wrapClientScript(scriptContent, tail)
 }
 
 /**
@@ -842,8 +861,18 @@ catch (error: unknown) {
         workingContent = templateMatch[1].trim()
       }
 
+      // Strip script blocks first, then extract / remove styles. The
+      // `<style>` extractor below uses a regex that doesn't understand
+      // script-tag boundaries, so a literal `<style…>` substring inside
+      // a `<script>` comment (`// <style data-x>` etc.) used to match
+      // as if it were a real opening tag and slurp everything up to the
+      // next real `</style>` — leaking the script body + downstream
+      // markup into `preservedStyle`. Stripping scripts first guarantees
+      // the style regex only ever sees real style tags.
+      const partialContentNoScripts = partialContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+
       // Extract <style> content
-      const styleMatch = partialContent.match(/<style\b([^>]*)>([\s\S]*?)<\/style>/i)
+      const styleMatch = partialContentNoScripts.match(/<style\b([^>]*)>([\s\S]*?)<\/style>/i)
       let preservedStyle = ''
       if (styleMatch) {
         preservedStyle = `<style${styleMatch[1]}>${styleMatch[2]}</style>`
@@ -876,9 +905,54 @@ catch (error: unknown) {
         const isServerScript = scriptAttrs.includes('server')
         const shouldTranspile = shouldTranspileTypeScript(scriptAttrs)
 
+        // Vendor CSS side-effect imports MUST be extracted BEFORE
+        // `transpileTypeScript` runs — Bun.Transpiler tree-shakes
+        // side-effect imports that have no JS bindings, so `import
+        // 'foo.css'` would be dropped silently before we ever see it.
+        // Pull them out first; the rest of the pipeline operates on the
+        // stripped code. Shared with `processClientScript`'s top-level
+        // `<script client>` flow via the same exported helpers.
+        let vendorStyleTags = ''
+        try {
+          const { extractAndStripCssImports, renderVendorStyleTags } = await import('./client-script')
+          const cssExtraction = extractAndStripCssImports(scriptContent, {
+            filePath: includeFilePath,
+            projectRoot: process.cwd(),
+          })
+          scriptContent = cssExtraction.code
+          vendorStyleTags = renderVendorStyleTags(cssExtraction.styles)
+        }
+        catch (err) {
+          if (options.debug)
+            console.warn(`[stx] vendor-css extractor skipped for ${includeFilePath}:`, err instanceof Error ? err.message : err)
+        }
+
         // Transpile TypeScript if needed
         if (shouldTranspile && scriptContent.trim()) {
           scriptContent = transpileTypeScript(scriptContent)
+        }
+
+        // Bundle user imports (`import x from '~/...' | '@/...' | npm packages`)
+        // for ALL client-side scripts, not just signal-API ones. Without this
+        // step, any bare-spec import surviving into the IIFE wrap crashes the
+        // browser with "Cannot use import statement outside a module" — and
+        // that's true whether the script uses `state()` or just `useRef()`,
+        // since the scope-id hoisting that gates the signal branch isn't what
+        // makes imports invalid inside `(function(){…})()`. Hoisted out of
+        // the branch below for that reason.
+        if (!isServerScript) {
+          try {
+            const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
+            if (hasUserImports(scriptContent)) {
+              scriptContent = await bundleClientScript(scriptContent, includeFilePath, {
+                projectRoot: process.cwd(),
+              })
+            }
+          }
+          catch (err) {
+            if (options.debug)
+              console.warn(`[stx] bundler skipped for ${includeFilePath}:`, err instanceof Error ? err.message : err)
+          }
         }
 
         const isSignalScript = hasSignalApis(scriptContent)
@@ -888,33 +962,13 @@ catch (error: unknown) {
           // Generate unique scope ID for this component
           signalScopeId = `stx_scope_${path.basename(includeFilePath, '.stx').replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}`
 
-          // Bundle user imports (e.g. `import x from '~/...' / '@/...' / npm packages`)
-          // BEFORE the IIFE wrap. Top-level `import` is illegal inside a function,
-          // so any bare-spec import that survives here lands inside the wrapper
-          // body and crashes the browser with `Cannot use import statement
-          // outside a module`. The bundler inlines those imports; framework
-          // imports (`stx`, `@stacksjs/stx`, `@stores`, `@composables`) are
-          // marked external and stripped/handled by later transforms.
-          let bundledScript = scriptContent
-          try {
-            const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
-            if (hasUserImports(bundledScript)) {
-              bundledScript = await bundleClientScript(bundledScript, includeFilePath, {
-                projectRoot: process.cwd(),
-              })
-            }
-          }
-          catch (err) {
-            if (options.debug)
-              console.warn(`[stx] bundler skipped for ${includeFilePath}:`, err instanceof Error ? err.message : err)
-          }
           // Transform store imports after bundling (the bundler leaves @stores
           // imports external; this rewrites them to the runtime store accessor).
-          const resolvedContent = transformStoreImports(bundledScript)
+          const resolvedContent = transformStoreImports(scriptContent)
           // Transform the script to register scope variables
           // Add data-stx-scoped attribute to prevent re-processing by processScriptSetup
           const transformedScript = transformSignalScript(resolvedContent, signalScopeId)
-          preservedScript += `<script data-stx-scoped>${transformedScript}</script>\n`
+          preservedScript += `${vendorStyleTags}<script data-stx-scoped>${transformedScript}</script>\n`
           continue
         }
 
@@ -936,10 +990,44 @@ catch (e) {
         // Preserve client-side scripts (non-signal)
         // Bare <script> and <script client> are both client-side — only <script server> runs on server
         // Wrap with data-stx-scoped to prevent re-processing in the parent template's
-        // client script pipeline, which would otherwise merge them with other scripts
+        // client script pipeline, which would otherwise merge them with other scripts.
+        // Same vendor-style prefix as the signal branch — the bundler step above
+        // already stripped CSS imports; emit the resolved `<style>` blocks here too.
         if (!isServerScript && !isSignalScript) {
           const extraAttrs = scriptAttrs.replace(/\bclient\b/i, '').trim()
-          preservedScript += `<script data-stx-scoped${extraAttrs ? ` ${extraAttrs}` : ''}>${scriptContent}</script>\n`
+          // Generate the same kind of scope ID the signal branch uses.
+          // Non-signal scripts that call `useRef`/`useEventListener`/etc.
+          // still need a `data-stx-scope` root for the runtime to bind
+          // refs and events into — without it, `useRef("foo").current`
+          // is always null because nothing populates `componentScope.$refs`
+          // for this subtree. The scope vars object can be empty (we
+          // have no top-level reactive declarations to register), but it
+          // MUST be registered, since the runtime's scope walker
+          // short-circuits on a missing entry in `window.stx._scopes`.
+          signalScopeId = `stx_scope_${path.basename(includeFilePath, '.stx').replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}`
+
+          // Pass through transformStoreImports for parity — non-signal scripts
+          // may still `import { x } from '@stores'`, which the bundler marks
+          // external and this rewrites to the runtime store accessor.
+          const resolvedContent = transformStoreImports(scriptContent)
+          // Wrap in the same IIFE-with-stx-globals shell the signal branch
+          // uses. Without this wrapper, top-level `useRef`/`onMount` calls
+          // in user code lookup against the page's global scope and crash
+          // with `ReferenceError: useRef is not defined` — those names live
+          // on `window.stx`, not the bare global. The empty-but-present
+          // scope registration in the tail is what makes ref binding
+          // actually happen at runtime.
+          // Match the signal branch's single-quote `window.stx._scopes['...']`
+          // format verbatim. The downstream `preservedScript.replace()` that
+          // merges scopes into an existing `data-stx-scope` uses single
+          // quotes in its search pattern, so deviating here would silently
+          // skip the merge step.
+          const tail = `
+  if (!window.stx._scopes) window.stx._scopes = {};
+  window.stx._scopes['${signalScopeId}'] = { __destroyCallbacks: __destroyHooks };
+`
+          const wrapped = wrapClientScript(resolvedContent, tail)
+          preservedScript += `${vendorStyleTags}<script data-stx-scoped${extraAttrs ? ` ${extraAttrs}` : ''}>${wrapped}</script>\n`
         }
       }
 

@@ -33,9 +33,269 @@
  * @module client-script
  */
 
+import path from 'node:path'
+import fs from 'node:fs'
 import type { ParsedEvent, EventModifiers } from './events'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
+
+// =============================================================================
+// Vendor CSS Side-Effect Imports
+// =============================================================================
+
+// Matches side-effect imports targeting `.css` files. Trailing `;` and any
+// `?query`/`#hash` suffix are tolerated so callers can disambiguate variants
+// the same way they would with a bundler (`?inline`, `?raw`, etc. — the
+// suffix doesn't change resolution, just round-trips into the emitted
+// `data-stx-vendor` attribute for traceability).
+const CSS_SIDE_EFFECT_IMPORT_REGEX = /^[ \t]*import\s+['"]([^'"]+?\.css)(\?[^'"]*)?['"]\s*;?\s*$/gm
+
+export interface VendorCssImport {
+  /** The original specifier as written in the import — kept verbatim for the data attribute. */
+  source: string
+  /** The resolved absolute filesystem path — used for dedupe and reads. */
+  resolvedPath: string
+  /** The CSS file contents at build time. */
+  contents: string
+}
+
+/**
+ * Split a bare specifier into `{ pkg, subpath }`. Handles scoped names
+ * (`@scope/name/...`) and the no-subpath case (`pkg` alone).
+ *
+ * Returns null for relative/absolute paths — those don't need package
+ * resolution and the caller handles them directly.
+ */
+function splitBareSpecifier(spec: string): { pkg: string, subpath: string } | null {
+  if (spec.startsWith('.') || spec.startsWith('/'))
+    return null
+  if (spec.startsWith('@')) {
+    const m = spec.match(/^(@[^/]+\/[^/]+)(\/.*)?$/)
+    if (!m) return null
+    return { pkg: m[1], subpath: m[2] || '' }
+  }
+  const m = spec.match(/^([^/]+)(\/.*)?$/)
+  if (!m) return null
+  return { pkg: m[1], subpath: m[2] || '' }
+}
+
+/**
+ * Walk up from `fromDir` looking for `node_modules/<pkg>/package.json`.
+ * Returns the package directory (the parent of `package.json`) or null.
+ *
+ * Stops at `/` and at filesystem roots that change device (cheap guard
+ * against an infinite loop on weird mount setups).
+ */
+function findPackageDir(pkg: string, fromDir: string): string | null {
+  let dir = fromDir
+  while (true) {
+    const candidate = path.join(dir, 'node_modules', pkg, 'package.json')
+    if (fs.existsSync(candidate))
+      return path.dirname(candidate)
+    const parent = path.dirname(dir)
+    if (parent === dir) return null
+    dir = parent
+  }
+}
+
+/**
+ * Match a request against a package.json `exports` map and return the
+ * relative target path, or null if nothing matched.
+ *
+ * Supports the subset Bun.resolveSync misses for CSS-style entries:
+ *  - exact-string keys (`./css/medium-editor.css`)
+ *  - single-star wildcards (`./css/*` → `./dist/css/*`)
+ *  - conditional objects (picks the `import` / `default` condition; the
+ *    `types` and `node` conditions are intentionally ignored here since
+ *    this resolver is only called for CSS at build time).
+ *
+ * Doesn't try to be a complete Node ESM resolver — it covers the patterns
+ * UI library authors actually ship for stylesheet entry points.
+ */
+function resolveExportsSubpath(exports: any, request: string): string | null {
+  if (!exports || typeof exports !== 'object')
+    return null
+
+  const pickTarget = (target: any): string | null => {
+    if (typeof target === 'string')
+      return target
+    if (target && typeof target === 'object') {
+      if (typeof target.import === 'string') return target.import
+      if (typeof target.default === 'string') return target.default
+      if (typeof target.import === 'object') return pickTarget(target.import)
+      if (typeof target.default === 'object') return pickTarget(target.default)
+    }
+    return null
+  }
+
+  // 1. Exact-string match
+  if (Object.prototype.hasOwnProperty.call(exports, request)) {
+    return pickTarget((exports as any)[request])
+  }
+
+  // 2. Wildcard match — longest pattern wins (Node's algorithm)
+  let bestMatch: { pattern: string, prefix: string, suffix: string } | null = null
+  for (const pattern of Object.keys(exports)) {
+    const starIdx = pattern.indexOf('*')
+    if (starIdx === -1) continue
+    const prefix = pattern.slice(0, starIdx)
+    const suffix = pattern.slice(starIdx + 1)
+    if (!request.startsWith(prefix) || !request.endsWith(suffix)) continue
+    if (request.length < prefix.length + suffix.length) continue
+    if (!bestMatch || prefix.length > bestMatch.prefix.length)
+      bestMatch = { pattern, prefix, suffix }
+  }
+  if (bestMatch) {
+    const matchedInner = request.slice(bestMatch.prefix.length, request.length - bestMatch.suffix.length)
+    const target = pickTarget((exports as any)[bestMatch.pattern])
+    if (target) return target.replace('*', matchedInner)
+  }
+
+  return null
+}
+
+/**
+ * Manual resolution for a bare specifier when `Bun.resolveSync` declines —
+ * the typical case being package.json `exports` wildcard patterns like
+ * `"./css/*": "./dist/css/*"`, which Bun's sync resolver doesn't always
+ * expand at the time of writing. Reads the package's own `package.json`,
+ * runs the exports request against it, and returns an absolute path.
+ */
+function resolveByPackageExports(spec: string, fromDir: string): string | null {
+  const split = splitBareSpecifier(spec)
+  if (!split || !split.subpath) return null
+
+  const pkgDir = findPackageDir(split.pkg, fromDir)
+  if (!pkgDir) return null
+
+  let manifest: any
+  try {
+    manifest = JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8'))
+  }
+  catch {
+    return null
+  }
+
+  // Request is `./<subpath>` against the exports map
+  const request = `.${split.subpath}`
+  const target = resolveExportsSubpath(manifest.exports, request)
+  if (!target) return null
+
+  const abs = path.resolve(pkgDir, target)
+  return fs.existsSync(abs) ? abs : null
+}
+
+/**
+ * Strip side-effect `.css` imports from a `<script client>` body and read
+ * their contents off disk.
+ *
+ * Bun.build doesn't know what to do with `import 'foo.css'` in a JS entry —
+ * it either errors or returns the original code unchanged, which leaks the
+ * unresolved import into the browser payload. So we intercept those imports
+ * before bundling, resolve them ourselves (bare specifiers via Bun's resolver,
+ * relative paths against the template's directory), and surface the file
+ * contents to the caller so they can be emitted as `<style>` tags wrapped in
+ * `@layer vendor { … }`.
+ *
+ * Missing or unresolvable files emit a single warn-level log and are left
+ * out of the result; the original import is still stripped so the bundler
+ * never sees it. The trade-off is a silent style miss vs. a broken JS bundle —
+ * the former is recoverable, the latter takes the whole component down.
+ *
+ * Dedupe is by absolute resolved path, so two components importing the same
+ * `medium-editor.css` only emit one `<style>` block per `processClientScript`
+ * call. Cross-component dedupe still relies on the caller's HTML response
+ * (CSS rules collapse harmlessly at the browser level either way).
+ */
+export function extractAndStripCssImports(
+  code: string,
+  options: { filePath?: string, projectRoot?: string },
+): { code: string, styles: VendorCssImport[] } {
+  const templateDir = options.filePath ? path.dirname(options.filePath) : (options.projectRoot || process.cwd())
+  const projectRoot = options.projectRoot || process.cwd()
+  const seen = new Set<string>()
+  const styles: VendorCssImport[] = []
+
+  const stripped = code.replace(CSS_SIDE_EFFECT_IMPORT_REGEX, (_match, spec: string) => {
+    let resolvedPath: string
+    try {
+      if (spec.startsWith('./') || spec.startsWith('../') || spec.startsWith('/')) {
+        resolvedPath = spec.startsWith('/') ? spec : path.resolve(templateDir, spec)
+        if (!fs.existsSync(resolvedPath))
+          throw new Error(`file not found: ${resolvedPath}`)
+      }
+      else {
+        // Try Bun's resolver first — it covers the simple cases (main entry,
+        // explicit subpath in `exports`) and respects the install layout.
+        let resolved: string | null = null
+        try {
+          resolved = Bun.resolveSync(spec, projectRoot)
+        }
+        catch {
+          // Bun.resolveSync currently misses wildcard `exports` patterns like
+          // `"./css/*": "./dist/css/*"` — common in libraries that ship
+          // multiple stylesheets. Fall back to a manual exports-aware walk
+          // so consumers can use the documented public CSS entry points
+          // without inlining the package's internal `dist/` path.
+          resolved = resolveByPackageExports(spec, projectRoot)
+        }
+        if (!resolved)
+          throw new Error(`could not resolve ${spec} (Bun.resolveSync + exports fallback both failed)`)
+        resolvedPath = resolved
+      }
+    }
+    catch (err: any) {
+      console.warn(`[stx:vendor-css] could not resolve ${JSON.stringify(spec)} (from ${options.filePath || '<unknown>'}): ${err?.message || err}`)
+      return ''
+    }
+
+    if (seen.has(resolvedPath))
+      return ''
+    seen.add(resolvedPath)
+
+    try {
+      const contents = fs.readFileSync(resolvedPath, 'utf8')
+      styles.push({ source: spec, resolvedPath, contents })
+    }
+    catch (err: any) {
+      console.warn(`[stx:vendor-css] could not read ${resolvedPath}: ${err?.message || err}`)
+    }
+    return ''
+  })
+
+  return { code: stripped, styles }
+}
+
+/**
+ * Escape a string for safe use inside an HTML double-quoted attribute value.
+ * Kept narrow on purpose — the only callers feed it filesystem paths and
+ * package specifiers, never user-controlled data.
+ */
+function escapeAttr(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+/**
+ * Render collected vendor CSS as one `<style>` tag per resolved source,
+ * each wrapped in `@layer vendor { … }` so the styles can never out-specificity
+ * utility classes (assuming the consuming app declares the layer order in
+ * its global stylesheet, e.g. `@layer vendor, components, utilities;`).
+ *
+ * Wrapping in a layer at emit time means consumers get correct ordering even
+ * if they forget to declare the layer order — anonymous layers still rank
+ * below un-layered rules, so vendor styles default to lowest precedence.
+ */
+export function renderVendorStyleTags(styles: VendorCssImport[]): string {
+  if (styles.length === 0)
+    return ''
+  return `${styles.map((s) => {
+    return `<style data-stx-vendor="${escapeAttr(s.source)}" data-stx-layer="vendor">
+@layer vendor {
+${s.contents}
+}
+</style>`
+  }).join('\n')}\n`
+}
 
 // =============================================================================
 // Auto-Import Configuration
@@ -640,7 +900,19 @@ export async function processClientScript(
   let autoImportCode = ''
   let wasBundled = false
 
-  // 0. Bundle user imports via Bun.build (if any detected)
+  // 0a. Extract side-effect CSS imports BEFORE the bundler sees them.
+  // Bun.build has no `.css` loader configured here and would either crash
+  // or pass the import through unresolved into the browser payload. We
+  // resolve, read, and surface them as `<style>` tags wrapped in
+  // `@layer vendor { … }` — emitted alongside the transformed `<script>`.
+  const cssExtraction = extractAndStripCssImports(code, {
+    filePath: options.filePath,
+    projectRoot: options.projectRoot,
+  })
+  code = cssExtraction.code
+  const vendorStyleTags = renderVendorStyleTags(cssExtraction.styles)
+
+  // 0b. Bundle user imports via Bun.build (if any detected)
   const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
   if (hasUserImports(code)) {
     console.log('[stx:bundler] user imports detected, bundling...')
@@ -681,7 +953,7 @@ export async function processClientScript(
     // Module scripts: preserve type="module", no IIFE wrapping
     const extraAttrs = attrs.replace(/\btype\s*=\s*["']module["']/i, '').trim()
     const attrStr = `type="module" data-stx-scoped${extraAttrs ? ` ${extraAttrs}` : ''}`
-    return `<script ${attrStr}>
+    return `${vendorStyleTags}<script ${attrStr}>
 ${autoImportCode}${code}
 ${eventCode}
 </script>`
@@ -703,7 +975,7 @@ ${eventCode}
       ? `\n  return { ${declarations.join(', ')} };`
       : ''
 
-    return `<script data-stx-scoped>
+    return `${vendorStyleTags}<script data-stx-scoped>
 window.stx.mount(function() {
   'use strict';
 ${autoImportCode}${code}
@@ -732,7 +1004,7 @@ ${eventCode}${returnStmt}
   }
 
   // Fallback: legacy IIFE (no template bindings, or explicit mount, or SFC-wrapped)
-  return `<script data-stx-scoped>
+  return `${vendorStyleTags}<script data-stx-scoped>
 ;(function() {
   'use strict';
 ${autoImportCode}${code}

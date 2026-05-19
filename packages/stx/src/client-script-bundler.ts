@@ -52,10 +52,18 @@ export function hasUserImports(code: string): boolean {
     }
   }
 
-  // Also check for bare `import 'module'` (side-effect imports)
+  // Also check for bare `import 'module'` (side-effect imports).
+  // `.css` side-effect imports are handled by the vendor-CSS extractor in
+  // `client-script.ts` BEFORE bundling and stripped from the code we see
+  // here. Belt-and-suspenders: filter them out anyway so a future caller
+  // that bypasses the extractor can't trip Bun.build with an unsupported
+  // loader. The `?inline`/`?raw` query suffix is tolerated to match how
+  // bundlers conventionally disambiguate CSS variants.
   const sideEffectRegex = /^\s*import\s+['"]([^'"]+)['"]/gm
   while ((match = sideEffectRegex.exec(code)) !== null) {
     const source = match[1]
+    if (/\.css(?:\?.*)?$/.test(source))
+      continue
     const isExternal = EXTERNAL_PATTERNS.some(p => p.test(source))
     if (!isExternal) {
       console.log('[stx:bundler] detected side-effect import:', source)
