@@ -468,6 +468,24 @@ async function processDirectivesInternal(
   // First, remove all comments
   output = output.replace(/\{\{--[\s\S]*?--\}\}/g, '')
 
+  // Mask HTML comments BEFORE directive expansion runs. Two distinct bugs
+  // surface if we don't (see stacksjs/stx#1699):
+  //   1. Backticks inside <!-- --> get pulled into the merged client-script
+  //      IIFE and flip the JS parser into template-literal mode, killing
+  //      every script after the comment.
+  //   2. Directive names inside <!-- --> (e.g. "see @push('styles') below")
+  //      get expanded at the comment location — splicing the push block
+  //      into the middle of the comment and destroying the surrounding DOM.
+  // Masking treats comments as opaque text. We restore them at each return.
+  const htmlComments: string[] = []
+  output = output.replace(/<!--[\s\S]*?-->/g, (m) => {
+    const i = htmlComments.push(m) - 1
+    return `\x00STX_HTML_COMMENT_${i}\x00`
+  })
+  const unmaskHtmlComments = (s: string): string => htmlComments.length === 0
+    ? s
+    : s.replace(/\x00STX_HTML_COMMENT_(\d+)\x00/g, (_, i) => htmlComments[Number(i)] ?? '')
+
   // Replace @@ with a unique placeholder BEFORE directive processing,
   // so @@if(true) doesn't get evaluated as a real @if directive.
   // The placeholder is restored to a literal @ after all processing.
@@ -656,6 +674,29 @@ async function processDirectivesInternal(
   // Replace @stack directives with their content
   output = processStackReplacements(output, stacks)
 
+  // Salvage view-level <script> / <style> blocks before the layout swallows
+  // them. When a view uses @extends + explicit @section('content'), anything
+  // OUTSIDE the sections (typically a top-level `<script client>`) was
+  // silently dropped — the layout's <body> is rebuilt from @yield/@slot
+  // substitution and the view's residue never made it in. Appending them
+  // to `sections.content` lets view-level scripts participate in scope
+  // registration the same way a component-level `<script client>` does.
+  // See stacksjs/stx#1698.
+  if (layoutPath) {
+    const orphans: string[] = []
+    output = output.replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, (m) => {
+      orphans.push(m)
+      return ''
+    })
+    if (orphans.length > 0) {
+      const joined = orphans.join('\n')
+      sections.content = sections.content
+        ? `${sections.content}\n${joined}`
+        : joined
+      context.__sections = sections
+    }
+  }
+
   // Load and process the layout if one was specified
   if (layoutPath) {
     try {
@@ -795,7 +836,7 @@ async function processDirectivesInternal(
       output = await processOtherDirectives(processedLayout, context, layoutFullPath, resolvedOptions, dependencies)
       // Embed layout identifier for SPA layout-change detection
       output = `<!-- stx-layout: ${layoutPath} -->\n${output}`
-      return output
+      return unmaskHtmlComments(output)
     }
     catch (error) {
       errorLogger.log(error instanceof Error ? error : new Error(String(error)), { layoutPath, filePath }, 'error')
@@ -804,7 +845,7 @@ async function processDirectivesInternal(
   }
 
   // If no layout, process all other directives
-  return await processOtherDirectives(output, context, filePath, resolvedOptions, dependencies)
+  return unmaskHtmlComments(await processOtherDirectives(output, context, filePath, resolvedOptions, dependencies))
 }
 
 function prepareDirectiveContext(context: Record<string, any>, opts: StxOptions): void {

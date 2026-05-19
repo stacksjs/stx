@@ -1240,6 +1240,18 @@ catch (e) {
       return null;
     }
 
+    // Bare function reference: "@click=\\"foo\\"" should invoke foo($event),
+    // matching Alpine/Vue/Svelte. Without this the expression falls through
+    // to the generic new Function() path and is evaluated as a discarded
+    // identifier statement — silently a no-op. See stacksjs/stx#1695.
+    const bareIdMatch = trimmed.match(/^([a-zA-Z_$][\\w$]*)$/);
+    if (bareIdMatch) {
+      const fn = scope[bareIdMatch[1]];
+      if (typeof fn === 'function' && !fn._isSignal) {
+        return ($event) => fn($event);
+      }
+    }
+
     return null;
   }
 
@@ -1256,7 +1268,7 @@ catch (e) {
       // Check for shorthand syntax (Feature #8)
       const shorthandFn = parseEventShorthand(expr, scope);
       if (shorthandFn) {
-        shorthandFn();
+        shorthandFn(event);
         return;
       }
 
@@ -1640,7 +1652,7 @@ else if (name.startsWith('@') || name.startsWith(':')) {
           try {
             if (!value || /^__[A-Z_]+__$/.test(value.trim())) return;
             var shorthandFn = parseEventShorthand(value, eventCapturedScope);
-            if (shorthandFn) { shorthandFn(); return; }
+            if (shorthandFn) { shorthandFn(event); return; }
             // Check if any scope values are signals (x-data pattern)
             var hasSignals = Object.values(eventCapturedScope).some(function(v) {
               return v && typeof v === 'function' && v._isSignal;
@@ -3868,8 +3880,10 @@ else {
       el.removeAttribute('x-cloak');
       el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
 
-      // Run scope-specific mount callbacks
-      if (scopeVars && scopeVars.__mountCallbacks) {
+      // Run scope-specific mount callbacks (mark mounted so _handleStxLoad
+      // doesn't re-fire onMount on persistent layout scopes — see #1697)
+      if (scopeVars && scopeVars.__mountCallbacks && !scopeVars.__mounted) {
+        scopeVars.__mounted = true;
         scopeVars.__mountCallbacks.forEach(fn => fn());
       }
     });
@@ -4103,12 +4117,18 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       });
     }
 
-    // Apply scope from [data-stx-scope] elements and process them
-    container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
+    // Apply scope from [data-stx-scope] elements and process them.
+    // Walk document.body (not just container) so layout-level scopes dropped
+    // by a full-body-swap SPA nav (e.g. nav/header/footer when the layout
+    // group changes) get bound. The __stx_disposers guard makes the walk
+    // idempotent — persistent layout scopes across same-layout navs are
+    // skipped instead of double-disposed. See stacksjs/stx#1697.
+    document.body.querySelectorAll('[data-stx-scope]').forEach(function(el) {
       var scopeId = el.getAttribute('data-stx-scope');
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
       if (!scopeVars) return;
       Object.assign(componentScope, scopeVars);
+      if (el.__stx_disposers) return;
       var disposeEffects = trackEffects(function() { processElement(el, componentScope); });
       el.__stx_disposers = disposeEffects;
     });
@@ -4133,11 +4153,15 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     container.removeAttribute('x-cloak');
     container.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
 
-    // Fire mount callbacks from scoped components
-    container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
+    // Fire mount callbacks from scoped components. Walk document.body so
+    // layout-level scopes added by a full-body swap mount; __mounted guard
+    // prevents persistent layout scopes from re-firing their onMount on
+    // every same-layout SPA nav. See stacksjs/stx#1697.
+    document.body.querySelectorAll('[data-stx-scope]').forEach(function(el) {
       var scopeId = el.getAttribute('data-stx-scope');
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
-      if (scopeVars && scopeVars.__mountCallbacks) {
+      if (scopeVars && scopeVars.__mountCallbacks && !scopeVars.__mounted) {
+        scopeVars.__mounted = true;
         scopeVars.__mountCallbacks.forEach(function(fn) { fn(); });
       }
     });

@@ -1,11 +1,25 @@
 <script server>
-export const show = $props.show !== false
-export const title = $props.title || ''
-export const message = $props.message || ''
-export const type = $props.type || 'info'
-export const position = $props.position || 'top-right'
-export const duration = $props.duration || 5000
+// Initial defaults captured at render time. The client script wraps these
+// in signals so consumers can mutate them after mount (fetch-then-toast,
+// auto-dismiss, etc.). See stacksjs/stx#1692.
+export const initialShow = $props.show !== false
+export const initialTitle = $props.title || ''
+export const initialMessage = $props.message || ''
+export const initialType = $props.type || 'info'
+export const initialPosition = $props.position || 'top-right'
+export const initialDuration = Number($props.duration ?? 5000)
 export const className = $props.className || ''
+</script>
+
+<script client>
+const emit = defineEmits()
+
+const isVisible = state({{ initialShow }})
+const title = state({{ initialTitle }})
+const message = state({{ initialMessage }})
+const type = state({{ initialType }})
+const position = state({{ initialPosition }})
+const duration = state({{ initialDuration }})
 
 const typeColors = {
   info: 'bg-blue-50 text-blue-900 dark:bg-blue-900 dark:text-blue-100',
@@ -24,44 +38,69 @@ const positions = {
 }
 
 const baseClasses = 'fixed z-50 m-4 max-w-md w-full pointer-events-auto rounded-lg p-4 shadow-lg ring-1 ring-black ring-opacity-5 transition-all'
-export const notificationClasses = `${baseClasses} ${typeColors[type]} ${positions[position]} ${className}`.trim()
-</script>
+const extraClassName = {{ JSON.stringify(className) }}
 
-<script client>
-const emit = defineEmits()
-const duration = {{ duration }}
-const isVisible = state({{ show }})
+const notificationClasses = derived(() => {
+  const color = typeColors[type()] || typeColors.info
+  const pos = positions[position()] || positions['top-right']
+  return `${baseClasses} ${color} ${pos} ${extraClassName}`.trim()
+})
+
+let autoHideTimer = null
+function clearAutoHide() {
+  if (autoHideTimer) {
+    clearTimeout(autoHideTimer)
+    autoHideTimer = null
+  }
+}
+function scheduleAutoHide() {
+  clearAutoHide()
+  const d = duration()
+  if (d > 0 && isVisible()) {
+    autoHideTimer = setTimeout(() => close(), d)
+  }
+}
 
 function close() {
   isVisible.set(false)
+  clearAutoHide()
   emit('close')
 }
 
-onMount(() => {
-  if (duration > 0 && isVisible()) {
-    setTimeout(close, duration)
+function open(opts) {
+  if (opts && typeof opts === 'object') {
+    if (opts.title !== undefined) title.set(opts.title)
+    if (opts.message !== undefined) message.set(opts.message)
+    if (opts.type !== undefined) type.set(opts.type)
+    if (opts.position !== undefined) position.set(opts.position)
+    if (opts.duration !== undefined) duration.set(Number(opts.duration))
   }
+  isVisible.set(true)
+  scheduleAutoHide()
+}
+
+onMount(() => {
+  if (isVisible()) scheduleAutoHide()
 })
 
 defineExpose({
-  show: () => isVisible.set(true),
+  open,
   close,
   isVisible,
+  title,
+  message,
+  type,
+  position,
+  duration,
 })
 </script>
 
-<div :show="isVisible()" class="{{ notificationClasses }}" role="alert">
+<div :if="isVisible()" :class="notificationClasses()" role="alert">
   <div class="flex items-start">
     <div class="flex-1">
-      @if(title)
-        <p class="text-sm font-medium">{{ title }}</p>
-      @endif
-      @if(message)
-        <p class="mt-1 text-sm {{ title ? 'opacity-90' : '' }}">{{ message }}</p>
-      @endif
-      @if(!title && !message)
-        <slot />
-      @endif
+      <p :if="title()" class="text-sm font-medium" :text="title()"></p>
+      <p :if="message()" class="mt-1 text-sm" :class="title() ? 'opacity-90' : ''" :text="message()"></p>
+      <slot :if="!title() && !message()" />
     </div>
 
     <button

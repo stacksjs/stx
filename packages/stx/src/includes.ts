@@ -307,8 +307,9 @@ ${scopeAssign}
  * Add data-stx-scope attribute to the first element in HTML content
  */
 function addScopeToRootElement(html: string, scopeId: string): { html: string, mergedIntoExisting: string | null } {
-  // Skip comments, whitespace, and find the first real element
-  const elementMatch = html.match(/^(\s*(?:<!--[\s\S]*?-->\s*)*)(<[a-zA-Z][a-zA-Z0-9-]*)(\s[^>]*>|>)/s)
+  // Skip comments (real <!-- --> and masked \x00STX_HTML_COMMENT_N\x00
+  // placeholders from process.ts), whitespace, and find the first real element
+  const elementMatch = html.match(/^(\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*)(<[a-zA-Z][a-zA-Z0-9-]*)(\s[^>]*>|>)/s)
   if (elementMatch) {
     const rootTag = elementMatch[2] + elementMatch[3]
     // Check if root element already has data-stx-scope (from x-data reactive bridge)

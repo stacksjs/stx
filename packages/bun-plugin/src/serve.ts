@@ -1189,9 +1189,22 @@ export async function serve(options: ServeOptions): Promise<void> {
       const regexPatterns = [
         new RegExp(`^${routePattern}$`),
       ]
+      // Also match without trailing `/index` so [id]/profile/index.stx
+      // resolves /:id/profile (not just /:id/profile/index).
+      const fileRouteNoIndex = fileRouteBase.replace(/\/index$/, '')
+      if (fileRouteNoIndex !== fileRouteBase) {
+        const noIndexPattern = fileRouteNoIndex.replace(/\[([^\]]+)\]/g, '([^/]+)').replace(/\//g, '\\/')
+        regexPatterns.push(new RegExp(`^${noIndexPattern}$`))
+      }
       if (fileRouteBase.startsWith('pages/')) {
-        const prettyPattern = fileRouteBase.slice(6).replace(/\[([^\]]+)\]/g, '([^/]+)').replace(/\//g, '\\/')
+        const prettyBase = fileRouteBase.slice(6)
+        const prettyPattern = prettyBase.replace(/\[([^\]]+)\]/g, '([^/]+)').replace(/\//g, '\\/')
         regexPatterns.push(new RegExp(`^${prettyPattern}$`))
+        const prettyNoIndex = prettyBase.replace(/\/index$/, '')
+        if (prettyNoIndex !== prettyBase) {
+          const prettyNoIndexPattern = prettyNoIndex.replace(/\[([^\]]+)\]/g, '([^/]+)').replace(/\//g, '\\/')
+          regexPatterns.push(new RegExp(`^${prettyNoIndexPattern}$`))
+        }
       }
 
       for (const regex of regexPatterns) {

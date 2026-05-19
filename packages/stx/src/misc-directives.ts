@@ -158,8 +158,10 @@ export function processMemoDirective(template: string): string {
     const blockInner = tail.slice(0, endIdx)
     const blockEnd = afterOpen + endIdx + '@endmemo'.length
 
-    // Skip leading whitespace and comments before the first real element
-    const leading = blockInner.match(/^(\s*(?:<!--[\s\S]*?-->\s*)*)/)
+    // Skip leading whitespace and comments (real <!-- --> plus the
+    // \x00STX_HTML_COMMENT_N\x00 placeholders that process.ts uses to
+    // protect comments from directive expansion — see stacksjs/stx#1699)
+    const leading = blockInner.match(/^(\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*)/)
     const leadingLen = leading ? leading[0].length : 0
     const rest = blockInner.slice(leadingLen)
     const trailing = blockInner.match(/(\s*)$/)

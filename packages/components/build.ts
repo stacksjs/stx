@@ -2,6 +2,7 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { dts } from 'bun-plugin-dtsx'
+import { stxPlugin } from 'bun-plugin-stx'
 
 console.log('Building @stacksjs/components...')
 
@@ -10,11 +11,15 @@ if (!existsSync('./dist')) {
   mkdirSync('./dist', { recursive: true })
 }
 
-// Build the main library
+// Build the main library. stxPlugin transforms `.stx` re-exports in
+// src/index.ts; without it, Bun.build treats `.stx` files as opaque JS and
+// emits synthetic `defaultN` bindings that aren't declared as top-level
+// vars, producing `SyntaxError: Exported binding 'default3' needs to refer
+// to a top-level declared variable.` at first import. See stacksjs/stx#1690.
 const result = await Bun.build({
   entrypoints: ['./src/index.ts'],
   outdir: './dist',
-  plugins: [dts()],
+  plugins: [stxPlugin(), dts()],
   target: 'bun',
   minify: true,
   splitting: false,
@@ -22,7 +27,6 @@ const result = await Bun.build({
     '@stacksjs/stx',
     '@cwcss/crosswind',
     'ts-syntax-highlighter',
-    'bun-plugin-stx',
   ],
 })
 
