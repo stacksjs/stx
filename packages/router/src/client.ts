@@ -351,7 +351,18 @@ else {
           // re-execute because each page has its own setup.
           var h=hashScript(code);
           var isSetup=code.indexOf('__stx_setup_')!==-1;
-          if(!isSetup&&executedScriptHashes[h]){
+          // Compute isAlreadyScoped first so the dedup check can exempt
+          // self-contained IIFE scripts. data-stx-scoped scope IIFEs
+          // (the (function(){ ... })() shape) must re-execute on every
+          // navigation. They own their own scope and won't collide
+          // with prior runs, AND _cleanupContainer deleted their
+          // entry from window.stx._scopes on the way out. Without
+          // this exemption, navigating away and back leaves the page
+          // leaf with no scope registered: bindIf/@event never re-bind
+          // and all :if branches stay visible at once.
+          // Mirrors the full-doc swap path's runAlways escape below.
+          var isAlreadyScoped=code.trimStart().charAt(0)==='('||code.trimStart().charAt(0)===';'||code.indexOf('window.stx.mount')>-1;
+          if(!isSetup&&!isAlreadyScoped&&executedScriptHashes[h]){
             log('[router] skipping already-executed script (hash dedup)');
             return;
           }
@@ -361,13 +372,6 @@ else {
           if(hasImport){
             ns.type='module';
           }
-          // Wrap in block scope to prevent const/let collisions on re-navigation.
-          // Without this, navigating away and back throws "Identifier has already
-          // been declared" because the previous page's top-level const/let are
-          // still in the global scope. Skip the wrap for module scripts —
-          // they get their own scope from ESM, and top-level 'import' is
-          // illegal inside a block, which would throw SyntaxError.
-          var isAlreadyScoped=code.trimStart().charAt(0)==='('||code.trimStart().charAt(0)===';'||code.indexOf('window.stx.mount')>-1;
           ns.textContent=(hasImport||isAlreadyScoped)?code:'{'+code+'}';
           ns.setAttribute('data-stx-page','');
           document.body.appendChild(ns);
