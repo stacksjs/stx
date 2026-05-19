@@ -102,6 +102,6 @@
   },
   "devDependencies": {
     "@iconify/json": "^2.2.463",
-    "better-dx": "^0.2.12"
+    "better-dx": "^0.2.15"
   }
 }
