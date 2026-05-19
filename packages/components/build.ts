@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path, { join } from 'node:path'
 import process from 'node:process'
 import { dts } from 'bun-plugin-dtsx'
-import { stxPlugin } from 'bun-plugin-stx'
 
 console.log('Building @stacksjs/components...')
 
@@ -11,24 +11,73 @@ if (!existsSync('./dist')) {
   mkdirSync('./dist', { recursive: true })
 }
 
-// Build the main library. stxPlugin transforms `.stx` re-exports in
-// src/index.ts; without it, Bun.build treats `.stx` files as opaque JS and
-// emits synthetic `defaultN` bindings that aren't declared as top-level
-// vars, producing `SyntaxError: Exported binding 'default3' needs to refer
-// to a top-level declared variable.` at first import. See stacksjs/stx#1690.
-const result = await Bun.build({
-  entrypoints: ['./src/index.ts'],
-  outdir: './dist',
-  plugins: [stxPlugin(), dts()],
-  target: 'bun',
-  minify: true,
-  splitting: false,
-  external: [
-    '@stacksjs/stx',
-    '@cwcss/crosswind',
-    'ts-syntax-highlighter',
-  ],
-})
+// The dist bundle used to fail with `SyntaxError: Exported binding 'defaultN'
+// needs to refer to a top-level declared variable.` because Bun's bundler
+// synthesized `defaultN` references for `.stx` re-exports without ever
+// invoking plugin hooks — particularly for files containing real `import`
+// statements like `src/components/CodeBlock.stx`. We work around it by
+// generating a temporary entry file in OS tmpdir (so Bun's bundler doesn't
+// hit whatever package-local-resolution path produces the bad emit when
+// the entry lives inside packages/components/), rewriting every `.stx`
+// re-export to a tiny JS-default stub. Non-Bun consumers get a stub
+// object (`{ __stx: true, src }`) instead of a SyntaxError; Bun consumers
+// fall through to `src/` via the `bun:` exports condition for real
+// rendering. See stacksjs/stx#1690.
+const srcDir = path.resolve('./src')
+const srcIndex = readFileSync(join(srcDir, 'index.ts'), 'utf8')
+
+const tmpRoot = mkdtempSync(join(tmpdir(), 'stx-components-build-'))
+const stubsDir = join(tmpRoot, 'stubs')
+mkdirSync(stubsDir, { recursive: true })
+
+let stubCounter = 0
+const stubMap = new Map<string, string>()
+const tmpIndexContent = srcIndex.replace(
+  /from\s+(['"])((?:\.\/|\.\.\/)[^'"\n]+)\1/g,
+  (_full, q, importPath) => {
+    if (importPath.endsWith('.stx')) {
+      let stubFile = stubMap.get(importPath)
+      if (!stubFile) {
+        stubFile = join(stubsDir, `stub-${stubCounter++}.js`)
+        stubMap.set(importPath, stubFile)
+        writeFileSync(
+          stubFile,
+          `export default { __stx: true, src: ${JSON.stringify(importPath)} };\n`,
+        )
+      }
+      return `from ${q}${stubFile}${q}`
+    }
+    // Rewrite all other relative imports to absolute paths so the entry
+    // can live outside the package without breaking resolution.
+    return `from ${q}${path.resolve(srcDir, importPath)}${q}`
+  },
+)
+const tmpEntry = join(tmpRoot, 'index.ts')
+writeFileSync(tmpEntry, tmpIndexContent)
+
+let result
+try {
+  result = await Bun.build({
+    entrypoints: [tmpEntry],
+    outdir: './dist',
+    plugins: [dts()],
+    target: 'bun',
+    // Minification miscompiles the re-exports — turning `default` aliases
+    // into renamed `defaultN` / `Ig`-style bindings that aren't declared
+    // at top level. Leaving minify off avoids it; stubbed modules keep
+    // dist small anyway.
+    minify: false,
+    splitting: false,
+    external: [
+      '@stacksjs/stx',
+      '@cwcss/crosswind',
+      'ts-syntax-highlighter',
+    ],
+  })
+}
+finally {
+  rmSync(tmpRoot, { recursive: true, force: true })
+}
 
 if (!result.success) {
   console.error('Build failed!')
