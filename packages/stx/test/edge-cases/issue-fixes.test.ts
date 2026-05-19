@@ -65,6 +65,88 @@ describe('#1699 — HTML comments are masked before directive expansion', () => 
     expect(out).toContain(`@section('content')`)
     expect(out).toContain(`@if(x)`)
   })
+
+  // End-to-end variants that hit the actual failure modes the issue reported:
+  // not just "the text survived" but "the JS that ships to the browser parses
+  // and still has the user's symbols". The earlier tests confirm the masking
+  // pass runs; these two confirm the bug *symptom* is gone.
+
+  // End-to-end variants that hit the actual failure modes the issue reported:
+  // not just "the text survived" but "the JS that ships to the browser parses
+  // and still has the user's symbols". The earlier tests confirm the masking
+  // pass runs; these two confirm the bug *symptom* is gone.
+
+  it('repro #1: backticks in a comment do not break the client-script mount body', async () => {
+    // Mirror of the issue's first repro. Pre-fix, the comment's backtick
+    // poisoned the merged JS — the script body wasn't valid JS so `greet`
+    // was never defined by the time the click handler fired.
+    const out = await processDirectives(
+      `<script client>
+  function greet() {
+    console.log('hello')
+  }
+</script>
+
+<!-- This comment uses \`template literals\` inside backticks for readability. -->
+
+<button @click="greet()">Greet</button>`,
+      {},
+      'view.stx',
+      {} as StxOptions,
+      new Set<string>(),
+    )
+
+    // 1. The HTML comment text — including its backticks — survived in the
+    //    final output, outside any script. That's the user-facing "comment
+    //    didn't get destroyed" assertion.
+    expect(out).toContain('`template literals`')
+
+    // 2. The scoped script body that the runtime evaluates parses as JS.
+    //    Pre-fix the lone backtick from the HTML comment was concatenated
+    //    into this body and made it un-parsable, killing every subsequent
+    //    binding. We use the run-time scoped script (mount or merged setup —
+    //    different code paths produce different wrappers) as a proxy: if
+    //    the body parses, the backtick didn't poison it.
+    const scopedMatch = out.match(/<script data-stx-scoped>([\s\S]*?)<\/script>/)
+    expect(scopedMatch).not.toBeNull()
+    const scopedBody = scopedMatch![1]
+    expect(() => new Function(scopedBody)).not.toThrow()
+
+    // 3. The user's symbol survived in that body.
+    expect(scopedBody).toContain('function greet')
+    // And no stray backtick poison was pulled in from the comment.
+    expect(scopedBody.includes('`')).toBe(false)
+  })
+
+  it('repro #2: an `@push` reference inside a comment does not splice the push block', async () => {
+    // Mirror of the issue's second repro. Pre-fix, the `@push('styles')`
+    // text inside the HTML comment was matched by the directive expander,
+    // and the actual `@push('styles') ... @endpush` block was spliced into
+    // the comment — breaking the HTML structure.
+    const out = await processDirectives(
+      `<article>
+  <!-- Body. drop cap on the first paragraph (handled in @push('styles') below). -->
+  <p>body</p>
+</article>
+
+@push('styles')
+<style>article p::first-letter { font-size: 3em }</style>
+@endpush`,
+      {},
+      'view.stx',
+      {} as StxOptions,
+      new Set<string>(),
+    )
+
+    // The comment text is preserved with its literal `@push('styles')` reference.
+    expect(out).toContain(`handled in @push('styles') below`)
+    // The comment is still a valid HTML comment with both delimiters.
+    expect(out).toMatch(/<!--[\s\S]*?-->/)
+    // The actual <style> block did NOT splice into the comment.
+    expect(out).not.toMatch(/<!--[\s\S]*?<style[\s\S]*?-->/)
+    // The article tag is still well-formed (opening and closing).
+    expect(out).toMatch(/<article>[\s\S]*?<\/article>/)
+  })
 })
 
 describe('#1698 — view-level <script>/<style> salvaged when @extends is used', () => {
