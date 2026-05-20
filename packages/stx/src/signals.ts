@@ -30,8 +30,14 @@ export function generateSignalsRuntime(): string {
   // statement boundaries like `}var` or `}let`. While Bun's parser handles
   // these, browsers in strict mode may reject them.
   try {
+    // Strip `console.log(...)` calls before minification. They're useful in dev
+    // (and the dev build keeps them via generateSignalsRuntimeDev), but in prod
+    // they're noise — every nav fires ~15 log lines and they show up in
+    // consumer DevTools. `console.warn` / `console.error` are preserved so
+    // real problems still surface. See stacksjs/stx#1668 bug 8.
+    const stripped = stripConsoleLog(generateSignalsRuntimeDev())
     const transpiler = new Bun.Transpiler({ loader: 'js', minifyWhitespace: true })
-    let minified = transpiler.transformSync(generateSignalsRuntimeDev())
+    let minified = transpiler.transformSync(stripped)
     // Insert semicolons at `}keyword` boundaries where ASI would have applied
     // with a newline but doesn't on a single line
     minified = minified.replace(/\}(var |let |const |function )/g, '};$1')
@@ -41,6 +47,50 @@ export function generateSignalsRuntime(): string {
     // Fallback: return dev runtime unminified (larger but correct)
     return generateSignalsRuntimeDev()
   }
+}
+
+/**
+ * Strips every `console.log(...)` call site from the source, replacing each
+ * with `0` (a valid no-op expression statement). Preserves `console.warn` and
+ * `console.error` — those signal real problems and should still reach the
+ * consumer's DevTools. String contents are respected so a literal `(` or `)`
+ * inside a logged message doesn't confuse the paren matcher.
+ */
+function stripConsoleLog(src: string): string {
+  const out: string[] = []
+  let i = 0
+  const needle = 'console.log('
+  while (i < src.length) {
+    const hit = src.indexOf(needle, i)
+    if (hit === -1) {
+      out.push(src.slice(i))
+      break
+    }
+    out.push(src.slice(i, hit))
+    // Walk past the call, respecting nested parens and string literals.
+    let depth = 1
+    let j = hit + needle.length
+    while (j < src.length && depth > 0) {
+      const c = src[j]
+      if (c === '"' || c === '\'' || c === '`') {
+        const quote = c
+        j++
+        while (j < src.length && src[j] !== quote) {
+          if (src[j] === '\\')
+            j++ // skip escaped char
+          j++
+        }
+        j++ // skip closing quote
+        continue
+      }
+      if (c === '(') depth++
+      else if (c === ')') depth--
+      j++
+    }
+    out.push('0')
+    i = j
+  }
+  return out.join('')
 }
 
 /**

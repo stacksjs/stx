@@ -732,6 +732,46 @@ Every reactive primitive, composable, and lifecycle hook is attached to `window.
 
 **When you hit a bug instead of a missing primitive:** if the symptom looks like "the stx binding didn't fire" or "the directive doesn't propagate" — the bug is in stx, not your component. Don't paper over it with `querySelector` / `addEventListener`. File it (or fix it — the framework lives at `~/Documents/Projects/stx`).
 
+## Signals: scripts call, templates don't
+
+stx flips reactivity syntax between scripts and templates, and the failure mode is silent. This single rule is the most common stx bug source — read it once and the rest of the framework's reactivity follows.
+
+| Where | Read a signal | Why |
+|---|---|---|
+| Inside `<script client>` / `<script setup>` | `flag()` — call the getter | Signals are functions. `flag` alone is the function reference, not its value |
+| Inside template attributes / interpolation | `flag` — bare name | The template engine wraps the scope in an auto-unwrap proxy, so reading the bare name returns the current value |
+
+```html
+<script client>
+  const flag = state(false)
+  // ✅ Script: call the getter to read the value
+  if (flag()) doStuff()
+  // ❌ Script: this is the getter function, always truthy
+  if (flag) doStuff()
+</script>
+
+<!-- ✅ Template: bare name; the proxy unwraps it -->
+<div :if="flag">Visible when flag is true</div>
+
+<!-- ❌ Template: this tries to CALL the unwrapped value (false), which throws
+     TypeError. Several directives swallow the error and just hide the element. -->
+<div :if="flag()">…</div>
+```
+
+**The silent-failure mode:** if you accidentally write `:if="flag()"` (or `:show="!flag()"`), the auto-unwrap proxy returns `false` (the unwrapped value) and you call `false()` → `TypeError: flag is not a function`. Most directive binders catch and suppress these errors during async init (a signal may not be ready on the first effect pass). The element silently stays hidden and you have no warning.
+
+**Exception — function references:** when the template attribute is naming a *function* in scope (not a signal), call it the same way you would in script:
+
+```html
+<script client>
+  function submit() { … }
+</script>
+<button @click="submit()">Save</button>  <!-- ✅ call -->
+<button @click="submit">Save</button>     <!-- ✅ also works since #1695 — runtime invokes bare fn refs in event handlers -->
+```
+
+**If you're unsure whether a name is a signal or a function:** check the `<script client>` block. `state(...)` / `derived(...)` produce signals (call to read in script, bare in template). `function foo()` / `const foo = () => …` produces functions (call in both places).
+
 ## App Architecture (logic ↔ UI separation)
 
 **stx apps separate logic from UI.** Components are presentation; everything else lives in composables or stores. This is the *default* — only deviate when a piece of code is genuinely single-use and trivial.

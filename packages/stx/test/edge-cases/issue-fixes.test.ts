@@ -250,6 +250,140 @@ describe('#1695 — bare function ref in event handler shorthand', () => {
   })
 })
 
+describe('#1668 bug 7 — extractExports tokenizer handles regex literals', () => {
+  // Pre-fix, top-level regex literals broke the hand-rolled tokenizer:
+  // - `/'/` triggered the string-skipper (the `'` looked like an open quote)
+  // - `/{...}/` confused brace-depth tracking
+  // - `/`/` triggered the template-literal-skipper
+  // The fix adds a position-aware regex skipper that activates when `/`
+  // appears in expression position (after `=`/`(`/`,` etc.), respects
+  // character classes, and bails on newlines.
+
+  it('skips a top-level regex containing an apostrophe', async () => {
+    const { extractExports } = await import('../../src/signal-processing')
+    expect(extractExports(`const re = /can't/g; const x = 1;`)).toBe('re, x')
+  })
+
+  it('skips a top-level regex containing curly braces', async () => {
+    const { extractExports } = await import('../../src/signal-processing')
+    expect(extractExports(`const re = /\\{[^}]+\\}/g; const after = 'ok';`)).toBe('re, after')
+  })
+
+  it('skips a top-level regex containing a backtick', async () => {
+    const { extractExports } = await import('../../src/signal-processing')
+    expect(extractExports('const re = /\\`/g; const z = 3;')).toBe('re, z')
+  })
+
+  it('still treats `/` as division when in expression-end position', async () => {
+    const { extractExports } = await import('../../src/signal-processing')
+    // `a / 2` is division — `b` should be detected. If the regex skipper
+    // misfired, it would consume to EOF and drop `b`.
+    expect(extractExports('const a = 10; const b = a / 2;')).toBe('a, b')
+  })
+
+  it('handles destructured arrow parameters at top level', async () => {
+    const { extractExports } = await import('../../src/signal-processing')
+    expect(extractExports('const fn = ({a, b}) => a + b; const x = 1;')).toBe('fn, x')
+  })
+})
+
+describe('#1668 bug 3 — component composition API imports merged into __stx_setup', () => {
+  // Pre-fix, a `<script setup>` (or `<script client>`) that only used the
+  // component composition API (defineProps / withDefaults / defineEmits /
+  // defineExpose) fell through processScriptSetup because the signal-API
+  // detector regex didn't list them. The script shipped verbatim, and on
+  // SPA fragment swap the router re-executed it as a non-module <script>,
+  // hitting `Cannot use import statement outside a module`.
+  it('merges <script client> with defineProps + import into the setup function', async () => {
+    const { processScriptSetup } = await import('../../src/signal-processing')
+    const { setupCode, output } = await processScriptSetup(
+      `<script client>
+import { defineProps, withDefaults } from 'stx'
+const props = withDefaults(defineProps({ title: String }), { title: 'Hi' })
+</script>
+<h1 :text="props.title"></h1>`,
+      'view.stx',
+    )
+
+    expect(setupCode).not.toBeNull()
+    // The raw `import { ... } from 'stx'` line must be stripped — otherwise
+    // it would land inside `function __stx_setup_X() { ... }` and throw at
+    // parse time (top-level-only statement).
+    expect(setupCode).not.toContain("import { defineProps, withDefaults } from 'stx'")
+    // defineProps / withDefaults must be available in scope (destructured
+    // from window.stx by the setup wrapper).
+    expect(setupCode).toContain('defineProps')
+    expect(setupCode).toContain('withDefaults')
+    // The original raw script tag is no longer in the output — only the
+    // generated `data-stx-scoped` setup script ships.
+    expect(output).not.toContain('import { defineProps')
+  })
+
+  it('also merges bare `<script setup>` Vue-style blocks', async () => {
+    const { processScriptSetup } = await import('../../src/signal-processing')
+    const { setupCode } = await processScriptSetup(
+      `<script setup>
+import { defineProps } from 'stx'
+const props = defineProps({ name: String })
+</script>`,
+      'view.stx',
+    )
+    expect(setupCode).not.toBeNull()
+    expect(setupCode).toContain('defineProps')
+  })
+
+  it('also recognizes defineEmits / defineExpose', async () => {
+    const { processScriptSetup } = await import('../../src/signal-processing')
+    const { setupCode: emitSetup } = await processScriptSetup(
+      `<script client>
+const emit = defineEmits()
+function notify() { emit('change') }
+</script>`,
+      'view.stx',
+    )
+    expect(emitSetup).not.toBeNull()
+
+    const { setupCode: exposeSetup } = await processScriptSetup(
+      `<script client>
+function open() {}
+defineExpose({ open })
+</script>`,
+      'view.stx',
+    )
+    expect(exposeSetup).not.toBeNull()
+  })
+})
+
+describe('#1668 bug 8 — production runtime strips console.log noise', () => {
+  it('production runtime has zero console.log calls', () => {
+    const { generateSignalsRuntime } = require('../../src/signals')
+    const prod = generateSignalsRuntime()
+    expect((prod.match(/console\.log\(/g) || []).length).toBe(0)
+  })
+
+  it('dev runtime keeps console.log calls for debugging', () => {
+    const dev = generateSignalsRuntimeDev()
+    // Sanity: dev build should still have a healthy number of debug logs;
+    // strip-pass only runs on the prod build.
+    expect((dev.match(/console\.log\(/g) || []).length).toBeGreaterThan(20)
+  })
+
+  it('production runtime preserves console.warn (real-error surface)', () => {
+    const { generateSignalsRuntime } = require('../../src/signals')
+    const prod = generateSignalsRuntime()
+    // Warn and error stay — the strip only targets informational logs.
+    expect((prod.match(/console\.warn\(/g) || []).length).toBeGreaterThan(10)
+    expect((prod.match(/console\.error\(/g) || []).length).toBeGreaterThan(0)
+  })
+
+  it('production runtime parses as valid JavaScript', () => {
+    const { generateSignalsRuntime } = require('../../src/signals')
+    const prod = generateSignalsRuntime()
+    // If the strip's paren matcher gets confused, the output won't parse.
+    expect(() => new Function(prod)).not.toThrow()
+  })
+})
+
 describe('#1697 — layout scope rebind walks document.body', () => {
   const runtime = generateSignalsRuntimeDev()
 

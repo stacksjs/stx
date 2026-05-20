@@ -632,7 +632,7 @@ export async function processScriptSetup(template: string, filePath?: string): P
   // APIs without bare state/derived calls, and we still want those merged
   // into the single setup function so their reactivity wires into the same
   // componentScope as the page's bindings.
-  const SIGNAL_API_RE = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useStore|useLocalStorage|useSessionStorage|useFetch|useRef|useEventListener|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useWebSocket|useRoute|useSearchParams|onMount|onDestroy)\s*(?:<[^>]*>)?\s*\(/
+  const SIGNAL_API_RE = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useStore|useLocalStorage|useSessionStorage|useCookie|useFetch|useRef|useEventListener|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useWebSocket|useRoute|useSearchParams|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose)\s*(?:<[^>]*>)?\s*\(/
 
   // Collect every signal-using script in document order (layout first, page
   // last). They'll all be merged into a single __stx_setup_ function so every
@@ -700,7 +700,7 @@ export async function processScriptSetup(template: string, filePath?: string): P
   const setupCode = `
 <script data-stx-scoped>
 function ${setupFnName}() {
-  const { state, derived, effect, batch, onMount, onDestroy, defineStore, useStore, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect } = window.stx;
+  const { state, derived, effect, batch, onMount, onDestroy, defineStore, useStore, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useCookie, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect, defineProps, withDefaults, defineEmits, defineExpose } = window.stx;
 ${mergedContent}
   return { ${mergedExports} };
 }
@@ -742,6 +742,62 @@ export function extractExports(setupContent: string): string {
   let depth = 0
   let i = 0
   const len = code.length
+
+  // Last significant (non-whitespace, non-comment) char. Used to decide
+  // whether a `/` is the start of a regex literal or a division operator.
+  // After tokens that can end an expression (identifier, number, `)`, `]`,
+  // string, template, regex) `/` is division; otherwise it's a regex.
+  let lastSig = ''
+
+  // Skip a regex literal `/.../flags`, respecting character classes (so
+  // `/` inside `[]` doesn't close the regex) and escapes. See #1668 bug 7 —
+  // before this skipper, a top-level `const re = /can't/g` confused the
+  // string-skipper (the `'` looked like an open quote and ran to EOF) and
+  // `const re = /\{[^}]+\}/g` confused the brace-depth tracker (`{`/`}`
+  // inside the regex were counted toward scope depth).
+  const skipRegex = (): void => {
+    i++ // skip opening /
+    let inClass = false
+    while (i < len) {
+      const c = code[i]
+      if (c === '\\') {
+        i += 2
+        continue
+      }
+      if (c === '[' && !inClass) {
+        inClass = true
+        i++
+        continue
+      }
+      if (c === ']' && inClass) {
+        inClass = false
+        i++
+        continue
+      }
+      if (c === '/' && !inClass) {
+        i++ // skip closing /
+        // Skip regex flags (g, i, m, s, u, y, d)
+        while (i < len && /[gimsuyd]/.test(code[i])) i++
+        return
+      }
+      if (c === '\n')
+        return // regex literals can't span lines — bail to avoid runaway
+      i++
+    }
+  }
+
+  // True when a `/` at the current position would parse as a regex literal,
+  // not division. Conservative: any non-postfix expression-end token means
+  // division position; anything else (operators, brackets, start of source)
+  // means regex position.
+  const isRegexStart = (): boolean => {
+    if (!lastSig) return true
+    // Tokens that END an expression (next `/` is division): identifier
+    // chars, digits, `)`, `]`, `}` (closing brace of a block; not perfect
+    // but matches the common case for setup scripts).
+    if (/[\w)\]]/.test(lastSig)) return false
+    return true
+  }
 
   // Skip string literals
   const skipString = (quote: string): void => {
@@ -878,23 +934,35 @@ export function extractExports(setupContent: string): string {
     // Skip string literals
     if (code[i] === '\'' || code[i] === '"') {
       skipString(code[i])
+      lastSig = code[i - 1] // closing quote
       continue
     }
 
     // Skip template literals
     if (code[i] === '`') {
       skipTemplateLiteral()
+      lastSig = '`'
+      continue
+    }
+
+    // Skip regex literals when `/` is in expression position. Otherwise
+    // treat `/` as division (just advance + update lastSig).
+    if (code[i] === '/' && code[i + 1] !== '/' && code[i + 1] !== '*' && isRegexStart()) {
+      skipRegex()
+      lastSig = '/'
       continue
     }
 
     // Track brace depth
     if (code[i] === '{') {
       depth++
+      lastSig = '{'
       i++
       continue
     }
     if (code[i] === '}') {
       depth--
+      lastSig = '}'
       i++
       continue
     }
@@ -904,6 +972,7 @@ export function extractExports(setupContent: string): string {
       checkDeclaration()
     }
 
+    if (!/\s/.test(code[i])) lastSig = code[i]
     i++
   }
 
