@@ -1,0 +1,25 @@
+<script server>
+// Slot wrapper that the parent <Tabs> discovers via DOM walk. The parent
+// reads `data-label` (and optional `data-icon`) to build the tab list and
+// toggles the `hidden` attribute as the active tab changes. Hidden by
+// default — the parent flips the active one visible after mount. See
+// stacksjs/stx#1703.
+export const label = $props.label || ''
+export const icon = $props.icon || ''
+export const className = $props.className || ''
+
+const baseClasses = 'p-4 focus:outline-none'
+export const panelClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<div
+  data-stx-tab-panel
+  data-label="{{ label }}"
+  data-icon="{{ icon }}"
+  class="{{ panelClasses }}"
+  role="tabpanel"
+  tabindex="0"
+  hidden
+>
+  <slot />
+</div>

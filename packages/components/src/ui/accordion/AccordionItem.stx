@@ -1,0 +1,37 @@
+<script server>
+// Slot wrapper that the parent <Accordion> discovers and wires up on mount.
+// Renders its own header button + content panel; the parent attaches click
+// handlers and toggles the content panel's `hidden` attribute as openItems
+// changes. Hard-coded styling here matches the legacy prop-mode markup so
+// snapshots compare cleanly in both modes. See stacksjs/stx#1703.
+export const title = $props.title || ''
+export const className = $props.className || ''
+
+const headerClasses = 'w-full flex items-center justify-between px-4 py-3 text-left font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
+const iconClasses = 'w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200'
+const contentClasses = 'px-4 py-3 text-gray-700 dark:text-gray-300'
+</script>
+
+<div data-stx-accordion-item data-title="{{ title }}" class="{{ className }}">
+  <button
+    type="button"
+    data-stx-accordion-header
+    data-accordion-header
+    class="{{ headerClasses }}"
+    aria-expanded="false"
+  >
+    <span>{{ title }}</span>
+    <svg
+      data-stx-accordion-chevron
+      class="{{ iconClasses }}"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+  <div data-stx-accordion-content class="{{ contentClasses }}" role="region" hidden>
+    <slot />
+  </div>
+</div>

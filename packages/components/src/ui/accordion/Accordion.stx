@@ -1,4 +1,11 @@
 <script server>
+// Two modes (see stacksjs/stx#1703):
+//   1. Legacy prop API — pass `items={[{title, content}, …]}` for simple
+//      string-content accordions (kept for backward compatibility with
+//      existing visual snapshots and consumers).
+//   2. Slot API — drop `<AccordionItem title="…">` children for arbitrary
+//      content. Each AccordionItem renders its own header + content panel;
+//      this parent attaches click handlers and toggles content visibility.
 export const items = $props.items || []
 export const allowMultiple = $props.allowMultiple || false
 export const defaultOpen = $props.defaultOpen || []
@@ -8,12 +15,55 @@ export const accordionClasses = `divide-y divide-gray-200 dark:divide-gray-700 b
 export const headerClasses = `w-full flex items-center justify-between px-4 py-3 text-left font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900`.trim()
 export const iconClasses = `w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200`.trim()
 export const contentClasses = `px-4 py-3 text-gray-700 dark:text-gray-300`.trim()
+export const hasPropItems = Array.isArray(items) && items.length > 0
 </script>
 
 <script client>
 const emit = defineEmits()
 const allowMultiple = {{ allowMultiple }}
+const hasPropItems = {{ hasPropItems }}
+const containerRef = useRef()
 const openItems = state({{ defaultOpen }})
+
+function findOwnItems() {
+  const root = containerRef.value
+  if (!root) return []
+  return Array.from(root.querySelectorAll('[data-stx-accordion-item]'))
+    .filter(item => item.closest('[data-stx-accordion]') === root)
+}
+
+onMount(() => {
+  if (hasPropItems) return  // legacy mode: server-rendered, no wiring needed
+  const items = findOwnItems()
+  items.forEach((item, idx) => {
+    const header = item.querySelector(':scope > [data-stx-accordion-header]')
+    if (header && !header.__stx_wired) {
+      header.__stx_wired = true
+      header.addEventListener('click', () => toggleItem(idx))
+      header.addEventListener('keydown', (e) => onHeaderKey(e, idx))
+    }
+  })
+})
+
+// Sync the open state into the DOM: show/hide content panels, update
+// aria-expanded on headers, rotate chevrons.
+effect(() => {
+  if (hasPropItems) return
+  const items = findOwnItems()
+  const open = openItems()
+  items.forEach((item, idx) => {
+    const isOpenItem = open.includes(idx)
+    const header = item.querySelector(':scope > [data-stx-accordion-header]')
+    const content = item.querySelector(':scope > [data-stx-accordion-content]')
+    const chevron = item.querySelector(':scope > [data-stx-accordion-header] [data-stx-accordion-chevron]')
+    if (header) header.setAttribute('aria-expanded', isOpenItem ? 'true' : 'false')
+    if (content) {
+      if (isOpenItem) content.removeAttribute('hidden')
+      else content.setAttribute('hidden', '')
+    }
+    if (chevron) chevron.style.transform = `rotate(${isOpenItem ? 180 : 0}deg)`
+  })
+})
 
 function toggleItem(index) {
   const cur = openItems()
@@ -31,7 +81,9 @@ function isOpen(index) {
 }
 
 function onHeaderKey(event, index) {
-  const buttons = event.currentTarget.closest('[role="region"]').querySelectorAll('button[data-accordion-header]')
+  const root = containerRef.value
+  if (!root) return
+  const buttons = root.querySelectorAll('button[data-stx-accordion-header], button[data-accordion-header]')
   if (event.key === 'ArrowDown') {
     event.preventDefault()
     buttons[index + 1]?.focus()
@@ -49,40 +101,46 @@ function onHeaderKey(event, index) {
     buttons[buttons.length - 1]?.focus()
   }
 }
+
+defineExpose({ openItems, toggleItem })
 </script>
 
-<div class="{{ accordionClasses }}" role="region">
-  @foreach(item in items)
-    <div>
-      <button
-        type="button"
-        data-accordion-header
-        class="{{ headerClasses }}"
-        @click="toggleItem({{ $loop.index }})"
-        @keydown="onHeaderKey($event, {{ $loop.index }})"
-        :aria-expanded="isOpen({{ $loop.index }}) ? 'true' : 'false'"
-        aria-controls="accordion-content-{{ $loop.index }}"
-      >
-        <span>{{ item.title }}</span>
-        <svg
-          class="{{ iconClasses }}"
-          :style="`transform: rotate(${isOpen({{ $loop.index }}) ? 180 : 0}deg)`"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+<div x-ref="containerRef" data-stx-accordion class="{{ accordionClasses }}" role="region">
+  @if(hasPropItems)
+    @foreach(item in items)
+      <div>
+        <button
+          type="button"
+          data-accordion-header
+          class="{{ headerClasses }}"
+          @click="toggleItem({{ $loop.index }})"
+          @keydown="onHeaderKey($event, {{ $loop.index }})"
+          :aria-expanded="isOpen({{ $loop.index }}) ? 'true' : 'false'"
+          aria-controls="accordion-content-{{ $loop.index }}"
         >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+          <span>{{ item.title }}</span>
+          <svg
+            class="{{ iconClasses }}"
+            :style="`transform: rotate(${isOpen({{ $loop.index }}) ? 180 : 0}deg)`"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
 
-      <div
-        :show="isOpen({{ $loop.index }})"
-        id="accordion-content-{{ $loop.index }}"
-        class="{{ contentClasses }}"
-        role="region"
-      >
-        {!! item.content !!}
+        <div
+          :show="isOpen({{ $loop.index }})"
+          id="accordion-content-{{ $loop.index }}"
+          class="{{ contentClasses }}"
+          role="region"
+        >
+          {!! item.content !!}
+        </div>
       </div>
-    </div>
-  @endforeach
+    @endforeach
+  @else
+    <slot />
+  @endif
 </div>
