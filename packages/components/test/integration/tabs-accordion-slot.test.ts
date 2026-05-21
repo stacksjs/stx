@@ -116,6 +116,6 @@ describe('#1703 — exports and type interfaces', () => {
     const src = readFileSync(join(UI_DIR, 'accordion/index.ts'), 'utf8')
     expect(src).toContain("export { default as AccordionItem } from './AccordionItem.stx'")
     expect(src).toContain('export interface AccordionItemProps')
-    expect(src).toMatch(/items\?:\s*AccordionItem\[\]/)
+    expect(src).toMatch(/items\?:\s*AccordionItemDefinition\[\]/)
   })
 })

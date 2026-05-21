@@ -17,7 +17,7 @@ export type AccordionItemDefinition = AccordionLegacyItem
 
 export interface AccordionProps {
   /** Legacy: array of item definitions with string content. */
-  items?: AccordionLegacyItem[]
+  items?: AccordionItemDefinition[]
   allowMultiple?: boolean
   defaultOpen?: number[]
   onChange?: (openItems: number[]) => void
