@@ -27,7 +27,8 @@ export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowC
 <script client>
 const delay = {{ delay }}
 const isDisabled = {{ disabled }}
-const isVisible = state({{ show }})
+// Reactive prop binding — parent can drive `show` via signals. See #1704.
+const isVisible = useReactiveProp('show', {{ show }})
 let timeoutId = null
 
 function showTooltip() {

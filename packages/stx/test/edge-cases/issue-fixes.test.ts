@@ -364,11 +364,19 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     const componentsDir = path.resolve(__dirname, '../../../components/src/ui')
     const checks: Array<[string, string]> = [
       ['dialog/Dialog.stx', "useReactiveProp('open',"],
+      ['drawer/Drawer.stx', "useReactiveProp('open',"],
       ['switch/Switch.stx', "useReactiveProp('checked',"],
       ['checkbox/Checkbox.stx', "useReactiveProp('checked',"],
+      ['radio/Radio.stx', "useReactiveProp('checked',"],
       ['input/TextInput.stx', "useReactiveProp('value',"],
       ['input/PasswordInput.stx', "useReactiveProp('value',"],
       ['input/NumberInput.stx', "useReactiveProp('value',"],
+      ['select/Select.stx', "useReactiveProp('value',"],
+      ['textarea/Textarea.stx', "useReactiveProp('value',"],
+      ['progress/Progress.stx', "useReactiveProp('value',"],
+      ['tooltip/Tooltip.stx', "useReactiveProp('show',"],
+      ['pagination/Pagination.stx', "useReactiveProp('current-page',"],
+      ['sidebar/SidebarSection.stx', "useReactiveProp('expanded',"],
     ]
     for (const [file, marker] of checks) {
       const src = fs.readFileSync(path.join(componentsDir, file), 'utf8')

@@ -25,7 +25,8 @@ export const inputId = `radio-${value || label}`
 const emit = defineEmits()
 const isDisabled = {{ disabled }}
 const radioValue = {{ value }}
-const isChecked = state({{ checked }})
+// Reactive prop binding — parent can drive `checked` via signals. See #1704.
+const isChecked = useReactiveProp('checked', {{ checked }})
 
 function onInputChange(event) {
   if (isDisabled) {

@@ -37,7 +37,8 @@ export const labelClasses = variant === 'workspace' || variant === 'desktop'
 const emit = defineEmits()
 const sectionId = {{ id }}
 const collapsibleProp = {{ collapsible }}
-const isExpanded = state({{ expanded }})
+// Reactive prop binding — parent can drive `expanded` via signals. See #1704.
+const isExpanded = useReactiveProp('expanded', {{ expanded }})
 
 function onHeaderClick() {
   if (!collapsibleProp) return

@@ -32,7 +32,10 @@ export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position
 
 <script client>
 const emit = defineEmits()
-const isOpen = state({{ open }})
+// useReactiveProp lets the parent drive `open` via signals
+// (`:open="drawerOpen()"`) instead of the prop being captured once.
+// See stacksjs/stx#1704.
+const isOpen = useReactiveProp('open', {{ open }})
 
 function close() {
   isOpen.set(false)

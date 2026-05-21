@@ -17,7 +17,9 @@ export const iconClasses = `w-5 h-5`.trim()
 const emit = defineEmits()
 const totalPages = {{ totalPages }}
 const siblingCount = {{ siblingCount }}
-const page = state({{ currentPage }})
+// Reactive prop binding — parent can drive `current-page` via signals
+// (useful for URL-driven pagination via useSearchParams). See #1704.
+const page = useReactiveProp('current-page', {{ currentPage }})
 
 function goToPage(target) {
   if (target >= 1 && target <= totalPages && target !== page()) {
