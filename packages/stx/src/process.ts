@@ -465,6 +465,21 @@ async function processDirectivesInternal(
 
   let output = template
 
+  await runViewComposersForTemplate(filePath, context)
+  prepareDirectiveContext(context, opts)
+
+  // Run "before" middleware against the raw template, before comments and
+  // directives are masked. Middleware is allowed to use HTML comments as
+  // placeholders, so masking first makes those hooks unreachable.
+  output = await safeExecuteAsync(
+    () => runPreProcessingMiddleware(output, context, filePath, opts),
+    output,
+    (error) => {
+      errorLogger.log(error, { filePath, phase: 'pre-processing-middleware' }, 'warning')
+      console.warn(`[stx] pre-processing middleware failed for ${filePath}: ${error.message}`)
+    },
+  )
+
   // First, remove all comments
   output = output.replace(/\{\{--[\s\S]*?--\}\}/g, '')
 
@@ -929,26 +944,6 @@ async function processOtherDirectives(
 
   // Use opts as alias for options (consistent with processDirectivesInternal)
   const opts = options
-
-  // Run view composers for the current view with error handling.
-  // Failures are non-fatal (page renders without the composer's data),
-  // but they ALWAYS get logged — silent composer failures used to mean
-  // a production page would render with `undefined` variables and no
-  // signal anywhere that something went wrong. The errorLogger record
-  // also lets debug overlays / log forwarders surface it.
-  await runViewComposersForTemplate(filePath, context)
-  prepareDirectiveContext(context, opts)
-
-  // Run pre-processing middleware with error handling.
-  // Always logged — same reasoning as view composers above.
-  output = await safeExecuteAsync(
-    () => runPreProcessingMiddleware(output, context, filePath, opts),
-    output,
-    (error) => {
-      errorLogger.log(error, { filePath, phase: 'pre-processing-middleware' }, 'warning')
-      console.warn(`[stx] pre-processing middleware failed for ${filePath}: ${error.message}`)
-    },
-  )
 
   // Extract variables from <script server> tags (SFC support)
   // Only scripts with explicit 'server' attribute are executed server-side
