@@ -91,9 +91,38 @@ Once installed, every component is auto-discovered. No imports needed:
 
   <Button variant="primary" @click="save()">Save</Button>
   <Switch :checked="true" label="Notifications" />
-  <Tabs :tabs="tabs" />
+
+  <Tabs>
+    <TabPanel label="Profile">…</TabPanel>
+    <TabPanel label="Notifications">…</TabPanel>
+  </Tabs>
 </Card>
 ```
+
+`<Tabs>` and `<Accordion>` accept either:
+- **Slot API** (recommended): drop `<TabPanel label="…">` / `<AccordionItem title="…">` children, each containing arbitrary content (components, forms, tables, etc.)
+- **Prop API** (legacy): pass `tabs={[{label, content, icon}]}` / `items={[{title, content}]}` for simple string-content lists
+
+The slot API is what most consumers want — string-only content can't hold a `<DriversTable>` or `<NotificationsTable>`. See `stacksjs/stx#1703` for the API change.
+
+### Reactive props from the parent
+
+Every component with a logical "controlled" prop (`<Dialog :open=>`, `<TextInput :value=>`, `<Switch :checked=>`, `<Pagination :current-page=>`, etc.) accepts a signal-driven binding from the parent:
+
+```html
+<script client>
+const modalOpen = state(false)
+const email = state('')
+</script>
+
+<button @click="modalOpen.set(true)">Open</button>
+<Dialog :open="modalOpen()" @close="modalOpen.set(false)">…</Dialog>
+
+<TextInput :value="email()" @input="email.set($event.detail)" />
+<button @click="email.set('')">Reset</button>
+```
+
+`modalOpen.set(true)` from anywhere on the page genuinely opens the dialog; `email.set('')` clears the input. This is one-way (parent → child) via `useReactiveProp` internally; events flow back via `@input` / `@change` / `@close`. See `stacksjs/stx#1704`.
 
 ### Component Index
 

@@ -4571,17 +4571,24 @@ Reusable composable functions for common browser patterns. All composables auto-
 ### Storage
 
 ```typescript
-import { useLocalStorage, useSessionStorage } from 'stx'
+import { useLocalStorage, useSessionStorage, useCookie } from 'stx'
 
-// Reactive localStorage with auto-serialization
+// Reactive localStorage with auto-serialization (JSON)
 const theme = useLocalStorage('theme', 'dark')
-console.log(theme.value) // 'dark'
-theme.value = 'light'    // Automatically saved
-theme.remove()           // Clear from storage
+theme()              // read
+theme.set('light')   // write — persists to localStorage
 
-// Session storage (cleared when tab closes)
-const token = useSessionStorage('auth_token', null)
+// Reactive sessionStorage (cleared when tab closes; JSON-serialized)
+const draftCart = useSessionStorage('draft-cart', [])
+
+// Reactive cookie (string-valued; respects cookie attributes; .set('') deletes)
+const token = useCookie('auth-token', {
+  maxAge: 60 * 60 * 24 * 30,  // 30 days
+  sameSite: 'Lax',
+})
 ```
+
+Signal-shaped storage composables — read via `signal()`, write via `signal.set(...)`. `useLocalStorage` and `useSessionStorage` JSON-serialize values and sync across tabs via the `storage` event. `useCookie` is string-valued (cookies are strings); it respects `path` / `domain` / `maxAge` / `expires` / `sameSite` / `secure` / `encode` / `decode` options, but does **not** auto-sync across tabs (cookies don't fire `storage` events).
 
 ### Events
 

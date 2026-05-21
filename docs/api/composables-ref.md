@@ -853,6 +853,110 @@ theme.set('dark')
 </script>
 ```
 
+### useSessionStorage
+
+```typescript
+useSessionStorage<T>(key: string, defaultValue: T): Signal<T>
+```
+
+Same shape as `useLocalStorage`, but backed by `sessionStorage` — values live only for the duration of the browser tab/session. Cross-tab sync via the `storage` event is filtered to the `sessionStorage` storage area so a `localStorage` write in another tab won't trip the signal.
+
+```html
+<script>
+const draftCart = useSessionStorage('draft-cart', [])
+
+draftCart.set([...draftCart(), item])
+</script>
+```
+
+### useCookie
+
+```typescript
+useCookie(name: string, options?: UseCookieOptions): Signal<string>
+```
+
+Reactive string-valued cookie binding. The signal reads the cookie at construction and writes back on every `.set(value)`. Setting `.set('')` deletes the cookie (`Max-Age=0`).
+
+Options:
+
+| Option | Type | Default | Notes |
+|---|---|---|---|
+| `defaultValue` | `string` | `''` | Returned when the cookie isn't present |
+| `path` | `string` | `'/'` | Cookie path attribute |
+| `domain` | `string` | (none) | Cookie domain attribute |
+| `maxAge` | `number` | (none) | Seconds; sets `Max-Age=N` |
+| `expires` | `Date` | (none) | Sets `Expires=...` (used when `maxAge` not provided) |
+| `sameSite` | `'Strict' \| 'Lax' \| 'None'` | `'Lax'` | SameSite attribute |
+| `secure` | `boolean` | auto on HTTPS | Sets the `Secure` flag |
+| `encode` / `decode` | `(string) => string` | `encodeURIComponent`/`decodeURIComponent` | Custom serialization |
+
+```html
+<script>
+const token = useCookie('auth-token', {
+  maxAge: 60 * 60 * 24 * 30, // 30 days
+  sameSite: 'Lax',
+})
+
+// Read
+if (!token()) navigate('/login', true)
+
+// Write (writes `auth-token=<encoded>; Path=/; Max-Age=2592000; SameSite=Lax`)
+token.set(jwt)
+
+// Delete
+token.set('')
+</script>
+```
+
+Cookies don't fire a `storage` event, so cross-tab updates aren't auto-reflected. If you need that, poll on `visibilitychange` in user-land.
+
+### useReactiveProp
+
+```typescript
+useReactiveProp<T>(
+  name: string,
+  defaultValue: T,
+  options?: { parse?: (v: string | null) => T },
+): Signal<T>
+```
+
+Used **inside a component's `<script client>` block** to bridge a parent's clientReactive attribute (e.g. `<Dialog :open="modalOpen()">`) into the component's local state. Returns a signal whose value tracks the named attribute on the component's root element — when the parent's expression changes and the runtime updates the attribute, a `MutationObserver` forwards the change into this signal.
+
+```html
+<!-- Inside Dialog.stx -->
+<script client>
+const isOpen = useReactiveProp('open', {{ open }})
+
+function close() {
+  isOpen.set(false)
+  emit('close')
+}
+</script>
+
+<div :show="isOpen()" role="dialog">
+  <slot />
+</div>
+```
+
+Default parse heuristic (override via `options.parse` for typed props):
+
+| Attribute value | Returned |
+|---|---|
+| `""` or `"true"` | `true` |
+| `"false"` | `false` |
+| Numeric string | `Number(v)` |
+| Otherwise | the original string |
+
+```html
+<!-- Typed: parse JSON for an object-valued prop -->
+const items = useReactiveProp('items', [], { parse: (v) => JSON.parse(v || '[]') })
+
+<!-- Typed: keep value as string even when it parses as boolean -->
+const role = useReactiveProp('role', '', { parse: (v) => v == null ? '' : String(v) })
+```
+
+One-way (parent → child). For two-way binding, the component still emits events (`@input` / `@change` / `@close`) and the parent updates its source signal.
+
 ## Color Mode
 
 ### useColorMode
