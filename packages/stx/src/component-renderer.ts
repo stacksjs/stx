@@ -456,7 +456,7 @@ function resolvePackageDir(spec: string, fromDir: string): string | null {
  *   resolves to a single `.stx` file.
  * - Named imports referencing non-`.stx` exports are left untouched in the script.
  */
-async function processESImports(
+export async function processESImports(
   template: string,
   context: Record<string, any>,
   filePath: string,

@@ -854,6 +854,24 @@ catch (error: unknown) {
       // SFC Support: Extract <template>, <script>, and <style> sections
       let workingContent = partialContent
 
+      // Register component tags imported by the partial's own <script> blocks
+      // (e.g. `import { Dialog } from '@stacksjs/components'`). Without this
+      // step, the import is later stripped during signal-script transformation
+      // and the resolver never learns Dialog is a component — so a <Dialog>
+      // tag in the partial body falls through to file lookup and errors with
+      // `ENOENT: open 'dialog'`. Page-level imports already register via
+      // processESImports in the first processComponents pass; this extends
+      // that registration into @include'd partials so the second pass picks
+      // up tags resolved from partial-scoped imports. See stacksjs/stx#1705.
+      try {
+        const { processESImports } = await import('./component-renderer')
+        await processESImports(partialContent, context, includeFilePath, options, dependencies)
+      }
+      catch (err) {
+        if (options.debug)
+          console.warn(`[stx] partial ES import extraction skipped for ${includeFilePath}:`, err instanceof Error ? err.message : err)
+      }
+
       // Extract <template> content if present (Vue-style SFC)
       // Only match <template> WITHOUT id, x-for, x-if, @for, @if, :for, :if attributes.
       // Templates with those attributes are client-side loop/conditional elements that must be preserved.

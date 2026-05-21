@@ -250,6 +250,77 @@ describe('#1695 — bare function ref in event handler shorthand', () => {
   })
 })
 
+describe('#1705 — partials register component imports for parent resolution', () => {
+  // Pre-fix, `import { Dialog } from '@stacksjs/components'` inside a
+  // partial's <script> block was stripped during signal-script transform
+  // before the second processComponents pass could see it. <Dialog> tags
+  // in the partial body then fell through to file lookup and errored
+  // with `ENOENT: open 'dialog'`. The fix runs processESImports against
+  // the partial's raw content during processIncludes so __importedComponents
+  // is populated before the strip pass.
+  const TMP = path.resolve(__dirname, './scratch-1705')
+
+  beforeAll(() => {
+    fs.mkdirSync(path.join(TMP, 'partials'), { recursive: true })
+    fs.mkdirSync(path.join(TMP, 'pkg/ui/widget'), { recursive: true })
+
+    // A fake "package" component the partial wants to import.
+    fs.writeFileSync(
+      path.join(TMP, 'pkg/ui/widget/Widget.stx'),
+      `<div data-test-widget><slot /></div>`,
+    )
+    fs.writeFileSync(
+      path.join(TMP, 'pkg/index.ts'),
+      `export { default as Widget } from './ui/widget/Widget.stx'`,
+    )
+
+    // A partial that imports the package component in its OWN script.
+    fs.writeFileSync(
+      path.join(TMP, 'partials/partial-with-import.stx'),
+      `<script client>
+import { Widget } from '${path.join(TMP, 'pkg').replace(/\\/g, '/')}'
+</script>
+
+<Widget>
+  <p>partial content</p>
+</Widget>`,
+    )
+  })
+
+  afterAll(() => fs.rmSync(TMP, { recursive: true, force: true }))
+
+  it('resolves <Widget> when imported in a partial included via @include', async () => {
+    const out = await processDirectives(
+      `@include('partial-with-import')`,
+      {},
+      path.join(TMP, 'page.stx'),
+      { partialsDir: path.join(TMP, 'partials') } as StxOptions,
+      new Set<string>(),
+    )
+
+    // The component resolved and rendered — `<Widget>` became its real markup.
+    expect(out).toContain('data-test-widget')
+    expect(out).toContain('partial content')
+    // And the un-resolved `<Widget>` tag is not in the output (it'd be there
+    // if the resolver had fallen through to file lookup and failed).
+    expect(out).not.toMatch(/<Widget[\s>]/)
+  })
+
+  it('still strips the bare ES import line from the emitted partial', async () => {
+    // Component-tag registration is the only thing we want from the partial's
+    // import — the rest of the pipeline still strips the line so it doesn't
+    // ship as raw `import` in client JS.
+    const out = await processDirectives(
+      `@include('partial-with-import')`,
+      {},
+      path.join(TMP, 'page.stx'),
+      { partialsDir: path.join(TMP, 'partials') } as StxOptions,
+      new Set<string>(),
+    )
+    expect(out).not.toMatch(/^import\s+\{\s*Widget\s*\}/m)
+  })
+})
+
 describe('useSessionStorage — close the gap strict-mode lint already pointed at', () => {
   const { generateSignalsRuntimeDev } = require('../../src/signals')
   const runtime = generateSignalsRuntimeDev()
