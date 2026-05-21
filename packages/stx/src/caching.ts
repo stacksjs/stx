@@ -149,6 +149,26 @@ export function clearDevCaches(): void {
   _cachedRouterScript = null
 }
 
+function createCacheOptionsSignature(options: StxOptions): string {
+  const signature = {
+    debug: options.debug === true,
+    middleware: (options.middleware ?? []).map(middleware => ({
+      name: middleware.name,
+      timing: middleware.timing,
+      handler: String(middleware.handler),
+    })),
+    customDirectives: (options.customDirectives ?? []).map(directive => ({
+      name: directive.name,
+      hasEndTag: directive.hasEndTag === true,
+      handler: String(directive.handler),
+    })),
+  }
+
+  return new Bun.CryptoHasher('sha1')
+    .update(JSON.stringify(signature))
+    .digest('hex')
+}
+
 /**
  * Check if a cached version of the template is available and valid
  */
@@ -170,6 +190,9 @@ export async function checkCache(filePath: string, options: StxOptions): Promise
 
     // Check if cache version matches
     if (meta.cacheVersion !== options.cacheVersion)
+      return null
+
+    if (meta.optionsSignature !== createCacheOptionsSignature(options))
       return null
 
     // Check if source file has been modified
@@ -230,6 +253,7 @@ export async function cacheTemplate(
       mtime: stats.mtime.getTime(),
       dependencies: Array.from(dependencies),
       cacheVersion: options.cacheVersion,
+      optionsSignature: createCacheOptionsSignature(options),
       generatedAt: Date.now(),
     }
 
