@@ -2,8 +2,11 @@ import { describe, expect, it, setDefaultTimeout } from 'bun:test'
 
 // Increase timeout for CI environments where Bun.build() can be slow
 setDefaultTimeout(30000)
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import stxPlugin from '../src/index'
+import { bundleBrowserAsset } from '../src/serve'
 
 const TEST_DIR = import.meta.dir
 const FIXTURES_DIR = path.join(TEST_DIR, 'fixtures')
@@ -113,6 +116,34 @@ describe('bun-plugin-stx serving', () => {
       expect(content).toContain('<meta name="title"')
       expect(content).toContain('<meta property="og:title"')
       expect(content).toContain('<meta name="twitter:card"')
+    }
+  })
+
+  it('should bundle TypeScript assets for browser modules', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'stx-asset-'))
+
+    try {
+      const helperPath = path.join(dir, 'helper.ts')
+      const entryPath = path.join(dir, 'analytics.ts')
+
+      await writeFile(helperPath, 'export const label = "bundled asset"\n')
+      await writeFile(entryPath, [
+        'import { label } from "./helper"',
+        '',
+        'const target = document.querySelector("[data-chart]")',
+        'if (target) target.textContent = label',
+      ].join('\n'))
+
+      const response = await bundleBrowserAsset(entryPath)
+      const code = await response.text()
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('Content-Type')).toBe('application/javascript')
+      expect(code).toContain('bundled asset')
+      expect(code).not.toContain('from "./helper"')
+    }
+    finally {
+      await rm(dir, { recursive: true, force: true })
     }
   })
 })

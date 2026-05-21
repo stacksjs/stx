@@ -259,6 +259,65 @@ const staticContentTypes: Record<string, string> = {
   eot: 'application/vnd.ms-fontobject',
 }
 
+const bundledAssetExtensions = new Set(['ts', 'tsx', 'mts', 'cts'])
+
+function isBundledAssetExtension(ext: string | undefined): ext is string {
+  return Boolean(ext && bundledAssetExtensions.has(ext))
+}
+
+function getAssetExtension(pathname: string): string | undefined {
+  return pathname.split('.').pop()?.toLowerCase()
+}
+
+function isSafeAssetPath(pathname: string): boolean {
+  if (pathname.includes('\0'))
+    return false
+
+  return !pathname
+    .split('/')
+    .some(segment => segment === '..')
+}
+
+function assetRequestPaths(pathname: string): string[] {
+  const paths = [
+    pathname,
+    pathname.replace(/^\/assets\//, '/resources/assets/'),
+    pathname.replace(/^\/resources\/assets\//, '/assets/'),
+  ]
+
+  return [...new Set(paths)]
+}
+
+export async function bundleBrowserAsset(entrypoint: string): Promise<Response> {
+  const result = await Bun.build({
+    entrypoints: [entrypoint],
+    format: 'esm',
+    minify: false,
+    packages: 'bundle',
+    sourcemap: 'inline',
+    target: 'browser',
+  })
+
+  if (!result.success) {
+    const message = result.logs.map(log => log.message).join('\n') || 'Unable to build TypeScript asset'
+
+    return new Response(message, {
+      status: 500,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    })
+  }
+
+  return new Response(await result.outputs[0].text(), {
+    headers: {
+      'Content-Type': 'application/javascript',
+      'Cache-Control': 'no-cache',
+    },
+  })
+}
+
 /**
  * Start the STX development server
  * @param options Server options with patterns and port
@@ -410,7 +469,8 @@ export async function serve(options: ServeOptions): Promise<void> {
         // cached copy and re-fetches.
         const isCss = f.endsWith('.css')
         const isAsset = isCss
-          || f.endsWith('.js') || f.endsWith('.ts')
+          || f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.tsx')
+          || f.endsWith('.mts') || f.endsWith('.cts')
           || f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.png')
           || f.endsWith('.gif') || f.endsWith('.svg') || f.endsWith('.webp') || f.endsWith('.avif')
           || f.endsWith('.woff') || f.endsWith('.woff2') || f.endsWith('.ttf') || f.endsWith('.otf')
@@ -1945,37 +2005,28 @@ export async function serve(options: ServeOptions): Promise<void> {
       if (path.startsWith('/assets/') || path.startsWith('/resources/assets/')) {
         // Ensure assets are copied on first request
         await ensureAssets()
-        // Try multiple possible paths (like Laravel does)
-        const possiblePaths = [
-          path, // Original path
-          path.replace(/^\/assets\//, '/resources/assets/'), // /assets/* -> /resources/assets/*
-          path.replace(/^\/resources\/assets\//, '/assets/'), // /resources/assets/* -> /assets/*
-        ]
+        let assetPathname: string
+        try {
+          assetPathname = decodeURIComponent(path)
+        }
+        catch {
+          return new Response('Invalid asset path', { status: 400 })
+        }
 
-        for (const assetPath of possiblePaths) {
+        if (!isSafeAssetPath(assetPathname))
+          return new Response('Invalid asset path', { status: 400 })
+
+        for (const assetPath of assetRequestPaths(assetPathname)) {
           try {
-            const filePath = `.${assetPath}`
+            const filePath = nodePath.resolve(process.cwd(), `.${assetPath}`)
             const file = Bun.file(filePath)
 
             if (await file.exists()) {
               // Determine content type based on file extension
-              const ext = assetPath.split('.').pop()?.toLowerCase()
+              const ext = getAssetExtension(assetPath)
 
-              // Handle TypeScript files - transpile to JavaScript
-              if (ext === 'ts') {
-                const transpiler = new Bun.Transpiler({
-                  loader: 'ts',
-                })
-                const code = await file.text()
-                const transpiled = transpiler.transformSync(code)
-
-                return new Response(transpiled, {
-                  headers: {
-                    'Content-Type': 'application/javascript',
-                    'Cache-Control': 'no-cache', // Dev mode - no caching for TS
-                  },
-                })
-              }
+              if (isBundledAssetExtension(ext))
+                return bundleBrowserAsset(filePath)
 
               return new Response(file, {
                 headers: {
