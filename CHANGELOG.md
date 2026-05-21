@@ -1,4 +1,97 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.65...v0.2.66)
+
+### 🚀 Features
+
+- **components**: migrate 8 more components to useReactiveProp (#1704) ([c1015e5](https://github.com/stacksjs/stx/commit/c1015e5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1704](https://github.com/stacksjs/stx/issues/1704), [#1704](https://github.com/stacksjs/stx/issues/1704))
+- **signals**: add useSessionStorage to back the existing strict-mode lint ([c0e80b3](https://github.com/stacksjs/stx/commit/c0e80b3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: useReactiveProp for parent-driven component props (#1704) ([2e7b96c](https://github.com/stacksjs/stx/commit/2e7b96c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1704](https://github.com/stacksjs/stx/issues/1704), [#1704](https://github.com/stacksjs/stx/issues/1704))
+- **components**: add slot API to Tabs + Accordion (#1703) ([67025b6](https://github.com/stacksjs/stx/commit/67025b6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1703](https://github.com/stacksjs/stx/issues/1703), [#1703](https://github.com/stacksjs/stx/issues/1703))
+- **signals**: add useCookie composable (#1701) ([15d5f94](https://github.com/stacksjs/stx/commit/15d5f94)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1701](https://github.com/stacksjs/stx/issues/1701), [#1701](https://github.com/stacksjs/stx/issues/1701))
+
+### 🐛 Bug Fixes
+
+- **dev-server**: bundle browser TypeScript assets ([f36712f](https://github.com/stacksjs/stx/commit/f36712f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **includes**: extract partial-level ES imports for component resolution ([1d91829](https://github.com/stacksjs/stx/commit/1d91829)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: address remaining #1668 sub-bugs (3, 6, 7, 8) ([752c900](https://github.com/stacksjs/stx/commit/752c900)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1668](https://github.com/stacksjs/stx/issues/1668), [#1668](https://github.com/stacksjs/stx/issues/1668))
+- **router**: exempt scope IIFEs from fragment-swap hash dedup (#1700) ([f348390](https://github.com/stacksjs/stx/commit/f348390)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1700](https://github.com/stacksjs/stx/issues/1700), [#1700](https://github.com/stacksjs/stx/issues/1700))
+- **components**: tmpdir entry + .stx stubs so dist/index.js imports cleanly ([0a71c7c](https://github.com/stacksjs/stx/commit/0a71c7c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- address seven reported issues across stx, bun-plugin, components ([1899048](https://github.com/stacksjs/stx/commit/1899048)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **dev-server**: keep HMR SSE stream alive past Bun's 10s idleTimeout ([e4ffd1a](https://github.com/stacksjs/stx/commit/e4ffd1a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **icon**: synchronously load icon collection on first render miss ([3f3f376](https://github.com/stacksjs/stx/commit/3f3f376)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **dev-server**: no-cache for assets, real HMR via SSE, layout dep tracking ([7cb7f5d](https://github.com/stacksjs/stx/commit/7cb7f5d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- document useSessionStorage, useCookie, useReactiveProp, and the Tabs/Accordion slot API ([b7e046b](https://github.com/stacksjs/stx/commit/b7e046b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧪 Tests
+
+- **#1699**: add end-to-end regression tests for HTML-comment masking ([f8d2c36](https://github.com/stacksjs/stx/commit/f8d2c36)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1699](https://github.com/stacksjs/stx/issues/1699), [#1699](https://github.com/stacksjs/stx/issues/1699))
+- regression suite for #1695, #1696, #1697, #1698, #1699 ([8db98be](https://github.com/stacksjs/stx/commit/8db98be)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1695](https://github.com/stacksjs/stx/issues/1695), [#1696](https://github.com/stacksjs/stx/issues/1696), [#1697](https://github.com/stacksjs/stx/issues/1697), [#1698](https://github.com/stacksjs/stx/issues/1698), [#1699](https://github.com/stacksjs/stx/issues/1699), [#1695](https://github.com/stacksjs/stx/issues/1695), [#1696](https://github.com/stacksjs/stx/issues/1696), [#1697](https://github.com/stacksjs/stx/issues/1697), [#1698](https://github.com/stacksjs/stx/issues/1698), [#1699](https://github.com/stacksjs/stx/issues/1699))
+
+### 🤖 Continuous Integration
+
+- **buddy-bot**: regenerate workflow from current template ([9d1fe5f](https://github.com/stacksjs/stx/commit/9d1fe5f)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.66 ([b0d8d51](https://github.com/stacksjs/stx/commit/b0d8d51)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: bump better-dx to ^0.2.15 ([e1b30d0](https://github.com/stacksjs/stx/commit/e1b30d0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([54607c4](https://github.com/stacksjs/stx/commit/54607c4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Glenn Michael Torregosa <gtorregosa@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.65...HEAD)
+
+### 🚀 Features
+
+- **components**: migrate 8 more components to useReactiveProp (#1704) ([c1015e5](https://github.com/stacksjs/stx/commit/c1015e5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1704](https://github.com/stacksjs/stx/issues/1704), [#1704](https://github.com/stacksjs/stx/issues/1704))
+- **signals**: add useSessionStorage to back the existing strict-mode lint ([c0e80b3](https://github.com/stacksjs/stx/commit/c0e80b3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: useReactiveProp for parent-driven component props (#1704) ([2e7b96c](https://github.com/stacksjs/stx/commit/2e7b96c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1704](https://github.com/stacksjs/stx/issues/1704), [#1704](https://github.com/stacksjs/stx/issues/1704))
+- **components**: add slot API to Tabs + Accordion (#1703) ([67025b6](https://github.com/stacksjs/stx/commit/67025b6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1703](https://github.com/stacksjs/stx/issues/1703), [#1703](https://github.com/stacksjs/stx/issues/1703))
+- **signals**: add useCookie composable (#1701) ([15d5f94](https://github.com/stacksjs/stx/commit/15d5f94)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1701](https://github.com/stacksjs/stx/issues/1701), [#1701](https://github.com/stacksjs/stx/issues/1701))
+
+### 🐛 Bug Fixes
+
+- **dev-server**: bundle browser TypeScript assets ([f36712f](https://github.com/stacksjs/stx/commit/f36712f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **includes**: extract partial-level ES imports for component resolution ([1d91829](https://github.com/stacksjs/stx/commit/1d91829)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: address remaining #1668 sub-bugs (3, 6, 7, 8) ([752c900](https://github.com/stacksjs/stx/commit/752c900)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1668](https://github.com/stacksjs/stx/issues/1668), [#1668](https://github.com/stacksjs/stx/issues/1668))
+- **router**: exempt scope IIFEs from fragment-swap hash dedup (#1700) ([f348390](https://github.com/stacksjs/stx/commit/f348390)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1700](https://github.com/stacksjs/stx/issues/1700), [#1700](https://github.com/stacksjs/stx/issues/1700))
+- **components**: tmpdir entry + .stx stubs so dist/index.js imports cleanly ([0a71c7c](https://github.com/stacksjs/stx/commit/0a71c7c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- address seven reported issues across stx, bun-plugin, components ([1899048](https://github.com/stacksjs/stx/commit/1899048)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **dev-server**: keep HMR SSE stream alive past Bun's 10s idleTimeout ([e4ffd1a](https://github.com/stacksjs/stx/commit/e4ffd1a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **icon**: synchronously load icon collection on first render miss ([3f3f376](https://github.com/stacksjs/stx/commit/3f3f376)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **dev-server**: no-cache for assets, real HMR via SSE, layout dep tracking ([7cb7f5d](https://github.com/stacksjs/stx/commit/7cb7f5d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- document useSessionStorage, useCookie, useReactiveProp, and the Tabs/Accordion slot API ([b7e046b](https://github.com/stacksjs/stx/commit/b7e046b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧪 Tests
+
+- **#1699**: add end-to-end regression tests for HTML-comment masking ([f8d2c36](https://github.com/stacksjs/stx/commit/f8d2c36)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1699](https://github.com/stacksjs/stx/issues/1699), [#1699](https://github.com/stacksjs/stx/issues/1699))
+- regression suite for #1695, #1696, #1697, #1698, #1699 ([8db98be](https://github.com/stacksjs/stx/commit/8db98be)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1695](https://github.com/stacksjs/stx/issues/1695), [#1696](https://github.com/stacksjs/stx/issues/1696), [#1697](https://github.com/stacksjs/stx/issues/1697), [#1698](https://github.com/stacksjs/stx/issues/1698), [#1699](https://github.com/stacksjs/stx/issues/1699), [#1695](https://github.com/stacksjs/stx/issues/1695), [#1696](https://github.com/stacksjs/stx/issues/1696), [#1697](https://github.com/stacksjs/stx/issues/1697), [#1698](https://github.com/stacksjs/stx/issues/1698), [#1699](https://github.com/stacksjs/stx/issues/1699))
+
+### 🤖 Continuous Integration
+
+- **buddy-bot**: regenerate workflow from current template ([9d1fe5f](https://github.com/stacksjs/stx/commit/9d1fe5f)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- **deps**: bump better-dx to ^0.2.15 ([e1b30d0](https://github.com/stacksjs/stx/commit/e1b30d0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([54607c4](https://github.com/stacksjs/stx/commit/54607c4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Glenn Michael Torregosa <gtorregosa@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.64...v0.2.65)
 
 ### 🧹 Chores
