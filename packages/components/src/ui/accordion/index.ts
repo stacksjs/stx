@@ -8,14 +8,16 @@ export { default as AccordionItem } from './AccordionItem.stx'
  *
  * See stacksjs/stx#1703.
  */
-export interface AccordionItem {
+export interface AccordionLegacyItem {
   title: string
   content: string
 }
 
+export type AccordionItemDefinition = AccordionLegacyItem
+
 export interface AccordionProps {
   /** Legacy: array of item definitions with string content. */
-  items?: AccordionItem[]
+  items?: AccordionLegacyItem[]
   allowMultiple?: boolean
   defaultOpen?: number[]
   onChange?: (openItems: number[]) => void
