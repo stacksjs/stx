@@ -2930,6 +2930,50 @@ catch (e) {}
     return s;
   }
 
+  // Reactive prop binding. Bridges the gap between a parent's clientReactive
+  // attribute (e.g. :open="modalOpen()" on a component) and the component's
+  // internal state. Returns a signal whose value tracks the named attribute
+  // on the component's root element — when the parent's expression changes
+  // and bindAttr updates the attribute, a MutationObserver on the root
+  // forwards the change into this signal. See stacksjs/stx#1704.
+  //
+  // Parse heuristic (override via opts.parse for typed props):
+  //   - empty string or "true" → true
+  //   - "false" → false
+  //   - numeric-looking → Number
+  //   - otherwise → original string
+  //
+  // The signal is one-way (parent → child). For two-way binding, components
+  // still emit events (@input / @change / @close) and the parent
+  // updates its source signal. The signal's own .set() won't propagate back
+  // through the attribute by design; that prevents observer feedback loops.
+  function useReactiveProp(name, defaultValue, opts) {
+    opts = opts || {};
+    var parse = opts.parse || function(v) {
+      if (v === '' || v === 'true') return true;
+      if (v === 'false') return false;
+      if (v != null && v !== '' && !isNaN(Number(v))) return Number(v);
+      return v;
+    };
+    var root = window.__STX_CURRENT_ELEMENT__;
+    var initial;
+    if (root && root.hasAttribute && root.hasAttribute(name)) {
+      initial = parse(root.getAttribute(name));
+    } else {
+      initial = defaultValue;
+    }
+    var s = state(initial);
+    if (!root) return s;
+    var observer = new MutationObserver(function() {
+      var hasAttr = root.hasAttribute(name);
+      var next = hasAttr ? parse(root.getAttribute(name)) : defaultValue;
+      if (next !== s()) s.set(next);
+    });
+    observer.observe(root, { attributes: true, attributeFilter: [name] });
+    onDestroy(function() { observer.disconnect(); });
+    return s;
+  }
+
   function useEventListener(event, handler, options) {
     var target = (options && options.target) || window;
     if (typeof target === 'string') target = document.querySelector(target);
@@ -3411,6 +3455,7 @@ catch (e) {}
     useAsync,
     useLocalStorage,
     useCookie,
+    useReactiveProp,
     useEventListener,
     useWebSocket,
     useColorMode,

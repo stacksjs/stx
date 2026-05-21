@@ -37,7 +37,8 @@ const emit = defineEmits()
 const stepSize = {{ step }}
 const minVal = {{ min === undefined ? 'undefined' : min }}
 const maxVal = {{ max === undefined ? 'undefined' : max }}
-const inputValue = state({{ value }})
+// Reactive prop binding — parent can drive value via signals. See #1704.
+const inputValue = useReactiveProp('value', {{ value }}, { parse: (v) => v == null || v === '' ? '' : String(v) })
 
 function onInput(event) {
   inputValue.set(event.target.value)

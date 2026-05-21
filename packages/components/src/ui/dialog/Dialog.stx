@@ -8,7 +8,11 @@ export const dialogClasses = `${baseClasses} ${className}`.trim()
 
 <script client>
 const emit = defineEmits()
-const isOpen = state({{ open }})
+// useReactiveProp wires `:open="parentSignal()"` from the parent into our
+// local `isOpen` signal — when the parent's signal changes, bindAttr
+// updates the root's `open` attribute, our MutationObserver picks it up,
+// and isOpen flips. See stacksjs/stx#1704.
+const isOpen = useReactiveProp('open', {{ open }})
 
 function close() {
   isOpen.set(false)

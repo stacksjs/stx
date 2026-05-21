@@ -39,7 +39,10 @@ export const inputId = `input-${label}`
 
 <script client>
 const emit = defineEmits()
-const inputValue = state({{ value }})
+// Reactive prop binding so the parent can drive `value` via signals.
+// Parent listens to @input to push user changes back into its signal.
+// See stacksjs/stx#1704.
+const inputValue = useReactiveProp('value', {{ value }}, { parse: (v) => v == null ? '' : String(v) })
 
 function onInput(event) {
   inputValue.set(event.target.value)

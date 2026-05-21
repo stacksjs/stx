@@ -26,7 +26,9 @@ const trackBase = {{ trackBaseClasses }}
 const trackDisabled = {{ trackDisabledClasses }}
 const thumbBase = {{ thumbBaseClasses }}
 const extraClass = {{ className }}
-const isChecked = state({{ checked }})
+// Reactive prop binding so the parent can drive `checked` via signals.
+// See stacksjs/stx#1704.
+const isChecked = useReactiveProp('checked', {{ checked }})
 
 function toggle() {
   if (isDisabled) return

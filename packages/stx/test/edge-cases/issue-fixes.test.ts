@@ -250,6 +250,83 @@ describe('#1695 — bare function ref in event handler shorthand', () => {
   })
 })
 
+describe('#1704 — useReactiveProp bridges parent clientReactive props into child signals', () => {
+  const { generateSignalsRuntimeDev } = require('../../src/signals')
+  const runtime = generateSignalsRuntimeDev()
+
+  it('runtime defines a useReactiveProp function', () => {
+    expect(runtime).toContain('function useReactiveProp(')
+  })
+
+  it('runtime exposes useReactiveProp on window.stx', () => {
+    const stxAssign = runtime.match(/window\.stx\s*=\s*\{[\s\S]*?\};/)
+    expect(stxAssign).not.toBeNull()
+    expect(stxAssign![0]).toContain('useReactiveProp')
+  })
+
+  it('reads the named attribute off __STX_CURRENT_ELEMENT__', () => {
+    // Component-mount sets __STX_CURRENT_ELEMENT__ before the setup fn runs;
+    // useReactiveProp captures it to know which element to observe.
+    expect(runtime).toContain('window.__STX_CURRENT_ELEMENT__')
+    expect(runtime).toMatch(/root\.hasAttribute\(name\)/)
+    expect(runtime).toMatch(/root\.getAttribute\(name\)/)
+  })
+
+  it('sets up a MutationObserver to catch parent-driven attribute changes', () => {
+    expect(runtime).toContain('new MutationObserver(')
+    expect(runtime).toMatch(/attributeFilter:\s*\[name\]/)
+    // Cleanup on component teardown
+    expect(runtime).toMatch(/onDestroy\(function\s*\(\)\s*\{\s*observer\.disconnect/)
+  })
+
+  it('only updates the local signal when the parsed value actually changes', () => {
+    // Guards against MutationObserver re-firing for unrelated attribute
+    // writes (and prevents feedback loops if .set() ever propagated back).
+    expect(runtime).toMatch(/if\s*\(next !== s\(\)\)\s*s\.set\(next\)/)
+  })
+
+  it('default parse coerces "true"/"false"/numbers/empty to typed values', () => {
+    // Default parser heuristic — boolean attrs without an explicit parse opt
+    // still work right out of the gate (`open=""` → true, `open="false"` → false).
+    expect(runtime).toMatch(/v === '' \|\| v === 'true'/)
+    expect(runtime).toMatch(/v === 'false'/)
+    expect(runtime).toMatch(/!isNaN\(Number\(v\)\)/)
+  })
+
+  it('signal-processing destructures useReactiveProp in the setup wrapper', () => {
+    const setupSrc = require('node:fs').readFileSync(
+      require('node:path').resolve(__dirname, '../../src/signal-processing.ts'),
+      'utf8',
+    )
+    // The merged setup function destructures the runtime APIs from window.stx;
+    // useReactiveProp must be in that list so components can call it bare.
+    expect(setupSrc).toContain('useReactiveProp')
+    // And the SIGNAL_API_RE must detect calls to it, so scripts that ONLY
+    // use useReactiveProp (no state/derived) still get merged into setup.
+    const apiReBlock = setupSrc.match(/const SIGNAL_API_RE = [^\n]+/)
+    expect(apiReBlock).not.toBeNull()
+    expect(apiReBlock![0]).toContain('useReactiveProp')
+  })
+
+  it('shipped components actually use the helper for their reactive props', () => {
+    const fs = require('node:fs')
+    const path = require('node:path')
+    const componentsDir = path.resolve(__dirname, '../../../components/src/ui')
+    const checks: Array<[string, string]> = [
+      ['dialog/Dialog.stx', "useReactiveProp('open',"],
+      ['switch/Switch.stx', "useReactiveProp('checked',"],
+      ['checkbox/Checkbox.stx', "useReactiveProp('checked',"],
+      ['input/TextInput.stx', "useReactiveProp('value',"],
+      ['input/PasswordInput.stx', "useReactiveProp('value',"],
+      ['input/NumberInput.stx', "useReactiveProp('value',"],
+    ]
+    for (const [file, marker] of checks) {
+      const src = fs.readFileSync(path.join(componentsDir, file), 'utf8')
+      expect(src).toContain(marker)
+    }
+  })
+})
+
 describe('#1668 bug 7 — extractExports tokenizer handles regex literals', () => {
   // Pre-fix, top-level regex literals broke the hand-rolled tokenizer:
   // - `/'/` triggered the string-skipper (the `'` looked like an open quote)
