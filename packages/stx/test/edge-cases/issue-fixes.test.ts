@@ -250,6 +250,56 @@ describe('#1695 — bare function ref in event handler shorthand', () => {
   })
 })
 
+describe('useSessionStorage — close the gap strict-mode lint already pointed at', () => {
+  const { generateSignalsRuntimeDev } = require('../../src/signals')
+  const runtime = generateSignalsRuntimeDev()
+
+  it('runtime defines a useSessionStorage function', () => {
+    expect(runtime).toContain('function useSessionStorage(')
+  })
+
+  it('runtime exposes useSessionStorage on window.stx', () => {
+    const stxAssign = runtime.match(/window\.stx\s*=\s*\{[\s\S]*?\};/)
+    expect(stxAssign).not.toBeNull()
+    expect(stxAssign![0]).toContain('useSessionStorage')
+  })
+
+  it('uses sessionStorage (not localStorage) for backing reads/writes', () => {
+    // Scope the assertion to the useSessionStorage body so we don't
+    // collide with useLocalStorage's getItem/setItem lines.
+    const body = runtime.match(/function useSessionStorage\(key, defaultValue\)\s*\{[\s\S]*?\n  \}/)
+    expect(body).not.toBeNull()
+    expect(body![0]).toContain('sessionStorage.getItem(key)')
+    expect(body![0]).toContain('sessionStorage.setItem(key,')
+    expect(body![0]).not.toContain('localStorage.getItem')
+  })
+
+  it('filters cross-tab storage events to the sessionStorage area', () => {
+    // Without the storageArea filter, a localStorage change in another
+    // tab would also fire this handler and reset the signal.
+    const body = runtime.match(/function useSessionStorage\(key, defaultValue\)\s*\{[\s\S]*?\n  \}/)
+    expect(body![0]).toContain('e.storageArea === sessionStorage')
+  })
+
+  it('strict-mode lint message still suggests useSessionStorage', async () => {
+    // The lint hint in strict-mode.test.ts existed before the function did;
+    // it's the canonical entry point users will reach via the warning.
+    const strictSrc = require('node:fs').readFileSync(
+      require('node:path').resolve(__dirname, '../strict-mode.test.ts'),
+      'utf8',
+    )
+    expect(strictSrc).toContain('useSessionStorage()')
+  })
+
+  it('signal-processing destructures useSessionStorage in the setup wrapper', () => {
+    const setupSrc = require('node:fs').readFileSync(
+      require('node:path').resolve(__dirname, '../../src/signal-processing.ts'),
+      'utf8',
+    )
+    expect(setupSrc).toContain('useSessionStorage')
+  })
+})
+
 describe('#1704 — useReactiveProp bridges parent clientReactive props into child signals', () => {
   const { generateSignalsRuntimeDev } = require('../../src/signals')
   const runtime = generateSignalsRuntimeDev()

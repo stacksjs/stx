@@ -2892,6 +2892,28 @@ catch (e) {}
     return s;
   }
 
+  // Mirror of useLocalStorage against sessionStorage. Strict-mode lint
+  // already suggests this function name as the replacement for raw
+  // window.sessionStorage access; this is the implementation that backs
+  // that hint. Same JSON serialization, cross-tab sync via the 'storage'
+  // event (filtered to sessionStorage's storageArea — localStorage events
+  // share the same listener but fire from a different area).
+  function useSessionStorage(key, defaultValue) {
+    var stored = sessionStorage.getItem(key);
+    var initial = stored !== null ? JSON.parse(stored) : defaultValue;
+    var s = state(initial);
+    effect(function() {
+      sessionStorage.setItem(key, JSON.stringify(s()));
+    });
+    var handler = function(e) {
+      if (e.key === key && e.storageArea === sessionStorage)
+        s.set(e.newValue !== null ? JSON.parse(e.newValue) : defaultValue);
+    };
+    window.addEventListener('storage', handler);
+    onDestroy(function() { window.removeEventListener('storage', handler); });
+    return s;
+  }
+
   // Reactive cookie binding. Mirrors useLocalStorage's shape: returns a string-
   // valued signal, writes on .set(), and respects cookie attributes via opts.
   // Setting the signal to '' deletes the cookie (max-age=0). Cookies don't fire
@@ -3454,6 +3476,7 @@ catch (e) {}
     useFocus,
     useAsync,
     useLocalStorage,
+    useSessionStorage,
     useCookie,
     useReactiveProp,
     useEventListener,

@@ -633,6 +633,9 @@ export async function processScriptSetup(template: string, filePath?: string): P
   // into the single setup function so their reactivity wires into the same
   // componentScope as the page's bindings.
   const SIGNAL_API_RE = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useStore|useLocalStorage|useSessionStorage|useCookie|useReactiveProp|useFetch|useRef|useEventListener|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useWebSocket|useRoute|useSearchParams|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose)\s*(?:<[^>]*>)?\s*\(/
+  // (useSessionStorage was already in SIGNAL_API_RE before the runtime
+  // shipped — strict-mode hinted at it; the runtime implementation just
+  // landed alongside this.)
 
   // Collect every signal-using script in document order (layout first, page
   // last). They'll all be merged into a single __stx_setup_ function so every
@@ -700,7 +703,7 @@ export async function processScriptSetup(template: string, filePath?: string): P
   const setupCode = `
 <script data-stx-scoped>
 function ${setupFnName}() {
-  const { state, derived, effect, batch, onMount, onDestroy, defineStore, useStore, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useCookie, useReactiveProp, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect, defineProps, withDefaults, defineEmits, defineExpose } = window.stx;
+  const { state, derived, effect, batch, onMount, onDestroy, defineStore, useStore, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useSessionStorage, useCookie, useReactiveProp, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect, defineProps, withDefaults, defineEmits, defineExpose } = window.stx;
 ${mergedContent}
   return { ${mergedExports} };
 }
