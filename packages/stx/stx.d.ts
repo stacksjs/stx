@@ -92,7 +92,7 @@ declare function useRef<T = HTMLElement>(_name: string): { current: T | null }
 // Routing / navigation
 // ============================================================================
 
-declare function navigate(_url: string, options?: { replace?: boolean }): void
+declare function navigate(_url: string, _options?: { replace?: boolean }): void
 declare function goBack(): void
 declare function goForward(): void
 declare function useRoute(): {
@@ -127,25 +127,25 @@ interface StxMutationResult<T> {
   mutate: (body?: unknown) => Promise<T>
 }
 
-declare function useFetch<T = any>(_url: string, options?: any): StxQueryResult<T>
-declare function useQuery<T = any>(_url: string, options?: any): StxQueryResult<T>
-declare function useMutation<T = any>(_url: string, options?: any): StxMutationResult<T>
+declare function useFetch<T = any>(_url: string, _options?: any): StxQueryResult<T>
+declare function useQuery<T = any>(_url: string, _options?: any): StxQueryResult<T>
+declare function useMutation<T = any>(_url: string, _options?: any): StxMutationResult<T>
 
 // ============================================================================
 // DOM utilities
 // ============================================================================
 
 declare function useEventListener<K extends keyof WindowEventMap>(
-  target: Window | Document | HTMLElement | string | null,
-  event: K,
-  handler: (event: WindowEventMap[K]) => void,
-  options?: boolean | AddEventListenerOptions,
+  _target: Window | Document | HTMLElement | string | null,
+  _event: K,
+  _handler: (event: WindowEventMap[K]) => void,
+  _options?: boolean | AddEventListenerOptions,
 ): StxCleanup
 declare function useEventListener(
-  target: Window | Document | HTMLElement | string | null,
-  event: string,
-  handler: (event: Event) => void,
-  options?: boolean | AddEventListenerOptions,
+  _target: Window | Document | HTMLElement | string | null,
+  _event: string,
+  _handler: (event: Event) => void,
+  _options?: boolean | AddEventListenerOptions,
 ): StxCleanup
 declare function useMeta(_meta: Record<string, string>): void
 declare function useClickOutside(_target: HTMLElement | StxRef<HTMLElement | null> | string | null, _handler: (event: MouseEvent) => void): StxCleanup
@@ -155,27 +155,27 @@ declare function useFocus(_target: HTMLElement | StxRef<HTMLElement | null> | st
 // Timers / scheduling
 // ============================================================================
 
-declare function useDebounce<T extends (...args: any[]) => any>(fn: T, delay: number): T
+declare function useDebounce<T extends (..._args: any[]) => any>(_fn: T, _delay: number): T
 declare function useDebouncedValue<T>(_value: StxSignal<T>, _delay: number): StxSignal<T>
-declare function useThrottle<T extends (...args: any[]) => any>(fn: T, delay: number): T
-declare function useInterval(_fn: () => void, ms: number, options?: { immediate?: boolean }): {
+declare function useThrottle<T extends (..._args: any[]) => any>(_fn: T, _delay: number): T
+declare function useInterval(_fn: () => void, _ms: number, _options?: { immediate?: boolean }): {
   start: () => void
   stop: () => void
   isActive: StxSignal<boolean>
 }
-declare function useTimeout(_fn: () => void, ms: number): {
+declare function useTimeout(_fn: () => void, _ms: number): {
   start: () => void
   stop: () => void
   isPending: StxSignal<boolean>
 }
-declare function nextTick(fn?: () => void): Promise<void>
+declare function nextTick(_fn?: () => void): Promise<void>
 
 // ============================================================================
 // State utilities
 // ============================================================================
 
-declare function useToggle(initial?: boolean): [StxSignal<boolean>, (value?: boolean) => void]
-declare function useCounter(initial?: number, options?: { min?: number, max?: number }): {
+declare function useToggle(_initial?: boolean): [StxSignal<boolean>, (value?: boolean) => void]
+declare function useCounter(_initial?: number, _options?: { min?: number, max?: number }): {
   count: StxSignal<number>
   inc: (n?: number) => void
   dec: (n?: number) => void
@@ -200,7 +200,7 @@ declare function useSessionStorage<T>(_key: string, _defaultValue: T): StxSignal
 // WebSocket
 // ============================================================================
 
-declare function useWebSocket(_url: string, options?: {
+declare function useWebSocket(_url: string, _options?: {
   immediate?: boolean
   autoReconnect?: boolean | { retries?: number, delay?: number }
   onMessage?: (event: MessageEvent) => void
@@ -270,35 +270,35 @@ declare function ref<T>(_value: T): StxRef<T>
 declare function reactive<T extends object>(_target: T): T
 declare function computed<T>(_getter: () => T): StxRef<T>
 declare function watch<T>(
-  source: (() => T) | StxRef<T> | StxSignal<T>,
-  callback: (value: T, oldValue: T) => void,
-  options?: { immediate?: boolean, deep?: boolean },
+  _source: (() => T) | StxRef<T> | StxSignal<T>,
+  _callback: (value: T, oldValue: T) => void,
+  _options?: { immediate?: boolean, deep?: boolean },
 ): StxCleanup
 declare function watchEffect(_fn: () => void): StxCleanup
 declare function watchMultiple(
-  sources: Array<() => unknown>,
-  callback: (values: unknown[], oldValues: unknown[]) => void,
-  options?: { immediate?: boolean },
+  _sources: Array<() => unknown>,
+  _callback: (values: unknown[], oldValues: unknown[]) => void,
+  _options?: { immediate?: boolean },
 ): StxCleanup
 
 // ============================================================================
 // Component definition / composition API
 // ============================================================================
 
-declare function defineProps<T extends Record<string, any> = Record<string, any>>(definitions?: any): T
+declare function defineProps<T extends Record<string, any> = Record<string, any>>(_definitions?: any): T
 declare function withDefaults<T extends Record<string, any>>(_props: T, _defaults: Partial<T>): T
-declare function defineEmits<T extends string = string>(): (event: T, payload?: unknown) => void
+declare function defineEmits<T extends string = string>(): (_event: T, _payload?: unknown) => void
 declare function defineExpose<T extends Record<string, any>>(_exposed: T): void
 declare function provide<T>(_key: string | symbol, _value: T): void
-declare function inject<T>(_key: string | symbol, defaultValue?: T): T | undefined
+declare function inject<T>(_key: string | symbol, _defaultValue?: T): T | undefined
 declare function getCurrentInstance(): any
 declare function useSlots(): Record<string, any>
 declare function useAttrs(): Record<string, any>
 declare function $computed<T>(_getter: () => T): StxRef<T>
 declare function $watch<T>(
-  source: (() => T) | StxRef<T> | StxSignal<T>,
-  callback: (value: T, oldValue: T) => void,
-  options?: { immediate?: boolean, deep?: boolean },
+  _source: (() => T) | StxRef<T> | StxSignal<T>,
+  _callback: (value: T, oldValue: T) => void,
+  _options?: { immediate?: boolean, deep?: boolean },
 ): StxCleanup
 
 // ============================================================================
@@ -371,10 +371,10 @@ interface StxDialogOptions {
 }
 
 /** Styled replacement for window.alert(). Returns a Promise that resolves when dismissed. */
-declare function stxAlert(_message: string, options?: StxDialogOptions): Promise<void>
+declare function stxAlert(_message: string, _options?: StxDialogOptions): Promise<void>
 
 /** Styled replacement for window.confirm(). Returns a Promise<boolean>. */
-declare function stxConfirm(_message: string, options?: StxDialogOptions): Promise<boolean>
+declare function stxConfirm(_message: string, _options?: StxDialogOptions): Promise<boolean>
 
 // ============================================================================
 // Stores (Pinia-inspired, signals-based)
@@ -391,13 +391,13 @@ interface StxStoreOptions {
 }
 
 declare function defineStore<T>(
-  id: string,
-  setup: () => T,
-  options?: StxStoreOptions,
+  _id: string,
+  _setup: () => T,
+  _options?: StxStoreOptions,
 ): () => T
 declare function defineStore<S extends Record<string, any>, G extends Record<string, any>, A extends Record<string, any>>(
-  id: string,
-  options: {
+  _id: string,
+  _options: {
     state?: () => S
     getters?: G
     actions?: A
@@ -405,15 +405,15 @@ declare function defineStore<S extends Record<string, any>, G extends Record<str
   },
 ): () => S & G & A
 declare function useStore<T = any>(_id: string): T
-declare function createStore<T>(_setup: () => T, options?: StxStoreOptions): () => T
-declare function action<T extends (...args: any[]) => any>(fn: T): T
-declare function createSelector<T, R>(selector: (state: T) => R): (state: T) => R
+declare function createStore<T>(_setup: () => T, _options?: StxStoreOptions): () => T
+declare function action<T extends (..._args: any[]) => any>(_fn: T): T
+declare function createSelector<T, R>(_selector: (state: T) => R): (state: T) => R
 
 // ============================================================================
 // JSX runtime (Vue/React style)
 // ============================================================================
 
-declare function h(_tag: string | Function, props?: Record<string, any> | null, ...children: any[]): any
+declare function h(_tag: string | Function, _props?: Record<string, any> | null, ..._children: any[]): any
 declare const Fragment: unique symbol
 
 // ============================================================================
