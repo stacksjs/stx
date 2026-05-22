@@ -80,7 +80,7 @@ declare function onBeforeUpdate(_fn: () => void): void
 declare function onUpdated(_fn: () => void): void
 declare function onBeforeUnmount(_fn: () => void): void
 declare function onUnmounted(_fn: () => void): void
-declare function onErrorCaptured(_fn: (error: unknown, instance: any, info: string) => boolean | void): void
+declare function onErrorCaptured(_fn: (error: unknown, instance: HTMLElement | null, info: string) => boolean | void): void
 
 // ============================================================================
 // Template refs
@@ -124,7 +124,7 @@ interface StxMutationResult<T> {
   data: StxSignal<T | null>
   loading: StxSignal<boolean>
   error: StxSignal<Error | null>
-  mutate: (body?: any) => Promise<T>
+  mutate: (body?: unknown) => Promise<T>
 }
 
 declare function useFetch<T = any>(_url: string, options?: any): StxQueryResult<T>
@@ -148,8 +148,8 @@ declare function useEventListener(
   options?: boolean | AddEventListenerOptions,
 ): StxCleanup
 declare function useMeta(_meta: Record<string, string>): void
-declare function useClickOutside(_target: any, _handler: (event: MouseEvent) => void): StxCleanup
-declare function useFocus(_target: any): { focused: StxSignal<boolean>, focus: () => void, blur: () => void }
+declare function useClickOutside(_target: HTMLElement | StxRef<HTMLElement | null> | string | null, _handler: (event: MouseEvent) => void): StxCleanup
+declare function useFocus(_target: HTMLElement | StxRef<HTMLElement | null> | string | null): { focused: StxSignal<boolean>, focus: () => void, blur: () => void }
 
 // ============================================================================
 // Timers / scheduling
@@ -209,7 +209,7 @@ declare function useWebSocket(_url: string, options?: {
   onError?: (event: Event) => void
 }): {
   status: StxSignal<'CONNECTING' | 'OPEN' | 'CLOSING' | 'CLOSED'>
-  data: StxSignal<any>
+  data: StxSignal<unknown>
   send: (data: string | ArrayBuffer | Blob) => void
   open: () => void
   close: () => void
@@ -276,8 +276,8 @@ declare function watch<T>(
 ): StxCleanup
 declare function watchEffect(_fn: () => void): StxCleanup
 declare function watchMultiple(
-  sources: Array<() => any>,
-  callback: (values: any[], oldValues: any[]) => void,
+  sources: Array<() => unknown>,
+  callback: (values: unknown[], oldValues: unknown[]) => void,
   options?: { immediate?: boolean },
 ): StxCleanup
 
@@ -287,7 +287,7 @@ declare function watchMultiple(
 
 declare function defineProps<T extends Record<string, any> = Record<string, any>>(definitions?: any): T
 declare function withDefaults<T extends Record<string, any>>(_props: T, _defaults: Partial<T>): T
-declare function defineEmits<T extends string = string>(): (event: T, payload?: any) => void
+declare function defineEmits<T extends string = string>(): (event: T, payload?: unknown) => void
 declare function defineExpose<T extends Record<string, any>>(_exposed: T): void
 declare function provide<T>(_key: string | symbol, _value: T): void
 declare function inject<T>(_key: string | symbol, defaultValue?: T): T | undefined

@@ -32,6 +32,13 @@ const config: Partial<PickierConfig> = {
   },
 
   pluginRules: {
+    // Warn (not error) on `: any` / `as any` / `<any>` so future code gets
+    // flagged but the existing historical usages in lint-ignored stx core
+    // (template-engine internals legitimately use Record<string, any> for
+    // arbitrary user context) don't break CI. Promote to 'error' once
+    // the count is contained.
+    'ts/no-explicit-any': 'warn',
+
     // Disable false positives on TypeScript function signatures
     'regexp/no-unused-capturing-group': 'off',
 
