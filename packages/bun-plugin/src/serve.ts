@@ -326,8 +326,11 @@ export async function serve(options: ServeOptions): Promise<void> {
   // Load STX config via bunfig - supports stx.config.ts, .stx.config.ts, etc.
   const stxConfig = await loadConfig({
     name: 'stx',
+    alias: ['ui'],
     cwd: process.cwd(),
     defaultConfig: defaultStxConfig,
+    checkEnv: false,
+    verbose: false,
   }) as Record<string, any>
 
   // Plugin discovery is a separate concern: stx's own `loadStxConfig`
@@ -745,7 +748,8 @@ export async function serve(options: ServeOptions): Promise<void> {
       const { Router } = await import('stx-router')
       const pagesDirs = patterns.map(p => p.replace(/\/$/, '')).filter(Boolean)
       const router = new Router(process.cwd(), { pagesDirs })
-      console.log(`[stx] Generated ${router.routes.length} routes → .stx/routes.ts`)
+      if (!options.quiet)
+        console.log(`[stx] Generated ${router.routes.length} routes → .stx/routes.ts`)
     }
     catch (e) {
       // Non-fatal — route generation is optional
@@ -901,6 +905,8 @@ export async function serve(options: ServeOptions): Promise<void> {
           name: 'crosswind',
           cwd: process.cwd(),
           defaultConfig: {} as Record<string, any>,
+          checkEnv: false,
+          verbose: false,
         }) as Promise<Record<string, any>>
       }
       const userConfig = await crosswindUserConfigPromise

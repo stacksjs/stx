@@ -197,7 +197,8 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
       const result = await tryImportCrosswind(importPath)
       if (result) {
         crosswindModule = result
-        console.log(`${colors.green}[Crosswind]${colors.reset} CSS engine loaded`)
+        if (!process.env.STACKS_DEV_QUIET)
+          console.log(`${colors.green}[Crosswind]${colors.reset} CSS engine loaded`)
         return crosswindModule
       }
     }
@@ -209,7 +210,8 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
         const result = await tryImportCrosswind(localPath)
         if (result) {
           crosswindModule = result
-          console.log(`${colors.green}[Crosswind]${colors.reset} CSS engine loaded from ${path.dirname(path.dirname(localPath))}`)
+          if (!process.env.STACKS_DEV_QUIET)
+            console.log(`${colors.green}[Crosswind]${colors.reset} CSS engine loaded from ${path.dirname(path.dirname(localPath))}`)
           return crosswindModule
         }
       }
@@ -286,7 +288,8 @@ export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig 
       return null
 
     const rel = path.relative(cwd, result.path)
-    console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${rel || result.path}`)
+    if (!process.env.STACKS_DEV_QUIET)
+      console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${rel || result.path}`)
     return result.config
   }
   catch (error) {
