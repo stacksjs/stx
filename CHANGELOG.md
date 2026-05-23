@@ -1,4 +1,28 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.66...v0.2.67)
+
+### 🐛 Bug Fixes
+
+- **dev**: quiet STX/Crosswind logs until buddy ready banner ([d0ff3d0](https://github.com/stacksjs/stx/commit/d0ff3d0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **scripts**: stop double-generating CHANGELOG on release ([7fd05c5](https://github.com/stacksjs/stx/commit/7fd05c5)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_
+- **components**: avoid accordion item type collision ([f2eddae](https://github.com/stacksjs/stx/commit/f2eddae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: run pre middleware before comment masking ([3eac657](https://github.com/stacksjs/stx/commit/3eac657)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: invalidate cache for render options ([a250533](https://github.com/stacksjs/stx/commit/a250533)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: export accordion item types ([4b44c5a](https://github.com/stacksjs/stx/commit/4b44c5a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **release**: keep workspace versions aligned ([be0f7bf](https://github.com/stacksjs/stx/commit/be0f7bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.67 ([8c8d5aa](https://github.com/stacksjs/stx/commit/8c8d5aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **lint**: prefix unused .d.ts params with _ to match file convention ([80d6aff](https://github.com/stacksjs/stx/commit/80d6aff)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **lint,types**: enable ts/no-explicit-any warning + tighten public types ([95f1c4c](https://github.com/stacksjs/stx/commit/95f1c4c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Glenn Michael Torregosa <gtorregosa@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.65...v0.2.66)
 
 ### 🚀 Features
