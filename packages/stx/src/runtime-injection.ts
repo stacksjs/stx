@@ -180,6 +180,8 @@ export async function injectRouterScript(template: string, options?: StxOptions)
   if (routerConfig) {
     const configObj: Record<string, any> = {}
     if (routerConfig.container) configObj.container = routerConfig.container
+    if (routerConfig.interceptAllLinks !== undefined) configObj.interceptAllLinks = routerConfig.interceptAllLinks
+    if (routerConfig.progress !== undefined) configObj.progress = routerConfig.progress
     if (routerConfig.viewTransitions !== undefined) configObj.viewTransitions = routerConfig.viewTransitions
     if (routerConfig.viewTransitionDuration !== undefined) configObj.viewTransitionDuration = routerConfig.viewTransitionDuration
     if (routerConfig.viewTransitionEasing !== undefined) configObj.viewTransitionEasing = routerConfig.viewTransitionEasing

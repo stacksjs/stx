@@ -156,9 +156,14 @@ export interface BuildOptions extends SiteConfig {
  */
 export interface SiteRouterOptions {
   color?: string
+  /** Top loading bar color (hex/rgb). Matches stx-router `progressColor`. */
+  progressColor?: string
+  progressHeight?: string
   progress?: boolean
   prefetch?: boolean
   cache?: boolean
+  /** DOM selector for the SPA swap target. Defaults to `main`. */
+  container?: string
   /**
    * Intercept any same-origin <a href="...">, not just elements with
    * `data-stx-link`. Defaults to true for static-site builds because

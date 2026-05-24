@@ -43,10 +43,9 @@ export async function injectRouterScript(html: string, options?: RouterOptions):
   if (!script) return html
 
   // Static-site builds are full SPAs — every page is built and
-  // reachable through the same client. Default to intercepting all
-  // same-origin links and using `<body>` as the swap container so the
-  // user doesn't need a wrapping `<main>` element on every page.
-  const merged = { interceptAllLinks: true, container: 'body', ...options }
+  // reachable through the same client. Intercept same-origin links and
+  // swap only `<main>` so nav/footer/lang chrome stays put between pages.
+  const merged = { interceptAllLinks: true, container: 'main', ...options }
 
   const configBlock = `<script>window.__stxRouterConfig=${JSON.stringify(merged)};</script>\n`
 
