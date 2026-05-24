@@ -282,11 +282,65 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   const buildPage = async (route: Route, requestParams?: Record<string, string>): Promise<BuiltPage | null> => {
     try {
       const { processDirectives, extractVariables, defaultConfig, loadStxConfig, injectRouterScript } = await import('../')
+      const { checkCache, cacheTemplate, readFileCached, templateCache } = await import('../caching')
 
       // Load project stx.config.ts (e.g. partialsDir, componentsDir, layoutsDir)
       const projectConfig = await loadStxConfig(absoluteAppDir)
 
-      const content = await Bun.file(route.filePath).text()
+      const resolveRel = (dir: string | undefined): string | undefined => {
+        if (!dir) return dir
+        if (path.isAbsolute(dir)) return dir
+        return path.resolve(absoluteAppDir, dir)
+      }
+      const merged = {
+        ...defaultConfig,
+        ...projectConfig,
+        ...options.stxOptions,
+        autoShell: true,
+      } as any
+      if (options.debugDirectives) merged.debug = true
+      merged.partialsDir = resolveRel(merged.partialsDir)
+      merged.componentsDir = resolveRel(merged.componentsDir)
+      merged.layoutsDir = resolveRel(merged.layoutsDir)
+      merged.storesDir = resolveRel(merged.storesDir || 'stores')
+      merged.cachePath = resolveRel(merged.cachePath || '.stx/cache')
+
+      const isStaticBuild = !requestParams && !options.profile
+      const cacheEnabled = merged.cache !== false
+
+      if (cacheEnabled && isStaticBuild) {
+        const memEntry = templateCache.get(route.filePath)
+        if (memEntry) {
+          try {
+            const stats = await fs.promises.stat(route.filePath)
+            if (stats.mtime.getTime() <= memEntry.mtime) {
+              let valid = true
+              for (const dep of memEntry.dependencies) {
+                if (!fs.existsSync(dep)) { valid = false; break }
+                const depStats = await fs.promises.stat(dep)
+                if (depStats.mtime.getTime() > memEntry.mtime) { valid = false; break }
+              }
+              if (valid) {
+                let output = memEntry.output
+                if (shell) output = stripDocumentWrapper(output)
+                return { route, content: output }
+              }
+            }
+          }
+          catch {}
+        }
+
+        const cached = await checkCache(route.filePath, merged)
+        if (cached) {
+          let output = cached
+          if (shell) output = stripDocumentWrapper(output)
+          return { route, content: output }
+        }
+      }
+
+      const content = cacheEnabled
+        ? await readFileCached(route.filePath)
+        : await Bun.file(route.filePath).text()
 
       // Extract and classify script tags using unified classifier.
       // Server scripts are removed (their vars are extracted into context
@@ -333,31 +387,6 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
       // Process template directives
       const dependencies = new Set<string>()
-      // Resolve component/layout/partial dirs against the APP DIR (not
-      // process.cwd()) so `stx <app-dir>` run from outside the app still
-      // finds the app's own components. process.ts would otherwise resolve
-      // these against cwd, which points at the directory the user invoked
-      // stx from.
-      const resolveRel = (dir: string | undefined): string | undefined => {
-        if (!dir) return dir
-        if (path.isAbsolute(dir)) return dir
-        return path.resolve(absoluteAppDir, dir)
-      }
-      const merged = {
-        ...defaultConfig,
-        ...projectConfig,
-        ...options.stxOptions,
-        autoShell: true,
-      } as any
-      // CLI flags: --debug-directives flips on debug logging from the
-      // template processor (forwarded to options.debug); --profile wraps
-      // the processDirectives call with performanceMonitor so per-page
-      // timings are recorded and can be inspected in the dev overlay.
-      if (options.debugDirectives) merged.debug = true
-      merged.partialsDir = resolveRel(merged.partialsDir)
-      merged.componentsDir = resolveRel(merged.componentsDir)
-      merged.layoutsDir = resolveRel(merged.layoutsDir)
-      merged.storesDir = resolveRel(merged.storesDir || 'stores')
       let output: string
       if (options.profile) {
         const t0 = performance.now()
@@ -401,6 +430,10 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         output = stripDocumentWrapper(output)
       }
 
+      if (cacheEnabled && isStaticBuild) {
+        await cacheTemplate(route.filePath, output, dependencies, merged)
+      }
+
       return { route, content: output }
     }
     catch (error) {
@@ -409,23 +442,26 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
     }
   }
 
+  const BUILD_CONCURRENCY = 8
+
   // Build all pages (including plugin pages)
   const buildAllPages = async (): Promise<boolean> => {
     builtPages.clear()
     builtPluginPages.clear()
 
-    for (const route of routes) {
-      const built = await buildPage(route)
-      if (built) {
-        builtPages.set(route.pattern, built)
+    for (let i = 0; i < routes.length; i += BUILD_CONCURRENCY) {
+      const chunk = routes.slice(i, i + BUILD_CONCURRENCY)
+      const results = await Promise.all(chunk.map(route => buildPage(route)))
+      for (const built of results) {
+        if (built) builtPages.set(built.route.pattern, built)
       }
     }
 
-    // Build plugin pages
-    for (const { route: pluginRoute } of pluginRoutes) {
-      const built = await buildPage(pluginRoute)
-      if (built) {
-        builtPluginPages.set(pluginRoute.pattern, built)
+  for (let i = 0; i < pluginRoutes.length; i += BUILD_CONCURRENCY) {
+      const chunk = pluginRoutes.slice(i, i + BUILD_CONCURRENCY)
+      const results = await Promise.all(chunk.map(({ route }) => buildPage(route)))
+      for (const built of results) {
+        if (built) builtPluginPages.set(built.route.pattern, built)
       }
     }
 
@@ -924,6 +960,12 @@ catch {
           // Clear all caches to ensure fresh content
           partialsCache.clear()
           clearComponentCache()
+          try {
+            const { invalidateFileCache, templateCache } = await import('../caching')
+            invalidateFileCache(path.resolve(absoluteAppDir, filename))
+            templateCache.delete(path.resolve(absoluteAppDir, filename))
+          }
+          catch {}
           // Rebuild shell if shell file changed
           if (shellPath && filename) {
             const changedPath = path.resolve(absoluteAppDir, filename)
@@ -945,6 +987,12 @@ catch {
           // Clear all caches to ensure fresh content
           partialsCache.clear()
           clearComponentCache()
+          try {
+            const { invalidateFileCache, templateCache } = await import('../caching')
+            invalidateFileCache(path.resolve(absoluteAppDir, filename))
+            templateCache.delete(path.resolve(absoluteAppDir, filename))
+          }
+          catch {}
           await buildAllPages()
 
           if (hotReload && hmrServer) {
