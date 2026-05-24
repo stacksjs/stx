@@ -21,7 +21,8 @@ export function getRouterScript(): string {
   return `
 ;(function(){
   'use strict';
-  if(window.__stxRouter)return;
+  var ROUTER_REV=3;
+  if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
   var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false};
@@ -151,6 +152,12 @@ export function getRouterScript(): string {
     var u=new URL(url,location.origin);
     return u.pathname+u.search;
   }
+  // Keep SPA fetches inside the active locale (/en/... when viewing English).
+  function withCurrentLocale(href){
+    var d=window.__stxI18n;
+    if(d&&typeof d.localizeHref==='function')return d.localizeHref(href);
+    return href;
+  }
   function defaultLayoutGroup(layout){
     if(!layout)return 'app';
     var clean=String(layout).replace(/\\\\/g,'/');
@@ -194,6 +201,9 @@ export function getRouterScript(): string {
   }
 
   function navigate(url,pushState,force){
+    // Lang-picker passes force=true with an already-localized path (/en/...).
+    // Re-localizing would map it back to the *current* locale and no-op.
+    if(!force) url=withCurrentLocale(url);
     log('[router] navigate() called:',url,'isNavigating:',isNavigating);
     if(isNavigating)return;
     var t=new URL(url,location.origin);
@@ -645,6 +655,7 @@ else {
     if(href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:')||href.startsWith('javascript:'))return false;
     if(link.target==='_blank')return false;
     if(link.hasAttribute('data-stx-no-router')||link.hasAttribute('data-no-router')||link.hasAttribute('download'))return false;
+    if(href.startsWith('?'))return true;
     if(href===location.pathname)return false;
     if(!getContainer())return false;
     return true;
@@ -671,7 +682,7 @@ else {
     e.preventDefault();
     e.stopPropagation();
     log('[router] navigating to:',href);
-    navigate(href);
+    navigate(withCurrentLocale(href));
   },true);
 
   // ── Back/forward ──
@@ -685,7 +696,7 @@ else {
       if(!e.target||!e.target.closest)return;
       var link=e.target.closest('[data-stx-link]');
       if(!link)return;
-      var href=link.getAttribute('href');
+      var href=withCurrentLocale(link.getAttribute('href'));
       var key=cacheKey(href);
       if(cache[key]||prefetching[key])return;
       prefetching[key]=true;
@@ -802,6 +813,7 @@ else {
     updateNav:updateNav
   };
 
+  router.__rev=ROUTER_REV;
   window.__stxRouter=router;
   window.stxRouter=router;
   if(window.stx)window.stx.router=router;
