@@ -392,6 +392,8 @@ export async function serve(options: ServeOptions): Promise<void> {
   // Lazy-load: Cache for processed templates
   const routes = new Map<string, string>()
   let sourceFiles: string[] | null = null
+  /** Route paths derived from discovered `.stx` views — used to rewrite `<a href>` for non-default locales. */
+  let discoveredPagePaths: Set<string> | null = null
   let assetsInitialized = false
 
   // Rendered-HTML cache. Declared here (rather than inside the route handler)
@@ -652,6 +654,41 @@ export async function serve(options: ServeOptions): Promise<void> {
   const authHome = authConfig?.home ?? '/'
   const extraProtectedPrefixes = authConfig?.protectedPaths ?? []
 
+  /** Locale for the in-flight SSR pass (`/en/...` prefix). STX server scripts run in
+   *  a `new Function()` scope and do not inherit AsyncLocalStorage — inject `t`/`locale`
+   *  into the extractVariables context instead. */
+  let activeServeLocale: string | null = null
+  /** Query string for the in-flight SSR pass — pagination/filter pages must not share htmlCache entries. */
+  let activeServeSearch: string = ''
+
+  function injectServeLocaleContext(context: Record<string, any>) {
+    if (!activeServeLocale)
+      return
+    const loc = activeServeLocale
+    context.locale = loc
+    context.t = (key: string, values?: Record<string, unknown>) => {
+      const translate = (globalThis as { t?: (k: string, v?: Record<string, unknown>, l?: string) => string }).t
+      return typeof translate === 'function' ? translate(key, values, loc) : key
+    }
+  }
+
+  /** Expose the current request query string to `<script server>` blocks. */
+  function injectServeRequestContext(context: Record<string, any>) {
+    if (!activeServeSearch)
+      return
+    context.__stxServeSearch = activeServeSearch
+    ;(globalThis as { __stxServeSearch?: string }).__stxServeSearch = activeServeSearch
+  }
+
+  /** Render cache must vary by locale — same `.stx` file serves different `t()` output per prefix. */
+  function htmlCacheKey(filePath: string): string {
+    const loc = i18nConfig ? (activeServeLocale ?? i18nConfig.defaultLocale) : ''
+    const search = activeServeSearch || ''
+    if (!loc && !search)
+      return filePath
+    return `${filePath}\0${loc}\0${search}`
+  }
+
   const builtInMiddleware: Record<string, MiddlewareHandler> = authConfig === null ? {} : {
     auth: (_req, ctx) => {
       const tok = ctx.cookies[authCookieName]
@@ -686,6 +723,39 @@ export async function serve(options: ServeOptions): Promise<void> {
   }
 
   const globalMiddlewareNames = options.globalMiddleware ?? []
+
+  function stxViewFileToRoutePath(filePath: string): string | null {
+    const normalized = filePath.replace(/\\/g, '/')
+    for (const pattern of patterns) {
+      const normPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
+      if (!normalized.startsWith(`${normPattern}/`))
+        continue
+      let rel = normalized.slice(normPattern.length + 1).replace(/\.(stx|md|html)$/, '')
+      if (rel.includes('['))
+        return null
+      if (rel === 'index' || rel === '')
+        return '/'
+      if (rel.endsWith('/index'))
+        rel = rel.slice(0, -6) || 'index'
+      return rel === 'index' ? '/' : `/${rel}`
+    }
+    return null
+  }
+
+  function rebuildDiscoveredPagePaths(files: string[]) {
+    const known = new Set<string>(['/'])
+    for (const filePath of files) {
+      const routePath = stxViewFileToRoutePath(filePath)
+      if (routePath)
+        known.add(routePath)
+    }
+    const pages = options.site?.pages as Record<string, unknown> | undefined
+    if (pages) {
+      for (const p of Object.keys(pages))
+        known.add(p.startsWith('/') ? p : `/${p}`)
+    }
+    discoveredPagePaths = known
+  }
 
   async function discoverFiles() {
     if (sourceFiles !== null)
@@ -733,6 +803,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
 
     sourceFiles = files
+    rebuildDiscoveredPagePaths(files)
 
     // Build the page-middleware index (Laravel-style named middleware).
     pageMiddlewareByPath.clear()
@@ -982,15 +1053,19 @@ export async function serve(options: ServeOptions): Promise<void> {
 
   // Lazy template processing function
   async function processTemplate(filePath: string): Promise<string> {
+    const content = await Bun.file(filePath).text()
+    const skipCacheHint = /(?:^|[^\w$])__stx_skip_cache\s*=\s*true/.test(content)
+
     // Cache fast path — if every dependency mtime matches the previous
     // render, return the cached HTML. The stat fan-out is ~1ms total for a
     // typical 5-dep page; a fresh render is ~50ms, so even on miss we only
-    // pay the stat cost once.
-    const cachedEntry = htmlCache.get(filePath)
-    if (cachedEntry && await templateSignatureFresh(cachedEntry.signature))
-      return cachedEntry.html
-
-    const content = await Bun.file(filePath).text()
+    // pay the stat cost once. Query-driven pages opt out entirely.
+    if (!skipCacheHint) {
+      const cacheKey = htmlCacheKey(filePath)
+      const cachedEntry = htmlCache.get(cacheKey)
+      if (cachedEntry && await templateSignatureFresh(cachedEntry.signature))
+        return cachedEntry.html
+    }
 
     // Extract server script bodies for variable extraction, and remove only
     // server scripts from the template. Client scripts (including <script client>
@@ -1017,6 +1092,8 @@ export async function serve(options: ServeOptions): Promise<void> {
     // starts clean, then mark the context so processDirectives doesn't reset
     // again and wipe what useHead just populated.
     resetHead()
+    injectServeLocaleContext(context)
+    injectServeRequestContext(context)
     for (const scriptBody of serverScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
@@ -1065,7 +1142,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     output = await processDirectives(output, context, filePath, config, dependencies)
 
     // Inject the SPA router (auto-initializes, guards against double-init)
-    output = await injectRouterScript(output)
+    output = await injectRouterScript(output, getRouterInjectOptions())
 
     // Strip plain <template> wrapper tags - browsers don't render template content
     // STX uses <template> in source but output should be renderable HTML
@@ -1096,9 +1173,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     // `context.__stx_skip_cache = true`). The dependency set was populated
     // by processDirectives — every layout / component / partial it pulled
     // in is now part of the invalidation signature.
-    if (!context.__stx_skip_cache) {
+    if (!context.__stx_skip_cache && !skipCacheHint) {
       const signature = await buildTemplateSignature(filePath, dependencies)
-      htmlCache.set(filePath, { html: output, signature })
+      htmlCache.set(htmlCacheKey(filePath), { html: output, signature })
     }
 
     return output
@@ -1328,6 +1405,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter, resetHead: resetHeadDyn } = await stxModule
     // Fresh head state per request (see static-route handler above for rationale)
     resetHeadDyn()
+    injectServeLocaleContext(context)
     for (const scriptBody of dynServerScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
@@ -1374,7 +1452,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
 
     // Inject the SPA router
-    output = await injectRouter(output)
+    output = await injectRouter(output, getRouterInjectOptions())
 
     // Strip SFC <template> wrappers but preserve client-side directive templates
     const directiveTemplateRe2 = /@for|:for|@if|:if|x-for|x-if/
@@ -1441,6 +1519,32 @@ export async function serve(options: ServeOptions): Promise<void> {
     return { locale: i18nConfig.defaultLocale, path: pathname }
   }
 
+  /** SPA router defaults for static sites — merged with site.config + stx.config. */
+  function getRouterInjectOptions(): { router: Record<string, unknown> } {
+    return {
+      router: {
+        interceptAllLinks: true,
+        container: 'main',
+        ...(siteConfig?.router ?? {}),
+        ...(stxConfig.router ?? {}),
+      },
+    }
+  }
+
+  /** Ensure `window.__stxRouterConfig` is present (older @stacksjs/stx builds may omit it). */
+  function ensureRouterConfig(html: string): string {
+    const routerOpts = getRouterInjectOptions().router
+    const block = `<script>window.__stxRouterConfig=${JSON.stringify(routerOpts)};</script>\n`
+    // Match only the dedicated config tag — the inlined router bundle mentions
+    // `window.__stxRouterConfig` in comments, which must not short-circuit us.
+    const configTagRe = /<script>window\.__stxRouterConfig=\{[^<]*\}<\/script>\s*/i
+    if (configTagRe.test(html))
+      return html.replace(configTagRe, block)
+    if (/<\/body>/i.test(html))
+      return html.replace(/<\/body>/i, `${block}</body>`)
+    return `${html}\n${block}`
+  }
+
   async function applyI18nToResponse(res: Response, locale: string, normalizedPath: string): Promise<Response> {
     if (!siteStxPromise) return res
     const contentType = res.headers.get('content-type') || ''
@@ -1501,8 +1605,8 @@ export async function serve(options: ServeOptions): Promise<void> {
     // Mirrors `localizeInternalLinks` from build.ts. Only rewrites
     // paths the project declared in `site.pages` so we don't
     // accidentally prefix static assets or unknown deep links.
-    if (i18nConfig && locale !== i18nConfig.defaultLocale && siteConfig?.pages) {
-      const knownPaths = new Set(Object.keys(siteConfig.pages))
+    const knownPaths = discoveredPagePaths ?? new Set<string>()
+    if (i18nConfig && locale !== i18nConfig.defaultLocale && knownPaths.size > 0) {
       html = html.replace(
         /<a\b([^>]*?)\bhref="(\/[^"]*)"([^>]*)>/gi,
         (full, before, href, after) => {
@@ -1524,6 +1628,8 @@ export async function serve(options: ServeOptions): Promise<void> {
     // resolve.
     if (i18nConfig && stx.applyTranslations)
       html = stx.applyTranslations(html, i18nConfig, locale)
+
+    html = ensureRouterConfig(html)
 
     const headers = new Headers(res.headers)
     headers.delete('content-length')
@@ -1574,8 +1680,15 @@ export async function serve(options: ServeOptions): Promise<void> {
           // discoverFiles, page resolution) sees the unprefixed path.
           const rewritten = new URL(req.url)
           rewritten.pathname = stripped.path
-          req = new Request(rewritten, req)
+          const headers = new Headers(req.headers)
+          headers.set('x-stx-locale', stripped.locale)
+          req = new Request(rewritten, { headers, method: req.method, body: req.body, redirect: req.redirect, duplex: 'half' } as RequestInit)
           path = stripped.path
+        }
+        else if (i18nLocale) {
+          const headers = new Headers(req.headers)
+          headers.set('x-stx-locale', i18nLocale)
+          req = new Request(req, { headers })
         }
       }
 
@@ -1584,6 +1697,9 @@ export async function serve(options: ServeOptions): Promise<void> {
       // i18n is disabled, the IIFE body is the original handler 1:1
       // and `applyI18nToResponse` returns the response untouched.
       const _i18nResp: Response = await (async (): Promise<Response> => {
+      activeServeLocale = i18nLocale
+      activeServeSearch = url.search
+      try {
 
       // Handle CORS preflight
       if (req.method === 'OPTIONS') {
@@ -1852,7 +1968,13 @@ export async function serve(options: ServeOptions): Promise<void> {
           // so the router does a full document swap instead of just swapping <main>
           const layoutMatch = content.match(/<!-- stx-layout: ([^ ]+) -->/)
           const pageLayout = layoutMatch ? layoutMatch[1] : 'default'
-          const pageLayoutGroup = deriveLayoutGroup(pageLayout)
+          // Locale switches must report `i18n:<code>` so the router does a full-body
+          // swap (nav/footer translations live outside <main>). `applyI18nToResponse`
+          // injects the same meta after render; headers here must match.
+          const groupMetaMatch = content.match(/<meta\b[^>]*name=["']stx-layout-group["'][^>]*content=["']([^"']+)["'][^>]*>/i)
+          const pageLayoutGroup = (i18nConfig && i18nLocale)
+            ? `i18n:${i18nLocale}`
+            : (groupMetaMatch?.[1] || deriveLayoutGroup(pageLayout))
 
           let fragment = content
 
@@ -2182,6 +2304,11 @@ export async function serve(options: ServeOptions): Promise<void> {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       })
 
+      }
+      finally {
+        activeServeLocale = null
+        activeServeSearch = ''
+      }
       })() // ─── end IIFE — single exit for translation post-process
       return applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
     },
