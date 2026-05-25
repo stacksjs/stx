@@ -12,7 +12,6 @@
  */
 
 import type { StxOptions } from './types'
-import fs from 'node:fs'
 import path from 'node:path'
 import { classifyAllScripts } from './script-classifier'
 export { extractLayoutMetadata } from 'stx-router/layout-metadata'
@@ -57,7 +56,7 @@ export interface ProcessedShell {
  * Checks for `app.stx` in the project root (or configured shell path).
  * Returns the absolute path if found, null otherwise.
  */
-export function detectShell(appDir: string, shellConfig?: string | false): string | null {
+export async function detectShell(appDir: string, shellConfig?: string | false): Promise<string | null> {
   // Explicitly disabled
   if (shellConfig === false) {
     return null
@@ -66,7 +65,7 @@ export function detectShell(appDir: string, shellConfig?: string | false): strin
   // Explicit shell path
   if (shellConfig && typeof shellConfig === 'string') {
     const shellPath = path.resolve(appDir, shellConfig)
-    if (fs.existsSync(shellPath)) {
+    if (await Bun.file(shellPath).exists()) {
       return shellPath
     }
     return null
@@ -74,7 +73,7 @@ export function detectShell(appDir: string, shellConfig?: string | false): strin
 
   // Auto-detect: check for app.stx in project root
   const defaultShellPath = path.join(appDir, 'app.stx')
-  if (fs.existsSync(defaultShellPath)) {
+  if (await Bun.file(defaultShellPath).exists()) {
     return defaultShellPath
   }
 

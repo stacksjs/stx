@@ -168,7 +168,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   let shell: ProcessedShell | null = null
   let shellPath: string | null = null
   if (options.stxOptions?.shell !== false) {
-    shellPath = detectShell(absoluteAppDir, options.stxOptions?.shell)
+    shellPath = await detectShell(absoluteAppDir, options.stxOptions?.shell)
     if (shellPath) {
       shell = await processShell(shellPath, options.stxOptions || {})
       if (shell) {

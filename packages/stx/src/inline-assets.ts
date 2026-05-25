@@ -23,7 +23,7 @@ export function isExternalUrl(url: string): boolean {
  * @param filePath - Full path to the template file
  * @returns Resolved absolute path, or null if not found
  */
-export function resolveInlinePath(assetPath: string, templateDir: string, _filePath: string): string | null {
+export async function resolveInlinePath(assetPath: string, templateDir: string, _filePath: string): Promise<string | null> {
   try {
     let resolvedPath: string
 
@@ -33,7 +33,7 @@ export function resolveInlinePath(assetPath: string, templateDir: string, _fileP
       let baseDir = templateDir
       for (let i = 0; i < 5; i++) {
         const potentialPath = path.join(baseDir, assetPath)
-        if (require('node:fs').existsSync(potentialPath)) {
+        if (await Bun.file(potentialPath).exists()) {
           return potentialPath
         }
         baseDir = path.dirname(baseDir)
@@ -51,7 +51,7 @@ export function resolveInlinePath(assetPath: string, templateDir: string, _fileP
     }
 
     // Check if file exists
-    if (require('node:fs').existsSync(resolvedPath)) {
+    if (await Bun.file(resolvedPath).exists()) {
       return resolvedPath
     }
 
@@ -97,7 +97,7 @@ export async function processInlineAssets(
       continue
     }
 
-    const resolvedPath = resolveInlinePath(srcPath, templateDir, filePath)
+    const resolvedPath = await resolveInlinePath(srcPath, templateDir, filePath)
 
     if (resolvedPath) {
       try {
@@ -148,7 +148,7 @@ export async function processInlineAssets(
     const isStylesheet = /rel=["']stylesheet["']/.test(combinedAttrs) || hrefPath.endsWith('.css')
 
     if (isStylesheet) {
-      const resolvedPath = resolveInlinePath(hrefPath, templateDir, filePath)
+      const resolvedPath = await resolveInlinePath(hrefPath, templateDir, filePath)
 
       if (resolvedPath) {
         try {
