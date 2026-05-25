@@ -2232,6 +2232,15 @@ catch (e) {
       if (!Array.isArray(list) && trailingParens.test(listExpr)) {
         list = evalLazy(listExpr.replace(trailingParens, ''));
       }
+      // Second-chance fallback: if the retry returned a signal /
+      // derived function (the proxy failed to auto-unwrap, which
+      // can happen when the resolved owning object lacks the
+      // _isStxStore marker — e.g. ad-hoc objects, locally-imported
+      // shapes), call it manually. Defensive: cheap when it would
+      // already be an array, useful when the proxy missed.
+      if (!Array.isArray(list) && typeof list === 'function' && (list._isSignal || list._isDerived)) {
+        try { list = list(); } catch { /* swallow - the warning below surfaces it */ }
+      }
 
       // If there's an @if condition, check it
       if (ifExpr) {
