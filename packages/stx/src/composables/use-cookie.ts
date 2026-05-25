@@ -1,53 +1,67 @@
 /**
- * useCookie - Reactive cookie composable
+ * useCookie — reactive cookie binding (module-import path).
  *
- * Similar to Nuxt's useCookie but for STX applications.
- * Provides a reactive, type-safe wrapper around document.cookie.
+ * stx ships two `useCookie` implementations:
+ *
+ *   1. This one (signals-api / module-import path) — used by tests, SSR-side
+ *      tooling, and any code that imports from `'stx'` or
+ *      `'@stacksjs/stx/composables'` directly.
+ *   2. The runtime template literal inside `packages/stx/src/signals.ts` —
+ *      injected into client pages and exposed at `window.stx.useCookie`.
+ *
+ * They MUST return the same shape and honor the same option keys, or callers
+ * silently get different behavior depending on which entry point their import
+ * resolves to. The runtime version is the canonical contract; this file
+ * mirrors it. See stacksjs/stx#1710 for the divergence that motivated the
+ * unification, and `test/composables/use-cookie-parity.test.ts` for the
+ * tests that pin both impls to one contract.
+ *
+ * Shape (both impls):
+ *   - returns a Signal<string> (callable; `c()` reads, `c.set(v)` writes)
+ *   - setting to `''` removes the cookie (max-age=0)
+ *   - options: defaultValue, encode, decode, maxAge, expires, path, domain,
+ *     secure, sameSite, httpOnly
+ *
+ * The low-level utility exports (parseCookies, getCookie, setCookie,
+ * removeCookie, useCookies, clearCookies) are unique to this module — the
+ * runtime doesn't need them because it operates on `document.cookie`
+ * directly inside its closure.
  */
+import type { Signal } from '../signals-api'
+import { state } from '../signals-api'
 
 export interface CookieOptions {
-  /** Max age in seconds */
+  /** Max age in seconds. */
   maxAge?: number
-  /** Expiration date */
+  /** Expiration date (Date, ms-epoch, or parseable string). */
   expires?: Date | number | string
-  /** Cookie path */
+  /** Cookie path. Defaults to '/'. */
   path?: string
-  /** Cookie domain */
+  /** Cookie domain. */
   domain?: string
-  /** Secure flag (HTTPS only) */
+  /** Secure flag (HTTPS only). Defaults to true when location.protocol === 'https:'. */
   secure?: boolean
-  /** HttpOnly flag (not accessible via JavaScript - only works server-side) */
+  /** HttpOnly flag — only meaningful server-side; ignored in browser writes. */
   httpOnly?: boolean
-  /** SameSite attribute */
-  sameSite?: 'strict' | 'lax' | 'none'
-  /** Default value if cookie doesn't exist */
-  default?: unknown
-  /** Custom encoder/decoder */
+  /** SameSite attribute. Defaults to 'Lax'. */
+  sameSite?: 'strict' | 'lax' | 'none' | 'Strict' | 'Lax' | 'None'
+  /** Default value returned when the cookie is missing. Defaults to ''. */
+  defaultValue?: string
+  /** Custom encoder (defaults to encodeURIComponent). */
   encode?: (value: string) => string
+  /** Custom decoder (defaults to decodeURIComponent). */
   decode?: (value: string) => string
-}
-
-export interface CookieRef<T> {
-  /** Current value */
-  value: T | null
-  /** Get the current value */
-  get: () => T | null
-  /** Set a new value */
-  set: (value: T, options?: CookieOptions) => void
-  /** Remove the cookie */
-  remove: () => void
-  /** Subscribe to changes (via polling) */
-  subscribe: (callback: (value: T | null, prev: T | null) => void) => () => void
 }
 
 const defaultEncode = encodeURIComponent
 const defaultDecode = decodeURIComponent
 
 /**
- * Parse all cookies from document.cookie
+ * Parse all cookies from `document.cookie` into a plain object.
  */
 export function parseCookies(): Record<string, string> {
-  if (typeof document === 'undefined') return {}
+  if (typeof document === 'undefined')
+    return {}
 
   const cookies: Record<string, string> = {}
   const pairs = document.cookie.split(';')
@@ -58,7 +72,7 @@ export function parseCookies(): Record<string, string> {
       try {
         cookies[key] = defaultDecode(valueParts.join('='))
       }
-catch {
+      catch {
         cookies[key] = valueParts.join('=')
       }
     }
@@ -68,7 +82,7 @@ catch {
 }
 
 /**
- * Get a specific cookie value
+ * Read a single cookie's value. Returns `null` when missing.
  */
 export function getCookie(name: string): string | null {
   const cookies = parseCookies()
@@ -76,57 +90,65 @@ export function getCookie(name: string): string | null {
 }
 
 /**
- * Set a cookie
+ * Serialize options into a cookie attribute string. Shared by setCookie() and
+ * the reactive useCookie() effect so attribute handling stays consistent.
  */
-export function setCookie(name: string, value: string, options: CookieOptions = {}): void {
-  if (typeof document === 'undefined') return
-
+function serializeAttrs(name: string, value: string, options: CookieOptions): string {
   const {
     maxAge,
     expires,
     path = '/',
     domain,
     secure,
-    sameSite = 'lax',
+    sameSite = 'Lax',
     encode = defaultEncode,
   } = options
 
-  let cookieString = `${encode(name)}=${encode(value)}`
+  const parts: string[] = [`${name}=${value ? encode(value) : ''}`]
 
-  if (maxAge !== undefined) {
-    cookieString += `; max-age=${maxAge}`
+  if (path)
+    parts.push(`path=${path}`)
+  if (domain)
+    parts.push(`domain=${domain}`)
+
+  // value === '' is the deletion path; max-age=0 wins regardless of caller intent.
+  if (value === '') {
+    parts.push('max-age=0')
   }
-
-  if (expires !== undefined) {
+  else if (typeof maxAge === 'number') {
+    parts.push(`max-age=${maxAge}`)
+  }
+  else if (expires !== undefined) {
     const expiresDate = expires instanceof Date
       ? expires
       : typeof expires === 'number'
         ? new Date(Date.now() + expires * 1000)
         : new Date(expires)
-    cookieString += `; expires=${expiresDate.toUTCString()}`
+    parts.push(`expires=${expiresDate.toUTCString()}`)
   }
 
-  if (path) {
-    cookieString += `; path=${path}`
-  }
+  parts.push(`SameSite=${sameSite}`)
 
-  if (domain) {
-    cookieString += `; domain=${domain}`
-  }
+  let secureFinal = secure
+  if (secureFinal === undefined)
+    secureFinal = typeof location !== 'undefined' && location.protocol === 'https:'
+  if (secureFinal)
+    parts.push('Secure')
 
-  if (secure) {
-    cookieString += '; secure'
-  }
-
-  if (sameSite) {
-    cookieString += `; samesite=${sameSite}`
-  }
-
-  document.cookie = cookieString
+  return parts.join('; ')
 }
 
 /**
- * Remove a cookie
+ * Write a cookie. No reactivity — use `useCookie()` for that.
+ */
+export function setCookie(name: string, value: string, options: CookieOptions = {}): void {
+  if (typeof document === 'undefined')
+    return
+  document.cookie = serializeAttrs(name, value, options)
+}
+
+/**
+ * Delete a cookie (sets max-age=0 and expires=epoch).
  */
 export function removeCookie(name: string, options: Pick<CookieOptions, 'path' | 'domain'> = {}): void {
   setCookie(name, '', {
@@ -137,149 +159,60 @@ export function removeCookie(name: string, options: Pick<CookieOptions, 'path' |
 }
 
 /**
- * Create a reactive cookie reference
+ * Create a reactive Signal bound to a cookie. Mirrors `useLocalStorage`'s
+ * shape: read with `c()`, write with `c.set(v)`. Setting to `''` deletes the
+ * cookie. The signal is one-way (writes propagate to document.cookie via an
+ * `effect`); cookies don't fire a 'storage' event, so cross-tab updates
+ * aren't auto-reflected.
  *
  * @example
  * ```ts
- * // Simple usage
- * const token = useCookie<string>('auth_token')
- * token.value = 'abc123' // Automatically persists
- *
- * // With options
- * const session = useCookie<SessionData>('session', {
- *   maxAge: 60 * 60 * 24 * 7, // 7 days
- *   secure: true,
- *   sameSite: 'strict'
- * })
- *
- * // Subscribe to changes
- * token.subscribe((newValue) => console.log('Token changed:', newValue))
+ * const token = useCookie('auth-token', { maxAge: 60 * 60 * 24 * 7 })
+ * token()           // read current value
+ * token.set('xyz')  // persist
+ * token.set('')     // delete
  * ```
  */
-export function useCookie<T = string>(
-  name: string,
-  options: CookieOptions = {}
-): CookieRef<T> {
-  const {
-    default: defaultValue = null,
-    decode = defaultDecode,
-  } = options
+export function useCookie(name: string, options: CookieOptions = {}): Signal<string> {
+  const decode = options.decode || defaultDecode
+  const defaultValue = options.defaultValue ?? ''
 
-  const subscribers = new Set<(value: T | null, prev: T | null) => void>()
-  let pollInterval: ReturnType<typeof setInterval> | null = null
+  // Escape regex metacharacters so cookie names like `__Host-session.id` are
+  // matched literally (the dot was previously interpreted as "any char").
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const nameRe = new RegExp(`(?:^|; )${escapedName}=([^;]*)`)
 
-  const read = (): T | null => {
-    if (typeof document === 'undefined') return defaultValue as T | null
-
-    const raw = getCookie(name)
-    if (raw === null) return defaultValue as T | null
-
-    try {
-      // Try to parse as JSON first
-      return JSON.parse(decode(raw)) as T
-    }
-catch {
-      // Return as string if not valid JSON
-      return decode(raw) as unknown as T
-    }
+  function read(): string {
+    if (typeof document === 'undefined')
+      return defaultValue
+    const m = document.cookie.match(nameRe)
+    return m ? decode(m[1]) : defaultValue
   }
 
-  const write = (value: T | null): void => {
-    if (value === null || value === undefined) {
-      removeCookie(name, options)
-    }
-else {
-      const stringValue = typeof value === 'string' ? value : JSON.stringify(value)
-      setCookie(name, stringValue, options)
-    }
-  }
+  const s = state<string>(read())
 
-  let currentValue = read()
+  // Subscribe to the signal so every .set() persists to document.cookie.
+  // Using subscribe (not effect) keeps this independent of any outer effect
+  // tracking context the caller might be running in.
+  s.subscribe((value) => {
+    if (typeof document === 'undefined')
+      return
+    document.cookie = serializeAttrs(name, value, options)
+  })
 
-  const notify = (newValue: T | null, prevValue: T | null) => {
-    for (const callback of subscribers) {
-      try {
-        callback(newValue, prevValue)
-      }
-catch (e) {
-        console.error('[useCookie] Subscriber error:', e)
-      }
-    }
-  }
-
-  // Start polling for changes when there are subscribers
-  const startPolling = () => {
-    if (pollInterval || typeof document === 'undefined') return
-    pollInterval = setInterval(() => {
-      const newValue = read()
-      if (JSON.stringify(newValue) !== JSON.stringify(currentValue)) {
-        const prevValue = currentValue
-        currentValue = newValue
-        notify(newValue, prevValue)
-      }
-    }, 1000)
-  }
-
-  const stopPolling = () => {
-    if (pollInterval) {
-      clearInterval(pollInterval)
-      pollInterval = null
-    }
-  }
-
-  const ref: CookieRef<T> = {
-    get value() {
-      return currentValue
-    },
-    set value(newValue: T | null) {
-      const prevValue = currentValue
-      currentValue = newValue
-      write(newValue)
-      notify(newValue, prevValue)
-    },
-    get: () => currentValue,
-    set: (value: T, customOptions?: CookieOptions) => {
-      const prevValue = currentValue
-      currentValue = value
-      const stringValue = typeof value === 'string' ? value : JSON.stringify(value)
-      setCookie(name, stringValue, { ...options, ...customOptions })
-      notify(value, prevValue)
-    },
-    remove: () => {
-      const prevValue = currentValue
-      currentValue = null
-      removeCookie(name, options)
-      notify(null, prevValue)
-    },
-    subscribe: (callback) => {
-      subscribers.add(callback)
-      callback(currentValue, null)
-
-      if (subscribers.size === 1) {
-        startPolling()
-      }
-
-      return () => {
-        subscribers.delete(callback)
-        if (subscribers.size === 0) {
-          stopPolling()
-        }
-      }
-    },
-  }
-
-  return ref
+  return s
 }
 
 /**
- * Get all cookies as an object
+ * Snapshot of all currently-readable cookies as a plain object.
  */
 export function useCookies(): Record<string, string> {
   return parseCookies()
 }
 
 /**
- * Clear all cookies (that are accessible)
+ * Best-effort clear of every cookie visible to JavaScript. HttpOnly cookies
+ * and cookies under a different path/domain won't be touched.
  */
 export function clearCookies(options: Pick<CookieOptions, 'path' | 'domain'> = {}): void {
   const cookies = parseCookies()

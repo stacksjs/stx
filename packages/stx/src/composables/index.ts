@@ -30,7 +30,10 @@ export {
   type StorageRef,
 } from './use-storage'
 
-// Cookies
+// Cookies. `useCookie` returns a Signal<string> matching the runtime contract;
+// the old `CookieRef` shape was removed in #1710 as part of the dual-impl
+// unification. Migrate `.value` reads to `c()` and `.value = x` writes to
+// `c.set(x)`; remove via `c.set('')`.
 export {
   useCookie,
   useCookies,
@@ -40,7 +43,6 @@ export {
   parseCookies,
   clearCookies,
   type CookieOptions,
-  type CookieRef,
 } from './use-cookie'
 
 // Clipboard
