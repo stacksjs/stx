@@ -66,7 +66,6 @@ describe('stx Auth Directives', () => {
     // For @guest directive
     expect(outputHtml).not.toContain('<div class="guest-message">Hello Guest! Please sign in.</div>')
     expect(outputHtml).toContain('<div class="member-content">You are signed in as john@example.com</div>')
-    expect(true).toBe(true)
   })
 
   it('should properly handle @auth and @guest when user is not authenticated', async () => {
@@ -128,7 +127,6 @@ describe('stx Auth Directives', () => {
     // For @guest directive
     expect(outputHtml).toContain('<div class="guest-message">Hello Guest! Please sign in.</div>')
     expect(outputHtml).not.toContain('<div class="member-content">You are signed in</div>')
-    expect(true).toBe(true)
   })
 
   it('should properly handle @can and @cannot directives', async () => {
@@ -228,7 +226,6 @@ describe('stx Auth Directives', () => {
     expect(outputHtml).toContain('<p class="draft-notice">This is in draft mode</p>')
     expect(outputHtml).not.toContain('<p class="pending-notice">This is pending approval</p>')
     expect(outputHtml).not.toContain('<p class="public-notice">This is published</p>')
-    expect(true).toBe(true)
   })
 
   it('should handle @can with complex parameters', async () => {
@@ -303,7 +300,6 @@ describe('stx Auth Directives', () => {
     // Check a permission that doesn't exist
     expect(outputHtml).not.toContain('<button class="moderate">Moderate Forum</button>')
     expect(outputHtml).toContain('<p class="no-moderate">No moderation privileges</p>')
-    expect(true).toBe(true)
   })
 
   // Migrated auth unit tests

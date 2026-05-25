@@ -45,7 +45,6 @@ describe('stx Output Syntax', () => {
     expect(outputHtml).toContain('<div class="number">42</div>')
     expect(outputHtml).toContain('<div class="boolean">true</div>')
     expect(outputHtml).toContain('<div class="expression">84</div>')
-    expect(true).toBe(true)
   })
 
   it('should handle triple curly braces for unescaped output', async () => {
@@ -79,7 +78,6 @@ describe('stx Output Syntax', () => {
 
     expect(outputHtml).toContain('<div class="html-content"><strong>Bold text</strong></div>')
     expect(outputHtml).toContain('<div class="complex-html"><div class=\'nested\'><span>Nested HTML</span></div></div>')
-    expect(true).toBe(true)
   })
 
   it('should handle {!! !!} syntax for unescaped output', async () => {
@@ -110,7 +108,6 @@ describe('stx Output Syntax', () => {
     const outputHtml = await getHtmlOutput(result)
 
     expect(outputHtml).toContain('<div class="html-content"><em>Emphasized text</em></div>')
-    expect(true).toBe(true)
   })
 
   it('should handle @{{ syntax for literal display', async () => {
@@ -182,6 +179,5 @@ describe('stx Output Syntax', () => {
     expect(outputHtml).toContain('<div class="string-operation">JOHN</div>')
     expect(outputHtml).toContain('<div class="math">5</div>')
     expect(outputHtml).toContain('<div class="combined">Senior Admin</div>')
-    expect(true).toBe(true)
   })
 })

@@ -76,7 +76,6 @@ describe('stx Layout Directives', () => {
 
     // Just check that the build completes successfully
     expect(outputHtml).toContain('<title>Page Title</title>')
-    expect(true).toBe(true)
   })
 
   it('should properly handle @parent directive in sections', async () => {
@@ -185,7 +184,6 @@ describe('stx Layout Directives', () => {
     expect(outputHtml).toContain('<p>&copy; My Website</p>')
     expect(outputHtml).toContain('<p>Additional footer content</p>')
 
-    expect(true).toBe(true)
   })
 
   it('should properly handle @include directive', async () => {
@@ -290,7 +288,6 @@ describe('stx Layout Directives', () => {
     // Footer partial
     expect(outputHtml).toContain('<p>Site Footer</p>')
 
-    expect(true).toBe(true)
   })
 
   it('should properly handle @includeIf, @includeWhen, and @includeUnless directives', async () => {
@@ -418,7 +415,6 @@ describe('stx Layout Directives', () => {
     expect(outputHtml.includes('User Menu')).toBe(true)
     expect(outputHtml.includes('Guest Menu')).toBe(false)
 
-    expect(true).toBe(true)
   }, 10000)
 
   // ==========================================================================

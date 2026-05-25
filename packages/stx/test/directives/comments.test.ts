@@ -38,7 +38,6 @@ describe('stx Comments', () => {
     expect(outputHtml).toContain('<span>Visible content</span>')
     expect(outputHtml).not.toContain('This is a blade comment that should not appear in output')
     expect(outputHtml).not.toContain('Another comment')
-    expect(true).toBe(true)
   })
 
   it('should properly handle multi-line blade comments', async () => {
@@ -86,7 +85,6 @@ describe('stx Comments', () => {
     expect(outputHtml).not.toContain('in the final output')
     expect(outputHtml).not.toContain('This paragraph within comments should NOT be visible')
     expect(outputHtml).not.toContain('This list item should not be visible')
-    expect(true).toBe(true)
   })
 
   it('should properly handle nested comments', async () => {
@@ -128,7 +126,6 @@ describe('stx Comments', () => {
     expect(outputHtml).not.toContain('Comment with')
     expect(outputHtml).not.toContain('expressions')
     expect(outputHtml).not.toContain('rawOutput')
-    expect(true).toBe(true)
   })
 
   it('should handle comments that contain HTML code', async () => {
@@ -171,7 +168,6 @@ describe('stx Comments', () => {
     expect(outputHtml).not.toContain('This heading should not appear')
     expect(outputHtml).not.toContain('This paragraph inside a comment should not appear')
     expect(outputHtml).not.toContain('This avoids using script tags entirely')
-    expect(true).toBe(true)
   })
 
   it('should handle comments that contain Blade directives', async () => {
@@ -220,6 +216,5 @@ describe('stx Comments', () => {
     expect(outputHtml).not.toContain('should not appear')
     expect(outputHtml).not.toContain('Apple')
     expect(outputHtml).not.toContain('Banana')
-    expect(true).toBe(true)
   })
 })
