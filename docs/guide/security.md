@@ -99,6 +99,38 @@ stx automatically escapes variables in templates:
 <div>@html(trustedHtml)</div>
 ```
 
+### Reactive bindings: `:text=` vs `:html=`
+
+stx has two ways to bind dynamic text content to an element. They have very
+different safety profiles:
+
+| Directive | Behavior | Safe with user input? |
+|---|---|---|
+| `:text="expr"` | Sets `el.textContent` — HTML is escaped, no markup interpretation | ✅ Yes — always safe |
+| `:html="expr"` | Sets `el.innerHTML` — markup and scripts execute | ❌ No — opt-in raw HTML |
+
+`:html=` is stx's `v-html` / `dangerouslySetInnerHTML` equivalent. Only use it
+when the bound value is content you fully control:
+
+```stx
+<!-- ✅ Safe: trusted server-rendered markdown -->
+<article :html="post.bodyHtml"></article>
+
+<!-- ✅ Safe: sanitizer output -->
+<div :html="sanitize(userMarkdown).result"></div>
+
+<!-- ❌ XSS vulnerability: comment.body might contain <script>… -->
+<div :html="comment.body"></div>
+
+<!-- ✅ Correct alternative: use :text= for unsanitized user input -->
+<div :text="comment.body"></div>
+```
+
+If the value could ever flow from user input — comments, search results,
+review text, third-party API responses, store fields that may eventually
+hold user content — either route it through `@stacksjs/sanitizer`
+upstream or switch to `:text=`. When in doubt, `:text=`.
+
 ### Content Sanitization
 
 Sanitize user input:

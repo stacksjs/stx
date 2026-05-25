@@ -234,7 +234,21 @@ catch (e) { console.error('Binding error:', e); }
 `
     }
     else if (attribute === 'html') {
-      // html binding - update innerHTML
+      // ⚠️  SECURITY — `:html=` is stx's `v-html` / `dangerouslySetInnerHTML`
+      // equivalent. The bound expression's result is written directly to
+      // `innerHTML` with no escaping. Any HTML / scripts / event handlers
+      // in the value execute in the page's origin. Safe only when the
+      // value is trusted content the developer controls:
+      //   ✅  static markdown rendered server-side
+      //   ✅  output of @stacksjs/sanitizer
+      //   ❌  user-provided comment / search / review text
+      //   ❌  third-party API responses you don't fully trust
+      //   ❌  store fields that may eventually hold user input
+      //
+      // If the data could ever be attacker-controlled, sanitize it
+      // upstream (e.g. via @stacksjs/sanitizer or DOMPurify) BEFORE it
+      // lands in the bound store / signal. Use `:text=` instead when you
+      // want plain-text rendering (auto-escapes). See stacksjs/stx#1708.
       code += `      (function() {
         var el = document.getElementById('${elementId}');
         if (el) {

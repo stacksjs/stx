@@ -661,6 +661,7 @@ stx serve <directory> [--port 3000]
 - Bare `<script>` and `<script client>` blocks run client-side. Browser APIs (`localStorage`, `document`, `window`) work here — but **reach for an stx primitive first**; see "Reach for stx primitives before vanilla JS" below for the cheat sheet
 - Use **crosswind** as the default CSS framework which enables standard Tailwind-like utility classes
 - If you see an abundance of custom styling or utility classes in `<style>` blocks, that's wrong — use Crosswind utility classes in the HTML instead. Custom CSS should be rare (only for things Tailwind can't express).
+- **`:html=` is the framework's `v-html` / `dangerouslySetInnerHTML` equivalent — opt-in raw HTML.** It writes the bound value directly to `innerHTML` with no escaping. Only use it for content you control (server-rendered markdown, sanitizer output). If the value could ever come from user input or an untrusted API, sanitize upstream (`@stacksjs/sanitizer`) or use `:text=` (auto-escapes). When in doubt, `:text=`.
 
 ## Reach for stx primitives before vanilla JS
 
