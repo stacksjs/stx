@@ -272,12 +272,31 @@ export function useLoadingIndicator(userOptions?: LoadingIndicatorOptions): Load
   }
 }
 
+// Tracks the active init's teardown — captured by initLoadingIndicator()
+// each time it runs so a re-init can dispose the previous wiring first.
+// Without this, a second init would stack a fresh set of click/popstate/load
+// listeners on top of the old ones, double-firing every event. See
+// stacksjs/stx#1709.
+let activeLoadingCleanup: (() => void) | null = null
+
 /**
  * Initialize automatic loading indicator for page navigation
- * Call this once in your app to enable automatic loading on route changes
+ * Call this once in your app to enable automatic loading on route changes.
+ *
+ * Safe to call multiple times — each call disposes any previous wiring
+ * before installing new listeners. Use `cleanupLoadingIndicator()` to
+ * tear down without re-installing.
  */
 export function initLoadingIndicator(userOptions?: LoadingIndicatorOptions): void {
   if (!isBrowser) return
+
+  // Idempotency: dispose any prior wiring first. Without this, repeated
+  // calls (SPA navigation, HMR cycles, tests) accumulated listeners and
+  // re-wrapped window.fetch on top of itself.
+  if (activeLoadingCleanup) {
+    activeLoadingCleanup()
+    activeLoadingCleanup = null
+  }
 
   const options = { ...defaultOptions, ...userOptions }
   const loading = useLoadingIndicator(options)
@@ -288,8 +307,10 @@ export function initLoadingIndicator(userOptions?: LoadingIndicatorOptions): voi
   // Hook into browser navigation events
   let navigating = false
 
-  // Handle link clicks for SPA navigation
-  document.addEventListener('click', (e) => {
+  // Capture each handler as a named function so we can pass the SAME
+  // reference to addEventListener and removeEventListener. Inline arrows
+  // can't be removed.
+  const onClick = (e: MouseEvent) => {
     const target = e.target as HTMLElement
     const link = target.closest('a')
 
@@ -313,29 +334,34 @@ export function initLoadingIndicator(userOptions?: LoadingIndicatorOptions): voi
     // Start loading for internal navigation
     navigating = true
     loading.start()
-  })
+  }
 
-  // Handle popstate (back/forward navigation)
-  window.addEventListener('popstate', () => {
+  const onPopstate = () => {
     if (!navigating) {
       loading.start()
       navigating = true
     }
-  })
+  }
 
-  // Finish loading when page loads
-  window.addEventListener('load', () => {
+  const onLoad = () => {
     if (navigating || options.autoFinish) {
       loading.finish()
       navigating = false
     }
-  })
+  }
 
-  // Handle fetch requests (optional - for API calls)
+  document.addEventListener('click', onClick)
+  window.addEventListener('popstate', onPopstate)
+  window.addEventListener('load', onLoad)
+
+  // Wrap window.fetch to track API request progress. Save the original so
+  // cleanup can restore it — otherwise repeat inits stack wrappers, and
+  // each call walks N deep through the wrapper chain.
   const originalFetch = window.fetch
   let activeRequests = 0
 
-  ;(window as any).fetch = async function (...args: Parameters<typeof fetch>) {
+  // eslint-disable-next-line ts/no-explicit-any
+  const wrappedFetch = async function (this: any, ...args: Parameters<typeof fetch>) {
     // Only track same-origin API requests
     const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url
     const isApi = url.includes('/api/') || url.startsWith('/api')
@@ -358,6 +384,30 @@ export function initLoadingIndicator(userOptions?: LoadingIndicatorOptions): voi
         }
       }
     }
+  }
+  // eslint-disable-next-line ts/no-explicit-any
+  ;(window as any).fetch = wrappedFetch
+
+  activeLoadingCleanup = () => {
+    document.removeEventListener('click', onClick)
+    window.removeEventListener('popstate', onPopstate)
+    window.removeEventListener('load', onLoad)
+    // Only restore the original fetch if our wrapper is still installed.
+    // Some other code might have wrapped on top of ours — in that case,
+    // leave it alone (restoring would unhook them too).
+    if (window.fetch === wrappedFetch)
+      window.fetch = originalFetch
+  }
+}
+
+/**
+ * Tear down the loading-indicator listeners + restore the original
+ * window.fetch. Safe to call when no init has run (no-op).
+ */
+export function cleanupLoadingIndicator(): void {
+  if (activeLoadingCleanup) {
+    activeLoadingCleanup()
+    activeLoadingCleanup = null
   }
 }
 

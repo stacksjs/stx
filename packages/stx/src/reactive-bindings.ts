@@ -331,16 +331,24 @@ catch (e) { console.error('Binding error:', e); }
 
   code += `    }
 
-    // Subscribe to stores and update on changes
+    // Subscribe to stores and update on changes. Capture the disposers so
+    // SPA fragment swaps can tear down old bindings before the next page's
+    // runtime takes over — without this, every navigation between pages
+    // using reactive-bindings stacked another subscription on every store,
+    // walking detached DOM forever. See stacksjs/stx#1709.
+    var _disposers = [];
 `
 
-  // Generate subscriptions for each store
+  // Generate subscriptions for each store, capturing each unsubscribe.
   for (const storeName of storeNames) {
     code += `    if (stores.${storeName}) {
-      stores.${storeName}.subscribe(function(state) {
+      var _unsub_${storeName} = stores.${storeName}.subscribe(function(state) {
         $state.${storeName} = state;
         updateBindings();
       });
+      // store.subscribe() may return the disposer (preferred) or void; both
+      // are tolerated here.
+      if (typeof _unsub_${storeName} === 'function') _disposers.push(_unsub_${storeName});
     }
 `
   }
@@ -348,6 +356,30 @@ catch (e) { console.error('Binding error:', e); }
   code += `
     // Initial update
     updateBindings();
+
+    // Register this runtime's cleanup so SPA navigation can run it before
+    // swapping pages. The router (and any code) can call
+    // window.__stxCleanupBindings() to dispose subscriptions; we also wire
+    // 'popstate' and 'beforeunload' as a safety net for browser-driven nav.
+    function _cleanup() {
+      for (var i = 0; i < _disposers.length; i++) {
+        try { _disposers[i](); } catch (e) { /* swallow */ }
+      }
+      _disposers.length = 0;
+    }
+    if (!window.__stxBindingsCleanups) window.__stxBindingsCleanups = [];
+    window.__stxBindingsCleanups.push(_cleanup);
+    if (!window.__stxCleanupBindings) {
+      window.__stxCleanupBindings = function() {
+        var fns = window.__stxBindingsCleanups || [];
+        for (var i = 0; i < fns.length; i++) {
+          try { fns[i](); } catch (e) { /* swallow */ }
+        }
+        window.__stxBindingsCleanups = [];
+      };
+      window.addEventListener('popstate', window.__stxCleanupBindings);
+      window.addEventListener('beforeunload', window.__stxCleanupBindings);
+    }
   }
 
   // Start when DOM is ready
