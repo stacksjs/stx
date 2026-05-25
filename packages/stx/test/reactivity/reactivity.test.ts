@@ -317,6 +317,87 @@ describe('reactivity - watch()', () => {
 
     expect(changed).toBe(true)
   })
+
+  // #1713: function-source watch used to spawn `setInterval(check, 16)`.
+  // The fix integrates with the currentEffect tracking so the callback
+  // fires only when a tracked ref read inside the getter changes — no
+  // polling, no fixed-cadence work.
+  it('#1713: function-source watch fires reactively without polling', () => {
+    const count = ref(0)
+    const calls: Array<[number, number | undefined]> = []
+    watch(() => count.value * 2, (next, prev) => {
+      calls.push([next, prev])
+    }, { flush: 'sync' })
+
+    count.value = 1
+    count.value = 2
+    expect(calls.length).toBe(2)
+    expect(calls[0][0]).toBe(2)
+    expect(calls[1][0]).toBe(4)
+  })
+
+  it('#1713: function-source watch tracks new dependencies on re-evaluation', () => {
+    const a = ref(1)
+    const b = ref(10)
+    const useA = ref(true)
+    const seen: number[] = []
+    watch(() => useA.value ? a.value : b.value, (next) => {
+      seen.push(next)
+    }, { flush: 'sync' })
+
+    // Initially tracks `a`. Mutating `b` should NOT fire.
+    b.value = 20
+    expect(seen.length).toBe(0)
+
+    // Flip to track `b`.
+    useA.value = false
+    expect(seen[seen.length - 1]).toBe(20)
+
+    // Now mutating `a` should NOT fire (tracking re-routed to `b`).
+    const beforeA = seen.length
+    a.value = 5
+    expect(seen.length).toBe(beforeA)
+  })
+
+  it('#1713: deep equality uses structural comparison (not JSON.stringify)', () => {
+    // NaN, +0/-0, Date, Map — JSON.stringify breaks all of these.
+    // structuralEqual handles them.
+    const state = ref<{ d: Date, m: Map<string, number>, n: number }>({
+      d: new Date(2020, 0, 1),
+      m: new Map([['k', 1]]),
+      n: Number.NaN,
+    })
+    let changed = false
+    watch(state, () => { changed = true }, { deep: true, flush: 'sync' })
+
+    // Same epoch, same map contents, NaN === NaN under Object.is — should be equal.
+    state.value = {
+      d: new Date(2020, 0, 1),
+      m: new Map([['k', 1]]),
+      n: Number.NaN,
+    }
+    expect(changed).toBe(false)
+
+    // Different epoch — should fire.
+    state.value = { d: new Date(2021, 0, 1), m: new Map([['k', 1]]), n: Number.NaN }
+    expect(changed).toBe(true)
+  })
+
+  it('#1713: deep clone preserves Date / Map (structuredClone, not JSON)', () => {
+    const state = ref({ d: new Date(2020, 0, 1) })
+    let oldDate: Date | undefined
+    watch(state, (_next, prev) => {
+      oldDate = (prev as { d: Date } | undefined)?.d
+    }, { deep: true, flush: 'sync' })
+
+    state.value = { d: new Date(2021, 0, 1) }
+    state.value = { d: new Date(2022, 0, 1) }
+
+    // The "old" snapshot from the second call should be a Date — JSON-clone
+    // would have turned it into a string and this would fail.
+    expect(oldDate).toBeInstanceOf(Date)
+    expect(oldDate?.getFullYear()).toBe(2021)
+  })
 })
 
 describe('reactivity - watchMultiple()', () => {

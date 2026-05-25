@@ -119,6 +119,62 @@ let currentInstance: ComponentInstance | null = null
 let currentEffect: (() => void) | null = null
 
 /**
+ * Structural equality for deep-watch comparison.
+ *
+ * Walks objects/arrays/Map/Set and uses `Object.is` for primitives. Handles
+ * NaN, +0/-0, Date, RegExp, and circular references via a seen-pairs WeakSet.
+ * Returns `false` for type mismatches (e.g. Date vs string of same content).
+ *
+ * Replaces the previous `JSON.stringify(a) !== JSON.stringify(b)` approach
+ * which silently mis-compared: undefined-valued props were stripped, NaN
+ * collapsed to null, Date/RegExp/Map/Set turned into "{}", and any cyclic
+ * structure crashed. See stacksjs/stx#1713.
+ */
+function structuralEqual(a: unknown, b: unknown, seen: WeakSet<object> = new WeakSet()): boolean {
+  if (Object.is(a, b)) return true
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false
+  // Cycle guard: if we've compared this pair before in the current walk,
+  // treat as equal (cycles structurally match if everything else does).
+  if (seen.has(a as object)) return true
+  seen.add(a as object)
+
+  // Dates compare by epoch
+  if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime()
+  // RegExp compare by source + flags
+  if (a instanceof RegExp && b instanceof RegExp) return a.source === b.source && a.flags === b.flags
+  // Arrays: same length + every element structurally equal
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false
+    for (let i = 0; i < a.length; i++) if (!structuralEqual(a[i], b[i], seen)) return false
+    return true
+  }
+  if (Array.isArray(b)) return false
+  // Map: same size + same keys + structurally-equal values
+  if (a instanceof Map) {
+    if (!(b instanceof Map) || a.size !== b.size) return false
+    for (const [k, v] of a) if (!b.has(k) || !structuralEqual(v, b.get(k), seen)) return false
+    return true
+  }
+  if (b instanceof Map) return false
+  // Set: same size + every element present
+  if (a instanceof Set) {
+    if (!(b instanceof Set) || a.size !== b.size) return false
+    for (const v of a) if (!b.has(v)) return false
+    return true
+  }
+  if (b instanceof Set) return false
+  // Plain objects: same own-key set + structurally-equal values
+  const aKeys = Object.keys(a as object)
+  const bKeys = Object.keys(b as object)
+  if (aKeys.length !== bKeys.length) return false
+  for (const k of aKeys) {
+    if (!Object.prototype.hasOwnProperty.call(b, k)) return false
+    if (!structuralEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k], seen)) return false
+  }
+  return true
+}
+
+/**
  * Set the current component instance for lifecycle hook registration.
  */
 export function setCurrentInstance(instance: ComponentInstance | null): void {
@@ -407,27 +463,37 @@ export function watch<T>(
 
   let oldValue: T | undefined
   let cleanup: (() => void) | undefined
-
-  const getValue = (): T => {
-    if (typeof source === 'function') {
-      return source()
-    }
-    return source.value
-  }
+  let stopped = false
 
   const job = () => {
-    const newValue = getValue()
+    if (stopped) return
+    const newValue = getValueTracking()
 
-    // Deep comparison for objects if deep is true
+    // Compare. `Object.is` handles primitives + reference identity (NaN, +0/-0).
+    // Deep mode uses a structural comparator that walks objects/arrays/Map/Set
+    // and handles cyclic refs — JSON.stringify-based equality silently misses
+    // these cases (drops undefined, loses functions, blows up on cycles).
     const hasChanged = deep
-      ? JSON.stringify(newValue) !== JSON.stringify(oldValue)
+      ? !structuralEqual(newValue, oldValue)
       : !Object.is(newValue, oldValue)
 
     if (hasChanged || immediate) {
       callback(newValue, oldValue)
-      oldValue = deep && typeof newValue === 'object'
-        ? JSON.parse(JSON.stringify(newValue))
-        : newValue
+      // `structuredClone` (native) handles Date / RegExp / Map / Set / typed
+      // arrays / circular refs — JSON-based clone silently mishandled all of
+      // those. Fall back to identity when value can't be cloned (e.g. a
+      // function, a DOM node) — those use reference equality anyway.
+      if (deep && newValue !== null && typeof newValue === 'object') {
+        try {
+          oldValue = structuredClone(newValue) as T
+        }
+        catch {
+          oldValue = newValue
+        }
+      }
+      else {
+        oldValue = newValue
+      }
     }
   }
 
@@ -447,25 +513,55 @@ export function watch<T>(
     }
   }
 
-  // Subscribe to source changes
-  if (typeof source === 'function') {
-    // For getter functions, we need to track manually
-    // This is a simplified implementation
-    const interval = setInterval(() => {
-      scheduler(job)
-    }, 16) // ~60fps check
-
-    cleanup = () => clearInterval(interval)
-  }
-  else {
-    // For refs, use the subscribe method
-    cleanup = source.subscribe(() => {
-      scheduler(job)
+  // Re-evaluation with signal tracking. When the source is a function, we
+  // run it under `currentEffect` so any reactive reads inside subscribe to
+  // `onChange`. This replaces the previous `setInterval(check, 16)` polling
+  // — see stacksjs/stx#1713. Function-source watch now fires only when an
+  // actually-tracked signal changes, not on a fixed cadence.
+  let scheduled = false
+  const onChange = () => {
+    if (stopped || scheduled) return
+    scheduled = true
+    scheduler(() => {
+      scheduled = false
+      job()
     })
   }
 
-  // Get initial value
-  oldValue = getValue()
+  const getValueTracking = (): T => {
+    if (typeof source === 'function') {
+      const prevEffect = currentEffect
+      currentEffect = onChange
+      try {
+        return source()
+      }
+      finally {
+        currentEffect = prevEffect
+      }
+    }
+    return source.value
+  }
+
+  // Subscribe to source changes
+  if (typeof source !== 'function') {
+    // For refs, the existing subscribe path is reactive without polling.
+    const unsubscribe = source.subscribe(() => {
+      scheduler(job)
+    })
+    cleanup = () => {
+      stopped = true
+      unsubscribe()
+    }
+  }
+  else {
+    // Function sources re-subscribe automatically inside getValueTracking().
+    // The `stopped` flag is the only teardown — existing subscribers on refs
+    // read by source() still fire onChange but bail because stopped is true.
+    cleanup = () => { stopped = true }
+  }
+
+  // Get initial value (also performs initial subscription for function sources)
+  oldValue = getValueTracking()
 
   // Run immediately if requested
   if (immediate) {
