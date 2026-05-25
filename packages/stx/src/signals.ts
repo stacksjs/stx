@@ -2213,15 +2213,24 @@ catch (e) {
       let list = evalLazy(listExpr);
 
       // Tolerate parens-on-signal in the list expression.
-      //   :for="x in store.signal"   → works (bare-ref, auto-unwrapped)
-      //   :for="x in store.signal()" → silently iterated zero, because
-      //                                 the proxy unwraps the signal to
-      //                                 the array on access, then the
-      //                                 trailing call throws TypeError
-      //                                 which evalLazy's catch swallows.
+      //   :for="x in store.signal"   --> works (bare-ref, auto-unwrapped)
+      //   :for="x in store.signal()" --> silently iterated zero, because
+      //                                  the proxy unwraps the signal to
+      //                                  the array on access, then the
+      //                                  trailing call throws TypeError
+      //                                  which evalLazy's catch swallows.
       // Retry without the trailing parens so both forms succeed.
-      if (!Array.isArray(list) && /\(\s*\)\s*$/.test(listExpr)) {
-        list = evalLazy(listExpr.replace(/\(\s*\)\s*$/, ''));
+      //
+      // RegExp is constructed via new RegExp(string) rather than a
+      // regex literal because the upstream stx build pipeline
+      // mangles regex literals - stripping backslash escapes so the
+      // literal form shipped to dist with backslashes removed
+      // (e.g. paren+whitespace ended up as bare s* in the dist),
+      // which never matched anything and the fix silently did
+      // nothing. RegExp-from-string survives the build unchanged.
+      var trailingParens = new RegExp('\\(\\s*\\)\\s*$');
+      if (!Array.isArray(list) && trailingParens.test(listExpr)) {
+        list = evalLazy(listExpr.replace(trailingParens, ''));
       }
 
       // If there's an @if condition, check it
