@@ -8,7 +8,12 @@
 export { type BuildResult } from './build-optimizer'
 export { type ComponentInstance } from './reactivity'
 export { type HydrationOptions } from './hydration'
-export { type CookieOptions } from './route-middleware'
+// `CookieOptions` is the user-facing type for the `useCookie()` composable —
+// the most common consumer path. The route-middleware module (re-exported from
+// stx-router) and the SSR module each have their own internal `CookieOptions`
+// shapes with different field sets; those are kept private to their modules
+// to avoid silently shadowing the user-facing one. Surfaced by stacksjs/stx#1707.
+export { type CookieOptions } from './composables/use-cookie'
 export { formatSize, getTotalSize } from './deploy'
 export { type ImageRenderResult, type ImageVariant, type ProcessedImage, clearImageCache, getFallbackVariant, getMimeType, groupVariantsByFormat, optimizeImage, processImage } from './image-optimization'
 export { type AnalysisResult } from './analyzer'

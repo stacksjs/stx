@@ -51,9 +51,14 @@ beforeAll(() => {
 })
 
 function getImpls(): Record<string, ReactiveImpl> {
+  // happy-dom puts a `window` global on `globalThis`; the runtime IIFE
+  // populates `window.stx` when executed. Cast via `any` is intentional —
+  // globalThis's nominal type doesn't include the happy-dom shape.
+  // eslint-disable-next-line ts/no-explicit-any
+  const runtimeStx = (globalThis as any).window?.stx as ReactiveImpl
   return {
     'signals-api': api as unknown as ReactiveImpl,
-    'runtime': (globalThis as { window?: { stx?: ReactiveImpl } }).window?.stx as ReactiveImpl,
+    'runtime': runtimeStx,
   }
 }
 
@@ -222,12 +227,15 @@ for (const name of ['signals-api', 'runtime'] as const) {
     // ── untrack() ──
     it('untrack returns the value of a signal', () => {
       const s = impl.state(99)
-      expect(impl.untrack(s)).toBe(99)
+      // Explicit generic — untrack<T>(unknown): T can't infer T from an
+      // `unknown` parameter, so toBe()'s strict overload matching fails
+      // without it.
+      expect(impl.untrack<number>(s)).toBe(99)
     })
 
     it('untrack passes through non-signal values unchanged', () => {
-      expect(impl.untrack(42)).toBe(42)
-      expect(impl.untrack('hi')).toBe('hi')
+      expect(impl.untrack<number>(42)).toBe(42)
+      expect(impl.untrack<string>('hi')).toBe('hi')
     })
 
     // ── peek() ──
