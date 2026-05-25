@@ -2210,7 +2210,19 @@ catch (e) {
       hideLoading();
 
       // Evaluate list with LAZY tracking — only the list signal is tracked
-      const list = evalLazy(listExpr);
+      let list = evalLazy(listExpr);
+
+      // Tolerate parens-on-signal in the list expression.
+      //   :for="x in store.signal"   → works (bare-ref, auto-unwrapped)
+      //   :for="x in store.signal()" → silently iterated zero, because
+      //                                 the proxy unwraps the signal to
+      //                                 the array on access, then the
+      //                                 trailing call throws TypeError
+      //                                 which evalLazy's catch swallows.
+      // Retry without the trailing parens so both forms succeed.
+      if (!Array.isArray(list) && /\(\s*\)\s*$/.test(listExpr)) {
+        list = evalLazy(listExpr.replace(/\(\s*\)\s*$/, ''));
+      }
 
       // If there's an @if condition, check it
       if (ifExpr) {
@@ -2224,7 +2236,15 @@ catch (e) {
         }
       }
 
-      if (!Array.isArray(list)) return;
+      if (!Array.isArray(list)) {
+        // Silent return here used to mask a class of real misuse:
+        // most often a signal call that threw mid-expression, or a
+        // :for over undefined from a typo. One warn line saves a lot
+        // of "list rendered no rows despite the data being there"
+        // debugging cycles.
+        console.warn('[STX] :for expected an array; got ' + (list === '' ? 'empty/error' : typeof list) + ' for expression "' + listExpr + '". If this is a signal call, try the bare reference (signal instead of signal()).');
+        return;
+      }
 
       // Check empty state (Feature #3)
       if (list.length === 0) {
