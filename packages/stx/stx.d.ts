@@ -46,7 +46,11 @@ interface StxSignal<T> {
 
 interface StxDerivedSignal<T> {
   (): T
-  readonly _isSignal: true
+  // Derived signals carry `_isDerived: true` (distinguishes them from state
+  // signals, which carry `_isSignal: true`). The two branches are exposed
+  // separately as `isSignal()` / `isDerived()`. Surfaced by the dual-impl
+  // parity test — both implementations agree on this contract.
+  readonly _isDerived: true
 }
 
 interface StxRef<T> {

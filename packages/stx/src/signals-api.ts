@@ -1,12 +1,45 @@
 /**
- * STX Signals API - Reactive State Management (Build-time API)
+ * STX Signals API — module-import path for reactive primitives.
  * =============================================================
  *
- * This module contains all TypeScript-level exports for the STX signals
- * reactivity system: types, state management functions, lifecycle hooks,
- * and utility functions used at build time.
+ * This module exports `state`, `derived`, `effect`, `batch`, `untrack`,
+ * `peek`, `isSignal`, `isDerived`, `onMount`, `onDestroy` as standalone
+ * TypeScript functions. They have their own subscriber sets, effect
+ * tracking, and batching — fully self-contained reactivity.
  *
- * The runtime string generators live in signals.ts.
+ * ## Why this exists alongside `signals.ts`
+ *
+ * stx ships TWO independent reactive implementations:
+ *
+ *   1. **This file (`signals-api.ts`)** — module-import path. Used by
+ *      composables, stores, SSR/server code, and tests that import
+ *      from `'@stacksjs/stx'` and run in Node (or browser) without
+ *      going through the stx bundler.
+ *
+ *   2. **The runtime template literal in `signals.ts`** — generated as
+ *      a JS string and injected into client pages. Owns its own
+ *      subscribers; populates `window.stx.{state, derived, …}`.
+ *
+ * The stx bundler rewrites `<script client>` imports of these symbols
+ * to destructure from `window.stx`. So a `const count = state(0)` in a
+ * client script ends up using the runtime version (#2). The same call
+ * in an unbundled context — a composable test, an SSR helper — uses
+ * this file (#1).
+ *
+ * **Important**: signals created in one impl are invisible to the other.
+ * A `state()` returned by this module cannot be `.set()`-ed from inside
+ * a client page's `<script>` block (and vice versa). The two reactive
+ * worlds are disjoint by design — they exist because bundled and
+ * non-bundled contexts need different code-generation strategies.
+ *
+ * ## Parity contract
+ *
+ * Both implementations expose the same public surface and must behave
+ * equivalently. Pinned by `test/reactivity/dual-impl-parity.test.ts`,
+ * which executes the same suite against both. When parity drifts, fix
+ * the lagging side — don't update only one.
+ *
+ * See stacksjs/stx#1712 for the architectural rationale.
  *
  * @module signals-api
  */
