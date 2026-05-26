@@ -364,4 +364,96 @@ No frontmatter here.
       expect(result.successCount).toBe(0)
     })
   })
+
+  // Regression tests for stacksjs/stx#1717 — the SSG build cache was passing
+  // hardcoded `[]` for the dependencies array at both get() and set() sites,
+  // so a change to a partial / layout / transitive include never invalidated
+  // the consuming page's cached HTML. The fix threads renderPage's collected
+  // dependencies through buildCache.set(), and buildCache.get() re-validates
+  // against the previously-stored dep list.
+  describe('build cache dependency tracking (#1717)', () => {
+    const cacheDir = path.join(testDir, 'ssg-cache')
+
+    it('invalidates a page when one of its included partials is edited', async () => {
+      const partialsDir = path.join(pagesDir, 'partials')
+      await fs.promises.mkdir(partialsDir, { recursive: true })
+
+      // Page includes the partial via a `./`-prefixed path so the include
+      // resolves relative to the current template instead of going through
+      // `partialsDir` (which would otherwise resolve against the host repo's
+      // stx.config.ts — irrelevant for this isolated test). Underscore-prefix
+      // on the partial filename also keeps file-router.ts:30 from picking
+      // up the partial as a real route at /partials/_header.
+      await Bun.write(
+        path.join(pagesDir, 'index.stx'),
+        '<html><body>@include(\'./partials/_header\')<main>page body</main></body></html>'
+      )
+      await Bun.write(
+        path.join(partialsDir, '_header.stx'),
+        '<header data-marker="v1">VERSION-ONE</header>'
+      )
+
+      const baseOptions = {
+        pagesDir,
+        outputDir,
+        cacheDir,
+        sitemap: false,
+        cache: true,
+        cleanOutput: false,
+      }
+
+      // First build: no cache, full render. The cache entry that gets
+      // persisted now (post-fix) contains the partial as a dependency.
+      const first = await generateStaticSite(baseOptions)
+      expect(first.successCount).toBe(1)
+      const firstHtml = await Bun.file(path.join(outputDir, 'index.html')).text()
+      expect(firstHtml).toContain('VERSION-ONE')
+
+      // Edit the partial and bump its mtime far enough into the future that
+      // the filesystem reports a different mtimeMs even on coarse-grained
+      // timestamps (some filesystems have second resolution).
+      const future = new Date(Date.now() + 2000)
+      await Bun.write(
+        path.join(partialsDir, '_header.stx'),
+        '<header data-marker="v2">VERSION-TWO</header>'
+      )
+      fs.utimesSync(path.join(partialsDir, '_header.stx'), future, future)
+
+      // Second build: with the bug, the cache would hit (the page's own
+      // mtime didn't change, the cache key didn't include the partial) and
+      // the output would still say VERSION-ONE. Post-fix, the cache's
+      // stored dep list catches the partial's mtime change → miss → re-render.
+      const second = await generateStaticSite(baseOptions)
+      expect(second.successCount).toBe(1)
+      const secondHtml = await Bun.file(path.join(outputDir, 'index.html')).text()
+      expect(secondHtml).toContain('VERSION-TWO')
+      expect(secondHtml).not.toContain('VERSION-ONE')
+    })
+
+    it('still hits the cache when nothing changed (no spurious re-renders)', async () => {
+      await Bun.write(
+        path.join(pagesDir, 'index.stx'),
+        '<html><body><h1>Stable</h1></body></html>'
+      )
+
+      const baseOptions = {
+        pagesDir,
+        outputDir,
+        cacheDir,
+        sitemap: false,
+        cache: true,
+        cleanOutput: false,
+      }
+
+      // First build populates cache.
+      const first = await generateStaticSite(baseOptions)
+      expect(first.successCount).toBe(1)
+      expect(first.cachedCount).toBe(0)
+
+      // Second build with no edits — should be a cache hit. `cachedCount`
+      // bumps when buildCache.get() returns a non-null entry.
+      const second = await generateStaticSite(baseOptions)
+      expect(second.cachedCount).toBe(1)
+    })
+  })
 })

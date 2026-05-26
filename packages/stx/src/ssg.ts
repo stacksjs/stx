@@ -298,11 +298,18 @@ catch {
     return Math.abs(hash).toString(36)
   }
 
-  get(route: string, filePath: string, dependencies: string[]): string | null {
+  // Re-validate against the dependencies recorded at last set() time. Callers
+  // don't know what the page's deps are before they render it (they're
+  // collected during processDirectives), so the cache uses the previous
+  // build's dep list as a quick re-validation check. If any of those deps'
+  // mtimes have changed, the cached entry is stale and we report a miss so
+  // the caller re-renders and refreshes the dep list via set(). The first
+  // build of a route has no entry, so it always misses. See stacksjs/stx#1717.
+  get(route: string, filePath: string): string | null {
     const entry = this.cache.get(route)
     if (!entry) return null
 
-    const currentHash = this.getHash(filePath, dependencies)
+    const currentHash = this.getHash(filePath, entry.dependencies ?? [])
     if (entry.hash !== currentHash) {
       this.cache.delete(route)
       return null
@@ -576,7 +583,7 @@ async function renderPage(
   props: Record<string, unknown> = {},
   options: SSGConfig,
   stxConfig: Record<string, unknown>
-): Promise<string> {
+): Promise<{ html: string, dependencies: string[] }> {
   const content = await Bun.file(route.filePath).text()
 
   // 1. Load data from companion .data.ts file
@@ -648,10 +655,10 @@ async function renderPage(
 
   // Minify if enabled
   if (options.minify !== false) {
-    return minifyHtml(html)
+    return { html: minifyHtml(html), dependencies: Array.from(dependencies) }
   }
 
-  return html
+  return { html, dependencies: Array.from(dependencies) }
 }
 
 /**
@@ -1016,24 +1023,33 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
             }
           }
 
-          // Check cache
+          // Check cache. buildCache.get() re-validates against the dependency
+          // list stored from the previous build of this route — if any of
+          // those deps' mtimes changed, the entry is invalidated and we
+          // re-render. See stacksjs/stx#1717 for why dep tracking was broken
+          // (the old code passed `[]` to get/set and dep changes never
+          // invalidated, so a partial edit didn't propagate to consuming
+          // pages).
           let html: string | null = null
           let cached = false
 
           if (cfg.cache) {
-            html = buildCache.get(url, route.filePath, [])
+            html = buildCache.get(url, route.filePath)
             if (html) {
               cached = true
               result.cachedCount++
             }
           }
 
-          // Render if not cached
+          // Render if not cached. The renderPage() return now includes the
+          // actual deps collected during processDirectives, which we hand to
+          // buildCache.set() so the next build can revalidate against them.
           if (!html) {
-            html = await renderPage(route, params, props, cfg, stxConfig as unknown as Record<string, unknown>)
+            const rendered = await renderPage(route, params, props, cfg, stxConfig as unknown as Record<string, unknown>)
+            html = rendered.html
 
             if (cfg.cache) {
-              buildCache.set(url, route.filePath, [], html)
+              buildCache.set(url, route.filePath, rendered.dependencies, html)
             }
           }
 
@@ -1314,8 +1330,9 @@ export function createISRHandler(options: SSGConfig = {}): {
       // Load stx config for proper template processing
       const stxConfig = await loadStxConfig()
 
-      // Re-render the page
-      const html = await renderPage(matchedRoute, params, {}, options, stxConfig as unknown as Record<string, unknown>)
+      // Re-render the page. ISR's CachedPage shape doesn't track deps, so the
+      // dependency list returned by renderPage is intentionally discarded here.
+      const { html } = await renderPage(matchedRoute, params, {}, options, stxConfig as unknown as Record<string, unknown>)
 
       // Update cache
       await cache.set(route, {
