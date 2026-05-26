@@ -142,15 +142,29 @@ catch (e) {
     }
   }
 
-  // Listen for storage changes from other tabs
+  // Listen for storage changes from other tabs. The handler is hoisted to
+  // a named binding so it can be removed on scope teardown (stacksjs/stx#1718
+  // — previously this was an inline closure and `addEventListener` had no
+  // pair, leaking one listener per useStorage() call across HMR and across
+  // repeated scope creation). The cleanup is best-effort: when called inside
+  // a signals-runtime scope (`<script client>`), `onDestroy` is available on
+  // globalThis and we wire the removal; outside that context (raw module
+  // imports from tests/SSR) the listener stays until the document is gone,
+  // which is fine because there's no scope to leak into.
   if (isClient && listenToStorageChanges) {
-    window.addEventListener('storage', (event) => {
+    const onStorage = (event: StorageEvent) => {
       if (event.key === key && event.storageArea === getStorage()) {
         const prevValue = currentValue
         currentValue = event.newValue ? serializer.read(event.newValue) : defaultValue
         notify(currentValue, prevValue)
       }
-    })
+    }
+    window.addEventListener('storage', onStorage)
+
+    // eslint-disable-next-line ts/no-explicit-any
+    const maybeOnDestroy = (globalThis as any).onDestroy
+    if (typeof maybeOnDestroy === 'function')
+      maybeOnDestroy(() => window.removeEventListener('storage', onStorage))
   }
 
   const ref: StorageRef<T> = {
