@@ -52,7 +52,20 @@ export function useEventListener(
   let target: EventTarget = window
   if (options?.target) {
     if (typeof options.target === 'string') {
-      target = document.querySelector(options.target) || window
+      // Previously `document.querySelector(...) || window` — a typo'd
+      // selector silently upgraded the listener to window scope (the
+      // intended `click outside #dropdown` would fire on every click in
+      // the page). Now we bail with a clear warning so the misconfig is
+      // discoverable. Matches the runtime version's no-spurious-fallback
+      // behavior (signals.ts:3054-3055). See stacksjs/stx#1721.
+      const resolved = document.querySelector(options.target)
+      if (!resolved) {
+        console.warn(
+          `[stx] useEventListener: selector "${options.target}" did not match any element. Listener not attached.`,
+        )
+        return { remove: () => {} }
+      }
+      target = resolved
     }
     else {
       target = options.target
