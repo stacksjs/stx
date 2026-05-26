@@ -305,6 +305,134 @@ function extractVariableNames(code: string): string[] {
 /**
  * Shared function to render a component with props and slot content
  */
+/**
+ * Split a destructuring body on top-level commas, respecting nested
+ * brackets/braces/parens and string/template literals.
+ */
+function splitTopLevelCommas(body: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let start = 0
+  let quote: string | null = null
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i]
+    if (quote) {
+      if (c === '\\') { i++; continue }
+      if (c === quote) quote = null
+      continue
+    }
+    if (c === '"' || c === '\'' || c === '`') { quote = c; continue }
+    if (c === '(' || c === '[' || c === '{') depth++
+    else if (c === ')' || c === ']' || c === '}') depth--
+    else if (c === ',' && depth === 0) { parts.push(body.slice(start, i)); start = i + 1 }
+  }
+  if (start < body.length) parts.push(body.slice(start))
+  return parts
+}
+
+/**
+ * Index of the top-level `=` (default assignment) in a destructuring entry,
+ * skipping `==`/`===`/`!=`/`<=`/`>=`/`=>` and anything inside brackets or
+ * strings. Returns -1 when the entry has no default.
+ */
+function topLevelDefaultEq(entry: string): number {
+  let depth = 0
+  let quote: string | null = null
+  for (let i = 0; i < entry.length; i++) {
+    const c = entry[i]
+    if (quote) {
+      if (c === '\\') { i++; continue }
+      if (c === quote) quote = null
+      continue
+    }
+    if (c === '"' || c === '\'' || c === '`') { quote = c; continue }
+    if (c === '(' || c === '[' || c === '{') depth++
+    else if (c === ')' || c === ']' || c === '}') depth--
+    else if (c === '=' && depth === 0) {
+      const prev = entry[i - 1]
+      const next = entry[i + 1]
+      if (prev === '!' || prev === '<' || prev === '>' || prev === '=') continue
+      if (next === '=' || next === '>') continue
+      return i
+    }
+  }
+  return -1
+}
+
+/**
+ * Apply a component's `defineProps` destructuring defaults to its SSR render
+ * context. STX evaluates a component's `<script>` block client-side only, so
+ * default values written as `const { steps = [...] } = defineProps()` never
+ * reached server-side template evaluation: a prop the caller omits was
+ * `undefined` during SSR, which broke `@foreach (steps as ...)` ("steps is not
+ * iterable") and any `{{ prop }}` / `:prop` relying on a default. This fills in
+ * only the keys the caller did not provide, evaluating each default against the
+ * already-resolved context (so a default may reference earlier props). It is
+ * best-effort — any parse/eval failure leaves the context untouched, matching
+ * the pre-fix behavior (e.g. defaults that reference browser-only globals).
+ */
+function applyDestructuredPropDefaults(
+  componentContent: string,
+  ctx: Record<string, unknown>,
+): void {
+  try {
+    const m = /=\s*(?:withDefaults\s*\([\s\S]*?defineProps|defineProps)\b/.exec(componentContent)
+    if (!m)
+      return
+    // Walk left from the `=` to the destructuring `}` … `{` that precedes it.
+    let i = m.index - 1
+    while (i >= 0 && /\s/.test(componentContent[i])) i--
+    if (componentContent[i] !== '}')
+      return
+    const end = i
+    let depth = 0
+    let start = -1
+    for (; i >= 0; i--) {
+      const c = componentContent[i]
+      if (c === '}')
+        depth++
+      else if (c === '{') {
+        depth--
+        if (depth === 0) { start = i; break }
+      }
+    }
+    if (start === -1)
+      return
+
+    const body = componentContent.slice(start + 1, end)
+    for (const rawEntry of splitTopLevelCommas(body)) {
+      const entry = rawEntry.trim()
+      if (!entry || entry.startsWith('...'))
+        continue
+      const eq = topLevelDefaultEq(entry)
+      if (eq === -1)
+        continue
+      const name = entry.slice(0, eq).trim()
+      // Only simple `name = default` entries; skip renames / nested patterns.
+      if (!/^[A-Z_$][\w$]*$/i.test(name))
+        continue
+      if (ctx[name] !== undefined)
+        continue // caller-provided value always wins
+      const expr = entry.slice(eq + 1).trim()
+      if (!expr)
+        continue
+      try {
+        const keys = Object.keys(ctx)
+        // eslint-disable-next-line no-new-func
+        const fn = new Function(...keys, `"use strict"; return (${expr});`)
+        ctx[name] = fn(...keys.map(k => ctx[k]))
+      }
+      catch {
+        // Default references browser-only globals or unavailable vars — leave
+        // it undefined, exactly as before this fix.
+      }
+    }
+  }
+  catch {
+    // Never let prop-default extraction break component rendering.
+  }
+}
+
 export async function renderComponentWithSlot(
   componentPath: string,
   props: Record<string, unknown>,
@@ -421,6 +549,17 @@ export async function renderComponentWithSlot(
       // componentsDir but actual components live at the project-level src/components
       const projectRoot = process.cwd()
       const fallbackDirs = [
+        // Canonical Stacks project components dir. Without this, a tag
+        // referenced from a *nested* view (e.g. resources/views/products/
+        // index.stx) only searched its own `<viewDir>/components` and the
+        // global componentsDir (the framework defaults), so project-level
+        // components in `resources/views/components` resolved for root
+        // views but 404'd for any view in a subdirectory. Adding it as a
+        // project-wide fallback makes project components resolve from any
+        // view depth — matching how the framework defaults already do.
+        path.resolve(projectRoot, 'resources/views/components'),
+        // Legacy scaffold location (pre-`resources/views/` move).
+        path.resolve(projectRoot, 'resources/components'),
         path.resolve(projectRoot, 'src/components'),
         path.resolve(projectRoot, 'components'),
         // Built-in STX components (e.g., StxLink)
@@ -566,6 +705,12 @@ export async function renderComponentWithSlot(
       // the parent page's @section('content') content
       __sections: {},
     }
+
+    // Fill in `defineProps` destructuring defaults for any prop the caller
+    // omitted, so server-side template evaluation sees them (the component's
+    // `<script>` runs client-side only). Must run after `...props` above so
+    // caller-provided values are never overwritten.
+    applyDestructuredPropDefaults(componentContent, componentContext)
 
     // SFC Support: Extract <template>, <script>, and <style> sections
     let workingContent = componentContent
