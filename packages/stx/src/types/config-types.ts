@@ -709,6 +709,11 @@ export interface StxConfig {
     enabled?: boolean
     container?: string
     linkSelector?: string
+    /**
+     * Intercept every in-app `<a>` for client-side navigation rather than
+     * only those matching `linkSelector`. Default: false.
+     */
+    interceptAllLinks?: boolean
     viewTransitions?: boolean
     /**
      * Duration of the default View Transitions fade, in milliseconds.
@@ -727,6 +732,11 @@ export interface StxConfig {
     cacheTTL?: number
     skipSelectors?: string
     viewTransitionCSS?: Record<string, string>
+    /**
+     * Show the top loading/progress bar during client-side navigation.
+     * Default: true.
+     */
+    progress?: boolean
     /**
      * Progress-bar color (hex, rgb, css var, etc.). Default: '#78dce8'.
      */
