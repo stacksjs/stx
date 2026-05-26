@@ -27,7 +27,7 @@
  * in `use-fetch.test.ts`, not here. This file only covers the shared
  * contract.
  */
-import { beforeAll, beforeEach, describe, expect, it } from 'bun:test'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import * as composableModule from '../../src/composables/use-fetch'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 
@@ -95,6 +95,15 @@ for (const name of ['composable', 'runtime'] as const) {
     beforeEach(() => {
       restore?.()
       restore = installMockFetch({})
+    })
+    // CRITICAL: restore globalThis.fetch when this describe ends. Without
+    // it, the mock fetch leaks into subsequent test files in the same bun
+    // process — and since the mock throws on any URL it doesn't recognize,
+    // any later test that calls real `fetch(http://localhost:PORT/...)`
+    // (e.g. production-server/error-page.test.ts) suddenly gets thrown
+    // errors. Caught during the full-suite regression for #1729.
+    afterAll(() => {
+      restore?.()
     })
 
     it('returns Signal-shaped { data, loading, error, refetch }', async () => {
