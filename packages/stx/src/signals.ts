@@ -2202,7 +2202,8 @@ catch (e) {
       if (loadingExpr) {
         const isLoading = evalLazy(loadingExpr);
         if (isLoading) {
-          currentElements.forEach(e => e.remove());
+          // Dispose scopes registered by items before they leave the DOM (#1727).
+          currentElements.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
           currentElements = [];
           currentKeys = [];
           showLoading();
@@ -2249,7 +2250,8 @@ catch (e) {
       if (ifExpr) {
         const ifValue = evalLazy(ifExpr);
         if (!ifValue) {
-          currentElements.forEach(e => e.remove());
+          // Dispose scopes registered by items before they leave the DOM (#1727).
+          currentElements.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
           currentElements = [];
           currentKeys = [];
           hideEmpty();
@@ -2269,7 +2271,8 @@ catch (e) {
 
       // Check empty state (Feature #3)
       if (list.length === 0) {
-        currentElements.forEach(e => e.remove());
+        // Dispose scopes registered by items before they leave the DOM (#1727).
+        currentElements.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
         currentElements = [];
         currentKeys = [];
         if (emptyExpr) {
@@ -2329,10 +2332,12 @@ catch (e) {
         }
       }
 
-      // Remove old elements whose keys are no longer in the list
+      // Remove old elements whose keys are no longer in the list.
+      // Dispose any scopes registered inside removed items before the
+      // remove() call (#1727).
       for (const [key, elements] of oldKeyMap) {
         if (!usedKeys.has(key)) {
-          elements.forEach(el => el.remove());
+          elements.forEach(el => { disposeSubtreeScopes(el); el.remove(); });
           itemSignalMap.delete(key);
         }
       }
@@ -2457,8 +2462,9 @@ catch (e) {
           isInserted = true;
         }
 else if (!value && isInserted) {
-          // Remove all current nodes
-          currentNodes.forEach(node => node.remove());
+          // Remove all current nodes. Dispose scopes inside each subtree
+          // first so they don't leak (#1727).
+          currentNodes.forEach(node => { disposeSubtreeScopes(node); node.remove(); });
           currentNodes = [];
           isInserted = false;
         }
@@ -2472,6 +2478,11 @@ else {
         }
 else if (!value && isInserted) {
           console.log('[stx] bindIf REMOVING element for :if=' + expr, 'el.isConnected:', el.isConnected, 'parent:', parent.tagName);
+          // Fire scope destroy callbacks + delete from window.stx._scopes
+          // for the subtree being removed. Pre-fix (#1727) only SPA-nav
+          // teardown ran this walk, so :if-driven unmounts leaked scopes
+          // (including any user-registered onDestroy hooks).
+          disposeSubtreeScopes(el);
           el.remove();
           isInserted = false;
           console.log('[stx] bindIf REMOVED, el.isConnected:', el.isConnected);
@@ -4162,6 +4173,44 @@ catch (e) {
   });
 
   // ==========================================================================
+  // Scope Disposal
+  // ==========================================================================
+
+  // Walk a subtree (root + descendants) and fire each [data-stx-scope]'s
+  // destroy callbacks + remove the entry from window.stx._scopes. Pre-fix
+  // (stacksjs/stx#1727) only cleanupContainer (called during SPA navigation)
+  // ran this walk, so dynamic unmounts driven by :if/:for leaked scopes
+  // indefinitely. Now bindIf, bindFor, and cleanupContainer all funnel
+  // through this helper so the cleanup is symmetric regardless of who
+  // initiated the removal.
+  function disposeSubtreeScopes(root) {
+    if (!root || !window.stx || !window.stx._scopes) return;
+    // Build the list of nodes to inspect: root + descendants with the
+    // [data-stx-scope] attribute. Avoid Array.from on a generator since
+    // we want browser-broad compatibility from the minified runtime.
+    var nodes = [];
+    if (root.getAttribute && root.getAttribute('data-stx-scope')) nodes.push(root);
+    if (root.querySelectorAll) {
+      var matches = root.querySelectorAll('[data-stx-scope]');
+      for (var i = 0; i < matches.length; i++) nodes.push(matches[i]);
+    }
+    for (var n = 0; n < nodes.length; n++) {
+      var el = nodes[n];
+      var scopeId = el.getAttribute('data-stx-scope');
+      if (!scopeId) continue;
+      var scopeVars = window.stx._scopes[scopeId];
+      if (!scopeVars) continue;
+      if (scopeVars.__destroyCallbacks && Array.isArray(scopeVars.__destroyCallbacks)) {
+        for (var j = 0; j < scopeVars.__destroyCallbacks.length; j++) {
+          try { scopeVars.__destroyCallbacks[j](); }
+          catch (e) { console.warn('[stx] scope destroy error:', e); }
+        }
+      }
+      delete window.stx._scopes[scopeId];
+    }
+  }
+
+  // ==========================================================================
   // Container Cleanup (for SPA navigation)
   // ==========================================================================
 
@@ -4214,21 +4263,10 @@ catch (e) { console.warn('[stx] destroy hook error:', e); }
     // Clear __stx_scope so _handleStxLoad's processElement guard doesn't skip it
     container.__stx_scope = null;
 
-    // 3. Clean up scopes registered on departing components
-    container.querySelectorAll('[data-stx-scope]').forEach(function(el) {
-      var scopeId = el.getAttribute('data-stx-scope');
-      if (scopeId && window.stx._scopes && window.stx._scopes[scopeId]) {
-        var scopeVars = window.stx._scopes[scopeId];
-        // Fire scope-level destroy callbacks
-        if (scopeVars.__destroyCallbacks && Array.isArray(scopeVars.__destroyCallbacks)) {
-          scopeVars.__destroyCallbacks.forEach(function(fn) {
-            try { fn(); }
-catch (e) { console.warn('[stx] scope destroy error:', e); }
-          });
-        }
-        delete window.stx._scopes[scopeId];
-      }
-    });
+    // 3. Clean up scopes registered on departing components. Routed
+    // through disposeSubtreeScopes so the same walk runs for SPA
+    // navigation and for :if/:for-driven unmount (see #1727).
+    disposeSubtreeScopes(container);
   }
 
   // Re-initialize components after SPA content swap.
