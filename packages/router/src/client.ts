@@ -25,7 +25,7 @@ export function getRouterScript(): string {
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
-  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false};
+  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
   var debug=!!o.debug;
@@ -84,6 +84,40 @@ export function getRouterScript(): string {
   var cache={};
   var prefetching={};
   var isNavigating=false;
+
+  // LRU bookkeeping for cache/layoutCache/layoutGroupCache. Pre-fix
+  // (stacksjs/stx#1719) these were plain objects with no eviction, so
+  // hover-prefetch on a sidebar of 200 internal links retained ~10MB
+  // of HTML strings for the page's lifetime. cacheOrder is a most-
+  // recently-used-last list of keys; setCache pushes new entries and
+  // evicts the oldest when length exceeds o.prefetchCacheMax (default
+  // 50). touchCache promotes a key on cache-hit. We use a plain array
+  // rather than a Map to keep the diff localized and the runtime
+  // hand-minified shape consistent.
+  var cacheOrder=[];
+  function setCache(key,html,layout,group){
+    if(!(key in cache))cacheOrder.push(key);
+    cache[key]=html;
+    layoutCache[key]=layout;
+    layoutGroupCache[key]=group;
+    while(cacheOrder.length>o.prefetchCacheMax){
+      var oldest=cacheOrder.shift();
+      delete cache[oldest];
+      delete layoutCache[oldest];
+      delete layoutGroupCache[oldest];
+    }
+  }
+  function touchCache(key){
+    var i=cacheOrder.indexOf(key);
+    if(i>=0){cacheOrder.splice(i,1);cacheOrder.push(key)}
+  }
+  function evictCache(key){
+    var i=cacheOrder.indexOf(key);
+    if(i>=0)cacheOrder.splice(i,1);
+    delete cache[key];
+    delete layoutCache[key];
+    delete layoutGroupCache[key];
+  }
 
   // Extract top-level CSS blocks (rules AND @media blocks with nested braces).
   // The old regex ([^{}]+\{[^{}]*\}) silently dropped @media blocks because
@@ -236,6 +270,9 @@ export function getRouterScript(): string {
     function done(){isNavigating=false;document.body.classList.remove(o.loadingClass);finishProgress()}
 
     if(o.cache&&cache[targetPath]&&!force){
+      // Cache hit → promote in LRU order so this entry survives eviction
+      // longer than other entries that haven't been touched.
+      touchCache(targetPath);
       if(checkLayoutChange(layoutCache[targetPath],url,layoutGroupCache[targetPath])){
         // Layout changed — fetch full page and do full document swap
         log('[router] cache hit but layout changed — fetching full page');
@@ -255,7 +292,7 @@ export function getRouterScript(): string {
       done();
     }
 else {
-      if(force&&cache[targetPath])delete cache[targetPath];
+      if(force&&cache[targetPath])evictCache(targetPath);
       // First fetch as fragment (SPA mode) when the configured container is
       // the page content. Custom app-shell containers need full documents so
       // the router does not inject a <main> fragment into the wrong element.
@@ -281,7 +318,7 @@ else {
       }).then(function(result){
         if(!result)return;
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
-        if(o.cache){cache[targetPath]=result.html;layoutCache[targetPath]=result.layout;layoutGroupCache[targetPath]=result.layoutGroup}
+        if(o.cache)setCache(targetPath,result.html,result.layout,result.layoutGroup);
         swap(result.html,targetPath,pushState,targetHash);
       }).catch(function(err){
         console.error('[router] fetch error:',err);
@@ -707,7 +744,7 @@ else {
         var pGroup=r.headers.get('X-STX-Layout-Group')||'';
         return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup}});
       }).then(function(result){
-        if(o.cache){cache[key]=result.html;layoutCache[key]=result.layout;layoutGroupCache[key]=result.layoutGroup}
+        if(o.cache)setCache(key,result.html,result.layout,result.layoutGroup);
       }).catch(function(){}).finally(function(){delete prefetching[key]});
     },true);
   }
@@ -804,10 +841,10 @@ else {
       var key=cacheKey(url);
       if(!cache[key]){
         var wantsFragment=shouldUseFragmentResponse();
-        fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup}})}).then(function(result){cache[key]=result.html;layoutCache[key]=result.layout;layoutGroupCache[key]=result.layoutGroup}).catch(function(){});
+        fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup}})}).then(function(result){setCache(key,result.html,result.layout,result.layoutGroup)}).catch(function(){});
       }
     },
-    clearCache:function(){for(var k in cache)delete cache[k];for(var lk in layoutCache)delete layoutCache[lk];for(var gk in layoutGroupCache)delete layoutGroupCache[gk]},
+    clearCache:function(){for(var k in cache)delete cache[k];for(var lk in layoutCache)delete layoutCache[lk];for(var gk in layoutGroupCache)delete layoutGroupCache[gk];cacheOrder.length=0},
     cache:cache,
     swap:swap,
     updateNav:updateNav
