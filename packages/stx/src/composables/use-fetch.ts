@@ -1,28 +1,41 @@
-// @ts-nocheck - Skip type checking due to generic Awaited<T> type constraints
 /**
- * useFetch - Reactive data fetching with loading/error states
+ * useFetch — reactive data fetching (module-import path).
  *
- * Provides a streamlined API for fetching data with automatic state management.
+ * stx ships two `useFetch` implementations:
+ *
+ *   1. This one (signals-api / module-import path) — used by tests,
+ *      SSR-side tooling, and any code that imports from `'stx'` or
+ *      `'@stacksjs/stx/composables'` directly.
+ *   2. The runtime template literal inside `packages/stx/src/signals.ts`
+ *      (search for `function useFetch`), injected into client pages and
+ *      exposed at `window.stx.useFetch`.
+ *
+ * Pre-stacksjs/stx#1726 these returned different shapes (composable used
+ * a Vue-style `{ get, subscribe, refresh, execute, abort }` ref;
+ * runtime returned Signal-shaped `{ data, loading, error, refetch }`).
+ * That meant the same code crashed on one path or the other depending
+ * on which entry point the bundler resolved. Now both return the
+ * Signal shape — `data`, `loading`, `error` are signals; `refetch` is
+ * a function. The composable additionally exposes `abort`, `status`,
+ * `statusText` and accepts the richer options set (retry, cache,
+ * refetchOnFocus, etc.) — these are supersets the runtime doesn't
+ * implement, available to module-import consumers only.
+ *
+ * Parity tests in `test/composables/use-fetch-parity.test.ts` pin the
+ * shared shape across both impls; do not change one side without the
+ * other.
  *
  * @example
  * ```ts
- * // Basic fetch
- * const { data, loading, error, refresh } = useFetch('/api/users')
- *
- * // With options
- * const { data } = useFetch('/api/users', {
- *   method: 'POST',
- *   body: { name: 'John' },
- *   immediate: false, // Don't fetch immediately
- * })
- *
- * // Async data with transform
- * const { data } = useAsyncData(
- *   () => fetch('/api/users').then(r => r.json()),
- *   { transform: (data) => data.users }
- * )
+ * const { data, loading, error, refetch } = useFetch('/api/users')
+ * // data() — current value (null while loading)
+ * // loading() — boolean signal
+ * // error() — Error | null signal
+ * // refetch() — trigger a new request
  * ```
  */
+import type { Signal } from '../signals-api'
+import { state } from '../signals-api'
 
 export interface FetchOptions<T = unknown> extends Omit<RequestInit, 'body'> {
   /** Request body (will be JSON stringified if object) */
@@ -31,89 +44,81 @@ export interface FetchOptions<T = unknown> extends Omit<RequestInit, 'body'> {
   baseURL?: string
   /** Query parameters */
   query?: Record<string, string | number | boolean | undefined>
-  /** Fetch immediately on creation */
+  /** Fetch immediately on creation (default: true) */
   immediate?: boolean
   /** Transform response data */
   transform?: (data: unknown) => T
   /** Custom response parser (default: json) */
   parseResponse?: (response: Response) => Promise<unknown>
-  /** Timeout in milliseconds */
+  /** Timeout in milliseconds (default: 30000) */
   timeout?: number
-  /** Retry count on failure */
+  /** Retry count on failure (default: 0) */
   retry?: number
-  /** Retry delay in milliseconds */
+  /** Retry delay in milliseconds (default: 1000) */
   retryDelay?: number
   /** Cache key for deduplication */
   key?: string
   /** Cache time in milliseconds (0 = no cache) */
   cacheTime?: number
-  /** Refetch on window focus */
+  /** Refetch on document visibility change (default: false) */
   refetchOnFocus?: boolean
   /** Refetch interval in milliseconds */
   refetchInterval?: number
-  /** Default value while loading */
-  default?: T
+  /** Initial value while loading (matches runtime's `initialData`) */
+  initialData?: T | null
 }
 
-export interface FetchState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  status: number | null
-  statusText: string | null
-}
-
+/** Signal-shaped fetch result. Matches the runtime's `useFetch` return. */
 export interface FetchRef<T> {
-  /** Get current state */
-  get: () => FetchState<T>
-  /** Subscribe to state changes */
-  subscribe: (fn: (state: FetchState<T>) => void) => () => void
-  /** Refresh/refetch data */
-  refresh: () => Promise<void>
-  /** Execute fetch (if immediate was false) */
+  /** Current data, or `initialData`/null while loading. */
+  data: Signal<T | null>
+  /** True while a request is in flight. */
+  loading: Signal<boolean>
+  /** The most recent error, or null. */
+  error: Signal<Error | null>
+  /** HTTP status code of the most recent response, or null. */
+  status: Signal<number | null>
+  /** HTTP status text of the most recent response, or null. */
+  statusText: Signal<string | null>
+  /** Trigger a new request. */
+  refetch: () => Promise<void>
+  /** Same as refetch — kept for runtime-parity callers. */
   execute: () => Promise<void>
-  /** Abort current request */
+  /** Abort the in-flight request. */
   abort: () => void
-  /** Check if currently loading */
-  isLoading: () => boolean
 }
 
-// Simple in-memory cache
-const fetchCache = new Map<string, { data: unknown; timestamp: number }>()
+// Simple in-memory cache shared across useFetch instances.
+const fetchCache = new Map<string, { data: unknown, timestamp: number }>()
 
-/**
- * Build URL with query parameters
- */
 function buildURL(url: string, baseURL?: string, query?: Record<string, string | number | boolean | undefined>): string {
   let fullURL = baseURL ? `${baseURL.replace(/\/$/, '')}/${url.replace(/^\//, '')}` : url
 
   if (query) {
     const params = new URLSearchParams()
     for (const [key, value] of Object.entries(query)) {
-      if (value !== undefined) {
+      if (value !== undefined)
         params.append(key, String(value))
-      }
     }
     const queryString = params.toString()
-    if (queryString) {
+    if (queryString)
       fullURL += (fullURL.includes('?') ? '&' : '?') + queryString
-    }
   }
 
   return fullURL
 }
 
 /**
- * Reactive fetch with loading/error states
+ * Reactive fetch with loading/error states. Returns Signal-shaped state.
  */
 export function useFetch<T = unknown>(
   url: string | (() => string),
-  options: FetchOptions<T> = {}
+  options: FetchOptions<T> = {},
 ): FetchRef<T> {
   const {
     immediate = true,
     transform,
-    parseResponse = (r) => r.json(),
+    parseResponse = (r: Response) => r.json(),
     timeout = 30000,
     retry = 0,
     retryDelay = 1000,
@@ -121,79 +126,64 @@ export function useFetch<T = unknown>(
     cacheTime = 0,
     refetchOnFocus = false,
     refetchInterval,
-    default: defaultValue = null as T,
+    initialData = null as T | null,
     baseURL,
     query,
     body,
     ...fetchOptions
   } = options
 
-  let state: FetchState<T> = {
-    data: defaultValue,
-    loading: false,
-    error: null,
-    status: null,
-    statusText: null,
-  }
+  const data = state<T | null>(initialData)
+  const loading = state(false)
+  const error = state<Error | null>(null)
+  const status = state<number | null>(null)
+  const statusText = state<string | null>(null)
 
-  let listeners: Array<(state: FetchState<T>) => void> = []
   let abortController: AbortController | null = null
   let focusHandler: (() => void) | null = null
   let intervalId: ReturnType<typeof setInterval> | null = null
-
-  const notify = () => {
-    listeners.forEach(fn => fn(state))
-  }
 
   const getURL = (): string => {
     const rawURL = typeof url === 'function' ? url() : url
     return buildURL(rawURL, baseURL, query)
   }
 
-  const getCacheKey = (): string => {
-    return key || getURL()
-  }
+  const getCacheKey = (): string => key || getURL()
 
   const getFromCache = (): T | null => {
-    if (cacheTime <= 0) return null
+    if (cacheTime <= 0)
+      return null
     const cached = fetchCache.get(getCacheKey())
-    if (cached && Date.now() - cached.timestamp < cacheTime) {
+    if (cached && Date.now() - cached.timestamp < cacheTime)
       return cached.data as T
-    }
     return null
   }
 
-  const setCache = (data: T) => {
-    if (cacheTime > 0) {
-      fetchCache.set(getCacheKey(), { data, timestamp: Date.now() })
-    }
+  const setCache = (value: T) => {
+    if (cacheTime > 0)
+      fetchCache.set(getCacheKey(), { data: value, timestamp: Date.now() })
   }
 
   const doFetch = async (attempt = 0): Promise<void> => {
-    // Check cache first
     const cached = getFromCache()
     if (cached !== null) {
-      state = { ...state, data: cached, loading: false, error: null }
-      notify()
+      data.set(cached)
+      loading.set(false)
+      error.set(null)
       return
     }
 
-    // Abort previous request
-    if (abortController) {
+    // Abort previous in-flight request
+    if (abortController)
       abortController.abort()
-    }
     abortController = new AbortController()
 
-    state = { ...state, loading: true, error: null }
-    notify()
+    loading.set(true)
+    error.set(null)
 
-    // Setup timeout
-    const timeoutId = setTimeout(() => {
-      abortController?.abort()
-    }, timeout)
+    const timeoutId = setTimeout(() => abortController?.abort(), timeout)
 
     try {
-      // Prepare body
       let requestBody: BodyInit | undefined
       if (body) {
         if (typeof body === 'object' && !(body instanceof FormData) && !(body instanceof URLSearchParams)) {
@@ -203,7 +193,7 @@ export function useFetch<T = unknown>(
             ...fetchOptions.headers,
           }
         }
-else {
+        else {
           requestBody = body as BodyInit
         }
       }
@@ -215,246 +205,188 @@ else {
       })
 
       clearTimeout(timeoutId)
+      status.set(response.status)
+      statusText.set(response.statusText)
 
-      state.status = response.status
-      state.statusText = response.statusText
-
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
 
-      let data = await parseResponse(response)
-      if (transform) {
-        data = transform(data)
-      }
+      let payload = await parseResponse(response) as unknown
+      if (transform)
+        payload = transform(payload)
 
-      setCache(data as T)
-
-      state = {
-        ...state,
-        data: data as T,
-        loading: false,
-        error: null,
-      }
-      notify()
+      setCache(payload as T)
+      data.set(payload as T)
+      loading.set(false)
     }
-catch (err) {
+    catch (err) {
       clearTimeout(timeoutId)
 
-      // Don't treat abort as error
-      if (err instanceof Error && err.name === 'AbortError') {
+      if (err instanceof Error && err.name === 'AbortError')
         return
-      }
 
-      // Retry logic
       if (attempt < retry) {
         await new Promise(resolve => setTimeout(resolve, retryDelay))
         return doFetch(attempt + 1)
       }
 
-      state = {
-        ...state,
-        loading: false,
-        error: err instanceof Error ? err : new Error(String(err)),
-      }
-      notify()
+      error.set(err instanceof Error ? err : new Error(String(err)))
+      loading.set(false)
     }
   }
 
   const setupRefetchOnFocus = () => {
-    if (!refetchOnFocus || typeof window === 'undefined') return
-
+    if (!refetchOnFocus || typeof window === 'undefined')
+      return
     focusHandler = () => {
-      if (document.visibilityState === 'visible') {
-        doFetch()
-      }
+      if (document.visibilityState === 'visible')
+        void doFetch()
     }
     document.addEventListener('visibilitychange', focusHandler)
   }
 
   const setupRefetchInterval = () => {
-    if (!refetchInterval || typeof window === 'undefined') return
-
-    intervalId = setInterval(() => {
-      doFetch()
-    }, refetchInterval)
+    if (!refetchInterval || typeof window === 'undefined')
+      return
+    intervalId = setInterval(() => void doFetch(), refetchInterval)
   }
 
-  const cleanup = () => {
-    if (focusHandler) {
-      document.removeEventListener('visibilitychange', focusHandler)
-      focusHandler = null
-    }
-    if (intervalId) {
-      clearInterval(intervalId)
-      intervalId = null
-    }
-    if (abortController) {
-      abortController.abort()
-      abortController = null
-    }
-  }
-
-  // Start immediately if requested
   if (immediate) {
-    doFetch()
+    void doFetch()
     setupRefetchOnFocus()
     setupRefetchInterval()
   }
 
   return {
-    get: () => state,
-    subscribe: (fn) => {
-      listeners.push(fn)
-      fn(state)
-
-      return () => {
-        listeners = listeners.filter(l => l !== fn)
-        if (listeners.length === 0) {
-          cleanup()
-        }
-      }
-    },
-    refresh: doFetch,
+    data,
+    loading,
+    error,
+    status,
+    statusText,
+    refetch: () => doFetch(),
     execute: async () => {
       await doFetch()
       setupRefetchOnFocus()
       setupRefetchInterval()
     },
     abort: () => {
-      if (abortController) {
+      if (abortController)
         abortController.abort()
+      if (focusHandler) {
+        document.removeEventListener('visibilitychange', focusHandler)
+        focusHandler = null
+      }
+      if (intervalId) {
+        clearInterval(intervalId)
+        intervalId = null
       }
     },
-    isLoading: () => state.loading,
   }
 }
 
 /**
- * Generic async data fetcher
+ * Generic async data fetcher. Same Signal shape as `useFetch`.
  */
 export function useAsyncData<T>(
   fetcher: () => Promise<T>,
   options: {
     immediate?: boolean
     transform?: (data: T) => T
-    default?: T
+    initialData?: T | null
     key?: string
     cacheTime?: number
-  } = {}
+  } = {},
 ): FetchRef<T> {
   const {
     immediate = true,
     transform,
-    default: defaultValue = null as T,
+    initialData = null as T | null,
     key,
     cacheTime = 0,
   } = options
 
-  let state: FetchState<T> = {
-    data: defaultValue,
-    loading: false,
-    error: null,
-    status: null,
-    statusText: null,
-  }
+  const data = state<T | null>(initialData)
+  const loading = state(false)
+  const error = state<Error | null>(null)
+  // status / statusText are not meaningful for arbitrary async fetchers,
+  // but exposed for shape parity with useFetch.
+  const status = state<number | null>(null)
+  const statusText = state<string | null>(null)
 
-  let listeners: Array<(state: FetchState<T>) => void> = []
-
-  const notify = () => {
-    listeners.forEach(fn => fn(state))
-  }
-
-  const getCacheKey = (): string => {
-    return key || fetcher.toString()
-  }
+  const getCacheKey = (): string => key || fetcher.toString()
 
   const getFromCache = (): T | null => {
-    if (cacheTime <= 0) return null
+    if (cacheTime <= 0)
+      return null
     const cached = fetchCache.get(getCacheKey())
-    if (cached && Date.now() - cached.timestamp < cacheTime) {
+    if (cached && Date.now() - cached.timestamp < cacheTime)
       return cached.data as T
-    }
     return null
   }
 
-  const setCache = (data: T) => {
-    if (cacheTime > 0) {
-      fetchCache.set(getCacheKey(), { data, timestamp: Date.now() })
-    }
+  const setCache = (value: T) => {
+    if (cacheTime > 0)
+      fetchCache.set(getCacheKey(), { data: value, timestamp: Date.now() })
   }
 
   const doFetch = async (): Promise<void> => {
-    // Check cache first
     const cached = getFromCache()
     if (cached !== null) {
-      state = { ...state, data: cached, loading: false, error: null }
-      notify()
+      data.set(cached)
+      loading.set(false)
+      error.set(null)
       return
     }
 
-    state = { ...state, loading: true, error: null }
-    notify()
+    loading.set(true)
+    error.set(null)
 
     try {
-      let data = await fetcher()
-      if (transform) {
-        data = transform(data)
-      }
+      // `payload` is typed as Awaited<T> from the await; transform takes T
+      // and returns T. TS's strict variance check sees the two as
+      // distinct, so we narrow through `unknown` to satisfy both sides.
+      let payload = (await fetcher()) as unknown as T
+      if (transform)
+        payload = transform(payload)
 
-      setCache(data)
-
-      state = {
-        ...state,
-        data,
-        loading: false,
-        error: null,
-      }
-      notify()
+      setCache(payload)
+      data.set(payload)
+      loading.set(false)
     }
-catch (err) {
-      state = {
-        ...state,
-        loading: false,
-        error: err instanceof Error ? err : new Error(String(err)),
-      }
-      notify()
+    catch (err) {
+      error.set(err instanceof Error ? err : new Error(String(err)))
+      loading.set(false)
     }
   }
 
-  if (immediate) {
-    doFetch()
-  }
+  if (immediate)
+    void doFetch()
 
   return {
-    get: () => state,
-    subscribe: (fn) => {
-      listeners.push(fn)
-      fn(state)
-      return () => {
-        listeners = listeners.filter(l => l !== fn)
-      }
-    },
-    refresh: doFetch,
+    data,
+    loading,
+    error,
+    status,
+    statusText,
+    refetch: doFetch,
     execute: doFetch,
     abort: () => {},
-    isLoading: () => state.loading,
   }
 }
 
 /**
- * POST request helper
+ * POST request helper. Returns the fetch state plus an execute(body) helper.
  */
 export function usePost<T = unknown, B = unknown>(
   url: string,
-  options: Omit<FetchOptions<T>, 'method' | 'body'> = {}
+  options: Omit<FetchOptions<T>, 'method' | 'body'> = {},
 ): {
-  execute: (body?: B) => Promise<T | null>
-  state: FetchRef<T>
-} {
+    execute: (body?: B) => Promise<T | null>
+    state: FetchRef<T>
+  } {
   let requestBody: B | undefined
 
-  const state = useFetch<T>(url, {
+  const fetchState = useFetch<T>(url, {
     ...options,
     method: 'POST',
     immediate: false,
@@ -466,28 +398,22 @@ export function usePost<T = unknown, B = unknown>(
   return {
     execute: async (body?: B) => {
       requestBody = body
-      await state.execute()
-      return state.get().data
+      await fetchState.execute()
+      return fetchState.data()
     },
-    state,
+    state: fetchState,
   }
 }
 
-/**
- * Clear fetch cache
- */
+/** Clear fetch cache (one key or all). */
 export function clearFetchCache(key?: string): void {
-  if (key) {
+  if (key)
     fetchCache.delete(key)
-  }
-else {
+  else
     fetchCache.clear()
-  }
 }
 
-/**
- * Prefetch data into cache
- */
+/** Prefetch data into cache. */
 export async function prefetch<T>(url: string, options?: FetchOptions<T>): Promise<void> {
   const fetcher = useFetch<T>(url, { ...options, immediate: false })
   await fetcher.execute()

@@ -138,7 +138,11 @@ export {
   type IntersectionObserverRef,
 } from './use-intersection-observer'
 
-// Fetch & Async Data
+// Fetch & Async Data. `useFetch` now returns Signal-shaped state
+// ({ data, loading, error, refetch, ... }) matching the runtime contract;
+// the old Vue-style `{ get, subscribe, refresh, execute, abort }` shape
+// (and the `FetchState` interface that went with it) was removed in
+// #1726 as part of the dual-impl unification.
 export {
   useFetch,
   useAsyncData,
@@ -146,7 +150,6 @@ export {
   clearFetchCache,
   prefetch,
   type FetchOptions,
-  type FetchState,
   type FetchRef,
 } from './use-fetch'
 

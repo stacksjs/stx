@@ -877,7 +877,10 @@ finally {
       }
 catch (e) {
         console.error('[STX] useFetch error:', e);
-        error.set(e.message || 'Fetch failed');
+        // Store Error objects (not just messages) so consumers can use
+        // .message, .stack, instanceof Error. Matches the composable's
+        // shape; pinned by use-fetch-parity.test.ts (#1726).
+        error.set(e instanceof Error ? e : new Error(String(e)));
         if (options.onError) options.onError(e);
       }
 finally {
