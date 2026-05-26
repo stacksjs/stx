@@ -65,34 +65,44 @@ function generateTeleportScript(id: string, target: string): string {
       const source = document.getElementById('${id}');
       if (!source) return;
 
-      const targetEl = document.querySelector('${target}');
-      if (!targetEl) {
-        console.warn('[stx] Teleport target not found: ${target}');
-        return;
-      }
-
-      // Get the content template
+      // Get the content template up-front so we can hold a reference for the
+      // retry path. (template.content is moved out by cloneNode below.)
       const template = source.querySelector('template');
       if (!template) return;
 
-      // Clone and append content to target
-      const content = template.content.cloneNode(true);
+      function mount(targetEl) {
+        // Clone the template content and wrap it for tracking.
+        const content = template.content.cloneNode(true);
+        const wrapper = document.createElement('div');
+        wrapper.setAttribute('data-teleport-from', '${id}');
+        wrapper.appendChild(content);
 
-      // Create a wrapper to track teleported content
-      const wrapper = document.createElement('div');
-      wrapper.setAttribute('data-teleport-from', '${id}');
-      wrapper.appendChild(content);
+        targetEl.appendChild(wrapper);
 
-      targetEl.appendChild(wrapper);
+        // Remove the source placeholder
+        source.remove();
 
-      // Remove the source placeholder
-      source.remove();
+        wrapper.dispatchEvent(new CustomEvent('teleport:mounted', {
+          bubbles: true,
+          detail: { sourceId: '${id}', target: '${target}' }
+        }));
+      }
 
-      // Dispatch event for tracking
-      wrapper.dispatchEvent(new CustomEvent('teleport:mounted', {
-        bubbles: true,
-        detail: { sourceId: '${id}', target: '${target}' }
-      }));
+      // The teleport script runs inline at the position it's emitted. If the
+      // target is declared later in the same render pass (e.g. by a layout
+      // shell whose onMount creates the portal root), the first lookup
+      // misses. Pre-fix (stacksjs/stx#1728) the script bailed with a warning
+      // and never tried again. Now retry once via requestAnimationFrame so
+      // targets that land in the same paint cycle still work. A second
+      // miss is still a warning — we don't loop forever.
+      const firstEl = document.querySelector('${target}');
+      if (firstEl) { mount(firstEl); return; }
+
+      requestAnimationFrame(function() {
+        const retryEl = document.querySelector('${target}');
+        if (retryEl) { mount(retryEl); return; }
+        console.warn('[stx] Teleport target not found: ${target}');
+      });
     })();
     </script>
   `
