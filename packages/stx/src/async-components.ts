@@ -216,6 +216,25 @@ function generateAsyncComponentHtml(
   let delayTimer = null;
   let timeoutTimer = null;
   let resolved = false;
+  let aborted = false;
+
+  // AbortController + container detachment guards (stacksjs/stx#1720). Without
+  // these, an in-flight fetch from a previous page would write innerHTML on
+  // a detached container after the user SPA-navigated away, or — for
+  // components removed via :if/parent toggle — would log a "rejected" state
+  // on a node that no longer exists. The router dispatches stx:navigate
+  // when a navigation starts; we treat that as a teardown signal. The
+  // isConnected check covers non-router unmounts (:if false, parent remove).
+  const controller = new AbortController();
+  function teardown() {
+    if (aborted) return;
+    aborted = true;
+    controller.abort();
+    clearTimeout(delayTimer);
+    clearTimeout(timeoutTimer);
+    window.removeEventListener('stx:navigate', teardown);
+  }
+  window.addEventListener('stx:navigate', teardown);
 
   // Update state
   function setState(status) {
@@ -252,8 +271,11 @@ function generateAsyncComponentHtml(
         window.STX.suspense.register(asyncId);
       }
 
-      // Fetch the component
-      const response = await fetch('/_stx/component/' + encodeURIComponent(componentPath));
+      // Fetch the component with the AbortController signal so a teardown
+      // (SPA navigation, component unmount) cancels the in-flight request.
+      const response = await fetch('/_stx/component/' + encodeURIComponent(componentPath), {
+        signal: controller.signal
+      });
 
       if (!response.ok) {
         throw new Error('Failed to load component: ' + response.statusText);
@@ -264,6 +286,11 @@ function generateAsyncComponentHtml(
       // Clear timers
       clearTimeout(delayTimer);
       clearTimeout(timeoutTimer);
+
+      // Belt-and-suspenders: if the container was removed between the fetch
+      // starting and now (e.g. :if flipped to false, or a non-router parent
+      // mutation), bail before writing innerHTML on a detached node.
+      if (aborted || !container.isConnected) return;
 
       resolved = true;
       contentEl.innerHTML = html;
@@ -297,8 +324,15 @@ else {
         bubbles: true
       }));
 
+      // Load succeeded — drop the navigate-teardown listener so it doesn't
+      // accumulate per async component across an app's lifetime.
+      window.removeEventListener('stx:navigate', teardown);
     }
 catch (error) {
+      // AbortError fires when teardown() runs during an in-flight fetch.
+      // That's not a load failure — the component is being unmounted, so
+      // don't render the rejected state, don't retry, don't dispatch error.
+      if (aborted || (error && error.name === 'AbortError')) return;
       handleError(error);
     }
   }
@@ -307,6 +341,10 @@ catch (error) {
   function handleError(error) {
     clearTimeout(delayTimer);
     clearTimeout(timeoutTimer);
+
+    // The container may have been removed (e.g., a non-router :if toggle)
+    // between the failure and now. No DOM left to write the error state to.
+    if (aborted || !container.isConnected) return;
 
     if (attempts < maxRetries) {
       // Retry
@@ -336,6 +374,10 @@ catch (error) {
     }));
 
     console.error('[stx:async:' + asyncId + ']', error);
+
+    // Final error state — no more retries. Drop the navigate listener so it
+    // doesn't outlive the (failed) component.
+    window.removeEventListener('stx:navigate', teardown);
   }
 
   // Retry function
