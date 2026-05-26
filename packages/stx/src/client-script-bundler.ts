@@ -85,7 +85,12 @@ export function hasUserImports(code: string): boolean {
  * bundle time because the temp entry file lives under
  * `.stx/bundle-tmp/`, not next to the page source.
  */
-function createBundlePlugin(projectRoot: string, templateDir: string, tmpEntry: string): BunPlugin {
+function createBundlePlugin(
+  projectRoot: string,
+  templateDir: string,
+  tmpEntry: string,
+  inputFiles: Set<string>,
+): BunPlugin {
   // Resolve a relative import against `templateDir`, returning the
   // first existing file with one of the standard JS/TS extensions or
   // an `index.{ts,js}` fallback. Falls back to the bare path so
@@ -137,8 +142,11 @@ function createBundlePlugin(projectRoot: string, templateDir: string, tmpEntry: 
 
       // Relative imports (`./x`, `../x`) — rebase against the original
       // `<script client>` source file, not the temp entry's directory.
+      // Record resolved paths so the bundler can fold their mtimes into
+      // the cache key (stacksjs/stx#1723).
       build.onResolve({ filter: /^\.\.?\// }, (args) => {
         const resolved = resolveRelative(args.importer, args.path)
+        inputFiles.add(resolved)
         return { path: resolved }
       })
 
@@ -164,6 +172,7 @@ function createBundlePlugin(projectRoot: string, templateDir: string, tmpEntry: 
         for (const candidate of candidates) {
           if (fs.existsSync(candidate) && fs.statSync(candidate, { throwIfNoEntry: false })?.isFile()) {
             console.log(`[stx:bundler] resolved ${args.path[0]}/ import:`, args.path, '→', candidate)
+            inputFiles.add(candidate)
             return { path: candidate }
           }
         }
@@ -198,17 +207,56 @@ export async function bundleClientScript(
   const minify = options.minify ?? false
   const cacheDir = options.cacheDir || path.join(projectRoot, '.stx', 'bundle-cache')
 
-  // Content-hash for caching and temp file naming
+  // Content-hash for caching and temp file naming. The hash covers only
+  // the script source + host file path — transitive imports (e.g.
+  // `import { x } from '@/functions/helper'`) are NOT in the hash because
+  // they can't be known before Bun.build runs. We instead persist the
+  // resolved input file list with their mtimes alongside the cached
+  // output (`.deps.json` sidecar) and re-validate on lookup — same
+  // pattern as the SSG build cache fix in stacksjs/stx#1717. See
+  // stacksjs/stx#1723 for the bug this addresses (helper edits silently
+  // failed to invalidate the bundle).
   const hasher = new Bun.CryptoHasher('md5')
   hasher.update(code + filePath)
   const hash = hasher.digest('hex').slice(0, 12)
 
-  // Check cache
+  // Check cache. A cache hit requires both the bundled JS to exist AND
+  // every recorded transitive dep's mtime to be unchanged since the
+  // bundle was built.
   const cachePath = path.join(cacheDir, `${hash}.js`)
+  const depsPath = path.join(cacheDir, `${hash}.deps.json`)
   const cacheFile = Bun.file(cachePath)
   if (await cacheFile.exists()) {
-    console.log('[stx:bundler] cache hit:', hash)
-    return await cacheFile.text()
+    const depsFile = Bun.file(depsPath)
+    let depsValid = true
+    if (await depsFile.exists()) {
+      try {
+        const stored = JSON.parse(await depsFile.text()) as { files: Array<{ path: string, mtimeMs: number }> }
+        for (const dep of stored.files) {
+          try {
+            const current = fs.statSync(dep.path).mtimeMs
+            if (current !== dep.mtimeMs) {
+              depsValid = false
+              break
+            }
+          }
+          catch {
+            // Dep file was deleted since last build — treat as invalid.
+            depsValid = false
+            break
+          }
+        }
+      }
+      catch {
+        // Corrupt sidecar — rebundle.
+        depsValid = false
+      }
+    }
+    if (depsValid) {
+      console.log('[stx:bundler] cache hit:', hash)
+      return await cacheFile.text()
+    }
+    console.log('[stx:bundler] cache invalidated by dep change:', hash)
   }
 
   // Write temp entry file (Bun.build needs a real file)
@@ -249,6 +297,11 @@ export async function bundleClientScript(
 
   console.log('[stx:bundler] bundling:', hash, 'from:', path.basename(filePath))
 
+  // Collected during build by the plugin's onResolve hooks. Each entry
+  // is an absolute path that contributed to the bundle; we snapshot
+  // their mtimes after a successful build to gate future cache hits.
+  const inputFiles = new Set<string>()
+
   try {
     const result = await Bun.build({
       entrypoints: [tmpEntry],
@@ -256,7 +309,7 @@ export async function bundleClientScript(
       target: 'browser',
       format: 'esm',
       minify,
-      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry)],
+      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles)],
       define: {
         'process.env.NODE_ENV': minify ? '"production"' : '"development"',
         ...getPublicEnvDefine(),
@@ -300,9 +353,22 @@ export async function bundleClientScript(
 
     console.log('[stx:bundler] bundled:', hash, 'output:', bundled.length, 'bytes')
 
-    // Cache the result
+    // Cache the result + the dependency snapshot. The sidecar lists
+    // every input file resolved through the plugin (relative imports
+    // + @/ + ~/ aliased imports) with its mtime at build time. On the
+    // next lookup, we re-stat those files and miss if any mtime
+    // changed.
     fs.mkdirSync(cacheDir, { recursive: true })
     await Bun.write(cachePath, bundled)
+    const depsSnapshot = Array.from(inputFiles).map((p) => {
+      try {
+        return { path: p, mtimeMs: fs.statSync(p).mtimeMs }
+      }
+      catch {
+        return null
+      }
+    }).filter((d): d is { path: string, mtimeMs: number } => d !== null)
+    await Bun.write(depsPath, JSON.stringify({ files: depsSnapshot }))
 
     return bundled
   }
