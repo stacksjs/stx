@@ -2265,7 +2265,26 @@ catch (e) {
         // :for over undefined from a typo. One warn line saves a lot
         // of "list rendered no rows despite the data being there"
         // debugging cycles.
-        console.warn('[STX] :for expected an array; got ' + (list === '' ? 'empty/error' : typeof list) + ' for expression "' + listExpr + '". If this is a signal call, try the bare reference (signal instead of signal()).');
+        //
+        // Diagnostic: dump the scope identifiers so the caller can see
+        // whether the expression's root identifier was in scope at all
+        // (and if so, what type it was and whether it carried the
+        // _isStxStore marker). Only fires on the warn path, which is
+        // rare, so the extra Object.keys / spread cost is negligible.
+        var diagScope;
+        try {
+          var diagMerged = { ...passedScope, ...(capturedScope || {}), ...globalHelpers };
+          var firstIdent = listExpr.match(/^[A-Za-z_$][\w$]*/);
+          var rootName = firstIdent ? firstIdent[0] : '?';
+          var rootInScope = Object.prototype.hasOwnProperty.call(diagMerged, rootName);
+          var rootVal = rootInScope ? diagMerged[rootName] : '<NOT-IN-SCOPE>';
+          var rootKeys = (rootVal && typeof rootVal === 'object')
+            ? Object.keys(rootVal).slice(0, 8).join(',')
+            : '-';
+          diagScope = '[root=' + rootName + ' inScope=' + rootInScope + ' type=' + (typeof rootVal) + ' isStxStore=' + !!(rootVal && rootVal._isStxStore) + ' keys=' + rootKeys + ']';
+        }
+        catch (_e) { diagScope = '[diag-error]'; }
+        console.warn('[STX] :for expected an array; got ' + (list === '' ? 'empty/error' : typeof list) + ' for expression "' + listExpr + '". ' + diagScope + ' If this is a signal call, try the bare reference (signal instead of signal()).');
         return;
       }
 
