@@ -225,10 +225,15 @@ export async function startProductionServer(options: ProductionServerOptions = {
       }
 
       if (!matchedRoute) {
-        // Try 404 error page first, then return plain 404
+        // Try 404 error page first, then return plain 404. Note:
+        // compiledTemplates is keyed by `route.pattern` (see the loader
+        // at line ~105), so the lookup must use `errorPage.pattern`, NOT
+        // `errorPage.compiledPath` — that was a pre-existing bug noticed
+        // while wiring in the parallel /500 lookup for stacksjs/stx#1722.
+        // It silently broke the entire 404.stx feature in production.
         const errorPage = exactRoutes.get('/404') || null
         if (errorPage) {
-          const compiled = compiledTemplates.get(errorPage.compiledPath)
+          const compiled = compiledTemplates.get(errorPage.pattern)
           if (compiled) {
             return new Response(compiled.html, {
               status: 404,
@@ -263,6 +268,21 @@ export async function startProductionServer(options: ProductionServerOptions = {
       // ── Full page response ──
       const compiled = compiledTemplates.get(matchedRoute.pattern)
       if (!compiled) {
+        // Try the user's 500 error page first (mirrors the /404 lookup at
+        // line ~229). Before stacksjs/stx#1722 this always returned a
+        // bare "Internal Server Error" text response, so apps that ship
+        // a branded `pages/500.stx` got an unbranded error in production.
+        const errorPage = exactRoutes.get('/500') || null
+        if (errorPage) {
+          // Key by pattern (see the 404 path above and the loader at line ~105).
+          const compiledError = compiledTemplates.get(errorPage.pattern)
+          if (compiledError) {
+            return new Response(compiledError.html, {
+              status: 500,
+              headers: { 'Content-Type': 'text/html' },
+            })
+          }
+        }
         return new Response('Internal Server Error', { status: 500 })
       }
 
