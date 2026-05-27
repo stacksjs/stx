@@ -744,6 +744,19 @@ export async function processCustomElements(
     'desc', 'metadata', 'switch', 'view',
   ])
 
+  // Stash <script> bodies before the three-pass scan so JS string
+  // literals containing tag-like substrings aren't mis-resolved as
+  // component references. See stacksjs/stx#1730 — the live path in
+  // component-renderer.ts has the same fix; this branch isn't on the
+  // current call graph but matches the fix defensively in case it
+  // gets reintroduced.
+  const stashedScripts: string[] = []
+  output = output.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (match) => {
+    const idx = stashedScripts.length
+    stashedScripts.push(match)
+    return `\x00STX_SCRIPT_${idx}\x00`
+  })
+
   // Process kebab-case components (e.g., <my-component />)
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
   output = await processComponentsWithParser(output, kebabPattern, false)
@@ -755,6 +768,11 @@ export async function processCustomElements(
   // Process single-word lowercase components (e.g., <card />) - skip HTML tags
   const lowercasePattern = /[a-z][a-z0-9]*/
   output = await processComponentsWithParser(output, lowercasePattern, false, htmlTags)
+
+  // Restore the stashed <script> blocks.
+  if (stashedScripts.length > 0) {
+    output = output.replace(/\x00STX_SCRIPT_(\d+)\x00/g, (_, idx) => stashedScripts[+idx])
+  }
 
   return output
 

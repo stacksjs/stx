@@ -818,6 +818,24 @@ async function processCustomElementTags(
   }
   const processedComponents = context.__processedComponents as Set<string>
 
+  // Stash <script> bodies behind sentinel markers before the three-pass
+  // scan so JS string literals like Leaflet's `div.innerHTML = '<v:shape ...>'`
+  // aren't mis-resolved as component references. Pre-fix
+  // (stacksjs/stx#1730) the lowercase pass below caught the `v` inside
+  // `<v:shape>` (the regex charset doesn't include `:`), couldn't find a
+  // `v.stx`, and injected the ENOENT error string verbatim into the
+  // emitted JS — producing an unbalanced quote chain that crashed the
+  // browser parser with a misleading "Unexpected identifier 'v'" pointing
+  // into Leaflet's internals. Markers use NUL bytes so they can't appear
+  // in legitimate input. The same shape is mirrored in
+  // component-processing.ts for defense.
+  const stashedScripts: string[] = []
+  output = output.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (match) => {
+    const idx = stashedScripts.length
+    stashedScripts.push(match)
+    return `\x00STX_SCRIPT_${idx}\x00`
+  })
+
   // Process kebab-case components (e.g., <my-component />)
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
   output = await processTagsWithParser(output, kebabPattern, false)
@@ -829,6 +847,11 @@ async function processCustomElementTags(
   // Process single-word lowercase components (e.g., <card />) - skip HTML tags
   const lowercasePattern = /[a-z][a-z0-9]*/
   output = await processTagsWithParser(output, lowercasePattern, false, htmlTags)
+
+  // Restore the stashed <script> blocks.
+  if (stashedScripts.length > 0) {
+    output = output.replace(/\x00STX_SCRIPT_(\d+)\x00/g, (_, idx) => stashedScripts[+idx])
+  }
 
   return output
 
