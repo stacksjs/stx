@@ -1547,6 +1547,7 @@ else if (part) {
       // If else/else-if siblings follow, drive the whole chain with one
       // mutually-exclusive effect; otherwise the single-element fast path.
       var ifChain = findIfChain(el, ifAttr);
+      console.log('[stx] :if dispatch on', el.tagName, ifAttr + '="' + el.getAttribute(ifAttr) + '"', 'chainLen:', ifChain.length, 'branches:', ifChain.map(function(c) { return c.attr; }).join(','));
       if (ifChain.length > 1) bindIfChain(ifChain, scope);
       else bindIf(el, scope, ifAttr);
       return;
@@ -2436,7 +2437,8 @@ catch (e) {
   // and a single source signal isn't subscribed N times. See #1734.
   function bindIfChain(chain, passedScope = componentScope) {
     var head = chain[0].el;
-    if (head.__stx_if_bound) return;
+    if (head.__stx_if_bound) { console.log('[stx] bindIfChain SKIPPED (head already bound):', head.tagName, chain.map(function(c) { return c.attr; }).join(',')); return; }
+    console.log('[stx] bindIfChain entry:', head.tagName, 'branches:', chain.map(function(c) { return c.attr; }).join(','));
 
     var parent = head.parentNode;
     if (!parent) { console.warn('[STX] bindIfChain: head element has no parent, skipping'); return; }
@@ -2507,6 +2509,7 @@ catch (e2) {
         if (evalBranch(b)) { pickedIdx = i; break; }
       }
 
+      console.log('[stx] bindIfChain pick:', pickedIdx, 'of', chain.length, '(', pickedIdx >= 0 ? chain[pickedIdx].attr : 'none', ') prev:', currentIdx);
       if (pickedIdx === currentIdx) return;
 
       // Remove the previously-shown branch (dispose its scopes first, #1727).
