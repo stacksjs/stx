@@ -699,6 +699,16 @@ External links (`http://`, `https://`, `mailto:`, `tel:`) stay as `<a href>` —
 
 For genuinely dynamic URLs with no transforms, `x-src` / `x-alt` on a plain `<img>` is acceptable. Otherwise prefer `<StxImage>`.
 
+**`<SafeImage>` instead of a plain `<img>` for any URL that can 404** — external-CDN avatars, user-uploaded content, seed data pointing at links that may disappear. It wires a race-free inline `onerror=` handler (parsed synchronously with the element, so it catches cached 404s and offline first paint that a delegated listener misses) that swaps to a fallback image, with an optional class swap.
+
+- `src` + `alt` — minimum (also accepts `:src` / `:alt` server-dynamic bindings)
+- `fallback="/images/avatars/default.svg"` — per-instance fallback (defaults to `/images/safe-image-default.svg`)
+- `className="… grayscale filter"` + `fallbackClassName="…"` — swap the class string on error (e.g. drop a `grayscale`/`blur-up` load class that shouldn't apply to the placeholder)
+- Extra attrs (`loading`, `width`, `height`, `id`, …) pass through to the `<img>`
+- The window-level error handler is registered once per page (idempotent across SPA nav); the loop guard prevents an infinite swap if the fallback itself 404s
+
+Use `<StxImage>` for local assets you control (it has the responsive/CLS machinery); use `<SafeImage>` when the URL is untrusted and the failure mode is "broken image in a styled frame."
+
 ### 3. State — `window.stx` exposes everything globally, no imports needed
 
 Every reactive primitive, composable, and lifecycle hook is attached to `window.stx` and callable as a bare identifier inside any `<script>` / `<script client>` block. Full surface (see `packages/stx/src/signals.ts:3286`):

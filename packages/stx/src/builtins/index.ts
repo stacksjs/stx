@@ -10,6 +10,7 @@
 
 export { StxLinkBuiltin } from './stx-link'
 export { StxImageBuiltin } from './stx-image'
+export { SafeImageBuiltin } from './safe-image'
 export { StxLoadingIndicatorBuiltin } from './stx-loading-indicator'
 export { StxToastBuiltin } from './toast'
 export { StxModalBuiltin } from './modal'
@@ -20,6 +21,7 @@ export { getTooltipRuntime } from './tooltip'
 import { registry } from '../component-registry'
 import { StxLinkBuiltin } from './stx-link'
 import { StxImageBuiltin } from './stx-image'
+import { SafeImageBuiltin } from './safe-image'
 import { StxLoadingIndicatorBuiltin } from './stx-loading-indicator'
 import { StxToastBuiltin } from './toast'
 import { StxModalBuiltin } from './modal'
@@ -33,6 +35,7 @@ import { IconBuiltin } from './icon'
 export function registerBuiltins(): void {
   registry.registerBuiltin(StxLinkBuiltin)
   registry.registerBuiltin(StxImageBuiltin)
+  registry.registerBuiltin(SafeImageBuiltin)
   registry.registerBuiltin(StxLoadingIndicatorBuiltin)
   registry.registerBuiltin(StxToastBuiltin)
   registry.registerBuiltin(StxModalBuiltin)
