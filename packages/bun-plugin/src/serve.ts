@@ -32,6 +32,41 @@ import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 // from the importer's location and a stale copy there beats the vendored one.
 const defaultStxModule = import('@stacksjs/stx')
 
+/**
+ * Build the candidate regexes for a dynamic route file (stacksjs/stx#1927).
+ *
+ * `fileRouteBase` is the route path with the file extension already
+ * stripped (e.g. `judges/[id]/profile/index`). Returns one regex per
+ * acceptable URL shape:
+ *   - the literal path with `[param]` → `([^/]+)`
+ *   - the same with a trailing `/index` removed, so
+ *     `judges/[id]/profile/index` also matches `judges/35/profile`
+ *     (without this, nested dynamic routes 404 on hard reload)
+ *   - both of the above again with a leading `pages/` stripped, for
+ *     projects that nest routable views under `pages/`
+ */
+export function buildDynamicRouteRegexes(fileRouteBase: string): RegExp[] {
+  const toPattern = (p: string): string => p
+    .replace(/\[([^\]]+)\]/g, '([^/]+)') // [param] → capture group
+    .replace(/\//g, '\\/') // escape slashes
+
+  const patterns: RegExp[] = [new RegExp(`^${toPattern(fileRouteBase)}$`)]
+
+  const noIndex = fileRouteBase.replace(/\/index$/, '')
+  if (noIndex !== fileRouteBase)
+    patterns.push(new RegExp(`^${toPattern(noIndex)}$`))
+
+  if (fileRouteBase.startsWith('pages/')) {
+    const pretty = fileRouteBase.slice(6)
+    patterns.push(new RegExp(`^${toPattern(pretty)}$`))
+    const prettyNoIndex = pretty.replace(/\/index$/, '')
+    if (prettyNoIndex !== pretty)
+      patterns.push(new RegExp(`^${toPattern(prettyNoIndex)}$`))
+  }
+
+  return patterns
+}
+
 export interface ServeOptions {
   patterns: string[]
   port?: number
@@ -305,7 +340,7 @@ export async function bundleBrowserAsset(entrypoint: string): Promise<Response> 
       status: 500,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-store',
       },
     })
   }
@@ -313,7 +348,7 @@ export async function bundleBrowserAsset(entrypoint: string): Promise<Response> 
   return new Response(await result.outputs[0].text(), {
     headers: {
       'Content-Type': 'application/javascript',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-store',
     },
   })
 }
@@ -406,6 +441,15 @@ export async function serve(options: ServeOptions): Promise<void> {
     signature: Map<string, number>
   }
   const htmlCache = new Map<string, HtmlCacheEntry>()
+  // Rendered-HTML cache is OFF in the dev server (stacksjs/stx#1926).
+  // `templateSignatureFresh` compares dependency mtimes, but transitive
+  // `@include`s sometimes don't get registered into the dependency set
+  // during `processDirectives` — so editing a deeply-included partial
+  // intermittently served stale HTML on alternating reloads. The dev
+  // server must be the source of truth on every request; a fresh render
+  // is ~50ms, which is a fine price for correctness. Flip this to `true`
+  // only if the dependency-tracking gap is fully closed.
+  const ENABLE_HTML_CACHE = false
   // Crosswind-generated CSS cache, keyed by sorted class-set. Lives here for
   // the same reason as `htmlCache`: so the watcher can wipe it on a source
   // edit and pick up a new utility's CSS the next render.
@@ -1060,7 +1104,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     // render, return the cached HTML. The stat fan-out is ~1ms total for a
     // typical 5-dep page; a fresh render is ~50ms, so even on miss we only
     // pay the stat cost once. Query-driven pages opt out entirely.
-    if (!skipCacheHint) {
+    if (ENABLE_HTML_CACHE && !skipCacheHint) {
       const cacheKey = htmlCacheKey(filePath)
       const cachedEntry = htmlCache.get(cacheKey)
       if (cachedEntry && await templateSignatureFresh(cachedEntry.signature))
@@ -1173,7 +1217,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     // `context.__stx_skip_cache = true`). The dependency set was populated
     // by processDirectives — every layout / component / partial it pulled
     // in is now part of the invalidation signature.
-    if (!context.__stx_skip_cache && !skipCacheHint) {
+    if (ENABLE_HTML_CACHE && !context.__stx_skip_cache && !skipCacheHint) {
       const signature = await buildTemplateSignature(filePath, dependencies)
       htmlCache.set(htmlCacheKey(filePath), { html: output, signature })
     }
@@ -1323,32 +1367,10 @@ export async function serve(options: ServeOptions): Promise<void> {
 
       // Convert dynamic route file to regex pattern
       // e.g., pages/data/[model].stx -> ^pages/data/([^/]+)$
+      // Build candidate regexes (incl. the `/index`-stripped variant so
+      // nested dynamic routes resolve on hard reload — stacksjs/stx#1927).
       const fileRouteBase = relativeFilePath.replace(/\.(stx|md|html)$/, '')
-      const routePattern = fileRouteBase
-        .replace(/\[([^\]]+)\]/g, '([^/]+)') // Replace [param] with capture group
-        .replace(/\//g, '\\/') // Escape slashes
-
-      // Try matching with and without 'pages/' prefix
-      const regexPatterns = [
-        new RegExp(`^${routePattern}$`),
-      ]
-      // Also match without trailing `/index` so [id]/profile/index.stx
-      // resolves /:id/profile (not just /:id/profile/index).
-      const fileRouteNoIndex = fileRouteBase.replace(/\/index$/, '')
-      if (fileRouteNoIndex !== fileRouteBase) {
-        const noIndexPattern = fileRouteNoIndex.replace(/\[([^\]]+)\]/g, '([^/]+)').replace(/\//g, '\\/')
-        regexPatterns.push(new RegExp(`^${noIndexPattern}$`))
-      }
-      if (fileRouteBase.startsWith('pages/')) {
-        const prettyBase = fileRouteBase.slice(6)
-        const prettyPattern = prettyBase.replace(/\[([^\]]+)\]/g, '([^/]+)').replace(/\//g, '\\/')
-        regexPatterns.push(new RegExp(`^${prettyPattern}$`))
-        const prettyNoIndex = prettyBase.replace(/\/index$/, '')
-        if (prettyNoIndex !== prettyBase) {
-          const prettyNoIndexPattern = prettyNoIndex.replace(/\[([^\]]+)\]/g, '([^/]+)').replace(/\//g, '\\/')
-          regexPatterns.push(new RegExp(`^${prettyNoIndexPattern}$`))
-        }
-      }
+      const regexPatterns = buildDynamicRouteRegexes(fileRouteBase)
 
       for (const regex of regexPatterns) {
         const match = normalizedPath.match(regex)
@@ -2068,7 +2090,7 @@ export async function serve(options: ServeOptions): Promise<void> {
               'X-STX-Fragment': 'true',
               'X-STX-Layout': pageLayout,
               'X-STX-Layout-Group': pageLayoutGroup,
-              'Cache-Control': 'no-cache',
+              'Cache-Control': 'no-store',
               ...corsHeaders,
             },
           })
@@ -2089,7 +2111,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         return new Response(injectHmrClient(cleaned), {
           headers: {
             'Content-Type': 'text/html; charset=utf-8',
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-store',
             ...corsHeaders,
           },
         })
@@ -2101,7 +2123,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         return new Response(injectHmrClient(contentWithExt), {
           headers: {
             'Content-Type': 'text/html; charset=utf-8',
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-store',
             ...corsHeaders,
           },
         })
@@ -2118,7 +2140,7 @@ export async function serve(options: ServeOptions): Promise<void> {
             return new Response(buildFile, {
               headers: {
                 'Content-Type': contentType,
-                'Cache-Control': 'no-cache', // Build artifacts change during dev
+                'Cache-Control': 'no-store', // Build artifacts change during dev
               },
             })
           }
@@ -2166,7 +2188,7 @@ export async function serve(options: ServeOptions): Promise<void> {
                   // stale copy from disk cache without revalidating. The build path (in
                   // `build-views.ts` / SSG) is what stamps long-lived cache headers on
                   // production output; the dev server should never set them.
-                  'Cache-Control': 'no-cache',
+                  'Cache-Control': 'no-store',
                 },
               })
             }
@@ -2224,7 +2246,7 @@ export async function serve(options: ServeOptions): Promise<void> {
                       // appear on the next normal reload. The previous `max-age=3600`
                       // meant up to an hour of stale assets after a swap. Production
                       // builds copy public/ to dist/ where a CDN stamps long caching.
-                      'Cache-Control': 'no-cache',
+                      'Cache-Control': 'no-store',
                     },
                   })
                 }
