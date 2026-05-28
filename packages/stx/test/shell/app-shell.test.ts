@@ -25,33 +25,36 @@ afterAll(() => {
 
 describe('App Shell', () => {
   describe('detectShell', () => {
-    it('should detect app.stx in project root', () => {
+    // detectShell is async (Bun-first migration, #1715) — these calls must
+    // be awaited; previously they compared a Promise against a string/null
+    // and silently failed.
+    it('should detect app.stx in project root', async () => {
       fs.writeFileSync(path.join(tmpDir, 'app.stx'), '<template><slot /></template>')
-      const result = detectShell(tmpDir)
+      const result = await detectShell(tmpDir)
       expect(result).toBe(path.join(tmpDir, 'app.stx'))
     })
 
-    it('should return null when no app.stx exists', () => {
+    it('should return null when no app.stx exists', async () => {
       const emptyDir = path.join(tmpDir, 'empty')
       fs.mkdirSync(emptyDir, { recursive: true })
-      const result = detectShell(emptyDir)
+      const result = await detectShell(emptyDir)
       expect(result).toBeNull()
     })
 
-    it('should return null when shell is explicitly disabled', () => {
-      const result = detectShell(tmpDir, false)
+    it('should return null when shell is explicitly disabled', async () => {
+      const result = await detectShell(tmpDir, false)
       expect(result).toBeNull()
     })
 
-    it('should use custom shell path when configured', () => {
+    it('should use custom shell path when configured', async () => {
       const customShell = path.join(tmpDir, 'layout.stx')
       fs.writeFileSync(customShell, '<template><slot /></template>')
-      const result = detectShell(tmpDir, 'layout.stx')
+      const result = await detectShell(tmpDir, 'layout.stx')
       expect(result).toBe(customShell)
     })
 
-    it('should return null for non-existent custom shell', () => {
-      const result = detectShell(tmpDir, 'nonexistent.stx')
+    it('should return null for non-existent custom shell', async () => {
+      const result = await detectShell(tmpDir, 'nonexistent.stx')
       expect(result).toBeNull()
     })
   })
