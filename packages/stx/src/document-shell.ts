@@ -12,6 +12,34 @@
 import type { AppHeadConfig } from './types/config-types'
 
 /**
+ * Inline x-cloak rule shipped in the SSR <head> (stacksjs/stx#1736).
+ *
+ * Must be parsed by the browser BEFORE first paint — so it goes in the head
+ * as static markup, not injected by the runtime script (which runs after the
+ * body has already painted, the window where false `:if` branches / hidden
+ * `:show` elements flash). The `data-stx-cloak` marker makes injection
+ * idempotent. The runtime's own late injection (signals.ts) is retained as a
+ * belt-and-suspenders for SPA-nav fragments that arrive without SSR head
+ * emission.
+ */
+export const CLOAK_STYLE = '<style data-stx-cloak>[x-cloak]{display:none !important}</style>'
+
+/**
+ * Insert the inline x-cloak <style> before </head> if a head exists and the
+ * style isn't already present. Idempotent (guards on the data-stx-cloak
+ * marker). No-op when the output has no </head> — those paths fall back to
+ * the runtime's late injection.
+ */
+export function injectCloakStyle(html: string): string {
+  if (html.includes('data-stx-cloak'))
+    return html
+  const headCloseIdx = html.lastIndexOf('</head>')
+  if (headCloseIdx === -1)
+    return html
+  return `${html.slice(0, headCloseIdx)}${CLOAK_STYLE}\n${html.slice(headCloseIdx)}`
+}
+
+/**
  * Generate the full HTML document shell wrapping page content.
  *
  * @param content - The rendered page/layout HTML (no document wrapper)
@@ -82,10 +110,13 @@ export function generateDocumentShell(
   const bodyAttrStr = Object.entries(bodyAttrs).map(([k, v]) => ` ${k}="${v}"`).join('')
   const bodyClassStr = bodyClass ? ` class="${bodyClass}"` : ''
 
-  // Compose <head>
+  // Compose <head>. The cloak style goes in early (before user styles and
+  // scripts) so the [x-cloak] rule is live before first paint — prevents the
+  // conditional-directive FOUC (#1736).
   const headParts = [
     metaTags,
     `  <title>${pageTitle}</title>`,
+    `  ${CLOAK_STYLE}`,
     linkTags,
     configHeadScripts,
     headRaw ? `  ${headRaw}` : '',

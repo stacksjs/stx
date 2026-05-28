@@ -50,13 +50,13 @@ import { processServerBindings } from './server-bindings'
 import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 import { processScopedStyles } from './style-scoping'
-import { ensureDocumentShell } from './document-shell'
+import { ensureDocumentShell, injectCloakStyle } from './document-shell'
 
 // Extracted modules
 import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, processSignals } from './signal-processing'
 import { processComponents } from './component-renderer'
 import { processInlineAssets } from './inline-assets'
-import { addCloakToUnresolvedExpressions, processJsonDirective, processMemoDirective, processOnceDirective, processRefAttributes } from './misc-directives'
+import { addCloakToConditionalDirectives, addCloakToUnresolvedExpressions, processJsonDirective, processMemoDirective, processOnceDirective, processRefAttributes } from './misc-directives'
 import { validateClientScript } from './script-validation'
 import { safeEvaluate } from './safe-evaluator'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
@@ -354,6 +354,15 @@ export async function processDirectives(
           const wrongAttrRegex = new RegExp(`(<(?!body)[a-zA-Z][^>]*) data-stx="${setupMatch[1]}"`, 'i')
           result = result.replace(wrongAttrRegex, '$1')
         }
+      }
+
+      // Ship the inline x-cloak <style> in the <head> so the rule is live
+      // before first paint (#1736). Idempotent: a no-op when generateDocumentShell
+      // already added it (auto-shell pages) or when there's no <head> (the
+      // runtime's late injection covers those). Covers layout-supplied heads
+      // that don't go through generateDocumentShell.
+      if (isTopLevel) {
+        result = injectCloakStyle(result)
       }
 
       // Auto-inject store definitions from storesDir.
@@ -1177,6 +1186,14 @@ async function processOtherDirectives(
   // This prevents FOUC — raw mustache syntax flashing before the JS runtime processes them.
   // The signals runtime removes x-cloak after binding, identical to Vue's v-cloak approach.
   output = addCloakToUnresolvedExpressions(output)
+
+  // Auto-stamp x-cloak on elements carrying a reactive conditional/visibility
+  // directive (:if, :else, :else-if, :show, x-*, @if, @show). Paired with the
+  // inline cloak <style> shipped in the SSR <head>, this hides false branches
+  // and hidden elements until the runtime mounts — preventing the FOUC in
+  // stacksjs/stx#1736 without per-element opt-in. The runtime strips x-cloak
+  // as it processes each element.
+  output = addCloakToConditionalDirectives(output)
 
   // Process reactive bindings (:class, :text, stx-class, stx-bind:class, etc.)
   // This generates client-side JS for store-aware reactive updates

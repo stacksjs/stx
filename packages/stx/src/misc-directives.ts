@@ -286,3 +286,98 @@ export function addCloakToUnresolvedExpressions(html: string): string {
   result += html.slice(lastIndex)
   return result
 }
+
+// Reactive conditional / visibility directives whose elements flash their
+// false-branch (or hidden) content before the client runtime processes them.
+// Auto-stamping x-cloak on these (paired with the inline cloak <style> shipped
+// in the SSR <head>) hides them until the runtime mounts and removes the
+// attribute. See stacksjs/stx#1736. `:else-if` MUST precede `:else` in the
+// alternation so the longer token wins. `@if` / `@show` here are the
+// element-attribute forms (e.g. `<div @if="…">`); the Blade `@if(...)`
+// control-flow directive is resolved server-side long before this pass and
+// never survives as an attribute.
+const CONDITIONAL_DIRECTIVE_RE
+  = /(?:^|\s)(?::else-if|:if|:else|:show|x-else-if|x-if|x-else|x-show|@if|@show)(?:=|\s|\/|>|$)/
+
+/**
+ * Add x-cloak to every element carrying a reactive conditional / visibility
+ * directive (:if, :else, :else-if, :show, x-if, x-else, x-else-if, x-show,
+ * and the @if / @show element-attribute forms).
+ *
+ * Without this, false branches and hidden elements paint before the runtime
+ * hides them — the FOUC described in stacksjs/stx#1736. The runtime already
+ * strips x-cloak the moment it processes each element, so this is purely an
+ * SSR-side additive pass; hand-written x-cloak is preserved (we skip tags
+ * that already have it).
+ */
+export function addCloakToConditionalDirectives(html: string): string {
+  const tagStartRe = /<[a-z][\w-]*/gi
+  let result = ''
+  let lastIndex = 0
+  let tagMatch: RegExpExecArray | null
+
+  // eslint-disable-next-line no-cond-assign
+  while ((tagMatch = tagStartRe.exec(html)) !== null) {
+    const tagOpenStart = tagMatch.index
+    const tagName = tagMatch[0].slice(1).toLowerCase()
+
+    // Skip <script> / <style> bodies entirely — their raw JS/CSS text (e.g.
+    // `if (a < b)`) can contain `<`-prefixed substrings that look like tags
+    // and could trip a conditional-directive false positive. Same lesson as
+    // the component-scanner fix in stacksjs/stx#1730. Advance the regex
+    // cursor past the matching close tag.
+    if (tagName === 'script' || tagName === 'style') {
+      const closeTag = `</${tagName}>`
+      const closeIdx = html.toLowerCase().indexOf(closeTag, tagOpenStart)
+      if (closeIdx !== -1)
+        tagStartRe.lastIndex = closeIdx + closeTag.length
+      continue
+    }
+
+    // Find the real closing ">" of this opening tag, skipping ">" inside
+    // quoted attribute values (same boundary logic as the {{ }} pass).
+    let i = tagOpenStart + tagMatch[0].length
+    let inSingleQuote = false
+    let inDoubleQuote = false
+    let tagCloseIdx = -1
+
+    while (i < html.length) {
+      const ch = html[i]
+      if (inSingleQuote) {
+        if (ch === '\'') inSingleQuote = false
+      }
+      else if (inDoubleQuote) {
+        if (ch === '"') inDoubleQuote = false
+      }
+      else if (ch === '\'') {
+        inSingleQuote = true
+      }
+      else if (ch === '"') {
+        inDoubleQuote = true
+      }
+      else if (ch === '>') {
+        tagCloseIdx = i
+        break
+      }
+      i++
+    }
+
+    if (tagCloseIdx === -1) continue
+
+    // The attribute span is everything between the tag name and the ">".
+    const attrSpan = html.slice(tagOpenStart + tagMatch[0].length, tagCloseIdx)
+
+    // Skip if already cloaked or no conditional directive present.
+    if (/(?:^|\s)x-cloak(?:=|\s|\/|>|$)/.test(attrSpan)) continue
+    if (!CONDITIONAL_DIRECTIVE_RE.test(attrSpan)) continue
+
+    // Self-closing tags end in "/>" — insert x-cloak before the trailing slash.
+    const isSelfClosing = html[tagCloseIdx - 1] === '/'
+    const insertAt = isSelfClosing ? tagCloseIdx - 1 : tagCloseIdx
+    result += `${html.slice(lastIndex, insertAt)} x-cloak${isSelfClosing ? ' ' : ''}`
+    lastIndex = insertAt
+  }
+
+  result += html.slice(lastIndex)
+  return result
+}
