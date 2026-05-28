@@ -2405,22 +2405,39 @@ catch (e) {
       el.remove(); // Remove the template element itself
     }
 
-    // Helper to evaluate with captured scope (auto-unwraps signals)
+    // Helper to evaluate with captured scope (auto-unwraps signals).
+    // Mirrors bindStyle/bindShow/evalAttrExpr: first try the auto-unwrap
+    // proxy (so a bare-reference comparison like count > 5 reads the signal
+    // as a primitive), then retry with the raw scope so call-syntax
+    // expressions like count() === 0 or !recording() still work. The proxy
+    // unwraps signals to their values, which turns count() into 0() ->
+    // TypeError; pre-fix (stacksjs/stx#1733) the single catch swallowed
+    // that TypeError and returned '' (falsy), silently hiding the element
+    // for EVERY comparison/boolean expression. bindIf was the only
+    // directive missing this retry.
     const evalExpr = (expression) => {
+      // Skip placeholder expressions like __TITLE__ (build-time placeholders)
+      if (/^__[A-Z_]+__$/.test(expression.trim())) {
+        return expression;
+      }
       try {
-        // Skip placeholder expressions like __TITLE__ (build-time placeholders)
-        if (/^__[A-Z_]+__$/.test(expression.trim())) {
-          return expression;
-        }
         // Use captured componentScope (with @for vars) merged with element scope
         const scope = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
         const unwrapScope = createAutoUnwrapProxy(scope);
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(unwrapScope));
       }
-catch (e) {
-        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
-        return '';
+catch (e1) {
+        try {
+          // Retry without the unwrap proxy so call-syntax (signal()) works.
+          const scope2 = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
+          const fn2 = new Function(...Object.keys(scope2), 'return ' + expression);
+          return fn2(...Object.values(scope2));
+        }
+catch (e2) {
+          if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expression, e2);
+          return '';
+        }
       }
     };
 
