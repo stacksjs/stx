@@ -1,174 +1,92 @@
 /**
- * Streaming suspense error UI tests (#1711).
+ * Streaming suspense error-UI tests (#1711).
  *
- * Covers the catch handler in `packages/stx/src/streaming.ts` ~ line 334:
- *
- *   catch (error: unknown) {
- *     const errorMsg = error instanceof Error ? error.message : String(error)
- *     controller.enqueue(`
- * <script>
- * window.__stxSuspense.resolve('${name}', '<div class="stx-error">…');
- * </script>`)
- *   }
- *
- * When a suspense boundary's `processDirectives` promise rejects, the streaming
- * pipeline must:
- *   1. Still close the stream successfully (one boundary's failure must not
- *      take down the rest of the page).
- *   2. Replace that boundary's placeholder with a marked-up error UI (`<div
- *      class="stx-error">`) so the client can detect and style it.
+ * Covers `buildSuspenseResolveScript` — the per-boundary resolve logic
+ * extracted from streamTemplate's inline loop. When a suspense boundary's
+ * content promise rejects, the function must:
+ *   1. Not throw — one boundary's failure can't take down the stream.
+ *   2. Emit a marked-up error UI (`<div class="stx-error">`) into the
+ *      boundary's placeholder via __stxSuspense.resolve.
  *   3. HTML-escape the error message — never inject raw `<script>` or quote
  *      characters from the thrown Error into the page.
  *   4. Coerce non-Error throws via `String(error)`.
+ *   5. Resolve real content (the success path) intact.
  *
- * Real production failure modes (a directive whose handler throws, a database
- * lookup that times out, an upstream API returning a malformed response) are
- * hard to trigger reproducibly from a test, so we mock `processDirectives` to
- * reject for content tagged with a sentinel string. Everything else flows
- * normally — confirming the surrounding pipeline is unaffected.
+ * Testing the extracted function directly (with resolving/rejecting promises)
+ * avoids mocking `processDirectives`. The previous version mocked it via
+ * Bun's `mock.module`, which is process-global and does NOT restore at file
+ * boundaries — it leaked into every later test that imports processDirectives
+ * (returning input unchanged → silently no-op'ing the render pipeline), which
+ * was the root cause of a ~110-test cross-contamination cluster in the full
+ * `bun test` run. No global mocking here.
  */
-import { afterAll, beforeAll, describe, expect, it, mock } from 'bun:test'
-import fs from 'node:fs'
-import path from 'node:path'
+import { describe, expect, it } from 'bun:test'
+import { buildSuspenseResolveScript } from '../../src/streaming'
 
-// IMPORTANT: mock.module must run BEFORE the import of streaming, since
-// streaming.ts captures `processDirectives` at module-evaluation time. We use
-// the `../../src/process` specifier here to match the relative import inside
-// streaming.ts; without that match, the mock would be silently ignored.
-mock.module('../../src/process', () => ({
-  processDirectives: async (content: string) => {
-    if (content.includes('__FAIL_ERROR__'))
-      throw new Error('boom <script>alert("xss")</script>')
-    if (content.includes('__FAIL_STRING__'))
-      // eslint-disable-next-line no-throw-literal
-      throw 'plain string error'
-    return content
-  },
-}))
-
-const { streamTemplate } = await import('../../src/streaming')
-
-const TEST_DIR = import.meta.dir
-const TMP = path.join(TEST_DIR, 'temp-suspense-error')
-
-async function drain(stream: ReadableStream<string>): Promise<string> {
-  const reader = stream.getReader()
-  let out = ''
-  while (true) {
-    const r = await reader.read()
-    if (r.done)
-      break
-    out += r.value
-  }
-  return out
-}
-
-describe('streaming suspense error UI (#1711)', () => {
-  beforeAll(async () => {
-    await fs.promises.mkdir(TMP, { recursive: true })
-  })
-
-  afterAll(async () => {
-    await fs.promises.rm(TMP, { recursive: true, force: true })
-  })
-
-  it('replaces the placeholder with a stx-error div when the boundary throws', async () => {
-    const file = path.join(TMP, 'error-boundary.stx')
-    await Bun.write(file, [
-      '<div>shell</div>',
-      '<!-- @suspense:bad -->',
-      '__FAIL_ERROR__',
-      '<!-- @endsuspense:bad -->',
-    ].join('\n'))
-
-    const out = await drain(await streamTemplate(file))
-
-    // The error-path script fires for the failing boundary.
+describe('buildSuspenseResolveScript — error path (#1711)', () => {
+  it('emits a stx-error div when the boundary promise rejects', async () => {
+    const out = await buildSuspenseResolveScript('bad', Promise.reject(new Error('kaboom')))
     expect(out).toContain('__stxSuspense.resolve(\'bad\'')
     expect(out).toContain('<div class="stx-error">Error loading content:')
+    expect(out).toContain('kaboom')
   })
 
-  it('HTML-escapes the error message (no raw <script> in the output)', async () => {
-    const file = path.join(TMP, 'escape.stx')
-    await Bun.write(file, [
-      '<!-- @suspense:bad -->',
-      '__FAIL_ERROR__',
-      '<!-- @endsuspense:bad -->',
-    ].join('\n'))
+  it('does not throw when the boundary rejects (stream stays alive)', async () => {
+    // The function must resolve to a string, never reject — otherwise one
+    // failing boundary would reject Promise.all and tear down the stream.
+    const p = buildSuspenseResolveScript('bad', Promise.reject(new Error('x')))
+    await expect(p).resolves.toBeString()
+  })
 
-    const out = await drain(await streamTemplate(file))
-
-    // The Error message contains `<script>alert("xss")</script>`. After
-    // escaping it must appear with entity-encoded angle brackets and quotes.
+  it('HTML-escapes the error message (no raw <script> in the error div)', async () => {
+    const out = await buildSuspenseResolveScript(
+      'bad',
+      Promise.reject(new Error('boom <script>alert("xss")</script>')),
+    )
+    // Entity-encoded angle brackets + quotes.
     expect(out).toContain('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;')
-    // The raw script-tag boundary must NOT appear inside the stx-error div —
-    // that's the actual XSS risk (a `<script>` substring in user-supplied
-    // error text would close the outer script and start a fresh one). We
-    // scope the assertion to the error div itself so it doesn't false-fire
-    // on the `</script>` that closes the resolve() script tag.
-    const errorDivMatch = out.match(/<div class="stx-error">[\s\S]*?<\/div>/)
-    expect(errorDivMatch).not.toBeNull()
-    expect(errorDivMatch![0]).not.toContain('<script>')
-    expect(errorDivMatch![0]).not.toContain('</script>')
+    // The error div itself must carry no raw script-tag boundary — that's
+    // the actual XSS risk. Scope the assertion to the div (the wrapping
+    // resolve() <script> tag's own </script> is unrelated).
+    const errorDiv = out.match(/<div class="stx-error">[\s\S]*?<\/div>/)
+    expect(errorDiv).not.toBeNull()
+    expect(errorDiv![0]).not.toContain('<script>')
+    expect(errorDiv![0]).not.toContain('</script>')
   })
 
   it('coerces non-Error throws via String(error)', async () => {
-    const file = path.join(TMP, 'string-throw.stx')
-    await Bun.write(file, [
-      '<!-- @suspense:bad -->',
-      '__FAIL_STRING__',
-      '<!-- @endsuspense:bad -->',
-    ].join('\n'))
-
-    const out = await drain(await streamTemplate(file))
-
-    // The thrown value was a string; the handler must `String()` it (which is
-    // a no-op for strings) and inline it as the error message.
+    // eslint-disable-next-line prefer-promise-reject-errors
+    const out = await buildSuspenseResolveScript('bad', Promise.reject('plain string error'))
     expect(out).toContain('Error loading content: plain string error')
     expect(out).toContain('class="stx-error"')
   })
+})
 
-  it('keeps successful sibling boundaries flowing even when one fails', async () => {
-    const file = path.join(TMP, 'mixed.stx')
-    await Bun.write(file, [
-      '<div>shell</div>',
-      '<!-- @suspense:ok -->',
-      'OK_CONTENT',
-      '<!-- @endsuspense:ok -->',
-      '<!-- @suspense:bad -->',
-      '__FAIL_ERROR__',
-      '<!-- @endsuspense:bad -->',
-    ].join('\n'))
-
-    const out = await drain(await streamTemplate(file))
-
-    // Failing boundary gets the error UI.
-    expect(out).toContain('__stxSuspense.resolve(\'bad\'')
-    expect(out).toContain('stx-error')
-
-    // Healthy boundary still resolves with its real content. The resolve
-    // call for 'ok' must NOT contain the stx-error marker.
-    const okResolveMatch = out.match(/__stxSuspense\.resolve\('ok',[\s\S]*?\);/)
-    expect(okResolveMatch).not.toBeNull()
-    expect(okResolveMatch![0]).toContain('OK_CONTENT')
-    expect(okResolveMatch![0]).not.toContain('stx-error')
+describe('buildSuspenseResolveScript — success path (#1711)', () => {
+  it('injects resolved content into the boundary placeholder', async () => {
+    const out = await buildSuspenseResolveScript('ok', Promise.resolve('<p>hello</p>'))
+    expect(out).toContain('__stxSuspense.resolve(\'ok\'')
+    expect(out).toContain('<p>hello</p>')
+    // Success path uses the content as-is — no stx-error wrapper.
+    expect(out).not.toContain('stx-error')
   })
 
-  it('still closes the stream cleanly after a boundary failure', async () => {
-    const file = path.join(TMP, 'closes.stx')
-    await Bun.write(file, [
-      '<!-- @suspense:bad -->',
-      '__FAIL_ERROR__',
-      '<!-- @endsuspense:bad -->',
-    ].join('\n'))
+  it('escapes backticks and </script> in resolved content', async () => {
+    const out = await buildSuspenseResolveScript('ok', Promise.resolve('a `b` </script> c'))
+    // Backtick escaped so it can't close the template literal; </script>
+    // escaped so it can't break out of the wrapping script tag.
+    expect(out).toContain('\\`b\\`')
+    expect(out).toContain('<\\/script>')
+  })
 
-    // drain() walks until reader.read() reports done — a hung or errored
-    // stream would deadlock this test, so the fact that we reach the
-    // assertion at all is half the proof.
-    const out = await drain(await streamTemplate(file))
-    expect(out.length).toBeGreaterThan(0)
-    // The runtime <script> for __stxSuspense should be present — proving the
-    // pipeline progressed past the shell into the resolve phase.
-    expect(out).toContain('__stxSuspense')
+  it('keeps sibling boundaries independent (one fails, one succeeds)', async () => {
+    const okOut = await buildSuspenseResolveScript('ok', Promise.resolve('GOOD'))
+    const badOut = await buildSuspenseResolveScript('bad', Promise.reject(new Error('BAD')))
+    // The healthy boundary resolves with its real content and no error marker.
+    expect(okOut).toContain('GOOD')
+    expect(okOut).not.toContain('stx-error')
+    // The failing boundary is isolated to its own error UI.
+    expect(badOut).toContain('stx-error')
+    expect(badOut).toContain('BAD')
   })
 })

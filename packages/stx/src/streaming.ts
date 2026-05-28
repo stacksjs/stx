@@ -322,23 +322,7 @@ export async function streamTemplate(
           // Stream resolved suspense content as it completes
           const resolvePromises = Array.from(suspensePromises.entries()).map(
             async ([name, promise]) => {
-              try {
-                const content = await promise
-                // Send script to inject content into placeholder
-                const escapedContent = content.replace(/`/g, '\\`').replace(/<\/script>/gi, '<\\/script>')
-                controller.enqueue(`
-<script>
-window.__stxSuspense.resolve('${name}', \`${escapedContent}\`);
-</script>`)
-              }
-              catch (error: unknown) {
-                // Send error state for this suspense boundary
-                const errorMsg = error instanceof Error ? error.message : String(error)
-                controller.enqueue(`
-<script>
-window.__stxSuspense.resolve('${name}', '<div class="stx-error">Error loading content: ${escapeHtml(errorMsg)}</div>');
-</script>`)
-              }
+              controller.enqueue(await buildSuspenseResolveScript(name, promise))
             },
           )
 
@@ -354,6 +338,40 @@ window.__stxSuspense.resolve('${name}', '<div class="stx-error">Error loading co
       }
     },
   })
+}
+
+/**
+ * Build the <script> chunk that resolves a single suspense boundary.
+ *
+ * On success it injects the rendered content (backtick- and
+ * </script>-escaped so it can't break out of the template literal). On
+ * rejection it injects a marked-up, HTML-escaped error UI instead of
+ * letting the failure take down the whole stream — one boundary's error
+ * is isolated to that boundary's placeholder.
+ *
+ * Extracted from the inline resolve loop so the error path is directly
+ * unit-testable with a rejecting promise, without mocking the render
+ * pipeline (the previous test mocked `processDirectives` via
+ * `mock.module`, which is process-global in Bun and leaked into every
+ * later test in the run — the root cause of a large cross-contamination
+ * cluster). See stacksjs/stx#1711.
+ */
+export async function buildSuspenseResolveScript(name: string, promise: Promise<string>): Promise<string> {
+  try {
+    const content = await promise
+    const escapedContent = content.replace(/`/g, '\\`').replace(/<\/script>/gi, '<\\/script>')
+    return `
+<script>
+window.__stxSuspense.resolve('${name}', \`${escapedContent}\`);
+</script>`
+  }
+  catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    return `
+<script>
+window.__stxSuspense.resolve('${name}', '<div class="stx-error">Error loading content: ${escapeHtml(errorMsg)}</div>');
+</script>`
+  }
 }
 
 /**
