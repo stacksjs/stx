@@ -1521,11 +1521,34 @@ else if (part) {
       return;
     }
 
+    // x-else / x-else-if are owned by their preceding x-if chain (#1734).
+    // A detached chain member reached via the parent's snapshot child-
+    // iteration must be skipped — bindIfChain manages its lifecycle and
+    // only the active branch is (re)connected. Connected chain members
+    // (the active branch) fall through; their if/else attr was already
+    // removed by bindIfChain, and double-bind guards make any redundant
+    // pass idempotent.
+    if (el.__stx_chain_member && !el.isConnected) return;
+
+    // An else/else-if with no preceding if is an orphan. Match Vue: warn,
+    // strip the attribute, and render it as a plain element (fall through).
+    if (!el.__stx_chain_member) {
+      var orphanElse = getElseAttrInfo(el);
+      if (orphanElse) {
+        console.warn('[STX] ' + orphanElse.name + ' has no matching preceding x-if/:if/@if sibling; rendering as a plain element.');
+        el.removeAttribute(orphanElse.name);
+      }
+    }
+
     // Handle @if / :if / x-if (conditional rendering)
     if (el.hasAttribute('@if') || el.hasAttribute(':if') || el.hasAttribute('x-if')) {
       var ifAttr = el.hasAttribute(':if') ? ':if' : el.hasAttribute('x-if') ? 'x-if' : '@if';
 
-      bindIf(el, scope, ifAttr);
+      // If else/else-if siblings follow, drive the whole chain with one
+      // mutually-exclusive effect; otherwise the single-element fast path.
+      var ifChain = findIfChain(el, ifAttr);
+      if (ifChain.length > 1) bindIfChain(ifChain, scope);
+      else bindIf(el, scope, ifAttr);
       return;
     }
 
@@ -2367,6 +2390,157 @@ catch (e) {
   }
 
   var __bindIfCounter = 0;
+  // ── x-else / x-else-if chain support (stacksjs/stx#1734) ──────────────
+  // Returns { name, terminal } for an else/else-if attribute present on el,
+  // or null. terminal=true for the catch-all x-else (no further siblings
+  // join the chain). Checks all three prefixes (:, x-, @).
+  function getElseAttrInfo(el) {
+    if (!el || !el.hasAttribute) return null;
+    if (el.hasAttribute(':else-if')) return { name: ':else-if', terminal: false };
+    if (el.hasAttribute('x-else-if')) return { name: 'x-else-if', terminal: false };
+    if (el.hasAttribute('@else-if')) return { name: '@else-if', terminal: false };
+    if (el.hasAttribute(':else')) return { name: ':else', terminal: true };
+    if (el.hasAttribute('x-else')) return { name: 'x-else', terminal: true };
+    if (el.hasAttribute('@else')) return { name: '@else', terminal: true };
+    return null;
+  }
+
+  // Walk forward from an x-if/:if/@if head element collecting consecutive
+  // else-if/else siblings (nextElementSibling skips text/comment nodes, so
+  // whitespace between branches is tolerated — matches Vue). Returns a chain
+  // array whose first entry is the if head; trailing x-else (if any) has
+  // expr=null and terminal=true.
+  function findIfChain(el, ifAttr) {
+    var chain = [{ el: el, attr: ifAttr, expr: el.getAttribute(ifAttr), terminal: false }];
+    var sib = el.nextElementSibling;
+    while (sib) {
+      var info = getElseAttrInfo(sib);
+      if (!info) break;
+      chain.push({
+        el: sib,
+        attr: info.name,
+        expr: info.terminal ? null : sib.getAttribute(info.name),
+        terminal: info.terminal,
+      });
+      if (info.terminal) break; // x-else is the chain terminator
+      sib = sib.nextElementSibling;
+    }
+    return chain;
+  }
+
+  // Reactive if/else-if/else chain. A single effect drives mutual exclusion:
+  // on each run it picks the first branch whose condition is truthy (the
+  // trailing x-else always matches), inserts that branch, and removes
+  // whichever branch was previously shown. One effect for the whole chain
+  // means branches can't transiently both render or both vanish in a tick,
+  // and a single source signal isn't subscribed N times. See #1734.
+  function bindIfChain(chain, passedScope = componentScope) {
+    var head = chain[0].el;
+    if (head.__stx_if_bound) return;
+
+    var parent = head.parentNode;
+    if (!parent) { console.warn('[STX] bindIfChain: head element has no parent, skipping'); return; }
+
+    var capturedComponentScope = { ...passedScope };
+
+    // Detach every branch up-front, leaving a positional placeholder comment
+    // so reinsertion preserves source order. Mark each as a chain member so
+    // the parent's snapshot child-iteration skips the detached (non-active)
+    // branches instead of bringing their content to life. The active branch
+    // is re-inserted below and IS connected, so it processes normally.
+    chain.forEach(function(b) {
+      b.el.__stx_if_bound = true;
+      b.el.__stx_chain_member = true;
+      b.capturedElementScope = findElementScope(b.el);
+      b.placeholder = document.createComment('stx-if-chain');
+      parent.insertBefore(b.placeholder, b.el);
+      b.el.removeAttribute(b.attr);
+      b.el.remove();
+      b.childrenProcessed = false;
+    });
+
+    // Per-branch evaluator with the same retry-without-unwrap fallback as
+    // bindIf (see #1733): proxy pass first (bare-ref comparisons), raw-scope
+    // retry second (call-syntax like count() === 0).
+    function evalBranch(b) {
+      var expression = b.expr;
+      if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
+      try {
+        var scope = { ...capturedComponentScope, ...(b.capturedElementScope || {}), ...globalHelpers };
+        var unwrapScope = createAutoUnwrapProxy(scope);
+        var fn = new Function(...Object.keys(scope), 'return ' + expression);
+        return fn(...Object.values(unwrapScope));
+      }
+catch (e1) {
+        try {
+          var scope2 = { ...capturedComponentScope, ...(b.capturedElementScope || {}), ...globalHelpers };
+          var fn2 = new Function(...Object.keys(scope2), 'return ' + expression);
+          return fn2(...Object.values(scope2));
+        }
+catch (e2) {
+          if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expression, e2);
+          return '';
+        }
+      }
+    }
+
+    // Build the signal-tracking scope: union of component scope + every
+    // branch's element scope, so a change to any referenced signal re-runs
+    // the chain regardless of which branch reads it.
+    var trackScope = { ...capturedComponentScope, ...globalHelpers };
+    chain.forEach(function(b) { Object.assign(trackScope, b.capturedElementScope || {}); });
+
+    var currentIdx = -1;
+
+    effect(function() {
+      // Subscribe to every signal in scope for reactivity.
+      for (var sk in trackScope) {
+        var sv = trackScope[sk];
+        if (sv && typeof sv === 'function' && (sv._isSignal || sv._isDerived)) sv();
+      }
+
+      // Pick the first matching branch; terminal x-else (expr=null) matches.
+      var pickedIdx = -1;
+      for (var i = 0; i < chain.length; i++) {
+        var b = chain[i];
+        if (b.terminal) { pickedIdx = i; break; }
+        if (evalBranch(b)) { pickedIdx = i; break; }
+      }
+
+      if (pickedIdx === currentIdx) return;
+
+      // Remove the previously-shown branch (dispose its scopes first, #1727).
+      if (currentIdx !== -1) {
+        var prev = chain[currentIdx].el;
+        disposeSubtreeScopes(prev);
+        prev.remove();
+      }
+
+      // Insert + process the newly-picked branch.
+      if (pickedIdx !== -1) {
+        var pick = chain[pickedIdx];
+        pick.placeholder.parentNode.insertBefore(pick.el, pick.placeholder.nextSibling);
+        pick.el.__stx_shown_at = performance.now();
+        if (!pick.childrenProcessed) {
+          pick.childrenProcessed = true;
+          // Defer child processing (same rationale as bindIf, CLAUDE.md
+          // item 35): keep child effects from subscribing to THIS chain
+          // effect's tracked signals.
+          (function (branch) {
+            setTimeout(function () {
+              var childScope = { ...capturedComponentScope, ...(branch.capturedElementScope || {}), ...globalHelpers };
+              processElement(branch.el, childScope);
+              branch.el.removeAttribute('x-cloak');
+              branch.el.querySelectorAll('[x-cloak]').forEach(function (c) { c.removeAttribute('x-cloak'); });
+            }, 0);
+          })(pick);
+        }
+      }
+
+      currentIdx = pickedIdx;
+    });
+  }
+
   function bindIf(el, passedScope = componentScope, attrName = '@if') {
     // Guard: prevent double-binding on the same element
     if (el.__stx_if_bound) { console.log('[stx] bindIf SKIPPED (already bound):', el.getAttribute(attrName) || '(attr removed)', 'on', el.tagName); return; }
@@ -4456,12 +4630,20 @@ catch (e) { console.warn('[stx] mount callback error:', e); }
     if (el.nodeType !== Node.ELEMENT_NODE) return;
     // Skip scoped elements - they were already processed
     if (el.hasAttribute && el.hasAttribute('data-stx-scope')) return;
+    // Detached chain members are owned by bindIfChain — skip (#1734).
+    if (el.__stx_chain_member && !el.isConnected) return;
     // Process this element's directives without recursing into children
     // (we'll handle children manually to skip scoped ones)
     const hasFor = el.hasAttribute && (el.hasAttribute('@for') || el.hasAttribute(':for') || el.hasAttribute('x-for'));
     const hasIf = el.hasAttribute && (el.hasAttribute('@if') || el.hasAttribute(':if') || el.hasAttribute('x-if'));
     if (hasFor) { var fa = el.hasAttribute(':for') ? ':for' : el.hasAttribute('x-for') ? 'x-for' : '@for'; bindFor(el, componentScope, fa); return; }
-    if (hasIf) { var ia = el.hasAttribute(':if') ? ':if' : el.hasAttribute('x-if') ? 'x-if' : '@if'; bindIf(el, componentScope, ia); return; }
+    if (hasIf) {
+      var ia = el.hasAttribute(':if') ? ':if' : el.hasAttribute('x-if') ? 'x-if' : '@if';
+      var ic = findIfChain(el, ia);
+      if (ic.length > 1) bindIfChain(ic, componentScope);
+      else bindIf(el, componentScope, ia);
+      return;
+    }
     // Process other attributes...
     if (el.hasAttribute && (el.hasAttribute('@show') || el.hasAttribute(':show') || el.hasAttribute('x-show'))) {
       var sa = el.hasAttribute(':show') ? ':show' : el.hasAttribute('x-show') ? 'x-show' : '@show';
