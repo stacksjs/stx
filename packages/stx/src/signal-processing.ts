@@ -632,7 +632,7 @@ export async function processScriptSetup(template: string, filePath?: string): P
   // APIs without bare state/derived calls, and we still want those merged
   // into the single setup function so their reactivity wires into the same
   // componentScope as the page's bindings.
-  const SIGNAL_API_RE = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useStore|useLocalStorage|useSessionStorage|useCookie|useReactiveProp|useFetch|useRef|useEventListener|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useWebSocket|useRoute|useSearchParams|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose)\s*(?:<[^>]*>)?\s*\(/
+  const SIGNAL_API_RE = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useStore|useLocalStorage|useSessionStorage|useCookie|useReactiveProp|useFetch|useRef|useEventListener|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useWebSocket|useRoute|useSearchParams|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^>]*>)?\s*\(/
   // (useSessionStorage was already in SIGNAL_API_RE before the runtime
   // shipped — strict-mode hinted at it; the runtime implementation just
   // landed alongside this.)
@@ -703,7 +703,7 @@ export async function processScriptSetup(template: string, filePath?: string): P
   const setupCode = `
 <script data-stx-scoped>
 function ${setupFnName}() {
-  const { state, derived, effect, batch, onMount, onDestroy, defineStore, useStore, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useSessionStorage, useCookie, useReactiveProp, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect, defineProps, withDefaults, defineEmits, defineExpose } = window.stx;
+  const { state, derived, effect, batch, onMount, onDestroy, defineStore, useStore, useFetch, useRef, useQuery, useMutation, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useSessionStorage, useCookie, useReactiveProp, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect, defineProps, withDefaults, defineEmits, defineExpose, defineSlots } = window.stx;
 ${mergedContent}
   return { ${mergedExports} };
 }

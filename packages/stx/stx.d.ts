@@ -293,6 +293,7 @@ declare function defineProps<T extends Record<string, any> = Record<string, any>
 declare function withDefaults<T extends Record<string, any>>(_props: T, _defaults: Partial<T>): T
 declare function defineEmits<T extends string = string>(): (_event: T, _payload?: unknown) => void
 declare function defineExpose<T extends Record<string, any>>(_exposed: T): void
+declare function defineSlots<T extends Record<string, (..._args: any[]) => any> = Record<string, (..._args: any[]) => any>>(): T
 declare function provide<T>(_key: string | symbol, _value: T): void
 declare function inject<T>(_key: string | symbol, _defaultValue?: T): T | undefined
 declare function getCurrentInstance(): any
@@ -458,6 +459,7 @@ interface StxRuntimeRegistry {
   withDefaults: typeof withDefaults
   defineEmits: typeof defineEmits
   defineExpose: typeof defineExpose
+  defineSlots: typeof defineSlots
 
   // Vue compat
   ref: typeof ref

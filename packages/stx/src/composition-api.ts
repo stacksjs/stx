@@ -344,6 +344,30 @@ export function useSlots(): Record<string, any> {
 }
 
 /**
+ * Declare the component's typed slot contract.
+ *
+ * The type parameter is the contract surface (mirrors Vue 3.3's `defineSlots`):
+ * editors and `.d.ts` consumers see exactly which slots a component renders and
+ * what props each slot receives. At runtime it returns the live slots object —
+ * the same value as {@link useSlots} — so it is usable as both a type anchor and
+ * a runtime accessor.
+ *
+ * ```ts
+ * interface Slots {
+ *   default: () => unknown
+ *   header?: (props: { title: string }) => unknown
+ * }
+ * const slots = defineSlots<Slots>()
+ * if (slots.header) { ... }
+ * ```
+ */
+export function defineSlots<
+  T extends Record<string, (...args: any[]) => any> = Record<string, (...args: any[]) => any>,
+>(): T {
+  return (currentInstance?.slots ?? {}) as T
+}
+
+/**
  * Get the current component's non-prop attributes.
  *
  * ```ts

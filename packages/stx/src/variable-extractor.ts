@@ -281,7 +281,7 @@ export function stripTypeScript(scriptContent: string): string {
   // - After defineProps/withDefaults: defineProps<Props>()
   // Pattern: identifier followed by <Type> where Type contains only valid type characters
   result = result.replace(/(\b(?:function|class|interface|type|extends|implements)\s+\w+)\s*<[^<>()]*>/g, '$1')
-  result = result.replace(/(\b(?:defineProps|withDefaults|Array|Promise|Map|Set|Record|Partial|Required|Readonly|Pick|Omit|Exclude|Extract))\s*<[^<>()]*>/g, '$1')
+  result = result.replace(/(\b(?:defineProps|withDefaults|defineEmits|defineSlots|Array|Promise|Map|Set|Record|Partial|Required|Readonly|Pick|Omit|Exclude|Extract))\s*<[^<>()]*>/g, '$1')
   // Also handle simple generic calls like foo<T>() but only when followed by (
   result = result.replace(/(\w+)\s*<[A-Z][^<>()]*>\s*(?=\()/g, '$1')
 
@@ -422,8 +422,30 @@ export async function extractVariables(
     propsObj, // Spread props as properties for direct destructuring
   )
 
-  // Vue-like defineProps
-  const defineProps = () => propsObj
+  // Vue-like defineProps. Supports the options-style defaults arg
+  // (`{ count: { default: 0 } }`) for parity with the module (props.ts) and
+  // client-runtime (signals.ts) impls. Defaults apply only when the prop is
+  // undefined, so a passed `0`/`false`/`''` is never collapsed.
+  const defineProps = (definitions?: Record<string, unknown>) => {
+    if (!definitions)
+      return propsObj
+    const result: Record<string, unknown> = { ...propsObj }
+    for (const [key, def] of Object.entries(definitions)) {
+      const opts = (def && typeof def === 'object' && !Array.isArray(def))
+        ? def as Record<string, unknown>
+        : { type: def }
+      if (result[key] === undefined && opts.default !== undefined) {
+        result[key] = typeof opts.default === 'function'
+          ? (opts.default as () => unknown)()
+          : opts.default
+      }
+    }
+    return result
+  }
+
+  // Type-only contract anchor at runtime; returns the live slots map.
+  // eslint-disable-next-line pickier/no-unused-vars
+  const defineSlots = () => (context.slots as Record<string, unknown>) || {}
 
   // Vue-like withDefaults - merge props with defaults
   const withDefaults = (props: Record<string, unknown>, defaults: Record<string, unknown>) => {
@@ -687,7 +709,7 @@ catch {
       'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
       'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',
       'ref', 'reactive', 'computed', 'watch', 'onMounted', 'onUnmounted', 'nextTick',
-      'defineEmits', 'defineExpose', 'provide', 'inject', 'useColorMode', 'useDark',
+      'defineEmits', 'defineExpose', 'defineSlots', 'provide', 'inject', 'useColorMode', 'useDark',
       'window', 'document', 'console', 'confirm', 'alert', 'fetch',
       'params',
       ...propArgNames,
@@ -705,7 +727,7 @@ catch {
       state, derived, effect, batch, onMount, onDestroy,
       definePageMeta, useRoute, useRouter, useHead, useSeoMeta,
       ref, reactive, computed, watch, onMounted, onUnmounted, nextTick,
-      defineEmits, defineExpose, provide, inject, useColorMode, useDark,
+      defineEmits, defineExpose, defineSlots, provide, inject, useColorMode, useDark,
       windowProxy, mockDocument, mockConsole, mockWindow.confirm, mockWindow.alert, mockWindow.fetch,
       paramsObj,
       ...propArgValues,

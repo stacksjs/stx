@@ -134,6 +134,74 @@ interface CardProps {
 @endcomponent
 ```
 
+### Typed component contracts
+
+For a Vue-3-style typed contract, declare props/emits/slots with the
+`define*` macros inside `<script server>` (SSR) or `<script>` (client). They are
+globally available — no import needed.
+
+```stx
+<script server>
+interface Props {
+  src: string            // required
+  alt?: string           // optional
+  count?: number         // optional
+  fallback?: string      // optional
+}
+
+interface Emits {
+  (e: 'close'): void
+  (e: 'submit', payload: { value: string }): void
+}
+
+interface Slots {
+  default: () => unknown
+  header?: (props: { title: string }) => unknown
+}
+
+// Typed props. Pair with withDefaults for default values.
+const props = withDefaults(defineProps<Props>(), {
+  alt: '',
+  count: 0,
+  fallback: '/images/default.svg',
+})
+
+const emit = defineEmits<Emits>()
+const slots = defineSlots<Slots>()
+</script>
+
+<img src="{{ props.src }}" alt="{{ props.alt }}" data-count="{{ props.count }}">
+```
+
+| Macro | Returns | Use it for |
+|---|---|---|
+| `defineProps<T>()` | the props object, typed as `T` | reading props with autocomplete + type-checked access |
+| `withDefaults(defineProps<T>(), { … })` | `T` with defaults filled in | default values that survive type narrowing |
+| `defineProps<T>({ key: { default } })` | `T` with options-style defaults | Vue runtime-options form (equivalent to `withDefaults`) |
+| `defineEmits<E>()` | a typed `emit(event, payload)` fn | emitting events the parent listens to via `@event` |
+| `defineSlots<S>()` | the live slots map, typed as `S` | branching on which slots the caller provided |
+
+**Defaults never collapse falsy values.** A default is applied **only when the
+prop is `undefined`** — a passed `0`, `false`, or `''` is a real value and is
+kept. This holds identically on the server and the client, so there is no
+hydration mismatch:
+
+```stx
+<!-- caller -->
+<Counter :count="0" />
+
+<script server>
+// props.count is 0 — NOT the 99 default. `$props.count || 99` would wrongly
+// collapse it to 99; defineProps/withDefaults do not.
+const props = withDefaults(defineProps<{ count?: number }>(), { count: 99 })
+</script>
+```
+
+> Compile-time call-site validation (turning `<SafeImage src={123} />` into a
+> TS error via a generated `.d.ts`) is tracked separately as a build-tooling
+> phase — the macros above give you the typed authoring surface and the
+> runtime-correct defaults today.
+
 ### Slots
 
 Use slots to inject content into components:

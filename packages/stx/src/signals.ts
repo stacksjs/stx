@@ -3817,6 +3817,9 @@ catch (e) {}
       var el = window.__STX_CURRENT_ELEMENT__;
       if (el) el.__stx_exposed = exposed;
     },
+    defineSlots: function() {
+      return window.__STX_CURRENT_SLOTS__ || {};
+    },
 
     _mountCallbacks: mountCallbacks,
     _destroyCallbacks: destroyCallbacks,

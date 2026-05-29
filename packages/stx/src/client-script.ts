@@ -328,7 +328,7 @@ const STX_AUTO_IMPORTS = [
   // Vue-style lifecycle hooks
   'onBeforeMount', 'onMounted', 'onBeforeUpdate', 'onUpdated', 'onBeforeUnmount', 'onUnmounted',
   // Component definition
-  'defineProps', 'withDefaults', 'defineEmits', 'defineExpose',
+  'defineProps', 'withDefaults', 'defineEmits', 'defineExpose', 'defineSlots',
   // Composition API (Vue-compatible)
   'provide', 'inject', 'nextTick', 'getCurrentInstance',
   'onErrorCaptured', 'useSlots', 'useAttrs',
