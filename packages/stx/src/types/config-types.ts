@@ -583,8 +583,13 @@ export interface StxConfig {
   envFile?: string | boolean
   /** Environment variable prefix for client-side exposure (e.g. 'STX_PUBLIC_') */
   envPrefix?: string
-  /** Path to Crosswind/CSS config file, or inline CSS config */
-  css?: string | { config?: string, content?: string[], preflight?: boolean, minify?: boolean }
+  /**
+   * Path to a `crosswind.config.*` file, or an inline Crosswind config. The
+   * inline object accepts any Crosswind field (`theme`, `fonts`, `safelist`,
+   * `shortcuts`, …) — e.g. load web fonts with
+   * `css: { fonts: { google: ['Inter:wght@400;700'] } }`.
+   */
+  css?: string | { config?: string, content?: string[], preflight?: boolean, minify?: boolean, [key: string]: unknown }
   /** Enable debug mode for detailed error messages */
   debug: boolean
   /** Directory to store cached templates, defaults to '.stx/cache' in the project root */

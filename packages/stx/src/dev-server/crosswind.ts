@@ -501,8 +501,12 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
             }
           }
           else {
-            // Inline CSS config object
+            // Inline CSS config object. Spread the whole object first so
+            // fields like `theme`, `fonts`, `safelist`, and `shortcuts` survive
+            // — previously only content/preflight/minify were carried through,
+            // which silently dropped web fonts and theme overrides.
             stxCssConfig = {
+              ...stxConfig.css,
               content: stxConfig.css.content || [],
               preflight: stxConfig.css.preflight ?? true,
               minify: stxConfig.css.minify ?? false,
