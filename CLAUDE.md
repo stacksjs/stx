@@ -250,7 +250,17 @@ stx uses three distinct prefixes:
 |--------|---------|----------|
 | `:` | **Structural directives** (control flow) | `:if`, `:show`, `:for`, `:key` |
 | `x-` | **Attribute bindings & content** | `x-class`, `x-style`, `x-href`, `x-src`, `x-text`, `x-html`, `x-model`, `x-cloak` |
-| `@` | **Event listeners** | `@click`, `@submit`, `@keydown.enter` |
+| `@` | **Event listeners** (as an attribute) | `@click`, `@submit`, `@keydown.enter` |
+
+**Three `if` families — do not confuse them** (they look identical but run at different times):
+
+| Form | Runs at | Reactive? | Use for |
+|------|---------|-----------|---------|
+| `@if(cond) … @endif` | **Server** (SSR, once) | No | branching on server data (`$user`, env) fixed at render time |
+| `v-if="cond"` | **Server** — compiles to `@if` (vue-template.ts) | No | Vue-style sugar for `@if`; **not** reactive despite the Vue name |
+| `:if` / `x-if="cond"` | **Client** (signals runtime: `bindIf`/`bindIfChain`) | Yes | branching on signals / fetch results / interaction |
+
+So `@`/`v-` conditionals are frozen after render; only `:if`/`x-if` re-evaluate on signal change. Note `@` is overloaded: a *statement* `@if(...)` is a server directive, an *attribute* `@click="…"` is a client event listener. Full table + gotchas: `docs/guide/prefix-convention.md` → "Conditionals: three lifecycles".
 
 ~~`x-data` is deprecated~~ — all client-side state lives in `<script client>` blocks using signals:
 
