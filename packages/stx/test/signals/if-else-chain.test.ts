@@ -171,12 +171,16 @@ describe('if/else chain runtime wiring (#1734)', () => {
     expect(runtime).toContain('if (ifChain.length > 1) bindIfChain(ifChain, scope)')
   })
 
-  it('binder inherits the #1733 retry-without-unwrap eval', () => {
+  it('binder inherits the #1733 retry-without-unwrap eval, via with() for narrow subscription (#1738)', () => {
     // The chain's per-branch evaluator must retry without the unwrap proxy
-    // so x-else-if="count() === 0" works on day one.
+    // so x-else-if="count() === 0" works on day one (#1733)...
     expect(runtime).toContain('var unwrapScope = createAutoUnwrapProxy(scope);')
-    // The retry path constructs a second Function against the raw scope.
-    expect(runtime).toContain('var fn2 = new Function(...Object.keys(scope2)')
+    // ...and both passes evaluate via with(__scope__) so the effect subscribes
+    // ONLY to the signals the branch references, not every signal in scope
+    // (#1738). The proxy pass uses unwrapScope; the retry pass uses the raw
+    // scope (call-syntax).
+    expect(runtime).toContain('new Function(\'__scope__\', \'with(__scope__) { return \' + expression + \' }\')')
+    expect(runtime).toContain('return fn2(scope);')
   })
 
   it('skips detached chain members in processElement (parent snapshot guard)', () => {

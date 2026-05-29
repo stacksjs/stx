@@ -56,38 +56,39 @@ describe('disposeSubtreeScopes (#1727)', () => {
     })
   })
 
-  describe('disposeSubtreeScopes is wired into all unmount paths', () => {
-    it('bindIf calls it before el.remove()', () => {
-      // The bindIf removal path used to be just `el.remove();` —
-      // now it must call disposeSubtreeScopes(el) immediately before.
-      // Match a slice that includes both the comment and the call so
-      // ordering can't drift.
-      expect(runtime).toMatch(/disposeSubtreeScopes\(el\);\s*el\.remove\(\);/)
-    })
+  describe('disposeSubtreeScopes is wired into the PERMANENT-removal paths only', () => {
+    // #1737 correction: :if / bindIfChain are TOGGLES (the element is re-shown
+    // when its condition flips back), not permanent unmounts. Disposing a
+    // nested data-stx-scope on every toggle deleted its window.stx._scopes
+    // entry, which the setup IIFE can't recreate — breaking re-show. So
+    // dispose runs ONLY for genuinely-permanent removals: bindFor item
+    // removal and cleanupContainer (SPA nav).
 
-    it('bindFor calls it before each removed item (loading/if/empty/key-mismatch)', () => {
-      // bindFor has multiple removal sites — one per state. Each must
-      // dispose before remove. The pattern `disposeSubtreeScopes(e); e.remove()`
-      // (with single-char arg) catches the inline forEach callbacks;
-      // `disposeSubtreeScopes(el); el.remove()` catches the keyed
-      // oldKeyMap path; `disposeSubtreeScopes(node); node.remove()`
-      // catches the template-multi-node bindIf path.
+    it('bindFor disposes each removed item (loading/if/empty/key-mismatch)', () => {
+      // bindFor's removal sites: `disposeSubtreeScopes(e); e.remove()` for the
+      // inline forEach callbacks and `disposeSubtreeScopes(el); el.remove()`
+      // for the keyed oldKeyMap path.
       const occurrences = runtime.match(/disposeSubtreeScopes\(\w+\)/g) || []
-      // At minimum: bindIf single-el path + 4 bindFor sites (loading,
-      // ifExpr, empty, oldKeyMap) + multi-node bindIf = 6 sites,
-      // plus the cleanupContainer one. Keep this loose so refactors
-      // that consolidate sites don't trip the test as long as wiring
-      // remains.
-      expect(occurrences.length).toBeGreaterThanOrEqual(5)
+      // 4 bindFor sites (loading, ifExpr, empty, oldKeyMap) + cleanupContainer.
+      expect(occurrences.length).toBeGreaterThanOrEqual(4)
+      expect(runtime).toMatch(/disposeSubtreeScopes\(e\);\s*e\.remove\(\);/)
     })
 
-    it('cleanupContainer routes through the helper (not an inline walk)', () => {
-      // The inline walk that used to live in cleanupContainer should
-      // be gone — replaced by the helper call. The old shape had
-      // `container.querySelectorAll('[data-stx-scope]').forEach`
-      // immediately followed by `.__destroyCallbacks`. The new shape
-      // calls disposeSubtreeScopes(container) directly.
+    it('cleanupContainer routes through the helper (SPA-nav teardown)', () => {
       expect(runtime).toContain('disposeSubtreeScopes(container)')
+    })
+
+    it('bindIf / bindIfChain do NOT dispose on toggle (#1737)', () => {
+      // bindIfChain's branch removal used `disposeSubtreeScopes(prev)` and
+      // bindIf's <template> multi-node path used `disposeSubtreeScopes(node)`;
+      // both are gone. (We can't assert on `(el)` because bindFor's keyed
+      // oldKeyMap removal legitimately names its loop var `el` — that one
+      // stays.)
+      expect(runtime).not.toContain('disposeSubtreeScopes(prev)')
+      expect(runtime).not.toContain('disposeSubtreeScopes(node)')
+      // The bindIf single-element removal carries an explicit marker that it
+      // intentionally does not dispose (it's a toggle, not a teardown).
+      expect(runtime).toContain(':if is a TOGGLE')
     })
   })
 })

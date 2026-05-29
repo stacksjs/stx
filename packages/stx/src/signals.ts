@@ -2461,23 +2461,33 @@ catch (e) {
       b.childrenProcessed = false;
     });
 
-    // Per-branch evaluator with the same retry-without-unwrap fallback as
-    // bindIf (see #1733): proxy pass first (bare-ref comparisons), raw-scope
-    // retry second (call-syntax like count() === 0).
+    // Per-branch evaluator. Evaluated inside the chain effect via with()
+    // (like evalLazy) so ONLY the signals the expression actually references
+    // register as dependencies — not every signal in scope. The old form
+    // (new Function(...Object.keys(scope)) called with ...Object.values of
+    // the unwrap proxy) read every scope value through the proxy to build the
+    // positional args, subscribing the effect to ALL scope signals, so it
+    // re-ran on every unrelated mutation (#1738). with() only triggers the
+    // proxy's get-trap for identifiers the expression names.
+    //
+    // Two passes, same as bindIf (#1733): proxy pass first (so bare-ref
+    // comparisons like count === 0 read the signal as a value), raw-scope
+    // retry second (so call-syntax like count() === 0 works — the proxy
+    // would have unwrapped count to a value, making count() throw).
     function evalBranch(b) {
       var expression = b.expr;
       if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
+      var scope = { ...capturedComponentScope, ...(b.capturedElementScope || {}), ...globalHelpers };
       try {
-        var scope = { ...capturedComponentScope, ...(b.capturedElementScope || {}), ...globalHelpers };
         var unwrapScope = createAutoUnwrapProxy(scope);
-        var fn = new Function(...Object.keys(scope), 'return ' + expression);
-        return fn(...Object.values(unwrapScope));
+        // new Function body is non-strict, so with() works.
+        var fn = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
+        return fn(unwrapScope);
       }
 catch (e1) {
         try {
-          var scope2 = { ...capturedComponentScope, ...(b.capturedElementScope || {}), ...globalHelpers };
-          var fn2 = new Function(...Object.keys(scope2), 'return ' + expression);
-          return fn2(...Object.values(scope2));
+          var fn2 = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
+          return fn2(scope);
         }
 catch (e2) {
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expression, e2);
@@ -2486,37 +2496,40 @@ catch (e2) {
       }
     }
 
-    // Build the signal-tracking scope: union of component scope + every
-    // branch's element scope, so a change to any referenced signal re-runs
-    // the chain regardless of which branch reads it.
-    var trackScope = { ...capturedComponentScope, ...globalHelpers };
-    chain.forEach(function(b) { Object.assign(trackScope, b.capturedElementScope || {}); });
-
     var currentIdx = -1;
 
     effect(function() {
-      // Subscribe to every signal in scope for reactivity.
-      for (var sk in trackScope) {
-        var sv = trackScope[sk];
-        if (sv && typeof sv === 'function' && (sv._isSignal || sv._isDerived)) sv();
-      }
-
-      // Pick the first matching branch; terminal x-else (expr=null) matches.
+      // Evaluate EVERY branch's condition each run (not for-break) so the
+      // reactive tracker registers dependencies on exactly the signals the
+      // branch expressions reference — and on ALL of them, so a transition
+      // from a later branch back to an earlier one still re-fires. Then pick
+      // the first truthy branch (terminal x-else always matches).
+      //
+      // Pre-fix (#1738) this used a for-break picker, which only subscribed
+      // to signals up to the first truthy branch; to stay correct it then
+      // eagerly read EVERY signal in scope — a sledgehammer that re-ran this
+      // effect on every unrelated signal mutation in the scope (50+ no-op
+      // runs per page load on real apps). Evaluating all branches subscribes
+      // narrowly to just the branch signals instead.
       var pickedIdx = -1;
       for (var i = 0; i < chain.length; i++) {
         var b = chain[i];
-        if (b.terminal) { pickedIdx = i; break; }
-        if (evalBranch(b)) { pickedIdx = i; break; }
+        var matched = b.terminal ? true : !!evalBranch(b);
+        if (matched && pickedIdx === -1) pickedIdx = i;
       }
 
       console.log('[stx] bindIfChain pick:', pickedIdx, 'of', chain.length, '(', pickedIdx >= 0 ? chain[pickedIdx].attr : 'none', ') prev:', currentIdx);
       if (pickedIdx === currentIdx) return;
 
-      // Remove the previously-shown branch (dispose its scopes first, #1727).
+      // Remove the previously-shown branch. Do NOT disposeSubtreeScopes here:
+      // a chain branch is a TOGGLE (re-shown when its condition matches again),
+      // not a permanent unmount, and a nested data-stx-scope inside it can't be
+      // recreated once deleted from window.stx._scopes (its setup IIFE ran
+      // once at page load). Deleting it broke re-show of nested scoped
+      // components under reactive conditionals (#1737). Permanent disposal is
+      // still handled by bindFor (item removal) and cleanupContainer (SPA nav).
       if (currentIdx !== -1) {
-        var prev = chain[currentIdx].el;
-        disposeSubtreeScopes(prev);
-        prev.remove();
+        chain[currentIdx].el.remove();
       }
 
       // Insert + process the newly-picked branch.
@@ -2675,9 +2688,10 @@ catch (e2) {
           isInserted = true;
         }
 else if (!value && isInserted) {
-          // Remove all current nodes. Dispose scopes inside each subtree
-          // first so they don't leak (#1727).
-          currentNodes.forEach(node => { disposeSubtreeScopes(node); node.remove(); });
+          // Remove all current nodes. Do NOT disposeSubtreeScopes — :if is a
+          // toggle, not a permanent unmount; see the single-element branch
+          // below and #1737.
+          currentNodes.forEach(node => node.remove());
           currentNodes = [];
           isInserted = false;
         }
@@ -2691,11 +2705,15 @@ else {
         }
 else if (!value && isInserted) {
           console.log('[stx] bindIf REMOVING element for :if=' + expr, 'el.isConnected:', el.isConnected, 'parent:', parent.tagName);
-          // Fire scope destroy callbacks + delete from window.stx._scopes
-          // for the subtree being removed. Pre-fix (#1727) only SPA-nav
-          // teardown ran this walk, so :if-driven unmounts leaked scopes
-          // (including any user-registered onDestroy hooks).
-          disposeSubtreeScopes(el);
+          // Do NOT disposeSubtreeScopes here. :if is a TOGGLE — the element is
+          // re-shown when the condition flips back — not a permanent unmount.
+          // A nested data-stx-scope inside this subtree is created once by its
+          // setup IIFE at page load and stored in window.stx._scopes; deleting
+          // it on hide left re-show unable to recreate it, so nested scoped
+          // components under reactive conditionals rendered all branches at
+          // once (#1737). Permanent disposal stays in bindFor (item removal)
+          // and cleanupContainer (SPA navigation). The double-bind guards make
+          // re-show idempotent, so toggling doesn't leak.
           el.remove();
           isInserted = false;
           console.log('[stx] bindIf REMOVED, el.isConnected:', el.isConnected);
