@@ -28,6 +28,65 @@ stx provides test utilities for component testing:
 import { mount, shallowMount } from '@stacksjs/stx/test-utils'
 ```
 
+## Testing reactive directives (DOM runtime shim)
+
+The client signals runtime — the engine behind `:if` / `:else` / `:for` /
+`:show` and the `x-*` directives — is written against real-browser DOM
+semantics that `happy-dom` doesn't fully provide: `Node.ELEMENT_NODE` is
+`undefined`, and `el.attributes` is a `Map` rather than a `NamedNodeMap`.
+Without bridging those, the runtime's `processElement` bails on every element
+and your reactive directives never run in a test.
+
+`stx/testing` ships a shim that closes both gaps so you can drive a
+component's reactive directives end-to-end and assert on the resulting DOM:
+
+```ts
+import { describe, expect, it } from 'bun:test'
+import { generateSignalsRuntimeDev, state } from '@stacksjs/stx'
+import { flushEffects, setupStxTestDom, shimAttributes } from '@stacksjs/stx/testing'
+
+describe('Comments list', () => {
+  // Install Node.nodeType constants + a requestAnimationFrame polyfill once,
+  // then execute the signals runtime into the test's window.
+  setupStxTestDom()
+  // eslint-disable-next-line no-new-func
+  new Function(generateSignalsRuntimeDev())()
+
+  it('shows the skeleton while loading, the list when loaded', async () => {
+    const loading = state(true)
+    const items = state<string[]>([])
+    window.stx._scopes = { comments: { loading, items } }
+
+    document.body.innerHTML = `
+      <section data-stx-scope="comments">
+        <ul :if="loading()">skeleton</ul>
+        <div :else-if="items().length === 0">empty</div>
+        <ul :else>list</ul>
+      </section>`
+
+    shimAttributes(document.body)             // after every innerHTML assignment
+    document.dispatchEvent(new Event('DOMContentLoaded'))
+    await flushEffects()                       // drain the runtime's deferred work
+
+    expect(document.body.textContent).toContain('skeleton')
+  })
+})
+```
+
+Helpers:
+
+| Export | Purpose |
+|---|---|
+| `setupStxTestDom()` | Install the `Node.*_NODE` constants + a `requestAnimationFrame` polyfill. Call once before running the runtime. Idempotent. |
+| `shimAttributes(root)` | Give `root` and its descendants a `NamedNodeMap`-shaped `attributes` accessor (while preserving `get`/`set`). Call after each `innerHTML` write. |
+| `flushEffects(ms?)` | Await the runtime's deferred (`setTimeout(0)`) child processing before asserting. |
+
+> Cross-`.set()` reactivity (flip a signal, assert the DOM updated) works when
+> a single runtime instance is active. If you run many test files that each
+> execute the runtime IIFE in one process, effect tracking can drift across
+> instances — keep each runtime-driven file focused, or assert the
+> initial-render state, which is always deterministic.
+
 ## Unit Testing
 
 ### Testing Functions and Utilities

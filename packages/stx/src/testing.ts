@@ -31,6 +31,111 @@ import { processDirectives } from './process'
 import { extractVariables } from './variable-extractor'
 
 // =============================================================================
+// DOM Runtime Shim (happy-dom <-> browser parity)
+// =============================================================================
+//
+// The client signals runtime is written against real-browser DOM semantics.
+// happy-dom / very-happy-dom diverge in two ways that make the runtime's
+// `processElement` un-drivable in a unit test:
+//
+//   1. `Node.ELEMENT_NODE` / `TEXT_NODE` / etc. are `undefined`, so the
+//      runtime's `el.nodeType !== Node.ELEMENT_NODE` gate is always true and
+//      processElement bails on every element.
+//   2. `el.attributes` is a `Map`, not a `NamedNodeMap`, so the runtime's
+//      `Array.from(el.attributes).forEach(a => a.name…)` yields `[k, v]` pairs
+//      and `a.name` is undefined — the attribute loop throws.
+//
+// These helpers close both gaps so a component's reactive directives
+// (:if/:else/:for/:show/x-*) can be driven and asserted in a unit test.
+// See stacksjs/stx#1741 (and #1737, which surfaced the need).
+//
+// Quick start:
+//   import { setupStxTestDom, shimAttributes, flushEffects } from 'stx/testing'
+//   setupStxTestDom()                              // once, before the runtime
+//   // … inject the generated runtime, set innerHTML …
+//   shimAttributes(document.body)                  // after each innerHTML write
+//   document.dispatchEvent(new Event('DOMContentLoaded'))
+//   await flushEffects()                           // drain deferred work
+
+/** Define the standard Node.nodeType constants happy-dom omits. Idempotent. */
+export function installNodeConstants(): void {
+  const N: any = (globalThis as any).Node || ((globalThis as any).Node = {})
+  if (N.ELEMENT_NODE == null) N.ELEMENT_NODE = 1
+  if (N.TEXT_NODE == null) N.TEXT_NODE = 3
+  if (N.COMMENT_NODE == null) N.COMMENT_NODE = 8
+  if (N.DOCUMENT_NODE == null) N.DOCUMENT_NODE = 9
+  if (N.DOCUMENT_FRAGMENT_NODE == null) N.DOCUMENT_FRAGMENT_NODE = 11
+}
+
+/**
+ * Replace each element's `attributes` Map with a NamedNodeMap-shaped accessor
+ * (array-like of `{ name, value }`) while still delegating get/set/delete/has/
+ * keys/values/entries/forEach/size to the backing Map — so the runtime's
+ * `Array.from(el.attributes)` works AND happy-dom's own getAttribute/
+ * setAttribute keep working. Walk root + descendants; call again after
+ * inserting new markup. Each element is shimmed once (guarded).
+ */
+export function shimAttributes(root: any): void {
+  if (!root)
+    return
+  const els: any[] = [root, ...(root.querySelectorAll ? Array.from(root.querySelectorAll('*')) : [])]
+  for (const el of els) {
+    if (!el || el.nodeType !== 1 || el.__attrShimmed)
+      continue
+    const map: Map<string, string> = el.attributes
+    if (!(map instanceof Map))
+      continue
+    el.__attrMap = map
+    Object.defineProperty(el, 'attributes', {
+      configurable: true,
+      get() {
+        const m: Map<string, string> = el.__attrMap
+        const arr: any = []
+        let i = 0
+        for (const [name, value] of m) arr[i++] = { name, value }
+        arr.length = i
+        arr.get = (k: string) => m.get(k)
+        arr.set = (k: string, v: string) => m.set(k, v)
+        arr.delete = (k: string) => m.delete(k)
+        arr.has = (k: string) => m.has(k)
+        arr.keys = () => m.keys()
+        arr.values = () => m.values()
+        arr.entries = () => m.entries()
+        arr.forEach = (cb: any) => m.forEach(cb)
+        Object.defineProperty(arr, 'size', { get: () => m.size })
+        arr.item = (n: number) => arr[n] || null
+        arr.getNamedItem = (k: string) => (m.has(k) ? { name: k, value: m.get(k) } : null)
+        return arr
+      },
+    })
+    el.__attrShimmed = true
+  }
+}
+
+/**
+ * One-call setup: install the Node constants and (if available) a
+ * requestAnimationFrame polyfill the runtime uses for deferred work. Call once
+ * before executing the signals runtime. `shimAttributes` must still be called
+ * after each `innerHTML` assignment (it operates per-element).
+ */
+export function setupStxTestDom(): void {
+  installNodeConstants()
+  if (typeof (globalThis as any).requestAnimationFrame === 'undefined') {
+    (globalThis as any).requestAnimationFrame = (cb: () => void) => setTimeout(cb, 0)
+  }
+}
+
+/**
+ * Drain the runtime's deferred work: microtasks plus the `setTimeout(0)`
+ * deferred child-processing the runtime schedules (bindIf/bindIfChain defer
+ * subtree processing). Await this after a mount or a directive-triggering
+ * change before asserting on the DOM.
+ */
+export function flushEffects(ms = 30): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// =============================================================================
 // Types
 // =============================================================================
 
