@@ -1,4 +1,73 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.67...v0.2.68)
+
+### 🚀 Features
+
+- **signals**: dump scope diagnostic on :for warn path (#1716 followup) ([ec973c8](https://github.com/stacksjs/stx/commit/ec973c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1716](https://github.com/stacksjs/stx/issues/1716), [#1716](https://github.com/stacksjs/stx/issues/1716))
+- **site-builder**: improve i18n SPA routing and router config options ([226540b](https://github.com/stacksjs/stx/commit/226540b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **components**: stash <script> bodies before tag scan (#1730) ([b819ff5](https://github.com/stacksjs/stx/commit/b819ff5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1730](https://github.com/stacksjs/stx/issues/1730), [#1730](https://github.com/stacksjs/stx/issues/1730))
+- **stx**: resolve project components from nested views + apply defineProps defaults in SSR (#1729) ([30566f2](https://github.com/stacksjs/stx/commit/30566f2)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1729](https://github.com/stacksjs/stx/issues/1729), [#1729](https://github.com/stacksjs/stx/issues/1729))
+- **signals**: dispose scopes on :if / :for driven unmounts (#1727) ([52a580f](https://github.com/stacksjs/stx/commit/52a580f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1727](https://github.com/stacksjs/stx/issues/1727), [#1727](https://github.com/stacksjs/stx/issues/1727))
+- **teleport**: retry target lookup on next frame (#1728) ([1ba4480](https://github.com/stacksjs/stx/commit/1ba4480)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1728](https://github.com/stacksjs/stx/issues/1728), [#1728](https://github.com/stacksjs/stx/issues/1728))
+- **router**: bound the prefetch cache with an LRU policy (#1719) ([59af986](https://github.com/stacksjs/stx/commit/59af986)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1719](https://github.com/stacksjs/stx/issues/1719), [#1719](https://github.com/stacksjs/stx/issues/1719))
+- **client-script-bundler**: invalidate cache on transitive import changes (#1723) ([aad04ff](https://github.com/stacksjs/stx/commit/aad04ff)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1723](https://github.com/stacksjs/stx/issues/1723), [#1723](https://github.com/stacksjs/stx/issues/1723))
+- **production-server**: serve user's 500.stx; also fix latent 404.stx bug (#1722) ([cd1b17e](https://github.com/stacksjs/stx/commit/cd1b17e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1722](https://github.com/stacksjs/stx/issues/1722), [#1722](https://github.com/stacksjs/stx/issues/1722))
+- **composables**: useEventListener warns instead of falling back to window (#1721) ([253ba90](https://github.com/stacksjs/stx/commit/253ba90)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1721](https://github.com/stacksjs/stx/issues/1721), [#1721](https://github.com/stacksjs/stx/issues/1721))
+- **async-components**: cancel in-flight fetch on unmount (#1720) ([427bc05](https://github.com/stacksjs/stx/commit/427bc05)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1720](https://github.com/stacksjs/stx/issues/1720), [#1720](https://github.com/stacksjs/stx/issues/1720))
+- **composables**: cleanup useStorage 'storage' listener via onDestroy (#1718) ([89f9f83](https://github.com/stacksjs/stx/commit/89f9f83)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1718](https://github.com/stacksjs/stx/issues/1718), [#1718](https://github.com/stacksjs/stx/issues/1718))
+- **ssg**: thread real dependencies through build cache get/set (#1717) ([b42a5b4](https://github.com/stacksjs/stx/commit/b42a5b4)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1717](https://github.com/stacksjs/stx/issues/1717), [#1717](https://github.com/stacksjs/stx/issues/1717))
+- **signals**: :for second-chance fallback calls signal/derived when proxy misses (#1716 followup) ([7be3012](https://github.com/stacksjs/stx/commit/7be3012)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1716](https://github.com/stacksjs/stx/issues/1716), [#1716](https://github.com/stacksjs/stx/issues/1716))
+- **signals**: :for paren-strip retry uses new RegExp() so backslashes survive build (#1716 followup) ([fc2385b](https://github.com/stacksjs/stx/commit/fc2385b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1716](https://github.com/stacksjs/stx/issues/1716), [#1716](https://github.com/stacksjs/stx/issues/1716))
+- **signals**: :for accepts both bare-ref and called-signal list expressions (#1716) ([70f5acf](https://github.com/stacksjs/stx/commit/70f5acf)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1716](https://github.com/stacksjs/stx/issues/1716), [#1716](https://github.com/stacksjs/stx/issues/1716))
+- cleanup paths for two listener-leak sites (#1709) ([b27a7ec](https://github.com/stacksjs/stx/commit/b27a7ec)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1709](https://github.com/stacksjs/stx/issues/1709), [#1709](https://github.com/stacksjs/stx/issues/1709))
+- **reactivity**: replace watch() polling with effect tracking + structural equality (#1713) ([900c13f](https://github.com/stacksjs/stx/commit/900c13f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1713](https://github.com/stacksjs/stx/issues/1713), [#1713](https://github.com/stacksjs/stx/issues/1713))
+- **router**: intercept query-only same-page navigation links ([f905f87](https://github.com/stacksjs/stx/commit/f905f87)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bun-plugin**: vary HTML cache by locale and query string ([a391c87](https://github.com/stacksjs/stx/commit/a391c87)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ⚡ Performance Improvements
+
+- **dev-server**: cache static page builds and compile in parallel ([04a142b](https://github.com/stacksjs/stx/commit/04a142b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- **composables**: unify useFetch shape across both reactive impls (#1726) ([f1c703a](https://github.com/stacksjs/stx/commit/f1c703a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1726](https://github.com/stacksjs/stx/issues/1726), [#1726](https://github.com/stacksjs/stx/issues/1726))
+- **composables**: unify useCookie shape across both reactive impls (#1710) ([9607ee0](https://github.com/stacksjs/stx/commit/9607ee0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1710](https://github.com/stacksjs/stx/issues/1710), [#1710](https://github.com/stacksjs/stx/issues/1710))
+- migrate inline-assets and app-shell to Bun.file().exists() (#1715) ([878f181](https://github.com/stacksjs/stx/commit/878f181)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1715](https://github.com/stacksjs/stx/issues/1715), [#1715](https://github.com/stacksjs/stx/issues/1715))
+
+### 📚 Documentation
+
+- document the :html= XSS contract — opt-in raw HTML (#1708) ([de770dc](https://github.com/stacksjs/stx/commit/de770dc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1708](https://github.com/stacksjs/stx/issues/1708), [#1708](https://github.com/stacksjs/stx/issues/1708))
+
+### 🧪 Tests
+
+- **composables**: restore globalThis.fetch in use-fetch-parity afterAll ([a170354](https://github.com/stacksjs/stx/commit/a170354)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **streaming**: cover suspense-boundary error UI catch handler (#1711) ([442d356](https://github.com/stacksjs/stx/commit/442d356)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1711](https://github.com/stacksjs/stx/issues/1711), [#1711](https://github.com/stacksjs/stx/issues/1711))
+- **reactivity**: add dual-impl parity suite + docs + fix stx.d.ts brand (#1712) ([bc4c1b6](https://github.com/stacksjs/stx/commit/bc4c1b6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1712](https://github.com/stacksjs/stx/issues/1712), [#1712](https://github.com/stacksjs/stx/issues/1712))
+- drop 17 redundant \`expect(true).toBe(true)\` trailing assertions (#1714) ([504ec58](https://github.com/stacksjs/stx/commit/504ec58)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1714](https://github.com/stacksjs/stx/issues/1714), [#1714](https://github.com/stacksjs/stx/issues/1714))
+
+### 🤖 Continuous Integration
+
+- **buddy-bot**: add daily cleanup cron to workflow ([747ff82](https://github.com/stacksjs/stx/commit/747ff82)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.2.68 ([7504b6a](https://github.com/stacksjs/stx/commit/7504b6a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: refresh bun.lock to pick up @stacksjs/logsmith 0.2.3 ([bff9dc4](https://github.com/stacksjs/stx/commit/bff9dc4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([a490f41](https://github.com/stacksjs/stx/commit/a490f41)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### types
+
+- **stx**: re-export CookieOptions from the useCookie composable (#1707) ([1722999](https://github.com/stacksjs/stx/commit/1722999)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1707](https://github.com/stacksjs/stx/issues/1707), [#1707](https://github.com/stacksjs/stx/issues/1707))
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Glenn Michael Torregosa <gtorregosa@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.66...v0.2.67)
 
 ### 🐛 Bug Fixes
