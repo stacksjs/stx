@@ -1,4 +1,33 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.69...v0.2.70)
+
+### 🚀 Features
+
+- **components**: defineSlots + cross-impl typed-prop contract parity (#1740) ([e90d91f](https://github.com/stacksjs/stx/commit/e90d91f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1740](https://github.com/stacksjs/stx/issues/1740), [#1740](https://github.com/stacksjs/stx/issues/1740))
+- **testing**: ship the DOM runtime shim publicly via stx/testing (#1741) ([1657011](https://github.com/stacksjs/stx/commit/1657011)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1741](https://github.com/stacksjs/stx/issues/1741), [#1741](https://github.com/stacksjs/stx/issues/1741))
+
+### 🐛 Bug Fixes
+
+- **crosswind**: preserve all fields from an inline css config ([5c75796](https://github.com/stacksjs/stx/commit/5c75796)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: nested scopes survive :if toggles (#1737) + bindIfChain subscribes narrowly (#1738) ([429f31f](https://github.com/stacksjs/stx/commit/429f31f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1737](https://github.com/stacksjs/stx/issues/1737), [#1738](https://github.com/stacksjs/stx/issues/1738), [#1737](https://github.com/stacksjs/stx/issues/1737), [#1738](https://github.com/stacksjs/stx/issues/1738))
+
+### 📚 Documentation
+
+- disambiguate the @if / v-if / :if conditional families (#1743) ([bc8cacf](https://github.com/stacksjs/stx/commit/bc8cacf)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1743](https://github.com/stacksjs/stx/issues/1743), [#1743](https://github.com/stacksjs/stx/issues/1743))
+
+### 🧪 Tests
+
+- **signals**: behaviorally test if/else chains against real DOM; #1737 regression guard ([b2d29ca](https://github.com/stacksjs/stx/commit/b2d29ca)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1737](https://github.com/stacksjs/stx/issues/1737), [#1737](https://github.com/stacksjs/stx/issues/1737))
+
+### 🧹 Chores
+
+- release v0.2.70 ([f68fc8d](https://github.com/stacksjs/stx/commit/f68fc8d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.67...v0.2.68)
 
 ### 🚀 Features
