@@ -257,6 +257,44 @@ export function findComponentTags(html: string, tagPattern: RegExp, skipTags?: S
 }
 
 /**
+ * Decode a pre-evaluated `__stx_` prop value produced by loop processing.
+ *
+ * Loop iterations serialise component prop values so they survive until the
+ * component directive is processed. The current wire format is base64-encoded
+ * JSON — chosen because base64 contains no quotes, backslashes or angle
+ * brackets, so it passes through `parseMultilineAttributes` (which strips
+ * backslash escapes) and HTML attribute quoting completely intact.
+ *
+ * A legacy HTML-entity-escaped JSON format is still accepted as a fallback so
+ * that any externally-produced markup keeps working.
+ */
+export function decodeStxProp(attrValue: string, options?: { debug?: boolean }): unknown {
+  // Preferred format: base64-encoded JSON.
+  try {
+    const json = Buffer.from(attrValue, 'base64').toString('utf8')
+    return JSON.parse(json)
+  }
+  catch {
+    // Fall through to the legacy format below.
+  }
+
+  // Legacy format: HTML-entity-escaped JSON.
+  try {
+    const unescaped = attrValue
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+    return JSON.parse(unescaped)
+  }
+  catch (error) {
+    if (options?.debug)
+      console.error('Error decoding __stx_ prop:', error)
+    return attrValue
+  }
+}
+
+/**
  * Parse multiline attributes from a component tag
  * Handles HTML content inside attribute values correctly
  *
@@ -816,21 +854,7 @@ export async function processCustomElements(
         // These were evaluated at loop iteration time and serialized as JSON
         if (attrName.startsWith('__stx_')) {
           const propName = attrName.slice(6) // Remove __stx_ prefix
-          try {
-            // Unescape HTML entities and parse JSON
-            const unescaped = (attrValue as string)
-              .replace(/&quot;/g, '"')
-              .replace(/&lt;/g, '<')
-              .replace(/&gt;/g, '>')
-              .replace(/&amp;/g, '&')
-            props[propName] = JSON.parse(unescaped)
-          }
-          catch (error) {
-            if (options.debug) {
-              console.error(`Error parsing __stx_${propName}:`, error)
-            }
-            props[propName] = attrValue
-          }
+          props[propName] = decodeStxProp(attrValue as string, options)
           continue
         }
 

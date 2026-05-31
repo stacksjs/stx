@@ -22,8 +22,8 @@ import type { StxOptions } from './types'
 import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
 import { registerBuiltins } from './builtins'
-import { findComponentTags, parseMultilineAttributes, pascalToKebab } from './component-processing'
-import { renderComponentWithSlot } from './utils'
+import { decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, restoreStashedScripts, stashScriptElements } from './component-processing'
+import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -136,20 +136,7 @@ function parseComponentProps(
     // --- Pre-evaluated props from loop processing: __stx_propName ---
     if (attrName.startsWith('__stx_')) {
       const propName = kebabToCamel(attrName.slice(6)) // Remove __stx_ prefix
-      try {
-        const unescaped = (attrValue as string)
-          .replace(/&quot;/g, '"')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&amp;/g, '&')
-        resolved.serverDynamic[propName] = JSON.parse(unescaped)
-      }
-      catch (error) {
-        if (options.debug) {
-          console.error(`Error parsing __stx_${propName}:`, error)
-        }
-        resolved.serverDynamic[propName] = attrValue
-      }
+      resolved.serverDynamic[propName] = decodeStxProp(attrValue as string, options)
       continue
     }
 

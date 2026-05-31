@@ -3,6 +3,22 @@ import path from 'node:path'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { parseSlots } from '../src/slots'
 import { processLoops } from '../src/loops'
+import { decodeStxProp } from '../src/component-processing'
+
+/**
+ * Pre-evaluated loop props are stored as `__stx_<prop>="<base64-json>"`.
+ * Decode every occurrence so assertions check the round-tripped value rather
+ * than the opaque wire format.
+ */
+function decodeStxProps(result: string, prop: string): unknown[] {
+  const re = new RegExp(`__stx_${prop}="([^"]*)"`, 'g')
+  const values: unknown[] = []
+  let match: RegExpExecArray | null
+  // eslint-disable-next-line no-cond-assign
+  while ((match = re.exec(result)) !== null)
+    values.push(decodeStxProp(match[1]))
+  return values
+}
 
 /**
  * Tests for:
@@ -140,10 +156,10 @@ describe('Loop Processing with Bindings', () => {
       }
       
       const result = processLoops(template, context, 'test.stx')
-      
-      // The :name="item.name" should be converted to __stx_name with serialized value
-      expect(result).toContain('__stx_name="&quot;First&quot;"')
-      expect(result).toContain('__stx_name="&quot;Second&quot;"')
+
+      // The :name="item.name" should be converted to __stx_name with the
+      // serialized (base64-encoded JSON) value, round-tripping to the original.
+      expect(decodeStxProps(result, 'name')).toEqual(['First', 'Second'])
     })
 
     it('should process shorthand :prop syntax', () => {
@@ -159,11 +175,12 @@ describe('Loop Processing with Bindings', () => {
       }
       
       const result = processLoops(template, context, 'test.stx')
-      
-      // The :trail shorthand should be expanded to :trail="trail" and then processed
-      expect(result).toContain('__stx_trail=')
-      expect(result).toContain('Mountain Trail')
-      expect(result).toContain('Forest Path')
+
+      // The :trail shorthand should be expanded to :trail="trail" and processed.
+      const trails = decodeStxProps(result, 'trail') as Array<{ name: string }>
+      expect(trails).toHaveLength(2)
+      expect(trails[0].name).toBe('Mountain Trail')
+      expect(trails[1].name).toBe('Forest Path')
     })
 
     it('should handle complex objects in bindings', () => {
@@ -178,11 +195,11 @@ describe('Loop Processing with Bindings', () => {
       }
       
       const result = processLoops(template, context, 'test.stx')
-      
-      // The serialized JSON should contain all properties
-      expect(result).toContain('__stx_user=')
-      expect(result).toContain('John')
-      expect(result).toContain('john@example.com')
+
+      // The serialized value should round-trip to the full object.
+      const users = decodeStxProps(result, 'user') as Array<Record<string, unknown>>
+      expect(users).toHaveLength(1)
+      expect(users[0]).toEqual({ id: 1, name: 'John', email: 'john@example.com', active: true })
     })
 
     it('should handle expressions in bindings', () => {
@@ -195,11 +212,9 @@ describe('Loop Processing with Bindings', () => {
       }
       
       const result = processLoops(template, context, 'test.stx')
-      
+
       // index + 1 should be evaluated
-      expect(result).toContain('__stx_position="1"')
-      expect(result).toContain('__stx_position="2"')
-      expect(result).toContain('__stx_position="3"')
+      expect(decodeStxProps(result, 'position')).toEqual([1, 2, 3])
     })
 
     it('should preserve bindings that fail evaluation', () => {
@@ -258,13 +273,11 @@ describe('Loop Processing with Bindings', () => {
       }
       
       const result = processLoops(template, context, 'test.stx')
-      
-      expect(result).toContain('__stx_category=')
-      expect(result).toContain('__stx_item=')
-      expect(result).toContain('Cat1')
-      expect(result).toContain('Item1')
-      expect(result).toContain('Cat2')
-      expect(result).toContain('Item2')
+
+      const categories = decodeStxProps(result, 'category') as Array<{ name: string }>
+      const itemsOut = decodeStxProps(result, 'item') as Array<{ name: string }>
+      expect(categories.map(c => c.name)).toEqual(['Cat1', 'Cat2'])
+      expect(itemsOut.map(i => i.name)).toEqual(['Item1', 'Item2'])
     })
   })
 })

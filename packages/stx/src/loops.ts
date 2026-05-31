@@ -199,17 +199,16 @@ function processPropBindings(content: string, context: Record<string, any>): str
       const evaluator = createSafeFunction(expression, contextKeys)
       const value = evaluator(...contextValues)
 
-      // Serialize the value to JSON and encode for safe HTML attribute storage
-      // Use a special attribute prefix __stx_ to mark it as pre-evaluated
+      // Serialize the value to JSON, then base64-encode it. base64 contains no
+      // quotes, backslashes or angle brackets, so the payload survives both
+      // HTML attribute quoting and `parseMultilineAttributes` (which strips
+      // backslash escapes) without corruption. The previous HTML-entity scheme
+      // lost JSON string escaping like \" — breaking any value containing a
+      // double quote. The __stx_ prefix marks it as pre-evaluated.
       const serialized = JSON.stringify(value)
-      // Escape HTML entities in the JSON string for safe attribute value
-      const escaped = serialized
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
+      const encoded = Buffer.from(serialized, 'utf8').toString('base64')
 
-      return `__stx_${propName}="${escaped}"`
+      return `__stx_${propName}="${encoded}"`
     }
     catch (error) {
       // If evaluation fails, keep the original binding for later processing

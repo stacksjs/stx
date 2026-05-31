@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { processLoops } from '../../src/loops'
+import { decodeStxProp } from '../../src/component-processing'
 import type { StxOptions } from '../../src/types'
 
 const defaultOptions: StxOptions = { debug: false, componentsDir: 'components' }
@@ -753,9 +754,10 @@ describe('Loops Comprehensive', () => {
         '@foreach(items as item)<my-comp :title="item.name"></my-comp>@endforeach',
         { items: [{ name: 'Hello' }] },
       )
-      // Should convert to __stx_title="..."
-      expect(result).toContain('__stx_title=')
-      expect(result).toContain('Hello')
+      // Should convert to __stx_title="<base64-json>" round-tripping to 'Hello'
+      const m = result.match(/__stx_title="([^"]*)"/)
+      expect(m).not.toBeNull()
+      expect(decodeStxProp(m![1])).toBe('Hello')
     })
 
     it('should process shorthand :prop syntax within @foreach', () => {
