@@ -4,6 +4,48 @@ Tracking significant bugs found and fixed during development. Most recent first.
 
 ---
 
+## Security Hardening Pass — masks, builtins, event fallback (2026-05-31)
+
+Follow-ups after the `<script>`-stash XSS, closing the same bug class everywhere:
+
+- **Comment & script-expr masks (same un-escape-on-restore class).** `process.ts`
+  masked `<!-- … -->` and `expressions.ts` masked `<script>`/`<style>` with global
+  regexes, then restored them raw — so a comment/script inside an attribute value
+  could break out of the attribute on restore (defeating the renderer's escaping).
+  Both now route through `html-masking.ts` `maskAtElementPosition`, which only masks
+  tokens at element position (not inside an open tag or quoted attribute value).
+- **Builtins didn't escape interpolated props.** `icon` (class/style/size/color),
+  `drawer`/`modal` (id), `toast` (position) interpolated prop values into attributes
+  unescaped — unlike StxLink/StxImage. Added a shared `builtins/escape.ts` and
+  applied it. (`tooltip`/`stx-loading-indicator` were already safe.)
+- **Non-reactive `@event` fallback.** The fallback inlined the HTML-entity-encoded
+  handler as raw JS (`else { doIt(&quot;a&quot;) }`) — invalid JS, and it never ran
+  for forwarded handlers. Now routed through `__stx_runHandler`, which keeps the
+  handler entity-encoded in the emitted `<script>` (no `</script>` breakout) and
+  decodes it to JS only in memory before running it with `$event`/`$el` in scope.
+- **Conditional reactivity heuristic** (`conditionIsClientReactive`) now treats only
+  **zero-arg** getter calls (`loading()`, `cart.count()`) as signal-driven; with-arg
+  calls (`formatDate(x)`) are assumed server helpers and stay server-side, removing a
+  false positive on helpers not present in the server context.
+
+---
+
+## XSS via `<script>` Stashing Inside Attribute Values (2026-05-30)
+
+**Problem:** The component scanner stashes real `<script>…</script>` element bodies behind NUL sentinels before its three regex passes (so JS string literals like Leaflet's `'<v:shape>'` aren't mis-resolved as components — #1730). The stash regex (`/<script\b[^>]*>[\s\S]*?<\/script>/gi`) was **not quote-aware**, so a `<script>` appearing inside an *attribute value* — e.g. `<StxLink aria-label="<script>alert(1)</script>">` — was also pulled out. The renderer's `escapeAttr`/`escapeAttribute` then ran against the harmless placeholder, and the raw `<script>alert(1)</script>` was restored back into the attribute afterward, unescaped — an XSS sink on every builtin/component that forwards static attrs or `@event` handlers.
+
+**Fix:** Replaced both stash sites (`component-renderer.ts`, `component-processing.ts`) with a shared tag/quote-aware walker, `stashScriptElements()` (+ `restoreStashedScripts()`) in `component-processing.ts`. It only stashes a `<script>` that begins at *element position* (not within an open tag, not inside a quoted attribute value); a script embedded in an attribute is left in place to be HTML-escaped normally. Covered by `test/components/security.test.ts` and unit tests in `test/components/script-tag-stashing.test.ts`.
+
+---
+
+## `@if`/`v-if` Else-Chains Not Reactive on Signal Pages (2026-05-30)
+
+**Problem:** `@if`/`v-if`/`:if` were documented as three frozen "lifecycles," but the intent is interchangeable sugar (`v-if`→`@if`, `x-if`→`:if`) where reactivity follows the data. The converter already promoted signal-driven `@if` blocks to reactive attributes, but **skipped any block containing `@elseif`/`@else`**, so a reactive if/else chain had to be written with `:if`/`:else`. Separately, the no-else path converted *any* `@if` on a signal page, which could drag a server/loop-data condition (`@if(b.status)` inside a server `@foreach`) client-side where its variables don't exist.
+
+**Fix:** `convertSignalDirectivesToAttributes` now (a) promotes `@if`/`@elseif`/`@else` chains to reactive `@if`/`@else-if`/`@else` attribute sibling-chains (the runtime's `findIfChain`/`bindIfChain` already handle those attrs), and (b) decides conversion **per condition** via `conditionIsClientReactive` — client-reactive iff it reads a declared signal or a non-server getter call and doesn't read a bare `<script server>` var. Server/loop-data conditions stay textual for `processConditionals`. Docs (`prefix-convention.md`, `directives.md`, CLAUDE.md) rewritten to the unified model.
+
+---
+
 ## Route Guard Middleware for SSG (2026-04-16)
 
 **Commit:** `00ad5bc998`

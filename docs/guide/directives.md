@@ -6,11 +6,13 @@ stx directives are special template attributes that provide powerful functionali
 
 ### Conditional Rendering
 
-> **`@if` is server-side and runs once.** It is *not* the same as the reactive
-> `:if` / `x-if` directives, nor the build-time `v-if` sugar. If you need a
-> conditional that re-evaluates when client state changes, you want `:if`. See
-> [Conditionals: three lifecycles](/guide/prefix-convention#conditionals-three-lifecycles-if-vs-v-if-vs-if)
-> for the full `@if` vs `v-if` vs `:if` breakdown.
+> **`@if`, `v-if`, and `:if` are the same conditional in different syntax**
+> (`v-if` is sugar for `@if`; `x-if` for `:if`). What makes a conditional reactive
+> is the data it reads, not the keyword: a condition that reads a signal
+> re-evaluates on change (including `@if`/`@else` chains on a signals page); a
+> condition over server data renders once. See
+> [Conditionals](/guide/prefix-convention#conditionals-if-v-if-if-are-the-same-thing-in-different-syntax)
+> for the full breakdown.
 
 #### @if / @else / @elseif
 

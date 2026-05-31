@@ -6,10 +6,11 @@ stx provides a powerful directive system for extending template functionality. T
 
 ### Conditional Directives
 
-> These `@`-prefixed conditionals run on the **server** and evaluate once.
-> They are distinct from reactive `:if` / `x-if` (client, signal-driven) and
-> from `v-if` (build-time sugar that compiles to `@if`). See
-> [Conditionals: three lifecycles](/guide/prefix-convention#conditionals-three-lifecycles-if-vs-v-if-vs-if).
+> `@if` / `v-if` / `:if` / `x-if` are interchangeable syntax for the same
+> conditional. A condition over **server data** evaluates once at render time; a
+> condition that **reads a signal** (on a page that uses signals) is reactive and
+> re-evaluates on change — the keyword you pick is just style. See
+> [Conditionals](/guide/prefix-convention#conditionals-if-v-if-if-are-the-same-thing-in-different-syntax).
 
 ```stx
 <!-- Basic conditionals -->

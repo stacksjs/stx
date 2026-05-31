@@ -27,48 +27,58 @@ In stx:
 
 > **The `@` symbol is also used for Blade-style block directives** — `@if`,
 > `@foreach`, `@auth`, etc. Those are *statements* in the markup, not element
-> attributes, and they run on the **server**. The rule of thumb: `@name(...)`
-> as a standalone statement is a server directive; `@event="…"` as an
-> attribute on an element is a client event listener. See the conditionals
-> table below for how `@if` differs from `:if`.
+> attributes. The rule of thumb: `@name(...)` as a standalone statement is a
+> directive; `@event="…"` as an attribute on an element is a client event
+> listener. See the conditionals section below for how `@if`, `v-if`, and `:if`
+> relate.
 
-## Conditionals: three lifecycles (`@if` vs `v-if` vs `:if`)
+## Conditionals: `@if`, `v-if`, `:if` are the same thing in different syntax
 
-stx has **three** conditional families that look almost identical but run at
-completely different times. Picking the wrong one is the most common week-one
-footgun. They are not interchangeable:
+`@if`, `v-if`, `:if`, and `x-if` are **interchangeable sugar for one
+conditional** — not three separate lifecycles. Pick the spelling you like:
 
-| Form | Runs at | Reactive? | Else family | Reach for it when… |
-|---|---|---|---|---|
-| `@if (cond) … @endif` | **Server** (SSR/build, once) | ❌ evaluated once when the HTML is generated | `@elseif`, `@else`, `@endif` | branching on server data — `$user`, env, request — that is fixed by the time the page is sent |
-| `v-if="cond"` (attribute) | **Server** — *compiles to `@if`* | ❌ same as `@if` | `v-else-if`, `v-else` | you have Vue muscle memory; it is pure sugar for `@if`, **not** reactive |
-| `:if="cond"` / `x-if="cond"` (attribute) | **Client** (signals runtime: `bindIf`/`bindIfChain`) | ✅ re-runs whenever a referenced signal changes | `:else-if` / `:else` (and `x-else-if` / `x-else`) since v0 #1734 | branching on client state — signals, fetch results, user interaction |
+| Form | What it is |
+|---|---|
+| `@if (cond) … @elseif … @else … @endif` | Blade-style statement (the canonical form) |
+| `v-if="cond"` / `v-else-if` / `v-else` | Vue sugar — compiles to `@if` |
+| `:if="cond"` / `:else-if` / `:else` | attribute form |
+| `x-if="cond"` / `x-else-if` / `x-else` | Alpine sugar — same as `:if` |
 
-The trap, in three adjacent lines that each behave differently:
+**What decides whether a conditional is reactive is the data it reads, not the
+keyword you typed.** On a page that uses signals (`<script client>` with
+`state()` / `derived()` / …):
+
+- A condition that **reads a signal** is wired into the client signals runtime
+  (`bindIf` / `bindIfChain`) and **re-evaluates whenever that signal changes** —
+  including `@if`/`@elseif`/`@else` and `v-if`/`v-else` chains, which are promoted
+  to the reactive runtime form just like `:if`/`:else`.
+- A condition over **server data** (`$user`, env, a `@foreach` loop variable) is
+  evaluated **once on the server** and the unmatched branches are dropped from the
+  HTML. On a page with no signals at all, every conditional renders once on the
+  server.
 
 ```stx
-@if($user)                          {{-- SERVER: rendered once, $user from <script server> --}}
-  <span v-if="user.isAdmin">admin</span>   <!-- SERVER: compiles to @if, NOT reactive -->
-  <span :if="loading">loading…</span>      <!-- CLIENT: reactive, re-runs when `loading` signal changes -->
+<script client>
+  const loading = state(true)
+</script>
+
+@if($user)                                 {{-- server data → rendered once --}}
+  {{-- both of these re-render when `loading` flips; the keyword is just style --}}
+  <span :if="loading">loading…</span>
+  @if(loading) <span>still loading…</span> @else <span>done</span> @endif
 @endif
 ```
 
-Mental model:
+So `v-if` is sugar for `@if`, `x-if` is sugar for `:if`, and a signal-driven
+`@if`/`v-if` chain behaves exactly like the `:if`/`:else` equivalent. Use whichever
+reads best in context.
 
-- **`@…` / `v-…` → server, frozen.** Once the HTML leaves the server the
-  condition never re-evaluates. Use it for "what does the initial page look
-  like." `v-if` is *exactly* `@if` with element-attribute syntax — if you came
-  from Vue expecting reactivity, that expectation is wrong here.
-- **`:if` / `x-if` → client, live.** These are wired into the signals runtime
-  and re-run on signal change. Use them for "what changes after the user
-  interacts."
-
-Two more gotchas worth internalizing:
+Two gotchas worth internalizing:
 
 - **`$` is not decoration.** `@if($user)` reads a `<script server>` variable;
-  `:if="user"` reads a client signal scope. They are different scopes, not the
-  same value with optional sugar.
-- **Reading signals inside `:if` follows the signals call/bare rule.** In a
+  `:if="loading"` reads a client signal scope. Same conditional, but they look in
+  different places — a name that exists in one scope may not exist in the other.
+- **Reading signals in a condition follows the signals call/bare rule.** In a
   template attribute the auto-unwrap proxy lets you write the bare name
   (`:if="loading"`); call syntax (`:if="loading()"`) also works because the
   binder retries evaluation without the proxy (#1733). Both are fine — but if
