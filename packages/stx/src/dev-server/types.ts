@@ -32,6 +32,11 @@ export interface DevServerOptions {
   watch?: boolean
   /** Open in native window instead of browser */
   native?: boolean
+  /**
+   * Hide the native titlebar but keep the traffic-light buttons. Web content
+   * draws under a transparent, full-size-content titlebar. Implies `native`.
+   */
+  titlebarHidden?: boolean
   /** STX template processing options */
   stxOptions?: StxOptions
   /** Markdown-specific options */

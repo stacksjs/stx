@@ -567,6 +567,7 @@ else {
     .option('--port <port>', 'Port to use for the dev server', { default: 3000 })
     .option('--no-watch', 'Disable file watching and auto-reload')
     .option('--native', 'Open in a native desktop window using Zyte')
+    .option('--titlebar-hidden', 'Hide the native titlebar but keep the traffic-light buttons (web content draws under a transparent full-size titlebar). Implies --native.')
     .option('--highlight-theme <theme>', 'Syntax highlighting theme for Markdown code blocks', { default: 'github-dark' })
     .option('--no-highlight', 'Disable syntax highlighting for Markdown code blocks')
     .option('--no-highlight-unknown', 'Disable syntax highlighting for unknown languages in Markdown')
@@ -623,7 +624,8 @@ else {
           const success = await serveApp('.', {
             port: options.port,
             watch: options.watch !== false,
-            native: options.native || false,
+            native: options.native || options.titlebarHidden || false,
+            titlebarHidden: options.titlebarHidden === true,
             cache: options.cache !== false,
             hotReload: options.hmr !== false,
             profile: options.profile === true,
@@ -644,7 +646,8 @@ else {
               const success = await serveApp(filePattern, {
                 port: options.port,
                 watch: options.watch !== false,
-                native: options.native || false,
+                native: options.native || options.titlebarHidden || false,
+            titlebarHidden: options.titlebarHidden === true,
                 cache: options.cache !== false,
                 hotReload: options.hmr !== false,
                 profile: options.profile === true,
@@ -705,7 +708,8 @@ else {
           const success = await serveMultipleStxFiles(supportedFiles, {
             port: options.port,
             watch: options.watch !== false,
-            native: options.native || false,
+            native: options.native || options.titlebarHidden || false,
+            titlebarHidden: options.titlebarHidden === true,
             markdown: markdownOptions,
             cache: options.cache !== false,
           } as DevServerOptions)
@@ -727,7 +731,8 @@ else {
           const success = await serveStxFile(filePattern, {
             port: options.port,
             watch: options.watch !== false,
-            native: options.native || false,
+            native: options.native || options.titlebarHidden || false,
+            titlebarHidden: options.titlebarHidden === true,
             markdown: markdownOptions,
             cache: options.cache !== false,
           } as DevServerOptions)

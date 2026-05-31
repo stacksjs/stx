@@ -248,6 +248,20 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
               content = `<head>${nativeSidebarInjection}</head>` + content
             }
           }
+          // Flag titlebar-hidden mode so components (e.g. traffic lights) can
+          // defer to the real native window controls drawn by craft.
+          if (options.titlebarHidden) {
+            const tbInjection = `<style>html.stx-titlebar-hidden .stx-traffic-lights-dot{visibility:hidden}</style><script>document.documentElement.classList.add('stx-titlebar-hidden')</script>`
+            if (content.includes('<head>')) {
+              content = content.replace('<head>', `<head>${tbInjection}`)
+            }
+            else if (content.includes('<html')) {
+              content = content.replace(/(<html[^>]*>)/, `$1<head>${tbInjection}</head>`)
+            }
+            else {
+              content = `<head>${tbInjection}</head>${content}`
+            }
+          }
           return content
         }
 
@@ -518,6 +532,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
     await openNativeWindow(actualPort, {
       title: path.basename(absolutePath, '.stx'),
+      titlebarHidden: options.titlebarHidden === true,
       nativeSidebar: !!sidebarConfig,
       sidebarConfig,
     })

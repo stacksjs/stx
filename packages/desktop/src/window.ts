@@ -375,6 +375,7 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
         darkMode: options.darkMode ?? true,
         hotReload: options.hotReload ?? true,
         devTools: true,
+        titlebarHidden: options.titlebarHidden ?? false,
         nativeSidebar: options.nativeSidebar ?? false,
         sidebarWidth: options.sidebarWidth ?? 260,
         sidebarConfig: sidebarConfig as Record<string, unknown> | undefined,
@@ -406,6 +407,7 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
         ]
         if (options.darkMode) args.push('--dark')
         if (options.hotReload ?? true) args.push('--hot-reload')
+        if (options.titlebarHidden) args.push('--titlebar-hidden')
 
         const child = spawn(craftPath, args, { stdio: 'inherit' })
 

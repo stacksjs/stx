@@ -736,6 +736,18 @@ catch {
             }
           }
 
+          // Flag titlebar-hidden mode so traffic-light components defer to the
+          // real native window controls drawn by craft.
+          if (options.titlebarHidden) {
+            const tbInjection = `<style>html.stx-titlebar-hidden .stx-traffic-lights-dot{visibility:hidden}</style><script>document.documentElement.classList.add('stx-titlebar-hidden')</script>`
+            if (content.includes('<head>')) {
+              content = content.replace('<head>', `<head>${tbInjection}`)
+            }
+            else {
+              content = `<head>${tbInjection}</head>${content}`
+            }
+          }
+
           return new Response(content, {
             headers: {
               'Content-Type': 'text/html',
@@ -922,6 +934,7 @@ catch {
       height: appWindow.height,
       darkMode: appWindow.darkMode,
       hotReload: appWindow.hotReload,
+      titlebarHidden: appWindow.titlebarHidden ?? options.titlebarHidden === true,
       nativeSidebar: !!sidebarConfig,
       sidebarConfig,
     })

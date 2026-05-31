@@ -104,6 +104,14 @@ export interface WindowOptions {
   alwaysOnTop?: boolean
   /** Window is frameless (no title bar) */
   frameless?: boolean
+  /**
+   * Hide the titlebar while keeping the native traffic-light buttons.
+   * Web content extends under a transparent, full-size-content titlebar
+   * (macOS `titlebarAppearsTransparent` + `fullSizeContentView`), so a custom
+   * web toolbar can sit behind the real close/minimize/zoom controls — the
+   * pattern used by GitHub Desktop and VS Code.
+   */
+  titlebarHidden?: boolean
   /** Window background color */
   backgroundColor?: string
   /** Enable native macOS sidebar (Finder-style with vibrancy) */

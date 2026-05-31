@@ -30,6 +30,12 @@ export interface NativeWindowConfig {
   height?: number
   darkMode?: boolean
   hotReload?: boolean
+  /**
+   * Hide the titlebar while keeping the native traffic-light buttons. Web
+   * content draws under a transparent, full-size-content titlebar so a custom
+   * web toolbar can host the real close/minimize/zoom controls.
+   */
+  titlebarHidden?: boolean
   /** Enable native macOS sidebar (Finder-style with vibrancy) */
   nativeSidebar?: boolean
   /** Width of the native sidebar in pixels */
@@ -47,6 +53,7 @@ export const DEFAULT_NATIVE_WINDOW_CONFIG: Required<Omit<NativeWindowConfig, 'si
   height: 900,
   darkMode: true,
   hotReload: true,
+  titlebarHidden: false,
   nativeSidebar: false,
   sidebarWidth: 260,
   sidebarConfig: undefined,
@@ -103,6 +110,7 @@ export async function openNativeWindow(
       height: mergedConfig.height,
       darkMode: mergedConfig.darkMode,
       hotReload: mergedConfig.hotReload,
+      titlebarHidden: mergedConfig.titlebarHidden,
       nativeSidebar: mergedConfig.nativeSidebar,
       sidebarWidth: mergedConfig.sidebarWidth,
       sidebarConfig: mergedConfig.sidebarConfig,
