@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeAll, afterAll } from 'bun:test'
 import { processDirectives } from '../../src/process'
+import { userComponentFileExists } from '../../src/utils'
 import { join } from 'node:path'
 import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -43,5 +44,40 @@ describe('user components override built-ins', () => {
     const result = await render(`<StxLink href="/about">About</StxLink>`)
     expect(result).toContain('<a')
     expect(result).toContain('/about')
+  })
+})
+
+describe('component override resolution is cwd-independent', () => {
+  // Regression guard for the bug where a builtin was shadowed simply because the
+  // process was launched in a directory containing a like-named component file
+  // (stx's own packages/stx/src/components/StxLink.stx when run from packages/stx).
+  // Resolution must derive from the configured root / rendered file, not cwd.
+
+  it('does NOT report a builtin as a user override when no root is configured', async () => {
+    // No `root` in options → the launch directory must NOT be searched, even though
+    // (when run from packages/stx) cwd/src/components/StxLink.stx exists.
+    const exists = await userComponentFileExists(
+      'stx-link',
+      'components',
+      {},
+      join(tmpdir(), 'some-page.stx'),
+      { debug: false } as any,
+    )
+    expect(exists).toBe(false)
+  })
+
+  it('honors a user override under an explicitly configured root', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'stx-root-override-'))
+    await mkdir(join(dir, 'components'), { recursive: true })
+    await writeFile(join(dir, 'components', 'Widget.stx'), '<div>w</div>')
+    const exists = await userComponentFileExists(
+      'Widget',
+      'components',
+      {},
+      join(dir, 'page.stx'),
+      { root: dir, debug: false } as any,
+    )
+    await rm(dir, { recursive: true, force: true })
+    expect(exists).toBe(true)
   })
 })
