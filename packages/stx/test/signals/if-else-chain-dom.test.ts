@@ -108,6 +108,59 @@ describe('reactive if/else chains — DOM behavior (#1734, regression #1737)', (
     expect(presentBranches(['composer', 'signin', 'skeleton', 'empty', 'list'])).toEqual(['composer', 'list'])
   })
 
+  // `@if`/`@else-if`/`@else` ATTRIBUTE form — the shape
+  // convertSignalDirectivesToAttributes emits when promoting a signal-driven
+  // `@if`/`@elseif`/`@else` chain on a signals page. The runtime must drive it
+  // identically to the `:` form, so `@if`/`v-if` chains are interchangeable with
+  // `:if` chains. getElseAttrInfo already recognizes `@else-if`/`@else`.
+  //
+  // NOTE: built via setAttribute, not innerHTML — happy-dom drops `@`-prefixed
+  // attributes when parsing an HTML string (real browsers keep them), so the
+  // string-based processScope can't carry `@if` here.
+  async function processScopeWithAttrChain(
+    scopeVars: Record<string, unknown>,
+    branches: Array<{ attr: string, value?: string, text: string }>,
+  ) {
+    window.stx._scopes = { test: scopeVars }
+    document.body.innerHTML = `<section data-stx-scope="test"></section>`
+    const section = document.body.querySelector('section')
+    for (const b of branches) {
+      const el = document.createElement('div')
+      if (b.value === undefined)
+        el.setAttribute(b.attr, '')
+      else
+        el.setAttribute(b.attr, b.value)
+      el.textContent = b.text
+      section.appendChild(el)
+    }
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(r => setTimeout(r, 50))
+  }
+
+  it('@if/@else attribute chain (converter output) picks the matching branch', async () => {
+    await processScopeWithAttrChain(
+      { open: window.stx.state(true) },
+      [
+        { attr: '@if', value: 'open()', text: 'panel' },
+        { attr: '@else', text: 'closed' },
+      ],
+    )
+    expect(presentBranches(['panel', 'closed'])).toEqual(['panel'])
+  })
+
+  it('@if/@else-if/@else attribute chain picks the else-if when it matches', async () => {
+    await processScopeWithAttrChain(
+      { status: window.stx.state('b') },
+      [
+        { attr: '@if', value: 'status() === \'a\'', text: 'A' },
+        { attr: '@else-if', value: 'status() === \'b\'', text: 'B' },
+        { attr: '@else', text: 'C' },
+      ],
+    )
+    expect(presentBranches(['A', 'B', 'C'])).toEqual(['B'])
+  })
+
   // #1737 (real cause): a nested data-stx-scope inside a reactive :if. When
   // the outer :if starts hidden, the inner scope must NOT be permanently
   // disposed — its chains must still resolve and show correctly once the :if

@@ -187,8 +187,13 @@ describe('convertSignalLoopsToAttributes — server-data detection', () => {
  * Seen in the drivly host/dashboard page rendering literal "@else" text in
  * the DOM next to the status chips and inbox previews.
  */
-describe('convertSignalDirectivesToAttributes — @if/@else/@endif skip', () => {
-  it('does NOT convert @if/@else/@endif to an attribute form', () => {
+describe('convertSignalDirectivesToAttributes — @if/@else chains', () => {
+  // A chain is promoted to a reactive @if/@else-if/@else attribute chain ONLY when
+  // its conditions are signal-driven. Chains over server/loop data stay textual so
+  // processConditionals can pick a single branch server-side. This keeps `@if`/`v-if`
+  // interchangeable with `:if` on signal pages without mangling server conditionals.
+
+  it('leaves a server/loop-data @if/@else chain textual (no declared signal)', () => {
     const input = `
       @if(b.status === 'Confirmed')
         <span class="good">{{ b.status }}</span>
@@ -209,7 +214,7 @@ describe('convertSignalDirectivesToAttributes — @if/@else/@endif skip', () => 
     expect(output).not.toContain('<template @if=')
   })
 
-  it('does NOT convert @if/@elseif/@endif either', () => {
+  it('leaves a server-data @if/@elseif chain textual too', () => {
     const input = `
       @if(status === 'a')
         <span>A</span>
@@ -224,8 +229,67 @@ describe('convertSignalDirectivesToAttributes — @if/@else/@endif skip', () => 
     expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
   })
 
-  it('still converts simple @if/@endif (no else) to the attribute form', () => {
-    // Simple reactive blocks are what the converter is supposed to handle.
+  it('promotes a signal-driven @if/@else chain to a reactive sibling chain', () => {
+    // `open` is a declared signal → the chain is reactive, exactly like :if/:else.
+    const input = `
+      <script client>
+        const open = state(false)
+      </script>
+      @if(open())
+        <p class="a">Open</p>
+      @else
+        <p class="b">Closed</p>
+      @endif
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+    expect(output).toMatch(/<p class="a"\s@if="open\(\)">Open<\/p>/)
+    expect(output).toMatch(/<p class="b"\s@else>Closed<\/p>/)
+    // Directive form is gone — the runtime drives it now.
+    expect(output).not.toContain('@if(open())')
+    expect(output).not.toContain('@endif')
+  })
+
+  it('promotes a signal-driven @if/@elseif/@else chain (all branches reactive)', () => {
+    const input = `
+      <script client>
+        const status = state('a')
+      </script>
+      @if(status() === 'a')
+        <span>A</span>
+      @elseif(status() === 'b')
+        <span>B</span>
+      @else
+        <span>C</span>
+      @endif
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+    expect(output).toMatch(/<span\s@if="status\(\) === 'a'">A<\/span>/)
+    expect(output).toMatch(/<span\s@else-if="status\(\) === 'b'">B<\/span>/)
+    expect(output).toMatch(/<span\s@else>C<\/span>/)
+    expect(output).not.toContain('@elseif(')
+    expect(output).not.toContain('@endif')
+  })
+
+  it('wraps a multi-child signal-driven branch in <template>', () => {
+    const input = `
+      <script client>
+        const open = state(false)
+      </script>
+      @if(open())
+        <p>one</p>
+        <p>two</p>
+      @else
+        <p>closed</p>
+      @endif
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+    expect(output).toContain('<template @if="open()">')
+    expect(output).toMatch(/<p\s@else>closed<\/p>/)
+  })
+
+  it('still converts a simple @if/@endif (no else) to the attribute form', () => {
+    // The no-else path is unchanged: it converts any @if (it cannot leak a
+    // dangling @else), regardless of whether a signal is declared.
     const input = `
       @if(loading())
         <div class="spinner">Loading…</div>
@@ -237,33 +301,10 @@ describe('convertSignalDirectivesToAttributes — @if/@else/@endif skip', () => 
     expect(output).not.toContain('@endif')
   })
 
-  it('outer @if/@else is left untouched when it wraps a simple @if/@endif', () => {
-    // The OUTER block has @else at top level — it must stay as a textual
-    // directive block for processConditionals to handle. (The inner block
-    // without @else is a separate story: it's a simple reactive conditional
-    // and the converter MAY convert it — that's fine because processConditionals
-    // still picks the outer branch correctly at build time.)
-    const input = `
-      @if(a)
-        @if(b)
-          <span>inner</span>
-        @endif
-      @else
-        <span>else</span>
-      @endif
-    `
-    const output = convertSignalDirectivesToAttributes(input)
-    // Outer directives survive as text.
-    expect(output).toContain('@if(a)')
-    expect(output).toContain('@else')
-    // Outer @endif survives (the inner @endif may or may not, depending on
-    // whether the inner got attribute-converted).
-    expect(output).toContain('@endif')
-  })
-
   it('regression — dashboard status chip with @if/@else inside @foreach', () => {
     // Reproduces the exact shape from drivly/pages/host/dashboard.stx where
-    // literal "@else" was rendering to the DOM next to the status chips.
+    // literal "@else" was rendering to the DOM next to the status chips. `b` is a
+    // server loop variable, not a signal, so the chain must stay textual.
     const input = `
       @foreach (upcomingBookings as b)
         <tr>
@@ -284,6 +325,119 @@ describe('convertSignalDirectivesToAttributes — @if/@else/@endif skip', () => 
     expect(output).toContain('@else')
     expect(output).toContain('@endif')
     expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
+  })
+
+  it('regression — dashboard chip stays textual even on a page that uses signals elsewhere', () => {
+    // The whole point of signal-gating: a page can mix a reactive signal chain
+    // with a server-loop chip. The loop chip must NOT be dragged client-side.
+    const input = `
+      <script client>
+        const open = state(false)
+      </script>
+      @if(open())
+        <p>panel</p>
+      @endif
+      @foreach (upcomingBookings as b)
+        @if (b.status === 'Confirmed')
+          <span class="good">{{ b.status }}</span>
+        @else
+          <span class="warn">{{ b.status }}</span>
+        @endif
+      @endforeach
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+    // Signal chip converted…
+    expect(output).toMatch(/<p\s@if="open\(\)">panel<\/p>/)
+    // …server-loop chip left textual.
+    expect(output).toContain("@if (b.status === 'Confirmed')")
+    expect(output).toContain('@else')
+    expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
+  })
+})
+
+describe('convertSignalDirectivesToAttributes — per-condition server vs reactive', () => {
+  // The keyword (@if) is fixed; what decides conversion is the data the condition
+  // reads. These cover the no-else path too (which is now gated, not unconditional).
+
+  it('does NOT convert a no-else @if over a server-context variable', () => {
+    // `user` is server data (in context) → stays textual for processConditionals.
+    const input = `@if(user.isAdmin)<span>admin</span>@endif`
+    const output = convertSignalDirectivesToAttributes(input, { user: { isAdmin: true } })
+    expect(output).toContain('@if(user.isAdmin)')
+    expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
+  })
+
+  it('does NOT convert a no-else @if over a server loop variable', () => {
+    // `b` is neither a declared signal nor a context var → not client-reactive.
+    const input = `@if(b.active)<span>on</span>@endif`
+    const output = convertSignalDirectivesToAttributes(input, { rows: [] })
+    expect(output).toContain('@if(b.active)')
+    expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
+  })
+
+  it('converts a no-else @if that calls a store/getter not in server context', () => {
+    // `cart.count()` is a getter call on a non-server value → client-reactive,
+    // even without a local `state()` declaration.
+    const input = `@if(cart.count())<span>items</span>@endif`
+    const output = convertSignalDirectivesToAttributes(input, {})
+    expect(output).toMatch(/<span\s@if="cart\.count\(\)">items<\/span>/)
+  })
+
+  it('keeps a chain that mixes a signal with a bare server var server-side', () => {
+    // `open` is a signal but the elseif reads a bare server var `role` → the whole
+    // mutually-exclusive chain must resolve in one place, so keep it on the server.
+    const input = `
+      <script client>
+        const open = state(false)
+      </script>
+      @if(open())
+        <p>a</p>
+      @elseif(role === 'admin')
+        <p>b</p>
+      @else
+        <p>c</p>
+      @endif
+    `
+    const output = convertSignalDirectivesToAttributes(input, { role: 'admin' })
+    expect(output).toContain('@if(open())')
+    expect(output).toContain('@elseif(')
+    expect(output).not.toMatch(/<p[^>]*\s@if\s*=/)
+  })
+
+  it('does not count identifiers inside string literals as signals', () => {
+    // `state` appears only inside a string — must not be mistaken for a signal ref.
+    const input = `@if(label === 'state')<span>x</span>@endif`
+    const output = convertSignalDirectivesToAttributes(input, { label: 'state' })
+    expect(output).toContain("@if(label === 'state')")
+    expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
+  })
+
+  it('does NOT convert a with-arg helper call (likely a server helper)', () => {
+    // `formatDate(user.date)` takes an argument → treated as a server helper, not a
+    // signal getter, even though `formatDate` isn't in context. Stays server-side.
+    const input = `@if(formatDate(d))<span>x</span>@endif`
+    const output = convertSignalDirectivesToAttributes(input, {})
+    expect(output).toContain('@if(formatDate(d))')
+    expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
+  })
+
+  it('converts a zero-arg getter call (signal/derived/store getter)', () => {
+    const input = `@if(items())<span>x</span>@endif`
+    const output = convertSignalDirectivesToAttributes(input, {})
+    expect(output).toMatch(/<span\s@if="items\(\)">x<\/span>/)
+  })
+
+  it('still converts when a getter is mixed with a with-arg call on a signal value', () => {
+    // `items()` is a zero-arg getter (reactive); the trailing `.includes(x)` is a
+    // method on its value, not a separate server helper.
+    const input = `
+      <script client>
+        const items = state([])
+      </script>
+      @if(items().length)<span>x</span>@endif
+    `
+    const output = convertSignalDirectivesToAttributes(input, {})
+    expect(output).toMatch(/<span\s@if="items\(\).length">x<\/span>/)
   })
 })
 

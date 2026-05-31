@@ -10,6 +10,7 @@
  */
 
 import type { StxOptions } from './types'
+import { findIfBlocks } from './parser'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { injectSignalsRuntime, injectBrowserRuntime } from './runtime-injection'
@@ -224,10 +225,171 @@ function hasTopLevelElseBranch(content: string): boolean {
 }
 
 /**
+ * Collect the names of signals declared locally in a template's client `<script>`
+ * blocks — `const open = state(false)`, `let count = derived(...)`, etc. Used to
+ * decide whether an `@if`/`@elseif`/`@else` chain is driven by client signals (so
+ * it should become a reactive attribute chain) or by server/loop data (so it must
+ * stay a textual directive for `processConditionals` to evaluate server-side).
+ *
+ * Server-only loop variables (`@foreach(rows as b)` → `b.status`) are NOT declared
+ * via `state()`/etc., so they never land in this set — which is exactly why a
+ * server-loop `@if/@else` chain is left alone.
+ */
+function extractClientSignalNames(template: string): Set<string> {
+  const names = new Set<string>()
+  // Non-server, non-src <script> blocks only — same gating as usesSignalsInScript.
+  const scriptRe = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
+  const declRe = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:state|derived|computed|ref|reactive|signal)\s*(?:<[^>]*>)?\s*\(/g
+  let scriptMatch: RegExpExecArray | null
+  while ((scriptMatch = scriptRe.exec(template)) !== null) {
+    const body = scriptMatch[1]
+    let declMatch: RegExpExecArray | null
+    while ((declMatch = declRe.exec(body)) !== null) {
+      names.add(declMatch[1])
+    }
+  }
+  return names
+}
+
+// Identifiers that are JS globals / keywords — never client signals or server vars.
+const JS_NON_VARS = new Set([
+  'true', 'false', 'null', 'undefined', 'NaN', 'Infinity', 'typeof', 'instanceof',
+  'in', 'of', 'new', 'void', 'delete', 'this', 'Math', 'JSON', 'Date', 'Number',
+  'String', 'Boolean', 'Array', 'Object', 'RegExp', 'Map', 'Set', 'Symbol',
+  'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'encodeURIComponent',
+  'decodeURIComponent', 'encodeURI', 'decodeURI', 'window', 'document', 'console',
+])
+
+/** Blank out string/template literals so identifiers inside them aren't counted. */
+function stripExprStrings(expr: string): string {
+  return expr
+    .replace(/'(?:\\.|[^'\\])*'/g, '\'\'')
+    .replace(/"(?:\\.|[^"\\])*"/g, '""')
+    .replace(/`(?:\\.|[^`\\])*`/g, '``')
+}
+
+/**
+ * Decide whether a single conditional expression should run client-reactive
+ * (wired into the signals runtime) or stay server-side. The keyword (`@if` vs
+ * `:if`) does not matter — the data the condition reads does:
+ *
+ *   client-reactive  ⇐  references a declared local signal, OR calls a getter-style
+ *                        identifier that isn't a server-side value (signal/store getter)
+ *   server-side      ⇐  the only thing it reads is server data (a `<script server>`
+ *                        var or a `@foreach` loop variable), or it mixes a bare
+ *                        server var into the condition
+ *
+ * Returns true ⇒ convert to a reactive attribute; false ⇒ leave for
+ * `processConditionals`. With no `context` (e.g. unit tests, or pages without a
+ * `<script server>`), server-var detection simply finds nothing and the verdict
+ * rests on signal references / getter calls.
+ */
+function conditionIsClientReactive(
+  condition: string | undefined,
+  signalNames: Set<string>,
+  context: Record<string, any> | undefined,
+): boolean {
+  if (!condition)
+    return false
+  const expr = stripExprStrings(condition)
+
+  let refsSignal = false
+  let refsServerVar = false
+  let refsZeroArgGetter = false
+
+  // Pass 1 — root identifiers (skip `.prop` accesses). A declared signal makes the
+  // condition reactive; any server-context var makes it server-bound.
+  const idRe = /([a-zA-Z_$][\w$]*)/g
+  let m: RegExpExecArray | null
+  while ((m = idRe.exec(expr)) !== null) {
+    const id = m[1]
+    if (expr.slice(0, m.index).trimEnd().endsWith('.'))
+      continue // property access — belongs to the root before the dot
+    if (JS_NON_VARS.has(id))
+      continue
+    if (signalNames.has(id))
+      refsSignal = true
+    else if (context && id in context)
+      refsServerVar = true
+  }
+
+  // Pass 2 — ZERO-ARG getter calls. Signals/derived/store getters are read with no
+  // arguments (`loading()`, `cart.count()`, `items()`); server helpers take args
+  // (`formatDate(x)`, `count($items)`). Requiring empty parens keeps getters
+  // reactive while leaving with-arg server-helper calls server-side — avoiding the
+  // false positive where a helper that isn't in `context` looked client-reactive.
+  const getterRe = /([a-zA-Z_$][\w$]*)(?:\.[a-zA-Z_$][\w$]*)*\s*\(\s*\)/g
+  let c: RegExpExecArray | null
+  while ((c = getterRe.exec(expr)) !== null) {
+    const root = c[1]
+    if (expr.slice(0, c.index).trimEnd().endsWith('.'))
+      continue // chain root already handled by an earlier match
+    if (JS_NON_VARS.has(root) || (context && root in context))
+      continue
+    refsZeroArgGetter = true
+  }
+
+  const signalDriven = refsSignal || refsZeroArgGetter
+  return signalDriven && !refsServerVar
+}
+
+/**
+ * Render a single conditional branch as an attribute-carrying element for the
+ * client signals runtime. A branch with exactly one root element gets the
+ * attribute placed directly on it; anything else (multiple children, text nodes)
+ * is wrapped in a `<template>`.
+ *
+ * Pass `attrValue` for value-carrying attributes (`@if`, `@else-if`); omit it for
+ * boolean attributes (`@else`). Double quotes in the value are escaped so they
+ * don't break the attribute.
+ */
+function branchToAttrElement(content: string, attrName: string, attrValue?: string): string {
+  const attr = attrValue === undefined
+    ? ` ${attrName}`
+    : ` ${attrName}="${attrValue.replace(/"/g, '&quot;')}"`
+
+  const trimmed = content.trim()
+  const singleElementMatch = trimmed.match(SINGLE_ELEMENT_RE)
+  // SINGLE_ELEMENT_RE greedily matches up to the LAST </tag>, so same-tag siblings
+  // (`<p>a</p><p>b</p>`) falsely look like one element. Verify the inner content is
+  // actually balanced for this tag before placing the attribute on it; otherwise a
+  // stray sibling would escape the conditional (and break findIfChain in a chain).
+  if (singleElementMatch && isBalancedForTag(singleElementMatch[3], singleElementMatch[1])) {
+    const [, tag, attrs, innerContent] = singleElementMatch
+    return `<${tag}${attrs}${attr}>${innerContent}</${tag}>`
+  }
+  return `<template${attr}>${trimmed}</template>`
+}
+
+/**
+ * Does `inner` contain a `</tag>` that isn't matched by an open `<tag>` within it?
+ * If so, SINGLE_ELEMENT_RE matched across sibling elements rather than one root.
+ */
+function isBalancedForTag(inner: string, tag: string): boolean {
+  const tokenRe = new RegExp(`<(/)?${tag}(?=[\\s/>])`, 'gi')
+  let depth = 0
+  let m: RegExpExecArray | null
+  while ((m = tokenRe.exec(inner)) !== null) {
+    if (m[1]) {
+      depth-- // closing </tag>
+      if (depth < 0)
+        return false // an unmatched close → siblings, not a single root
+    }
+    else {
+      depth++ // opening <tag ...>
+    }
+  }
+  return true
+}
+
+/**
  * Convert @if(expr)...@endif directive blocks to attribute-style for signal templates.
  *
  * This allows the signals runtime to handle reactive conditionals instead of
- * evaluating them at build time with mock values.
+ * evaluating them at build time with mock values. `@if`/`v-if` (which compiles to
+ * `@if`) thus behave as interchangeable sugar for `:if` on signal pages — including
+ * `@if`/`@elseif`/`@else` chains, which become a reactive sibling chain driven by
+ * the runtime's `findIfChain`/`bindIfChain` (it already understands `@else-if`/`@else`).
  *
  * Converts:
  *   @if(loading())
@@ -239,10 +401,23 @@ function hasTopLevelElseBranch(content: string): boolean {
  *     <div>Loading...</div>
  *   </template>
  *
- * Note: Uses <template> wrapper for blocks with multiple children or text nodes.
+ * And a branching chain:
+ *   @if(a()) <p>A</p> @elseif(b()) <p>B</p> @else <p>C</p> @endif
+ *
+ * To adjacent siblings the runtime walks via nextElementSibling:
+ *   <p @if="a()">A</p>
+ *   <p @else-if="b()">B</p>
+ *   <p @else>C</p>
+ *
+ * Note: Uses <template> wrapper for branches with multiple children or text nodes.
  */
-export function convertSignalDirectivesToAttributes(template: string): string {
+export function convertSignalDirectivesToAttributes(template: string, context?: Record<string, any>): string {
   let output = template
+
+  // Names of locally-declared signals — used (together with the server `context`)
+  // to tell a client-reactive conditional from a server/loop-data one that must
+  // stay textual for processConditionals.
+  const signalNames = extractClientSignalNames(template)
 
   // Pattern to match @if(expr)...@endif blocks (handles nested parens in expr)
   // We use a simpler approach: find @if( and then parse balanced parens
@@ -293,28 +468,35 @@ export function convertSignalDirectivesToAttributes(template: string): string {
     // Extract content between ) and @endif
     const content = output.substring(afterCondition, endIdx - '@endif'.length).trim()
 
-    // Skip blocks containing @else / @elseif — the reactive attribute form is
-    // a simple boolean show/hide, while branching requires the full server-side
-    // conditional processor. Leave these for `processConditionals` to handle.
-    // We scan at the top level only (ignoring @else inside nested @if blocks).
-    if (hasTopLevelElseBranch(content)) continue
-
-    // Check if content is a single element or needs wrapper
-    // Handle > in attribute values by matching quoted attrs properly
-    const singleElementMatch = content.match(SINGLE_ELEMENT_RE)
-
     let replacement: string
-    if (singleElementMatch) {
-      // Single root element - add @if attribute directly
-      const [, tag, attrs, innerContent] = singleElementMatch
-      // Escape double quotes in condition to avoid breaking the attribute
-      const escapedCondition = condition.replace(/"/g, '&quot;')
-      replacement = `<${tag}${attrs} @if="${escapedCondition}">${innerContent}</${tag}>`
+    if (hasTopLevelElseBranch(content)) {
+      // @if/@elseif/@else chain. Promote to a reactive sibling chain only when every
+      // value branch is client-reactive; a chain that reads server/loop data (e.g. a
+      // status chip inside a server @foreach) stays textual so processConditionals
+      // picks one branch server-side. Reuse the robust server-side branch parser so
+      // branch boundaries match what processConditionals would see.
+      const parsed = findIfBlocks(output.substring(startIdx, endIdx))
+      if (parsed.length === 0) continue // Defensive: shouldn't happen, leave for server
+      const valueBranches = parsed[0].branches.filter(b => b.type !== 'else')
+      const isReactiveChain = valueBranches.length > 0
+        && valueBranches.every(b => conditionIsClientReactive(b.condition, signalNames, context))
+      if (!isReactiveChain) continue // Server/loop-data chain — leave for processConditionals
+      const parts = parsed[0].branches.map((branch) => {
+        if (branch.type === 'elseif')
+          return branchToAttrElement(branch.content, '@else-if', branch.condition ?? '')
+        if (branch.type === 'else')
+          return branchToAttrElement(branch.content, '@else')
+        return branchToAttrElement(branch.content, '@if', branch.condition ?? '')
+      })
+      // Newline-separated: nextElementSibling skips the whitespace text nodes.
+      replacement = parts.join('\n')
     }
     else {
-      // Multiple elements or text - wrap in template
-      const escapedCondition = condition.replace(/"/g, '&quot;')
-      replacement = `<template @if="${escapedCondition}">${content}</template>`
+      // Single boolean condition. Convert only when it's client-reactive; a server-data
+      // @if (e.g. a loop-variable check) stays textual for processConditionals so it
+      // isn't evaluated against the client scope, where its variables don't exist.
+      if (!conditionIsClientReactive(condition, signalNames, context)) continue
+      replacement = branchToAttrElement(content, '@if', condition)
     }
 
     replacements.push({ start: startIdx, end: endIdx, replacement })
