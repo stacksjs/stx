@@ -4,6 +4,31 @@ Tracking significant bugs found and fixed during development. Most recent first.
 
 ---
 
+## Component Resolution Depended on `process.cwd()` (2026-05-31)
+
+**Problem:** `userComponentFileExists` and `renderComponentWithSlot` (`utils.ts`)
+built their "convention" component search dirs (`src/components`,
+`resources/views/components`, `components`, …) by resolving against
+`process.cwd()`. So whether a user file shadowed a built-in depended on **where the
+process was launched**, not the project. Running from `packages/stx`, resolution
+found stx's own `packages/stx/src/components/StxLink.stx`, shadowed the `<StxLink>`
+built-in, and — because that file renders `<stx-link>`, which re-resolves to
+itself — produced `[Circular component reference: stx-link]`. Worse, the two
+functions could disagree about *which* file a tag resolves to (one keyed off cwd,
+the other off config), a latent correctness hazard. Symptom: several component
+tests passed from the repo root but failed from `packages/stx`.
+
+**Fix:** Both functions now derive the project root from the **configured**
+`options.root` (resolved absolute) and fall back to the rendered file's directory —
+never `process.cwd()`. The convention search dirs only apply within an explicitly
+configured root; the built-in `import.meta.dir/components` dir is always searched
+(cwd-independent). Resolution is now deterministic regardless of launch directory,
+and the two functions agree. Guarded by cwd-independence tests in
+`test/components/builtin-override.test.ts`. The full suite now passes from both the
+repo root and `packages/stx`.
+
+---
+
 ## Security Hardening Pass — masks, builtins, event fallback (2026-05-31)
 
 Follow-ups after the `<script>`-stash XSS, closing the same bug class everywhere:
