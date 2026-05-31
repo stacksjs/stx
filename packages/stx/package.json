@@ -120,6 +120,7 @@
     "@stacksjs/desktop": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
     "@stacksjs/ts-craft": "^0.0.2",
+    "@stacksjs/ts-i18n": "file:../../../../Libraries/ts-i18n/packages/ts-i18n",
     "bun-plugin-stx": "workspace:*",
     "bunfig": "^0.15.6",
     "stx-router": "workspace:*",

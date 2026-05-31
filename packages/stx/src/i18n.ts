@@ -65,6 +65,7 @@ else {
 
 import type { I18nConfig, StxOptions } from './types'
 import path from 'node:path'
+import { loadLocale } from '@stacksjs/ts-i18n'
 import { ErrorCodes, inlineError } from './error-handling'
 import { safeEvaluateObject } from './safe-evaluator'
 
@@ -528,39 +529,33 @@ async function loadTranslationInternal(
     ...options.i18n,
   }
 
-  // Determine the path to the translation file. Relative translation dirs
-  // belong to the consuming project, not to the installed @stacksjs/stx
-  // package directory.
+  // Determine the path to the translations directory. Relative translation dirs
+  // belong to the consuming project, not to the installed @stacksjs/stx package
+  // directory.
   const translationsDir = path.isAbsolute(i18nConfig.translationsDir)
     ? i18nConfig.translationsDir
     : path.resolve(options.root || process.cwd(), i18nConfig.translationsDir)
-  const fileExtension = getFileExtension(i18nConfig.format)
-  const translationFile = path.join(translationsDir, `${locale}${fileExtension}`)
 
   try {
-    let translations: Record<string, any> = {}
+    // Delegate file discovery + parsing to the shared @stacksjs/ts-i18n loader
+    // (full Bun.YAML parsing, JSON, and TS/JS modules; flat `<locale>.<ext>` plus
+    // nested `<locale>/**` namespaces). stx keeps caching, lazy dedup, and the
+    // runtime layer (interpolation/pluralization/ICU/@translate) on top.
+    const tree = await loadLocale(locale, {
+      translationsDir,
+      defaultLocale: i18nConfig.defaultLocale,
+      sources: formatToSources(i18nConfig.format),
+    })
 
-    // Use dynamic imports for all formats - Bun supports JS, JSON, and YAML
-    try {
-      const imported = await import(translationFile)
-      translations = imported.default || imported
+    // No file for this locale: fall back to the default locale once, else empty.
+    if (tree === undefined) {
+      if (locale !== i18nConfig.defaultLocale) {
+        return loadTranslationInternal(i18nConfig.defaultLocale, options)
+      }
+      return {}
     }
-    catch (importError) {
-      // Fallback: Try reading and parsing the file manually
-      const fileContent = await Bun.file(translationFile).text()
 
-      if (i18nConfig.format === 'yaml' || i18nConfig.format === 'yml') {
-        // Use simple YAML parser fallback
-        translations = parseSimpleYaml(fileContent)
-      }
-      else if (i18nConfig.format === 'json') {
-        translations = JSON.parse(fileContent)
-      }
-      else {
-        // For JS files, re-throw the import error
-        throw importError
-      }
-    }
+    const translations = tree as Record<string, any>
 
     // Cache the translations if caching is enabled
     if (i18nConfig.cache) {
@@ -578,13 +573,31 @@ async function loadTranslationInternal(
       console.error(`Error loading translation file for locale "${locale}":`, error)
     }
 
-    // If file not found and locale is not the default, try to load the default locale
+    // On a parse error (or any load failure), fall back to the default locale.
     if (locale !== i18nConfig.defaultLocale) {
       return loadTranslationInternal(i18nConfig.defaultLocale, options)
     }
 
-    // Return empty object if default locale file is also not found
+    // Return empty object if the default locale also can't be loaded.
     return {}
+  }
+}
+
+/**
+ * Map stx's i18n `format` config to ts-i18n's `sources` list.
+ * `yaml`/`yml` → YAML, `js`/`ts` → TS/JS modules, `json` (default) → JSON.
+ */
+function formatToSources(format: string): Array<'ts' | 'yaml' | 'json'> {
+  switch (format) {
+    case 'yaml':
+    case 'yml':
+      return ['yaml']
+    case 'js':
+    case 'ts':
+      return ['ts']
+    case 'json':
+    default:
+      return ['json']
   }
 }
 
@@ -615,109 +628,6 @@ export async function loadTranslation(
 ): Promise<Record<string, any>> {
   // Delegate to lazy loading implementation for deduplication
   return loadTranslationLazy(locale, options)
-}
-
-/**
- * Simple YAML parser fallback for basic key-value pairs
- * Supports:
- * - Simple key: value pairs
- * - Nested objects via indentation
- * - String values (quoted or unquoted)
- * - Comments (#)
- *
- * Does NOT support:
- * - Arrays
- * - Multi-line strings
- * - Anchors and aliases
- * - Complex YAML features
- */
-function parseSimpleYaml(content: string): Record<string, any> {
-  const result: Record<string, any> = {}
-  const lines = content.split('\n')
-  const stack: Array<{ obj: Record<string, any>, indent: number }> = [{ obj: result, indent: -1 }]
-
-  for (const rawLine of lines) {
-    // Skip empty lines and comments
-    const line = rawLine.replace(/#.*$/, '').trimEnd()
-    if (!line.trim())
-      continue
-
-    // Calculate indentation
-    const indent = line.search(/\S/)
-    if (indent === -1)
-      continue
-
-    // Pop stack to find the correct parent
-    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
-      stack.pop()
-    }
-
-    const currentObj = stack[stack.length - 1].obj
-
-    // Parse key: value
-    const match = line.match(/^(\s*)(\S[^:]*):\s*(.*)$/)
-    if (match) {
-      const [, , key, rawValue] = match
-      const trimmedKey = key.trim()
-      const trimmedValue = rawValue.trim()
-
-      if (trimmedValue === '') {
-        // This is a nested object
-        currentObj[trimmedKey] = {}
-        stack.push({ obj: currentObj[trimmedKey], indent })
-      }
-      else {
-        // This is a simple value
-        currentObj[trimmedKey] = parseYamlValue(trimmedValue)
-      }
-    }
-  }
-
-  return result
-}
-
-/**
- * Parse a YAML value (handles strings, numbers, booleans)
- */
-function parseYamlValue(value: string): string | number | boolean | null {
-  // Remove quotes
-  if ((value.startsWith('\'') && value.endsWith('\'')) || (value.startsWith('"') && value.endsWith('"'))) {
-    return value.slice(1, -1)
-  }
-
-  // Check for boolean
-  const lowerValue = value.toLowerCase()
-  if (lowerValue === 'true' || lowerValue === 'yes')
-    return true
-  if (lowerValue === 'false' || lowerValue === 'no')
-    return false
-  if (lowerValue === 'null' || lowerValue === '~')
-    return null
-
-  // Check for number
-  const num = Number(value)
-  if (!Number.isNaN(num))
-    return num
-
-  // Return as string
-  return value
-}
-
-/**
- * Get file extension based on format
- */
-function getFileExtension(format: string): string {
-  switch (format) {
-    case 'yaml':
-      return '.yaml'
-    case 'yml':
-      return '.yml'
-    case 'js':
-      return '.js'
-    case 'json':
-    default:
-      return '.json'
-  }
 }
 
 /**
