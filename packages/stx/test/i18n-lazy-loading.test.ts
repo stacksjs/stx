@@ -18,10 +18,12 @@ import {
   preloadTranslationsBackground,
 } from '../src/i18n'
 
-// Mock options for testing
+// Mock options for testing.
+// Resolve `root` from this test file (test/ → packages/stx) so the suite passes
+// regardless of the cwd it's launched from (repo root or packages/stx).
 const mockOptions: StxOptions = {
   debug: false,
-  root: path.resolve('packages/stx'),
+  root: path.resolve(import.meta.dir, '..'),
   i18n: {
     cache: true,
     translationsDir: 'test/fixtures/translations',
