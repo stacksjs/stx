@@ -626,27 +626,28 @@ export async function renderComponentWithSlot(
         }
       }
 
-      // Also search common project component directories as fallbacks
-      // This handles cases where the caller (e.g., bun-router) passes a viewsDir-relative
-      // componentsDir but actual components live at the project-level src/components
-      const projectRoot = process.cwd()
-      const fallbackDirs = [
-        // Canonical Stacks project components dir. Without this, a tag
-        // referenced from a *nested* view (e.g. resources/views/products/
-        // index.stx) only searched its own `<viewDir>/components` and the
-        // global componentsDir (the framework defaults), so project-level
-        // components in `resources/views/components` resolved for root
-        // views but 404'd for any view in a subdirectory. Adding it as a
-        // project-wide fallback makes project components resolve from any
-        // view depth — matching how the framework defaults already do.
-        path.resolve(projectRoot, 'resources/views/components'),
+      // Also search common project component directories as fallbacks. Root these
+      // at the CONFIGURED project root (and the rendered file), never process.cwd()
+      // — otherwise resolution depends on where the process was launched and can
+      // disagree with userComponentFileExists() about which file a tag resolves to.
+      // The convention dirs only apply within an explicitly configured root.
+      const configuredRoot = typeof options.root === 'string' ? path.resolve(options.root) : undefined
+      const resolveBase = configuredRoot ?? path.dirname(parentFilePath)
+      const fallbackDirs: string[] = []
+      if (configuredRoot) {
+        // Canonical Stacks project components dir. Without this, a tag referenced
+        // from a *nested* view (e.g. resources/views/products/index.stx) only
+        // searched its own `<viewDir>/components` and the global componentsDir, so
+        // project-level components in `resources/views/components` resolved for root
+        // views but 404'd for any view in a subdirectory.
+        fallbackDirs.push(path.resolve(configuredRoot, 'resources/views/components'))
         // Legacy scaffold location (pre-`resources/views/` move).
-        path.resolve(projectRoot, 'resources/components'),
-        path.resolve(projectRoot, 'src/components'),
-        path.resolve(projectRoot, 'components'),
-        // Built-in STX components (e.g., StxLink)
-        path.resolve(import.meta.dir, 'components'),
-      ]
+        fallbackDirs.push(path.resolve(configuredRoot, 'resources/components'))
+        fallbackDirs.push(path.resolve(configuredRoot, 'src/components'))
+        fallbackDirs.push(path.resolve(configuredRoot, 'components'))
+      }
+      // Built-in STX components (e.g., StxLink) — always available, cwd-independent.
+      fallbackDirs.push(path.resolve(import.meta.dir, 'components'))
       for (const fallback of fallbackDirs) {
         if (!searchDirs.includes(fallback)) {
           searchDirs.push(fallback)
@@ -659,7 +660,7 @@ export async function renderComponentWithSlot(
 
         return path.isAbsolute(dir)
           ? dir
-          : path.resolve(projectRoot, dir)
+          : path.resolve(resolveBase, dir)
       }))]
       searchDirs.length = 0
       searchDirs.push(...normalizedSearchDirs)
