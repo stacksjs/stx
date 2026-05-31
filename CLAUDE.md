@@ -655,7 +655,6 @@ stx serve <directory> [--port 3000]
 
 ## Additional Documentation
 
-- **[Bug Fixes](docs/bug-fixes.md)** — Comprehensive tracking of significant bugs found and fixed, with root causes and commit references
 - **[Lazy Hydration](docs/features/lazy-hydration.md)** — `stx-hydrate` attribute documentation with trigger types and usage examples
 - **[Deployment](docs/features/deployment.md)** — Deployment guide for static sites and SSR apps
 
