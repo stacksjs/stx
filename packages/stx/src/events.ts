@@ -387,7 +387,7 @@ function generateEventListener(event: ParsedEvent): string {
       scope.__stx_execute('${escapedHandler}', null, $el);
     }
 else {
-      ${handler}
+      __stx_runHandler('${escapedHandler}', null, $el);
     }
   })();`
   }
@@ -408,7 +408,7 @@ else {
               scope.__stx_execute('${escapedHandler}', null, $el);
             }
 else {
-              ${handler}
+              __stx_runHandler('${escapedHandler}', null, $el);
             }
             return;
           }
@@ -434,8 +434,8 @@ else {
         scope.__stx_execute('${escapedHandler}', $event, $el);
       }
 else {
-        // Fallback for non-reactive context
-        ${handler}
+        // Fallback for non-reactive context (entity-safe; decoded + run in memory)
+        __stx_runHandler('${escapedHandler}', $event, $el);
       }
     }${optionsStr});
   })();`
@@ -479,6 +479,26 @@ function generateRuntimeScript(elements: ElementWithEvents[]): string {
         fn.apply(this, arguments);
       }
     };
+  }
+
+  // Non-reactive fallback runner. The handler is embedded HTML-entity-encoded so
+  // the surrounding <script> can never contain raw markup (e.g. </script>); we
+  // decode it to JS only in memory here, then run it with $event/$el in scope.
+  function __stx_runHandler(h, $event, $el) {
+    var code = h
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&#x27;/g, "'")
+      .replace(/&amp;/g, '&');
+    try {
+      // eslint-disable-next-line no-new-func
+      (new Function('$event', '$el', code)).call($el, $event, $el);
+    }
+    catch (e) {
+      if (typeof console !== 'undefined') console.error('[stx] event handler error:', e);
+    }
   }
 
   // Event listeners

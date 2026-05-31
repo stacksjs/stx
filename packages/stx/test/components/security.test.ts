@@ -1,9 +1,21 @@
+import type { ResolvedProps } from '../../src/component-registry'
 import { afterEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { StxDrawerBuiltin } from '../../src/builtins/drawer'
+import { IconBuiltin } from '../../src/builtins/icon'
+import { StxModalBuiltin } from '../../src/builtins/modal'
+import { StxToastBuiltin } from '../../src/builtins/toast'
 import { processDynamicComponents } from '../../src/dynamic-components'
 import { processDirectives } from '../../src/process'
+
+function staticProps(s: Record<string, unknown>): ResolvedProps {
+  return { static: s, serverDynamic: {}, clientReactive: {}, events: {} } as ResolvedProps
+}
+
+// A value that breaks out of a double-quoted attribute and runs JS.
+const BREAKOUT = 'x" onload="alert(1)'
 
 const tempDirs: string[] = []
 
@@ -66,5 +78,77 @@ describe('component rendering security', () => {
     expect(output).toContain('dynamic component: could not resolve')
     expect(output).not.toContain('--><script>')
     expect(output).not.toContain('<script>alert(1)</script>')
+  })
+})
+
+describe('builtin attribute escaping', () => {
+  const ctx = {} as any
+
+  it('Icon escapes class / style / size / color', () => {
+    const out = IconBuiltin.render(
+      staticProps({ name: 'lucide:check', class: BREAKOUT, style: BREAKOUT, size: BREAKOUT, color: BREAKOUT }),
+      '',
+      ctx,
+    )
+    expect(out).not.toContain('onload="alert(1)"')
+    expect(out).not.toContain('" onload=')
+    expect(out).toContain('&quot; onload=&quot;alert(1)')
+  })
+
+  it('StxDrawer escapes the id prop', () => {
+    const out = StxDrawerBuiltin.render(staticProps({ id: BREAKOUT }), '', ctx)
+    expect(out).not.toContain('" onload="alert(1)')
+    expect(out).toContain('&quot; onload=&quot;alert(1)')
+  })
+
+  it('StxModal escapes the id prop', () => {
+    const out = StxModalBuiltin.render(staticProps({ id: BREAKOUT }), '', ctx)
+    expect(out).not.toContain('" onload="alert(1)')
+    expect(out).toContain('&quot; onload=&quot;alert(1)')
+  })
+
+  it('StxToast escapes the position prop', () => {
+    const out = StxToastBuiltin.render(staticProps({ position: BREAKOUT }), '', ctx)
+    expect(out).not.toContain('" onload="alert(1)')
+    expect(out).toContain('&quot; onload=&quot;alert(1)')
+  })
+
+  it('leaves benign prop values untouched (no over-escaping)', () => {
+    const out = StxModalBuiltin.render(staticProps({ id: 'settings' }), '', ctx)
+    expect(out).toContain('id="stx-modal-settings"')
+    expect(out).toContain('data-stx-modal="settings"')
+  })
+})
+
+describe('comment-mask does not defeat attribute escaping', () => {
+  it('a <!-- … --> inside an attribute value cannot break out on restore', async () => {
+    const dir = await makeTempDir()
+    // Single-quoted source attribute, so the comment can legally contain a `"`.
+    // The old global comment mask hid that `"` from the attribute parser; the
+    // value was then re-emitted double-quoted+escaped, and the raw comment (with
+    // its `"`) was restored INTO that double-quoted attribute — closing it and
+    // injecting <img onerror>. Element-position masking leaves it in place to escape.
+    const output = await processDirectives(
+      `<StxLink to="/x" data-note='<!-- "><img src=x onerror=alert(1)> -->'>go</StxLink>`,
+      {},
+      path.join(dir, 'page.stx'),
+      { debug: false },
+      new Set(),
+    )
+    expect(output).not.toContain('<img src=x onerror=alert(1)>')
+    expect(output).not.toContain('"><img')
+  })
+
+  it('still masks a real top-level comment (directives inside are not expanded)', async () => {
+    const dir = await makeTempDir()
+    const output = await processDirectives(
+      '<p>a</p><!-- @if(true) hidden @endif --><p>b</p>',
+      {},
+      path.join(dir, 'page.stx'),
+      { debug: false },
+      new Set(),
+    )
+    // The directive inside the comment must NOT be evaluated; the comment survives.
+    expect(output).toContain('<!-- @if(true) hidden @endif -->')
   })
 })

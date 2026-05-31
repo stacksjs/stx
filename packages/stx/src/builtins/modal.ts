@@ -24,6 +24,7 @@
  */
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
+import { escapeAttr } from './escape'
 
 function resolveProp(props: ResolvedProps, key: string): string | undefined {
   if (props.serverDynamic[key] !== undefined) return String(props.serverDynamic[key])
@@ -45,11 +46,12 @@ export const StxModalBuiltin: BuiltinComponentDef = {
   aliases: ['stx-modal'],
 
   render(props: ResolvedProps, slotContent: string, _ctx: RenderContext): string {
-    const id = resolveProp(props, 'id')
-    if (!id) {
+    const rawId = resolveProp(props, 'id')
+    if (!rawId) {
       console.warn('[stx] <StxModal> requires an "id" prop')
       return '<!-- StxModal: missing id prop -->'
     }
+    const id = escapeAttr(rawId)
 
     const size = resolveProp(props, 'size') || 'md'
     const closeOnBackdrop = resolveProp(props, 'closeOnBackdrop') !== 'false'

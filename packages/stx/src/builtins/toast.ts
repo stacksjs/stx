@@ -17,6 +17,7 @@
  */
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
+import { escapeAttr } from './escape'
 
 function resolveProp(props: ResolvedProps, key: string): string | undefined {
   if (props.serverDynamic[key] !== undefined) return String(props.serverDynamic[key])
@@ -48,7 +49,7 @@ export const StxToastBuiltin: BuiltinComponentDef = {
   aliases: ['stx-toast'],
 
   render(props: ResolvedProps, _slotContent: string, _ctx: RenderContext): string {
-    const position = resolveProp(props, 'position') || 'top-right'
+    const position = escapeAttr(resolveProp(props, 'position') || 'top-right')
     const max = resolveNumericProp(props, 'max', 5)
 
     const posStyle = POSITION_STYLES[position] || POSITION_STYLES['top-right']

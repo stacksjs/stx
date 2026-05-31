@@ -21,6 +21,8 @@
  */
 import { describe, expect, it } from 'bun:test'
 import { processComponents } from '../../src/component-renderer'
+import { restoreStashedScripts, stashScriptElements } from '../../src/component-processing'
+import { maskAtElementPosition, matchHtmlComment } from '../../src/html-masking'
 import { defaultConfig } from '../../src/config'
 
 async function processOnce(template: string): Promise<string> {
@@ -130,5 +132,70 @@ describe('component scanner does not descend into <script> content (#1730)', () 
 
     expect(output).not.toContain('STX_SCRIPT_')
     expect(output).not.toMatch(/\x00/)
+  })
+})
+
+describe('stashScriptElements — tag/quote-aware (XSS guard)', () => {
+  it('stashes a genuine top-level <script> element', () => {
+    const { output, scripts } = stashScriptElements('<p>x</p><script>var a = 1</script><p>y</p>')
+    expect(scripts).toEqual(['<script>var a = 1</script>'])
+    expect(output).toBe('<p>x</p>\x00STX_SCRIPT_0\x00<p>y</p>')
+    expect(restoreStashedScripts(output, scripts)).toBe('<p>x</p><script>var a = 1</script><p>y</p>')
+  })
+
+  it('does NOT stash a <script> that lives inside an attribute value', () => {
+    // The bug: this <script> is attribute text, not an element. Stashing it would
+    // let the renderer's escaping run against a harmless placeholder, then restore
+    // the raw <script> back into the attribute — an XSS.
+    const input = '<StxLink aria-label="<script>alert(1)</script>">x</StxLink>'
+    const { output, scripts } = stashScriptElements(input)
+    expect(scripts).toEqual([])
+    expect(output).toBe(input)
+  })
+
+  it('does NOT stash a <script> inside a single-quoted attribute value', () => {
+    const input = `<a data-x='<script>bad()</script>'>x</a>`
+    const { scripts } = stashScriptElements(input)
+    expect(scripts).toEqual([])
+  })
+
+  it('stashes a real element but leaves an attribute-embedded one in place', () => {
+    const input = '<a title="<script>no()</script>">t</a><script>yes()</script>'
+    const { output, scripts } = stashScriptElements(input)
+    expect(scripts).toEqual(['<script>yes()</script>'])
+    expect(output).toContain('title="<script>no()</script>"') // untouched, renderer will escape
+    expect(output).toContain('\x00STX_SCRIPT_0\x00')
+  })
+
+  it('end-to-end: an attribute-embedded <script> is HTML-escaped, not executed', async () => {
+    const output = await processOnce(
+      '<StxLink to="/x" aria-label="<script>alert(1)</script>">go</StxLink>',
+    )
+    expect(output).toContain('aria-label="&lt;script&gt;alert(1)&lt;/script&gt;"')
+    expect(output).not.toContain('<script>alert(1)</script>')
+  })
+})
+
+describe('maskAtElementPosition — HTML comments (XSS guard)', () => {
+  const ph = (_t: string, i: number) => `\x00C${i}\x00`
+
+  it('masks a top-level comment but not one inside an attribute value', () => {
+    const input = '<p>a</p><!-- real --><div title="<!-- attr -->">x</div>'
+    const { output, tokens } = maskAtElementPosition(input, matchHtmlComment, ph)
+    expect(tokens).toEqual(['<!-- real -->'])
+    expect(output).toBe('<p>a</p>\x00C0\x00<div title="<!-- attr -->">x</div>')
+  })
+
+  it('handles a comment containing a quote+angle-bracket payload at top level', () => {
+    const input = '<!-- "><img onerror=alert(1)> --><p>ok</p>'
+    const { output, tokens } = maskAtElementPosition(input, matchHtmlComment, ph)
+    expect(tokens).toEqual(['<!-- "><img onerror=alert(1)> -->'])
+    expect(output).toBe('\x00C0\x00<p>ok</p>')
+  })
+
+  it('leaves an unterminated comment unmasked', () => {
+    const input = '<p>a</p><!-- no close'
+    const { tokens } = maskAtElementPosition(input, matchHtmlComment, ph)
+    expect(tokens).toEqual([])
   })
 })

@@ -13,6 +13,7 @@ import path from 'node:path'
 
 // Directive processors
 import { injectCrosswindCSS } from './dev-server/crosswind'
+import { matchHtmlComment, maskAtElementPosition } from './html-masking'
 import { processA11yDirectives } from './a11y'
 import { generateLifecycleRuntime } from './composables'
 import { processTemplateBindings } from './reactive-bindings'
@@ -501,11 +502,17 @@ async function processDirectivesInternal(
   //      get expanded at the comment location — splicing the push block
   //      into the middle of the comment and destroying the surrounding DOM.
   // Masking treats comments as opaque text. We restore them at each return.
-  const htmlComments: string[] = []
-  output = output.replace(/<!--[\s\S]*?-->/g, (m) => {
-    const i = htmlComments.push(m) - 1
-    return `\x00STX_HTML_COMMENT_${i}\x00`
-  })
+  // Element-position-aware (see html-masking): a `<!-- … -->` sequence inside an
+  // attribute value (e.g. `title="<!-- "><img onerror=…> -->"`) is NOT masked, so
+  // it can't be restored raw past the renderer's escaping and break out — an XSS
+  // class shared with the component <script> stash.
+  const masked = maskAtElementPosition(
+    output,
+    matchHtmlComment,
+    (_token, index) => `\x00STX_HTML_COMMENT_${index}\x00`,
+  )
+  output = masked.output
+  const htmlComments = masked.tokens
   const unmaskHtmlComments = (s: string): string => htmlComments.length === 0
     ? s
     : s.replace(/\x00STX_HTML_COMMENT_(\d+)\x00/g, (_, i) => htmlComments[Number(i)] ?? '')
@@ -988,7 +995,7 @@ async function processOtherDirectives(
   // MUST run BEFORE processLoops/processConditionals so signal loops aren't evaluated server-side
   // Pass context so loops referencing server-side data are kept for server-side processing
   if (usesSignalsInScript(output)) {
-    output = convertSignalDirectivesToAttributes(output)
+    output = convertSignalDirectivesToAttributes(output, context)
     output = convertSignalLoopsToAttributes(output, context)
   }
 

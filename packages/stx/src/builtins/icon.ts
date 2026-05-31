@@ -15,6 +15,7 @@
  */
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
+import { escapeAttr } from './escape'
 import { existsSync, readFileSync } from 'node:fs'
 
 type IconCollection = Record<string, { body: string, width?: number, height?: number }>
@@ -119,10 +120,10 @@ export const IconBuiltin: BuiltinComponentDef = {
       iconName = parts[1]
     }
 
-    const size = resolveProp(props, 'size') || '24'
-    const color = resolveProp(props, 'color') || 'currentColor'
-    const className = resolveProp(props, 'class') || ''
-    const style = resolveProp(props, 'style') || ''
+    const size = escapeAttr(resolveProp(props, 'size') || '24')
+    const color = escapeAttr(resolveProp(props, 'color') || 'currentColor')
+    const className = escapeAttr(resolveProp(props, 'class') || '')
+    const style = escapeAttr(resolveProp(props, 'style') || '')
 
     // Lookup from cache, falling through to a synchronous on-disk load
     // when the collection hasn't been preloaded yet. Previously this

@@ -34,6 +34,7 @@
 import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
 import { createDetailedErrorMessage } from './utils'
 import { createPlaceholder } from './placeholder'
+import { maskAtElementPosition, matchScriptElement, matchStyleElement, type TokenMatcher } from './html-masking'
 
 /**
  * Add basic filter support to expressions
@@ -635,24 +636,31 @@ export function processExpressions(template: string, context: Record<string, any
   // However, layout templates may legitimately embed `{!! var !!}` or
   // `{{ var }}` inside these tags (e.g. `{!! customCSS !!}` in a <style>),
   // so only protect blocks without stx expressions.
+  // Element-position-aware masking (see html-masking): only mask <script>/<style>
+  // ELEMENTS, never a tag-like substring inside a quoted attribute value — that
+  // would let the mask round-trip restore raw markup past escaping (an XSS class).
+  // A <style> that itself contains stx expressions is left for processing.
+  const styleMatcher: TokenMatcher = (html, i) => {
+    const end = matchStyleElement(html, i)
+    if (end === -1)
+      return -1
+    return /\{\{[\s\S]*?\}\}|\{!![\s\S]*?!!\}/.test(html.slice(i, end)) ? -1 : end
+  }
+  const maskInto = (src: string, matcher: TokenMatcher, store: string[], fmt: (n: number) => string): string => {
+    const base = store.length
+    const { output: out, tokens } = maskAtElementPosition(src, matcher, (_t, idx) => fmt(base + idx))
+    store.push(...tokens)
+    return out
+  }
+
   const styleBlocks: string[] = []
-  output = output.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, (match) => {
-    // If the block contains stx expressions, let them be processed
-    if (/\{\{[\s\S]*?\}\}|\{!![\s\S]*?!!\}/.test(match)) return match
-    const idx = styleBlocks.length
-    styleBlocks.push(match)
-    return `<!--__STX_STYLE_${idx}__-->`
-  })
+  output = maskInto(output, styleMatcher, styleBlocks, n => `<!--__STX_STYLE_${n}__-->`)
 
   // Always protect <script> blocks — they have their own processing
   // pipeline (interpolateScriptExpressions) and may contain regex
   // patterns like /{{s*|s*}}/g that look like template expressions.
   const scriptBlocks: string[] = []
-  output = output.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, (match) => {
-    const idx = scriptBlocks.length
-    scriptBlocks.push(match)
-    return `<!--__STX_SCRIPT_EXPR_${idx}__-->`
-  })
+  output = maskInto(output, matchScriptElement, scriptBlocks, n => `<!--__STX_SCRIPT_EXPR_${n}__-->`)
 
   // Check if this template uses signals - if so, we need to preserve expressions
   // that reference runtime variables (like loop variables or signal calls)
@@ -706,25 +714,13 @@ export function processExpressions(template: string, context: Record<string, any
     }
   })
 
-  // After {!! !!} replacement, newly injected content may contain
-  // <script> or <style> blocks (e.g. {!! content !!} injects the signals
-  // runtime which has regex patterns like /^{{\s*|\s*}}$/g that look like
-  // template expressions). Protect them before {{ }} processing.
-  output = output.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, (match) => {
-    // Skip already-protected blocks
-    if (match.startsWith('<!--__STX_SCRIPT_EXPR_')) return match
-    const idx = scriptBlocks.length
-    scriptBlocks.push(match)
-    return `<!--__STX_SCRIPT_EXPR_${idx}__-->`
-  })
-  output = output.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, (match) => {
-    if (match.startsWith('<!--__STX_STYLE_')) return match
-    // Still allow style blocks with remaining stx expressions
-    if (/\{\{[\s\S]*?\}\}|\{!![\s\S]*?!!\}/.test(match)) return match
-    const idx = styleBlocks.length
-    styleBlocks.push(match)
-    return `<!--__STX_STYLE_${idx}__-->`
-  })
+  // After {!! !!} replacement, newly injected content may contain <script> or
+  // <style> blocks (e.g. {!! content !!} injects the signals runtime, whose regex
+  // patterns like /^{{\s*|\s*}}$/g look like template expressions). Protect them
+  // before {{ }} processing. Existing placeholders are HTML comments, so the
+  // element matchers skip them — no "already-protected" guard needed.
+  output = maskInto(output, matchScriptElement, scriptBlocks, n => `<!--__STX_SCRIPT_EXPR_${n}__-->`)
+  output = maskInto(output, styleMatcher, styleBlocks, n => `<!--__STX_STYLE_${n}__-->`)
 
   // Replace {{ expr }} with escaped expressions
   output = output.replace(/\{\{([\s\S]*?)\}\}/g, (match, expr, offset) => {

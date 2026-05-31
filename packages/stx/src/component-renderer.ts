@@ -829,12 +829,8 @@ async function processCustomElementTags(
   // into Leaflet's internals. Markers use NUL bytes so they can't appear
   // in legitimate input. The same shape is mirrored in
   // component-processing.ts for defense.
-  const stashedScripts: string[] = []
-  output = output.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (match) => {
-    const idx = stashedScripts.length
-    stashedScripts.push(match)
-    return `\x00STX_SCRIPT_${idx}\x00`
-  })
+  const stashed = stashScriptElements(output)
+  output = stashed.output
 
   // Process kebab-case components (e.g., <my-component />)
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
@@ -849,9 +845,7 @@ async function processCustomElementTags(
   output = await processTagsWithParser(output, lowercasePattern, false, htmlTags)
 
   // Restore the stashed <script> blocks.
-  if (stashedScripts.length > 0) {
-    output = output.replace(/\x00STX_SCRIPT_(\d+)\x00/g, (_, idx) => stashedScripts[+idx])
-  }
+  output = restoreStashedScripts(output, stashed.scripts)
 
   return output
 

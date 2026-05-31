@@ -36,6 +36,13 @@ export function pascalToKebab(str: string): string {
     .toLowerCase()
 }
 
+// Element-position-aware script stashing lives in the leaf html-masking module
+// (no stx imports) so process.ts / expressions.ts can share it without a cycle.
+// Imported for local use here and re-exported for existing import sites.
+import { restoreStashedScripts, stashScriptElements } from './html-masking'
+
+export { restoreStashedScripts, stashScriptElements }
+
 /**
  * Parse HTML/JSX-like attributes from a string.
  *
