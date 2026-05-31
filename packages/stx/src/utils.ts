@@ -433,6 +433,88 @@ function applyDestructuredPropDefaults(
   }
 }
 
+/**
+ * Does a project-authored component file exist for `componentPath`?
+ *
+ * Used to let a user component (e.g. `components/Icon.stx`) take precedence
+ * over a built-in component of the same name (e.g. the Lucide `Icon`). It
+ * mirrors the primary search directories used by `renderComponentWithSlot`
+ * but deliberately EXCLUDES stx's own built-in components directory — a
+ * built-in shipping its own `.stx` file must not count as a user override.
+ */
+export async function userComponentFileExists(
+  componentPath: string,
+  componentsDir: string,
+  parentContext: Record<string, unknown>,
+  parentFilePath: string,
+  options: StxOptions,
+): Promise<boolean> {
+  const baseName = componentPath.endsWith('.stx') ? componentPath.slice(0, -4) : componentPath
+
+  const kebabToPascal = (str: string) => str
+    .split('-')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')
+  const pascalToKebab = (str: string) => str
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .toLowerCase()
+
+  // Explicit @import always wins and is unambiguously user-authored.
+  const importedComponents = parentContext.__importedComponents as Map<string, string> | undefined
+  if (importedComponents) {
+    for (const name of [baseName, baseName.toLowerCase(), kebabToPascal(baseName), pascalToKebab(baseName)]) {
+      if (importedComponents.has(name)) return true
+    }
+  }
+
+  const variants = [...new Set([`${baseName}.stx`, `${kebabToPascal(baseName)}.stx`, `${pascalToKebab(baseName)}.stx`])]
+
+  // Derive the project root from configuration and the rendered file — NEVER from
+  // process.cwd(). Using the launch directory made builtin-vs-user resolution
+  // non-deterministic: a builtin (e.g. <StxLink>) got shadowed merely because the
+  // process was started in a directory that happened to contain a like-named
+  // component file (stx's own src/components/StxLink.stx when tests run from
+  // packages/stx), which then self-referenced into a "circular component" error.
+  // The convention-based project dirs only apply within an explicitly configured root.
+  const configuredRoot = typeof options.root === 'string' ? path.resolve(options.root) : undefined
+  const resolveBase = configuredRoot ?? path.dirname(parentFilePath)
+  const searchDirs: string[] = []
+  const push = (dir?: string | null) => {
+    if (dir && !searchDirs.includes(dir)) searchDirs.push(dir)
+  }
+
+  const originalFilePath = parentContext.__originalFilePath as string | undefined
+  if (originalFilePath) push(path.join(path.dirname(originalFilePath), 'components'))
+  push(componentsDir)
+  push(path.join(path.dirname(parentFilePath), 'components'))
+  push(options.componentsDir)
+  const pluginDirs = (options as any)._pluginComponentDirs
+  if (Array.isArray(pluginDirs)) {
+    for (const dir of pluginDirs) push(typeof dir === 'string' ? dir : null)
+  }
+  // Convention fallbacks — only within a configured project root, and never stx's
+  // own `import.meta.dir/components` (where built-ins live).
+  if (configuredRoot) {
+    push(path.resolve(configuredRoot, 'resources/views/components'))
+    push(path.resolve(configuredRoot, 'resources/components'))
+    push(path.resolve(configuredRoot, 'src/components'))
+    push(path.resolve(configuredRoot, 'components'))
+  }
+
+  // Relative path components (./Foo, ../Foo) are always user-authored.
+  if (baseName.startsWith('./') || baseName.startsWith('../')) {
+    return fileExists(path.resolve(path.dirname(parentFilePath), `${baseName}.stx`))
+  }
+
+  for (const dir of searchDirs) {
+    const resolvedDir = path.isAbsolute(dir) ? dir : path.resolve(resolveBase, dir)
+    for (const variant of variants) {
+      if (await fileExists(path.join(resolvedDir, variant))) return true
+    }
+  }
+  return false
+}
+
 export async function renderComponentWithSlot(
   componentPath: string,
   props: Record<string, unknown>,

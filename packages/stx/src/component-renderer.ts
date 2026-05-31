@@ -867,9 +867,15 @@ async function processCustomElementTags(
       const resolvedProps = parseComponentProps(rawProps, context, options)
 
       // --- Check if this is a builtin component ---
+      // A project-authored component file of the same name takes precedence so
+      // users can override built-ins (e.g. a custom `components/Icon.stx`
+      // shadowing the built-in Lucide `Icon`).
       const builtinDef = registry.getBuiltin(tag.tagName)
+      const overriddenByUser = builtinDef
+        ? await userComponentFileExists(componentPath, componentsDir, context, filePath, options)
+        : false
 
-      if (builtinDef) {
+      if (builtinDef && !overriddenByUser) {
         // Build the render context
         const renderCtx: RenderContext = {
           context,
