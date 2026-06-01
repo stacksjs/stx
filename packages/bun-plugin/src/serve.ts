@@ -410,6 +410,14 @@ export async function serve(options: ServeOptions): Promise<void> {
     ? Promise.resolve(options.stxModule)
     : defaultStxModule
 
+  // Synchronously-reachable handle to the resolved stx module, so the file
+  // watcher can clear stx's framework-level dev caches without awaiting.
+  // Stays null until the module resolves at startup (well before the first
+  // edit), and every use is optional-chained — so the worst case is a no-op,
+  // never a regression (stacksjs/stx#1745 item C).
+  let resolvedStxModule: { clearDevCaches?: () => void } | null = null
+  void Promise.resolve(stxModule).then((m) => { resolvedStxModule = m as { clearDevCaches?: () => void } }).catch(() => {})
+
   const { patterns, port = 3456 } = options
 
   if (patterns.length === 0) {
@@ -535,6 +543,14 @@ export async function serve(options: ServeOptions): Promise<void> {
           // on watch is the simple, correct fallback for dev.
           htmlCache.clear()
           crosswindCssCache.clear()
+          // Also wipe stx's framework-level caches (fileContentCache, signals
+          // runtime, router script). The app-render caches above are cleared
+          // on every edit, but the framework caches previously survived until
+          // a full process restart — so a stale `@include`d partial whose
+          // transitive dependency slipped past the mtime tracker (the #1926
+          // failure class) could outlive an edit. Optional-chained: a missing
+          // module/method is a no-op (stacksjs/stx#1745 item C).
+          resolvedStxModule?.clearDevCaches?.()
         }
         // For CSS-only changes, prefer a stylesheet hot-swap over a full
         // reload — the script side just re-fingerprints `<link>` hrefs.
