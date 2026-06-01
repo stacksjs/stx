@@ -191,8 +191,32 @@ export * from './slots'
 // Types module - note: PropType is also in props, import from stx/props if needed
 export * from './types'
 
-// Props module - has overlapping PropType with types, import from stx/props directly if needed
-// export * from './props'
+// Props module — surfaces the user-facing typed-props API (stacksjs/stx#1740).
+// Selective re-export avoids overlap with `./types`' string-union `PropType`
+// (different shape) and `./composition-api`'s `defineEmits` / `EmitFn` (the
+// canonical events API — props.ts has dead duplicates kept only for
+// internal back-compat). For `PropType<T>` (constructor union) and the props
+// flavour of `defineEmits` / `EmitFn`, import from 'stx/props' directly.
+export {
+  arrayOf,
+  defineProps,
+  definePropsWithValidation,
+  oneOf,
+  optional,
+  processComponentProps,
+  prop,
+  required,
+  shape,
+  validated,
+  withDefaults,
+} from './props'
+export type {
+  ExtractPropTypes,
+  PropOptions,
+  PropsDefinition,
+  PropValidationError,
+  PropValidationResult,
+} from './props'
 
 // Default export for the stx module
 export default {}
