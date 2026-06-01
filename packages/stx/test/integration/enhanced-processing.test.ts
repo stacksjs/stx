@@ -70,16 +70,32 @@ describe('Enhanced Template Processing Integration', () => {
       expect(outputHtml).toContain('Item 0')
       expect(outputHtml).toContain('Item 99')
 
+      // Performance metrics are recorded by the SRC pipeline instance. The
+      // plugin/Bun.build path resolves `@stacksjs/stx` to a separate module
+      // realm, so its `performanceMonitor` is a different singleton than the
+      // one imported here. Exercise the feature through the SRC
+      // `processDirectives` (same realm as the imported monitor) so the
+      // `template-processing` metric lands on the instance we assert on.
+      performanceMonitor.clear()
+      const directResult = await processDirectives(
+        '@foreach (items as item)<div>{{ item.name }} ({{ item.id }})</div>@endforeach',
+        { items: Array.from({ length: 100 }).fill(0).map((_, i) => ({ id: i, name: `Item ${i}` })) },
+        'performance-test.stx',
+        { enabled: true, partialsDir: TEMP_DIR, componentsDir: TEMP_DIR, debug: false, cachePath: path.join(TEMP_DIR, '.cache') } as any,
+        new Set<string>(),
+      )
+      expect(directResult).toContain('Item 0')
+      expect(directResult).toContain('Item 99')
+
       // Check that performance metrics were recorded
       const stats = performanceMonitor.getStats()
       expect(Object.keys(stats).length).toBeGreaterThan(0)
 
       // Should have template processing metrics
       const templateProcessingStats = stats['template-processing']
-      if (templateProcessingStats) {
-        expect(templateProcessingStats.count).toBeGreaterThan(0)
-        expect(templateProcessingStats.totalTime).toBeGreaterThan(0)
-      }
+      expect(templateProcessingStats).toBeDefined()
+      expect(templateProcessingStats.count).toBeGreaterThan(0)
+      expect(templateProcessingStats.totalTime).toBeGreaterThan(0)
     })
 
     it('should track individual processing stages', async () => {
@@ -124,11 +140,31 @@ describe('Enhanced Template Processing Integration', () => {
 
       await getHtmlOutput(result)
 
+      // As above: the plugin build records perf metrics in a separate module
+      // realm. Drive the SRC `processDirectives` directly so the metrics land
+      // on the `performanceMonitor` instance this test imports and asserts on.
+      performanceMonitor.clear()
+      await processDirectives(
+        '<h1>{{ title }}</h1>@if (user.admin)<div class="admin-section"><h2>Admin: {{ user.name }}</h2>@foreach (posts as post)<article><h3>{{ post.title }}</h3><p>{{ post.content }}</p></article>@endforeach</div>@endif',
+        {
+          title: 'Complex Template',
+          user: { name: 'John', admin: true },
+          posts: [
+            { title: 'Post 1', content: 'Content 1' },
+            { title: 'Post 2', content: 'Content 2' },
+          ],
+        },
+        'stages-test.stx',
+        { enabled: true, partialsDir: TEMP_DIR, componentsDir: TEMP_DIR, debug: false, cachePath: path.join(TEMP_DIR, '.cache') } as any,
+        new Set<string>(),
+      )
+
       const stats = performanceMonitor.getStats()
 
       // Check that some performance stats were collected
       // The actual stage names may vary based on implementation
       expect(Object.keys(stats).length).toBeGreaterThan(0)
+      expect(stats['template-processing']).toBeDefined()
     })
   })
 

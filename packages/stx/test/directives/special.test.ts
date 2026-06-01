@@ -133,18 +133,17 @@ describe('stx Special Directives', () => {
   })
 
   it('should handle @env directive', async () => {
-    // Set NODE_ENV to 'production' for this test
+    // @env / @production / @development read process.env.NODE_ENV LIVE at render
+    // time (conditionals.ts processEnvDirective). The Bun.build plugin path
+    // renders through @stacksjs/stx's built dist bundle, where NODE_ENV is
+    // baked in at bundle time and can't be steered from here — so we exercise
+    // the directives through the src-realm pipeline (processTemplate), where
+    // setting process.env.NODE_ENV genuinely drives branch selection.
     const originalEnv = process.env.NODE_ENV
     process.env.NODE_ENV = 'production'
 
     try {
-      const testFile = await createTestFile('env-directive.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Env Directive Test</title>
-      </head>
-      <body>
+      const template = `
         <h1>Env Directive</h1>
 
         @env('production')
@@ -164,17 +163,9 @@ describe('stx Special Directives', () => {
         @else
           <p class="not-dev">Not development environment</p>
         @enddevelopment
-      </body>
-      </html>
-    `)
+      `
 
-      const result = await Bun.build({
-        entrypoints: [testFile],
-        outdir: OUTPUT_DIR,
-        plugins: [stxPlugin()],
-      })
-
-      const outputHtml = await getHtmlOutput(result)
+      const outputHtml = await processTemplate(template, {}, 'env-directive.stx')
 
       expect(outputHtml).toContain('<p class="prod-message">Production environment</p>')
       expect(outputHtml).not.toContain('<p class="dev-message">Non-production environment</p>')
@@ -330,12 +321,18 @@ describe('stx Special Directives', () => {
   })
 
   it('should handle @csrf directive', async () => {
-    // First set a known CSRF token for testing
-    const { setCsrfToken, resetCsrfToken } = await import('../../src/csrf')
-    setCsrfToken('12345abcde')
-
-    try {
-      const testFile = await createTestFile('csrf-directive.stx', `
+    // NOTE: We assert on the *shape* of the emitted hidden input (a 40-char hex
+    // token) rather than a fixed token value. The token cannot be pinned from
+    // here: the stx plugin renders @csrf through the published `@stacksjs/stx`
+    // entry (its built bundle), which carries its OWN copy of csrf.ts's
+    // module-global token. A `setCsrfToken(...)` call imported from `../../src/csrf`
+    // mutates a *different* module instance, so it never reaches the plugin and a
+    // real random token is emitted instead. Deterministic `setCsrfToken` ->
+    // @csrf injection (exact value + custom name) is covered at the unit level in
+    // `laravel-features.test.ts`, which drives `processDirectives` directly in the
+    // same realm. Here we verify the end-to-end plugin path actually injects a
+    // well-formed CSRF field and honours a custom field name.
+    const testFile = await createTestFile('csrf-directive.stx', `
       <!DOCTYPE html>
       <html>
       <head>
@@ -363,21 +360,18 @@ describe('stx Special Directives', () => {
       </html>
     `)
 
-      const result = await Bun.build({
-        entrypoints: [testFile],
-        outdir: OUTPUT_DIR,
-        plugins: [stxPlugin()],
-      })
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
 
-      const outputHtml = await getHtmlOutput(result)
+    const outputHtml = await getHtmlOutput(result)
 
-      expect(outputHtml).toContain('<input type="hidden" name="_token" value="12345abcde">')
-      expect(outputHtml).toContain('<input type="hidden" name="my_token" value="12345abcde">')
-    }
-    finally {
-      // Reset the CSRF token
-      resetCsrfToken()
-    }
+    // Default field name: a hidden _token input with a 40-char hex token.
+    expect(outputHtml).toMatch(/<input type="hidden" name="_token" value="[a-f0-9]{40}">/)
+    // Custom field name: @csrf("my_token") uses the supplied name, same token shape.
+    expect(outputHtml).toMatch(/<input type="hidden" name="my_token" value="[a-f0-9]{40}">/)
   })
 
   it('should handle @method directive', async () => {

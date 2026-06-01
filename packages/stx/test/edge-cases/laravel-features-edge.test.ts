@@ -333,8 +333,21 @@ describe('Laravel-like Features Edge Cases', () => {
 
   describe('Integration Edge Cases', () => {
     it('should correctly combine features in complex templates', async () => {
-      // Let's simplify this test to focus on what we can test reliably
+      // NOTE on CSRF token values in this test:
+      // The Bun.build path below runs the @csrf directive inside `bun-plugin-stx`,
+      // which imports the pipeline from `@stacksjs/stx` (resolved to the BUILT
+      // dist bundle). That is a SEPARATE module instance from `../../src/csrf`.
+      // So `setCsrfToken('test-token')` (imported from src) cannot influence the
+      // token the plugin renders — the plugin has its own module-global token and
+      // auto-generates a random hex value. We therefore assert that the directive
+      // renders a *valid* CSRF token (hex) in the build path, and separately verify
+      // (in the same src realm the setter lives in) that a configured token value
+      // is actually honoured by @csrf. See packages/stx/src/csrf.ts.
+
+      // Same-realm check: setCsrfToken + @csrf (both via ../../src) must agree.
       setCsrfToken('test-token')
+      const csrfSrcResult = await processTemplate('<form id="dev-form" method="POST">@csrf("dev_token")</form>', {}, 'csrf-realm-check.stx')
+      expect(csrfSrcResult).toBe('<form id="dev-form" method="POST"><input type="hidden" name="dev_token" value="test-token"></form>')
 
       const testFile = await createTestFile('complex-template.stx', `
         <!DOCTYPE html>
@@ -385,7 +398,11 @@ describe('Laravel-like Features Edge Cases', () => {
 
       // Check features that should work reliably
       expect(outputHtml).toContain('<form id="dev-form" method="POST">')
-      expect(outputHtml).toContain('<input type="hidden" name="dev_token" value="test-token">')
+      // @csrf("dev_token") in the @else (development) branch must render a hidden
+      // input named dev_token with a valid CSRF token. The exact value is the
+      // plugin/dist-realm token (auto-generated hex), not the src-realm setter's
+      // value — see the realm note above.
+      expect(outputHtml).toMatch(/<input type="hidden" name="dev_token" value="[a-f0-9]+">/)
       expect(outputHtml).toContain('action="/users/123/edit"')
       expect(outputHtml).toContain('<input type="hidden" name="_method" value="PUT">')
       expect(outputHtml).toContain('<div class="admin-panel">')

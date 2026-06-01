@@ -1,183 +1,106 @@
 import type { Middleware } from '../../src/types'
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import path from 'node:path'
-import stxPlugin from 'bun-plugin-stx'
-import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
+import { processDirectives } from '../../src/process'
+
+/**
+ * Middleware is applied by the core pipeline — `runPreProcessingMiddleware` /
+ * `runPostProcessingMiddleware` inside `processDirectives` — so these tests
+ * drive `processDirectives` directly in the src realm.
+ *
+ * They previously rendered through `Bun.build({ plugins: [stxPlugin(...)] })`,
+ * but that path loads the pipeline from `@stacksjs/stx`'s GITIGNORED dist
+ * bundle. When the dist is stale (e.g. a checkout without a fresh `bun run
+ * build`), it predates the "run before-middleware against the raw template,
+ * BEFORE HTML comments are masked" fix (see process.ts) — so comment-placeholder
+ * middleware ran but its result was immediately undone by comment unmasking,
+ * and only tag/text-targeting middleware appeared to work. Driving
+ * `processDirectives` directly tests the real middleware contract
+ * deterministically, independent of dist freshness.
+ */
+async function render(
+  template: string,
+  middleware: Middleware[],
+  context: Record<string, any> = {},
+  filePath = 'middleware-test.stx',
+  debug = false,
+): Promise<string> {
+  return processDirectives(
+    template,
+    context,
+    filePath,
+    { middleware, debug, partialsDir: '/tmp', componentsDir: '/tmp' },
+    new Set<string>(),
+  )
+}
 
 describe('stx Middleware', () => {
-  beforeAll(async () => {
-    await setupTestDirs()
-  })
-
-  afterAll(cleanupTestDirs)
-
   it('should run pre-processing middleware before directive processing', async () => {
-    // Create a pre-processing middleware that adds a variable to the template
+    // A "before" middleware may inject directives/expressions using an HTML
+    // comment as a placeholder; the injected `{{ injectedVariable }}` must then
+    // be resolved by the expression pass that runs afterwards.
     const preProcessMiddleware: Middleware = {
       name: 'variable-injector',
-      handler: (template) => {
-        // Inject a variable that will be processed by the template engine
-        return template.replace('<!-- PRE_PROCESS_PLACEHOLDER -->', '{{ injectedVariable }}')
-      },
+      handler: template => template.replace('<!-- PRE_PROCESS_PLACEHOLDER -->', '{{ injectedVariable }}'),
       timing: 'before',
       description: 'Injects a variable into the template',
     }
 
-    // Create a test file
-    const testFile = await createTestFile('pre-process-middleware.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Pre-Processing Middleware Test</title>
-        <script>
-          module.exports = {
-            injectedVariable: 'Pre-processed content'
-          };
-        </script>
-      </head>
-      <body>
-        <h1>Pre-Processing Middleware Test</h1>
+    const output = await render(
+      '<div><!-- PRE_PROCESS_PLACEHOLDER --></div>',
+      [preProcessMiddleware],
+      { injectedVariable: 'Pre-processed content' },
+    )
 
-        <div>
-          <!-- PRE_PROCESS_PLACEHOLDER -->
-        </div>
-      </body>
-      </html>
-    `)
-
-    // Build with middleware
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin(
-        {
-          middleware: [preProcessMiddleware],
-        },
-      )],
-    })
-
-    const outputHtml = await getHtmlOutput(result)
-
-    // Check that middleware processed the template and the variable was rendered
-    expect(outputHtml).toContain('Pre-processed content')
-    expect(outputHtml).not.toContain('PRE_PROCESS_PLACEHOLDER')
+    expect(output).toContain('Pre-processed content')
+    expect(output).not.toContain('PRE_PROCESS_PLACEHOLDER')
   })
 
   it('should run post-processing middleware after directive processing', async () => {
-    // Create a post-processing middleware that transforms the final HTML
     const postProcessMiddleware: Middleware = {
       name: 'html-transformer',
-      handler: (template) => {
-        // Add a footer to the output HTML
-        return template.replace('</body>', '<footer>Added by post-processing middleware</footer></body>')
-      },
+      handler: template => template.replace('</body>', '<footer>Added by post-processing middleware</footer></body>'),
       timing: 'after',
       description: 'Adds a footer to the final HTML',
     }
 
-    // Create a test file
-    const testFile = await createTestFile('post-process-middleware.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Post-Processing Middleware Test</title>
-      </head>
-      <body>
-        <h1>Post-Processing Middleware Test</h1>
+    const output = await render('<body><h1>Post-Processing Middleware Test</h1></body>', [postProcessMiddleware])
 
-        <div>
-          <p>This is a test for post-processing middleware</p>
-        </div>
-      </body>
-      </html>
-    `)
-
-    // Build with middleware
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin(
-        {
-          middleware: [postProcessMiddleware],
-        },
-      )],
-    })
-
-    const outputHtml = await getHtmlOutput(result)
-
-    // Check that middleware processed the final HTML
-    expect(outputHtml).toContain('<footer>Added by post-processing middleware</footer>')
+    expect(output).toContain('<footer>Added by post-processing middleware</footer>')
   })
 
   it('should run multiple middleware in sequence', async () => {
-    // Create multiple middleware
     const headerMiddleware: Middleware = {
       name: 'header-injector',
-      handler: (template) => {
-        return template.replace('<body>', '<body><header>Added by pre-processing middleware</header>')
-      },
+      handler: template => template.replace('<body>', '<body><header>Added by pre-processing middleware</header>'),
       timing: 'before',
     }
-
     const footerMiddleware: Middleware = {
       name: 'footer-injector',
-      handler: (template) => {
-        return template.replace('</body>', '<footer>Added by post-processing middleware</footer></body>')
-      },
+      handler: template => template.replace('</body>', '<footer>Added by post-processing middleware</footer></body>'),
       timing: 'after',
     }
-
     const textTransformer: Middleware = {
       name: 'text-transformer',
-      handler: (template) => {
-        return template.replace('Regular content', 'Transformed content')
-      },
+      handler: template => template.replace('Regular content', 'Transformed content'),
       timing: 'after',
     }
 
-    // Create a test file
-    const testFile = await createTestFile('multiple-middleware.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Multiple Middleware Test</title>
-      </head>
-      <body>
-        <h1>Multiple Middleware Test</h1>
+    const output = await render(
+      '<body><h1>Multiple Middleware Test</h1><div><p>Regular content</p></div></body>',
+      [headerMiddleware, footerMiddleware, textTransformer],
+    )
 
-        <div>
-          <p>Regular content</p>
-        </div>
-      </body>
-      </html>
-    `)
-
-    // Build with middleware
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin(
-        {
-          middleware: [headerMiddleware, footerMiddleware, textTransformer],
-        },
-      )],
-    })
-
-    const outputHtml = await getHtmlOutput(result)
-
-    // Check that all middleware applied their transformations
-    expect(outputHtml).toContain('<header>Added by pre-processing middleware</header>')
-    expect(outputHtml).toContain('<footer>Added by post-processing middleware</footer>')
-    expect(outputHtml).toContain('Transformed content')
-    expect(outputHtml).not.toContain('Regular content')
+    expect(output).toContain('<header>Added by pre-processing middleware</header>')
+    expect(output).toContain('<footer>Added by post-processing middleware</footer>')
+    expect(output).toContain('Transformed content')
+    expect(output).not.toContain('Regular content')
   })
 
   it('should provide context to middleware handlers', async () => {
-    // Create a middleware that uses context
     const contextAwareMiddleware: Middleware = {
       name: 'context-aware',
       handler: (template, context: Record<string, any>) => {
-        // Insert the user's name from context
         if (context.user && (context.user as Record<string, any>).name) {
           return template.replace('<!-- USER_NAME -->', (context.user as Record<string, any>).name)
         }
@@ -186,51 +109,17 @@ describe('stx Middleware', () => {
       timing: 'before',
     }
 
-    // Create a test file
-    const testFile = await createTestFile('context-middleware.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Context in Middleware Test</title>
-        <script>
-          module.exports = {
-            user: {
-              name: 'John Doe',
-              role: 'admin'
-            }
-          };
-        </script>
-      </head>
-      <body>
-        <h1>Context in Middleware Test</h1>
+    const output = await render(
+      '<div><p>Welcome, <!-- USER_NAME --></p></div>',
+      [contextAwareMiddleware],
+      { user: { name: 'John Doe', role: 'admin' } },
+    )
 
-        <div>
-          <p>Welcome, <!-- USER_NAME --></p>
-        </div>
-      </body>
-      </html>
-    `)
-
-    // Build with middleware
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin(
-        {
-          middleware: [contextAwareMiddleware],
-        },
-      )],
-    })
-
-    const outputHtml = await getHtmlOutput(result)
-
-    // Check that middleware used context data
-    expect(outputHtml).toContain('Welcome, John Doe')
-    expect(outputHtml).not.toContain('<!-- USER_NAME -->')
+    expect(output).toContain('Welcome, John Doe')
+    expect(output).not.toContain('<!-- USER_NAME -->')
   })
 
   it('should handle async middleware', async () => {
-    // Create an async middleware
     const asyncMiddleware: Middleware = {
       name: 'async-middleware',
       handler: async (template) => {
@@ -241,89 +130,32 @@ describe('stx Middleware', () => {
       timing: 'before',
     }
 
-    // Create a test file
-    const testFile = await createTestFile('async-middleware.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Async Middleware Test</title>
-      </head>
-      <body>
-        <h1>Async Middleware Test</h1>
+    const output = await render('<div><p><!-- ASYNC_CONTENT --></p></div>', [asyncMiddleware])
 
-        <div>
-          <p><!-- ASYNC_CONTENT --></p>
-        </div>
-      </body>
-      </html>
-    `)
-
-    // Build with middleware
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin(
-        {
-          middleware: [asyncMiddleware],
-        },
-      )],
-    })
-
-    const outputHtml = await getHtmlOutput(result)
-
-    // Check that async middleware worked
-    expect(outputHtml).toContain('Content from async middleware')
-    expect(outputHtml).not.toContain('<!-- ASYNC_CONTENT -->')
+    expect(output).toContain('Content from async middleware')
+    expect(output).not.toContain('<!-- ASYNC_CONTENT -->')
   })
 
   it('should provide file path to middleware handlers', async () => {
-    // Create a middleware that uses file path
     const filePathMiddleware: Middleware = {
       name: 'file-path-middleware',
-      handler: (template, _context, filePath) => {
-        const filename = path.basename(filePath)
-        return template.replace('<!-- FILE_PATH -->', filename)
-      },
+      handler: (template, _context, filePath) => template.replace('<!-- FILE_PATH -->', path.basename(filePath || '')),
       timing: 'before',
     }
 
-    // Create a test file
-    const testFile = await createTestFile('file-path-middleware.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>File Path in Middleware Test</title>
-      </head>
-      <body>
-        <h1>File Path in Middleware Test</h1>
+    const output = await render(
+      '<div><p>Current file: <!-- FILE_PATH --></p></div>',
+      [filePathMiddleware],
+      {},
+      'file-path-middleware.stx',
+    )
 
-        <div>
-          <p>Current file: <!-- FILE_PATH --></p>
-        </div>
-      </body>
-      </html>
-    `)
-
-    // Build with middleware
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin(
-        {
-          middleware: [filePathMiddleware],
-        },
-      )],
-    })
-
-    const outputHtml = await getHtmlOutput(result)
-
-    // Check that middleware used file path
-    expect(outputHtml).toContain('Current file: file-path-middleware.stx')
-    expect(outputHtml).not.toContain('<!-- FILE_PATH -->')
+    expect(output).toContain('Current file: file-path-middleware.stx')
+    expect(output).not.toContain('<!-- FILE_PATH -->')
   })
 
   it('should handle errors in middleware gracefully', async () => {
-    // Create a middleware that throws an error
+    // One middleware throwing must not prevent later middleware from running.
     const errorMiddleware: Middleware = {
       name: 'error-middleware',
       handler: () => {
@@ -331,49 +163,20 @@ describe('stx Middleware', () => {
       },
       timing: 'before',
     }
-
-    // Create a middleware that runs after the error middleware
     const safeMiddleware: Middleware = {
       name: 'safe-middleware',
-      handler: (template) => {
-        return template.replace('<!-- SAFE_CONTENT -->', 'Content from safe middleware')
-      },
+      handler: template => template.replace('<!-- SAFE_CONTENT -->', 'Content from safe middleware'),
       timing: 'before',
     }
 
-    // Create a test file
-    const testFile = await createTestFile('error-middleware.stx', `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Error in Middleware Test</title>
-      </head>
-      <body>
-        <h1>Error in Middleware Test</h1>
+    const output = await render(
+      '<div><p><!-- SAFE_CONTENT --></p></div>',
+      [errorMiddleware, safeMiddleware],
+      {},
+      'error-middleware.stx',
+    )
 
-        <div>
-          <p><!-- SAFE_CONTENT --></p>
-        </div>
-      </body>
-      </html>
-    `)
-
-    // Build with middleware
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin(
-        {
-          middleware: [errorMiddleware, safeMiddleware],
-          debug: true,
-        },
-      )],
-    })
-
-    const outputHtml = await getHtmlOutput(result)
-
-    // Check that error middleware didn't break processing and safe middleware still ran
-    expect(outputHtml).toContain('Content from safe middleware')
-    expect(outputHtml).not.toContain('<!-- SAFE_CONTENT -->')
+    expect(output).toContain('Content from safe middleware')
+    expect(output).not.toContain('<!-- SAFE_CONTENT -->')
   })
 })
