@@ -10,24 +10,40 @@
  *   - clearDevCaches() forces the next call to regenerate.
  *   - getCachedSignalsRuntime(true) (debug) never memoizes — always fresh.
  *
- * `./signals` is mocked with counting generators so we can distinguish a cache
+ * The generators are stubbed with counting fns so we can distinguish a cache
  * hit from a regeneration by call count (the real generators are deterministic,
- * so output alone can't tell them apart). `@stacksjs/ts-i18n` is stubbed only
- * because caching.ts → utils.ts → process.ts → i18n.ts pulls it in transitively
- * via a workspace file: link that isn't present in clean checkouts.
+ * so output alone can't tell them apart).
+ *
+ * CRITICAL — mock isolation: we do NOT use Bun's `mock.module('../src/signals',
+ * …)` for this. mock.module is process-global, import resolution happens during
+ * collection (before any hook runs), and it isn't restored at file boundaries —
+ * so the stub leaked into every signals test file loaded afterwards (dropping
+ * `state`/`derived`/`effect`/the whole runtime), failing ~200 of them in the
+ * full `bun test` run while they passed in isolation. Instead we inject the
+ * stub through caching.ts's `__setSignalsGeneratorsForTest` seam, which is plain
+ * module state cleared in `afterAll`, so it can never escape this file. (i18n no
+ * longer needs stubbing either — src/i18n.ts resolves @stacksjs/ts-i18n via a
+ * guarded dynamic import with a built-in fallback, so the transitive import
+ * can't crash a clean checkout.)
  */
-import { describe, expect, it, mock } from 'bun:test'
-
-mock.module('@stacksjs/ts-i18n', () => ({ loadLocale: async () => ({}) }))
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { __setSignalsGeneratorsForTest, clearDevCaches, getCachedSignalsRuntime } from '../src/caching'
 
 let prodGenCount = 0
 let devGenCount = 0
-mock.module('../src/signals', () => ({
-  generateSignalsRuntime: () => { prodGenCount++; return 'PROD_RUNTIME' },
-  generateSignalsRuntimeDev: () => { devGenCount++; return 'DEV_RUNTIME' },
-}))
 
-const { getCachedSignalsRuntime, clearDevCaches } = await import('../src/caching')
+beforeAll(() => {
+  __setSignalsGeneratorsForTest({
+    generateSignalsRuntime: () => { prodGenCount++; return 'PROD_RUNTIME' },
+    generateSignalsRuntimeDev: () => { devGenCount++; return 'DEV_RUNTIME' },
+  })
+})
+
+afterAll(() => {
+  // Restore real generators + drop the stubbed 'PROD_RUNTIME' from the cache.
+  __setSignalsGeneratorsForTest(null)
+  clearDevCaches()
+})
 
 describe('signals runtime cache + clearDevCaches (stacksjs/stx#1745 item C)', () => {
   it('memoizes the prod runtime, then regenerates after clearDevCaches()', async () => {

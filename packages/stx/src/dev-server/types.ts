@@ -143,4 +143,5 @@ export const DEFAULT_DEV_OPTIONS: Required<Omit<DevServerOptions, 'stxOptions' |
   hmrPort: 3001,
   profile: false,
   debugDirectives: false,
+  titlebarHidden: false,
 }

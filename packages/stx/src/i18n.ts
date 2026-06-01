@@ -65,9 +65,44 @@ else {
 
 import type { I18nConfig, StxOptions } from './types'
 import path from 'node:path'
-import { loadLocale } from '@stacksjs/ts-i18n'
 import { ErrorCodes, inlineError } from './error-handling'
 import { safeEvaluateObject } from './safe-evaluator'
+
+/**
+ * Signature of ts-i18n's `loadLocale`. Returns the merged translation tree for
+ * a locale, or `undefined` when no file exists for it.
+ */
+type LoadLocaleFn = (
+  locale: string,
+  options: { translationsDir: string, defaultLocale?: string, sources?: Array<'ts' | 'yaml' | 'json'> },
+) => Promise<Record<string, any> | undefined>
+
+// Resolution state for the optional @stacksjs/ts-i18n dependency:
+//   undefined → not yet attempted, null → attempted and unavailable.
+let resolvedLoadLocale: LoadLocaleFn | null | undefined
+
+/**
+ * Resolve ts-i18n's `loadLocale` lazily and at most once.
+ *
+ * The dependency is linked via a machine-specific `file:` path until it's
+ * published to npm, so on machines where it isn't installed we must NOT crash
+ * at module load — doing so would poison every test file that transitively
+ * imports the stx entry. A guarded dynamic import returns `null` when the
+ * package is absent, and `loadTranslationInternal` falls back to the built-in
+ * file loader below.
+ */
+async function resolveLoadLocale(): Promise<LoadLocaleFn | null> {
+  if (resolvedLoadLocale !== undefined)
+    return resolvedLoadLocale
+  try {
+    const mod = await import('@stacksjs/ts-i18n')
+    resolvedLoadLocale = (mod.loadLocale ?? null) as LoadLocaleFn | null
+  }
+  catch {
+    resolvedLoadLocale = null
+  }
+  return resolvedLoadLocale
+}
 
 // =============================================================================
 // Configuration
@@ -538,14 +573,20 @@ async function loadTranslationInternal(
 
   try {
     // Delegate file discovery + parsing to the shared @stacksjs/ts-i18n loader
-    // (full Bun.YAML parsing, JSON, and TS/JS modules; flat `<locale>.<ext>` plus
-    // nested `<locale>/**` namespaces). stx keeps caching, lazy dedup, and the
-    // runtime layer (interpolation/pluralization/ICU/@translate) on top.
-    const tree = await loadLocale(locale, {
-      translationsDir,
-      defaultLocale: i18nConfig.defaultLocale,
-      sources: formatToSources(i18nConfig.format),
-    })
+    // when it's available (full Bun.YAML parsing, JSON, and TS/JS modules; flat
+    // `<locale>.<ext>` plus nested `<locale>/**` namespaces). When the package
+    // isn't installed, fall back to the built-in single-file loader below. stx
+    // keeps caching, lazy dedup, and the runtime layer
+    // (interpolation/pluralization/ICU/@translate) on top either way.
+    const loadLocale = await resolveLoadLocale()
+
+    const tree = loadLocale
+      ? await loadLocale(locale, {
+          translationsDir,
+          defaultLocale: i18nConfig.defaultLocale,
+          sources: formatToSources(i18nConfig.format),
+        })
+      : await loadTranslationFromFile(locale, i18nConfig, translationsDir)
 
     // No file for this locale: fall back to the default locale once, else empty.
     if (tree === undefined) {
@@ -581,6 +622,139 @@ async function loadTranslationInternal(
     // Return empty object if the default locale also can't be loaded.
     return {}
   }
+}
+
+/**
+ * Built-in single-file translation loader used when @stacksjs/ts-i18n isn't
+ * installed. Loads `<translationsDir>/<locale>.<ext>` via Bun's native module
+ * import (JS/TS/JSON/YAML), falling back to a manual read + minimal YAML/JSON
+ * parse. Returns `undefined` when no file exists for the locale (so the caller
+ * can fall back to the default locale), matching `loadLocale`'s semantics.
+ */
+async function loadTranslationFromFile(
+  locale: string,
+  i18nConfig: Required<I18nConfig>,
+  translationsDir: string,
+): Promise<Record<string, any> | undefined> {
+  const translationFile = path.join(translationsDir, `${locale}${getFileExtension(i18nConfig.format)}`)
+
+  try {
+    // Bun imports JS/TS/JSON/YAML modules natively.
+    const imported = await import(translationFile)
+    return imported.default || imported
+  }
+  catch (importError) {
+    // Fallback: read and parse the file manually.
+    try {
+      const fileContent = await Bun.file(translationFile).text()
+      if (i18nConfig.format === 'yaml' || i18nConfig.format === 'yml')
+        return parseSimpleYaml(fileContent)
+      if (i18nConfig.format === 'json')
+        return JSON.parse(fileContent)
+      // For JS/TS files an import failure is fatal — there's no manual parse.
+      throw importError
+    }
+    catch {
+      // No readable file for this locale.
+      return undefined
+    }
+  }
+}
+
+/**
+ * Get the translation file extension for a configured format.
+ */
+function getFileExtension(format: string): string {
+  switch (format) {
+    case 'yaml':
+      return '.yaml'
+    case 'yml':
+      return '.yml'
+    case 'js':
+      return '.js'
+    case 'ts':
+      return '.ts'
+    case 'json':
+    default:
+      return '.json'
+  }
+}
+
+/**
+ * Minimal YAML parser for the built-in fallback loader (nested maps + scalar
+ * values). Only used when @stacksjs/ts-i18n is absent and Bun's native YAML
+ * import didn't apply.
+ */
+function parseSimpleYaml(content: string): Record<string, any> {
+  const result: Record<string, any> = {}
+  const lines = content.split('\n')
+  const stack: Array<{ obj: Record<string, any>, indent: number }> = [{ obj: result, indent: -1 }]
+
+  for (const rawLine of lines) {
+    // Skip empty lines and comments
+    const line = rawLine.replace(/#.*$/, '').trimEnd()
+    if (!line.trim())
+      continue
+
+    // Calculate indentation
+    const indent = line.search(/\S/)
+    if (indent === -1)
+      continue
+
+    // Pop stack to find the correct parent
+    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+      stack.pop()
+    }
+
+    const currentObj = stack[stack.length - 1].obj
+
+    // Parse key: value
+    const match = line.match(/^(\s*)(\S[^:]*):\s*(.*)$/)
+    if (match) {
+      const [, , key, rawValue] = match
+      const trimmedKey = key.trim()
+      const trimmedValue = rawValue.trim()
+
+      if (trimmedValue === '') {
+        // This is a nested object
+        currentObj[trimmedKey] = {}
+        stack.push({ obj: currentObj[trimmedKey], indent })
+      }
+      else {
+        // This is a simple value
+        currentObj[trimmedKey] = parseYamlValue(trimmedValue)
+      }
+    }
+  }
+
+  return result
+}
+
+/**
+ * Parse a YAML scalar value (strings, numbers, booleans, null).
+ */
+function parseYamlValue(value: string): string | number | boolean | null {
+  // Remove quotes
+  if ((value.startsWith('\'') && value.endsWith('\'')) || (value.startsWith('"') && value.endsWith('"'))) {
+    return value.slice(1, -1)
+  }
+
+  // Check for boolean / null
+  const lowerValue = value.toLowerCase()
+  if (lowerValue === 'true' || lowerValue === 'yes')
+    return true
+  if (lowerValue === 'false' || lowerValue === 'no')
+    return false
+  if (lowerValue === 'null' || lowerValue === '~')
+    return null
+
+  // Check for number
+  const num = Number(value)
+  if (!Number.isNaN(num) && value !== '')
+    return num
+
+  // Return as string
+  return value
 }
 
 /**

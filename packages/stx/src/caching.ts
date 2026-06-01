@@ -106,19 +106,43 @@ export function invalidateFileCacheByDir(dirPath: string): void {
 let _cachedSignalsRuntime: string | null = null
 let _cachedSignalsRuntimeDev: string | null = null
 
+/** The two runtime generators caching depends on (subset of `./signals`). */
+type SignalsGenerators = Pick<
+  typeof import('./signals'),
+  'generateSignalsRuntime' | 'generateSignalsRuntimeDev'
+>
+
+/**
+ * Test-only override for the signals generators.
+ *
+ * Tests that need to count generations (to tell a cache hit from a regenerate)
+ * must NOT use Bun's `mock.module('./signals', …)`: it's process-global, isn't
+ * restored at file boundaries, and import resolution happens during collection
+ * — so the stub leaks into every signals test file loaded afterwards, replacing
+ * the real runtime. This plain-module-state seam is set/cleared by a function
+ * call within `afterAll`, so it never escapes the test that uses it.
+ *
+ * @internal
+ */
+let _signalsGeneratorsOverride: SignalsGenerators | null = null
+
+/** @internal test-only — inject (or, with `null`, restore) the signals generators. */
+export function __setSignalsGeneratorsForTest(generators: SignalsGenerators | null): void {
+  _signalsGeneratorsOverride = generators
+}
+
 /**
  * Get the signals runtime with module-level caching.
  * The runtime is identical for every page and never changes during a dev session.
  */
 export async function getCachedSignalsRuntime(debug = false): Promise<string> {
+  const signals = _signalsGeneratorsOverride ?? await import('./signals')
   if (debug) {
     // In debug mode, always regenerate to avoid stale runtime issues
-    const { generateSignalsRuntimeDev } = await import('./signals')
-    return generateSignalsRuntimeDev()
+    return signals.generateSignalsRuntimeDev()
   }
   if (_cachedSignalsRuntime === null) {
-    const { generateSignalsRuntime } = await import('./signals')
-    _cachedSignalsRuntime = generateSignalsRuntime()
+    _cachedSignalsRuntime = signals.generateSignalsRuntime()
   }
   return _cachedSignalsRuntime!
 }

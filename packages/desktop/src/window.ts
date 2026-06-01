@@ -366,6 +366,10 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
     const app = createApp({
       url,
       craftPath: getCraftBinaryPath(),
+      // ts-craft's WindowOptions doesn't type `titlebarHidden` yet, but the
+      // Craft binary honors it (see the `--titlebar-hidden` arg on the binary
+      // fallback path below). Cast to ts-craft's own window type so this
+      // forward-compat field passes through without a fresh-literal excess error.
       window: {
         title: options.title || 'stx Development',
         width: options.width || 1400,
@@ -379,7 +383,7 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
         nativeSidebar: options.nativeSidebar ?? false,
         sidebarWidth: options.sidebarWidth ?? 260,
         sidebarConfig: sidebarConfig as Record<string, unknown> | undefined,
-      },
+      } as NonNullable<Parameters<typeof createApp>[0]>['window'],
     })
 
     const id = `dev-window-${port}`
