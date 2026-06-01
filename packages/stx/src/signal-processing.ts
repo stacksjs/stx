@@ -512,6 +512,309 @@ export function convertSignalDirectivesToAttributes(template: string, context?: 
 }
 
 /**
+ * Try to evaluate a `:if` / `:show` attribute value as a literal JavaScript
+ * constant. Returns `true` / `false` / `undefined` (undefined ⇒ not a
+ * recognizable literal, leave it for the runtime).
+ *
+ * Phase A of stacksjs/stx#1739 only handles pure literals — `true`, `false`,
+ * `1`, `0`, `"x"`, `''`, `null`, `undefined`. Server-resolvable expression
+ * analysis (the larger ~75% of `:if` conditions per the issue's bench-review
+ * audit) is scoped to Phase B; it needs scope-walk AST analysis that touches
+ * the SSR pipeline more deeply.
+ *
+ * Falsy literals: `false`, `0`, `''`, `""`, `null`, `undefined`, `NaN`.
+ * Anything else (identifier references, member access, function calls,
+ * operators) returns `undefined` so the runtime keeps owning it.
+ */
+function evalLiteralCondition(expr: string): boolean | undefined {
+  const trimmed = expr.trim()
+  if (trimmed === '') return undefined
+  if (trimmed === 'true') return true
+  if (trimmed === 'false') return false
+  if (trimmed === 'null') return false
+  if (trimmed === 'undefined') return false
+  if (trimmed === 'NaN') return false
+
+  // Numeric literal — `:if="0"` / `:if="1"` / `:if="3.14"`. Reject anything
+  // with a leading sign or surrounding operators.
+  if (/^-?\d+(?:\.\d+)?$/.test(trimmed)) {
+    const n = Number(trimmed)
+    return n !== 0 && !Number.isNaN(n)
+  }
+
+  // Quoted string literal — `:if="'foo'"` is truthy iff non-empty.
+  // Both quote kinds; reject embedded operators by requiring the full
+  // string to be one balanced quoted run.
+  const singleQ = trimmed.match(/^'((?:\\.|[^'\\])*)'$/)
+  if (singleQ) return singleQ[1].length > 0
+  const doubleQ = trimmed.match(/^"((?:\\.|[^"\\])*)"$/)
+  if (doubleQ) return doubleQ[1].length > 0
+
+  return undefined
+}
+
+/** Void HTML elements with no closing tag — drop just the start tag. */
+const VOID_ELEMENT_TAGS = new Set([
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+  'link', 'meta', 'param', 'source', 'track', 'wbr',
+])
+
+/**
+ * Find the end index of `<tag ...>...</tag>` whose start tag begins at
+ * `output[startIdx]`. Tracks nested same-tag depth so
+ * `<div><div>x</div></div>` is one element, not two. Returns the index
+ * one past the closing `</tag>`, or `-1` if no balanced close is found.
+ *
+ * The scan skips over regions where a literal `</tag>` is NOT a real
+ * close tag — HTML comments and `<script>` / `<style>` raw-text bodies.
+ * Without this, a falsy `<div :if="false">` wrapping
+ * `<script>const s = "</div>"</script>` (or a `</div>` in a CSS string or
+ * an HTML comment) would terminate at the bogus close, truncating the
+ * drop range and emitting malformed HTML (stacksjs/stx#1739 review).
+ * A self-closing or void nested same-tag does not increment depth.
+ */
+function findElementEnd(output: string, startIdx: number, tag: string, startTagEnd: number): number {
+  if (VOID_ELEMENT_TAGS.has(tag.toLowerCase())) return startTagEnd
+  const lower = tag.toLowerCase()
+  const lowerOut = output.toLowerCase()
+  const len = output.length
+  let depth = 1
+  let i = startTagEnd
+  while (i < len) {
+    const lt = output.indexOf('<', i)
+    if (lt === -1) return -1
+    i = lt
+
+    // HTML comment — skip to `-->`.
+    if (output.startsWith('<!--', i)) {
+      const c = output.indexOf('-->', i + 4)
+      if (c === -1) return -1
+      i = c + 3
+      continue
+    }
+
+    // Raw-text element (<script> / <style>) — skip its entire body, since a
+    // `</tag>` inside it is text, not markup.
+    const raw = /^<(script|style)\b/i.exec(output.slice(i, i + 8))
+    if (raw) {
+      const startGt = output.indexOf('>', i)
+      if (startGt === -1) return -1
+      // A `<script .../>` / `<style .../>` written self-closed has no raw-text
+      // body, so skip just the start tag. If we instead searched for a
+      // `</script>` that isn't there we'd return -1 and defer — and the browser
+      // then treats the unclosed <script> as swallowing every following sibling
+      // as script text, so a falsy ancestor's removal would delete content that
+      // should have survived (the finding-#1 content-loss class). Skip just the
+      // tag (stacksjs/stx#1739 review).
+      if (output[startGt - 1] === '/') {
+        i = startGt + 1
+        continue
+      }
+      const close = lowerOut.indexOf(`</${raw[1].toLowerCase()}`, i)
+      if (close === -1) return -1
+      const gt = output.indexOf('>', close)
+      if (gt === -1) return -1
+      i = gt + 1
+      continue
+    }
+
+    // Closing tag.
+    if (output[i + 1] === '/') {
+      const m = /^<\/([a-z][\w-]*)\s*>/i.exec(output.slice(i, i + 64))
+      if (!m) { i++; continue }
+      if (m[1].toLowerCase() === lower) {
+        depth--
+        i += m[0].length
+        if (depth === 0) return i
+        continue
+      }
+      i += m[0].length
+      continue
+    }
+
+    // Opening tag.
+    const om = /^<([a-z][\w-]*)\b/i.exec(output.slice(i, i + 64))
+    if (!om) { i++; continue }
+    const gt = output.indexOf('>', i)
+    if (gt === -1) return -1
+    if (om[1].toLowerCase() === lower) {
+      const tagStr = output.slice(i, gt + 1)
+      const selfClosed = /\/\s*>$/.test(tagStr) || VOID_ELEMENT_TAGS.has(lower)
+      if (!selfClosed) depth++
+    }
+    i = gt + 1
+  }
+  return -1
+}
+
+/** Else / else-if attribute names across all three directive prefixes. */
+const ELSE_ATTR_RE = /\s(?::else-if|x-else-if|@else-if|:else|x-else|@else)(?=[=\s/>])/
+
+/**
+ * Peek at the next element sibling starting at `fromIndex` (skipping
+ * whitespace and HTML comments, mirroring the runtime's
+ * `nextElementSibling` chain walk) and report whether it carries an
+ * `:else` / `:else-if` attribute (any prefix).
+ *
+ * Used to keep `preEvalLiteralReactiveIfs` from eliminating a `:if`
+ * branch that heads an if/else chain — doing so would orphan the
+ * sibling `:else`, which the runtime then renders as a plain
+ * always-on element. Such chains are deferred to the runtime (and to
+ * Phase B's chain-aware rebalancing).
+ */
+function nextSiblingHasElse(template: string, fromIndex: number): boolean {
+  let i = fromIndex
+  const len = template.length
+  // Skip inter-element content (text, whitespace) + HTML comments — the
+  // runtime's `nextElementSibling` chain walk skips text AND comment nodes, so
+  // a non-whitespace text node between the `:if` and its `:else` must NOT hide
+  // the chain from this guard (stacksjs/stx#1739 review).
+  for (;;) {
+    while (i < len && template[i] !== '<') i++
+    if (i >= len) return false
+    if (template.startsWith('<!--', i)) {
+      const close = template.indexOf('-->', i + 4)
+      if (close === -1) return false
+      i = close + 3
+      continue
+    }
+    break
+  }
+  // Must be the start of an element (not an end-tag closing the parent).
+  if (template[i + 1] === '/') return false
+  const tagEnd = template.indexOf('>', i)
+  if (tagEnd === -1) return false
+  const startTag = template.slice(i, tagEnd + 1)
+  return ELSE_ATTR_RE.test(startTag)
+}
+
+/**
+ * SSR pre-eval for literal-valued reactive conditional attributes
+ * (stacksjs/stx#1739, Phase A).
+ *
+ * The reactive `:if` / `:show` family (and the `x-if` / `x-show` /
+ * attribute-form `@if` aliases) is normally bound at runtime via
+ * `bindIf` / `bindShow`. When the attribute value is a pure literal
+ * — feature-flag constants like `:if="false"`, dev-only debug blocks
+ * like `:if="true"`, etc. — there's no reason to ship the element +
+ * runtime binding. Pre-evaluate and:
+ *
+ *   - truthy literal ⇒ strip the attribute, keep the element
+ *   - falsy literal  ⇒ drop the element entirely (children included)
+ *
+ * Phase A intentionally handles ONE element at a time — `:else-if` /
+ * `:else` chain rebalancing is Phase B. So `:if="false"` with a sibling
+ * `:else` still drops the if-element; the else still emits as it would
+ * have, and the runtime picks correctly (chains where the first
+ * branch is gone become "always show the else branch").
+ *
+ * Skips:
+ *   - non-literal expressions (let the runtime own them)
+ *   - the block-form `@if(...)@endif` directive — that has its own
+ *     server-side handler (`processConditionals`)
+ *   - elements inside `<script>` / `<style>` bodies
+ */
+export function preEvalLiteralReactiveIfs(template: string): string {
+  if (!template.includes(':if')
+    && !template.includes(':show')
+    && !template.includes('x-if')
+    && !template.includes('x-show')
+    && !template.includes('@if=')
+    && !template.includes('@show=')) {
+    return template
+  }
+
+  // Index every <script> / <style> body so we don't rewrite content inside them.
+  const skipRanges: Array<[number, number]> = []
+  const rawTagRe = /<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi
+  let rawMatch: RegExpExecArray | null
+  while ((rawMatch = rawTagRe.exec(template)) !== null) {
+    skipRanges.push([rawMatch.index, rawMatch.index + rawMatch[0].length])
+  }
+  const inSkipRange = (i: number) => skipRanges.some(([s, e]) => i >= s && i < e)
+
+  // Match an opening tag carrying one of our six attribute names with a
+  // quoted value. The non-greedy attrs prefix/suffix lets the attribute
+  // appear anywhere in the tag.
+  const tagWithLiteralIf = /<([a-zA-Z][\w-]*)\b((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*?)\s+(:if|:show|x-if|x-show|@if|@show)\s*=\s*"([^"]*)"((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s*)(\/?)>/g
+
+  const replacements: Array<{ start: number, end: number, replacement: string }> = []
+  let m: RegExpExecArray | null
+  while ((m = tagWithLiteralIf.exec(template)) !== null) {
+    if (inSkipRange(m.index)) continue
+    const [full, tag, beforeAttrs, attrName, value, afterAttrs, selfClose] = m
+    const verdict = evalLiteralCondition(value)
+    if (verdict === undefined) continue
+
+    const startIdx = m.index
+    const startTagEnd = startIdx + full.length
+
+    // Compute the element end up-front: needed to drop a falsy element, and to
+    // peek at the next sibling for if/else chain detection. Derive self-close
+    // from the WHOLE matched start tag, not the trailing `(\/?)` capture — a
+    // space before `/>` (`<section :if="false" />`) lets the greedy attrs group
+    // swallow the `/`, leaving that capture empty and fooling the void check
+    // into searching for a `</section>` that doesn't exist (stacksjs/stx#1739
+    // review).
+    const isSelfClose = !!selfClose || /\/\s*>$/.test(full)
+    const isVoid = isSelfClose || VOID_ELEMENT_TAGS.has(tag.toLowerCase())
+    const elementEnd = isVoid ? startTagEnd : findElementEnd(template, startIdx, tag, startTagEnd)
+    if (elementEnd === -1) continue // Unbalanced — defer to runtime
+
+    // Phase A is single-element only. The `:if` family forms mutually-exclusive
+    // if/else(-if) chains; eliminating the head branch would orphan a following
+    // `:else` (the runtime renders an orphan else as a plain, always-on element
+    // — for `:if="true"` that wrongly shows BOTH branches). So if this `:if`
+    // heads a chain, defer the whole thing to the runtime / Phase B. `:show` has
+    // no else partner, so it's exempt.
+    const isIfFamily = attrName === ':if' || attrName === 'x-if' || attrName === '@if'
+    if (isIfFamily && nextSiblingHasElse(template, elementEnd)) {
+      tagWithLiteralIf.lastIndex = startTagEnd
+      continue
+    }
+
+    if (verdict === true) {
+      // Truthy literal — strip the attribute, keep everything else. Leave the
+      // scanner just past the start tag so nested `:if`s inside are still seen.
+      const rebuiltStartTag = `<${tag}${beforeAttrs}${afterAttrs}${selfClose}>`
+      replacements.push({ start: startIdx, end: startTagEnd, replacement: rebuiltStartTag })
+      continue
+    }
+
+    // Falsy literal — drop the element including children. Resume scanning AFTER
+    // the dropped element so a nested `:if` inside it isn't matched again:
+    // overlapping replacements (an inner range fully contained in this outer
+    // one) would corrupt the end-to-start apply pass, since the outer's `end`
+    // index goes stale once the inner substring is removed first.
+    replacements.push({ start: startIdx, end: elementEnd, replacement: '' })
+    tagWithLiteralIf.lastIndex = elementEnd
+  }
+
+  if (replacements.length === 0) return template
+
+  // Defensive: drop any replacement whose range overlaps an already-kept one.
+  // The lastIndex skip above prevents nested matches in the common path, but a
+  // belt-and-suspenders filter keeps the apply pass correct no matter what the
+  // scanner produced. Sort by start asc, keep a running high-water mark.
+  replacements.sort((a, b) => a.start - b.start)
+  const safe: typeof replacements = []
+  let highWater = -1
+  for (const r of replacements) {
+    if (r.start < highWater) continue // overlaps a kept replacement — skip
+    safe.push(r)
+    highWater = r.end
+  }
+
+  // Apply end-to-start so earlier offsets stay valid.
+  let output = template
+  for (let i = safe.length - 1; i >= 0; i--) {
+    const { start, end, replacement } = safe[i]
+    output = output.substring(0, start) + replacement + output.substring(end)
+  }
+  return output
+}
+
+/**
  * Convert @for(item in items())...@endfor directive blocks to attribute-style.
  *
  * Converts:

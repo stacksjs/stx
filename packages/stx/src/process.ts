@@ -54,7 +54,7 @@ import { processScopedStyles } from './style-scoping'
 import { ensureDocumentShell, injectCloakStyle } from './document-shell'
 
 // Extracted modules
-import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, processSignals } from './signal-processing'
+import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, preEvalLiteralReactiveIfs, processSignals } from './signal-processing'
 import { processComponents } from './component-renderer'
 import { processInlineAssets } from './inline-assets'
 import { addCloakToConditionalDirectives, addCloakToUnresolvedExpressions, processJsonDirective, processMemoDirective, processOnceDirective, processRefAttributes } from './misc-directives'
@@ -998,6 +998,14 @@ async function processOtherDirectives(
     output = convertSignalDirectivesToAttributes(output, context)
     output = convertSignalLoopsToAttributes(output, context)
   }
+
+  // Pre-eval literal `:if` / `:show` (stacksjs/stx#1739 Phase A) — dead
+  // branches like `:if="false"` (feature flags, debug-only blocks) no
+  // longer ship to the client. Runs after attribute conversion so any
+  // `@if(false)` block we just rewrote into a `:if="false"` attribute
+  // gets eliminated here too. Server-resolvable expression analysis
+  // (the ~75% of `:if` reading server/loop scope) is Phase B.
+  output = preEvalLiteralReactiveIfs(output)
 
   // Process loops FIRST - BEFORE components so that loop variables are evaluated
   // when components are processed, not after components have already been expanded
