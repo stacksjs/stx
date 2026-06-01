@@ -188,6 +188,10 @@ export * from './slots'
 // Import from stx/server-components directly if needed
 // export * from './server-components'
 
+// stx-strict footgun linter (stacksjs/stx#1744)
+export { lintStxStrict } from './strict-lint'
+export type { StxStrictDiagnostic, StxStrictOptions, StxStrictRuleId } from './strict-lint'
+
 // Types module - note: PropType is also in props, import from stx/props if needed
 export * from './types'
 
