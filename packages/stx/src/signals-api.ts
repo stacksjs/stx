@@ -581,3 +581,90 @@ finally {
     activeEffect = prevEffect
   }
 }
+
+/**
+ * The function returned by {@link useOptimistic} to apply an optimistic update.
+ * Returns a `settle` function that removes this specific optimistic entry (call
+ * it to roll back, e.g. in a `catch`). If a `settleWhen` promise is passed, the
+ * entry is removed automatically when that promise settles (success or error).
+ */
+export type AddOptimistic<A> = (action: A, settleWhen?: PromiseLike<unknown>) => () => void
+
+/**
+ * React-19-style optimistic state, adapted to signals.
+ *
+ * Shows an immediate, optimistic value layered on top of `base` while an async
+ * action is in flight, then falls back to `base` as the source of truth once the
+ * real update lands. Returns `[optimistic, addOptimistic]`:
+ *
+ * - `optimistic` is a derived signal: `base` with every pending action folded in
+ *   via `reducer`.
+ * - `addOptimistic(action)` queues an optimistic action (visible immediately) and
+ *   returns a `settle()` to remove it. Pass a promise as the 2nd arg to auto-settle.
+ *
+ * The optimistic overlay is discarded automatically the moment `base` changes —
+ * i.e. when the server/store confirms the real value — so the happy path needs
+ * no cleanup. On error, `base` doesn't change, so call the returned `settle()`
+ * (or pass the action promise) to roll back.
+ *
+ * Unlike React, there is no render cycle: pass the SIGNAL (or a getter) as `base`
+ * so the overlay stays reactive. A plain value is accepted but won't track changes.
+ *
+ * ```ts
+ * const likes = state(10)
+ * const [optimisticLikes, addOptimistic] = useOptimistic(likes, (cur, delta) => cur + delta)
+ *
+ * async function toggleLike() {
+ *   const settle = addOptimistic(liked() ? -1 : 1)   // optimisticLikes() updates now
+ *   try { await api.like() }                          // on success, `likes` updates → overlay clears
+ *   catch { settle() }                                // on error, roll back
+ * }
+ * ```
+ *
+ * @see stacksjs/stx#1742
+ */
+export function useOptimistic<T, A>(
+  base: Signal<T> | DerivedSignal<T> | (() => T) | T,
+  reducer: (current: T, action: A) => T,
+): [DerivedSignal<T>, AddOptimistic<A>] {
+  const readBase = (typeof base === 'function' ? base : () => base) as () => T
+  // Each entry is a unique object so settle() removes exactly the one it owns,
+  // even when two identical action values are queued.
+  interface Entry { action: A }
+  const pending = state<Entry[]>([])
+
+  const optimistic = derived<T>(() =>
+    pending().reduce<T>((acc, entry) => reducer(acc, entry.action), readBase()),
+  )
+
+  // When the real base value changes (the action landed / store confirmed), the
+  // optimistic overlay is stale — discard it so base is the source of truth.
+  // `peek` the pending read so this effect only re-runs on base change, not when
+  // addOptimistic queues a new entry (which would clear it instantly).
+  let primed = false
+  effect(() => {
+    readBase() // track base only
+    if (!primed) {
+      primed = true
+      return
+    }
+    if (peek(() => pending().length))
+      pending.set([])
+  })
+
+  const addOptimistic: AddOptimistic<A> = (action, settleWhen) => {
+    const entry: Entry = { action }
+    pending.set([...pending(), entry])
+    const settle = (): void => {
+      const next = pending().filter(e => e !== entry)
+      if (next.length !== pending().length)
+        pending.set(next)
+    }
+    if (settleWhen && typeof settleWhen.then === 'function') {
+      Promise.resolve(settleWhen).then(settle, settle)
+    }
+    return settle
+  }
+
+  return [optimistic, addOptimistic]
+}

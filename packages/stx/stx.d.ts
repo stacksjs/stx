@@ -134,6 +134,10 @@ interface StxMutationResult<T> {
 declare function useFetch<T = any>(_url: string, _options?: any): StxQueryResult<T>
 declare function useQuery<T = any>(_url: string, _options?: any): StxQueryResult<T>
 declare function useMutation<T = any>(_url: string, _options?: any): StxMutationResult<T>
+declare function useOptimistic<T = any, A = any>(
+  _base: StxSignal<T> | (() => T) | T,
+  _reducer: (_current: T, _action: A) => T,
+): [StxSignal<T>, (_action: A, _settleWhen?: PromiseLike<unknown>) => () => void]
 
 // ============================================================================
 // DOM utilities
@@ -444,6 +448,7 @@ interface StxRuntimeRegistry {
   useRef: typeof useRef
   useQuery: typeof useQuery
   useMutation: typeof useMutation
+  useOptimistic: typeof useOptimistic
 
   // Routing
   navigate: typeof navigate

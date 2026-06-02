@@ -240,6 +240,54 @@ const { data: users, loading, error, refresh } = useFetch('/api/users')
 </div>
 ```
 
+### useOptimistic
+
+React-19-style optimistic state, adapted to signals. Shows an immediate value
+layered on top of a base signal while an async action is in flight, then falls
+back to the base as the source of truth once the real update lands — so you stop
+hand-rolling snapshot/rollback in every mutation.
+
+`useOptimistic(base, reducer)` returns `[optimistic, addOptimistic]`:
+
+- **`optimistic`** — a derived signal: `base` with every pending action folded in
+  via `reducer`. Read it in templates as the bare name (`optimistic`), in scripts
+  as a call (`optimistic()`).
+- **`addOptimistic(action)`** — queues an optimistic action (visible immediately)
+  and returns a `settle()` to remove it. Pass a promise as the 2nd arg to auto-settle.
+
+Pass the **signal** (or a getter) as `base` so the overlay stays reactive — unlike
+React there's no render cycle to re-read a plain value.
+
+```html
+<script client>
+  const likes = useStore('reviews').likes   // a shared signal
+  const [optimisticLikes, addOptimistic] = useOptimistic(likes, (cur, delta) => cur + delta)
+
+  async function toggleLike() {
+    const settle = addOptimistic(liked() ? -1 : 1)   // optimisticLikes() updates instantly
+    try {
+      await authFetch('/api/reviews/16/like', { method: 'POST' })
+      // On success the store updates `likes` → the overlay is discarded automatically.
+    }
+    catch {
+      settle()   // On error, base never changed — roll back this entry.
+    }
+  }
+</script>
+
+<button @click="toggleLike()">
+  ♥ <span x-text="optimisticLikes"></span>
+</button>
+```
+
+The overlay is discarded the moment `base` changes (the server/store confirmed the
+real value), so the happy path needs no cleanup. For list mutations the reducer can
+append: `useOptimistic(comments, (list, draft) => [...list, draft])`.
+
+> Available as a bare identifier in `<script client>` and on `window.stx`
+> (`window.stx.useOptimistic`). Implemented in both reactive impls with parity
+> (`signals-api.ts` + the client runtime).
+
 ### useLocalStorage
 
 ```typescript

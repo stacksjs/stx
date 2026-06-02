@@ -314,7 +314,7 @@ const STX_AUTO_IMPORTS = [
   // Navigation
   'navigate', 'goBack', 'goForward', 'useRoute', 'setRouteParams', 'useSearchParams',
   // Data fetching
-  'useQuery', 'useMutation',
+  'useQuery', 'useMutation', 'useOptimistic',
   // DOM utilities
   'useEventListener', 'useMeta',
   // Timers
