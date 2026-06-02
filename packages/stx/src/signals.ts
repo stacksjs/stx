@@ -1738,7 +1738,7 @@ else if (name.startsWith('@') || name.startsWith(':')) {
             // like "count = count + 1" or "open = !open". Function calls like
             // "openModal()" handle their own signal.set() internally — the writeback
             // would RESET signals to their pre-handler values.
-            var isDirectAssignment = hasSignals && /^[a-zA-Z_$]\w*\s*=/.test(value.trim()) && !value.trim().startsWith('==');
+            var isDirectAssignment = hasSignals && /^[a-zA-Z_$]\\w*\\s*=/.test(value.trim()) && !value.trim().startsWith('==');
             if (isDirectAssignment) {
               var getVars = Object.keys(eventCapturedScope).map(function(k) {
                 return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
@@ -2249,14 +2249,14 @@ catch (e) {
       //                                  which evalLazy's catch swallows.
       // Retry without the trailing parens so both forms succeed.
       //
-      // RegExp is constructed via new RegExp(string) rather than a
-      // regex literal because the upstream stx build pipeline
-      // mangles regex literals - stripping backslash escapes so the
-      // literal form shipped to dist with backslashes removed
-      // (e.g. paren+whitespace ended up as bare s* in the dist),
-      // which never matched anything and the fix silently did
-      // nothing. RegExp-from-string survives the build unchanged.
-      var trailingParens = new RegExp('\\(\\s*\\)\\s*$');
+      // This runtime is emitted as a TEMPLATE LITERAL, so every backslash here
+      // must be DOUBLED to survive into the shipped string. A regex literal
+      // crosses only that one layer (doubled escapes ship intact). A
+      // new RegExp('...') string crosses a SECOND layer too — the browser's
+      // string-literal parse strips the escapes again — collapsing the pattern
+      // to a bare-letter match that never fires (stacksjs/stx#1748). So use a
+      // regex literal, not new RegExp(string), for patterns with backslashes.
+      var trailingParens = /\\(\\s*\\)\\s*$/;
       if (!Array.isArray(list) && trailingParens.test(listExpr)) {
         list = evalLazy(listExpr.replace(trailingParens, ''));
       }
@@ -2298,7 +2298,7 @@ catch (e) {
         var diagScope;
         try {
           var diagMerged = { ...passedScope, ...(capturedScope || {}), ...globalHelpers };
-          var firstIdent = listExpr.match(/^[A-Za-z_$][\w$]*/);
+          var firstIdent = listExpr.match(/^[A-Za-z_$][\\w$]*/);
           var rootName = firstIdent ? firstIdent[0] : '?';
           var rootInScope = Object.prototype.hasOwnProperty.call(diagMerged, rootName);
           var rootVal = rootInScope ? diagMerged[rootName] : '<NOT-IN-SCOPE>';
@@ -3207,7 +3207,7 @@ catch (e) {}
     var encode = opts.encode || encodeURIComponent;
     var decode = opts.decode || decodeURIComponent;
     // Escape cookie name so dots/brackets/etc. read safely through the matcher.
-    var escapedName = name.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&');
+    var escapedName = name.replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&');
     var nameRe = new RegExp('(?:^|; )' + escapedName + '=([^;]*)');
     function read() {
       if (typeof document === 'undefined') return opts.defaultValue || '';
@@ -4359,10 +4359,10 @@ else {
           effect(() => {
             try {
               let result = text;
-              const matches = text.match(/\{\{\s*(.+?)\s*\}\}/g);
+              const matches = text.match(/\\{\\{\\s*(.+?)\\s*\\}\\}/g);
               if (matches) {
                 matches.forEach(match => {
-                  const expr = match.replace(/^\{\{\s*|\s*\}\}$/g, '');
+                  const expr = match.replace(/^\\{\\{\\s*|\\s*\\}\\}$/g, '');
                   const fn = new Function(...Object.keys(componentScope), 'return ' + expr);
                   const value = fn(...Object.values(componentScope));
                   result = result.replace(match, value != null ? value : '');
@@ -4380,15 +4380,15 @@ else if (el.tagName === 'META') {
         const content = el.getAttribute('content');
         if (content && content.includes('{{')) {
           // Skip build-time placeholders like {{__TITLE__}}
-          const hasOnlyPlaceholders = !content.replace(/\{\{\s*__[A-Z_]+__\s*\}\}/g, '').includes('{{');
+          const hasOnlyPlaceholders = !content.replace(/\\{\\{\\s*__[A-Z_]+__\\s*\\}\\}/g, '').includes('{{');
           if (hasOnlyPlaceholders) return;
           effect(() => {
             try {
               let result = content;
-              const matches = content.match(/\{\{\s*(.+?)\s*\}\}/g);
+              const matches = content.match(/\\{\\{\\s*(.+?)\\s*\\}\\}/g);
               if (matches) {
                 matches.forEach(match => {
-                  const expr = match.replace(/^\{\{\s*|\s*\}\}$/g, '');
+                  const expr = match.replace(/^\\{\\{\\s*|\\s*\\}\\}$/g, '');
                   if (/^__[A-Z_]+__$/.test(expr.trim())) return;
                   const fn = new Function(...Object.keys(componentScope), 'return ' + expr);
                   const value = fn(...Object.values(componentScope));

@@ -30,10 +30,15 @@ describe('useCookie — runtime exposure', () => {
   })
 
   it('escapes regex metacharacters in the cookie name', () => {
-    // The implementation must regex-escape the cookie name before building
-    // the matcher, or names with `.`/`[`/etc. break the read path. The escape
-    // replacement string `\$&` is unique to this code path in the runtime.
-    expect(runtime).toContain("'\\$&'")
+    // The implementation must regex-escape the cookie name before building the
+    // matcher, or names with `.`/`[`/etc. break the read path. Because the
+    // runtime ships as a template literal AND is re-parsed as a JS string in
+    // the browser, the replacement must ship as `'\\$&'` (double backslash) so
+    // the browser parses it to a literal-backslash + match (stacksjs/stx#1748).
+    // A single-backslash `'\$&'` here would collapse to `'$&'` and not escape.
+    expect(runtime).toContain("'\\\\$&'")
+    // And the escape char-class must ship with real backslashes, not stripped.
+    expect(runtime).toContain('[.*+?^${}()|[\\]\\\\]')
   })
 })
 
@@ -152,6 +157,18 @@ describe('useCookie — functional behavior', () => {
     document.cookie = '__Host-session.id=safe; path=/'
     const c = useCookie('__Host-session.id')
     expect(c()).toBe('safe')
+  })
+
+  it('does NOT false-match a different cookie via an unescaped metacharacter', () => {
+    // Only `aXbc` exists. A `.` left unescaped in the name `a.bc` would match
+    // `aXbc` (regex `.` = any char) and wrongly return its value. Correct
+    // escaping (`a\.bc`) must NOT match, so the default is returned instead.
+    // This is the discriminating case for stacksjs/stx#1748's regex mangling —
+    // the plain `a.bc` cookie test passes even with the bug.
+    document.cookie = 'aXbc=leaked; path=/'
+    const c = useCookie('a.bc', { defaultValue: 'fallback' })
+    expect(c()).toBe('fallback')
+    expect(c()).not.toBe('leaked')
   })
 
   it('uses custom encode/decode when provided', () => {

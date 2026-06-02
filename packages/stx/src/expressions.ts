@@ -468,6 +468,20 @@ export function usesSignalsInScript(template: string): boolean {
     return true
   }
 
+  // The `:` and `x-` prefixed structural/binding directives are ALWAYS
+  // client-side (there is no server-side `:for`/`x-for`), so their presence
+  // means the template is reactive and any `{{ }}` over their scope/loop vars
+  // must be preserved for the runtime. This matters when the detecting script
+  // has already been stripped — e.g. inside a component body, where
+  // renderComponentWithSlot removes `<script client>` before the body's
+  // expressions are processed, leaving only a bare `x-for="it in items"`
+  // (no `()` call, since `:for`/`x-for` take bare signal refs). Without this,
+  // `{{ it.name }}` inside a component loop is evaluated server-side (loop var
+  // undefined → empty) instead of preserved. See stacksjs/stx#1748.
+  if (/(?:^|[\s"'])(?::|x-)(?:for|if|else-if|else|show|text|html|model|bind)\b/.test(template)) {
+    return true
+  }
+
   return false
 }
 
