@@ -335,6 +335,44 @@ queries, so an inner section can resolve while an outer one is still pending.
 > the descendant scripts run and register). Suspense queries are client-side, so
 > the fallback shows first on hydration — there's no flash of empty content.
 
+### `<TransitionGroup>`
+
+Animate a keyed list as items are added, removed, and reordered — enter/leave
+transitions plus **FLIP** (smooth position shifts on reorder), without
+hand-rolling `x-class` transition strings.
+
+Wrap a single `:for` (or `x-for`) in `<TransitionGroup>`; its rendered items
+become the wrapper's direct children and the runtime animates them:
+
+```stx
+<TransitionGroup name="card" tag="ul" class="space-y-2">
+  <li :for="r in reviews()" :key="r.id" class="card">{{ r.title }}</li>
+</TransitionGroup>
+```
+
+- `name` (default `v`) — the class prefix.
+- `tag` (default `div`) — the wrapper element.
+
+Provide the transition classes for that name (crosswind utilities or plain CSS):
+
+| Phase | Classes |
+|---|---|
+| enter | `name-enter-from` → `name-enter-active` → `name-enter-to` |
+| leave | `name-leave-from` → `name-leave-active` → `name-leave-to` |
+| move (reorder) | `name-move` (applied to elements that shift position) |
+
+```css
+.card-enter-active, .card-leave-active, .card-move { transition: all .25s ease; }
+.card-enter-from, .card-leave-to { opacity: 0; transform: translateY(8px); }
+```
+
+The first render doesn't animate (only subsequent list changes do). Leaving
+elements stay in the DOM until their transition ends — and every phase has a
+duration-based timeout fallback, so a missed `transitionend` can't strand a node.
+
+> Use `<TransitionGroup>` for *lists*. For a single element toggled by `:if` /
+> `:show`, use `<Transition>` (from `@stacksjs/components`).
+
 ### useLocalStorage
 
 ```typescript

@@ -18,6 +18,7 @@ export { StxDrawerBuiltin } from './drawer'
 export { IconBuiltin, preloadIconCollection } from './icon'
 export { getTooltipRuntime } from './tooltip'
 export { SuspenseBuiltin } from './suspense'
+export { TransitionGroupBuiltin } from './transition-group'
 
 import { registry } from '../component-registry'
 import { StxLinkBuiltin } from './stx-link'
@@ -29,6 +30,7 @@ import { StxModalBuiltin } from './modal'
 import { StxDrawerBuiltin } from './drawer'
 import { IconBuiltin } from './icon'
 import { SuspenseBuiltin } from './suspense'
+import { TransitionGroupBuiltin } from './transition-group'
 
 /**
  * Register all builtin components with the singleton registry.
@@ -44,4 +46,5 @@ export function registerBuiltins(): void {
   registry.registerBuiltin(StxDrawerBuiltin)
   registry.registerBuiltin(IconBuiltin)
   registry.registerBuiltin(SuspenseBuiltin)
+  registry.registerBuiltin(TransitionGroupBuiltin)
 }
