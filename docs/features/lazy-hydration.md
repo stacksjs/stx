@@ -89,3 +89,39 @@ Useful for analytics, performance measurement, or chaining additional work after
 | Typical use | Slow-loading components | Performance optimization for off-screen content |
 
 Use `@async` when you want to skip shipping a component's HTML entirely until needed. Use `stx-hydrate` when the HTML is fine to ship upfront, but interactivity can wait.
+
+## Islands: `client="…"` on components
+
+`stx-hydrate` is the low-level attribute. For a **component**, the ergonomic form
+is the `client="…"` directive on the tag — it defers that component's hydration
+to the given trigger (it compiles down to `stx-hydrate` on the component's scope
+wrapper). This is the per-component half of the islands model (see
+[the islands proposal](/proposals/islands-streaming) — tracking
+[#1746](https://github.com/stacksjs/stx/issues/1746)).
+
+```stx
+<BenchHeader client="load" />                     <!-- eager (the default) -->
+<CommentsList client="visible" />                 <!-- hydrate when scrolled into view -->
+<LikeButton client="idle" />                      <!-- hydrate during idle time -->
+<SearchBox client="media:(min-width: 768px)" />   <!-- hydrate when the query matches -->
+```
+
+| Value | Behaviour |
+|---|---|
+| `load` | Eager — hydrates at page load (same as omitting `client`). |
+| `visible` | Hydrate when the component scrolls into the viewport. |
+| `idle` | Hydrate during the browser's idle time. |
+| `interaction` | Hydrate on first `mouseenter` / `click` / `focusin` / `touchstart`. |
+| `media:<query>` | Hydrate when the media query first matches. |
+
+The component's **HTML still ships and renders** immediately; what's deferred is
+the reactive wire-up (`processElement`) — the expensive main-thread work — until
+the trigger fires. `client="…"` is **opt-in**: a component without it behaves
+exactly as before. It only applies to interactive components (those with a
+`<script client>` scope); on a static component it's a harmless no-op.
+
+> **Scope of this phase.** Today `client="…"` defers the *hydration work*. It does
+> not yet suppress the component's bytes (its scope script + the runtime still
+> ship), and `onMount` currently fires at page load rather than on the trigger.
+> Byte-level suppression (server-only components shipping zero JS) and
+> trigger-timed `onMount` are the next increments on #1746.

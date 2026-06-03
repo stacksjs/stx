@@ -515,6 +515,17 @@ export async function userComponentFileExists(
   return false
 }
 
+/**
+ * Whether a `client="..."` value is a deferring island trigger (#1746).
+ * Mirrors the stx-hydrate runtime triggers; `load` (eager) is handled separately.
+ */
+export function isHydrateTrigger(trigger: string): boolean {
+  return trigger === 'visible'
+    || trigger === 'idle'
+    || trigger === 'interaction'
+    || trigger.startsWith('media:')
+}
+
 export async function renderComponentWithSlot(
   componentPath: string,
   props: Record<string, unknown>,
@@ -542,6 +553,18 @@ export async function renderComponentWithSlot(
   // only nested (recursive) usages within this component's own subtree
   const branchComponents = new Set(components)
   branchComponents.add(componentPath)
+
+  // Islands (#1746 Phase 1): a `client="visible|idle|interaction|media:<query>"`
+  // attribute on the component tag DEFERS this component's hydration to that
+  // trigger, reusing the stx-hydrate lazy-hydration runtime — its reactive
+  // binding (processElement) is held back until the trigger fires instead of
+  // running eagerly at page load. `client="load"` is the eager default (no-op).
+  // The directive is consumed HERE: removed from props so it is neither passed
+  // to the component (defineProps) nor serialized into data-stx-props.
+  const clientAttr = typeof props.client === 'string' ? props.client.trim() : ''
+  if ('client' in props)
+    delete props.client
+  const hydrateTrigger = (clientAttr && clientAttr !== 'load' && isHydrateTrigger(clientAttr)) ? clientAttr : ''
 
   try {
     // Helper: convert kebab-case to PascalCase
@@ -968,7 +991,8 @@ export async function renderComponentWithSlot(
           // Skip props serialization if circular references or other JSON errors
         }
       }
-      output = `<div data-stx-scope="${scopeId}"${propsJson}>${result}</div>`
+      const hydrateJson = hydrateTrigger ? ` stx-hydrate="${escapeAttr(hydrateTrigger)}"` : ''
+      output = `<div data-stx-scope="${scopeId}"${propsJson}${hydrateJson}>${result}</div>`
 
       // Modify client scripts to register variables in this scope
       const scopedScripts = clientScripts.map(script => {
