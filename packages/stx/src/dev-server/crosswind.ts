@@ -651,20 +651,40 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
  * Tries to inject before </head>, falls back to <body> or prepends
  */
 export async function injectCrosswindCSS(htmlContent: string, appDir?: string): Promise<string> {
-  // Skip if Crosswind CSS already injected (prevents duplicate Preflight resets
-  // from recursive processDirectives calls via layout resolution)
-  if (htmlContent.includes('data-crosswind="generated"')) {
-    return htmlContent
-  }
-
+  // Generate CSS for ALL utility classes in the (possibly shell-composed)
+  // content. We must NOT early-return just because a `data-crosswind="generated"`
+  // style already exists: when a page is composed into a pre-processed app shell,
+  // the shell already carries a generated style covering the SHELL's classes
+  // only (its nav/layout used e.g. `gap-4`). Early-returning there drops the
+  // page's own utilities — `.grid` / `.grid-cols-*` never get emitted, so the
+  // page lays out as `display:block`. Instead we regenerate from the full
+  // content and REPLACE the existing style, so the single emitted stylesheet
+  // covers the union of shell + page classes — with exactly one Preflight reset.
+  // See stacksjs/stx#1749.
   const css = await generateCrosswindCSS(htmlContent, appDir)
 
   if (!css) {
+    // Nothing to emit (no classes, or crosswind unavailable). Leave any existing
+    // generated style in place rather than stripping it.
     return htmlContent
   }
 
   // Create a style tag with the generated CSS
   const styleTag = `<style data-crosswind="generated">\n${css}\n</style>`
+
+  // If one or more generated styles already exist (e.g. from the composed
+  // shell, or a recursive layout render), replace the first with the complete
+  // one and drop any duplicates — keeping a single Preflight reset.
+  const existing = /<style data-crosswind="generated">[\s\S]*?<\/style>/g
+  if (existing.test(htmlContent)) {
+    let placed = false
+    return htmlContent.replace(existing, () => {
+      if (placed)
+        return ''
+      placed = true
+      return styleTag
+    })
+  }
 
   // Try to inject before </head>
   if (htmlContent.includes('</head>')) {
