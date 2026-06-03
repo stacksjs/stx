@@ -837,6 +837,7 @@ finally {
     const data = state(options.initialData ?? null);
     const loading = state(true);
     const error = state(null);
+    if (options.suspense) registerSuspense(loading, error);
 
     const fetchData = async () => {
       loading.set(true);
@@ -1018,6 +1019,23 @@ else {
 
   var _queryCache = {};
 
+  // Suspense registry (#1742). A query created with { suspense: true } pushes
+  // { el, loading, error } here at creation time (which runs during partial-scope
+  // script execution, BEFORE the <Suspense> boundary inits on content-load).
+  // Each boundary then CLAIMS the descendant entries for which it is the nearest
+  // [data-stx-suspense] ancestor, and aggregates their loading/error signals.
+  // Kept on the window (one registry per page) rather than a per-instance
+  // closure so a boundary and the queries it claims agree even if the page
+  // somehow has more than one runtime instance (e.g. across test files).
+  function suspenseRegistry() {
+    if (typeof window === 'undefined') return [];
+    return window.__stx_suspense_registry || (window.__stx_suspense_registry = []);
+  }
+  function registerSuspense(loading, error) {
+    var el = (typeof window !== 'undefined' && window.__STX_CURRENT_ELEMENT__) || null;
+    suspenseRegistry().push({ el: el, loading: loading, error: error });
+  }
+
   function useQuery(url, options) {
     options = options || {};
     var staleTime = options.staleTime || 0;
@@ -1027,6 +1045,7 @@ else {
     var loading = state(true);
     var error = state(null);
     var isStale = state(false);
+    if (options.suspense) registerSuspense(loading, error);
 
     var fetchData = async function() {
       var resolvedUrl = typeof url === 'function' ? url() : url;
@@ -1548,6 +1567,13 @@ else if (part) {
     // <stx-link> handling removed — StxLink builtin now produces <a> directly
     // with data-stx-link attribute. The router handles SPA click interception.
 
+    // <Suspense> boundary — coordinate descendant suspense queries (#1742).
+    if (el.hasAttribute('data-stx-suspense') && !el.__stx_suspense_bound) {
+      bindSuspense(el, scope);
+      // bindSuspense processes the content subtree itself; don't double-process.
+      return;
+    }
+
     // Handle @for / :for / x-for first (reactive list)
     if (el.hasAttribute('@for') || el.hasAttribute(':for') || el.hasAttribute('x-for')) {
       var forAttr = el.hasAttribute(':for') ? ':for' : el.hasAttribute('x-for') ? 'x-for' : '@for';
@@ -1835,6 +1861,65 @@ catch (e) {
         processElement(child, scope);
       });
     }
+  }
+
+  // <Suspense> boundary (#1742). Aggregates the loading/error state of every
+  // descendant suspense query (useQuery/useFetch with { suspense: true }) for
+  // which this is the nearest [data-stx-suspense] ancestor, and toggles three
+  // regions accordingly: [data-stx-suspense-fallback] while any query is loading,
+  // [data-stx-suspense-error] when one errors, [data-stx-suspense-content]
+  // once all resolve. With no suspense queries inside, content shows immediately.
+  function bindSuspense(el, scope) {
+    if (el.__stx_suspense_bound) return;
+    el.__stx_suspense_bound = true;
+
+    var fallbackEl = el.querySelector('[data-stx-suspense-fallback]');
+    var errorEl = el.querySelector('[data-stx-suspense-error]');
+    var contentEl = el.querySelector('[data-stx-suspense-content]') || el;
+
+    // Claim the descendant queries this boundary owns. closest() returns the
+    // DEEPEST [data-stx-suspense] ancestor, so nested boundaries don't steal
+    // each other's queries.
+    var claimed = suspenseRegistry().filter(function(entry) {
+      return entry.el && el.contains(entry.el) && entry.el.closest('[data-stx-suspense]') === el;
+    });
+
+    var anyLoading = derived(function() {
+      for (var i = 0; i < claimed.length; i++) {
+        if (claimed[i].loading && claimed[i].loading()) return true;
+      }
+      return false;
+    });
+    var firstError = derived(function() {
+      for (var i = 0; i < claimed.length; i++) {
+        var err = claimed[i].error ? claimed[i].error() : null;
+        if (err) return err;
+      }
+      return null;
+    });
+
+    function setHidden(node, hidden) {
+      if (!node || node === el) return;
+      if (hidden) node.setAttribute('hidden', '');
+      else node.removeAttribute('hidden');
+    }
+
+    effect(function() {
+      var err = firstError();
+      var loading = anyLoading();
+      if (err && errorEl) {
+        setHidden(errorEl, false); setHidden(fallbackEl, true); setHidden(contentEl, true);
+      } else if (loading) {
+        setHidden(fallbackEl, false); setHidden(contentEl, true); setHidden(errorEl, true);
+      } else {
+        setHidden(contentEl, false); setHidden(fallbackEl, true); setHidden(errorEl, true);
+      }
+    });
+
+    // Bind the content subtree (inline :if / {{ }} / @click etc.). Nested
+    // component scopes are still processed independently by the scope loop.
+    var contentRoot = (contentEl === el) ? el : contentEl;
+    Array.from(contentRoot.childNodes).forEach(function(child) { processElement(child, scope); });
   }
 
   function bindShow(el, expr, passedScope = componentScope, attrName = '@show') {
@@ -3859,6 +3944,7 @@ catch (e) {}
     _mountCallbacks: mountCallbacks,
     _destroyCallbacks: destroyCallbacks,
     _cleanupContainer: cleanupContainer,
+    _registerSuspense: registerSuspense,  // <Suspense> query registration (#1742)
     _scopes: {},  // Component-level scopes
     _scopeCounter: 0,  // Counter for generating unique scope IDs during SPA navigation
     _latestSetup: null,  // Latest SFC setup function (for SPA re-initialization)

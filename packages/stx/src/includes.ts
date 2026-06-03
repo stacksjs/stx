@@ -300,7 +300,24 @@ function transformSignalScript(scriptContent: string, scopeId: string): string {
 ${scopeAssign}
   window.stx._scopes['${scopeId}'] = __scopeRegistration;
 `
-  return wrapClientScript(scriptContent, tail)
+  // Set __STX_CURRENT_ELEMENT__ to this scope's root element while the body runs,
+  // so element-aware primitives invoked at partial-scope time — useQuery/useFetch
+  // ({ suspense: true }) registering with the nearest <Suspense> boundary,
+  // defineProps/defineEmits — resolve against the right element (#1742). The
+  // scope element is already in the DOM when this inline script executes. The
+  // try/finally wraps the IIFE call so __STX_CURRENT_ELEMENT__ is always restored.
+  const head = `
+(function() {
+  var __stxScopeEl = (typeof document !== 'undefined') ? document.querySelector('[data-stx-scope="${scopeId}"]') : null;
+  var __stxPrevEl = (typeof window !== 'undefined') ? window.__STX_CURRENT_ELEMENT__ : undefined;
+  if (__stxScopeEl && typeof window !== 'undefined') window.__STX_CURRENT_ELEMENT__ = __stxScopeEl;
+  try {`
+  const foot = `
+  } finally {
+    if (typeof window !== 'undefined') window.__STX_CURRENT_ELEMENT__ = __stxPrevEl;
+  }
+})();`
+  return head + wrapClientScript(scriptContent, tail) + foot
 }
 
 /**

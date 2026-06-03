@@ -288,6 +288,53 @@ append: `useOptimistic(comments, (list, draft) => [...list, draft])`.
 > (`window.stx.useOptimistic`). Implemented in both reactive impls with parity
 > (`signals-api.ts` + the client runtime).
 
+### `<Suspense>` + query suspense mode
+
+`<Suspense>` is a client **loading boundary**: one wrapper handles the loading
+(and error) state of every data-fetching component inside it, replacing the
+three-branch `:if` / `:else-if` / `:else` skeleton pattern.
+
+A descendant opts in by passing `{ suspense: true }` to `useQuery` / `useFetch`.
+The query registers its loading/error with the nearest `<Suspense>` ancestor; the
+boundary shows the `fallback` while **any** descendant query is loading, the
+`error` region if one fails, and the content once they all resolve.
+
+```html
+<!-- CommentsList.stx — a component -->
+<script client>
+  // suspense mode: this query's loading/error feeds the enclosing <Suspense>.
+  const { data: comments } = useQuery('/api/comments', { suspense: true })
+</script>
+<ul>
+  <li :for="c in comments()" :key="c.id" x-text="c.body"></li>
+</ul>
+```
+
+```stx
+<!-- the page -->
+<Suspense fallback="Loading comments…">
+  <CommentsList />
+</Suspense>
+```
+
+Richer fallback / error content can come from named slots instead of the string
+props:
+
+```stx
+<Suspense>
+  <template slot="fallback"><Skeleton count="3" /></template>
+  <template slot="error">Couldn't load comments.</template>
+  <CommentsList />
+</Suspense>
+```
+
+Boundaries **nest** — an inner `<Suspense>` claims only its own descendant
+queries, so an inner section can resolve while an outer one is still pending.
+
+> The content is rendered into the DOM but hidden until the queries settle (so
+> the descendant scripts run and register). Suspense queries are client-side, so
+> the fallback shows first on hydration — there's no flash of empty content.
+
 ### useLocalStorage
 
 ```typescript
