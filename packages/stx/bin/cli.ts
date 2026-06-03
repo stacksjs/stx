@@ -26,6 +26,7 @@
  * ### Utilities
  * - `stx iconify <command>` - Generate Iconify icon packages
  * - `stx perf [command...]` - Show performance statistics
+ * - `stx doctor` - Diagnose the framework-runtime resolution + staleness chain
  * - `stx version` - Show CLI version
  *
  * ## Examples
@@ -64,6 +65,7 @@ import { performanceMonitor } from '../src/performance-utils'
 import { formatMarkdownContent, formatStxContent } from '../src/formatter'
 import { analyzeProject } from '../src/analyzer'
 import { generateStaticSite } from '../src/ssg'
+import { formatDoctorReport, runDoctor } from '../src/doctor'
 
 const cli = new CLI('stx')
 
@@ -1672,6 +1674,42 @@ catch (error) {
     })
 
   cli
+    .command('doctor', 'Diagnose the stx framework-runtime resolution + staleness chain')
+    .option('--json', 'Output the report as JSON')
+    .example('stx doctor')
+    .example('stx doctor --json')
+    .action(async (options: { json?: boolean }) => {
+      try {
+        // The runtime-length sanity check is optional — lazy-load the heavy
+        // signals module so `stx doctor` stays fast if it's unavailable.
+        let generateRuntime: (() => string) | undefined
+        try {
+          const signals = await import('../src/signals')
+          generateRuntime = signals.generateSignalsRuntime
+        }
+        catch {
+          generateRuntime = undefined
+        }
+
+        const report = await runDoctor({ generateRuntime })
+
+        if (options.json) {
+          console.log(JSON.stringify(report, null, 2))
+        }
+        else {
+          console.log(formatDoctorReport(report))
+        }
+
+        if (!report.ok)
+          process.exit(1)
+      }
+      catch (error) {
+        console.error('Error running doctor:', error)
+        process.exit(1)
+      }
+    })
+
+  cli
     .command('debug <file>', 'Debug STX template processing step by step')
     .option('--step', 'Step through processing stages interactively')
     .option('--verbose', 'Show detailed processing information')
@@ -2578,7 +2616,7 @@ else {
   // Check for unknown commands and provide suggestions
   const knownCommands = [
     'docs', 'iconify', 'dev', 'a11y', 'build', 'start', 'build:native', 'compile', 'test', 'init', 'new',
-    'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version', 'deploy',
+    'format', 'perf', 'debug', 'doctor', 'status', 'watch', 'analyze', 'version', 'deploy',
     'interactive', 'i', 'story', 'story:build', 'story:test'
   ]
 

@@ -567,6 +567,10 @@ stx iconify generate <collection>
 
 # Serve templates
 stx serve <directory> [--port 3000]
+
+# Diagnose framework-runtime resolution + staleness (pantry dist freshness,
+# node_modules symlink, runtime length). Exits 1 if a layer is stale.
+stx doctor [--json]
 ```
 
 ## Important Implementation Notes

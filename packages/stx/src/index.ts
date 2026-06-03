@@ -142,6 +142,8 @@ export type { StxPlugin, PluginContext, PluginSetupContext } from './plugin-syst
 // These modules are exported first to establish their types
 export * from './render'
 export { generateCrosswindCSS, injectCrosswindCSS, extractClassNames } from './dev-server/crosswind'
+export { runDoctor, formatDoctorReport, findPantryPackage } from './doctor'
+export type { DoctorCheck, DoctorReport, DoctorOptions, CheckStatus } from './doctor'
 export {
   applyTranslations,
   buildAlternateLinks,

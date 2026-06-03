@@ -351,6 +351,25 @@ stx docs:generate
 ### Maintenance Commands
 
 ```bash
+# Diagnose the framework-runtime resolution + staleness chain
+stx doctor
+stx doctor --json
+```
+
+`stx doctor` inspects each layer a framework-source edit must cross before it
+reaches the browser and reports which one is stale, with the command to fix it:
+
+- where `@stacksjs/stx` / `bun-plugin-stx` resolve from
+- in a pantry setup, whether `pantry/@stacksjs/stx/dist` was rebuilt after its
+  `src` (a stale dist means your edit isn't built)
+- whether `node_modules/@stacksjs/stx` is symlinked to the pantry
+- the generated signals-runtime length (a sanity check)
+
+It exits non-zero when a layer is stale, so it can gate CI or a pre-dev check.
+The dev server already invalidates the framework runtime cache on source edits;
+`doctor` covers the layers a watcher can't (build freshness, resolution).
+
+```bash
 # Enter maintenance mode
 stx down
 
