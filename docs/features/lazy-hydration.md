@@ -132,14 +132,44 @@ So `<CommentsList client="visible">` ships its rendered HTML up front, but doesn
 create signals, run effects, *or* fire its data-loading `fetch` until it scrolls
 into view — the whole island is dormant until then.
 
-> **Scope of this phase.** `client="…"` now defers the component's full
-> client-side *execution* (wire-up, setup script, `onMount`). It does not yet
-> suppress the inert script's *download* — its bytes still ship inline in the
-> HTML, and the shared runtime still loads. Moving each island into a
-> separately-fetched chunk (per-island production chunking) so the bytes arrive
-> only on the trigger is the next increment on
-> [#1746](https://github.com/stacksjs/stx/issues/1746).
+### Per-island chunking (production)
+
+By default a deferred island's setup script still ships **inline** (inert), so its
+*bytes* arrive with the page even though they only run on the trigger. For a
+production build you can move each island's setup into a **separately-fetched
+chunk** so the bytes arrive only when the island hydrates:
+
+```ts
+// build script
+import { generateStaticSite } from 'stx'
+
+await generateStaticSite({
+  pagesDir: 'pages',
+  outputDir: 'dist',
+  chunkIslands: true, // opt-in
+})
+```
+
+With `chunkIslands: true`, the build lifts each island's IIFE into a
+content-hashed file under `dist/_stx/islands/<hash>.js` and rewrites the tag to
+reference it (`data-stx-src="/_stx/islands/<hash>.js"`, empty body). On the
+trigger the runtime loads that chunk via a real `<script src>` — so the island's
+JS isn't downloaded until it's needed, and identical islands across pages share
+one immutable, content-addressed file.
+
+- **Opt-in & inert by default** — `chunkIslands` defaults to `false`; existing
+  builds are byte-identical. Dev/SSR always stay inline (no stable build phase to
+  emit chunks into, and bytes are local anyway).
+- **CSP-clean** — the chunked path uses `<script src>`, **no `eval`/`new
+  Function`**, so `script-src 'self'` is sufficient for chunked islands.
+
+> **Scope of this phase.** `client="…"` defers the component's full client-side
+> *execution* (wire-up, setup script, `onMount`), and `chunkIslands: true` now
+> defers the *download* too. Still inline: the shared signals runtime, and
+> dev/SSR islands.
 >
-> ⚠️ Executing the deferred setup uses `new Function(...)`, so a strict
-> `script-src` CSP without `'unsafe-eval'` will block island hydration. Eager
-> (`client="load"` / no `client`) components are unaffected.
+> ⚠️ The **inline** path (dev, SSR, or `chunkIslands: false`) executes the
+> deferred setup via `new Function(...)`, so a strict `script-src` CSP without
+> `'unsafe-eval'` blocks island hydration there — use `chunkIslands: true` for a
+> CSP-clean production build. Eager (`client="load"` / no `client`) components
+> are unaffected either way.

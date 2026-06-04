@@ -1402,38 +1402,59 @@ catch (e) {
       el.__stx_hydration_cancel = null; // trigger consumed — nothing left to cancel
       el.removeAttribute('stx-hydrate');
       var sid = el.getAttribute && el.getAttribute('data-stx-scope');
-      var effectiveScope = scope;
-      // Island (#1746): the component's setup script was emitted inert
-      // (type="stx/island") so the browser skipped it at parse. Execute it now —
-      // it registers the scope (signals + methods) AND runs any side-effectful
-      // setup (e.g. a fetch in the <script client> body) at hydration time,
-      // not at page load. Non-island stx-hydrate subtrees have no such script,
-      // so this is a no-op for them (effectiveScope stays the captured scope).
-      if (sid) {
-        var islandScript = document.querySelector('script[data-stx-island="' + sid + '"]');
-        if (islandScript && !islandScript.__stx_ran) {
-          islandScript.__stx_ran = true;
-          // eslint-disable-next-line no-new-func
-          try { (new Function(islandScript.textContent))(); }
-          catch (e) { console.error('[stx] island setup error:', sid, e); }
+
+      // Everything downstream of the island setup running: merge the now-
+      // registered scope, bind the subtree, flush onMount, announce hydration.
+      // Factored out so the async chunked path can run it from a <script> load
+      // event while the inline path runs it synchronously (#1746).
+      var finishHydrate = function() {
+        var effectiveScope = scope;
+        if (sid) {
+          var reg = window.stx._scopes ? window.stx._scopes[sid] : null;
+          if (reg) effectiveScope = Object.assign({}, scope || {}, reg);
         }
-        var reg = window.stx._scopes ? window.stx._scopes[sid] : null;
-        if (reg) effectiveScope = Object.assign({}, scope || {}, reg);
+        // Walk children and process them with the (now scope-merged) context
+        Array.from(el.children).forEach(function(child) { processElement(child, effectiveScope); });
+        // Also process the element itself (attributes/bindings on the host)
+        processAttributesOnly(el, effectiveScope);
+        // Fire this scope's onMount now that it has actually hydrated — the
+        // initial mount pass deferred it for stx-hydrate scopes so onMount lands
+        // on hydration, not at page load (#1746). Guarded by __mounted so it
+        // never double-fires with the eager path.
+        var sv = sid && window.stx._scopes ? window.stx._scopes[sid] : null;
+        if (sv && sv.__mountCallbacks && !sv.__mounted) {
+          sv.__mounted = true;
+          sv.__mountCallbacks.forEach(function(fn) { try { fn(); } catch (e) { console.error('[stx] onMount error:', e); } });
+        }
+        window.dispatchEvent(new CustomEvent('stx:hydrated', { detail: { el: el, trigger: trigger } }));
+      };
+
+      // Island (#1746): the component's setup script was emitted inert
+      // (type="stx/island") so the browser skipped it at parse. Run it now — it
+      // registers the scope (signals + methods) AND runs any side-effectful
+      // setup (e.g. a fetch in the <script client> body) at hydration time.
+      var islandScript = sid ? document.querySelector('script[data-stx-island="' + sid + '"]') : null;
+      if (islandScript && !islandScript.__stx_ran) {
+        islandScript.__stx_ran = true;
+        var chunkSrc = islandScript.getAttribute && islandScript.getAttribute('data-stx-src');
+        if (chunkSrc) {
+          // Chunked island (production build): the IIFE lives in a separate
+          // file fetched only now. Load it via a real <script src> (CSP-clean —
+          // no eval/new Function) and defer ALL downstream work to its load
+          // event, since the scope isn't registered until the chunk executes.
+          var s = document.createElement('script');
+          s.src = chunkSrc;
+          s.onload = finishHydrate;
+          s.onerror = function() { console.error('[stx] island chunk load failed:', sid, chunkSrc); finishHydrate(); };
+          document.head.appendChild(s);
+          return; // finishHydrate runs from the chunk's load event
+        }
+        // Inline island (dev / SSR / chunking off): execute synchronously.
+        // eslint-disable-next-line no-new-func
+        try { (new Function(islandScript.textContent))(); }
+        catch (e) { console.error('[stx] island setup error:', sid, e); }
       }
-      // Walk children and process them with the (now scope-merged) context
-      Array.from(el.children).forEach(function(child) { processElement(child, effectiveScope); });
-      // Also process the element itself (attributes/bindings on the host)
-      processAttributesOnly(el, effectiveScope);
-      // Fire this scope's onMount now that it has actually hydrated — the
-      // initial mount pass deferred it for stx-hydrate scopes so onMount lands on
-      // hydration, not at page load (#1746). Guarded by __mounted so it never
-      // double-fires with the eager path.
-      var sv = sid && window.stx._scopes ? window.stx._scopes[sid] : null;
-      if (sv && sv.__mountCallbacks && !sv.__mounted) {
-        sv.__mounted = true;
-        sv.__mountCallbacks.forEach(function(fn) { try { fn(); } catch (e) { console.error('[stx] onMount error:', e); } });
-      }
-      window.dispatchEvent(new CustomEvent('stx:hydrated', { detail: { el: el, trigger: trigger } }));
+      finishHydrate();
     };
 
     // Record how to cancel a still-pending trigger so SPA navigation can tear it

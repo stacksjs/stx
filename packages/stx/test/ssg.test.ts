@@ -456,4 +456,52 @@ No frontmatter here.
       expect(second.cachedCount).toBe(1)
     })
   })
+
+  describe('island chunking (#1746)', () => {
+    // A page using an interactive component with client="visible" → the build
+    // emits an inline island setup script the runtime runs on the trigger.
+    async function setupIslandFixture() {
+      await fs.promises.mkdir(path.join(pagesDir, 'components'), { recursive: true })
+      await Bun.write(
+        path.join(pagesDir, 'components', 'Counter.stx'),
+        '<script client>\nconst count = state(0)\n</script>\n<button @click="count.set(count() + 1)" x-text="count"></button>\n',
+      )
+      await Bun.write(
+        path.join(pagesDir, 'index.stx'),
+        '<html><body><h1>Home</h1><Counter client="visible" /></body></html>',
+      )
+    }
+
+    const islandRe = /type="stx\/island"[^>]*>\s*\(function/
+
+    it('flag OFF (default): islands stay inline, no chunk dir written', async () => {
+      await setupIslandFixture()
+      await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true })
+
+      const html = await Bun.file(path.join(outputDir, 'index.html')).text()
+      expect(html).toMatch(islandRe) // inline IIFE present
+      // The island tag itself carries no chunk reference (the runtime source
+      // mentions the attribute name, so scope the check to the tag).
+      expect(html).not.toMatch(/type="stx\/island"[^>]*data-stx-src/)
+      expect(fs.existsSync(path.join(outputDir, '_stx', 'islands'))).toBe(false)
+    })
+
+    it('flag ON: island IIFE moves to a content-hashed chunk the tag references', async () => {
+      await setupIslandFixture()
+      await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true } as any)
+
+      const html = await Bun.file(path.join(outputDir, 'index.html')).text()
+      // Tag now references a chunk and the inline IIFE is gone from the page.
+      expect(html).toContain('data-stx-src="/_stx/islands/')
+      expect(html).not.toMatch(islandRe)
+
+      // The referenced chunk exists on disk and holds the island IIFE.
+      const m = html.match(/data-stx-src="\/_stx\/islands\/([^"]+)\.js"/)
+      expect(m).toBeTruthy()
+      const chunkPath = path.join(outputDir, '_stx', 'islands', `${m![1]}.js`)
+      expect(fs.existsSync(chunkPath)).toBe(true)
+      const chunk = await Bun.file(chunkPath).text()
+      expect(chunk).toContain('(function')
+    })
+  })
 })

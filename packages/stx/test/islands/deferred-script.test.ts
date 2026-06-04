@@ -108,6 +108,63 @@ describe('island deferred setup script (#1746)', () => {
     expect(window.stx._scopes.isleS).toBeUndefined()
   })
 
+  it('chunked island (data-stx-src): loads via <script src> and finishes on load, not before', async () => {
+    window.__chunkMounts = 0
+    const sid = 'isleChunk'
+    delete window.stx._scopes[sid]
+
+    // Intercept the chunk <script src> append and simulate the fetch+exec:
+    // register the scope + fire onload only when WE choose, to prove
+    // finishHydrate is deferred to the load event (not run on the trigger).
+    const origAppend = document.head.appendChild.bind(document.head)
+    let appendedSrc = ''
+    let triggerLoad: (() => void) | null = null
+    document.head.appendChild = (node: any) => {
+      const src = String((node && (node.src || (node.getAttribute && node.getAttribute('src')))) || '')
+      if (node && node.tagName === 'SCRIPT' && src.includes('/_stx/islands/')) {
+        appendedSrc = src
+        triggerLoad = () => {
+          window.stx._scopes[sid] = {
+            greeting: window.stx.state('hi'),
+            __mountCallbacks: [() => { window.__chunkMounts++ }],
+          }
+          node.onload()
+        }
+        return node // do NOT really append/fetch
+      }
+      return origAppend(node)
+    }
+
+    try {
+      document.body.innerHTML
+        = `<script type="stx/island" data-stx-island="${sid}" data-stx-src="/_stx/islands/abc.js" data-stx-scoped></script>`
+        + `<section data-stx-scope="${sid}" stx-hydrate="interaction"><span class="g" x-text="greeting"></span></section>`
+      shimAttributes(document.body)
+
+      document.dispatchEvent(new window.Event('DOMContentLoaded'))
+      await flushEffects()
+      document.querySelector(`[data-stx-scope="${sid}"]`).dispatchEvent(new window.Event('click'))
+      await flushEffects()
+
+      // The chunk <script src> was appended, but nothing downstream has run yet:
+      // scope unregistered, onMount not fired, binding not applied.
+      expect(appendedSrc).toContain('/_stx/islands/abc.js')
+      expect(window.stx._scopes[sid]).toBeUndefined()
+      expect(window.__chunkMounts).toBe(0)
+      expect(document.querySelector('.g').textContent).not.toBe('hi')
+
+      // Chunk "loads" → finishHydrate runs: scope merged, bound, onMount fired.
+      triggerLoad!()
+      await flushEffects()
+      expect(window.stx._scopes[sid]).toBeDefined()
+      expect(window.__chunkMounts).toBe(1)
+      expect(document.querySelector('.g').textContent).toBe('hi')
+    }
+    finally {
+      document.head.appendChild = origAppend
+    }
+  })
+
   it('does not eval anything for a plain (non-island) stx-hydrate subtree', async () => {
     // Pre-registered scope, no data-stx-island script → run() must not try to
     // eval; it binds with the captured scope exactly as before.

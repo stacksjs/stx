@@ -118,13 +118,19 @@ while suppressing its scope/runtime.
 > **setup script is emitted inert** (`<script type="stx/island">`) and the
 > runtime **executes it only on the trigger** — so side-effectful setup (a
 > `fetch` in the `<script client>` body) runs when the island hydrates, not at
-> load. Opt-in, zero blast radius. The inert→trigger execution currently runs the
-> deferred setup via `new Function` (so a strict `script-src` CSP without
-> `'unsafe-eval'` blocks island hydration). **Still to do in this phase:**
-> download-level suppression — the inert script's *bytes* still ship inline;
-> moving each island into a separately-loaded chunk fetched as a real
-> `<script src>` on the trigger (per-island production chunking) is the remaining
-> win, and it also removes the `new Function`/CSP constraint. See
+> load. Opt-in, zero blast radius.
+>
+> **Download-level suppression shipped (first slice).** `generateStaticSite({
+> chunkIslands: true })` now lifts each island's inline IIFE into a
+> content-hashed chunk under `dist/_stx/islands/<hash>.js` (pure emitter:
+> `island-chunking.ts` `extractIslandChunks`; written from the SSG per-page hook)
+> and rewrites the tag to `data-stx-src="…"` with an empty body. The runtime
+> (`deferHydration.run()`) loads a chunked island via a real `<script src>` on
+> the trigger — CSP-clean (no `new Function`), async-correct (a `finishHydrate`
+> closure runs from the script's `load` event). Flag defaults **off** → builds
+> are byte-identical; dev/SSR stay inline. **Still to do in this phase:**
+> cross-build dedup manifest, a dev-server chunk endpoint, SPA-nav chunk cache,
+> `modulepreload` hints, and SRI/`integrity` for full CSP hardening. See
 > [docs](/features/lazy-hydration).
 
 **Goal:** `<CommentsList client="visible" />` ships HTML now, hydrates on trigger.

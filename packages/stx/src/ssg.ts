@@ -49,6 +49,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createRouter, type Route } from './router'
 import { processDirectives, injectRouterScript } from './process'
+import { extractIslandChunks } from './island-chunking'
 import { loadStxConfig } from './config'
 import { injectCrosswindCSS } from './dev-server/crosswind'
 import {
@@ -99,6 +100,13 @@ export interface SSGConfig {
   trailingSlash?: boolean
   /** Clean output directory before build */
   cleanOutput?: boolean
+  /**
+   * Per-island chunking (#1746): lift each `client="<trigger>"` island's inline
+   * setup script into a content-hashed chunk under `_stx/islands/` that the
+   * runtime fetches only on the hydration trigger. Default `false` (opt-in) —
+   * when off, builds are byte-identical and islands stay inline.
+   */
+  chunkIslands?: boolean
 }
 
 export interface RSSConfig {
@@ -859,6 +867,9 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     publicDir: options.publicDir || 'public',
     trailingSlash: options.trailingSlash ?? false,
     cleanOutput: options.cleanOutput ?? true,
+    // Strict opt-in: only an explicit `true` enables chunking, so NODE_ENV
+    // never auto-flips it and every existing pipeline stays byte-identical.
+    chunkIslands: options.chunkIslands === true,
   }
 
   const result: SSGResult = {
@@ -1062,6 +1073,27 @@ else {
             outputPath = url === '/'
               ? path.join(cfg.outputDir, 'index.html')
               : path.join(cfg.outputDir, `${url}.html`)
+          }
+
+          // Per-island chunking (#1746): when opted in, lift each island's
+          // inline setup IIFE into a content-hashed chunk under _stx/islands/
+          // and rewrite the page to reference it (fetched on the trigger). Runs
+          // before the single write so the page is emitted once in final form;
+          // a no-op (and no chunk dir) for pages without island components.
+          if (cfg.chunkIslands) {
+            const { html: chunkedHtml, chunks } = extractIslandChunks(html)
+            if (chunks.length > 0) {
+              const islandsDir = path.join(cfg.outputDir, '_stx', 'islands')
+              await fs.promises.mkdir(islandsDir, { recursive: true })
+              for (const chunk of chunks) {
+                const chunkPath = path.join(islandsDir, `${chunk.hash}.js`)
+                // Content-addressed → identical chunks across pages collide to
+                // one file; skip the write if it already exists (idempotent).
+                if (!(await Bun.file(chunkPath).exists()))
+                  await Bun.write(chunkPath, chunk.code)
+              }
+              html = chunkedHtml
+            }
           }
 
           // Write file
