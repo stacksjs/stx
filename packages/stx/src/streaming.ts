@@ -375,6 +375,78 @@ window.__stxSuspense.resolve('${name}', '<div class="stx-error">Error loading co
 }
 
 /**
+ * Client receiver for streamed boundaries. Emitted once, right after the shell:
+ * defines `window.__stxSuspense.resolve(id, html)`, which swaps the boundary's
+ * fallback placeholder (`[data-suspense="id"]`) for the streamed content.
+ * Idempotent (`|| { … }`) so multiple streamed renders on one document — or a
+ * re-run after SPA nav — don't clobber an in-flight receiver.
+ */
+export const SUSPENSE_RESOLVER_RUNTIME: string = `
+<script>
+(function(){
+  window.__stxSuspense = window.__stxSuspense || {
+    resolve: function(name, content){
+      var el = document.querySelector('[data-suspense="' + name + '"]');
+      if (!el) return;
+      var t = document.createElement('template');
+      t.innerHTML = content;
+      el.replaceWith(t.content);
+    }
+  };
+})();
+</script>`
+
+/** A deferred streaming boundary: its `render` does the server-side async work. */
+export interface StreamBoundary {
+  /** Boundary id — matches the `data-suspense="<id>"` placeholder in the shell. */
+  id: string
+  /**
+   * Server-side async render for this boundary: fetch + render, resolving to the
+   * final HTML. Runs AFTER the shell has been flushed, so the slow data work
+   * here doesn't block first paint.
+   */
+  render: () => Promise<string>
+}
+
+/**
+ * Render a streaming-SSR page (#1746 Phase 3). Flushes the shell — which carries
+ * each boundary's fallback in a `[data-suspense="<id>"]` placeholder — to the
+ * browser immediately, then streams each boundary's HTML as its server-side
+ * async `render()` resolves, in completion order. The browser paints the shell
+ * at once and each slow region swaps in when its data is ready.
+ *
+ * Per-boundary errors are isolated (`buildSuspenseResolveScript` emits an error
+ * UI into that boundary instead of failing the whole stream). Pair with
+ * `streamToResponse` to get a chunked HTTP `Response`.
+ */
+export function renderStreamingPage(
+  shellHtml: string,
+  boundaries: StreamBoundary[] = [],
+): ReadableStream<string> {
+  return new ReadableStream<string>({
+    async start(controller) {
+      try {
+        // 1. Shell (with fallback placeholders) — flush immediately.
+        controller.enqueue(shellHtml)
+        if (boundaries.length > 0) {
+          // 2. The client receiver, once.
+          controller.enqueue(SUSPENSE_RESOLVER_RUNTIME)
+          // 3. Each boundary streams independently, in resolution order — a slow
+          //    one doesn't hold back a fast one.
+          await Promise.all(boundaries.map(async (boundary) => {
+            controller.enqueue(await buildSuspenseResolveScript(boundary.id, boundary.render()))
+          }))
+        }
+        controller.close()
+      }
+      catch (error: unknown) {
+        controller.error(error)
+      }
+    },
+  })
+}
+
+/**
  * Stream a template with data (simple version without suspense).
  * Returns full content in chunks based on buffer size.
  *
