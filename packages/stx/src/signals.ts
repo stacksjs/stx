@@ -1404,6 +1404,16 @@ catch (e) {
       Array.from(el.children).forEach(function(child) { processElement(child, scope); });
       // Also process the element itself (attributes/bindings on the host)
       processAttributesOnly(el, scope);
+      // Fire this scope's onMount now that it has actually hydrated — the
+      // initial mount pass deferred it for stx-hydrate scopes so onMount lands on
+      // hydration, not at page load (#1746). Guarded by __mounted so it never
+      // double-fires with the eager path.
+      var sid = el.getAttribute && el.getAttribute('data-stx-scope');
+      var sv = sid && window.stx._scopes ? window.stx._scopes[sid] : null;
+      if (sv && sv.__mountCallbacks && !sv.__mounted) {
+        sv.__mounted = true;
+        sv.__mountCallbacks.forEach(function(fn) { try { fn(); } catch (e) { console.error('[stx] onMount error:', e); } });
+      }
       window.dispatchEvent(new CustomEvent('stx:hydrated', { detail: { el: el, trigger: trigger } }));
     };
 
@@ -4556,8 +4566,13 @@ else {
       el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
 
       // Run scope-specific mount callbacks (mark mounted so _handleStxLoad
-      // doesn't re-fire onMount on persistent layout scopes — see #1697)
-      if (scopeVars && scopeVars.__mountCallbacks && !scopeVars.__mounted) {
+      // doesn't re-fire onMount on persistent layout scopes — see #1697).
+      // EXCEPT when this scope's hydration is deferred (stx-hydrate, e.g. a
+      // client=visible|idle island, #1746): processElement above only SCHEDULED
+      // the work, so onMount must fire when the trigger actually hydrates the
+      // scope, not now. deferHydration's run() flushes it then.
+      var scopeDeferred = el.hasAttribute && el.hasAttribute('stx-hydrate') && !el.__stx_hydrated;
+      if (scopeVars && scopeVars.__mountCallbacks && !scopeVars.__mounted && !scopeDeferred) {
         scopeVars.__mounted = true;
         scopeVars.__mountCallbacks.forEach(fn => fn());
       }

@@ -120,8 +120,12 @@ the trigger fires. `client="…"` is **opt-in**: a component without it behaves
 exactly as before. It only applies to interactive components (those with a
 `<script client>` scope); on a static component it's a harmless no-op.
 
-> **Scope of this phase.** Today `client="…"` defers the *hydration work*. It does
-> not yet suppress the component's bytes (its scope script + the runtime still
-> ship), and `onMount` currently fires at page load rather than on the trigger.
-> Byte-level suppression (server-only components shipping zero JS) and
-> trigger-timed `onMount` are the next increments on #1746.
+A deferred component's `onMount` fires when it **hydrates** (on the trigger), not
+at page load — so setup work in `onMount` runs after the component is wired up,
+at the right time.
+
+> **Scope of this phase.** Today `client="…"` defers the *hydration work* (the
+> reactive wire-up + `onMount`). It does not yet suppress the component's bytes —
+> its scope script + the runtime still ship. Byte-level suppression (server-only
+> components shipping zero JS, via per-island chunks) is the next increment on
+> [#1746](https://github.com/stacksjs/stx/issues/1746).
