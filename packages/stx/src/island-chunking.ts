@@ -45,6 +45,30 @@ export interface ExtractIslandChunksOptions {
    * and the island silently won't hydrate.
    */
   integrity?: boolean
+  /**
+   * Minify each chunk's JS (whitespace only) before hashing/writing, so the
+   * lazily-loaded bytes aren't padded with source whitespace. Default `false`;
+   * the SSG passes its `minify` flag. Hashing happens over the minified bytes,
+   * so the content hash + SRI always match what's served.
+   */
+  minify?: boolean
+}
+
+/**
+ * Whitespace-minify a chunk's JS, mirroring the signals-runtime minification:
+ * `Bun.Transpiler` (whitespace only — never identifier/syntax, to stay safe)
+ * plus the ASI fix that re-inserts semicolons at `}var`/`}function` boundaries
+ * browsers in strict mode reject once newlines are stripped. Falls back to the
+ * original source if transpilation fails (correct, just larger).
+ */
+function minifyChunk(code: string): string {
+  try {
+    const transpiler = new Bun.Transpiler({ loader: 'js', minifyWhitespace: true })
+    return transpiler.transformSync(code).replace(/\}(var |let |const |function )/g, '};$1').trim()
+  }
+  catch {
+    return code
+  }
 }
 
 // Matches the exact emit shape from utils.ts renderComponentWithSlot:
@@ -76,13 +100,17 @@ export function extractIslandChunks(html: string, options: ExtractIslandChunksOp
   const chunksByHash = new Map<string, string>()
 
   const rewritten = html.replace(ISLAND_SCRIPT_RE, (full, sid: string, attrs: string, body: string) => {
-    const code = body.trim()
+    let code = body.trim()
     // Empty body → already chunked or nothing to extract; leave untouched.
     if (!code)
       return full
     // Already carries a chunk reference → idempotent re-run; don't double-process.
     if (/\bdata-stx-src=/.test(attrs))
       return full
+
+    // Minify first so the hash + SRI are computed over the bytes we actually write.
+    if (options.minify)
+      code = minifyChunk(code)
 
     const hash = hashChunk(code)
     if (!chunksByHash.has(hash))

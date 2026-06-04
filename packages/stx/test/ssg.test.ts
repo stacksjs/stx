@@ -563,5 +563,21 @@ No frontmatter here.
       const res = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true })
       expect(res.islandChunks).toBeUndefined()
     })
+
+    it('minifies island chunks when minify is on (smaller lazy payload)', async () => {
+      await setupIslandFixture()
+      const big = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true } as any)
+      const bigBytes = big.islandChunks!.totalBytes
+
+      await setupIslandFixture()
+      const small = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true, minify: true } as any)
+
+      const islandsDir = path.join(outputDir, '_stx', 'islands')
+      const file = fs.readdirSync(islandsDir).find(f => f.endsWith('.js'))!
+      const chunk = await Bun.file(path.join(islandsDir, file)).text()
+      // minified: no source-indentation newlines, and smaller than unminified
+      expect(chunk).not.toMatch(/\n {2,}/)
+      expect(small.islandChunks!.totalBytes).toBeLessThan(bigBytes)
+    })
   })
 })

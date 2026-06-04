@@ -1109,7 +1109,7 @@ else {
           // before the single write so the page is emitted once in final form;
           // a no-op (and no chunk dir) for pages without island components.
           if (cfg.chunkIslands) {
-            const { html: chunkedHtml, chunks } = extractIslandChunks(html, { integrity: cfg.integrityIslands })
+            const { html: chunkedHtml, chunks } = extractIslandChunks(html, { integrity: cfg.integrityIslands, minify: cfg.minify })
             if (chunks.length > 0) {
               const islandsDir = path.join(cfg.outputDir, '_stx', 'islands')
               await fs.promises.mkdir(islandsDir, { recursive: true })

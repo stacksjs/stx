@@ -89,6 +89,26 @@ describe('extractIslandChunks (#1746)', () => {
   it('omits integrity by default (opt-in)', () => {
     expect(extractIslandChunks(tag('S1', IIFE)).html).not.toContain('data-stx-integrity')
   })
+
+  it('minifies the chunk (whitespace) when requested, and hashes the minified bytes', () => {
+    const spaced = `(function () {\n  var s = window.stx\n  s._scopes["S1"] = { n: s.state(0) }\n})();`
+    const plain = extractIslandChunks(tag('S1', spaced))
+    const min = extractIslandChunks(tag('S1', spaced), { minify: true })
+
+    expect(min.chunks[0].code).not.toContain('\n') // whitespace stripped
+    expect(min.chunks[0].code.length).toBeLessThan(plain.chunks[0].code.length)
+    expect(min.chunks[0].code).toContain('window.stx') // still valid code
+    // hash is over the minified bytes → differs from the unminified chunk
+    expect(min.chunks[0].hash).not.toBe(plain.chunks[0].hash)
+    expect(min.html).toContain(`/_stx/islands/${min.chunks[0].hash}.js`)
+  })
+
+  it('minified chunk hash + SRI are computed over the same (minified) bytes', () => {
+    const spaced = `(function () {\n  window.stx._scopes["S1"] = {}\n})();`
+    const { chunks, html: out } = extractIslandChunks(tag('S1', spaced), { minify: true, integrity: true })
+    const expectedSri = `sha384-${createHash('sha384').update(chunks[0].code).digest('base64')}`
+    expect(out).toContain(`data-stx-integrity="${expectedSri}"`)
+  })
 })
 
 // A chunked page: a host (data-stx-scope + stx-hydrate) + its chunk reference.
