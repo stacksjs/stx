@@ -165,6 +165,51 @@ describe('island deferred setup script (#1746)', () => {
     }
   })
 
+  it('chunked island: a chunk load failure emits stx:island-error and degrades gracefully', async () => {
+    const sid = 'isleErr'
+    delete window.stx._scopes[sid]
+    let errEvent: any = null
+    const onErr = (e: any) => { errEvent = e }
+    window.addEventListener('stx:island-error', onErr)
+
+    const origAppend = document.head.appendChild.bind(document.head)
+    let triggerError: (() => void) | null = null
+    document.head.appendChild = (node: any) => {
+      const src = String((node && (node.src || (node.getAttribute && node.getAttribute('src')))) || '')
+      if (node && node.tagName === 'SCRIPT' && src.includes('/_stx/islands/')) {
+        triggerError = () => node.onerror()
+        return node
+      }
+      return origAppend(node)
+    }
+
+    try {
+      document.body.innerHTML
+        = `<script type="stx/island" data-stx-island="${sid}" data-stx-src="/_stx/islands/missing.js" data-stx-scoped></script>`
+        + `<section data-stx-scope="${sid}" stx-hydrate="interaction"><span>x</span></section>`
+      shimAttributes(document.body)
+      document.dispatchEvent(new window.Event('DOMContentLoaded'))
+      await flushEffects()
+      document.querySelector(`[data-stx-scope="${sid}"]`).dispatchEvent(new window.Event('click'))
+      await flushEffects()
+
+      // Simulate the chunk failing to load (404 / offline).
+      triggerError!()
+      await flushEffects()
+
+      expect(errEvent).toBeTruthy()
+      expect(errEvent.detail.scopeId).toBe(sid)
+      expect(errEvent.detail.src).toContain('/_stx/islands/missing.js')
+      // Degrades: scope never registered, but no throw — static HTML still there.
+      expect(window.stx._scopes[sid]).toBeUndefined()
+      expect(document.querySelector(`[data-stx-scope="${sid}"] span`).textContent).toBe('x')
+    }
+    finally {
+      document.head.appendChild = origAppend
+      window.removeEventListener('stx:island-error', onErr)
+    }
+  })
+
   it('chunked island applies SRI integrity to the <script> when present', async () => {
     const sid = 'isleSri'
     delete window.stx._scopes[sid]

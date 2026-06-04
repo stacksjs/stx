@@ -1448,7 +1448,15 @@ catch (e) {
           var integ = islandScript.getAttribute('data-stx-integrity');
           if (integ) s.integrity = integ;
           s.onload = finishHydrate;
-          s.onerror = function() { console.error('[stx] island chunk load failed:', sid, chunkSrc); finishHydrate(); };
+          s.onerror = function() {
+            // Network error / 404: the island can't become interactive. Log,
+            // emit an observable event (analytics/monitoring can react), then
+            // best-effort finish. The server-rendered HTML stays visible
+            // (x-cloak was already removed on arming) — it just won't wire up.
+            console.error('[stx] island chunk load failed:', sid, chunkSrc);
+            window.dispatchEvent(new CustomEvent('stx:island-error', { detail: { el: el, scopeId: sid, src: chunkSrc } }));
+            finishHydrate();
+          };
           document.head.appendChild(s);
           return; // finishHydrate runs from the chunk's load event
         }
