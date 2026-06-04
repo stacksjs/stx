@@ -1400,15 +1400,33 @@ catch (e) {
       if (el.__stx_hydrated) return;
       el.__stx_hydrated = true;
       el.removeAttribute('stx-hydrate');
-      // Walk children and process them with the captured scope
-      Array.from(el.children).forEach(function(child) { processElement(child, scope); });
+      var sid = el.getAttribute && el.getAttribute('data-stx-scope');
+      var effectiveScope = scope;
+      // Island (#1746): the component's setup script was emitted inert
+      // (type="stx/island") so the browser skipped it at parse. Execute it now —
+      // it registers the scope (signals + methods) AND runs any side-effectful
+      // setup (e.g. a fetch in the <script client> body) at hydration time,
+      // not at page load. Non-island stx-hydrate subtrees have no such script,
+      // so this is a no-op for them (effectiveScope stays the captured scope).
+      if (sid) {
+        var islandScript = document.querySelector('script[data-stx-island="' + sid + '"]');
+        if (islandScript && !islandScript.__stx_ran) {
+          islandScript.__stx_ran = true;
+          // eslint-disable-next-line no-new-func
+          try { (new Function(islandScript.textContent))(); }
+          catch (e) { console.error('[stx] island setup error:', sid, e); }
+        }
+        var reg = window.stx._scopes ? window.stx._scopes[sid] : null;
+        if (reg) effectiveScope = Object.assign({}, scope || {}, reg);
+      }
+      // Walk children and process them with the (now scope-merged) context
+      Array.from(el.children).forEach(function(child) { processElement(child, effectiveScope); });
       // Also process the element itself (attributes/bindings on the host)
-      processAttributesOnly(el, scope);
+      processAttributesOnly(el, effectiveScope);
       // Fire this scope's onMount now that it has actually hydrated — the
       // initial mount pass deferred it for stx-hydrate scopes so onMount lands on
       // hydration, not at page load (#1746). Guarded by __mounted so it never
       // double-fires with the eager path.
-      var sid = el.getAttribute && el.getAttribute('data-stx-scope');
       var sv = sid && window.stx._scopes ? window.stx._scopes[sid] : null;
       if (sv && sv.__mountCallbacks && !sv.__mounted) {
         sv.__mounted = true;
@@ -4609,6 +4627,21 @@ else {
       processedScopes.add(el);
 
       const scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
+
+      // Deferred island (#1746): its setup script (type="stx/island") hasn't run
+      // yet, so the scope isn't registered. Arm the hydration trigger anyway —
+      // processElement sees stx-hydrate and defers; deferHydration's run()
+      // executes the script (registering the scope + running side-effectful
+      // setup like fetches) and binds on the trigger. Reveal the HTML now.
+      var isDeferredIsland = !scopeVars && el.hasAttribute && el.hasAttribute('stx-hydrate')
+        && !!document.querySelector('script[data-stx-island="' + scopeId + '"]');
+      if (isDeferredIsland) {
+        processElement(el);
+        el.removeAttribute('x-cloak');
+        el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
+        return;
+      }
+
       if (!scopeVars) return;
 
       // Merge component scope vars into componentScope (don't restore - keep for head elements)

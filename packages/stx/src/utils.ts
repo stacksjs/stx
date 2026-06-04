@@ -1036,6 +1036,14 @@ ${content}
 catch (e) {}
   Object.assign(__scopeVars, __localVars);
 })();`
+        // Islands (#1746): when this component is deferred via client="<trigger>",
+        // emit the setup script as an INERT type="stx/island" so the browser does
+        // NOT run it at parse — the runtime executes it (registering the scope +
+        // running any side-effectful setup like fetches) only when the trigger
+        // fires. Keep data-stx-scoped so the build passes don't reprocess it.
+        if (hydrateTrigger) {
+          return `<script type="stx/island" data-stx-island="${scopeId}" data-stx-scoped${attrs}>${wrappedContent}</script>`
+        }
         return `<script data-stx-scoped${attrs}>${wrappedContent}</script>`
       })
 

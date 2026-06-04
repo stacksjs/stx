@@ -72,12 +72,22 @@ while suppressing its scope/runtime.
 
 ## Phase 1 — Per-component `client="load|visible|idle|interaction|media:…"` *(the headline win)*
 
-> **First increment shipped:** the `client="…"` directive now defers a
-> component's hydration *work* (`processElement`) to the trigger by stamping
-> `stx-hydrate` on its scope wrapper (`utils.ts` `renderComponentWithSlot`,
-> consumed via the existing `deferHydration`). Opt-in, zero blast radius. Still
-> to do in this phase: byte-level suppression (don't ship the scope script until
-> the trigger) and trigger-timed `onMount`. See [docs](/features/lazy-hydration).
+> **Shipped (three increments):** the `client="…"` directive defers a
+> component's hydration to the trigger by stamping `stx-hydrate` on its scope
+> wrapper (`utils.ts` `renderComponentWithSlot`, via the existing
+> `deferHydration`). (1) the reactive *wire-up* (`processElement`) is deferred;
+> (2) `onMount` now fires on the trigger, not at page load; (3) the component's
+> **setup script is emitted inert** (`<script type="stx/island">`) and the
+> runtime **executes it only on the trigger** — so side-effectful setup (a
+> `fetch` in the `<script client>` body) runs when the island hydrates, not at
+> load. Opt-in, zero blast radius. The inert→trigger execution currently runs the
+> deferred setup via `new Function` (so a strict `script-src` CSP without
+> `'unsafe-eval'` blocks island hydration). **Still to do in this phase:**
+> download-level suppression — the inert script's *bytes* still ship inline;
+> moving each island into a separately-loaded chunk fetched as a real
+> `<script src>` on the trigger (per-island production chunking) is the remaining
+> win, and it also removes the `new Function`/CSP constraint. See
+> [docs](/features/lazy-hydration).
 
 **Goal:** `<CommentsList client="visible" />` ships HTML now, hydrates on trigger.
 

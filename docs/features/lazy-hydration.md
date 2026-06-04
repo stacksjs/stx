@@ -115,17 +115,31 @@ wrapper). This is the per-component half of the islands model (see
 | `media:<query>` | Hydrate when the media query first matches. |
 
 The component's **HTML still ships and renders** immediately; what's deferred is
-the reactive wire-up (`processElement`) — the expensive main-thread work — until
-the trigger fires. `client="…"` is **opt-in**: a component without it behaves
-exactly as before. It only applies to interactive components (those with a
-`<script client>` scope); on a static component it's a harmless no-op.
+*all* of its client-side execution until the trigger fires:
 
-A deferred component's `onMount` fires when it **hydrates** (on the trigger), not
-at page load — so setup work in `onMount` runs after the component is wired up,
-at the right time.
+- the reactive wire-up (`processElement`) — the expensive main-thread work;
+- the component's **setup script itself** — emitted inert as
+  `<script type="stx/island">`, the runtime runs it only on the trigger, so any
+  side-effectful setup (a `fetch`/subscription in the `<script client>` body)
+  fires when the island hydrates, *not* at page load;
+- `onMount`, which fires on hydration (the trigger), not at page load.
 
-> **Scope of this phase.** Today `client="…"` defers the *hydration work* (the
-> reactive wire-up + `onMount`). It does not yet suppress the component's bytes —
-> its scope script + the runtime still ship. Byte-level suppression (server-only
-> components shipping zero JS, via per-island chunks) is the next increment on
+`client="…"` is **opt-in**: a component without it behaves exactly as before. It
+only applies to interactive components (those with a `<script client>` scope); on
+a static component it's a harmless no-op.
+
+So `<CommentsList client="visible">` ships its rendered HTML up front, but doesn't
+create signals, run effects, *or* fire its data-loading `fetch` until it scrolls
+into view — the whole island is dormant until then.
+
+> **Scope of this phase.** `client="…"` now defers the component's full
+> client-side *execution* (wire-up, setup script, `onMount`). It does not yet
+> suppress the inert script's *download* — its bytes still ship inline in the
+> HTML, and the shared runtime still loads. Moving each island into a
+> separately-fetched chunk (per-island production chunking) so the bytes arrive
+> only on the trigger is the next increment on
 > [#1746](https://github.com/stacksjs/stx/issues/1746).
+>
+> ⚠️ Executing the deferred setup uses `new Function(...)`, so a strict
+> `script-src` CSP without `'unsafe-eval'` will block island hydration. Eager
+> (`client="load"` / no `client`) components are unaffected.
