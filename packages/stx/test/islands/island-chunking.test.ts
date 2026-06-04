@@ -7,7 +7,7 @@
  * the no-op guarantees, and that non-island markup is left byte-identical.
  */
 import { describe, expect, it } from 'bun:test'
-import { extractIslandChunks } from '../../src/island-chunking'
+import { extractIslandChunks, injectIslandChunkPrefetch } from '../../src/island-chunking'
 
 const IIFE = `(function(){ var s = window.stx; window.stx._scopes["S1"] = { n: s.state(0) }; })();`
 const tag = (sid: string, body: string) =>
@@ -77,5 +77,59 @@ describe('extractIslandChunks (#1746)', () => {
     const { html: twice, chunks } = extractIslandChunks(once)
     expect(twice).toBe(once) // empty-body + existing data-stx-src → skipped
     expect(chunks).toEqual([])
+  })
+})
+
+// A chunked page: a host (data-stx-scope + stx-hydrate) + its chunk reference.
+const chunkedPage = (sid: string, trigger: string, hash: string) =>
+  `<html><head><title>t</title></head><body>`
+  + `<div data-stx-scope="${sid}" stx-hydrate="${trigger}"><span x-text="n"></span></div>`
+  + `<script type="stx/island" data-stx-island="${sid}" data-stx-src="/_stx/islands/${hash}.js" data-stx-scoped></script>`
+  + `</body></html>`
+
+describe('injectIslandChunkPrefetch (#1746)', () => {
+  it('prefetches a visible island chunk into the head', () => {
+    const out = injectIslandChunkPrefetch(chunkedPage('S1', 'visible', 'aaa'))
+    expect(out).toContain('<link rel="prefetch" href="/_stx/islands/aaa.js" as="script">')
+    // inserted inside the head (before </head>)
+    expect(out.indexOf('rel="prefetch"')).toBeLessThan(out.indexOf('</head>'))
+  })
+
+  it('prefetches an idle island chunk', () => {
+    const out = injectIslandChunkPrefetch(chunkedPage('S1', 'idle', 'bbb'))
+    expect(out).toContain('href="/_stx/islands/bbb.js"')
+  })
+
+  it('does NOT prefetch interaction or media islands (may never hydrate)', () => {
+    expect(injectIslandChunkPrefetch(chunkedPage('S1', 'interaction', 'ccc'))).not.toContain('rel="prefetch"')
+    expect(injectIslandChunkPrefetch(chunkedPage('S1', 'media:(max-width:768px)', 'ddd'))).not.toContain('rel="prefetch"')
+  })
+
+  it('only prefetches eligible islands on a mixed page', () => {
+    const mixed
+      = `<html><head></head><body>`
+      + `<div data-stx-scope="V" stx-hydrate="visible"></div>`
+      + `<script data-stx-island="V" data-stx-src="/_stx/islands/vv.js" data-stx-scoped></script>`
+      + `<div data-stx-scope="I" stx-hydrate="interaction"></div>`
+      + `<script data-stx-island="I" data-stx-src="/_stx/islands/ii.js" data-stx-scoped></script>`
+      + `</body></html>`
+    const out = injectIslandChunkPrefetch(mixed)
+    expect(out).toContain('rel="prefetch" href="/_stx/islands/vv.js"') // visible → prefetched
+    // interaction → no prefetch link (its chunk tag still references the url in body)
+    expect(out).not.toContain('rel="prefetch" href="/_stx/islands/ii.js"')
+  })
+
+  it('is a no-op without a head, or on non-chunked HTML', () => {
+    const noHead = `<body><div data-stx-scope="S1" stx-hydrate="visible"></div><script data-stx-island="S1" data-stx-src="/x.js"></script></body>`
+    expect(injectIslandChunkPrefetch(noHead)).toBe(noHead)
+    const noChunks = `<html><head></head><body><p>hi</p></body></html>`
+    expect(injectIslandChunkPrefetch(noChunks)).toBe(noChunks)
+  })
+
+  it('is idempotent — no duplicate prefetch link on re-run', () => {
+    const once = injectIslandChunkPrefetch(chunkedPage('S1', 'visible', 'aaa'))
+    const twice = injectIslandChunkPrefetch(once)
+    expect(twice).toBe(once)
+    expect(twice.match(/rel="prefetch" href="\/_stx\/islands\/aaa\.js"/g)).toHaveLength(1)
   })
 })

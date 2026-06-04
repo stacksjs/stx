@@ -85,3 +85,59 @@ export function extractIslandChunks(html: string): ExtractIslandChunksResult {
   const chunks: IslandChunk[] = Array.from(chunksByHash, ([hash, code]) => ({ hash, code }))
   return { html: rewritten, chunks }
 }
+
+// Triggers whose island is likely to hydrate, so warming its chunk pays off.
+// `interaction` / `media:` may never fire, so we don't fetch their chunks early.
+const PREFETCH_TRIGGERS = new Set(['visible', 'idle'])
+
+/**
+ * Warm the chunks of islands likely to hydrate soon (`visible` / `idle`
+ * triggers) with `<link rel="prefetch" as="script">` in the document head, so
+ * the chunk is already cached when the trigger fires — instant hydration with no
+ * inline JS. Pure and idempotent; operates on already-chunked HTML (it reads the
+ * `data-stx-src` the emitter added) and is a no-op when there's no `<head>`, no
+ * chunked island, or no island with an eligible trigger.
+ *
+ * `prefetch` (not `preload`) is deliberate: it's low-priority/idle, so it never
+ * competes with the critical render path, and it avoids the "preloaded resource
+ * not used within N seconds" console warning for below-the-fold islands.
+ */
+export function injectIslandChunkPrefetch(html: string): string {
+  if (!html.includes('data-stx-src='))
+    return html
+
+  // Host scope id → hydration trigger. utils.ts emits `data-stx-scope` before
+  // `stx-hydrate` on the same element; a `>` inside a serialized prop value
+  // would stop the match early, in which case the island is simply not
+  // prefetched (safe degradation, never breakage).
+  const triggerBySid = new Map<string, string>()
+  const hostRe = /data-stx-scope="([^"]+)"[^>]*?stx-hydrate="([^"]+)"/g
+  let h: RegExpExecArray | null
+  // eslint-disable-next-line no-cond-assign
+  while ((h = hostRe.exec(html)) !== null)
+    triggerBySid.set(h[1], h[2])
+
+  // Chunked island tag: scope id → chunk url. Keep only eligible triggers.
+  const urls = new Set<string>()
+  const tagRe = /data-stx-island="([^"]+)"[^>]*?data-stx-src="([^"]+)"/g
+  let t: RegExpExecArray | null
+  // eslint-disable-next-line no-cond-assign
+  while ((t = tagRe.exec(html)) !== null) {
+    if (PREFETCH_TRIGGERS.has(triggerBySid.get(t[1]) || ''))
+      urls.add(t[2])
+  }
+
+  const headEnd = html.lastIndexOf('</head>')
+  if (urls.size === 0 || headEnd === -1)
+    return html
+
+  const links = Array.from(urls)
+    // Idempotent: don't add a prefetch link that's already present.
+    .filter(url => !html.includes(`rel="prefetch" href="${url}"`))
+    .map(url => `<link rel="prefetch" href="${url}" as="script">`)
+    .join('')
+  if (!links)
+    return html
+
+  return html.slice(0, headEnd) + links + html.slice(headEnd)
+}

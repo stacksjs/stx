@@ -163,6 +163,30 @@ one immutable, content-addressed file.
 - **CSP-clean** — the chunked path uses `<script src>`, **no `eval`/`new
   Function`**, so `script-src 'self'` is sufficient for chunked islands.
 
+#### Prefetching soon-to-hydrate chunks
+
+Lazy chunks mean the JS arrives only on the trigger — great for bytes, but a
+`visible` island still pays a fetch round-trip the moment it scrolls into view.
+`prefetchIslands: true` warms those chunks ahead of time:
+
+```ts
+await generateStaticSite({
+  pagesDir: 'pages',
+  outputDir: 'dist',
+  chunkIslands: true,
+  prefetchIslands: true, // warm visible/idle chunks
+})
+```
+
+It emits `<link rel="prefetch" href="/_stx/islands/<hash>.js" as="script">` into
+the `<head>` for **`visible`** and **`idle`** islands — the ones likely to
+hydrate — so the chunk is cached before the trigger fires (instant hydration,
+still no inline JS). `interaction` and `media:` islands are **skipped** (they may
+never hydrate, so eagerly fetching them would waste bandwidth). `prefetch` (not
+`preload`) is used deliberately: it's idle-priority, so it never competes with
+the critical render path. Defaults to `false` — it trades some idle bandwidth
+for latency, and requires `chunkIslands`.
+
 > **Scope of this phase.** `client="…"` defers the component's full client-side
 > *execution* (wire-up, setup script, `onMount`), and `chunkIslands: true` now
 > defers the *download* too. Still inline: the shared signals runtime, and

@@ -468,7 +468,7 @@ No frontmatter here.
       )
       await Bun.write(
         path.join(pagesDir, 'index.stx'),
-        '<html><body><h1>Home</h1><Counter client="visible" /></body></html>',
+        '<html><head><title>Home</title></head><body><h1>Home</h1><Counter client="visible" /></body></html>',
       )
     }
 
@@ -502,6 +502,27 @@ No frontmatter here.
       expect(fs.existsSync(chunkPath)).toBe(true)
       const chunk = await Bun.file(chunkPath).text()
       expect(chunk).toContain('(function')
+    })
+
+    it('prefetchIslands: warms a visible island chunk with a <link rel="prefetch">', async () => {
+      await setupIslandFixture() // Counter uses client="visible"
+      await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true, prefetchIslands: true } as any)
+
+      const html = await Bun.file(path.join(outputDir, 'index.html')).text()
+      const m = html.match(/data-stx-src="(\/_stx\/islands\/[^"]+)"/)
+      expect(m).toBeTruthy()
+      // a prefetch hint for that exact chunk, inside the head
+      expect(html).toContain(`<link rel="prefetch" href="${m![1]}" as="script">`)
+      expect(html.indexOf('rel="prefetch"')).toBeLessThan(html.indexOf('</head>'))
+    })
+
+    it('no prefetch hints when prefetchIslands is off (chunking only)', async () => {
+      await setupIslandFixture()
+      await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true } as any)
+
+      const html = await Bun.file(path.join(outputDir, 'index.html')).text()
+      expect(html).toContain('data-stx-src="/_stx/islands/') // chunked
+      expect(html).not.toContain('rel="prefetch"') // but not prefetched
     })
   })
 })

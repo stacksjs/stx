@@ -49,7 +49,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createRouter, type Route } from './router'
 import { processDirectives, injectRouterScript } from './process'
-import { extractIslandChunks } from './island-chunking'
+import { extractIslandChunks, injectIslandChunkPrefetch } from './island-chunking'
 import { loadStxConfig } from './config'
 import { injectCrosswindCSS } from './dev-server/crosswind'
 import {
@@ -107,6 +107,13 @@ export interface SSGConfig {
    * when off, builds are byte-identical and islands stay inline.
    */
   chunkIslands?: boolean
+  /**
+   * Emit `<link rel="prefetch" as="script">` hints for `visible`/`idle` island
+   * chunks so they warm in cache before the trigger fires (instant hydration,
+   * still no inline JS). `interaction`/`media:` islands are skipped. Requires
+   * `chunkIslands`. Default `false` — trades some idle bandwidth for latency.
+   */
+  prefetchIslands?: boolean
 }
 
 export interface RSSConfig {
@@ -870,6 +877,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     // Strict opt-in: only an explicit `true` enables chunking, so NODE_ENV
     // never auto-flips it and every existing pipeline stays byte-identical.
     chunkIslands: options.chunkIslands === true,
+    prefetchIslands: options.prefetchIslands === true,
   }
 
   const result: SSGResult = {
@@ -1093,6 +1101,9 @@ else {
                   await Bun.write(chunkPath, chunk.code)
               }
               html = chunkedHtml
+              // Optionally warm visible/idle island chunks via prefetch hints.
+              if (cfg.prefetchIslands)
+                html = injectIslandChunkPrefetch(html)
             }
           }
 
