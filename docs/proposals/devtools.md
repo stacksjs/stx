@@ -43,6 +43,14 @@ extension is a thin client of it.
 
 ## Phase 1 — `window.__stxDevtools` programmatic API *(in-repo, shippable now)*
 
+> **Shipped.** The runtime now exposes a read-only `window.__stxDevtools`:
+> `tree()` (component tree from `[data-stx-scope]`, nested by DOM ancestry),
+> `scope(id)` (signals / derived / stores / methods / plain values for a scope),
+> `inspect(el)` (nearest enclosing scope), and `stores()`. Auto-wired — no manual
+> `registerComponent`. Signal values are read via `peek`, so inspecting never
+> subscribes the active effect (it can't pollute the reactive graph). Phase 2
+> (the live dependency graph + set/run counters) is the next increment.
+
 **Goal:** auto-wired, documented introspection — no extension needed.
 
 - **Component tree:** walk `[data-stx-scope]` DOM elements + `_scopes`,

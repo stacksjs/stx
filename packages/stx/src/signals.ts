@@ -4503,6 +4503,68 @@ else {
   // the signals runtime or via the @stxRouter directive.
 
   // ==========================================================================
+  // DevTools introspection (stacksjs/stx#1747, Phase 1)
+  // ==========================================================================
+  // A read-only, console-usable inspector wired to the live runtime — no manual
+  // registration. Reads signal values via peek() so inspecting never subscribes
+  // the active effect (i.e. it can't pollute the reactive graph).
+  function __stxDevtoolsClassify(sv) {
+    var out = { signals: {}, derived: {}, stores: {}, values: {}, methods: [] };
+    if (!sv || typeof sv !== 'object') return out;
+    Object.keys(sv).forEach(function(k) {
+      if (k.indexOf('__') === 0 || k === '$el' || k === '$refs' || k === '$props') return;
+      var v = sv[k];
+      try {
+        if (typeof v === 'function' && v._isSignal) out.signals[k] = peek(function() { return v(); });
+        else if (typeof v === 'function' && v._isDerived) out.derived[k] = peek(function() { return v(); });
+        else if (v && v._isStxStore) out.stores[k] = '[store]';
+        else if (typeof v === 'function') out.methods.push(k);
+        else out.values[k] = v;
+      }
+      catch (e) { out.values[k] = '[unreadable]'; }
+    });
+    return out;
+  }
+  window.__stxDevtools = {
+    version: 1,
+    // Component tree from [data-stx-scope] elements, nested by DOM ancestry.
+    tree: function() {
+      var byEl = new Map();
+      var roots = [];
+      var nodes = document.querySelectorAll('[data-stx-scope]');
+      Array.prototype.forEach.call(nodes, function(el) {
+        byEl.set(el, { scopeId: el.getAttribute('data-stx-scope'), tag: (el.tagName || '').toLowerCase(), children: [], el: el });
+      });
+      Array.prototype.forEach.call(nodes, function(el) {
+        var node = byEl.get(el);
+        var p = el.parentElement;
+        while (p && !byEl.has(p)) p = p.parentElement;
+        if (p) byEl.get(p).children.push(node); else roots.push(node);
+      });
+      function clean(n) { return { scopeId: n.scopeId, tag: n.tag, children: n.children.map(clean) }; }
+      return roots.map(clean);
+    },
+    // Signals / derived / stores / methods / plain values for a scope id.
+    scope: function(scopeId) {
+      var sv = (window.stx && window.stx._scopes) ? window.stx._scopes[scopeId] : null;
+      return sv ? __stxDevtoolsClassify(sv) : null;
+    },
+    // The nearest enclosing scope's inspection for a DOM element.
+    inspect: function(el) {
+      var s = el;
+      while (s && !(s.getAttribute && s.getAttribute('data-stx-scope'))) s = s.parentElement;
+      return s ? this.scope(s.getAttribute('data-stx-scope')) : null;
+    },
+    // All registered stores by id.
+    stores: function() {
+      var out = {};
+      var reg = window.stx && window.stx._stores;
+      if (reg && typeof reg.forEach === 'function') reg.forEach(function(v, k) { out[k] = true; });
+      return out;
+    },
+  };
+
+  // ==========================================================================
   // Auto-initialization
   // ==========================================================================
 
