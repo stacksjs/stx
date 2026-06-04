@@ -1399,6 +1399,7 @@ catch (e) {
     var run = function() {
       if (el.__stx_hydrated) return;
       el.__stx_hydrated = true;
+      el.__stx_hydration_cancel = null; // trigger consumed — nothing left to cancel
       el.removeAttribute('stx-hydrate');
       var sid = el.getAttribute && el.getAttribute('data-stx-scope');
       var effectiveScope = scope;
@@ -1435,9 +1436,19 @@ catch (e) {
       window.dispatchEvent(new CustomEvent('stx:hydrated', { detail: { el: el, trigger: trigger } }));
     };
 
+    // Record how to cancel a still-pending trigger so SPA navigation can tear it
+    // down — otherwise an unhydrated island's observer/timer/listener leaks and
+    // may fire run() on a detached element after the page swapped (#1746).
+    // Cleared once run() fires (it guards on __stx_hydrated anyway).
     if (trigger === 'idle') {
-      if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2000 });
-      else setTimeout(run, 200);
+      if (typeof requestIdleCallback === 'function') {
+        var idleId = requestIdleCallback(run, { timeout: 2000 });
+        el.__stx_hydration_cancel = function() { if (typeof cancelIdleCallback === 'function') cancelIdleCallback(idleId); };
+      }
+      else {
+        var idleTimer = setTimeout(run, 200);
+        el.__stx_hydration_cancel = function() { clearTimeout(idleTimer); };
+      }
     }
     else if (trigger === 'visible') {
       if (typeof IntersectionObserver === 'function') {
@@ -1447,6 +1458,7 @@ catch (e) {
           });
         }, { rootMargin: '50px' });
         io.observe(el);
+        el.__stx_hydration_cancel = function() { io.disconnect(); };
       } else {
         run(); // fallback: no IO support, hydrate immediately
       }
@@ -1458,6 +1470,7 @@ catch (e) {
         run();
       };
       events.forEach(function(ev) { el.addEventListener(ev, handler, { once: true, passive: true }); });
+      el.__stx_hydration_cancel = function() { events.forEach(function(ev) { el.removeEventListener(ev, handler); }); };
     }
     else if (trigger && trigger.indexOf('media:') === 0) {
       var query = trigger.slice(6);
@@ -1468,6 +1481,7 @@ catch (e) {
           if (e.matches) { mql.removeEventListener('change', mqHandler); run(); }
         };
         mql.addEventListener('change', mqHandler);
+        el.__stx_hydration_cancel = function() { mql.removeEventListener('change', mqHandler); };
       }
     }
     else {
@@ -4811,6 +4825,12 @@ catch (e) {
 
     // 1. Walk all child elements — fire destroy hooks and dispose effects
     container.querySelectorAll('*').forEach(function(el) {
+      // Cancel a still-pending island hydration trigger (#1746) so its
+      // observer/timer/listener doesn't fire on this detached element.
+      if (typeof el.__stx_hydration_cancel === 'function') {
+        try { el.__stx_hydration_cancel(); } catch (e) { /* noop */ }
+        el.__stx_hydration_cancel = null;
+      }
       if (el.__stx_destroy && Array.isArray(el.__stx_destroy)) {
         el.__stx_destroy.forEach(function(fn) {
           try { fn(); }
@@ -4825,6 +4845,10 @@ catch (e) { console.warn('[stx] destroy hook error:', e); }
     });
 
     // 2. Check container itself
+    if (typeof container.__stx_hydration_cancel === 'function') {
+      try { container.__stx_hydration_cancel(); } catch (e) { /* noop */ }
+      container.__stx_hydration_cancel = null;
+    }
     if (container.__stx_destroy) {
       container.__stx_destroy.forEach(function(fn) {
         try { fn(); }

@@ -81,6 +81,33 @@ describe('island deferred setup script (#1746)', () => {
     expect(window.stx._scopes.isleC).toBeUndefined()
   })
 
+  it('cancels a pending island trigger on SPA navigation (cleanupContainer)', async () => {
+    window.__islandRuns3 = 0
+    const src = 'window.__islandRuns3++; window.stx._scopes["isleS"] = { __mountCallbacks: [] };'
+    delete window.stx._scopes.isleS
+    document.body.innerHTML
+      = '<main data-stx-content>'
+      + `<script type="stx/island" data-stx-island="isleS" data-stx-scoped>${src}</script>`
+      + '<section data-stx-scope="isleS" stx-hydrate="interaction"><span>x</span></section>'
+      + '</main>'
+    shimAttributes(document.body)
+
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await flushEffects()
+    const host = document.querySelector('[data-stx-scope="isleS"]')
+    expect(typeof host.__stx_hydration_cancel).toBe('function') // armed, cancelable
+
+    // Simulate SPA navigation tearing down the departing page container.
+    window.stx._cleanupContainer(document.querySelector('[data-stx-content]'))
+    expect(host.__stx_hydration_cancel).toBeNull() // trigger cancelled
+
+    // The (now-removed) interaction listener must not hydrate the detached island.
+    host.dispatchEvent(new window.Event('click'))
+    await flushEffects()
+    expect(window.__islandRuns3).toBe(0) // setup never ran — trigger was cancelled
+    expect(window.stx._scopes.isleS).toBeUndefined()
+  })
+
   it('does not eval anything for a plain (non-island) stx-hydrate subtree', async () => {
     // Pre-registered scope, no data-stx-island script → run() must not try to
     // eval; it binds with the captured scope exactly as before.
