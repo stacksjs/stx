@@ -4986,6 +4986,20 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     document.body.querySelectorAll('[data-stx-scope]').forEach(function(el) {
       var scopeId = el.getAttribute('data-stx-scope');
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
+      // Deferred island reached via SPA navigation (#1746): its setup script is
+      // inert (type="stx/island"), so the scope isn't registered yet. Arm the
+      // hydration trigger (deferHydration) instead of skipping it — mirrors the
+      // initial-load DOMContentLoaded path, which has the same guard. Without
+      // this, a client="visible|idle|…" island on a page reached by SPA nav
+      // (inline OR chunked) never hydrates.
+      if (!scopeVars && el.hasAttribute && el.hasAttribute('stx-hydrate')
+        && !el.__stx_hydration_scheduled
+        && document.querySelector('script[data-stx-island="' + scopeId + '"]')) {
+        processElement(el, componentScope);
+        el.removeAttribute('x-cloak');
+        el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
+        return;
+      }
       if (!scopeVars) return;
       Object.assign(componentScope, scopeVars);
       if (el.__stx_disposers) return;

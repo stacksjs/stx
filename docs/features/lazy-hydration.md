@@ -128,6 +128,10 @@ The component's **HTML still ships and renders** immediately; what's deferred is
 only applies to interactive components (those with a `<script client>` scope); on
 a static component it's a harmless no-op.
 
+Islands also hydrate correctly when their page is reached via **SPA navigation**,
+not just a full page load — the router's re-init pass arms the island's trigger
+on the swapped-in content the same way the initial load does.
+
 So `<CommentsList client="visible">` ships its rendered HTML up front, but doesn't
 create signals, run effects, *or* fire its data-loading `fetch` until it scrolls
 into view — the whole island is dormant until then.
