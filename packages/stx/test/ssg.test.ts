@@ -541,5 +541,27 @@ No frontmatter here.
       // (the runtime source mentions the attribute name, so scope to the tag)
       expect(html).not.toMatch(/type="stx\/island"[^>]*data-stx-integrity/)
     })
+
+    it('reports island-chunk stats in the SSGResult', async () => {
+      await setupIslandFixture()
+      const res = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true } as any)
+
+      expect(res.islandChunks).toBeTruthy()
+      expect(res.islandChunks!.count).toBeGreaterThanOrEqual(1)
+      expect(res.islandChunks!.totalBytes).toBeGreaterThan(0)
+
+      // bytes should match the actual chunk file(s) on disk
+      const islandsDir = path.join(outputDir, '_stx', 'islands')
+      const files = fs.readdirSync(islandsDir).filter(f => f.endsWith('.js'))
+      expect(files.length).toBe(res.islandChunks!.count)
+      const onDisk = files.reduce((sum, f) => sum + fs.statSync(path.join(islandsDir, f)).size, 0)
+      expect(res.islandChunks!.totalBytes).toBe(onDisk)
+    })
+
+    it('omits island-chunk stats when chunking is off', async () => {
+      await setupIslandFixture()
+      const res = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true })
+      expect(res.islandChunks).toBeUndefined()
+    })
   })
 })

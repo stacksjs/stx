@@ -215,6 +215,12 @@ export interface SSGResult {
   pages: PageResult[]
   /** Errors encountered */
   errors: PageError[]
+  /**
+   * Per-island chunking stats (#1746), present only when `chunkIslands` emitted
+   * any chunks: `count` unique (content-addressed) chunk files and `totalBytes`
+   * of island JS moved out of inline HTML into lazily-fetched chunks.
+   */
+  islandChunks?: { count: number, totalBytes: number }
 }
 
 export interface PageResult {
@@ -898,6 +904,12 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     errors: [],
   }
 
+  // Island-chunk accounting (#1746): content-addressed, so dedupe by hash
+  // across pages to count unique chunks + the total island JS lifted out of
+  // inline HTML.
+  const islandChunkHashes = new Set<string>()
+  let islandChunkBytes = 0
+
   // Build hooks
   await cfg.hooks.onBuildStart?.()
 
@@ -1107,6 +1119,11 @@ else {
                 // one file; skip the write if it already exists (idempotent).
                 if (!(await Bun.file(chunkPath).exists()))
                   await Bun.write(chunkPath, chunk.code)
+                // Count each unique chunk once (dedupe by content hash).
+                if (!islandChunkHashes.has(chunk.hash)) {
+                  islandChunkHashes.add(chunk.hash)
+                  islandChunkBytes += Buffer.byteLength(chunk.code, 'utf8')
+                }
               }
               html = chunkedHtml
               // Optionally warm visible/idle island chunks via prefetch hints.
@@ -1278,9 +1295,15 @@ catch (error) {
 
   result.buildTime = Date.now() - startTime
 
+  if (islandChunkHashes.size > 0)
+    result.islandChunks = { count: islandChunkHashes.size, totalBytes: islandChunkBytes }
+
   // Build complete hook
   await cfg.hooks.onBuildEnd?.(result)
 
+  const islandLine = result.islandChunks
+    ? `\n  Island chunks: ${result.islandChunks.count} (${(result.islandChunks.totalBytes / 1024).toFixed(1)} KB lifted out of inline HTML)`
+    : ''
   // eslint-disable-next-line no-console
   console.log(`
 Build complete!
@@ -1288,7 +1311,7 @@ Build complete!
   Success: ${result.successCount}
   Cached: ${result.cachedCount}
   Failed: ${result.failedCount}
-  Time: ${result.buildTime}ms
+  Time: ${result.buildTime}ms${islandLine}
 `)
 
   return result
