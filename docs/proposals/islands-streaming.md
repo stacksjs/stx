@@ -44,6 +44,44 @@ fourth**, or the framework ships competing, confusing hydration models.
 
 ## Phase 0 — Consolidate + build the gate *(prerequisite; highest risk, no user-visible feature)*
 
+> **Finding (verified 2026-06 — DEFERRED, do not build the suppression gate yet).**
+> A multi-agent audit + direct corpus measurement settled the open question of
+> whether the runtime ships wastefully today. It does **not**:
+> - **`hasClientInteractivity()` would save zero bytes on the current corpus.**
+>   Scanning all **302** source `.stx` files (`packages/` + `examples/`):
+>   **0** files have `hasSignalsSyntax()=true` while lacking genuine client
+>   interactivity, and **0** use `state()`/`derived()`/`effect()` *only* inside
+>   `<script server>` (the sole theoretical gap). The prior assumption of
+>   server-only-signal pages shipping the runtime is unfounded — those pages do
+>   not exist in the codebase.
+> - **The detection split isn't even a clean subset.** A prototype
+>   `hasClientInteractivity()` matched **51** files vs `hasSignalsSyntax()`'s
+>   **47** — they disagree in *both* directions, so wiring the narrower predicate
+>   into the pipeline's most load-bearing early-exit (`signal-processing.ts:1477`)
+>   is pure regression risk for zero current benefit, and creates a second
+>   client/server-boundary predicate (the drift trap of CLAUDE.md item 40).
+> - **The 4 "reverse-divergence" components are NOT broken** (`Dialog`/`Tooltip`/
+>   `Drawer` `:show`, `drivly/footer` `x-model`). Hypothesis: `hasSignalsSyntax`
+>   has no `:show`/`x-model` pattern, so a component using only those + a
+>   `useReactiveProp` script (no `state()`) might ship with no runtime. **Refuted
+>   end-to-end:** driving the real `processDirectives` pipeline, all such pages
+>   inject the runtime — `usesSignalsInScript`'s `:`/`x-` clause stamps
+>   `data-stx-auto` and wraps `<script client>` as `data-stx-scoped` *before*
+>   `hasSignalsSyntax` runs, so the gate sees those markers and returns true.
+> - **Consolidation (item 1 below) is not cheap hygiene.** `hydration.ts` is
+>   public, barrel-exported (`index.ts:115`), and tested; `partial-hydration.ts`'s
+>   `processPartialHydrationDirectives` is **actively called** at
+>   `process.ts:1062`. Unifying them is a real refactor of live APIs, not
+>   dead-code removal.
+>
+> **Conclusion:** the byte win #1746 targets lives entirely in **per-island
+> chunking** (Phase 1's remaining increment), not in page-level runtime
+> suppression. Revisit this gate only if #1739 Phase B begins evaluating
+> `derived()` server-side (which would create the first real population of
+> server-only signals). The stranding analysis below is sound and preserved for
+> that future — but a sound mitigation for a non-existent problem isn't worth
+> editing the pipeline's single most consequential early-exit today.
+
 **Goal:** one hydration mechanism, plus the ability to render a component's HTML
 while suppressing its scope/runtime.
 
