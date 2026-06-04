@@ -9,7 +9,7 @@
  * data is gated behind a delay — so first paint isn't blocked on slow data.
  */
 import { describe, expect, it } from 'bun:test'
-import { renderStreamingPage, streamToResponse } from '../../src/streaming'
+import { extractStreamBoundaries, renderStreamingPage, streamToResponse } from '../../src/streaming'
 
 async function collect(stream: ReadableStream<string>): Promise<string[]> {
   const reader = stream.getReader()
@@ -99,6 +99,63 @@ describe('renderStreamingPage (#1746 Phase 3)', () => {
       expect(shellBeforeBoundary).toBe(true)
       expect(hasBoundary).toBe(true)
       expect(acc).toContain('<p id="loaded">DATA</p>')
+    }
+    finally {
+      server.stop(true)
+    }
+  })
+})
+
+describe('extractStreamBoundaries (serve-app opt-in)', () => {
+  it('reads a streamBoundaries export off the server context, in declaration order', () => {
+    const b = extractStreamBoundaries({ streamBoundaries: { a: async () => 'A', b: async () => 'B' } })
+    expect(b?.map(x => x.id)).toEqual(['a', 'b'])
+  })
+
+  it('returns undefined when the page declares no boundaries', () => {
+    expect(extractStreamBoundaries({ title: 'x' })).toBeUndefined()
+    expect(extractStreamBoundaries(undefined)).toBeUndefined()
+    expect(extractStreamBoundaries(null)).toBeUndefined()
+    expect(extractStreamBoundaries({ streamBoundaries: {} })).toBeUndefined()
+  })
+
+  it('ignores non-function entries', () => {
+    const b = extractStreamBoundaries({ streamBoundaries: { a: async () => 'A', bad: 'nope' } })
+    expect(b?.map(x => x.id)).toEqual(['a'])
+  })
+
+  it('HTTP: composes extract → renderStreamingPage → streamToResponse like serve-app', async () => {
+    // Mirrors the serve-app flow exactly: the page's server context exports
+    // streamBoundaries; the (already-pipelined) shell carries the placeholder.
+    const context = {
+      streamBoundaries: {
+        article: async () => { await Bun.sleep(60); return '<article id="a">DATA</article>' },
+      },
+    }
+    const shell = '<!DOCTYPE html><html><body><h1>Page</h1><div data-suspense="article">Loading…</div></body></html>'
+    const server = Bun.serve({
+      port: 0,
+      fetch() {
+        const boundaries = extractStreamBoundaries(context)!
+        return streamToResponse(renderStreamingPage(shell, boundaries))
+      },
+    })
+    try {
+      const res = await fetch(`http://localhost:${server.port}/`)
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let acc = ''
+      let shellFirst = false
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done)
+          break
+        acc += decoder.decode(value, { stream: true })
+        if (acc.includes('<h1>Page</h1>') && !acc.includes('resolve(\'article\''))
+          shellFirst = true
+      }
+      expect(shellFirst).toBe(true)
+      expect(acc).toContain('<article id="a">DATA</article>')
     }
     finally {
       server.stop(true)

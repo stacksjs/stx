@@ -42,6 +42,13 @@ import {
 interface BuiltPage {
   route: Route
   content: string
+  /**
+   * Streaming-SSR boundaries (#1746 Phase 3): present when the page's
+   * `<script server>` exports `streamBoundaries` — a map of `data-suspense` id →
+   * server-side async render. The shell (`content`) ships first with each
+   * boundary's fallback placeholder; these resolve + stream after.
+   */
+  boundaries?: { id: string, render: () => Promise<string> }[]
 }
 
 // Helper to serve static files with proper content types
@@ -237,6 +244,9 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
   // Built pages cache
   const builtPages: Map<string, BuiltPage> = new Map()
+  // Routes whose page exports streamBoundaries (#1746 Phase 3) — rebuilt per
+  // request so the boundary render fns are fresh and see request params.
+  const streamingRoutes: Set<string> = new Set()
 
   // Render a custom error page if it exists in the pages directory
   const renderErrorPage = async (statusCode: number): Promise<string | null> => {
@@ -434,7 +444,17 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         await cacheTemplate(route.filePath, output, dependencies, merged)
       }
 
-      return { route, content: output }
+      // Streaming SSR (#1746 Phase 3): a page opts in by exporting
+      // `streamBoundaries` from <script server> — a map of boundary id →
+      // server-side async render. We don't CALL them here (that would block the
+      // shell); we hand them to renderStreamingPage so they resolve after the
+      // shell flushes. Record the route so it rebuilds per request (fresh fns).
+      const { extractStreamBoundaries } = await import('../streaming')
+      const boundaries = extractStreamBoundaries(context)
+      if (boundaries)
+        streamingRoutes.add(route.pattern)
+
+      return { route, content: output, boundaries }
     }
     catch (error) {
       console.error(`${colors.red}Error building ${colors.bright}${route.pattern}${colors.reset}:`, error)
@@ -603,7 +623,8 @@ catch {
         // Dynamic routes rebuild per request so server scripts see the actual
         // URL params. Static routes use the cached startup build.
         let builtPage = builtPages.get(routeMatch.route.pattern)
-        if (routeMatch.route.isDynamic && Object.keys(routeMatch.params).length > 0) {
+        const isStreamingRoute = streamingRoutes.has(routeMatch.route.pattern)
+        if ((routeMatch.route.isDynamic && Object.keys(routeMatch.params).length > 0) || isStreamingRoute) {
           const rebuilt = await buildPage(routeMatch.route, routeMatch.params)
           if (rebuilt) builtPage = rebuilt
         }
@@ -746,6 +767,22 @@ catch {
             else {
               content = `<head>${tbInjection}</head>${content}`
             }
+          }
+
+          // Streaming SSR (#1746 Phase 3): when the page exported
+          // streamBoundaries, flush the shell (`content`, fully pipelined —
+          // layout/Crosswind/HMR already applied) immediately, then stream each
+          // boundary as its server-side async render resolves. Full-page loads
+          // only; SPA fragment nav returned earlier.
+          if (builtPage.boundaries && builtPage.boundaries.length > 0) {
+            const { renderStreamingPage, streamToResponse } = await import('../streaming')
+            return streamToResponse(renderStreamingPage(content, builtPage.boundaries), {
+              headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
+            })
           }
 
           return new Response(content, {

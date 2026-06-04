@@ -447,6 +447,23 @@ export function renderStreamingPage(
 }
 
 /**
+ * Read streaming-SSR boundaries off a rendered page's server context (#1746
+ * Phase 3). A page opts in by exporting `streamBoundaries` from `<script
+ * server>` — a map of boundary id → server-side async render. Returns the
+ * boundary list (sorted-stable by declaration), or `undefined` when the page
+ * declared none. Non-function entries are ignored.
+ */
+export function extractStreamBoundaries(
+  context: Record<string, unknown> | undefined | null,
+): StreamBoundary[] | undefined {
+  const map = context?.streamBoundaries as Record<string, () => Promise<string>> | undefined
+  if (!map || typeof map !== 'object')
+    return undefined
+  const entries = Object.entries(map).filter(([, fn]) => typeof fn === 'function')
+  return entries.length > 0 ? entries.map(([id, render]) => ({ id, render })) : undefined
+}
+
+/**
  * Stream a template with data (simple version without suspense).
  * Returns full content in chunks based on buffer size.
  *
