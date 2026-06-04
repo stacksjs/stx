@@ -906,9 +906,11 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
 
   // Island-chunk accounting (#1746): content-addressed, so dedupe by hash
   // across pages to count unique chunks + the total island JS lifted out of
-  // inline HTML.
+  // inline HTML. The maps back an emitted manifest (tooling / CI byte budgets).
   const islandChunkHashes = new Set<string>()
   let islandChunkBytes = 0
+  const manifestChunks: Record<string, { bytes: number, file: string }> = {}
+  const manifestPages: Record<string, string[]> = {}
 
   // Build hooks
   await cfg.hooks.onBuildStart?.()
@@ -1122,9 +1124,12 @@ else {
                 // Count each unique chunk once (dedupe by content hash).
                 if (!islandChunkHashes.has(chunk.hash)) {
                   islandChunkHashes.add(chunk.hash)
-                  islandChunkBytes += Buffer.byteLength(chunk.code, 'utf8')
+                  const bytes = Buffer.byteLength(chunk.code, 'utf8')
+                  islandChunkBytes += bytes
+                  manifestChunks[chunk.hash] = { bytes, file: `/_stx/islands/${chunk.hash}.js` }
                 }
               }
+              manifestPages[url] = chunks.map(c => c.hash)
               html = chunkedHtml
               // Optionally warm visible/idle island chunks via prefetch hints.
               if (cfg.prefetchIslands)
@@ -1295,8 +1300,18 @@ catch (error) {
 
   result.buildTime = Date.now() - startTime
 
-  if (islandChunkHashes.size > 0)
+  if (islandChunkHashes.size > 0) {
     result.islandChunks = { count: islandChunkHashes.size, totalBytes: islandChunkBytes }
+    // Persist a manifest (tooling / CI byte budgets / CDN config): which pages
+    // use which chunks, and each chunk's size + URL. Co-located with the chunks.
+    const manifest = {
+      generatedChunks: islandChunkHashes.size,
+      totalBytes: islandChunkBytes,
+      chunks: manifestChunks,
+      pages: manifestPages,
+    }
+    await Bun.write(path.join(cfg.outputDir, '_stx', 'islands-manifest.json'), JSON.stringify(manifest, null, 2))
+  }
 
   // Build complete hook
   await cfg.hooks.onBuildEnd?.(result)

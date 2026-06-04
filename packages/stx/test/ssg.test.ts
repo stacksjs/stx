@@ -564,6 +564,33 @@ No frontmatter here.
       expect(res.islandChunks).toBeUndefined()
     })
 
+    it('writes an island manifest (pages → chunks, sizes) when chunking emits chunks', async () => {
+      await setupIslandFixture()
+      const res = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true } as any)
+
+      const manifestPath = path.join(outputDir, '_stx', 'islands-manifest.json')
+      expect(fs.existsSync(manifestPath)).toBe(true)
+      const manifest = JSON.parse(await Bun.file(manifestPath).text())
+
+      expect(manifest.generatedChunks).toBe(res.islandChunks!.count)
+      expect(manifest.totalBytes).toBe(res.islandChunks!.totalBytes)
+      // every chunk in the manifest maps to a real file + recorded size
+      const hashes = Object.keys(manifest.chunks)
+      expect(hashes.length).toBe(res.islandChunks!.count)
+      for (const h of hashes) {
+        expect(manifest.chunks[h].file).toBe(`/_stx/islands/${h}.js`)
+        expect(fs.existsSync(path.join(outputDir, '_stx', 'islands', `${h}.js`))).toBe(true)
+      }
+      // the index page records the chunk(s) it uses
+      expect(manifest.pages['/']).toEqual(hashes)
+    })
+
+    it('writes no manifest when chunking is off', async () => {
+      await setupIslandFixture()
+      await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true })
+      expect(fs.existsSync(path.join(outputDir, '_stx', 'islands-manifest.json'))).toBe(false)
+    })
+
     it('minifies island chunks when minify is on (smaller lazy payload)', async () => {
       await setupIslandFixture()
       const big = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true } as any)
