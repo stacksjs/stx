@@ -524,5 +524,22 @@ No frontmatter here.
       expect(html).toContain('data-stx-src="/_stx/islands/') // chunked
       expect(html).not.toContain('rel="prefetch"') // but not prefetched
     })
+
+    it('integrityIslands: stamps a sha384 SRI hash on the chunk tag', async () => {
+      await setupIslandFixture()
+      await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true, integrityIslands: true } as any)
+
+      const html = await Bun.file(path.join(outputDir, 'index.html')).text()
+      expect(html).toMatch(/data-stx-integrity="sha384-[A-Za-z0-9+/=]+"/)
+    })
+
+    it('no integrity when integrityIslands is off', async () => {
+      await setupIslandFixture()
+      await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true } as any)
+
+      const html = await Bun.file(path.join(outputDir, 'index.html')).text()
+      // (the runtime source mentions the attribute name, so scope to the tag)
+      expect(html).not.toMatch(/type="stx\/island"[^>]*data-stx-integrity/)
+    })
   })
 })

@@ -165,6 +165,35 @@ describe('island deferred setup script (#1746)', () => {
     }
   })
 
+  it('chunked island applies SRI integrity to the <script> when present', async () => {
+    const sid = 'isleSri'
+    delete window.stx._scopes[sid]
+    let capturedIntegrity = ''
+    const origAppend = document.head.appendChild.bind(document.head)
+    document.head.appendChild = (node: any) => {
+      const src = String((node && (node.src || (node.getAttribute && node.getAttribute('src')))) || '')
+      if (node && node.tagName === 'SCRIPT' && src.includes('/_stx/islands/')) {
+        capturedIntegrity = node.integrity || (node.getAttribute && node.getAttribute('integrity')) || ''
+        return node
+      }
+      return origAppend(node)
+    }
+    try {
+      document.body.innerHTML
+        = `<script type="stx/island" data-stx-island="${sid}" data-stx-src="/_stx/islands/x.js" data-stx-integrity="sha384-ABC" data-stx-scoped></script>`
+        + `<section data-stx-scope="${sid}" stx-hydrate="interaction"><span>x</span></section>`
+      shimAttributes(document.body)
+      document.dispatchEvent(new window.Event('DOMContentLoaded'))
+      await flushEffects()
+      document.querySelector(`[data-stx-scope="${sid}"]`).dispatchEvent(new window.Event('click'))
+      await flushEffects()
+      expect(capturedIntegrity).toBe('sha384-ABC')
+    }
+    finally {
+      document.head.appendChild = origAppend
+    }
+  })
+
   it('does not eval anything for a plain (non-island) stx-hydrate subtree', async () => {
     // Pre-registered scope, no data-stx-island script → run() must not try to
     // eval; it binds with the captured scope exactly as before.

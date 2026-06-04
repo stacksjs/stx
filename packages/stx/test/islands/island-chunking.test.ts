@@ -6,6 +6,7 @@
  * empty body. These tests pin the pure transform (no I/O): determinism, dedup,
  * the no-op guarantees, and that non-island markup is left byte-identical.
  */
+import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'bun:test'
 import { extractIslandChunks, injectIslandChunkPrefetch } from '../../src/island-chunking'
 
@@ -77,6 +78,16 @@ describe('extractIslandChunks (#1746)', () => {
     const { html: twice, chunks } = extractIslandChunks(once)
     expect(twice).toBe(once) // empty-body + existing data-stx-src → skipped
     expect(chunks).toEqual([])
+  })
+
+  it('stamps SRI integrity (sha384 of the chunk) when requested', () => {
+    const { html: out } = extractIslandChunks(tag('S1', IIFE), { integrity: true })
+    const expected = `sha384-${createHash('sha384').update(IIFE).digest('base64')}`
+    expect(out).toContain(`data-stx-integrity="${expected}"`)
+  })
+
+  it('omits integrity by default (opt-in)', () => {
+    expect(extractIslandChunks(tag('S1', IIFE)).html).not.toContain('data-stx-integrity')
   })
 })
 

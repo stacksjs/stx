@@ -19,6 +19,7 @@
  * already chunked (empty body or an existing `data-stx-src`), so it's safe to
  * run unconditionally and idempotently.
  */
+import { createHash } from 'node:crypto'
 
 /** One extracted island chunk: a content hash and the IIFE it holds. */
 export interface IslandChunk {
@@ -33,6 +34,17 @@ export interface ExtractIslandChunksResult {
   html: string
   /** The unique chunks to write (deduped by content hash within the page). */
   chunks: IslandChunk[]
+}
+
+export interface ExtractIslandChunksOptions {
+  /**
+   * Stamp `data-stx-integrity="sha384-…"` (Subresource Integrity) on each
+   * chunked tag so the runtime can pin the chunk against tampering and a strict
+   * CSP can require SRI. Default `false` — only enable when chunks are served
+   * byte-for-byte unchanged (no CDN/proxy transform), else the hash won't match
+   * and the island silently won't hydrate.
+   */
+  integrity?: boolean
 }
 
 // Matches the exact emit shape from utils.ts renderComponentWithSlot:
@@ -56,7 +68,7 @@ function hashChunk(code: string): string {
  * Lift inline island IIFEs into content-hashed chunks. Pure: no filesystem
  * access — the caller writes `result.chunks` and `result.html`.
  */
-export function extractIslandChunks(html: string): ExtractIslandChunksResult {
+export function extractIslandChunks(html: string, options: ExtractIslandChunksOptions = {}): ExtractIslandChunksResult {
   // Fast path: nothing to do for pages without island components.
   if (!html.includes('type="stx/island"'))
     return { html, chunks: [] }
@@ -76,10 +88,15 @@ export function extractIslandChunks(html: string): ExtractIslandChunksResult {
     if (!chunksByHash.has(hash))
       chunksByHash.set(hash, code)
 
+    // Optional SRI: a sha384 of the exact chunk bytes the runtime will load.
+    const integrityAttr = options.integrity
+      ? ` data-stx-integrity="sha384-${createHash('sha384').update(code).digest('base64')}"`
+      : ''
+
     // Preserve type="stx/island" (browser still skips it at parse) and
-    // data-stx-island (the runtime's lookup key), insert data-stx-src, keep the
-    // original trailing attrs (data-stx-scoped, …), and empty the body.
-    return `<script type="stx/island" data-stx-island="${sid}" data-stx-src="/_stx/islands/${hash}.js"${attrs}></script>`
+    // data-stx-island (the runtime's lookup key), insert data-stx-src (+ optional
+    // integrity), keep the original trailing attrs (data-stx-scoped, …), empty body.
+    return `<script type="stx/island" data-stx-island="${sid}" data-stx-src="/_stx/islands/${hash}.js"${integrityAttr}${attrs}></script>`
   })
 
   const chunks: IslandChunk[] = Array.from(chunksByHash, ([hash, code]) => ({ hash, code }))

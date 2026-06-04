@@ -1444,6 +1444,9 @@ catch (e) {
           // event, since the scope isn't registered until the chunk executes.
           var s = document.createElement('script');
           s.src = chunkSrc;
+          // Subresource Integrity (opt-in at build): pin the chunk's bytes.
+          var integ = islandScript.getAttribute('data-stx-integrity');
+          if (integ) s.integrity = integ;
           s.onload = finishHydrate;
           s.onerror = function() { console.error('[stx] island chunk load failed:', sid, chunkSrc); finishHydrate(); };
           document.head.appendChild(s);

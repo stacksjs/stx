@@ -162,6 +162,11 @@ one immutable, content-addressed file.
   emit chunks into, and bytes are local anyway).
 - **CSP-clean** — the chunked path uses `<script src>`, **no `eval`/`new
   Function`**, so `script-src 'self'` is sufficient for chunked islands.
+- **Subresource Integrity (opt-in)** — `integrityIslands: true` stamps a
+  `sha384` hash on each chunk so the runtime pins it against tampering and a
+  strict CSP can require SRI. Only enable it when chunks are served byte-for-byte
+  unchanged (no CDN/proxy transform), otherwise the hash won't match and the
+  island silently won't hydrate. Requires `chunkIslands`; default `false`.
 
 #### Prefetching soon-to-hydrate chunks
 

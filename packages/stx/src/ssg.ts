@@ -114,6 +114,13 @@ export interface SSGConfig {
    * `chunkIslands`. Default `false` — trades some idle bandwidth for latency.
    */
   prefetchIslands?: boolean
+  /**
+   * Stamp Subresource Integrity (`sha384`) on island chunks so the runtime pins
+   * them against tampering and a strict CSP can require SRI. Requires
+   * `chunkIslands`. Default `false` — only enable when chunks are served
+   * byte-for-byte unchanged (no CDN/proxy transform).
+   */
+  integrityIslands?: boolean
 }
 
 export interface RSSConfig {
@@ -878,6 +885,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     // never auto-flips it and every existing pipeline stays byte-identical.
     chunkIslands: options.chunkIslands === true,
     prefetchIslands: options.prefetchIslands === true,
+    integrityIslands: options.integrityIslands === true,
   }
 
   const result: SSGResult = {
@@ -1089,7 +1097,7 @@ else {
           // before the single write so the page is emitted once in final form;
           // a no-op (and no chunk dir) for pages without island components.
           if (cfg.chunkIslands) {
-            const { html: chunkedHtml, chunks } = extractIslandChunks(html)
+            const { html: chunkedHtml, chunks } = extractIslandChunks(html, { integrity: cfg.integrityIslands })
             if (chunks.length > 0) {
               const islandsDir = path.join(cfg.outputDir, '_stx', 'islands')
               await fs.promises.mkdir(islandsDir, { recursive: true })
