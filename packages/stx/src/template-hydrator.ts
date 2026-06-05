@@ -46,7 +46,29 @@ export async function hydrateTemplateStream(
 ): Promise<{ html: string, boundaries?: { id: string, render: () => Promise<string> }[] }> {
   const { html, context } = await runHydration(compiled, requestContext)
   const { extractStreamBoundaries } = await import('./streaming')
-  return { html, boundaries: extractStreamBoundaries(context) }
+  // Low-level: streamBoundaries export → functions returning HTML.
+  let boundaries = extractStreamBoundaries(context)
+
+  // @stream sugar: render each compile-time-captured inner template per request
+  // with $boundary = await streamBoundaries[id]() (mirrors serve-app).
+  const templates = compiled.streamTemplates
+  if (templates && Object.keys(templates).length > 0) {
+    const { processDirectives } = await import('./process')
+    const { defaultConfig } = await import('./config')
+    const dataFns = (context.streamBoundaries || {}) as Record<string, () => Promise<unknown>>
+    const fragmentConfig = { ...defaultConfig, autoShell: false } as any
+    const tplBoundaries = Object.keys(templates).map(id => ({
+      id,
+      render: async (): Promise<string> => {
+        const data = typeof dataFns[id] === 'function' ? await dataFns[id]() : undefined
+        return processDirectives(templates[id], { ...context, $boundary: data }, compiled.sourceFile, fragmentConfig, new Set())
+      },
+    }))
+    const tplIds = new Set(tplBoundaries.map(b => b.id))
+    boundaries = [...(boundaries || []).filter(b => !tplIds.has(b.id)), ...tplBoundaries]
+  }
+
+  return { html, boundaries: boundaries && boundaries.length > 0 ? boundaries : undefined }
 }
 
 /** Build the request-time context (running server scripts) and fill placeholders. */

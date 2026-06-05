@@ -9,7 +9,7 @@ import { describe, expect, it } from 'bun:test'
 import type { CompiledTemplate } from '../../src/template-compiler'
 import { hydrateTemplateStream } from '../../src/template-hydrator'
 
-function compiled(serverScript: string, html: string): CompiledTemplate {
+function compiled(serverScript: string, html: string, streamTemplates?: Record<string, string>): CompiledTemplate {
   return {
     route: '/x',
     sourceFile: '/tmp/x.stx',
@@ -20,6 +20,7 @@ function compiled(serverScript: string, html: string): CompiledTemplate {
     serverScriptContent: [serverScript],
     dependencies: [],
     contentHash: 'h',
+    streamTemplates,
   }
 }
 
@@ -42,5 +43,17 @@ describe('hydrateTemplateStream (#1746 production streaming)', () => {
     const c = compiled(`const title = 'Home'`, `<h1>Home</h1>`)
     const { boundaries } = await hydrateTemplateStream(c, {})
     expect(boundaries).toBeUndefined()
+  })
+
+  it('replays a compile-time @stream template with its $boundary data', async () => {
+    // @stream captured this inner template at build; streamBoundaries supplies data.
+    const c = compiled(
+      `const streamBoundaries = { article: async () => ({ title: 'Hello' }) }`,
+      `<body><div data-suspense="article">Loading…</div></body>`,
+      { article: '<article>{{ $boundary.title }}</article>' },
+    )
+    const { boundaries } = await hydrateTemplateStream(c, {})
+    expect(boundaries!.map(b => b.id)).toEqual(['article'])
+    expect(await boundaries![0].render()).toContain('Hello') // template rendered with data
   })
 })

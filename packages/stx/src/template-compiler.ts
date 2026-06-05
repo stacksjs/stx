@@ -38,6 +38,12 @@ export interface CompiledTemplate {
   dependencies: string[]
   /** Content hash of the source file */
   contentHash: string
+  /**
+   * Streaming-SSR `@stream` inner templates captured at compile time (#1746):
+   * boundary id → raw template, re-rendered per request with `$boundary` data.
+   * Present only for pages using the `@stream` directive.
+   */
+  streamTemplates?: Record<string, string>
 }
 
 /**
@@ -159,5 +165,8 @@ export async function compileTemplate(
     serverScriptContent,
     dependencies: Array.from(dependencies),
     contentHash,
+    // @stream inner templates captured during processDirectives (#1746) — so the
+    // production server can re-render them per request with $boundary data.
+    streamTemplates: context.__streamTemplates as Record<string, string> | undefined,
   }
 }
