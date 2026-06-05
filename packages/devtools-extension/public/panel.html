@@ -7,6 +7,8 @@
     #bar { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid #333; flex-wrap: wrap; }
     button { background: #2d2d2d; color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 3px 8px; cursor: pointer; }
     button:hover { background: #3a3a3a; }
+    #filter { background: #2d2d2d; color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 2px 8px; margin-left: auto; min-width: 140px; }
+    #filter::placeholder { color: #777; }
     #out { padding: 8px; overflow: auto; }
     #out pre { white-space: pre-wrap; }
     code { color: #9cdcfe; }
@@ -34,6 +36,7 @@
   <div id="bar">
     <button id="enable">enable tracking</button>
     <label><input type="checkbox" id="live"> live</label>
+    <input id="filter" type="search" placeholder="filter graph…">
   </div>
   <pre id="out">Pick a view above.</pre>
   <script src="panel.js"></script>

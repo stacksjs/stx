@@ -41,6 +41,28 @@ export function renderTree(tree: TreeNode[]): string {
 interface GraphNode { name: string, type: string, value: unknown, setCount: number, subscribers: number }
 interface GraphScope { scopeId: string, nodes: GraphNode[] }
 
+/**
+ * Filter the reactive graph by a query (case-insensitive). A scope whose id
+ * matches is kept whole; otherwise only its signals whose name matches are kept,
+ * and a scope with no match is dropped. Empty query → the graph unchanged.
+ */
+export function filterGraph(graph: GraphScope[], query: string): GraphScope[] {
+  const q = (query || '').trim().toLowerCase()
+  if (!q || !Array.isArray(graph))
+    return graph
+  const out: GraphScope[] = []
+  for (const scope of graph) {
+    if (scope.scopeId.toLowerCase().includes(q)) {
+      out.push(scope)
+      continue
+    }
+    const nodes = scope.nodes.filter(n => n.name.toLowerCase().includes(q))
+    if (nodes.length > 0)
+      out.push({ ...scope, nodes })
+  }
+  return out
+}
+
 /** Reactive graph → per-scope tables of signals (value · set count · subscribers). */
 export function renderGraph(graph: GraphScope[]): string {
   if (!Array.isArray(graph) || graph.length === 0)

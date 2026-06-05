@@ -99,4 +99,27 @@ describe('createPanelController', () => {
     expect(html).toContain('signals')
     expect(html).toContain('go')
   })
+
+  it('setGraphFilter re-renders the cached graph without re-fetching', async () => {
+    let fetches = 0
+    let html = ''
+    const graph = [{ scopeId: 'Cart', nodes: [
+      { name: 'items', type: 'signal', value: 1, setCount: 0, subscribers: 0 },
+      { name: 'total', type: 'derived', value: 2, setCount: 0, subscribers: 0 },
+    ] }]
+    const controller = createPanelController({
+      request: async () => { fetches++; return { id: 1, ok: true, result: graph } },
+      setHtml: (h) => { html = h },
+    })
+
+    await controller.show('graph')
+    expect(fetches).toBe(1)
+    expect(html).toContain('items')
+    expect(html).toContain('total')
+
+    controller.setGraphFilter('tot') // re-renders cached graph, no new fetch
+    expect(fetches).toBe(1)
+    expect(html).toContain('total')
+    expect(html).not.toContain('items')
+  })
 })

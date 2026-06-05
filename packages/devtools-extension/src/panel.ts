@@ -54,6 +54,10 @@ for (const view of VIEWS) {
 
 document.getElementById('enable').addEventListener('click', () => request('enable'))
 
+// Filter the graph view by signal/scope name.
+const filterInput = document.getElementById('filter') as { value: string, addEventListener: (e: string, h: () => void) => void }
+filterInput.addEventListener('input', () => panel.setGraphFilter(filterInput.value))
+
 // Click a scope id in the tree → drill into its inspector.
 out.addEventListener('click', (e: { target?: { getAttribute?: (n: string) => string | null } }) => {
   const scopeId = e.target?.getAttribute?.('data-scope')

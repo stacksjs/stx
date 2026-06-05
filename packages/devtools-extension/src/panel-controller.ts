@@ -5,7 +5,7 @@
  * keeping it abstract makes the panel's core logic unit-testable.
  */
 import type { DevtoolsRequestType, DevtoolsResponse } from './protocol'
-import { escapeHtml, renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderTree } from './render'
+import { escapeHtml, filterGraph, renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderTree } from './render'
 
 // eslint-disable-next-line ts/no-explicit-any
 const RENDERERS: Partial<Record<DevtoolsRequestType, (result: any) => string>> = {
@@ -29,12 +29,17 @@ export interface PanelController {
   refresh: () => Promise<void>
   /** Drill into one scope: fetch `scope(id)` and render its inspector. */
   inspectScope: (scopeId: string) => Promise<void>
+  /** Filter the graph view by signal/scope name; re-renders the cached graph. */
+  setGraphFilter: (query: string) => void
   /** The view currently shown, or null before the first `show`. */
   current: () => DevtoolsRequestType | null
 }
 
 export function createPanelController(deps: PanelDeps): PanelController {
   let currentView: DevtoolsRequestType | null = null
+  let graphFilter = ''
+  // eslint-disable-next-line ts/no-explicit-any
+  let lastGraph: any = null
 
   async function render(view: DevtoolsRequestType): Promise<void> {
     let res: DevtoolsResponse
@@ -47,6 +52,12 @@ export function createPanelController(deps: PanelDeps): PanelController {
     }
     if (!res.ok) {
       deps.setHtml(`<p class="empty">error: ${escapeHtml(res.error)}</p>`)
+      return
+    }
+    // Cache the graph so the filter can re-render without re-fetching.
+    if (view === 'graph') {
+      lastGraph = res.result
+      deps.setHtml(renderGraph(filterGraph(lastGraph, graphFilter)))
       return
     }
     const renderer = RENDERERS[view]
@@ -73,6 +84,12 @@ export function createPanelController(deps: PanelDeps): PanelController {
       }
       // eslint-disable-next-line ts/no-explicit-any
       deps.setHtml(res.ok ? renderScope(res.result as any) : `<p class="empty">error: ${escapeHtml(res.error)}</p>`)
+    },
+    setGraphFilter(query) {
+      graphFilter = query
+      // Re-render the cached graph (no re-fetch) if the graph view is showing.
+      if (currentView === 'graph' && lastGraph)
+        deps.setHtml(renderGraph(filterGraph(lastGraph, graphFilter)))
     },
     current() {
       return currentView

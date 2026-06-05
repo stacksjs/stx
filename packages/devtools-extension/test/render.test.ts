@@ -3,7 +3,7 @@
  * without a DOM.
  */
 import { describe, expect, it } from 'bun:test'
-import { escapeHtml, renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderTree } from '../src/render'
+import { escapeHtml, filterGraph, renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderTree } from '../src/render'
 
 describe('panel renderers', () => {
   it('escapeHtml neutralizes markup', () => {
@@ -70,6 +70,27 @@ describe('panel renderers', () => {
     expect(html).toContain('on')
     expect(html).toContain('3')
     expect(html).toContain('8')
+  })
+
+  it('filterGraph matches by signal name, keeps a matching scope whole, drops the rest', () => {
+    const graph = [
+      { scopeId: 'Cart', nodes: [
+        { name: 'items', type: 'signal', value: 0, setCount: 0, subscribers: 0 },
+        { name: 'total', type: 'derived', value: 0, setCount: 0, subscribers: 0 },
+      ] },
+      { scopeId: 'Header', nodes: [{ name: 'query', type: 'signal', value: 0, setCount: 0, subscribers: 0 }] },
+    ]
+    // by signal name → only matching nodes, scope dropped if none match
+    const byNode = filterGraph(graph, 'tot')
+    expect(byNode.map(s => s.scopeId)).toEqual(['Cart'])
+    expect(byNode[0].nodes.map(n => n.name)).toEqual(['total'])
+    // by scope id → that scope kept whole
+    const byScope = filterGraph(graph, 'header')
+    expect(byScope).toHaveLength(1)
+    expect(byScope[0].nodes).toHaveLength(1)
+    // empty query → unchanged; no match → empty
+    expect(filterGraph(graph, '')).toBe(graph)
+    expect(filterGraph(graph, 'zzz')).toEqual([])
   })
 
   it('renderScope groups signals/derived/values/methods, empty-safe', () => {
