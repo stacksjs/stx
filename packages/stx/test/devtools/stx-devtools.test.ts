@@ -24,7 +24,7 @@ describe('window.__stxDevtools (#1747 Phase 1)', () => {
 
   it('is exposed on window', () => {
     expect(typeof window.__stxDevtools).toBe('object')
-    expect(window.__stxDevtools.version).toBe(1)
+    expect(window.__stxDevtools.version).toBe(2)
   })
 
   it('builds a component tree nested by DOM ancestry', () => {
@@ -90,5 +90,65 @@ describe('window.__stxDevtools (#1747 Phase 1)', () => {
 
   it('returns null for an unknown scope', () => {
     expect(window.__stxDevtools.scope('nope')).toBeNull()
+  })
+
+  // ── Phase 2: reactivity instrumentation ──
+
+  it('toggles tracking on and off', () => {
+    window.__stxDevtools.disable()
+    expect(window.__stxDevtools.tracking()).toBe(false)
+    window.__stxDevtools.enable()
+    expect(window.__stxDevtools.tracking()).toBe(true)
+  })
+
+  it('counts signal sets + effect runs while enabled, and resetStats zeroes them', () => {
+    window.__stxDevtools.enable()
+    window.__stxDevtools.resetStats()
+
+    const s = window.stx.state(0)
+    window.stx.effect(() => { s() }) // immediate run (1), subscribes to s
+    s.set(1) // change → re-run
+    s.set(2) // change → re-run
+
+    const stats = window.__stxDevtools.stats()
+    expect(stats.signalSets).toBe(2)
+    expect(stats.effectRuns).toBeGreaterThanOrEqual(3) // initial + 2 re-runs
+    expect(s._setCount).toBe(2)
+
+    window.__stxDevtools.resetStats()
+    expect(window.__stxDevtools.stats().signalSets).toBe(0)
+  })
+
+  it('does NOT count while disabled (the gate — zero overhead in prod)', () => {
+    window.__stxDevtools.disable()
+    window.__stxDevtools.resetStats()
+
+    const s = window.stx.state(0)
+    window.stx.effect(() => { s() })
+    s.set(1)
+    s.set(2)
+
+    expect(window.__stxDevtools.stats().signalSets).toBe(0)
+    expect(window.__stxDevtools.stats().effectRuns).toBe(0)
+    expect(s._setCount).toBe(0)
+  })
+
+  it('graph() reports each scope signal with value, setCount, and subscriber count', () => {
+    window.__stxDevtools.enable()
+    const count = window.stx.state(5)
+    const doubled = window.stx.derived(() => count() * 2)
+    window.stx._scopes = { G: { count, doubled } }
+    window.stx.effect(() => { count() }) // a subscriber on count (braces → no cleanup)
+    count.set(6)
+
+    const g = window.__stxDevtools.graph().find((x: any) => x.scopeId === 'G')
+    expect(g).toBeTruthy()
+    const c = g.nodes.find((n: any) => n.name === 'count')
+    expect(c.type).toBe('signal')
+    expect(c.value).toBe(6) // read via peek
+    expect(c.setCount).toBeGreaterThanOrEqual(1)
+    expect(c.subscribers).toBeGreaterThanOrEqual(1) // the effect + derived read it
+    const d = g.nodes.find((n: any) => n.name === 'doubled')
+    expect(d.type).toBe('derived')
   })
 })

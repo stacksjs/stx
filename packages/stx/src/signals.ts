@@ -126,6 +126,14 @@ console.log('[stx] entering IIFE');
   const effectStack = [];
   const pendingEffects = new Set();
   let isBatching = false;
+
+  // DevTools Phase 2 (#1747): dev-mode reactivity instrumentation. OFF by
+  // default — even in the dev runtime — so set()/effect-run stay zero-overhead
+  // until window.__stxDevtools.enable() turns counting on. The reactive graph
+  // (each signal's subscriber set) is always available via the _effects handle.
+  var __stxDevtoolsTracking = false;
+  var __stxDevtoolsStats = { signalSets: 0, effectRuns: 0 };
+  var __stxEffectId = 0;
   let activeDisposers = null; // Array | null — when non-null, effects auto-register their dispose fn
   const targetMap = new WeakMap();
 
@@ -499,6 +507,7 @@ else {
     signal.set = (newValue) => {
       console.log('[stx] signal.set:', value, '->', newValue, 'effects:', effects.size);
       if (!Object.is(newValue, value)) {
+        if (__stxDevtoolsTracking) { signal._setCount++; __stxDevtoolsStats.signalSets++; }
         const prev = value;
         value = newValue;
         subscribers.forEach(cb => cb(value, prev));
@@ -517,6 +526,8 @@ else {
       return () => subscribers.delete(cb);
     };
     signal._isSignal = true;
+    signal._effects = effects; // DevTools: the subscriber set (reactive graph)
+    signal._setCount = 0; // DevTools: times set() changed the value (when tracking)
 
     // Vue-compatible .value getter/setter for templates that use signal.value syntax
     Object.defineProperty(signal, 'value', {
@@ -568,6 +579,7 @@ finally {
     };
 
     signal._isDerived = true;
+    signal._effects = effects; // DevTools: the subscriber set (reactive graph)
 
     // Vue-compatible .value getter for templates that use computed.value syntax
     Object.defineProperty(signal, 'value', {
@@ -588,6 +600,7 @@ finally {
 
     const runEffect = () => {
       if (isDisposed) return;
+      if (__stxDevtoolsTracking) { runEffect._runCount++; __stxDevtoolsStats.effectRuns++; }
       if (cleanup) {
         cleanup();
         cleanup = undefined;
@@ -616,6 +629,10 @@ finally {
         activeEffect = prev;
       }
     };
+
+    runEffect._isStxEffect = true; // DevTools
+    runEffect._stxId = ++__stxEffectId; // DevTools: stable effect id
+    runEffect._runCount = 0; // DevTools: times this effect re-ran (when tracking)
 
     if (options.immediate !== false) runEffect();
     const dispose = () => {
@@ -4640,7 +4657,45 @@ else {
     return out;
   }
   window.__stxDevtools = {
-    version: 1,
+    version: 2,
+    // ── Phase 2: reactivity instrumentation (dev-mode, opt-in) ──
+    // Turn counting on/off. OFF by default so the runtime stays zero-overhead
+    // until a devtools session asks for it.
+    enable: function() { __stxDevtoolsTracking = true; },
+    disable: function() { __stxDevtoolsTracking = false; },
+    tracking: function() { return __stxDevtoolsTracking; },
+    // Global tallies since the last reset: total signal changes + effect re-runs.
+    stats: function() {
+      return { signalSets: __stxDevtoolsStats.signalSets, effectRuns: __stxDevtoolsStats.effectRuns, tracking: __stxDevtoolsTracking };
+    },
+    resetStats: function() { __stxDevtoolsStats.signalSets = 0; __stxDevtoolsStats.effectRuns = 0; },
+    // Reactive graph: per scope, each signal/derived with its current value, how
+    // many times it was set (when tracking), and how many effects subscribe to
+    // it (the dependency edges — "which effects read this signal", as a count).
+    graph: function() {
+      var out = [];
+      var scopes = (window.stx && window.stx._scopes) || {};
+      Object.keys(scopes).forEach(function(scopeId) {
+        var sv = scopes[scopeId];
+        if (!sv || typeof sv !== 'object') return;
+        var nodes = [];
+        Object.keys(sv).forEach(function(k) {
+          if (k.indexOf('__') === 0 || k === '$el' || k === '$refs' || k === '$props') return;
+          var v = sv[k];
+          if (typeof v === 'function' && (v._isSignal || v._isDerived)) {
+            nodes.push({
+              name: k,
+              type: v._isDerived ? 'derived' : 'signal',
+              value: peek(function() { return v(); }),
+              setCount: v._setCount || 0,
+              subscribers: (v._effects && typeof v._effects.size === 'number') ? v._effects.size : 0
+            });
+          }
+        });
+        if (nodes.length) out.push({ scopeId: scopeId, nodes: nodes });
+      });
+      return out;
+    },
     // Component tree from [data-stx-scope] elements, nested by DOM ancestry.
     tree: function() {
       var byEl = new Map();

@@ -69,6 +69,17 @@ extension is a thin client of it.
 
 ## Phase 2 — Runtime instrumentation (graph + counters) *(in-repo, dev-mode only)*
 
+> **Shipped.** `window.__stxDevtools` (now `version: 2`) gained opt-in reactivity
+> instrumentation: `enable()` / `disable()` / `tracking()` toggle counting (OFF
+> by default — even in the dev runtime — so `set()`/effect-run stay
+> zero-overhead until a session asks for it). `stats()` returns global
+> `{ signalSets, effectRuns }` since the last `resetStats()`. `graph()` walks the
+> scope registry and reports, per scope, each signal/derived with its current
+> value (via `peek`), its `setCount`, and its `subscribers` count (the dependency
+> edges — "which effects read this signal"). The signal/effect internals now
+> carry `_effects` (the subscriber set), `_setCount`, and `_runCount`/`_stxId`
+> for this. Next: structured `:if` trace + query timeline (Phase 3).
+
 **Goal:** expose what Phases 3–5 of the UI need.
 
 - **Reactive graph:** in debug mode, attach each signal's subscriber/`effects` set
