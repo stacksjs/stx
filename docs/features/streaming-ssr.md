@@ -88,8 +88,9 @@ nothing to defer.
   (repopulating `streamBoundaries`), and `@stream` inner templates are captured
   at compile time and replayed per request with `$boundary` data — so **both the
   function form and the `@stream` sugar stream in production.**
-- **`@stream` lives in the page (or its layout), not an included partial** — it's
-  extracted early (before includes) so its inner template is captured pristine.
+- **`@stream` works in the page, its layout, *and* included partials** — a
+  partial's boundaries are captured (raw, un-evaluated) as the partial is
+  `@include`d, before its own expressions run.
 - **Interactive content inside a boundary hydrates.** The boundary function
   returns HTML; when it streams in, stx runs `window.stx.hydrate()` on the
   swapped-in subtree — executing its scoped setup scripts, binding directives,

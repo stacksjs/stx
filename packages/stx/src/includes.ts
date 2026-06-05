@@ -865,6 +865,16 @@ catch (error: unknown) {
         }
       }
 
+      // Streaming SSR (#1746): extract @stream boundaries from the RAW partial
+      // before any of the partial's own processing (expressions, loops,
+      // conditionals) runs — so each boundary's inner template is captured
+      // un-evaluated and can be re-rendered later with $boundary data. Leaves a
+      // data-suspense placeholder + fallback in the partial. No-op without @stream.
+      if (partialContent && partialContent.includes('@stream')) {
+        const { processStreamDirectives } = await import('./streaming')
+        partialContent = processStreamDirectives(partialContent, context)
+      }
+
       // SFC Support: Extract <template>, <script>, and <style> sections
       let workingContent = partialContent
 
