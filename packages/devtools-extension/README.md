@@ -51,7 +51,8 @@ browser's **Load unpacked** (Chrome `chrome://extensions`, Developer mode).
 
 - ✅ **Protocol + bridge** — done and unit-tested (`test/protocol.test.ts`, `test/inject.test.ts`).
 - ✅ **Build** — `bun run build` emits a loadable `dist/` (`test/build.test.ts`).
-- 🚧 **Background relay** — MV3 routes a devtools-panel port to the inspected tab's content-script port via a background service worker, keyed by `chrome.devtools.inspectedWindow.tabId`. `panel.ts` opens the port; the relay is the one piece of transport still to wire.
+- ✅ **Background relay** — `relay.ts` pairs a devtools-panel port with its tab's content-script port (by id) and forwards both ways; `background.ts` is the chrome adapter. Routing core unit-tested (`test/relay.test.ts`).
 - 🚧 **Rich UI** — the panel currently renders raw JSON. The component-tree view, interactive reactive graph, `:if` decision trace, and query timeline are thin clients of `request()`.
 
-The hard contract (the protocol) is settled and tested, so the remaining work is UI + transport plumbing on top of a stable surface.
+The protocol, bridge, relay, and build are settled and tested end-to-end; the
+remaining work is the panel UI on top of the stable `request()` surface.

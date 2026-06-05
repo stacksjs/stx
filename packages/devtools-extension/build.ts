@@ -14,6 +14,7 @@ const ENTRIES: Record<string, string> = {
   'inject': 'src/inject-entry.ts',
   'devtools': 'src/devtools.ts',
   'panel': 'src/panel.ts',
+  'background': 'src/background.ts',
 }
 
 export async function build(outDir: string = path.join(root, 'dist')): Promise<void> {

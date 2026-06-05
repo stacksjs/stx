@@ -18,7 +18,7 @@ describe('extension build', () => {
   it('emits every manifest-referenced bundle + the static assets', async () => {
     await build(out)
 
-    for (const f of ['content-script.js', 'inject.js', 'devtools.js', 'panel.js', 'manifest.json', 'devtools.html', 'panel.html'])
+    for (const f of ['content-script.js', 'inject.js', 'devtools.js', 'panel.js', 'background.js', 'manifest.json', 'devtools.html', 'panel.html'])
       expect(existsSync(path.join(out, f))).toBe(true)
   })
 

@@ -4,6 +4,9 @@
   "version": "0.2.70",
   "description": "Inspect stx signals, scopes, the reactive graph, the :if decision trace, and the query timeline.",
   "devtools_page": "devtools.html",
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
