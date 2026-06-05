@@ -37,10 +37,20 @@ The standard devtools trifecta — the panel can't touch `window.__stxDevtools` 
 
 `scope` takes `payload: { scopeId }`. Reads are safe; a missing runtime / unknown type / throwing call all return `{ ok: false, error }` (never throws).
 
+## Build
+
+```bash
+bun run build   # → dist/ : a loadable unpacked extension
+```
+
+Bundles `src/{content-script,inject-entry,devtools,panel}.ts` to the JS files the
+manifest references and copies `public/*` (manifest + HTML). Load `dist/` via the
+browser's **Load unpacked** (Chrome `chrome://extensions`, Developer mode).
+
 ## Status
 
 - ✅ **Protocol + bridge** — done and unit-tested (`test/protocol.test.ts`, `test/inject.test.ts`).
-- 🚧 **Build** — bundle `src/{content-script,inject-entry,devtools,panel}.ts` to the JS files the manifest references, copy `public/*` to `dist/`. (No build script yet.)
+- ✅ **Build** — `bun run build` emits a loadable `dist/` (`test/build.test.ts`).
 - 🚧 **Background relay** — MV3 routes a devtools-panel port to the inspected tab's content-script port via a background service worker, keyed by `chrome.devtools.inspectedWindow.tabId`. `panel.ts` opens the port; the relay is the one piece of transport still to wire.
 - 🚧 **Rich UI** — the panel currently renders raw JSON. The component-tree view, interactive reactive graph, `:if` decision trace, and query timeline are thin clients of `request()`.
 

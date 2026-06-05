@@ -28,6 +28,7 @@
   },
   "module": "./src/index.ts",
   "scripts": {
+    "build": "bun --bun build.ts",
     "test": "bun test"
   }
 }
