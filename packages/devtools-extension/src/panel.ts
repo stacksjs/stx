@@ -7,6 +7,7 @@
  */
 import type { DevtoolsRequest, DevtoolsRequestType, DevtoolsResponse } from './protocol'
 import { createPanelController } from './panel-controller'
+import { createPoller } from './poller'
 import { STX_DEVTOOLS_CHANNEL } from './protocol'
 
 // eslint-disable-next-line ts/no-explicit-any
@@ -51,7 +52,9 @@ for (const view of VIEWS) {
   bar.appendChild(b)
 }
 
-document.getElementById('enable').addEventListener('click', async () => {
-  const res = await request('enable')
-  out.textContent = `tracking: ${JSON.stringify((res.result as { tracking?: boolean })?.tracking)}`
-})
+document.getElementById('enable').addEventListener('click', () => request('enable'))
+
+// Live refresh: poll the current view ~1s while the toggle is on.
+const poller = createPoller({ tick: () => panel.refresh(), intervalMs: 1000 })
+const live = document.getElementById('live') as { checked: boolean, addEventListener: (e: string, h: () => void) => void }
+live.addEventListener('change', () => { live.checked ? poller.start() : poller.stop() })

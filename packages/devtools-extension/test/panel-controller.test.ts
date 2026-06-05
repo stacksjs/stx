@@ -55,4 +55,29 @@ describe('createPanelController', () => {
     expect(h.html).not.toContain('<img')
     expect(h.html).toContain('&lt;img')
   })
+
+  it('tracks the current view and refresh() re-renders it', async () => {
+    let calls = 0
+    let html = ''
+    const controller = createPanelController({
+      request: async () => { calls++; return { id: calls, ok: true, result: [{ scopeId: `S${calls}`, tag: 'div', children: [] }] } },
+      setHtml: (h) => { html = h },
+    })
+    expect(controller.current()).toBeNull()
+
+    await controller.show('tree')
+    expect(controller.current()).toBe('tree')
+    expect(html).toContain('S1')
+
+    await controller.refresh() // re-fetches the current view
+    expect(calls).toBe(2)
+    expect(html).toContain('S2')
+  })
+
+  it('refresh() is a no-op before any view is shown', async () => {
+    let calls = 0
+    const controller = createPanelController({ request: async () => { calls++; return { id: 1, ok: true, result: [] } }, setHtml: () => {} })
+    await controller.refresh()
+    expect(calls).toBe(0)
+  })
 })

@@ -23,26 +23,45 @@ export interface PanelDeps {
 }
 
 export interface PanelController {
+  /** Switch to a view, fetch it, and render it (becomes the current view). */
   show: (view: DevtoolsRequestType) => Promise<void>
+  /** Re-fetch + re-render the current view (used by live refresh). No-op if none. */
+  refresh: () => Promise<void>
+  /** The view currently shown, or null before the first `show`. */
+  current: () => DevtoolsRequestType | null
 }
 
 export function createPanelController(deps: PanelDeps): PanelController {
+  let currentView: DevtoolsRequestType | null = null
+
+  async function render(view: DevtoolsRequestType): Promise<void> {
+    let res: DevtoolsResponse
+    try {
+      res = await deps.request(view)
+    }
+    catch (e) {
+      deps.setHtml(`<p class="empty">error: ${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`)
+      return
+    }
+    if (!res.ok) {
+      deps.setHtml(`<p class="empty">error: ${escapeHtml(res.error)}</p>`)
+      return
+    }
+    const renderer = RENDERERS[view]
+    deps.setHtml(renderer ? renderer(res.result) : `<pre>${escapeHtml(JSON.stringify(res.result, null, 2))}</pre>`)
+  }
+
   return {
     async show(view) {
-      let res: DevtoolsResponse
-      try {
-        res = await deps.request(view)
-      }
-      catch (e) {
-        deps.setHtml(`<p class="empty">error: ${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`)
-        return
-      }
-      if (!res.ok) {
-        deps.setHtml(`<p class="empty">error: ${escapeHtml(res.error)}</p>`)
-        return
-      }
-      const renderer = RENDERERS[view]
-      deps.setHtml(renderer ? renderer(res.result) : `<pre>${escapeHtml(JSON.stringify(res.result, null, 2))}</pre>`)
+      currentView = view
+      await render(view)
+    },
+    async refresh() {
+      if (currentView)
+        await render(currentView)
+    },
+    current() {
+      return currentView
     },
   }
 }
