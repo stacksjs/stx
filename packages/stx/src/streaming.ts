@@ -877,6 +877,13 @@ export function streamToResponse(
   if (!headers.has('X-Content-Type-Options')) {
     headers.set('X-Content-Type-Options', 'nosniff')
   }
+  // Tell reverse proxies NOT to buffer this response — nginx (and others) buffer
+  // proxied responses by default, which would hold the shell back until the
+  // whole stream completes, defeating streaming SSR. `X-Accel-Buffering: no`
+  // opts this response out (nginx honors it; harmless elsewhere).
+  if (!headers.has('X-Accel-Buffering')) {
+    headers.set('X-Accel-Buffering', 'no')
+  }
 
   return new Response(byteStream, {
     ...init,

@@ -43,6 +43,12 @@ describe('renderStreamingPage (#1746 Phase 3)', () => {
     expect(chunks).toEqual(['<p>just shell</p>'])
   })
 
+  it('streamToResponse opts out of proxy buffering (X-Accel-Buffering: no)', () => {
+    const res = streamToResponse(renderStreamingPage('<p>shell</p>'))
+    expect(res.headers.get('X-Accel-Buffering')).toBe('no')
+    expect(res.headers.get('Content-Type')).toContain('text/html')
+  })
+
   it('the receiver hydrates the swapped-in content (in-boundary hydration)', () => {
     // The receiver keeps node handles and calls window.stx.hydrate so interactive
     // content inside a streamed boundary comes alive.
