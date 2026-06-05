@@ -7,6 +7,7 @@
  */
 import type { DevtoolsRequest, DevtoolsRequestType, DevtoolsResponse } from './protocol'
 import { STX_DEVTOOLS_CHANNEL } from './protocol'
+import { escapeHtml, renderGraph, renderIfTrace, renderQueries, renderStats, renderTree } from './render'
 
 // eslint-disable-next-line ts/no-explicit-any
 declare const chrome: any
@@ -40,6 +41,16 @@ export function request(type: DevtoolsRequestType, payload?: Record<string, unkn
 
 const out = document.getElementById('out')
 const bar = document.getElementById('bar')
+
+// Map each view to its renderer; anything without one falls back to JSON.
+// eslint-disable-next-line ts/no-explicit-any
+const RENDERERS: Partial<Record<DevtoolsRequestType, (result: any) => string>> = {
+  tree: renderTree,
+  graph: renderGraph,
+  queries: renderQueries,
+  ifTrace: renderIfTrace,
+  stats: renderStats,
+}
 const VIEWS: DevtoolsRequestType[] = ['tree', 'graph', 'queries', 'ifTrace', 'stats', 'stores']
 
 for (const view of VIEWS) {
@@ -47,7 +58,12 @@ for (const view of VIEWS) {
   b.textContent = view
   b.onclick = async () => {
     const res = await request(view)
-    out.textContent = JSON.stringify(res.ok ? res.result : `error: ${res.error}`, null, 2)
+    if (!res.ok) {
+      out.innerHTML = `<p class="empty">error: ${escapeHtml(res.error)}</p>`
+      return
+    }
+    const renderer = RENDERERS[view]
+    out.innerHTML = renderer ? renderer(res.result) : `<pre>${escapeHtml(JSON.stringify(res.result, null, 2))}</pre>`
   }
   bar.appendChild(b)
 }
