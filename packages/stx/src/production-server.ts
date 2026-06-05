@@ -13,7 +13,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { serve } from 'bun'
 import { loadManifest, type BuildManifest, type ManifestRoute } from './manifest'
-import { hydrateTemplate, hydrateFragment } from './template-hydrator'
+import { hydrateTemplateStream, hydrateFragment } from './template-hydrator'
 import type { CompiledTemplate } from './template-compiler'
 import { extractLayoutMetadata, type LayoutMetadata } from './app-shell'
 
@@ -298,7 +298,15 @@ export async function startProductionServer(options: ProductionServerOptions = {
 
       // Dynamic page — hydrate with request context
       try {
-        const html = await hydrateTemplate(compiled, { params, request })
+        const { html, boundaries } = await hydrateTemplateStream(compiled, { params, request })
+        // Streaming SSR (#1746): a page that exported streamBoundaries streams
+        // its shell first, then each boundary as its server-side data resolves.
+        if (boundaries && boundaries.length > 0) {
+          const { renderStreamingPage, streamToResponse } = await import('./streaming')
+          return streamToResponse(renderStreamingPage(html, boundaries, { timeoutMs: 30000 }), {
+            headers: { 'Cache-Control': 'no-cache' },
+          })
+        }
         return new Response(html, {
           headers: {
             'Content-Type': 'text/html',

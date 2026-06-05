@@ -83,6 +83,11 @@ nothing to defer.
   fresh request state.
 - **Full-page loads** — streaming applies to direct page loads. SPA fragment
   navigation returns the fragment as before.
+- **Dev *and* production** — works in the dev server and the compiled-template
+  production server (which re-runs `<script server>` per request, repopulating
+  `streamBoundaries`). In production use the **function form** of
+  `streamBoundaries` (returns HTML); the `@stream` template sugar isn't
+  serialized into the compiled template, so it's dev/SSG-only for now.
 - **`@stream` lives in the page (or its layout), not an included partial** — it's
   extracted early (before includes) so its inner template is captured pristine.
 - **Interactive content inside a boundary hydrates.** The boundary function

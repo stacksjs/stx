@@ -28,11 +28,32 @@ export async function hydrateTemplate(
   compiled: CompiledTemplate,
   requestContext: Record<string, any> = {},
 ): Promise<string> {
-  // If the page has no dynamic content, return pre-rendered HTML as-is
-  if (!compiled.hasServerScripts && !hasPlaceholders(compiled.html)) {
-    return compiled.html
-  }
+  return (await runHydration(compiled, requestContext)).html
+}
 
+/**
+ * Like `hydrateTemplate`, but also returns any streaming-SSR boundaries the
+ * page's `<script server>` exported (`streamBoundaries`) — re-run per request,
+ * so they're fresh. The production server uses this to stream a page's shell
+ * first, then its boundaries (#1746). `boundaries` is `undefined` for a normal
+ * page. (The low-level `streamBoundaries` form; the `@stream` sugar's captured
+ * templates aren't serialized into the compiled template, so use the function
+ * form in production.)
+ */
+export async function hydrateTemplateStream(
+  compiled: CompiledTemplate,
+  requestContext: Record<string, any> = {},
+): Promise<{ html: string, boundaries?: { id: string, render: () => Promise<string> }[] }> {
+  const { html, context } = await runHydration(compiled, requestContext)
+  const { extractStreamBoundaries } = await import('./streaming')
+  return { html, boundaries: extractStreamBoundaries(context) }
+}
+
+/** Build the request-time context (running server scripts) and fill placeholders. */
+async function runHydration(
+  compiled: CompiledTemplate,
+  requestContext: Record<string, any>,
+): Promise<{ html: string, context: Record<string, any> }> {
   // Build the hydration context from request data
   const context: Record<string, any> = {
     __filename: compiled.sourceFile,
@@ -40,7 +61,13 @@ export async function hydrateTemplate(
     ...requestContext,
   }
 
-  // Execute server scripts to populate context with dynamic data
+  // If the page has no dynamic content, return pre-rendered HTML as-is.
+  if (!compiled.hasServerScripts && !hasPlaceholders(compiled.html)) {
+    return { html: compiled.html, context }
+  }
+
+  // Execute server scripts to populate context with dynamic data (incl. any
+  // streamBoundaries export, re-run fresh each request).
   for (const scriptContent of compiled.serverScriptContent) {
     try {
       await extractVariables(scriptContent, context, compiled.sourceFile)
@@ -53,7 +80,7 @@ export async function hydrateTemplate(
   // If no placeholders, server scripts only needed to populate context
   // for side effects (e.g., setting headers). Return HTML as-is.
   if (!hasPlaceholders(compiled.html)) {
-    return compiled.html
+    return { html: compiled.html, context }
   }
 
   // Resolve expression placeholders
@@ -76,7 +103,7 @@ export async function hydrateTemplate(
     }
   }
 
-  return replacePlaceholders(compiled.html, values)
+  return { html: replacePlaceholders(compiled.html, values), context }
 }
 
 /**
