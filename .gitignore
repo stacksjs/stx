@@ -60,3 +60,5 @@ packages/components/test/visual/__snapshots__/
 .stx
 pantry
 .claude/scheduled_tasks.lock
+.claude/settings.local.json
+.claude/worktrees/
