@@ -84,6 +84,34 @@ export function renderIfTrace(trace: IfRow[]): string {
     + `</tbody></table>`
 }
 
+interface ScopeData {
+  signals?: Record<string, unknown>
+  derived?: Record<string, unknown>
+  stores?: Record<string, unknown>
+  values?: Record<string, unknown>
+  methods?: string[]
+}
+
+/** A single scope's inspection (signals · derived · stores · values · methods). */
+export function renderScope(scope: ScopeData | null): string {
+  if (!scope)
+    return '<p class="empty">Scope not found.</p>'
+  const table = (title: string, obj?: Record<string, unknown>): string => {
+    const entries = Object.entries(obj || {})
+    if (entries.length === 0)
+      return ''
+    return `<h3>${title}</h3><table><tbody>`
+      + entries.map(([k, v]) => `<tr><td><code>${escapeHtml(k)}</code></td><td>${fmtValue(v)}</td></tr>`).join('')
+      + `</tbody></table>`
+  }
+  const methods = scope.methods && scope.methods.length
+    ? `<h3>methods</h3><p>${scope.methods.map(m => `<code>${escapeHtml(m)}</code>`).join(', ')}</p>`
+    : ''
+  const out = table('signals', scope.signals) + table('derived', scope.derived)
+    + table('stores', scope.stores) + table('values', scope.values) + methods
+  return out || '<p class="empty">Empty scope.</p>'
+}
+
 interface Stats { signalSets: number, effectRuns: number, tracking: boolean }
 
 /** Global counters. */

@@ -3,7 +3,7 @@
  * without a DOM.
  */
 import { describe, expect, it } from 'bun:test'
-import { escapeHtml, renderGraph, renderIfTrace, renderQueries, renderStats, renderTree } from '../src/render'
+import { escapeHtml, renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderTree } from '../src/render'
 
 describe('panel renderers', () => {
   it('escapeHtml neutralizes markup', () => {
@@ -50,6 +50,16 @@ describe('panel renderers', () => {
     expect(html).toContain('on')
     expect(html).toContain('3')
     expect(html).toContain('8')
+  })
+
+  it('renderScope groups signals/derived/values/methods, empty-safe', () => {
+    const html = renderScope({ signals: { n: 1 }, derived: { d: 2 }, values: { label: 'hi' }, methods: ['submit'] })
+    expect(html).toContain('signals')
+    expect(html).toContain('n')
+    expect(html).toContain('derived')
+    expect(html).toContain('submit')
+    expect(renderScope(null)).toContain('Scope not found')
+    expect(renderScope({})).toContain('Empty scope')
   })
 
   it('escapes hostile content from the inspected page (no injection)', () => {
