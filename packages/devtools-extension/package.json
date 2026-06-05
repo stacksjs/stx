@@ -29,6 +29,7 @@
   "module": "./src/index.ts",
   "scripts": {
     "build": "bun --bun build.ts",
+    "preview": "bun scripts/gen-preview.ts",
     "test": "bun test"
   }
 }

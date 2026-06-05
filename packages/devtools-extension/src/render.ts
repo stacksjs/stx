@@ -47,11 +47,16 @@ export function renderGraph(graph: GraphScope[]): string {
     return '<p class="empty">No reactive signals tracked.</p>'
   return graph.map(scope =>
     `<section><h3>${escapeHtml(scope.scopeId)}</h3>`
-    + `<table><thead><tr><th>signal</th><th>type</th><th>value</th><th>set</th><th>subs</th></tr></thead><tbody>`
-    + scope.nodes.map(n =>
-      `<tr><td><code>${escapeHtml(n.name)}</code></td><td>${escapeHtml(n.type)}</td>`
-      + `<td>${fmtValue(n.value)}</td><td>${escapeHtml(n.setCount)}</td><td>${escapeHtml(n.subscribers)}</td></tr>`,
-    ).join('')
+    + `<table><thead><tr><th>signal</th><th>type</th><th>value</th><th>set</th><th>subscribers</th></tr></thead><tbody>`
+    + scope.nodes.map((n) => {
+      const pill = `<span class="pill ${n.type === 'derived' ? 'derived' : 'signal'}">${escapeHtml(n.type)}</span>`
+      // A bar proportional to subscriber count makes "what's heavily depended on"
+      // scannable; capped so a hot signal can't blow out the column.
+      const barW = Math.min(n.subscribers || 0, 12) * 7
+      const subs = `${escapeHtml(n.subscribers)} <span class="subbar" style="width:${barW}px"></span>`
+      return `<tr><td><code>${escapeHtml(n.name)}</code></td><td>${pill}</td>`
+        + `<td>${fmtValue(n.value)}</td><td>${escapeHtml(n.setCount)}</td><td>${subs}</td></tr>`
+    }).join('')
     + `</tbody></table></section>`,
   ).join('')
 }

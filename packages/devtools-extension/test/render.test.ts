@@ -27,9 +27,19 @@ describe('panel renderers', () => {
     const html = renderGraph([{ scopeId: 'G', nodes: [{ name: 'count', type: 'signal', value: 6, setCount: 3, subscribers: 2 }] }])
     expect(html).toContain('G')
     expect(html).toContain('count')
-    expect(html).toContain('signal')
     expect(html).toContain('>6<') // value cell
     expect(renderGraph([])).toContain('No reactive signals')
+  })
+
+  it('renderGraph emits a type pill and a subscriber bar', () => {
+    const html = renderGraph([{ scopeId: 'G', nodes: [
+      { name: 's', type: 'signal', value: 1, setCount: 0, subscribers: 3 },
+      { name: 'd', type: 'derived', value: 2, setCount: 0, subscribers: 0 },
+    ] }])
+    expect(html).toContain('class="pill signal"')
+    expect(html).toContain('class="pill derived"')
+    expect(html).toContain('class="subbar"')
+    expect(html).toContain('width:21px') // 3 subscribers × 7
   })
 
   it('renderQueries flags failures and rounds ms', () => {
