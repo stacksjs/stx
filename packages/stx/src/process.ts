@@ -1007,6 +1007,13 @@ async function processOtherDirectives(
   // (the ~75% of `:if` reading server/loop scope) is Phase B.
   output = preEvalLiteralReactiveIfs(output)
 
+  // Streaming SSR (#1746 Phase 3): extract @stream(...) boundaries BEFORE loops/
+  // expressions so each boundary's inner template is captured raw (re-rendered
+  // later, per request, with its $boundary data). Leaves a data-suspense
+  // placeholder + fallback in the shell. No-op unless the page uses @stream.
+  const { processStreamDirectives } = await import('./streaming')
+  output = processStreamDirectives(output, context)
+
   // Process loops FIRST - BEFORE components so that loop variables are evaluated
   // when components are processed, not after components have already been expanded
   output = processLoops(output, context, filePath, opts)

@@ -453,6 +453,35 @@ export function renderStreamingPage(
   })
 }
 
+// Captures the inner template of an `@stream('id') … @fallback … @endstream`
+// block. `@fallback` is optional; everything before it is the deferred content,
+// everything after is the fallback shown until the boundary resolves.
+const STREAM_DIRECTIVE_RE = /@stream\s*\(\s*['"]([^'"]+)['"]\s*\)([\s\S]*?)@endstream/gi
+
+/**
+ * Declarative streaming-SSR sugar (#1746 Phase 3). Extracts each
+ * `@stream('id') <content> @fallback <fallback> @endstream` block, stashes the
+ * RAW inner template on `context.__streamTemplates[id]` (re-rendered later with
+ * `$boundary` data, so its `{{ }}` / directives stay un-evaluated now), and
+ * replaces the block with the fallback inside a `data-suspense="id"` placeholder
+ * — which flows through the normal pipeline. Distinct from the client-side
+ * `@suspense` directive (suspense.ts), so the two don't collide.
+ *
+ * Runs early (before loops/expressions) so the captured template is pristine.
+ */
+export function processStreamDirectives(template: string, context: Record<string, any>): string {
+  return template.replace(STREAM_DIRECTIVE_RE, (_match, rawId: string, inner: string) => {
+    const id = rawId.trim()
+    const parts = inner.split(/@fallback/i)
+    const content = parts[0].trim()
+    const fallback = parts.length > 1 ? parts.slice(1).join('@fallback').trim() : ''
+    if (!context.__streamTemplates)
+      context.__streamTemplates = {}
+    context.__streamTemplates[id] = content
+    return `<div data-suspense="${id}">${fallback}</div>`
+  })
+}
+
 /**
  * Read streaming-SSR boundaries off a rendered page's server context (#1746
  * Phase 3). A page opts in by exporting `streamBoundaries` from `<script

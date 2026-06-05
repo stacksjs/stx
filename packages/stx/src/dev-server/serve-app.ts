@@ -450,9 +450,29 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
       // shell); we hand them to renderStreamingPage so they resolve after the
       // shell flushes. Record the route so it rebuilds per request (fresh fns).
       const { extractStreamBoundaries } = await import('../streaming')
-      const boundaries = extractStreamBoundaries(context)
-      if (boundaries)
+      // Low-level: streamBoundaries export → functions returning HTML directly.
+      let boundaries = extractStreamBoundaries(context)
+      // Declarative sugar: each @stream('id') captured a raw inner template;
+      // render it per request with $boundary = await streamBoundaries[id]().
+      const streamTemplates = context.__streamTemplates as Record<string, string> | undefined
+      if (streamTemplates && typeof streamTemplates === 'object' && Object.keys(streamTemplates).length > 0) {
+        const dataFns = (context.streamBoundaries || {}) as Record<string, () => Promise<unknown>>
+        const fragmentConfig = { ...merged, autoShell: false }
+        const tplBoundaries = Object.keys(streamTemplates).map(id => ({
+          id,
+          render: async (): Promise<string> => {
+            const data = typeof dataFns[id] === 'function' ? await dataFns[id]() : undefined
+            return processDirectives(streamTemplates[id], { ...context, $boundary: data }, route.filePath, fragmentConfig, new Set())
+          },
+        }))
+        const tplIds = new Set(tplBoundaries.map(b => b.id))
+        // @stream template wins over a same-id raw streamBoundaries entry.
+        boundaries = [...(boundaries || []).filter(b => !tplIds.has(b.id)), ...tplBoundaries]
+      }
+      if (boundaries && boundaries.length > 0)
         streamingRoutes.add(route.pattern)
+      else
+        boundaries = undefined
 
       return { route, content: output, boundaries }
     }

@@ -9,7 +9,7 @@
  * data is gated behind a delay — so first paint isn't blocked on slow data.
  */
 import { describe, expect, it } from 'bun:test'
-import { extractStreamBoundaries, renderStreamingPage, streamToResponse, SUSPENSE_RESOLVER_RUNTIME } from '../../src/streaming'
+import { extractStreamBoundaries, processStreamDirectives, renderStreamingPage, streamToResponse, SUSPENSE_RESOLVER_RUNTIME } from '../../src/streaming'
 
 async function collect(stream: ReadableStream<string>): Promise<string[]> {
   const reader = stream.getReader()
@@ -129,6 +129,55 @@ describe('extractStreamBoundaries (serve-app opt-in)', () => {
   it('ignores non-function entries', () => {
     const b = extractStreamBoundaries({ streamBoundaries: { a: async () => 'A', bad: 'nope' } })
     expect(b?.map(x => x.id)).toEqual(['a'])
+  })
+})
+
+describe('processStreamDirectives (@stream sugar)', () => {
+  it('emits a placeholder + fallback and stashes the RAW inner template', () => {
+    const ctx: Record<string, any> = {}
+    const out = processStreamDirectives(
+      `<h1>Page</h1>@stream('article')<article>{{ $boundary.title }}</article>@fallback<p>Loading…</p>@endstream<footer>f</footer>`,
+      ctx,
+    )
+    expect(out).toContain('<div data-suspense="article"><p>Loading…</p></div>')
+    expect(out).toContain('<h1>Page</h1>')
+    expect(out).toContain('<footer>f</footer>')
+    expect(out).not.toContain('@stream')
+    // template stashed verbatim — its {{ }} stays un-evaluated for later
+    expect(ctx.__streamTemplates.article).toBe('<article>{{ $boundary.title }}</article>')
+  })
+
+  it('supports a boundary with no @fallback (empty placeholder)', () => {
+    const ctx: Record<string, any> = {}
+    const out = processStreamDirectives(`@stream('x')<p>{{ $boundary.v }}</p>@endstream`, ctx)
+    expect(out).toBe('<div data-suspense="x"></div>')
+    expect(ctx.__streamTemplates.x).toBe('<p>{{ $boundary.v }}</p>')
+  })
+
+  it('handles multiple boundaries', () => {
+    const ctx: Record<string, any> = {}
+    processStreamDirectives(`@stream('a')A@fallback fa@endstream @stream('b')B@fallback fb@endstream`, ctx)
+    expect(Object.keys(ctx.__streamTemplates)).toEqual(['a', 'b'])
+  })
+
+  it('is a no-op without @stream', () => {
+    const ctx: Record<string, any> = {}
+    expect(processStreamDirectives('<p>plain</p>', ctx)).toBe('<p>plain</p>')
+    expect(ctx.__streamTemplates).toBeUndefined()
+  })
+
+  it('end-to-end: @stream emits the shell placeholder; the template renders with $boundary', async () => {
+    const { processDirectives } = await import('../../src/process')
+    const { defaultConfig } = await import('../../src/config')
+    const ctx: Record<string, any> = {}
+    const page = `<html><head><title>t</title></head><body><h1>Blog</h1>@stream('article')<article>{{ $boundary.title }}</article>@fallback<p>Loading…</p>@endstream</body></html>`
+    const shell = await processDirectives(page, ctx, '/tmp/p.stx', { ...defaultConfig } as any, new Set())
+    expect(shell).toContain('<div data-suspense="article"><p>Loading…</p></div>')
+    expect(ctx.__streamTemplates.article).toBe('<article>{{ $boundary.title }}</article>')
+
+    // Render the captured template with its resolved boundary data (serve-app flow).
+    const resolved = await processDirectives(ctx.__streamTemplates.article, { ...ctx, $boundary: { title: 'Hello' } }, '/tmp/p.stx', { ...defaultConfig, autoShell: false } as any, new Set())
+    expect(resolved).toContain('Hello')
   })
 
   it('HTTP: composes extract → renderStreamingPage → streamToResponse like serve-app', async () => {
