@@ -851,6 +851,15 @@ async function processDirectivesInternal(
         return defaultContent || ''
       })
 
+      // Resolve @yield/@slot nested INSIDE a section body that was just merged
+      // into the layout (#1752). Those slots were extracted with their section
+      // before the slot resolver ran, so they never reached it — an unfilled one
+      // would otherwise render as the literal directive text. Fill from a
+      // sibling section when available; collapse a self-referential slot (a
+      // section body referencing its own name) or an unfilled one to its default
+      // or empty string.
+      processedLayout = resolveNestedSlots(processedLayout, sections)
+
       // Replace {{ slot }} with content section (simpler syntax for layouts)
       processedLayout = processedLayout.replace(/\{\{\s*slot\s*\}\}/g, () => {
         return sections.content || ''
@@ -877,6 +886,32 @@ async function processDirectivesInternal(
 
   // If no layout, process all other directives
   return unmaskHtmlComments(await processOtherDirectives(output, context, filePath, resolvedOptions, dependencies))
+}
+
+/**
+ * Resolve `@yield/@slot('name', default?)` that survived the section→layout
+ * merge — i.e. slots nested inside a section body, which the main slot resolver
+ * never saw because their section was extracted before it ran (#1752). Fills
+ * from a sibling section when one exists; collapses a self-referential slot (a
+ * section body containing a slot of its own name — filling it would re-insert
+ * the body recursively) or an unfilled slot to its default or empty string, so
+ * it renders nothing rather than leaking the literal directive text.
+ */
+function resolveNestedSlots(input: string, sections: Record<string, string>): string {
+  return input.replace(
+    /@(?:yield|slot)\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?\)/g,
+    (_full, name: string, defaultContent?: string) => {
+      const fill = sections[name]
+      if (fill !== undefined) {
+        // Guard recursion: don't fill from a section whose body references this
+        // same slot (the self-referential nested-layout case from #1752).
+        const selfRef = new RegExp(`@(?:yield|slot)\\(\\s*['"]${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`)
+        if (!selfRef.test(fill))
+          return fill
+      }
+      return defaultContent || ''
+    },
+  )
 }
 
 function prepareDirectiveContext(context: Record<string, any>, opts: StxOptions): void {
