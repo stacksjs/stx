@@ -69,6 +69,8 @@ const CSS = `
   .pill { display: inline-block; padding: 0 6px; border-radius: 8px; font-size: 11px; }
   .pill.signal { background: #264f78; color: #9cdcfe; }
   .pill.derived { background: #3a3d2a; color: #c5cea0; }
+  .pill.ok { background: #213e2a; color: #89d185; }
+  .pill.bad { background: #4a2326; color: #f48771; }
 `
 
 const views: [string, string][] = [

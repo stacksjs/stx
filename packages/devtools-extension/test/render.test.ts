@@ -46,8 +46,10 @@ describe('panel renderers', () => {
     const ok = renderQueries([{ source: 'useFetch', url: '/a', method: 'GET', status: 200, ok: true, ms: 12.7 }])
     expect(ok).toContain('class="ok"')
     expect(ok).toContain('13') // rounded
+    expect(ok).toContain('pill ok') // green status pill
     const err = renderQueries([{ source: 'useQuery', url: '/b', method: 'GET', status: 0, ok: false, ms: 5, error: 'offline' }])
     expect(err).toContain('class="err"')
+    expect(err).toContain('pill bad') // red status pill
     expect(err).toContain('offline')
     expect(renderQueries([])).toContain('No queries')
   })
@@ -57,7 +59,10 @@ describe('panel renderers', () => {
     expect(html).toContain('IF')
     expect(html).toContain(':if · :else')
     expect(html).toContain('#0')
-    expect(renderIfTrace([{ scopeId: null, branches: [':if'], picked: -1 }])).toContain('none')
+    expect(html).toContain('pill ok') // picked branch highlighted
+    const none = renderIfTrace([{ scopeId: null, branches: [':if'], picked: -1 }])
+    expect(none).toContain('none')
+    expect(none).toContain('pill bad') // no branch matched
   })
 
   it('renderStats shows tracking + counters', () => {

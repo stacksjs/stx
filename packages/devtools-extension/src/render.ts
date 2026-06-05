@@ -68,11 +68,12 @@ export function renderQueries(queries: QueryRow[]): string {
   if (!Array.isArray(queries) || queries.length === 0)
     return '<p class="empty">No queries recorded (enable tracking, then fetch).</p>'
   return `<table><thead><tr><th>source</th><th>method</th><th>url</th><th>status</th><th>ms</th></tr></thead><tbody>`
-    + queries.map(q =>
-      `<tr class="${q.ok ? 'ok' : 'err'}"><td>${escapeHtml(q.source)}</td><td>${escapeHtml(q.method)}</td>`
-      + `<td><code>${escapeHtml(q.url)}</code></td><td>${q.ok ? escapeHtml(q.status) : escapeHtml(q.error || q.status)}</td>`
-      + `<td>${escapeHtml(Math.round(q.ms))}</td></tr>`,
-    ).join('')
+    + queries.map((q) => {
+      const status = `<span class="pill ${q.ok ? 'ok' : 'bad'}">${q.ok ? escapeHtml(q.status) : escapeHtml(q.error || q.status)}</span>`
+      return `<tr class="${q.ok ? 'ok' : 'err'}"><td>${escapeHtml(q.source)}</td><td>${escapeHtml(q.method)}</td>`
+        + `<td><code>${escapeHtml(q.url)}</code></td><td>${status}</td>`
+        + `<td>${escapeHtml(Math.round(q.ms))}</td></tr>`
+    }).join('')
     + `</tbody></table>`
 }
 
@@ -83,10 +84,13 @@ export function renderIfTrace(trace: IfRow[]): string {
   if (!Array.isArray(trace) || trace.length === 0)
     return '<p class="empty">No conditional evaluations recorded.</p>'
   return `<table><thead><tr><th>scope</th><th>branches</th><th>picked</th></tr></thead><tbody>`
-    + trace.map(t =>
-      `<tr><td>${escapeHtml(t.scopeId || '—')}</td><td><code>${escapeHtml((t.branches || []).join(' · '))}</code></td>`
-      + `<td>${t.picked < 0 ? 'none' : `#${escapeHtml(t.picked)} ${escapeHtml(t.pickedAttr || '')}`}</td></tr>`,
-    ).join('')
+    + trace.map((t) => {
+      const picked = t.picked < 0
+        ? '<span class="pill bad">none</span>'
+        : `<span class="pill ok">#${escapeHtml(t.picked)} ${escapeHtml(t.pickedAttr || '')}</span>`
+      return `<tr><td>${escapeHtml(t.scopeId || '—')}</td><td><code>${escapeHtml((t.branches || []).join(' · '))}</code></td>`
+        + `<td>${picked}</td></tr>`
+    }).join('')
     + `</tbody></table>`
 }
 
