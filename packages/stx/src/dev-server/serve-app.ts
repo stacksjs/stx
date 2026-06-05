@@ -796,7 +796,9 @@ catch {
           // only; SPA fragment nav returned earlier.
           if (builtPage.boundaries && builtPage.boundaries.length > 0) {
             const { renderStreamingPage, streamToResponse } = await import('../streaming')
-            return streamToResponse(renderStreamingPage(content, builtPage.boundaries), {
+            // 30s per-boundary cap so a hung data source can't hold the stream
+            // (and the connection) open forever — it degrades to an error UI.
+            return streamToResponse(renderStreamingPage(content, builtPage.boundaries, { timeoutMs: 30000 }), {
               headers: {
                 'Cache-Control': 'no-store, no-cache, must-revalidate',
                 'Pragma': 'no-cache',

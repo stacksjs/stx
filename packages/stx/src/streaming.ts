@@ -426,10 +426,32 @@ export interface StreamBoundary {
  * UI into that boundary instead of failing the whole stream). Pair with
  * `streamToResponse` to get a chunked HTTP `Response`.
  */
+export interface RenderStreamingOptions {
+  /**
+   * Per-boundary timeout in ms. A boundary whose `render()` doesn't resolve in
+   * time is rejected (→ an error UI in its placeholder) so a hung data source
+   * can't keep the stream open forever. `0` (default) = no timeout.
+   */
+  timeoutMs?: number
+}
+
+/** Reject `promise` if it doesn't settle within `ms`; clears its timer either way. */
+function withTimeout(promise: Promise<string>, ms: number, id: string): Promise<string> {
+  if (!ms || ms <= 0)
+    return promise
+  let timer: ReturnType<typeof setTimeout>
+  const timeout = new Promise<string>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(`streaming boundary "${id}" timed out after ${ms}ms`)), ms)
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
 export function renderStreamingPage(
   shellHtml: string,
   boundaries: StreamBoundary[] = [],
+  options: RenderStreamingOptions = {},
 ): ReadableStream<string> {
+  const timeoutMs = options.timeoutMs ?? 0
   return new ReadableStream<string>({
     async start(controller) {
       try {
@@ -439,9 +461,10 @@ export function renderStreamingPage(
           // 2. The client receiver, once.
           controller.enqueue(SUSPENSE_RESOLVER_RUNTIME)
           // 3. Each boundary streams independently, in resolution order — a slow
-          //    one doesn't hold back a fast one.
+          //    one doesn't hold back a fast one; a hung one times out (if set).
           await Promise.all(boundaries.map(async (boundary) => {
-            controller.enqueue(await buildSuspenseResolveScript(boundary.id, boundary.render()))
+            const render = withTimeout(boundary.render(), timeoutMs, boundary.id)
+            controller.enqueue(await buildSuspenseResolveScript(boundary.id, render))
           }))
         }
         controller.close()

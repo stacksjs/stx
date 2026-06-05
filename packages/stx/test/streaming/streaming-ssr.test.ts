@@ -60,6 +60,20 @@ describe('renderStreamingPage (#1746 Phase 3)', () => {
     expect(full).toContain('Error loading content') // with an error UI, stream intact
   })
 
+  it('times out a hung boundary so the stream still closes', async () => {
+    // A boundary whose render never resolves — without the timeout, collect()
+    // (which waits for stream close) would hang the test.
+    const stream = renderStreamingPage(
+      '<div data-suspense="slow">…</div>',
+      [{ id: 'slow', render: () => new Promise<string>(() => {}) }],
+      { timeoutMs: 40 },
+    )
+    const full = (await collect(stream)).join('')
+    expect(full).toContain('resolve(\'slow\'') // boundary resolved (with an error)
+    expect(full).toContain('Error loading content')
+    expect(full).toContain('timed out')
+  })
+
   it('streams independent boundaries in completion order, not declaration order', async () => {
     const stream = renderStreamingPage(
       '<div data-suspense="slow"></div><div data-suspense="fast"></div>',
