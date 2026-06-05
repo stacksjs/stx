@@ -24,7 +24,7 @@ describe('window.__stxDevtools (#1747 Phase 1)', () => {
 
   it('is exposed on window', () => {
     expect(typeof window.__stxDevtools).toBe('object')
-    expect(window.__stxDevtools.version).toBe(2)
+    expect(window.__stxDevtools.version).toBe(3)
   })
 
   it('builds a component tree nested by DOM ancestry', () => {
@@ -90,6 +90,19 @@ describe('window.__stxDevtools (#1747 Phase 1)', () => {
 
   it('returns null for an unknown scope', () => {
     expect(window.__stxDevtools.scope('nope')).toBeNull()
+  })
+
+  it('store(id) classifies a store\'s state / getters / actions', () => {
+    const items = window.stx.state([{ id: 1 }])
+    const total = window.stx.derived(() => items().length)
+    window.stx._stores.set('cart', { items, total, add: () => {}, label: 'Cart' })
+
+    const s = window.__stxDevtools.store('cart')
+    expect(Array.isArray(s.signals.items)).toBe(true)
+    expect(s.derived.total).toBe(1)
+    expect(s.methods).toContain('add')
+    expect(s.values.label).toBe('Cart')
+    expect(window.__stxDevtools.store('missing')).toBeNull()
   })
 
   // ── Phase 2: reactivity instrumentation ──

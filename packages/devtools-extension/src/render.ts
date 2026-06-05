@@ -144,6 +144,16 @@ export function renderScope(scope: ScopeData | null): string {
   return out || '<p class="empty">Empty scope.</p>'
 }
 
+/** Registered stores — each id click-to-inspect its state (`data-store`). */
+export function renderStores(stores: Record<string, unknown> | null): string {
+  const ids = stores ? Object.keys(stores) : []
+  if (ids.length === 0)
+    return '<p class="empty">No stores registered (defineStore).</p>'
+  return `<ul class="tree">${ids.map(id =>
+    `<li><code class="store-link scope-link" data-store="${escapeHtml(id)}">${escapeHtml(id)}</code></li>`,
+  ).join('')}</ul>`
+}
+
 interface Stats { signalSets: number, effectRuns: number, tracking: boolean }
 
 /** Global counters. */

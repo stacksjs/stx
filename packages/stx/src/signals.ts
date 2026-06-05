@@ -4687,7 +4687,7 @@ else {
     return out;
   }
   window.__stxDevtools = {
-    version: 2,
+    version: 3,
     // ── Phase 2: reactivity instrumentation (dev-mode, opt-in) ──
     // Turn counting on/off. OFF by default so the runtime stays zero-overhead
     // until a devtools session asks for it.
@@ -4766,6 +4766,14 @@ else {
       var reg = window.stx && window.stx._stores;
       if (reg && typeof reg.forEach === 'function') reg.forEach(function(v, k) { out[k] = true; });
       return out;
+    },
+    // One store's state — its state signals / getters (derived) / plain values /
+    // actions (methods). A store is just an object of those, so the same
+    // classifier as scope() works (values read via peek — no graph pollution).
+    store: function(id) {
+      var reg = window.stx && window.stx._stores;
+      var s = reg && typeof reg.get === 'function' ? reg.get(id) : null;
+      return s ? __stxDevtoolsClassify(s) : null;
     },
   };
 

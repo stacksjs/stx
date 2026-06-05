@@ -5,7 +5,7 @@
  * keeping it abstract makes the panel's core logic unit-testable.
  */
 import type { DevtoolsRequestType, DevtoolsResponse } from './protocol'
-import { escapeHtml, filterGraph, renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderTree } from './render'
+import { escapeHtml, filterGraph, renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderStores, renderTree } from './render'
 
 // eslint-disable-next-line ts/no-explicit-any
 const RENDERERS: Partial<Record<DevtoolsRequestType, (result: any) => string>> = {
@@ -14,6 +14,7 @@ const RENDERERS: Partial<Record<DevtoolsRequestType, (result: any) => string>> =
   queries: renderQueries,
   ifTrace: renderIfTrace,
   stats: renderStats,
+  stores: renderStores,
 }
 
 export interface PanelDeps {
@@ -29,6 +30,8 @@ export interface PanelController {
   refresh: () => Promise<void>
   /** Drill into one scope: fetch `scope(id)` and render its inspector. */
   inspectScope: (scopeId: string) => Promise<void>
+  /** Drill into one store: fetch `store(id)` and render its state. */
+  inspectStore: (storeId: string) => Promise<void>
   /** Filter the graph view by signal/scope name; re-renders the cached graph. */
   setGraphFilter: (query: string) => void
   /** The view currently shown, or null before the first `show`. */
@@ -64,6 +67,21 @@ export function createPanelController(deps: PanelDeps): PanelController {
     deps.setHtml(renderer ? renderer(res.result) : `<pre>${escapeHtml(JSON.stringify(res.result, null, 2))}</pre>`)
   }
 
+  // Drill into a scope or store — both classify to the same shape, so both
+  // render through renderScope.
+  async function inspect(type: 'scope' | 'store', payload: Record<string, unknown>): Promise<void> {
+    let res: DevtoolsResponse
+    try {
+      res = await deps.request(type, payload)
+    }
+    catch (e) {
+      deps.setHtml(`<p class="empty">error: ${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`)
+      return
+    }
+    // eslint-disable-next-line ts/no-explicit-any
+    deps.setHtml(res.ok ? renderScope(res.result as any) : `<p class="empty">error: ${escapeHtml(res.error)}</p>`)
+  }
+
   return {
     async show(view) {
       currentView = view
@@ -74,16 +92,10 @@ export function createPanelController(deps: PanelDeps): PanelController {
         await render(currentView)
     },
     async inspectScope(scopeId) {
-      let res: DevtoolsResponse
-      try {
-        res = await deps.request('scope', { scopeId })
-      }
-      catch (e) {
-        deps.setHtml(`<p class="empty">error: ${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`)
-        return
-      }
-      // eslint-disable-next-line ts/no-explicit-any
-      deps.setHtml(res.ok ? renderScope(res.result as any) : `<p class="empty">error: ${escapeHtml(res.error)}</p>`)
+      await inspect('scope', { scopeId })
+    },
+    async inspectStore(storeId) {
+      await inspect('store', { storeId })
     },
     setGraphFilter(query) {
       graphFilter = query

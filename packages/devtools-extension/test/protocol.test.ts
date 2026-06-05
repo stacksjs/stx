@@ -14,6 +14,7 @@ function mockDevtools(overrides: Partial<StxDevtoolsApi> = {}): StxDevtoolsApi {
     tree: () => [{ scopeId: 'A', tag: 'div', children: [] }],
     scope: (id: string) => ({ id, signals: { n: 1 } }),
     stores: () => ({ cart: true }),
+    store: (id: string) => ({ id, signals: { items: [] }, methods: ['add'] }),
     enable: () => { tracking = true },
     disable: () => { tracking = false },
     tracking: () => tracking,
@@ -41,6 +42,14 @@ describe('handleDevtoolsRequest', () => {
     const dt = mockDevtools()
     const res = handleDevtoolsRequest(dt, { id: 7, type: 'scope', payload: { scopeId: 'X' } })
     expect((res.result as any).id).toBe('X')
+  })
+
+  it('routes store(id) with its storeId payload', () => {
+    const dt = mockDevtools()
+    const res = handleDevtoolsRequest(dt, { id: 13, type: 'store', payload: { storeId: 'cart' } })
+    expect(res.ok).toBe(true)
+    expect((res.result as any).id).toBe('cart')
+    expect((res.result as any).methods).toContain('add')
   })
 
   it('enable/disable toggle tracking and report it back', () => {

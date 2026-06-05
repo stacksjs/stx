@@ -19,6 +19,7 @@ export interface StxDevtoolsApi {
   tree: () => unknown
   scope: (id: string) => unknown
   stores: () => unknown
+  store: (id: string) => unknown
   enable: () => void
   disable: () => void
   tracking: () => boolean
@@ -30,7 +31,7 @@ export interface StxDevtoolsApi {
 }
 
 export type DevtoolsRequestType =
-  | 'version' | 'tree' | 'scope' | 'stores'
+  | 'version' | 'tree' | 'scope' | 'stores' | 'store'
   | 'enable' | 'disable' | 'tracking' | 'stats' | 'resetStats'
   | 'graph' | 'ifTrace' | 'queries'
 
@@ -69,6 +70,7 @@ export function handleDevtoolsRequest(
       case 'tree': return done(req, devtools.tree())
       case 'scope': return done(req, devtools.scope(String((req.payload && req.payload.scopeId) || '')))
       case 'stores': return done(req, devtools.stores())
+      case 'store': return done(req, devtools.store(String((req.payload && req.payload.storeId) || '')))
       case 'graph': return done(req, devtools.graph())
       case 'ifTrace': return done(req, devtools.ifTrace())
       case 'queries': return done(req, devtools.queries())

@@ -58,11 +58,16 @@ document.getElementById('enable').addEventListener('click', () => request('enabl
 const filterInput = document.getElementById('filter') as { value: string, addEventListener: (e: string, h: () => void) => void }
 filterInput.addEventListener('input', () => panel.setGraphFilter(filterInput.value))
 
-// Click a scope id in the tree → drill into its inspector.
+// Click a scope id (tree) or store id (stores) → drill into its inspector.
 out.addEventListener('click', (e: { target?: { getAttribute?: (n: string) => string | null } }) => {
   const scopeId = e.target?.getAttribute?.('data-scope')
-  if (scopeId)
+  if (scopeId) {
     panel.inspectScope(scopeId)
+    return
+  }
+  const storeId = e.target?.getAttribute?.('data-store')
+  if (storeId)
+    panel.inspectStore(storeId)
 })
 
 // Live refresh: poll the current view ~1s while the toggle is on.

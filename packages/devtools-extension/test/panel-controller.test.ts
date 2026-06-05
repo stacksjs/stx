@@ -30,11 +30,17 @@ describe('createPanelController', () => {
     expect(g.html).toContain('n')
   })
 
-  it('falls back to JSON for a view with no dedicated renderer (stores)', async () => {
+  it('falls back to JSON for a view with no dedicated renderer', async () => {
+    const h = harness(() => ({ id: 1, ok: true, result: { version: 3 } }))
+    await h.controller.show('version') // no renderer → JSON
+    expect(h.html).toContain('<pre>')
+    expect(h.html).toContain('version')
+  })
+
+  it('renders the stores list via renderStores (clickable)', async () => {
     const h = harness(() => ({ id: 1, ok: true, result: { cart: true } }))
     await h.controller.show('stores')
-    expect(h.html).toContain('<pre>')
-    expect(h.html).toContain('cart')
+    expect(h.html).toContain('data-store="cart"')
   })
 
   it('shows an error for an unsuccessful response', async () => {
@@ -98,6 +104,25 @@ describe('createPanelController', () => {
     expect(askedPayload).toEqual({ scopeId: 'Cart' })
     expect(html).toContain('signals')
     expect(html).toContain('go')
+  })
+
+  it('inspectStore requests store(id) and renders its state', async () => {
+    let askedType = ''
+    let askedPayload: Record<string, unknown> | undefined
+    let html = ''
+    const controller = createPanelController({
+      request: async (type, payload) => {
+        askedType = type
+        askedPayload = payload
+        return { id: 1, ok: true, result: { signals: { items: [] }, methods: ['add', 'clear'] } }
+      },
+      setHtml: (h) => { html = h },
+    })
+    await controller.inspectStore('cart')
+    expect(askedType).toBe('store')
+    expect(askedPayload).toEqual({ storeId: 'cart' })
+    expect(html).toContain('signals')
+    expect(html).toContain('add')
   })
 
   it('setGraphFilter re-renders the cached graph without re-fetching', async () => {
