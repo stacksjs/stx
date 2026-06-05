@@ -390,7 +390,14 @@ export const SUSPENSE_RESOLVER_RUNTIME: string = `
       if (!el) return;
       var t = document.createElement('template');
       t.innerHTML = content;
+      // Keep handles to the inserted nodes — the fragment is emptied on insert.
+      var nodes = Array.prototype.slice.call(t.content.childNodes);
       el.replaceWith(t.content);
+      // Hydrate the streamed content so interactive islands/directives inside
+      // it come alive (no-op when the signals runtime isn't on the page).
+      if (window.stx && typeof window.stx.hydrate === 'function') {
+        nodes.forEach(function(n){ if (n.nodeType === 1) window.stx.hydrate(n); });
+      }
     }
   };
 })();

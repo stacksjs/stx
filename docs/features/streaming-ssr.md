@@ -57,11 +57,12 @@ nothing to defer.
   fresh request state.
 - **Full-page loads** — streaming applies to direct page loads. SPA fragment
   navigation returns the fragment as before.
-- **Boundary content is server-rendered HTML.** The boundary function returns a
-  string; it's swapped into the DOM as-is. Hydrating interactive content *inside*
-  a streamed boundary (signals/islands) is a later increment — for now, put
-  interactive components in the shell, or hydrate them after the
-  `stx:hydrated`-style swap yourself.
+- **Interactive content inside a boundary hydrates.** The boundary function
+  returns HTML; when it streams in, stx runs `window.stx.hydrate()` on the
+  swapped-in subtree — executing its scoped setup scripts, binding directives,
+  and firing `onMount` — so islands/signals inside a streamed boundary come
+  alive, and a `stx:hydrated` event fires for it. (Hydration is a no-op when the
+  page ships no signals runtime — the content is simply static.)
 
 ## Primitives
 

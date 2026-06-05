@@ -9,7 +9,7 @@
  * data is gated behind a delay — so first paint isn't blocked on slow data.
  */
 import { describe, expect, it } from 'bun:test'
-import { extractStreamBoundaries, renderStreamingPage, streamToResponse } from '../../src/streaming'
+import { extractStreamBoundaries, renderStreamingPage, streamToResponse, SUSPENSE_RESOLVER_RUNTIME } from '../../src/streaming'
 
 async function collect(stream: ReadableStream<string>): Promise<string[]> {
   const reader = stream.getReader()
@@ -41,6 +41,13 @@ describe('renderStreamingPage (#1746 Phase 3)', () => {
   it('emits only the shell when there are no boundaries (no receiver overhead)', async () => {
     const chunks = await collect(renderStreamingPage('<p>just shell</p>'))
     expect(chunks).toEqual(['<p>just shell</p>'])
+  })
+
+  it('the receiver hydrates the swapped-in content (in-boundary hydration)', () => {
+    // The receiver keeps node handles and calls window.stx.hydrate so interactive
+    // content inside a streamed boundary comes alive.
+    expect(SUSPENSE_RESOLVER_RUNTIME).toContain('window.stx.hydrate')
+    expect(SUSPENSE_RESOLVER_RUNTIME).toContain('childNodes')
   })
 
   it('isolates a boundary error instead of failing the whole stream', async () => {
