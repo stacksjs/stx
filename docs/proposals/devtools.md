@@ -95,6 +95,18 @@ extension is a thin client of it.
 
 ## Phase 3 — Conditional-render trace + query timeline *(in-repo data, extension UI)*
 
+> **Shipped.** Both records land in bounded ring buffers, recorded only while
+> tracking is enabled (same gate as Phase 2):
+> - **`:if` trace** — `__stxDevtools.ifTrace()` returns, per reactive
+>   `@if`/`:if`/`v-if` chain evaluation, `{ scopeId, branches, picked,
+>   pickedAttr, prev }` — the structured form of `bindIfChain`'s pick.
+> - **Query timeline** — `__stxDevtools.queries()` returns, per
+>   `useFetch`/`useQuery`/`useMutation` request, `{ source, url, method, status,
+>   ok, ms }` (and `error` on failure). All three route through one `__stxFetch`
+>   wrapper. `resetStats()` clears both buffers.
+>
+> Remaining: the browser-extension UI (Phases 4–6) consumes this protocol.
+
 - **`:if` trace:** `bindIfChain` already computes the picked branch (the
   `pick: <idx>` diagnostics) — emit them as structured trace records.
 - **Query timeline:** instrument `useQuery`/`useFetch`/`useMutation` (the data

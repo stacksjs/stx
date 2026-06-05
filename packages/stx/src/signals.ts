@@ -134,6 +134,25 @@ console.log('[stx] entering IIFE');
   var __stxDevtoolsTracking = false;
   var __stxDevtoolsStats = { signalSets: 0, effectRuns: 0 };
   var __stxEffectId = 0;
+  // Phase 3 (#1747): bounded trace buffers, recorded only while tracking.
+  var __stxDevtoolsIfTrace = [];
+  var __stxDevtoolsQueries = [];
+  function __stxDevtoolsNow() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
+  function __stxDevtoolsRecordIf(rec) { if (!__stxDevtoolsTracking) return; __stxDevtoolsIfTrace.push(rec); if (__stxDevtoolsIfTrace.length > 100) __stxDevtoolsIfTrace.shift(); }
+  function __stxDevtoolsRecordQuery(rec) { if (!__stxDevtoolsTracking) return; __stxDevtoolsQueries.push(rec); if (__stxDevtoolsQueries.length > 100) __stxDevtoolsQueries.shift(); }
+  // Wraps fetch with timing + a timeline record (the data layer's queries).
+  async function __stxFetch(source, url, opts) {
+    var t0 = __stxDevtoolsNow();
+    var method = (opts && opts.method) || 'GET';
+    try {
+      var r = await fetch(url, opts);
+      __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: r.status, ok: r.ok, ms: __stxDevtoolsNow() - t0 });
+      return r;
+    } catch (e) {
+      __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: 0, ok: false, error: String((e && e.message) || e), ms: __stxDevtoolsNow() - t0 });
+      throw e;
+    }
+  }
   let activeDisposers = null; // Array | null — when non-null, effects auto-register their dispose fn
   const targetMap = new WeakMap();
 
@@ -881,7 +900,7 @@ finally {
             : JSON.stringify(options.body);
         }
 
-        const response = await fetch(url, fetchOptions);
+        const response = await __stxFetch('useFetch', url, fetchOptions);
 
         if (!response.ok) {
           throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
@@ -1089,7 +1108,7 @@ else {
       error.set(null);
       try {
         var fetchOpts = { method: 'GET', headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } };
-        var response = await fetch(resolvedUrl, fetchOpts);
+        var response = await __stxFetch('useQuery', resolvedUrl, fetchOpts);
         if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + response.statusText);
         var result = await response.json();
         var transformed = options.transform ? options.transform(result) : result;
@@ -1164,7 +1183,7 @@ finally {
           headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
           body: typeof body === 'string' ? body : JSON.stringify(body)
         };
-        var response = await fetch(resolvedUrl, fetchOpts);
+        var response = await __stxFetch('useMutation', resolvedUrl, fetchOpts);
         if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + response.statusText);
         var result = await response.json();
         var transformed = options.transform ? options.transform(result) : result;
@@ -2839,6 +2858,17 @@ catch (e2) {
       }
 
       console.log('[stx] bindIfChain pick:', pickedIdx, 'of', chain.length, '(', pickedIdx >= 0 ? chain[pickedIdx].attr : 'none', ') prev:', currentIdx);
+      if (__stxDevtoolsTracking) {
+        var __ifScope = null;
+        try { __ifScope = (head && head.closest) ? head.closest('[data-stx-scope]') : null; } catch (e) { __ifScope = null; }
+        __stxDevtoolsRecordIf({
+          scopeId: __ifScope ? __ifScope.getAttribute('data-stx-scope') : null,
+          branches: chain.map(function(c) { return c.attr; }),
+          picked: pickedIdx,
+          pickedAttr: pickedIdx >= 0 ? chain[pickedIdx].attr : null,
+          prev: currentIdx
+        });
+      }
       if (pickedIdx === currentIdx) return;
 
       // Remove the previously-shown branch. Do NOT disposeSubtreeScopes here:
@@ -4668,7 +4698,13 @@ else {
     stats: function() {
       return { signalSets: __stxDevtoolsStats.signalSets, effectRuns: __stxDevtoolsStats.effectRuns, tracking: __stxDevtoolsTracking };
     },
-    resetStats: function() { __stxDevtoolsStats.signalSets = 0; __stxDevtoolsStats.effectRuns = 0; },
+    resetStats: function() { __stxDevtoolsStats.signalSets = 0; __stxDevtoolsStats.effectRuns = 0; __stxDevtoolsIfTrace.length = 0; __stxDevtoolsQueries.length = 0; },
+    // Phase 3: structured :if decision trace — which branch each reactive
+    // @if/v-if/:if chain picked, newest last. Recorded only while tracking.
+    ifTrace: function() { return __stxDevtoolsIfTrace.slice(); },
+    // Phase 3: data-layer query timeline — { source, url, method, status, ok, ms }
+    // for each useFetch/useQuery/useMutation request, newest last.
+    queries: function() { return __stxDevtoolsQueries.slice(); },
     // Reactive graph: per scope, each signal/derived with its current value, how
     // many times it was set (when tracking), and how many effects subscribe to
     // it (the dependency edges — "which effects read this signal", as a count).

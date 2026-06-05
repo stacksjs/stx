@@ -8,7 +8,7 @@
  */
 import { beforeAll, describe, expect, it } from 'bun:test'
 import { generateSignalsRuntimeDev } from '../../src/signals'
-import { setupStxTestDom, shimAttributes } from '../../src/testing'
+import { flushEffects, setupStxTestDom, shimAttributes } from '../../src/testing'
 
 // eslint-disable-next-line ts/no-explicit-any
 declare const window: any
@@ -150,5 +150,63 @@ describe('window.__stxDevtools (#1747 Phase 1)', () => {
     expect(c.subscribers).toBeGreaterThanOrEqual(1) // the effect + derived read it
     const d = g.nodes.find((n: any) => n.name === 'doubled')
     expect(d.type).toBe('derived')
+  })
+
+  // ── Phase 3: :if decision trace + query timeline ──
+
+  it('ifTrace() records the picked branch for a reactive :if chain', async () => {
+    window.__stxDevtools.enable()
+    window.__stxDevtools.resetStats()
+    const flag = window.stx.state(true)
+    window.stx._scopes = { IF: { flag } }
+    document.body.innerHTML = '<div data-stx-scope="IF"><p class="a" :if="flag">YES</p><p class="b" :else>NO</p></div>'
+    shimAttributes(document.body)
+
+    window.stx.hydrate(document.querySelector('[data-stx-scope="IF"]'))
+    await flushEffects()
+
+    const trace = window.__stxDevtools.ifTrace()
+    expect(trace.length).toBeGreaterThanOrEqual(1)
+    const last = trace[trace.length - 1]
+    expect(last.branches).toEqual([':if', ':else'])
+    expect(typeof last.picked).toBe('number')
+  })
+
+  it('queries() records a useFetch timeline entry (source, status, ms)', async () => {
+    window.__stxDevtools.enable()
+    window.__stxDevtools.resetStats()
+    const origFetch = globalThis.fetch
+    // eslint-disable-next-line ts/no-explicit-any
+    globalThis.fetch = (async () => ({ ok: true, status: 200, statusText: 'OK', json: async () => ({ x: 1 }) })) as any
+    try {
+      const r = window.stx.useFetch('/api/thing', { immediate: false })
+      await r.refetch()
+
+      const rec = window.__stxDevtools.queries().find((x: any) => x.url === '/api/thing')
+      expect(rec).toBeTruthy()
+      expect(rec.source).toBe('useFetch')
+      expect(rec.status).toBe(200)
+      expect(rec.ok).toBe(true)
+      expect(typeof rec.ms).toBe('number')
+    }
+    finally {
+      globalThis.fetch = origFetch
+    }
+  })
+
+  it('records nothing into the trace buffers while disabled', async () => {
+    window.__stxDevtools.disable()
+    window.__stxDevtools.resetStats()
+    const origFetch = globalThis.fetch
+    // eslint-disable-next-line ts/no-explicit-any
+    globalThis.fetch = (async () => ({ ok: true, status: 200, json: async () => ({}) })) as any
+    try {
+      await window.stx.useFetch('/api/off', { immediate: false }).refetch()
+      expect(window.__stxDevtools.queries()).toEqual([])
+      expect(window.__stxDevtools.ifTrace()).toEqual([])
+    }
+    finally {
+      globalThis.fetch = origFetch
+    }
   })
 })
