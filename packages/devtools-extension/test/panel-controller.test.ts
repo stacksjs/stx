@@ -80,4 +80,23 @@ describe('createPanelController', () => {
     await controller.refresh()
     expect(calls).toBe(0)
   })
+
+  it('inspectScope requests scope(id) and renders the inspector', async () => {
+    let askedType = ''
+    let askedPayload: Record<string, unknown> | undefined
+    let html = ''
+    const controller = createPanelController({
+      request: async (type, payload) => {
+        askedType = type
+        askedPayload = payload
+        return { id: 1, ok: true, result: { signals: { n: 7 }, methods: ['go'] } }
+      },
+      setHtml: (h) => { html = h },
+    })
+    await controller.inspectScope('Cart')
+    expect(askedType).toBe('scope')
+    expect(askedPayload).toEqual({ scopeId: 'Cart' })
+    expect(html).toContain('signals')
+    expect(html).toContain('go')
+  })
 })

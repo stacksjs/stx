@@ -27,12 +27,13 @@ function fmtValue(v: unknown): string {
 
 interface TreeNode { scopeId: string, tag?: string, children?: TreeNode[] }
 
-/** Component tree → nested list. */
+/** Component tree → nested list; each scope id is a click target (`data-scope`). */
 export function renderTree(tree: TreeNode[]): string {
   if (!Array.isArray(tree) || tree.length === 0)
     return '<p class="empty">No component scopes on this page.</p>'
   const node = (n: TreeNode): string =>
-    `<li><code>${escapeHtml(n.scopeId)}</code>${n.tag ? ` <span class="tag">&lt;${escapeHtml(n.tag)}&gt;</span>` : ''}`
+    `<li><code class="scope-link" data-scope="${escapeHtml(n.scopeId)}">${escapeHtml(n.scopeId)}</code>`
+    + `${n.tag ? ` <span class="tag">&lt;${escapeHtml(n.tag)}&gt;</span>` : ''}`
     + `${n.children && n.children.length ? `<ul>${n.children.map(node).join('')}</ul>` : ''}</li>`
   return `<ul class="tree">${tree.map(node).join('')}</ul>`
 }

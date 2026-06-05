@@ -18,6 +18,11 @@ describe('panel renderers', () => {
     expect(renderTree([])).toContain('No component scopes')
   })
 
+  it('renderTree makes each scope id a click target (data-scope)', () => {
+    const html = renderTree([{ scopeId: 'Cart', tag: 'div', children: [] }])
+    expect(html).toContain('class="scope-link" data-scope="Cart"')
+  })
+
   it('renderGraph tabulates signals with value/setCount/subscribers', () => {
     const html = renderGraph([{ scopeId: 'G', nodes: [{ name: 'count', type: 'signal', value: 6, setCount: 3, subscribers: 2 }] }])
     expect(html).toContain('G')

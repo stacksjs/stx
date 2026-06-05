@@ -5,7 +5,7 @@
  * keeping it abstract makes the panel's core logic unit-testable.
  */
 import type { DevtoolsRequestType, DevtoolsResponse } from './protocol'
-import { escapeHtml, renderGraph, renderIfTrace, renderQueries, renderStats, renderTree } from './render'
+import { escapeHtml, renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderTree } from './render'
 
 // eslint-disable-next-line ts/no-explicit-any
 const RENDERERS: Partial<Record<DevtoolsRequestType, (result: any) => string>> = {
@@ -27,6 +27,8 @@ export interface PanelController {
   show: (view: DevtoolsRequestType) => Promise<void>
   /** Re-fetch + re-render the current view (used by live refresh). No-op if none. */
   refresh: () => Promise<void>
+  /** Drill into one scope: fetch `scope(id)` and render its inspector. */
+  inspectScope: (scopeId: string) => Promise<void>
   /** The view currently shown, or null before the first `show`. */
   current: () => DevtoolsRequestType | null
 }
@@ -59,6 +61,18 @@ export function createPanelController(deps: PanelDeps): PanelController {
     async refresh() {
       if (currentView)
         await render(currentView)
+    },
+    async inspectScope(scopeId) {
+      let res: DevtoolsResponse
+      try {
+        res = await deps.request('scope', { scopeId })
+      }
+      catch (e) {
+        deps.setHtml(`<p class="empty">error: ${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`)
+        return
+      }
+      // eslint-disable-next-line ts/no-explicit-any
+      deps.setHtml(res.ok ? renderScope(res.result as any) : `<p class="empty">error: ${escapeHtml(res.error)}</p>`)
     },
     current() {
       return currentView

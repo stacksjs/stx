@@ -54,6 +54,13 @@ for (const view of VIEWS) {
 
 document.getElementById('enable').addEventListener('click', () => request('enable'))
 
+// Click a scope id in the tree → drill into its inspector.
+out.addEventListener('click', (e: { target?: { getAttribute?: (n: string) => string | null } }) => {
+  const scopeId = e.target?.getAttribute?.('data-scope')
+  if (scopeId)
+    panel.inspectScope(scopeId)
+})
+
 // Live refresh: poll the current view ~1s while the toggle is on.
 const poller = createPoller({ tick: () => panel.refresh(), intervalMs: 1000 })
 const live = document.getElementById('live') as { checked: boolean, addEventListener: (e: string, h: () => void) => void }
