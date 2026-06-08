@@ -611,7 +611,7 @@ describe('#1697 — layout scope rebind walks document.body', () => {
   it('DOMContentLoaded path also marks scopes mounted (so cross-nav doesn\'t re-fire onMount)', () => {
     const dclIdx = runtime.indexOf('DOMContentLoaded')
     expect(dclIdx).toBeGreaterThan(-1)
-    const dclSection = runtime.slice(dclIdx, dclIdx + 5000)
+    const dclSection = runtime.slice(dclIdx, dclIdx + 8000)
     expect(dclSection).toMatch(/!\s*scopeVars\.__mounted/)
   })
 })

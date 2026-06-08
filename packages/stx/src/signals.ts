@@ -4853,6 +4853,30 @@ else {
       mountCallbacks.forEach(fn => fn());
     });
 
+    // Multi-root fragment fix: a no-<body> setup page tags only the FIRST
+    // top-level element with data-stx (signal-processing.ts marks one element),
+    // so sibling root elements were orphaned — their :if / :for / {{ }} / x-text
+    // never hydrated, which read as "{{ }} doesn't work under :if/:for". The
+    // setup(s) above already populated the shared global componentScope, so
+    // process each un-hydrated sibling root under that same scope — same signals,
+    // so cross-root state stays coupled.
+    var stxRoots = document.querySelectorAll('[data-stx]');
+    if (stxRoots.length && Object.keys(componentScope).length) {
+      var rootParent = stxRoots[0].parentNode;
+      if (rootParent && rootParent.children) {
+        Array.prototype.slice.call(rootParent.children).forEach(function(sib) {
+          if (sib.nodeType !== 1) return;
+          if (sib.hasAttribute('data-stx') || sib.hasAttribute('data-stx-scope')) return;
+          if (sib.tagName === 'SCRIPT' || sib.tagName === 'STYLE') return;
+          if (sib.__stx_disposers) return; // already processed
+          var disposeSib = trackEffects(function() { processElement(sib); });
+          sib.__stx_disposers = disposeSib;
+          sib.removeAttribute('x-cloak');
+          sib.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
+        });
+      }
+    }
+
     // Process scoped components FIRST (their scripts have already registered scope variables)
     var allScopes = document.querySelectorAll('[data-stx-scope]');
     console.log('[stx] found', allScopes.length, 'data-stx-scope elements');
