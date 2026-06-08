@@ -4,7 +4,7 @@
  * browser (or screenshot headlessly) to see/iterate the UI without installing
  * the extension. `bun scripts/gen-preview.ts [outFile]`.
  */
-import { renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderStores, renderTree } from '../src/render'
+import { renderGraph, renderIfTrace, renderMutations, renderQueries, renderScope, renderStats, renderStores, renderTree } from '../src/render'
 
 const tree = [
   { scopeId: 'AppShell', tag: 'div', children: [
@@ -78,6 +78,12 @@ const views: [string, string][] = [
   ['Graph', renderGraph(graph)],
   ['Queries', renderQueries(queries)],
   ['If Trace', renderIfTrace(ifTrace)],
+  ['Mutations', renderMutations([
+    { name: 'open', scope: 'CartDrawer', prev: false, next: true },
+    { name: 'items', scope: 'store:cart', prev: '[]', next: '[{"id":1}]' },
+    { name: 'query', scope: 'Header', prev: '"sho"', next: '"shoes"' },
+    { name: 'total', scope: 'store:cart', prev: 0, next: 59.97 },
+  ])],
   ['Stats', renderStats(stats)],
   ['Scope (CartDrawer)', renderScope(scope)],
   ['Stores', renderStores({ cart: true, auth: true, theme: true })],

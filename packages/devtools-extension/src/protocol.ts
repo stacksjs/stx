@@ -28,12 +28,13 @@ export interface StxDevtoolsApi {
   graph: () => unknown
   ifTrace: () => unknown
   queries: () => unknown
+  mutations: () => unknown
 }
 
 export type DevtoolsRequestType =
   | 'version' | 'tree' | 'scope' | 'stores' | 'store'
   | 'enable' | 'disable' | 'tracking' | 'stats' | 'resetStats'
-  | 'graph' | 'ifTrace' | 'queries'
+  | 'graph' | 'ifTrace' | 'queries' | 'mutations'
 
 export interface DevtoolsRequest {
   /** Correlates a response to its request. */
@@ -74,6 +75,7 @@ export function handleDevtoolsRequest(
       case 'graph': return done(req, devtools.graph())
       case 'ifTrace': return done(req, devtools.ifTrace())
       case 'queries': return done(req, devtools.queries())
+      case 'mutations': return done(req, devtools.mutations())
       case 'stats': return done(req, devtools.stats())
       case 'tracking': return done(req, devtools.tracking())
       case 'enable': devtools.enable(); return done(req, { tracking: devtools.tracking() })

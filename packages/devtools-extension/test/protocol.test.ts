@@ -23,6 +23,7 @@ function mockDevtools(overrides: Partial<StxDevtoolsApi> = {}): StxDevtoolsApi {
     graph: () => [{ scopeId: 'A', nodes: [{ name: 'n', type: 'signal', value: 1, setCount: 3, subscribers: 2 }] }],
     ifTrace: () => [{ scopeId: 'A', branches: [':if', ':else'], picked: 0 }],
     queries: () => [{ source: 'useFetch', url: '/api', method: 'GET', status: 200, ok: true, ms: 12 }],
+    mutations: () => [{ name: 'open', scope: 'Drawer', prev: false, next: true }],
     ...overrides,
   }
 }
@@ -36,6 +37,7 @@ describe('handleDevtoolsRequest', () => {
     expect((handleDevtoolsRequest(dt, { id: 4, type: 'queries' }).result as any[])[0].status).toBe(200)
     expect((handleDevtoolsRequest(dt, { id: 5, type: 'ifTrace' }).result as any[])[0].picked).toBe(0)
     expect(handleDevtoolsRequest(dt, { id: 6, type: 'stores' }).result).toEqual({ cart: true })
+    expect((handleDevtoolsRequest(dt, { id: 14, type: 'mutations' }).result as any[])[0].name).toBe('open')
   })
 
   it('passes payload args (scope → scopeId)', () => {

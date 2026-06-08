@@ -44,7 +44,7 @@ const out = document.getElementById('out')
 const bar = document.getElementById('bar')
 const panel = createPanelController({ request, setHtml: html => { out.innerHTML = html } })
 
-const VIEWS: DevtoolsRequestType[] = ['tree', 'graph', 'queries', 'ifTrace', 'stats', 'stores']
+const VIEWS: DevtoolsRequestType[] = ['tree', 'graph', 'stores', 'mutations', 'queries', 'ifTrace', 'stats']
 for (const view of VIEWS) {
   const b = document.createElement('button')
   b.textContent = view

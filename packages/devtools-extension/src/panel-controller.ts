@@ -5,7 +5,7 @@
  * keeping it abstract makes the panel's core logic unit-testable.
  */
 import type { DevtoolsRequestType, DevtoolsResponse } from './protocol'
-import { escapeHtml, filterGraph, renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderStores, renderTree } from './render'
+import { escapeHtml, filterGraph, renderGraph, renderIfTrace, renderMutations, renderQueries, renderScope, renderStats, renderStores, renderTree } from './render'
 
 // eslint-disable-next-line ts/no-explicit-any
 const RENDERERS: Partial<Record<DevtoolsRequestType, (result: any) => string>> = {
@@ -15,6 +15,7 @@ const RENDERERS: Partial<Record<DevtoolsRequestType, (result: any) => string>> =
   ifTrace: renderIfTrace,
   stats: renderStats,
   stores: renderStores,
+  mutations: renderMutations,
 }
 
 export interface PanelDeps {

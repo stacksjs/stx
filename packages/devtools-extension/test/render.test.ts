@@ -3,7 +3,7 @@
  * without a DOM.
  */
 import { describe, expect, it } from 'bun:test'
-import { escapeHtml, filterGraph, renderGraph, renderIfTrace, renderQueries, renderScope, renderStats, renderStores, renderTree } from '../src/render'
+import { escapeHtml, filterGraph, renderGraph, renderIfTrace, renderMutations, renderQueries, renderScope, renderStats, renderStores, renderTree } from '../src/render'
 
 describe('panel renderers', () => {
   it('escapeHtml neutralizes markup', () => {
@@ -63,6 +63,16 @@ describe('panel renderers', () => {
     const none = renderIfTrace([{ scopeId: null, branches: [':if'], picked: -1 }])
     expect(none).toContain('none')
     expect(none).toContain('pill bad') // no branch matched
+  })
+
+  it('renderMutations shows prev → next per change, empty-safe', () => {
+    const html = renderMutations([{ name: 'open', scope: 'Drawer', prev: false, next: true }])
+    expect(html).toContain('open')
+    expect(html).toContain('Drawer')
+    expect(html).toContain('→')
+    expect(html).toContain('false')
+    expect(html).toContain('true')
+    expect(renderMutations([])).toContain('No mutations recorded')
   })
 
   it('renderStores lists stores as click targets, empty-safe', () => {

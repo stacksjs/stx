@@ -24,7 +24,7 @@ describe('window.__stxDevtools (#1747 Phase 1)', () => {
 
   it('is exposed on window', () => {
     expect(typeof window.__stxDevtools).toBe('object')
-    expect(window.__stxDevtools.version).toBe(3)
+    expect(window.__stxDevtools.version).toBe(4)
   })
 
   it('builds a component tree nested by DOM ancestry', () => {
@@ -144,6 +144,28 @@ describe('window.__stxDevtools (#1747 Phase 1)', () => {
     expect(window.__stxDevtools.stats().signalSets).toBe(0)
     expect(window.__stxDevtools.stats().effectRuns).toBe(0)
     expect(s._setCount).toBe(0)
+  })
+
+  it('mutations() logs each state change with prev/next, attributed to its scope', async () => {
+    window.__stxDevtools.enable()
+    window.__stxDevtools.resetStats()
+    const open = window.stx.state(false)
+    window.stx._scopes = { Drawer: { open } }
+
+    open.set(true)
+    open.set(false)
+
+    const muts = window.__stxDevtools.mutations()
+    expect(muts.length).toBe(2)
+    expect(muts[0]).toMatchObject({ name: 'open', scope: 'Drawer', prev: false, next: true })
+    expect(muts[1]).toMatchObject({ name: 'open', prev: true, next: false })
+
+    // attributes a store signal to its store
+    const count = window.stx.state(0)
+    window.stx._stores.set('counter', { count })
+    window.__stxDevtools.resetStats()
+    count.set(5)
+    expect(window.__stxDevtools.mutations()[0]).toMatchObject({ name: 'count', scope: 'store:counter', prev: 0, next: 5 })
   })
 
   it('graph() reports each scope signal with value, setCount, and subscriber count', () => {

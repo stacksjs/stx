@@ -154,6 +154,20 @@ export function renderStores(stores: Record<string, unknown> | null): string {
   ).join('')}</ul>`
 }
 
+interface Mutation { name: string, scope: string | null, prev: unknown, next: unknown }
+
+/** State-change log → a table of name · scope · prev → next (newest last). */
+export function renderMutations(mutations: Mutation[]): string {
+  if (!Array.isArray(mutations) || mutations.length === 0)
+    return '<p class="empty">No mutations recorded (enable tracking, then change state).</p>'
+  return `<table><thead><tr><th>signal</th><th>scope</th><th>change</th></tr></thead><tbody>`
+    + mutations.map(m =>
+      `<tr><td><code>${escapeHtml(m.name)}</code></td><td>${escapeHtml(m.scope || '—')}</td>`
+      + `<td>${fmtValue(m.prev)} <span class="arrow">→</span> ${fmtValue(m.next)}</td></tr>`,
+    ).join('')
+    + `</tbody></table>`
+}
+
 interface Stats { signalSets: number, effectRuns: number, tracking: boolean }
 
 /** Global counters. */

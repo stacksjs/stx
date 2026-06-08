@@ -137,9 +137,21 @@ console.log('[stx] entering IIFE');
   // Phase 3 (#1747): bounded trace buffers, recorded only while tracking.
   var __stxDevtoolsIfTrace = [];
   var __stxDevtoolsQueries = [];
+  var __stxDevtoolsMutations = []; // state-change log (signal id + prev/next)
+  var __stxSignalId = 0;
   function __stxDevtoolsNow() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
   function __stxDevtoolsRecordIf(rec) { if (!__stxDevtoolsTracking) return; __stxDevtoolsIfTrace.push(rec); if (__stxDevtoolsIfTrace.length > 100) __stxDevtoolsIfTrace.shift(); }
   function __stxDevtoolsRecordQuery(rec) { if (!__stxDevtoolsTracking) return; __stxDevtoolsQueries.push(rec); if (__stxDevtoolsQueries.length > 100) __stxDevtoolsQueries.shift(); }
+  // Short, ref-free repr of a value for the mutation log (so the buffer holds no
+  // live references and big objects don't bloat it).
+  function __stxShort(v) {
+    try {
+      if (typeof v === 'string') return v.length > 40 ? (v.slice(0, 40) + '…') : v;
+      if (v === null || typeof v !== 'object') return v;
+      var s = JSON.stringify(v);
+      return s.length > 60 ? (s.slice(0, 60) + '…') : s;
+    } catch (e) { return '[unserializable]'; }
+  }
   // Wraps fetch with timing + a timeline record (the data layer's queries).
   async function __stxFetch(source, url, opts) {
     var t0 = __stxDevtoolsNow();
@@ -526,7 +538,12 @@ else {
     signal.set = (newValue) => {
       console.log('[stx] signal.set:', value, '->', newValue, 'effects:', effects.size);
       if (!Object.is(newValue, value)) {
-        if (__stxDevtoolsTracking) { signal._setCount++; __stxDevtoolsStats.signalSets++; }
+        if (__stxDevtoolsTracking) {
+          signal._setCount++;
+          __stxDevtoolsStats.signalSets++;
+          __stxDevtoolsMutations.push({ sid: signal._stxSignalId, prev: __stxShort(value), next: __stxShort(newValue) });
+          if (__stxDevtoolsMutations.length > 100) __stxDevtoolsMutations.shift();
+        }
         const prev = value;
         value = newValue;
         subscribers.forEach(cb => cb(value, prev));
@@ -547,6 +564,7 @@ else {
     signal._isSignal = true;
     signal._effects = effects; // DevTools: the subscriber set (reactive graph)
     signal._setCount = 0; // DevTools: times set() changed the value (when tracking)
+    signal._stxSignalId = ++__stxSignalId; // DevTools: stable id for the mutation log
 
     // Vue-compatible .value getter/setter for templates that use signal.value syntax
     Object.defineProperty(signal, 'value', {
@@ -4687,7 +4705,7 @@ else {
     return out;
   }
   window.__stxDevtools = {
-    version: 3,
+    version: 4,
     // ── Phase 2: reactivity instrumentation (dev-mode, opt-in) ──
     // Turn counting on/off. OFF by default so the runtime stays zero-overhead
     // until a devtools session asks for it.
@@ -4698,13 +4716,35 @@ else {
     stats: function() {
       return { signalSets: __stxDevtoolsStats.signalSets, effectRuns: __stxDevtoolsStats.effectRuns, tracking: __stxDevtoolsTracking };
     },
-    resetStats: function() { __stxDevtoolsStats.signalSets = 0; __stxDevtoolsStats.effectRuns = 0; __stxDevtoolsIfTrace.length = 0; __stxDevtoolsQueries.length = 0; },
+    resetStats: function() { __stxDevtoolsStats.signalSets = 0; __stxDevtoolsStats.effectRuns = 0; __stxDevtoolsIfTrace.length = 0; __stxDevtoolsQueries.length = 0; __stxDevtoolsMutations.length = 0; },
     // Phase 3: structured :if decision trace — which branch each reactive
     // @if/v-if/:if chain picked, newest last. Recorded only while tracking.
     ifTrace: function() { return __stxDevtoolsIfTrace.slice(); },
     // Phase 3: data-layer query timeline — { source, url, method, status, ok, ms }
     // for each useFetch/useQuery/useMutation request, newest last.
     queries: function() { return __stxDevtoolsQueries.slice(); },
+    // Phase 4: state-change log — each recorded signal mutation { name, scope,
+    // prev, next }, newest last. Resolves each signal id to its name + owning
+    // scope/store at query time, so the buffer itself holds no live references.
+    mutations: function() {
+      var nameById = {};
+      function index(container, label) {
+        if (!container || typeof container !== 'object') return;
+        Object.keys(container).forEach(function(k) {
+          if (k.indexOf('__') === 0) return;
+          var v = container[k];
+          if (typeof v === 'function' && v._stxSignalId) nameById[v._stxSignalId] = { name: k, scope: label };
+        });
+      }
+      var scopes = (window.stx && window.stx._scopes) || {};
+      Object.keys(scopes).forEach(function(id) { index(scopes[id], id); });
+      if (window.stx && window.stx._stores && typeof window.stx._stores.forEach === 'function')
+        window.stx._stores.forEach(function(s, id) { index(s, 'store:' + id); });
+      return __stxDevtoolsMutations.map(function(m) {
+        var info = nameById[m.sid];
+        return { name: info ? info.name : '(anonymous)', scope: info ? info.scope : null, prev: m.prev, next: m.next };
+      });
+    },
     // Reactive graph: per scope, each signal/derived with its current value, how
     // many times it was set (when tracking), and how many effects subscribe to
     // it (the dependency edges — "which effects read this signal", as a count).
