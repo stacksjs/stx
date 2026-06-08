@@ -59,10 +59,10 @@ describe('panel renderers', () => {
     expect(html).toContain('IF')
     expect(html).toContain(':if · :else')
     expect(html).toContain('#0')
-    expect(html).toContain('pill ok') // picked branch highlighted
+    expect(html).toContain('ok pill') // picked branch highlighted
     const none = renderIfTrace([{ scopeId: null, branches: [':if'], picked: -1 }])
     expect(none).toContain('none')
-    expect(none).toContain('pill bad') // no branch matched
+    expect(none).toContain('bad pill') // no branch matched
   })
 
   it('renderMutations shows prev → next per change, empty-safe', () => {

@@ -108,8 +108,8 @@ export function renderIfTrace(trace: IfRow[]): string {
   return `<table><thead><tr><th>scope</th><th>branches</th><th>picked</th></tr></thead><tbody>`
     + trace.map((t) => {
       const picked = t.picked < 0
-        ? '<span class="pill bad">none</span>'
-        : `<span class="pill ok">#${escapeHtml(t.picked)} ${escapeHtml(t.pickedAttr || '')}</span>`
+        ? '<span class="bad pill">none</span>'
+        : `<span class="ok pill">#${escapeHtml(t.picked)} ${escapeHtml(t.pickedAttr || '')}</span>`
       return `<tr><td>${escapeHtml(t.scopeId || '—')}</td><td><code>${escapeHtml((t.branches || []).join(' · '))}</code></td>`
         + `<td>${picked}</td></tr>`
     }).join('')
@@ -150,7 +150,7 @@ export function renderStores(stores: Record<string, unknown> | null): string {
   if (ids.length === 0)
     return '<p class="empty">No stores registered (defineStore).</p>'
   return `<ul class="tree">${ids.map(id =>
-    `<li><code class="store-link scope-link" data-store="${escapeHtml(id)}">${escapeHtml(id)}</code></li>`,
+    `<li><code class="scope-link store-link" data-store="${escapeHtml(id)}">${escapeHtml(id)}</code></li>`,
   ).join('')}</ul>`
 }
 
