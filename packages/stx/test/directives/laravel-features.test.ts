@@ -273,6 +273,12 @@ describe('Laravel-like Features', () => {
     beforeEach(() => {
       resetCsrfToken()
     })
+    // Also reset AFTER each test so a token set here (e.g. 'test-csrf-token')
+    // doesn't leak into other test files that assert a fresh hex token via the
+    // shared module-global. (#csrf-realm-flake)
+    afterEach(() => {
+      resetCsrfToken()
+    })
 
     test('@csrf directive adds CSRF token field to forms', async () => {
       // Set a fixed token for testing

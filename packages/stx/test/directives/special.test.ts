@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
+import { resetCsrfToken } from '../../src/csrf'
 import { processDirectives, processJsonDirective, processOnceDirective } from '../../src/process'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
 
@@ -359,6 +360,14 @@ describe('stx Special Directives', () => {
       </body>
       </html>
     `)
+
+    // Clear any token a prior test left on the module-global. The note above
+    // assumes the plugin's dist realm is separate from ../../src/csrf — true on
+    // macOS, but on Linux (CI) module dedup can collapse them, so a leftover
+    // non-hex token (e.g. 'test-csrf-token' from laravel-features.test.ts) would
+    // leak in and fail the hex assertion. Resetting forces a fresh hex token
+    // regardless of whether the realms are shared. (#csrf-realm-flake)
+    resetCsrfToken()
 
     const result = await Bun.build({
       entrypoints: [testFile],

@@ -349,6 +349,14 @@ describe('Laravel-like Features Edge Cases', () => {
       const csrfSrcResult = await processTemplate('<form id="dev-form" method="POST">@csrf("dev_token")</form>', {}, 'csrf-realm-check.stx')
       expect(csrfSrcResult).toBe('<form id="dev-form" method="POST"><input type="hidden" name="dev_token" value="test-token"></form>')
 
+      // Reset before the Bun.build path below. The note above assumes the plugin's
+      // dist realm is a SEPARATE module instance from ../../src/csrf — true on
+      // macOS, but on Linux (CI) module dedup can collapse them into one, so the
+      // 'test-token' set above would leak into the build-path @csrf and fail the
+      // hex assertion. Resetting here makes the build path auto-generate a fresh
+      // hex token regardless of whether the realms are shared. (#csrf-realm-flake)
+      resetCsrfToken()
+
       const testFile = await createTestFile('complex-template.stx', `
         <!DOCTYPE html>
         <html>
