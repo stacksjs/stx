@@ -323,12 +323,33 @@ export async function processDirectives(
         // the module-global path is the historical API.
         const contextHead = (context.__stx_runtime_head as Record<string, any>) || null
         const runtimeHead = contextHead ?? getHeadStatic()
+
+        // Per-page head sources beyond useHead() (#1756):
+        //  - @head … @endhead raw HTML, accumulated on the context by the
+        //    processHeadDirective pass (page + layout + includes). A <title>
+        //    inside it is promoted to the shell title so the shell doesn't
+        //    emit a competing default (first <title> wins in browsers).
+        //  - @section('title', …) — the idiom users reach for with
+        //    body-fragment layouts, where no @yield('title') target exists.
+        let pageHeadRaw = ((context.__stx_head_raw as string) || '').trim()
+        let pageHeadTitle: string | undefined
+        const rawTitleMatch = pageHeadRaw.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+        if (rawTitleMatch) {
+          pageHeadTitle = rawTitleMatch[1].trim()
+          pageHeadRaw = pageHeadRaw.replace(rawTitleMatch[0], '').trim()
+        }
+        const sectionTitle = (context.__sections as Record<string, string> | undefined)?.title
+
+        // Title precedence: useHead()/@title > @head <title> > @section('title') > config
+        const pageTitle = runtimeHead.title || pageHeadTitle || sectionTitle
+
         const headConfig = {
           ...baseHeadConfig,
-          ...(runtimeHead.title && { title: runtimeHead.title }),
+          ...(pageTitle && { title: pageTitle }),
           meta: [...(baseHeadConfig.meta || []), ...(runtimeHead.meta || [])],
           link: [...(baseHeadConfig.link || []), ...(runtimeHead.link || [])],
           script: [...(baseHeadConfig.script || []), ...(runtimeHead.script || [])],
+          headRaw: [baseHeadConfig.headRaw, pageHeadRaw].filter(Boolean).join('\n'),
           ...(runtimeHead.htmlAttrs && { htmlAttrs: { ...(baseHeadConfig.htmlAttrs || {}), ...runtimeHead.htmlAttrs } }),
           ...(runtimeHead.bodyAttrs && { bodyAttrs: { ...(baseHeadConfig.bodyAttrs || {}), ...runtimeHead.bodyAttrs } }),
         }
@@ -1126,6 +1147,13 @@ async function processOtherDirectives(
   }
   const headResult = processHeadDirective(output)
   output = headResult.content
+  // Accumulate @head … @endhead content on the context so the auto-shell
+  // composition (top of processDirectives) can inject it into the generated
+  // <head>. Previously the extracted headContent was discarded here, so
+  // @head was a silent no-op on the app-shell/SSG path (#1756).
+  if (headResult.headContent) {
+    context.__stx_head_raw = `${(context.__stx_head_raw as string) || ''}${headResult.headContent}\n`
+  }
   output = processTitleDirective(output, context)
   output = processMetaDirective(output, context)
 

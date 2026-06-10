@@ -266,6 +266,77 @@ describe('App Shell', () => {
     })
   })
 
+  describe('page head preservation through shell composition (#1756)', () => {
+    const pageDoc = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Per-Page Title</title>
+  <meta name="description" content="Page description">
+  <link rel="canonical" href="https://example.com/page">
+</head>
+<body><h1>Content</h1></body>
+</html>`
+
+    it('preserveHead carries title/meta/link as an inert marker', () => {
+      const fragment = stripDocumentWrapper(pageDoc, { preserveHead: true })
+      expect(fragment).toContain('<!--stx-page-head:')
+      expect(fragment).toContain('<h1>Content</h1>')
+      // tags are encoded, not raw, in the fragment
+      expect(fragment).not.toContain('<title>')
+      expect(fragment).not.toContain('<meta name="description"')
+      // default charset/viewport metas are not carried — the shell emits its own
+      const encoded = fragment.match(/<!--stx-page-head:([A-Za-z0-9+/=]+)-->/)![1]
+      const decoded = Buffer.from(encoded, 'base64').toString('utf8')
+      expect(decoded).toContain('<title>Per-Page Title</title>')
+      expect(decoded).toContain('<meta name="description" content="Page description">')
+      expect(decoded).toContain('<link rel="canonical" href="https://example.com/page">')
+      expect(decoded).not.toContain('charset')
+      expect(decoded).not.toContain('viewport')
+    })
+
+    it('composeShellWithPage hoists the marker into the shell head', async () => {
+      const shellPath = path.join(tmpDir, 'shell-hoist.stx')
+      fs.writeFileSync(shellPath, '<div class="app"><slot /></div>')
+      const shell = await processShell(shellPath, {})
+      expect(shell).not.toBeNull()
+
+      const fragment = stripDocumentWrapper(pageDoc, { preserveHead: true })
+      const result = composeShellWithPage(shell!, fragment)
+
+      expect(result).toContain('<title>Per-Page Title</title>')
+      expect(result).not.toContain('<title>stx App</title>')
+      const head = result.slice(0, result.indexOf('</head>'))
+      expect(head).toContain('<meta name="description" content="Page description">')
+      expect(head).toContain('<link rel="canonical" href="https://example.com/page">')
+      // marker removed from the final document
+      expect(result).not.toContain('stx-page-head:')
+      // exactly one title in the document
+      expect(result.match(/<title/g)!.length).toBe(1)
+    })
+
+    it('explicit pageTitle argument still wins over the hoisted title', async () => {
+      const shellPath = path.join(tmpDir, 'shell-hoist2.stx')
+      fs.writeFileSync(shellPath, '<div><slot /></div>')
+      const shell = await processShell(shellPath, {})
+
+      const fragment = stripDocumentWrapper(pageDoc, { preserveHead: true })
+      const result = composeShellWithPage(shell!, fragment, 'Explicit Title')
+      expect(result).toContain('<title>Explicit Title</title>')
+      expect(result).not.toContain('Per-Page Title')
+    })
+
+    it('compose without a marker keeps the default title', async () => {
+      const shellPath = path.join(tmpDir, 'shell-hoist3.stx')
+      fs.writeFileSync(shellPath, '<div><slot /></div>')
+      const shell = await processShell(shellPath, {})
+
+      const result = composeShellWithPage(shell!, '<h1>No marker</h1>')
+      expect(result).toContain('<title>stx App</title>')
+    })
+  })
+
   describe('isSpaNavigation', () => {
     it('should detect X-STX-Router header', () => {
       const request = new Request('http://localhost/test', {

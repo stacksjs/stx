@@ -17,6 +17,11 @@ import { classifyAllScripts } from './script-classifier'
 export { extractLayoutMetadata } from 'stx-router/layout-metadata'
 export type { LayoutMetadata } from 'stx-router/layout-metadata'
 
+// Marker comment carrying page-authored head tags (base64) through a
+// stripped fragment so composeShellWithPage can hoist them (#1756)
+const PAGE_HEAD_MARKER = 'stx-page-head:'
+const PAGE_HEAD_MARKER_RE = /<!--stx-page-head:([A-Za-z0-9+/=]+)-->\n?/
+
 // Cache router script at module level (loaded once)
 let _cachedRouterScript: string | null = null
 function getRouterScriptCached(): string {
@@ -197,7 +202,27 @@ export function composeShellWithPage(
   pageContent: string,
   pageTitle?: string,
 ): string {
-  const title = pageTitle || 'stx App'
+  // Hoist page-authored head tags carried through the fragment by
+  // stripDocumentWrapper({ preserveHead: true }) — see #1756. A page <title>
+  // wins over the default; remaining tags (meta/link) join the shell head.
+  let hoistedTitle: string | undefined
+  let hoistedHead = ''
+  const markerMatch = pageContent.match(PAGE_HEAD_MARKER_RE)
+  if (markerMatch) {
+    pageContent = pageContent.replace(markerMatch[0], '')
+    try {
+      const tags = Buffer.from(markerMatch[1], 'base64').toString('utf8')
+      const titleMatch = tags.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+      if (titleMatch)
+        hoistedTitle = titleMatch[1].trim()
+      hoistedHead = tags.replace(/<title[^>]*>[\s\S]*?<\/title>/i, '').trim()
+    }
+    catch {
+      // malformed marker — ignore and fall through to defaults
+    }
+  }
+
+  const title = pageTitle || hoistedTitle || 'stx App'
 
   // Router script (cached at module level)
   const routerScript = getRouterScriptCached()
@@ -212,7 +237,7 @@ export function composeShellWithPage(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
-  ${shell.shellStyles.join('\n  ')}
+${hoistedHead ? `  ${hoistedHead}\n` : ''}  ${shell.shellStyles.join('\n  ')}
 </head>
 <body>
 ${shell.beforeSlot}
@@ -240,9 +265,11 @@ ${routerScript}
  *
  * Strips:
  * - `<!DOCTYPE>`, `<html>`, `<head>`, `<body>` wrappers
- * - `<meta>`, `<title>`, `<link>` tags from `<head>`
+ * - `<meta>`, `<title>`, `<link>` tags from `<head>` — unless
+ *   `preserveHead` is set, which carries them through the fragment as an
+ *   inert marker comment for `composeShellWithPage` to hoist (#1756)
  */
-export function stripDocumentWrapper(html: string): string {
+export function stripDocumentWrapper(html: string, options: { preserveHead?: boolean } = {}): string {
   const trimmed = html.trim()
 
   // No document wrapper — already a fragment
@@ -260,6 +287,24 @@ export function stripDocumentWrapper(html: string): string {
     while ((m = styleRegex.exec(headContent)) !== null) {
       headStyles.push(m[0])
     }
+  }
+
+  // preserveHead (#1756): carry the page's <title>/<meta>/<link> through the
+  // fragment in-band (the stripped fragment is cached between strip and
+  // compose, so a side-channel would be lost). Base64 keeps any `-->` inside
+  // tag content from terminating the comment. Default charset/viewport metas
+  // are skipped — the shell always emits its own.
+  if (options.preserveHead && headMatch) {
+    const headTags: string[] = []
+    const tagRegex = /<title\b[^>]*>[\s\S]*?<\/title>|<meta\b[^>]*>|<link\b[^>]*>/gi
+    let m: RegExpExecArray | null
+    while ((m = tagRegex.exec(headMatch[1])) !== null) {
+      if (/<meta\b[^>]*(?:\bcharset|name="viewport")/i.test(m[0]))
+        continue
+      headTags.push(m[0])
+    }
+    if (headTags.length > 0)
+      headStyles.unshift(`<!--${PAGE_HEAD_MARKER}${Buffer.from(headTags.join('\n'), 'utf8').toString('base64')}-->`)
   }
 
   // Use index-based extraction for <body> — more robust than regex with [\s\S]*?

@@ -332,7 +332,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
               }
               if (valid) {
                 let output = memEntry.output
-                if (shell) output = stripDocumentWrapper(output)
+                if (shell) output = stripDocumentWrapper(output, { preserveHead: true })
                 return { route, content: output }
               }
             }
@@ -343,7 +343,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         const cached = await checkCache(route.filePath, merged)
         if (cached) {
           let output = cached
-          if (shell) output = stripDocumentWrapper(output)
+          if (shell) output = stripDocumentWrapper(output, { preserveHead: true })
           return { route, content: output }
         }
       }
@@ -437,7 +437,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
       // inside the shell's own <!DOCTYPE>/html/head/body structure.
       // Preserves page scripts and styles as fragment content.
       if (shell) {
-        output = stripDocumentWrapper(output)
+        output = stripDocumentWrapper(output, { preserveHead: true })
       }
 
       if (cacheEnabled && isStaticBuild) {
