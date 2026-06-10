@@ -1,4 +1,106 @@
 # Changelog
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.70...v0.2.71)
+
+## 🚀 Features
+
+- **devtools**: state-change log — mutation history with prev→next (#1747) ([d1311d9](https://github.com/stacksjs/stx/commit/d1311d9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **devtools**: inspect store state — state management as a first-class view (#1747) ([4fc5855](https://github.com/stacksjs/stx/commit/4fc5855)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **devtools**: graph filter — search signals/scopes by name (#1747) ([00421cb](https://github.com/stacksjs/stx/commit/00421cb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **streaming**: @stream now works inside included partials (#1746) ([15dcf72](https://github.com/stacksjs/stx/commit/15dcf72)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **devtools**: color-coded status + picked-branch pills in the panel (#1747) ([914c9bd](https://github.com/stacksjs/stx/commit/914c9bd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **devtools**: scannable graph view (type pills + subscriber bars) + preview harness (#1747) ([cf719cc](https://github.com/stacksjs/stx/commit/cf719cc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **streaming**: @stream sugar now streams in production too (#1746) ([4160991](https://github.com/stacksjs/stx/commit/4160991)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **devtools**: click-to-drill scope inspection in the panel (#1747) ([655cc80](https://github.com/stacksjs/stx/commit/655cc80)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **streaming**: production-server streaming — not blocked after all (#1746) ([832d9cf](https://github.com/stacksjs/stx/commit/832d9cf)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **devtools**: renderScope — the per-scope inspector view (#1747) ([ee5174b](https://github.com/stacksjs/stx/commit/ee5174b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **devtools**: live panel refresh — poller + controller refresh() (#1747) ([6ebc914](https://github.com/stacksjs/stx/commit/6ebc914)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **streaming**: per-boundary timeout so a hung data source can't stall the stream (#1746) ([dd7ca30](https://github.com/stacksjs/stx/commit/dd7ca30)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **devtools**: panel rendering layer — tree/graph/queries/ifTrace/stats views (#1747) ([8268d05](https://github.com/stacksjs/stx/commit/8268d05)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **devtools**: MV3 background relay — completes the extension transport (#1747) ([138cf8c](https://github.com/stacksjs/stx/commit/138cf8c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **devtools**: build the extension to a loadable dist/ (#1747) ([7d6acb7](https://github.com/stacksjs/stx/commit/7d6acb7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **devtools**: scaffold packages/devtools-extension — browser-extension bridge (#1747) ([ba5cd86](https://github.com/stacksjs/stx/commit/ba5cd86)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **devtools**: Phase 3 — :if decision trace + query timeline (#1747) ([c76a8e8](https://github.com/stacksjs/stx/commit/c76a8e8)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **devtools**: Phase 2 — reactivity instrumentation (graph + counters) (#1747) ([f9b5996](https://github.com/stacksjs/stx/commit/f9b5996)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **streaming**: declarative @stream boundary sugar (#1746 Phase 3) ([f9e9d91](https://github.com/stacksjs/stx/commit/f9e9d91)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **streaming**: hydrate interactive content inside streamed boundaries (#1746 Phase 3) ([c9b06ce](https://github.com/stacksjs/stx/commit/c9b06ce)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **streaming**: wire streaming SSR into serve-app via streamBoundaries (#1746 Phase 3) ([9d0b405](https://github.com/stacksjs/stx/commit/9d0b405)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **streaming**: real deferred-boundary streaming-SSR renderer (#1746 Phase 3) ([44abfcb](https://github.com/stacksjs/stx/commit/44abfcb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **islands**: emit an island chunk manifest from the SSG build (#1746) ([27aa85a](https://github.com/stacksjs/stx/commit/27aa85a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **islands**: minify island chunks under the build minify flag (#1746) ([944c571](https://github.com/stacksjs/stx/commit/944c571)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **islands**: observable chunk-load failures via stx:island-error (#1746) ([6455c83](https://github.com/stacksjs/stx/commit/6455c83)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **islands**: report island-chunk stats in the SSG build (#1746) ([2f04feb](https://github.com/stacksjs/stx/commit/2f04feb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **islands**: opt-in Subresource Integrity for island chunks (#1746) ([1cc633f](https://github.com/stacksjs/stx/commit/1cc633f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **islands**: prefetch hints for visible/idle island chunks (#1746) ([6f38b12](https://github.com/stacksjs/stx/commit/6f38b12)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **islands**: per-island production chunking — first slice (#1746) ([367d629](https://github.com/stacksjs/stx/commit/367d629)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **islands**: defer the island setup script's execution to the trigger (#1746) ([9e23561](https://github.com/stacksjs/stx/commit/9e23561)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **devtools**: window.__stxDevtools introspection API (#1747 Phase 1) ([05f0551](https://github.com/stacksjs/stx/commit/05f0551)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **islands**: per-component client="<trigger>" deferred hydration (#1746 Phase 1) ([1fcee9b](https://github.com/stacksjs/stx/commit/1fcee9b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **signals**: <TransitionGroup> — FLIP list transitions (#1742 Phase 1 ext) ([c5b3a88](https://github.com/stacksjs/stx/commit/c5b3a88)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1742](https://github.com/stacksjs/stx/issues/1742), [#1742](https://github.com/stacksjs/stx/issues/1742))
+- **cli**: stx doctor — diagnose framework-runtime staleness (#1745 Section D) ([17879bb](https://github.com/stacksjs/stx/commit/17879bb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1745](https://github.com/stacksjs/stx/issues/1745), [#1745](https://github.com/stacksjs/stx/issues/1745))
+- **signals**: <Suspense> client loading boundary (#1742 Phase 3) ([46be770](https://github.com/stacksjs/stx/commit/46be770)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1742](https://github.com/stacksjs/stx/issues/1742), [#1742](https://github.com/stacksjs/stx/issues/1742))
+- **signals**: useOptimistic — optimistic state primitive (#1742 Phase 2) ([aa28406](https://github.com/stacksjs/stx/commit/aa28406)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1742](https://github.com/stacksjs/stx/issues/1742), [#1742](https://github.com/stacksjs/stx/issues/1742))
+- **lint**: stx-strict footgun linter — top-5 rules (#1744 Phase 1) ([ff9d4c9](https://github.com/stacksjs/stx/commit/ff9d4c9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1744](https://github.com/stacksjs/stx/issues/1744), [#1744](https://github.com/stacksjs/stx/issues/1744))
+- **signals**: SSR pre-eval of literal :if / :show (#1739 Phase A) ([5136925](https://github.com/stacksjs/stx/commit/5136925)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1739](https://github.com/stacksjs/stx/issues/1739), [#1739](https://github.com/stacksjs/stx/issues/1739))
+- **i18n**: delegate translation loading to @stacksjs/ts-i18n ([e37c9db](https://github.com/stacksjs/stx/commit/e37c9db)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dev**: add --titlebar-hidden for native traffic-light titlebars ([860aa13](https://github.com/stacksjs/stx/commit/860aa13)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: let user components override built-ins of the same name ([5c8f425](https://github.com/stacksjs/stx/commit/5c8f425)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **test**: reset CSRF token before fresh-hex assertions (CI-order flake) ([657ff1f](https://github.com/stacksjs/stx/commit/657ff1f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: hydrate sibling root elements in multi-root setup fragments ([d4a5ece](https://github.com/stacksjs/stx/commit/d4a5ece)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **streaming**: X-Accel-Buffering: no so proxies don't buffer the stream (#1746) ([c028372](https://github.com/stacksjs/stx/commit/c028372)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **slots**: resolve @slot nested inside a @section block (#1752) ([a8c44ea](https://github.com/stacksjs/stx/commit/a8c44ea)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1752](https://github.com/stacksjs/stx/issues/1752), [#1752](https://github.com/stacksjs/stx/issues/1752))
+- **islands**: hydrate deferred islands reached via SPA navigation (#1746) ([bafdefd](https://github.com/stacksjs/stx/commit/bafdefd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **islands**: cancel a pending island trigger on SPA navigation (#1746) ([38a6164](https://github.com/stacksjs/stx/commit/38a6164)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **islands**: fire a deferred component's onMount on hydration, not page load (#1746) ([7ab1245](https://github.com/stacksjs/stx/commit/7ab1245)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **crosswind**: regenerate (not skip) CSS when a page composes into a shell (#1749) ([29b6093](https://github.com/stacksjs/stx/commit/29b6093)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1749](https://github.com/stacksjs/stx/issues/1749), [#1749](https://github.com/stacksjs/stx/issues/1749))
+- **signals**: preserve {{ }} in component x-for + unmangle runtime regexes (#1748) ([4c5fb05](https://github.com/stacksjs/stx/commit/4c5fb05)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1748](https://github.com/stacksjs/stx/issues/1748), [#1748](https://github.com/stacksjs/stx/issues/1748))
+- **i18n,test**: resilient ts-i18n loading + kill the signals mock leak ([cb14bd8](https://github.com/stacksjs/stx/commit/cb14bd8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: clear stx framework caches on source edit (#1745 item C) ([73abece](https://github.com/stacksjs/stx/commit/73abece)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1745](https://github.com/stacksjs/stx/issues/1745), [#1745](https://github.com/stacksjs/stx/issues/1745))
+- **props**: export defineProps / withDefaults from main entry (#1740) ([31f5546](https://github.com/stacksjs/stx/commit/31f5546)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1740](https://github.com/stacksjs/stx/issues/1740), [#1740](https://github.com/stacksjs/stx/issues/1740))
+- **components**: root component resolution at the configured project root ([ac99a90](https://github.com/stacksjs/stx/commit/ac99a90)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **loops**: preserve special characters in component props passed through @foreach ([0dabfaf](https://github.com/stacksjs/stx/commit/0dabfaf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: make @if/@elseif/@else and v-if chains reactive on signal-driven pages ([d3626af](https://github.com/stacksjs/stx/commit/d3626af)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **security**: harden HTML masking, builtin attribute escaping, and event-handler fallback against XSS ([7f3ff10](https://github.com/stacksjs/stx/commit/7f3ff10)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ♻️ Code Refactoring
+
+- **devtools**: extract tested panel controller from panel.ts (#1747) ([7ee8b53](https://github.com/stacksjs/stx/commit/7ee8b53)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- **security**: route processCustomElements script stashing through html-masking ([7b48640](https://github.com/stacksjs/stx/commit/7b48640)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📚 Documentation
+
+- **islands**: record verified finding — Phase 0 suppression gate is 0-value today (#1746) ([433fcef](https://github.com/stacksjs/stx/commit/433fcef)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
+- **proposals**: grounded phased plans for islands+streaming (#1746) and DevTools (#1747) ([b47312c](https://github.com/stacksjs/stx/commit/b47312c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1747](https://github.com/stacksjs/stx/issues/1747), [#1746](https://github.com/stacksjs/stx/issues/1746), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- remove bug-fixes.md tracking doc ([a16fb9f](https://github.com/stacksjs/stx/commit/a16fb9f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bug-fixes**: expand notes on the loop prop and resolution fixes ([eae0f1f](https://github.com/stacksjs/stx/commit/eae0f1f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- document the security pass, reactive if/else fix, and prefix conventions ([c353612](https://github.com/stacksjs/stx/commit/c353612)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💅 Styles
+
+- apply repo-wide format with pickier 0.1.35 ([d5b53a1](https://github.com/stacksjs/stx/commit/d5b53a1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧪 Tests
+
+- **devtools**: real runtime ↔ bridge integration; lint-clean render (#1747) ([5e8ffd3](https://github.com/stacksjs/stx/commit/5e8ffd3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1747](https://github.com/stacksjs/stx/issues/1747), [#1747](https://github.com/stacksjs/stx/issues/1747))
+- fix 10 Bun.build-realm-fragile tests by exercising the src pipeline ([6babd5a](https://github.com/stacksjs/stx/commit/6babd5a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: cover cwd-independent override resolution ([8a63399](https://github.com/stacksjs/stx/commit/8a63399)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **i18n**: resolve fixture root relative to the test file ([103b17e](https://github.com/stacksjs/stx/commit/103b17e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.71 ([b655787](https://github.com/stacksjs/stx/commit/b655787)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: refresh bun.lock to pick up pickier 0.1.33 ([01da025](https://github.com/stacksjs/stx/commit/01da025)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove symlinking @stacksjs/ts-i18n ([2d3b6b3](https://github.com/stacksjs/stx/commit/2d3b6b3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- gitignore local + transient .claude entries ([25ea6e7](https://github.com/stacksjs/stx/commit/25ea6e7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.69...v0.2.70)
 
 ### 🚀 Features
