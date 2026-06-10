@@ -18,7 +18,6 @@
  * The mousedown event is preferred over a synthetic call because AppKit
  * uses the current mouse event to anchor the drag preview.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface DragOutOptions {

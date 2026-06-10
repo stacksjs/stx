@@ -9,7 +9,6 @@
  * No web fallback — `getDisplayMedia()` exists but it's a different
  * shape (live stream vs still). Calls outside Craft return null.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface CapturableWindow {

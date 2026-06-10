@@ -1,6 +1,6 @@
-import plugin from 'bun-plugin-dtsx'
 import { mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import plugin from 'bun-plugin-dtsx'
 
 function collectEntrypoints(dir: string): string[] {
   const entries: string[] = []

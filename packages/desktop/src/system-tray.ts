@@ -120,11 +120,11 @@ function convertMenuItem(item: SystemTrayMenuItem, index: number): CraftMenuItem
 
   if (item.type === 'submenu' && item.submenu) {
     menuItem.submenu = item.submenu.map((subItem, subIndex) =>
-      convertMenuItem(subItem, subIndex),
-    )
-  }
+    convertMenuItem(subItem, subIndex),
+  )
+}
 
-  return menuItem
+return menuItem
 }
 
 /**

@@ -11,17 +11,16 @@
  * for security reasons — they return empty/false there rather than
  * throwing, so feature-detection on the result is the cleanest pattern.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
-export type ConnectionType =
-  | 'wifi'
-  | 'ethernet'
-  | 'cellular'
-  | 'bluetooth'
-  | 'vpn'
-  | 'none'
-  | 'unknown'
+export type ConnectionType = 
+| 'wifi'
+| 'ethernet'
+| 'cellular'
+| 'bluetooth'
+| 'vpn'
+| 'none'
+| 'unknown'
 
 export interface NetworkInterface {
   name: string

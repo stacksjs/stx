@@ -9,7 +9,6 @@
  * No web fallback — AppleScript is a macOS-only system facility.
  * Calls outside Craft resolve with `{ok: false}`.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface AppleScriptResult {

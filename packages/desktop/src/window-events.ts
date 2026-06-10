@@ -11,7 +11,6 @@
  * here. For a real "are you sure you want to close?" gate, attach
  * `beforeunload` in JS, which fires before AppKit's close path runs.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface WindowSize {

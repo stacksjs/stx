@@ -9,7 +9,6 @@
  * **Permissions:** browsers require a user gesture (click, key) for
  * `writeText`. The native side has no such requirement.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface Clipboard {

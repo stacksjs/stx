@@ -9,7 +9,6 @@
  * The two paths report identical values, so call sites don't need to
  * branch on environment.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export type Appearance = 'light' | 'dark'

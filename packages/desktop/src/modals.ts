@@ -64,17 +64,17 @@ function generateModalId(): string {
 function getModalIcon(type: ModalOptions['type']): string {
   switch (type) {
     case 'info':
-      return '&#x2139;'
+    return '&#x2139;'
     case 'warning':
-      return '&#x26A0;'
+    return '&#x26A0;'
     case 'error':
-      return '&#x2716;'
+    return '&#x2716;'
     case 'success':
-      return '&#x2714;'
+    return '&#x2714;'
     case 'question':
-      return '&#x2753;'
+    return '&#x2753;'
     default:
-      return '&#x2139;'
+    return '&#x2139;'
   }
 }
 

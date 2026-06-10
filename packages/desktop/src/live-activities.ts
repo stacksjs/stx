@@ -17,7 +17,6 @@
  * call `Activity.request(...)` from Swift. This module is the
  * cross-platform glue — same surface, best-effort behaviour.
  */
-
 import { handoff } from './handoff'
 
 export interface LiveActivityState {

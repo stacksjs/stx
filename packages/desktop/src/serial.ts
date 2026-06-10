@@ -10,7 +10,6 @@
  * reason. The list is the part most apps need first (the "which
  * device" UI).
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface SerialPort {

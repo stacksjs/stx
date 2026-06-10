@@ -10,7 +10,6 @@
  * The `isContinuity` flag distinguishes Continuity-paired devices from
  * regular built-in / USB cameras so apps can label them appropriately.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface ContinuityCameraDevice {

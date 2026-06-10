@@ -8,7 +8,6 @@
  * `window.screen`, which is "good enough" for layout heuristics but
  * misses secondary monitors (browsers can't see those).
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface Display {

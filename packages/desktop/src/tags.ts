@@ -9,7 +9,6 @@
  * encodes the colour index. We pass them through unchanged so apps
  * can preserve or strip the suffix as they like.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface TagsAPI {

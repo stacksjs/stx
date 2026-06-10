@@ -12,7 +12,6 @@
  * Browser fallback: WebNN / TensorFlow.js fill the same role with a
  * different API shape; apps targeting both should detect at runtime.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface CoreMLAPI {

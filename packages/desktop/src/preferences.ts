@@ -36,10 +36,9 @@
  * prefs.reset()
  * ```
  */
-
-import { existsSync, mkdirSync, readFileSync, writeFileSync, watch } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, watch, writeFileSync } from 'node:fs'
 import { homedir, platform } from 'node:os'
+import { dirname, join } from 'node:path'
 
 // ============================================================================
 // Types
@@ -92,11 +91,11 @@ function getDefaultPrefsDir(appName: string): string {
 
   switch (os) {
     case 'darwin':
-      return join(home, 'Library', 'Application Support', appName)
+    return join(home, 'Library', 'Application Support', appName)
     case 'win32':
-      return join(process.env.APPDATA || join(home, 'AppData', 'Roaming'), appName)
+    return join(process.env.APPDATA || join(home, 'AppData', 'Roaming'), appName)
     default:
-      return join(home, '.config', appName)
+    return join(home, '.config', appName)
   }
 }
 

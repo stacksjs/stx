@@ -1,8 +1,8 @@
-import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import stxPlugin from 'bun-plugin-stx'
+import { serve } from 'bun'
 
 // Port for the dev server
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 3500

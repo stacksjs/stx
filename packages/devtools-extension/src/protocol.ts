@@ -31,10 +31,10 @@ export interface StxDevtoolsApi {
   mutations: () => unknown
 }
 
-export type DevtoolsRequestType =
-  | 'version' | 'tree' | 'scope' | 'stores' | 'store'
-  | 'enable' | 'disable' | 'tracking' | 'stats' | 'resetStats'
-  | 'graph' | 'ifTrace' | 'queries' | 'mutations'
+export type DevtoolsRequestType = 
+| 'version' | 'tree' | 'scope' | 'stores' | 'store'
+| 'enable' | 'disable' | 'tracking' | 'stats' | 'resetStats'
+| 'graph' | 'ifTrace' | 'queries' | 'mutations'
 
 export interface DevtoolsRequest {
   /** Correlates a response to its request. */

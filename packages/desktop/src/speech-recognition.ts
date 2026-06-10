@@ -13,7 +13,6 @@
  * Without both, the system rejects the request and `isAvailable()`
  * returns false.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface SpeechRecognitionStartOptions {

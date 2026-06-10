@@ -1,5 +1,4 @@
 // Example server demonstrating stx streaming functionality
-
 import { createStreamRenderer } from '../../src/streaming'
 
 interface UserData {

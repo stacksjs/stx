@@ -20,7 +20,6 @@
  *
  * No web fallback — there's no socket-binding equivalent.
  */
-
 import { hasBridge, onCraftEvent, requireBridge } from './_bridge'
 
 export interface LocalServerStartResult {

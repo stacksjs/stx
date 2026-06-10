@@ -1,7 +1,7 @@
+import type { Route, RouteMatch, RouterConfig } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
-import type { Route, RouteMatch, RouterConfig } from './types'
-import { generateRouteTypes, generateRouteManifest } from './codegen'
+import { generateRouteManifest, generateRouteTypes } from './codegen'
 import { filePathToPattern, patternToRegex } from './matcher'
 import { resolveLayoutChain } from './nested-layouts'
 

@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, readdirSync, statSync, copyFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
 import type { AdapterBuildConfig, AdapterBuildResult, DeployAdapter, StaticAdapterConfig } from '../types'
+import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs'
+import { join, relative } from 'node:path'
 
 function copyDirSync(src: string, dest: string): void {
   mkdirSync(dest, { recursive: true })

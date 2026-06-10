@@ -1,8 +1,5 @@
 // Test importing components
-import type {
-  CalendarProps,
-  NavigatorProps,
-} from '@stacksjs/components'
+import type { CalendarProps, NavigatorProps } from '@stacksjs/components'
 
 // Test importing composables
 

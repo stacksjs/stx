@@ -14,7 +14,6 @@
  * module doesn't try to bridge them — apps targeting both should
  * detect and route per-environment.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface MIDIEndpoint {

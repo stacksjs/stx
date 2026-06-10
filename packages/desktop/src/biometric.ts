@@ -12,7 +12,6 @@
  * No web fallback — WebAuthn covers a subset (security keys, browser-
  * level passkeys) but doesn't expose macOS biometrics directly.
  */
-
 import { hasBridge } from './_bridge'
 
 export type BiometryType = 'none' | 'touchID' | 'faceID' | 'opticID'

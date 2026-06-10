@@ -28,76 +28,76 @@ export type AriaLive = 'off' | 'polite' | 'assertive'
 /**
  * ARIA role types
  */
-export type AriaRole =
-  | 'alert'
-  | 'alertdialog'
-  | 'application'
-  | 'article'
-  | 'banner'
-  | 'button'
-  | 'cell'
-  | 'checkbox'
-  | 'columnheader'
-  | 'combobox'
-  | 'complementary'
-  | 'contentinfo'
-  | 'definition'
-  | 'dialog'
-  | 'directory'
-  | 'document'
-  | 'feed'
-  | 'figure'
-  | 'form'
-  | 'grid'
-  | 'gridcell'
-  | 'group'
-  | 'heading'
-  | 'img'
-  | 'link'
-  | 'list'
-  | 'listbox'
-  | 'listitem'
-  | 'log'
-  | 'main'
-  | 'marquee'
-  | 'math'
-  | 'menu'
-  | 'menubar'
-  | 'menuitem'
-  | 'menuitemcheckbox'
-  | 'menuitemradio'
-  | 'navigation'
-  | 'none'
-  | 'note'
-  | 'option'
-  | 'presentation'
-  | 'progressbar'
-  | 'radio'
-  | 'radiogroup'
-  | 'region'
-  | 'row'
-  | 'rowgroup'
-  | 'rowheader'
-  | 'scrollbar'
-  | 'search'
-  | 'searchbox'
-  | 'separator'
-  | 'slider'
-  | 'spinbutton'
-  | 'status'
-  | 'switch'
-  | 'tab'
-  | 'table'
-  | 'tablist'
-  | 'tabpanel'
-  | 'term'
-  | 'textbox'
-  | 'timer'
-  | 'toolbar'
-  | 'tooltip'
-  | 'tree'
-  | 'treegrid'
-  | 'treeitem'
+export type AriaRole = 
+| 'alert'
+| 'alertdialog'
+| 'application'
+| 'article'
+| 'banner'
+| 'button'
+| 'cell'
+| 'checkbox'
+| 'columnheader'
+| 'combobox'
+| 'complementary'
+| 'contentinfo'
+| 'definition'
+| 'dialog'
+| 'directory'
+| 'document'
+| 'feed'
+| 'figure'
+| 'form'
+| 'grid'
+| 'gridcell'
+| 'group'
+| 'heading'
+| 'img'
+| 'link'
+| 'list'
+| 'listbox'
+| 'listitem'
+| 'log'
+| 'main'
+| 'marquee'
+| 'math'
+| 'menu'
+| 'menubar'
+| 'menuitem'
+| 'menuitemcheckbox'
+| 'menuitemradio'
+| 'navigation'
+| 'none'
+| 'note'
+| 'option'
+| 'presentation'
+| 'progressbar'
+| 'radio'
+| 'radiogroup'
+| 'region'
+| 'row'
+| 'rowgroup'
+| 'rowheader'
+| 'scrollbar'
+| 'search'
+| 'searchbox'
+| 'separator'
+| 'slider'
+| 'spinbutton'
+| 'status'
+| 'switch'
+| 'tab'
+| 'table'
+| 'tablist'
+| 'tabpanel'
+| 'term'
+| 'textbox'
+| 'timer'
+| 'toolbar'
+| 'tooltip'
+| 'tree'
+| 'treegrid'
+| 'treeitem'
 
 /**
  * Focus trap options
@@ -504,54 +504,54 @@ export function createRovingTabindex(
 
     switch (event.key) {
       case 'ArrowRight':
-        if (orientation === 'horizontal' || orientation === 'both') {
-          newIndex = currentIndex + 1
-          if (newIndex > maxIndex) {
-            newIndex = loop ? 0 : maxIndex
-          }
-          handled = true
+      if (orientation === 'horizontal' || orientation === 'both') {
+        newIndex = currentIndex + 1
+        if (newIndex > maxIndex) {
+          newIndex = loop ? 0 : maxIndex
         }
-        break
+        handled = true
+      }
+      break
 
       case 'ArrowLeft':
-        if (orientation === 'horizontal' || orientation === 'both') {
-          newIndex = currentIndex - 1
-          if (newIndex < 0) {
-            newIndex = loop ? maxIndex : 0
-          }
-          handled = true
+      if (orientation === 'horizontal' || orientation === 'both') {
+        newIndex = currentIndex - 1
+        if (newIndex < 0) {
+          newIndex = loop ? maxIndex : 0
         }
-        break
+        handled = true
+      }
+      break
 
       case 'ArrowDown':
-        if (orientation === 'vertical' || orientation === 'both') {
-          newIndex = currentIndex + 1
-          if (newIndex > maxIndex) {
-            newIndex = loop ? 0 : maxIndex
-          }
-          handled = true
+      if (orientation === 'vertical' || orientation === 'both') {
+        newIndex = currentIndex + 1
+        if (newIndex > maxIndex) {
+          newIndex = loop ? 0 : maxIndex
         }
-        break
+        handled = true
+      }
+      break
 
       case 'ArrowUp':
-        if (orientation === 'vertical' || orientation === 'both') {
-          newIndex = currentIndex - 1
-          if (newIndex < 0) {
-            newIndex = loop ? maxIndex : 0
-          }
-          handled = true
+      if (orientation === 'vertical' || orientation === 'both') {
+        newIndex = currentIndex - 1
+        if (newIndex < 0) {
+          newIndex = loop ? maxIndex : 0
         }
-        break
+        handled = true
+      }
+      break
 
       case 'Home':
-        newIndex = 0
-        handled = true
-        break
+      newIndex = 0
+      handled = true
+      break
 
       case 'End':
-        newIndex = maxIndex
-        handled = true
-        break
+      newIndex = maxIndex
+      handled = true
+      break
     }
 
     if (handled) {

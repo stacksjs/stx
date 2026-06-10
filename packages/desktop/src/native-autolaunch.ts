@@ -14,7 +14,6 @@
  * Windows) `enable`/`disable` resolve to `false` — let the caller
  * fall back to the legacy module.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface NativeAutoLaunchAPI {

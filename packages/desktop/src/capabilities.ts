@@ -11,7 +11,6 @@
  * code can use this to enable or hide UI rather than relying on calls
  * that fail silently.
  */
-
 import { hasBridge } from './_bridge'
 
 /**

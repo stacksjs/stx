@@ -36,10 +36,10 @@ export function useLocalStorage<T>(
   initialValue: T,
   options: UseLocalStorageOptions<T> = {},
 ): {
-    value: T
-    setValue: (newValue: T | ((_prev: T) => T)) => void
-    removeValue: () => void
-  } {
+  value: T
+  setValue: (newValue: T | ((_prev: T) => T)) => void
+  removeValue: () => void
+} {
   const {
     serializer = JSON.stringify,
     deserializer = JSON.parse,

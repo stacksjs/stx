@@ -14,7 +14,6 @@
  * API where it's still available; `preventSleep`/`allowSleep` use the
  * Wake Lock API (`navigator.wakeLock.request('screen')`).
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export type ThermalState = 'nominal' | 'fair' | 'serious' | 'critical' | 'unknown'

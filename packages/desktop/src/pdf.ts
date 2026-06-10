@@ -11,7 +11,6 @@
  * annotations, form-field values) should walk the document directly
  * via the lower-level PDFKit surface.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface PDFAPI {

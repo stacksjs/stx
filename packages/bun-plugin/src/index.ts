@@ -35,11 +35,10 @@
  * })
  * ```
  */
-
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, classifyScript, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile, renderToString } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, classifyScript, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -254,7 +253,7 @@ export { content as default };
 
       build.onLoad({ filter: /\.stx$/ }, async ({ path: filePath }) => {
         try {
-        // Track dependencies for caching
+          // Track dependencies for caching
           const dependencies = new Set<string>()
 
           // Check for cached content if caching is enabled
@@ -293,14 +292,14 @@ export { content as default };
 
             switch (classified.type) {
               case 'signals':
-                signalsScripts.push(classified.fullTag)
-                break
+              signalsScripts.push(classified.fullTag)
+              break
               case 'client':
-                clientScripts.push(classified.fullTag)
-                break
+              clientScripts.push(classified.fullTag)
+              break
               case 'server':
-                serverScripts.push(classified.content)
-                break
+              serverScripts.push(classified.content)
+              break
             }
           }
 
@@ -318,7 +317,7 @@ export { content as default };
 
           // Create a sandbox environment to execute the script
           const context: Record<string, any> = {
-          // Add some useful globals
+            // Add some useful globals
             __filename: filePath,
             __dirname: path.dirname(filePath),
             // Add stx config info

@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import type { SidebarConfig, WindowInstance, WindowOptions } from './types'
+import process from 'node:process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import process from 'node:process'
 
 // =============================================================================
 // Configuration

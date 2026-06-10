@@ -9,7 +9,6 @@
  * portable web equivalent for "silently save current page as PDF" —
  * that path throws.
  */
-
 import { hasBridge, requireBridge } from './_bridge'
 
 export interface PrintToPDFResult {

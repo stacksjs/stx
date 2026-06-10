@@ -89,35 +89,35 @@ export function parseShortcut(shortcut: string): ParsedShortcut {
       case 'command':
       case 'meta':
       case '⌘':
-        result.meta = true
-        break
+      result.meta = true
+      break
       case 'ctrl':
       case 'control':
       case '⌃':
-        result.ctrl = true
-        break
+      result.ctrl = true
+      break
       case 'shift':
       case '⇧':
-        result.shift = true
-        break
+      result.shift = true
+      break
       case 'alt':
       case 'option':
       case 'opt':
       case '⌥':
-        result.alt = true
-        break
+      result.alt = true
+      break
       case 'cmdorctrl':
       case 'commandorcontrol':
-        // On macOS use Meta, otherwise Ctrl
-        if (typeof process !== 'undefined' && process.platform === 'darwin') {
-          result.meta = true
-        }
-        else {
-          result.ctrl = true
-        }
-        break
+      // On macOS use Meta, otherwise Ctrl
+      if (typeof process !== 'undefined' && process.platform === 'darwin') {
+        result.meta = true
+      }
+      else {
+        result.ctrl = true
+      }
+      break
       default:
-        result.key = lower
+      result.key = lower
     }
   }
 

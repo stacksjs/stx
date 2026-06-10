@@ -10,7 +10,6 @@
  * Or in bunfig.toml:
  *   preload = ["bun-plugin-stx/preload"]
  */
-
 import { plugin } from 'bun'
 import stxPlugin from './index'
 

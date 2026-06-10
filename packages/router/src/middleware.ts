@@ -1,22 +1,6 @@
+import type { AbortNavigationResult, CookieManager, CookieOptions, MiddlewareContext, MiddlewareMode, MiddlewareOptions, MiddlewareResult, NavigateToOptions, NavigateToResult, NavigationError, NavigationResult, RouteLocation, RouteMiddlewareDefinition, RouteMiddlewareHandler, StorageManager } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
-import type {
-  AbortNavigationResult,
-  CookieManager,
-  CookieOptions,
-  MiddlewareContext,
-  MiddlewareMode,
-  MiddlewareOptions,
-  MiddlewareResult,
-  NavigateToOptions,
-  NavigateToResult,
-  NavigationError,
-  NavigationResult,
-  RouteLocation,
-  RouteMiddlewareDefinition,
-  RouteMiddlewareHandler,
-  StorageManager,
-} from './types'
 
 // =============================================================================
 // Navigation Helpers
@@ -36,7 +20,7 @@ export function navigateTo(navPath: string, options: NavigateToOptions = {}): Na
 
 export function abortNavigation(error: string | NavigationError): AbortNavigationResult {
   const normalizedError: NavigationError
-    = typeof error === 'string' ? { statusCode: 500, message: error } : error
+   = typeof error === 'string' ? { statusCode: 500, message: error } : error
 
   return {
     type: 'abort',
@@ -85,9 +69,9 @@ function serializeCookie(name: string, value: string, options: CookieOptions = {
 
   if (options.expires) {
     const expires
-      = typeof options.expires === 'number'
-        ? new Date(Date.now() + options.expires * 1000)
-        : options.expires
+     = typeof options.expires === 'number'
+      ? new Date(Date.now() + options.expires * 1000)
+      : options.expires
     cookie += `; Expires=${expires.toUTCString()}`
   }
 
@@ -156,7 +140,7 @@ export function createClientCookieManager(): CookieManager {
 
 export function createStorageManager(): StorageManager {
   const available
-    = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+   = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
 
   return {
     get(key: string): string | null {

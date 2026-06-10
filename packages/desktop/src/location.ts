@@ -11,16 +11,15 @@
  *   - `NSLocationWhenInUseUsageDescription` — when in use only
  *   - `NSLocationAlwaysAndWhenInUseUsageDescription` — background access
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
-export type LocationAuthStatus =
-  | 'undetermined'
-  | 'restricted-or-denied'
-  | 'authorizedAlways'
-  | 'authorizedWhenInUse'
-  | 'not-supported'
-  | 'unknown'
+export type LocationAuthStatus = 
+| 'undetermined'
+| 'restricted-or-denied'
+| 'authorizedAlways'
+| 'authorizedWhenInUse'
+| 'not-supported'
+| 'unknown'
 
 export interface LocationCoordinate {
   latitude: number

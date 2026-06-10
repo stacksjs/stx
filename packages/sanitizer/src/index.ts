@@ -4,7 +4,6 @@
  * A fast, native Bun-powered HTML sanitizer with DOMPurify-like features.
  * Protection against XSS and malicious content.
  */
-
 // Default export
 import { sanitize } from './sanitizer'
 

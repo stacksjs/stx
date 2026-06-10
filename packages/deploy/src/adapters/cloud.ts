@@ -1,7 +1,7 @@
-import { existsSync, mkdirSync, readdirSync } from 'node:fs'
-import process from 'node:process'
-import { join, relative } from 'node:path'
 import type { AdapterBuildConfig, AdapterBuildResult, AdapterDeployConfig, DeployAdapter, DeployResult } from '../types'
+import process from 'node:process'
+import { existsSync, mkdirSync, readdirSync } from 'node:fs'
+import { join, relative } from 'node:path'
 
 export type DnsProviderName = 'porkbun' | 'godaddy' | 'route53'
 

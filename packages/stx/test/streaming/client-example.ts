@@ -46,40 +46,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Then hydrate the rest after a delay
   // setTimeout(() => {
-  //   const nonCriticalIslands = { ...islands }
-  //   delete nonCriticalIslands['search-box']
-  //   hydrateIslands(nonCriticalIslands)
-  // }, 2000)
-})
-
-// Example of a custom hydration strategy:
-// Hydrate islands when the user interacts with them
-function _setupManualHydration(): void {
-  document.querySelectorAll('[data-island]').forEach((island: Element) => {
-    if (island.getAttribute('data-hydrated') !== 'true') {
-      // Add click listener to trigger hydration
-      island.addEventListener('click', () => {
-        const name = island.getAttribute('data-island')
-        if (name && islands[name]) {
-          console.log(`Hydrating ${name} on user interaction`)
-          import(`./islands/${name}`).then((module) => {
-            const hydrate = module.default || module.hydrate
-            if (typeof hydrate === 'function') {
-              // Get props
-              const id = island.getAttribute('data-island-id')
-              const propsScript = document.querySelector(`script[data-island-props="${id}"]`)
-              const props = propsScript ? JSON.parse(propsScript.textContent || '{}') : {}
-
-              // Hydrate the island
-              hydrate(island, props)
-              island.setAttribute('data-hydrated', 'true')
-            }
-          })
-        }
-      }, { once: true })
-    }
+    //   const nonCriticalIslands = { ...islands }
+    //   delete nonCriticalIslands['search-box']
+    //   hydrateIslands(nonCriticalIslands)
+    // }, 2000)
   })
-}
 
-// This is an alternative approach that's commented out
-// setupManualHydration()
+  // Example of a custom hydration strategy:
+  // Hydrate islands when the user interacts with them
+  function _setupManualHydration(): void {
+    document.querySelectorAll('[data-island]').forEach((island: Element) => {
+      if (island.getAttribute('data-hydrated') !== 'true') {
+        // Add click listener to trigger hydration
+        island.addEventListener('click', () => {
+          const name = island.getAttribute('data-island')
+          if (name && islands[name]) {
+            console.log(`Hydrating ${name} on user interaction`)
+            import(`./islands/${name}`).then((module) => {
+              const hydrate = module.default || module.hydrate
+              if (typeof hydrate === 'function') {
+                // Get props
+                const id = island.getAttribute('data-island-id')
+                const propsScript = document.querySelector(`script[data-island-props="${id}"]`)
+                const props = propsScript ? JSON.parse(propsScript.textContent || '{}') : {}
+
+                // Hydrate the island
+                hydrate(island, props)
+                island.setAttribute('data-hydrated', 'true')
+              }
+            })
+          }
+        }, { once: true })
+      }
+    })
+  }
+
+  // This is an alternative approach that's commented out
+  // setupManualHydration()

@@ -14,7 +14,6 @@
  * back to localStorage would silently downgrade security guarantees.
  * Calls outside a Craft window throw.
  */
-
 import { requireBridge } from './_bridge'
 
 export interface KeychainAPI {

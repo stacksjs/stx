@@ -11,7 +11,6 @@
  * resources. Forgetting `stop()` keeps the system browsing in the
  * background which is wasteful but not harmful.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface BonjourService {

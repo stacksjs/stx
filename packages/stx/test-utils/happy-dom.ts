@@ -2,7 +2,6 @@
  * Shared VeryHappyDOM setup for all packages in the workspace
  * This file is preloaded by Bun test to provide a DOM environment
  */
-
 import { CustomEvent as VirtualCustomEvent, VirtualElement, VirtualEvent, Window } from 'very-happy-dom'
 
 // Create and setup the global window

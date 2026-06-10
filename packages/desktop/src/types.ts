@@ -137,27 +137,27 @@ export interface SystemTrayOptions {
 /**
  * System tray menu item
  */
-export type SystemTrayMenuItem =
-  | {
-    /** Menu item label */
-    label: string
-    /** Click handler */
-    onClick?: () => void
-    /** Keyboard shortcut */
-    accelerator?: string
-    /** Menu item type */
-    type?: 'normal' | 'checkbox' | 'submenu'
-    /** Submenu items (if type is 'submenu') */
-    submenu?: SystemTrayMenuItem[]
-    /** Is checkbox checked (if type is 'checkbox') */
-    checked?: boolean
-    /** Is menu item enabled */
-    enabled?: boolean
-  }
-  | {
-    /** Menu item type */
-    type: 'separator'
-  }
+export type SystemTrayMenuItem = 
+| {
+  /** Menu item label */
+  label: string
+  /** Click handler */
+  onClick?: () => void
+  /** Keyboard shortcut */
+  accelerator?: string
+  /** Menu item type */
+  type?: 'normal' | 'checkbox' | 'submenu'
+  /** Submenu items (if type is 'submenu') */
+  submenu?: SystemTrayMenuItem[]
+  /** Is checkbox checked (if type is 'checkbox') */
+  checked?: boolean
+  /** Is menu item enabled */
+  enabled?: boolean
+}
+| {
+  /** Menu item type */
+  type: 'separator'
+}
 
 /**
  * Modal dialog options

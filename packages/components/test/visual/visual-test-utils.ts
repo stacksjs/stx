@@ -4,7 +4,6 @@
  * This module provides utilities for snapshot-based visual testing of components.
  * It captures component template structure and CSS class compositions for comparison.
  */
-
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
@@ -312,13 +311,13 @@ export async function testResponsiveSupport(
   const classes = extractClasses(template)
   const breakpointPrefixes = ['sm:', 'md:', 'lg:', 'xl:', '2xl:']
   const responsiveClasses = classes.filter(c =>
-    breakpointPrefixes.some(prefix => c.startsWith(prefix)),
-  )
+  breakpointPrefixes.some(prefix => c.startsWith(prefix)),
+)
 
-  return {
-    hasResponsiveClasses: responsiveClasses.length > 0,
-    responsiveClasses,
-  }
+return {
+  hasResponsiveClasses: responsiveClasses.length > 0,
+  responsiveClasses,
+}
 }
 
 /**

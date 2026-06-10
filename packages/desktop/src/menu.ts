@@ -10,7 +10,6 @@
  * `craft:menu:action` event with `{id}` when the user picks it; use
  * `menu.onAction(cb)` to listen.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface MenuItem {
@@ -73,13 +72,13 @@ export const menu: MenuAPI = {
   async addItem(parent, item) {
     if (hasBridge('menu')) await window.craft!.menu.addItem(parent, item)
   },
-  async removeItem(id)         { if (hasBridge('menu')) await window.craft!.menu.removeItem(id) },
-  async enableItem(id)         { if (hasBridge('menu')) await window.craft!.menu.enableItem(id) },
-  async disableItem(id)        { if (hasBridge('menu')) await window.craft!.menu.disableItem(id) },
-  async checkItem(id)          { if (hasBridge('menu')) await window.craft!.menu.checkItem(id) },
-  async uncheckItem(id)        { if (hasBridge('menu')) await window.craft!.menu.uncheckItem(id) },
-  async setItemLabel(id, lbl)  { if (hasBridge('menu')) await window.craft!.menu.setItemLabel(id, lbl) },
-  async clearDock()            { if (hasBridge('menu')) await window.craft!.menu.clearDock() },
+  async removeItem(id) { if (hasBridge('menu')) await window.craft!.menu.removeItem(id) },
+  async enableItem(id) { if (hasBridge('menu')) await window.craft!.menu.enableItem(id) },
+  async disableItem(id) { if (hasBridge('menu')) await window.craft!.menu.disableItem(id) },
+  async checkItem(id) { if (hasBridge('menu')) await window.craft!.menu.checkItem(id) },
+  async uncheckItem(id) { if (hasBridge('menu')) await window.craft!.menu.uncheckItem(id) },
+  async setItemLabel(id, lbl) { if (hasBridge('menu')) await window.craft!.menu.setItemLabel(id, lbl) },
+  async clearDock() { if (hasBridge('menu')) await window.craft!.menu.clearDock() },
   onAction(cb) {
     return onCraftEvent<MenuActionEvent>('craft:menu:action', cb)
   },

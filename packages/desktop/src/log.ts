@@ -9,19 +9,18 @@
  * `console.*` call so library code can call `log.info()` from web
  * builds without branching.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface LogAPI {
   debug: (message: string) => Promise<void>
-  info:  (message: string) => Promise<void>
-  warn:  (message: string) => Promise<void>
+  info: (message: string) => Promise<void>
+  warn: (message: string) => Promise<void>
   error: (message: string) => Promise<void>
 }
 
 export const log: LogAPI = {
   async debug(m) { if (hasBridge('log')) await window.craft!.log.debug(m); else console.debug(m) },
-  async info(m)  { if (hasBridge('log')) await window.craft!.log.info(m);  else console.info(m) },
-  async warn(m)  { if (hasBridge('log')) await window.craft!.log.warn(m);  else console.warn(m) },
+  async info(m) { if (hasBridge('log')) await window.craft!.log.info(m); else console.info(m) },
+  async warn(m) { if (hasBridge('log')) await window.craft!.log.warn(m); else console.warn(m) },
   async error(m) { if (hasBridge('log')) await window.craft!.log.error(m); else console.error(m) },
 }

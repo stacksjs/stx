@@ -9,7 +9,6 @@
  * filesystem-touching APIs (`openPath`, `showInFinder`, `spawn`) throw
  * if the bridge isn't available — they have no meaningful web fallback.
  */
-
 import { hasBridge, onCraftEvent, requireBridge } from './_bridge'
 
 export interface SpawnOptions {
@@ -127,8 +126,8 @@ export const shell: Shell = {
 
   // These have no sensible web fallback, so they throw via requireBridge.
   // Wrap each in async so the throw arrives as a rejected promise.
-  async openPath(path)      { await requireBridge('shell').openPath(path) },
-  async showInFinder(path)  { await requireBridge('shell').showInFinder(path) },
+  async openPath(path) { await requireBridge('shell').openPath(path) },
+  async showInFinder(path) { await requireBridge('shell').showInFinder(path) },
   async spawn(id, command, args = [], opts = {}) {
     ensureExitListener()
     if (!id || typeof id !== 'string') throw new Error('shell.spawn: id must be a non-empty string')
@@ -168,5 +167,5 @@ export const shell: Shell = {
   async setEnv(name, value) { await requireBridge('shell').setEnv(name, value) },
   onStdout(cb) { return onCraftEvent<ShellOutputEvent>('craft:shell:stdout', cb) },
   onStderr(cb) { return onCraftEvent<ShellOutputEvent>('craft:shell:stderr', cb) },
-  onExit(cb)   { return onCraftEvent<ShellExitEvent>('craft:shell:exit', cb) },
+  onExit(cb) { return onCraftEvent<ShellExitEvent>('craft:shell:exit', cb) },
 }

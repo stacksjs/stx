@@ -9,7 +9,6 @@
  * defaults (empty / "0.0.0") so call sites can render an About panel
  * without branching on environment.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface AppInfo {
@@ -58,7 +57,7 @@ const DEFAULT_INFO: AppInfo = { name: '', version: '0.0.0' }
 export const app: AppAPI = {
   async hideDockIcon() { if (hasBridge('app')) await window.craft!.app.hideDockIcon() },
   async showDockIcon() { if (hasBridge('app')) await window.craft!.app.showDockIcon() },
-  async quit()         { if (hasBridge('app')) await window.craft!.app.quit() },
+  async quit() { if (hasBridge('app')) await window.craft!.app.quit() },
   async getInfo() {
     if (!hasBridge('app')) return DEFAULT_INFO
     const r = await window.craft!.app.getInfo()

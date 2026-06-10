@@ -217,14 +217,14 @@ export const markdown: SanitizerOptions = {
 export function getPreset(name: string): SanitizerOptions {
   switch (name) {
     case 'strict':
-      return strict
+    return strict
     case 'basic':
-      return basic
+    return basic
     case 'relaxed':
-      return relaxed
+    return relaxed
     case 'markdown':
-      return markdown
+    return markdown
     default:
-      return basic
+    return basic
   }
 }

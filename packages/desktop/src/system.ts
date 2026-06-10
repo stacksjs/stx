@@ -9,7 +9,6 @@
  * (mostly `Intl.DateTimeFormat().resolvedOptions()` + `matchMedia` for
  * the accessibility flags).
  */
-
 import { hasBridge } from './_bridge'
 
 export interface SystemInfo {

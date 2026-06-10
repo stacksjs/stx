@@ -9,7 +9,6 @@
  * voice list. The two paths are deliberately compatible so call sites
  * don't need to branch.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface SpeakOptions {

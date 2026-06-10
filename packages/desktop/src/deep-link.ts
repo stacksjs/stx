@@ -17,7 +17,6 @@
  * graceful no-op (subscriptions never fire). For browser-side custom
  * URL schemes, register a service worker or use `navigator.registerProtocolHandler`.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface DeepLinkEvent {

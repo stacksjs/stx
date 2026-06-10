@@ -10,7 +10,6 @@
  * have OCR-via-Tesseract-WASM but the shape is different and apps
  * that want both should layer that themselves.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface VisionTextResult {

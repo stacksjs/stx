@@ -9,7 +9,6 @@
  * has its own permission prompt; apps that need cross-environment
  * recording should provide their own stream-based path.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface AudioPlayOptions {

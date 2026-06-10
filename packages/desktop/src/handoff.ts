@@ -25,7 +25,6 @@
  * Browser fallback: this module is a graceful no-op (subscriptions
  * never fire). Handoff has no web equivalent.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface HandoffActivityOptions {

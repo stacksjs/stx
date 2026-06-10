@@ -27,10 +27,9 @@
  * await setAutoLaunch(false, { appName: 'Barista' })
  * ```
  */
-
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { homedir, platform } from 'node:os'
+import { join } from 'node:path'
 
 // ============================================================================
 // Types
@@ -186,11 +185,11 @@ export async function setAutoLaunch(enabled: boolean, options: AutoLaunchOptions
 
   switch (os) {
     case 'darwin':
-      return setAutoLaunchMacOS(enabled, options)
+    return setAutoLaunchMacOS(enabled, options)
     case 'linux':
-      return setAutoLaunchLinux(enabled, options)
+    return setAutoLaunchLinux(enabled, options)
     default:
-      throw new Error(`Auto-launch is not yet supported on ${os}`)
+    throw new Error(`Auto-launch is not yet supported on ${os}`)
   }
 }
 
@@ -203,10 +202,10 @@ export async function isAutoLaunchEnabled(appName?: string): Promise<boolean> {
 
   switch (os) {
     case 'darwin':
-      return isAutoLaunchEnabledMacOS(name)
+    return isAutoLaunchEnabledMacOS(name)
     case 'linux':
-      return isAutoLaunchEnabledLinux(name)
+    return isAutoLaunchEnabledLinux(name)
     default:
-      return false
+    return false
   }
 }

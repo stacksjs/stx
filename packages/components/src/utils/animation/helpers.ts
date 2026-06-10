@@ -207,13 +207,13 @@ export function createKeyframes(name: string, frames: Record<string, Record<stri
   const keyframesRule = `
     @keyframes ${name} {
       ${Object.entries(frames)
-        .map(([percentage, styles]) => {
-          const styleString = Object.entries(styles)
-            .map(([prop, value]) => `${prop}: ${value};`)
-            .join(' ')
-          return `${percentage} { ${styleString} }`
-        })
-        .join('\n')}
+    .map(([percentage, styles]) => {
+    const styleString = Object.entries(styles)
+      .map(([prop, value]) => `${prop}: ${value};`)
+      .join(' ')
+    return `${percentage} { ${styleString} }`
+  })
+    .join('\n')}
     }
   `
 

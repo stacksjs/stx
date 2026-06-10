@@ -11,7 +11,6 @@
  * top: prefer `dialog.showOpenDialog()` to prompt for paths in
  * browser builds.
  */
-
 import { onCraftEvent, requireBridge } from './_bridge'
 
 export interface FileStat {
@@ -156,7 +155,7 @@ export interface FS {
 // surfaces as a rejected promise — matching the rest of the surface and
 // keeping call sites uniformly awaitable.
 export const fs: FS = {
-  async readFile(path)        { const r = await requireBridge('fs').readFile(path); return (r && r.data) || '' },
+  async readFile(path) { const r = await requireBridge('fs').readFile(path); return (r && r.data) || '' },
   async readBuffer(path) {
     // The native fs bridge currently round-trips through UTF-8, so binary
     // data gets mangled. We base64-encode on the way out and decode here
@@ -203,14 +202,14 @@ export const fs: FS = {
     if (from === to) throw new Error('fs.move: source and destination must differ')
     await requireBridge('fs').move(from, to)
   },
-  async appendFile(path, data){ await requireBridge('fs').appendFile(path, data) },
-  async deleteFile(path)      { await requireBridge('fs').deleteFile(path) },
-  async exists(path)          { return await requireBridge('fs').exists(path) },
+  async appendFile(path, data) { await requireBridge('fs').appendFile(path, data) },
+  async deleteFile(path) { await requireBridge('fs').deleteFile(path) },
+  async exists(path) { return await requireBridge('fs').exists(path) },
   // The translator already normalizes the stat response shape, so the
   // local `normalizeStat` here is now a defence-in-depth: handle the
   // case where a non-Craft host (e.g. an unmocked test or a future
   // bridge) returns the raw native shape directly.
-  async stat(path)            { return normalizeStat(await requireBridge('fs').stat(path)) },
+  async stat(path) { return normalizeStat(await requireBridge('fs').stat(path)) },
   async readDir(path) {
     const r = await requireBridge('fs').readDir(path)
     const raw = (r && r.entries) || []
@@ -224,11 +223,11 @@ export const fs: FS = {
       isDirectory: !!e.isDirectory,
     }))
   },
-  async mkdir(path, opts)     { await requireBridge('fs').mkdir(path, opts) },
-  async rmdir(path, opts)     { await requireBridge('fs').rmdir(path, opts) },
-  async watch(path, id)       { await requireBridge('fs').watch(path, id) },
-  async unwatch(id)           { await requireBridge('fs').unwatch(id) },
-  onChange(cb)                { return onCraftEvent<FSChangeEvent>('craft:fs:change', cb) },
+  async mkdir(path, opts) { await requireBridge('fs').mkdir(path, opts) },
+  async rmdir(path, opts) { await requireBridge('fs').rmdir(path, opts) },
+  async watch(path, id) { await requireBridge('fs').watch(path, id) },
+  async unwatch(id) { await requireBridge('fs').unwatch(id) },
+  onChange(cb) { return onCraftEvent<FSChangeEvent>('craft:fs:change', cb) },
 
   async watchTree(path, options, cb) {
     const id = `watch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
@@ -288,9 +287,9 @@ export const fs: FS = {
       },
     }
   },
-  async homeDir()             { return await requireBridge('fs').homeDir() },
-  async tempDir()             { return await requireBridge('fs').tempDir() },
-  async appDataDir()          { return await requireBridge('fs').appDataDir() },
+  async homeDir() { return await requireBridge('fs').homeDir() },
+  async tempDir() { return await requireBridge('fs').tempDir() },
+  async appDataDir() { return await requireBridge('fs').appDataDir() },
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -310,13 +309,13 @@ function base64ToBytes(b64: string): Uint8Array {
 
 function normalizeStat(raw: any): FileStat {
   return {
-    isFile:      !!raw.isFile,
+    isFile: !!raw.isFile,
     isDirectory: !!raw.isDirectory,
-    isSymlink:   !!raw.isSymlink,
-    size:        Number(raw.size) || 0,
+    isSymlink: !!raw.isSymlink,
+    size: Number(raw.size) || 0,
     // Native side reports a unix timestamp in seconds; normalize to ms
     // so callers don't have to remember which one to multiply.
-    modifiedAt:  raw.modifiedAt != null
+    modifiedAt: raw.modifiedAt != null
       ? (raw.modifiedAt < 1e12 ? raw.modifiedAt * 1000 : raw.modifiedAt)
       : 0,
   }

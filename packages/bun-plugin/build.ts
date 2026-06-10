@@ -1,5 +1,5 @@
-import { dts } from 'bun-plugin-dtsx'
 import { rmSync } from 'node:fs'
+import { dts } from 'bun-plugin-dtsx'
 
 function assertBuild(result: Awaited<ReturnType<typeof Bun.build>>, label: string): void {
   if (result.success)

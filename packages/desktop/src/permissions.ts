@@ -9,26 +9,25 @@
  * API where available — note that the web API only knows about a small
  * subset of names ('camera', 'microphone', 'geolocation', 'notifications').
  */
-
 import { hasBridge } from './_bridge'
 
 /** Status values match the macOS TCC convention. */
 export type PermissionStatus = 'granted' | 'denied' | 'restricted' | 'undetermined' | 'not-supported'
 
-export type PermissionName =
-  | 'camera'
-  | 'microphone'
-  | 'screen_recording'
-  | 'accessibility'
-  | 'full_disk_access'
-  | 'input_monitoring'
-  | 'location'
-  | 'notifications'
-  | 'contacts'
-  | 'calendar'
-  | 'reminders'
-  | 'photos'
-  | 'bluetooth'
+export type PermissionName = 
+| 'camera'
+| 'microphone'
+| 'screen_recording'
+| 'accessibility'
+| 'full_disk_access'
+| 'input_monitoring'
+| 'location'
+| 'notifications'
+| 'contacts'
+| 'calendar'
+| 'reminders'
+| 'photos'
+| 'bluetooth'
 
 export interface PermissionsAPI {
   /** Read current status without prompting. */

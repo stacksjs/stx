@@ -17,14 +17,13 @@
  * This shape is intentionally stable so apps can write against it now
  * and switch over to a richer implementation when it lands.
  */
-
 import { hasBridge } from './_bridge'
 
-export type IAPProductType =
-  | 'consumable'
-  | 'non-consumable'
-  | 'auto-subscription'
-  | 'non-auto-subscription'
+export type IAPProductType = 
+| 'consumable'
+| 'non-consumable'
+| 'auto-subscription'
+| 'non-auto-subscription'
 
 export type IAPSubscriptionPeriod = 'day' | 'week' | 'month' | 'year'
 
@@ -206,13 +205,13 @@ export const iap: IAPAPI = {
     const r = await window.craft!.iap.getReceiptData()
     return r ? String(r) : null
   },
-  onPurchased(cb)       { return onCraftEvent<IAPTransactionEvent>('craft:iap:purchased', cb) },
-  onFailed(cb)          { return onCraftEvent<IAPFailureEvent>('craft:iap:failed', cb) },
-  onRestored(cb)        { return onCraftEvent<IAPTransactionEvent>('craft:iap:restored', cb) },
+  onPurchased(cb) { return onCraftEvent<IAPTransactionEvent>('craft:iap:purchased', cb) },
+  onFailed(cb) { return onCraftEvent<IAPFailureEvent>('craft:iap:failed', cb) },
+  onRestored(cb) { return onCraftEvent<IAPTransactionEvent>('craft:iap:restored', cb) },
   onProductsLoaded(cb) {
     return onCraftEvent<{ products?: IAPProduct[] }>('craft:iap:productsLoaded', (e) => cb(e.products || []))
   },
-  onRefunded(cb)        { return onCraftEvent<IAPRefundEvent>('craft:iap:refunded', cb) },
+  onRefunded(cb) { return onCraftEvent<IAPRefundEvent>('craft:iap:refunded', cb) },
   onSubscriptionStatusChanged(cb) {
     return onCraftEvent<IAPSubscriptionStatusEvent>('craft:iap:subscriptionStatusChanged', cb)
   },

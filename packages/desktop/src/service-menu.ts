@@ -15,7 +15,6 @@
  * adding services dynamically. Apps that need dynamic services should
  * ship a worker app extension instead.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface ServiceMenuInvokedEvent {

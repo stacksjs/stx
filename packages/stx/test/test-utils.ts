@@ -13,7 +13,6 @@
  *
  * @module test-utils
  */
-
 import type { BuildConfig } from 'bun'
 import type { StxOptions } from '../src/types'
 import * as fs from 'node:fs'
@@ -645,12 +644,12 @@ export function createSnapshotManager(
   testFilePath: string,
   defaultOptions: SnapshotOptions & { stxOptions?: StxOptions } = {},
 ): {
-    match: (template: string, snapshotName: string, context?: Record<string, any>, options?: SnapshotOptions & { stxOptions?: StxOptions }) => Promise<SnapshotResult>
-    assert: (template: string, snapshotName: string, context?: Record<string, any>, options?: SnapshotOptions & { stxOptions?: StxOptions }) => Promise<void>
-    getSnapshotDir: () => string
-    clearSnapshots: () => void
-    listSnapshots: () => string[]
-  } {
+  match: (template: string, snapshotName: string, context?: Record<string, any>, options?: SnapshotOptions & { stxOptions?: StxOptions }) => Promise<SnapshotResult>
+  assert: (template: string, snapshotName: string, context?: Record<string, any>, options?: SnapshotOptions & { stxOptions?: StxOptions }) => Promise<void>
+  getSnapshotDir: () => string
+  clearSnapshots: () => void
+  listSnapshots: () => string[]
+} {
   return {
     /**
      * Match template output against snapshot and return result
@@ -992,12 +991,12 @@ export function createMockFn<Args extends unknown[] = unknown[], R = unknown>(
   fn.lastCall = () => fn.calls[fn.calls.length - 1]
   fn.wasCalledWith = (...expectedArgs: Args) => {
     return fn.calls.some(callArgs =>
-      callArgs.length === expectedArgs.length
+    callArgs.length === expectedArgs.length
       && callArgs.every((arg, i) => arg === expectedArgs[i]),
-    )
-  }
+  )
+}
 
-  return fn
+return fn
 }
 
 // =============================================================================
@@ -1063,9 +1062,9 @@ export async function withTimeout<T>(
   return Promise.race([
     fn(),
     new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(message)), timeout),
-    ),
-  ])
+    setTimeout(() => reject(new Error(message)), timeout),
+  ),
+])
 }
 
 // =============================================================================

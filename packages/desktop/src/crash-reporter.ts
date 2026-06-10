@@ -15,7 +15,6 @@
  * Browser fallback: keeps a JS-side queue with the same shape so
  * call sites don't branch. No automatic upload either way.
  */
-
 import { hasBridge } from './_bridge'
 
 export type CrashSeverity = 'fatal' | 'error' | 'warning'
@@ -133,23 +132,23 @@ export const crashReporter: CrashReporterAPI = {
     if (!jsEnabled) return
     const normalized: StoredCrashEntry = entry instanceof Error
       ? {
-          timestamp: Date.now(),
-          severity: 'error',
-          message: entry.message,
-          source: 'js',
-          stack: entry.stack || '',
-          userId: jsUserId,
-          appVersion: jsAppVersion,
-        }
+      timestamp: Date.now(),
+      severity: 'error',
+      message: entry.message,
+      source: 'js',
+      stack: entry.stack || '',
+      userId: jsUserId,
+      appVersion: jsAppVersion,
+    }
       : {
-          timestamp: Date.now(),
-          severity: entry.severity || 'error',
-          message: entry.message || '',
-          source: entry.source || 'js',
-          stack: entry.stack || '',
-          userId: jsUserId,
-          appVersion: jsAppVersion,
-        }
+      timestamp: Date.now(),
+      severity: entry.severity || 'error',
+      message: entry.message || '',
+      source: entry.source || 'js',
+      stack: entry.stack || '',
+      userId: jsUserId,
+      appVersion: jsAppVersion,
+    }
     if (jsQueue.length >= 64) jsQueue.shift()
     jsQueue.push(normalized)
   },
@@ -316,8 +315,8 @@ function startForwarder(options: CrashForwarderOptions): CrashForwarderHandle {
   const redactor = typeof redact === 'function'
     ? redact
     : redact === false
-      ? (e: StoredCrashEntry) => e
-      : redactPII
+    ? (e: StoredCrashEntry) => e
+    : redactPII
 
   async function postBatch(batch: StoredCrashEntry[]): Promise<void> {
     const body = JSON.stringify({ entries: batch })

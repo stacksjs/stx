@@ -562,7 +562,7 @@ export function createButton(props: ButtonProps): string {
     ? `${iconHtml}${loadingHtml}<span class="stx-button-text">${escapeHtml(text)}</span>`
     : `<span class="stx-button-text">${escapeHtml(text)}</span>${iconHtml}${loadingHtml}`
 
-  return `<button id="${id}" class="${classes}" ${disabled || loading ? 'disabled' : ''} ${styleStr ? `style="${styleStr}"` : ''}>${content}</button>`
+  return `<button id="${id}" class="${classes}" ${disabled || loading ? 'disabled' : ''} ${styleStr ? `style='${styleStr}'` : ''}>${content}</button>`
 }
 
 /**
@@ -700,7 +700,7 @@ export function createSlider(props: SliderProps): string {
     html += `<span class="stx-slider-value">${value}</span>`
   }
 
-  return `<div class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 // =============================================================================
@@ -762,7 +762,7 @@ export function createBadge(props: BadgeProps): string {
   )
   const styleStr = buildStyles(style)
 
-  return `<span id="${id}" class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${escapeHtml(text)}</span>`
+  return `<span id="${id}" class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${escapeHtml(text)}</span>`
 }
 
 /**
@@ -840,7 +840,7 @@ export function createCard(props: CardProps): string {
     html += `<div class="stx-card-footer">${escapeHtml(footer)}</div>`
   }
 
-  return `<div id="${id}" class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div id="${id}" class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 // =============================================================================
@@ -873,7 +873,7 @@ export function createTabs(props: TabsProps): string {
     return `<button class="${tabClasses}" data-value="${escapeHtml(tab.value)}" ${tab.disabled ? 'disabled' : ''} role="tab" aria-selected="${isActive}">${escapeHtml(tab.label)}</button>`
   }).join('')
 
-  return `<div id="${id}" class="${classes}" role="tablist" ${styleStr ? `style="${styleStr}"` : ''}>${tabsHtml}</div>`
+  return `<div id="${id}" class="${classes}" role="tablist" ${styleStr ? `style='${styleStr}'` : ''}>${tabsHtml}</div>`
 }
 
 /**
@@ -901,7 +901,7 @@ export function createDropdown(props: DropdownProps): string {
 
   const placeholderOption = value ? '' : `<option value="" disabled selected>${escapeHtml(placeholder)}</option>`
 
-  return `<select id="${id}" class="${classes}" ${disabled ? 'disabled' : ''} ${styleStr ? `style="${styleStr}"` : ''}>${placeholderOption}${optionsHtml}</select>`
+  return `<select id="${id}" class="${classes}" ${disabled ? 'disabled' : ''} ${styleStr ? `style='${styleStr}'` : ''}>${placeholderOption}${optionsHtml}</select>`
 }
 
 // =============================================================================
@@ -939,7 +939,7 @@ export function createRating(props: RatingProps): string {
     starsHtml += `<span class="stx-star ${starClass}" data-value="${i}">★</span>`
   }
 
-  return `<div id="${id}" class="${classes}" role="slider" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="${max}" ${styleStr ? `style="${styleStr}"` : ''}>${starsHtml}</div>`
+  return `<div id="${id}" class="${classes}" role="slider" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="${max}" ${styleStr ? `style='${styleStr}'` : ''}>${starsHtml}</div>`
 }
 
 /**
@@ -1012,7 +1012,7 @@ export function createColorPicker(props: ColorPickerProps): string {
     html += '</div>'
   }
 
-  return `<div class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1058,7 +1058,7 @@ export function createDatePicker(props: DatePickerProps): string {
     ${showClear && dateValue ? '<button class="stx-date-picker-clear" type="button">&times;</button>' : ''}
   </div>`
 
-  return `<div class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1096,7 +1096,7 @@ export function createTimePicker(props: TimePickerProps): string {
   }
   html += `<input ${inputAttrs} class="stx-time-picker-input" />`
 
-  return `<div class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1135,7 +1135,7 @@ export function createAutocomplete(props: AutocompleteProps): string {
   }
   html += '</ul>'
 
-  return `<div class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1155,7 +1155,7 @@ export function createLabel(props: LabelProps): string {
   const classes = buildClasses('stx-label', `stx-label--${size}`, className)
   const styleStr = buildStyles(style)
 
-  return `<label id="${id}" class="${classes}" ${htmlFor ? `for="${escapeHtml(htmlFor)}"` : ''} ${styleStr ? `style="${styleStr}"` : ''}>${escapeHtml(text)}${required ? '<span class="stx-label-required">*</span>' : ''}</label>`
+  return `<label id="${id}" class="${classes}" ${htmlFor ? `for='${escapeHtml(htmlFor)}'` : ''} ${styleStr ? `style='${styleStr}'` : ''}>${escapeHtml(text)}${required ? '<span class="stx-label-required">*</span>' : ''}</label>`
 }
 
 /**
@@ -1185,7 +1185,7 @@ export function createImageView(props: ImageViewProps): string {
   const combinedStyle = [buildStyles(imageStyles), buildStyles(style)].filter(Boolean).join('; ')
   const fallbackAttr = fallback ? `onerror="this.src='${escapeHtml(fallback)}'"` : ''
 
-  return `<img id="${id}" class="${classes}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="${loading}" ${combinedStyle ? `style="${combinedStyle}"` : ''} ${fallbackAttr} />`
+  return `<img id="${id}" class="${classes}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="${loading}" ${combinedStyle ? `style='${combinedStyle}'` : ''} ${fallbackAttr} />`
 }
 
 /**
@@ -1220,7 +1220,7 @@ export function createChip(props: ChipProps): string {
     html += '<button class="stx-chip-remove" type="button">&times;</button>'
   }
 
-  return `<span id="${id}" class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</span>`
+  return `<span id="${id}" class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</span>`
 }
 
 /**
@@ -1278,7 +1278,7 @@ export function createScrollView(props: ScrollViewProps): string {
 
   const combinedStyle = [buildStyles(scrollStyles), buildStyles(style)].filter(Boolean).join('; ')
 
-  return `<div id="${id}" class="${classes}" ${combinedStyle ? `style="${combinedStyle}"` : ''}>${children}</div>`
+  return `<div id="${id}" class="${classes}" ${combinedStyle ? `style='${combinedStyle}'` : ''}>${children}</div>`
 }
 
 /**
@@ -1347,7 +1347,7 @@ export function createAccordion(props: AccordionProps): string {
     </div>`
   })
 
-  return `<div id="${id}" class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div id="${id}" class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1387,7 +1387,7 @@ export function createStepper(props: StepperProps): string {
     }
   })
 
-  return `<div id="${id}" class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div id="${id}" class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1410,7 +1410,7 @@ export function createModalComponent(props: ModalComponentProps): string {
   const styleStr = buildStyles(style)
 
   if (!open) {
-    return `<div id="${id}" class="${classes} stx-modal-component--hidden" ${styleStr ? `style="${styleStr}"` : ''}></div>`
+    return `<div id="${id}" class="${classes} stx-modal-component--hidden" ${styleStr ? `style='${styleStr}'` : ''}></div>`
   }
 
   let html = '<div class="stx-modal-component-overlay">'
@@ -1435,7 +1435,7 @@ export function createModalComponent(props: ModalComponentProps): string {
 
   html += '</div></div>'
 
-  return `<div id="${id}" class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div id="${id}" class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1476,7 +1476,7 @@ export function createListView(props: ListViewProps): string {
   }
   html += '</ul>'
 
-  return `<div id="${id}" class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div id="${id}" class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1527,7 +1527,7 @@ export function createTable(props: TableProps): string {
   }
   html += '</tbody></table>'
 
-  return `<div id="${id}" class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div id="${id}" class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1599,7 +1599,7 @@ export function createTreeView(props: TreeViewProps): string {
     html += renderTreeNode(node, expandedKeys, selectedKeys, checkable)
   }
 
-  return `<div id="${id}" class="${classes}" role="tree" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div id="${id}" class="${classes}" role="tree" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1664,7 +1664,7 @@ export function createDataGrid(props: DataGridProps): string {
     </div>`
   }
 
-  return `<div id="${id}" class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div id="${id}" class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**
@@ -1791,7 +1791,7 @@ export function createMediaPlayer(props: MediaPlayerProps): string {
     ? `<video ${mediaAttrs}>Your browser does not support the video tag.</video>`
     : `<audio ${mediaAttrs}>Your browser does not support the audio tag.</audio>`
 
-  return `<div id="${id}" class="${classes}" ${combinedStyle ? `style="${combinedStyle}"` : ''}>${mediaElement}</div>`
+  return `<div id="${id}" class="${classes}" ${combinedStyle ? `style='${combinedStyle}'` : ''}>${mediaElement}</div>`
 }
 
 /**
@@ -1856,7 +1856,7 @@ export function createFileExplorer(props: FileExplorerProps): string {
     html += '</div>'
   }
 
-  return `<div id="${id}" class="${classes}" ${styleStr ? `style="${styleStr}"` : ''}>${html}</div>`
+  return `<div id="${id}" class="${classes}" ${styleStr ? `style='${styleStr}'` : ''}>${html}</div>`
 }
 
 /**

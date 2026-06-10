@@ -11,7 +11,6 @@
  * library directory and is queryable from Spotlight as soon as the
  * write completes.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface SpotlightItem {

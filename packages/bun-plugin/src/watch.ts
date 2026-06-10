@@ -25,10 +25,9 @@
  * watcher.close()
  * ```
  */
-
+import type { FSWatcher, WatchEventType } from 'node:fs'
 import type { StxOptions } from '@stacksjs/stx'
 import type { BuildConfig } from 'bun'
-import type { FSWatcher, WatchEventType } from 'node:fs'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'

@@ -12,7 +12,6 @@
  * but the shortcuts won't fire). Use `hotkeys.ts` for in-window-only
  * shortcuts that should work everywhere.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface GlobalShortcutOptions {

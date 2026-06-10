@@ -9,7 +9,6 @@
  * "make us the default?" — Apple's HIG says you only ask once per
  * launch, but they don't enforce it.
  */
-
 import { hasBridge } from './_bridge'
 
 export interface FileAssociationsAPI {

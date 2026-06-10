@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { extname, join, relative } from 'node:path'
 import type { AdapterBuildConfig, AdapterBuildResult, BunServerConfig, DeployAdapter } from '../types'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { extname, join, relative } from 'node:path'
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',

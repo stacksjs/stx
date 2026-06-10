@@ -1,6 +1,6 @@
-import { dts } from 'bun-plugin-dtsx'
 import { copyFileSync, cpSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
+import { dts } from 'bun-plugin-dtsx'
 
 function collectEntrypoints(dir: string): string[] {
   const entries: string[] = []

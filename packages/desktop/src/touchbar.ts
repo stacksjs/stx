@@ -8,7 +8,6 @@
  *
  * No fallback outside Craft windows — Touch Bar is hardware-only.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export type TouchBarItemType = 'button' | 'label' | 'slider' | 'spacer' | 'colorPicker' | 'segmented'
@@ -52,16 +51,16 @@ export interface TouchBarAPI {
 }
 
 export const touchbar: TouchBarAPI = {
-  async addItem(item)              { if (hasBridge('touchbar')) await window.craft!.touchbar.addItem(item) },
-  async removeItem(id)             { if (hasBridge('touchbar')) await window.craft!.touchbar.removeItem(id) },
-  async updateItem(id, props)      { if (hasBridge('touchbar')) await window.craft!.touchbar.updateItem(id, props) },
-  async setLabel(id, label)        { if (hasBridge('touchbar')) await window.craft!.touchbar.setLabel(id, label) },
-  async setIcon(id, icon)          { if (hasBridge('touchbar')) await window.craft!.touchbar.setIcon(id, icon) },
-  async setEnabled(id, enabled)    { if (hasBridge('touchbar')) await window.craft!.touchbar.setEnabled(id, enabled) },
-  async setSliderValue(id, value)  { if (hasBridge('touchbar')) await window.craft!.touchbar.setSliderValue(id, value) },
-  async clear()                    { if (hasBridge('touchbar')) await window.craft!.touchbar.clear() },
-  async show()                     { if (hasBridge('touchbar')) await window.craft!.touchbar.show() },
-  async hide()                     { if (hasBridge('touchbar')) await window.craft!.touchbar.hide() },
+  async addItem(item) { if (hasBridge('touchbar')) await window.craft!.touchbar.addItem(item) },
+  async removeItem(id) { if (hasBridge('touchbar')) await window.craft!.touchbar.removeItem(id) },
+  async updateItem(id, props) { if (hasBridge('touchbar')) await window.craft!.touchbar.updateItem(id, props) },
+  async setLabel(id, label) { if (hasBridge('touchbar')) await window.craft!.touchbar.setLabel(id, label) },
+  async setIcon(id, icon) { if (hasBridge('touchbar')) await window.craft!.touchbar.setIcon(id, icon) },
+  async setEnabled(id, enabled) { if (hasBridge('touchbar')) await window.craft!.touchbar.setEnabled(id, enabled) },
+  async setSliderValue(id, value) { if (hasBridge('touchbar')) await window.craft!.touchbar.setSliderValue(id, value) },
+  async clear() { if (hasBridge('touchbar')) await window.craft!.touchbar.clear() },
+  async show() { if (hasBridge('touchbar')) await window.craft!.touchbar.show() },
+  async hide() { if (hasBridge('touchbar')) await window.craft!.touchbar.hide() },
   onAction(cb) {
     return onCraftEvent<TouchBarActionEvent>('craft:touchbar:action', cb)
   },

@@ -10,7 +10,6 @@
  * (DOM overlays). This module dispatches to the OS notification center,
  * which persists in Notification Center / Action Center / etc.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface NotificationAttachment {
@@ -253,8 +252,8 @@ export const notifications: SystemNotifications = {
     // No web fallback — the standard Notification API has no equivalent.
   },
 
-  onActionClicked(cb)  { return onCraftEvent<NotificationActionEvent>('craft:notification:actionClicked', cb) },
-  onReply(cb)          { return onCraftEvent<NotificationReplyEvent>('craft:notification:reply', cb) },
+  onActionClicked(cb) { return onCraftEvent<NotificationActionEvent>('craft:notification:actionClicked', cb) },
+  onReply(cb) { return onCraftEvent<NotificationReplyEvent>('craft:notification:reply', cb) },
 }
 
 function toEpochMs(t: string | number | Date | undefined): number {

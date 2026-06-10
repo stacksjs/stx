@@ -1,6 +1,5 @@
 // stx DevTools
 // A powerful dev tools UI for stx templating engine
-
 import type { StxConfig } from '../../stx/src/types'
 
 export { default as PerformanceChart } from './components/PerformanceChart.stx'

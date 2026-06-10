@@ -8,7 +8,6 @@
  * the model is fundamentally different (per-call user prompt, no
  * persistent pairings). Calls outside Craft return defaults.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface BluetoothDevice {
@@ -113,16 +112,16 @@ function assertHex(label: string, hex: string): void {
 }
 
 export const bluetooth: BluetoothAPI = {
-  async isEnabled()           { return hasBridge('bluetooth') ? await window.craft!.bluetooth.isEnabled() : false },
-  async powerState()          { return hasBridge('bluetooth') ? await window.craft!.bluetooth.powerState() : 'unknown' as BluetoothPowerState },
-  async connectedDevices()    { return hasBridge('bluetooth') ? await window.craft!.bluetooth.connectedDevices() : [] },
-  async pairedDevices()       { return hasBridge('bluetooth') ? await window.craft!.bluetooth.pairedDevices() : [] },
-  async startDiscovery()      { if (hasBridge('bluetooth')) await window.craft!.bluetooth.startDiscovery() },
-  async stopDiscovery()       { if (hasBridge('bluetooth')) await window.craft!.bluetooth.stopDiscovery() },
-  async isDiscovering()       { return hasBridge('bluetooth') ? await window.craft!.bluetooth.isDiscovering() : false },
-  async connect(id)           { if (hasBridge('bluetooth')) await window.craft!.bluetooth.connect(id) },
-  async disconnect(id)        { if (hasBridge('bluetooth')) await window.craft!.bluetooth.disconnect(id) },
-  async openPreferences()     { if (hasBridge('bluetooth')) await window.craft!.bluetooth.openPreferences() },
+  async isEnabled() { return hasBridge('bluetooth') ? await window.craft!.bluetooth.isEnabled() : false },
+  async powerState() { return hasBridge('bluetooth') ? await window.craft!.bluetooth.powerState() : 'unknown' as BluetoothPowerState },
+  async connectedDevices() { return hasBridge('bluetooth') ? await window.craft!.bluetooth.connectedDevices() : [] },
+  async pairedDevices() { return hasBridge('bluetooth') ? await window.craft!.bluetooth.pairedDevices() : [] },
+  async startDiscovery() { if (hasBridge('bluetooth')) await window.craft!.bluetooth.startDiscovery() },
+  async stopDiscovery() { if (hasBridge('bluetooth')) await window.craft!.bluetooth.stopDiscovery() },
+  async isDiscovering() { return hasBridge('bluetooth') ? await window.craft!.bluetooth.isDiscovering() : false },
+  async connect(id) { if (hasBridge('bluetooth')) await window.craft!.bluetooth.connect(id) },
+  async disconnect(id) { if (hasBridge('bluetooth')) await window.craft!.bluetooth.disconnect(id) },
+  async openPreferences() { if (hasBridge('bluetooth')) await window.craft!.bluetooth.openPreferences() },
 
   async discoverServices(deviceId) {
     if (!deviceId) throw new Error('bluetooth.discoverServices: deviceId is required')
@@ -163,8 +162,8 @@ export const bluetooth: BluetoothAPI = {
     return await window.craft!.bluetooth.setCharacteristicNotify(deviceId, serviceUuid, characteristicUuid, on)
   },
 
-  onDeviceFound(cb)        { return onCraftEvent<BluetoothDevice>('craft:bluetooth:deviceFound', cb) },
-  onDeviceConnected(cb)    { return onCraftEvent<BluetoothDevice>('craft:bluetooth:deviceConnected', cb) },
+  onDeviceFound(cb) { return onCraftEvent<BluetoothDevice>('craft:bluetooth:deviceFound', cb) },
+  onDeviceConnected(cb) { return onCraftEvent<BluetoothDevice>('craft:bluetooth:deviceConnected', cb) },
   onDeviceDisconnected(cb) { return onCraftEvent<BluetoothDevice>('craft:bluetooth:deviceDisconnected', cb) },
   onCharacteristicValue(cb) {
     return onCraftEvent<BluetoothCharacteristicValueEvent>('craft:bluetooth:characteristicValue', cb)

@@ -3,8 +3,8 @@
  * references, and copy the static assets (manifest + HTML) alongside. The result
  * (default `dist/`) is a loadable unpacked extension.
  */
-import { cp, mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
+import { cp, mkdir, rm } from 'node:fs/promises'
 
 const root = import.meta.dir
 

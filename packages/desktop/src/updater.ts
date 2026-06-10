@@ -12,7 +12,6 @@
  * Browser fallback: this module is an inert no-op (calls resolve, but
  * nothing happens). Outside a native shell there's no update flow.
  */
-
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface UpdateInfo {
