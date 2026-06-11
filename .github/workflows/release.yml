@@ -7,6 +7,12 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ── Phase 1+2: core packages (blocking) ─────────────────────────────────
+  # Publish order is controlled with staged --skip lists: pantry publishes in
+  # directory-scan order (effectively arbitrary), and the v0.2.71 release
+  # proved the failure mode — the run died rate-limited on an icon package
+  # while @stacksjs/stx itself was still unpublished. skip_existing makes the
+  # staged re-invocations cheap: already-published packages cost one GET.
   npm:
     runs-on: ubuntu-latest
     permissions:
@@ -25,27 +31,75 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
+      - name: Setup Pantry
+        uses: home-lang/pantry/packages/action@main
+        with:
+          install: false
+
+      # Stage 1: the framework itself ships first — @stacksjs/stx,
+      # bun-plugin-stx, and @stacksjs/desktop are what consumers wait on.
+      - name: Publish stx + bun-plugin-stx + desktop
+        run: pantry publish --npm --access public --skip collections,components,config,create-stx,iconify-core,iconify-generator,markdown,router,sanitizer
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Stage 2: remaining core packages (stx/bun-plugin skip via cheap GET).
+      - name: Publish remaining core packages
+        run: pantry publish --npm --access public --skip collections
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: home-lang/pantry/packages/action@main
+        with:
+          install: false
+          release: true
+          release-changelog: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Phase 3: icon collections (non-blocking) ────────────────────────────
+  # 218 generated @stacksjs/iconify-* packages. npm rate-limits this volume,
+  # so the job runs after — and independently of — the core release: a 429
+  # storm here can never delay or fail the framework release. skip_existing
+  # means a re-run of this job resumes where the rate limit cut it off.
+  icons:
+    needs: npm
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 150
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Setup Pantry
+        uses: home-lang/pantry/packages/action@main
+        with:
+          install: false
+
       - name: Pre-build icon collections (parallel)
-        # Each Bun build is fast (~0.3-1.6s, even for the 7640-icon mdi
-        # package), so 218 serial builds during pantry's publish step is
-        # only ~2 min — not the dominant release cost. Doing them in
-        # parallel here cuts that to ~30s; the bigger win is that
-        # prepublishOnly becomes a ~50ms no-op for each package because
-        # build.ts short-circuits on a fresh dist/, simplifying the
-        # publish-step output.
+        # Each Bun build is fast (~0.3-1.6s); parallel pre-build makes
+        # prepublishOnly a ~50ms no-op per package because build.ts
+        # short-circuits on a fresh dist/.
         run: |
           set -e
           ls -d packages/collections/iconify-*/ 2>/dev/null \
             | xargs -P 8 -I {} bash -c 'cd "{}" && bun build.ts' \
             || echo "::warning::Some icon pre-builds failed; pantry will retry via prepublishOnly"
 
-      - name: Publish
-        uses: home-lang/pantry/packages/action@main
-        with:
-          install: false
-          publish: npm
-          release: true
-          release-changelog: CHANGELOG.md
+      - name: Publish icon collections
+        run: pantry publish --npm --access public --skip bun-plugin,components,config,create-stx,desktop,iconify-core,iconify-generator,markdown,router,sanitizer,stx
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
