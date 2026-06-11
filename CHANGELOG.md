@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.71...v0.2.72)
+
+## 🐛 Bug Fixes
+
+- **ssg**: per-page <title>/meta on the auto-shell path (#1756) ([a0e5a24](https://github.com/stacksjs/stx/commit/a0e5a24)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1756](https://github.com/stacksjs/stx/issues/1756), [#1756](https://github.com/stacksjs/stx/issues/1756))
+
+## 🤖 Continuous Integration
+
+- **release**: stage npm publish order — stx/bun-plugin/desktop first, icons last ([1ed6703](https://github.com/stacksjs/stx/commit/1ed6703)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.72 ([c1aa72a](https://github.com/stacksjs/stx/commit/c1aa72a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: refresh bun.lock to pick up pickier 0.1.35 ([766169f](https://github.com/stacksjs/stx/commit/766169f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.70...v0.2.71)
 
 ## 🚀 Features
