@@ -115,7 +115,7 @@
     "typecheck": "bun tsc -p tsconfig.src.json --noEmit"
   },
   "dependencies": {
-    "@cwcss/crosswind": "^0.2.0",
+    "@cwcss/crosswind": "^0.2.6",
     "@stacksjs/clapp": "^0.2.0",
     "@stacksjs/desktop": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",

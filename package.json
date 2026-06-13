@@ -98,7 +98,7 @@
     "!packages/vscode"
   ],
   "dependencies": {
-    "@cwcss/crosswind": "^0.2.4",
+    "@cwcss/crosswind": "^0.2.6",
     "very-happy-dom": "^0.1.4"
   },
   "devDependencies": {
