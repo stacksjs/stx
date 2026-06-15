@@ -640,7 +640,7 @@ export function interpolateScriptsInTemplate(
 /**
  * Process template expressions including variables, filters, and operations
  */
-export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {
+export function processExpressions(template: string, context: Record<string, any>, filePath: string, options?: { forceSignals?: boolean }): string {
   let output = template
 
   // Protect <style> and <script> blocks that contain NO stx template
@@ -677,8 +677,13 @@ export function processExpressions(template: string, context: Record<string, any
   output = maskInto(output, matchScriptElement, scriptBlocks, n => `<!--__STX_SCRIPT_EXPR_${n}__-->`)
 
   // Check if this template uses signals - if so, we need to preserve expressions
-  // that reference runtime variables (like loop variables or signal calls)
-  const hasSignals = usesSignalsInScript(template)
+  // that reference runtime variables (like loop variables or signal calls).
+  // `forceSignals` is set by the @include path: a partial's <script> is stripped
+  // (includes.ts) before this runs, so usesSignalsInScript(template) can't see its
+  // own state()/derived(). The caller computes the gate on the partial's FULL
+  // content and passes it here, so {{ }} over the partial's own signals are
+  // preserved for the runtime — exactly like a top-level page. See stacksjs/stx#1758.
+  const hasSignals = options?.forceSignals === true || usesSignalsInScript(template)
 
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
   output = output.replace(/\{\{\{([\s\S]*?)\}\}\}/g, (match, expr, offset) => {
