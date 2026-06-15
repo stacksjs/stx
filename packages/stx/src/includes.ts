@@ -69,7 +69,7 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { processConditionals } from './conditionals'
-import { processExpressions } from './expressions'
+import { processExpressions, usesSignalsInScript } from './expressions'
 import { LRUCache } from './performance-utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 import { transformStoreImports } from './store-imports'
@@ -1103,8 +1103,17 @@ catch (e) {
       // Process conditionals
       processedContent = processConditionals(processedContent, includeContext, includeFilePath)
 
-      // Process expressions
-      processedContent = processExpressions(processedContent, includeContext, includeFilePath)
+      // Process expressions.
+      // The partial's <script> was stripped above (line ~925) so the style/script
+      // extractors and the parent's client-script pipeline don't double-process it.
+      // That also hides the partial's own state()/derived() from processExpressions'
+      // usesSignalsInScript gate, which would then evaluate `{{ signalCall() }}`
+      // server-side (undefined → emptied) and consume the marker, leaving nothing
+      // for the runtime to bind — the partial renders permanently blank. Recover the
+      // gate from the FULL partial content so a partial with a client signal script
+      // preserves {{ }} just like a top-level page. See stacksjs/stx#1758.
+      const partialHasSignals = usesSignalsInScript(partialContent)
+      processedContent = processExpressions(processedContent, includeContext, includeFilePath, { forceSignals: partialHasSignals })
 
       // Append preserved style and script for SFC support
       if (preservedStyle) {
