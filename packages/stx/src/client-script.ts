@@ -314,7 +314,15 @@ const STX_AUTO_IMPORTS = [
   // Navigation
   'navigate', 'goBack', 'goForward', 'useRoute', 'setRouteParams', 'useSearchParams',
   // Data fetching
-  'useQuery', 'useMutation', 'useOptimistic',
+  'useFetch', 'useQuery', 'useMutation', 'useOptimistic',
+  // Reactive component props (parent attr -> child signal bridge)
+  'useReactiveProp',
+  // Persistence
+  'useLocalStorage', 'useSessionStorage', 'useCookie',
+  // Networking
+  'useWebSocket',
+  // Head / SEO / page meta
+  'useHead', 'useSeoMeta', 'definePageMeta',
   // DOM utilities
   'useEventListener', 'useMeta',
   // Timers

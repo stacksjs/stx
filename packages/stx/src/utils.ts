@@ -1016,7 +1016,7 @@ export async function renderComponentWithSlot(
         // setup uses in signal-processing.ts.
         const wrappedContent = `
 (function() {
-  const { state, derived, effect, batch, defineEmits, defineExpose, defineSlots, defineProps, withDefaults, useStore, useFetch, useRef, useQuery, useMutation, useOptimistic, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, inject, ref, reactive, computed, watch, watchEffect, nextTick } = window.stx;
+  const { state, derived, effect, batch, defineEmits, defineExpose, defineSlots, defineProps, withDefaults, useStore, useFetch, useRef, useQuery, useMutation, useOptimistic, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useSessionStorage, useCookie, useReactiveProp, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, inject, ref, reactive, computed, watch, watchEffect, nextTick } = window.stx;
   const __scope = window.stx._scopes = window.stx._scopes || {};
   const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
 
