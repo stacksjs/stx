@@ -24,7 +24,7 @@ console.log('🚀 Building CSS with Crosswind...')
 
 const contentPath = resolve(import.meta.dir, '../../../examples/**/*.stx')
 const outputPath = resolve(import.meta.dir, '../examples/dist/styles.css')
-const configPath = resolve(import.meta.dir, '../crosswind.config.ts')
+const configPath = resolve(import.meta.dir, '../config/crosswind.ts')
 
 try {
   const crosswindCli = resolve(crosswindPath, 'bin/cli.ts')
