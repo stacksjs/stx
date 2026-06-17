@@ -7,8 +7,8 @@
  * repo root — no custom server bootstrap needed.
  */
 
-import type { StxConfig } from '../../packages/stx/src/types'
-import { optimize } from './optimize'
+import type { StxConfig } from '../../../packages/stx/src/types'
+import { optimize } from '../optimize'
 
 /** Hard cap so a runaway upload can't OOM the dev server. */
 const MAX_UPLOAD_BYTES = 256 * 1024 * 1024 // 256 MB

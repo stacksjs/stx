@@ -92,10 +92,19 @@ export function watchConfigFile(
  * Get the config file path if it exists
  */
 export function findConfigFile(root: string): string | null {
+  // Mirror bunfig's resolution order: root first (back-compat with the
+  // historical `stx.config.*` location), then the `config/` and `.config/`
+  // directories where `stx.ts` now conventionally lives.
   const configPaths = [
     path.join(root, 'stx.config.ts'),
     path.join(root, 'stx.config.js'),
     path.join(root, 'stx.config.mjs'),
+    path.join(root, 'config', 'stx.ts'),
+    path.join(root, 'config', 'stx.js'),
+    path.join(root, 'config', 'stx.mjs'),
+    path.join(root, '.config', 'stx.ts'),
+    path.join(root, '.config', 'stx.js'),
+    path.join(root, '.config', 'stx.mjs'),
   ]
 
   for (const configPath of configPaths) {
