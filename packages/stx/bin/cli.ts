@@ -2203,6 +2203,35 @@ catch (error) {
       }
     })
 
+  cli
+    .command('screenshot [input]', 'Capture PNG screenshot(s) of page(s) via Bun WebView — a file, URL, or dist directory')
+    .option('--out <dir>', 'Output directory', { default: 'screenshots' })
+    .option('--width <px>', 'Viewport width', { default: '1440' })
+    .option('--height <px>', 'Viewport height', { default: '2200' })
+    .option('--wait <ms>', 'Settle time after navigation before capture', { default: '800' })
+    .option('--format <fmt>', 'Image format: png | jpeg | webp', { default: 'png' })
+    .option('--backend <name>', 'WebView backend: webkit (macOS, default) | chrome')
+    .action(async (input: string | undefined, options: any) => {
+      const { captureScreenshots } = await import('../src/screenshot')
+      const target = input || 'dist'
+      try {
+        const results = await captureScreenshots(target, options.out, {
+          width: Number.parseInt(options.width, 10),
+          height: Number.parseInt(options.height, 10),
+          waitMs: Number.parseInt(options.wait, 10),
+          format: options.format,
+          backend: options.backend,
+        })
+        for (const r of results)
+          console.log(`📸 ${r.output} (${(r.bytes / 1024).toFixed(0)} KB)`)
+        console.log(`\n✨ Captured ${results.length} screenshot(s) to ${options.out}/ via Bun WebView`)
+      }
+      catch (error: any) {
+        console.error(`Screenshot failed: ${error.message}`)
+        process.exit(1)
+      }
+    })
+
   cli.command('version', 'Show the version of the CLI').action(() => {
     console.log(version)
   })
@@ -2617,7 +2646,7 @@ else {
   const knownCommands = [
     'docs', 'iconify', 'dev', 'a11y', 'build', 'start', 'build:native', 'compile', 'test', 'init', 'new',
     'format', 'perf', 'debug', 'doctor', 'status', 'watch', 'analyze', 'version', 'deploy',
-    'interactive', 'i', 'story', 'story:build', 'story:test'
+    'interactive', 'i', 'story', 'story:build', 'story:test', 'screenshot'
   ]
 
   const args = process.argv.slice(2)
