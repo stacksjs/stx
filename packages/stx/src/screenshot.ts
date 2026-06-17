@@ -12,6 +12,9 @@ import { WebView } from 'bun'
 import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
+/** WebView viewport dimensions are clamped to [1, 16384] by Bun. */
+const MAX_DIMENSION = 16384
+
 export interface ScreenshotOptions {
   /** Viewport width in CSS px. @default 1440 */
   width?: number
@@ -25,6 +28,19 @@ export interface ScreenshotOptions {
   format?: 'png' | 'jpeg' | 'webp'
   /** WebView backend. macOS defaults to system WebKit; elsewhere use 'chrome'. */
   backend?: 'webkit' | 'chrome'
+  /**
+   * Capture the entire scrollable page rather than just the viewport. The page
+   * is measured (`scrollHeight`) and re-rendered at its full height so nothing
+   * is cut off — ideal for long pages (dashboards, docs). Clamped to WebView's
+   * 16384px ceiling. @default false
+   */
+  fullPage?: boolean
+  /**
+   * Wait until this CSS selector is present in the DOM before capturing (polls
+   * the page via `evaluate`). Use for content that renders after load (data
+   * fetched client-side, hydration, fonts swapped in).
+   */
+  waitSelector?: string
 }
 
 export interface ShotResult {
@@ -40,37 +56,88 @@ function toUrl(input: string): string {
   return `file://${path.resolve(input)}`
 }
 
+/** Resolve once navigation completes (+ a short settle), with a timeout fallback. */
+function waitForNavigation(view: any, waitMs: number, timeoutMs: number): Promise<void> {
+  return new Promise<void>((resolve) => {
+    let settled = false
+    const finish = (): void => {
+      if (!settled) {
+        settled = true
+        resolve()
+      }
+    }
+    view.onNavigated = () => setTimeout(finish, waitMs)
+    setTimeout(finish, timeoutMs)
+  })
+}
+
+/** Poll the page until `selector` exists, or `timeoutMs` elapses (best-effort). */
+async function waitForSelector(view: any, selector: string, timeoutMs: number): Promise<void> {
+  const expr = `!!document.querySelector(${JSON.stringify(selector)})`
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    try {
+      if (await view.evaluate(expr))
+        return
+    }
+    catch {
+      // Navigation may still be settling; keep polling until the deadline.
+    }
+    await new Promise(r => setTimeout(r, 100))
+  }
+}
+
+/** Measure the full scrollable document height in CSS px (0 on failure). */
+async function measureFullHeight(view: any): Promise<number> {
+  try {
+    const h = await view.evaluate(
+      'Math.ceil(Math.max('
+      + 'document.documentElement.scrollHeight, document.documentElement.offsetHeight, '
+      + 'document.body ? document.body.scrollHeight : 0, document.body ? document.body.offsetHeight : 0))',
+    )
+    return typeof h === 'number' && Number.isFinite(h) && h > 0 ? Math.min(h, MAX_DIMENSION) : 0
+  }
+  catch {
+    return 0
+  }
+}
+
 /** Capture a single page to `output` using Bun's headless WebView. */
 export async function captureScreenshot(input: string, output: string, opts: ScreenshotOptions = {}): Promise<ShotResult> {
-  const width = opts.width ?? 1440
-  const height = opts.height ?? 2200
+  const width = Math.min(opts.width ?? 1440, MAX_DIMENSION)
+  const height = Math.min(opts.height ?? 2200, MAX_DIMENSION)
   const waitMs = opts.waitMs ?? 800
   const timeoutMs = opts.timeoutMs ?? 15000
   const format = opts.format ?? 'png'
+  const url = toUrl(input)
 
-  const view = new WebView({
-    url: toUrl(input),
+  const open = (h: number): any => new WebView({
+    url,
     width,
-    height,
+    height: h,
     headless: true,
     ...(opts.backend ? { backend: opts.backend } : {}),
   } as any)
 
+  let view = open(height)
   try {
-    // Resolve once navigation completes (+ a short settle), with a timeout
-    // fallback in case onNavigated never fires.
-    await new Promise<void>((resolve) => {
-      let settled = false
-      const finish = (): void => {
-        if (!settled) {
-          settled = true
-          resolve()
-        }
+    await waitForNavigation(view, waitMs, timeoutMs)
+    if (opts.waitSelector)
+      await waitForSelector(view, opts.waitSelector, timeoutMs)
+
+    // Full-page: WebView has no resize(), so measure the document and re-render
+    // at its full height. Only re-render when the page is actually taller than
+    // the current viewport (a no-op otherwise).
+    if (opts.fullPage) {
+      const full = await measureFullHeight(view)
+      if (full > height) {
+        view.close()
+        view = open(full)
+        await waitForNavigation(view, waitMs, timeoutMs)
+        if (opts.waitSelector)
+          await waitForSelector(view, opts.waitSelector, timeoutMs)
       }
-      const v = view as any
-      v.onNavigated = () => setTimeout(finish, waitMs)
-      setTimeout(finish, timeoutMs)
-    })
+    }
 
     const buf = await view.screenshot({ encoding: 'buffer', format } as any)
     mkdirSync(path.dirname(path.resolve(output)), { recursive: true })

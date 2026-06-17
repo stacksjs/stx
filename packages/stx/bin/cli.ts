@@ -2209,6 +2209,9 @@ catch (error) {
     .option('--width <px>', 'Viewport width', { default: '1440' })
     .option('--height <px>', 'Viewport height', { default: '2200' })
     .option('--wait <ms>', 'Settle time after navigation before capture', { default: '800' })
+    .option('--timeout <ms>', 'Hard cap on waiting for navigation', { default: '15000' })
+    .option('--full-page', 'Capture the entire scrollable page, not just the viewport')
+    .option('--wait-selector <sel>', 'Wait until a CSS selector exists before capturing')
     .option('--format <fmt>', 'Image format: png | jpeg | webp', { default: 'png' })
     .option('--backend <name>', 'WebView backend: webkit (macOS, default) | chrome')
     .action(async (input: string | undefined, options: any) => {
@@ -2219,6 +2222,9 @@ catch (error) {
           width: Number.parseInt(options.width, 10),
           height: Number.parseInt(options.height, 10),
           waitMs: Number.parseInt(options.wait, 10),
+          timeoutMs: Number.parseInt(options.timeout, 10),
+          fullPage: Boolean(options.fullPage),
+          waitSelector: options.waitSelector,
           format: options.format,
           backend: options.backend,
         })

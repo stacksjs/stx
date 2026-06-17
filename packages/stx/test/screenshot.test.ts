@@ -42,4 +42,44 @@ describe('screenshot (Bun WebView)', () => {
       rmSync(dir, { recursive: true, force: true })
     }
   })
+
+  it('full-page captures the whole scrollable document, not just the viewport', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'stx-shot-full-'))
+    // A page far taller than the viewport (a tall column).
+    const tall = join(dir, 'tall.html')
+    writeFileSync(tall, '<!doctype html><html><body style="margin:0"><div style="height:3000px;background:#0b1020"></div></body></html>')
+    const viewportOut = join(dir, 'viewport.png')
+    const fullOut = join(dir, 'full.png')
+    try {
+      await captureScreenshot(tall, viewportOut, { width: 400, height: 300, waitMs: 300 })
+      await captureScreenshot(tall, fullOut, { width: 400, height: 300, waitMs: 300, fullPage: true })
+      // PNG height lives in bytes 20-23 (big-endian) of the IHDR chunk.
+      const pngHeight = async (p: string): Promise<number> => {
+        const b = await Bun.file(p).bytes()
+        return (b[20] << 24) | (b[21] << 16) | (b[22] << 8) | b[23]
+      }
+      const vh = await pngHeight(viewportOut)
+      const fh = await pngHeight(fullOut)
+      // The full-page shot is much taller than the 300px viewport capture.
+      expect(fh).toBeGreaterThan(vh * 3)
+    }
+    finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('wait-selector resolves and still captures when the selector exists', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'stx-shot-sel-'))
+    const file = join(dir, 'sel.html')
+    writeFileSync(file, '<!doctype html><html><body><div id="ready">ok</div></body></html>')
+    const out = join(dir, 'sel.png')
+    try {
+      const r = await captureScreenshot(file, out, { width: 400, height: 300, waitMs: 200, waitSelector: '#ready', timeoutMs: 5000 })
+      expect(existsSync(out)).toBe(true)
+      expect(r.bytes).toBeGreaterThan(0)
+    }
+    finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
 })
