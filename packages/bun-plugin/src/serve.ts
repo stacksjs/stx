@@ -384,6 +384,13 @@ export async function serve(options: ServeOptions): Promise<void> {
         stxConfig._pluginComponentDirs = pluginLoaded._pluginComponentDirs
       if (pluginLoaded?._pluginPageDirs)
         stxConfig._pluginPageDirs = pluginLoaded._pluginPageDirs
+      // A plugin's setup() can mutate the loaded config — e.g. an analytics
+      // plugin sets `analytics.{enabled,driver,custom}` so injectAnalytics
+      // runs. bunfig's loadConfig above returns the RAW object (pre-setup), so
+      // carry the plugin-mutated analytics across, else the tracker is silently
+      // dropped on this serve path.
+      if (pluginLoaded?.analytics)
+        stxConfig.analytics = pluginLoaded.analytics
     }
     // Preload the default icon collection so <Icon name="..." /> resolves on
     // the FIRST page render. Without this preload, the IconBuiltin returns
@@ -1180,6 +1187,10 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...('defaultDescription' in stxConfig && { defaultDescription: stxConfig.defaultDescription }),
       ...('defaultImage' in stxConfig && { defaultImage: stxConfig.defaultImage }),
       ...('seo' in stxConfig && { seo: stxConfig.seo }),
+      // Forward analytics so injectAnalytics runs on this serve path too —
+      // both native providers (fathom/GA/…) and plugin-injected trackers (the
+      // plugin-mutated analytics is merged onto stxConfig above).
+      ...('analytics' in stxConfig && { analytics: stxConfig.analytics }),
       // Forward plugin-registered component dirs so renderComponentWithSlot
       // can resolve tags exposed by stx plugins (e.g. `<Notification>` from
       // `@stacksjs/components` via a stx plugin shim). Populated by
@@ -1463,6 +1474,10 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...('defaultDescription' in stxConfig && { defaultDescription: stxConfig.defaultDescription }),
       ...('defaultImage' in stxConfig && { defaultImage: stxConfig.defaultImage }),
       ...('seo' in stxConfig && { seo: stxConfig.seo }),
+      // Forward analytics so injectAnalytics runs on this serve path too —
+      // both native providers (fathom/GA/…) and plugin-injected trackers (the
+      // plugin-mutated analytics is merged onto stxConfig above).
+      ...('analytics' in stxConfig && { analytics: stxConfig.analytics }),
       // Mirror the static-route config: forward plugin-registered component
       // dirs so dynamic routes also resolve `<Notification>` etc.
       ...('_pluginComponentDirs' in stxConfig && { _pluginComponentDirs: stxConfig._pluginComponentDirs }),
