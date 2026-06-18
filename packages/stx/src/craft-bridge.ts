@@ -178,8 +178,130 @@ else if (data.type === 'event' && data.method) {
     };
   }
 
+  function sendNativeUI(action, data) {
+    if (window.webkit?.messageHandlers?.craft) {
+      window.webkit.messageHandlers.craft.postMessage({ t: 'nativeUI', a: action, d: data || {} });
+      return true;
+    }
+
+    if (window.CraftBridge?.postMessage) {
+      window.CraftBridge.postMessage(JSON.stringify({ t: 'nativeUI', a: action, d: data || {} }));
+      return true;
+    }
+
+    return send({
+      id: generateId(),
+      type: 'nativeUI',
+      action,
+      data: data || {}
+    });
+  }
+
+  function createNativeUIFacade() {
+    class Sidebar {
+      constructor(id) {
+        this.id = id;
+        this._selectCallbacks = [];
+      }
+      addSection(section) {
+        sendNativeUI('addSidebarSection', { sidebarId: this.id, section });
+        return this;
+      }
+      setSelectedItem(itemId) {
+        sendNativeUI('setSelectedItem', { sidebarId: this.id, itemId });
+        return this;
+      }
+      onSelect(callback) {
+        this._selectCallbacks.push(callback);
+        return this;
+      }
+      destroy() {
+        sendNativeUI('destroyComponent', { id: this.id, type: 'sidebar' });
+      }
+    }
+
+    class FileBrowser {
+      constructor(id) {
+        this.id = id;
+      }
+      addFile(file) {
+        sendNativeUI('addFile', { browserId: this.id, file });
+        return this;
+      }
+      addFiles(files) {
+        sendNativeUI('addFiles', { browserId: this.id, files });
+        return this;
+      }
+      clearFiles() {
+        sendNativeUI('clearFiles', { browserId: this.id });
+        return this;
+      }
+      destroy() {
+        sendNativeUI('destroyComponent', { id: this.id, type: 'fileBrowser' });
+      }
+    }
+
+    class SplitView {
+      constructor(id, sidebar, browser) {
+        this.id = id;
+        this.sidebar = sidebar;
+        this.browser = browser;
+      }
+      setDividerPosition(position) {
+        sendNativeUI('setDividerPosition', { splitViewId: this.id, position });
+        return this;
+      }
+      destroy() {
+        sendNativeUI('destroyComponent', { id: this.id, type: 'splitView' });
+      }
+    }
+
+    return {
+      createSidebar(options) {
+        const opts = options || {};
+        const id = opts.id || 'sidebar-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        sendNativeUI('createSidebar', Object.assign({}, opts, { id }));
+        return new Sidebar(id);
+      },
+      createFileBrowser(options) {
+        const opts = options || {};
+        const id = opts.id || 'browser-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        sendNativeUI('createFileBrowser', Object.assign({}, opts, { id }));
+        return new FileBrowser(id);
+      },
+      createSplitView(options) {
+        if (!options?.sidebar || !options?.browser) {
+          throw new Error('createSplitView requires sidebar and browser options');
+        }
+        const id = options.id || 'splitview-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        sendNativeUI('createSplitView', {
+          id,
+          sidebarId: options.sidebar.id,
+          browserId: options.browser.id
+        });
+        return new SplitView(id, options.sidebar, options.browser);
+      },
+      showQuickLook(options) {
+        sendNativeUI('showQuickLook', options);
+      },
+      closeQuickLook() {
+        sendNativeUI('closeQuickLook', {});
+      },
+      toggleQuickLook(options) {
+        sendNativeUI('toggleQuickLook', options);
+      }
+    };
+  }
+
+  const existingCraft = window.craft || {};
+  const nativeUI = existingCraft.nativeUI || createNativeUIFacade();
+  const componentAPI = existingCraft.components || Object.assign({}, nativeUI, {
+    updateComponent: (id, props) => request('component.update', { componentId: id, props }),
+    destroyComponent: (id) => request('component.destroy', { componentId: id })
+  });
+
   // Build the craft API object
-  window.craft = {
+  window.craft = Object.assign({}, existingCraft, {
     // Meta
     isCraft,
     on,
@@ -289,14 +411,9 @@ else if (data.type === 'event' && data.method) {
     },
 
     // Native component helpers
-    components: {
-      createSidebar: (config) => request('component.createSidebar', config),
-      createFileBrowser: (config) => request('component.createFileBrowser', config),
-      createSplitView: (config) => request('component.createSplitView', config),
-      updateComponent: (id, props) => request('component.update', { componentId: id, props }),
-      destroyComponent: (id) => request('component.destroy', { componentId: id }),
-    }
-  };
+    nativeUI,
+    components: componentAPI
+  });
 
   // Dispatch ready event
   window.dispatchEvent(new CustomEvent('craft:ready', { detail: { isCraft: isCraft() } }));

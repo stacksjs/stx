@@ -1314,6 +1314,29 @@ async function processOtherDirectives(
     output = injectSeoTags(output, context, opts)
   }
 
+  // Insert head HTML into the document, creating a <head> when the rendered
+  // output has none. A page built through a named layout (and/or an app shell)
+  // can emit `<html><body>…` with no <head> at all — once that happens, head
+  // meta registered via useHead/useSeoMeta used to be dropped server-side and
+  // only applied on the client, which SEO/social crawlers never see. Creating
+  // the <head> here makes that meta server-rendered.
+  const injectIntoHead = (html: string, snippet: string): string => {
+    if (!snippet)
+      return html
+    if (/<\/head>/i.test(html))
+      return html.replace(/<\/head>/i, `${snippet}\n</head>`)
+    if (/<head\b[^>]*>/i.test(html))
+      return html.replace(/(<head\b[^>]*>)/i, `$1\n${snippet}`)
+    // Full HTML document with no <head> — e.g. a named layout that emitted
+    // `<html><body>…` and dropped its head. Create one right after <html …>.
+    // We only do this when an <html> shell is already present; bare fragments
+    // are left untouched so the auto-shell path builds their head itself
+    // (otherwise we'd double the <title> — see per-page-head #1756).
+    if (/<html\b[^>]*>/i.test(html))
+      return html.replace(/(<html\b[^>]*>)/i, `$1\n<head>\n${snippet}\n</head>`)
+    return html
+  }
+
   // Inject rendered head content from useHead/useSeoMeta calls. Prefer the
   // context-bound copy (set by variable-extractor's wrapped composables) over
   // the module-global — the context copy is per-page and survives even when
@@ -1325,26 +1348,13 @@ async function processOtherDirectives(
     : getHead()
   if (headConfig.title || headConfig.meta?.length || headConfig.link?.length) {
     const renderedHead = renderHead(headConfig)
-    if (renderedHead) {
-      // Inject before </head> or at start of document
-      if (output.includes('</head>')) {
-        output = output.replace('</head>', `${renderedHead}\n</head>`)
-      }
-else if (output.includes('<head>')) {
-        output = output.replace('<head>', `<head>\n${renderedHead}`)
-      }
-    }
+    if (renderedHead)
+      output = injectIntoHead(output, renderedHead)
   }
 
   // Also inject head content from @head directive blocks
-  if (headResult.headContent) {
-    if (output.includes('</head>')) {
-      output = output.replace('</head>', `${headResult.headContent}\n</head>`)
-    }
-else if (output.includes('<head>')) {
-      output = output.replace('<head>', `<head>\n${headResult.headContent}`)
-    }
-  }
+  if (headResult.headContent)
+    output = injectIntoHead(output, headResult.headContent)
 
   // Auto-inject CSP meta tag if enabled
   if (opts.csp?.enabled && opts.csp.addMetaTag) {

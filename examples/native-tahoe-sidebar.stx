@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Native Tahoe Sidebar</title>
+</head>
+<body class="m-0 min-h-screen overflow-hidden bg-zinc-100 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
+  @craft
+
+  <main class="flex h-screen">
+    <@craft-sidebar
+      id="tahoe-sidebar"
+      class="m-3"
+      selectedItem="inbox"
+      searchPlaceholder="Search"
+      variant="desktop"
+      material="sidebar"
+      backgroundEffect="shimmer"
+      allowsVibrancy="true"
+      materialOpacity="0.62"
+      minWidth="240"
+      maxWidth="340"
+    >
+      <@craft-sidebar-section id="favorites" title="Favorites">
+        <@craft-sidebar-item id="inbox" label="Inbox" icon="tray.fill" badge="12" />
+        <@craft-sidebar-item id="today" label="Today" icon="calendar" />
+        <@craft-sidebar-item id="starred" label="Starred" icon="star.fill" />
+      </@craft-sidebar-section>
+
+      <@craft-sidebar-section id="folders" title="Folders">
+        <@craft-sidebar-item id="documents" label="Documents" icon="doc.text" />
+        <@craft-sidebar-item id="projects" label="Projects" icon="folder.badge.gearshape" />
+        <@craft-sidebar-item id="archive" label="Archive" icon="archivebox.fill" />
+      </@craft-sidebar-section>
+
+      <@craft-sidebar-section id="tags" title="Tags">
+        <@craft-sidebar-item id="important" label="Important" icon="circle.fill" tintColor="#ef4444" />
+        <@craft-sidebar-item id="work" label="Work" icon="circle.fill" tintColor="#0a84ff" />
+        <@craft-sidebar-item id="personal" label="Personal" icon="circle.fill" tintColor="#34c759" />
+      </@craft-sidebar-section>
+    </@craft-sidebar>
+
+    <section class="flex min-w-0 flex-1 flex-col">
+      <header class="flex h-14 items-center border-b border-black/10 px-6 dark:border-white/10">
+        <h1 class="text-base font-semibold">Inbox</h1>
+      </header>
+
+      <div class="grid flex-1 place-items-center p-8">
+        <div class="max-w-lg rounded-lg border border-black/10 bg-white/75 p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <h2 class="mb-2 text-lg font-semibold">Native macOS sidebar</h2>
+          <p class="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+            In Craft on macOS, this STX-authored sidebar is promoted to the native Tahoe-style
+            sidebar with AppKit material. In a browser, the same markup keeps a glass fallback.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

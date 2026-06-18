@@ -797,3 +797,59 @@ describe('convertToCommonJS edge cases', () => {
     expect(r).toContain('module.exports.c')
   })
 })
+
+// =============================================================================
+// Regression: hoisted `var` declarations (no initializer)
+//
+// Bun's transpiler lifts block-scoped `var`s out of `for`/`try`/`if` blocks to
+// bare top-level `var x;` statements. parseVariableDeclaration used to throw on
+// these ("Failed to parse variable declaration: var row;"), which silently
+// stranded the ENTIRE server script in the static fallback extractor — the page
+// rendered with empty variables and no error. See stacksjs/stx.
+// =============================================================================
+
+describe('hoisted var declarations (no initializer)', () => {
+  it('convertToCommonJS keeps a bare `var x;` and compiles', () => {
+    const out = convertToCommonJS('var pageTitle = \'x\'\nvar row;\nvar i;')
+    expect(out).toContain('var row;')
+    expect(out).toContain('var i;')
+    // The converted script must be syntactically valid.
+    expect(() => new Function('module', 'exports', `return (async () => { ${out}\n return module.exports })()`)).not.toThrow()
+  })
+
+  it('convertToCommonJS handles a bare `let x;` declaration', () => {
+    const out = convertToCommonJS('let later;\nlater = 5')
+    expect(out).toContain('let later;')
+    expect(() => new Function('module', 'exports', `return (async () => { ${out}\n return module.exports })()`)).not.toThrow()
+  })
+
+  it('extractVariables executes a server script containing a for-loop', async () => {
+    const context: Record<string, unknown> = {}
+    const script = `const rows = [{ id: 1, title: 'a' }, { id: 2, title: 'b' }]
+let found = null
+for (var i = 0; i < rows.length; i++) {
+  var row = rows[i]
+  if (row.id === 2) {
+    found = row.title
+    break
+  }
+}`
+    await extractVariables(script, context, 'test.stx')
+    // Before the fix this fell back and left found === null.
+    expect(context.found).toBe('b')
+  })
+
+  it('extractVariables runs a script with var inside a try block', async () => {
+    const context: Record<string, unknown> = {}
+    const script = `let result = 'default'
+try {
+  var temp = 'computed'
+  result = temp
+}
+catch (e) {
+  result = 'error'
+}`
+    await extractVariables(script, context, 'test.stx')
+    expect(context.result).toBe('computed')
+  })
+})

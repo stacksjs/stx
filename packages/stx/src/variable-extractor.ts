@@ -74,6 +74,14 @@ function extractDeclaredVariableNames(script: string): string[] {
       if (match) {
         names.push(match[1])
       }
+      // Declaration without an initializer (e.g. hoisted `var row;`). Capture
+      // the name so the final reSync still exports its value if it is assigned
+      // later in the script.
+      else if (/^\s*(?:const|let|var)\s+\w+\s*;?\s*$/.test(line)) {
+        const declOnly = line.match(/(?:const|let|var)\s+(\w+)/)
+        if (declOnly)
+          names.push(declOnly[1])
+      }
       else {
         // Handle destructuring: const { a, b } = ... or const [a, b] = ...
         const destructMatch = line.match(/(?:const|let|var)\s+(\{[^}]+\}|\[[^\]]+\])\s*=/)
@@ -759,14 +767,28 @@ catch {
       }
     }
   }
-  catch {
+  catch (primaryError) {
+    // The server <script> IIFE failed to execute, so we fall back to static
+    // extraction below. This is sometimes legitimate (pages that only use
+    // client-only APIs like reactive()/Chart.js), but a genuine server-script
+    // bug looks identical from the outside — the page just renders with empty
+    // variables and NO error, which is very hard to debug. Set STX_DEBUG=1 to
+    // surface the real cause and the offending file.
+    if (process.env.STX_DEBUG) {
+      const msg = primaryError instanceof Error ? primaryError.message : String(primaryError)
+      console.warn(`[stx] server <script> did not execute in ${filePath ?? '<unknown>'} — falling back to static extraction. Cause: ${msg}`)
+    }
     // Fallback: Try alternative parsing approaches
     try {
       await fallbackVariableExtraction(jsContent, context, filePath)
     }
-    catch {
+    catch (fallbackError) {
       // Script execution failed — page will render without server variables.
       // This is expected for pages using client-only APIs (reactive(), Chart.js, etc.)
+      if (process.env.STX_DEBUG) {
+        const msg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError)
+        console.warn(`[stx] fallback extraction also failed in ${filePath ?? '<unknown>'}: ${msg}`)
+      }
     }
   }
 }
@@ -878,7 +900,20 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
       continue
     }
 
-    if (line.startsWith('export const ') || line.startsWith('export let ') || line.startsWith('export var ')) {
+    if (
+      (line.startsWith('const ') || line.startsWith('let ') || line.startsWith('var ')
+        || line.startsWith('export const ') || line.startsWith('export let ') || line.startsWith('export var '))
+      && !line.includes('=')
+    ) {
+      // Declaration without an initializer, e.g. a hoisted `var row;` / `var i;`
+      // that Bun's transpiler lifts to the top level out of a `for`/`try`/`if`
+      // block. parseVariableDeclaration expects `name = value` and would throw
+      // on these (which silently strands the whole script in the fallback
+      // extractor). Emit the line as-is; the trailing reSync exports the value.
+      convertedLines.push(lines[i])
+      i++
+    }
+    else if (line.startsWith('export const ') || line.startsWith('export let ') || line.startsWith('export var ')) {
       // Handle export variable declarations
       const result = parseVariableDeclaration(lines, i)
       const { type, name, value } = result

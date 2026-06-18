@@ -57,6 +57,37 @@ export interface CraftComponentDefinition {
   render?: (props: Record<string, unknown>, children: string) => string
 }
 
+interface CraftSidebarItem {
+  id: string
+  label: string
+  icon?: string
+  badge?: string
+  tintColor?: string
+}
+
+interface CraftSidebarSection {
+  id: string
+  header?: string
+  title?: string
+  items: CraftSidebarItem[]
+}
+
+interface CraftSidebarConfig {
+  id: string
+  variant: string
+  material: string
+  backgroundEffect: string
+  allowsVibrancy: boolean
+  materialOpacity: number
+  materialDarkOpacity?: number
+  minWidth?: number
+  maxWidth?: number
+  canCollapse: boolean
+  searchPlaceholder?: string
+  selectedItem?: string
+  sections: CraftSidebarSection[]
+}
+
 /**
  * Built-in Craft component definitions
  */
@@ -288,6 +319,41 @@ export const CRAFT_COMPONENTS: Record<string, CraftComponentDefinition> = {
     fallbackTag: 'nav',
     fallbackClasses: 'craft-breadcrumb',
     nativeProps: ['items', 'separator'],
+  },
+  sidebar: {
+    nativeType: 'craft-sidebar',
+    fallbackTag: 'aside',
+    fallbackClasses: 'craft-sidebar craft-sidebar-tahoe',
+    nativeProps: [
+      'id',
+      'variant',
+      'material',
+      'backgroundEffect',
+      'allowsVibrancy',
+      'materialOpacity',
+      'materialDarkOpacity',
+      'minWidth',
+      'maxWidth',
+      'canCollapse',
+      'searchPlaceholder',
+      'selectedItem',
+      'sections',
+    ],
+    render: renderCraftSidebar,
+  },
+  'sidebar-section': {
+    nativeType: 'craft-sidebar-section',
+    fallbackTag: 'section',
+    fallbackClasses: 'craft-sidebar-section',
+    nativeProps: ['id', 'title', 'header'],
+    render: renderCraftSidebarSection,
+  },
+  'sidebar-item': {
+    nativeType: 'craft-sidebar-item',
+    fallbackTag: 'button',
+    fallbackClasses: 'craft-sidebar-item',
+    nativeProps: ['id', 'label', 'icon', 'badge', 'tintColor'],
+    render: renderCraftSidebarItem,
   },
   pagination: {
     nativeType: 'craft-pagination',
@@ -545,6 +611,145 @@ export const CRAFT_COMPONENT_STYLES = `
 }
 .craft-list li:last-child { border-bottom: none; }
 
+.craft-sidebar {
+  --craft-sidebar-width: 286px;
+  --craft-sidebar-bg: rgba(255, 255, 255, 0.68);
+  --craft-sidebar-border: rgba(255, 255, 255, 0.62);
+  --craft-sidebar-shadow: 0 24px 70px rgba(15, 23, 42, 0.22), 0 1px 0 rgba(255, 255, 255, 0.72) inset;
+  --craft-sidebar-text: rgba(24, 24, 27, 0.86);
+  --craft-sidebar-muted: rgba(63, 63, 70, 0.62);
+  --craft-sidebar-hover: rgba(255, 255, 255, 0.42);
+  --craft-sidebar-selected: rgba(10, 132, 255, 0.86);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: var(--craft-sidebar-width);
+  min-width: var(--craft-sidebar-width);
+  height: 100vh;
+  padding: 58px 10px 12px;
+  color: var(--craft-sidebar-text);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.08)),
+    var(--craft-sidebar-bg);
+  border: 1px solid var(--craft-sidebar-border);
+  border-radius: 18px;
+  box-shadow: var(--craft-sidebar-shadow);
+  backdrop-filter: blur(34px) saturate(180%);
+  -webkit-backdrop-filter: blur(34px) saturate(180%);
+  overflow: hidden;
+  user-select: none;
+}
+.craft-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255,255,255,0.68), transparent 32%),
+    linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.30) 42%, transparent 58%);
+  mix-blend-mode: screen;
+  opacity: 0.72;
+}
+.craft-sidebar[data-native-active="true"] { display: none; }
+.craft-sidebar-search {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 12px;
+}
+.craft-sidebar-search input {
+  width: 100%;
+  min-height: 28px;
+  padding: 5px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.34);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.craft-sidebar-section {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 14px;
+}
+.craft-sidebar-section-title {
+  padding: 0 8px 5px;
+  color: var(--craft-sidebar-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.craft-sidebar-item {
+  width: calc(100% - 4px);
+  min-height: 28px;
+  margin: 1px 2px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: default;
+}
+.craft-sidebar-item:hover { background: var(--craft-sidebar-hover); }
+.craft-sidebar-item[data-selected="true"] {
+  color: white;
+  background: var(--craft-sidebar-selected);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset, 0 8px 18px rgba(10, 132, 255, 0.22);
+}
+.craft-sidebar-item-icon {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  opacity: 0.82;
+  overflow: hidden;
+  color: transparent;
+}
+.craft-sidebar-item-icon::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 4px;
+  background: var(--craft-sidebar-icon-color, rgba(63, 63, 70, 0.62));
+  box-shadow: 0 1px 0 rgba(255,255,255,0.24) inset;
+}
+.craft-sidebar-item-icon[data-icon*="circle"]::before {
+  inset: 4px;
+  border-radius: 999px;
+}
+.craft-sidebar-item[data-selected="true"] .craft-sidebar-item-icon::before {
+  background: rgba(255, 255, 255, 0.9);
+}
+.craft-sidebar-item-label {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.craft-sidebar-item-badge {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--craft-sidebar-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+.craft-sidebar-item[data-selected="true"] .craft-sidebar-item-badge {
+  color: white;
+  background: rgba(255, 255, 255, 0.24);
+}
+
 .craft-code-editor {
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 13px;
@@ -569,8 +774,101 @@ export const CRAFT_COMPONENT_STYLES = `
   }
   .craft-accordion-header { background: #374151; }
   .craft-table th { background: #374151; }
+  .craft-sidebar {
+    --craft-sidebar-bg: rgba(24, 24, 27, 0.58);
+    --craft-sidebar-border: rgba(255, 255, 255, 0.12);
+    --craft-sidebar-shadow: 0 26px 74px rgba(0, 0, 0, 0.44), 0 1px 0 rgba(255, 255, 255, 0.11) inset;
+    --craft-sidebar-text: rgba(244, 244, 245, 0.92);
+    --craft-sidebar-muted: rgba(212, 212, 216, 0.58);
+    --craft-sidebar-hover: rgba(255, 255, 255, 0.10);
+  }
+  .craft-sidebar-search input {
+    border-color: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.08);
+  }
 }
 </style>
+`
+
+export const CRAFT_COMPONENT_RUNTIME = `
+<script id="craft-component-runtime">
+(function() {
+  if (window.__stxCraftComponentRuntime) return;
+  window.__stxCraftComponentRuntime = true;
+
+  function parseConfig(sidebar) {
+    var id = sidebar.getAttribute('data-craft-sidebar-id');
+    var script = id && document.querySelector('script[data-craft-sidebar-config="' + id + '"]');
+    if (!script) return null;
+    try {
+      return JSON.parse(script.textContent || '{}');
+    } catch (error) {
+      console.warn('[stx] Invalid Craft sidebar config', error);
+      return null;
+    }
+  }
+
+  function getNativeUI() {
+    if (!window.craft) return null;
+    var hasNativeHost = window.craft.isCraft?.() ||
+      !!(window.webkit?.messageHandlers?.craft || window.CraftBridge || window.craftIPC);
+    if (!hasNativeHost) return null;
+    return window.craft.nativeUI || window.craft.components;
+  }
+
+  function initializeSidebar(sidebar) {
+    if (sidebar.dataset.craftInitialized === 'true') return;
+    if (sidebar.dataset.native === 'false') return;
+
+    var nativeUI = getNativeUI();
+    if (!nativeUI || typeof nativeUI.createSidebar !== 'function') return;
+
+    var config = parseConfig(sidebar);
+    if (!config) return;
+
+    try {
+      var nativeConfig = Object.assign({}, config);
+      delete nativeConfig.sections;
+      var nativeSidebar = nativeUI.createSidebar(nativeConfig);
+      if (nativeSidebar && config.sections) {
+        config.sections.forEach(function(section) {
+          if (nativeSidebar.addSection) nativeSidebar.addSection(section);
+        });
+      }
+      if (nativeSidebar && config.selectedItem && nativeSidebar.setSelectedItem) {
+        nativeSidebar.setSelectedItem(config.selectedItem);
+      }
+      if (nativeSidebar && nativeSidebar.onSelect) {
+        nativeSidebar.onSelect(function(itemId) {
+          sidebar.dispatchEvent(new CustomEvent('craft-sidebar:select', {
+            bubbles: true,
+            detail: { itemId: itemId, sidebarId: config.id }
+          }));
+        });
+      }
+      sidebar.dataset.craftInitialized = 'true';
+      sidebar.dataset.nativeActive = 'true';
+      window.__stxCraftNativeSidebars = window.__stxCraftNativeSidebars || {};
+      window.__stxCraftNativeSidebars[config.id] = nativeSidebar;
+    } catch (error) {
+      sidebar.dataset.nativeError = error.message || 'unknown';
+      console.warn('[stx] Failed to create native Craft sidebar', error);
+    }
+  }
+
+  function initializeCraftComponents() {
+    document.querySelectorAll('[data-craft-native-sidebar]').forEach(initializeSidebar);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeCraftComponents);
+  } else {
+    initializeCraftComponents();
+  }
+  window.addEventListener('craft:ready', initializeCraftComponents);
+  document.addEventListener('craft:nativeui:ready', initializeCraftComponents);
+})();
+</script>
 `
 
 /**
@@ -582,7 +880,7 @@ export function processCraftComponents(
 ): string {
   const { classPrefix = 'craft' } = config
 
-  // Inject styles if not already present
+  // Inject styles/runtime if not already present
   if (!content.includes('craft-component-styles')) {
     if (content.includes('</head>')) {
       content = content.replace('</head>', `${CRAFT_COMPONENT_STYLES}\n</head>`)
@@ -594,6 +892,32 @@ else {
       content = CRAFT_COMPONENT_STYLES + content
     }
   }
+  if (!content.includes('craft-component-runtime')) {
+    if (content.includes('</body>')) {
+      content = content.replace('</body>', `${CRAFT_COMPONENT_RUNTIME}\n</body>`)
+    }
+else {
+      content += CRAFT_COMPONENT_RUNTIME
+    }
+  }
+
+  // Process sidebar containers before generic self-closing tags so nested
+  // @craft-sidebar-item nodes can be collected into the native config.
+  content = content.replace(
+    /<@craft-sidebar\s*([^>]*)>([\s\S]*?)<\/@craft-sidebar>/g,
+    // eslint-disable-next-line pickier/no-unused-vars
+    (match, propsStr, children) => {
+      return renderCraftComponent('sidebar', propsStr, children.trim(), config, classPrefix)
+    },
+  )
+
+  content = content.replace(
+    /<@craft-sidebar\s*([^>]*?)\/>/g,
+    // eslint-disable-next-line pickier/no-unused-vars
+    (match, propsStr) => {
+      return renderCraftComponent('sidebar', propsStr, '', config, classPrefix)
+    },
+  )
 
   // Process self-closing @craft-* tags: <@craft-button ... />
   content = content.replace(
@@ -645,6 +969,7 @@ function renderCraftComponent(
 
   // Use custom render function if available
   if (componentDef.render) {
+    props.__fallbackClasses = classes.join(' ')
     return componentDef.render(props, children)
   }
 
@@ -672,11 +997,12 @@ function parseProps(propsStr: string): Record<string, unknown> {
   // Binding: :name="expression"
   // Event: @event="handler"
   // Boolean: disabled
-  const attrPattern = /(?::|@)?(\w+[-\w]*)(?:="([^"]*)")?/g
+  const attrPattern = /(?::|@)?(\w+[-\w]*)(?:=(?:"([^"]*)"|'([^']*)'))?/g
 
   let match
   while ((match = attrPattern.exec(propsStr)) !== null) {
-    const [full, name, value] = match
+    const [full, name, doubleQuoted, singleQuoted] = match
+    const value = doubleQuoted ?? singleQuoted
     if (full.startsWith(':')) {
       // Vue-style binding - keep as-is for now
       props[name] = value
@@ -695,6 +1021,162 @@ else {
   }
 
   return props
+}
+
+function renderCraftSidebar(props: Record<string, unknown>, children: string): string {
+  const id = normalizeId(String(props.id || `craft-sidebar-${hashString(children || JSON.stringify(props))}`))
+  const sections = normalizeSidebarSections(props.sections) || extractSidebarSections(children)
+  const selectedItem = String(props.selectedItem || props.selected || sections[0]?.items[0]?.id || '')
+  const config: CraftSidebarConfig = {
+    id,
+    variant: String(props.variant || 'desktop'),
+    material: String(props.material || 'sidebar'),
+    backgroundEffect: String(props.backgroundEffect || 'shimmer'),
+    allowsVibrancy: props.allowsVibrancy !== false && props.allowsVibrancy !== 'false',
+    materialOpacity: Number(props.materialOpacity ?? 0.68),
+    materialDarkOpacity: props.materialDarkOpacity === undefined ? undefined : Number(props.materialDarkOpacity),
+    minWidth: props.minWidth === undefined ? 240 : Number(props.minWidth),
+    maxWidth: props.maxWidth === undefined ? 340 : Number(props.maxWidth),
+    canCollapse: props.canCollapse !== false && props.canCollapse !== 'false',
+    searchPlaceholder: props.searchPlaceholder ? String(props.searchPlaceholder) : undefined,
+    selectedItem,
+    sections,
+  }
+  const fallbackClasses = String(props.__fallbackClasses || 'craft-sidebar craft-sidebar-tahoe')
+  const width = Number(props.width || props.sidebarWidth || 286)
+  const native = props.native === false || props.native === 'false' ? 'false' : 'true'
+  const search = config.searchPlaceholder
+    ? `<div class="craft-sidebar-search"><input type="search" placeholder="${escapeHtml(config.searchPlaceholder)}"></div>`
+    : ''
+  const sectionHtml = sections.length
+    ? sections.map(section => renderSidebarSectionFallback(section, selectedItem)).join('')
+    : children
+
+  return `<aside class="${escapeAttribute(fallbackClasses)}" data-craft="craft-sidebar" data-craft-native-sidebar data-craft-sidebar-id="${escapeAttribute(id)}" data-native="${native}" style="--craft-sidebar-width:${width}px">
+  ${search}
+  ${sectionHtml}
+</aside>
+<script type="application/json" data-craft-sidebar-config="${escapeAttribute(id)}">${escapeScriptJson(config)}</script>`
+}
+
+function renderCraftSidebarSection(props: Record<string, unknown>, children: string): string {
+  const title = String(props.header || props.title || '')
+  return `<section class="craft-sidebar-section" data-craft="craft-sidebar-section" data-section-id="${escapeAttribute(String(props.id || 'section'))}">
+    ${title ? `<div class="craft-sidebar-section-title">${escapeHtml(title)}</div>` : ''}
+    ${children}
+  </section>`
+}
+
+function renderCraftSidebarItem(props: Record<string, unknown>, children: string): string {
+  const item: CraftSidebarItem = {
+    id: String(props.id || normalizeId(String(props.label || children || 'item'))),
+    label: String(props.label || children || ''),
+    icon: props.icon ? String(props.icon) : undefined,
+    badge: props.badge ? String(props.badge) : undefined,
+    tintColor: props.tintColor ? String(props.tintColor) : undefined,
+  }
+  return renderSidebarItemFallback(item, String(props.selected || '') === 'true')
+}
+
+function extractSidebarSections(children: string): CraftSidebarSection[] {
+  const sections: CraftSidebarSection[] = []
+  const sectionPattern = /<@craft-sidebar-section\s*([^>]*?)(?:\/>|>([\s\S]*?)<\/@craft-sidebar-section>)/g
+  let sectionMatch: RegExpExecArray | null
+
+  while ((sectionMatch = sectionPattern.exec(children)) !== null) {
+    const props = parseProps(sectionMatch[1] || '')
+    const body = sectionMatch[2] || ''
+    const id = String(props.id || normalizeId(String(props.header || props.title || `section-${sections.length + 1}`)))
+    const header = String(props.header || props.title || id)
+    const items = extractSidebarItems(body)
+    sections.push({ id, header, title: header, items })
+  }
+
+  return sections
+}
+
+function extractSidebarItems(content: string): CraftSidebarItem[] {
+  const items: CraftSidebarItem[] = []
+  const itemPattern = /<@craft-sidebar-item\s*([^>]*?)(?:\/>|>([\s\S]*?)<\/@craft-sidebar-item>)/g
+  let itemMatch: RegExpExecArray | null
+
+  while ((itemMatch = itemPattern.exec(content)) !== null) {
+    const props = parseProps(itemMatch[1] || '')
+    const label = String(props.label || (itemMatch[2] || '').replace(/<[^>]*>/g, '').trim())
+    const id = String(props.id || normalizeId(label || `item-${items.length + 1}`))
+    items.push({
+      id,
+      label,
+      icon: props.icon ? String(props.icon) : undefined,
+      badge: props.badge ? String(props.badge) : undefined,
+      tintColor: props.tintColor ? String(props.tintColor) : undefined,
+    })
+  }
+
+  return items
+}
+
+function normalizeSidebarSections(value: unknown): CraftSidebarSection[] | undefined {
+  if (!value) return undefined
+  if (Array.isArray(value)) return value as CraftSidebarSection[]
+  if (typeof value !== 'string') return undefined
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed as CraftSidebarSection[] : undefined
+  }
+  catch {
+    return undefined
+  }
+}
+
+function renderSidebarSectionFallback(section: CraftSidebarSection, selectedItem: string): string {
+  const title = section.header || section.title || section.id
+  return `<section class="craft-sidebar-section" data-section-id="${escapeAttribute(section.id)}">
+    <div class="craft-sidebar-section-title">${escapeHtml(title)}</div>
+    ${section.items.map(item => renderSidebarItemFallback(item, item.id === selectedItem)).join('')}
+  </section>`
+}
+
+function renderSidebarItemFallback(item: CraftSidebarItem, selected: boolean): string {
+  const iconStyle = item.tintColor ? ` style="--craft-sidebar-icon-color:${escapeAttribute(item.tintColor)}"` : ''
+  return `<button class="craft-sidebar-item" type="button" data-item-id="${escapeAttribute(item.id)}" data-selected="${selected ? 'true' : 'false'}">
+    ${item.icon ? `<span class="craft-sidebar-item-icon" data-icon="${escapeAttribute(item.icon)}"${iconStyle}></span>` : ''}
+    <span class="craft-sidebar-item-label">${escapeHtml(item.label)}</span>
+    ${item.badge ? `<span class="craft-sidebar-item-badge">${escapeHtml(item.badge)}</span>` : ''}
+  </button>`
+}
+
+function normalizeId(value: string): string {
+  const normalized = value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '')
+  return normalized || 'craft-sidebar'
+}
+
+function hashString(value: string): string {
+  let hash = 5381
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 33) ^ value.charCodeAt(i)
+  }
+  return (hash >>> 0).toString(36)
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function escapeAttribute(value: string): string {
+  return escapeHtml(value).replace(/`/g, '&#96;')
+}
+
+function escapeScriptJson(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
 }
 
 /**
@@ -748,12 +1230,14 @@ export function getCraftComponents(): Record<string, CraftComponentDefinition> {
 const craftComponents: {
   CRAFT_COMPONENTS: typeof CRAFT_COMPONENTS
   CRAFT_COMPONENT_STYLES: string
+  CRAFT_COMPONENT_RUNTIME: string
   processCraftComponents: typeof processCraftComponents
   registerCraftComponent: typeof registerCraftComponent
   getCraftComponents: typeof getCraftComponents
 } = {
   CRAFT_COMPONENTS,
   CRAFT_COMPONENT_STYLES,
+  CRAFT_COMPONENT_RUNTIME,
   processCraftComponents,
   registerCraftComponent,
   getCraftComponents,
