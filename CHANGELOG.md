@@ -1,5 +1,34 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.72...v0.2.73)
+
+## 🚀 Features
+
+- **stx**: add server -> client data bridge for reactive seeding ([f070614](https://github.com/stacksjs/stx/commit/f070614)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **screenshot**: full-page capture, wait-for-selector, and --timeout ([6af36e5](https://github.com/stacksjs/stx/commit/6af36e5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cli**: add screenshot command powered by Bun's native WebView ([b3e1c80](https://github.com/stacksjs/stx/commit/b3e1c80)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- make stx plugin install framework deps ([3d7bdca](https://github.com/stacksjs/stx/commit/3d7bdca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bun-plugin**: forward analytics config on the serve path (#1760) ([308ce73](https://github.com/stacksjs/stx/commit/308ce73)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_ ([#1760](https://github.com/stacksjs/stx/issues/1760), [#1760](https://github.com/stacksjs/stx/issues/1760))
+- **client-script**: destructure useReactiveProp + storage/head composables for components ([ff2ef9e](https://github.com/stacksjs/stx/commit/ff2ef9e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **includes**: preserve {{ }} in @include partials that define their own signals (#1759) ([c571492](https://github.com/stacksjs/stx/commit/c571492)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_ ([#1759](https://github.com/stacksjs/stx/issues/1759), [#1759](https://github.com/stacksjs/stx/issues/1759))
+
+## 🧹 Chores
+
+- release v0.2.73 ([1589f9c](https://github.com/stacksjs/stx/commit/1589f9c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1201e11](https://github.com/stacksjs/stx/commit/1201e11)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **config**: move stx.config.ts to config/stx.ts ([d77bb9c](https://github.com/stacksjs/stx/commit/d77bb9c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **config**: move crosswind.config.ts to config/crosswind.ts ([41b7110](https://github.com/stacksjs/stx/commit/41b7110)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: upgrade @cwcss/crosswind to 0.2.6 ([0bb61e7](https://github.com/stacksjs/stx/commit/0bb61e7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Glenn Michael Torregosa <gtorregosa@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.71...v0.2.72)
 
 ## 🐛 Bug Fixes
