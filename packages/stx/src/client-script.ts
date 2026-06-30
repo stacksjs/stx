@@ -416,6 +416,15 @@ export interface ClientScriptOptions {
   projectRoot?: string
   /** Whether this is a production build (enables minification in bundler) */
   production?: boolean
+  /**
+   * Server → client data bridge. Top-level `<script server>` variables (and
+   * other template-context values) made available to `<script client>` code:
+   * any JSON-serializable value referenced — but not redeclared — by the client
+   * script is serialized into the client bundle, so reactive state can be seeded
+   * from build-time data (e.g. `const items = state(serverItems)`) without a
+   * round-trip fetch. Functions/non-serializable values are skipped.
+   */
+  serverData?: Record<string, unknown>
 }
 
 // =============================================================================
@@ -546,6 +555,67 @@ function generateAutoImportDestructuring(stxImports: string[], browserImports: s
   }
 
   return ''
+}
+
+/**
+ * Build the server → client bridge payload from a template context: the
+ * top-level, JSON-serializable values (excluding internal `__`/`$` keys and
+ * functions) that a `<script client>` may seed reactive state from. Pass the
+ * result as {@link ClientScriptOptions.serverData}.
+ */
+export function extractBridgeData(context: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const key in context) {
+    if (key.startsWith('__') || key.startsWith('$'))
+      continue
+    const value = context[key]
+    if (typeof value === 'function')
+      continue
+    out[key] = value
+  }
+  return out
+}
+
+/**
+ * Generate the server → client data bridge: `var <name> = <json>;` for each
+ * template-context value referenced — but NOT redeclared — by the client script.
+ * Lets `<script client>` seed reactive state from `<script server>` data without
+ * a fetch. Only JSON-serializable values cross the boundary; declared names are
+ * skipped so client-owned variables are never clobbered.
+ */
+export function generateServerDataBridge(code: string, serverData?: Record<string, unknown>): string {
+  if (!serverData)
+    return ''
+  const lines: string[] = []
+  for (const [name, value] of Object.entries(serverData)) {
+    if (!/^[A-Za-z_$][\w$]*$/.test(name))
+      continue
+    // Only bridge identifiers the client actually references…
+    if (!new RegExp(`\\b${name}\\b`).test(code))
+      continue
+    // …and does not itself declare (never clobber a client-owned name).
+    if (new RegExp(`(?:const|let|var|function|class)\\s+${name}\\b`).test(code))
+      continue
+    let json: string | undefined
+    try {
+      json = JSON.stringify(value)
+    }
+    catch {
+      continue
+    }
+    if (json === undefined)
+      continue
+    // Escape `<` so a value containing markup (e.g. `</script>`) can't break out
+    // of the surrounding tag, AND so the generated text never contains a literal
+    // `<script…>` that a downstream tag scanner would treat as a real boundary.
+    lines.push(`  var ${name} = ${json.replace(/</g, '\\u003c')};`)
+  }
+  if (lines.length === 0)
+    return ''
+  // NB: keep this comment free of any `<script…>`-like text — the merged setup
+  // block is re-scanned for script tags downstream, and a literal tag here would
+  // be mistaken for a real boundary, swallowing the rest of the document.
+  return `  // stx: server -> client data bridge (seeded from server scope)\n${lines.join('\n')}\n`
 }
 
 // =============================================================================
@@ -940,6 +1010,11 @@ export async function processClientScript(
       autoImportResult.browserImports,
     )
   }
+
+  // 1b. Server → client data bridge: seed client scope with referenced
+  // <script server> values so reactive state can initialize from build-time
+  // data. Runs after auto-imports so it can be detected against the user code.
+  autoImportCode = `${generateServerDataBridge(code, options.serverData)}${autoImportCode}`
 
   // 2. Transform store imports
   code = transformStoreImports(code)

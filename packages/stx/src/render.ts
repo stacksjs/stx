@@ -29,7 +29,7 @@ import { dirname, resolve } from 'node:path'
 import { defaultConfig } from './config'
 import { extractVariables } from './variable-extractor'
 import { injectRouterScript, processDirectives } from './process'
-import { processClientScript } from './client-script'
+import { extractBridgeData, processClientScript } from './client-script'
 import type { StxOptions } from './types'
 
 // ============================================================================
@@ -349,11 +349,13 @@ async function renderTemplateString(
     // Process client scripts
     if (renderOptions.processClientScripts !== false && clientScripts.length > 0) {
       const eventBindings = (context.__stx_event_bindings || []) as any[]
+      // Seed <script client> with referenced <script server> data (the bridge).
+      const serverData = extractBridgeData(context as Record<string, unknown>)
       const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
         const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
         if (!contentMatch)
           return fullScript
-        return await processClientScript(contentMatch[1], { eventBindings, templateContent: output })
+        return await processClientScript(contentMatch[1], { eventBindings, templateContent: output, serverData })
       }))
       const scriptsHtml = transformedScripts.join('\n')
       const bodyEndMatch = output.match(/(<\/body>)/i)

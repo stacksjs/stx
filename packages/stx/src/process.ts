@@ -21,7 +21,7 @@ import { injectAnalytics } from './analytics'
 import { injectHeatmap } from './heatmap'
 import { processAnimationDirectives } from './animation'
 import { processEventDirectives } from './events'
-import { processClientScript } from './client-script'
+import { extractBridgeData, processClientScript } from './client-script'
 import { processReactiveDirectives } from './reactive'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
@@ -1295,7 +1295,13 @@ async function processOtherDirectives(
   // the client-script bundler can rebase relative `import './...'` lines
   // against the page directory rather than the layout's directory.
   const pageFilePath = (context.__originalFilePath as string | undefined) || filePath
-  output = await processSignals(output, opts, pageFilePath)
+  // Server → client data bridge: expose top-level template-context values (from
+  // <script server> + frontmatter) so <script client> can seed reactive state
+  // from build-time data. Internal (`__`/`$`-prefixed) keys and functions are
+  // excluded; the transforms only serialize the names actually referenced. Used
+  // by both the signals/SFC setup path (below) and the client-script loop.
+  const serverData = extractBridgeData(context as Record<string, unknown>)
+  output = await processSignals(output, opts, pageFilePath, serverData)
 
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, opts)
@@ -1489,6 +1495,9 @@ else {
     clientScriptMatches.push({ match: s.fullMatch, attrs: s.attrs, content: s.body })
   }
 
+  // serverData (the server → client bridge payload) is computed once earlier in
+  // this function and reused here for the client-script loop.
+
   for (const { match, attrs, content } of clientScriptMatches) {
     clientScriptsTransformed = true
     // eslint-disable-next-line pickier/no-unused-vars
@@ -1499,7 +1508,7 @@ else {
 
     // Use callback form of replace to avoid $ pattern interpretation in replacement string
     // Note: processClientScript handles transpilation internally based on attrs
-    const scriptResult = await processClientScript(content, { eventBindings, attrs, hasColonDirectives, templateContent: template, filePath, projectRoot: process.cwd(), production: options.buildMode === 'compile' })
+    const scriptResult = await processClientScript(content, { eventBindings, attrs, hasColonDirectives, templateContent: template, filePath, projectRoot: process.cwd(), production: options.buildMode === 'compile', serverData })
     output = output.replace(match, () => scriptResult)
   }
   // Only clear event bindings if scripts were found and transformed.

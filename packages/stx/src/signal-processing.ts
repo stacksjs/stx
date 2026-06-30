@@ -10,6 +10,7 @@
  */
 
 import type { StxOptions } from './types'
+import { generateServerDataBridge } from './client-script'
 import { findIfBlocks } from './parser'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
@@ -1103,7 +1104,7 @@ function dedupeTopLevelDeclarations(code: string): string {
   return out.join('')
 }
 
-export async function processScriptSetup(template: string, filePath?: string): Promise<{ output: string, setupCode: string | null }> {
+export async function processScriptSetup(template: string, filePath?: string, serverData?: Record<string, unknown>): Promise<{ output: string, setupCode: string | null }> {
   // Walk the template like a browser: find each `<script>` opening tag, then
   // the FIRST `</script>` that closes it — don't re-scan for nested `<script`
   // substrings inside script bodies. This prevents false matches against
@@ -1183,13 +1184,20 @@ export async function processScriptSetup(template: string, filePath?: string): P
   mergedContent = dedupeTopLevelDeclarations(mergedContent)
   const mergedExports = extractExports(mergedContent)
 
+  // Server → client data bridge: inject `var NAME = <json>;` for each
+  // `<script server>` value the merged client setup references but does not
+  // itself declare. Lets `state(initialLogs)` seed from build-time data with
+  // no fetch. Generated against the deduped merged content so a name declared
+  // by any signal script is never clobbered.
+  const bridge = generateServerDataBridge(mergedContent, serverData)
+
   // Generate the setup function that provides signal APIs. Mark the script
   // with data-stx-scoped so the client-script loop skips it.
   const setupCode = `
 <script data-stx-scoped>
 function ${setupFnName}() {
   const { state, derived, effect, batch, onMount, onDestroy, defineStore, useStore, useFetch, useRef, useQuery, useMutation, useOptimistic, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useSessionStorage, useCookie, useReactiveProp, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect, defineProps, withDefaults, defineEmits, defineExpose, defineSlots } = window.stx;
-${mergedContent}
+${bridge}${mergedContent}
   return { ${mergedExports} };
 }
 if(window.stx)window.stx._latestSetup=${setupFnName};
@@ -1473,7 +1481,7 @@ export function extractExports(setupContent: string): string {
  * Detects signal syntax, wraps scripts in setup functions,
  * injects the signals runtime and browser runtime.
  */
-export async function processSignals(template: string, options: StxOptions, filePath?: string): Promise<string> {
+export async function processSignals(template: string, options: StxOptions, filePath?: string, serverData?: Record<string, unknown>): Promise<string> {
   if (!hasSignalsSyntax(template)) {
     return template
   }
@@ -1487,7 +1495,7 @@ export async function processSignals(template: string, options: StxOptions, file
   }
 
   // Process <script setup> blocks
-  const { output: processedOutput, setupCode } = await processScriptSetup(output, filePath)
+  const { output: processedOutput, setupCode } = await processScriptSetup(output, filePath, serverData)
   output = processedOutput
 
   // Inject the signals runtime

@@ -16,7 +16,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 // Import from expressions
-import { processClientScript } from './client-script'
+import { extractBridgeData, processClientScript } from './client-script'
 import { processExpressions, unescapeHtml } from './expressions'
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
@@ -1062,10 +1062,11 @@ else {
       if (clientScripts.length > 0) {
         // Use event bindings collected during template processing (from @click, @input, etc.)
         const eventBindings = (componentContext.__stx_event_bindings || []) as any[]
+        const serverData = extractBridgeData(componentContext as Record<string, unknown>)
         const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
           const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
           if (!contentMatch) return fullScript
-          return await processClientScript(contentMatch[1], { eventBindings, templateContent: output, filePath: componentFilePath, projectRoot: process.cwd() })
+          return await processClientScript(contentMatch[1], { eventBindings, templateContent: output, filePath: componentFilePath, projectRoot: process.cwd(), serverData })
         }))
         output += '\n' + transformedScripts.join('\n')
         // Clear bindings after use
