@@ -163,9 +163,79 @@ export function hasDocumentShell(html: string): boolean {
 }
 
 /**
+ * Inject the config `app.head` tags — script / meta / link / headRaw, but NOT
+ * `title` — into an EXISTING `<head>`.
+ *
+ * `generateDocumentShell` populates config head only when IT builds the shell.
+ * A page whose layout already renders `<html><head>` (the common case, and what
+ * SSG/static builds emit) skips that path, so global config head never lands —
+ * most visibly a site-wide analytics `<script>` (Fathom/Contentsquare/…) that
+ * silently never injects on layout-based or statically-built pages.
+ *
+ * Idempotent: skips a `<script src>`, `<link href>`, meta name/property/charset/
+ * http-equiv, or inline `<script>` content already present in the head, so it's
+ * safe to run even when the layout or `useHead` already emitted the same tag.
+ * `title` is intentionally excluded — the page/layout owns its own title.
+ */
+export function injectConfigHeadTags(html: string, headConfig: AppHeadConfig = {}): string {
+  const headCloseIdx = html.lastIndexOf('</head>')
+  if (headCloseIdx === -1)
+    return html
+
+  const { meta = [], link = [], script = [], headRaw = '' } = headConfig
+  const head = html.slice(0, headCloseIdx)
+  const parts: string[] = []
+
+  for (const m of meta as Record<string, string>[]) {
+    const dedup = m.name
+      ? `name="${m.name}"`
+      : m.property
+        ? `property="${m.property}"`
+        : m.charset != null
+          ? 'charset='
+          : m['http-equiv']
+            ? `http-equiv="${m['http-equiv']}"`
+            : ''
+    if (dedup && head.includes(dedup))
+      continue
+    parts.push(`  <meta ${Object.entries(m).map(([k, v]) => `${k}="${v}"`).join(' ')}>`)
+  }
+
+  for (const l of link as Record<string, string>[]) {
+    if (l.href && head.includes(`href="${l.href}"`))
+      continue
+    parts.push(`  <link ${Object.entries(l).map(([k, v]) => `${k}="${v}"`).join(' ')}>`)
+  }
+
+  for (const s of script as Record<string, any>[]) {
+    if (s.src) {
+      if (head.includes(`src="${s.src}"`))
+        continue
+      parts.push(`  <script ${Object.entries(s).filter(([k]) => k !== 'content').map(([k, v]) => `${k}="${v}"`).join(' ')}></script>`)
+    }
+    else if (s.content) {
+      if (head.includes(s.content))
+        continue
+      parts.push(`  <script>${s.content}</script>`)
+    }
+  }
+
+  if (headRaw && !head.includes(headRaw))
+    parts.push(`  ${headRaw}`)
+
+  if (parts.length === 0)
+    return html
+  return `${html.slice(0, headCloseIdx)}${parts.join('\n')}\n${html.slice(headCloseIdx)}`
+}
+
+/**
  * Wrap HTML in a document shell if it doesn't already have one.
  * This is the main entry point — called at the top level after all
  * directive processing is complete.
+ *
+ * When the html ALREADY has a shell we don't re-wrap (and don't touch its
+ * head here — the caller injects config-only head via `injectConfigHeadTags`,
+ * so runtime `useHead` tags aren't double-emitted).
  */
 export function ensureDocumentShell(
   html: string,
