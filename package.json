@@ -102,7 +102,7 @@
     "very-happy-dom": "^0.1.4"
   },
   "devDependencies": {
-    "@iconify/json": "^2.2.463",
+    "@iconify/json": "^2.2.494",
     "better-dx": "^0.2.15"
   }
 }
