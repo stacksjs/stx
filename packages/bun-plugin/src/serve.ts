@@ -1718,6 +1718,43 @@ export async function serve(options: ServeOptions): Promise<void> {
           const url = new URL(req.url)
           let path = url.pathname
 
+          // Dev proxy — forward matching paths to a backend before any routing.
+          // Configured (Vite-style) in stx.config.ts:
+          //   server: { proxy: { '/api': 'http://localhost:8000' } }
+          // or per-rule: { '/api': { target, changeOrigin?, rewrite? } }.
+          // Keys are matched by path prefix; the full path+query is forwarded
+          // (or `rewrite(path)` when given). Lets an stx app talk to a separate
+          // API server in dev without CORS — the parity gap vs Nuxt's
+          // `vite.server.proxy` / `nitro.devProxy`.
+          const proxyRules = (stxConfig as any).server?.proxy as
+            | Record<string, string | { target: string, changeOrigin?: boolean, rewrite?: (p: string) => string }>
+            | undefined
+          if (proxyRules) {
+            for (const [prefix, rule] of Object.entries(proxyRules)) {
+              if (path !== prefix && !path.startsWith(prefix))
+                continue
+              const ruleCfg = typeof rule === 'string' ? { target: rule } : rule
+              const outPath = ruleCfg.rewrite ? ruleCfg.rewrite(path) : path
+              const target = new URL(ruleCfg.target)
+              const outUrl = new URL(outPath + url.search, target)
+              const headers = new Headers(req.headers)
+              if (ruleCfg.changeOrigin !== false)
+                headers.set('host', target.host)
+              try {
+                return await fetch(outUrl, {
+                  method: req.method,
+                  headers,
+                  body: req.body,
+                  redirect: 'manual',
+                  ...(req.body ? { duplex: 'half' } : {}),
+                } as RequestInit)
+              }
+              catch (err) {
+                return new Response(`[stx dev proxy] ${prefix} → ${ruleCfg.target} failed: ${err instanceof Error ? err.message : String(err)}`, { status: 502 })
+              }
+            }
+          }
+
           // i18n: detect + strip locale prefix BEFORE any other routing
           // decision so downstream sees the unprefixed path. Records the
           // resolved locale so the post-render translation pass below uses

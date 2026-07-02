@@ -51,7 +51,7 @@ import { processServerBindings } from './server-bindings'
 import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 import { processScopedStyles } from './style-scoping'
-import { ensureDocumentShell, injectCloakStyle } from './document-shell'
+import { ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags } from './document-shell'
 
 // Extracted modules
 import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, preEvalLiteralReactiveIfs, processSignals } from './signal-processing'
@@ -353,7 +353,16 @@ export async function processDirectives(
           ...(runtimeHead.htmlAttrs && { htmlAttrs: { ...(baseHeadConfig.htmlAttrs || {}), ...runtimeHead.htmlAttrs } }),
           ...(runtimeHead.bodyAttrs && { bodyAttrs: { ...(baseHeadConfig.bodyAttrs || {}), ...runtimeHead.bodyAttrs } }),
         }
+        // A page/layout that already rendered its own <html><head> (the common
+        // case, and what SSG/static builds emit) makes ensureDocumentShell a
+        // no-op, so config `app.head` (script/meta/link/headRaw) never got into
+        // the head — most visibly a site-wide analytics <script>. Inject the
+        // CONFIG head (not the merged runtime head — renderHead below handles
+        // useHead) into the existing head, idempotently. See stacksjs/stx#1765.
+        const alreadyShelled = hasDocumentShell(result)
         result = ensureDocumentShell(result, headConfig)
+        if (alreadyShelled)
+          result = injectConfigHeadTags(result, baseHeadConfig)
 
         // Inject layout meta tag for SPA layout-change detection
         const layoutComment = result.match(/<!-- stx-layout: ([^ ]+) -->/)
