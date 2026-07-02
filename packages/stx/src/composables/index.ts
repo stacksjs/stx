@@ -290,6 +290,9 @@ export {
   type DeviceMotionState,
   type DeviceOrientationRef,
   type DeviceMotionRef,
+  type ParallaxState,
+  type ParallaxOptions,
+  type ParallaxRef,
 } from './use-device-orientation'
 
 // Mutation Observer

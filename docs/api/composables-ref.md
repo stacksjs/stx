@@ -1023,6 +1023,113 @@ const dark = useDark()
 | `set(dark)` | `(dark: boolean) => void` | Set dark mode on/off |
 | `subscribe(fn)` | `(fn: (isDark) => void) => () => void` | Listen to changes |
 
+## Motion & Sensors
+
+Reactive helpers for scroll, pointer/tilt, and motion-preference driven UI. Pair them with CSS transitions or scroll-driven animations; stx ships no animation library, so these composables plus Crosswind utilities are how you build motion. Always honor reduced motion (see `usePreferredReducedMotion`).
+
+### useScroll
+
+```typescript
+useScroll(): ScrollRef
+```
+
+Reactively tracks document scroll position and progress, with smooth scroll helpers. The scroll listener is registered once with `{ passive: true }`.
+
+```html
+<script>
+const scroll = useScroll()
+
+// Reactive: show a back-to-top button past 400px, drive a progress bar
+scroll.subscribe(({ y, progress }) => {
+  // progress is 0 at the top of the document, 1 at the bottom
+})
+</script>
+
+<button @click="scroll.scrollToTop()">Back to top</button>
+```
+
+**ScrollRef:**
+
+| Property/Method | Type | Description |
+|-----------------|------|-------------|
+| `x` | `number` (getter) | Horizontal scroll offset (`window.scrollX`) |
+| `y` | `number` (getter) | Vertical scroll offset (`window.scrollY`) |
+| `progress` | `number` (getter) | Vertical scroll progress of the document, `0` (top) to `1` (bottom) |
+| `subscribe(fn)` | `(fn: (pos: ScrollPosition) => void) => () => void` | Listen to scroll changes |
+| `scrollTo(options, y?)` | `(options: ScrollToOptions \| number, y?: number) => void` | Scroll to a position |
+| `scrollToTop()` | `() => void` | Smooth-scroll to the top |
+| `scrollToBottom()` | `() => void` | Smooth-scroll to the bottom |
+
+Prefer `useScroll()` over a hand-rolled `window.addEventListener('scroll', ...)` in templates; scroll listeners in template `<script>` blocks are discouraged.
+
+### useParallax
+
+```typescript
+useParallax(options?: ParallaxOptions): ParallaxRef
+```
+
+Normalized tilt for parallax effects, driven by mouse position on desktop and device orientation on touch devices. Both sources are enabled by default and the latest event wins, reporting itself via `source`. Values are clamped to a `-1` to `1` range around center.
+
+```html
+<script>
+const tilt = useParallax()
+
+tilt.subscribe(({ x, y }) => {
+  // Drive a CSS custom property; let CSS do the transform (no per-frame signal writes)
+  layer.style.setProperty('--px', String(x))
+  layer.style.setProperty('--py', String(y))
+})
+</script>
+```
+
+**ParallaxOptions:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `mouse` | `boolean` | `true` | React to mouse position (desktop parallax) |
+| `orientation` | `boolean` | `true` | React to device orientation (mobile tilt) |
+
+**ParallaxRef:**
+
+| Property/Method | Type | Description |
+|-----------------|------|-------------|
+| `get()` | `() => ParallaxState` | Current `{ x, y, source }` |
+| `subscribe(fn)` | `(fn: (state: ParallaxState) => void) => () => void` | Listen to tilt changes |
+| `stop()` | `() => void` | Detach all inputs and clear subscribers |
+| `isSupported()` | `() => boolean` | Whether any source is available |
+| `requestPermission()` | `() => Promise<boolean>` | Request device-orientation permission (required on iOS 13+) |
+
+`ParallaxState.source` is `'mouse'`, `'orientation'`, or `'initial'`.
+
+### usePreferredReducedMotion
+
+```typescript
+usePreferredReducedMotion(): MediaQueryRef
+```
+
+Reactive `(prefers-reduced-motion: reduce)` media query. Use it to gate or disable animation. Part of the `usePreferred*` family (`usePreferredDark`, `usePreferredLight`, `usePreferredContrast`), all thin wrappers over `useMediaQuery`.
+
+```html
+<script>
+const reduced = usePreferredReducedMotion()
+
+const tilt = useParallax()
+if (!reduced.matches) {
+  tilt.subscribe(({ x, y }) => {
+    layer.style.setProperty('--px', String(x))
+    layer.style.setProperty('--py', String(y))
+  })
+}
+</script>
+```
+
+**MediaQueryRef:**
+
+| Property/Method | Type | Description |
+|-----------------|------|-------------|
+| `matches` | `boolean` (getter) | Whether reduced motion is preferred |
+| `subscribe(fn)` | `(fn: (matches: boolean) => void) => () => void` | Listen to preference changes |
+
 ## Communication
 
 ### useWebSocket

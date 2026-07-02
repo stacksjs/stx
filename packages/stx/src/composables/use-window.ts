@@ -12,6 +12,8 @@ export interface WindowSize {
 export interface ScrollPosition {
   x: number
   y: number
+  /** Vertical scroll progress of the document, 0 (top) to 1 (bottom) */
+  progress: number
 }
 
 export interface WindowSizeRef extends WindowSize {
@@ -101,9 +103,17 @@ export function useScroll(): ScrollRef {
   const subscribers = new Set<(position: ScrollPosition) => void>()
   const isClient = typeof window !== 'undefined'
 
+  const computeProgress = (): number => {
+    if (!isClient)
+      return 0
+    const max = document.documentElement.scrollHeight - window.innerHeight
+    return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0
+  }
+
   let currentPosition: ScrollPosition = {
     x: isClient ? window.scrollX : 0,
     y: isClient ? window.scrollY : 0,
+    progress: computeProgress(),
   }
 
   if (isClient) {
@@ -111,6 +121,7 @@ export function useScroll(): ScrollRef {
       currentPosition = {
         x: window.scrollX,
         y: window.scrollY,
+        progress: computeProgress(),
       }
       for (const callback of subscribers) {
         try {
@@ -128,6 +139,7 @@ catch (e) {
   return {
     get x() { return currentPosition.x },
     get y() { return currentPosition.y },
+    get progress() { return currentPosition.progress },
     subscribe: (callback) => {
       subscribers.add(callback)
       callback(currentPosition)

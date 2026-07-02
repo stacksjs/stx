@@ -4,6 +4,8 @@
  * Reactive utilities for device orientation and motion sensors.
  */
 
+import { useMouse } from './use-mouse'
+
 export interface DeviceOrientationState {
   isSupported: boolean
   isAbsolute: boolean
@@ -308,45 +310,127 @@ export function useDeviceMotion(): DeviceMotionRef {
   }
 }
 
+export interface ParallaxState {
+  /** Horizontal tilt, -1 (left) to 1 (right) */
+  x: number
+  /** Vertical tilt, -1 (top) to 1 (bottom) */
+  y: number
+  /** Which input produced the latest value */
+  source: 'mouse' | 'orientation' | 'initial'
+}
+
+export interface ParallaxOptions {
+  /** React to mouse position (default: true). Enables desktop parallax. */
+  mouse?: boolean
+  /** React to device orientation (default: true). Enables mobile tilt parallax. */
+  orientation?: boolean
+}
+
+export interface ParallaxRef {
+  get: () => ParallaxState
+  subscribe: (fn: (state: ParallaxState) => void) => () => void
+  /** Detach all inputs and clear subscribers */
+  stop: () => void
+  isSupported: () => boolean
+  requestPermission: () => Promise<boolean>
+}
+
 /**
- * Simple tilt detection for parallax effects
+ * Tilt detection for parallax effects, driven by mouse (desktop) and/or device
+ * orientation (mobile). Values are normalized to a -1 to 1 range around center.
+ *
+ * On desktop the pointer position relative to the viewport center drives the
+ * tilt; on touch devices the gyroscope drives it. Both sources are enabled by
+ * default; the latest event wins and reports itself via `source`.
  *
  * @example
  * ```ts
  * const tilt = useParallax()
  *
  * tilt.subscribe(({ x, y }) => {
- *   element.style.transform = `translate(${x * 10}px, ${y * 10}px)`
+ *   layer.style.setProperty('--px', String(x))
+ *   layer.style.setProperty('--py', String(y))
  * })
  * ```
  */
-export function useParallax() {
-  const orientation = useDeviceOrientation()
-  const subscribers = new Set<(state: { x: number, y: number }) => void>()
+export function useParallax(options: ParallaxOptions = {}): ParallaxRef {
+  const { mouse = true, orientation = true } = options
+  const subscribers = new Set<(state: ParallaxState) => void>()
 
-  let tilt = { x: 0, y: 0 }
+  let state: ParallaxState = { x: 0, y: 0, source: 'initial' }
 
-  orientation.subscribe((state) => {
-    if (state.gamma !== null && state.beta !== null) {
-      // Normalize to -1 to 1 range
-      tilt = {
-        x: Math.max(-1, Math.min(1, (state.gamma || 0) / 45)),
-        y: Math.max(-1, Math.min(1, (state.beta || 0) / 45)),
+  const notify = () => {
+    for (const fn of subscribers) {
+      try {
+        fn(state)
       }
-      subscribers.forEach(fn => fn(tilt))
+catch (e) {
+        console.error('[useParallax] Subscriber error:', e)
+      }
     }
-  })
+  }
+
+  const clamp = (n: number) => Math.max(-1, Math.min(1, n))
+
+  // Device orientation source (mobile tilt)
+  const orientationRef = orientation ? useDeviceOrientation() : null
+  let unsubscribeOrientation: (() => void) | null = null
+
+  if (orientationRef) {
+    unsubscribeOrientation = orientationRef.subscribe((o) => {
+      if (o.gamma !== null && o.beta !== null) {
+        state = {
+          x: clamp((o.gamma || 0) / 45),
+          y: clamp((o.beta || 0) / 45),
+          source: 'orientation',
+        }
+        notify()
+      }
+    })
+  }
+
+  // Mouse source (desktop): pointer position relative to viewport center
+  const mouseRef = mouse ? useMouse() : null
+  let unsubscribeMouse: (() => void) | null = null
+
+  if (mouseRef) {
+    unsubscribeMouse = mouseRef.subscribe((m) => {
+      if (typeof window === 'undefined' || !m.isInside)
+        return
+      const w = window.innerWidth || 1
+      const h = window.innerHeight || 1
+      state = {
+        x: clamp((m.clientX / w) * 2 - 1),
+        y: clamp((m.clientY / h) * 2 - 1),
+        source: 'mouse',
+      }
+      notify()
+    })
+  }
 
   return {
-    get: () => tilt,
-    subscribe: (fn: (state: { x: number, y: number }) => void) => {
+    get: () => state,
+    subscribe: (fn) => {
       subscribers.add(fn)
-      fn(tilt)
+      fn(state)
       return () => {
         subscribers.delete(fn)
       }
     },
-    isSupported: orientation.isSupported,
-    requestPermission: orientation.requestPermission,
+    stop: () => {
+      if (unsubscribeOrientation) {
+        unsubscribeOrientation()
+        unsubscribeOrientation = null
+      }
+      if (unsubscribeMouse) {
+        unsubscribeMouse()
+        unsubscribeMouse = null
+      }
+      mouseRef?.stop()
+      subscribers.clear()
+    },
+    isSupported: () =>
+      (orientationRef?.isSupported() ?? false) || (mouse && typeof window !== 'undefined'),
+    requestPermission: () => (orientationRef ? orientationRef.requestPermission() : Promise.resolve(false)),
   }
 }
