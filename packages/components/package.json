@@ -58,14 +58,14 @@
   },
   "dependencies": {
     "@cwcss/crosswind": "^0.2.6",
-    "@stacksjs/stx": "workspace:*",
+    "@stacksjs/stx": "workspace:*0.2.73",
     "bun-plugin-stx": "workspace:*",
     "ts-syntax-highlighter": "^0.2.1"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.11",
+    "@types/bun": "^1.3.14",
     "bun-plugin-dtsx": "^0.21.17",
-    "pickier": "^0.1.35",
+    "pickier": "^0.1.36",
     "typescript": "^6.0.2"
   }
 }
