@@ -1180,6 +1180,10 @@ export async function serve(options: ServeOptions): Promise<void> {
       app: stxConfig.app || {},
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
       ...('router' in stxConfig && { router: stxConfig.router }),
+      // Forward debug so `debug: true` in stx.config.ts turns on the verbose
+      // render/component/directive logs on the serve path (gated by
+      // options.debug in the renderer, otherwise unreachable from a config).
+      ...('debug' in stxConfig && { debug: stxConfig.debug }),
       // Forward SEO/head defaults so stx.config.ts can suppress the auto-injected
       // "stx Project" fallback tags and override the project-wide title/description/image.
       ...('skipDefaultSeoTags' in stxConfig && { skipDefaultSeoTags: stxConfig.skipDefaultSeoTags }),
@@ -1469,6 +1473,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       app: stxConfig.app || {},
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
       ...('router' in stxConfig && { router: stxConfig.router }),
+      ...('debug' in stxConfig && { debug: stxConfig.debug }),
       ...('skipDefaultSeoTags' in stxConfig && { skipDefaultSeoTags: stxConfig.skipDefaultSeoTags }),
       ...('defaultTitle' in stxConfig && { defaultTitle: stxConfig.defaultTitle }),
       ...('defaultDescription' in stxConfig && { defaultDescription: stxConfig.defaultDescription }),
