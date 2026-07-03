@@ -587,35 +587,111 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
     filteredKeys.push(key)
   }
 
-  // Create the function with strict mode
-  // eslint-disable-next-line no-new-func
-  const func = new Function(...filteredKeys, `
+  const buildFunc = (extraParams: string[]): (...args: unknown[]) => unknown =>
+    // eslint-disable-next-line no-new-func
+    new Function(...filteredKeys, ...extraParams, `
     'use strict';
     try {
       return ${sanitizedExpr};
     }
 catch (e) {
-      if (e instanceof ReferenceError || e instanceof TypeError) {
+      if (e instanceof TypeError) {
         return undefined;
       }
       throw e;
     }
-  `)
+  `) as (...args: unknown[]) => unknown
+
+  // Create the function with strict mode
+  let func = buildFunc([])
 
   // Fast path when nothing was filtered: skip the value-projection pass.
   if (filteredKeys.length === contextKeys.length) {
-    // eslint-disable-next-line pickier/no-unused-vars
-    return func as (...args: unknown[]) => unknown
+    return wrapWithMissingIdentifierRetry(func, filteredKeys, buildFunc)
   }
 
   // Project the caller's values down to the columns that survived the
   // identifier filter. Callers pass values positionally aligned with the
   // ORIGINAL contextKeys, so we read each surviving slot and forward it.
-  return ((...args: unknown[]) => {
+  const projectedFunc = ((...args: unknown[]) => {
     const projected = new Array(validIndices.length)
     for (let i = 0; i < validIndices.length; i++) projected[i] = args[validIndices[i]]
     return func(...projected)
   }) as (...args: unknown[]) => unknown
+
+  return wrapWithMissingIdentifierRetry(projectedFunc, filteredKeys, buildFunc, (extra) => {
+    func = buildFunc(extra)
+  })
+}
+
+/**
+ * Wrap a compiled expression-evaluator function so that a `ReferenceError`
+ * for an identifier NOT already covered by `filteredKeys` is retried once
+ * with that identifier added as an extra parameter (implicitly `undefined`
+ * when the caller doesn't supply a value for it), instead of collapsing the
+ * WHOLE expression to `undefined`.
+ *
+ * Why this matters: `statusPageForHost ? statusPageForHost.title : appName`
+ * — when `statusPageForHost` was never added to context — throws a real
+ * ReferenceError on the condition check alone. The original code mapped
+ * that to `undefined` for the entire expression, silently discarding
+ * `appName` even though it was never the problem. That blanks out `{{ }}`
+ * interpolations and `@if`/loop conditions with no error anywhere. See
+ * stacksjs/stx and stacksjs/status#1.
+ *
+ * This is done via retry-on-actual-ReferenceError (using the engine's own
+ * "X is not defined" message to name the missing identifier) rather than
+ * static regex analysis of the expression text, because expressions can
+ * contain arrow-function params, regex literals, hex numerals, and object
+ * keys that are indistinguishable from free variables without a real
+ * parser — the retry approach only ever reacts to a name the JS engine
+ * itself just failed to resolve, so it can't misfire on any of those.
+ *
+ * Bounded to a handful of attempts so a pathological expression can't loop
+ * forever; any given expression realistically has very few distinct
+ * genuinely-missing top-level names.
+ */
+function wrapWithMissingIdentifierRetry(
+  initialFunc: (...args: unknown[]) => unknown,
+  filteredKeys: string[],
+  buildFunc: (extraParams: string[]) => (...args: unknown[]) => unknown,
+  onRebuild?: (extraParams: string[]) => void,
+): (...args: unknown[]) => unknown {
+  const MAX_RETRIES = 8
+  const missingRe = /^(\w+) is not defined$/
+  let func = initialFunc
+  const extraParams: string[] = []
+  const knownNames = new Set(filteredKeys)
+
+  return (...args: unknown[]): unknown => {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return func(...args)
+      }
+      catch (e) {
+        const message = e instanceof Error ? e.message : ''
+        const match = missingRe.exec(message)
+        if (!(e instanceof ReferenceError) || !match) {
+          // Not a "name is not defined" ReferenceError (or the underlying
+          // function already swallows those) — nothing more we can do.
+          return undefined
+        }
+        const missingName = match[1]
+        if (knownNames.has(missingName) || RESERVED_PARAM_NAMES.has(missingName)) {
+          // Already tried adding this name (or it's not a valid param name)
+          // and it's STILL missing — avoid looping forever.
+          return undefined
+        }
+        knownNames.add(missingName)
+        extraParams.push(missingName)
+        func = buildFunc(extraParams)
+        onRebuild?.(extraParams)
+        // `args` doesn't include a value for the newly-added trailing
+        // param, so it's naturally `undefined` on the next call — retry.
+      }
+    }
+    return undefined
+  }
 }
 
 /**

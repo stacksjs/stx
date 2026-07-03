@@ -1,4 +1,5 @@
 import path from 'node:path'
+import process from 'node:process'
 
 /**
  * Variable Extraction
@@ -1560,6 +1561,57 @@ function readMultilineFunction(lines: string[], startIndex: number, initialFunct
 }
 
 /**
+ * Evaluate a single top-level declaration's initializer for the fallback
+ * extractor. Tries `safeEvaluate` first (the same sandboxed evaluator used
+ * for user-facing template expressions), then — only on failure — retries
+ * with `process` (env-only, read-only) exposed as an extra identifier.
+ *
+ * `safeEvaluate` deliberately rejects any expression containing the token
+ * `process` (see DANGEROUS_PATTERNS in safe-evaluator.ts): that sanitizer
+ * guards *user template expressions* (`{{ }}`, `@if`, …) which really must
+ * never read `process.env` or reach `process.exit()`. But the fallback
+ * extractor here evaluates *server-script source the developer already
+ * wrote and trusted enough to execute* — the primary IIFE path (above)
+ * already ran this exact source with full ambient access to `process`. If
+ * the IIFE aborted (e.g. an unrelated later statement threw) and we're
+ * down to per-line recovery, rejecting `process.env.APP_NAME || 'x'` here
+ * just because it contains the word "process" silently drops the
+ * variable — no error, no warning, template renders with an empty
+ * interpolation. `process.env` is a near-universal pattern in
+ * `<script server>` blocks (feature flags, API keys, mode switches), so
+ * this is not an edge case.
+ *
+ * Only `process.env` is exposed (as a frozen shallow copy), not the full
+ * `process` object — no `process.exit`, `process.binding`, `process.kill`,
+ * etc. reach the fallback sandbox.
+ */
+function evaluateFallbackExpression(expression: string, context: Record<string, unknown>): unknown {
+  const direct = safeEvaluate(expression, context) ?? safeEvaluate(`(${expression})`, context)
+  if (direct !== undefined)
+    return direct
+
+  if (!/\bprocess\b/.test(expression))
+    return undefined
+
+  const processEnvContext = { ...context, process: Object.freeze({ env: { ...process.env } }) }
+  try {
+    // eslint-disable-next-line no-new-func
+    const fn = new Function(...Object.keys(processEnvContext), `'use strict'; return (${expression});`)
+    return fn(...Object.values(processEnvContext))
+  }
+  catch {
+    try {
+      // eslint-disable-next-line no-new-func
+      const fn = new Function(...Object.keys(processEnvContext), `'use strict'; return ${expression};`)
+      return fn(...Object.values(processEnvContext))
+    }
+    catch {
+      return undefined
+    }
+  }
+}
+
+/**
  * Fallback variable extraction for edge cases
  */
 async function fallbackVariableExtraction(
@@ -1576,20 +1628,12 @@ async function fallbackVariableExtraction(
 
     try {
       const cleanValue = value.trim().replace(/;$/, '')
-      const evaluated = safeEvaluate(cleanValue, context) ?? safeEvaluate(`(${cleanValue})`, context)
+      const evaluated = evaluateFallbackExpression(cleanValue, context)
       if (evaluated !== undefined)
         context[name] = evaluated
     }
-    catch {
-      try {
-        const cleanValue = value.trim().replace(/;$/, '')
-        const evaluated = safeEvaluate(`(${cleanValue})`, context)
-        if (evaluated !== undefined)
-          context[name] = evaluated
-      }
-      catch (e2) {
-        console.warn(`Failed to parse export ${name} in fallback:`, e2)
-      }
+    catch (e2) {
+      console.warn(`Failed to parse export ${name} in fallback:`, e2)
     }
   }
 
@@ -1603,7 +1647,7 @@ async function fallbackVariableExtraction(
     if (!(name in context)) {
       try {
         const cleanValue = value.trim().replace(/;$/, '')
-        const evaluated = safeEvaluate(cleanValue, context) ?? safeEvaluate(`(${cleanValue})`, context)
+        const evaluated = evaluateFallbackExpression(cleanValue, context)
         if (evaluated !== undefined)
           context[name] = evaluated
       }

@@ -853,3 +853,125 @@ catch (e) {
     expect(context.result).toBe('computed')
   })
 })
+
+// =============================================================================
+// Regression: `process.env`-based consts stranded when an unrelated earlier
+// statement throws (e.g. a DB connection that only exists in production,
+// opened locally with `NODE_ENV=production`/`APP_ENV=production` but no
+// production infrastructure available).
+//
+// The primary extraction path runs the whole `<script server>` body as one
+// IIFE. If any statement throws, the entire IIFE aborts and every
+// declaration — including unrelated ones later in the same script — falls
+// through to `fallbackVariableExtraction`, which evaluates each `const`
+// individually via `safeEvaluate`. `safeEvaluate` intentionally rejects any
+// expression containing the token `process` (it's the sandbox for
+// user-facing template expressions like `{{ }}`, where reading
+// `process.env` or reaching `process.exit()` must never be possible). But
+// `<script server>` source is developer-authored and already trusted enough
+// to execute in the primary pass, so the fallback silently losing every
+// `process.env.X`-based declaration turned real, common patterns (feature
+// flags, app name/mode fallbacks) into silent empty-string interpolations
+// with no error anywhere. See stacksjs/stx and stacksjs/status#1.
+// =============================================================================
+
+describe('fallback extraction recovers process.env-based consts after an unrelated throw', () => {
+  it('recovers a `process.env.X || fallback` const declared after a throwing statement', async () => {
+    const script = `
+const StatusDb = require('bun:sqlite').Database
+const statusDb = new StatusDb('/nonexistent/path/does-not-exist.sqlite', { readonly: true })
+
+const appName = process.env.APP_NAME || 'UptimeStatus'
+const siteMode = process.env.APP_COMING_SOON === 'true' ? 'coming-soon' : 'live'
+`
+    const previousAppName = process.env.APP_NAME
+    const previousComingSoon = process.env.APP_COMING_SOON
+    process.env.APP_NAME = ''
+    process.env.APP_COMING_SOON = 'false'
+
+    try {
+      const context: Record<string, unknown> = {}
+      await extractVariables(script, context, 'test.stx')
+
+      // Before the fix: the DB open failure aborted the whole IIFE, the
+      // fallback extractor couldn't evaluate `process.env.APP_NAME`
+      // (silently rejected as an "unsafe" identifier), and both variables
+      // were missing from context entirely — rendering as empty strings.
+      expect(context.appName).toBe('UptimeStatus')
+      expect(context.siteMode).toBe('live')
+    }
+    finally {
+      process.env.APP_NAME = previousAppName
+      process.env.APP_COMING_SOON = previousComingSoon
+    }
+  })
+
+  it('renders {{ }} interpolations of process.env-based consts after an unrelated throw', async () => {
+    const { renderString } = await import('../../src/render')
+
+    const template = `<script server>
+const StatusDb = require('bun:sqlite').Database
+const statusDb = new StatusDb('/nonexistent/path/does-not-exist.sqlite', { readonly: true })
+
+const appName = process.env.APP_NAME || 'UptimeStatus'
+const siteMode = process.env.APP_COMING_SOON === 'true' ? 'coming-soon' : 'live'
+</script>
+<title>{{ appName }}</title>
+<body data-site-mode="{{ siteMode }}">
+<span>{{ appName }}</span>
+</body>`
+
+    const previousAppName = process.env.APP_NAME
+    const previousComingSoon = process.env.APP_COMING_SOON
+    process.env.APP_NAME = ''
+    process.env.APP_COMING_SOON = 'false'
+
+    try {
+      const html = await renderString(template, {})
+      expect(html).toContain('<title>UptimeStatus</title>')
+      expect(html).toContain('data-site-mode="live"')
+      expect(html.match(/UptimeStatus/g)?.length).toBeGreaterThanOrEqual(2)
+    }
+    finally {
+      process.env.APP_NAME = previousAppName
+      process.env.APP_COMING_SOON = previousComingSoon
+    }
+  })
+
+  it('renders a ternary that falls through to appName when a sibling DB-backed variable never made it into context', async () => {
+    // Reproduces the full stacksjs/status#1 scenario: `statusPageForHost` is
+    // declared via a DB query that throws (e.g. DB_DATABASE_PATH pointing at
+    // a production-only path that doesn't exist locally), so it's never
+    // added to context. Its own throw already strands `appName`/`siteMode`
+    // (covered by the previous two tests); THIS test covers the second,
+    // independent bug: even after appName/siteMode are correctly recovered,
+    // `{{ statusPageForHost ? statusPageForHost.title : appName }}` used to
+    // render empty — the bare `statusPageForHost` reference (which was
+    // simply never declared) threw a ReferenceError that collapsed the
+    // WHOLE ternary to undefined, discarding the perfectly valid `appName`
+    // fallback.
+    const { renderString } = await import('../../src/render')
+
+    const template = `<script server>
+const StatusDb = require('bun:sqlite').Database
+const statusDb = new StatusDb('/nonexistent/path/does-not-exist.sqlite', { readonly: true })
+const statusPageForHost = statusDb.query('SELECT * FROM status_pages WHERE custom_domain = ?1').get('example.com')
+
+const appName = process.env.APP_NAME || 'UptimeStatus'
+</script>
+<title>{{ statusPageForHost ? statusPageForHost.title : appName }}</title>
+<span>{{ statusPageForHost ? statusPageForHost.title : appName }}</span>`
+
+    const previousAppName = process.env.APP_NAME
+    process.env.APP_NAME = ''
+
+    try {
+      const html = await renderString(template, {})
+      expect(html).toContain('<title>UptimeStatus</title>')
+      expect(html.match(/UptimeStatus/g)?.length).toBeGreaterThanOrEqual(2)
+    }
+    finally {
+      process.env.APP_NAME = previousAppName
+    }
+  })
+})

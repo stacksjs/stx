@@ -1412,4 +1412,71 @@ describe('Safe Evaluator Comprehensive Security Tests', () => {
       expect(isExpressionSafe('window.location')).toBe(false)
     })
   })
+
+  // ===========================================================================
+  // Regression: a ReferenceError on ONE identifier used to abort the WHOLE
+  // expression, discarding an otherwise-valid fallback value.
+  //
+  // `createSafeFunction`/`safeEvaluate` wrap the compiled expression in a
+  // try/catch that maps any ReferenceError to `undefined`. That's correct
+  // for a bare `{{ missingVar }}`, but it also fired when the missing name
+  // was only the CONDITION of a ternary/`||`/`&&` whose other branch was
+  // perfectly valid — e.g. `statusPageForHost ? statusPageForHost.title :
+  // appName` when `statusPageForHost` was never added to context. The whole
+  // expression returned `undefined` instead of falling through to
+  // `appName`, silently blanking `{{ }}` interpolations and `@if`/loop
+  // conditions with no error anywhere. See stacksjs/stx and
+  // stacksjs/status#1 (the `<script server>` block declaring
+  // `const appName = process.env.APP_NAME || 'UptimeStatus'` and a sibling
+  // `statusPageForHost` that failed to extract — the page's <title> and
+  // every appName interpolation rendered empty in production mode even
+  // though `appName` itself was populated correctly).
+  // ===========================================================================
+  describe('missing identifier in one branch of an expression', () => {
+    it('falls through to the other ternary branch when the condition identifier is undeclared', () => {
+      const result = safeEvaluate('statusPageForHost ? statusPageForHost.title : appName', { appName: 'UptimeStatus' })
+      expect(result).toBe('UptimeStatus')
+    })
+
+    it('createSafeFunction resolves the same ternary directly', () => {
+      const fn = createSafeFunction('statusPageForHost ? statusPageForHost.title : appName', ['appName'])
+      expect(fn('UptimeStatus')).toBe('UptimeStatus')
+    })
+
+    it('falls through to the right-hand side of || when the left identifier is undeclared', () => {
+      const result = safeEvaluate('missingFlag || fallbackValue', { fallbackValue: 'default' })
+      expect(result).toBe('default')
+    })
+
+    it('short-circuits && to false when the left identifier is undeclared (no throw)', () => {
+      const result = safeEvaluate('missingFlag && somethingElse', { somethingElse: 'x' })
+      expect(result).toBeFalsy()
+    })
+
+    it('still resolves ambient ammo globals (Math, JSON, Object) unshadowed', () => {
+      expect(createSafeFunction('Math.floor(score / 10)', ['score'])(95)).toBe(9)
+      expect(createSafeFunction('JSON.stringify(obj)', ['obj'])({ a: 1 })).toBe('{"a":1}')
+      expect(createSafeFunction('Object.keys(obj).length', ['obj'])({ a: 1, b: 2 })).toBe(2)
+    })
+
+    it('still handles regex literals referencing a real context var', () => {
+      const fn = createSafeFunction('/^admin/.test(role)', ['role'])
+      expect(fn('admin-user')).toBe(true)
+    })
+
+    it('still handles bitwise operators and hex literals', () => {
+      const fn = createSafeFunction('flags & 0x01', ['flags'])
+      expect(fn(0x05)).toBe(1)
+    })
+
+    it('still treats arrow-function parameters as local bindings, not free variables', () => {
+      const fn = createSafeFunction('items.filter(x => x > 0).length', ['items'])
+      expect(fn([1, -2, 3])).toBe(2)
+    })
+
+    it('a bare reference to a truly undefined identifier still evaluates to undefined (no throw)', () => {
+      const result = safeEvaluate('totallyUndeclaredName', {})
+      expect(result).toBeUndefined()
+    })
+  })
 })
