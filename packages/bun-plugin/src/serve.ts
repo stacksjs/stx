@@ -727,6 +727,15 @@ export async function serve(options: ServeOptions): Promise<void> {
   let activeServeLocale: string | null = null
   /** Query string for the in-flight SSR pass — pagination/filter pages must not share htmlCache entries. */
   let activeServeSearch: string = ''
+  /**
+   * `Host` header for the in-flight SSR pass, exposed to `<script server>`
+   * blocks as the ambient `host` variable — the same mechanism as
+   * `activeServeSearch`/`__stxServeSearch`. Lets a page branch on the
+   * requested hostname (e.g. serving different content for a customer's
+   * custom domain vs. the app's own default domain) without needing a
+   * distinct route per host.
+   */
+  let activeServeHost: string = ''
 
   function injectServeLocaleContext(context: Record<string, any>) {
     if (!activeServeLocale)
@@ -739,21 +748,24 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
   }
 
-  /** Expose the current request query string to `<script server>` blocks. */
+  /** Expose the current request query string + Host header to `<script server>` blocks. */
   function injectServeRequestContext(context: Record<string, any>) {
-    if (!activeServeSearch)
-      return
-    context.__stxServeSearch = activeServeSearch
-    ;(globalThis as { __stxServeSearch?: string }).__stxServeSearch = activeServeSearch
+    if (activeServeSearch) {
+      context.__stxServeSearch = activeServeSearch
+      ;(globalThis as { __stxServeSearch?: string }).__stxServeSearch = activeServeSearch
+    }
+    if (activeServeHost)
+      context.host = activeServeHost
   }
 
-  /** Render cache must vary by locale — same `.stx` file serves different `t()` output per prefix. */
+  /** Render cache must vary by locale/host — same `.stx` file can serve different `t()`/host-branched output. */
   function htmlCacheKey(filePath: string): string {
     const loc = i18nConfig ? (activeServeLocale ?? i18nConfig.defaultLocale) : ''
     const search = activeServeSearch || ''
-    if (!loc && !search)
+    const host = activeServeHost || ''
+    if (!loc && !search && !host)
       return filePath
-    return `${filePath}\0${loc}\0${search}`
+    return `${filePath}\0${loc}\0${search}\0${host}`
   }
 
   const builtInMiddleware: Record<string, MiddlewareHandler> = authConfig === null ? {} : {
@@ -1793,6 +1805,7 @@ export async function serve(options: ServeOptions): Promise<void> {
           const _i18nResp: Response = await (async (): Promise<Response> => {
             activeServeLocale = i18nLocale
             activeServeSearch = url.search
+            activeServeHost = req.headers.get('host') || ''
             try {
 
               // Handle CORS preflight
@@ -2401,6 +2414,7 @@ export async function serve(options: ServeOptions): Promise<void> {
             finally {
               activeServeLocale = null
               activeServeSearch = ''
+              activeServeHost = ''
             }
           })() // ─── end IIFE — single exit for translation post-process
           return applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
