@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.74...v0.2.75)
+
+## 🚀 Features
+
+- **bun-plugin**: expose cookies + client IP to <script server> blocks ([80ac187](https://github.com/stacksjs/stx/commit/80ac187)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.75 ([a8ad798](https://github.com/stacksjs/stx/commit/a8ad798)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bun-plugin**: fix pre-existing format:check violation in serve.ts ([b3c153c](https://github.com/stacksjs/stx/commit/b3c153c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.73...v0.2.74)
 
 ## 🚀 Features
