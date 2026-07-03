@@ -736,6 +736,36 @@ export async function serve(options: ServeOptions): Promise<void> {
    * distinct route per host.
    */
   let activeServeHost: string = ''
+  /**
+   * Parsed `Cookie` header for the in-flight SSR pass, exposed as the
+   * ambient `cookies` object — lets a page gate content per-visitor (e.g.
+   * a password-protected page checking an unlock cookie) without a
+   * dedicated route/middleware. Always an object (never undefined) so
+   * `cookies.foo` reads cleanly with no truthy-guard needed at the call
+   * site, unlike `host`/`__stxServeSearch` which are plain strings.
+   *
+   * SECURITY: the raw cookie header is folded into htmlCacheKey whenever
+   * present. Two visitors with different cookies (e.g. one unlocked, one
+   * not) must never share a cached render — that would leak gated content
+   * to an anonymous visitor or serve a stale locked page to one who just
+   * unlocked. This trades cache hit-rate for correctness on any page that
+   * reads cookies at all; pages that never read cookies are unaffected
+   * since ordinary anonymous traffic sends no Cookie header.
+   */
+  let activeServeCookies: Record<string, string> = {}
+  let activeServeCookieHeader: string = ''
+  /**
+   * Best-effort client IP for the in-flight SSR pass, exposed as the
+   * ambient `ip` variable — lets a page implement an IP allowlist. From
+   * `server.requestIP()` (the actual socket peer), falling back to the
+   * left-most `X-Forwarded-For` entry when running behind a reverse proxy
+   * (rpx, a CDN, ...) since the socket peer is the proxy itself in that
+   * case, not the real visitor. The X-Forwarded-For fallback is spoofable
+   * by anyone who can reach this process directly — only trust it in a
+   * deployment where an actual trusted proxy is guaranteed to be the only
+   * thing that can reach this process.
+   */
+  let activeServeIp: string = ''
 
   function injectServeLocaleContext(context: Record<string, any>) {
     if (!activeServeLocale)
@@ -748,7 +778,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
   }
 
-  /** Expose the current request query string + Host header to `<script server>` blocks. */
+  /** Expose the current request query string + Host/cookies/IP to `<script server>` blocks. */
   function injectServeRequestContext(context: Record<string, any>) {
     if (activeServeSearch) {
       context.__stxServeSearch = activeServeSearch
@@ -756,16 +786,20 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
     if (activeServeHost)
       context.host = activeServeHost
+    context.cookies = activeServeCookies
+    if (activeServeIp)
+      context.ip = activeServeIp
   }
 
-  /** Render cache must vary by locale/host — same `.stx` file can serve different `t()`/host-branched output. */
+  /** Render cache must vary by locale/host/cookies — same `.stx` file can serve different `t()`/host/cookie-gated output. */
   function htmlCacheKey(filePath: string): string {
     const loc = i18nConfig ? (activeServeLocale ?? i18nConfig.defaultLocale) : ''
     const search = activeServeSearch || ''
     const host = activeServeHost || ''
-    if (!loc && !search && !host)
+    const cookies = activeServeCookieHeader
+    if (!loc && !search && !host && !cookies)
       return filePath
-    return `${filePath}\0${loc}\0${search}\0${host}`
+    return `${filePath}\0${loc}\0${search}\0${host}\0${cookies}`
   }
 
   const builtInMiddleware: Record<string, MiddlewareHandler> = authConfig === null ? {} : {
@@ -1731,7 +1765,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         // (debug websockets, slow downloads) benefit too. A dev server has
         // no good reason to enforce request timeouts.
         idleTimeout: 0,
-        async fetch(req) {
+        async fetch(req, server) {
           const url = new URL(req.url)
           let path = url.pathname
 
@@ -1806,6 +1840,9 @@ export async function serve(options: ServeOptions): Promise<void> {
             activeServeLocale = i18nLocale
             activeServeSearch = url.search
             activeServeHost = req.headers.get('host') || ''
+            activeServeCookieHeader = req.headers.get('cookie') || ''
+            activeServeCookies = parseCookies(req)
+            activeServeIp = server.requestIP(req)?.address || (req.headers.get('x-forwarded-for') || '').split(',')[0]!.trim()
             try {
 
               // Handle CORS preflight
@@ -2415,6 +2452,9 @@ export async function serve(options: ServeOptions): Promise<void> {
               activeServeLocale = null
               activeServeSearch = ''
               activeServeHost = ''
+              activeServeCookieHeader = ''
+              activeServeCookies = {}
+              activeServeIp = ''
             }
           })() // ─── end IIFE — single exit for translation post-process
           return applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
