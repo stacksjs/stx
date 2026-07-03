@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.75...v0.2.76)
+
+## 🐛 Bug Fixes
+
+- **bun-plugin**: inject request context into dynamic-route <script server> blocks ([d3879f7](https://github.com/stacksjs/stx/commit/d3879f7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.76 ([1ed278c](https://github.com/stacksjs/stx/commit/1ed278c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.74...v0.2.75)
 
 ## 🚀 Features
