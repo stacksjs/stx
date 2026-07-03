@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.76...v0.2.77)
+
+## 🐛 Bug Fixes
+
+- **stx**: stop swallowing valid fallback values on unrelated ReferenceError/process.env in <script server> ([eee9e48](https://github.com/stacksjs/stx/commit/eee9e48)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.77 ([61cf93d](https://github.com/stacksjs/stx/commit/61cf93d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.75...v0.2.76)
 
 ## 🐛 Bug Fixes
