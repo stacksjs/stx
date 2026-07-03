@@ -1744,8 +1744,8 @@ export async function serve(options: ServeOptions): Promise<void> {
           // API server in dev without CORS — the parity gap vs Nuxt's
           // `vite.server.proxy` / `nitro.devProxy`.
           const proxyRules = (stxConfig as any).server?.proxy as
-            | Record<string, string | { target: string, changeOrigin?: boolean, rewrite?: (p: string) => string }>
-            | undefined
+          | Record<string, string | { target: string, changeOrigin?: boolean, rewrite?: (p: string) => string }>
+          | undefined
           if (proxyRules) {
             for (const [prefix, rule] of Object.entries(proxyRules)) {
               if (path !== prefix && !path.startsWith(prefix))
