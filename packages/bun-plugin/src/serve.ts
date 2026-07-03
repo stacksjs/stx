@@ -1504,6 +1504,12 @@ export async function serve(options: ServeOptions): Promise<void> {
     // Fresh head state per request (see static-route handler above for rationale)
     resetHeadDyn()
     injectServeLocaleContext(context)
+    // Dynamic ([param].stx-style) routes need the same query/host/cookies/
+    // IP ambient context as static routes — this was missed when `host`
+    // was first added (only the static-route path called
+    // injectServeRequestContext), so every dynamic route silently never
+    // saw `host`/`cookies`/`ip`/`__stxServeSearch` until this fix.
+    injectServeRequestContext(context)
     for (const scriptBody of dynServerScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
