@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.73...v0.2.74)
+
+## 🚀 Features
+
+- **bun-plugin**: expose request Host header to <script server> blocks ([0e3daef](https://github.com/stacksjs/stx/commit/0e3daef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- config app.head on already-shelled pages + dev-server proxy (#1765) ([9729d11](https://github.com/stacksjs/stx/commit/9729d11)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_ ([#1765](https://github.com/stacksjs/stx/issues/1765), [#1765](https://github.com/stacksjs/stx/issues/1765))
+
+## 🧹 Chores
+
+- release v0.2.74 ([ef741a7](https://github.com/stacksjs/stx/commit/ef741a7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d985c5b](https://github.com/stacksjs/stx/commit/d985c5b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Glenn Michael Torregosa <gtorregosa@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.72...v0.2.73)
 
 ## 🚀 Features
