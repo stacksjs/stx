@@ -67,6 +67,149 @@ export function buildDynamicRouteRegexes(fileRouteBase: string): RegExp[] {
   return patterns
 }
 
+/**
+ * Escape a string for safe interpolation into HTML text/attribute context.
+ * Used so a crafted request path can't inject markup into the 404 page
+ * (reflected-XSS guard).
+ */
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
+ * Are we serving in production? In production the built-in 404 must not
+ * enumerate the app's route list (information disclosure) and must not
+ * inject the HMR client.
+ *
+ * Reuses the standard Stacks/Node signals — `NODE_ENV` / `APP_ENV`. serve.ts
+ * has no pre-existing prod/dev flag threaded through its options, so these
+ * env vars are the canonical signal (the same ones the wider stacks codebase
+ * keys production behaviour off of).
+ */
+export function isProductionServe(): boolean {
+  return process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'production'
+}
+
+/**
+ * Render the built-in fallback 404 page.
+ *
+ * - In development (`isProduction: false`) it lists the discovered routes as
+ *   clickable links — a genuinely useful dev affordance — and reflects the
+ *   requested path (HTML-escaped).
+ * - In production (`isProduction: true`) it renders a clean, neutral, self-
+ *   contained page with NO route list and NO reflected path, so nothing about
+ *   the app's internal structure leaks to anonymous visitors.
+ *
+ * The page is a complete HTML document, styled inline (system font stack,
+ * centered, light + dark via `prefers-color-scheme`, no external assets).
+ * The caller is responsible for HMR injection (dev only) and the 404 status.
+ */
+export function render404Page(opts: {
+  path: string
+  routes?: string[]
+  isProduction: boolean
+}): string {
+  const { path, routes = [], isProduction } = opts
+
+  const baseStyles = `
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: #ffffff;
+        color: #1a202c;
+        line-height: 1.5;
+      }
+      main { max-width: 32rem; width: 100%; text-align: center; }
+      .code { font-size: 3.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+      h1 { font-size: 1.25rem; font-weight: 600; margin: 0.75rem 0 0.5rem; }
+      p { margin: 0.5rem 0; color: #4a5568; }
+      a { color: #4a5568; }
+      .home {
+        display: inline-block;
+        margin-top: 1.5rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: 0.5rem;
+        background: #1a202c;
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+      }
+      .home:hover { opacity: 0.85; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #0f1115; color: #e2e8f0; }
+        p { color: #a0aec0; }
+        a { color: #a0aec0; }
+        .home { background: #e2e8f0; color: #0f1115; }
+      }`
+
+  if (isProduction) {
+    return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>404 - Page Not Found</title>
+    <style>${baseStyles}
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="code">404</p>
+      <h1>Page not found</h1>
+      <p>The page you're looking for doesn't exist or may have moved.</p>
+      <a class="home" href="/">Go to homepage</a>
+    </main>
+  </body>
+</html>`
+  }
+
+  // Development: keep the helpful, browsable route list.
+  const routesList = routes
+    .map(route => `<li><a href="/${escapeHtml(route)}">/${escapeHtml(route)}</a></li>`)
+    .join('\n            ')
+
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>404 - Not Found</title>
+    <style>${baseStyles}
+      main { max-width: 40rem; }
+      .routes { list-style: none; padding: 0; margin: 2rem 0 0; text-align: left; }
+      .routes li { margin: 0.35rem 0; }
+      .routes a { color: #667eea; text-decoration: none; font-size: 1.05rem; }
+      .routes a:hover { text-decoration: underline; }
+      .dev-note { font-size: 0.85rem; margin-top: 1.5rem; opacity: 0.7; }
+      @media (prefers-color-scheme: dark) { .routes a { color: #9aa8ff; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="code">404</p>
+      <h1>Page not found</h1>
+      <p>The page "${escapeHtml(path)}" doesn't exist.</p>
+      <h2 style="font-size:1rem;margin-top:2rem;">Available pages</h2>
+      <ul class="routes">${routesList ? `\n            ${routesList}\n          ` : ''}</ul>
+      <p class="dev-note">This route list is shown in development only.</p>
+    </main>
+  </body>
+</html>`
+}
+
 export interface ServeOptions {
   patterns: string[]
   port?: number
@@ -2393,62 +2536,64 @@ export async function serve(options: ServeOptions): Promise<void> {
                 return new Response(null, { status: 204 })
               }
 
-              // 404 page - discover files to show available routes
-              const files = await discoverFiles()
-              const availableRoutes: string[] = []
+              // 404 handling.
+              const isProd = isProductionServe()
 
-              for (const filePath of files) {
-                // Normalize and create route from file path
-                let normalizedPath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
-
-                // For absolute paths, extract relative portion from patterns
-                for (const pattern of patterns) {
-                  const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
-                  if (normalizedPath.startsWith(`${normalizedPattern}/`)) {
-                    normalizedPath = normalizedPath.slice(normalizedPattern.length + 1)
-                    break
+              // (1) Custom-app override: if the app ships a 404 page at a
+              // conventional location, render THAT (works in both dev and
+              // prod). Reuses the same getRoute() resolution machinery the
+              // normal page pipeline uses, so `.stx` / `.md` / `.html` and
+              // index-file conventions all just work.
+              for (const custom404 of ['/404', '/errors/404']) {
+                try {
+                  const customContent = await getRoute(custom404)
+                  if (customContent) {
+                    return new Response(
+                      isProd ? customContent : injectHmrClient(customContent),
+                      {
+                        status: 404,
+                        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+                      },
+                    )
                   }
                 }
-
-                // Strip extension and 'pages/' prefix for cleaner route display
-                let route = normalizedPath.replace(/\.(stx|md|html)$/, '')
-                if (route.startsWith('pages/')) {
-                  route = route.slice(6) // Remove 'pages/' prefix
+                catch {
+                  // Custom 404 render failed — fall through to the built-in page.
                 }
-
-                availableRoutes.push(`<li><a href="/${route}">/${route}</a></li>`)
               }
 
-              const routesList = availableRoutes.join('\n')
+              // (2) Built-in fallback. In production we do NOT enumerate the
+              // route list (information disclosure) and do NOT inject HMR.
+              let availableRoutes: string[] | undefined
+              if (!isProd) {
+                const files = await discoverFiles()
+                availableRoutes = []
+                for (const filePath of files) {
+                  // Normalize and create route from file path
+                  let normalizedPath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
 
-              return new Response(injectHmrClient(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>404 - Not Found</title>
-            <style>
-              body {
-                font-family: system-ui, sans-serif;
-                max-width: 800px;
-                margin: 4rem auto;
-                padding: 2rem;
-                text-align: center;
+                  // For absolute paths, extract relative portion from patterns
+                  for (const pattern of patterns) {
+                    const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
+                    if (normalizedPath.startsWith(`${normalizedPattern}/`)) {
+                      normalizedPath = normalizedPath.slice(normalizedPattern.length + 1)
+                      break
+                    }
+                  }
+
+                  // Strip extension and 'pages/' prefix for cleaner route display
+                  let route = normalizedPath.replace(/\.(stx|md|html)$/, '')
+                  if (route.startsWith('pages/')) {
+                    route = route.slice(6) // Remove 'pages/' prefix
+                  }
+
+                  availableRoutes.push(route)
+                }
               }
-              h1 { color: #e53e3e; }
-              ul { list-style: none; padding: 0; margin: 2rem 0; }
-              li { margin: 0.5rem 0; }
-              a { color: #667eea; text-decoration: none; font-size: 1.1rem; }
-              a:hover { text-decoration: underline; }
-            </style>
-          </head>
-          <body>
-            <h1>404 - Page Not Found</h1>
-            <p>The page "${path}" doesn't exist.</p>
-            <h2>Available pages:</h2>
-            <ul>${routesList}</ul>
-          </body>
-        </html>
-      `), {
+
+              const notFoundHtml = render404Page({ path, routes: availableRoutes, isProduction: isProd })
+
+              return new Response(isProd ? notFoundHtml : injectHmrClient(notFoundHtml), {
                 status: 404,
                 headers: { 'Content-Type': 'text/html; charset=utf-8' },
               })
