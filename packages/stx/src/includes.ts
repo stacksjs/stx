@@ -69,6 +69,7 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { processConditionals } from './conditionals'
+import { isProduction, isTest } from './env'
 import { processExpressions, usesSignalsInScript } from './expressions'
 import { LRUCache } from './performance-utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
@@ -878,6 +879,20 @@ catch (error: unknown) {
       if (partialContent && partialContent.includes('@stream')) {
         const { processStreamDirectives } = await import('./streaming')
         partialContent = processStreamDirectives(partialContent, context)
+      }
+
+      // #1769: dev-mode tag-balance heads-up on the RAW partial, before SFC
+      // extraction / directive processing auto-closes anything. A dropped
+      // </div> silently re-parents following siblings and blanks the page with
+      // no error at any layer; a coarse per-tag open/close count catches it.
+      // On by default in development; opt-in via `debug` elsewhere; off in prod
+      // + the test runner. Pre-gated so the dynamic import is dev-only.
+      if (partialContent && (options.debug || (!isProduction() && !isTest()))) {
+        try {
+          const { warnUnbalancedTags } = await import('./template-tag-balance')
+          warnUnbalancedTags(partialContent, includeFilePath)
+        }
+        catch {}
       }
 
       // SFC Support: Extract <template>, <script>, and <style> sections

@@ -60,6 +60,8 @@ import { processInlineAssets } from './inline-assets'
 import { addCloakToConditionalDirectives, addCloakToUnresolvedExpressions, processJsonDirective, processMemoDirective, processOnceDirective, processRefAttributes } from './misc-directives'
 import { validateClientScript } from './script-validation'
 import { safeEvaluate } from './safe-evaluator'
+import { isProduction, isTest } from './env'
+import { warnUnbalancedTags } from './template-tag-balance'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 
 // Re-export public API from extracted modules (preserves backwards compatibility)
@@ -297,6 +299,15 @@ export async function processDirectives(
   // across separate processDirectives calls (e.g. between test runs or server requests)
   if (!context.__onceStore) {
     context.__onceStore = new Set<string>()
+  }
+
+  // #1769: dev-mode tag-balance heads-up for top-level views/layouts, on the
+  // RAW template before any processing auto-closes tags. @include'd partials
+  // are checked separately in the include pipeline. On by default in
+  // development; opt-in via `debug` elsewhere; off in prod + the test runner.
+  // Deduped + best-effort.
+  if ((options.debug || (!isProduction() && !isTest())) && filePath && filePath.endsWith('.stx')) {
+    warnUnbalancedTags(template, filePath)
   }
 
   try {
