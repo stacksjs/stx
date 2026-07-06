@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.79...v0.2.80)
+
+## 🚀 Features
+
+- **dx**: dev-mode warning for unbalanced template tags (#1769) (#1770) ([1ed4e1b](https://github.com/stacksjs/stx/commit/1ed4e1b)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_ ([#1769](https://github.com/stacksjs/stx/issues/1769), [#1770](https://github.com/stacksjs/stx/issues/1770), [#1769](https://github.com/stacksjs/stx/issues/1769), [#1770](https://github.com/stacksjs/stx/issues/1770))
+
+## 🐛 Bug Fixes
+
+- **variable-extractor**: capture top-level consts that open a brace mid-line ([409a2e0](https://github.com/stacksjs/stx/commit/409a2e0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: simplify x-html null-guard to '?? ""' (#1767) ([da91c34](https://github.com/stacksjs/stx/commit/da91c34)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1767](https://github.com/stacksjs/stx/issues/1767), [#1767](https://github.com/stacksjs/stx/issues/1767))
+- **client-script**: bind template names shadowed by inlined imports (#1767) (#1768) ([bcd6f2c](https://github.com/stacksjs/stx/commit/bcd6f2c)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_ ([#1767](https://github.com/stacksjs/stx/issues/1767), [#1768](https://github.com/stacksjs/stx/issues/1768), [#1767](https://github.com/stacksjs/stx/issues/1767), [#1768](https://github.com/stacksjs/stx/issues/1768))
+
+## 🧹 Chores
+
+- release v0.2.80 ([f42009f](https://github.com/stacksjs/stx/commit/f42009f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Glenn Michael Torregosa <gtorregosa@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.78...v0.2.79)
 
 ## 🐛 Bug Fixes
