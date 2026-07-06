@@ -200,6 +200,37 @@ describe('Variable extraction edge cases', () => {
       expect(context).not.toHaveProperty('inner')
     })
 
+    it('should extract a top-level const whose initializer opens a brace that closes on a later line', async () => {
+      // Regression: the declaration line ends at brace depth > 0 (the arrow
+      // block / object literal is still open), which used to make the
+      // depth-tracking skip the whole declaration — the variable silently
+      // never reached the render context and the page blanked with no error.
+      const code = `
+        const items = [{ n: 'a', r: 1 }, { n: 'b', r: 3 }]
+        const sites = items
+          .map((s) => {
+            const worst = s.r
+            return { name: s.n, rank: worst }
+          })
+          .sort((a, b) => b.rank - a.rank)
+        const count = sites.length
+        const obj = {
+          x: 1,
+          y: 2,
+        }
+      `
+      const context: Record<string, unknown> = {}
+      await extractVariables(code, context, '<test>')
+      expect(context).toHaveProperty('sites')
+      expect(Array.isArray(context.sites)).toBe(true)
+      expect((context.sites as unknown[]).length).toBe(2)
+      expect(context.count).toBe(2)
+      expect(context).toHaveProperty('obj')
+      expect((context.obj as { x: number }).x).toBe(1)
+      // still must not leak names declared inside the arrow block body
+      expect(context).not.toHaveProperty('worst')
+    })
+
     it('should not extract variables from class methods', async () => {
       // Note: Current implementation doesn't extract class declarations
       const code = `

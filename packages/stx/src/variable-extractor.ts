@@ -51,6 +51,18 @@ function extractDeclaredVariableNames(script: string): string[] {
   const lines = script.split('\n')
 
   for (const line of lines) {
+    // A declaration is top-level if it STARTS at brace depth 0 — capture that
+    // before the line's own braces move `depth`. Gating on the post-line depth
+    // (as this did originally) silently dropped any top-level declaration whose
+    // initializer opens a brace that only closes on a later line, e.g.
+    //   const xs = items.map((x) => {  …  })
+    //   const obj = {
+    //     …
+    //   }
+    // leaving the variable absent from the render context — the page then
+    // blanks with no error because the template references an undefined name.
+    const depthAtLineStart = depth
+
     // Track brace depth — count braces outside of strings/comments
     let inString: string | null = null
     let escaped = false
@@ -69,8 +81,8 @@ function extractDeclaredVariableNames(script: string): string[] {
       else if (ch === '}') depth--
     }
 
-    // Only match declarations at top level (depth 0)
-    if (depth === 0) {
+    // Only match declarations that start at top level (depth 0)
+    if (depthAtLineStart === 0) {
       const match = line.match(/(?:const|let|var)\s+(\w+)\s*=/)
       if (match) {
         names.push(match[1])
