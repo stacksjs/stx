@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.78...v0.2.79)
+
+## 🐛 Bug Fixes
+
+- **conditionals**: guard @if processing loop against non-termination ([71dbd79](https://github.com/stacksjs/stx/commit/71dbd79)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.79 ([e426e43](https://github.com/stacksjs/stx/commit/e426e43)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.76...v0.2.77)
 
 ## 🐛 Bug Fixes
