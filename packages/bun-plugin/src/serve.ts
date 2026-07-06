@@ -1371,6 +1371,16 @@ export async function serve(options: ServeOptions): Promise<void> {
     // causes unexpected behavior.
     const config = {
       ...defaultConfig,
+      // The project root the renderer resolves component conventions against
+      // (`<root>/resources/views/components`, `<root>/src/components`, …). The
+      // serve is always launched from the project root (every other path here
+      // is likewise `process.cwd()`-relative), so without this `options.root`
+      // is undefined in renderComponentWithSlot → `configuredRoot` is unset →
+      // the convention fallbacks are skipped and `resolveBase` degrades to the
+      // parent file's dir. For a layout-wrapped page that dir is the layouts
+      // dir, so app components under `resources/views/components` were never
+      // searched and `<MyComponent />` leaked into the output as a raw tag.
+      root: process.cwd(),
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
       ...(partialsDir && { partialsDir }),
@@ -1670,6 +1680,11 @@ export async function serve(options: ServeOptions): Promise<void> {
 
     const config = {
       ...defaultConfig,
+      // See the static-route config above: without `root` the component
+      // convention fallbacks are skipped and `<MyComponent />` leaks as a raw
+      // tag. Dynamic ([param].stx) routes render app components too, so they
+      // need the same project root.
+      root: process.cwd(),
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
       ...(partialsDir && { partialsDir }),
