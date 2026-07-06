@@ -90,9 +90,19 @@ function escapeHtml(input: string): string {
  * has no pre-existing prod/dev flag threaded through its options, so these
  * env vars are the canonical signal (the same ones the wider stacks codebase
  * keys production behaviour off of).
+ *
+ * Safe by default: the browsable route list is a development-only affordance,
+ * so we only treat a serve as development when it is EXPLICITLY marked so
+ * (`development`/`dev`/`local`/`test`). A served app with no env configured —
+ * the easy-to-hit misconfiguration — is therefore treated as production and
+ * does NOT leak its route list. Local `buddy dev` already runs with
+ * `NODE_ENV=development`, so it keeps the helpful list.
  */
 export function isProductionServe(): boolean {
-  return process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'production'
+  const node = (process.env.NODE_ENV || '').toLowerCase()
+  const app = (process.env.APP_ENV || '').toLowerCase()
+  const devEnvs = new Set(['development', 'dev', 'local', 'test', 'testing'])
+  return !(devEnvs.has(node) || devEnvs.has(app))
 }
 
 /**
