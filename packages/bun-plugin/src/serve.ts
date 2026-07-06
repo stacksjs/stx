@@ -248,6 +248,17 @@ export interface ServeOptions {
    */
   autoIncrementPort?: boolean | number
   /**
+   * Bind the listening socket with `SO_REUSEPORT` (Linux), letting a new
+   * server instance share the port with one that's already serving — the
+   * overlap zero-downtime deploy cutovers rely on (start new release,
+   * health-gate it, stop old). Passed straight through to `Bun.serve`.
+   * Pair with `autoIncrementPort: false` in production so a bind that
+   * can't be shared fails loudly instead of drifting to another port.
+   *
+   * Default: `false`.
+   */
+  reusePort?: boolean
+  /**
    * Pre-resolved `@stacksjs/stx` module. When set, `serve()` uses this
    * instead of the bare-specifier `import('@stacksjs/stx')` it would
    * normally do. Callers should pass this when they ship a vendored stx
@@ -1932,6 +1943,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     try {
       _server = bunServe({
         port: actualPort,
+        // SO_REUSEPORT opt-in for zero-downtime deploy overlaps — see the
+        // ServeOptions doc.
+        reusePort: options.reusePort ?? false,
         // Disable Bun's per-request idle timeout. The HMR SSE stream is the
         // primary case — it sits open for the lifetime of the dev session
         // and the default 10s idle kills it with
