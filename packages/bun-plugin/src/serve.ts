@@ -2679,6 +2679,22 @@ export async function serve(options: ServeOptions): Promise<void> {
     console.warn(`\x1b[33m[stx]\x1b[0m port ${port} in use — using \x1b[1m${actualPort}\x1b[0m instead`)
   }
 
+  // Graceful drain, auto-enabled with reusePort (i.e. exactly the
+  // zero-downtime deploy setup): when the supervisor SIGTERMs the OLD
+  // release's instance after the new one is healthy, stop accepting new
+  // connections but let in-flight requests finish — without this, a
+  // request being served at the kill instant gets a connection reset.
+  // Bounded by SHUTDOWN_GRACE_MS (default 15s) so a stuck keep-alive
+  // can't outlive the supervisor's own kill timeout mid-request. Scoped
+  // to reusePort so a plain dev server never hooks process signals.
+  if (options.reusePort) {
+    const graceMs = Number(process.env.SHUTDOWN_GRACE_MS) || 15_000
+    process.once('SIGTERM', () => {
+      setTimeout(() => process.exit(0), graceMs).unref()
+      Promise.resolve(_server?.stop()).then(() => process.exit(0))
+    })
+  }
+
   // Print Bun-style startup banner
   if (!options.quiet) {
     const elapsed = (performance.now() - startTime).toFixed(0)
