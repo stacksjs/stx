@@ -345,10 +345,27 @@ export function processConditionals(template: string, context: Record<string, an
     return true
   }
 
-  // Process @if statements until no more matches are found
-  // This handles nested conditionals
-  while (processIfStatements()) {
-    // Continue processing until no more @if tags are found
+  // Process @if statements until no more matches are found. This handles
+  // nested conditionals: each pass replaces the outer @if…@endif with its
+  // taken branch, exposing any @if the branch contained for the next pass,
+  // so the block count shrinks to zero as nesting unwinds.
+  //
+  // Non-progress guard: processIfStatements() returns true whenever it finds
+  // ANY block, and only false at zero blocks — so if a pass finds a block but
+  // substitution leaves `output` byte-identical (a pathological template where
+  // findIfBlocks keeps matching an @if that a branch body reintroduces
+  // verbatim, or that balanced parsing can't consume), the naive loop spins
+  // forever and wedges the whole single-threaded render. If a full pass makes
+  // no change, the next pass is guaranteed to make no change either, so we
+  // stop and leave the unprocessed @if in the output as a visible signal —
+  // the same fail-loud fallback the per-block error handling above uses.
+  while (true) {
+    const before = output
+    const found = processIfStatements()
+    if (!found)
+      break
+    if (output === before)
+      break
   }
 
   return output
