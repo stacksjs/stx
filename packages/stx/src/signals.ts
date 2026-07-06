@@ -1859,7 +1859,10 @@ else if (name === '@text' || name === ':text' || name === 'x-text') {
       }
 else if (name === '@html' || name === ':html' || name === 'x-html') {
         effect(() => {
-          el.innerHTML = evalAttrExpr(value);
+          // Coerce null/undefined to '' so a missing/unresolved binding renders
+          // nothing rather than the literal string "undefined" (#1767).
+          var __html = evalAttrExpr(value);
+          el.innerHTML = (__html == null) ? '' : __html;
         });
         el.removeAttribute(name);
       }

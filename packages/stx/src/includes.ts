@@ -298,6 +298,11 @@ function transformSignalScript(scriptContent: string, scopeId: string): string {
   if (!window.stx._scopes) window.stx._scopes = {};
   var __scopeRegistration = { __destroyCallbacks: __destroyHooks };
 ${scopeAssign}
+  // #1767: when the bundler renamed a component const that collided with an
+  // inlined import (foo -> foo2), rebind the ORIGINAL template name to the
+  // renamed declaration so it resolves to the component's value, not the
+  // shadowing import. __stxScopeRenames is emitted by bundleClientScript.
+  try { if (typeof __stxScopeRenames !== 'undefined' && __stxScopeRenames) { for (var __stxRK in __stxScopeRenames) __scopeRegistration[__stxRK] = __stxScopeRenames[__stxRK]; } } catch (e) { /* no renames */ }
   window.stx._scopes['${scopeId}'] = __scopeRegistration;
 `
   // Set __STX_CURRENT_ELEMENT__ to this scope's root element while the body runs,
