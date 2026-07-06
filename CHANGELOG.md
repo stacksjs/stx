@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.80...v0.2.81)
+
+## 🚀 Features
+
+- **serve**: reusePort option for zero-downtime deploy overlaps ([276f063](https://github.com/stacksjs/stx/commit/276f063)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **serve**: pass project root so app components resolve ([939b0e4](https://github.com/stacksjs/stx/commit/939b0e4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **serve**: 404 route list is opt-in to development, safe by default ([55d1edf](https://github.com/stacksjs/stx/commit/55d1edf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.81 ([2c7c42c](https://github.com/stacksjs/stx/commit/2c7c42c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.79...v0.2.80)
 
 ## 🚀 Features
