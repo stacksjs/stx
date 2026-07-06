@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.81...v0.2.82)
+
+## 🚀 Features
+
+- **serve**: graceful SIGTERM drain when reusePort is enabled ([f001775](https://github.com/stacksjs/stx/commit/f001775)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.82 ([af89313](https://github.com/stacksjs/stx/commit/af89313)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.80...v0.2.81)
 
 ## 🚀 Features
