@@ -507,8 +507,15 @@ function expressionUsesOnlyContextVars(expr: string, context: Record<string, any
     if (!inTpl && ch === '`') { inTpl = true; tplDepth = 0; continue }
     if (inTpl) {
       if (ch === '`' && tplDepth === 0) { inTpl = false; continue }
-      if (ch === '$' && exprWithoutStrings[ti + 1] === '{') { tplDepth++; ti++; continue }
+      // Separator so adjacent interpolations `${a}${b}` (or ones split only by
+      // literal text, which we drop) don't fuse into one bogus identifier `ab`.
+      if (ch === '$' && exprWithoutStrings[ti + 1] === '{') { tplDepth++; ti++; tplResult += ' '; continue }
       if (ch === '}' && tplDepth > 0) { tplDepth--; continue }
+      // Inside a `${ ... }` interpolation we're looking at an EXPRESSION, not string
+      // text — keep it so its identifiers (e.g. a client-only signal `rating` in
+      // `` `${rating}/5` ``) are still detected. Only the literal text between
+      // interpolations (tplDepth === 0) is dropped.
+      if (tplDepth > 0) { tplResult += ch; continue }
       continue
     }
     tplResult += ch
@@ -775,11 +782,15 @@ export function processExpressions(template: string, context: Record<string, any
     try {
       const value = evaluateExpression(expr, context)
 
-      // For signal-based templates: if evaluation returned undefined and the expression
-      // references variables NOT in the server-side context, preserve for client-side processing.
-      // evaluateExpression() internally catches ReferenceError and returns undefined,
-      // so we must check here rather than relying on the catch block below.
-      if (value === undefined && hasSignals && !expressionUsesOnlyContextVars(trimmedExpr, context)) {
+      // For signal-based templates: if the expression references variables NOT in the
+      // server-side context (i.e. client-only signals), preserve it for client-side
+      // processing REGARDLESS of the server-evaluated value. Gating on `value === undefined`
+      // only preserved BARE `{{ signal }}` (which server-evaluates to undefined); a COMPOUND
+      // expression like `{{ liked ? … : likes + ' people' }}` server-evaluates to a *defined*
+      // string ("undefined people…") and so was wrongly baked into static HTML instead of
+      // handed to the client — freezing it at the undefined-substituted text. Mirror the
+      // catch-block logic below, which already preserves on the same condition.
+      if (hasSignals && !expressionUsesOnlyContextVars(trimmedExpr, context)) {
         return match // Preserve {{ expr }} for runtime evaluation
       }
 
