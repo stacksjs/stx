@@ -702,6 +702,24 @@ function substituteExpressionsInExpr(expr: string, context: Record<string, any>)
     try {
       const value = evaluateExpression(inner, context, true)
       if (value === undefined) return match
+      // A string that is itself a JSON object/array literal (the server
+      // passed JSON.stringify output, e.g. `meta: {{ metaJson }}`) must
+      // splice as the literal it encodes — JSON.stringify-ing it again
+      // would double-encode and leave the scope property a plain string.
+      // This also keeps the runtime scope consistent with how the same
+      // `{{ }}` renders as raw text inside the element's attribute.
+      if (typeof value === 'string') {
+        const trimmed = value.trim()
+        if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+          try {
+            JSON.parse(trimmed)
+            return trimmed
+          }
+          catch {
+            // Not valid JSON after all — fall through to the quoted splice.
+          }
+        }
+      }
       return JSON.stringify(value)
     }
     catch {
