@@ -2206,10 +2206,12 @@ else {
         });
       }
 else if (Array.isArray(value)) {
-        el.className = originalClasses + ' ' + value.filter(Boolean).join(' ');
+        var _clsArr = originalClasses + ' ' + value.filter(Boolean).join(' ');
+        if (typeof el.className === 'string') el.className = _clsArr; else el.setAttribute('class', _clsArr);
       }
 else {
-        el.className = originalClasses + (value ? ' ' + value : '');
+        var _clsStr = originalClasses + (value ? ' ' + value : '');
+        if (typeof el.className === 'string') el.className = _clsStr; else el.setAttribute('class', _clsStr);
       }
     });
   }
