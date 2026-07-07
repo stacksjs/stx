@@ -1803,6 +1803,13 @@ catch (e2) {
 
     // Known directive names to exclude from generic :attr binding
     var DIRECTIVE_NAMES = {class:1, style:1, text:1, html:1, show:1, model:1, 'if':1, 'for':1, ref:1};
+    // SVG attributes are case-sensitive, but the HTML parser lowercases
+    // prefixed attribute names — ':viewBox' arrives as ':viewbox' because
+    // the spec's "adjust SVG attributes" step only covers unprefixed names.
+    // Without restoring the canonical casing, setAttribute('viewbox') creates
+    // a dead duplicate attribute and the real viewBox never updates.
+    var SVG_ATTR_CASE = {attributename:'attributeName', attributetype:'attributeType', basefrequency:'baseFrequency', baseprofile:'baseProfile', calcmode:'calcMode', clippathunits:'clipPathUnits', diffuseconstant:'diffuseConstant', edgemode:'edgeMode', filterunits:'filterUnits', glyphref:'glyphRef', gradienttransform:'gradientTransform', gradientunits:'gradientUnits', kernelmatrix:'kernelMatrix', kernelunitlength:'kernelUnitLength', keypoints:'keyPoints', keysplines:'keySplines', keytimes:'keyTimes', lengthadjust:'lengthAdjust', limitingconeangle:'limitingConeAngle', markerheight:'markerHeight', markerunits:'markerUnits', markerwidth:'markerWidth', maskcontentunits:'maskContentUnits', maskunits:'maskUnits', numoctaves:'numOctaves', pathlength:'pathLength', patterncontentunits:'patternContentUnits', patterntransform:'patternTransform', patternunits:'patternUnits', pointsatx:'pointsAtX', pointsaty:'pointsAtY', pointsatz:'pointsAtZ', preservealpha:'preserveAlpha', preserveaspectratio:'preserveAspectRatio', primitiveunits:'primitiveUnits', refx:'refX', refy:'refY', repeatcount:'repeatCount', repeatdur:'repeatDur', requiredextensions:'requiredExtensions', requiredfeatures:'requiredFeatures', specularconstant:'specularConstant', specularexponent:'specularExponent', spreadmethod:'spreadMethod', startoffset:'startOffset', stddeviation:'stdDeviation', stitchtiles:'stitchTiles', surfacescale:'surfaceScale', systemlanguage:'systemLanguage', tablevalues:'tableValues', targetx:'targetX', targety:'targetY', textlength:'textLength', viewbox:'viewBox', viewtarget:'viewTarget', xchannelselector:'xChannelSelector', ychannelselector:'yChannelSelector', zoomandpan:'zoomAndPan'};
+    var SVG_NS = 'http://www.w3.org/2000/svg';
     var EVENT_RE = /^(click|dblclick|mousedown|mouseup|mousemove|mouseenter|mouseleave|keydown|keyup|keypress|input|change|submit|focus|blur|scroll|resize|touchstart|touchend|touchmove|contextmenu|wheel|pointerdown|pointerup|pointermove)/;
     var KEY_MAP = {enter:'Enter', tab:'Tab', escape:'Escape', space:' ', up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight', 'delete':'Delete', backspace:'Backspace'};
 
@@ -1827,7 +1834,8 @@ catch (e2) {
       if (name.startsWith('@bind:') || name.startsWith('x-bind:')
           || (name.startsWith(':') && !name.startsWith('::') && !DIRECTIVE_NAMES[name.slice(1).split('.')[0]] && !EVENT_RE.test(name.slice(1)))
           || (name.startsWith('x-') && !X_HANDLED[name.split('.')[0]] && !X_HANDLED[name])) {
-        const attrName = name.startsWith('@bind:') ? name.slice(6) : name.startsWith('x-bind:') ? name.slice(7) : name.startsWith('x-') ? name.slice(2) : name.slice(1);
+        let attrName = name.startsWith('@bind:') ? name.slice(6) : name.startsWith('x-bind:') ? name.slice(7) : name.startsWith('x-') ? name.slice(2) : name.slice(1);
+        if (el.namespaceURI === SVG_NS && SVG_ATTR_CASE[attrName]) attrName = SVG_ATTR_CASE[attrName];
         effect(() => {
           const v = evalAttrExpr(value);
           if (v === false || v === null || v === undefined) {
