@@ -1630,7 +1630,7 @@ catch (e) {
     if (el.nodeType === Node.TEXT_NODE) {
       const text = el.textContent;
       if (text && text.includes('{{')) {
-        const parts = text.split(/(\\{\\{[^}]+\\}\\})/g);
+        const parts = text.split(/(\\{\\{[\\s\\S]+?\\}\\})/g);
         if (parts.length > 1) {
           const fragment = document.createDocumentFragment();
           const parentEl = el.parentNode;
@@ -1639,7 +1639,7 @@ catch (e) {
           // through nested @if/@for processing where componentScope may be restored
           const capturedScope = { ...scope, ...(findElementScope(parentEl) || {}), ...globalHelpers };
           parts.forEach(part => {
-            const match = part.match(/^\\{\\{\\s*(.+?)\\s*\\}\\}$/);
+            const match = part.match(/^\\{\\{\\s*([\\s\\S]+?)\\s*\\}\\}$/);
             if (match) {
               const expr = match[1];
               // Skip placeholder expressions like __TITLE__ (build-time placeholders)
