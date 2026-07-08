@@ -1214,9 +1214,19 @@ if(window.stx)window.stx._latestSetup=${setupFnName};
     output = output.replace(/<body([^>]*)>/, `<body$1 data-stx="${setupFnName}">`)
   }
   else {
+    // Mark the first *non-skip* top-level element so the client runtime's
+    // startup walk reaches the real content on a bare page (no <body>). The
+    // regex must be GLOBAL: with a non-global regex `.replace()` inspects only
+    // the first tag and stops, so a page that opens with a skip-tag (a leading
+    // <style> or <script>, e.g. `<script client>…</script><style>…</style>
+    // <div><form @submit>…`) never gets a marker and its directives are never
+    // hydrated. The `marked` guard keeps us to just the first eligible element.
     const skipTags = ['script', 'style', 'html', 'head', 'meta', 'link', 'title', '!doctype']
-    output = output.replace(/<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/i, (match, tag, attrs) => {
-      if (skipTags.includes(tag.toLowerCase())) return match
+    let marked = false
+    output = output.replace(/<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/gi, (match, tag, attrs) => {
+      if (marked || skipTags.includes(tag.toLowerCase()))
+        return match
+      marked = true
       return `<${tag}${attrs} data-stx="${setupFnName}">`
     })
   }

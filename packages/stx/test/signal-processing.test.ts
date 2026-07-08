@@ -538,4 +538,14 @@ describe('processScriptSetup — multi-script merge', () => {
     // Body tagged with data-stx="__stx_setup_..."
     expect(result.output).toMatch(/<body[^>]*\sdata-stx="__stx_setup_/)
   })
+
+  it('marks the first non-skip element on a bare page with a leading <style> (Bug A)', async () => {
+    // A bare page (no <body>) whose first tag is a skip-tag (<style>/<script>)
+    // must still get the data-stx hydration marker on the real content element,
+    // or its @submit/@input/:value directives never bind at runtime.
+    const template = `<script client>const loading = state(false)</script>\n<style>.wrap{padding:2rem}</style>\n<div class="wrap"><form @submit="handleSubmit"></form></div>`
+    const result = await processScriptSetup(template)
+    expect(result.output).toMatch(/<div class="wrap" data-stx="__stx_setup_/)
+    expect(result.output).not.toMatch(/<style[^>]*data-stx=/)
+  })
 })
