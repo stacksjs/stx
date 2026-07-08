@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.83...v0.2.84)
+
+## 🐛 Bug Fixes
+
+- **hydration**: keep <body>/<head> tokens out of the signals runtime string ([9d0b7df](https://github.com/stacksjs/stx/commit/9d0b7df)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.84 ([1f0f3fb](https://github.com/stacksjs/stx/commit/1f0f3fb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.82...v0.2.83)
 
 ## 🐛 Bug Fixes
