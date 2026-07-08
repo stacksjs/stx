@@ -4543,10 +4543,10 @@ else {
         var root = scriptEl ? scriptEl.nextElementSibling : null;
         if (!root && scriptEl) root = scriptEl.previousElementSibling || scriptEl.parentElement;
 
-        // SPA fallback: during router navigation, script is appended to <body>
+        // SPA fallback: during router navigation, script is appended to body>
         // (not inside the content container), so nextElementSibling won't find the page content.
         // Only use fallback when we genuinely couldn't find a suitable root element.
-        // Do NOT fallback just because the script is in <body> — layout scripts in <body>
+        // Do NOT fallback just because the script is in body> — layout scripts in body>
         // with valid siblings (e.g. sidebar <aside>) should use those siblings as root.
         var needsFallback = !root || root === document.body
           || (root && root.tagName === 'SCRIPT');
@@ -4865,7 +4865,7 @@ else {
       mountCallbacks.forEach(fn => fn());
     });
 
-    // Multi-root fragment fix: a no-<body> setup page tags only the FIRST
+    // Multi-root fragment fix: a no-body> setup page tags only the FIRST
     // top-level element with data-stx (signal-processing.ts marks one element),
     // so sibling root elements were orphaned — their :if / :for / {{ }} / x-text
     // never hydrated, which read as "{{ }} doesn't work under :if/:for". The
@@ -4962,7 +4962,7 @@ else {
       el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
     });
 
-    // Process <head> elements (title, meta) that may contain {{ }} expressions
+    // Process head> elements (title, meta) that may contain {{ }} expressions
     // Use componentScope which now contains variables from processed components
     const headElements = document.querySelectorAll('head title, head meta[content]');
     headElements.forEach(el => {
@@ -5158,7 +5158,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
 
     // Apply new page's SFC setup function. During SPA navigation, re-executed page
     // scripts set window.stx._latestSetup to the new setup function. This takes priority
-    // over the stale data-stx attribute on <body> (which has the PREVIOUS page's function name).
+    // over the stale data-stx attribute on body> (which has the PREVIOUS page's function name).
     var usedLatestSetup = false;
     if (window.stx._latestSetup && typeof window.stx._latestSetup === 'function') {
       try {
@@ -5242,7 +5242,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
 
     // Process the container content — bind {{ }}, :attr, @event directives.
     // Run synchronously (not in setTimeout) so componentScope is captured correctly.
-    // The DOMContentLoaded path processes <body> synchronously — the SPA path must match.
+    // The DOMContentLoaded path processes body> synchronously — the SPA path must match.
     console.log('[stx:load] container:', container.tagName, '__stx_scope:', !!container.__stx_scope, 'scope keys:', Object.keys(componentScope).slice(0, 10));
     if (!container.__stx_scope) {
       // Dispose previous effects on the container (from prior navigation)
