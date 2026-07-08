@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.82...v0.2.83)
+
+## 🐛 Bug Fixes
+
+- **hydration**: mark first non-skip element on bare pages (no <body>) ([a97fe2c](https://github.com/stacksjs/stx/commit/a97fe2c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **reactive**: splice JSON string payloads in x-data as literals, not double-encoded strings ([2c239c8](https://github.com/stacksjs/stx/commit/2c239c8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: restore SVG attribute casing in generic :attr bindings ([1816062](https://github.com/stacksjs/stx/commit/1816062)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: x-class on SVG elements — className is SVGAnimatedString ([5df84be](https://github.com/stacksjs/stx/commit/5df84be)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.83 ([b095966](https://github.com/stacksjs/stx/commit/b095966)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.81...v0.2.82)
 
 ## 🚀 Features
