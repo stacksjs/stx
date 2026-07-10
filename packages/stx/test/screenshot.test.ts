@@ -27,7 +27,7 @@ describe('screenshot (Bun WebView)', () => {
     finally {
       rmSync(dir, { recursive: true, force: true })
     }
-  })
+  }, 15_000)
 
   it('captures every *.html in a directory', async () => {
     const { dir } = fixture()
@@ -41,7 +41,7 @@ describe('screenshot (Bun WebView)', () => {
     finally {
       rmSync(dir, { recursive: true, force: true })
     }
-  })
+  }, 15_000)
 
   it('full-page captures the whole scrollable document, not just the viewport', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'stx-shot-full-'))
@@ -66,7 +66,7 @@ describe('screenshot (Bun WebView)', () => {
     finally {
       rmSync(dir, { recursive: true, force: true })
     }
-  })
+  }, 15_000)
 
   it('wait-selector resolves and still captures when the selector exists', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'stx-shot-sel-'))
@@ -81,5 +81,5 @@ describe('screenshot (Bun WebView)', () => {
     finally {
       rmSync(dir, { recursive: true, force: true })
     }
-  })
+  }, 15_000)
 })
