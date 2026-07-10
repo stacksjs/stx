@@ -2056,16 +2056,19 @@ export async function serve(options: ServeOptions): Promise<void> {
                     // and gives the readyState a definite "open" before any change.
                     c.enqueue(hmrEncoder.encode('data: {"type":"connected"}\n\n'))
                     // Keepalive ping. Without traffic, the stream idles and gets
-                    // killed by Bun.serve's `idleTimeout` (default 10s) — the browser
-                    // sees `ERR_INCOMPLETE_CHUNKED_ENCODING` and falls into a
-                    // reconnect loop that mostly hides the HMR being broken. A
-                    // 15s comment line (the leading `:` is the SSE comment syntax,
-                    // ignored by the EventSource API) is well under any sane idle
-                    // timeout (Bun's, reverse proxy's, browser's) and costs nothing.
+                    // killed by Bun.serve's `idleTimeout` (default 10s) or a reverse
+                    // proxy's read timeout — the browser then sees
+                    // `ERR_INCOMPLETE_CHUNKED_ENCODING` and falls into a reconnect
+                    // loop that mostly hides the HMR being broken. The ping MUST fire
+                    // faster than the shortest such timeout: 15s was longer than Bun's
+                    // 10s default, so the connection died before the first ping ever
+                    // arrived. 5s comfortably beats Bun's 10s and typical proxy (rpx,
+                    // nginx) read timeouts. The leading `:` is SSE comment syntax
+                    // (ignored by the EventSource API) and costs nothing.
                     keepalive = setInterval(() => {
                       try { c.enqueue(hmrEncoder.encode(': keepalive\n\n')) }
                       catch { /* stream closed — cancel handler clears the timer */ }
-                    }, 15_000)
+                    }, 5_000)
                   },
                   cancel() {
                     if (keepalive) clearInterval(keepalive)
