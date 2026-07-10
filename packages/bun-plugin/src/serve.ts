@@ -45,6 +45,40 @@ const defaultStxModule = import('@stacksjs/stx')
  *   - both of the above again with a leading `pages/` stripped, for
  *     projects that nest routable views under `pages/`
  */
+/**
+ * Snapshot of the in-flight request, threaded from the fetch handler down to
+ * the `<script server>` render (stacksjs/stacks#1967).
+ *
+ * The module-level `activeServe*` singletons are NOT safe to read at render
+ * time: a render can suspend at an `await` (onRequest hooks, DB queries in
+ * server scripts) while a concurrent request — the HMR EventSource opens on
+ * every page load — runs its own handler and resets the singletons in its
+ * `finally`. Threading an immutable per-request snapshot removes that race;
+ * the singletons remain only as a fallback for legacy call sites.
+ */
+export interface ServeRequestContext {
+  /** Full request URL (`req.url`). */
+  url: string
+  /** Normalized request path (no query string). */
+  path: string
+  /** Query string including the leading `?`, or `''`. */
+  search: string
+  /** `Host` header, or `''`. */
+  host: string
+  /** Raw `Cookie` header, or `''`. */
+  cookieHeader: string
+  /** Parsed cookies — always an object. */
+  cookies: Record<string, string>
+  /** Best-effort client IP, or `''`. */
+  ip: string
+  /** Active locale for the SSR pass, when i18n is enabled. */
+  locale: string | null
+  /** Dynamic route params (`[id].stx` → `{ id }`) — set by the dynamic-route renderer. */
+  params: Record<string, string>
+  /** Extra keys merged from a non-Response `onRequest` return (app-owned). */
+  [key: string]: unknown
+}
+
 export function buildDynamicRouteRegexes(fileRouteBase: string): RegExp[] {
   const toPattern = (p: string): string => p
     .replace(/\[([^\]]+)\]/g, '([^/]+)') // [param] → capture group
@@ -317,14 +351,24 @@ export interface ServeOptions {
    *     return await proxyToApi(req)
    *   }
    *
-   * The runtime awaits the return and only short-circuits on a truthy value,
+   * The runtime awaits the return and only short-circuits on a `Response`,
    * so both sync and async null/undefined behave identically.
+   *
+   * Returning a plain object instead merges it into the per-request context
+   * that `<script server>` blocks see as `__stxServeContext` (and that is
+   * mirrored on `globalThis.__stxServeContext` during the render). This is
+   * the race-free channel for frameworks that authenticate/localize in
+   * `onRequest` and need that state visible to server scripts — plain
+   * globals set inside the hook can be clobbered by concurrent requests,
+   * and AsyncLocalStorage `enterWith()` does not survive the hook's await
+   * boundary (stacksjs/stacks#1967).
    */
   onRequest?: (req: Request) =>
   | Response
+  | Record<string, unknown>
   | null
   | undefined
-  | Promise<Response | null | undefined>
+  | Promise<Response | Record<string, unknown> | null | undefined>
 
   /**
    * **Page middleware.** Modelled on Laravel's named-route middleware.
@@ -942,17 +986,50 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
   }
 
-  /** Expose the current request query string + Host/cookies/IP to `<script server>` blocks. */
-  function injectServeRequestContext(context: Record<string, any>) {
-    if (activeServeSearch) {
-      context.__stxServeSearch = activeServeSearch
-      ;(globalThis as { __stxServeSearch?: string }).__stxServeSearch = activeServeSearch
+  /**
+   * Expose the current request (query string, Host, cookies, IP, url, locale,
+   * route params) to `<script server>` blocks. Prefers the threaded per-request
+   * snapshot over the module singletons — the singletons can be clobbered by a
+   * concurrent request while this render is suspended at an await
+   * (stacksjs/stacks#1967); the snapshot cannot.
+   */
+  function injectServeRequestContext(context: Record<string, any>, reqCtx?: ServeRequestContext) {
+    const search = reqCtx ? reqCtx.search : activeServeSearch
+    const host = reqCtx ? reqCtx.host : activeServeHost
+    const cookies = reqCtx ? reqCtx.cookies : activeServeCookies
+    const ip = reqCtx ? reqCtx.ip : activeServeIp
+
+    // Unconditional: a query-less request must OVERWRITE the previous
+    // request's value on the shared global, or stale search strings leak
+    // across requests (the old `if (activeServeSearch)` guard did exactly
+    // that — stacksjs/stacks#1967).
+    context.__stxServeSearch = search
+    ;(globalThis as { __stxServeSearch?: string }).__stxServeSearch = search
+    if (host)
+      context.host = host
+    context.cookies = cookies
+    if (ip)
+      context.ip = ip
+
+    // The whole request in one object. As a context key it becomes an ambient
+    // `__stxServeContext` binding inside `<script server>` (a per-render
+    // snapshot, immune to global clobbering); the globalThis mirror serves
+    // out-of-continuation readers — e.g. Stacks' `requestContext` fallback —
+    // and is refreshed here, immediately before script execution, so it is
+    // current for the synchronous prefix of every server script.
+    const full: ServeRequestContext = reqCtx ?? {
+      url: '',
+      path: '',
+      search,
+      host,
+      cookieHeader: activeServeCookieHeader,
+      cookies,
+      ip,
+      locale: activeServeLocale,
+      params: {},
     }
-    if (activeServeHost)
-      context.host = activeServeHost
-    context.cookies = activeServeCookies
-    if (activeServeIp)
-      context.ip = activeServeIp
+    context.__stxServeContext = full
+    ;(globalThis as { __stxServeContext?: ServeRequestContext }).__stxServeContext = full
   }
 
   /** Render cache must vary by locale/host/cookies — same `.stx` file can serve different `t()`/host/cookie-gated output. */
@@ -1329,7 +1406,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   }
 
   // Lazy template processing function
-  async function processTemplate(filePath: string): Promise<string> {
+  async function processTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
     const content = await Bun.file(filePath).text()
     const skipCacheHint = /(?:^|[^\w$])__stx_skip_cache\s*=\s*true/.test(content)
 
@@ -1370,7 +1447,10 @@ export async function serve(options: ServeOptions): Promise<void> {
     // again and wipe what useHead just populated.
     resetHead()
     injectServeLocaleContext(context)
-    injectServeRequestContext(context)
+    injectServeRequestContext(context, reqCtx)
+    // Static routes have no dynamic segments — give server scripts the same
+    // always-an-object `params` shape the dynamic path provides.
+    context.params = reqCtx?.params ?? {}
     for (const scriptBody of serverScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
@@ -1477,7 +1557,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   }
 
   // Function to get or create route
-  async function getRoute(requestPath: string): Promise<string | null> {
+  async function getRoute(requestPath: string, reqCtx?: ServeRequestContext): Promise<string | null> {
     // Dev mode: never cache — always re-process templates so file changes are reflected
     // Production caching is handled by the production server, not the dev serve path
 
@@ -1541,7 +1621,7 @@ export async function serve(options: ServeOptions): Promise<void> {
 
         if (normalizedFilePath === possible || relativeFilePath === possible) {
           // Process template on every request (dev mode — no caching)
-          const output = await processTemplate(filePath)
+          const output = await processTemplate(filePath, reqCtx)
           return output
         }
       }
@@ -1578,7 +1658,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       `/${fileRoute}.md` === requestPath ||
       `/${fileRoute}.html` === requestPath ||
       (isIndexFile && isRootRequest)) {
-        const output = await processTemplate(filePath)
+        const output = await processTemplate(filePath, reqCtx)
         routes.set(requestPath, output)
         return output
       }
@@ -1589,7 +1669,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         const prettyRoute = fileRoute.slice(6) // Remove 'pages/' prefix
         if (`/${prettyRoute}` === requestPath ||
         prettyRoute === normalizedPath) {
-          const output = await processTemplate(filePath)
+          const output = await processTemplate(filePath, reqCtx)
           routes.set(requestPath, output)
           return output
         }
@@ -1630,7 +1710,7 @@ export async function serve(options: ServeOptions): Promise<void> {
           const paramValues = match.slice(1)
 
           // Process template with dynamic params in context
-          const output = await processTemplateDynamic(filePath, paramNames, paramValues, normalizedPath)
+          const output = await processTemplateDynamic(filePath, paramNames, paramValues, normalizedPath, reqCtx)
           routes.set(requestPath, output)
           return output
         }
@@ -1646,6 +1726,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     paramNames: string[],
     paramValues: string[],
     routePath: string,
+    reqCtx?: ServeRequestContext,
   ): Promise<string> {
 
     const content = await Bun.file(filePath).text()
@@ -1669,10 +1750,33 @@ export async function serve(options: ServeOptions): Promise<void> {
       __route: routePath,
     }
 
-    // Add each param to context
+    // Name→value map of the dynamic segments, URL-decoded (path segments
+    // arrive percent-encoded; scripts want `café`, not `caf%C3%A9`). Single
+    // source of truth for the ambient bindings below, the server-script
+    // `params` object, and the client-side `window.stx._rp` injection.
+    const paramsObj: Record<string, string> = {}
     for (let i = 0; i < paramNames.length; i++) {
-      context[paramNames[i]] = paramValues[i]
+      let value = paramValues[i] ?? ''
+      try {
+        value = decodeURIComponent(value)
+      }
+      catch {
+        // malformed escape — keep the raw segment
+      }
+      paramsObj[paramNames[i]] = value
     }
+
+    // Add each param to context as a bare identifier (`[id].stx` → `id`)...
+    for (const name of paramNames) {
+      context[name] = paramsObj[name]
+    }
+    // ...and as the documented `params` object — @stacksjs/stx's
+    // variable-extractor plumbs `context.params` into every server script,
+    // but the serve path never set it, so `params.id` was always `{}`
+    // (stacksjs/stacks#1967).
+    context.params = paramsObj
+    if (reqCtx)
+      reqCtx.params = paramsObj
 
     const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter, resetHead: resetHeadDyn } = await stxModule
     // Fresh head state per request (see static-route handler above for rationale)
@@ -1683,7 +1787,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     // was first added (only the static-route path called
     // injectServeRequestContext), so every dynamic route silently never
     // saw `host`/`cookies`/`ip`/`__stxServeSearch` until this fix.
-    injectServeRequestContext(context)
+    injectServeRequestContext(context, reqCtx)
     for (const scriptBody of dynServerScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
@@ -1724,12 +1828,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     const dependencies = new Set<string>()
     output = await processDirectives(output, context, filePath, config, dependencies)
 
-    // Inject route params for client-side useRoute().params
+    // Inject route params for client-side useRoute().params — the same
+    // decoded paramsObj the server script saw, so both sides agree.
     if (paramNames.length > 0) {
-      const paramsObj: Record<string, string> = {}
-      for (let i = 0; i < paramNames.length; i++) {
-        paramsObj[paramNames[i]] = paramValues[i]
-      }
       const paramsScript = `<script>if(window.stx)window.stx._rp=${JSON.stringify(paramsObj)};else window.__stx_rp=${JSON.stringify(paramsObj)};</script>`
       if (output.includes('</head>')) {
         output = output.replace('</head>', `${paramsScript}\n</head>`)
@@ -2031,6 +2132,21 @@ export async function serve(options: ServeOptions): Promise<void> {
             activeServeCookieHeader = req.headers.get('cookie') || ''
             activeServeCookies = parseCookies(req)
             activeServeIp = server.requestIP(req)?.address || (req.headers.get('x-forwarded-for') || '').split(',')[0]!.trim()
+            // Immutable-per-request snapshot threaded down to the render.
+            // The singletons above can be reset by a concurrent request's
+            // `finally` while this render is suspended at an await; this
+            // object cannot (stacksjs/stacks#1967).
+            const reqCtx: ServeRequestContext = {
+              url: req.url,
+              path,
+              search: activeServeSearch,
+              host: activeServeHost,
+              cookieHeader: activeServeCookieHeader,
+              cookies: activeServeCookies,
+              ip: activeServeIp,
+              locale: activeServeLocale,
+              params: {},
+            }
             try {
 
               // Handle CORS preflight
@@ -2085,10 +2201,17 @@ export async function serve(options: ServeOptions): Promise<void> {
                 })
               }
 
-              // Custom onRequest handler — short-circuits if a Response is returned
+              // Custom onRequest handler — short-circuits if a Response is
+              // returned. A plain-object return is merged into the request
+              // context instead, giving the hook a race-free way to hand
+              // state (auth cookies, locale, a user object, ...) to
+              // `<script server>` blocks — see the onRequest option docs.
               if (options.onRequest) {
-                const customResponse = await options.onRequest(req)
-                if (customResponse) return customResponse
+                const hookResult = await options.onRequest(req)
+                if (hookResult instanceof Response)
+                  return hookResult
+                if (hookResult && typeof hookResult === 'object')
+                  Object.assign(reqCtx, hookResult)
               }
 
               // ── Page middleware pipeline ────────────────────────────────────
@@ -2275,10 +2398,10 @@ export async function serve(options: ServeOptions): Promise<void> {
 
               // Redirect root to /home if no index exists (dashboard pattern)
               if (path === '/') {
-                const indexContent = await getRoute('/')
+                const indexContent = await getRoute('/', reqCtx)
                 if (!indexContent) {
                   // Try /home as default landing page
-                  const homeContent = await getRoute('/home')
+                  const homeContent = await getRoute('/home', reqCtx)
                   if (homeContent) {
                     return new Response(null, {
                       status: 302,
@@ -2292,7 +2415,7 @@ export async function serve(options: ServeOptions): Promise<void> {
               }
 
               // Try to serve the requested page (lazy load on demand)
-              const content = await getRoute(path)
+              const content = await getRoute(path, reqCtx)
               if (content) {
                 // SPA navigation: return only <main> content as fragment
                 const isSpaNav = req.headers.get('X-STX-Router') === 'true'
@@ -2430,7 +2553,7 @@ export async function serve(options: ServeOptions): Promise<void> {
               }
 
               // Try without extension
-              const contentWithExt = await getRoute(`${path}.html`)
+              const contentWithExt = await getRoute(`${path}.html`, reqCtx)
               if (contentWithExt) {
                 return new Response(injectHmrClient(contentWithExt), {
                   headers: {
@@ -2588,7 +2711,7 @@ export async function serve(options: ServeOptions): Promise<void> {
               // index-file conventions all just work.
               for (const custom404 of ['/404', '/errors/404']) {
                 try {
-                  const customContent = await getRoute(custom404)
+                  const customContent = await getRoute(custom404, reqCtx)
                   if (customContent) {
                     return new Response(
                       isProd ? customContent : injectHmrClient(customContent),

@@ -530,7 +530,23 @@ catch {
 
   // Mock Vue/Nuxt-like composables commonly used in dashboard pages
   const definePageMeta = (_meta: unknown) => {}
-  const useRoute = () => ({ params: {}, query: {}, path: '', name: '', fullPath: '', hash: '', matched: [] })
+  // useRoute() mirrors what the browser's useRoute() reads from
+  // window.stx._rp — the serve path passes real params/search via context
+  // (stacksjs/stacks#1967), so `useRoute().params.id` agrees on both sides.
+  const useRoute = () => {
+    const serveCtx = context.__stxServeContext as { path?: string, search?: string } | undefined
+    const search = (context.__stxServeSearch as string | undefined) ?? serveCtx?.search ?? ''
+    const path = serveCtx?.path ?? ''
+    return {
+      params: (context.params as Record<string, string> | undefined) ?? {},
+      query: Object.fromEntries(new URLSearchParams(search)),
+      path,
+      name: '',
+      fullPath: path + search,
+      hash: '',
+      matched: [],
+    }
+  }
   const useRouter = () => ({ push: (_to: unknown) => {}, replace: (_to: unknown) => {}, back: () => {}, forward: () => {}, go: (_n: number) => {} })
   // useHead is auto-injected so server scripts can call it without explicitly
   // importing from 'stx'. It mutates module-global currentHead in head.ts,
