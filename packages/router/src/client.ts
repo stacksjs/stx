@@ -327,9 +327,21 @@ else {
     }
   }
 
+  // A full document is only safe to partial-swap into the stx shell if it is
+  // itself stx-rendered. Pages served by another engine mounted on the same
+  // origin (e.g. a docs/blog generator) carry none of these markers; swapping
+  // their <main> + styles into the stx shell corrupts the layout. Detect them
+  // and hand off to a native full navigation instead.
+  function isStxDocument(html){
+    return html.indexOf('name="stx-layout"')!==-1
+      ||html.indexOf('__stxRouterConfig')!==-1
+      ||html.indexOf('data-stx-content')!==-1;
+  }
+
   function swap(html,url,pushState,hash){
     var isFragment=html.indexOf('<!--stx-fragment-->')===0;
     if(isFragment)html=html.slice('<!--stx-fragment-->'.length);
+    if(!isFragment&&!isStxDocument(html)){log('[router] non-stx document — full navigation to:',url);location.href=url;return}
     var currentContent=getContainer();
     log('[router] swap: isFragment='+isFragment+' container='+!!currentContent+' tag='+(currentContent&&currentContent.tagName)+' selector='+containerSel+' htmlLen='+html.length);
     if(!currentContent){log('[router] no container — falling back');location.href=url;return}

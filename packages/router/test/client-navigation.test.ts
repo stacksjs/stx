@@ -127,6 +127,32 @@ describe('router browser navigation behavior', () => {
     expect(window.document.querySelector('main')?.textContent).toContain('Product full page')
   })
 
+  it('does a native full navigation for non-stx documents instead of corrupting the shell', async () => {
+    // A route on the same origin rendered by another engine (e.g. a BunPress
+    // blog) carries none of the stx layout markers. The router must NOT splice
+    // its <main> into the stx shell — it should hand off to a full navigation.
+    const calls: string[] = []
+    const window = installRouter(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/site">
+          <meta name="stx-layout-group" content="site">
+        </head>
+        <body><nav>Site nav</nav><main>Home</main></body>
+      </html>
+    `, async (url) => {
+      calls.push(String(url))
+      return response('<html><head><title>Docs</title></head><body><main>Foreign engine content</main></body></html>')
+    }, { interceptAllLinks: true })
+
+    await window.stxRouter.navigate('/blog')
+    await waitForRouterSwap()
+
+    // The stx shell keeps its own content; the foreign page is never spliced in.
+    expect(window.document.querySelector('main')?.textContent).toContain('Home')
+    expect(window.document.querySelector('main')?.textContent).not.toContain('Foreign engine content')
+  })
+
   it('fetches full pages for custom app-shell containers', async () => {
     const calls: string[] = []
     const window = installRouter(`
