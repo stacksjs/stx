@@ -2519,12 +2519,19 @@ export async function serve(options: ServeOptions): Promise<void> {
                   const clearStale = '<script data-stx-page>if(window.stx)window.stx._latestSetup=null;</script>'
                   fragment = `${headStyles.join('\n')}\n${fragment}\n${clearStale}\n${pageSetupScripts.join('\n')}`
 
+                  // Carry the page <title> (from the full page, before it was
+                  // reduced to the <main> fragment) so the SPA router can keep
+                  // document.title in sync on swap. URI-encoded for header safety.
+                  const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+                  const pageTitle = titleMatch ? titleMatch[1].trim() : ''
+
                   return new Response(fragment, {
                     headers: {
                       'Content-Type': 'text/html; charset=utf-8',
                       'X-STX-Fragment': 'true',
                       'X-STX-Layout': pageLayout,
                       'X-STX-Layout-Group': pageLayoutGroup,
+                      ...(pageTitle && { 'X-STX-Title': encodeURIComponent(pageTitle) }),
                       'Cache-Control': 'no-store',
                       ...corsHeaders,
                     },

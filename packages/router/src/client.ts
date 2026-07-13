@@ -95,18 +95,24 @@ export function getRouterScript(): string {
   // rather than a Map to keep the diff localized and the runtime
   // hand-minified shape consistent.
   var cacheOrder=[];
-  function setCache(key,html,layout,group){
+  function setCache(key,html,layout,group,title){
     if(!(key in cache))cacheOrder.push(key);
     cache[key]=html;
     layoutCache[key]=layout;
     layoutGroupCache[key]=group;
+    titleCache[key]=title||'';
     while(cacheOrder.length>o.prefetchCacheMax){
       var oldest=cacheOrder.shift();
       delete cache[oldest];
       delete layoutCache[oldest];
       delete layoutGroupCache[oldest];
+      delete titleCache[oldest];
     }
   }
+  // Apply a page title captured from the fragment response's X-STX-Title
+  // header (URI-encoded) so SPA swaps keep document.title in sync with the
+  // page — full-document swaps set the title from the <title> tag directly.
+  function applyTitle(t){if(t){try{document.title=decodeURIComponent(t)}catch(e){document.title=t}}}
   function touchCache(key){
     var i=cacheOrder.indexOf(key);
     if(i>=0){cacheOrder.splice(i,1);cacheOrder.push(key)}
@@ -117,6 +123,7 @@ export function getRouterScript(): string {
     delete cache[key];
     delete layoutCache[key];
     delete layoutGroupCache[key];
+    delete titleCache[key];
   }
 
   // Extract top-level CSS blocks (rules AND @media blocks with nested braces).
@@ -169,6 +176,7 @@ export function getRouterScript(): string {
   // Only truly different layout groups trigger a full page reload.
   var layoutCache={};
   var layoutGroupCache={};
+  var titleCache={};
   // Track executed script hashes to prevent redeclaration errors on navigation.
   // Layout-level scripts (theme, nav setup) execute on initial page load and
   // should NOT re-execute when navigating to another page with the same layout.
@@ -289,6 +297,7 @@ export function getRouterScript(): string {
         return;
       }
       swap(cache[targetPath],targetPath,pushState,targetHash);
+      applyTitle(titleCache[targetPath]);
       done();
     }
 else {
@@ -302,6 +311,7 @@ else {
         var isFragment=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
         var newLayout=r.headers.get('X-STX-Layout')||'';
         var newGroup=r.headers.get('X-STX-Layout-Group')||'';
+        var newTitle=r.headers.get('X-STX-Title')||'';
         // Layout change? Fetch the FULL page (no X-STX-Router header) and do full document swap
         if(isFragment&&checkLayoutChange(newLayout,url,newGroup)){
           log('[router] layout change — fetching full page for document swap');
@@ -310,16 +320,19 @@ else {
             if(!fullRes.ok)throw new Error(fullRes.status);
             return fullRes.text().then(function(html){
               log('[router] full page html length:',html.length);
-              return{html:html,isFragment:false,layout:newLayout,layoutGroup:newGroup};
+              return{html:html,isFragment:false,layout:newLayout,layoutGroup:newGroup,title:newTitle};
             });
           });
         }
-        return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout,layoutGroup:newGroup}});
+        return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout,layoutGroup:newGroup,title:newTitle}});
       }).then(function(result){
         if(!result)return;
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
-        if(o.cache)setCache(targetPath,result.html,result.layout,result.layoutGroup);
+        if(o.cache)setCache(targetPath,result.html,result.layout,result.layoutGroup,result.title);
         swap(result.html,targetPath,pushState,targetHash);
+        // Fragment swaps carry no <head>; apply the title from the header.
+        // Full-document swaps already set document.title from the <title> tag.
+        if(result.isFragment)applyTitle(result.title);
       }).catch(function(err){
         console.error('[router] fetch error:',err);
         location.href=url;
@@ -754,9 +767,10 @@ else {
         var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
         var pLayout=r.headers.get('X-STX-Layout')||'';
         var pGroup=r.headers.get('X-STX-Layout-Group')||'';
-        return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup}});
+        var pTitle=r.headers.get('X-STX-Title')||'';
+        return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup,title:pTitle}});
       }).then(function(result){
-        if(o.cache)setCache(key,result.html,result.layout,result.layoutGroup);
+        if(o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title);
       }).catch(function(){}).finally(function(){delete prefetching[key]});
     },true);
   }
@@ -853,7 +867,7 @@ else {
       var key=cacheKey(url);
       if(!cache[key]){
         var wantsFragment=shouldUseFragmentResponse();
-        fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup}})}).then(function(result){setCache(key,result.html,result.layout,result.layoutGroup)}).catch(function(){});
+        fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';var pTitle=r.headers.get('X-STX-Title')||'';return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup,title:pTitle}})}).then(function(result){setCache(key,result.html,result.layout,result.layoutGroup,result.title)}).catch(function(){});
       }
     },
     clearCache:function(){for(var k in cache)delete cache[k];for(var lk in layoutCache)delete layoutCache[lk];for(var gk in layoutGroupCache)delete layoutGroupCache[gk];cacheOrder.length=0},

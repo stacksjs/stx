@@ -724,6 +724,12 @@ catch {
           // Shell mode: SPA navigation returns page fragment only
           if (shell && isSpaNavigation(request)) {
             const layoutMetadata = extractLayoutMetadata(content)
+            // Capture the page <title> from the FULL page before reducing to
+            // the fragment, so the SPA router can update document.title on
+            // swap (fragments carry no <head>). URI-encoded so any title text
+            // is header-safe.
+            const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+            const pageTitle = titleMatch ? titleMatch[1].trim() : ''
             // Inject route params into fragment
             if (Object.keys(routeMatch.params).length > 0) {
               content = injectRouteParams(content, routeMatch.params)
@@ -743,6 +749,7 @@ catch {
                 'X-STX-Fragment': 'true',
                 'X-STX-Layout': layoutMetadata.layout,
                 'X-STX-Layout-Group': layoutMetadata.group,
+                ...(pageTitle && { 'X-STX-Title': encodeURIComponent(pageTitle) }),
                 'Cache-Control': 'no-store, no-cache, must-revalidate',
               },
             })
