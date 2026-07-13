@@ -5,6 +5,14 @@
   "description": "Generator for Iconify icon packages",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
+  "homepage": "https://github.com/stacksjs/stx#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stacksjs/stx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stacksjs/stx/issues"
+  },
   "keywords": [
     "iconify",
     "icons",
@@ -30,7 +38,8 @@
   ],
   "scripts": {
     "build": "bun build.ts",
-    "dev": "bun build.ts --watch"
+    "dev": "bun build.ts --watch",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "@stacksjs/iconify-core": "workspace:*"
