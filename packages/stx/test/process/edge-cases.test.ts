@@ -456,3 +456,49 @@ describe('Process Directive Miscellaneous', () => {
     expect(resultC).toContain('<span>other</span>')
   })
 })
+
+// =============================================================================
+// Server-script stripping vs tag-like text inside the body (regression)
+// =============================================================================
+
+describe('server script stripping with tag-like text in body', () => {
+  it('does not corrupt the document when a comment mentions <script server>', async () => {
+    const template = `<script server>
+// Fallback page meta. Every page overrides these from its own <script server>
+const title = 'T'
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+</head>
+<body>
+  <main>hello</main>
+</body>
+</html>
+`
+    const out = await processTemplate(template, { title: 'T' })
+    expect(out).toContain('<!DOCTYPE html>')
+    expect(out).toContain('<meta charset="utf-8">')
+    expect(out).toContain('<main>hello</main>')
+    // document starts at the doctype (no sliced prefix), exactly one head
+    expect(out.trimStart().startsWith('<!DOCTYPE')).toBe(true)
+    expect((out.match(/<head>/g) || []).length).toBe(1)
+  })
+
+  it('strips multiple sibling server scripts cleanly', async () => {
+    const template = `<script server>
+const a = 1 // <script server> lookalike one
+</script>
+<script server>
+const b = 2
+</script>
+<p>{{ a }}-{{ b }}</p>
+`
+    const out = await processTemplate(template, { a: 1, b: 2 })
+    expect(out).toContain('<p>1-2</p>')
+    expect(out).not.toContain('script server')
+  })
+})

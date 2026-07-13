@@ -1471,6 +1471,13 @@ else {
       // Also consume trailing whitespace
       while (rangeEnd < output.length && /\s/.test(output[rangeEnd])) rangeEnd++
       serverRemoveRanges.push({ start: serverMatch.index, end: rangeEnd })
+      // Resume scanning AFTER the real close tag. The regex's own lastIndex
+      // sits just past the OPEN tag, so tag-like text inside the consumed
+      // body (e.g. a JS comment mentioning `<script server>`) would re-match
+      // and produce an overlapping removal range — and overlapping ranges
+      // corrupt the document when sliced out back-to-front (the outer
+      // range's indices go stale the moment the inner one is removed).
+      serverScriptRe.lastIndex = rangeEnd
     }
     // Remove in reverse order to preserve indices
     for (let ri = serverRemoveRanges.length - 1; ri >= 0; ri--) {
