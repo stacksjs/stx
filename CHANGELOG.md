@@ -1,5 +1,16 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.87...v0.2.88)
+
+## 🧹 Chores
+
+- release v0.2.88 ([ed8a986](https://github.com/stacksjs/stx/commit/ed8a986)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **release**: publish desktop again now that trusted publishing is configured ([67c800e](https://github.com/stacksjs/stx/commit/67c800e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.86...v0.2.87)
 
 ## 🚀 Features
