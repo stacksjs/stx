@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.84...v0.2.85)
+
+## 🐛 Bug Fixes
+
+- **router**: full-navigate non-stx pages instead of corrupting the shell ([3075c27](https://github.com/stacksjs/stx/commit/3075c27)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **process**: resume server-script scan after the close tag to avoid overlapping removal ranges ([9246c62](https://github.com/stacksjs/stx/commit/9246c62)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **serve**: thread a per-request context to <script server> — params, cookies, url, search survive concurrency ([0183a63](https://github.com/stacksjs/stx/commit/0183a63)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **hmr**: send SSE keepalive every 5s so /_stx/hmr survives idle timeouts ([4a49f51](https://github.com/stacksjs/stx/commit/4a49f51)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧪 Tests
+
+- allow screenshot tests more time ([8c43338](https://github.com/stacksjs/stx/commit/8c43338)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.85 ([26c68b1](https://github.com/stacksjs/stx/commit/26c68b1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- upgrade to TypeScript 7 ([a5acfb9](https://github.com/stacksjs/stx/commit/a5acfb9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.83...v0.2.84)
 
 ## 🐛 Bug Fixes
