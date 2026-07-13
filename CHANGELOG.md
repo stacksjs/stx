@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.86...v0.2.87)
+
+## 🚀 Features
+
+- **router**: keep document.title in sync on SPA fragment swaps ([3dce045](https://github.com/stacksjs/stx/commit/3dce045)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.87 ([b914a3e](https://github.com/stacksjs/stx/commit/b914a3e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.85...v0.2.86)
 
 ## 🐛 Bug Fixes
