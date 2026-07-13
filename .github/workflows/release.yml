@@ -47,10 +47,13 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # Stage 2: remaining core packages incl. stx-router + sanitizer
-      # (stx/bun-plugin skip via cheap GET). desktop stays skipped, see above.
+      # Stage 2: everything else — stx-router, sanitizer, desktop, iconify-*,
+      # create-stx, markdown, etc. (stx/bun-plugin skip via cheap GET). Runs
+      # after Stage 1 so a hiccup in a peripheral package can never block the
+      # critical stx publish; with trusted publishing configured for every
+      # package these all succeed.
       - name: Publish remaining core packages
-        run: pantry publish --npm --access public --skip collections,desktop
+        run: pantry publish --npm --access public --skip collections
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
