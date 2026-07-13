@@ -36,16 +36,21 @@ jobs:
         with:
           install: false
 
-      # Stage 1: the framework itself ships first — @stacksjs/stx,
-      # bun-plugin-stx, and @stacksjs/desktop are what consumers wait on.
-      - name: Publish stx + bun-plugin-stx + desktop
-        run: pantry publish --npm --access public --skip collections,components,config,create-stx,iconify-core,iconify-generator,markdown,router,sanitizer
+      # Stage 1: the framework itself ships first — @stacksjs/stx and
+      # bun-plugin-stx are what consumers wait on. @stacksjs/desktop is an
+      # OPTIONAL dependency of @stacksjs/stx (lazily imported for native
+      # windows) and its npm trusted-publishing is currently misconfigured, so
+      # it is skipped here — a desktop publish failure must never abort the
+      # release before stx-router / sanitizer publish in Stage 2.
+      - name: Publish stx + bun-plugin-stx
+        run: pantry publish --npm --access public --skip collections,components,config,create-stx,desktop,iconify-core,iconify-generator,markdown,router,sanitizer
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # Stage 2: remaining core packages (stx/bun-plugin skip via cheap GET).
+      # Stage 2: remaining core packages incl. stx-router + sanitizer
+      # (stx/bun-plugin skip via cheap GET). desktop stays skipped, see above.
       - name: Publish remaining core packages
-        run: pantry publish --npm --access public --skip collections
+        run: pantry publish --npm --access public --skip collections,desktop
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
