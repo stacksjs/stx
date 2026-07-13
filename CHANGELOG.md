@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.85...v0.2.86)
+
+## 🐛 Bug Fixes
+
+- **release**: make @stacksjs/desktop optional so its publish can't break stx ([c2c3fa5](https://github.com/stacksjs/stx/commit/c2c3fa5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.86 ([a6754ff](https://github.com/stacksjs/stx/commit/a6754ff)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.84...v0.2.85)
 
 ## 🐛 Bug Fixes
