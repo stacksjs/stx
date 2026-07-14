@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.89...v0.2.90)
+
+## ⚡ Performance Improvements
+
+- **stx**: code-split the multi-entry build (52MB -> ~9MB dist) ([7aa2e34](https://github.com/stacksjs/stx/commit/7aa2e34)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.90 ([e295ced](https://github.com/stacksjs/stx/commit/e295ced)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.88...v0.2.89)
 
 ## 🐛 Bug Fixes
