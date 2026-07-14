@@ -71,9 +71,15 @@ const sourceEntrypoints = collectEntrypoints('./src')
 // Build every source module that the package exports through the `./*`
 // subpath. Keeping real JS next to every generated declaration prevents
 // runtime-only failures such as `import '@stacksjs/stx/expressions'`.
+//
+// `splitting: true` extracts code shared across the ~350 entrypoints into a
+// handful of `chunk-*.js` files that each entry imports, instead of inlining a
+// full copy of the shared graph into every entry (which ballooned dist to
+// ~50 MB). The named entry files still exist, so `@stacksjs/stx/<subpath>`
+// imports keep resolving — they just re-export from the shared chunks.
 assertBuild(await Bun.build({
   entrypoints: sourceEntrypoints,
-  splitting: false,
+  splitting: true,
   outdir: './dist',
   root: './src',
   naming: '[dir]/[name].js',
