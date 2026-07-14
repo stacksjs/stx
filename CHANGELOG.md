@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.90...v0.2.91)
+
+## 🧹 Chores
+
+- release v0.2.91 ([3c74811](https://github.com/stacksjs/stx/commit/3c74811)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.89...v0.2.90)
 
 ## ⚡ Performance Improvements

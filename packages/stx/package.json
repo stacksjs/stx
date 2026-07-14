@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/stx",
   "type": "module",
-  "version": "0.2.90",
+  "version": "0.2.91",
   "description": "A performant UI Framework. Powered by Bun.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
@@ -123,7 +123,7 @@
     "bun-plugin-stx": "workspace:*",
     "bunfig": "^0.15.14",
     "stx-router": "workspace:*",
-    "ts-broadcasting": "^0.0.4",
+    "ts-broadcasting": "^0.0.5",
     "ts-images": "^0.1.9",
     "ts-syntax-highlighter": "^0.2.1"
   },
