@@ -36,6 +36,10 @@
       "bun": "./src/*/index.ts",
       "types": "./dist/*/index.d.ts",
       "import": "./dist/*/index.js"
+    },
+    "./stx-plugin": {
+      "bun": "./stx-plugin.ts",
+      "import": "./stx-plugin.ts"
     }
   },
   "module": "./dist/index.js",
@@ -43,7 +47,8 @@
   "files": [
     "README.md",
     "dist",
-    "src"
+    "src",
+    "stx-plugin.ts"
   ],
   "scripts": {
     "build": "bun --bun build.ts",
