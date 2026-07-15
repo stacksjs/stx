@@ -1,114 +1,83 @@
 <script server>
+import { resolveSidebarTheme } from './themes'
+
 export const id = $props.id || ''
 export const label = $props.label || ''
-export const icon = $props.icon || ''
 export const items = $props.items || []
-export const expanded = $props.expanded ?? true
 export const collapsible = $props.collapsible ?? true
-export const showLabel = $props.showLabel ?? true
-export const variant = $props.variant || 'tahoe'
+export const collapsed = $props.collapsed ?? false
+export const theme = $props.theme || $props.variant || 'macos'
 
-const headerVariants = {
-  workspace: {
-    base: 'w-full flex items-center gap-2.5 px-4 pb-2 pt-5 rounded-[14px] text-left transition-colors duration-150 text-[13px] font-semibold uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500',
-    hover: 'hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer',
-  },
-  desktop: {
-    base: 'w-full flex items-center gap-2.5 px-3 pb-1.5 pt-3 rounded-[14px] text-left transition-colors duration-150 text-[12px] font-semibold uppercase tracking-[0.10em] text-zinc-500/80 dark:text-zinc-400/80',
-    hover: 'hover:bg-white/25 dark:hover:bg-white/10 cursor-pointer',
-  },
-  default: {
-    base: 'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left transition-all duration-150 text-black/60 dark:text-white/60',
-    hover: 'hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer',
-  },
+const themeStyle = resolveSidebarTheme(theme)
+export const headerClasses = themeStyle.sectionHeader + (collapsible ? ' cursor-default' : '')
+export const chevronClasses = themeStyle.sectionChevron
+export const groupClasses = themeStyle.sectionGroup
+
+// Components can't render themselves recursively, so the item tree is
+// flattened into ready-to-render rows here. Each row remembers its depth
+// and ancestor ids — the Sidebar controller uses those to collapse whole
+// subtrees.
+function flatten(list, depth = 0, parents = []) {
+  return list.flatMap((item) => {
+    const children = item.children || []
+    const row = {
+      id: item.id,
+      label: item.label,
+      icon: item.icon || '',
+      iconColor: item.iconColor || '',
+      image: item.image || '',
+      href: item.href || '',
+      count: item.count ?? item.badge ?? '',
+      active: item.active === true,
+      disabled: item.disabled === true,
+      expandable: children.length > 0 || item.expandable === true,
+      expanded: item.expanded !== false,
+      depth,
+      parents: parents.join('/'),
+    }
+    return [row, ...flatten(children, depth + 1, [...parents, item.id])]
+  })
 }
 
-const headerStyle = headerVariants[variant] || headerVariants.default
-const headerClasses = [headerStyle.base, collapsible ? headerStyle.hover : ''].filter(Boolean).join(' ')
-export const headerClassesValue = headerClasses
-export const sectionClasses = variant === 'workspace' ? 'py-1.5' : variant === 'desktop' ? 'py-1' : 'py-1'
-export const groupClasses = variant === 'workspace' || variant === 'desktop' ? 'space-y-1 overflow-hidden' : 'mt-1 space-y-0.5 overflow-hidden'
-export const labelClasses = variant === 'workspace' || variant === 'desktop'
-  ? 'flex-1 truncate'
-  : 'flex-1 text-[13px] font-semibold tracking-tight truncate'
+export const rows = flatten(items)
 </script>
 
-<script client>
-const emit = defineEmits()
-const sectionId = {{ id }}
-const collapsibleProp = {{ collapsible }}
-// Reactive prop binding — parent can drive `expanded` via signals. See #1704.
-const isExpanded = useReactiveProp('expanded', {{ expanded }})
-
-function onHeaderClick() {
-  if (!collapsibleProp) return
-  isExpanded.set(!isExpanded())
-  emit('toggle', sectionId)
-}
-
-function onItemClick(event) {
-  emit('itemClick', event.detail)
-}
-
-const arrowClass = derived(() => `i-hugeicons-arrow-right-01 w-3 h-3 transition-transform duration-200 opacity-50 ${isExpanded() ? 'rotate-90' : ''}`)
-
-defineExpose({ isExpanded })
-</script>
-
-<div class="{{ sectionClasses }}">
-  @if(collapsible)
-    <button
-      type="button"
-      class="{{ headerClassesValue }}"
-      @click="onHeaderClick()"
-      :aria-expanded="isExpanded() ? 'true' : 'false'"
-      aria-controls="sidebar-section-{{ id }}"
-    >
-      @if(icon)
-        <div class="{{ icon }} w-4 h-4 flex-shrink-0 opacity-70"></div>
-      @endif
-      @if(showLabel)
-        <span class="{{ labelClasses }}">
-          {{ label }}
-        </span>
-        <div :class="arrowClass()"></div>
-      @endif
-    </button>
-  @else
-    <div class="{{ headerClassesValue }}">
-      @if(icon)
-        <div class="{{ icon }} w-4 h-4 flex-shrink-0 opacity-70"></div>
-      @endif
-      @if(showLabel)
-        <span class="{{ labelClasses }}">
-          {{ label }}
-        </span>
-      @endif
-    </div>
+<section
+  data-sidebar-section
+  data-section-id="{{ id }}"
+  data-expanded="{{ collapsed ? 'false' : 'true' }}"
+>
+  @if(label)
+    @if(collapsible)
+      <button type="button" data-sidebar-section-header class="{{ headerClasses }}" aria-expanded="{{ collapsed ? 'false' : 'true' }}">
+        <span class="truncate">{{ label }}</span>
+        <span data-sidebar-section-chevron class="{{ chevronClasses }}" aria-hidden="true"></span>
+      </button>
+    @else
+      <div class="{{ headerClasses }}">
+        <span class="truncate">{{ label }}</span>
+      </div>
+    @endif
   @endif
 
-  @if(showLabel && items.length > 0)
-    <div
-      :show="isExpanded()"
-      id="sidebar-section-{{ id }}"
-      class="{{ groupClasses }}"
-      role="group"
-      aria-label="{{ label }}"
-    >
-      @foreach(item in items)
-        <SidebarItem
-          :id="item.id"
-          :label="item.label"
-          :icon="item.icon"
-          :href="item.href"
-          :badge="item.badge"
-          :active="item.active"
-          :disabled="item.disabled"
-          :indent="variant !== 'workspace' && variant !== 'desktop'"
-          :variant="variant"
-          @click="onItemClick($event)"
-        />
-      @endforeach
-    </div>
-  @endif
-</div>
+  <div class="{{ groupClasses }}" role="group" @if(label)aria-label="{{ label }}"@endif>
+    @foreach(rows as row)
+      <SidebarItem
+        :id="row.id"
+        :label="row.label"
+        :icon="row.icon"
+        :iconColor="row.iconColor"
+        :image="row.image"
+        :href="row.href"
+        :count="row.count"
+        :active="row.active"
+        :disabled="row.disabled"
+        :expandable="row.expandable"
+        :expanded="row.expanded"
+        :depth="row.depth"
+        :parents="row.parents"
+        :theme="theme"
+      />
+    @endforeach
+  </div>
+</section>

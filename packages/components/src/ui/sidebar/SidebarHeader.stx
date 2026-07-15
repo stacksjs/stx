@@ -1,199 +1,103 @@
 <script server>
+// The window-chrome strip at the top of a macOS sidebar: traffic lights on
+// the left, floating "Liquid Glass" toolbar buttons on the right, and the
+// whole strip acts as a window drag region inside a Craft window.
+export const theme = $props.theme || $props.variant || 'macos'
+export const showWindowControls = $props.showWindowControls ?? true
+export const actions = $props.actions || [] // [{ id, icon, label }]
 export const title = $props.title || ''
 export const subtitle = $props.subtitle || ''
 export const logo = $props.logo || ''
-export const logoIcon = $props.logoIcon || ''
 export const showSearch = $props.showSearch ?? false
-export const searchPlaceholder = $props.searchPlaceholder || 'Search...'
-export const searchValue = $props.searchValue || ''
-export const collapsed = $props.collapsed ?? false
-export const variant = $props.variant || 'tahoe'
-export const showWindowControls = $props.showWindowControls ?? (variant === 'desktop' ? 'auto' : false)
-export const showNavigationControls = $props.showNavigationControls ?? variant === 'desktop'
+export const searchPlaceholder = $props.searchPlaceholder || 'Search'
 
-const headerVariants = {
-  workspace: {
-    titlebar: 'h-18 flex items-center justify-between px-5',
-    logo: 'w-9 h-9 rounded-[12px] bg-black text-white flex items-center justify-center font-semibold text-sm',
-    title: 'text-[18px] font-semibold text-zinc-950 dark:text-white truncate',
-    subtitle: 'text-sm text-zinc-500 dark:text-zinc-400 truncate',
-    searchWrap: 'px-5 pb-4',
-    searchInput: 'w-full rounded-[16px] border border-zinc-200/70 bg-white/70 px-10 py-2.5 text-[15px] text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-300/80 dark:border-white/10 dark:bg-white/10 dark:text-white',
-  },
-  desktop: {
-    titlebar: 'h-14 flex items-center gap-5 px-5 border-b border-black/5 dark:border-white/10',
-    chrome: 'flex shrink-0 items-center justify-start gap-5 min-h-7',
-    trafficLight: 'h-3.5 w-3.5 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]',
-    navButton: 'inline-flex h-7 w-7 items-center justify-center rounded-full text-zinc-500/80 transition-colors hover:bg-white/35 hover:text-zinc-900 disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-zinc-500/80 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white',
-    logo: 'w-9 h-9 rounded-[12px] bg-black/80 text-white flex items-center justify-center font-semibold text-sm shadow-sm dark:bg-white/14',
-    title: 'text-[15px] leading-[22px] font-medium text-zinc-950 dark:text-white truncate',
-    subtitle: 'text-xs text-zinc-500 dark:text-zinc-400 truncate',
-    searchWrap: 'px-4 pb-4',
-    searchInput: 'w-full rounded-[16px] border border-white/40 bg-white/45 px-10 py-2.5 text-[15px] text-zinc-900 placeholder:text-zinc-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/70 dark:border-white/10 dark:bg-white/10 dark:text-white',
-  },
-  default: {
-    titlebar: 'h-13 flex items-center justify-between px-4 border-b border-black/5 dark:border-white/10',
-    logo: 'w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm',
-    title: 'text-sm font-semibold text-black/90 dark:text-white truncate',
-    subtitle: 'text-xs text-black/50 dark:text-white/50 truncate',
-    searchWrap: 'px-3 py-3',
-    searchInput: 'w-full pl-9 pr-3 py-2 text-sm bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 rounded-lg text-black/90 dark:text-white placeholder:text-black/40 dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400/50 transition-colors',
-  },
-}
+export const isMacos = theme === 'macos' || theme === 'tahoe' || theme === 'macos-tahoe' || theme === 'macos-latest'
 
-const headerStyle = headerVariants[variant] || headerVariants.default
-export const titlebarClasses = headerStyle.titlebar
-export const chromeClasses = headerStyle.chrome || ''
-export const trafficLightClasses = headerStyle.trafficLight || ''
-export const navButtonClasses = headerStyle.navButton || ''
-export const logoClasses = headerStyle.logo
-export const titleClasses = headerStyle.title
-export const subtitleClasses = headerStyle.subtitle
-export const searchWrapClasses = headerStyle.searchWrap
-export const searchInputClasses = headerStyle.searchInput
-export const hasDesktopChrome = variant === 'desktop' && (showWindowControls || showNavigationControls)
-export const windowControlsClasses = showWindowControls === 'auto' ? 'hidden items-center gap-2' : 'flex items-center gap-2'
+// Traffic lights: 13px circles, 7px apart, inset ~21px — measured on
+// macOS Tahoe. Colors are Apple's exact stoplight values.
+export const trafficLightClasses = 'h-[13px] w-[13px] rounded-full shadow-[inset_0_0_1px_rgba(0,0,0,0.2)]'
+
+// Floating toolbar button: a 34px glass circle that brightens on hover.
+export const toolbarButtonClasses = [
+  'grid h-[34px] w-[34px] place-items-center rounded-full',
+  'bg-white/55 dark:bg-white/10',
+  'backdrop-blur-xl',
+  'shadow-[0_1px_4px_rgba(0,0,0,0.12),inset_0_0.5px_0_rgba(255,255,255,0.6)]',
+  'text-[#3c3c43]/75 dark:text-[#ebebf5]/75',
+  'transition-colors duration-150',
+  'hover:bg-white/80 dark:hover:bg-white/20',
+  'active:bg-white/95 dark:active:bg-white/25',
+].join(' ')
 </script>
 
 <script client>
 const emit = defineEmits()
 
-function isCraftRuntime() {
-  return window.__craftNativeSidebar === true
-    || window.craft?.__craft_bridge_loaded === true
-    || !!window.craft?.window
-    || !!window.webkit?.messageHandlers?.craft
-}
-
-function usesCustomWindowControls() {
-  return window.__craftCustomWindowControls === true
-    || document.documentElement.classList.contains('has-custom-window-controls')
-    || document.body?.dataset?.customWindowControls === 'true'
-}
-
-function syncWindowControls() {
-  document.querySelectorAll('[data-stx-native-window-controls]').forEach((element) => {
-    const show = element.dataset.stxNativeWindowControls === 'auto'
-      ? isCraftRuntime() && usesCustomWindowControls()
-      : true
-    element.classList.toggle('hidden', !show)
-    element.classList.toggle('flex', show)
-  })
+function onAction(event) {
+  emit('action', event.currentTarget?.dataset?.sidebarAction || event.target.closest('[data-sidebar-action]')?.dataset.sidebarAction)
 }
 
 function onSearchInput(event) {
   emit('search', event.target.value)
 }
 
-function goBack() {
-  window.history.back()
-  emit('back')
+function onWindowControl(action) {
+  const api = window.craft?.window
+  if (action === 'close') api?.close?.()
+  if (action === 'minimize') api?.minimize?.()
+  if (action === 'zoom') (api?.maximize || api?.zoom)?.call(api)
+  emit('windowControl', action)
 }
-
-function goForward() {
-  window.history.forward()
-  emit('forward')
-}
-
-onMount(() => {
-  syncWindowControls()
-  window.addEventListener('craft:ready', syncWindowControls)
-  window.addEventListener('stx:load', syncWindowControls)
-
-  return () => {
-    window.removeEventListener('craft:ready', syncWindowControls)
-    window.removeEventListener('stx:load', syncWindowControls)
-  }
-})
 </script>
 
-<div class="flex-shrink-0">
-  <!-- Title bar area -->
-  <div class="{{ titlebarClasses }}">
-    @if(hasDesktopChrome)
-      <div class="{{ chromeClasses }}" data-stx-sidebar-web-chrome>
-        @if(showWindowControls)
-          <div class="{{ windowControlsClasses }}" aria-hidden="true" data-stx-native-window-controls="{{ showWindowControls === 'auto' ? 'auto' : 'always' }}">
-            <span class="{{ trafficLightClasses }} bg-[#ff5f57]"></span>
-            <span class="{{ trafficLightClasses }} bg-[#ffbd2e]"></span>
-            <span class="{{ trafficLightClasses }} bg-[#28c840]"></span>
-          </div>
-        @endif
-
-        @if(showNavigationControls)
-          <div class="flex items-center gap-2">
-            <button type="button" class="{{ navButtonClasses }}" @click="goBack()" aria-label="Go back">
-              <span class="h-5 w-5 i-hugeicons-arrow-left-02" aria-hidden="true"></span>
-            </button>
-            <button type="button" class="{{ navButtonClasses }}" @click="goForward()" aria-label="Go forward">
-              <span class="h-5 w-5 i-hugeicons-arrow-right-02" aria-hidden="true"></span>
-            </button>
-          </div>
-        @endif
-      </div>
-    @endif
-
-    @if(!collapsed)
-      <div class="flex items-center gap-3 min-w-0">
-        <!-- Logo -->
-        @if(logo)
-          <img src="{{ logo }}" alt="{{ title }}" class="w-8 h-8 rounded-lg object-cover" />
-        @elseif(logoIcon)
-          <div class="{{ logoClasses }}">
-            <div class="{{ logoIcon }} w-5 h-5 text-white"></div>
-          </div>
-        @else
-          <div class="{{ logoClasses }}">
-            {{ title.charAt(0) }}
-          </div>
-        @endif
-
-        <!-- Title & Subtitle -->
-        <div class="min-w-0">
-          @if(title)
-            <div class="{{ titleClasses }}">
-              {{ title }}
-            </div>
-          @endif
-          @if(subtitle)
-            <div class="{{ subtitleClasses }}">
-              {{ subtitle }}
-            </div>
-          @endif
-        </div>
+@if(isMacos)
+  <div class="flex h-[52px] shrink-0 items-center justify-between pl-[21px] pr-[10px] [-webkit-app-region:drag]">
+    @if(showWindowControls)
+      <div class="group/lights flex items-center gap-[7px] [-webkit-app-region:no-drag]">
+        <button type="button" class="{{ trafficLightClasses }} bg-[#ff5f57]" aria-label="Close window" @click="onWindowControl('close')"></button>
+        <button type="button" class="{{ trafficLightClasses }} bg-[#febc2e]" aria-label="Minimize window" @click="onWindowControl('minimize')"></button>
+        <button type="button" class="{{ trafficLightClasses }} bg-[#28c840]" aria-label="Zoom window" @click="onWindowControl('zoom')"></button>
       </div>
     @else
-      <!-- Collapsed state - just logo -->
-      @if(logo)
-        <img src="{{ logo }}" alt="{{ title }}" class="w-8 h-8 rounded-lg object-cover mx-auto" />
-      @elseif(logoIcon)
-        <div class="{{ logoClasses }} mx-auto">
-          <div class="{{ logoIcon }} w-5 h-5 text-white"></div>
-        </div>
-      @else
-        <div class="{{ logoClasses }} mx-auto">
-          {{ title.charAt(0) }}
-        </div>
-      @endif
+      <span></span>
     @endif
 
-    <!-- Slot for custom header actions -->
-    <slot name="actions" />
+    <div class="flex items-center gap-[8px] [-webkit-app-region:no-drag]">
+      @foreach(actions as action)
+        <button type="button" class="{{ toolbarButtonClasses }}" aria-label="{{ action.label }}" data-sidebar-action="{{ action.id }}" @click="onAction($event)">
+          <span class="{{ action.icon }} h-[16px] w-[16px]" aria-hidden="true"></span>
+        </button>
+      @endforeach
+      <slot name="actions" />
+    </div>
   </div>
 
-  <!-- Search (only when expanded) -->
-  @if(showSearch && !collapsed)
-    <div class="{{ searchWrapClasses }}">
+  @if(showSearch)
+    <div class="shrink-0 px-[10px] pb-[6px]">
       <div class="relative">
-        <div class="i-hugeicons-search-01 absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 dark:text-white/40"></div>
+        <span class="i-f7-search absolute left-[8px] top-1/2 h-[13px] w-[13px] -translate-y-1/2 text-[#3c3c43]/50 dark:text-[#ebebf5]/50" aria-hidden="true"></span>
         <input
           type="text"
           placeholder="{{ searchPlaceholder }}"
-          value="{{ searchValue }}"
-          class="{{ searchInputClasses }}"
+          class="h-[28px] w-full rounded-[8px] border-0 bg-black/5 pl-[26px] pr-[8px] text-[13px] text-black placeholder:text-[#3c3c43]/50 focus:outline-none focus:ring-2 focus:ring-[#0088ff]/60 dark:bg-white/10 dark:text-white dark:placeholder:text-[#ebebf5]/50"
           @input="onSearchInput($event)"
         />
       </div>
     </div>
   @endif
-</div>
+@else
+  <div class="flex h-13 items-center gap-3 border-b border-black/5 px-4 dark:border-white/10">
+    @if(logo)
+      <img src="{{ logo }}" alt="{{ title }}" class="h-8 w-8 rounded-lg object-cover" />
+    @endif
+    <div class="min-w-0">
+      @if(title)
+        <div class="truncate text-sm font-semibold text-black/90 dark:text-white">{{ title }}</div>
+      @endif
+      @if(subtitle)
+        <div class="truncate text-xs text-black/50 dark:text-white/50">{{ subtitle }}</div>
+      @endif
+    </div>
+    <slot name="actions" />
+  </div>
+@endif

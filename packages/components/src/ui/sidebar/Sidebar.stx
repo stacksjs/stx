@@ -1,330 +1,458 @@
 <script server>
+import { resolveSidebarTheme } from './themes'
+
+// Data: [{ id, label, collapsible?, collapsed?, items: [{ id, label, icon,
+// iconColor, image, href, count, active?, disabled?, expanded?, children? }] }]
 export const sections = $props.sections || []
-export const collapsed = $props.collapsed ?? false
-export const collapsible = $props.collapsible ?? true
-export const width = $props.width || 240
-export const minWidth = $props.minWidth || 64
-export const collapseMode = $props.collapseMode || 'rail'
-export const variant = $props.variant || 'tahoe'
+
+// `theme` is the new name; `variant` is accepted for backwards compatibility.
+export const theme = $props.theme || $props.variant || 'macos'
+export const width = $props.width || 250
 export const position = $props.position || 'left'
 export const placement = $props.placement || 'fixed'
-export const bordered = $props.bordered ?? true
-export const materialOpacity = $props.materialOpacity ?? (variant === 'desktop' ? 0.78 : 0.7)
-export const materialDarkOpacity = $props.materialDarkOpacity ?? (variant === 'desktop' ? 0.8 : materialOpacity)
-export const materialScheme = $props.materialScheme || 'system'
+export const bordered = $props.bordered ?? false
+
+// Collapsing. macOS sidebars hide entirely (toolbar button / drag); legacy
+// themes may collapse to a compact rail instead.
+export const collapsed = $props.collapsed ?? false
+export const collapsible = $props.collapsible ?? true
+export const collapseMode = $props.collapseMode || (theme === 'workspace' || theme === 'desktop' ? 'rail' : 'hidden')
+export const minWidth = $props.minWidth || 64
 export const persistKey = $props.persistKey || ''
 export const shellSelector = $props.shellSelector || ''
 export const widthVar = $props.widthVar || '--stx-sidebar-width'
 export const collapsedClass = $props.collapsedClass || ''
-export const nativeMaterialCollapse = $props.nativeMaterialCollapse ?? (variant === 'desktop' && collapseMode === 'hidden')
 export const className = $props.className || ''
 
-const variantStyles = {
-  tahoe: {
-    bg: 'bg-white/70 dark:bg-black/50',
-    border: 'border-black/5 dark:border-white/10',
-    backdrop: 'backdrop-blur-2xl backdrop-saturate-180',
-    tint: true,
-  },
-  vibrancy: {
-    bg: 'bg-white/50 dark:bg-black/40',
-    border: 'border-white/20 dark:border-white/10',
-    backdrop: 'backdrop-blur-3xl backdrop-saturate-200',
-    tint: false,
-  },
-  solid: {
-    bg: 'bg-stone-100 dark:bg-neutral-900',
-    border: 'border-stone-200 dark:border-neutral-800',
-    backdrop: '',
-    tint: false,
-  },
-  transparent: {
-    bg: 'bg-transparent',
-    border: 'border-transparent',
-    backdrop: '',
-    tint: false,
-  },
-  workspace: {
-    bg: 'bg-[#f4f4f3] dark:bg-neutral-950',
-    border: 'border-transparent',
-    backdrop: '',
-    tint: false,
-    nav: 'px-5 py-5 space-y-1',
-    slot: 'px-5 py-5',
-  },
-  desktop: {
-    bg: 'bg-[#f3f3f1]/48 dark:bg-neutral-950/32',
-    border: 'border-white/15 dark:border-white/10',
-    backdrop: 'backdrop-blur-3xl backdrop-saturate-150',
-    tint: false,
-    shimmer: true,
-    nav: 'px-5 py-2 space-y-1',
-    slot: 'px-5 py-2',
-  },
-}
+// Unique id so the client controller can find this pane even with several
+// sidebars on the page.
+export const sidebarUid = $props.id || `stx-sidebar-${Math.random().toString(36).slice(2, 8)}`
 
-const style = variantStyles[variant] || variantStyles.tahoe
-export const variantTint = style.tint
-export const variantShimmer = style.shimmer
+const themeStyle = resolveSidebarTheme(theme)
+export const hasShimmerRim = themeStyle.layers.shimmerRim === true
+export const tintClasses = themeStyle.layers.tint || ''
+export const scrollAreaClasses = themeStyle.scrollArea
+
 const borderSide = position === 'left' ? 'border-r' : 'border-l'
-const borderClasses = bordered ? `${borderSide} ${style.border}` : ''
-const positionClass = position === 'left' ? 'left-0' : 'right-0'
+const borderClasses = bordered ? `${borderSide} border-black/5 dark:border-white/10` : ''
 const placementClasses = {
-  fixed: `fixed inset-y-0 z-50 ${positionClass}`,
+  fixed: `fixed inset-y-0 z-50 ${position === 'left' ? 'left-0' : 'right-0'}`,
   sticky: 'sticky top-0 h-screen',
   static: 'relative h-full',
 }
 
-export const containerClasses = [
+export const paneClasses = [
   placementClasses[placement] || placementClasses.fixed,
-  'flex flex-col',
-  'transition-all duration-300 ease-out',
-  'overflow-hidden',
-  style.bg,
-  style.backdrop,
+  'flex flex-col overflow-hidden',
+  'transition-[width] duration-300 ease-out',
+  themeStyle.pane,
   borderClasses,
   className,
 ].filter(Boolean).join(' ')
 
-export const collapseBtnPosition = variant === 'desktop'
-  ? (position === 'left' ? 'left-[166px]' : 'right-[166px]')
-  : (position === 'left' ? 'right-2' : 'left-2')
-export const navClasses = style.nav || 'px-3 py-2 space-y-1'
-export const slotClasses = style.slot || 'px-3 py-2'
+// Normalized ahead of the loop so template bindings stay simple accessors.
+export const sectionList = sections.map(section => ({
+  id: section.id,
+  label: section.label || '',
+  items: section.items || [],
+  collapsible: section.collapsible !== false,
+  collapsed: section.collapsed === true,
+}))
+
+// State classes the client controller swaps on rows. Kept as data attributes
+// so all behavior lives in one place (the controller below) and themes stay
+// pure data.
+export const activeClasses = themeStyle.item.active
 </script>
 
 <script client>
 const emit = defineEmits()
+const sidebarUidProp = '{{ sidebarUid }}'
 const collapsedProp = {{ collapsed }}
 const collapsibleProp = {{ collapsible }}
+const collapseModeProp = '{{ collapseMode }}'
 const widthProp = {{ width }}
 const minWidthProp = {{ minWidth }}
-const collapseModeProp = {{ collapseMode }}
-const sectionsProp = {{ sections }}
-const positionProp = {{ position }}
-const variantProp = {{ variant }}
-const materialOpacityProp = {{ materialOpacity }}
-const materialDarkOpacityProp = {{ materialDarkOpacity }}
-const materialSchemeProp = {{ materialScheme }}
-const persistKeyProp = {{ persistKey }}
-const shellSelectorProp = {{ shellSelector }}
-const widthVarProp = {{ widthVar }}
-const collapsedClassProp = {{ collapsedClass }}
-const nativeMaterialCollapseProp = {{ nativeMaterialCollapse }}
+const persistKeyProp = '{{ persistKey }}'
+const shellSelectorProp = '{{ shellSelector }}'
+const widthVarProp = '{{ widthVar }}'
+const collapsedClassProp = '{{ collapsedClass }}'
 
 const collapsed = state(collapsedProp)
-const isHovered = state(false)
-const hasNativeSidebar = state(false)
-
-const showExpanded = derived(() => !collapsed() || isHovered())
 const sidebarWidth = derived(() => {
-  if (collapsed() && collapseModeProp === 'hidden') return '0px'
-  if (collapsed() && !isHovered()) return `${minWidthProp}px`
+  if (collapsed()) return collapseModeProp === 'hidden' ? '0px' : `${minWidthProp}px`
   return `${widthProp}px`
 })
-const collapseAriaLabel = derived(() => collapsed() ? 'Expand sidebar' : 'Collapse sidebar')
+
+let pane = null
+
+// ---------------------------------------------------------------------------
+// Selection — one row carries data-active="true"; the highlight classes come
+// from the theme (stored on the pane as data-active-class).
+// ---------------------------------------------------------------------------
+
+function activeClassList() {
+  return (pane?.dataset.activeClass || '').split(' ').filter(Boolean)
+}
+
+function setActiveRow(button) {
+  const classes = activeClassList()
+  pane.querySelectorAll('[data-sidebar-item][data-active="true"]').forEach((el) => {
+    el.removeAttribute('data-active')
+    el.classList.remove(...classes)
+  })
+  button.setAttribute('data-active', 'true')
+  button.classList.add(...classes)
+}
+
+// ---------------------------------------------------------------------------
+// Disclosure — rows know their ancestors (data-parents="a/b"). Collapsing a
+// row (or section) marks every descendant with data-collapsed, which the
+// scoped CSS animates to zero height, exactly like AppKit's outline collapse.
+// ---------------------------------------------------------------------------
+
+function syncRowVisibility() {
+  const collapsedIds = new Set()
+  pane.querySelectorAll('[data-sidebar-row][data-expanded="false"]').forEach((row) => {
+    collapsedIds.add(row.dataset.itemId)
+  })
+  pane.querySelectorAll('[data-sidebar-section][data-expanded="false"]').forEach((section) => {
+    section.querySelectorAll('[data-sidebar-row]').forEach((row) => {
+      row.setAttribute('data-collapsed', '')
+    })
+  })
+  pane.querySelectorAll('[data-sidebar-section][data-expanded="true"] [data-sidebar-row]').forEach((row) => {
+    const parents = (row.dataset.parents || '').split('/').filter(Boolean)
+    const hidden = parents.some(id => collapsedIds.has(id))
+    if (hidden) row.setAttribute('data-collapsed', '')
+    else row.removeAttribute('data-collapsed')
+  })
+}
+
+function toggleRowDisclosure(row) {
+  const expanded = row.getAttribute('data-expanded') === 'true'
+  row.setAttribute('data-expanded', String(!expanded))
+  syncRowVisibility()
+  emit('itemToggle', { id: row.dataset.itemId, expanded: !expanded })
+}
+
+function toggleSection(section) {
+  const expanded = section.getAttribute('data-expanded') !== 'false'
+  section.setAttribute('data-expanded', String(!expanded))
+  syncRowVisibility()
+  emit('sectionToggle', section.dataset.sectionId)
+}
+
+// ---------------------------------------------------------------------------
+// Pointer input (event delegation — items and sections stay presentational)
+// ---------------------------------------------------------------------------
+
+function onClick(event) {
+  const chevron = event.target.closest('[data-sidebar-disclosure]')
+  if (chevron) {
+    event.preventDefault()
+    toggleRowDisclosure(chevron.closest('[data-sidebar-row]'))
+    return
+  }
+
+  const sectionHeader = event.target.closest('[data-sidebar-section-header]')
+  if (sectionHeader) {
+    toggleSection(sectionHeader.closest('[data-sidebar-section]'))
+    return
+  }
+
+  const item = event.target.closest('[data-sidebar-item]')
+  if (item && !item.hasAttribute('data-disabled')) {
+    setActiveRow(item)
+    const row = item.closest('[data-sidebar-row]')
+    emit('itemClick', {
+      item: { id: row.dataset.itemId, label: item.dataset.label || '', href: item.getAttribute('href') || '' },
+      event,
+    })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Keyboard — matches macOS source lists: ↑/↓ move the selection over visible
+// rows, ←/→ collapse/expand, Return opens.
+// ---------------------------------------------------------------------------
+
+function visibleItems() {
+  return [...pane.querySelectorAll('[data-sidebar-row]:not([data-collapsed]) [data-sidebar-item]:not([data-disabled])')]
+}
+
+function onKeyDown(event) {
+  const items = visibleItems()
+  if (items.length === 0) return
+  const current = pane.querySelector('[data-sidebar-item][data-active="true"]')
+  const index = items.indexOf(current)
+
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault()
+    const next = event.key === 'ArrowDown'
+      ? items[Math.min(index + 1, items.length - 1)]
+      : items[Math.max(index - 1, 0)]
+    if (next && next !== current) {
+      setActiveRow(next)
+      next.scrollIntoView({ block: 'nearest' })
+      emit('itemClick', { item: { id: next.closest('[data-sidebar-row]').dataset.itemId, label: next.dataset.label || '', href: next.getAttribute('href') || '' }, event })
+    }
+  }
+  else if ((event.key === 'ArrowRight' || event.key === 'ArrowLeft') && current) {
+    const row = current.closest('[data-sidebar-row]')
+    if (row.querySelector('[data-sidebar-disclosure]')) {
+      const expanded = row.getAttribute('data-expanded') === 'true'
+      if (event.key === 'ArrowRight' ? !expanded : expanded) {
+        event.preventDefault()
+        toggleRowDisclosure(row)
+      }
+    }
+  }
+  else if (event.key === 'Enter' && current) {
+    current.click()
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Overlay scrollbar — a floating thumb that appears while scrolling and fades
+// away, like macOS overlay scrollbars. The native scrollbar is hidden so rows
+// keep their exact insets.
+// ---------------------------------------------------------------------------
+
+function attachOverlayScrollbar(scrollArea, thumb) {
+  let fadeTimer
+
+  function update() {
+    const { scrollTop, scrollHeight, clientHeight } = scrollArea
+    if (scrollHeight <= clientHeight) {
+      thumb.style.opacity = '0'
+      return
+    }
+    const trackHeight = clientHeight - 8
+    const height = Math.max(24, (clientHeight / scrollHeight) * trackHeight)
+    const top = 4 + (scrollTop / (scrollHeight - clientHeight)) * (trackHeight - height)
+    thumb.style.height = `${height}px`
+    thumb.style.transform = `translateY(${top}px)`
+    thumb.style.opacity = '1'
+    clearTimeout(fadeTimer)
+    fadeTimer = setTimeout(() => { thumb.style.opacity = '0' }, 900)
+  }
+
+  scrollArea.addEventListener('scroll', update, { passive: true })
+}
+
+// ---------------------------------------------------------------------------
+// Collapse (sidebar-wide) — persisted, synced to the app shell and to Craft's
+// native web-sidebar material when present.
+// ---------------------------------------------------------------------------
 
 function applyCollapseEffects(nextCollapsed) {
   if (persistKeyProp) {
-    try {
-      window.localStorage?.setItem(persistKeyProp, nextCollapsed ? 'true' : 'false')
-    }
-    catch {}
+    try { window.localStorage?.setItem(persistKeyProp, String(nextCollapsed)) } catch {}
   }
-
   if (shellSelectorProp) {
     document.querySelectorAll(shellSelectorProp).forEach((shell) => {
       shell.style?.setProperty?.(widthVarProp, nextCollapsed && collapseModeProp === 'hidden' ? '0px' : `${widthProp}px`)
-      if (shell.dataset) shell.dataset.sidebarCollapsed = nextCollapsed ? 'true' : 'false'
+      if (shell.dataset) shell.dataset.sidebarCollapsed = String(nextCollapsed)
     })
   }
-
-  document.documentElement.dataset.stxSidebarCollapsed = nextCollapsed ? 'true' : 'false'
-  if (collapsedClassProp) {
-    document.documentElement.classList.toggle(collapsedClassProp, nextCollapsed)
-  }
-
-  if (nativeMaterialCollapseProp) {
-    window.craft?.window?.setWebSidebarCollapsed?.(nextCollapsed).catch?.(() => {})
-  }
+  document.documentElement.dataset.stxSidebarCollapsed = String(nextCollapsed)
+  if (collapsedClassProp) document.documentElement.classList.toggle(collapsedClassProp, nextCollapsed)
+  window.craft?.window?.setWebSidebarCollapsed?.(nextCollapsed).catch?.(() => {})
 }
 
-function setCollapsed(nextCollapsed, shouldEmit = true) {
+function setCollapsed(nextCollapsed) {
   collapsed.set(nextCollapsed)
   applyCollapseEffects(nextCollapsed)
-  if (shouldEmit) emit('collapse', nextCollapsed)
-}
-
-function onMouseEnter() {
-  if (collapsed() && collapsibleProp && collapseModeProp !== 'hidden') isHovered.set(true)
-}
-
-function onMouseLeave() {
-  isHovered.set(false)
+  emit('collapse', nextCollapsed)
 }
 
 function toggleCollapse() {
-  setCollapsed(!collapsed())
+  if (collapsibleProp) setCollapsed(!collapsed())
 }
 
-function onSectionToggle(sectionId) {
-  emit('sectionToggle', sectionId)
-}
+onMount(() => {
+  pane = document.getElementById(sidebarUidProp)
+  if (!pane) return
 
-function onItemClick(event) {
-  emit('itemClick', event.detail)
-}
-
-function isCraftRuntime() {
-  return window.__craftNativeSidebar === true
-    || window.craft?.__craft_bridge_loaded === true
-    || !!window.craft?.window
-    || !!window.webkit?.messageHandlers?.craft
-}
-
-onMount(async () => {
   if (persistKeyProp) {
     try {
       const saved = window.localStorage?.getItem(persistKeyProp)
       if (saved === 'true' || saved === 'false') collapsed.set(saved === 'true')
-    }
-    catch {}
+    } catch {}
   }
-
   applyCollapseEffects(collapsed())
 
-  if (variantProp === 'desktop' && isCraftRuntime()) {
-    document.documentElement.classList.add('has-stx-sidebar-material')
-    if (document.body?.dataset) document.body.dataset.sidebarMaterial = 'desktop'
-  }
+  pane.addEventListener('click', onClick)
+  pane.addEventListener('keydown', onKeyDown)
 
-  hasNativeSidebar.set(isCraftRuntime() && window.craft?.hasNativeSidebar?.() === true)
+  const scrollArea = pane.querySelector('[data-sidebar-scroll]')
+  const thumb = pane.querySelector('[data-sidebar-scroll-thumb]')
+  if (scrollArea && thumb) attachOverlayScrollbar(scrollArea, thumb)
 
-  const nativeSidebarApi = window.craft?.nativeUI || window.craft?.components
-  if (isCraftRuntime() && nativeSidebarApi?.createSidebar) {
-    try {
-      const sidebar = await nativeSidebarApi.createSidebar({
-        position: positionProp,
-        width: widthProp,
-        minWidth: minWidthProp,
-        collapseMode: collapseModeProp,
-        collapsible: collapsibleProp,
-        variant: variantProp,
-        material: variantProp === 'desktop' ? 'sidebar' : undefined,
-        backgroundEffect: variantProp === 'desktop' ? 'vibrancy' : undefined,
-        materialOpacity: materialOpacityProp,
-        materialDarkOpacity: materialDarkOpacityProp,
-        materialScheme: materialSchemeProp,
-        allowsVibrancy: variantProp === 'desktop' || variantProp === 'vibrancy' || variantProp === 'tahoe',
-        sections: sectionsProp.map(s => ({
-          id: s.id,
-          label: s.label,
-          items: s.items?.map(i => ({ id: i.id, label: i.label, icon: i.icon, href: i.href, badge: i.badge })),
-        })),
-      })
-      if (sidebar) hasNativeSidebar.set(true)
-    }
-    catch (err) {
-      console.warn('[Sidebar] Failed to create native sidebar, using web fallback:', err)
-    }
-  }
+  // Ensure the initial active row carries the theme's highlight classes.
+  const active = pane.querySelector('[data-sidebar-item][data-active="true"]')
+  if (active) active.classList.add(...activeClassList())
+  syncRowVisibility()
 })
 
 defineExpose({ collapsed, toggle: toggleCollapse })
 </script>
 
 <aside
-  :show="!hasNativeSidebar()"
-  class="{{ containerClasses }} sidebar-container"
-  data-sidebar-variant="{{ variant }}"
-  data-sidebar-material-scheme="{{ materialScheme }}"
+  id="{{ sidebarUid }}"
+  data-stx-sidebar
+  data-sidebar-theme="{{ theme }}"
+  data-active-class="{{ activeClasses }}"
+  class="{{ paneClasses }}"
+  :style="`width: ${sidebarWidth()}`"
   :aria-hidden="String(collapsed() && collapseModeProp === 'hidden')"
-  :style="`width: ${sidebarWidth()}; --stx-sidebar-material-opacity: ${materialOpacityProp}; --stx-sidebar-material-dark-opacity: ${materialDarkOpacityProp}`"
-  @mouseenter="onMouseEnter()"
-  @mouseleave="onMouseLeave()"
   role="navigation"
-  aria-label="Sidebar navigation"
+  aria-label="Sidebar"
+  tabindex="0"
 >
-  @if(variantTint)
-    <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-amber-50/30 via-orange-50/20 to-stone-100/30 dark:from-neutral-800/20 dark:via-neutral-900/10 dark:to-neutral-800/20 mix-blend-overlay"></div>
+  @if(tintClasses)
+    <div class="absolute inset-0 pointer-events-none {{ tintClasses }}"></div>
   @endif
-  @if(variantShimmer)
-    <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(112deg,rgba(255,255,255,0.20)_0%,rgba(255,255,255,0.04)_45%,rgba(226,226,222,0.16)_100%)] dark:bg-[linear-gradient(112deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.02)_46%,rgba(255,255,255,0.06)_100%)]"></div>
+  @if(hasShimmerRim)
+    <div class="stx-sidebar-rim" aria-hidden="true"></div>
   @endif
 
   @if($slots.header)
-    <div class="flex-shrink-0 relative z-10">
+    <div class="relative z-10 flex-shrink-0">
       <slot name="header" />
     </div>
   @endif
 
-  <div class="flex-1 overflow-y-auto overflow-x-hidden relative z-10">
-    @if(sections.length > 0)
-      <nav class="{{ navClasses }}">
-        @foreach(section in sections)
-          <SidebarSection
-            :id="section.id"
-            :label="section.label"
-            :icon="section.icon"
-            :items="section.items"
-            :expanded="section.expanded !== false"
-            :collapsible="section.collapsible !== false"
-            :showLabel="showExpanded()"
-            :variant="variant"
-            @toggle="onSectionToggle(section.id)"
-            @itemClick="onItemClick($event)"
-          />
-        @endforeach
-      </nav>
-    @else
-      <div class="{{ slotClasses }}">
+  <div class="relative z-10 min-h-0 flex-1">
+    <div data-sidebar-scroll class="{{ scrollAreaClasses }} h-full stx-sidebar-scroll">
+      @if(sectionList.length > 0)
+        <nav class="flex flex-col">
+          @foreach(sectionList as section)
+            <SidebarSection
+              :id="section.id"
+              :label="section.label"
+              :items="section.items"
+              :collapsible="section.collapsible"
+              :collapsed="section.collapsed"
+              :theme="theme"
+            />
+          @endforeach
+        </nav>
+      @else
         <slot />
-      </div>
-    @endif
+      @endif
+    </div>
+    <div data-sidebar-scroll-thumb class="stx-sidebar-scroll-thumb" aria-hidden="true"></div>
   </div>
 
   @if($slots.footer)
-    <div class="flex-shrink-0 relative z-10">
+    <div class="relative z-10 flex-shrink-0">
       <slot name="footer" />
     </div>
-  @endif
-
-  @if(collapsible)
-    <button
-      type="button"
-      class="absolute top-4 {{ collapseBtnPosition }} p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-black/5 dark:hover:text-neutral-300 dark:hover:bg-white/10 transition-colors z-20"
-      @click="toggleCollapse()"
-      :aria-label="collapseAriaLabel()"
-      data-sidebar-collapse
-      data-stx-sidebar-collapse-button
-    >
-      <div :show="!collapsed()" class="i-hugeicons-sidebar-left w-5 h-5"></div>
-      <div :show="collapsed()" class="i-hugeicons-sidebar-right w-5 h-5"></div>
-    </button>
   @endif
 </aside>
 
 <style scoped>
-.overflow-y-auto::-webkit-scrollbar { width: 6px; }
-.overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
-.overflow-y-auto::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.15); border-radius: 3px; }
-.overflow-y-auto::-webkit-scrollbar-thumb:hover { background-color: rgba(0, 0, 0, 0.25); }
-.sidebar-container[data-sidebar-variant="desktop"] {
-  background-color: rgba(246, 246, 244, var(--stx-sidebar-material-opacity, 0.78));
-  backdrop-filter: blur(24px) saturate(1.08);
-  -webkit-backdrop-filter: blur(24px) saturate(1.08);
+[data-stx-sidebar] {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  outline: none;
 }
-html.has-native-sidebar [data-stx-native-window-controls] {
-  display: none;
+
+/* Liquid Glass edge highlight: a hairline rim that catches light along the
+   pane's edges, with a slow sheen drifting across it. */
+.stx-sidebar-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 5;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.50),
+    inset 1px 0 0 rgba(255, 255, 255, 0.26),
+    inset -1px 0 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.14);
 }
-html.has-native-sidebar [data-stx-sidebar-web-chrome] {
-  margin-left: 202px;
+.stx-sidebar-rim::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.00) 28%,
+    rgba(255, 255, 255, 0.18) 52%,
+    rgba(255, 255, 255, 0.00) 74%,
+    rgba(255, 255, 255, 0.65) 100%
+  );
+  background-size: 250% 250%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: stx-sidebar-shimmer 10s ease-in-out infinite alternate;
+}
+@keyframes stx-sidebar-shimmer {
+  from { background-position: 0% 0%; }
+  to { background-position: 100% 100%; }
 }
 @media (prefers-color-scheme: dark) {
-  .sidebar-container[data-sidebar-variant="desktop"]:not([data-sidebar-material-scheme="light"]) {
-    background-color: rgba(24, 24, 23, var(--stx-sidebar-material-dark-opacity, 0.8));
+  .stx-sidebar-rim {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 1px 0 0 rgba(255, 255, 255, 0.10),
+      inset -1px 0 0 rgba(255, 255, 255, 0.05),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.06);
   }
-  .overflow-y-auto::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.15); }
-  .overflow-y-auto::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.25); }
+  .stx-sidebar-rim::after { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stx-sidebar-rim::after { animation: none; }
+}
+
+/* Rows collapse like AppKit outlines: fixed row height animates to zero. */
+[data-sidebar-row] {
+  height: 32px; /* 30px row + 2px gap */
+  padding-bottom: 2px;
+  transition: height 0.22s ease, opacity 0.16s ease;
+}
+[data-sidebar-row][data-collapsed] {
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Disclosure chevron rotates from ▸ to ▾ */
+[data-sidebar-row][data-expanded="true"] [data-sidebar-disclosure] > * {
+  transform: rotate(90deg);
+}
+[data-sidebar-section][data-expanded="false"] [data-sidebar-section-chevron] {
+  transform: rotate(-90deg);
+}
+
+/* Native scrollbar hidden; the floating thumb below takes its place. */
+.stx-sidebar-scroll {
+  scrollbar-width: none;
+}
+.stx-sidebar-scroll::-webkit-scrollbar {
+  display: none;
+}
+.stx-sidebar-scroll-thumb {
+  position: absolute;
+  top: 0;
+  right: 3px;
+  width: 7px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 20;
+}
+@media (prefers-color-scheme: dark) {
+  .stx-sidebar-scroll-thumb { background: rgba(255, 255, 255, 0.35); }
 }
 </style>

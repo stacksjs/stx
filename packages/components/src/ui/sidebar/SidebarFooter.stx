@@ -1,109 +1,71 @@
 <script server>
-export const showSettings = $props.showSettings ?? true
-export const showThemeToggle = $props.showThemeToggle ?? true
-export const settingsHref = $props.settingsHref || '/settings'
-export const settingsLabel = $props.settingsLabel || 'Settings'
-export const collapsed = $props.collapsed ?? false
-export const actions = $props.actions || []
-export const variant = $props.variant || 'tahoe'
+// The bottom strip of a macOS sidebar — e.g. the account row in Music
+// ("Chris Breuer" with an avatar) or custom actions.
+export const theme = $props.theme || $props.variant || 'macos'
+export const avatar = $props.avatar || ''
+export const name = $props.name || ''
+export const detail = $props.detail || ''
+export const actions = $props.actions || [] // [{ id, icon, label }]
 
-const footerVariants = {
-  workspace: {
-    container: 'p-5 space-y-2',
-    action: 'flex-1 flex items-center gap-3 rounded-[18px] px-4 py-3 text-[17px] text-zinc-700 transition-colors hover:bg-[#ececea] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10',
-    icon: 'w-5 h-5 text-zinc-500 dark:text-zinc-400',
-  },
-  desktop: {
-    container: 'p-4 space-y-2',
-    action: 'flex-1 flex items-center gap-3 rounded-[16px] px-3.5 py-2.5 text-[15px] text-zinc-700 transition-colors hover:bg-white/34 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10',
-    icon: 'w-5 h-5 text-zinc-500 dark:text-zinc-400',
-  },
-  default: {
-    container: 'border-t border-black/5 dark:border-white/10 p-3 space-y-2',
-    action: 'flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors',
-    icon: 'w-4 h-4',
-  },
-}
+export const isMacos = theme === 'macos' || theme === 'tahoe' || theme === 'macos-tahoe' || theme === 'macos-latest'
 
-const footerStyle = footerVariants[variant] || footerVariants.default
-export const footerClasses = footerStyle.container
-export const actionClasses = footerStyle.action
-export const footerIconClasses = footerStyle.icon
-export const settingsIconClasses = `i-hugeicons-settings-02 ${footerStyle.icon}`
-export const themeButtonClasses = variant === 'workspace' || variant === 'desktop'
-  ? 'p-3 rounded-[16px] text-zinc-500 hover:text-zinc-900 hover:bg-white/50 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors'
-  : 'p-2 rounded-lg text-black/50 hover:text-black/80 hover:bg-black/5 dark:text-white/50 dark:hover:text-white/80 dark:hover:bg-white/10 transition-colors'
+export const profileClasses = [
+  'flex w-full items-center gap-[8px]',
+  'h-[44px] rounded-[10px] px-[6px]',
+  'text-[13px] font-medium text-black dark:text-white',
+  'transition-colors duration-150',
+  'hover:bg-black/4 active:bg-black/8',
+  'dark:hover:bg-white/6 dark:active:bg-white/12',
+].join(' ')
+
+export const actionClasses = [
+  'grid h-[28px] w-[28px] place-items-center rounded-[7px]',
+  'text-[#3c3c43]/70 dark:text-[#ebebf5]/70',
+  'transition-colors duration-150',
+  'hover:bg-black/5 dark:hover:bg-white/10',
+].join(' ')
 </script>
 
 <script client>
 const emit = defineEmits()
 
-function onThemeToggle() {
-  document.documentElement.classList.toggle('dark')
-  emit('themeToggle')
+function onProfileClick() {
+  emit('profileClick')
 }
 
-function onActionClick(index) {
-  emit('actionClick', index)
+function onAction(event) {
+  emit('action', event.target.closest('[data-sidebar-action]')?.dataset.sidebarAction)
 }
 </script>
 
-<div class="{{ footerClasses }}">
-  <!-- Custom actions slot -->
-  <slot />
-
-  <!-- Quick actions row -->
-  @if(!collapsed && actions.length > 0)
-    <div class="flex items-center gap-2">
-      @foreach(actions as action)
-        @if(action.href)
-          <a
-            href="{{ action.href }}"
-            class="{{ actionClasses }}"
-          >
-            @if(action.icon)
-              <div class="{{ action.icon }} {{ footerIconClasses }}"></div>
-            @endif
-            <span>{{ action.label }}</span>
-          </a>
+@if(isMacos)
+  <div class="shrink-0 px-[10px] pb-[8px] pt-[4px]">
+    @if(name)
+      <button type="button" class="{{ profileClasses }}" @click="onProfileClick()">
+        @if(avatar)
+          <img src="{{ avatar }}" alt="" class="h-[30px] w-[30px] rounded-full object-cover shadow-sm" />
         @else
-          <button
-            type="button"
-            class="{{ actionClasses }}"
-            @click="onActionClick({{ $loop.index }})"
-          >
-            @if(action.icon)
-              <div class="{{ action.icon }} {{ footerIconClasses }}"></div>
-            @endif
-            <span>{{ action.label }}</span>
-          </button>
+          <span class="grid h-[30px] w-[30px] place-items-center rounded-full bg-black/10 text-[13px] font-semibold dark:bg-white/15">{{ name.charAt(0) }}</span>
         @endif
-      @endforeach
-
-      @if(showThemeToggle)
-        <button
-          type="button"
-          class="{{ themeButtonClasses }}"
-          @click="onThemeToggle()"
-          aria-label="Toggle dark mode"
-        >
-          <div class="i-hugeicons-moon-02 w-4 h-4 dark:hidden"></div>
-          <div class="i-hugeicons-sun-02 w-4 h-4 hidden dark:block"></div>
-        </button>
-      @endif
-    </div>
-  @endif
-
-  <!-- Settings link -->
-  @if(showSettings)
-    <a
-      href="{{ settingsHref }}"
-      class="{{ actionClasses }}"
-    >
-      <div class="{{ settingsIconClasses }}"></div>
-      @if(!collapsed)
-        <span>{{ settingsLabel }}</span>
-      @endif
-    </a>
-  @endif
-</div>
+        <span class="min-w-0 flex-1 truncate text-left">{{ name }}</span>
+        @if(detail)
+          <span class="shrink-0 text-[12px] text-[#3c3c43]/60 dark:text-[#ebebf5]/60">{{ detail }}</span>
+        @endif
+      </button>
+    @endif
+    @if(actions.length > 0)
+      <div class="flex items-center gap-[4px] pt-[4px]">
+        @foreach(actions as action)
+          <button type="button" class="{{ actionClasses }}" aria-label="{{ action.label }}" data-sidebar-action="{{ action.id }}" @click="onAction($event)">
+            <span class="{{ action.icon }} h-[16px] w-[16px]" aria-hidden="true"></span>
+          </button>
+        @endforeach
+      </div>
+    @endif
+    <slot />
+  </div>
+@else
+  <div class="shrink-0 border-t border-black/5 p-3 dark:border-white/10">
+    <slot />
+  </div>
+@endif

@@ -1,225 +1,153 @@
 export { default as Sidebar } from './Sidebar.stx'
-export { default as SidebarSection } from './SidebarSection.stx'
-export { default as SidebarItem } from './SidebarItem.stx'
-export { default as SidebarHeader } from './SidebarHeader.stx'
 export { default as SidebarFooter } from './SidebarFooter.stx'
+export { default as SidebarHeader } from './SidebarHeader.stx'
+export { default as SidebarItem } from './SidebarItem.stx'
+export { default as SidebarSection } from './SidebarSection.stx'
+export * from './themes'
 
-// Types
+/**
+ * One navigation row.
+ *
+ * ```ts
+ * { id: 'icloud', label: 'iCloud', icon: 'i-f7-tray', iconColor: 'blue', count: 248, active: true }
+ * ```
+ */
 export interface SidebarItemData {
   id: string
   label: string
+  /** Iconify utility class, e.g. `i-f7-tray`. F7 icons mirror SF Symbols. */
   icon?: string
+  /** macOS system color name (`"blue"`, `"red"`, `"yellow"`, …) or any CSS color. */
+  iconColor?: string
+  /** Image URL rendered instead of an icon (album art, avatars). */
+  image?: string
   href?: string
+  /** Right-aligned count — rendered as plain gray text like native macOS. */
+  count?: string | number
+  /** @deprecated Use `count`. */
   badge?: string | number
   active?: boolean
   disabled?: boolean
+  /** Nested rows, indented and collapsible under this one. */
+  children?: SidebarItemData[]
+  /** Show a disclosure chevron even without children. */
+  expandable?: boolean
+  /** Initial disclosure state when the item has children. Defaults to true. */
+  expanded?: boolean
 }
 
+/** A titled group of rows (e.g. "Favorites"). Untitled when `label` is empty. */
 export interface SidebarSectionData {
   id: string
-  label: string
-  icon?: string
+  label?: string
   items: SidebarItemData[]
-  expanded?: boolean
+  /** Section headers collapse their group on click. Defaults to true. */
   collapsible?: boolean
+  /** Initial collapse state. Defaults to false (expanded). */
+  collapsed?: boolean
 }
 
+/**
+ * Sidebar themes. `macos` recreates the sidebar of the latest macOS
+ * (Tahoe, macOS 26/27) — translucent material, Liquid Glass edge shimmer,
+ * 30px rows with 9px-radius highlights and plain gray counts. `tahoe`,
+ * `macos-tahoe` and `macos-latest` are aliases of `macos`. The remaining
+ * names are legacy looks kept for backwards compatibility.
+ */
+export type SidebarThemeChoice =
+  | 'macos'
+  | 'macos-tahoe'
+  | 'macos-latest'
+  | 'tahoe'
+  | 'vibrancy'
+  | 'solid'
+  | 'transparent'
+  | 'workspace'
+  | 'desktop'
+
 export interface SidebarProps {
-  /** Array of sidebar sections with their items */
+  /** Sections with their items. Omit to compose children via the default slot. */
   sections?: SidebarSectionData[]
-  /** Whether the sidebar is collapsed */
-  collapsed?: boolean
-  /** Whether the sidebar can be collapsed */
-  collapsible?: boolean
-  /** Width of the expanded sidebar in pixels */
+  /** Visual theme. Defaults to `macos`. */
+  theme?: SidebarThemeChoice
+  /** @deprecated Use `theme`. */
+  variant?: SidebarThemeChoice
+  /** Expanded width in pixels. Defaults to 250 (native macOS default). */
   width?: number
-  /** Minimum width when collapsed in pixels */
-  minWidth?: number
-  /** Collapse behavior: keep a compact rail or hide the sidebar entirely */
-  collapseMode?: 'rail' | 'hidden'
-  /** Visual style variant */
-  variant?: SidebarVariant
-  /** Layout placement for app shells and native-like sidebars */
-  placement?: 'fixed' | 'sticky' | 'static'
-  /** Position of the sidebar */
   position?: 'left' | 'right'
-  /** Whether to show border */
+  /** Layout placement for app shells. Defaults to `fixed`. */
+  placement?: 'fixed' | 'sticky' | 'static'
   bordered?: boolean
-  /** Light-mode tint opacity over sidebar material. Higher values reduce vibrancy. */
-  materialOpacity?: number
-  /** Dark-mode tint opacity over sidebar material. Higher values reduce vibrancy. */
-  materialDarkOpacity?: number
-  /** Force native/sidebar material appearance instead of following system mode */
-  materialScheme?: 'system' | 'light' | 'dark'
-  /** localStorage key used to persist collapse state */
+  /** Whether the sidebar starts collapsed. */
+  collapsed?: boolean
+  collapsible?: boolean
+  /** `hidden` slides away entirely (macOS); `rail` keeps a compact strip. */
+  collapseMode?: 'hidden' | 'rail'
+  /** Rail width when `collapseMode` is `rail`. */
+  minWidth?: number
+  /** localStorage key that persists collapse state. */
   persistKey?: string
-  /** Optional app shell selector whose sidebar width CSS variable should be synced */
+  /** App-shell selector whose width CSS variable tracks the sidebar. */
   shellSelector?: string
-  /** CSS variable written on shellSelector when the sidebar collapses or expands */
   widthVar?: string
-  /** Optional class toggled on the document element while collapsed */
   collapsedClass?: string
-  /** Whether hidden desktop collapse should notify Craft's web sidebar material */
-  nativeMaterialCollapse?: boolean
-  /** Additional CSS classes */
   className?: string
-  /** Callback when collapse state changes */
   onCollapse?: (collapsed: boolean) => void
-  /** Callback when a section is toggled */
   onSectionToggle?: (sectionId: string) => void
-  /** Callback when an item is clicked */
+  onItemToggle?: (event: { id: string, expanded: boolean }) => void
   onItemClick?: (item: SidebarItemData, event: Event) => void
 }
 
 export interface SidebarSectionProps {
   id: string
-  label: string
-  icon?: string
+  label?: string
   items: SidebarItemData[]
-  expanded?: boolean
   collapsible?: boolean
-  showLabel?: boolean
-  variant?: SidebarVariant
-  onToggle?: (id: string) => void
-  onItemClick?: (item: SidebarItemData, event: Event) => void
+  collapsed?: boolean
+  theme?: SidebarThemeChoice
 }
 
-export interface SidebarItemProps {
+export interface SidebarItemProps extends SidebarItemData {
+  /** Nesting depth — set by SidebarSection when flattening the tree. */
+  depth?: number
+  /** Slash-joined ancestor ids — set by SidebarSection. */
+  parents?: string
+  theme?: SidebarThemeChoice
+}
+
+/** A floating toolbar or footer action button. */
+export interface SidebarActionData {
   id: string
+  /** Iconify utility class. */
+  icon: string
+  /** Accessible label. */
   label: string
-  icon?: string
-  href?: string
-  badge?: string | number
-  active?: boolean
-  disabled?: boolean
-  indent?: boolean
-  variant?: SidebarVariant
-  onClick?: (event: Event) => void
 }
 
 export interface SidebarHeaderProps {
+  theme?: SidebarThemeChoice
+  /** Render traffic lights (wired to Craft's window API when present). */
+  showWindowControls?: boolean
+  /** Floating Liquid Glass toolbar buttons on the right. */
+  actions?: SidebarActionData[]
+  showSearch?: boolean
+  searchPlaceholder?: string
+  /** Legacy (non-macos) header content. */
   title?: string
   subtitle?: string
   logo?: string
-  logoIcon?: string
-  /**
-   * Show macOS-style window controls. `auto` only renders them when Craft
-   * exposes a custom-window-controls marker, avoiding duplicate native chrome.
-   */
-  showWindowControls?: boolean | 'auto'
-  showNavigationControls?: boolean
-  showSearch?: boolean
-  searchPlaceholder?: string
-  searchValue?: string
-  collapsed?: boolean
-  variant?: SidebarVariant
+  onAction?: (actionId: string) => void
   onSearch?: (value: string) => void
+  onWindowControl?: (action: 'close' | 'minimize' | 'zoom') => void
 }
 
 export interface SidebarFooterProps {
-  showSettings?: boolean
-  showThemeToggle?: boolean
-  settingsHref?: string
-  settingsLabel?: string
-  collapsed?: boolean
-  variant?: SidebarVariant
-  actions?: Array<{
-    label: string
-    icon?: string
-    href?: string
-    onClick?: () => void
-  }>
-  onThemeToggle?: () => void
-}
-
-export type SidebarVariant = 'tahoe' | 'vibrancy' | 'solid' | 'transparent' | 'workspace' | 'desktop'
-
-export type SidebarMaterial = 'auto' | 'sidebar' | 'hud' | 'popover' | 'content'
-
-export type SidebarBackgroundEffect = 'none' | 'vibrancy' | 'shimmer'
-
-/**
- * Native Sidebar Configuration
- *
- * Used to configure the native macOS sidebar when running with Craft's --native-sidebar flag.
- * The sidebar uses NSOutlineView with vibrancy for a true Tahoe-style appearance.
- */
-export interface NativeSidebarConfig {
-  /** Visual style variant shared with the web fallback */
-  variant?: SidebarVariant
-  /** Native material used by Craft desktop sidebars */
-  material?: SidebarMaterial
-  /** Native background treatment */
-  backgroundEffect?: SidebarBackgroundEffect
-  /** Whether the native sidebar should let the window background show through */
-  allowsVibrancy?: boolean
-  /** Light-mode tint opacity over sidebar material */
-  materialOpacity?: number
-  /** Dark-mode tint opacity over sidebar material */
-  materialDarkOpacity?: number
-  /** Force native/sidebar material appearance instead of following system mode */
-  materialScheme?: 'system' | 'light' | 'dark'
-  /** Header configuration */
-  header?: {
-    title?: string
-    subtitle?: string
-    icon?: string // SF Symbol name (e.g., 'house.fill', 'message.fill')
-  }
-  /** Search placeholder text */
-  searchPlaceholder?: string
-  /** Array of sidebar sections */
-  sections: NativeSidebarSection[]
-  /** Minimum width when collapsed */
-  minWidth?: number
-  /** Maximum width */
-  maxWidth?: number
-  /** Whether the sidebar can be collapsed */
-  canCollapse?: boolean
-}
-
-export interface NativeSidebarSection {
-  /** Unique section ID */
-  id: string
-  /** Section title (shown as header) */
-  title: string
-  /** Whether section is collapsible */
-  collapsible?: boolean
-  /** Whether section starts collapsed */
-  collapsed?: boolean
-  /** Items in this section */
-  items: NativeSidebarItem[]
-}
-
-export interface NativeSidebarItem {
-  /** Unique item ID */
-  id: string
-  /** Display label */
-  label: string
-  /** SF Symbol icon name (e.g., 'tray.fill', 'envelope.badge.fill') */
-  icon?: string
-  /** Badge count or text */
-  badge?: string | number
-  /** Tint color for the icon (hex) */
-  tintColor?: string
-  /** Whether this item is selected */
-  selected?: boolean
-  /** Whether this item is disabled */
-  disabled?: boolean
-  /** Nested children items */
-  children?: NativeSidebarItem[]
-  /** Custom data to pass to selection handler */
-  data?: Record<string, unknown>
-}
-
-/**
- * Craft sidebar selection event
- * Passed to window.craft._sidebarSelectHandler when user clicks a sidebar item
- */
-export interface SidebarSelectEvent {
-  /** ID of the selected item */
-  itemId: string
-  /** The full item object */
-  item: NativeSidebarItem
-  /** Parent section ID */
-  sectionId?: string
+  theme?: SidebarThemeChoice
+  /** Account row, like Music's profile footer. */
+  avatar?: string
+  name?: string
+  detail?: string
+  actions?: SidebarActionData[]
+  onProfileClick?: () => void
+  onAction?: (actionId: string) => void
 }

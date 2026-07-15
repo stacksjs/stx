@@ -1,92 +1,86 @@
 <script server>
+import { resolveIconColor, resolveSidebarTheme } from './themes'
+
 export const id = $props.id || ''
 export const label = $props.label || ''
 export const icon = $props.icon || ''
+export const iconColor = $props.iconColor || ''
+export const image = $props.image || ''
 export const href = $props.href || ''
-export const badge = $props.badge || ''
+export const count = $props.count ?? $props.badge ?? ''
 export const active = $props.active ?? false
 export const disabled = $props.disabled ?? false
-export const indent = $props.indent ?? false
-export const variant = $props.variant || 'tahoe'
+export const expandable = $props.expandable ?? false
+export const expanded = $props.expanded ?? true
+export const depth = $props.depth || 0
+export const parents = $props.parents || ''
+export const theme = $props.theme || $props.variant || 'macos'
 
-const itemVariants = {
-  workspace: {
-    base: 'flex w-full items-center gap-3 rounded-[16px] px-3.5 py-2 text-[14px] leading-tight transition-colors duration-150',
-    indent: '',
-    active: 'bg-[#e7e7e5] text-zinc-950',
-    inactive: 'text-zinc-700 hover:bg-[#ececea] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10',
-    icon: active ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 dark:text-zinc-500',
-    badge: 'ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-white/70 px-1.5 text-[11px] font-medium text-zinc-500 shadow-sm dark:bg-white/10 dark:text-zinc-400',
-  },
-  desktop: {
-    base: 'flex w-full items-center gap-3 rounded-[14px] px-3 py-1.5 text-[13.5px] leading-tight transition-colors duration-150',
-    indent: '',
-    active: 'bg-[#e8e8e6]/90 text-zinc-950 dark:bg-white/12 dark:text-white',
-    inactive: 'text-zinc-700 hover:bg-white/38 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10',
-    icon: active ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400',
-    badge: 'ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-white/72 px-1.5 text-[11px] font-medium text-zinc-500 shadow-sm dark:bg-white/10 dark:text-zinc-400',
-  },
-  default: {
-    base: 'flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-all duration-150',
-    indent: indent ? 'ml-2' : '',
-    active: 'bg-blue-500/20 text-blue-600 dark:bg-blue-400/25 dark:text-blue-300 font-medium',
-    inactive: 'text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10',
-    icon: active ? 'text-blue-600 dark:text-blue-300' : 'text-black/50 dark:text-white/50',
-    badge: 'ml-auto px-2 py-0.5 text-xs font-medium rounded-full bg-black/10 text-black/70 dark:bg-white/15 dark:text-white/70',
-  },
-}
+const themeStyle = resolveSidebarTheme(theme).item
 
-const itemStyle = itemVariants[variant] || itemVariants.default
-const baseItemList = [itemStyle.base, itemStyle.indent]
-const stateClasses = disabled ? 'opacity-50 cursor-not-allowed' : active ? itemStyle.active : itemStyle.inactive
+export const rowClasses = [
+  themeStyle.base,
+  disabled ? themeStyle.disabled : themeStyle.hover,
+  disabled ? '' : themeStyle.pressed,
+  active ? themeStyle.active : '',
+].filter(Boolean).join(' ')
 
-export const itemClasses = [...baseItemList, stateClasses].filter(Boolean).join(' ')
-export const iconClasses = `${icon} h-[18px] w-[18px] flex-shrink-0 ${itemStyle.icon}`
-export const badgeClasses = itemStyle.badge
+export const disclosureClasses = themeStyle.disclosure
+export const chevronClasses = themeStyle.chevron
+export const iconSlotClasses = themeStyle.iconSlot
+export const iconClasses = `${icon} ${themeStyle.icon}`
+export const imageClasses = themeStyle.image
+export const labelClasses = themeStyle.label
+export const countClasses = themeStyle.count
+
+// Nested rows are indented; the icon tint accepts macOS system color names
+// ("blue", "yellow", …) or any CSS color.
+export const indentStyle = depth > 0 ? `padding-left: ${depth * themeStyle.indentPerLevel}px` : ''
+const tint = resolveIconColor(iconColor)
+export const iconStyle = tint ? `color: ${tint}` : ''
+export const isLink = Boolean(href) && !disabled
 </script>
 
-<script client>
-const emit = defineEmits()
-const isDisabled = {{ disabled }}
-const itemPayload = { id: {{ id }}, label: {{ label }}, href: {{ href }} }
-
-function onClick(event) {
-  if (isDisabled) {
-    event.preventDefault()
-    return
-  }
-  emit('click', { item: itemPayload, event })
-}
-</script>
-
-@if(href && !disabled)
-  <a
-    href="{{ href }}"
-    class="{{ itemClasses }}"
-    @click="onClick($event)"
-    @if(active)aria-current="page"@endif
-  >
-    @if(icon)
-      <div class="{{ iconClasses }}"></div>
-    @endif
-    <span class="flex-1 truncate">{{ label }}</span>
-    @if(badge)
-      <span class="{{ badgeClasses }}">{{ badge }}</span>
-    @endif
-  </a>
-@else
-  <button
-    type="button"
-    class="{{ itemClasses }}"
-    @click="onClick($event)"
-    @if(disabled)disabled aria-disabled="true"@endif
-  >
-    @if(icon)
-      <div class="{{ iconClasses }}"></div>
-    @endif
-    <span class="flex-1 truncate text-left">{{ label }}</span>
-    @if(badge)
-      <span class="{{ badgeClasses }}">{{ badge }}</span>
-    @endif
-  </button>
-@endif
+<div
+  data-sidebar-row
+  data-item-id="{{ id }}"
+  @if(parents)data-parents="{{ parents }}"@endif
+  @if(expandable)data-expanded="{{ expanded ? 'true' : 'false' }}"@endif
+  @if(indentStyle)style="{{ indentStyle }}"@endif
+>
+  @if(isLink)
+    <a href="{{ href }}" data-sidebar-item data-label="{{ label }}" class="{{ rowClasses }}" @if(active)data-active="true" aria-current="page"@endif>
+      <span class="{{ disclosureClasses }}" @if(expandable)data-sidebar-disclosure role="button" aria-label="Toggle {{ label }}"@endif>
+        @if(expandable)
+          <span class="{{ chevronClasses }}" aria-hidden="true"></span>
+        @endif
+      </span>
+      @if(image)
+        <span class="{{ iconSlotClasses }}"><img src="{{ image }}" alt="" class="{{ imageClasses }}" /></span>
+      @elseif(icon)
+        <span class="{{ iconSlotClasses }}"><span class="{{ iconClasses }}" @if(iconStyle)style="{{ iconStyle }}"@endif aria-hidden="true"></span></span>
+      @endif
+      <span class="{{ labelClasses }}">{{ label }}</span>
+      @if(count !== '' && count !== null && count !== undefined)
+        <span class="{{ countClasses }}">{{ count }}</span>
+      @endif
+    </a>
+  @else
+    <button type="button" data-sidebar-item data-label="{{ label }}" class="{{ rowClasses }}" @if(active)data-active="true" aria-current="page"@endif @if(disabled)data-disabled disabled aria-disabled="true"@endif>
+      <span class="{{ disclosureClasses }}" @if(expandable)data-sidebar-disclosure role="button" aria-label="Toggle {{ label }}"@endif>
+        @if(expandable)
+          <span class="{{ chevronClasses }}" aria-hidden="true"></span>
+        @endif
+      </span>
+      @if(image)
+        <span class="{{ iconSlotClasses }}"><img src="{{ image }}" alt="" class="{{ imageClasses }}" /></span>
+      @elseif(icon)
+        <span class="{{ iconSlotClasses }}"><span class="{{ iconClasses }}" @if(iconStyle)style="{{ iconStyle }}"@endif aria-hidden="true"></span></span>
+      @endif
+      <span class="{{ labelClasses }}">{{ label }}</span>
+      @if(count !== '' && count !== null && count !== undefined)
+        <span class="{{ countClasses }}">{{ count }}</span>
+      @endif
+    </button>
+  @endif
+</div>
