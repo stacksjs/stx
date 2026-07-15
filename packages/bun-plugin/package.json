@@ -1,6 +1,7 @@
 {
   "name": "bun-plugin-stx",
   "type": "module",
+  "sideEffects": false,
   "version": "0.2.92",
   "description": "A Bun plugin that allows for using Laravel Blade-like syntax.",
   "author": "Chris Breuer <chris@stacksjs.org>",
@@ -25,13 +26,13 @@
   ],
   "exports": {
     ".": {
-      "bun": "./dist/index.js",
       "types": "./dist/index.d.ts",
+      "bun": "./dist/index.js",
       "import": "./dist/index.js"
     },
     "./client": {
-      "bun": "./dist/client.js",
       "types": "./dist/client.d.ts",
+      "bun": "./dist/client.js",
       "import": "./dist/client.js"
     },
     "./preload": {
@@ -43,8 +44,8 @@
       "import": "./dist/serve.js"
     },
     "./*": {
-      "bun": "./dist/*.js",
       "types": "./dist/*.d.ts",
+      "bun": "./dist/*.js",
       "import": "./dist/*.js"
     }
   },

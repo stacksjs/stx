@@ -1,6 +1,7 @@
 {
   "name": "@stacksjs/stx",
   "type": "module",
+  "sideEffects": false,
   "version": "0.2.92",
   "description": "A performant UI Framework. Powered by Bun.",
   "author": "Chris Breuer <chris@stacksjs.org>",
@@ -61,13 +62,13 @@
       "import": "./dist/bundle-analyzer.js"
     },
     "./composables": {
-      "bun": "./dist/composables/index.js",
       "types": "./dist/composables/index.d.ts",
+      "bun": "./dist/composables/index.js",
       "import": "./dist/composables/index.js"
     },
     "./composables/*": {
-      "bun": "./dist/composables/*.js",
       "types": "./dist/composables/*.d.ts",
+      "bun": "./dist/composables/*.js",
       "import": "./dist/composables/*.js"
     },
     "./*": {
