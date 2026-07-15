@@ -271,9 +271,27 @@ function toggleCollapse() {
   if (collapsibleProp) setCollapsed(!collapsed())
 }
 
+// ---------------------------------------------------------------------------
+// Appearance — native sidebars follow the OS light/dark appearance. Crosswind
+// dark: utilities are class-based, so mirror prefers-color-scheme onto the
+// root element unless the app manages its own theme (data-theme attribute).
+// ---------------------------------------------------------------------------
+
+function followSystemAppearance() {
+  const media = window.matchMedia('(prefers-color-scheme: dark)')
+  function sync() {
+    if (document.documentElement.dataset.theme) return
+    document.documentElement.classList.toggle('dark', media.matches)
+  }
+  sync()
+  media.addEventListener('change', sync)
+}
+
 onMount(() => {
   pane = document.getElementById(sidebarUidProp)
   if (!pane) return
+
+  followSystemAppearance()
 
   if (persistKeyProp) {
     try {
