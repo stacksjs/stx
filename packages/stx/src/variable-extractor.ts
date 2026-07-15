@@ -422,26 +422,30 @@ export async function extractVariables(
   // Usage: const { name = 'default' } = $props
   // Or: const { name } = $props({ name: 'default' })
   // eslint-disable-next-line pickier/no-unused-vars
-  const $props = Object.assign(
-    (defaults?: Record<string, unknown>) => {
-      if (!defaults) return propsObj
-      const result: Record<string, unknown> = {}
-      for (const [key, defaultValue] of Object.entries(defaults)) {
-        const propValue = propsObj[key]
-        if (propValue !== undefined) {
-          result[key] = propValue
-        }
-        else if (typeof defaultValue === 'function') {
-          result[key] = (defaultValue as () => unknown)()
-        }
-        else {
-          result[key] = defaultValue
-        }
+  const $props = (defaults?: Record<string, unknown>) => {
+    if (!defaults) return propsObj
+    const result: Record<string, unknown> = {}
+    for (const [key, defaultValue] of Object.entries(defaults)) {
+      const propValue = propsObj[key]
+      if (propValue !== undefined) {
+        result[key] = propValue
       }
-      return result
-    },
-    propsObj, // Spread props as properties for direct destructuring
-  )
+      else if (typeof defaultValue === 'function') {
+        result[key] = (defaultValue as () => unknown)()
+      }
+      else {
+        result[key] = defaultValue
+      }
+    }
+    return result
+  }
+  // Spread props as properties for direct destructuring. Object.assign would
+  // throw on props named after readonly function properties (`name`,
+  // `length`), so define them instead — those are configurable, which is all
+  // defineProperty needs to override them.
+  for (const [key, value] of Object.entries(propsObj)) {
+    Object.defineProperty($props, key, { value, enumerable: true, configurable: true, writable: true })
+  }
 
   // Vue-like defineProps. Supports the options-style defaults arg
   // (`{ count: { default: 0 } }`) for parity with the module (props.ts) and
