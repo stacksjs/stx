@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.93...v0.2.94)
+
+## ⚡ Performance Improvements
+
+- **components**: serve built JS from the bun export condition ([8df707a](https://github.com/stacksjs/stx/commit/8df707a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.94 ([0b0fe3d](https://github.com/stacksjs/stx/commit/0b0fe3d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.92...v0.2.93)
 
 ## 🚀 Features
