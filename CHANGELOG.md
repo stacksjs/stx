@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.92...v0.2.93)
+
+## 🚀 Features
+
+- **components**: sidebar follows the system appearance ([a5644be](https://github.com/stacksjs/stx/commit/a5644be)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.93 ([89ea8d2](https://github.com/stacksjs/stx/commit/89ea8d2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **pkg**: publint clean — types-first exports + sideEffects:false ([ae5a74e](https://github.com/stacksjs/stx/commit/ae5a74e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.91...v0.2.92)
 
 ## 🚀 Features
