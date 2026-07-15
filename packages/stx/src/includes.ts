@@ -919,7 +919,7 @@ catch (error: unknown) {
       // Extract <template> content if present (Vue-style SFC)
       // Only match <template> WITHOUT id, x-for, x-if, @for, @if, :for, :if attributes.
       // Templates with those attributes are client-side loop/conditional elements that must be preserved.
-      const templateMatch = workingContent.match(/<template\b(?![^>]*\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=)[^>]*>([\s\S]*?)<\/template>/i)
+      const templateMatch = workingContent.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>([\s\S]*?)<\/template>/i)
       if (templateMatch) {
         workingContent = templateMatch[1].trim()
       }

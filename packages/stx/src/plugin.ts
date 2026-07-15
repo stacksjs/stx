@@ -88,7 +88,7 @@ export const plugin: BunPlugin = {
           // This allows Vue-style single file components with explicit <template> tags
           // Preserve templates with id, x-for, x-if, @for, @if, :for, :if — those are client-side elements
           let workingContent = content
-          const templateTagMatch = content.match(/<template\b(?![^>]*\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=)[^>]*>([\s\S]*?)<\/template>/i)
+          const templateTagMatch = content.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>([\s\S]*?)<\/template>/i)
           if (templateTagMatch) {
             workingContent = templateTagMatch[1].trim()
           }

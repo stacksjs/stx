@@ -116,7 +116,7 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     // SFC Support: Extract <template> content if present
     // Preserve templates with id, x-for, x-if, @for, @if, :for, :if — those are client-side elements
     let workingContent = content
-    const templateOpenMatch = content.match(/<template\b(?![^>]*\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=)[^>]*>/i)
+    const templateOpenMatch = content.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>/i)
     if (templateOpenMatch && templateOpenMatch.index !== undefined) {
       const contentStart = templateOpenMatch.index + templateOpenMatch[0].length
       let depth = 1

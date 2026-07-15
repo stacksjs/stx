@@ -800,11 +800,22 @@ export async function renderComponentWithSlot(
         filteredParentContext[key] = val
       }
     }
+    // Parse slot content once — `$slots` lets component templates branch on
+    // what the caller provided (e.g. `@if($slots.header)`), mirroring Vue.
+    const { extractSlotContent } = await import('./slots')
+    const parsedSlotContent = extractSlotContent(slotContent)
+    const $slots: Record<string, string> = {}
+    if (parsedSlotContent.defaultSlot?.trim())
+      $slots.default = parsedSlotContent.defaultSlot
+    for (const [slotName, slotDef] of parsedSlotContent.namedSlots)
+      $slots[slotName] = slotDef.content
+
     const componentContext: Record<string, unknown> = {
       ...filteredParentContext,
       ...props,
       props, // Allow `props.foo` syntax in addition to just `foo`
       slot: slotContent,
+      $slots,
       __processedComponents: branchComponents,
       // Clear __sections so {{ slot }} in the component template is resolved as an
       // expression (using the `slot` variable above) rather than being replaced by
@@ -823,7 +834,7 @@ export async function renderComponentWithSlot(
 
     // Extract <template> content if present (Vue-style SFC)
     // Preserve templates with id, x-for, x-if, @for, @if, :for, :if — those are client-side elements
-    const templateMatch = workingContent.match(/<template\b(?![^>]*\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=)[^>]*>([\s\S]*?)<\/template>/i)
+    const templateMatch = workingContent.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>([\s\S]*?)<\/template>/i)
     if (templateMatch) {
       workingContent = templateMatch[1].trim()
     }
@@ -926,8 +937,9 @@ export async function renderComponentWithSlot(
     }
 
     // Process slots using the new slots module (supports named and scoped slots)
-    const { extractSlotContent, applySlots } = await import('./slots')
-    const { defaultSlot, namedSlots } = extractSlotContent(slotContent)
+    // (slot content was already parsed once for `$slots` above)
+    const { applySlots } = await import('./slots')
+    const { defaultSlot, namedSlots } = parsedSlotContent
 
     // Apply slots to the template (handles named slots, scoped slots, and default slots)
     templateContent = await applySlots(templateContent, defaultSlot || slotContent, namedSlots, componentContext)
