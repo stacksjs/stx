@@ -1,5 +1,30 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.91...v0.2.92)
+
+## 🚀 Features
+
+- **components**: add stx plugin shim exposing the ui library ([5f09535](https://github.com/stacksjs/stx/commit/5f09535)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: add Mail/Music/Notes sidebar recreations ([b1ab2ee](https://github.com/stacksjs/stx/commit/b1ab2ee)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: revamp Sidebar into a macOS Tahoe source list ([f31829f](https://github.com/stacksjs/stx/commit/f31829f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **stx**: tolerate props named after readonly function properties ([fe313a6](https://github.com/stacksjs/stx/commit/fe313a6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: render named slot templates correctly inside components ([b574db2](https://github.com/stacksjs/stx/commit/b574db2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧪 Tests
+
+- **stx**: cover macOS sidebar rendering and slot/props regressions ([58119f1](https://github.com/stacksjs/stx/commit/58119f1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.92 ([d6d2c44](https://github.com/stacksjs/stx/commit/d6d2c44)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.90...v0.2.91)
 
 ## 🧹 Chores
