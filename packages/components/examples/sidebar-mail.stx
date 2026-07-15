@@ -1,0 +1,93 @@
+<script server>
+// Recreation of Mail's sidebar on macOS Tahoe. Icons are Framework7's
+// SF Symbol lookalikes; colors are macOS system colors by name.
+export const sections = [
+  {
+    id: 'favorites',
+    label: 'Favorites',
+    items: [
+      {
+        id: 'all-inboxes',
+        label: 'All Inboxes',
+        icon: 'i-f7-tray-2',
+        iconColor: 'blue',
+        children: [
+          { id: 'inbox-icloud', label: 'iCloud', icon: 'i-f7-tray', iconColor: 'blue', count: 248, active: true },
+          { id: 'inbox-stacks', label: 'Stacks', icon: 'i-f7-tray', iconColor: 'blue' },
+          { id: 'inbox-reveal', label: 'Reveal', icon: 'i-f7-tray', iconColor: 'blue' },
+          { id: 'inbox-google', label: 'Google', icon: 'i-f7-tray', iconColor: 'blue', count: 641 },
+        ],
+      },
+      { id: 'vips', label: 'VIPs', icon: 'i-f7-star', iconColor: 'yellow', expandable: true, expanded: false },
+      { id: 'flagged', label: 'Flagged', icon: 'i-f7-flag', iconColor: 'blue', count: 4, expandable: true, expanded: false },
+      { id: 'all-drafts', label: 'All Drafts', icon: 'i-f7-doc', iconColor: 'blue', count: 43, expandable: true, expanded: false },
+      { id: 'all-sent', label: 'All Sent', icon: 'i-f7-paperplane', iconColor: 'blue', count: 2, expandable: true, expanded: false },
+    ],
+  },
+  { id: 'smart', label: 'Smart Mailboxes', items: [] },
+  {
+    id: 'on-my-mac',
+    label: 'On My Mac',
+    items: [
+      { id: 'import', label: 'Import', icon: 'i-f7-folder', iconColor: 'teal', count: 407 },
+    ],
+  },
+  {
+    id: 'icloud',
+    label: 'iCloud',
+    items: [
+      { id: 'icloud-inbox', label: 'Inbox', icon: 'i-f7-tray', iconColor: 'blue', count: 248 },
+      { id: 'icloud-drafts', label: 'Drafts', icon: 'i-f7-doc', iconColor: 'blue', count: 15 },
+      { id: 'icloud-sent', label: 'Sent', icon: 'i-f7-paperplane', iconColor: 'blue' },
+      { id: 'icloud-junk', label: 'Junk', icon: 'i-f7-bin-xmark', iconColor: 'blue', count: 88 },
+      { id: 'icloud-trash', label: 'Trash', icon: 'i-f7-trash', iconColor: 'blue' },
+      { id: 'icloud-archive', label: 'Archive', icon: 'i-f7-archivebox', iconColor: 'blue', count: 1 },
+    ],
+  },
+  {
+    id: 'stacks',
+    label: 'Stacks',
+    items: [
+      { id: 'stacks-important', label: 'Important', icon: 'i-f7-folder', iconColor: 'blue' },
+      { id: 'stacks-inbox', label: 'Inbox', icon: 'i-f7-tray', iconColor: 'blue' },
+      { id: 'stacks-drafts', label: 'Drafts', icon: 'i-f7-doc', iconColor: 'blue', count: 13 },
+      { id: 'stacks-sent', label: 'Sent', icon: 'i-f7-paperplane', iconColor: 'blue', count: 2 },
+      { id: 'stacks-junk', label: 'Junk', icon: 'i-f7-bin-xmark', iconColor: 'blue' },
+      { id: 'stacks-trash', label: 'Trash', icon: 'i-f7-trash', iconColor: 'blue' },
+      { id: 'stacks-archive', label: 'Archive', icon: 'i-f7-archivebox', iconColor: 'blue' },
+    ],
+  },
+]
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidebar — Mail on macOS Tahoe</title>
+  <style>
+    /* Stand-in for the macOS Tahoe wallpaper the glass refracts. */
+    body {
+      background: linear-gradient(180deg,
+        #7fb2d9 0%, #a9cbe4 18%, #d5e4ee 34%,
+        #b4c9d8 48%, #7695ad 62%, #4e7899 76%, #316289 100%);
+      min-height: 100vh;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="grid min-h-screen place-items-center p-8">
+  <!-- The window -->
+  <div class="flex h-[92vh] w-[980px] overflow-hidden rounded-[26px] shadow-[0_30px_90px_rgba(0,0,0,0.45),0_0_0_0.5px_rgba(0,0,0,0.15)]">
+    <Sidebar :sections="sections" theme="macos" width="230" placement="static">
+      <template #header>
+        <SidebarHeader :actions="[{ id: 'toggle-sidebar', icon: 'i-f7-sidebar-left', label: 'Toggle sidebar' }]" />
+      </template>
+    </Sidebar>
+
+    <!-- Content pane stand-in -->
+    <main class="flex-1 bg-white/92 backdrop-blur-2xl dark:bg-neutral-900/92"></main>
+  </div>
+</body>
+</html>

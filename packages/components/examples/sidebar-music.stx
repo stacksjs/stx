@@ -1,0 +1,93 @@
+<script server>
+// Recreation of Music's sidebar on macOS Tahoe — red system tint, a pinned
+// playlist with album art, and the account row pinned to the bottom.
+export const albumArt = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">'
+  + '<rect width="40" height="40" fill="#2a2331"/>'
+  + '<circle cx="20" cy="16" r="9" fill="#8a6d5c"/>'
+  + '<rect y="26" width="40" height="14" fill="#1c1822"/>'
+  + '</svg>',
+)}`
+
+export const sections = [
+  {
+    id: 'top',
+    items: [
+      { id: 'search', label: 'Search', icon: 'i-f7-search', iconColor: 'red' },
+      { id: 'home', label: 'Home', icon: 'i-f7-house', iconColor: 'red' },
+      { id: 'new', label: 'New', icon: 'i-f7-square-grid-2x2', iconColor: 'red' },
+      { id: 'radio', label: 'Radio', icon: 'i-f7-antenna-radiowaves-left-right', iconColor: 'red' },
+    ],
+  },
+  {
+    id: 'library',
+    label: 'Library',
+    items: [
+      {
+        id: 'pins',
+        label: 'Pins',
+        icon: 'i-f7-pin',
+        iconColor: 'red',
+        children: [
+          { id: 'pinned-album', label: 'i think i\'m addicted', image: albumArt },
+        ],
+      },
+      { id: 'recently-added', label: 'Recently Added', icon: 'i-f7-clock', iconColor: 'red', active: true },
+      { id: 'artists', label: 'Artists', icon: 'i-f7-music-mic', iconColor: 'red' },
+      { id: 'albums', label: 'Albums', icon: 'i-f7-music-albums', iconColor: 'red' },
+      { id: 'songs', label: 'Songs', icon: 'i-f7-music-note', iconColor: 'red' },
+      { id: 'music-videos', label: 'Music Videos', icon: 'i-f7-tv-music-note', iconColor: 'red' },
+      { id: 'made-for-you', label: 'Made for You', icon: 'i-f7-person-crop-square', iconColor: 'red' },
+    ],
+  },
+  {
+    id: 'playlists',
+    label: 'Playlists',
+    items: [
+      { id: 'all-playlists', label: 'All Playlists', icon: 'i-f7-square-grid-3x2', iconColor: 'red' },
+      { id: 'favorite-songs', label: 'Favorite Songs', icon: 'i-f7-square-favorites-alt', iconColor: 'red' },
+      { id: 'nineties-music', label: '90’s Music', icon: 'i-f7-music-note-list', iconColor: 'red' },
+    ],
+  },
+]
+
+export const avatar = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">'
+  + '<rect width="40" height="40" fill="#5b7f9a"/>'
+  + '<circle cx="20" cy="15" r="7" fill="#d9c8b8"/>'
+  + '<ellipse cx="20" cy="33" rx="12" ry="9" fill="#33475c"/>'
+  + '</svg>',
+)}`
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidebar — Music on macOS Tahoe</title>
+  <style>
+    body {
+      background: linear-gradient(180deg,
+        #7fb2d9 0%, #a9cbe4 18%, #d5e4ee 34%,
+        #b4c9d8 48%, #7695ad 62%, #4e7899 76%, #316289 100%);
+      min-height: 100vh;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="grid min-h-screen place-items-center p-8">
+  <div class="flex h-[92vh] w-[980px] overflow-hidden rounded-[26px] shadow-[0_30px_90px_rgba(0,0,0,0.45),0_0_0_0.5px_rgba(0,0,0,0.15)]">
+    <Sidebar :sections="sections" theme="macos" width="205" placement="static">
+      <template #header>
+        <SidebarHeader />
+      </template>
+      <template #footer>
+        <SidebarFooter name="Chris Breuer" :avatar="avatar" />
+      </template>
+    </Sidebar>
+
+    <main class="flex-1 bg-white/92 backdrop-blur-2xl dark:bg-neutral-900/92"></main>
+  </div>
+</body>
+</html>

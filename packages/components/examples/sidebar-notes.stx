@@ -1,0 +1,60 @@
+<script server>
+// Recreation of Notes' sidebar on macOS Tahoe — amber folders, collapsed
+// account sections, and two floating toolbar buttons.
+export const sections = [
+  {
+    id: 'top',
+    items: [
+      { id: 'quick-notes', label: 'Quick Notes', icon: 'i-f7-square-pencil', iconColor: 'red', count: 2 },
+      { id: 'shared', label: 'Shared', icon: 'i-f7-person-2', iconColor: 'blue', count: 22 },
+    ],
+  },
+  {
+    id: 'icloud',
+    label: 'iCloud',
+    items: [
+      { id: 'all-icloud', label: 'All iCloud', icon: 'i-f7-folder', iconColor: '#e0a800', count: 140, active: true },
+      { id: 'notes', label: 'Notes', icon: 'i-f7-folder', iconColor: '#e0a800', count: 99 },
+      { id: 'blog', label: 'Blog', icon: 'i-f7-folder', iconColor: '#e0a800', count: 1 },
+      { id: 'archive', label: 'Archive', icon: 'i-f7-folder', iconColor: '#e0a800', count: 40 },
+    ],
+  },
+  { id: 'google', label: 'Google', collapsed: true, items: [] },
+  { id: 'reveal', label: 'Reveal', collapsed: true, items: [] },
+  { id: 'stacks', label: 'Stacks', collapsed: true, items: [] },
+]
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidebar — Notes on macOS Tahoe</title>
+  <style>
+    body {
+      background: linear-gradient(180deg,
+        #7fb2d9 0%, #a9cbe4 18%, #d5e4ee 34%,
+        #b4c9d8 48%, #7695ad 62%, #4e7899 76%, #316289 100%);
+      min-height: 100vh;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="grid min-h-screen place-items-center p-8">
+  <div class="flex h-[92vh] w-[980px] overflow-hidden rounded-[26px] shadow-[0_30px_90px_rgba(0,0,0,0.45),0_0_0_0.5px_rgba(0,0,0,0.15)]">
+    <Sidebar :sections="sections" theme="macos" width="230" placement="static">
+      <template #header>
+        <SidebarHeader
+          :actions="[
+            { id: 'new-folder', icon: 'i-f7-folder-badge-plus', label: 'New folder' },
+            { id: 'toggle-sidebar', icon: 'i-f7-sidebar-left', label: 'Toggle sidebar' },
+          ]"
+        />
+      </template>
+    </Sidebar>
+
+    <main class="flex-1 bg-white/92 backdrop-blur-2xl dark:bg-neutral-900/92"></main>
+  </div>
+</body>
+</html>
