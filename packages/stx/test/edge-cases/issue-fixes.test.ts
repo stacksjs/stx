@@ -447,7 +447,9 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
       ['progress/Progress.stx', "useReactiveProp('value',"],
       ['tooltip/Tooltip.stx', "useReactiveProp('show',"],
       ['pagination/Pagination.stx', "useReactiveProp('current-page',"],
-      ['sidebar/SidebarSection.stx', "useReactiveProp('expanded',"],
+      // sidebar/SidebarSection.stx no longer appears here: the macOS sidebar
+      // revamp made sections presentational — expansion state lives in the
+      // Sidebar controller via data attributes, not per-section signals.
     ]
     for (const [file, marker] of checks) {
       const src = fs.readFileSync(path.join(componentsDir, file), 'utf8')
