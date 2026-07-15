@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.94...v0.2.95)
+
+## 🐛 Bug Fixes
+
+- **deps**: bump ts-broadcasting to ^0.0.8 to dedupe ([5c88b4c](https://github.com/stacksjs/stx/commit/5c88b4c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.95 ([7cd095b](https://github.com/stacksjs/stx/commit/7cd095b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.93...v0.2.94)
 
 ## ⚡ Performance Improvements
