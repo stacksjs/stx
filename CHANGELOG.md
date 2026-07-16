@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.96...v0.2.97)
+
+## 🐛 Bug Fixes
+
+- **pkg**: drop sideEffects:false across the monorepo packages ([3a417fe](https://github.com/stacksjs/stx/commit/3a417fe)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.97 ([2dbd149](https://github.com/stacksjs/stx/commit/2dbd149)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.95...v0.2.96)
 
 ## 🚀 Features
