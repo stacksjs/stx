@@ -1,7 +1,6 @@
 {
   "name": "@stacksjs/iconify-generator",
   "type": "module",
-  "sideEffects": false,
   "version": "0.2.96",
   "description": "Generator for Iconify icon packages",
   "author": "Chris Breuer <chris@stacksjs.org>",
