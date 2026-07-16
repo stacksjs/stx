@@ -99,7 +99,7 @@
   ],
   "dependencies": {
     "@cwcss/crosswind": "^0.2.6",
-    "very-happy-dom": "^0.1.4"
+    "very-happy-dom": "^0.1.9"
   },
   "devDependencies": {
     "@iconify/json": "^2.2.463",

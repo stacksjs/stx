@@ -6,7 +6,7 @@
       "name": "stx",
       "dependencies": {
         "@cwcss/crosswind": "^0.2.6",
-        "very-happy-dom": "^0.1.4",
+        "very-happy-dom": "^0.1.9",
       },
       "devDependencies": {
         "@iconify/json": "^2.2.463",
@@ -2923,7 +2923,7 @@
 
     "urlpattern-polyfill": ["urlpattern-polyfill@10.1.0", "", {}, "sha512-IGjKp/o0NL3Bso1PymYURCJxMPNAf/ILOpendP9f5B6e1rTJgdgiOvgfoT8VxCAdY+Wisb9uhGaJJf3yZ2V9nw=="],
 
-    "very-happy-dom": ["very-happy-dom@0.1.4", "", {}, "sha512-kYBZfDuEzrurOSIhFBEeMx2zCOdpyyv4j4mvvf7eGAhtma3aMh8ge4tEQhnw17bh9Xg4owmq/YJuQRnbLe57Xw=="],
+    "very-happy-dom": ["very-happy-dom@0.1.9", "", {}, "sha512-i9Bvhq0xWVmb87NaDrZGPDFZwBh8sSxADxgwkGfnHzYNiDXAHLc1ve+cSNyrXKqSzIcsOfPmqP4/fG8MoVuEZg=="],
 
     "vfile": ["vfile@6.0.3", "", { "dependencies": { "@types/unist": "^3.0.0", "vfile-message": "^4.0.0" } }, "sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q=="],
 

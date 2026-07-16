@@ -6,7 +6,7 @@
       "name": "stx",
       "dependencies": {
         "@cwcss/crosswind": "^0.2.6",
-        "very-happy-dom": "^0.1.4"
+        "very-happy-dom": "^0.1.9"
       },
       "devDependencies": {
         "@iconify/json": "^2.2.463",
@@ -2291,12 +2291,12 @@
         "tsc": "./bin/tsc"
       }
     },
-    "very-happy-dom@0.1.4": {
+    "very-happy-dom@0.1.9": {
       "name": "very-happy-dom",
-      "version": "0.1.4",
+      "version": "0.1.9",
       "source": "npm",
-      "resolved": "https://registry.npmjs.org/very-happy-dom/-/very-happy-dom-0.1.4.tgz",
-      "integrity": "sha512-kYBZfDuEzrurOSIhFBEeMx2zCOdpyyv4j4mvvf7eGAhtma3aMh8ge4tEQhnw17bh9Xg4owmq/YJuQRnbLe57Xw=="
+      "resolved": "https://registry.npmjs.org/very-happy-dom/-/very-happy-dom-0.1.9.tgz",
+      "integrity": "sha512-i9Bvhq0xWVmb87NaDrZGPDFZwBh8sSxADxgwkGfnHzYNiDXAHLc1ve+cSNyrXKqSzIcsOfPmqP4/fG8MoVuEZg=="
     },
     "ws@8.21.1": {
       "name": "ws",
