@@ -54,16 +54,9 @@ export interface SidebarSectionData {
  * `macos-tahoe` and `macos-latest` are aliases of `macos`. The remaining
  * names are legacy looks kept for backwards compatibility.
  */
-export type SidebarThemeChoice =
-  | 'macos'
-  | 'macos-tahoe'
-  | 'macos-latest'
-  | 'tahoe'
-  | 'vibrancy'
-  | 'solid'
-  | 'transparent'
-  | 'workspace'
-  | 'desktop'
+type MacOSSidebarTheme = 'macos' | 'macos-tahoe' | 'macos-latest' | 'tahoe'
+type LegacySidebarTheme = 'vibrancy' | 'solid' | 'transparent' | 'workspace' | 'desktop'
+export type SidebarThemeChoice = MacOSSidebarTheme | LegacySidebarTheme
 
 export interface SidebarProps {
   /** Sections with their items. Omit to compose children via the default slot. */
