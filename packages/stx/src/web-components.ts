@@ -255,8 +255,9 @@ function generateWebComponentCode(options: WebComponentCodeOptions): string {
 class ${name.replace(/\W/g, '')} extends ${baseElement} {
   constructor() {
     super()
+    this._initialized = false
+    ${shadowDOM ? '' : 'this._slotContent = []'}
     ${shadowDOM ? 'this.attachShadow({ mode: "open" })' : ''}
-    ${template ? 'this._createTemplate()' : 'this._render()'}
   }
 
   ${template
@@ -290,32 +291,28 @@ class ${name.replace(/\W/g, '')} extends ${baseElement} {
     })`
       : `// Manual slot processing for non-shadow DOM mode
     const slots = this.querySelectorAll('[data-slot]')
-    const lightDOMChildren = Array.from(this.childNodes).filter(
-      node => node.nodeType === Node.ELEMENT_NODE && !node.hasAttribute('data-slot')
-    )
 
     // Process named slots
     slots.forEach(slotEl => {
       const slotName = slotEl.getAttribute('data-slot')
-      const slottedContent = this.querySelector(\`[slot="\${slotName}"]\`)
-      if (slottedContent) {
-        // Replace slot placeholder with actual content
+      const slottedContent = this._slotContent.filter(
+        node => node.nodeType === Node.ELEMENT_NODE && node.getAttribute('slot') === slotName
+      )
+      if (slottedContent.length > 0) {
         slotEl.innerHTML = ''
-        slotEl.appendChild(slottedContent.cloneNode(true))
+        slottedContent.forEach(content => slotEl.appendChild(content))
       }
     })
 
     // Process default slot
     const defaultSlot = this.querySelector('[data-slot=""]') || this.querySelector('[data-default-slot]')
     if (defaultSlot) {
-      const unslottedContent = Array.from(this.children).filter(
-        child => !child.hasAttribute('slot') && child !== defaultSlot
+      const unslottedContent = this._slotContent.filter(
+        node => node.nodeType !== Node.ELEMENT_NODE || !node.hasAttribute('slot')
       )
       if (unslottedContent.length > 0) {
         defaultSlot.innerHTML = ''
-        unslottedContent.forEach(content => {
-          defaultSlot.appendChild(content.cloneNode(true))
-        })
+        unslottedContent.forEach(content => defaultSlot.appendChild(content))
       }
     }`}
   }
@@ -329,14 +326,17 @@ class ${name.replace(/\W/g, '')} extends ${baseElement} {
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue !== newValue) {
       this[name] = newValue
-      ${template ? '' : 'this._render()'}
+      ${template ? '' : 'if (this._initialized) this._render()'}
     }
   }
   `
     : ''}
 
   connectedCallback() {
-    // Component connected to the DOM
+    if (this._initialized) return
+    ${shadowDOM ? '' : 'this._slotContent = Array.from(this.childNodes)'}
+    this._initialized = true
+    ${template ? 'this._createTemplate()' : 'this._render()'}
   }
 
   disconnectedCallback() {
@@ -469,7 +469,7 @@ ${attributes.map((attr) => {
     if (oldValue !== newValue) {
       const camelCase = name.replace(/-([a-z])/g, (_: string, letter: string) => letter.toUpperCase());
       (this as unknown as Record<string, unknown>)[\`_\${camelCase}\`] = this._parseAttributeValue(name, newValue);
-      ${template ? '' : 'this._render();'}
+      ${template ? '' : 'if (this._initialized) this._render();'}
     }
   }
 
@@ -523,13 +523,25 @@ catch { return value; }
     slots.forEach((slotEl) => {
       const slotName = slotEl.getAttribute('data-slot');
       if (slotName) {
-        const slottedContent = this.querySelector(\`[slot="\${slotName}"]\`);
-        if (slottedContent) {
+        const slottedContent = this._slotContent.filter(
+          node => node.nodeType === Node.ELEMENT_NODE && (node as Element).getAttribute('slot') === slotName
+        );
+        if (slottedContent.length > 0) {
           slotEl.innerHTML = '';
-          slotEl.appendChild(slottedContent.cloneNode(true));
+          slottedContent.forEach(content => slotEl.appendChild(content));
         }
       }
     });
+    const defaultSlot = this.querySelector('[data-slot=""]') || this.querySelector('[data-default-slot]');
+    if (defaultSlot) {
+      const unslottedContent = this._slotContent.filter(
+        node => node.nodeType !== Node.ELEMENT_NODE || !(node as Element).hasAttribute('slot')
+      );
+      if (unslottedContent.length > 0) {
+        defaultSlot.innerHTML = '';
+        unslottedContent.forEach(content => defaultSlot.appendChild(content));
+      }
+    }
   }`
 
   return `/**
@@ -557,11 +569,12 @@ ${propsInterface}
  */
 export class ${className} extends ${baseElement} {
 ${propertyDeclarations}
+  private _initialized = false;
+  ${shadowDOM ? '' : 'private _slotContent: Node[] = [];'}
 
   constructor() {
     super();
     ${shadowDOM ? 'this.attachShadow({ mode: "open" });' : ''}
-    ${template ? 'this._createTemplate();' : 'this._render();'}
   }
 ${templateMethod}
 ${slotsMethod}
@@ -569,7 +582,10 @@ ${observedAttributesCode}
 ${gettersSetters}
 
   connectedCallback(): void {
-    // Component connected to the DOM
+    if (this._initialized) return;
+    ${shadowDOM ? '' : 'this._slotContent = Array.from(this.childNodes);'}
+    this._initialized = true;
+    ${template ? 'this._createTemplate();' : 'this._render();'}
   }
 
   disconnectedCallback(): void {

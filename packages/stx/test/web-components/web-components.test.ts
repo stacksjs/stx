@@ -201,4 +201,142 @@ describe('stx Web Components', () => {
     expect(componentJs).not.toContain('<slot name="title">')
     expect(componentJs).not.toContain('<slot>')
   })
+
+  it('runs native shadow slots and emits redistributed slotchange details', async () => {
+    const sourceFile = path.join(COMPONENTS_DIR, 'runtime-shadow-slot.stx')
+    await Bun.write(sourceFile, `
+      <section>
+        <slot name="heading">Fallback heading</slot>
+        <slot>Fallback body</slot>
+      </section>
+    `)
+
+    await buildWebComponents({
+      componentsDir: COMPONENTS_DIR,
+      webComponents: {
+        enabled: true,
+        outputDir: WEB_COMPONENTS_DIR,
+        components: [{
+          name: 'RuntimeShadowSlot',
+          tag: 'runtime-shadow-slot-a',
+          file: sourceFile,
+          shadowDOM: true,
+        }],
+      },
+    }, new Set<string>())
+    await import(`${path.join(WEB_COMPONENTS_DIR, 'runtime-shadow-slot-a.js')}?test=${Date.now()}`)
+
+    const element = document.createElement('runtime-shadow-slot-a')
+    const heading = document.createElement('h2')
+    const body = document.createElement('p')
+    heading.setAttribute('slot', 'heading')
+    heading.textContent = 'Projected heading'
+    body.textContent = 'Projected body'
+    element.append(heading, body)
+    document.body.appendChild(element)
+
+    const slots = element.shadowRoot!.querySelectorAll('slot') as HTMLSlotElement[]
+    expect(slots[0]).toBeInstanceOf(HTMLSlotElement)
+    expect(slots[0].assignedElements()).toEqual([heading])
+    expect(slots[1].assignedElements()).toEqual([body])
+
+    const changes: Array<{ slotName: string, assignedNodes: Node[] }> = []
+    element.addEventListener('slot-changed', event => changes.push((event as CustomEvent).detail))
+    // Let the initial assignment checkpoint settle before testing a second,
+    // distinct redistribution. Browsers coalesce changes within one microtask.
+    await Promise.resolve()
+    changes.length = 0
+    heading.removeAttribute('slot')
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(slots[0].assignedNodes()).toEqual([])
+    expect(slots[1].assignedElements()).toEqual([heading, body])
+    expect(changes.map(change => change.slotName)).toEqual(['heading', 'default'])
+  })
+
+  it('projects initial light DOM without cloning and survives reconnects', async () => {
+    const sourceFile = path.join(COMPONENTS_DIR, 'runtime-light-slot.stx')
+    await Bun.write(sourceFile, `
+      <section>
+        <header><slot name="title">Fallback title</slot></header>
+        <main><slot>Fallback body</slot></main>
+      </section>
+    `)
+
+    await buildWebComponents({
+      componentsDir: COMPONENTS_DIR,
+      webComponents: {
+        enabled: true,
+        outputDir: WEB_COMPONENTS_DIR,
+        components: [{
+          name: 'RuntimeLightSlot',
+          tag: 'runtime-light-slot-a',
+          file: sourceFile,
+          shadowDOM: false,
+        }],
+      },
+    }, new Set<string>())
+    await import(`${path.join(WEB_COMPONENTS_DIR, 'runtime-light-slot-a.js')}?test=${Date.now()}`)
+
+    const element = document.createElement('runtime-light-slot-a')
+    const title = document.createElement('strong')
+    const body = document.createElement('p')
+    title.setAttribute('slot', 'title')
+    title.textContent = 'Original title'
+    body.textContent = 'Original body'
+    let clicks = 0
+    title.addEventListener('click', () => clicks++)
+    element.append(title, body)
+    document.body.appendChild(element)
+
+    const titleSlot = element.querySelector('[data-slot="title"]')!
+    const defaultSlot = element.querySelector('[data-default-slot]')!
+    expect(titleSlot.firstChild).toBe(title)
+    expect(defaultSlot.firstChild).toBe(body)
+    expect(element.querySelectorAll('[slot="title"]')).toHaveLength(1)
+    title.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(clicks).toBe(1)
+
+    element.remove()
+    document.body.appendChild(element)
+    expect(element.querySelectorAll('section')).toHaveLength(1)
+    expect(element.querySelector('[data-slot="title"]')!.firstChild).toBe(title)
+    title.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(clicks).toBe(2)
+  })
+
+  it('emits type-safe deferred slot projection that compiles', async () => {
+    const sourceFile = path.join(COMPONENTS_DIR, 'runtime-typed-slot.stx')
+    await Bun.write(sourceFile, '<article><slot name="label"></slot><slot></slot></article>')
+
+    await buildWebComponents({
+      componentsDir: COMPONENTS_DIR,
+      webComponents: {
+        enabled: true,
+        outputDir: WEB_COMPONENTS_DIR,
+        components: [{
+          name: 'RuntimeTypedSlot',
+          tag: 'runtime-typed-slot-a',
+          file: sourceFile,
+          shadowDOM: false,
+          outputFormat: 'ts',
+        }],
+      },
+    }, new Set<string>())
+
+    const source = await Bun.file(path.join(WEB_COMPONENTS_DIR, 'runtime-typed-slot-a.ts')).text()
+    expect(source).toContain('private _slotContent: Node[] = []')
+    expect(source).toContain('this._slotContent = Array.from(this.childNodes)')
+    expect(source).not.toContain('slottedContent.cloneNode')
+
+    const build = await Bun.build({
+      entrypoints: [path.join(WEB_COMPONENTS_DIR, 'runtime-typed-slot-a.ts')],
+      target: 'browser',
+      format: 'esm',
+      write: false,
+    })
+    expect(build.success).toBe(true)
+    expect(build.logs).toEqual([])
+  })
 })

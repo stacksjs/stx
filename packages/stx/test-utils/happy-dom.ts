@@ -14,6 +14,9 @@ globalThis.document = document as any
 globalThis.navigator = window.navigator as any
 globalThis.location = (window as any).location as any
 globalThis.HTMLElement = (window as any).HTMLElement as any
+globalThis.customElements = (window as any).customElements as any
+globalThis.HTMLSlotElement = (window as any).HTMLSlotElement as any
+globalThis.ShadowRoot = (window as any).ShadowRoot as any
 globalThis.Element = VirtualElement as any
 globalThis.Node = (window as any).Node as any
 
