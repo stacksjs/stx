@@ -11,8 +11,9 @@ import { loadCrosswindConfig } from '../../src/dev-server/crosswind'
 // actual config lived in `examples/drivly/crosswind.config.ts` — every page
 // build produced a wall of red error output.
 //
-// The fix pre-checks for the file's existence and only hands off to bunfig
-// when it's actually there. Missing config → silent `null`.
+// The fix uses bunfig's lightweight discovery API and only loads the full
+// configuration pipeline when a matching local file exists. Missing config
+// → silent `null`, without duplicating bunfig's resolution rules.
 // =============================================================================
 
 const TMP_ROOT = path.join('/tmp', `stx-crosswind-config-${process.pid}-${Date.now()}`)
@@ -92,6 +93,18 @@ describe('loadCrosswindConfig (dev-server)', () => {
     const result = await loadCrosswindConfig(dir)
     expect((result as any)?.content).toEqual(['./views/**/*.stx'])
     expect((result as any)?.preflight).toBe(false)
+  })
+
+  it('preserves generic config names and modern TypeScript module extensions', async () => {
+    const dir = await mkTmpDir('generic-mts-config')
+    await Bun.write(
+      path.join(dir, 'config.mts'),
+      `export default { content: ['./generic/**/*.stx'], minify: true }`,
+    )
+
+    const result = await loadCrosswindConfig(dir)
+    expect((result as any)?.content).toEqual(['./generic/**/*.stx'])
+    expect((result as any)?.minify).toBe(true)
   })
 
   it('honors the passed `cwd` and does NOT fall back to process.cwd()', async () => {

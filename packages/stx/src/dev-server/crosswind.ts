@@ -4,8 +4,8 @@
  * Provides on-the-fly Tailwind CSS generation using Crosswind
  */
 
-import fs from 'node:fs'
 import path from 'node:path'
+import { hasLocalConfig } from 'bunfig/discovery'
 import { colors } from './terminal-colors'
 
 // Type for Crosswind module
@@ -254,8 +254,8 @@ export function resetCrosswindCache(): void {
  * `stx.config.ts` and other stacks configs — a single source of truth for
  * config loading across the stack.
  *
- * Pre-check: we only hand off to bunfig once we've confirmed a
- * `crosswind.config.*` file actually exists in the target directory. When
+ * Pre-check: bunfig's lightweight discovery entry point confirms a matching
+ * project-local config exists before we load its full configuration pipeline. When
  * stx is run from a parent repo root (e.g. running an example from the
  * monorepo root, or a page rendered before the app dir is known) bunfig's
  * built-in search would span 250+ paths up the tree and, on miss, log a
@@ -264,29 +264,18 @@ export function resetCrosswindCache(): void {
  */
 /**
  * Load the user's crosswind config via bunfig — our shared config loader.
- * bunfig's name-based search already covers `config/crosswind.ts`,
- * `.config/crosswind.ts`, and root-level `crosswind.config.{ts,js,mjs,cjs}`,
- * so we don't need to maintain a parallel list of paths here. Returns `null`
+ * `hasLocalConfig` uses the same filename, extension, alias, custom-directory,
+ * and resolution-priority rules as bunfig's loader, so this integration never
+ * maintains a parallel list of paths. Returns `null`
  * when no config file is present, so callers can fall through to defaults
  * without surfacing a "not found" warning to the user.
  */
 export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig | null> {
   try {
-    const configDirectories = ['', 'config', '.config']
-    const configNames = ['crosswind.config', 'crosswind', '.crosswind.config', '.crosswind']
-    const configExtensions = ['.ts', '.js', '.mjs', '.cjs', '.json']
-    const configCandidates = configDirectories.flatMap(directory =>
-      configNames.flatMap(name =>
-        configExtensions.map(extension => path.join(directory, `${name}${extension}`)),
-      ),
-    )
-
-    // A missing config is the overwhelmingly common path. Avoid importing
-    // bunfig and asking it to search hundreds of fallback locations when none
-    // of its supported project-local candidates exists. Besides eliminating
-    // noisy ConfigNotFoundError output, this keeps parallel test/dev-server
-    // workloads from spending seconds contending in module resolution.
-    if (!configCandidates.some(candidate => fs.existsSync(path.join(cwd, candidate))))
+    // A missing config is the overwhelmingly common path. The discovery
+    // subpath is deliberately lightweight, letting us avoid the full loader
+    // and its fallback search without duplicating bunfig's resolution rules.
+    if (!hasLocalConfig({ name: 'crosswind', cwd }))
       return null
 
     const { loadConfigWithResult } = await import('bunfig')

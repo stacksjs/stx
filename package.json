@@ -106,6 +106,7 @@
     "better-dx": "^0.2.15"
   },
   "overrides": {
+    "bunfig": "0.15.15",
     "typescript": "^7.0.2"
   }
 }
