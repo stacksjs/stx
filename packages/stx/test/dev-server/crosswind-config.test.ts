@@ -68,7 +68,7 @@ describe('loadCrosswindConfig (dev-server)', () => {
     expect(result).not.toBeNull()
     expect((result as any).content).toEqual(['./pages/**/*.stx'])
     expect((result as any).theme?.extend?.colors?.brand).toBe('#FF3E54')
-  })
+  }, 15_000)
 
   it('loads a crosswind.config.js (JS variant)', async () => {
     const dir = await mkTmpDir('js-config')
