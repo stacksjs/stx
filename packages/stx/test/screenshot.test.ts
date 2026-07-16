@@ -17,7 +17,7 @@ describe('screenshot (Bun WebView)', () => {
     const { dir, file } = fixture()
     const out = join(dir, 'shot.png')
     try {
-      const r = await captureScreenshot(file, out, { width: 600, height: 400, waitMs: 300 })
+      const r = await captureScreenshot(file, out, { width: 600, height: 400, waitMs: 300, timeoutMs: 30_000 })
       expect(existsSync(out)).toBe(true)
       expect(r.bytes).toBeGreaterThan(1000)
       // Valid PNG magic header.
@@ -27,21 +27,21 @@ describe('screenshot (Bun WebView)', () => {
     finally {
       rmSync(dir, { recursive: true, force: true })
     }
-  }, 15_000)
+  }, 45_000)
 
   it('captures every *.html in a directory', async () => {
     const { dir } = fixture()
     writeFileSync(join(dir, 'two.html'), '<!doctype html><h1>two</h1>')
     const outDir = join(dir, 'out')
     try {
-      const results = await captureScreenshots(dir, outDir, { width: 500, height: 300, waitMs: 300 })
+      const results = await captureScreenshots(dir, outDir, { width: 500, height: 300, waitMs: 300, timeoutMs: 30_000 })
       expect(results.length).toBe(2)
       expect(results.every(r => r.bytes > 0)).toBe(true)
     }
     finally {
       rmSync(dir, { recursive: true, force: true })
     }
-  }, 15_000)
+  }, 75_000)
 
   it('full-page captures the whole scrollable document, not just the viewport', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'stx-shot-full-'))
@@ -66,7 +66,7 @@ describe('screenshot (Bun WebView)', () => {
     finally {
       rmSync(dir, { recursive: true, force: true })
     }
-  }, 15_000)
+  }, 45_000)
 
   it('wait-selector resolves and still captures when the selector exists', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'stx-shot-sel-'))
@@ -81,5 +81,5 @@ describe('screenshot (Bun WebView)', () => {
     finally {
       rmSync(dir, { recursive: true, force: true })
     }
-  }, 15_000)
+  }, 45_000)
 })

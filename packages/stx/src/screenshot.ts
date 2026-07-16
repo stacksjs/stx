@@ -56,18 +56,39 @@ function toUrl(input: string): string {
   return `file://${path.resolve(input)}`
 }
 
-/** Resolve once navigation completes (+ a short settle), with a timeout fallback. */
-function waitForNavigation(view: any, waitMs: number, timeoutMs: number): Promise<void> {
+/** Navigate after installing the completion listener, then allow a short settle. */
+function navigateAndWait(view: any, url: string, waitMs: number, timeoutMs: number): Promise<void> {
   return new Promise<void>((resolve) => {
     let settled = false
+    let settleTimer: ReturnType<typeof setTimeout> | undefined
+    let timeoutTimer: ReturnType<typeof setTimeout>
     const finish = (): void => {
       if (!settled) {
         settled = true
+        clearTimeout(timeoutTimer)
+        if (settleTimer)
+          clearTimeout(settleTimer)
+        view.onNavigated = undefined
         resolve()
       }
     }
-    view.onNavigated = () => setTimeout(finish, waitMs)
-    setTimeout(finish, timeoutMs)
+    timeoutTimer = setTimeout(finish, timeoutMs)
+    view.onNavigated = () => {
+      if (!settled)
+        settleTimer = setTimeout(finish, waitMs)
+    }
+
+    // Setting `url` in the constructor can complete before onNavigated is
+    // assigned, especially for local files. Start navigation only after the
+    // callback and hard timeout are active.
+    try {
+      const navigation = view.navigate(url)
+      if (navigation && typeof navigation.catch === 'function')
+        navigation.catch(finish)
+    }
+    catch {
+      finish()
+    }
   })
 }
 
@@ -112,7 +133,6 @@ export async function captureScreenshot(input: string, output: string, opts: Scr
   const url = toUrl(input)
 
   const open = (h: number): any => new WebView({
-    url,
     width,
     height: h,
     headless: true,
@@ -121,7 +141,7 @@ export async function captureScreenshot(input: string, output: string, opts: Scr
 
   let view = open(height)
   try {
-    await waitForNavigation(view, waitMs, timeoutMs)
+    await navigateAndWait(view, url, waitMs, timeoutMs)
     if (opts.waitSelector)
       await waitForSelector(view, opts.waitSelector, timeoutMs)
 
@@ -133,7 +153,7 @@ export async function captureScreenshot(input: string, output: string, opts: Scr
       if (full > height) {
         view.close()
         view = open(full)
-        await waitForNavigation(view, waitMs, timeoutMs)
+        await navigateAndWait(view, url, waitMs, timeoutMs)
         if (opts.waitSelector)
           await waitForSelector(view, opts.waitSelector, timeoutMs)
       }
