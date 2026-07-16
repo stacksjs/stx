@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { processConditionals, processAuthDirectives, processEnvDirective, processIssetEmptyDirectives, processSwitchStatements } from '../../src/conditionals'
+import { convertSignalDirectivesToAttributes } from '../../src/signal-processing'
 
 describe('Conditionals Comprehensive', () => {
   const filePath = 'test.stx'
@@ -1561,5 +1562,64 @@ describe('Conditionals Comprehensive', () => {
       const result = processSwitchStatements('@switch(val)@case("a")first@break@case("a")second@break@endswitch', { val: 'a' }, filePath)
       expect(result.trim()).toBe('first')
     })
+  })
+})
+
+// Regression: a NESTED reactive @if/@else lives inside a server @if. The signal
+// pass rewrites the inner reactive conditional into `<template @else>` HTML-
+// attribute markers BEFORE processConditionals runs; the server branch scanner
+// must NOT mistake that `@else` attribute for the enclosing @if's top-level
+// @else, or it mismatches @endif boundaries and corrupts the template.
+describe('@if — nested reactive conditional inside a server @if', () => {
+  const filePath = 'test.stx'
+  // Mirrors the app case: outer `@if (ownsActive)` (server) wrapping an inner
+  // `@if (isPro())…@else…@endif` (reactive signal). isPro is a client state().
+  const twoPass = (ownsActive: boolean) => {
+    const tpl = `<script>const isPro = state(false)</script>`
+      + `<div>@if (ownsActive)BEFORE@if (isPro())PRO@else FREE@endif AFTER@else LOCKED@endif</div>`
+    return processConditionals(convertSignalDirectivesToAttributes(tpl, { ownsActive }), { ownsActive }, filePath)
+  }
+
+  it('keeps the full true-branch (incl. content after the inner block) when the outer @if is true', () => {
+    const out = twoPass(true)
+    expect(out).toContain('BEFORE')
+    expect(out).toContain('AFTER')
+    // the inner reactive markers survive intact for the later client pass
+    expect(out).toContain('<template @if="isPro()">PRO</template>')
+    expect(out).toContain('<template @else>FREE</template>')
+    // the OUTER else-branch is not shown, and nothing is truncated mid-tag
+    expect(out).not.toContain('LOCKED')
+    expect(out).not.toMatch(/<template\s*<\/div>/)
+  })
+
+  it('shows the outer else-branch (and no reactive markers) when the outer @if is false', () => {
+    const out = twoPass(false)
+    expect(out).toContain('LOCKED')
+    expect(out).not.toContain('<template')
+    expect(out).not.toContain('BEFORE')
+    expect(out).not.toContain('AFTER')
+  })
+
+  it('handles an inner reactive @elseif chain without corrupting the outer block', () => {
+    const tpl = `<script>const tier = state(0)</script>`
+      + `<div>@if (ownsActive)A@if (tier() === 1)ONE@elseif (tier() === 2)TWO@else NONE@endif B@endif</div>`
+    const out = processConditionals(convertSignalDirectivesToAttributes(tpl, { ownsActive: true }), { ownsActive: true }, filePath)
+    expect(out).toContain('A')
+    expect(out).toContain('B')
+    expect(out).toContain('<template @if="tier() === 1">ONE</template>')
+  })
+
+  it('still expands a normal nested SERVER @if (no reactive markers involved)', () => {
+    const out = processConditionals('@if(a)X@if(b)Y@else Z@endif W@endif', { a: true, b: false }, filePath)
+    expect(out).toContain('X')
+    expect(out).toContain('Z')
+    expect(out).toContain('W')
+    expect(out).not.toContain('Y')
+  })
+
+  it('does not skip a real directive @else that immediately follows a closing tag', () => {
+    const out = processConditionals('@if(show)<p>hi</p>@else<p>bye</p>@endif', { show: false }, filePath)
+    expect(out).toContain('<p>bye</p>')
+    expect(out).not.toContain('<p>hi</p>')
   })
 })

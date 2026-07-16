@@ -88,6 +88,27 @@ export function extractParenthesizedExpressionDetailed(source: string, startPos:
 // =============================================================================
 
 /**
+ * Whether `pos` in `source` falls INSIDE an HTML tag (`<...>`) — i.e. the nearest
+ * angle bracket looking backwards is an unclosed `<`.
+ *
+ * Directive tokens (`@if`/`@elseif`/`@else`/`@endif`) only ever occur in text
+ * content, never inside a tag. The reactive-signal pass, however, rewrites a
+ * NESTED reactive conditional into HTML-attribute markers BEFORE this server pass
+ * runs — e.g. `@if (isPro())A@else B@endif` becomes
+ * `<template @if="isPro()">A</template><template @else>B</template>`. Without this
+ * guard the branch scanner matches that `@else` ATTRIBUTE as the enclosing server
+ * `@if`'s top-level `@else`, mismatching branch/`@endif` boundaries and corrupting
+ * the rest of the template. Skipping tag-interior tokens keeps the two passes from
+ * disagreeing on what is a directive.
+ */
+export function isInsideTag(source: string, pos: number): boolean {
+  const lastOpen = source.lastIndexOf('<', pos)
+  if (lastOpen === -1)
+    return false
+  return lastOpen > source.lastIndexOf('>', pos)
+}
+
+/**
  * Find the matching end tag for a directive, handling nested instances
  *
  * @param source - The source string to search in
@@ -184,6 +205,15 @@ export function parseConditionalBlock(source: string, startPos: number): ParsedC
     if (atIdx === -1) break
     currentPos = atIdx
     const remaining = fullContent.substring(atIdx)
+
+    // Ignore directive-looking tokens that are actually HTML attributes (inside a
+    // `<...>` tag), e.g. the `<template @else>` markers the reactive-signal pass
+    // emits for a nested reactive conditional. Matching them here would mismatch
+    // this block's branch/@endif boundaries. See isInsideTag().
+    if (isInsideTag(fullContent, atIdx)) {
+      currentPos++
+      continue
+    }
 
     // Track nested @if depth
     if (/^@if\s*\(/.test(remaining)) {
