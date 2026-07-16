@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.95...v0.2.96)
+
+## 🚀 Features
+
+- **web-components**: add component library builds ([d99b236](https://github.com/stacksjs/stx/commit/d99b236)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **pkg**: drop sideEffects:false, it broke the published dist ([f0e332e](https://github.com/stacksjs/stx/commit/f0e332e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.96 ([f138bfb](https://github.com/stacksjs/stx/commit/f138bfb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: bump @stacksjs/ts-cloud to ^0.7.26 ([a6649fc](https://github.com/stacksjs/stx/commit/a6649fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: declare bun ^1.3.14 in deps.yaml ([4db1c46](https://github.com/stacksjs/stx/commit/4db1c46)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.94...v0.2.95)
 
 ## 🐛 Bug Fixes

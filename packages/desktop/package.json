@@ -2,7 +2,7 @@
   "name": "@stacksjs/desktop",
   "type": "module",
   "sideEffects": false,
-  "version": "0.2.95",
+  "version": "0.2.96",
   "description": "Native desktop application framework for stx (powered by Craft)",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
