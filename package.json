@@ -65,7 +65,7 @@
     "fresh": "bun x rimraf node_modules/ bun.lock && bun i",
     "prepublishOnly": "bun run build",
     "setup": "bun run scripts/setup.ts",
-    "test": "bun test",
+    "test": "bun test packages examples",
     "lint": "bun x --bun pickier 'packages/*/src/**/*.ts' --config .config/code-style.ts",
     "lint:fix": "bun x --bun pickier 'packages/*/src/**/*.ts' --fix --config .config/code-style.ts",
     "format": "bun x --bun pickier . --format --config .config/code-style.ts",

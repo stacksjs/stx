@@ -64,6 +64,7 @@ import { gitHash } from '../src/release'
 import { performanceMonitor } from '../src/performance-utils'
 import { formatMarkdownContent, formatStxContent } from '../src/formatter'
 import { analyzeProject } from '../src/analyzer'
+import { buildComponentLibrary } from '../src/component-library'
 import { generateStaticSite } from '../src/ssg'
 import { formatDoctorReport, runDoctor } from '../src/doctor'
 
@@ -880,6 +881,48 @@ else {
       }
       catch (error) {
         console.error('Error scanning for accessibility issues:', error)
+        process.exit(1)
+      }
+    })
+
+  // ==========================================================================
+  // Component Library Build Command
+  // ==========================================================================
+  cli
+    .command('components:build [input]', 'Compile .stx files into a progressive web component library')
+    .option('--out <dir>', 'Output directory', { default: 'dist/components' })
+    .option('--prefix <name>', 'Prefix for inferred custom-element tags', { default: 'stx' })
+    .option('--shadow', 'Use open Shadow DOM by default')
+    .option('--no-progressive', 'Always render client templates on connection')
+    .option('--no-manifest', 'Skip custom-elements.json generation')
+    .option('--no-types', 'Skip TypeScript and JSX declarations')
+    .option('--no-css', 'Skip CSS output')
+    .option('--no-bundle', 'Skip bundle.js generation')
+    .option('--no-minify', 'Do not minify bundle.js and CSS')
+    .option('--sourcemap', 'Generate an external bundle source map')
+    .example('stx components:build components --out dist --prefix acme')
+    .example('stx components:build src/components --shadow --sourcemap')
+    .action(async (input: string | undefined, options: Record<string, any>) => {
+      try {
+        const result = await buildComponentLibrary({
+          inputDir: input || 'components',
+          outputDir: options.out,
+          prefix: options.prefix,
+          shadowDOM: options.shadow ? 'open' : false,
+          progressive: options.progressive !== false,
+          manifest: options.manifest !== false,
+          declarations: options.types !== false,
+          css: options.css !== false,
+          bundle: options.bundle !== false,
+          minify: options.minify !== false,
+          sourcemap: options.sourcemap ? 'external' : false,
+        })
+        console.log(`Built ${result.components.length} web component${result.components.length === 1 ? '' : 's'} to ${path.resolve(options.out)}`)
+        console.log(`Generated ${result.files.length} files (${(result.totalBytes / 1024).toFixed(1)} kB)`)
+        for (const component of result.components) console.log(`  ${component.tag} <- ${path.relative(process.cwd(), component.source)}`)
+      }
+      catch (error) {
+        console.error(`Component library build failed: ${(error as Error).message}`)
         process.exit(1)
       }
     })
@@ -2650,7 +2693,7 @@ else {
 
   // Check for unknown commands and provide suggestions
   const knownCommands = [
-    'docs', 'iconify', 'dev', 'a11y', 'build', 'start', 'build:native', 'compile', 'test', 'init', 'new',
+    'docs', 'iconify', 'dev', 'a11y', 'build', 'components:build', 'start', 'build:native', 'compile', 'test', 'init', 'new',
     'format', 'perf', 'debug', 'doctor', 'status', 'watch', 'analyze', 'version', 'deploy',
     'interactive', 'i', 'story', 'story:build', 'story:test', 'screenshot'
   ]

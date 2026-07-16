@@ -9,6 +9,140 @@ stx splits its components into two layers, registered the same way and called th
 
 Both layers can be invoked two equivalent ways: as a JSX-style tag or via the Blade-style `@component` directive. Pick whichever fits the situation; they compile to the same thing.
 
+## Publishing a Web Component Library
+
+STX components can also compile into standards-based custom elements for a design system that must work in plain HTML, React, Vue, Angular, Svelte, server components, and non-STX applications. This is a library build—not an application hydration mode—and produces independently consumable ESM, CSS, metadata, and types.
+
+```bash
+stx components:build src/components --out dist --prefix acme
+```
+
+Given `src/components/Button.stx`, this infers `<acme-button>` and emits:
+
+| Output | Purpose |
+|--------|---------|
+| `acme-button.js` / `.d.ts` / `.css` | Tree-shakeable component entry, types, and CSS |
+| `runtime.js` | Shared, zero-dependency web-platform runtime |
+| `index.js` / `index.d.ts` | Library exports |
+| `bundle.js` / `bundle.css` | Single-file distribution builds |
+| `custom-elements.json` | Custom Elements Manifest for IDEs and ecosystem tools |
+| `custom-elements.d.ts` | JSX intrinsic-element props and event handlers |
+| `ssr.js` / `ssr.d.ts` | Escaping SSR helpers; Shadow components use Declarative Shadow DOM |
+
+The defaults are intentionally progressive: Light DOM, scoped CSS that can load before JavaScript, preservation of server-rendered markup, and enhancement on connection. Pass `--shadow` when a primitive genuinely benefits from Shadow DOM. Shadow components embed their CSS and the SSR helper emits `<template shadowrootmode="open">`, so their first render still does not depend on JavaScript.
+
+### Component authoring
+
+The HTML is ordinary STX. A static JSON metadata block declares the cross-framework public contract. Keeping this block data-only makes builds deterministic and lets STX generate manifests and types without executing component source.
+
+```html
+<!-- src/components/Button.stx -->
+<script component type="application/json">
+{
+  "description": "A design-system action button.",
+  "properties": {
+    "label": { "type": "string", "default": "Save", "description": "Visible text." },
+    "disabled": { "type": "boolean", "default": false },
+    "options": { "type": "object", "attribute": false }
+  },
+  "events": {
+    "activate": { "description": "Fires when activated.", "detailType": "{ label: string }" }
+  }
+}
+</script>
+
+<template>
+  <button
+    type="button"
+    @click.prevent="activate"
+    :disabled="disabled"
+  >{{ label }}</button>
+</template>
+
+<script client>
+function activate(event) {
+  this.emit('activate', { label: this.label, originalEvent: event })
+}
+</script>
+
+<style>
+:host {
+  --acme-button-color: royalblue;
+  display: inline-block;
+}
+
+button {
+  color: var(--acme-button-color);
+}
+</style>
+```
+
+Client functions become element methods. Event directives accept a method name and the familiar `.prevent` and `.stop` modifiers. Simple STX bindings such as `:disabled="disabled"`, `:class="variant"`, and `{{ label }}` react to property changes. `{{ value }}` is HTML-escaped; `{!! trustedHtml !!}` is the explicit raw-HTML escape hatch.
+
+Property types are `string`, `number`, `boolean`, `object`, and `array`. Properties reflect to kebab-case attributes by default. Use `"attribute": false` for property-only values, a string for a custom attribute name, or `"reflect": false` to accept attribute input without reflecting later property writes.
+
+### Programmatic builds
+
+Build scripts can use the typed API when entries or metadata are generated elsewhere:
+
+```ts
+import { buildComponentLibrary } from '@stacksjs/stx'
+
+const result = await buildComponentLibrary({
+  inputDir: 'src/components',
+  outputDir: 'dist',
+  prefix: 'acme',
+  progressive: true,
+  manifest: true,
+  declarations: true,
+  css: true,
+  bundle: true,
+  minify: true,
+  sourcemap: 'external',
+})
+
+console.log(result.components, result.totalBytes)
+```
+
+Set `components` for an explicit allow-list and to override `name`, `tag`, props, events, or methods per source file. Auto-discovery is recursive, stable, ignores `*.test.stx` / `*.spec.stx`, rejects invalid or duplicate custom-element tags, and never deletes unrelated output files.
+
+### Progressive rendering and SSR
+
+CSS is emitted separately for Light DOM and wrapped in native `@scope (<tag>)` when the source did not already provide a scope. This lets the browser paint semantic server HTML before the module downloads. When the element definition arrives, STX preserves existing markup, wires events, synchronizes typed props, and adds the `hydrated` attribute. Later changes are batched into one microtask render and restore keyed/id/name focus and text selection.
+
+```ts
+import { renderButton } from 'my-design-system/ssr'
+
+const html = renderButton(
+  { label: 'Save', disabled: false },
+  { icon: '<svg aria-hidden="true">...</svg>' },
+)
+```
+
+SSR interpolations and reflected attributes are escaped. Slot strings and `{!! raw !!}` are intentionally trusted HTML and should only receive sanitized content.
+
+### Cross-framework usage
+
+Import the component module or bundle once, then use native tags. The generated JSX declaration supplies typed attributes and `onActivate`; `custom-elements.json` supplies the same contract to supporting editors and documentation tools.
+
+```tsx
+import 'my-design-system/acme-button.js'
+
+export function SaveButton() {
+  return <acme-button label="Save" onActivate={event => console.log(event.detail)} />
+}
+```
+
+```vue
+<script setup>
+import 'my-design-system/acme-button.js'
+</script>
+
+<template>
+  <acme-button label="Save" @activate="save" />
+</template>
+```
+
 ## JSX-Tag Syntax
 
 The tag form reads naturally for the common case and looks like every other modern templating engine.

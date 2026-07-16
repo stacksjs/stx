@@ -81,6 +81,19 @@ describe('loadCrosswindConfig (dev-server)', () => {
     expect((result as any).content).toEqual(['./src/**/*.html'])
   })
 
+  it('preserves bunfig config-directory and JSON discovery', async () => {
+    const dir = await mkTmpDir('nested-json-config')
+    await Bun.$`mkdir -p ${path.join(dir, 'config')}`.quiet()
+    await Bun.write(
+      path.join(dir, 'config/crosswind.json'),
+      JSON.stringify({ content: ['./views/**/*.stx'], preflight: false }),
+    )
+
+    const result = await loadCrosswindConfig(dir)
+    expect((result as any)?.content).toEqual(['./views/**/*.stx'])
+    expect((result as any)?.preflight).toBe(false)
+  })
+
   it('honors the passed `cwd` and does NOT fall back to process.cwd()', async () => {
     // Put the config in a NESTED directory that isn't process.cwd(). If
     // the loader ignored our `cwd` argument and fell back to the default

@@ -1,8 +1,18 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { dirname, join, relative, resolve } from 'node:path'
 
 const packageRoot = join(import.meta.dir, '..')
+
+function collectTypeScriptModules(directory: string): string[] {
+  return readdirSync(directory).flatMap((name) => {
+    const fullPath = join(directory, name)
+    if (statSync(fullPath).isDirectory())
+      return collectTypeScriptModules(fullPath)
+
+    return name.endsWith('.ts') && !name.endsWith('.d.ts') ? [fullPath] : []
+  })
+}
 
 describe('package export surface', () => {
   beforeAll(() => {
@@ -20,6 +30,7 @@ describe('package export surface', () => {
 
   it('ships JavaScript for representative public subpath exports', async () => {
     const subpaths = [
+      'component-library',
       'expressions',
       'parser/tokenizer',
       'safe-evaluator',
@@ -45,5 +56,36 @@ describe('package export surface', () => {
       types: './dist/*.d.ts',
       import: './dist/*.js',
     })
+  })
+
+  it('emits valid, self-resolving ESM for every public source module', () => {
+    const sourceRoot = join(packageRoot, 'src')
+    const scanner = new Bun.Transpiler({ loader: 'js' })
+
+    for (const sourcePath of collectTypeScriptModules(sourceRoot)) {
+      const subpath = relative(sourceRoot, sourcePath).replace(/\.ts$/, '')
+      const jsPath = join(packageRoot, 'dist', `${subpath}.js`)
+      const dtsPath = join(packageRoot, 'dist', `${subpath}.d.ts`)
+
+      expect(existsSync(jsPath), `${subpath} is missing runtime JS`).toBe(true)
+      expect(existsSync(dtsPath), `${subpath} is missing declarations`).toBe(true)
+
+      const code = readFileSync(jsPath, 'utf8')
+      let imports: ReturnType<typeof scanner.scan>['imports']
+      try {
+        imports = scanner.scan(code).imports
+      }
+      catch (error) {
+        throw new Error(`${subpath} is invalid JavaScript: ${error instanceof Error ? error.message : error}`)
+      }
+
+      for (const imported of imports) {
+        if (!imported.path.startsWith('.'))
+          continue
+
+        const dependencyPath = resolve(dirname(jsPath), imported.path)
+        expect(existsSync(dependencyPath), `${subpath} has an unresolved import: ${imported.path}`).toBe(true)
+      }
+    }
   })
 })

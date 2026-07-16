@@ -272,6 +272,23 @@ export function resetCrosswindCache(): void {
  */
 export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig | null> {
   try {
+    const configDirectories = ['', 'config', '.config']
+    const configNames = ['crosswind.config', 'crosswind', '.crosswind.config', '.crosswind']
+    const configExtensions = ['.ts', '.js', '.mjs', '.cjs', '.json']
+    const configCandidates = configDirectories.flatMap(directory =>
+      configNames.flatMap(name =>
+        configExtensions.map(extension => path.join(directory, `${name}${extension}`)),
+      ),
+    )
+
+    // A missing config is the overwhelmingly common path. Avoid importing
+    // bunfig and asking it to search hundreds of fallback locations when none
+    // of its supported project-local candidates exists. Besides eliminating
+    // noisy ConfigNotFoundError output, this keeps parallel test/dev-server
+    // workloads from spending seconds contending in module resolution.
+    if (!configCandidates.some(candidate => fs.existsSync(path.join(cwd, candidate))))
+      return null
+
     const { loadConfigWithResult } = await import('bunfig')
     const result = await loadConfigWithResult<CrosswindConfig>({
       name: 'crosswind',

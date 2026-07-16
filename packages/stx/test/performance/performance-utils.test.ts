@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { beforeEach, describe, expect, it, jest } from 'bun:test'
 import {
   clearRegexCache,
   debounce,
@@ -161,28 +161,29 @@ describe('Performance Utils', () => {
       expect(callCount).toBe(1)
     })
 
-    it('should reset debounce timer on subsequent calls', async () => {
+    it('should reset debounce timer on subsequent calls', () => {
+      jest.useFakeTimers()
       let callCount = 0
       const increment = () => callCount++
 
-      const debouncedIncrement = debounce(increment, 50)
+      try {
+        const debouncedIncrement = debounce(increment, 50)
 
-      debouncedIncrement()
+        debouncedIncrement()
 
-      // Call again before delay expires
-      setTimeout(() => debouncedIncrement(), 25)
+        jest.advanceTimersByTime(25)
+        debouncedIncrement()
 
-      // Wait for initial delay
-      await new Promise(resolve => setTimeout(resolve, 60))
+        // The original deadline has passed, but the replacement timer has not.
+        jest.advanceTimersByTime(25)
+        expect(callCount).toBe(0)
 
-      // Should not have executed yet (timer was reset)
-      expect(callCount).toBe(0)
-
-      // Wait for reset delay
-      await new Promise(resolve => setTimeout(resolve, 30))
-
-      // Should have executed once
-      expect(callCount).toBe(1)
+        jest.advanceTimersByTime(25)
+        expect(callCount).toBe(1)
+      }
+      finally {
+        jest.useRealTimers()
+      }
     })
   })
 

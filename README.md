@@ -20,6 +20,7 @@ A modern templating engine with Vue-like Single File Components, Laravel Blade d
 - **Form Directives** - `@form`, `@input`, `@select`, `@csrf` with validation
 - **SEO & Sitemap** - `@seo`, `@meta`, `@structuredData` with auto-injection
 - **PWA Support** - Service worker, manifest, and offline page generation
+- **Web Component Libraries** - Compile `.stx` design systems to progressive custom elements with CSS-first rendering, SSR/Declarative Shadow DOM, CEM, JSX types, and ESM bundles
 - **200K+ Icons** - Built-in Iconify integration
 - **Crosswind CSS** - Utility-first CSS framework integration
 - **Native Desktop** - Build desktop apps with `stx dev --native`

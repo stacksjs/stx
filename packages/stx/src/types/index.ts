@@ -55,6 +55,11 @@ export { isDirectiveKind } from './directive-types'
 
 // Component types
 export type {
+  ComponentLibraryBuildResult,
+  ComponentLibraryComponent,
+  ComponentLibraryConfig,
+  ComponentLibraryEvent,
+  ComponentLibraryProperty,
   ComponentConfig,
   ComponentDefinition,
   ComponentDoc,

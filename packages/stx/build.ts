@@ -1,4 +1,4 @@
-import { copyFileSync, cpSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { dts } from 'bun-plugin-dtsx'
 
@@ -25,6 +25,55 @@ function collectEntrypoints(dir: string): string[] {
 
 function outputPathForEntrypoint(entrypoint: string): string {
   return join('dist', relative('src', entrypoint).replace(/\.ts$/, '.js'))
+}
+
+const sourceTranspiler = new Bun.Transpiler({
+  loader: 'ts',
+  target: 'bun',
+})
+
+function resolveRuntimeSpecifier(entrypoint: string, specifier: string): string {
+  if (!specifier.startsWith('.'))
+    return specifier
+
+  if (specifier.endsWith('.ts') || specifier.endsWith('.tsx'))
+    return specifier.replace(/\.tsx?$/, '.js')
+
+  // TypeScript source commonly imports a future `.js` path so the emitted ESM
+  // is already Node-compatible. Leave those specifiers unchanged.
+  if (specifier.endsWith('.js') || specifier.endsWith('.json'))
+    return specifier
+
+  const absolute = resolve(dirname(entrypoint), specifier)
+  if (existsSync(`${absolute}.ts`) || existsSync(`${absolute}.tsx`))
+    return `${specifier}.js`
+
+  if (existsSync(join(absolute, 'index.ts')) || existsSync(join(absolute, 'index.tsx')))
+    return `${specifier.replace(/\/$/, '')}/index.js`
+
+  return specifier
+}
+
+async function emitRuntimeModule(entrypoint: string): Promise<void> {
+  const source = await Bun.file(entrypoint).text()
+  let output = await sourceTranspiler.transform(source)
+
+  // Bun.Transpiler intentionally preserves module specifiers. Add explicit
+  // `.js`/`index.js` suffixes so the published ESM works in standards-based
+  // runtimes as well as Bun, without bundling every public source file into a
+  // duplicated 30 MB distribution.
+  const imports = sourceTranspiler.scan(output).imports
+  for (const imported of imports) {
+    const runtimeSpecifier = resolveRuntimeSpecifier(entrypoint, imported.path)
+    if (runtimeSpecifier === imported.path)
+      continue
+
+    output = output.replaceAll(JSON.stringify(imported.path), JSON.stringify(runtimeSpecifier))
+  }
+
+  const outputPath = outputPathForEntrypoint(entrypoint)
+  mkdirSync(dirname(outputPath), { recursive: true })
+  await Bun.write(outputPath, output)
 }
 
 function assertBuild(result: Awaited<ReturnType<typeof Bun.build>>, label: string): void {
@@ -68,16 +117,12 @@ rmSync('./dist', { recursive: true, force: true })
 
 const sourceEntrypoints = collectEntrypoints('./src')
 
-// Build every source module that the package exports through the `./*`
-// subpath. Keeping real JS next to every generated declaration prevents
-// runtime-only failures such as `import '@stacksjs/stx/expressions'`.
-//
-// `splitting: true` extracts code shared across the ~350 entrypoints into a
-// handful of `chunk-*.js` files that each entry imports, instead of inlining a
-// full copy of the shared graph into every entry (which ballooned dist to
-// ~50 MB). The named entry files still exist, so `@stacksjs/stx/<subpath>`
-// imports keep resolving — they just re-export from the shared chunks.
-assertBuild(await Bun.build({
+// Generate declarations for every source module exposed by the wildcard
+// package export. dtsx runs through Bun's build graph, but its JavaScript
+// output is deliberately replaced below: when every source file is both an
+// entrypoint and a dependency, Bun 1.3 can emit shared chunks containing
+// exports whose declarations live in a different entry file.
+const declarationBuild = await Bun.build({
   entrypoints: sourceEntrypoints,
   splitting: true,
   outdir: './dist',
@@ -87,24 +132,18 @@ assertBuild(await Bun.build({
   target: 'bun',
   minify: true,
   packages: 'external',
-}), 'stx source build')
+})
+assertBuild(declarationBuild, 'stx declaration build')
 
-for (const entrypoint of sourceEntrypoints) {
-  const expectedOutput = outputPathForEntrypoint(entrypoint)
-  if (await Bun.file(expectedOutput).exists())
-    continue
+// Emit one standards-based ESM file per source module. This is both smaller
+// and safer than disabling splitting (which duplicates the full graph into
+// every subpath), while retaining the exact public module layout.
+await Promise.all(sourceEntrypoints.map(emitRuntimeModule))
 
-  mkdirSync(dirname(expectedOutput), { recursive: true })
-  assertBuild(await Bun.build({
-    entrypoints: [entrypoint],
-    splitting: false,
-    outdir: './dist',
-    root: './src',
-    naming: '[dir]/[name].js',
-    target: 'bun',
-    minify: true,
-    packages: 'external',
-  }), `stx fallback source build for ${entrypoint}`)
+// No transpiled module references dtsx's intermediate shared chunks.
+for (const output of declarationBuild.outputs) {
+  if (output.kind === 'chunk' && output.path.endsWith('.js'))
+    rmSync(output.path, { force: true })
 }
 
 // Build CLI separately
@@ -123,14 +162,6 @@ const cliContent = await Bun.file(cliPath).text()
 if (!cliContent.startsWith('#!/')) {
   await Bun.write(cliPath, `#!/usr/bin/env bun\n${cliContent}`)
 }
-
-// Build the client-side library
-assertBuild(await Bun.build({
-  entrypoints: ['./client.ts'],
-  outdir: './dist',
-  plugins: [dts()],
-  target: 'browser',
-}), 'stx client build')
 
 // Build optional modules as separate entry points
 const optionalModules = [
