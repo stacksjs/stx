@@ -198,6 +198,76 @@ describe('component library compiler', () => {
     expect(element.getAttribute('data-options')).toBe('{"density":"comfortable"}')
   })
 
+  it('upgrades pre-defined instances, preserves imperative properties, and reconnects cleanly', async () => {
+    const { input, output } = await workspace()
+    await fixture(input, 'UpgradeButton.stx', buttonSource)
+    await buildComponentLibrary({
+      inputDir: input,
+      outputDir: output,
+      components: [{ file: 'UpgradeButton.stx', name: 'UpgradeButton', tag: 'upgrade-button-a' }],
+      bundle: false,
+    })
+
+    const element = document.createElement('upgrade-button-a') as HTMLElement & {
+      label: string
+      disabled: boolean
+      options: Record<string, unknown>
+      updateComplete: Promise<void>
+    }
+    // These assignments happen before the definition exists and therefore
+    // exercise the platform's custom-element property upgrade path.
+    element.label = 'Imperative value'
+    Object.defineProperty(element, 'options', {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: { density: 'spacious' },
+    })
+    element.setAttribute('label', 'Attribute value')
+    element.setAttribute('disabled', '')
+    const serverButton = document.createElement('button')
+    serverButton.id = 'action'
+    serverButton.setAttribute('@click.prevent', 'activate')
+    serverButton.textContent = 'Server markup'
+    element.appendChild(serverButton)
+
+    let hydrationCount = 0
+    let activationCount = 0
+    element.addEventListener('stx:hydrated', () => hydrationCount++)
+    element.addEventListener('activate', () => activationCount++)
+    document.body.appendChild(element)
+
+    await import(`${path.join(output, 'upgrade-button-a.js')}?test=${Date.now()}`)
+
+    expect(document.querySelector('upgrade-button-a')).toBe(element)
+    expect(element.textContent).toContain('Server markup')
+    expect(element.label).toBe('Imperative value')
+    expect(element.options).toEqual({ density: 'spacious' })
+    expect(element.disabled).toBe(true)
+    expect(hydrationCount).toBe(1)
+
+    serverButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    expect(activationCount).toBe(1)
+
+    element.remove()
+    element.label = 'Changed while disconnected'
+    document.body.appendChild(element)
+    expect(element.querySelector('button')!.textContent).toBe('Changed while disconnected')
+    element.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(activationCount).toBe(2)
+    expect(hydrationCount).toBe(1)
+
+    element.remove()
+    document.body.appendChild(element)
+    element.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(activationCount).toBe(3)
+
+    const another = document.createElement('upgrade-button-a') as typeof element
+    document.body.appendChild(another)
+    expect(another.options).toEqual({})
+    expect(another.options).not.toBe(element.options)
+  })
+
   it('produces SSR helpers including escaped props and declarative shadow DOM', async () => {
     const { input, output } = await workspace()
     await fixture(input, 'Greeting.stx', `
@@ -247,6 +317,33 @@ describe('component library compiler', () => {
     expect(stderr).toBe('')
     expect(exitCode).toBe(0)
     expect(stdout).toContain('ssr-import-ok')
+  })
+
+  it('renders and updates closed shadow roots through the public renderRoot', async () => {
+    const { input, output } = await workspace()
+    await fixture(input, 'ClosedCard.stx', `
+<script component>{"tag":"closed-card-a","properties":{"title":{"type":"string","default":"Private"}},"shadowDOM":"closed"}</script>
+<template><article><h2>{{ title }}</h2><slot></slot></article></template>
+<style>article { contain: content; }</style>`)
+    await buildComponentLibrary({ inputDir: input, outputDir: output, bundle: false })
+    await import(`${path.join(output, 'closed-card-a.js')}?test=${Date.now()}`)
+
+    const card = document.createElement('closed-card-a') as HTMLElement & {
+      title: string
+      updateComplete: Promise<void>
+      renderRoot: ShadowRoot
+    }
+    const slotted = document.createElement('span')
+    slotted.textContent = 'Light child'
+    card.appendChild(slotted)
+    document.body.appendChild(card)
+
+    expect(card.shadowRoot).toBeNull()
+    expect(card.renderRoot.querySelector('h2')!.textContent).toBe('Private')
+    expect(card.renderRoot.querySelector('slot')!.assignedNodes()).toEqual([slotted])
+    card.title = 'Updated privately'
+    await card.updateComplete
+    expect(card.renderRoot.querySelector('h2')!.textContent).toBe('Updated privately')
   })
 
   it('uses explicit entries and supports lean output switches', async () => {

@@ -305,6 +305,17 @@ const serialize = (value, type) => {
   return String(value);
 };
 
+const cloneDefault = (value, type) => {
+  if (value == null || (type !== 'object' && type !== 'array')) return value;
+  if (typeof structuredClone === 'function') return structuredClone(value);
+  return JSON.parse(JSON.stringify(value));
+};
+
+const defaultFor = property => cloneDefault(
+  property.default ?? ({ string: '', number: 0, boolean: false, object: {}, array: [] })[property.type],
+  property.type,
+);
+
 export class StxElement extends HTMLElementBase {
   static definition = {};
   static get observedAttributes() { return this.definition.observedAttributes || []; }
@@ -314,11 +325,13 @@ export class StxElement extends HTMLElementBase {
     this._values = Object.create(null);
     this._reflecting = false;
     this._connected = false;
+    this._hasConnected = false;
+    this._initializing = false;
     this._updatePending = false;
     this._listeners = new Map();
     const definition = this.constructor.definition;
     for (const [name, property] of Object.entries(definition.properties || {})) {
-      this._values[name] = property.default ?? ({ string: '', number: 0, boolean: false, object: {}, array: [] })[property.type];
+      this._values[name] = defaultFor(property);
     }
     if (definition.shadowMode && this.attachShadow && !this.shadowRoot) {
       this._closedRoot = this.attachShadow({ mode: definition.shadowMode });
@@ -331,19 +344,28 @@ export class StxElement extends HTMLElementBase {
   connectedCallback() {
     if (this._connected) return;
     this._connected = true;
+    this._initializing = true;
     const definition = this.constructor.definition;
-    for (const name of Object.keys(definition.properties || {})) this._upgradeProperty(name);
     for (const [name, property] of Object.entries(definition.properties || {})) {
       const attribute = property.attribute === false ? null : (property.attribute || name.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()));
-      if (attribute && this.hasAttribute?.(attribute)) this._values[name] = deserialize(this.getAttribute(attribute), property.type, this._values[name]);
+      if (attribute && this.hasAttribute?.(attribute)) this._values[name] = deserialize(this.getAttribute(attribute), property.type, defaultFor(property));
     }
+    // Properties assigned before customElements.define() become own properties.
+    // Upgrade them after attributes so imperative state wins, matching the
+    // platform's property-first custom-element initialization convention.
+    for (const name of Object.keys(definition.properties || {})) this._upgradeProperty(name);
+    this._initializing = false;
     const root = this.renderRoot;
     const hasMarkup = [...(root.childNodes || [])].some(node => node.nodeType !== 3 || node.textContent.trim());
-    if (!(definition.progressive && hasMarkup)) this._render();
+    const firstConnection = !this._hasConnected;
+    if (!(firstConnection && definition.progressive && hasMarkup)) this._render();
     else this._upgradeDeclarativeEvents();
     this._bindEvents();
-    this.setAttribute?.('hydrated', '');
-    this.dispatchEvent?.(new CustomEvent('stx:hydrated', { bubbles: true, composed: true }));
+    if (firstConnection) {
+      this._hasConnected = true;
+      this.setAttribute?.('hydrated', '');
+      this.dispatchEvent?.(new CustomEvent('stx:hydrated', { bubbles: true, composed: true }));
+    }
   }
 
   disconnectedCallback() {
@@ -358,7 +380,7 @@ export class StxElement extends HTMLElementBase {
     const name = definition.attributeToProperty?.[attribute];
     if (!name) return;
     const property = definition.properties[name];
-    const value = deserialize(newValue, property.type, property.default);
+    const value = deserialize(newValue, property.type, defaultFor(property));
     if (!Object.is(this._values[name], value)) {
       this._values[name] = value;
       this.requestUpdate();
@@ -366,7 +388,7 @@ export class StxElement extends HTMLElementBase {
   }
 
   requestUpdate() {
-    if (!this._connected || this._updatePending) return this.updateComplete;
+    if (!this._connected || this._initializing || this._updatePending) return this.updateComplete;
     this._updatePending = true;
     this._updateComplete = new Promise((resolve) => {
       queueMicrotask(() => {
