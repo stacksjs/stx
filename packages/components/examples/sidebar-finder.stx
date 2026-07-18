@@ -1,0 +1,69 @@
+<script server>
+// Recreation of Finder's sidebar on macOS Tahoe. Framework7 icons are the
+// SF Symbol lookalikes Finder uses; colors are macOS system colors by name.
+// Mirrors the sibling sidebar-mail / sidebar-notes examples — same <Sidebar>
+// component, same glass window frame, so it renders in light and dark and is
+// promoted to the native Tahoe sidebar inside a Craft window.
+export const sections = [
+  {
+    id: 'top',
+    items: [
+      { id: 'recents', label: 'Recents', icon: 'i-f7-clock', iconColor: 'blue', active: true },
+      { id: 'shared', label: 'Shared', icon: 'i-f7-folder-badge-person-crop', iconColor: 'blue' },
+    ],
+  },
+  {
+    id: 'favorites',
+    label: 'Favorites',
+    items: [
+      { id: 'applications', label: 'Applications', icon: 'i-f7-square-grid-2x2-fill', iconColor: 'blue' },
+      { id: 'code', label: 'Code', icon: 'i-f7-folder-fill', iconColor: 'blue' },
+      { id: 'stacks', label: 'stacks', icon: 'i-f7-folder-fill', iconColor: 'blue' },
+      { id: 'apps', label: 'Apps', icon: 'i-f7-folder-fill', iconColor: 'blue' },
+      { id: 'libraries', label: 'Libraries', icon: 'i-f7-building-columns', iconColor: 'blue' },
+      { id: 'desktop', label: 'Desktop', icon: 'i-f7-desktopcomputer', iconColor: 'blue' },
+      { id: 'documents', label: 'Documents', icon: 'i-f7-doc-fill', iconColor: 'blue' },
+      { id: 'downloads', label: 'Downloads', icon: 'i-f7-arrow-down-circle', iconColor: 'blue' },
+    ],
+  },
+  {
+    id: 'locations',
+    label: 'Locations',
+    items: [
+      { id: 'icloud-drive', label: 'iCloud Drive', icon: 'i-f7-cloud', iconColor: 'blue' },
+    ],
+  },
+]
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidebar — Finder on macOS Tahoe</title>
+  <style>
+    /* Stand-in for the macOS Tahoe wallpaper the glass refracts. */
+    body {
+      background: linear-gradient(180deg,
+        #7fb2d9 0%, #a9cbe4 18%, #d5e4ee 34%,
+        #b4c9d8 48%, #7695ad 62%, #4e7899 76%, #316289 100%);
+      min-height: 100vh;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="grid min-h-screen place-items-center p-8">
+  <!-- The window -->
+  <div class="flex h-[92vh] w-[980px] overflow-hidden rounded-[26px] shadow-[0_30px_90px_rgba(0,0,0,0.45),0_0_0_0.5px_rgba(0,0,0,0.15)]">
+    <Sidebar :sections="sections" theme="macos" width="230" placement="static">
+      <template #header>
+        <SidebarHeader :actions="[{ id: 'toggle-sidebar', icon: 'i-f7-sidebar-left', label: 'Toggle sidebar' }]" />
+      </template>
+    </Sidebar>
+
+    <!-- Content pane stand-in -->
+    <main class="flex-1 bg-white/92 backdrop-blur-2xl dark:bg-neutral-900/92"></main>
+  </div>
+</body>
+</html>
