@@ -44,6 +44,12 @@ describe('findUnbalancedTags (#1769)', () => {
 
   it('ignores > inside attributes and {{ }} interpolations', () => {
     expect(findUnbalancedTags(`<div title="a > b">{{ a > b }}<span>x</span></div>`)).toEqual([])
+    expect(findUnbalancedTags(`<div title='a > b'><span>x</span></div>`)).toEqual([])
+  })
+
+  it('does not treat apostrophes in text as attribute quotes', () => {
+    const template = `<main><article><p>browser's <strong>own</strong> vendor's sync.</p><a href="/policy">GitHub's policy</a></article></main>`
+    expect(findUnbalancedTags(template)).toEqual([])
   })
 
   it('flags an unbalanced component tag (case preserved)', () => {

@@ -49,8 +49,9 @@ function blankKeepingLines(s: string): string {
  */
 export function findUnbalancedTags(template: string): TagBalanceIssue[] {
   // Neutralise regions where a `<`/`>` is not markup: scripts, styles, HTML
-  // comments, stx interpolations, and quoted attribute values (so a literal
-  // `>` inside an attribute value can't prematurely "close" a tag).
+  // comments and stx interpolations. Quoted attribute values are handled by
+  // the tag matcher below; stripping every quoted region from the full
+  // template would mistake prose apostrophes for quote delimiters.
   const stripped = template
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, blankKeepingLines)
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, blankKeepingLines)
@@ -58,14 +59,14 @@ export function findUnbalancedTags(template: string): TagBalanceIssue[] {
     .replace(/\{\{\{[\s\S]*?\}\}\}/g, blankKeepingLines)
     .replace(/\{\{[\s\S]*?\}\}/g, blankKeepingLines)
     .replace(/\{!![\s\S]*?!!\}/g, blankKeepingLines)
-    .replace(/"[^"]*"/g, blankKeepingLines)
-    .replace(/'[^']*'/g, blankKeepingLines)
 
   interface OpenInfo { count: number, firstLine: number }
   const opens = new Map<string, OpenInfo>()
   const closes = new Map<string, number>()
 
-  const tagRe = /<(\/?)([A-Za-z][\w-]*)\b[^>]*?(\/?)>/g
+  // Keep `>` inside quoted attributes within the same tag without treating
+  // apostrophes in normal text as the start of a quoted region.
+  const tagRe = /<(\/?)([A-Za-z][\w-]*)\b(?:[^>"']|"[^"]*"|'[^']*')*?(\/?)>/g
   let m: RegExpExecArray | null
   // eslint-disable-next-line no-cond-assign
   while ((m = tagRe.exec(stripped)) !== null) {
