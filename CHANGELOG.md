@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.98...v0.2.99)
+
+## 🚀 Features
+
+- **components**: add Finder sidebar example (macOS Tahoe) ([fd49515](https://github.com/stacksjs/stx/commit/fd49515)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **parser**: handle apostrophes in tag balance checks ([3efbe51](https://github.com/stacksjs/stx/commit/3efbe51)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.99 ([9f9c7fd](https://github.com/stacksjs/stx/commit/9f9c7fd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **actions**: update setup bun ([e7d84af](https://github.com/stacksjs/stx/commit/e7d84af)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.96...v0.2.97)
 
 ## 🐛 Bug Fixes
