@@ -186,6 +186,26 @@ describe('stx Components', () => {
     expect(outputHtml).toContain('Delete Item')
   })
 
+  it('should preserve native custom elements without an STX component', async () => {
+    const testFile = path.join(TEMP_DIR, 'native-custom-element.stx')
+    await Bun.write(testFile, `
+      <video-player controls>
+        <media-play-button slot="left"></media-play-button>
+      </video-player>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+    expect(outputHtml).toContain('<video-player controls>')
+    expect(outputHtml).toContain('<media-play-button slot="left"></media-play-button>')
+    expect(outputHtml).not.toContain('Error loading component')
+  })
+
   it('should process custom element syntax with PascalCase', async () => {
     // Create a component file with simpler syntax
     const cardComponent = path.join(COMPONENTS_DIR, 'card.stx')

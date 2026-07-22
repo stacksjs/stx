@@ -10,7 +10,7 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
-import { renderComponentWithSlot } from './utils'
+import { renderComponentWithSlot, userComponentFileExists } from './utils'
 
 /**
  * Convert PascalCase to kebab-case with proper handling of consecutive uppercase letters.
@@ -832,6 +832,13 @@ export async function processCustomElements(
       const componentPath = isPascalCase
         ? pascalToKebab(tag.tagName)
         : tag.tagName
+
+      // A hyphenated tag with no matching STX component is a native Custom
+      // Element. Preserve it for the browser instead of replacing it with a
+      // missing-component error. File components still take precedence.
+      if (!isPascalCase && tag.tagName.includes('-') && !await userComponentFileExists(componentPath, componentsDir, context, filePath, options)) {
+        continue
+      }
 
       // Parse attributes using the robust parser that handles HTML in values
       const rawProps = parseMultilineAttributes(tag.attributes)

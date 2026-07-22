@@ -905,6 +905,13 @@ async function processCustomElementTags(
         continue
       }
 
+      // Preserve standards-compliant Custom Elements when no file component
+      // exists. This lets libraries register elements such as <video-player>
+      // without requiring an empty proxy .stx component for every tag.
+      if (!isPascalCase && tag.tagName.includes('-') && !await userComponentFileExists(componentPath, componentsDir, context, filePath, options)) {
+        continue
+      }
+
       // --- File-based component ---
 
       // Merge static + serverDynamic into a single props object for renderComponentWithSlot
