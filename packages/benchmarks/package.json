@@ -26,7 +26,7 @@
     "gray-matter": "^4.0.3",
     "handlebars": "^4.7.9",
     "isomorphic-dompurify": "^3.7.1",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^5.2.2",
     "liquidjs": "^10.25.2",
     "markdown-it": "^14.1.1",
     "marked": "^17.0.5",
