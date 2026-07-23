@@ -116,14 +116,14 @@
   },
   "dependencies": {
     "@cwcss/crosswind": "^0.2.6",
-    "@stacksjs/clapp": "^0.2.0",
+    "@stacksjs/clapp": "^0.2.12",
     "@stacksjs/sanitizer": "workspace:*",
     "@stacksjs/ts-i18n": "^0.1.11",
     "bun-plugin-stx": "workspace:*",
     "bunfig": "^0.15.15",
     "stx-router": "workspace:*",
     "ts-broadcasting": "^0.0.8",
-    "ts-images": "^0.1.9",
+    "ts-images": "^0.2.1",
     "ts-syntax-highlighter": "^0.2.1"
   },
   "optionalDependencies": {

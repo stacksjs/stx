@@ -99,11 +99,11 @@
   ],
   "dependencies": {
     "@cwcss/crosswind": "^0.2.6",
-    "very-happy-dom": "^0.1.9"
+    "very-happy-dom": "^0.1.10"
   },
   "devDependencies": {
-    "@iconify/json": "^2.2.463",
-    "better-dx": "^0.2.15"
+    "@iconify/json": "^2.2.504",
+    "better-dx": "^0.2.20"
   },
   "overrides": {
     "bunfig": "0.15.15",
