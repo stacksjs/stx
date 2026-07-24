@@ -98,12 +98,12 @@
     "!packages/vscode"
   ],
   "dependencies": {
-    "@cwcss/crosswind": "^0.2.6",
-    "very-happy-dom": "^0.1.9"
+    "@cwcss/crosswind": "^0.2.10",
+    "very-happy-dom": "^0.1.10"
   },
   "devDependencies": {
-    "@iconify/json": "^2.2.463",
-    "better-dx": "^0.2.15"
+    "@iconify/json": "^2.2.505",
+    "better-dx": "^0.2.22"
   },
   "overrides": {
     "bunfig": "0.15.15",

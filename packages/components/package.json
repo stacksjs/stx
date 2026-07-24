@@ -61,16 +61,16 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "@cwcss/crosswind": "^0.2.6",
+    "@cwcss/crosswind": "^0.2.10",
     "@stacksjs/stx": "workspace:*",
     "bun-plugin-stx": "workspace:*",
-    "ts-syntax-highlighter": "^0.2.1"
+    "ts-syntax-highlighter": "^0.2.5"
   },
   "devDependencies": {
     "@iconify-json/f7": "^1.2.2",
-    "@types/bun": "^1.3.11",
+    "@types/bun": "^1.3.14",
     "bun-plugin-dtsx": "^0.21.17",
-    "pickier": "^0.1.35",
+    "pickier": "^0.1.40",
     "typescript": "^7.0.2"
   }
 }
