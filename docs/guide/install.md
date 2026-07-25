@@ -398,7 +398,7 @@ Now that you're set up:
 
 Need assistance?
 
-- **[Discord Community](https://discord.gg/stacksjs)** - Real-time help
+- **[Discord Community](https://stacksjs.com/discord)** - Real-time help
 - **[GitHub Discussions](https://github.com/stacksjs/stx/discussions)** - Q&A and ideas
 - **[GitHub Issues](https://github.com/stacksjs/stx/issues)** - Bug reports
 - **[Twitter](https://twitter.com/stacksjs)** - Updates and tips

@@ -294,7 +294,7 @@ Ready to build with `stx`?
 
 Join the `stx` community:
 
-- [Discord Server](https://discord.gg/stacksjs) - Get help and share ideas
+- [Discord Server](https://stacksjs.com/discord) - Get help and share ideas
 - [GitHub](https://github.com/stacksjs/stx) - Report issues and contribute
 - [Twitter](https://twitter.com/stacksjs) - Stay updated
 - [Best Practices](/guide/best-practices) - Learn from the community

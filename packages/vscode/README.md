@@ -409,7 +409,7 @@ MIT License - see [LICENSE.md](./LICENSE.md) for details.
 
 <div align="center">
 
-**[Website](https://stacksjs.org)** • **[Documentation](https://stacksjs.org/docs)** • **[Twitter](https://twitter.com/stacksjs)** • **[Discord](https://discord.gg/stacksjs)**
+**[Website](https://stacksjs.org)** • **[Documentation](https://stacksjs.org/docs)** • **[Twitter](https://twitter.com/stacksjs)** • **[Discord](https://stacksjs.com/discord)**
 
 Made with ❤️ by the Stacks team
 

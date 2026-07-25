@@ -319,4 +319,4 @@ Happy coding! 🚀
 **Need Help?**
 - [Full Documentation](./FEATURES.md)
 - [GitHub Issues](https://github.com/stacksjs/stx/issues)
-- [Stacks Discord](https://discord.gg/stacksjs)
+- [Stacks Discord](https://stacksjs.com/discord)
