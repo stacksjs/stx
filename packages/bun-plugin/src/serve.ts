@@ -141,6 +141,31 @@ export function isProductionServe(): boolean {
 }
 
 /**
+ * `Cache-Control` for a file served straight out of `publicDir`.
+ *
+ * Development says `no-store`, so a swapped favicon or hero image appears on
+ * the next reload rather than an hour later.
+ *
+ * Production does not: this server IS production for a server-rendered deploy,
+ * with no CDN in front stamping cache headers on the way past. Sending
+ * `no-store` there told every browser, proxy and link-preview crawler to
+ * re-fetch every image on every request, and made messengers that cache a
+ * preview by its headers throw the card away.
+ *
+ * An hour for ordinary assets, because they are replaced in place by a deploy
+ * and a share card that changed with a copy edit should not be stale for a
+ * year. A fingerprinted name (a content hash in it) can never change under a
+ * given URL, so it gets the long immutable lifetime.
+ */
+export function staticCacheControl(pathname: string, production: boolean = isProductionServe()): string {
+  if (!production)
+    return 'no-store'
+
+  const fingerprinted = /[.-][0-9a-f]{8,}\.[a-z0-9]+$/i.test(pathname)
+  return fingerprinted ? 'public, max-age=31536000, immutable' : 'public, max-age=3600'
+}
+
+/**
  * Render the built-in fallback 404 page.
  *
  * - In development (`isProduction: false`) it lists the discovered routes as
@@ -2685,12 +2710,7 @@ export async function serve(options: ServeOptions): Promise<void> {
                           return new Response(file, {
                             headers: {
                               'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
-                              // Dev mode: `no-cache` so edits to anything in publicDir
-                              // (favicons, hero images, robots.txt, fonts during a redesign)
-                              // appear on the next normal reload. The previous `max-age=3600`
-                              // meant up to an hour of stale assets after a swap. Production
-                              // builds copy public/ to dist/ where a CDN stamps long caching.
-                              'Cache-Control': 'no-store',
+                              'Cache-Control': staticCacheControl(resolvedPath),
                             },
                           })
                         }
