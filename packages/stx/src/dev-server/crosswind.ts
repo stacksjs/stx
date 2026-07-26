@@ -6,6 +6,7 @@
 
 import path from 'node:path'
 import { hasLocalConfig } from 'bunfig/discovery'
+import { stateDir } from '../state-dir'
 import { colors } from './terminal-colors'
 
 // Type for Crosswind module
@@ -53,7 +54,7 @@ let isBuilding = false
 // so we delete + re-set on hit to refresh recency).
 //
 // On-disk: each (class set, config-fingerprint) pair gets a deterministic
-// hash → `<cwd>/.stx/cache/cw-<hash>.css`. Persisting the result means
+// hash → `<state-dir>/cache/cw-<hash>.css`. Persisting the result means
 // the cache survives `bun --watch` restarts, fresh `git pull`s, and
 // CI builds — turning the cold-start CSS regeneration penalty (~50KB
 // of utilities, ~30-60ms) into a single file read.
@@ -464,10 +465,11 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
     const resolveRoot = appDir ? path.resolve(appDir) : process.cwd()
 
     // Wire up the on-disk cache root once we know the app directory.
-    // Putting it in `.stx/cache/` keeps it alongside the existing stx
-    // page cache and behaves the same way under .gitignore conventions.
+    // Putting it in the state directory's `cache/` keeps it alongside the
+    // existing stx page cache and behaves the same way under .gitignore
+    // conventions.
     if (!diskCacheRoot)
-      diskCacheRoot = path.join(resolveRoot, '.stx/cache')
+      diskCacheRoot = stateDir(resolveRoot, 'cache')
 
     // Cache lookup — keyed on the sorted class set + a fingerprint of
     // the loaded crosswind config. Different config (theme tokens,

@@ -14,6 +14,7 @@ import { imgDirective } from './media/image/directive'
 import { videoDirective } from './media/video/directive'
 import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
+import { DEFAULT_STATE_DIR, rebaseOntoStateDir, setStateDir, stateDirName } from './state-dir'
 import { webComponentDirectiveHandler } from './web-components'
 
 export const defaultConfig: StxConfig = {
@@ -25,6 +26,9 @@ export const defaultConfig: StxConfig = {
   defaultLayout: 'default',
   debug: false,
   cache: true,
+  // The `.stx/` paths below are written as the default state directory and
+  // rebased onto `stateDir` at load time — see `applyStateDir`.
+  stateDir: DEFAULT_STATE_DIR,
   cachePath: '.stx/cache',
   cacheVersion: '1.0.0',
 
@@ -419,6 +423,28 @@ function resolveStxRoot(configRoot?: string, configPagesDir?: string): { root: s
   return { root: '.', pagesDir: defaultPagesDir }
 }
 
+/**
+ * Publish `stateDir` to the resolver, then move the path-shaped options that
+ * default under `.stx/` onto it.
+ *
+ * The resolver is module state because plenty of stx runs from module scope or
+ * from helpers that never see a config object — the client-script bundler and
+ * the Crosswind cache, for two. Writing the resolved value back into `loaded`
+ * keeps the config object honest about where things actually go.
+ */
+function applyStateDir(loaded: StxConfig): void {
+  setStateDir(loaded.stateDir)
+  loaded.stateDir = stateDirName()
+
+  loaded.cachePath = rebaseOntoStateDir(loaded.cachePath)
+  if (loaded.build)
+    loaded.build.cacheDir = rebaseOntoStateDir(loaded.build.cacheDir)
+  if (loaded.media?.cache)
+    loaded.media.cache.directory = rebaseOntoStateDir(loaded.media.cache.directory)
+  if (loaded.story)
+    loaded.story.outDir = rebaseOntoStateDir(loaded.story.outDir)
+}
+
 // Lazy-load config to avoid blocking module initialization
 // This makes imports near-instant instead of taking 2-3 seconds
 let _config: StxConfig | null = null
@@ -457,6 +483,8 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
       verbose: false,
     })
     const loaded = configResult.config
+
+    applyStateDir(loaded)
 
     // Resolve the source root and pages directory for .stx files
     const resolved = resolveStxRoot(loaded.root, loaded.pagesDir)

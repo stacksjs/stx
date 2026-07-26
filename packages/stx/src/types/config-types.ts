@@ -496,11 +496,31 @@ export interface StxConfig {
    * - Stacks app: auto-detected as 'resources/views' if that directory has pages/
    * - Override: set explicitly to any path
    *
-   * Note: .stx/ (cache), .output/ (build), and stx.config.ts stay at project root.
+   * Note: the state directory (see `stateDir`), .output/ (build), and
+   * stx.config.ts stay at project root.
    *
    * @default '.' (auto-detects 'resources/views' if it exists with pages/)
    */
   root?: string
+
+  /**
+   * Where stx keeps its generated state: the compiled-template cache, the
+   * Crosswind CSS cache, the client-script bundle cache and temp dir, the
+   * generated route manifest and route types, dev-server output, SSG and media
+   * caches, story snapshots.
+   *
+   * Point it at an existing home for generated state to keep the project root
+   * clean - a Stacks application sets `storage/framework/stx`. The path-shaped
+   * options that default to somewhere under `.stx/` (`cachePath`,
+   * `build.cacheDir`, `media.cache.directory`, `story.outDir`) follow this
+   * setting; a path you point somewhere else entirely is left alone.
+   *
+   * Relative paths resolve against the project root; absolute paths are used
+   * as-is. `STX_DIR` overrides this.
+   *
+   * @default '.stx'
+   */
+  stateDir?: string
 
   /**
    * Pages directory name (relative to root).
@@ -592,7 +612,7 @@ export interface StxConfig {
   css?: string | { config?: string, content?: string[], preflight?: boolean, minify?: boolean, [key: string]: unknown }
   /** Enable debug mode for detailed error messages */
   debug: boolean
-  /** Directory to store cached templates, defaults to '.stx/cache' in the project root */
+  /** Directory to store cached templates, defaults to `cache` inside `stateDir` */
   cachePath: string
   /** Custom directives registered by the user */
   customDirectives?: CustomDirective[]
@@ -781,7 +801,7 @@ export interface BuildConfig {
   minify: boolean
   /** Enable build caching (default: true) */
   cache: boolean
-  /** Cache directory (default: '.stx/ssg-cache') */
+  /** Cache directory (default: `ssg-cache` inside `stateDir`) */
   cacheDir: string
   /** Parallel page generation limit (default: 10) */
   concurrency: number

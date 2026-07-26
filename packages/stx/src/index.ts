@@ -96,6 +96,8 @@ export * from './scaffolding'
 export * from './script-classifier'
 export * from './seo'
 export * from './serve'
+// Where stx keeps its generated state (`.stx/` by default, configurable)
+export * from './state-dir'
 export * from './style-scoping'
 export * from './template-compiler'
 export * from './template-hydrator'

@@ -19,6 +19,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
+import { stateDir, stateDirName } from '@stacksjs/stx'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 
 // Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
@@ -1164,7 +1165,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     pageMiddlewarePatterns.length = 0
     await Promise.all(files.map(f => detectPageMiddleware(f)))
 
-    // Generate route manifest and type declarations into .stx/.
+    // Generate route manifest and type declarations into the state directory.
     // Pass ALL patterns as a stack of page roots so frameworks can ship
     // default views (e.g. cart, checkout, orders) and apps can override
     // any of them by dropping a file with the same path into their own
@@ -1172,9 +1173,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     try {
       const { Router } = await import('stx-router')
       const pagesDirs = patterns.map(p => p.replace(/\/$/, '')).filter(Boolean)
-      const router = new Router(process.cwd(), { pagesDirs })
+      const router = new Router(process.cwd(), { pagesDirs, stateDir: stateDirName() })
       if (!options.quiet)
-        console.log(`[stx] Generated ${router.routes.length} routes → .stx/routes.ts`)
+        console.log(`[stx] Generated ${router.routes.length} routes → ${nodePath.join(stateDirName(), 'routes.ts')}`)
     }
     catch (e) {
       // Non-fatal — route generation is optional
@@ -1191,7 +1192,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     assetsInitialized = true
 
     const assetsDir = './resources/assets'
-    const targetAssetsDir = './.stx/assets'
+    const targetAssetsDir = stateDir(process.cwd(), 'assets')
 
     try {
       const assetsExist = await nodeFs.stat(assetsDir).then(() => true).catch(() => false)
@@ -2571,10 +2572,11 @@ export async function serve(options: ServeOptions): Promise<void> {
                 })
               }
 
-              // Try to serve build artifacts (chunk files, CSS, etc.) from .stx
+              // Try to serve build artifacts (chunk files, CSS, etc.) from the
+              // state directory
               if (path.startsWith('/chunk-') || path.endsWith('.js') || path.endsWith('.css')) {
                 try {
-                  const buildFile = Bun.file(`.stx${path}`)
+                  const buildFile = Bun.file(stateDir(process.cwd(), path))
                   if (await buildFile.exists()) {
                     const ext = path.split('.').pop()?.toLowerCase()
                     const contentType = ext === 'css' ? 'text/css' : ext === 'js' ? 'application/javascript' : 'text/plain'

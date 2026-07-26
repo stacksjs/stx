@@ -33,6 +33,16 @@ export interface RouterConfig {
    * If both `pagesDir` and `pagesDirs` are set, `pagesDirs` takes precedence.
    */
   pagesDirs?: string[]
+  /**
+   * Where the generated route manifest and route types are written.
+   * Resolved relative to `baseDir`. Default: `.stx`, or `STX_DIR` when set.
+   *
+   * stx calls this its state directory and lets a project move it (a Stacks
+   * application points it at `storage/framework/stx` so nothing generated sits
+   * in the project root). The router is standalone, so it reads the same
+   * environment variable rather than depending on stx to tell it.
+   */
+  stateDir?: string
   extensions?: string[]
   layouts?: boolean
   middleware?: boolean

@@ -8,6 +8,7 @@ import type { ServerStoryFile, StoryContext } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
 import { checkA11y } from '../a11y'
+import { stateDir } from '../state-dir'
 
 /**
  * Test options
@@ -92,7 +93,7 @@ export async function runVisualTests(
     duration: 0,
   }
 
-  const snapshotDir = options.snapshotDir || path.join(ctx.root, '.stx', 'story', 'snapshots')
+  const snapshotDir = options.snapshotDir || stateDir(ctx.root, 'story', 'snapshots')
 
   // Ensure snapshot directory exists
   await fs.promises.mkdir(snapshotDir, { recursive: true })

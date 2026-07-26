@@ -45,6 +45,32 @@ export default {
 }
 ```
 
+### State directory
+
+Everything stx generates for a project that is neither source nor a build
+artifact you ship lives under one directory: the compiled-template cache, the
+Crosswind CSS cache, the client-script bundle cache and its temp directory, the
+generated route manifest and route types, dev-server output, SSG and media
+caches, and story snapshots. It defaults to a hidden `.stx/` in the project
+root.
+
+Point it elsewhere if your project already has a home for generated state:
+
+```typescript
+export default {
+  // A Stacks application keeps every runtime-owned directory under storage/.
+  stateDir: 'storage/framework/stx',
+}
+```
+
+The path-shaped options that default to somewhere under `.stx/` follow this
+setting - `cachePath`, `build.cacheDir`, `media.cache.directory` and
+`story.outDir`. A path you point somewhere else entirely is left alone.
+
+Relative paths resolve against the project root; absolute paths are used as-is.
+`STX_DIR` overrides the config, which is how a framework driving stx keeps
+itself and the processes it spawns in agreement.
+
 ### Caching
 
 Template caching improves performance in production:
@@ -174,6 +200,7 @@ STX respects these environment variables:
 | `STX_DEBUG` | Enable debug mode |
 | `STX_CACHE` | Enable/disable caching |
 | `STX_COMPONENTS_DIR` | Override components directory |
+| `STX_DIR` | Override `stateDir` ([above](#state-directory)) |
 | `NODE_ENV` | Affects caching and debug defaults |
 
 ## Complete Example

@@ -9,6 +9,7 @@ import { readMarkdownFile } from '../assets'
 import { stxClientHelpers } from '../client-helpers'
 import { config } from '../config'
 import { partialsCache } from '../includes'
+import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { clearComponentCache } from '../utils'
 import {
@@ -86,7 +87,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   }
 
   // Create a temporary output directory
-  const outputDir = path.join(process.cwd(), '.stx/output')
+  const outputDir = stateDir(process.cwd(), 'output')
   fs.mkdirSync(outputDir, { recursive: true })
 
   // Get the common directory from all file paths

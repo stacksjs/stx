@@ -6,6 +6,7 @@
 import type { AnalyzedComponent, ServerStoryFile, StoryContext } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
+import { stateDir } from '../state-dir'
 
 /**
  * Documentation options
@@ -29,7 +30,7 @@ export async function generateStoryDocs(
   components: AnalyzedComponent[],
   options: DocsOptions = {},
 ): Promise<void> {
-  const outDir = options.outDir || path.join(ctx.root, '.stx', 'docs')
+  const outDir = options.outDir || stateDir(ctx.root, 'docs')
 
   // Ensure output directory exists
   await fs.promises.mkdir(outDir, { recursive: true })

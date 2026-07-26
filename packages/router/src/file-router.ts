@@ -101,8 +101,8 @@ export class Router {
       return a.pattern.localeCompare(b.pattern)
     })
 
-    // Generate type declarations and route manifest into .stx/
-    const stxDir = path.join(baseDir, '.stx')
+    // Generate type declarations and route manifest into the state directory
+    const stxDir = path.resolve(baseDir, config.stateDir || process.env.STX_DIR?.trim() || '.stx')
     generateRouteTypes(this.routes, stxDir)
     generateRouteManifest(this.routes, stxDir, this.pagesDir)
   }

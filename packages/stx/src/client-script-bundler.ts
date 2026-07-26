@@ -13,6 +13,7 @@ import path from 'node:path'
 import fs from 'node:fs' // kept for mkdir/rmSync (no Bun equivalent for dir ops)
 import type { BunPlugin } from 'bun'
 import { getPublicEnvDefine } from './public-env'
+import { stateDir } from './state-dir'
 
 // Known imports that are NOT user imports — handled by other transforms
 const EXTERNAL_PATTERNS = [
@@ -82,8 +83,8 @@ export function hasUserImports(code: string): boolean {
  *
  * Without the relative-import rebase, every `import { useFoo } from
  * '../../functions/foo'` in a feature page fails to resolve at
- * bundle time because the temp entry file lives under
- * `.stx/bundle-tmp/`, not next to the page source.
+ * bundle time because the temp entry file lives under the state
+ * directory's `bundle-tmp/`, not next to the page source.
  */
 function createBundlePlugin(
   projectRoot: string,
@@ -153,7 +154,7 @@ function createBundlePlugin(
       // @/ and ~/ path aliases → project root. Both prefixes are
       // common in Vite/Stacks-style configs; tsconfig path mappings
       // are not picked up automatically by Bun.build for temp entry
-      // files generated under `.stx/bundle-tmp/`, so the plugin
+      // files generated under the state directory, so the plugin
       // resolves them explicitly here.
       build.onResolve({ filter: /^[@~]\// }, (args) => {
         const resolved = path.resolve(projectRoot, args.path.slice(2))
@@ -205,7 +206,7 @@ export async function bundleClientScript(
 ): Promise<string> {
   const projectRoot = options.projectRoot || process.cwd()
   const minify = options.minify ?? false
-  const cacheDir = options.cacheDir || path.join(projectRoot, '.stx', 'bundle-cache')
+  const cacheDir = options.cacheDir || stateDir(projectRoot, 'bundle-cache')
 
   // Content-hash for caching and temp file naming. The hash covers only
   // the script source + host file path — transitive imports (e.g.
@@ -260,7 +261,7 @@ export async function bundleClientScript(
   }
 
   // Write temp entry file (Bun.build needs a real file)
-  const tmpDir = path.join(projectRoot, '.stx', 'bundle-tmp')
+  const tmpDir = stateDir(projectRoot, 'bundle-tmp')
   const tmpEntry = path.join(tmpDir, `${hash}.ts`)
   const tmpOutDir = path.join(tmpDir, 'out', hash)
 

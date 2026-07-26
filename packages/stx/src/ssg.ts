@@ -51,6 +51,7 @@ import { createRouter, type Route } from './router'
 import { processDirectives, injectRouterScript } from './process'
 import { extractIslandChunks, injectIslandChunkPrefetch } from './island-chunking'
 import { loadStxConfig } from './config'
+import { stateDir } from './state-dir'
 import { injectCrosswindCSS } from './dev-server/crosswind'
 import {
   loadMiddlewareFromDirectory,
@@ -84,7 +85,7 @@ export interface SSGConfig {
   concurrency?: number
   /** Enable build caching (default: true) */
   cache?: boolean
-  /** Cache directory (default: '.stx/ssg-cache') */
+  /** Cache directory (default: `ssg-cache` inside the state directory) */
   cacheDir?: string
   /** Custom content loaders */
   contentLoaders?: ContentLoader[]
@@ -879,7 +880,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     rss: options.rss ?? false,
     concurrency: options.concurrency || 10,
     cache: options.cache ?? true,
-    cacheDir: options.cacheDir || '.stx/ssg-cache',
+    cacheDir: options.cacheDir || stateDir(process.cwd(), 'ssg-cache'),
     contentLoaders: options.contentLoaders || [],
     hooks: options.hooks || {},
     minify: options.minify ?? (process.env.NODE_ENV === 'production'),
@@ -1364,7 +1365,7 @@ export function createISRHandler(options: SSGConfig = {}): {
   revalidate: (route: string) => Promise<void>
   invalidate: (route: string | RegExp) => Promise<void>
 } {
-  const cacheDir = options.cacheDir || '.stx/ssg-cache'
+  const cacheDir = options.cacheDir || stateDir(process.cwd(), 'ssg-cache')
   const cache = new FileISRCache(cacheDir)
   const revalidateTime = options.revalidate || 3600
 

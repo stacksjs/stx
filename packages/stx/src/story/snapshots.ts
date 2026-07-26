@@ -6,6 +6,7 @@
 import type { StoryContext } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
+import { stateDir } from '../state-dir'
 
 /**
  * Snapshot version info
@@ -53,7 +54,7 @@ export interface DiffResult {
  * Get snapshot directory
  */
 export function getSnapshotDir(ctx: StoryContext): string {
-  return path.join(ctx.root, '.stx', 'story', 'snapshots')
+  return stateDir(ctx.root, 'story', 'snapshots')
 }
 
 /**

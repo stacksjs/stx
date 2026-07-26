@@ -13,6 +13,7 @@ import {
   stopHmrServer,
 } from '../hot-reload'
 import { partialsCache } from '../includes'
+import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { clearComponentCache } from '../utils'
 import {
@@ -55,7 +56,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   }
 
   // Create a temporary output directory
-  const outputDir = path.join(process.cwd(), '.stx/output')
+  const outputDir = stateDir(process.cwd(), 'output')
   fs.mkdirSync(outputDir, { recursive: true })
 
   // Initial build

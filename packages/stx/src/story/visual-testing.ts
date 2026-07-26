@@ -6,6 +6,7 @@
 import type { ServerStoryFile, StoryContext } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
+import { stateDir } from '../state-dir'
 
 /**
  * Visual test options
@@ -78,7 +79,7 @@ export async function runScreenshotTests(
   const {
     update = false,
     threshold = 0.1,
-    snapshotDir = path.join(ctx.root, '.stx', 'story', 'snapshots'),
+    snapshotDir = stateDir(ctx.root, 'story', 'snapshots'),
     width = 800,
     height = 600,
     deviceScaleFactor = 1,
@@ -219,7 +220,7 @@ async function runHtmlComparisonTests(
   const startTime = performance.now()
   const {
     update = false,
-    snapshotDir = path.join(ctx.root, '.stx', 'story', 'snapshots'),
+    snapshotDir = stateDir(ctx.root, 'story', 'snapshots'),
     filter,
   } = options
 

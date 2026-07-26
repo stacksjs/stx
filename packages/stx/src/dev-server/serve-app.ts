@@ -15,6 +15,7 @@ import {
   stopHmrServer,
 } from '../hot-reload'
 import { partialsCache } from '../includes'
+import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { createRouter, matchRoute, formatRoutes, findErrorPage } from '../router'
 import {
@@ -239,7 +240,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   catch { /* no config or no apiRoutes */ }
 
   // Create output directory
-  const outputDir = path.join(absoluteAppDir, '.stx/output')
+  const outputDir = stateDir(absoluteAppDir, 'output')
   fs.mkdirSync(outputDir, { recursive: true })
 
   // Built pages cache
@@ -313,7 +314,9 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
       merged.componentsDir = resolveRel(merged.componentsDir)
       merged.layoutsDir = resolveRel(merged.layoutsDir)
       merged.storesDir = resolveRel(merged.storesDir || 'stores')
-      merged.cachePath = resolveRel(merged.cachePath || '.stx/cache')
+      // `loadStxConfig` has already moved `cachePath` onto the configured state
+      // directory, so this only has to make it absolute.
+      merged.cachePath = resolveRel(merged.cachePath) ?? stateDir(absoluteAppDir, 'cache')
 
       const isStaticBuild = !requestParams && !options.profile
       const cacheEnabled = merged.cache !== false
@@ -605,7 +608,7 @@ catch {
         const { handleImageRequest } = await import('../image-optimization/serve')
         const imgResponse = await handleImageRequest(request, {
           publicDir: path.join(absoluteAppDir, publicDirName),
-          cacheDir: path.join(absoluteAppDir, '.stx/cache/img'),
+          cacheDir: stateDir(absoluteAppDir, 'cache', 'img'),
         })
         if (imgResponse) return imgResponse
       }
