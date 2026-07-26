@@ -45,8 +45,6 @@ export function injectSeo(html: string, site: SiteConfig, page: PageMeta = {}, p
     tags.push(`<meta name="twitter:creator" content="@${escapeAttr(seo.twitter.replace(/^@/, ''))}">`)
   }
 
-  const block = `<!-- SEO -->\n${tags.join('\n')}\n<!-- /SEO -->`
-
   // Strip stx's auto-injected default block, if present
   const stxAutoBlockRe = /<!--\s*stx SEO Tags\s*-->[\s\S]*?<meta\s+name="twitter:description"[^>]*>\s*/i
   if (stxAutoBlockRe.test(html))
@@ -55,24 +53,69 @@ export function injectSeo(html: string, site: SiteConfig, page: PageMeta = {}, p
   // Strip any existing block we previously injected (idempotent rebuilds)
   html = html.replace(/<!--\s*SEO\s*-->[\s\S]*?<!--\s*\/SEO\s*-->\s*/g, '')
 
-  // Strip any existing <title> — site.config.ts pages[*].title is the
-  // source of truth. Without this, stx's default `<title>stx Project</title>`
-  // (or a stale per-page title) survives and the browser shows it instead
-  // of the SEO block's title.
-  html = html.replace(/<title>[\s\S]*?<\/title>\s*/i, '')
-
-  // Strip stale tags emitted by stx's defaults that aren't in the marker block
+  // Strip stale tags emitted by stx's defaults that aren't in the marker
+  // block. Every pattern is keyed to the placeholder text stx itself writes
+  // ("stx Project", "A website built with stx"), so a real page's tags are
+  // never caught by it.
+  //
+  // `og:type=website` and `twitter:card=summary_large_image` used to be in
+  // this list keyed on nothing but their value, which is the value a real
+  // page most often has: an app that asked for a large card had it deleted
+  // here and replaced with `summary` below, and every link it shared showed
+  // a thumbnail instead of the card it had built.
   html = html
     .replace(/<meta\s+name="title"\s+content="stx Project"[^>]*>\s*/g, '')
     .replace(/<meta\s+name="description"\s+content="A website built with stx[^"]*"[^>]*>\s*/g, '')
     .replace(/<meta\s+property="og:title"\s+content="stx Project"[^>]*>\s*/g, '')
     .replace(/<meta\s+property="og:description"\s+content="A website built with stx[^"]*"[^>]*>\s*/g, '')
-    .replace(/<meta\s+property="og:type"\s+content="website"[^>]*>\s*/g, '')
-    .replace(/<meta\s+name="twitter:card"\s+content="summary_large_image"[^>]*>\s*/g, '')
     .replace(/<meta\s+name="twitter:title"\s+content="stx Project"[^>]*>\s*/g, '')
     .replace(/<meta\s+name="twitter:description"\s+content="A website built with stx[^"]*"[^>]*>\s*/g, '')
 
-  // Inject after <head ...> (preserves any existing <title>, fonts, etc.)
+  /*
+   * Fill gaps; never overwrite.
+   *
+   * A page that authors its own head is the more specific source: it knows
+   * the capability being described, the share card that belongs to it and the
+   * locale it is being rendered in, none of which the site config can. This
+   * used to strip the page's <title> and inject the config's title and og
+   * tags ABOVE the page's own, so every page in the site shared one title and
+   * one description, and crawlers — which take the first occurrence — showed
+   * the generic pair with no image on every link anyone shared.
+   *
+   * Only the head is consulted, so an SVG <title> deep in the body cannot be
+   * mistaken for the document's.
+   */
+  const headEnd = html.search(/<\/head>/i)
+  const head = headEnd === -1 ? html : html.slice(0, headEnd)
+
+  const declared = (tag: string): boolean => {
+    const title = /^<title[\s>]/i.test(tag)
+    if (title)
+      return /<title[\s>]/i.test(head)
+
+    const canonical = /rel="canonical"/i.test(tag)
+    if (canonical)
+      return /<link[^>]+rel=["']canonical["']/i.test(head)
+
+    const key = /(?:property|name)="([^"]+)"/i.exec(tag)?.[1]
+    if (!key)
+      return false
+
+    return new RegExp(`<meta[^>]+(?:property|name)=["']${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'i').test(head)
+  }
+
+  const missing = tags.filter(tag => !declared(tag))
+
+  if (missing.length === 0)
+    return html
+
+  const block = `<!-- SEO -->\n${missing.join('\n')}\n<!-- /SEO -->`
+
+  // Injected at the END of the head rather than the start: a tag that is
+  // there to fill a gap should not sit in front of the ones the page wrote.
+  if (headEnd !== -1)
+    return `${html.slice(0, headEnd)}${block}\n${html.slice(headEnd)}`
+
   if (/<head[^>]*>/i.test(html))
     return html.replace(/<head([^>]*)>/i, `<head$1>\n${block}`)
 
