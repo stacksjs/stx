@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.103...v0.2.104)
+
+## 🐛 Bug Fixes
+
+- **serve**: cache public assets in production ([0d5b79c](https://github.com/stacksjs/stx/commit/0d5b79c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.104 ([529c873](https://github.com/stacksjs/stx/commit/529c873)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.101...v0.2.102)
 
 ## 🐛 Bug Fixes
