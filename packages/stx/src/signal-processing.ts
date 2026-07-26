@@ -1514,16 +1514,31 @@ export async function processSignals(template: string, options: StxOptions, file
   // Inject browser runtime if needed (for auto-imports from @stacksjs/browser)
   output = injectBrowserRuntime(output)
 
-  // Inject setup code after runtime
+  // Inject setup code after runtime.
+  //
+  // The anchor must be a REAL markup landmark, not the first textual match:
+  // by this point `output` already carries the signals runtime as a ~200KB
+  // inline script, and that runtime's own source mentions `</head>` and
+  // `<body>` in comments and strings (e.g. "script is appended to <body>").
+  // A plain `String.replace` splices the setup script into the middle of the
+  // runtime, and the setup's `</script>` then terminates the runtime tag
+  // early — the rest of the runtime spills into the document as text, the
+  // script never parses, `window.stx` is never defined, and every `{{ }}` /
+  // `:for` on the page stays raw. See the equivalent skip logic below.
   if (setupCode) {
-    if (output.includes('</head>')) {
-      output = output.replace('</head>', `${setupCode}\n</head>`)
+    const headIdx = findMarkupIndexOutsideScripts(output, /<\/head>/i)
+    const bodyIdx = headIdx === -1 ? findMarkupIndexOutsideScripts(output, /<body[^>]*>/i) : -1
+
+    if (headIdx !== -1) {
+      output = `${output.slice(0, headIdx)}${setupCode}\n${output.slice(headIdx)}`
     }
-    else if (output.includes('<body')) {
-      output = output.replace(/<body([^>]*)>/, `<body$1>\n${setupCode}`)
+    else if (bodyIdx !== -1) {
+      const bodyTag = /<body[^>]*>/i.exec(output.slice(bodyIdx))![0]
+      const insertAt = bodyIdx + bodyTag.length
+      output = `${output.slice(0, insertAt)}\n${setupCode}${output.slice(insertAt)}`
     }
     else {
-      output = output + '\n' + setupCode
+      output = `${output}\n${setupCode}`
     }
   }
 
@@ -1538,28 +1553,10 @@ export async function processSignals(template: string, options: StxOptions, file
   const bodyHasDataStx = bodyMatch && /data-stx/.test(bodyMatch[1])
 
   if (!setupCode && !bodyHasDataStx && bodyMatch && !/data-stx-auto/.test(bodyMatch[1])) {
-    // Locate the actual body tag in the original output to replace. Find the
-    // first <body in `stripped`, then find the equivalent position in `output`
-    // by walking forward and skipping over <script>/<style> regions, so we
-    // don't replace a regex literal inside a script.
+    // Locate the real body tag, skipping <script>/<style> regions so we don't
+    // corrupt a regex literal such as `/<body[^>]*>/` inside embedded JS.
     const bodyTagRe = /<body[^>]*>/i
-    const scriptOrStyleRe = /<(script|style)\b[\s\S]*?<\/\1>/gi
-    const skipRanges: Array<[number, number]> = []
-    let m: RegExpExecArray | null
-    while ((m = scriptOrStyleRe.exec(output)) !== null)
-      skipRanges.push([m.index, m.index + m[0].length])
-
-    let searchFrom = 0
-    let bodyIdx = -1
-    while (searchFrom < output.length) {
-      bodyTagRe.lastIndex = searchFrom
-      const hit = bodyTagRe.exec(output.slice(searchFrom))
-      if (!hit) break
-      const absIdx = searchFrom + hit.index
-      const insideSkip = skipRanges.some(([s, e]) => absIdx >= s && absIdx < e)
-      if (!insideSkip) { bodyIdx = absIdx; break }
-      searchFrom = absIdx + hit[0].length
-    }
+    const bodyIdx = findMarkupIndexOutsideScripts(output, bodyTagRe)
 
     if (bodyIdx !== -1) {
       const before = output.slice(0, bodyIdx)
@@ -1569,4 +1566,43 @@ export async function processSignals(template: string, options: StxOptions, file
   }
 
   return output
+}
+
+/**
+ * Index of the first `pattern` match in `html` that is not inside a `<script>`
+ * or `<style>` block, or -1 when every match is embedded.
+ *
+ * Markup landmarks cannot be located with a plain `indexOf` / `String.replace`
+ * once a runtime has been inlined: those scripts are hundreds of kilobytes of
+ * JavaScript that legitimately mention `<body>` and `</head>` in comments,
+ * strings and regex literals. Anchoring on the first textual hit splices
+ * generated markup into the middle of a script tag, which both corrupts the
+ * script and — when the inserted markup contains `</script>` — silently ends
+ * the tag early.
+ */
+export function findMarkupIndexOutsideScripts(html: string, pattern: RegExp): number {
+  const scriptOrStyleRe = /<(script|style)\b[\s\S]*?<\/\1>/gi
+  const skipRanges: Array<[number, number]> = []
+  let block: RegExpExecArray | null
+  while ((block = scriptOrStyleRe.exec(html)) !== null)
+    skipRanges.push([block.index, block.index + block[0].length])
+
+  // `pattern` is caller-owned and may carry the `g`/`y` flags, whose shared
+  // `lastIndex` would make repeated calls return different answers for the
+  // same input. Search with a stateless copy so the helper is pure.
+  const probe = new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, ''))
+
+  let searchFrom = 0
+  while (searchFrom < html.length) {
+    const hit = probe.exec(html.slice(searchFrom))
+    if (!hit) return -1
+
+    const absoluteIndex = searchFrom + hit.index
+    const insideSkip = skipRanges.some(([start, end]) => absoluteIndex >= start && absoluteIndex < end)
+    if (!insideSkip) return absoluteIndex
+
+    searchFrom = absoluteIndex + Math.max(hit[0].length, 1)
+  }
+
+  return -1
 }
