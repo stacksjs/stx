@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.99...v0.2.100)
+
+## 🚀 Features
+
+- **config**: make the generated state directory configurable ([4d41b9c](https://github.com/stacksjs/stx/commit/4d41b9c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: preserve native custom elements ([c77c37f](https://github.com/stacksjs/stx/commit/c77c37f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📚 Documentation
+
+- link the community as stacksjs.com/discord ([7a97bf7](https://github.com/stacksjs/stx/commit/7a97bf7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.100 ([582d6a1](https://github.com/stacksjs/stx/commit/582d6a1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.98...v0.2.99)
 
 ## 🚀 Features
