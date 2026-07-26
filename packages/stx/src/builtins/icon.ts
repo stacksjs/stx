@@ -23,25 +23,62 @@ type IconCollection = Record<string, { body: string, width?: number, height?: nu
 // Cache loaded icon collections to avoid re-reading JSON files
 const collectionCache = new Map<string, IconCollection>()
 
-/**
- * Resolve the on-disk path of an icon collection JSON, checking the
- * standard locations: the package resolver, then `node_modules/`, then
- * Stacks-style `pantry/` (which sits parallel to node_modules in apps
- * that use pantry as their vendor directory).
- */
-function resolveCollectionPath(prefix: string): string | null {
-  try {
-    return require.resolve(`@iconify/json/json/${prefix}.json`)
-  }
-  catch { /* fall through */ }
+/** Prefixes already reported as missing, so the warning fires once per run. */
+const warnedMissingCollections = new Set<string>()
 
+/**
+ * A missing collection used to render as an empty string, so every icon on the
+ * page silently disappeared and the markup gave no hint why. Say it once, with
+ * the install command, rather than leaving a blank UI to diagnose.
+ */
+function warnMissingCollection(prefix: string): void {
+  if (warnedMissingCollections.has(prefix)) return
+  warnedMissingCollections.add(prefix)
+  console.warn(
+    `[stx] icon collection "${prefix}" is not installed, so its icons render as nothing. `
+    + `Install it with \`bun add -d @iconify-json/${prefix}\`.`,
+  )
+}
+
+/**
+ * Resolve the on-disk path of an icon collection JSON.
+ *
+ * Two packaging conventions are accepted. `@iconify/json` ships every
+ * collection in one ~120MB dependency; `@iconify-json/<prefix>` ships a single
+ * collection in about a megabyte and is what most projects actually install.
+ * Supporting only the monolith meant an app with `@iconify-json/lucide`
+ * installed rendered nothing at all for every icon on every page, with no
+ * error to explain it.
+ *
+ * Each convention is checked through the package resolver first, then against
+ * `node_modules/` and Stacks-style `pantry/` (which sits parallel to
+ * node_modules in apps that vendor there).
+ */
+export function resolveCollectionPath(prefix: string): string | null {
+  // The consuming project's own install wins. `require.resolve` resolves
+  // relative to THIS module, so it happily returns a collection vendored
+  // inside stx's own dependencies even when the app never installed one —
+  // which silently renders a different icon set than the app declared.
   const cwd = process.cwd()
   for (const candidate of [
+    `${cwd}/node_modules/@iconify-json/${prefix}/icons.json`,
+    `${cwd}/pantry/@iconify-json/${prefix}/icons.json`,
     `${cwd}/node_modules/@iconify/json/json/${prefix}.json`,
     `${cwd}/pantry/@iconify/json/json/${prefix}.json`,
   ]) {
     if (existsSync(candidate)) return candidate
   }
+
+  for (const specifier of [
+    `@iconify-json/${prefix}/icons.json`,
+    `@iconify/json/json/${prefix}.json`,
+  ]) {
+    try {
+      return require.resolve(specifier)
+    }
+    catch { /* try the next convention */ }
+  }
+
   return null
 }
 
@@ -56,7 +93,10 @@ function loadCollectionSync(prefix: string): IconCollection | null {
   if (collectionCache.has(prefix)) return collectionCache.get(prefix)!
 
   const jsonPath = resolveCollectionPath(prefix)
-  if (!jsonPath) return null
+  if (!jsonPath) {
+    warnMissingCollection(prefix)
+    return null
+  }
 
   try {
     const data = JSON.parse(readFileSync(jsonPath, 'utf8'))
@@ -76,7 +116,10 @@ async function loadCollection(prefix: string): Promise<IconCollection | null> {
   if (collectionCache.has(prefix)) return collectionCache.get(prefix)!
 
   const jsonPath = resolveCollectionPath(prefix)
-  if (!jsonPath) return null
+  if (!jsonPath) {
+    warnMissingCollection(prefix)
+    return null
+  }
 
   try {
     const data = await Bun.file(jsonPath).json()
