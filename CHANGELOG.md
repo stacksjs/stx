@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.100...v0.2.101)
+
+## 🐛 Bug Fixes
+
+- **signals**: keep renamed stx imports bound in the merged setup ([0e5c9d3](https://github.com/stacksjs/stx/commit/0e5c9d3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: anchor the setup script on real markup, not the runtime's text ([ad77c6d](https://github.com/stacksjs/stx/commit/ad77c6d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.101 ([94a597c](https://github.com/stacksjs/stx/commit/94a597c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.99...v0.2.100)
 
 ## 🚀 Features
