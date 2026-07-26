@@ -13,7 +13,7 @@
  */
 
 import { describe, expect, it } from 'bun:test'
-import { findMarkupIndexOutsideScripts } from '../src/signal-processing'
+import { findMarkupIndexOutsideScripts, rewriteStxImportSpecifiers } from '../src/signal-processing'
 
 describe('findMarkupIndexOutsideScripts', () => {
   it('skips a landmark that only appears inside an inlined script', () => {
@@ -72,5 +72,49 @@ describe('findMarkupIndexOutsideScripts', () => {
     // dangling script is still reported, which is the pre-existing behaviour
     // for malformed input and keeps the helper total.
     expect(findMarkupIndexOutsideScripts(html, /<body[^>]*>/i)).toBe(html.indexOf('<body>'))
+  })
+})
+
+/**
+ * Regression focus: the merged setup destructures the stx API from
+ * `window.stx`, so `import { state }` needs no runtime binding. But when the
+ * bundler inlines a composable that imports a name the outer script already
+ * binds, it renames the local and emits `import { state as state2 }`. The old
+ * rewrite discarded the whole line, leaving `state2` unbound — the setup threw
+ * `state2 is not defined` on its first call, which aborted hydration for the
+ * entire page rather than just that composable.
+ */
+describe('rewriteStxImportSpecifiers', () => {
+  it('preserves a renamed specifier as a local alias', () => {
+    const out = rewriteStxImportSpecifiers(' state as state2 ')
+
+    expect(out).toStartWith('const state2 = state;')
+  })
+
+  it('emits no binding for plain specifiers already destructured', () => {
+    const out = rewriteStxImportSpecifiers(' state, derived ')
+
+    expect(out).not.toContain('const ')
+    expect(out).toContain('stx import stripped')
+  })
+
+  it('carries every renamed specifier in one declaration', () => {
+    const out = rewriteStxImportSpecifiers('state as state2, derived, effect as effect3')
+
+    expect(out).toStartWith('const state2 = state, effect3 = effect;')
+  })
+
+  it('erases type-only specifiers, which have no runtime binding', () => {
+    expect(rewriteStxImportSpecifiers('type Signal, type Ref as R')).not.toContain('const ')
+    expect(rewriteStxImportSpecifiers('type Signal, state as state2')).toStartWith('const state2 = state;')
+  })
+
+  it('ignores a self-rename, which would redeclare the destructured name', () => {
+    expect(rewriteStxImportSpecifiers('state as state')).not.toContain('const ')
+  })
+
+  it('tolerates trailing commas and whitespace', () => {
+    expect(rewriteStxImportSpecifiers(' state as state2 , ')).toStartWith('const state2 = state;')
+    expect(rewriteStxImportSpecifiers('   ')).toBe('// [stx import stripped — resolved via window.stx in __stx_setup]')
   })
 })

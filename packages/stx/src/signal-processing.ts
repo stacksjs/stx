@@ -1160,14 +1160,21 @@ export async function processScriptSetup(template: string, filePath?: string, se
         projectRoot: process.cwd(),
       })
     }
-    // Strip `import ... from 'stx'|'@stacksjs/stx'|'@stacksjs/browser'` lines
-    // that survive the bundle (stx runtime is external). The merged output is
-    // wrapped in `function __stx_setup_XXX() { ... }` where top-level `import`
-    // is a SyntaxError, and the symbols are already destructured from
-    // window.stx at the top of that setup function.
+    // Rewrite `import ... from 'stx'|'@stacksjs/stx'|'@stacksjs/browser'`
+    // lines that survive the bundle (the stx runtime is external). The merged
+    // output is wrapped in `function __stx_setup_XXX() { ... }` where a
+    // top-level `import` is a SyntaxError, and the symbols are already
+    // destructured from window.stx at the top of that setup function.
+    //
+    // Aliases must be carried over rather than dropped: when the bundler
+    // inlines a composable that also imports `state`, it renames the local to
+    // avoid a collision and emits `import { state as state2 } from '…'`.
+    // Discarding the whole line left `state2` unbound, so the setup threw
+    // "state2 is not defined" the moment it ran — which killed hydration for
+    // the entire page, not just that composable.
     scriptContent = scriptContent.replace(
-      /^\s*import\s+(?:type\s+)?\{[^}]*\}\s+from\s+['"](?:stx|@stacksjs\/stx|@stacksjs\/browser)['"]\s*;?\s*$/gm,
-      '// [stx import stripped — resolved via window.stx in __stx_setup]',
+      /^\s*import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"](?:stx|@stacksjs\/stx|@stacksjs\/browser)['"]\s*;?\s*$/gm,
+      (_match, specifiers: string) => rewriteStxImportSpecifiers(specifiers),
     )
     const resolved = transformStoreImports(scriptContent)
     resolvedParts.push(`// ── merged signal script #${i + 1} ──\n${resolved}`)
@@ -1605,4 +1612,38 @@ export function findMarkupIndexOutsideScripts(html: string, pattern: RegExp): nu
   }
 
   return -1
+}
+
+const STX_IMPORT_STRIPPED = '// [stx import stripped — resolved via window.stx in __stx_setup]'
+
+/**
+ * Turn the specifier list of an `import { … } from 'stx'` into local aliases.
+ *
+ * The setup function already destructures the stx API from `window.stx`, so a
+ * plain `{ state }` specifier needs nothing. A RENAMED one does: when the
+ * bundler inlines a composable that imports a name the outer script already
+ * binds, it emits `import { state as state2 } from '@stacksjs/stx'`. Dropping
+ * that line loses the mapping and every `state2(…)` call in the inlined module
+ * throws `state2 is not defined` — which aborts the whole setup, so no
+ * directive on the page ever binds.
+ *
+ * Type-only specifiers are erased: they have no runtime binding to alias.
+ */
+export function rewriteStxImportSpecifiers(specifiers: string): string {
+  const aliases: string[] = []
+
+  for (const raw of specifiers.split(',')) {
+    const specifier = raw.trim()
+    if (!specifier || specifier.startsWith('type '))
+      continue
+
+    const renamed = specifier.match(/^([A-Za-z_$][\w$]*)\s+as\s+([A-Za-z_$][\w$]*)$/)
+    if (renamed && renamed[1] !== renamed[2])
+      aliases.push(`${renamed[2]} = ${renamed[1]}`)
+  }
+
+  if (aliases.length === 0)
+    return STX_IMPORT_STRIPPED
+
+  return `const ${aliases.join(', ')}; ${STX_IMPORT_STRIPPED}`
 }
