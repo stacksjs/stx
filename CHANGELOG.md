@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.101...v0.2.102)
+
+## 🐛 Bug Fixes
+
+- **icon**: resolve per-collection @iconify-json packages ([1951913](https://github.com/stacksjs/stx/commit/1951913)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.102 ([11e84d5](https://github.com/stacksjs/stx/commit/11e84d5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.100...v0.2.101)
 
 ## 🐛 Bug Fixes
