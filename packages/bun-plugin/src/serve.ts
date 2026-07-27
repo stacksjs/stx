@@ -397,6 +397,37 @@ export interface ServeOptions {
   | Promise<Response | Record<string, unknown> | null | undefined>
 
   /**
+   * Custom response handler, run once on the finished response — the mirror
+   * of `onRequest`, and the only place a caller can touch a response the
+   * server itself produced (a rendered page, a static asset, a 404).
+   *
+   * Return a `Response` to replace it, or nothing to leave it alone.
+   *
+   * `onRequest` cannot do this job: returning a Response there *short-circuits*
+   * the pipeline, so a hook that only wants to attach a header would have to
+   * re-implement page rendering to get a response to attach it to. The
+   * motivating case is a framework seeding a CSRF double-submit cookie on safe
+   * requests — the token has to ride the HTML response that the form lives in,
+   * so without this hook the page ships with no token and its first POST is
+   * rejected by the framework's own CSRF check.
+   *
+   * @example
+   * ```ts
+   * serve({
+   *   onResponse(req, res) {
+   *     if (req.method === 'GET')
+   *       res.headers.append('Set-Cookie', `X-CSRF-Token=${token}; Path=/; SameSite=Lax`)
+   *   },
+   * })
+   * ```
+   */
+  onResponse?: (req: Request, response: Response) =>
+  | Response
+  | null
+  | undefined
+  | Promise<Response | null | undefined>
+
+  /**
    * **Page middleware.** Modelled on Laravel's named-route middleware.
    *
    * stx pages opt into middleware with frontmatter:
@@ -2802,7 +2833,19 @@ export async function serve(options: ServeOptions): Promise<void> {
               activeServeIp = ''
             }
           })() // ─── end IIFE — single exit for translation post-process
-          return applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
+          // Awaited, not passed through: `onResponse` is handed a Response,
+          // never a pending Promise of one.
+          const _finalResp = await applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
+
+          // Post-response hook — the mirror of `onRequest`, and the only
+          // place a caller can touch a response the server itself produced.
+          // See the `onResponse` option docs for why that matters.
+          if (options.onResponse) {
+            const hooked = await options.onResponse(req, _finalResp)
+            if (hooked instanceof Response)
+              return hooked
+          }
+          return _finalResp
         },
       })
       break
