@@ -536,7 +536,7 @@ else {
  * Generate destructuring statements for auto-imported symbols
  * These access globals set up by the STX runtime and @stacksjs/browser
  */
-function generateAutoImportDestructuring(stxImports: string[], browserImports: string[]): string {
+export function generateAutoImportDestructuring(stxImports: string[], browserImports: string[]): string {
   const lines: string[] = []
 
   // STX symbols come from window.stx (set up by signals runtime)
@@ -551,10 +551,46 @@ function generateAutoImportDestructuring(stxImports: string[], browserImports: s
   }
 
   if (lines.length > 0) {
-    return `  // STX: auto-imported from stx and @stacksjs/browser\n${lines.join('\n')}\n`
+    return `  // STX: auto-imported from stx and @stacksjs/browser\n${lines.join('\n')}\n${generateAutoImportGuard(stxImports, browserImports)}`
   }
 
   return ''
+}
+
+/**
+ * Report auto-imported symbols the client runtime never actually provided.
+ *
+ * Destructuring a name that is absent from `window.stx` or
+ * `window.StacksBrowser` yields `undefined` in silence. The script then ships,
+ * and the first call fails deep inside an event handler as
+ * `x is not a function` - or, when the name is referenced bare, as
+ * `x is not defined`. Neither says which import was wrong, so the message that
+ * reaches the person using the page is a puzzle, and the one that reaches the
+ * developer is barely better.
+ *
+ * The names are known at build time and their availability is knowable the
+ * moment the script runs, so say it there: name the symbol, name where it was
+ * expected to come from, and say what to do about it. Checking a handful of
+ * bindings once per script is not a cost worth optimising away.
+ */
+function generateAutoImportGuard(stxImports: string[], browserImports: string[]): string {
+  const entries = [
+    ...stxImports.map(name => `['${name}', typeof ${name}, 'stx']`),
+    ...browserImports.map(name => `['${name}', typeof ${name}, '@stacksjs/browser']`),
+  ]
+
+  if (entries.length === 0)
+    return ''
+
+  return `  // STX: report auto-imports the client runtime did not provide\n`
+    + `  [${entries.join(', ')}].forEach(function (e) {\n`
+    + `    if (e[1] !== 'undefined') return;\n`
+    + `    console.error(\n`
+    + `      '[stx] "' + e[0] + '" is used in this client script and auto-imported from ' + e[2] + ', '\n`
+    + `      + 'but the client runtime does not provide it. Either it is not exported to the browser, '\n`
+    + `      + 'or it should be imported from a relative path so the bundler includes it.'\n`
+    + `    );\n`
+    + `  });\n`
 }
 
 /**
