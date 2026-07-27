@@ -48,9 +48,25 @@ export interface ThemeOptions {
 //     media-queried sibling win the first-match-wins ordering, which
 //     would briefly tint the URL bar to the OS preference instead of
 //     the stored selection.
-const FOUC_SCRIPT = (defaultTheme: string, storageKey: string, lightColor: string, darkColor: string) => `(function(){function read(){try{var k=${JSON.stringify(storageKey)};var t=localStorage.getItem(k);return t===null?(${JSON.stringify(defaultTheme)}==='dark'||(${JSON.stringify(defaultTheme)}==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches)):t==='dark'}catch(e){return ${JSON.stringify(defaultTheme)}==='dark'}}function apply(){var isDark=read();var html=document.documentElement;html.classList[isDark?'add':'remove']('dark');var color=isDark?${JSON.stringify(darkColor)}:${JSON.stringify(lightColor)};if(!document.head)return;var tc=document.querySelector('meta[name="theme-color"]:not([media])');if(!tc){tc=document.createElement('meta');tc.setAttribute('name','theme-color');tc.setAttribute('data-stx-theme-meta','1')}tc.setAttribute('content',color);if(tc!==document.head.firstChild){document.head.insertBefore(tc,document.head.firstChild)}}apply();window.addEventListener('stx:navigate',apply);window.addEventListener('popstate',apply)})();`
+/**
+ * Keep the tab icon on the theme the visitor chose.
+ *
+ * A page declares its variants the standard way, with
+ * `<link rel="icon" media="(prefers-color-scheme: dark)">`. That media query
+ * follows the *operating system*, which is not the same thing as the theme
+ * this site is displaying: choose light on a machine set to dark and the tab
+ * keeps the dark icon forever. Browsers offer no "current page theme" media
+ * feature, so the only way to make the icon follow the toggle is to repoint
+ * the unmediated `<link rel="icon">` at the right variant.
+ *
+ * The mediated links are left in place — they are the correct answer for the
+ * first paint, before any script runs, and for anyone with JS disabled.
+ */
+const FAVICON_FN = `window.__stxThemeIcon=function(isDark){try{var want=isDark?'dark':'light';var pick=document.querySelector('link[rel~="icon"][media*="prefers-color-scheme: '+want+'"]');if(!pick)return;var live=document.querySelector('link[rel~="icon"]:not([media])');if(!live){live=document.createElement('link');live.setAttribute('rel','icon');document.head.appendChild(live)}if(pick.type)live.setAttribute('type',pick.type);var href=pick.getAttribute('href');if(live.getAttribute('href')!==href)live.setAttribute('href',href)}catch(e){}};`
 
-const TOGGLE_HANDLER = (storageKey: string, lightColor: string, darkColor: string) => `document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#theme-toggle');if(!t)return;var html=document.documentElement;var isDark=html.classList.toggle('dark');try{localStorage.setItem(${JSON.stringify(storageKey)},isDark?'dark':'light')}catch(e){}var tc=document.querySelector('meta[name="theme-color"]:not([media])');if(tc)tc.setAttribute('content',isDark?${JSON.stringify(darkColor)}:${JSON.stringify(lightColor)})});`
+const FOUC_SCRIPT = (defaultTheme: string, storageKey: string, lightColor: string, darkColor: string) => `(function(){${FAVICON_FN}function read(){try{var k=${JSON.stringify(storageKey)};var t=localStorage.getItem(k);return t===null?(${JSON.stringify(defaultTheme)}==='dark'||(${JSON.stringify(defaultTheme)}==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches)):t==='dark'}catch(e){return ${JSON.stringify(defaultTheme)}==='dark'}}function apply(){var isDark=read();var html=document.documentElement;html.classList[isDark?'add':'remove']('dark');var color=isDark?${JSON.stringify(darkColor)}:${JSON.stringify(lightColor)};if(!document.head)return;var tc=document.querySelector('meta[name="theme-color"]:not([media])');if(!tc){tc=document.createElement('meta');tc.setAttribute('name','theme-color');tc.setAttribute('data-stx-theme-meta','1')}tc.setAttribute('content',color);if(tc!==document.head.firstChild){document.head.insertBefore(tc,document.head.firstChild)}if(window.__stxThemeIcon)window.__stxThemeIcon(isDark)}apply();window.addEventListener('stx:navigate',apply);window.addEventListener('popstate',apply)})();`
+
+const TOGGLE_HANDLER = (storageKey: string, lightColor: string, darkColor: string) => `document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#theme-toggle');if(!t)return;var html=document.documentElement;var isDark=html.classList.toggle('dark');try{localStorage.setItem(${JSON.stringify(storageKey)},isDark?'dark':'light')}catch(e){}var tc=document.querySelector('meta[name="theme-color"]:not([media])');if(tc)tc.setAttribute('content',isDark?${JSON.stringify(darkColor)}:${JSON.stringify(lightColor)});if(window.__stxThemeIcon)window.__stxThemeIcon(isDark)});`
 
 /**
  * Inject the theme bootstrap (FOUC guard + class) and the toggle
