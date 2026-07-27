@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.104...v0.2.105)
+
+## 🚀 Features
+
+- **serve**: add an onResponse hook for post-render response mutation ([1d8e721](https://github.com/stacksjs/stx/commit/1d8e721)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.105 ([94b839f](https://github.com/stacksjs/stx/commit/94b839f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.103...v0.2.104)
 
 ## 🐛 Bug Fixes
