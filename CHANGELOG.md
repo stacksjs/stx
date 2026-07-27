@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.105...v0.2.106)
+
+## 🐛 Bug Fixes
+
+- **client-script**: report auto-imports the runtime never provided ([8f11a40](https://github.com/stacksjs/stx/commit/8f11a40)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.106 ([97c7586](https://github.com/stacksjs/stx/commit/97c7586)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.104...v0.2.105)
 
 ## 🚀 Features
