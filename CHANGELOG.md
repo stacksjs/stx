@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.108...v0.2.109)
+
+## 🚀 Features
+
+- **theme**: keep the tab icon on the theme the visitor chose ([e883802](https://github.com/stacksjs/stx/commit/e883802)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.109 ([df8f4f1](https://github.com/stacksjs/stx/commit/df8f4f1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.107...v0.2.108)
 
 ## 🐛 Bug Fixes
