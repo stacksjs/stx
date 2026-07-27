@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.107...v0.2.108)
+
+## 🐛 Bug Fixes
+
+- **slots**: keep caller signals reactive inside slot content ([bb81afc](https://github.com/stacksjs/stx/commit/bb81afc)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.108 ([b0548d9](https://github.com/stacksjs/stx/commit/b0548d9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.105...v0.2.106)
 
 ## 🐛 Bug Fixes
