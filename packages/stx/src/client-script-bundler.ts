@@ -15,11 +15,28 @@ import type { BunPlugin } from 'bun'
 import { getPublicEnvDefine } from './public-env'
 import { stateDir } from './state-dir'
 
-// Known imports that are NOT user imports — handled by other transforms
+// Known imports that are NOT user imports — handled by other transforms.
+//
+// `@stacksjs/browser` is deliberately NOT here. It used to be, on the grounds
+// that its symbols are auto-imported from `window.StacksBrowser`, but that
+// conflates two different things:
+//
+//   - No import statement at all, symbol used bare. That IS the auto-import
+//     path, and it still resolves off the runtime global.
+//   - `import { thing } from '@stacksjs/browser'`. The author named a module
+//     and asked for one binding from it.
+//
+// Treating the second case as external dropped the import and left the page
+// calling a function nothing defined — but only for bindings the runtime
+// global happened not to expose, so it broke silently and selectively. It is
+// an ordinary installed package; an explicit import of it gets bundled like
+// any other.
+//
+// `stx` and `@stacksjs/stx` stay external because they genuinely are the
+// injected runtime rather than a package to bundle.
 const EXTERNAL_PATTERNS = [
   /^stx$/,
   /^@stacksjs\/stx$/,
-  /^@stacksjs\/browser$/,
   /^@stores$/,
   /^stx\/stores$/,
   /^@composables$/,
@@ -129,8 +146,10 @@ function createBundlePlugin(
   return {
     name: 'stx-client-bundle',
     setup(build) {
-      // stx runtime — external, handled by auto-import destructuring
-      build.onResolve({ filter: /^(stx|@stacksjs\/stx|@stacksjs\/browser)$/ }, (args) => ({
+      // stx runtime — external, handled by auto-import destructuring.
+      // `@stacksjs/browser` is not listed: see EXTERNAL_PATTERNS above for why
+      // an explicit import of it is bundled rather than left to the runtime.
+      build.onResolve({ filter: /^(stx|@stacksjs\/stx)$/ }, (args) => ({
         path: args.path,
         external: true,
       }))
