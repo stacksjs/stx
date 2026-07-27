@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.109...v0.2.110)
+
+## 🐛 Bug Fixes
+
+- **bundler**: bundle explicit @stacksjs/browser imports instead of dropping them ([3ab7754](https://github.com/stacksjs/stx/commit/3ab7754)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.110 ([8dd8a7e](https://github.com/stacksjs/stx/commit/8dd8a7e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.108...v0.2.109)
 
 ## 🚀 Features
