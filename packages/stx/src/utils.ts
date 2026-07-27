@@ -526,6 +526,29 @@ export function isHydrateTrigger(trigger: string): boolean {
     || trigger.startsWith('media:')
 }
 
+/**
+ * Does this slot content carry template expressions?
+ *
+ * Slot content belongs to the caller, so `{{ ... }}` inside it names the
+ * caller's variables. When any are present the component has to be treated as
+ * signal-bearing, or the expression pipeline resolves them against the
+ * component's context (where they do not exist) and renders them as empty.
+ *
+ * `<script>` and `<style>` regions are ignored: a regex or a CSS rule can
+ * contain brace pairs that are not template expressions, and matching them
+ * would flag components that have no slot expressions at all.
+ */
+export function slotContentHasExpressions(slotContent: string): boolean {
+  if (!slotContent)
+    return false
+
+  const withoutScripts = slotContent
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+
+  return /\{\{[\s\S]*?\}\}|\{!![\s\S]*?!!\}/.test(withoutScripts)
+}
+
 export async function renderComponentWithSlot(
   componentPath: string,
   props: Record<string, unknown>,
@@ -821,6 +844,16 @@ export async function renderComponentWithSlot(
       // expression (using the `slot` variable above) rather than being replaced by
       // the parent page's @section('content') content
       __sections: {},
+      // Slot content is authored by the CALLER, so any {{ }} in it refers to
+      // the caller's scope - reactive state the component's own script has
+      // never heard of. Without this flag the expression pipeline judged them
+      // by the component's script alone, found no signals, and evaluated them
+      // server-side against a context that never had them: they rendered as
+      // empty. `<Alert>{{ error }}</Alert>` produced a styled, empty box, and
+      // the only clue was that the box appeared at all. Flagging the component
+      // as signal-bearing lets the existing "unresolvable here, preserve for
+      // the client" rule do its job.
+      ...(slotContentHasExpressions(slotContent) && { __stx_force_signals: true }),
     }
 
     // Fill in `defineProps` destructuring defaults for any prop the caller

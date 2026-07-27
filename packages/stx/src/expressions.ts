@@ -683,7 +683,17 @@ export function processExpressions(template: string, context: Record<string, any
   // own state()/derived(). The caller computes the gate on the partial's FULL
   // content and passes it here, so {{ }} over the partial's own signals are
   // preserved for the runtime — exactly like a top-level page. See stacksjs/stx#1758.
-  const hasSignals = options?.forceSignals === true || usesSignalsInScript(template)
+  //
+  // `__stx_force_signals` is the same gate for SLOT CONTENT. A component
+  // rendering `<slot />` receives markup authored by its caller, and any
+  // {{ }} in it refers to the CALLER's scope - which the component's own
+  // script knows nothing about. Judging by the component's script alone,
+  // those expressions looked unresolvable-and-not-signal-backed, so they were
+  // evaluated server-side against a context that never had them and rendered
+  // as empty. `<Alert>{{ error }}</Alert>` produced a styled, empty box.
+  const hasSignals = options?.forceSignals === true
+    || context?.__stx_force_signals === true
+    || usesSignalsInScript(template)
 
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
   output = output.replace(/\{\{\{([\s\S]*?)\}\}\}/g, (match, expr, offset) => {
