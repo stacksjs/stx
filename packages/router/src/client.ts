@@ -234,7 +234,10 @@ export function getRouterScript(): string {
     if(text.trim()&&!s.hasAttribute('src'))executedScriptHashes[hashScript(text)]=1;
   });
   function cacheKey(url){
-    var u=new URL(url,location.origin);
+    // Base is the CURRENT document, not the origin root: a relative key like
+    // '?status=resolved' on /dashboard must cache as /dashboard?status=resolved,
+    // not /?status=resolved (#1777).
+    var u=new URL(url,location.href);
     return u.pathname+u.search;
   }
   // Keep SPA fetches inside the active locale (/en/... when viewing English).
@@ -291,7 +294,12 @@ export function getRouterScript(): string {
     if(!force) url=withCurrentLocale(url);
     log('[router] navigate() called:',url,'isNavigating:',isNavigating);
     if(isNavigating)return;
-    var t=new URL(url,location.origin);
+    // Resolve against the current document URL, matching native <a> semantics.
+    // With location.origin as the base, any relative href ('?status=resolved',
+    // '#anchor', './sibling') resolved to the SITE ROOT — so filter tabs,
+    // pagination and sort links silently bounced users to the landing page once
+    // the SPA interceptor was active (#1777).
+    var t=new URL(url,location.href);
 
     if(t.origin!==location.origin){location.href=url;return}
 
@@ -568,13 +576,21 @@ else {
       // own marketing.css, or Google Fonts). Additive and href-deduped, mirroring
       // the external <head script[src]> reconcile below — never removes existing
       // links, so stylesheets shared across pages simply persist.
+      // Relative asset hrefs resolve against the document that declared them:
+      // the CURRENT page for links already in <head>, and the page being
+      // navigated TO for links from the fetched document. Against location.origin
+      // both collapsed to the site root, so 'assets/app.css' on /docs/intro
+      // deduped as /assets/app.css — the wrong file, and a false cache hit that
+      // skipped the real stylesheet (#1777).
+      var docBase;
+      try{docBase=new URL(url,location.href).href}catch(e){docBase=location.href}
       var linkSel='link[rel="stylesheet"],link[rel="preconnect"]';
       var curLinks={};
-      document.querySelectorAll('head '+linkSel).forEach(function(l){var h=l.getAttribute('href');if(h)curLinks[new URL(h,location.origin).href]=1});
+      document.querySelectorAll('head '+linkSel).forEach(function(l){var h=l.getAttribute('href');if(h)curLinks[new URL(h,location.href).href]=1});
       doc.querySelectorAll('head '+linkSel).forEach(function(l){
         var href=l.getAttribute('href');
         if(!href)return;
-        var abs=new URL(href,location.origin).href;
+        var abs=new URL(href,docBase).href;
         if(curLinks[abs])return;
         curLinks[abs]=1;
         var nl=document.createElement('link');
@@ -630,7 +646,9 @@ else {
       document.querySelectorAll('head script[src]').forEach(function(s){loadedSrcs[s.src]=1});
       var extPromises=[];
       doc.querySelectorAll('head script[src]').forEach(function(s){
-        var src=new URL(s.getAttribute('src'),location.origin).href;
+        // Fetched-document script: resolve against the page being navigated to
+        // (docBase), not the origin root — same rationale as the <link> reconcile (#1777).
+        var src=new URL(s.getAttribute('src'),docBase).href;
         if(loadedSrcs[src])return;
         loadedSrcs[src]=1;
         extPromises.push(new Promise(function(resolve,reject){
