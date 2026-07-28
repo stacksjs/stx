@@ -512,6 +512,27 @@ else {
 
       incoming.forEach(function(s){s.removeAttribute('data-stx-incoming')});
 
+      // ── Swap <head> stylesheet / font <link>s ──
+      // Without this, an SPA navigation to a page whose <link rel="stylesheet">
+      // (or font/preconnect <link>) the current page had not already loaded left
+      // the swapped-in content completely unstyled (e.g. a page that pulls in its
+      // own marketing.css, or Google Fonts). Additive and href-deduped, mirroring
+      // the external <head script[src]> reconcile below — never removes existing
+      // links, so stylesheets shared across pages simply persist.
+      var linkSel='link[rel="stylesheet"],link[rel="preconnect"]';
+      var curLinks={};
+      document.querySelectorAll('head '+linkSel).forEach(function(l){var h=l.getAttribute('href');if(h)curLinks[new URL(h,location.origin).href]=1});
+      doc.querySelectorAll('head '+linkSel).forEach(function(l){
+        var href=l.getAttribute('href');
+        if(!href)return;
+        var abs=new URL(href,location.origin).href;
+        if(curLinks[abs])return;
+        curLinks[abs]=1;
+        var nl=document.createElement('link');
+        Array.from(l.attributes).forEach(function(a){nl.setAttribute(a.name,a.value)});
+        document.head.appendChild(nl);
+      });
+
       // ── Swap content ──
       // For layout changes: swap the entire <body> to replace layout chrome (nav, footer, etc.)
       // For same-layout: swap only the container (<main>)
