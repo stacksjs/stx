@@ -4916,6 +4916,10 @@ else {
       processedScopes.add(el);
 
       const scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
+      // Record the element this scope is bound to so cleanupContainer can tell a
+      // dead registry entry (element replaced by an SPA swap) from a live one.
+      // See sweepOrphanedScopes / #1775.
+      if (scopeVars) scopeVars.__el = el;
 
       // Deferred island (#1746): its setup script (type="stx/island") hasn't run
       // yet, so the scope isn't registered. Arm the hydration trigger anyway —
@@ -5075,6 +5079,54 @@ catch (e) {
     }
   }
 
+  // Reclaim registry entries whose element is gone from the document.
+  //
+  // disposeSubtreeScopes only deletes scopes found UNDER the cleanup container,
+  // so two shapes leaked forever across SPA navigation (#1775): components
+  // rendered outside the swap container (an @include in the layout, above
+  // <main>), and elements already detached by the time cleanup ran its
+  // querySelectorAll. Each round-trip re-ran the include scripts under fresh
+  // scope ids while the previous ids stayed in window.stx._scopes — ~4 orphans
+  // per hop, unbounded, each retaining that scope's vars, signals and closures.
+  //
+  // The sweep is deliberately CONSERVATIVE — an over-eager delete is the #1737
+  // failure (a scope removed from the registry cannot be recreated: its setup
+  // IIFE ran once at page load), which is strictly worse than a leak. An entry
+  // is dropped only when all three hold:
+  //   1. the runtime actually bound it to an element (__el recorded),
+  //   2. that element is no longer connected to the document, and
+  //   3. neither it nor any ancestor is retained by a live conditional.
+  // Entries with no __el (e.g. a scope whose element still sits inside untouched
+  // <template> content, never inserted) are left alone — we can't prove they're
+  // dead, and a later clone re-uses that registration.
+  function sweepOrphanedScopes() {
+    if (!window.stx || !window.stx._scopes) return;
+    var scopes = window.stx._scopes;
+    for (var id in scopes) {
+      if (!Object.prototype.hasOwnProperty.call(scopes, id)) continue;
+      var entry = scopes[id];
+      if (!entry) continue;
+      var el = entry.__el;
+      if (!el || el.isConnected) continue;
+      // Detached but RETAINED: :if toggles keep their element (bindIf re-inserts
+      // the SAME node) and :if/:else chains keep their branches. Parent links
+      // inside a detached subtree stay intact, so walking up from the scope
+      // element still finds the conditional that owns it.
+      var retained = false;
+      for (var p = el; p; p = p.parentNode) {
+        if (p.__stx_if_bound || p.__stx_chain_member) { retained = true; break; }
+      }
+      if (retained) continue;
+      if (entry.__destroyCallbacks && Array.isArray(entry.__destroyCallbacks)) {
+        for (var k = 0; k < entry.__destroyCallbacks.length; k++) {
+          try { entry.__destroyCallbacks[k](); }
+          catch (e) { console.warn('[stx] scope destroy error:', e); }
+        }
+      }
+      delete scopes[id];
+    }
+  }
+
   // ==========================================================================
   // Container Cleanup (for SPA navigation)
   // ==========================================================================
@@ -5142,6 +5194,11 @@ catch (e) { console.warn('[stx] destroy hook error:', e); }
     // through disposeSubtreeScopes so the same walk runs for SPA
     // navigation and for :if/:for-driven unmount (see #1727).
     disposeSubtreeScopes(container);
+
+    // 4. Reclaim entries the container walk can't see — components rendered
+    // outside the swap container, or already detached before step 3 ran its
+    // querySelectorAll. Without this the registry grew every navigation (#1775).
+    sweepOrphanedScopes();
   }
 
   // Re-initialize components after SPA content swap.
@@ -5237,6 +5294,9 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     document.body.querySelectorAll('[data-stx-scope]').forEach(function(el) {
       var scopeId = el.getAttribute('data-stx-scope');
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
+      // Record the bound element for the orphan sweep (#1775) — see the
+      // DOMContentLoaded walk above for the rationale.
+      if (scopeVars) scopeVars.__el = el;
       // Deferred island reached via SPA navigation (#1746): its setup script is
       // inert (type="stx/island"), so the scope isn't registered yet. Arm the
       // hydration trigger (deferHydration) instead of skipping it — mirrors the
