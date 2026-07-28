@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.110...v0.2.111)
+
+## 🐛 Bug Fixes
+
+- **client**: preserve client-signal {{ }} + bind SVG classes via setAttribute ([cad4dd2](https://github.com/stacksjs/stx/commit/cad4dd2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **conditionals**: don't match directive tokens inside HTML tags ([9298fcb](https://github.com/stacksjs/stx/commit/9298fcb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **conditionals**: reactive @if/@else with nested @if no longer duplicates <main> on SPA nav ([644fca4](https://github.com/stacksjs/stx/commit/644fca4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.111 ([3ddd85d](https://github.com/stacksjs/stx/commit/3ddd85d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: major bumps — marked 18, ejs 6, js-yaml 5, @vscode/vsce 3.7.2-13 ([638bb41](https://github.com/stacksjs/stx/commit/638bb41)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update dependency vscode-languageclient to 10.1.0 (updated) (#1755) ([35b3533](https://github.com/stacksjs/stx/commit/35b3533)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1755](https://github.com/stacksjs/stx/issues/1755), [#1755](https://github.com/stacksjs/stx/issues/1755))
+- **deps**: update dependency jsdom to 30.0.0 (#1783) ([3e74e72](https://github.com/stacksjs/stx/commit/3e74e72)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1783](https://github.com/stacksjs/stx/issues/1783), [#1783](https://github.com/stacksjs/stx/issues/1783))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.109...v0.2.110)
 
 ## 🐛 Bug Fixes
