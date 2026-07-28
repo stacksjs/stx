@@ -274,7 +274,23 @@ ${tail}})();
 `
 }
 
-function transformSignalScript(scriptContent: string, scopeId: string): string {
+/**
+ * Build the scope-registration tail appended to a component client script's IIFE.
+ *
+ * Registers every top-level declaration into `window.stx._scopes[scopeId]` so the
+ * runtime can resolve template bindings (`x-class`, `:text`, `@click`, …) against
+ * the component's own variables.
+ *
+ * Shared by BOTH client-script branches — signal scripts (`state`/`derived`/
+ * `effect`) and non-signal ones (`useStore`-only, plain handler functions).
+ * Keeping one builder is deliberate: the non-signal branch used to emit a
+ * registration with no variables at all, on the assumption that a script
+ * without signal APIs has nothing worth registering. It does — `const store =
+ * useStore('confirm')` and plain `function submit()` are exactly the names
+ * templates bind to — so every such binding resolved to `''` and every handler
+ * was inert, silently (the runtime swallows the ReferenceError). See #1766.
+ */
+function buildScopeRegistrationTail(scriptContent: string, scopeId: string): string {
   const exports = extractExports(scriptContent)
   const exportNames = exports.split(',').map(s => s.trim()).filter(Boolean)
 
@@ -294,7 +310,7 @@ function transformSignalScript(scriptContent: string, scopeId: string): string {
   // Use real window.stx APIs (signals runtime is injected in <head>, runs before this script).
   // No polyfill fallbacks — they create signals without ._isSignal which breaks auto-unwrap
   // and effect tracking in the signals runtime.
-  const tail = `
+  return `
   // Register scope variables for STX runtime
   if (!window.stx._scopes) window.stx._scopes = {};
   var __scopeRegistration = { __destroyCallbacks: __destroyHooks };
@@ -306,6 +322,10 @@ ${scopeAssign}
   try { if (typeof __stxScopeRenames !== 'undefined' && __stxScopeRenames) { for (var __stxRK in __stxScopeRenames) __scopeRegistration[__stxRK] = __stxScopeRenames[__stxRK]; } } catch (e) { /* no renames */ }
   window.stx._scopes['${scopeId}'] = __scopeRegistration;
 `
+}
+
+function transformSignalScript(scriptContent: string, scopeId: string): string {
+  const tail = buildScopeRegistrationTail(scriptContent, scopeId)
   // Set __STX_CURRENT_ELEMENT__ to this scope's root element while the body runs,
   // so element-aware primitives invoked at partial-scope time — useQuery/useFetch
   // ({ suspense: true }) registering with the nearest <Suspense> boundary,
@@ -1066,10 +1086,9 @@ catch (e) {
           // still need a `data-stx-scope` root for the runtime to bind
           // refs and events into — without it, `useRef("foo").current`
           // is always null because nothing populates `componentScope.$refs`
-          // for this subtree. The scope vars object can be empty (we
-          // have no top-level reactive declarations to register), but it
-          // MUST be registered, since the runtime's scope walker
-          // short-circuits on a missing entry in `window.stx._scopes`.
+          // for this subtree. The registration MUST exist, since the
+          // runtime's scope walker short-circuits on a missing entry in
+          // `window.stx._scopes`.
           signalScopeId = `stx_scope_${path.basename(includeFilePath, '.stx').replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}`
 
           // Pass through transformStoreImports for parity — non-signal scripts
@@ -1080,18 +1099,18 @@ catch (e) {
           // uses. Without this wrapper, top-level `useRef`/`onMount` calls
           // in user code lookup against the page's global scope and crash
           // with `ReferenceError: useRef is not defined` — those names live
-          // on `window.stx`, not the bare global. The empty-but-present
-          // scope registration in the tail is what makes ref binding
-          // actually happen at runtime.
-          // Match the signal branch's single-quote `window.stx._scopes['...']`
-          // format verbatim. The downstream `preservedScript.replace()` that
-          // merges scopes into an existing `data-stx-scope` uses single
-          // quotes in its search pattern, so deviating here would silently
-          // skip the merge step.
-          const tail = `
-  if (!window.stx._scopes) window.stx._scopes = {};
-  window.stx._scopes['${signalScopeId}'] = { __destroyCallbacks: __destroyHooks };
-`
+          // on `window.stx`, not the bare global.
+          //
+          // Register this script's top-level declarations too (#1766): a
+          // non-signal script still names things templates bind to — a
+          // `useStore(...)` handle, plain `function` handlers — and emitting
+          // an empty registration made every one of those bindings resolve to
+          // `''` and every handler inert, with no console output. Uses the
+          // SAME builder as the signal branch so the two can't drift; it also
+          // emits the `window.stx._scopes['...']` single-quote form verbatim,
+          // which the downstream `preservedScript.replace()` merge step below
+          // pattern-matches on.
+          const tail = buildScopeRegistrationTail(resolvedContent, signalScopeId)
           const wrapped = wrapClientScript(resolvedContent, tail)
           preservedScript += `${vendorStyleTags}<script data-stx-scoped${extraAttrs ? ` ${extraAttrs}` : ''}>${wrapped}</script>\n`
         }
