@@ -2508,6 +2508,7 @@ export async function serve(options: ServeOptions): Promise<void> {
                     : (groupMetaMatch?.[1] || deriveLayoutGroup(pageLayout))
 
                   let fragment = content
+                  let containerAttrs = ''
 
                   // Extract styles from <head> AND body (Crosswind CSS, page styles, @push('styles'))
                   // The router's doFragSwap injects these into <head> during SPA swap
@@ -2555,6 +2556,18 @@ export async function serve(options: ServeOptions): Promise<void> {
                         headStyles.push(bodyStyleMatch[0])
                       }
                     }
+
+                    // Capture the destination <main>'s own attributes. The fragment
+                    // carries only the container's INNER content, so a page whose
+                    // layout lives on <main> itself (e.g. `<main class="flex
+                    // min-h-[100dvh] items-center justify-center">`) would otherwise
+                    // be injected into the persistent, attribute-less container and
+                    // lose its layout entirely on SPA navigation. The router applies
+                    // these to the container during the swap.
+                    containerAttrs = mainOpenMatch[0]
+                      .replace(/^<main\b/i, '')
+                      .replace(/\/?>$/, '')
+                      .trim()
 
                     // Extract only the <main> inner content (not sidebar, header, or layout)
                     const mainStart = mainOpenMatch.index! + mainOpenMatch[0].length
@@ -2606,6 +2619,7 @@ export async function serve(options: ServeOptions): Promise<void> {
                       'X-STX-Layout': pageLayout,
                       'X-STX-Layout-Group': pageLayoutGroup,
                       ...(pageTitle && { 'X-STX-Title': encodeURIComponent(pageTitle) }),
+                      ...(containerAttrs && { 'X-STX-Container-Attrs': encodeURIComponent(containerAttrs) }),
                       'Cache-Control': 'no-store',
                       ...corsHeaders,
                     },

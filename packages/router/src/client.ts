@@ -95,24 +95,65 @@ export function getRouterScript(): string {
   // rather than a Map to keep the diff localized and the runtime
   // hand-minified shape consistent.
   var cacheOrder=[];
-  function setCache(key,html,layout,group,title){
+  function setCache(key,html,layout,group,title,cattrs){
     if(!(key in cache))cacheOrder.push(key);
     cache[key]=html;
     layoutCache[key]=layout;
     layoutGroupCache[key]=group;
     titleCache[key]=title||'';
+    attrsCache[key]=cattrs||'';
     while(cacheOrder.length>o.prefetchCacheMax){
       var oldest=cacheOrder.shift();
       delete cache[oldest];
       delete layoutCache[oldest];
       delete layoutGroupCache[oldest];
       delete titleCache[oldest];
+      delete attrsCache[oldest];
     }
   }
   // Apply a page title captured from the fragment response's X-STX-Title
   // header (URI-encoded) so SPA swaps keep document.title in sync with the
   // page — full-document swaps set the title from the <title> tag directly.
   function applyTitle(t){if(t){try{document.title=decodeURIComponent(t)}catch(e){document.title=t}}}
+  // ── Container attributes ──
+  // A fragment carries only the container's INNER content, so any layout that
+  // lives on the destination's <main> itself (e.g. a centered auth page whose
+  // <main> carries flex + min-h-[100dvh] + items-center) would be
+  // dropped when injected into the persistent container. The server sends the
+  // destination container's attributes in X-STX-Container-Attrs (URI-encoded);
+  // we apply them here and track what we applied so navigating onward to a page
+  // with a bare <main> clears them again. Attributes the router never applied
+  // (the app's own id/data-stx-content hooks) are left untouched.
+  var pendingContainerAttrs='';
+  function parseContainerAttrs(attrStr){
+    var map={};
+    if(!attrStr)return map;
+    var probe=document.createElement('div');
+    probe.innerHTML='<i '+attrStr+'></i>';
+    var src=probe.firstChild;
+    if(src&&src.attributes){
+      Array.prototype.forEach.call(src.attributes,function(a){map[a.name]=a.value});
+    }
+    return map;
+  }
+  function setContainerAttrs(el,map){
+    if(!el)return;
+    var prev=(el.getAttribute('data-stx-cattrs')||'').split(',');
+    prev.forEach(function(n){if(n&&!(n in map))el.removeAttribute(n)});
+    var names=[];
+    for(var k in map){
+      if(Object.prototype.hasOwnProperty.call(map,k)&&k!=='data-stx-cattrs'){
+        el.setAttribute(k,map[k]);names.push(k);
+      }
+    }
+    if(names.length)el.setAttribute('data-stx-cattrs',names.join(','));
+    else el.removeAttribute('data-stx-cattrs');
+  }
+  function applyContainerAttrs(el,encoded){
+    var attrStr='';
+    if(encoded){try{attrStr=decodeURIComponent(encoded)}catch(e){attrStr=encoded}}
+    setContainerAttrs(el,parseContainerAttrs(attrStr));
+  }
   function touchCache(key){
     var i=cacheOrder.indexOf(key);
     if(i>=0){cacheOrder.splice(i,1);cacheOrder.push(key)}
@@ -124,6 +165,7 @@ export function getRouterScript(): string {
     delete layoutCache[key];
     delete layoutGroupCache[key];
     delete titleCache[key];
+    delete attrsCache[key];
   }
 
   // Extract top-level CSS blocks (rules AND @media blocks with nested braces).
@@ -177,6 +219,7 @@ export function getRouterScript(): string {
   var layoutCache={};
   var layoutGroupCache={};
   var titleCache={};
+  var attrsCache={};
   // Track executed script hashes to prevent redeclaration errors on navigation.
   // Layout-level scripts (theme, nav setup) execute on initial page load and
   // should NOT re-execute when navigating to another page with the same layout.
@@ -296,6 +339,7 @@ export function getRouterScript(): string {
         }).finally(done);
         return;
       }
+      pendingContainerAttrs=attrsCache[targetPath]||'';
       swap(cache[targetPath],targetPath,pushState,targetHash);
       applyTitle(titleCache[targetPath]);
       done();
@@ -312,6 +356,7 @@ else {
         var newLayout=r.headers.get('X-STX-Layout')||'';
         var newGroup=r.headers.get('X-STX-Layout-Group')||'';
         var newTitle=r.headers.get('X-STX-Title')||'';
+        var newCAttrs=r.headers.get('X-STX-Container-Attrs')||'';
         // Layout change? Fetch the FULL page (no X-STX-Router header) and do full document swap
         if(isFragment&&checkLayoutChange(newLayout,url,newGroup)){
           log('[router] layout change — fetching full page for document swap');
@@ -324,11 +369,12 @@ else {
             });
           });
         }
-        return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout,layoutGroup:newGroup,title:newTitle}});
+        return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout,layoutGroup:newGroup,title:newTitle,containerAttrs:newCAttrs}});
       }).then(function(result){
         if(!result)return;
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
-        if(o.cache)setCache(targetPath,result.html,result.layout,result.layoutGroup,result.title);
+        if(o.cache)setCache(targetPath,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
+        pendingContainerAttrs=result.isFragment?(result.containerAttrs||''):'';
         swap(result.html,targetPath,pushState,targetHash);
         // Fragment swaps carry no <head>; apply the title from the header.
         // Full-document swaps already set document.title from the <title> tag.
@@ -401,7 +447,10 @@ else {
           el.setAttribute('data-stx-page','');
           document.head.appendChild(el);
         });
-        // Swap content
+        // Swap content — apply the destination container's own attributes first
+        // so the incoming markup lands in a correctly-laid-out container instead
+        // of flashing (or sticking) unstyled.
+        applyContainerAttrs(currentContent,pendingContainerAttrs);
         currentContent.innerHTML=cleanFrag;
         // Remove old page scripts
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
@@ -566,7 +615,12 @@ else {
         // Update container reference for script execution below
         currentContent=document.querySelector(containerSel)||document.querySelector('main')||document.body;
       } else {
-        // Same layout — swap only container content
+        // Same layout — swap only container content. Carry the destination
+        // container's attributes across too (same reason as the fragment path:
+        // pages whose layout lives on <main> itself would otherwise lose it).
+        var attrMap={};
+        Array.prototype.forEach.call(newContent.attributes,function(a){attrMap[a.name]=a.value});
+        setContainerAttrs(currentContent,attrMap);
         var cleanHTML=newContent.innerHTML.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt\\\\s*>','gi'),'');
         currentContent.innerHTML=cleanHTML;
       }
