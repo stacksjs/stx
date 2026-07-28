@@ -353,6 +353,83 @@ describe('convertSignalDirectivesToAttributes — @if/@else chains', () => {
     expect(output).toContain('@else')
     expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
   })
+
+  // #1784 — a nested reactive @if inside the @else branch of an outer reactive
+  // chain used to be matched TWICE (once inside the outer block, once on its
+  // own by the top-level scan). Applying the two overlapping rewrites
+  // end-to-start dropped the inner content and left an unbalanced </template>.
+  // On a full page load browsers hide that; the SPA router's innerHTML swap
+  // reproduces it verbatim → a duplicate <main> + aborted view transition.
+  it('#1784 — nested reactive @if inside @else yields balanced, well-formed markup', () => {
+    const input = `
+      <script client>
+        const sent = state(false)
+        const error = state('')
+      </script>
+      @if(sent())
+        <div class="ok">Sent</div>
+        <p>done</p>
+      @else
+        <form>
+          @if(error())
+            <div class="err">{{ error() }}</div>
+          @endif
+          <input name="email">
+        </form>
+        <p>after</p>
+      @endif
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+
+    // Balanced templates — the exact symptom of the overlapping-replacement bug
+    // was an opening `<template>` count that didn't match the closings.
+    const opens = (output.match(/<template\b/g) || []).length
+    const closes = (output.match(/<\/template>/g) || []).length
+    expect(opens).toBe(closes)
+    expect(opens).toBe(2) // one for @if, one for @else (both multi-child → template)
+
+    // Both arms of the OUTER chain are present and attributed.
+    expect(output).toContain('<template @if="sent()">')
+    expect(output).toContain('<template @else>')
+
+    // The NESTED @if was converted in place (recursion), on its single element,
+    // not left as a raw directive and not spilled outside its branch.
+    expect(output).toMatch(/<div class="err"\s@if="error\(\)">/)
+    expect(output).not.toContain('@if(error())')
+    expect(output).not.toContain('@endif')
+
+    // Inner branch content survived (it was dropped by the old overlapping rewrite).
+    expect(output).toContain('<input name="email">')
+    expect(output).toContain('<p>after</p>')
+  })
+
+  it('#1784 — nested reactive @if inside a single (else-less) reactive @if also stays balanced', () => {
+    const input = `
+      <script client>
+        const open = state(false)
+        const busy = state(false)
+      </script>
+      @if(open())
+        <section>
+          @if(busy())
+            <span class="spin">…</span>
+          @endif
+          <p>body</p>
+        </section>
+      @endif
+    `
+    const output = convertSignalDirectivesToAttributes(input)
+    const opens = (output.match(/<template\b/g) || []).length
+    const closes = (output.match(/<\/template>/g) || []).length
+    expect(opens).toBe(closes)
+    // Both branches are single-rooted (<section>, <span>), so the attribute lands
+    // directly on the element — no <template> wrapper. The point is the nested
+    // @if is converted in place and nothing is left as a raw directive.
+    expect(output).toMatch(/<section\s@if="open\(\)">/)
+    expect(output).toMatch(/<span class="spin"\s@if="busy\(\)">/)
+    expect(output).not.toContain('@if(')
+    expect(output).not.toContain('@endif')
+  })
 })
 
 describe('convertSignalDirectivesToAttributes — per-condition server vs reactive', () => {

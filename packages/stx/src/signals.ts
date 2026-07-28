@@ -2826,6 +2826,18 @@ catch (e) {
       b.placeholder = document.createComment('stx-if-chain');
       parent.insertBefore(b.placeholder, b.el);
       b.el.removeAttribute(b.attr);
+      // A <template> branch (the wrapper convertSignalDirectivesToAttributes
+      // emits for a multi-child / text branch) is INERT — inserting the element
+      // renders nothing, its content lives in a document fragment. Clone that
+      // content ONCE into a stable node set we toggle in and out, exactly as
+      // bindIf/bindFor already do for template elements. An element branch is
+      // its own single node. Without this, a multi-element @else / @else-if
+      // branch rendered blank the moment the markup was well-formed enough to
+      // survive as a real <template> (the #1784 markup fix). See #1784.
+      b.isTemplate = b.el.tagName === 'TEMPLATE';
+      b.nodes = b.isTemplate
+        ? Array.prototype.slice.call(b.el.content.cloneNode(true).childNodes)
+        : [b.el];
       b.el.remove();
       b.childrenProcessed = false;
     });
@@ -2909,13 +2921,16 @@ catch (e2) {
       // components under reactive conditionals (#1737). Permanent disposal is
       // still handled by bindFor (item removal) and cleanupContainer (SPA nav).
       if (currentIdx !== -1) {
-        chain[currentIdx].el.remove();
+        chain[currentIdx].nodes.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
       }
 
       // Insert + process the newly-picked branch.
       if (pickedIdx !== -1) {
         var pick = chain[pickedIdx];
-        pick.placeholder.parentNode.insertBefore(pick.el, pick.placeholder.nextSibling);
+        // Insert this branch's node(s) before the placeholder's next sibling.
+        // The anchor is captured once so the nodes stack in source order.
+        var anchor = pick.placeholder.nextSibling;
+        pick.nodes.forEach(function (n) { pick.placeholder.parentNode.insertBefore(n, anchor); });
         pick.el.__stx_shown_at = performance.now();
         if (!pick.childrenProcessed) {
           pick.childrenProcessed = true;
@@ -2925,9 +2940,12 @@ catch (e2) {
           (function (branch) {
             setTimeout(function () {
               var childScope = { ...capturedComponentScope, ...(branch.capturedElementScope || {}), ...globalHelpers };
-              processElement(branch.el, childScope);
-              branch.el.removeAttribute('x-cloak');
-              branch.el.querySelectorAll('[x-cloak]').forEach(function (c) { c.removeAttribute('x-cloak'); });
+              branch.nodes.forEach(function (n) {
+                if (n.nodeType !== 1) return; // whitespace/text between template children
+                processElement(n, childScope);
+                n.removeAttribute('x-cloak');
+                n.querySelectorAll('[x-cloak]').forEach(function (c) { c.removeAttribute('x-cloak'); });
+              });
             }, 0);
           })(pick);
         }

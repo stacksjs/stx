@@ -917,9 +917,12 @@ catch (error: unknown) {
       }
 
       // Extract <template> content if present (Vue-style SFC)
-      // Only match <template> WITHOUT id, x-for, x-if, @for, @if, :for, :if attributes.
-      // Templates with those attributes are client-side loop/conditional elements that must be preserved.
-      const templateMatch = workingContent.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>([\s\S]*?)<\/template>/i)
+      // Only match <template> WITHOUT id or a client directive attribute.
+      // Templates with those attributes are client-side loop/conditional elements
+      // that must be preserved — including the `@else`/`@else-if` (and `:else` /
+      // `x-else`) branches a reactive `@if` chain compiles to; stripping one arm
+      // of the chain unbalances it (see #1784). `@else` matches `@else-if` too.
+      const templateMatch = workingContent.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|x-else|@for|@if|@else|:for|:if|:else)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>([\s\S]*?)<\/template>/i)
       if (templateMatch) {
         workingContent = templateMatch[1].trim()
       }

@@ -413,103 +413,131 @@ function isBalancedForTag(inner: string, tag: string): boolean {
  * Note: Uses <template> wrapper for branches with multiple children or text nodes.
  */
 export function convertSignalDirectivesToAttributes(template: string, context?: Record<string, any>): string {
-  let output = template
-
   // Names of locally-declared signals — used (together with the server `context`)
   // to tell a client-reactive conditional from a server/loop-data one that must
-  // stay textual for processConditionals.
+  // stay textual for processConditionals. Extracted once from the full template
+  // (the `<script>` scope) so recursive calls on a branch body — which has no
+  // script of its own — still classify nested conditions against the same signals.
   const signalNames = extractClientSignalNames(template)
 
-  // Pattern to match @if(expr)...@endif blocks (handles nested parens in expr)
-  // We use a simpler approach: find @if( and then parse balanced parens
-  const ifDirectiveStart = /@if\s*\(/g
-  let match: RegExpExecArray | null
-  const replacements: Array<{ start: number, end: number, replacement: string }> = []
+  // Convert one nesting level of @if(expr)...@endif blocks, recursing into the
+  // body of each block we actually rewrite.
+  //
+  // Recursion (rather than letting the outer regex re-find nested @if blocks) is
+  // what keeps a nested reactive @if inside a branch from being pushed as a
+  // SEPARATE replacement whose range overlaps the enclosing block's. Two
+  // overlapping replacements applied end-to-start corrupt each other — the inner
+  // rewrite shifts the string, the outer rewrite then slices at stale indices,
+  // dropping the inner branch content and leaving an unbalanced </template>. That
+  // malformed markup is silently normalized by the browser on a full page load,
+  // but the SPA router's innerHTML swap reproduces it verbatim, nesting a second
+  // <main> inside the container and aborting the view transition. See #1784.
+  function convert(input: string): string {
+    let output = input
 
-  while ((match = ifDirectiveStart.exec(output)) !== null) {
-    const startIdx = match.index
-    const exprStart = startIdx + match[0].length
+    // Pattern to match @if(expr)...@endif blocks (handles nested parens in expr)
+    // We use a simpler approach: find @if( and then parse balanced parens
+    const ifDirectiveStart = /@if\s*\(/g
+    let match: RegExpExecArray | null
+    const replacements: Array<{ start: number, end: number, replacement: string }> = []
 
-    // Find balanced closing paren for the condition
-    let depth = 1
-    let i = exprStart
-    while (i < output.length && depth > 0) {
-      if (output[i] === '(') depth++
-      else if (output[i] === ')') depth--
-      i++
-    }
+    while ((match = ifDirectiveStart.exec(output)) !== null) {
+      const startIdx = match.index
+      const exprStart = startIdx + match[0].length
 
-    if (depth !== 0) continue // Unbalanced parens, skip
-
-    const condition = output.substring(exprStart, i - 1).trim()
-    const afterCondition = i
-
-    // Find the matching @endif (handle nested @if)
-    let ifDepth = 1
-    let endIdx = afterCondition
-    const endifRegex = /@(if\s*\(|endif)/g
-    endifRegex.lastIndex = afterCondition
-
-    let endMatch: RegExpExecArray | null
-    while ((endMatch = endifRegex.exec(output)) !== null) {
-      if (endMatch[1].startsWith('if')) {
-        ifDepth++
+      // Find balanced closing paren for the condition
+      let depth = 1
+      let i = exprStart
+      while (i < output.length && depth > 0) {
+        if (output[i] === '(') depth++
+        else if (output[i] === ')') depth--
+        i++
       }
-      else if (endMatch[1] === 'endif') {
-        ifDepth--
-        if (ifDepth === 0) {
-          endIdx = endMatch.index + endMatch[0].length
-          break
+
+      if (depth !== 0) continue // Unbalanced parens, skip
+
+      const condition = output.substring(exprStart, i - 1).trim()
+      const afterCondition = i
+
+      // Find the matching @endif (handle nested @if)
+      let ifDepth = 1
+      let endIdx = afterCondition
+      const endifRegex = /@(if\s*\(|endif)/g
+      endifRegex.lastIndex = afterCondition
+
+      let endMatch: RegExpExecArray | null
+      while ((endMatch = endifRegex.exec(output)) !== null) {
+        if (endMatch[1].startsWith('if')) {
+          ifDepth++
+        }
+        else if (endMatch[1] === 'endif') {
+          ifDepth--
+          if (ifDepth === 0) {
+            endIdx = endMatch.index + endMatch[0].length
+            break
+          }
         }
       }
+
+      if (ifDepth !== 0) continue // No matching @endif, skip
+
+      // Extract content between ) and @endif
+      const content = output.substring(afterCondition, endIdx - '@endif'.length).trim()
+
+      let replacement: string
+      if (hasTopLevelElseBranch(content)) {
+        // @if/@elseif/@else chain. Promote to a reactive sibling chain only when every
+        // value branch is client-reactive; a chain that reads server/loop data (e.g. a
+        // status chip inside a server @foreach) stays textual so processConditionals
+        // picks one branch server-side. Reuse the robust server-side branch parser so
+        // branch boundaries match what processConditionals would see.
+        const parsed = findIfBlocks(output.substring(startIdx, endIdx))
+        if (parsed.length === 0) continue // Defensive: shouldn't happen, leave for server
+        const valueBranches = parsed[0].branches.filter(b => b.type !== 'else')
+        const isReactiveChain = valueBranches.length > 0
+          && valueBranches.every(b => conditionIsClientReactive(b.condition, signalNames, context))
+        if (!isReactiveChain) continue // Server/loop-data chain — leave for processConditionals
+        const parts = parsed[0].branches.map((branch) => {
+          // Recurse so a nested reactive @if inside this branch is converted in
+          // place (properly nested) instead of being re-matched by the outer loop
+          // as an overlapping replacement.
+          const branchContent = convert(branch.content)
+          if (branch.type === 'elseif')
+            return branchToAttrElement(branchContent, '@else-if', branch.condition ?? '')
+          if (branch.type === 'else')
+            return branchToAttrElement(branchContent, '@else')
+          return branchToAttrElement(branchContent, '@if', branch.condition ?? '')
+        })
+        // Newline-separated: nextElementSibling skips the whitespace text nodes.
+        replacement = parts.join('\n')
+      }
+      else {
+        // Single boolean condition. Convert only when it's client-reactive; a server-data
+        // @if (e.g. a loop-variable check) stays textual for processConditionals so it
+        // isn't evaluated against the client scope, where its variables don't exist.
+        if (!conditionIsClientReactive(condition, signalNames, context)) continue
+        // Recurse into the body for nested reactive @if blocks (see above).
+        replacement = branchToAttrElement(convert(content), '@if', condition)
+      }
+
+      replacements.push({ start: startIdx, end: endIdx, replacement })
+      // Skip past the block we just consumed so a nested @if isn't re-matched and
+      // pushed as a second, overlapping replacement. Only advance on an actual
+      // rewrite — a block left for the server (via `continue` above) keeps the
+      // cursor where it is so a reactive @if nested inside it is still found.
+      ifDirectiveStart.lastIndex = endIdx
     }
 
-    if (ifDepth !== 0) continue // No matching @endif, skip
-
-    // Extract content between ) and @endif
-    const content = output.substring(afterCondition, endIdx - '@endif'.length).trim()
-
-    let replacement: string
-    if (hasTopLevelElseBranch(content)) {
-      // @if/@elseif/@else chain. Promote to a reactive sibling chain only when every
-      // value branch is client-reactive; a chain that reads server/loop data (e.g. a
-      // status chip inside a server @foreach) stays textual so processConditionals
-      // picks one branch server-side. Reuse the robust server-side branch parser so
-      // branch boundaries match what processConditionals would see.
-      const parsed = findIfBlocks(output.substring(startIdx, endIdx))
-      if (parsed.length === 0) continue // Defensive: shouldn't happen, leave for server
-      const valueBranches = parsed[0].branches.filter(b => b.type !== 'else')
-      const isReactiveChain = valueBranches.length > 0
-        && valueBranches.every(b => conditionIsClientReactive(b.condition, signalNames, context))
-      if (!isReactiveChain) continue // Server/loop-data chain — leave for processConditionals
-      const parts = parsed[0].branches.map((branch) => {
-        if (branch.type === 'elseif')
-          return branchToAttrElement(branch.content, '@else-if', branch.condition ?? '')
-        if (branch.type === 'else')
-          return branchToAttrElement(branch.content, '@else')
-        return branchToAttrElement(branch.content, '@if', branch.condition ?? '')
-      })
-      // Newline-separated: nextElementSibling skips the whitespace text nodes.
-      replacement = parts.join('\n')
-    }
-    else {
-      // Single boolean condition. Convert only when it's client-reactive; a server-data
-      // @if (e.g. a loop-variable check) stays textual for processConditionals so it
-      // isn't evaluated against the client scope, where its variables don't exist.
-      if (!conditionIsClientReactive(condition, signalNames, context)) continue
-      replacement = branchToAttrElement(content, '@if', condition)
+    // Apply replacements from end to start to preserve indices
+    for (let i = replacements.length - 1; i >= 0; i--) {
+      const { start, end, replacement } = replacements[i]
+      output = output.substring(0, start) + replacement + output.substring(end)
     }
 
-    replacements.push({ start: startIdx, end: endIdx, replacement })
+    return output
   }
 
-  // Apply replacements from end to start to preserve indices
-  for (let i = replacements.length - 1; i >= 0; i--) {
-    const { start, end, replacement } = replacements[i]
-    output = output.substring(0, start) + replacement + output.substring(end)
-  }
-
-  return output
+  return convert(template)
 }
 
 /**

@@ -202,6 +202,37 @@ describe('reactive if/else chains — DOM behavior (#1734, regression #1737)', (
   // assertions above are deterministic under that environment and fully
   // cover the #1737 regression; cross-`.set()` reactivity is already covered
   // by the impl-level reactivity/parity suites.
+
+  // #1784 — a multi-child branch is emitted as a <template @if>/<template @else>
+  // wrapper (convertSignalDirectivesToAttributes). bindIf/bindFor clone template
+  // CONTENT, but bindIfChain used to insert the inert <template> element itself,
+  // so a multi-element @else branch rendered BLANK. These lock in that a chain
+  // whose branches are <template> wrappers renders the picked branch's content.
+  // `:if`/`:else` here (not `@if`/`@else`): happy-dom drops `@`-prefixed attrs
+  // when parsing an HTML string, and both forms drive the identical bindIfChain
+  // path — so the colon form faithfully exercises the same template-cloning fix.
+  it('#1784 — template-wrapped chain renders the else branch content (not blank)', async () => {
+    await processScope(
+      { sent: window.stx.state(false) },
+      `<template :if="sent()"><div>sent-head</div><span>sent-tail</span></template>`
+      + `<template :else><div>else-head</div><span>else-tail</span></template>`,
+    )
+    // else branch active → its cloned content is live; the if branch is absent.
+    expect(presentBranches(['sent-head', 'sent-tail', 'else-head', 'else-tail']))
+      .toEqual(['else-head', 'else-tail'])
+    // The inert <template> wrappers must not linger in the rendered subtree.
+    expect(document.querySelectorAll('[data-stx-scope] template').length).toBe(0)
+  })
+
+  it('#1784 — template-wrapped chain renders the if branch when its condition holds', async () => {
+    await processScope(
+      { sent: window.stx.derived(() => true) },
+      `<template :if="sent()"><div>sent-head</div><span>sent-tail</span></template>`
+      + `<template :else><div>else-head</div><span>else-tail</span></template>`,
+    )
+    expect(presentBranches(['sent-head', 'sent-tail', 'else-head', 'else-tail']))
+      .toEqual(['sent-head', 'sent-tail'])
+  })
 })
 
 describe('reactive if/else chains — minified runtime parity (#1737)', () => {

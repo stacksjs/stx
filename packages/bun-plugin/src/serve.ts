@@ -33,6 +33,23 @@ import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 // from the importer's location and a stale copy there beats the vendored one.
 const defaultStxModule = import('@stacksjs/stx')
 
+// Reactive-directive attributes whose `<template>` wrappers must SURVIVE the
+// SFC template-stripping below. These templates are the sibling chain the
+// signals runtime walks at runtime (findIfChain/bindIfChain for conditionals,
+// bindFor for loops), so stripping them breaks client reactivity.
+//
+// `@else` also matches `@else-if`; `:else` matches `:else-if`; `x-else` matches
+// `x-else-if`. The else forms MUST be here: `convertSignalDirectivesToAttributes`
+// emits `<template @else>` / `<template @else-if>` as part of an `@if` chain, and
+// the stripper keeps every `</template>` unconditionally — so omitting the else
+// forms stripped the `<template @else>` OPENING while keeping its `</template>`,
+// leaving unbalanced markup. A full page load hides it (the browser drops the
+// orphan close tag), but the SPA router's innerHTML swap reproduces it verbatim,
+// nesting a second `<main>` inside the container and aborting the view
+// transition. See #1784. Kept as one source of truth so the two strip sites
+// below can't drift (the drift is what caused #1784).
+const REACTIVE_TEMPLATE_DIRECTIVE_RE = /@for|:for|@if|:if|@else|:else|x-for|x-if|x-else/
+
 /**
  * Build the candidate regexes for a dynamic route file (stacksjs/stx#1927).
  *
@@ -1580,8 +1597,8 @@ export async function serve(options: ServeOptions): Promise<void> {
     // STX uses <template> in source but output should be renderable HTML
     // PRESERVE <template> tags with reactive directives — those are client-side
     // templates processed by the signals runtime (x-for, x-if, @for, @if, :for, :if)
-    const directiveTemplateRe = /@for|:for|@if|:if|x-for|x-if/
-    const hasDirectiveTemplates = /<template\s[^>]*(?:@for|:for|@if|:if|x-for|x-if)/.test(output)
+    const directiveTemplateRe = REACTIVE_TEMPLATE_DIRECTIVE_RE
+    const hasDirectiveTemplates = new RegExp(`<template\\s[^>]*(?:${REACTIVE_TEMPLATE_DIRECTIVE_RE.source})`).test(output)
     if (hasDirectiveTemplates) {
       // Only strip <template> tags that don't have directive attributes
       output = output.replace(/<template(?:\s[^>]*)?>|<\/template>/gi, (match) => {
@@ -1901,7 +1918,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     output = await injectRouter(output, getRouterInjectOptions())
 
     // Strip SFC <template> wrappers but preserve client-side directive templates
-    const directiveTemplateRe2 = /@for|:for|@if|:if|x-for|x-if/
+    const directiveTemplateRe2 = REACTIVE_TEMPLATE_DIRECTIVE_RE
     output = output.replace(/<template(?:\s[^>]*)?>|<\/template>/gi, (match) => {
       if (directiveTemplateRe2.test(match)) return match
       if (match === '</template>') return match
