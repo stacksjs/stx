@@ -51,6 +51,55 @@ const defaultStxModule = import('@stacksjs/stx')
 const REACTIVE_TEMPLATE_DIRECTIVE_RE = /@for|:for|@if|:if|@else|:else|x-for|x-if|x-else/
 
 /**
+ * Extract real top-level `<script server>` elements without matching tag-like
+ * text inside HTML comments or another script body. A regex over the whole
+ * template mistakes documentation such as `// moved from <script server>` in
+ * a client script for a nested server block, then removes the rest of that
+ * client script through its closing tag.
+ */
+export function extractServerScriptsFromTemplate(content: string): {
+  serverScripts: string[]
+  templateContent: string
+} {
+  const openRe = /<script\b([^>]*)>/gi
+  const lower = content.toLowerCase()
+  const serverScripts: string[] = []
+  const retained: string[] = []
+  let retainedFrom = 0
+  let cursor = 0
+
+  while (cursor < content.length) {
+    openRe.lastIndex = cursor
+    const match = openRe.exec(content)
+    if (!match) break
+
+    const commentStart = content.indexOf('<!--', cursor)
+    if (commentStart !== -1 && commentStart < match.index) {
+      const commentEnd = content.indexOf('-->', commentStart + 4)
+      if (commentEnd === -1) break
+      cursor = commentEnd + 3
+      continue
+    }
+
+    const bodyStart = match.index + match[0].length
+    const closeStart = lower.indexOf('</script>', bodyStart)
+    if (closeStart === -1) break
+    const end = closeStart + '</script>'.length
+
+    if (/\bserver\b/i.test(match[1])) {
+      retained.push(content.slice(retainedFrom, match.index))
+      serverScripts.push(content.slice(bodyStart, closeStart))
+      retainedFrom = end
+    }
+
+    cursor = end
+  }
+
+  retained.push(content.slice(retainedFrom))
+  return { serverScripts, templateContent: retained.join('') }
+}
+
+/**
  * Build the candidate regexes for a dynamic route file (stacksjs/stx#1927).
  *
  * `fileRouteBase` is the route path with the file extension already
@@ -1527,16 +1576,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     // Extract server script bodies for variable extraction, and remove only
     // server scripts from the template. Client scripts (including <script client>
     // with signals) must remain in the template for processDirectives to transform.
-    const serverScriptRegex = /<script\b([^>]*)\bserver\b[^>]*>([\s\S]*?)<\/script>/gi
-    const serverScripts: string[] = []
-    let scriptMatch: RegExpExecArray | null
-
-    while ((scriptMatch = serverScriptRegex.exec(content)) !== null) {
-      serverScripts.push(scriptMatch[2])
-    }
-
-    // Only remove server scripts from template — client scripts stay for processDirectives
-    let templateContent = content.replace(/<script\b[^>]*\bserver\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    const { serverScripts, templateContent } = extractServerScriptsFromTemplate(content)
 
     const context: Record<string, any> = {
       __filename: filePath,
@@ -1835,16 +1875,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     const content = await Bun.file(filePath).text()
 
     // Extract server scripts only — client scripts stay for processDirectives to transform
-    const serverScriptRegex = /<script\b([^>]*)\bserver\b[^>]*>([\s\S]*?)<\/script>/gi
-    const dynServerScripts: string[] = []
-    let dynScriptMatch: RegExpExecArray | null
-
-    while ((dynScriptMatch = serverScriptRegex.exec(content)) !== null) {
-      dynServerScripts.push(dynScriptMatch[2])
-    }
-
-    // Only remove server scripts from template — client scripts stay for processDirectives
-    const templateContent = content.replace(/<script\b[^>]*\bserver\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    const { serverScripts: dynServerScripts, templateContent } = extractServerScriptsFromTemplate(content)
 
     // Build context with dynamic params
     const context: Record<string, any> = {
