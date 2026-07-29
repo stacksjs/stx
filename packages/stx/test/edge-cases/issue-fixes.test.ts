@@ -814,8 +814,9 @@ const rows = useReactiveProp('rows', [] as Row[])
       const output = await processDirectives(
         `<script client>
 const rows = state([{ name: 'Alpha' }])
+function selectRow() {}
 </script>
-<ReactiveTable :rows="rows" />`,
+<ReactiveTable :rows="rows" @select="selectRow($event.detail)" />`,
         {},
         path.join(TMP, 'reactive-table-view.stx'),
         { componentsDir } as StxOptions,
@@ -829,6 +830,9 @@ const rows = state([{ name: 'Alpha' }])
       expect(output).toContain(':rows="rows"')
       expect(output).toContain('data-stx-scope="stx_reactive_table_')
       expect(output).toMatch(/useReactiveProp\(["']rows["']/)
+      expect(output).toMatch(/<div\s+@select="selectRow\(\$event\.detail\)"\s+:rows="rows"\s+data-stx-scope=/)
+      expect(output).not.toMatch(/<script[^>]*@select=/)
+      expect(output).not.toMatch(/<script[^>]*:rows=/)
     }
     finally {
       fs.rmSync(componentsDir, { recursive: true, force: true })

@@ -951,13 +951,12 @@ async function processCustomElementTags(
       // This connects parent handlers to child defineEmits() — the child emits
       // a CustomEvent that bubbles up, and the root element's @event listener catches it.
       if (Object.keys(resolvedProps.events).length > 0) {
-        const firstTagMatch = finalContent.match(/^(\s*<)([a-zA-Z][a-zA-Z0-9-]*)(\s|>|\/)/s)
-        if (firstTagMatch) {
+        const root = findRenderedComponentRoot(finalContent)
+        if (root) {
           const eventAttrs = Object.entries(resolvedProps.events)
             .map(([event, handler]) => `${event}="${escapeAttribute(handler)}"`)
             .join(' ')
-          const insertPos = firstTagMatch[1].length + firstTagMatch[2].length
-          finalContent = finalContent.substring(0, insertPos) + ' ' + eventAttrs + finalContent.substring(insertPos)
+          finalContent = finalContent.substring(0, root.insertPos) + ' ' + eventAttrs + finalContent.substring(root.insertPos)
         }
       }
 
@@ -978,9 +977,8 @@ async function processCustomElementTags(
  */
 // eslint-disable-next-line pickier/no-unused-vars
 function emitClientReactiveAttrs(html: string, clientReactive: Record<string, string>): string {
-  // Find the first opening HTML tag in the rendered output
-  const firstTagMatch = html.match(/^(\s*<)([a-zA-Z][a-zA-Z0-9-]*)(\s|>|\/)/s)
-  if (!firstTagMatch) {
+  const root = findRenderedComponentRoot(html)
+  if (!root) {
     return html
   }
 
@@ -990,8 +988,56 @@ function emitClientReactiveAttrs(html: string, clientReactive: Record<string, st
     .join(' ')
 
   // Insert after the tag name
-  const insertPos = firstTagMatch[1].length + firstTagMatch[2].length
-  return html.substring(0, insertPos) + ' ' + reactiveAttrs + html.substring(insertPos)
+  return html.substring(0, root.insertPos) + ' ' + reactiveAttrs + html.substring(root.insertPos)
+}
+
+/**
+ * Find the actual rendered component root, not a leading setup script or
+ * preserved style tag. Signal components emit their scoped setup script before
+ * a `data-stx-scope` wrapper, so forwarding props to the first textual tag
+ * incorrectly attached them to `<script>` and made useReactiveProp unreadable.
+ */
+function findRenderedComponentRoot(html: string): { insertPos: number } | null {
+  const scopedRoot = /<([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*\bdata-stx-scope(?:\s|=|>)/i.exec(html)
+  if (scopedRoot) {
+    return {
+      insertPos: scopedRoot.index + 1 + scopedRoot[1].length,
+    }
+  }
+
+  let cursor = 0
+  while (cursor < html.length) {
+    const rest = html.slice(cursor)
+    const whitespace = rest.match(/^\s+/)
+    if (whitespace) {
+      cursor += whitespace[0].length
+      continue
+    }
+
+    if (rest.startsWith('<!--')) {
+      const end = html.indexOf('-->', cursor + 4)
+      if (end === -1) return null
+      cursor = end + 3
+      continue
+    }
+
+    const nonRootTag = rest.match(/^<(script|style)\b[^>]*>/i)
+    if (nonRootTag) {
+      const closeTag = `</${nonRootTag[1].toLowerCase()}>`
+      const end = html.toLowerCase().indexOf(closeTag, cursor + nonRootTag[0].length)
+      if (end === -1) return null
+      cursor = end + closeTag.length
+      continue
+    }
+
+    const root = rest.match(/^<([a-zA-Z][a-zA-Z0-9-]*)(?:\s|>|\/)/)
+    if (!root) return null
+    return {
+      insertPos: cursor + 1 + root[1].length,
+    }
+  }
+
+  return null
 }
 
 /**
