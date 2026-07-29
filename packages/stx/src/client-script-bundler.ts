@@ -15,6 +15,8 @@ import type { BunPlugin } from 'bun'
 import { getPublicEnvDefine } from './public-env'
 import { stateDir } from './state-dir'
 
+const BUNDLE_CACHE_VERSION = 2
+
 // Known imports that are NOT user imports — handled by other transforms.
 //
 // `@stacksjs/browser` is deliberately NOT here. It used to be, on the grounds
@@ -251,7 +253,7 @@ export async function bundleClientScript(
   // stacksjs/stx#1723 for the bug this addresses (helper edits silently
   // failed to invalidate the bundle).
   const hasher = new Bun.CryptoHasher('md5')
-  hasher.update(code + filePath)
+  hasher.update(`${BUNDLE_CACHE_VERSION}\0${code}\0${filePath}`)
   const hash = hasher.digest('hex').slice(0, 12)
 
   // Check cache. A cache hit requires both the bundled JS to exist AND
