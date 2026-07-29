@@ -125,6 +125,19 @@ describe('dynamic route params in <script server>', () => {
     expect(probe.routeParamsId).toBe('café-42')
     expect(probe.routeQueryX).toBe('1')
   })
+
+  it('carries escaped client route params in SPA fragments', async () => {
+    const res = await fetch(`${BASE}/probe/%3Cjob-15%3E`, {
+      headers: { 'X-STX-Router': 'true' },
+    })
+    const html = await res.text()
+
+    expect(res.headers.get('X-STX-Fragment')).toBe('true')
+    expect(html).toContain('data-stx-route-params')
+    expect(html).toContain('window.stx.setRouteParams')
+    expect(html).toContain('\\u003Cjob-15>')
+    expect(html).not.toContain('var p={"id":"<job-15>"}')
+  })
 })
 
 describe('__stxServeContext in <script server>', () => {

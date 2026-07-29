@@ -544,8 +544,11 @@ catch {
 
   // Inject route params into HTML content via stx runtime
   const injectRouteParams = (content: string, params: Record<string, string>): string => {
-    // Use stx.setRouteParams() which internally handles window access
-    const paramsScript = `<script>(function(){var s=typeof stx!=='undefined'?stx:{};s._rp=${JSON.stringify(params)};if(s.setRouteParams)s.setRouteParams(s._rp);})()</script>`
+    const serializedParams = JSON.stringify(params)
+      .replace(/</g, '\\u003C')
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029')
+    const paramsScript = `<script data-stx-route-params>(function(){var p=${serializedParams};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
     // Insert before closing </head> or at start of <body>
     if (content.includes('</head>')) {
       return content.replace('</head>', `${paramsScript}</head>`)

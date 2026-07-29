@@ -216,6 +216,36 @@ describe('router browser navigation behavior', () => {
     expect(pageScript?.previousElementSibling?.id).toBe('order-form')
   })
 
+  it('re-executes dynamic route params emitted outside the routed container', async () => {
+    const window = installRouter(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app">
+          <meta name="stx-layout-group" content="app">
+        </head>
+        <body><main>Home</main></body>
+      </html>
+    `, async () => response(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app">
+          <meta name="stx-layout-group" content="app">
+          <script data-stx-route-params>
+            window.__stx_rp = { id: 'job-15' }
+          </script>
+        </head>
+        <body><main><section>Job</section></main></body>
+      </html>
+    `))
+
+    await window.stxRouter.navigate('/jobs/job-15')
+    await waitForRouterSwap()
+
+    const routeScript = [...window.document.querySelectorAll('script[data-stx-page]')]
+      .find(script => script.textContent?.includes('__stx_rp'))
+    expect(routeScript?.textContent).toContain("id: 'job-15'")
+  })
+
   it('preserves component script adjacency for fragment swaps', async () => {
     const window = installRouter(`
       <html>

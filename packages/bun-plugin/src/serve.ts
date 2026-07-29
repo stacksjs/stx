@@ -1965,7 +1965,11 @@ export async function serve(options: ServeOptions): Promise<void> {
     // Inject route params for client-side useRoute().params — the same
     // decoded paramsObj the server script saw, so both sides agree.
     if (paramNames.length > 0) {
-      const paramsScript = `<script>if(window.stx)window.stx._rp=${JSON.stringify(paramsObj)};else window.__stx_rp=${JSON.stringify(paramsObj)};</script>`
+      const serializedParams = JSON.stringify(paramsObj)
+        .replace(/</g, '\\u003C')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029')
+      const paramsScript = `<script data-stx-route-params>(function(){var p=${serializedParams};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
       if (output.includes('</head>')) {
         output = output.replace('</head>', `${paramsScript}\n</head>`)
       }
@@ -2636,11 +2640,15 @@ export async function serve(options: ServeOptions): Promise<void> {
                   // Extract ALL page-specific scripts from the full page response.
                   // These may be in <head> or before </body> — outside <main>.
                   // Includes: setup functions (__stx_setup_), partial scope IIFEs,
-                  // and the reactive bridge (initScope calls).
+                  // the dynamic route params, and the reactive bridge (initScope calls).
                   // Excludes: signals runtime IIFE, x-element runtime, router script.
                   const pageSetupScripts: string[] = []
-                  const allScriptRe = /<script\b[^>]*data-stx-scoped[^>]*>[\s\S]*?<\/script>/gi
+                  const routeParamsRe = /<script\b[^>]*data-stx-route-params[^>]*>[\s\S]*?<\/script>/gi
                   let setupMatch: RegExpExecArray | null
+                  while ((setupMatch = routeParamsRe.exec(content)) !== null) {
+                    pageSetupScripts.push(setupMatch[0])
+                  }
+                  const allScriptRe = /<script\b[^>]*data-stx-scoped[^>]*>[\s\S]*?<\/script>/gi
                   while ((setupMatch = allScriptRe.exec(content)) !== null) {
                     const scriptContent = setupMatch[0]
                     // Skip the signals runtime (huge IIFE starting with early_mounts shim)

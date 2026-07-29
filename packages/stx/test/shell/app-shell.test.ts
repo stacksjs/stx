@@ -8,6 +8,7 @@ import {
   detectShell,
   processShell,
   composeShellWithPage,
+  extractContainerContent,
   stripDocumentWrapper,
   isSpaNavigation,
 } from '../../src/app-shell'
@@ -263,6 +264,28 @@ describe('App Shell', () => {
       expect(result).not.toContain('<link')
       expect(result).not.toContain('<title>')
       expect(result).toContain('<p>Content</p>')
+    })
+  })
+
+  describe('extractContainerContent', () => {
+    it('preserves dynamic route params from the document head', () => {
+      const doc = `<!DOCTYPE html>
+<html>
+<head>
+  <script data-stx-route-params>window.__stx_rp = { id: 'job-15' }</script>
+</head>
+<body>
+  <nav>Dashboard</nav>
+  <main><h1>Job</h1></main>
+</body>
+</html>`
+
+      const result = extractContainerContent(doc)
+
+      expect(result).toContain('data-stx-route-params')
+      expect(result).toContain("id: 'job-15'")
+      expect(result).toContain('<h1>Job</h1>')
+      expect(result).not.toContain('<nav>')
     })
   })
 

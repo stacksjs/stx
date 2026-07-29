@@ -343,7 +343,7 @@ export function isSpaNavigation(request: Request): boolean {
 
 /**
  * Extract the inner content of the router container element from a full HTML
- * document, preserving any `<style>` tags found in `<head>`.
+ * document, preserving page styles and route state found in `<head>`.
  *
  * This is what fragment files should contain — NOT the whole body. The SPA
  * router injects fragments directly into the container element via innerHTML,
@@ -359,8 +359,10 @@ export function isSpaNavigation(request: Request): boolean {
 export function extractContainerContent(html: string, containerSelector: string = 'main'): string {
   const trimmed = html.trim()
 
-  // Preserve <style> tags from <head> so crosswind / scoped styles still apply
+  // Preserve <style> tags from <head> so crosswind / scoped styles still apply,
+  // plus the route-param handoff required before routed components mount.
   const headStyles: string[] = []
+  const headScripts: string[] = []
   const headMatch = trimmed.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)
   if (headMatch) {
     const headContent = headMatch[1]
@@ -368,6 +370,10 @@ export function extractContainerContent(html: string, containerSelector: string 
     let m: RegExpExecArray | null
     while ((m = styleRegex.exec(headContent)) !== null) {
       headStyles.push(m[0])
+    }
+    const routeParamsRegex = /<script\b[^>]*data-stx-route-params[^>]*>[\s\S]*?<\/script>/gi
+    while ((m = routeParamsRegex.exec(headContent)) !== null) {
+      headScripts.push(m[0])
     }
   }
 
@@ -441,6 +447,7 @@ export function extractContainerContent(html: string, containerSelector: string 
 
   const parts: string[] = []
   if (headStyles.length > 0) parts.push(headStyles.join('\n'))
+  if (headScripts.length > 0) parts.push(headScripts.join('\n'))
   if (bodyScripts.length > 0) parts.push(bodyScripts.join('\n'))
   parts.push(innerContent)
   return parts.join('\n')

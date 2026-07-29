@@ -1035,17 +1035,22 @@ else {
 
   // setRouteParams: called by the server-injected script to set initial params
   function setRouteParams(params) {
-    _routeParams.set(params || {});
+    var nextParams = params || {};
+    _routeParams.set(nextParams);
+    window.__stx_rp = nextParams;
+    if (window.stx) window.stx._rp = nextParams;
   }
 
   // Listen for SPA navigation to update params
   window.addEventListener('stx:navigate', function(e) {
-    // Parse params from URL if route patterns are registered
-    // For now, reset params — the server will inject them on full loads
-    // and the page's script can set them via setRouteParams() on SPA nav
-    if (e.detail && e.detail.params) {
-      _routeParams.set(e.detail.params);
-    }
+    // The destination fragment's data-stx-route-params script runs after this
+    // event and before stx:load. Reset first so a static route can never inherit
+    // params from the dynamic route that preceded it.
+    var nextParams = e.detail
+      && Object.prototype.hasOwnProperty.call(e.detail, 'params')
+      ? e.detail.params
+      : {};
+    setRouteParams(nextParams);
   });
 
   // Apply any server-injected params (set before runtime loaded)

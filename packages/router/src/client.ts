@@ -744,7 +744,7 @@ else {
           if(isSignalsRuntimeScript(s,text))return;
           if(text.indexOf('__stxRouter')!==-1)return;
           if(newContent.contains(s))return;
-          if(text.indexOf('__stx_setup_')===-1&&!s.hasAttribute('data-stx-scoped')&&!s.hasAttribute('data-stx-page'))return;
+          if(text.indexOf('__stx_setup_')===-1&&!s.hasAttribute('data-stx-scoped')&&!s.hasAttribute('data-stx-page')&&!s.hasAttribute('data-stx-route-params'))return;
           var key=text.substring(0,80);
           if(seenSetups[key])return;
           seenSetups[key]=1;
