@@ -751,8 +751,32 @@ finally {
   const mountCallbacks = [];
   const destroyCallbacks = [];
 
-  function onMount(fn) { mountCallbacks.push(fn); }
-  function onDestroy(fn) { destroyCallbacks.push(fn); }
+  function currentLifecycleScope() {
+    var el = window.__STX_CURRENT_ELEMENT__;
+    if (!el || !el.getAttribute || !window.stx || !window.stx._scopes) return null;
+    var scopeId = el.getAttribute('data-stx-scope');
+    return scopeId ? window.stx._scopes[scopeId] || null : null;
+  }
+
+  function onMount(fn) {
+    var scope = currentLifecycleScope();
+    if (scope) {
+      scope.__mountCallbacks = scope.__mountCallbacks || [];
+      scope.__mountCallbacks.push(fn);
+      return;
+    }
+    mountCallbacks.push(fn);
+  }
+
+  function onDestroy(fn) {
+    var scope = currentLifecycleScope();
+    if (scope) {
+      scope.__destroyCallbacks = scope.__destroyCallbacks || [];
+      scope.__destroyCallbacks.push(fn);
+      return;
+    }
+    destroyCallbacks.push(fn);
+  }
 
   // Drain any early mount/destroy calls captured by the pre-initialization shim
   if (window.__stx_early_mounts) { window.__stx_early_mounts.forEach(function(fn) { mountCallbacks.push(fn); }); window.__stx_early_mounts = null; }
@@ -1590,6 +1614,21 @@ catch (e) {
       && /^\\s*\\(?\\s*\\w+(?:\\s*,\\s*\\w+)?\\s*\\)?\\s+(?:in|of)\\s+.+\\s*$/.test(expr);
   }
 
+  function getModelBinding(el) {
+    if (!el || !el.attributes) return null;
+    var prefixes = ['x-model', ':model', '@model'];
+    var attrs = Array.from(el.attributes);
+    for (var i = 0; i < attrs.length; i++) {
+      var name = attrs[i] && attrs[i].name;
+      if (!name) continue;
+      for (var j = 0; j < prefixes.length; j++) {
+        if (name === prefixes[j] || name.indexOf(prefixes[j] + '.') === 0)
+          return { name: name, expression: attrs[i].value };
+      }
+    }
+    return null;
+  }
+
   function bindParentComponentProps(el, callerScope) {
     if (!el || !el.getAttribute || el.__stx_parent_props_bound) return;
     var names = (el.getAttribute('data-stx-parent-bindings') || '').split(/\\s+/).filter(Boolean);
@@ -1712,8 +1751,15 @@ catch (e) {
                 fragment.appendChild(document.createTextNode(part));
                 return;
               }
-              const span = document.createElement('span');
-              fragment.appendChild(span);
+              // Native text-only elements cannot contain the span wrapper used
+              // for general interpolation. Bind a text node there so options,
+              // titles, and textareas retain valid DOM and accessible labels.
+              const isTextOnlyParent = parentEl
+                && (parentEl.tagName === 'OPTION' || parentEl.tagName === 'TITLE' || parentEl.tagName === 'TEXTAREA');
+              const bindingNode = isTextOnlyParent
+                ? document.createTextNode('')
+                : document.createElement('span');
+              fragment.appendChild(bindingNode);
               // Use captured scope, not dynamic lookup
               effect(() => {
                 try {
@@ -1721,13 +1767,13 @@ catch (e) {
                   const pipeResult = parsePipeExpression(expr, capturedScope);
                   if (pipeResult) {
                     const unwrapScope = createAutoUnwrapProxy(capturedScope);
-                    span.textContent = executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
+                    bindingNode.textContent = executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
                   }
 else {
                     // Use auto-unwrap proxy (Feature #1)
                     const unwrapScope = createAutoUnwrapProxy(capturedScope);
                     const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
-                    span.textContent = fn(...Object.values(unwrapScope));
+                    bindingNode.textContent = fn(...Object.values(unwrapScope));
                   }
                 }
 catch (e) {
@@ -1736,11 +1782,11 @@ catch (e) {
                   // Retry without auto-unwrap so signal functions remain callable.
                   try {
                     const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
-                    span.textContent = fn(...Object.values(capturedScope));
+                    bindingNode.textContent = fn(...Object.values(capturedScope));
                   }
 catch (e2) {
                     if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expr, e2);
-                    span.textContent = '';
+                    bindingNode.textContent = '';
                   }
                 }
               });
@@ -1814,9 +1860,9 @@ else if (part) {
     }
 
     // Handle @model / :model / x-model (two-way binding)
-    if (el.hasAttribute('@model') || el.hasAttribute(':model') || el.hasAttribute('x-model')) {
-      var modelAttr = el.hasAttribute(':model') ? ':model' : el.hasAttribute('x-model') ? 'x-model' : '@model';
-      bindModel(el, el.getAttribute(modelAttr), scope, modelAttr);
+    var modelBinding = getModelBinding(el);
+    if (modelBinding) {
+      bindModel(el, modelBinding.expression, scope, modelBinding.name);
     }
 
     // Capture scope once for all attribute bindings on this element
@@ -2201,20 +2247,40 @@ catch (e) {
     el.__stx_model_bound = true;
     const tag = el.tagName.toLowerCase();
     const type = el.type;
+    const modifiers = attrName.split('.').slice(1);
+    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
+    const coerceValue = (value) => {
+      var next = value;
+      if (modifiers.includes('trim') && typeof next === 'string') next = next.trim();
+      if (modifiers.includes('number') && next !== '') {
+        var numeric = Number(next);
+        if (!Number.isNaN(numeric)) next = numeric;
+      }
+      return next;
+    };
 
-    const getValue = () => toValue(expr, el);
+    const getValue = () => {
+      var direct = capturedScope[expr];
+      if (direct && typeof direct === 'function' && (direct._isSignal || direct._isDerived))
+        return direct();
+      try {
+        var unwrapScope = createAutoUnwrapProxy(capturedScope);
+        var fn = new Function('__scope__', 'with(__scope__) { return (' + expr + ') }');
+        return fn(unwrapScope);
+      }
+      catch (e) {
+        if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] ' + attrName + ' get error:', expr, e);
+        return '';
+      }
+    };
     const setValue = (val) => {
       try {
-        // Check component scope first, then element scope - use passed scope
-        const elementScope = findElementScope(el);
-        const scope = { ...passedScope, ...(elementScope || {}) };
-
-        if (scope[expr] && scope[expr]._isSignal) {
-          scope[expr].set(val);
+        if (capturedScope[expr] && capturedScope[expr]._isSignal) {
+          capturedScope[expr].set(val);
         }
 else {
-          const fn = new Function(...Object.keys(scope), 'v', expr + ' = v');
-          fn(...Object.values(scope), val);
+          const fn = new Function(...Object.keys(capturedScope), 'v', expr + ' = v');
+          fn(...Object.values(capturedScope), val);
         }
       }
 catch (e) {
@@ -2226,13 +2292,13 @@ catch (e) {
       effect(() => { el.checked = getValue(); });
       el.addEventListener('change', () => setValue(el.checked));
     }
-else if (tag === 'select') {
+    else if (tag === 'select') {
       effect(() => { el.value = getValue(); });
-      el.addEventListener('change', () => setValue(el.value));
+      el.addEventListener('change', () => setValue(coerceValue(el.value)));
     }
 else {
       effect(() => { el.value = getValue() ?? ''; });
-      el.addEventListener('input', () => setValue(el.value));
+      el.addEventListener(modifiers.includes('lazy') ? 'change' : 'input', () => setValue(coerceValue(el.value)));
     }
 
     el.removeAttribute(attrName);
@@ -5584,9 +5650,9 @@ catch (e) { console.warn('[stx] mount callback error:', e); }
       var sa = el.hasAttribute(':show') ? ':show' : el.hasAttribute('x-show') ? 'x-show' : '@show';
       bindShow(el, el.getAttribute(sa), componentScope, sa);
     }
-    if (el.hasAttribute && (el.hasAttribute('@model') || el.hasAttribute(':model') || el.hasAttribute('x-model'))) {
-      var ma = el.hasAttribute(':model') ? ':model' : el.hasAttribute('x-model') ? 'x-model' : '@model';
-      bindModel(el, el.getAttribute(ma), componentScope, ma);
+    var mb = getModelBinding(el);
+    if (mb) {
+      bindModel(el, mb.expression, componentScope, mb.name);
     }
     // Process children, skipping scoped containers and script/style elements
     if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
