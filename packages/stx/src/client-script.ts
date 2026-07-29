@@ -613,6 +613,57 @@ export function extractBridgeData(context: Record<string, unknown>): Record<stri
 }
 
 /**
+ * Return the local bindings introduced by a destructuring declaration.
+ *
+ * The bridge only needs this to avoid emitting a same-named `var`, so being
+ * conservative for nested patterns is preferable to generating invalid
+ * JavaScript. Object aliases use their local name (`source: local`), while
+ * defaults are removed from either form.
+ */
+function extractDestructuredBindings(pattern: string, objectPattern: boolean): Set<string> {
+  const bindings = new Set<string>()
+  for (const rawPart of pattern.split(',')) {
+    let part = rawPart.trim().replace(/^\.\.\./, '').trim()
+    if (!part)
+      continue
+
+    if (objectPattern) {
+      const colon = part.lastIndexOf(':')
+      if (colon !== -1)
+        part = part.slice(colon + 1).trim()
+    }
+
+    part = part.split('=')[0].trim()
+    if (/^[A-Za-z_$][\w$]*$/.test(part))
+      bindings.add(part)
+  }
+  return bindings
+}
+
+/**
+ * Detect whether client code already owns an identifier.
+ *
+ * Direct declarations were always handled, but Vue-style prop declarations
+ * are normally destructured. Without this check the bridge emitted
+ * `var title = ...` immediately before
+ * `const { title } = defineProps()`, which is a parse-time error.
+ */
+function declaresClientIdentifier(code: string, name: string): boolean {
+  if (new RegExp(`(?:const|let|var|function|class)\\s+${name}\\b`).test(code))
+    return true
+
+  for (const match of code.matchAll(/(?:const|let|var)\s*\{([^}]*)\}/g)) {
+    if (extractDestructuredBindings(match[1], true).has(name))
+      return true
+  }
+  for (const match of code.matchAll(/(?:const|let|var)\s*\[([^\]]*)\]/g)) {
+    if (extractDestructuredBindings(match[1], false).has(name))
+      return true
+  }
+  return false
+}
+
+/**
  * Generate the server → client data bridge: `var <name> = <json>;` for each
  * template-context value referenced — but NOT redeclared — by the client script.
  * Lets `<script client>` seed reactive state from `<script server>` data without
@@ -630,7 +681,7 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
     if (!new RegExp(`\\b${name}\\b`).test(code))
       continue
     // …and does not itself declare (never clobber a client-owned name).
-    if (new RegExp(`(?:const|let|var|function|class)\\s+${name}\\b`).test(code))
+    if (declaresClientIdentifier(code, name))
       continue
     let json: string | undefined
     try {
