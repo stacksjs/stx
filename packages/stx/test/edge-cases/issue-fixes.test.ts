@@ -517,7 +517,17 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
   it('only updates the local signal when the parsed value actually changes', () => {
     // Guards against MutationObserver re-firing for unrelated attribute
     // writes (and prevents feedback loops if .set() ever propagated back).
+    expect(runtime).toMatch(/if\s*\(raw === lastRaw\)\s*return/)
     expect(runtime).toMatch(/if\s*\(next !== s\(\)\)\s*s\.set\(next\)/)
+  })
+
+  it('evaluates prop expressions lazily without subscribing to every child signal', () => {
+    const start = runtime.indexOf('const evalAttrExpr')
+    const end = runtime.indexOf('// Known directive names', start)
+    const evalAttrSection = runtime.slice(start, end)
+
+    expect(evalAttrSection).toContain('with(__scope__)')
+    expect(evalAttrSection).not.toContain('Object.values(unwrapScope)')
   })
 
   it('default parse coerces "true"/"false"/numbers/empty to typed values', () => {
@@ -833,6 +843,8 @@ function selectRow() {}
       expect(output).toMatch(/<div\s+@select="selectRow\(\$event\.detail\)"\s+:rows="rows"\s+data-stx-scope=/)
       expect(output).not.toMatch(/<script[^>]*@select=/)
       expect(output).not.toMatch(/<script[^>]*:rows=/)
+      expect(output).toMatch(/<div[^>]+data-stx-scope="(stx_reactive_table_[^"]+)"[^>]*>[\s\S]*?<script data-stx-scoped[^>]*>[\s\S]*?document\.querySelector\('\[data-stx-scope="\1"\]'\)/)
+      expect(output).toContain('window.__STX_CURRENT_ELEMENT__ = __previousCurrentElement')
     }
     finally {
       fs.rmSync(componentsDir, { recursive: true, force: true })

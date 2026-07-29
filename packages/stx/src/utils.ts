@@ -1068,6 +1068,8 @@ export async function renderComponentWithSlot(
   const { state, derived, effect, batch, onMounted, onBeforeUnmount, onUnmounted, defineEmits, defineExpose, defineSlots, defineProps, withDefaults, registerStoresClient, useStore, useFetch, useRef, useQuery, useMutation, useOptimistic, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useSessionStorage, useCookie, useReactiveProp, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, inject, ref, reactive, computed, watch, watchEffect, nextTick } = window.stx;
   const __scope = window.stx._scopes = window.stx._scopes || {};
   const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
+  const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;
+  window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="${scopeId}"]');
 
   // Scope-specific lifecycle callbacks
   __scopeVars.__mountCallbacks = __scopeVars.__mountCallbacks || [];
@@ -1075,6 +1077,7 @@ export async function renderComponentWithSlot(
   const onMount = (fn) => __scopeVars.__mountCallbacks.push(fn);
   const onDestroy = (fn) => __scopeVars.__destroyCallbacks.push(fn);
 
+try {
 ${content}
 
   // Register all defined signals and functions in this scope
@@ -1084,6 +1087,10 @@ ${content}
   }
 catch (e) {}
   Object.assign(__scopeVars, __localVars);
+}
+finally {
+  window.__STX_CURRENT_ELEMENT__ = __previousCurrentElement;
+}
 })();`
         // Islands (#1746): when this component is deferred via client="<trigger>",
         // emit the setup script as an INERT type="stx/island" so the browser does
@@ -1096,9 +1103,10 @@ catch (e) {}
         return `<script data-stx-scoped${attrs}>${wrappedContent}</script>`
       })
 
-      // Prepend scoped scripts BEFORE HTML so scope is registered before DOMContentLoaded processes elements
-      // Append preserved style after HTML
-      output = scopedScripts.join('\n') + '\n' + output
+      // Emit setup immediately after its root. The browser still executes it
+      // before DOMContentLoaded, while useReactiveProp can now read and observe
+      // the root that already exists in the parsed DOM.
+      output = output + '\n' + scopedScripts.join('\n')
       if (preservedStyle) {
         output += '\n' + preservedStyle
       }

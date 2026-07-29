@@ -1790,15 +1790,15 @@ else if (part) {
 
         // Use auto-unwrap proxy (Feature #1)
         const unwrapScope = createAutoUnwrapProxy(attrCapturedScope);
-        const fn = new Function(...Object.keys(attrCapturedScope), 'return ' + expr);
-        return maybeUnwrapSignal(fn(...Object.values(unwrapScope)));
+        const fn = new Function('__scope__', 'with(__scope__) { return (' + expr + ') }');
+        return maybeUnwrapSignal(fn(unwrapScope));
       }
 catch (e) {
         // Auto-unwrap can break explicit signal calls like errorData().message
         // Retry without auto-unwrap so signal functions remain callable
         try {
-          const fn = new Function(...Object.keys(attrCapturedScope), 'return ' + expr);
-          return maybeUnwrapSignal(fn(...Object.values(attrCapturedScope)));
+          const fn = new Function('__scope__', 'with(__scope__) { return (' + expr + ') }');
+          return maybeUnwrapSignal(fn(attrCapturedScope));
         }
 catch (e2) {
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Attribute expression error:', expr, e2);
@@ -3691,8 +3691,10 @@ catch (e) {}
     };
     var root = window.__STX_CURRENT_ELEMENT__;
     var initial;
+    var lastRaw = null;
     if (root && root.hasAttribute && root.hasAttribute(name)) {
-      initial = parse(root.getAttribute(name));
+      lastRaw = root.getAttribute(name);
+      initial = parse(lastRaw);
     } else {
       initial = defaultValue;
     }
@@ -3700,7 +3702,10 @@ catch (e) {}
     if (!root) return s;
     var observer = new MutationObserver(function() {
       var hasAttr = root.hasAttribute(name);
-      var next = hasAttr ? parse(root.getAttribute(name)) : defaultValue;
+      var raw = hasAttr ? root.getAttribute(name) : null;
+      if (raw === lastRaw) return;
+      lastRaw = raw;
+      var next = hasAttr ? parse(raw) : defaultValue;
       if (next !== s()) s.set(next);
     });
     observer.observe(root, { attributes: true, attributeFilter: [name] });
