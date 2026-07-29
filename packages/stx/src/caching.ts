@@ -1,7 +1,7 @@
 import type { StxOptions } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileExists } from './utils'
+import { clearComponentCache, fileExists } from './utils'
 
 /**
  * Cache entry structure
@@ -168,6 +168,7 @@ export async function getCachedRouterScript(): Promise<string> {
  */
 export function clearDevCaches(): void {
   fileContentCache.clear()
+  clearComponentCache()
   _cachedSignalsRuntime = null
   _cachedSignalsRuntimeDev = null
   _cachedRouterScript = null

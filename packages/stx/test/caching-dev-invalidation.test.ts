@@ -27,7 +27,11 @@
  * can't crash a clean checkout.)
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { __setSignalsGeneratorsForTest, clearDevCaches, getCachedSignalsRuntime } from '../src/caching'
+import { getComponentCacheStats, renderComponentWithSlot } from '../src/utils'
 
 let prodGenCount = 0
 let devGenCount = 0
@@ -72,5 +76,32 @@ describe('signals runtime cache + clearDevCaches (stacksjs/stx#1745 item C)', ()
 
   it('clearDevCaches() is idempotent and safe to call with an empty cache', () => {
     expect(() => { clearDevCaches(); clearDevCaches() }).not.toThrow()
+  })
+
+  it('clears cached child component source after an edit', async () => {
+    const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-dev-cache-'))
+    try {
+      const componentPath = path.join(tempDir, 'StatusCard.stx')
+      await Bun.write(componentPath, '<p>first version</p>')
+
+      await renderComponentWithSlot(
+        'StatusCard',
+        {},
+        '',
+        tempDir,
+        {},
+        path.join(tempDir, 'page.stx'),
+        {},
+        new Set(),
+        new Set(),
+      )
+      expect(getComponentCacheStats().size).toBeGreaterThan(0)
+
+      clearDevCaches()
+      expect(getComponentCacheStats().size).toBe(0)
+    }
+    finally {
+      await fs.promises.rm(tempDir, { recursive: true, force: true })
+    }
   })
 })
