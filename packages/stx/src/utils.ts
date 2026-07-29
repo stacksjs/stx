@@ -1001,7 +1001,7 @@ export async function renderComponentWithSlot(
     const { defaultSlot, namedSlots } = parsedSlotContent
 
     // Apply slots to the template (handles named slots, scoped slots, and default slots)
-    templateContent = await applySlots(templateContent, defaultSlot || slotContent, namedSlots, componentContext)
+    templateContent = await applySlots(templateContent, defaultSlot, namedSlots, componentContext)
 
     // Handle HTML content in component props
     for (const [key, value] of Object.entries(componentContext)) {

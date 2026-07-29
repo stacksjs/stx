@@ -17,6 +17,7 @@ describe('Component Resolution', () => {
     await Bun.write(path.join(COMPONENTS_DIR, 'greeting.stx'), `<div class="greeting"><h1>{{ title }}</h1><p>{{ message }}</p></div>`)
     await Bun.write(path.join(COMPONENTS_DIR, 'my-button.stx'), `<button class="btn btn-{{ variant }}">{{ label }}</button>`)
     await Bun.write(path.join(COMPONENTS_DIR, 'slot-card.stx'), `<div class="card"><div class="card-body"><slot /></div></div>`)
+    await Bun.write(path.join(COMPONENTS_DIR, 'named-slot-card.stx'), `<div class="card"><strong><slot name="value" /></strong><slot /></div>`)
     await Bun.write(path.join(COMPONENTS_DIR, 'with-script.stx'), `<script>\nconst computed = "Hello " + name;\n</script>\n<div>{{ computed }}</div>`)
     await Bun.write(path.join(COMPONENTS_DIR, 'wrapper.stx'), `<div class="wrapper"><h2>{{ heading }}</h2><div class="content"><slot /></div></div>`)
     await Bun.write(path.join(COMPONENTS_DIR, 'circular-a.stx'), `<div>A: @component('circular-a')</div>`)
@@ -80,6 +81,26 @@ describe('Component Resolution', () => {
 
     expect(result).toContain('<div class="card">')
     expect(result).toContain('<p>This is slot content</p>')
+  })
+
+  it('does not leak named-only slot markup into the default slot', async () => {
+    const deps = new Set<string>()
+    const result = await renderComponentWithSlot(
+      'named-slot-card',
+      {},
+      '<template #value>{{ total() }}</template>',
+      COMPONENTS_DIR,
+      {},
+      path.join(TEMP_DIR, 'test.stx'),
+      {},
+      new Set(),
+      deps,
+    )
+
+    expect(result).toContain('<strong')
+    expect(result).toContain('{{ total() }}</strong>')
+    expect(result).not.toContain('</template>')
+    expect(result.match(/\{\{ total\(\) \}\}/g)).toHaveLength(1)
   })
 
   it('should return error comment when component not found', async () => {
