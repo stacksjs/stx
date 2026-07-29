@@ -616,7 +616,7 @@
     "theme": "light"
   },
   "dependencies": {
-    "@cwcss/crosswind": "^0.2.6",
+    "@cwcss/crosswind": "^0.2.12",
     "prettier": "^3.8.1"
   },
   "devDependencies": {

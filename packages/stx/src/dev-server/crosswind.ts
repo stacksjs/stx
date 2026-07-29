@@ -130,11 +130,19 @@ async function tryImportCrosswind(importPath: string): Promise<CrosswindModule |
 }
 
 /**
- * Find potential crosswind paths by searching up the directory tree
+ * Crosswind copies installed by the PROJECT being served, nearest first.
+ *
+ * These are tried before a bare-specifier import. `import('@cwcss/crosswind')`
+ * resolves relative to this file, so it always finds the copy hoisted next to
+ * stx itself and an app's own — usually newer — crosswind was ignored. The
+ * engine version decides what CSS a class compiles to, so serving an app with
+ * a different version than it declares produced output the app could not
+ * reproduce: arbitrary filter values like `blur-[50px]` compiled to
+ * `blur(50pxpx)` and `backdrop-saturate-[180%]` to `saturate(NaN)`, both of
+ * which a browser drops, so the utility silently did nothing.
  */
-function findCrosswindPaths(): string[] {
+function findProjectCrosswindPaths(): string[] {
   const paths: string[] = []
-  const homeDir = process.env.HOME || process.env.USERPROFILE || ''
 
   // Search from current working directory up. Check pantry/ as well as
   // node_modules/ at each level — pantry is Stacks' vendored package
@@ -152,6 +160,18 @@ function findCrosswindPaths(): string[] {
     paths.push(path.join(currentDir, 'pantry', '@stacksjs', 'crosswind', 'dist', 'index.js'))
     currentDir = path.dirname(currentDir)
   }
+
+  return paths
+}
+
+/**
+ * Last-resort locations: a crosswind checkout sitting somewhere on this
+ * machine. Only reached when neither the project nor stx's own dependency
+ * provides one, so a stray checkout can never shadow an installed version.
+ */
+function findDevCrosswindPaths(): string[] {
+  const paths: string[] = []
+  const homeDir = process.env.HOME || process.env.USERPROFILE || ''
 
   // Common development locations (relative to home)
   if (homeDir) {
@@ -186,7 +206,31 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
   crosswindLoadAttempted = true
 
   try {
-    // Strategy 1: Standard npm imports
+    const loadFrom = async (candidates: string[]): Promise<CrosswindModule | null> => {
+      for (const candidate of candidates) {
+        if (!await Bun.file(candidate).exists())
+          continue
+        const result = await tryImportCrosswind(candidate)
+        if (result) {
+          if (!process.env.STACKS_DEV_QUIET)
+            console.log(`${colors.green}[Crosswind]${colors.reset} CSS engine loaded from ${path.dirname(path.dirname(candidate))}`)
+          return result
+        }
+      }
+      return null
+    }
+
+    // Strategy 1: the crosswind the PROJECT installed. This comes first
+    // because a bare import resolves relative to stx, not to the app, so
+    // stx's own copy used to win even when the app declared a newer one —
+    // and the engine version decides what a class compiles to.
+    const projectModule = await loadFrom(findProjectCrosswindPaths())
+    if (projectModule) {
+      crosswindModule = projectModule
+      return crosswindModule
+    }
+
+    // Strategy 2: stx's own dependency, via standard resolution.
     const importPaths = [
       '@cwcss/crosswind',
       '@cwcss/crosswind/dist/index.js',
@@ -204,18 +248,12 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
       }
     }
 
-    // Strategy 2: Search filesystem for linked packages
-    const localPaths = findCrosswindPaths()
-    for (const localPath of localPaths) {
-      if (await Bun.file(localPath).exists()) {
-        const result = await tryImportCrosswind(localPath)
-        if (result) {
-          crosswindModule = result
-          if (!process.env.STACKS_DEV_QUIET)
-            console.log(`${colors.green}[Crosswind]${colors.reset} CSS engine loaded from ${path.dirname(path.dirname(localPath))}`)
-          return crosswindModule
-        }
-      }
+    // Strategy 3: a checkout somewhere on this machine. Last, so a stray
+    // clone can never shadow a version the project or stx actually declares.
+    const devModule = await loadFrom(findDevCrosswindPaths())
+    if (devModule) {
+      crosswindModule = devModule
+      return crosswindModule
     }
 
     throw new Error('Crosswind CSSGenerator not found in any location')

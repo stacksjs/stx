@@ -1336,16 +1336,45 @@ export async function serve(options: ServeOptions): Promise<void> {
       return crosswindModule
     crosswindLoadAttempted = true
 
+    // The crosswind the SERVED PROJECT installed, nearest first. This is
+    // tried before a bare import because `import('@cwcss/crosswind')`
+    // resolves relative to this file and therefore always found the copy
+    // hoisted next to bun-plugin-stx, ignoring the app's own — usually
+    // newer — version. Since the engine version decides what a class
+    // compiles to, that served CSS the app could not reproduce: arbitrary
+    // filter values such as `blur-[50px]` came out as `blur(50pxpx)` and
+    // `backdrop-saturate-[180%]` as `saturate(NaN)`, both of which a
+    // browser drops, so the utility silently did nothing.
+    let dir = process.cwd()
+    while (dir !== nodePath.dirname(dir)) {
+      for (const store of ['node_modules', 'pantry']) {
+        for (const entry of ['dist/index.js', 'src/index.ts']) {
+          const candidate = nodePath.join(dir, store, '@cwcss', 'crosswind', entry)
+          try {
+            if (!await Bun.file(candidate).exists())
+              continue
+            const mod = await import(candidate)
+            if (mod?.CSSGenerator) {
+              crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
+              return crosswindModule
+            }
+          }
+          catch { /* try the next candidate */ }
+        }
+      }
+      dir = nodePath.dirname(dir)
+    }
+
     try {
-      // Try the npm package first
+      // bun-plugin-stx's own dependency
       const mod = await import('@cwcss/crosswind')
       crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
       return crosswindModule
     }
     catch {
       try {
-        // Fallback to local development path
-
+        // Last resort: a checkout on this machine, so a stray clone can
+        // never shadow a version the project or the plugin declares.
         const localPath = nodePath.join(process.env.HOME || '', 'Code/Tools/crosswind/packages/crosswind/src/index.ts')
         const mod = await import(localPath)
         crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
