@@ -315,12 +315,13 @@ else {
   // expressions like store.someSignal (no parens) and store.x === 'y'
   // resolve to the value. Action methods on the store pass through as
   // functions because they don't carry _isSignal/_isDerived markers.
-  function createAutoUnwrapProxy(scope) {
+  function createAutoUnwrapProxy(scope, preserveSignal) {
     return new Proxy(scope, {
       get(target, prop) {
         const val = target[prop];
         // If it's a signal or derived, call it to get the value
         if (val && typeof val === 'function' && (val._isSignal || val._isDerived)) {
+          if (preserveSignal && preserveSignal(prop)) return val;
           return val();
         }
         // If it's an stx store, return a recursively-unwrapping wrapper so
@@ -1445,6 +1446,11 @@ catch (e) {
     return signalApi.test(expression);
   }
 
+  function expressionCallsSignal(expression, name) {
+    var escapedName = name.replace(/[-/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');
+    return new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\(').test(expression);
+  }
+
   function executeHandler(expr, event, el) {
     try {
       // Skip placeholder expressions like __TITLE__ (build-time placeholders)
@@ -1649,7 +1655,15 @@ catch (e) {
       effect(function() {
         var value;
         try {
-          var unwrapScope = createAutoUnwrapProxy(scope);
+          // Support both signal styles in forwarded props:
+          //   :open="open" and :open="open()".
+          // Auto-unwrap bare signals, but preserve a signal function when this
+          // expression explicitly calls it or accesses its object API.
+          var unwrapScope = createAutoUnwrapProxy(scope, function(prop) {
+            if (typeof prop !== 'string') return false;
+            return expressionCallsSignal(expression, prop)
+              || expressionUsesSignalApi(expression, prop);
+          });
           var fn = new Function('__scope__', 'with(__scope__) { return (' + expression + ') }');
           value = fn(unwrapScope);
           if (value && typeof value === 'function' && (value._isSignal || value._isDerived)) value = value();
@@ -2039,13 +2053,27 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
 
         // Capture scope at setup time so @for loop variables are available when event fires
         const parentEventNames = (el.getAttribute && el.getAttribute('data-stx-parent-events') || '').split(/\\s+/);
-        const eventCapturedScope = el.__stx_parent_scope && parentEventNames.includes(eventName)
+        const isForwardedComponentEvent = !!(el.__stx_parent_scope && parentEventNames.includes(eventName));
+        const eventCapturedScope = isForwardedComponentEvent
           ? { ...globalHelpers, ...el.__stx_parent_scope }
           : { ...globalHelpers, ...scope, ...(findElementScope(el) || {}) };
 
         console.log('[stx] binding event:', eventName, 'on', el.tagName, 'expr:', value.substring(0, 40));
         el.addEventListener(eventName, (event) => {
           console.log('[stx] event fired:', eventName, 'on', el.tagName);
+          // A component listener belongs to the component root. Ignore native
+          // events bubbling out of its internal markup, otherwise a form
+          // component with @submit fires the parent once for the native form
+          // submit and again for defineEmits('submit').
+          if (isForwardedComponentEvent && event.target !== el) return;
+
+          // Vue-style component handlers receive the emitted payload directly.
+          // Native root events still receive the Event object so server-only
+          // components can forward clicks and other browser events.
+          var handlerEvent = isForwardedComponentEvent && event instanceof CustomEvent
+            ? event.detail
+            : event;
+
           // Skip clicks on elements that just became visible in this frame.
           // Prevents modal backdrop from catching the click that opened the modal.
           if (eventName === 'click') {
@@ -2073,7 +2101,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
           try {
             if (!value || /^__[A-Z_]+__$/.test(value.trim())) return;
             var shorthandFn = parseEventShorthand(value, eventCapturedScope);
-            if (shorthandFn) { shorthandFn(event); return; }
+            if (shorthandFn) { shorthandFn(handlerEvent); return; }
             // Check if any scope values are signals (x-data pattern)
             var hasSignals = Object.values(eventCapturedScope).some(function(v) {
               return v && typeof v === 'function' && v._isSignal;
@@ -2095,7 +2123,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
               }).join(';');
               var body = getVars + ';' + value + ';' + setVars;
               var fn2 = new Function('__s', '$event', body);
-              fn2(eventCapturedScope, event);
+              fn2(eventCapturedScope, handlerEvent);
             } else if (hasSignals) {
               // Function calls with signals in scope keep any signal used through
               // its object API as a raw signal function, and unwrap the rest for
@@ -2108,10 +2136,10 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
                 return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
               }).join(';');
               var fn3 = new Function('__s', '$event', unwrapVars + ';' + value);
-              fn3(eventCapturedScope, event);
+              fn3(eventCapturedScope, handlerEvent);
             } else {
               var fn = new Function(...Object.keys(eventCapturedScope), '$event', value);
-              fn(...Object.values(eventCapturedScope), event);
+              fn(...Object.values(eventCapturedScope), handlerEvent);
             }
           }
 catch (e) {

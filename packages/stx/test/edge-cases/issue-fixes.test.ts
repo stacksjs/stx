@@ -545,6 +545,10 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(runtime).toContain('el.__stx_parent_props_bound = true')
     expect(runtime).toContain('resolveComponentCallerScope(el, pageScopeSnapshot)')
     expect(runtime).toContain('resolveComponentCallerScope(el, spaPageScopeSnapshot)')
+    expect(runtime).toContain('if (isForwardedComponentEvent && event.target !== el) return')
+    expect(runtime).toContain('event instanceof CustomEvent')
+    expect(runtime).toContain('shorthandFn(handlerEvent)')
+    expect(runtime).toContain('expressionCallsSignal(expression, prop)')
   })
 
   it('default parse coerces "true"/"false"/numbers/empty to typed values', () => {
@@ -877,9 +881,9 @@ const rows = useReactiveProp('rows', [] as Row[])
       const output = await processDirectives(
         `<script client>
 const rows = state([{ name: 'Alpha' }])
-function selectRow() {}
+function selectRow(row) {}
 </script>
-<ReactiveTable :rows="rows" @select="selectRow($event.detail)" />`,
+<ReactiveTable :rows="rows" @select="selectRow" />`,
         {},
         path.join(TMP, 'reactive-table-view.stx'),
         { componentsDir } as StxOptions,
@@ -893,7 +897,7 @@ function selectRow() {}
       expect(output).toContain(':rows="rows"')
       expect(output).toContain('data-stx-scope="stx_reactive_table_')
       expect(output).toMatch(/useReactiveProp\(["']rows["']/)
-      expect(output).toMatch(/<div[^>]+data-stx-parent-events="select"[^>]+@select="selectRow\(\$event\.detail\)"/)
+      expect(output).toMatch(/<div[^>]+data-stx-parent-events="select"[^>]+@select="selectRow"/)
       expect(output).toMatch(/<div[^>]+data-stx-parent-bindings="rows"[^>]+:rows="rows"/)
       expect(output).not.toMatch(/<script[^>]*@select=/)
       expect(output).not.toMatch(/<script[^>]*:rows=/)
