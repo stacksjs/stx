@@ -1759,6 +1759,23 @@ catch (e) {
     return resolved;
   }
 
+  // A false :if detaches its subtree before the DOMContentLoaded scope walk
+  // reaches nested components. Capture and bind their caller-owned props while
+  // the ancestor chain is still connected, otherwise resolveComponentCallerScope
+  // can no longer see the component that declared expressions such as
+  // :options="environmentOptions".
+  function preserveConditionalComponentScopes(root, callerScope) {
+    if (!root || !root.querySelectorAll) return;
+    var scopeEls = [];
+    if (root.matches && root.matches('[data-stx-scope]')) scopeEls.push(root);
+    root.querySelectorAll('[data-stx-scope]').forEach(function(scopeEl) { scopeEls.push(scopeEl); });
+    scopeEls.forEach(function(scopeEl) {
+      if (scopeEl.__stx_parent_props_bound) return;
+      scopeEl.__stx_parent_scope = resolveComponentCallerScope(scopeEl, callerScope);
+      bindParentComponentProps(scopeEl, scopeEl.__stx_parent_scope);
+    });
+  }
+
   function processElement(el, scope = componentScope) {
     // Debug: log every element with x-class or @click
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
@@ -3101,6 +3118,7 @@ catch (e) {
     // branches instead of bringing their content to life. The active branch
     // is re-inserted below and IS connected, so it processes normally.
     chain.forEach(function(b) {
+      preserveConditionalComponentScopes(b.el, capturedComponentScope);
       b.el.__stx_if_bound = true;
       b.el.__stx_chain_member = true;
       b.capturedElementScope = findElementScope(b.el);
@@ -3262,6 +3280,7 @@ catch (e2) {
     const capturedElementScope = findElementScope(el);
     const capturedComponentScope = { ...passedScope };
 
+    preserveConditionalComponentScopes(el, capturedComponentScope);
     parent.insertBefore(placeholder, el);
     el.removeAttribute(attrName);
 
