@@ -29,6 +29,21 @@ let signalSetupCounter = 0
 // other's lastIndex.
 //
 // The non-`g` SINGLE_ELEMENT_RE is fully safe to hoist.
+/**
+ * The attribute run of an opening tag: quoted strings, or any character that
+ * isn't a quote or `>`.
+ *
+ * A bare `[^>]*` truncates at the first `>` even when it sits INSIDE a quoted
+ * attribute value, so `<button @click="flag.update(v => !v)">` was parsed as
+ * ending at the arrow's `>`. Anything injected into that tag then landed in the
+ * middle of the handler — `<button @click="flag.update(v = data-stx="…">` — and
+ * the handler died silently, with no console output and no parse error (#1771).
+ *
+ * Consuming quoted spans as a unit keeps `>` inside an attribute value from
+ * closing the tag, matching how a browser tokenizes it.
+ */
+const TAG_ATTR_RUN = `(?:"[^"]*"|'[^']*'|[^>"'])*`
+
 const SCRIPT_OPEN_RE = /<script\b([^>]*)>/gi
 const SINGLE_ELEMENT_RE = /^<([a-zA-Z][a-zA-Z0-9-]*)\b((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s*)>([\s\S]*)<\/\1>$/s
 
@@ -1262,7 +1277,7 @@ if(window.stx)window.stx._latestSetup=${setupFnName};
   }
 
   if (output.includes('<body')) {
-    output = output.replace(/<body([^>]*)>/, `<body$1 data-stx="${setupFnName}">`)
+    output = output.replace(new RegExp(`<body(${TAG_ATTR_RUN})>`), `<body$1 data-stx="${setupFnName}">`)
   }
   else {
     // Mark the first *non-skip* top-level element so the client runtime's
@@ -1274,7 +1289,7 @@ if(window.stx)window.stx._latestSetup=${setupFnName};
     // hydrated. The `marked` guard keeps us to just the first eligible element.
     const skipTags = ['script', 'style', 'html', 'head', 'meta', 'link', 'title', '!doctype']
     let marked = false
-    output = output.replace(/<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/gi, (match, tag, attrs) => {
+    output = output.replace(new RegExp(`<([a-zA-Z][a-zA-Z0-9-]*)\\b(${TAG_ATTR_RUN})>`, 'gi'), (match, tag, attrs) => {
       if (marked || skipTags.includes(tag.toLowerCase()))
         return match
       marked = true

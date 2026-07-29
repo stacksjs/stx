@@ -626,3 +626,58 @@ describe('processScriptSetup — multi-script merge', () => {
     expect(result.output).not.toMatch(/<style[^>]*data-stx=/)
   })
 })
+
+// Regression: stacksjs/stx#1771
+//
+// The data-stx marker injection matched an opening tag with `<tag([^>]*)>`,
+// which stops at the FIRST `>` — including one inside a quoted attribute value.
+// On `<button @click="flag.update(v => !v)">` the arrow's `>` was read as the
+// tag close, so the marker was spliced into the middle of the handler:
+//
+//   <button @click="flag.update(v = data-stx="__stx_setup_…"> !v)">
+//
+// The handler died silently — no parse error, no console output, nothing bound.
+// The runtime itself handles arrow handlers fine (see signal-api-event.test.ts),
+// so this injection was the whole bug. The tag matcher now consumes quoted spans
+// as a unit, the way a browser tokenizes them.
+describe('processScriptSetup — marker injection preserves > inside attributes (#1771)', () => {
+  it('does not truncate an @click arrow function on the marked element', async () => {
+    const template = `<script client>const flag = state(false)</script>\n<button @click="flag.update(v => !v)">arrow</button>`
+    const result = await processScriptSetup(template)
+
+    // The handler survives intact and the marker lands AFTER the full attribute.
+    expect(result.output).toContain('@click="flag.update(v => !v)"')
+    expect(result.output).toMatch(/<button @click="flag\.update\(v => !v\)" data-stx="__stx_setup_/)
+    // The corruption signature: marker spliced inside the attribute value.
+    expect(result.output).not.toMatch(/@click="[^"]*data-stx=/)
+  })
+
+  it('does not truncate a bare > comparison in a handler', async () => {
+    const template = `<script client>const c = state(5)</script>\n<button @click="c.set(c() > 0)">gt</button>`
+    const result = await processScriptSetup(template)
+    expect(result.output).toContain('@click="c.set(c() > 0)"')
+    expect(result.output).toMatch(/data-stx="__stx_setup_/)
+    expect(result.output).not.toMatch(/@click="[^"]*data-stx=/)
+  })
+
+  it('does not truncate a ternary containing > in a handler', async () => {
+    const template = `<script client>const c = state(5)</script>\n<button @click="set(c() > 3 ? true : false)">tern</button>`
+    const result = await processScriptSetup(template)
+    expect(result.output).toContain('@click="set(c() > 3 ? true : false)"')
+    expect(result.output).not.toMatch(/@click="[^"]*data-stx=/)
+  })
+
+  it('handles a > inside a single-quoted attribute value', async () => {
+    const template = `<script client>const f = state(false)</script>\n<button @click='f.update(v => !v)'>sq</button>`
+    const result = await processScriptSetup(template)
+    expect(result.output).toContain(`@click='f.update(v => !v)'`)
+    expect(result.output).not.toMatch(/@click='[^']*data-stx=/)
+  })
+
+  it('still marks <body> when an earlier tag carries a > in an attribute', async () => {
+    const template = `<!DOCTYPE html>\n<html><body>\n<script client>const f = state(false)</script>\n<button @click="f.update(v => !v)">x</button>\n</body></html>`
+    const result = await processScriptSetup(template)
+    expect(result.output).toMatch(/<body[^>]*data-stx="__stx_setup_/)
+    expect(result.output).toContain('@click="f.update(v => !v)"')
+  })
+})
