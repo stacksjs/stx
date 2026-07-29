@@ -294,6 +294,11 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
     resizable = true,
     frameless = false,
     alwaysOnTop = false,
+    titlebarHidden = false,
+    systemTray = false,
+    hideDockIcon = false,
+    devTools = false,
+    nativeSidebar = false,
   } = options
 
   try {
@@ -305,6 +310,9 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
     const app = createApp({
       url,
       craftPath,
+      // Menu bar windows need `systemTray`, `hideDockIcon` and `titlebarHidden`
+      // to reach the binary; ts-craft's WindowOptions doesn't type every field
+      // yet, so cast to its own window type to pass them through.
       window: {
         title,
         width,
@@ -314,7 +322,14 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
         resizable,
         frameless,
         alwaysOnTop,
-      },
+        titlebarHidden,
+        systemTray,
+        hideDockIcon,
+        devTools,
+        nativeSidebar,
+        sidebarWidth: options.sidebarWidth,
+        sidebarConfig: prepareSidebarConfig(options) as Record<string, unknown> | undefined,
+      } as NonNullable<Parameters<typeof createApp>[0]>['window'],
     })
 
     // Generate unique ID

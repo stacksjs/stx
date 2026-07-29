@@ -114,6 +114,12 @@ export interface WindowOptions {
   titlebarHidden?: boolean
   /** Window background color */
   backgroundColor?: string
+  /** Show a system tray (menu bar) icon for this window */
+  systemTray?: boolean
+  /** Hide the Dock icon — the window lives in the menu bar only */
+  hideDockIcon?: boolean
+  /** Open the webview inspector (right-click → Inspect Element) */
+  devTools?: boolean
   /** Enable native macOS sidebar (Finder-style with vibrancy) */
   nativeSidebar?: boolean
   /** Width of the native sidebar in pixels (default: 220) */
