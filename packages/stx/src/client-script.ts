@@ -780,9 +780,17 @@ function generateSingleEventBinding(binding: ParsedEvent, index: number): string
 
   // Escape handler for use in string context (scope.__stx_execute calls)
   const escapedHandler = handler.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+  const emitHelper = `var $emit = function(name, detail) {
+        $el.dispatchEvent(new CustomEvent(name, { detail: detail, bubbles: true, cancelable: true }))
+      };`
 
   // Helper: wrap handler to check for reactive scope (x-data) before bare execution
   function scopeAwareHandler(h: string): string {
+    if (/\$emit\s*\(/.test(h)) {
+      return `${emitHelper}
+      ${h}`
+    }
+
     return `var scope = $el.closest('[data-stx-scope]');
       if (scope && scope.__stx_execute) {
         scope.__stx_execute('${escapedHandler}', $event, $el);
@@ -823,6 +831,14 @@ else {
   }
 
   // Standard event binding — check for reactive scope (x-data) first
+  if (/\$emit\s*\(/.test(handler)) {
+    return `  var $el = document.getElementById('${elementId}')
+  if ($el) $el.addEventListener('${event}', function($event) {
+    ${handlerBody}${emitHelper}
+    ${handler}
+  }${optionsStr})`
+  }
+
   return `  var $el = document.getElementById('${elementId}')
   if ($el) $el.addEventListener('${event}', function($event) {
     ${handlerBody}var scope = $el.closest('[data-stx-scope]');

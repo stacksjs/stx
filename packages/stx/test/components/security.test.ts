@@ -71,6 +71,31 @@ function openModal() {}
     expect(output).toContain(`scope.__stx_execute('openModal()'`)
   })
 
+  it('provides $emit to component event handlers', async () => {
+    const dir = await makeTempDir()
+    const componentsDir = path.join(dir, 'components')
+    await fs.promises.mkdir(componentsDir, { recursive: true })
+    await Bun.write(
+      path.join(componentsDir, 'Dialog.stx'),
+      `<button @click="$emit('close')">Close</button>
+<script client>
+function label() { return 'dialog' }
+</script>`,
+    )
+
+    const output = await processDirectives(
+      '<Dialog @close="closeDialog()" />',
+      {},
+      path.join(dir, 'page.stx'),
+      { componentsDir, debug: false },
+      new Set(),
+    )
+
+    expect(output).toContain('var $emit = function(name, detail)')
+    expect(output).toContain('new CustomEvent(name, { detail: detail, bubbles: true, cancelable: true })')
+    expect(output).toContain(`$emit('close')`)
+  })
+
   it('escapes builtin component event handlers and static attributes', async () => {
     const dir = await makeTempDir()
     const output = await processDirectives(
