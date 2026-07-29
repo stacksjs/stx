@@ -4891,11 +4891,16 @@ else {
     const processedScopes = new Set();
 
     // Layout expansion can remove the data-stx marker from a page's first
-    // element. The generated setup function is still queued explicitly, so
-    // adopt it before the initial binding walk when no marker survived.
-    if (!document.querySelector('[data-stx]') && window.stx._latestSetup && typeof window.stx._latestSetup === 'function') {
+    // element while leaving markers owned by the layout itself. The generated
+    // page setup is still queued explicitly, so adopt it when its own marker
+    // did not survive.
+    const latestSetup = window.stx._latestSetup;
+    const latestSetupName = typeof latestSetup === 'function' ? latestSetup.name : '';
+    const hasLatestSetupMarker = latestSetupName && Array.from(document.querySelectorAll('[data-stx]'))
+      .some(el => el.getAttribute('data-stx') === latestSetupName);
+    if (latestSetup && !hasLatestSetupMarker) {
       try {
-        const result = window.stx._latestSetup();
+        const result = latestSetup();
         if (typeof result === 'object' && result !== null)
           Object.assign(componentScope, result);
       }
