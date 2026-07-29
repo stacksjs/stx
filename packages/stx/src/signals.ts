@@ -4903,7 +4903,9 @@ else {
         // script, so walk past script/style siblings before selecting the root.
         // Router-injected page scripts are marked data-stx-page and must use the
         // content-container fallback below instead.
-        var isSpaPageScript = scriptEl && scriptEl.hasAttribute && scriptEl.hasAttribute('data-stx-page');
+        var isSpaPageScript = scriptEl && scriptEl.hasAttribute
+          && scriptEl.hasAttribute('data-stx-page')
+          && !scriptEl.hasAttribute('data-stx-positioned');
         var root = null;
         if (scriptEl && !isSpaPageScript) {
           var previous = scriptEl.previousElementSibling;
@@ -5005,7 +5007,9 @@ catch (e) { console.error('[stx] onMount error:', e); }
         root.__stx_destroy = localDestroyHooks;
       }
 
-      if (document.readyState === 'loading') {
+      var isRoutedMount = scriptEl && scriptEl.hasAttribute
+        && scriptEl.hasAttribute('data-stx-page');
+      if (document.readyState === 'loading' || isRoutedMount) {
         mountQueue.push(doMount);
       }
 else {
@@ -5608,10 +5612,6 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     });
     destroyCallbacks.length = 0;
 
-    // Process mount queue (scripts in swapped content may have called stx.mount())
-    mountQueue.forEach(function(fn) { fn(); });
-    mountQueue = [];
-
     // Re-process scoped components in new content
     var routerOpts = window.STX_ROUTER_OPTIONS || window.__stxRouterConfig || {};
     var container = document.querySelector('[data-stx-content]')
@@ -5653,6 +5653,12 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       });
     }
     var spaPageScopeSnapshot = { ...componentScope };
+
+    // Routed component mount scripts execute after DOMContentLoaded. Queue them
+    // until the destination page setup is active so projected props and parent
+    // event handlers resolve against the caller, matching initial hydration.
+    mountQueue.forEach(function(fn) { fn(); });
+    mountQueue = [];
 
     // Initialize x-data scopes after SPA fragment swap.
     // On full page load, the reactive bridge <script> calls initScope(). But after SPA

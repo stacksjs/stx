@@ -391,6 +391,7 @@ describe('Auto-initialization', () => {
   it('should resolve component roots past generated helper scripts', () => {
     const runtime = generateSignalsRuntimeDev()
     expect(runtime).toContain("scriptEl.hasAttribute('data-stx-page')")
+    expect(runtime).toContain("!scriptEl.hasAttribute('data-stx-positioned')")
     expect(runtime).toContain("previous.tagName === 'SCRIPT' || previous.tagName === 'STYLE'")
     expect(runtime).toContain('previous = previous.previousElementSibling')
     expect(runtime).toContain('root = previous || next || scriptEl.parentElement')
@@ -404,5 +405,18 @@ describe('Auto-initialization', () => {
     expect(setupIndex).toBeGreaterThan(-1)
     expect(mountIndex).toBeGreaterThan(setupIndex)
     expect(runtime).toContain('processElement(root, { ...componentScope, ...(scope || {}) })')
+  })
+
+  it('should activate routed page setup before mounting routed components', () => {
+    const runtime = generateSignalsRuntimeDev()
+    const spaLoadIndex = runtime.indexOf('function _handleStxLoad()')
+    const setupIndex = runtime.indexOf('var spaPageScopeSnapshot', spaLoadIndex)
+    const mountIndex = runtime.indexOf('mountQueue.forEach(function(fn) { fn(); });', setupIndex)
+
+    expect(spaLoadIndex).toBeGreaterThan(-1)
+    expect(setupIndex).toBeGreaterThan(spaLoadIndex)
+    expect(mountIndex).toBeGreaterThan(setupIndex)
+    expect(runtime).toContain("scriptEl.hasAttribute('data-stx-page')")
+    expect(runtime).toContain("document.readyState === 'loading' || isRoutedMount")
   })
 })
