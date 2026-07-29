@@ -23,6 +23,7 @@ import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
 import { registerBuiltins } from './builtins'
 import { decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, restoreStashedScripts, stashScriptElements } from './component-processing'
+import { maskAtElementPosition, matchHtmlComment } from './html-masking'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
 import fs from 'node:fs'
@@ -1037,10 +1038,30 @@ export async function processComponents(
   // inside <StxLink>) aren't resolved in a single pass because the outer
   // builtin's children are raw HTML during the first pass. Re-scan until
   // no more unresolved builtins remain (max 3 passes to prevent infinite loops).
+  // Components may contain documentation comments with usage examples such
+  // as `<Card>...</Card>`. Those comments are restored when the nested
+  // component finishes rendering. Without masking them again here, the next
+  // recursive pass treats the example as live markup and renders it into
+  // every component instance.
+  const nestedComments: string[] = []
   for (let pass = 0; pass < 3; pass++) {
+    const masked = maskAtElementPosition(
+      output,
+      matchHtmlComment,
+      (_token, index) => `\x00STX_COMPONENT_COMMENT_${nestedComments.length + index}\x00`,
+    )
+    nestedComments.push(...masked.tokens)
+
     const before = output
-    output = await processCustomElementTags(output, context, filePath, options, dependencies)
+    output = await processCustomElementTags(masked.output, context, filePath, options, dependencies)
     if (output === before) break // No more changes — all builtins resolved
+  }
+
+  if (nestedComments.length > 0) {
+    output = output.replace(
+      /\x00STX_COMPONENT_COMMENT_(\d+)\x00/g,
+      (_match, index) => nestedComments[Number(index)] ?? '',
+    )
   }
 
   if (options.debug) {

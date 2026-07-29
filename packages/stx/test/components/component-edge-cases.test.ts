@@ -72,6 +72,17 @@ describe('Component Edge Cases', () => {
       `<script>\nconst fullName = first + ' ' + last;\n</script>\n<p>{{ fullName }}</p>`,
     )
 
+    await Bun.write(
+      path.join(COMPONENTS_DIR, 'documented-card.stx'),
+      `<!--
+Usage:
+<DocumentedCard title="Example">
+  <p>Documentation-only content</p>
+</DocumentedCard>
+-->
+<article class="documented-card"><h2>{{ title }}</h2><slot /></article>`,
+    )
+
     // --- Page-local component (for __originalFilePath testing) ---
     await Bun.write(
       path.join(PAGE_COMPONENTS_DIR, 'page-widget.stx'),
@@ -188,6 +199,24 @@ describe('Component Edge Cases', () => {
 
       expect(result).toContain('Hello, World!')
       expect(result).toContain('Welcome to the site')
+    })
+  })
+
+  describe('component documentation comments', () => {
+    it('does not render component examples found inside nested HTML comments', async () => {
+      const template = `<DocumentedCard title="Actual"><p>Live content</p></DocumentedCard>`
+      const result = await processDirectives(
+        template,
+        {},
+        path.join(TEMP_DIR, 'documented-card-page.stx'),
+        makeOptions(),
+        new Set(),
+      )
+
+      expect(result).toContain('<h2>Actual</h2>')
+      expect(result).toContain('<p>Live content</p>')
+      expect(result).toContain('Documentation-only content')
+      expect(result.match(/class="documented-card"/g)).toHaveLength(1)
     })
   })
 
