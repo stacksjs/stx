@@ -8,23 +8,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Core Architecture
 
-### Monorepo Structure
-
-This is a Bun workspace monorepo with packages in `packages/`:
-
-- **`packages/stx`** - Core framework with template processing engine
-- **`packages/bun-plugin`** - Bun plugin for `.stx` file processing
-- **`packages/desktop`** - Native desktop application framework (NEW)
-- **`packages/markdown`** - Markdown parsing with frontmatter support
-- **`packages/sanitizer`** - HTML/XSS sanitization
-- **`packages/iconify-core`** - Iconify integration core
-- **`packages/iconify-generator`** - Icon package generation CLI
-- **`packages/vscode`** - VS Code extension for `.stx` syntax
-- **`packages/devtools`** - Development tooling
-- **`packages/benchmarks`** - Performance benchmarks
-
-**External dependency**: Craft (~/Code/craft) - Zig-based native webview framework for desktop/mobile apps
-
 ### Template Processing Pipeline
 
 The core template processing is orchestrated by `packages/stx/src/process.ts` (~920 lines), which acts as a pipeline orchestrator delegating to extracted modules:
@@ -68,67 +51,6 @@ The core template processing is orchestrated by `packages/stx/src/process.ts` (~
 The Bun plugin (`packages/bun-plugin/src/index.ts`) registers loaders for:
 - `.stx` files - Processed as templates and exported as JavaScript modules
 - `.md` files - Parsed with frontmatter and exported with `content` and `data` exports
-
-## Development Commands
-
-### Building
-
-```bash
-# Build all packages
-bun run build
-
-# Build individual packages
-cd packages/bun-plugin && bun run build
-cd packages/stx && bun run build
-```
-
-The build process:
-1. Builds CSS assets (`packages/stx/scripts/build-css.ts`)
-2. Compiles TypeScript using custom build scripts (`build.ts` in each package)
-3. Creates compiled CLI binaries for multiple platforms
-
-### Testing
-
-```bash
-# Run all tests
-bun test
-
-# Run tests for a specific package
-cd packages/stx && bun test
-
-# Run specific test file
-bun test packages/stx/test/directives/conditionals.test.ts
-
-# Run tests with coverage
-cd packages/stx && bun test --coverage
-
-# Run tests in watch mode
-cd packages/stx && bun test --watch
-```
-
-Tests use Bun's built-in test runner with Happy DOM preloaded (configured in `bunfig.toml`). Test files follow the pattern `*.test.ts` and are located in each package's `test/` directory.
-
-### Linting
-
-```bash
-# Lint all code
-bun run lint
-
-# Auto-fix linting issues
-bun run lint:fix
-```
-
-Uses `@stacksjs/eslint-config` for consistent code style.
-
-### Development Server
-
-```bash
-# Serve .stx files for development
-bun packages/bun-plugin/dist/serve.js pages/ --port 8888
-
-# Or using the CLI
-stx-serve pages/ --port 3000
-```
 
 ## Key Concepts
 
@@ -287,7 +209,7 @@ Note `@` is overloaded: a *statement* `@if(...)` is a directive, an *attribute* 
 - **No `<template>` wrappers** — put `:for`/`:if` directly on the element. stx strips `<template>` tags during server processing (SFC extraction), so `<template :for>` breaks. Use `<div :for>` instead.
 - All directives work: `:for`, `:if`, `:show`, `x-text`, `x-html`, `x-model`, `x-class`, `x-style`, `@click`
 - `:for` supports parenthesized syntax: `(item, index) in array`
-- Avoid `>` operator in attribute expressions (`:if="count > 0"`) — use `:if="count"` or `:if="count >= 1"` instead. The `>` can be parsed as the HTML tag closer by regex-based processors.
+- `>` is safe inside attribute expressions — `:if="count > 0"`, `@click="flag.update(v => !v)"`, ternaries. It used to close the tag early and silently kill the binding when the element carried the hydration marker; fixed in #1771 (the tag matcher now consumes quoted spans as a unit).
 
 #### Named Slots
 
@@ -407,21 +329,6 @@ export default definePlugin({
 @endif
 ```
 
-## TypeScript Paths
-
-TypeScript path mappings are configured in `tsconfig.json`:
-
-```typescript
-"paths": {
-  "stx": ["./packages/stx/src/index.ts"],
-  "@stacksjs/stx": ["./packages/stx/src/index.ts"],
-  "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
-  // ... other packages
-}
-```
-
-Use these imports consistently across the codebase.
-
 ## Release Process
 
 ```bash
@@ -452,86 +359,6 @@ bun stx iconify generate <collection-name>
 ```
 
 Icon components are generated in `packages/collections/` and used as `<IconName size="24" />` in templates.
-
-## Desktop Applications
-
-The `@stacksjs/desktop` package provides native desktop application support:
-
-### Architecture
-
-```
-@stacksjs/desktop (TypeScript API)
-    ↓
-Craft (~/Code/craft - Zig webview implementation)
-    ↓
-Native APIs (WebKit/GTK/WebView2)
-```
-
-**Note**: The desktop package uses Craft for native webview rendering. Craft source lives at `~/Code/craft`.
-
-### Usage
-
-```bash
-# Open native window with dev server
-stx dev examples/homepage.stx --native
-```
-
-This internally calls `openDevWindow()` from the desktop package, which uses Craft to create a lightweight native window.
-
-### Key Features
-
-- **Window Management**: Create and control native windows
-- **System Tray**: Build menubar applications
-- **Modals & Alerts**: Native dialogs and notifications
-- **35 UI Components**: Documented component library
-- **Hot Reload**: Development mode support
-- **100% Test Coverage**: 132 tests, 96.77% line coverage
-
-### Implementation Location
-
-- `packages/desktop/src/window.ts` - Window management (fully implemented)
-- `packages/desktop/src/system-tray.ts` - System tray with Craft bridge + web simulation (fully implemented)
-- `packages/desktop/src/modals.ts` - Modal dialogs with native + web fallback (fully implemented)
-- `packages/desktop/src/alerts.ts` - Toast notifications with native + web fallback (fully implemented)
-- `packages/desktop/src/components.ts` - 35+ UI components with HTML rendering (fully implemented)
-- `packages/desktop/src/types.ts` - Complete type definitions
-- `packages/desktop/test/` - Comprehensive test suite
-- `packages/desktop/examples/` - Working examples
-
-### Integration with stx CLI
-
-The `--native` flag in `stx dev` is implemented via the dev-server module. `dev-server.ts` is now a 7-line re-export hub delegating to:
-- `dev-server/serve-markdown.ts` — markdown file serving
-- `dev-server/serve-file.ts` — single `.stx` file serving
-- `dev-server/serve-multi.ts` — multi-file routing
-- `dev-server/serve-app.ts` — full app serving with file-based routing
-
-Native window integration example:
-
-```typescript
-import { openDevWindow } from '@stacksjs/desktop'
-
-async function openNativeWindow(port: number) {
-  return await openDevWindow(port, {
-    title: 'stx Development',
-    width: 1400,
-    height: 900,
-    darkMode: true,
-    hotReload: true,
-  })
-}
-```
-
-### Testing
-
-Run desktop package tests:
-```bash
-cd packages/desktop
-bun test              # Run all tests
-bun test --coverage   # With coverage report
-```
-
-All desktop functionality is fully tested. The package uses Craft (`~/Code/craft`) for native rendering.
 
 ## Error Handling
 
