@@ -439,6 +439,39 @@ export async function processDirectives(
         }
       }
 
+      // Auto-inject composables from composablesDir (default: composables/, then
+      // functions/). Populates window.__composables, which is what
+      // `import { useThing } from '@composables'` compiles to — without it that
+      // import destructured undefined and every binding using a composable
+      // silently did nothing (#1780).
+      //
+      // Injected AFTER the stores tag: composables may call useStore(), and the
+      // store definitions must already have run. Both land before any page
+      // <script client>, which is what consumes them.
+      if (isTopLevel) {
+        try {
+          const { getComposableScript } = await import('./composable-loader')
+          const resolvedComposablesDir = (options as any).composablesDir as string | undefined
+          const composableCode = await getComposableScript(resolvedComposablesDir)
+          if (composableCode) {
+            const composableTag = `<script data-stx-composables>${composableCode}</script>`
+            // Anchor to the stores tag when present, else the signals runtime.
+            const storesTagIdx = result.indexOf('<script data-stx-stores>')
+            const anchorStart = storesTagIdx !== -1 ? storesTagIdx : result.indexOf('<script data-stx-scoped>')
+            if (anchorStart !== -1) {
+              const anchorClose = result.indexOf('</script>', anchorStart)
+              if (anchorClose !== -1) {
+                const insertPos = anchorClose + '</script>'.length
+                result = result.slice(0, insertPos) + '\n' + composableTag + result.slice(insertPos)
+              }
+            }
+          }
+        }
+        catch {
+          // Composable loading is optional
+        }
+      }
+
       // Generate and inject Crosswind CSS AFTER document shell wrapping
       // so bodyClass from stx.config.ts (e.g. 'bg-[#0a0a0f]') is included in the scan.
       // Skip when the caller has opted out via renderOptions.injectCSS=false —
