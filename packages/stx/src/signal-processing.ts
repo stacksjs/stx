@@ -12,6 +12,7 @@
 import type { StxOptions } from './types'
 import { generateServerDataBridge } from './client-script'
 import { findIfBlocks } from './parser'
+import { buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { injectSignalsRuntime, injectBrowserRuntime } from './runtime-injection'
@@ -1261,7 +1262,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
   const setupCode = `
 <script data-stx-scoped>
 function ${setupFnName}() {
-  const { state, derived, effect, batch, onMount, onDestroy, onMounted, onBeforeUnmount, onUnmounted, defineStore, registerStoresClient, useStore, useFetch, useRef, useQuery, useMutation, useOptimistic, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useSessionStorage, useCookie, useReactiveProp, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect, defineProps, withDefaults, defineEmits, defineExpose, defineSlots } = window.stx;
+  ${buildRuntimeGlobalsDestructure('const')}
 ${bridge}${mergedContent}
   return { ${mergedExports} };
 }

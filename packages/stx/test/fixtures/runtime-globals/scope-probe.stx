@@ -1,0 +1,6 @@
+<script client>
+const n = state(0)
+onMount(() => n.set(1))
+onDestroy(() => n.set(0))
+</script>
+<p x-text="n()"></p>

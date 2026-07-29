@@ -1,0 +1,153 @@
+import { describe, expect, it } from 'bun:test'
+import { processDirectives } from '../src/process'
+import { COMPONENT_SCOPE_LOCAL_GLOBALS, STX_RUNTIME_GLOBALS, buildRuntimeGlobalsDestructure } from '../src/runtime-globals'
+import { generateSignalsRuntimeDev } from '../src/signals'
+
+// Regression: stacksjs/stx#1785
+//
+// The runtime-globals destructure was hardcoded in three places — the @include
+// component wrapper (includes.ts), the page setup function (signal-processing.ts)
+// and the <Component /> client-script wrapper (utils.ts). They drifted to 51/54/53
+// names against a union of 56, so which stx APIs existed depended on which kind of
+// script you were writing, and the failure was a bare ReferenceError at runtime
+// with nothing at build time: nextTick() resolved in a component script but threw
+// in a page; onMounted() resolved in a page but threw in an @include'd component.
+//
+// Two entries were phantoms — `inject` and `nextTick` were destructured by one
+// site but never defined on window.stx at all, so they evaluated to undefined and
+// threw "is not a function" when called.
+//
+// All three now build from STX_RUNTIME_GLOBALS. These tests are the part that
+// keeps it that way.
+
+/** Names the runtime actually assigns to `window.stx`. */
+function realRuntimeSurface(): Set<string> {
+  const src = generateSignalsRuntimeDev()
+  const start = src.indexOf('window.stx = {')
+  if (start === -1) throw new Error('could not locate the window.stx assignment in the runtime')
+  const open = src.indexOf('{', start)
+  let depth = 0
+  let end = open
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '{') depth++
+    else if (src[i] === '}') {
+      depth--
+      if (depth === 0) { end = i; break }
+    }
+  }
+  const body = src.slice(open + 1, end)
+  return new Set([...body.matchAll(/^\s*([A-Za-z_$][\w$]*)\s*[:,]/gm)].map(m => m[1]))
+}
+
+/** Pull the `{ … } = window.stx` name set out of a generated script. */
+function destructuredNames(generated: string): Set<string> {
+  const match = generated.match(/(?:const|var)\s*\{([^}]*)\}\s*=\s*window\.stx/)
+  if (!match) throw new Error('no window.stx destructure found in the generated script')
+  return new Set(match[1].split(',').map(n => n.trim()).filter(Boolean))
+}
+
+describe('stx#1785: runtime globals come from one source', () => {
+  it('every declared global actually exists on window.stx', () => {
+    // This is the check that would have caught `inject` and `nextTick`: both were
+    // destructured for years while the runtime never defined them, so calling one
+    // threw "is not a function" rather than anything pointing at the real cause.
+    const real = realRuntimeSurface()
+    const missing = STX_RUNTIME_GLOBALS.filter(name => !real.has(name))
+    expect(missing).toEqual([])
+  })
+
+  it('declares no duplicates and stays sorted', () => {
+    expect(new Set(STX_RUNTIME_GLOBALS).size).toBe(STX_RUNTIME_GLOBALS.length)
+    expect([...STX_RUNTIME_GLOBALS]).toEqual([...STX_RUNTIME_GLOBALS].sort())
+  })
+
+  it('excludes runtime internals', () => {
+    // window.stx also carries plumbing (_scopes, _cleanupContainer, mount, …).
+    // Those are not part of the authoring surface and must not leak into scope.
+    expect(STX_RUNTIME_GLOBALS.some(n => n.startsWith('_'))).toBe(false)
+  })
+
+  it('emits the requested declaration keyword', () => {
+    // The component wrapper reassigns onDestroy to tee into its teardown
+    // channel, so that site needs `var`, not `const`.
+    expect(buildRuntimeGlobalsDestructure('var').startsWith('var {')).toBe(true)
+    expect(buildRuntimeGlobalsDestructure('const').startsWith('const {')).toBe(true)
+    expect(buildRuntimeGlobalsDestructure()).toBe(buildRuntimeGlobalsDestructure('const'))
+  })
+
+  it('the page setup destructure is exactly the shared list', async () => {
+    const page = await processDirectives(
+      `<script client>\nconst a = state(1)\n</script>\n<p x-text="a()"></p>`,
+      {},
+      'page.stx',
+      { debug: false } as any,
+      new Set(),
+    )
+    const pageScript = (page.match(/<script[^>]*>[\s\S]*?<\/script>/gi) || [])
+      .find(b => b.includes('__stx_setup_'))
+    expect(pageScript).toBeDefined()
+    expect(destructuredNames(pageScript!)).toEqual(new Set(STX_RUNTIME_GLOBALS))
+  })
+
+  it('no call site introduces a name outside the shared list', () => {
+    // The point of consolidating: a site may omit names it declares itself, but
+    // it must never add one, or the drift starts over.
+    for (const generated of [
+      buildRuntimeGlobalsDestructure('const'),
+      buildRuntimeGlobalsDestructure('var'),
+      buildRuntimeGlobalsDestructure('const', COMPONENT_SCOPE_LOCAL_GLOBALS),
+    ]) {
+      for (const name of destructuredNames(generated))
+        expect(STX_RUNTIME_GLOBALS).toContain(name)
+    }
+  })
+
+  it('the component wrapper omits exactly the names it declares itself', async () => {
+    // Regression guard for a real break introduced while consolidating: the
+    // <Component /> wrapper defines scope-aware onMount/onDestroy that push into
+    // that component's own callback arrays. Destructuring the same names first
+    // made it a duplicate `const` — a SyntaxError, which showed up only as the
+    // island chunk silently failing to minify (and failing to run).
+    const names = destructuredNames(buildRuntimeGlobalsDestructure('const', COMPONENT_SCOPE_LOCAL_GLOBALS))
+    for (const local of COMPONENT_SCOPE_LOCAL_GLOBALS)
+      expect(names.has(local)).toBe(false)
+
+    const expected = new Set(STX_RUNTIME_GLOBALS)
+    for (const local of COMPONENT_SCOPE_LOCAL_GLOBALS) expected.delete(local)
+    expect(names).toEqual(expected)
+
+    // And the omission is justified — the wrapper really does declare them.
+    const source = await Bun.file(new URL('../src/utils.ts', import.meta.url).pathname).text()
+    for (const local of COMPONENT_SCOPE_LOCAL_GLOBALS)
+      expect(source).toContain(`const ${local} = (fn) =>`)
+  })
+
+  it('emits a component client script that is valid JavaScript', async () => {
+    // The strongest guard: a duplicate declaration is a parse error, so parse it.
+    const out = await processDirectives(
+      `<div><scope-probe /></div>`,
+      {},
+      'page.stx',
+      { componentsDir: new URL('./fixtures/runtime-globals', import.meta.url).pathname, debug: false } as any,
+      new Set(),
+    )
+    const script = (out.match(/<script[^>]*>[\s\S]*?<\/script>/gi) || [])
+      .find(b => b.includes('__scopeVars'))
+    expect(script).toBeDefined()
+    const body = script!.replace(/<\/?script[^>]*>/gi, '')
+    // eslint-disable-next-line no-new-func
+    expect(() => new Function(body)).not.toThrow()
+  })
+
+  it('the previously-drifted lifecycle aliases are now available everywhere', async () => {
+    // onMounted/onUnmounted/onBeforeUnmount were missing from the @include
+    // wrapper, and onMount/onDestroy from the component wrapper.
+    for (const name of ['onMount', 'onDestroy', 'onMounted', 'onUnmounted', 'onBeforeUnmount'])
+      expect(STX_RUNTIME_GLOBALS).toContain(name)
+  })
+
+  it('drops the phantom names that were never implemented', () => {
+    expect(STX_RUNTIME_GLOBALS).not.toContain('inject')
+    expect(STX_RUNTIME_GLOBALS).not.toContain('nextTick')
+  })
+})

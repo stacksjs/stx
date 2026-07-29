@@ -18,6 +18,7 @@ import path from 'node:path'
 // Import from expressions
 import { extractAndStripCssImports, extractBridgeData, processClientScript, renderVendorStyleTags } from './client-script'
 import { interpolateScriptExpressions, processExpressions, unescapeHtml } from './expressions'
+import { COMPONENT_SCOPE_LOCAL_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
@@ -1149,7 +1150,7 @@ export async function renderComponentWithSlot(
         // setup uses in signal-processing.ts.
         const wrappedContent = `
 (function() {
-  const { state, derived, effect, batch, onMounted, onBeforeUnmount, onUnmounted, defineEmits, defineExpose, defineSlots, defineProps, withDefaults, registerStoresClient, useStore, useFetch, useRef, useQuery, useMutation, useOptimistic, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useSessionStorage, useCookie, useReactiveProp, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, inject, ref, reactive, computed, watch, watchEffect, nextTick } = window.stx;
+  ${buildRuntimeGlobalsDestructure('const', COMPONENT_SCOPE_LOCAL_GLOBALS)}
   const __scope = window.stx._scopes = window.stx._scopes || {};
   const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
   const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;

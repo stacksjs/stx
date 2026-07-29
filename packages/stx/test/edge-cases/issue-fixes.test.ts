@@ -259,7 +259,11 @@ onUnmounted(() => status.set('unmounted'))
       new Set<string>(),
     )
 
-    expect(out).toContain('onMounted, onBeforeUnmount, onUnmounted')
+    // Membership, not adjacency — the destructure order comes from the shared
+    // STX_RUNTIME_GLOBALS list (#1785) and is alphabetical.
+    const destructure = out.match(/(?:const|var)\s*\{[^}]*\}\s*=\s*window\.stx/)?.[0] ?? ''
+    for (const alias of ['onMounted', 'onBeforeUnmount', 'onUnmounted'])
+      expect(destructure).toContain(alias)
     expect(out).toMatch(/onMounted:\s*onMount/)
     expect(out).toMatch(/onUnmounted:\s*onDestroy/)
   })
@@ -359,7 +363,12 @@ registerStoresClient({ authStore })
       new Set<string>(),
     )
 
-    expect(out).toMatch(/defineStore,\s*registerStoresClient,\s*useStore/)
+    // Assert membership, not adjacency: the destructure is generated from the
+    // shared STX_RUNTIME_GLOBALS list (#1785), whose order is alphabetical and
+    // free to change. What matters is that each name is in scope.
+    const destructure = out.match(/(?:const|var)\s*\{[^}]*\}\s*=\s*window\.stx/)?.[0] ?? ''
+    for (const name of ['defineStore', 'registerStoresClient', 'useStore'])
+      expect(destructure).toContain(name)
     expect(out).toContain('registerStoresClient({ authStore })')
   })
 })

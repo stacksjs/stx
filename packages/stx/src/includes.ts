@@ -72,6 +72,7 @@ import path from 'node:path'
 import { processConditionals } from './conditionals'
 import { isProduction, isTest } from './env'
 import { processExpressions, usesSignalsInScript } from './expressions'
+import { buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { LRUCache } from './performance-utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 import { transformStoreImports } from './store-imports'
@@ -265,7 +266,7 @@ function extractExports(setupContent: string): string {
 function wrapClientScript(scriptContent: string, tail = ''): string {
   return `
 (function() {
-  var { state, derived, effect, batch, onMount, onDestroy, defineStore, registerStoresClient, useStore, useFetch, useRef, useQuery, useMutation, useOptimistic, useDebounce, useDebouncedValue, useThrottle, useInterval, useTimeout, useToggle, useCounter, useClickOutside, useFocus, useAsync, useLocalStorage, useSessionStorage, useCookie, useReactiveProp, useEventListener, useWebSocket, useColorMode, useDark, useHead, useSeoMeta, definePageMeta, useRoute, useSearchParams, navigate, goBack, goForward, provide, ref, reactive, computed, watch, watchEffect, defineProps, withDefaults, defineEmits, defineExpose, defineSlots } = window.stx;
+  ${buildRuntimeGlobalsDestructure('var')}
   var __destroyHooks = [];
   var __origOnDestroy = onDestroy;
   onDestroy = function(fn) { __origOnDestroy(fn); __destroyHooks.push(fn); };

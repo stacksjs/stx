@@ -19,32 +19,24 @@
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import { STX_RUNTIME_GLOBALS, buildRuntimeGlobalsDestructure } from '../src/runtime-globals'
 
 const ROOT = path.resolve(__dirname, '..', 'src')
 
 describe('client signal-setup shims — definePageMeta', () => {
-  it('signal-processing.ts merges definePageMeta into the setup destructure', () => {
-    const source = readFileSync(path.join(ROOT, 'signal-processing.ts'), 'utf8')
-    // The merged setup function literally destructures the symbol list from
-    // window.stx. We can't easily run the emitted setup in isolation
-    // because it expects a real window.stx in scope; assert the symbol is
-    // present in the destructure line directly.
-    const destructureMatch = source.match(
-      /const\s*\{[\s\S]*?\}\s*=\s*window\.stx;?/,
-    )
-    expect(destructureMatch).not.toBeNull()
-    expect(destructureMatch![0]).toContain('definePageMeta')
+  it('the setup destructure includes definePageMeta', () => {
+    // Was: scrape signal-processing.ts for a literal `const { … } = window.stx`.
+    // Since #1785 all three call sites generate that line from one shared list,
+    // so assert the list itself — the scrape had nothing left to match, and this
+    // covers every site at once rather than one file's copy.
+    expect(STX_RUNTIME_GLOBALS).toContain('definePageMeta')
+    expect(buildRuntimeGlobalsDestructure('const')).toContain('definePageMeta')
   })
 
-  it('includes.ts partial-signal scripts also destructure definePageMeta', () => {
-    const source = readFileSync(path.join(ROOT, 'includes.ts'), 'utf8')
-    // The partial scope transformer has its own destructure; both paths
-    // need the shim so partials and merged setups behave the same.
-    const destructureMatch = source.match(
-      /var\s*\{[\s\S]*?\}\s*=\s*window\.stx;?/,
-    )
-    expect(destructureMatch).not.toBeNull()
-    expect(destructureMatch![0]).toContain('definePageMeta')
+  it('partial-signal scripts get the same shim', () => {
+    // Partials use the `var` form (the wrapper reassigns onDestroy), but the
+    // name set is identical, so partials and merged setups behave the same.
+    expect(buildRuntimeGlobalsDestructure('var')).toContain('definePageMeta')
   })
 
   it('signals.ts window.stx assignment exposes definePageMeta', () => {
