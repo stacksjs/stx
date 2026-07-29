@@ -1439,6 +1439,12 @@ catch (e) {
     return null;
   }
 
+  function expressionUsesSignalApi(expression, name) {
+    var escapedName = name.replace(/[-/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');
+    var signalApi = new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\.\\\\s*(?:(?:set|update|subscribe)\\\\s*\\\\(|value\\\\b)');
+    return signalApi.test(expression);
+  }
+
   function executeHandler(expr, event, el) {
     try {
       // Skip placeholder expressions like __TITLE__ (build-time placeholders)
@@ -2076,12 +2082,12 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
               var fn2 = new Function('__s', '$event', body);
               fn2(eventCapturedScope, event);
             } else if (hasSignals) {
-              // Function call with signals in scope — keep signals that have .set()
-              // called on them as raw signal functions, unwrap the rest for reading
+              // Function calls with signals in scope keep any signal used through
+              // its object API as a raw signal function, and unwrap the rest for
+              // primitive reads.
               var unwrapVars = Object.keys(eventCapturedScope).map(function(k) {
                 var v = eventCapturedScope[k];
-                // If this signal is used with .set() in the expression, keep it as-is
-                if (v && typeof v === 'function' && v._isSignal && value.includes(k + '.set(')) {
+                if (v && typeof v === 'function' && v._isSignal && expressionUsesSignalApi(value, k)) {
                   return 'var ' + k + ' = __s["' + k + '"]';
                 }
                 return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
