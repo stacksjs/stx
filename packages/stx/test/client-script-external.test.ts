@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { processClientScript } from '../src/client-script'
 import { hasUserImports } from '../src/client-script-bundler'
 
 /**
@@ -29,5 +30,15 @@ describe('hasUserImports', () => {
 
   it('ignores type-only imports, which the transpiler strips', () => {
     expect(hasUserImports(`import type { Foo } from '@stacksjs/browser'`)).toBe(false)
+  })
+
+  it('rewrites canonical @stacksjs/stx imports for classic client scripts', async () => {
+    const output = await processClientScript(
+      `import { onMount, state } from '@stacksjs/stx'\nconst ready = state(false)\nonMount(() => ready.set(true))`,
+    )
+
+    expect(output).not.toContain(`from '@stacksjs/stx'`)
+    expect(output).not.toContain(`from "@stacksjs/stx"`)
+    expect(output).toMatch(/var \{ (?:onMount, state|state, onMount) \} = window\.stx \|\| window/)
   })
 })

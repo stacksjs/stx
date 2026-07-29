@@ -465,8 +465,10 @@ function transformAutoImports(code: string): AutoImportResult {
   // Track existing imports to avoid duplicates
   const existingImports = new Set<string>()
 
-  // Pattern to match import statements from 'stx' or '@stacksjs/browser'
-  const importRegex = /^\s*import\s+(?:type\s+)?{\s*([^}]+)\s*}\s+from\s+['"](@stacksjs\/browser|stx)['"]\s*;?\s*$/gm
+  // Pattern to match import statements from the stx runtime or browser
+  // package. Both `stx` and its canonical package name resolve to the same
+  // injected browser runtime.
+  const importRegex = /^\s*import\s+(?:type\s+)?{\s*([^}]+)\s*}\s+from\s+['"](@stacksjs\/browser|@stacksjs\/stx|stx)['"]\s*;?\s*$/gm
 
   let match
   while ((match = importRegex.exec(code)) !== null) {
@@ -486,7 +488,7 @@ function transformAutoImports(code: string): AutoImportResult {
 
     importedNames.forEach(name => {
       existingImports.add(name)
-      if (source === 'stx') {
+      if (source === 'stx' || source === '@stacksjs/stx') {
         usedStxImports.add(name)
       }
 else {
