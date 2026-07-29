@@ -15,7 +15,7 @@ import type { BunPlugin } from 'bun'
 import { getPublicEnvDefine } from './public-env'
 import { stateDir } from './state-dir'
 
-const BUNDLE_CACHE_VERSION = 2
+const BUNDLE_CACHE_VERSION = 3
 
 // Known imports that are NOT user imports — handled by other transforms.
 //
