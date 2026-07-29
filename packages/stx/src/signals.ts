@@ -1327,7 +1327,7 @@ finally {
       }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
-      const baseScope = { ...componentScope, ...(elementScope || {}), ...globalHelpers };
+      const baseScope = { ...globalHelpers, ...componentScope, ...(elementScope || {}) };
 
       // Check for pipe syntax (Feature #2)
       const pipeResult = parsePipeExpression(expr, baseScope);
@@ -1447,7 +1447,7 @@ catch (e) {
       }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
-      const scope = { ...componentScope, ...(elementScope || {}), ...globalHelpers };
+      const scope = { ...globalHelpers, ...componentScope, ...(elementScope || {}) };
 
       // Check for shorthand syntax (Feature #8)
       const shorthandFn = parseEventShorthand(expr, scope);
@@ -1634,7 +1634,7 @@ catch (e) {
     var names = (el.getAttribute('data-stx-parent-bindings') || '').split(/\\s+/).filter(Boolean);
     if (!names.length) return;
     el.__stx_parent_props_bound = true;
-    var scope = { ...callerScope, ...globalHelpers };
+    var scope = { ...globalHelpers, ...callerScope };
 
     names.forEach(function(name) {
       var sourceName = ':' + name;
@@ -1721,7 +1721,7 @@ catch (e) {
       if (el.hasAttribute('data-stx-memo')) {
         var memoExpr = el.getAttribute('data-stx-memo');
         try {
-          var memoScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
+          var memoScope = { ...globalHelpers, ...scope, ...(findElementScope(el) || {}) };
           var memoFn = new Function(...Object.keys(memoScope), 'return ' + memoExpr);
           var memoVals = JSON.stringify(memoFn(...Object.values(memoScope)));
           if (el.__stx_memo_prev === memoVals) {
@@ -1741,7 +1741,7 @@ catch (e) {
           // Capture scope NOW before effects run asynchronously
           // Use the passed scope parameter (not global componentScope) to preserve context
           // through nested @if/@for processing where componentScope may be restored
-          const capturedScope = { ...scope, ...(findElementScope(parentEl) || {}), ...globalHelpers };
+          const capturedScope = { ...globalHelpers, ...scope, ...(findElementScope(parentEl) || {}) };
           parts.forEach(part => {
             const match = part.match(/^\\{\\{\\s*([\\s\\S]+?)\\s*\\}\\}$/);
             if (match) {
@@ -1867,7 +1867,7 @@ else if (part) {
 
     // Capture scope once for all attribute bindings on this element
     // Use the passed scope parameter to preserve context through nested processing
-    const attrCapturedScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
+    const attrCapturedScope = { ...globalHelpers, ...scope, ...(findElementScope(el) || {}) };
 
     // Post-eval unwrap: if the expression result is a signal function (e.g.
     // step was resolved via identifier lookup, not via the auto-unwrap
@@ -2019,8 +2019,8 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
         // Capture scope at setup time so @for loop variables are available when event fires
         const parentEventNames = (el.getAttribute && el.getAttribute('data-stx-parent-events') || '').split(/\\s+/);
         const eventCapturedScope = el.__stx_parent_scope && parentEventNames.includes(eventName)
-          ? { ...el.__stx_parent_scope, ...globalHelpers }
-          : { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
+          ? { ...globalHelpers, ...el.__stx_parent_scope }
+          : { ...globalHelpers, ...scope, ...(findElementScope(el) || {}) };
 
         console.log('[stx] binding event:', eventName, 'on', el.tagName, 'expr:', value.substring(0, 40));
         el.addEventListener(eventName, (event) => {
@@ -2191,7 +2191,7 @@ catch (e) {
 
     const currentDisplay = el.style.display;
     const originalDisplay = (currentDisplay && currentDisplay !== 'none') ? currentDisplay : '';
-    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
+    const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
 
     // Check if the expression is a simple signal reference (most common case for :show)
     const directSignal = capturedScope[expr];
@@ -2248,7 +2248,7 @@ catch (e) {
     const tag = el.tagName.toLowerCase();
     const type = el.type;
     const modifiers = attrName.split('.').slice(1);
-    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
+    const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
     const coerceValue = (value) => {
       var next = value;
       if (modifiers.includes('trim') && typeof next === 'string') next = next.trim();
@@ -2306,7 +2306,7 @@ else {
 
   function bindClass(el, expr, passedScope = componentScope) {
     const originalClasses = el.className;
-    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
+    const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
     const keys = Object.keys(capturedScope);
 
     // Pre-compile — filter out keys that aren't valid JS identifiers
@@ -2371,7 +2371,7 @@ else {
 
   function bindStyle(el, expr, passedScope = componentScope) {
     // Capture scope at setup time - use passed scope to preserve context
-    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}), ...globalHelpers };
+    const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
 
     const evalExpr = () => {
       // Mirror bindClass: first try the auto-unwrap proxy (so an expression
@@ -2605,7 +2605,7 @@ else {
           return expression;
         }
         // Use passedScope instead of componentScope to preserve context through nested processing
-        const scope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers, ...extraScope };
+        const scope = { ...globalHelpers, ...passedScope, ...(capturedScope || {}), ...extraScope };
         const unwrapScope = createAutoUnwrapProxy(scope);
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(unwrapScope));
@@ -2622,7 +2622,7 @@ catch (e) {
     const evalLazy = (expression, extraScope = {}) => {
       try {
         if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
-        const scope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers, ...extraScope };
+        const scope = { ...globalHelpers, ...passedScope, ...(capturedScope || {}), ...extraScope };
         const unwrapScope = createAutoUnwrapProxy(scope);
         // new Function body is non-strict, so with() works — only accessed
         // properties trigger the proxy's get trap and register as dependencies
@@ -2683,7 +2683,7 @@ catch (e) {
       const indexSignal = state(index);
       if (key) itemSignalMap.set(key, { item: itemSignal, index: indexSignal });
 
-      const itemScope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers };
+      const itemScope = { ...globalHelpers, ...passedScope, ...(capturedScope || {}) };
       itemScope[itemName] = itemSignal;
       if (indexName) itemScope[indexName] = indexSignal;
 
@@ -2800,7 +2800,7 @@ catch (e) {
         // rare, so the extra Object.keys / spread cost is negligible.
         var diagScope;
         try {
-          var diagMerged = { ...passedScope, ...(capturedScope || {}), ...globalHelpers };
+          var diagMerged = { ...globalHelpers, ...passedScope, ...(capturedScope || {}) };
           var firstIdent = listExpr.match(/^[A-Za-z_$][\\w$]*/);
           var rootName = firstIdent ? firstIdent[0] : '?';
           var rootInScope = Object.prototype.hasOwnProperty.call(diagMerged, rootName);
@@ -3032,7 +3032,7 @@ catch (e) {
     function evalBranch(b) {
       var expression = b.expr;
       if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
-      var scope = { ...capturedComponentScope, ...(b.capturedElementScope || {}), ...globalHelpers };
+      var scope = { ...globalHelpers, ...capturedComponentScope, ...(b.capturedElementScope || {}) };
       try {
         var unwrapScope = createAutoUnwrapProxy(scope);
         // new Function body is non-strict, so with() works.
@@ -3113,7 +3113,7 @@ catch (e2) {
           // effect's tracked signals.
           (function (branch) {
             setTimeout(function () {
-              var childScope = { ...capturedComponentScope, ...(branch.capturedElementScope || {}), ...globalHelpers };
+              var childScope = { ...globalHelpers, ...capturedComponentScope, ...(branch.capturedElementScope || {}) };
               branch.nodes.forEach(function (n) {
                 if (n.nodeType !== 1) return; // whitespace/text between template children
                 processElement(n, childScope);
@@ -3184,7 +3184,7 @@ catch (e2) {
       }
       try {
         // Use captured componentScope (with @for vars) merged with element scope
-        const scope = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
+        const scope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
         const unwrapScope = createAutoUnwrapProxy(scope);
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(unwrapScope));
@@ -3192,7 +3192,7 @@ catch (e2) {
 catch (e1) {
         try {
           // Retry without the unwrap proxy so call-syntax (signal()) works.
-          const scope2 = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
+          const scope2 = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
           const fn2 = new Function(...Object.keys(scope2), 'return ' + expression);
           return fn2(...Object.values(scope2));
         }
@@ -3210,7 +3210,7 @@ catch (e2) {
     const processChildrenWithScope = () => {
       // Build the combined scope for children - no need to modify global componentScope
       // Just pass the scope explicitly to processElement
-      const childScope = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
+      const childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
 
 
       Array.from(el.childNodes).forEach(child => processElement(child, childScope));
@@ -3220,7 +3220,7 @@ catch (e2) {
 
     // Evaluate the :if expression — use direct signal read for simple refs,
     // falling back to evalExpr for complex expressions
-    const fullScope = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
+    const fullScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
     const directSignal = fullScope[expr];
 
     if (directSignal) {
@@ -3300,7 +3300,7 @@ else if (!value && isInserted) {
         if (value && isInserted && !childrenProcessed) {
           childrenProcessed = true;
           setTimeout(function() {
-            var childScope = { ...capturedComponentScope, ...(capturedElementScope || {}), ...globalHelpers };
+            var childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
             processElement(el, childScope);
             // Remove x-cloak from the inserted subtree — the initial
             // cloak removal (after processElement on the root) already
