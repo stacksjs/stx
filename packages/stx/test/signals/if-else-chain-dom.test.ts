@@ -233,6 +233,16 @@ describe('reactive if/else chains — DOM behavior (#1734, regression #1737)', (
     expect(presentBranches(['sent-head', 'sent-tail', 'else-head', 'else-tail']))
       .toEqual(['sent-head', 'sent-tail'])
   })
+
+  it('keeps a single template if branch in source order', async () => {
+    await processScope(
+      { show: window.stx.state(true) },
+      `<template :if="show()"><div>first</div><section>second</section><span>third</span></template>`,
+    )
+    const scope = document.querySelector('[data-stx-scope="test"]')
+    const rendered = Array.from(scope.children).map((element: any) => element.textContent.trim())
+    expect(rendered).toEqual(['first', 'second', 'third'])
+  })
 })
 
 describe('reactive if/else chains — minified runtime parity (#1737)', () => {

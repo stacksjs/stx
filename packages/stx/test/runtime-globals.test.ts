@@ -137,6 +137,29 @@ describe('stx#1785: runtime globals come from one source', () => {
     const body = script!.replace(/<\/?script[^>]*>/gi, '')
     // eslint-disable-next-line no-new-func
     expect(() => new Function(body)).not.toThrow()
+    expect(destructuredNames(script!).has('goBack')).toBe(false)
+    expect(script).toContain('return "component-local"')
+  })
+
+  it('lets page declarations shadow runtime convenience globals', async () => {
+    const page = await processDirectives(
+      `<script client>
+const ready = state(true)
+function goBack() { return 'page-local' }
+</script>
+<button :if="ready()" @click="goBack()">Back</button>`,
+      {},
+      'page.stx',
+      { debug: false } as any,
+      new Set(),
+    )
+    const pageScript = (page.match(/<script[^>]*>[\s\S]*?<\/script>/gi) || [])
+      .find(block => block.includes('__stx_setup_'))
+    expect(pageScript).toBeDefined()
+    expect(destructuredNames(pageScript!).has('goBack')).toBe(false)
+    const body = pageScript!.replace(/<\/?script[^>]*>/gi, '')
+    // eslint-disable-next-line no-new-func
+    expect(() => new Function(body)).not.toThrow()
   })
 
   it('the previously-drifted lifecycle aliases are now available everywhere', async () => {

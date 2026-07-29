@@ -2020,6 +2020,7 @@ catch (e2) {
     Array.from(el.attributes).forEach(attr => {
       const name = attr.name;
       const value = attr.value;
+      if (!name) return;
 
       if (el.hasAttribute && (el.hasAttribute('x-class') || el.hasAttribute('@click'))) {
         console.log('[stx] attr iter:', el.tagName, 'name:', name);
@@ -2052,9 +2053,34 @@ catch (e2) {
               catch (e) { controlValue = String(v); }
             }
             controlValue = v === false || v === null || v === undefined ? '' : String(controlValue);
-            el.value = controlValue;
-            if (controlValue === '' && el.tagName !== 'OPTION') el.removeAttribute(attrName);
-            else el.setAttribute(attrName, controlValue);
+            el.__stx_bound_value = controlValue;
+            var applyControlValue = function() {
+              var desiredValue = el.__stx_bound_value == null ? '' : String(el.__stx_bound_value);
+              el.value = desiredValue;
+              if (desiredValue === '' && el.tagName !== 'OPTION') el.removeAttribute(attrName);
+              else if (el.getAttribute(attrName) !== desiredValue) el.setAttribute(attrName, desiredValue);
+            };
+            applyControlValue();
+
+            // A select's value binding is processed before its child
+            // directives. When a nested :for creates the matching options
+            // afterward, the browser otherwise leaves the first option
+            // selected. Keep the desired value and reapply it whenever the
+            // option tree changes, including later reactive list updates.
+            if (el.tagName === 'SELECT' && !el.__stx_value_observer && typeof window.MutationObserver !== 'undefined') {
+              el.__stx_value_observer = new window.MutationObserver(applyControlValue);
+              el.__stx_value_observer.observe(el, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['value'],
+              });
+              el.__stx_destroy = el.__stx_destroy || [];
+              el.__stx_destroy.push(function() {
+                if (el.__stx_value_observer) el.__stx_value_observer.disconnect();
+                el.__stx_value_observer = null;
+              });
+            }
             return;
           }
           if (v === false || v === null || v === undefined) {
@@ -3289,7 +3315,11 @@ catch (e2) {
       const content = el.content;
       currentNodes = Array.from(content.childNodes).map(n => n.cloneNode(true));
       // Insert cloned content initially
-      currentNodes.forEach(node => parent.insertBefore(node, placeholder.nextSibling));
+      // Capture the anchor once. Re-reading placeholder.nextSibling after
+      // every insertion points at the node just inserted and reverses a
+      // multi-root template branch.
+      const initialAnchor = placeholder.nextSibling;
+      currentNodes.forEach(node => parent.insertBefore(node, initialAnchor));
       el.remove(); // Remove the template element itself
     }
 
@@ -3370,7 +3400,8 @@ catch (e2) {
         if (value && !isInserted) {
           // Re-insert cloned content
           currentNodes = Array.from(el.content.childNodes).map(n => n.cloneNode(true));
-          currentNodes.forEach(node => parent.insertBefore(node, placeholder.nextSibling));
+          const insertionAnchor = placeholder.nextSibling;
+          currentNodes.forEach(node => parent.insertBefore(node, insertionAnchor));
           // Process the new nodes — use LIVE componentScope so all functions are available
           const childScope = { ...componentScope, ...(capturedElementScope || {}) };
           currentNodes.forEach(node => {

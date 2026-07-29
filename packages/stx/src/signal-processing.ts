@@ -1249,6 +1249,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
   // scripts is a user anti-pattern; name them differently.)
   mergedContent = dedupeTopLevelDeclarations(mergedContent)
   const mergedExports = extractExports(mergedContent)
+  const mergedExportNames = mergedExports.split(',').map(name => name.trim()).filter(Boolean)
 
   // Server → client data bridge: inject `var NAME = <json>;` for each
   // `<script server>` value the merged client setup references but does not
@@ -1262,7 +1263,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
   const setupCode = `
 <script data-stx-scoped>
 function ${setupFnName}() {
-  ${buildRuntimeGlobalsDestructure('const')}
+  ${buildRuntimeGlobalsDestructure('const', mergedExportNames)}
 ${bridge}${mergedContent}
   return { ${mergedExports} };
 }

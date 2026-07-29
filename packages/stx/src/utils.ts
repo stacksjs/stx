@@ -1137,6 +1137,7 @@ export async function renderComponentWithSlot(
         )
         // Transform store imports before IIFE wrapping (import statements can't be inside functions)
         const content = transformStoreImports(bundledContent)
+        const componentLocalNames = extractVariableNames(content)
         // Wrap script content to register in scope
         // Add data-stx-scoped attribute to prevent double-processing by processScriptSetup
         // Pull the full component-system API into scope, not just the
@@ -1150,7 +1151,7 @@ export async function renderComponentWithSlot(
         // setup uses in signal-processing.ts.
         const wrappedContent = `
 (function() {
-  ${buildRuntimeGlobalsDestructure('const', COMPONENT_SCOPE_LOCAL_GLOBALS)}
+  ${buildRuntimeGlobalsDestructure('const', [...COMPONENT_SCOPE_LOCAL_GLOBALS, ...componentLocalNames])}
   const __scope = window.stx._scopes = window.stx._scopes || {};
   const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
   const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;
@@ -1168,7 +1169,7 @@ ${content}
   // Register all defined signals and functions in this scope
   const __localVars = {};
   try {
-    ${extractVariableNames(content).map(v => `if (typeof ${v} !== 'undefined') __localVars['${v}'] = ${v};`).join('\n    ')}
+    ${componentLocalNames.map(v => `if (typeof ${v} !== 'undefined') __localVars['${v}'] = ${v};`).join('\n    ')}
   }
 catch (e) {}
   Object.assign(__scopeVars, __localVars);

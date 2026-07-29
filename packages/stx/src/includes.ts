@@ -264,9 +264,10 @@ function extractExports(setupContent: string): string {
  * added here, not in two parallel sites.
  */
 function wrapClientScript(scriptContent: string, tail = ''): string {
+  const localNames = extractExports(scriptContent).split(',').map(name => name.trim()).filter(Boolean)
   return `
 (function() {
-  ${buildRuntimeGlobalsDestructure('var')}
+  ${buildRuntimeGlobalsDestructure('var', localNames)}
   var __destroyHooks = [];
   var __origOnDestroy = onDestroy;
   onDestroy = function(fn) { __origOnDestroy(fn); __destroyHooks.push(fn); };

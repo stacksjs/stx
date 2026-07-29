@@ -67,8 +67,10 @@ export const COMPONENT_SCOPE_LOCAL_GLOBALS: readonly string[] = ['onMount', 'onD
  * @param declaration `var` for scripts that reassign a binding (the `@include`
  * wrapper rebinds `onDestroy` to tee into its teardown channel — an assignment,
  * which `var` permits), `const` otherwise.
- * @param exclude names the call site declares itself; see
- * {@link COMPONENT_SCOPE_LOCAL_GLOBALS}.
+ * @param exclude names the generated wrapper or user script declares itself.
+ * A local declaration is intentionally allowed to shadow a runtime convenience
+ * global, just as an explicit import would. Omitting it from this destructure
+ * prevents duplicate-binding syntax errors.
  */
 export function buildRuntimeGlobalsDestructure(
   declaration: 'const' | 'var' = 'const',

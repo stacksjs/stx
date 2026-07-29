@@ -76,6 +76,32 @@ describe('template for DOM binding', () => {
     expect(selectedMethod()).toBe(1)
   })
 
+  it('reapplies a select value after reactive options are inserted', async () => {
+    window.__stx_setup_dynamic_select = () => ({
+      selected: window.stx.state('2'),
+    })
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_dynamic_select">
+        <select id="dynamic-select" :value="selected()"></select>
+      </main>
+    `
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const select = document.querySelector('#dynamic-select')
+    const first = document.createElement('option')
+    first.value = '1'
+    first.textContent = 'Ground'
+    const second = document.createElement('option')
+    second.value = '2'
+    second.textContent = 'Express'
+    select.append(first, second)
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    expect(select.value).toBe('2')
+  })
+
   it('preserves an explicitly empty value on an option binding', async () => {
     window.__stx_setup_empty_option = () => ({
       optionValue: window.stx.state(''),
