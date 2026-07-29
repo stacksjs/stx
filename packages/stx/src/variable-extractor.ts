@@ -690,7 +690,18 @@ catch {
     // IMPORTANT: Filter out keys that are also in props to avoid duplicate variable declarations
     // when scripts use defineProps/withDefaults pattern like: const { title } = withDefaults(defineProps(), {...})
     const propsKeys = new Set(Object.keys(propsObj))
-    const filteredContextKeys = Object.keys(context).filter(key => !propsKeys.has(key) && key !== 'props')
+    // Context keys become PARAMETER NAMES on the `new Function` below, so a key
+    // that is not a bare JS identifier is a syntax error in the generated
+    // function signature — and that error takes down the whole server script,
+    // not just the offending name. Templates routinely put non-identifier keys
+    // in context (`data-*` attributes, hyphenated slot names, `...`-prefixed
+    // internals), which silently dropped every component's server script into
+    // the static-extraction fallback: exports computed by calling a helper
+    // came back undefined and the component rendered empty. Props were already
+    // screened this way; context was not.
+    const isIdentifier = (key: string) => /^[a-z_$][\w$]*$/i.test(key)
+    const filteredContextKeys = Object.keys(context).filter(key =>
+      !propsKeys.has(key) && key !== 'props' && isIdentifier(key))
     const filteredContextValues = filteredContextKeys.map(key => context[key])
 
     // Expose each prop as a bare identifier (e.g. `car`, `rating`) in the
