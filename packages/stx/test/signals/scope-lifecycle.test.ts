@@ -395,4 +395,14 @@ describe('Auto-initialization', () => {
     expect(runtime).toContain('previous = previous.previousElementSibling')
     expect(runtime).toContain('root = previous || next || scriptEl.parentElement')
   })
+
+  it('should register caller setup before mounting projected slot content', () => {
+    const runtime = generateSignalsRuntimeDev()
+    const setupIndex = runtime.indexOf("document.querySelectorAll('[data-stx]').forEach(el =>")
+    const mountIndex = runtime.indexOf('mountQueue.forEach(function(fn) { fn(); });', setupIndex)
+
+    expect(setupIndex).toBeGreaterThan(-1)
+    expect(mountIndex).toBeGreaterThan(setupIndex)
+    expect(runtime).toContain('processElement(root, { ...componentScope, ...(scope || {}) })')
+  })
 })

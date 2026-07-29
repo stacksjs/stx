@@ -4555,7 +4555,7 @@ catch (e) {}
         }
 
         var disposeEffects = trackEffects(function() {
-          processElement(root, scope || componentScope);
+          processElement(root, { ...componentScope, ...(scope || {}) });
         });
         root.__stx_disposers = disposeEffects;
 
@@ -4672,7 +4672,7 @@ else {
 
         // Walk DOM and bind directives, tracking effects for cleanup
         var disposeEffects = trackEffects(function() {
-          processElement(root, scope || componentScope);
+          processElement(root, { ...componentScope, ...(scope || {}) });
         });
         root.__stx_disposers = disposeEffects;
 
@@ -4898,10 +4898,6 @@ else {
   console.log('[stx] registering DOMContentLoaded handler');
   document.addEventListener('DOMContentLoaded', () => {
     console.log('[stx] DOMContentLoaded fired — processing scopes');
-    // Process mount queue (from stx.mount() calls during loading)
-    mountQueue.forEach(function(fn) { fn(); });
-    mountQueue = [];
-
     // Track which scoped elements have been processed
     const processedScopes = new Set();
 
@@ -4924,7 +4920,9 @@ else {
       }
     }
 
-    // Initialize components with data-stx attribute
+    // Register page setup before mounting child components. Projected slot
+    // content belongs to the caller, so child mounts need the caller's signals
+    // available when they walk their own rendered roots.
     document.querySelectorAll('[data-stx]').forEach(el => {
       const setupName = el.getAttribute('data-stx');
       console.log('[DOMContentLoaded] data-stx:', setupName, 'el:', el.tagName, 'fn exists:', !!(setupName && window[setupName]));
@@ -4935,6 +4933,15 @@ else {
           Object.assign(componentScope, result);
         }
       }
+    });
+
+    // Process mount queue (from stx.mount() calls during loading) only after
+    // caller setup is available for Vue-style projected slot ownership.
+    mountQueue.forEach(function(fn) { fn(); });
+    mountQueue = [];
+
+    // Bind page roots after child components have registered their local scope.
+    document.querySelectorAll('[data-stx]').forEach(el => {
       console.log('[DOMContentLoaded] processElement on:', el.tagName, 'scope keys:', Object.keys(componentScope).slice(0, 10));
       var disposeEffects = trackEffects(function() { processElement(el); });
       el.__stx_disposers = disposeEffects;
