@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.114...v0.2.115)
+
+## 🐛 Bug Fixes
+
+- **desktop**: keep craft-native external so its version isn't frozen ([22e4b0a](https://github.com/stacksjs/stx/commit/22e4b0a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.115 ([fd44ce4](https://github.com/stacksjs/stx/commit/fd44ce4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.113...v0.2.114)
 
 ## 🚀 Features
