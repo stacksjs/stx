@@ -15,7 +15,7 @@ import type { BunPlugin } from 'bun'
 import { getPublicEnvDefine } from './public-env'
 import { stateDir } from './state-dir'
 
-const BUNDLE_CACHE_VERSION = 3
+const BUNDLE_CACHE_VERSION = 4
 
 // Known imports that are NOT user imports — handled by other transforms.
 //
@@ -411,16 +411,26 @@ export async function bundleClientScript(
     const returnedBindings = exposedBindings
       .map(([publicName, localName]) => `${JSON.stringify(publicName)}: ${localName}`)
       .join(', ')
+    // Declare the public bindings before the generated bundle body. The
+    // component scope registrar scans this output for top-level declarations,
+    // and arbitrary inlined code can contain regex or template syntax that
+    // makes a lightweight declaration scanner lose track of brace depth.
+    // Initializing these bindings up front keeps the public contract visible
+    // without exposing the bundle's internal declarations.
     const publicDeclarations = exposedBindings
-      .map(([publicName]) => `var ${publicName} = ${namespace}[${JSON.stringify(publicName)}];`)
+      .map(([publicName]) => `var ${publicName} = undefined;`)
+      .join('\n')
+    const publicAssignments = exposedBindings
+      .map(([publicName]) => `${publicName} = ${namespace}[${JSON.stringify(publicName)}];`)
       .join('\n')
 
     bundled = `${externalImports.join('\n')}
+${publicDeclarations}
 var ${namespace} = (function() {
 ${bundled}
 return { ${returnedBindings} };
 })();
-${publicDeclarations}`.trim()
+${publicAssignments}`.trim()
 
     // External imports stay intact for transformAutoImports and
     // transformStoreImports, which run after this bundling step.

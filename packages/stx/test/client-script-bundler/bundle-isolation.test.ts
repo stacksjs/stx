@@ -33,7 +33,28 @@ describe('client-script-bundler isolation', () => {
     )
 
     expect(() => new Function(`${first}\n${second}`)).not.toThrow()
-    expect(first).toContain('var firstValue = __stxBundle_')
-    expect(second).toContain('var secondValue = __stxBundle_')
+    expect(first).toContain('var firstValue = undefined')
+    expect(first).toContain('firstValue = __stxBundle_')
+    expect(second).toContain('var secondValue = undefined')
+    expect(second).toContain('secondValue = __stxBundle_')
+  })
+
+  it('declares public bindings before arbitrary bundled dependency syntax', async () => {
+    await Bun.write(
+      path.join(projectRoot, 'complex.ts'),
+      String.raw`export const matches = (value: string) => /\{\{[^}]+\}\}/.test(value)`,
+    )
+
+    const output = await bundleClientScript(
+      `import { matches } from './complex'\nconst dashboard = state(null)\nfunction ready() { return matches('{{ value }}') && dashboard() !== null }`,
+      path.join(projectRoot, 'RealtimeDashboard.stx'),
+      { projectRoot },
+    )
+
+    const declarationIndex = output.indexOf('var dashboard = undefined')
+    const bundleIndex = output.indexOf('var __stxBundle_')
+    expect(declarationIndex).toBeGreaterThanOrEqual(0)
+    expect(bundleIndex).toBeGreaterThan(declarationIndex)
+    expect(output).toMatch(/dashboard = __stxBundle_[a-f0-9]+\["dashboard"\]/)
   })
 })

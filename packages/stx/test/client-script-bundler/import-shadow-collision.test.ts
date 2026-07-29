@@ -48,7 +48,8 @@ describe('client-script-bundler: import/local name shadow (#1767)', () => {
     // ...and the isolated bundle re-exposes the original public name from the
     // renamed local binding, so templates receive the derived value.
     expect(out).toMatch(/"items":\s*items2/)
-    expect(out).toMatch(/var items = __stxBundle_[a-f0-9]+\["items"\]/)
+    expect(out).toContain('var items = undefined')
+    expect(out).toMatch(/items = __stxBundle_[a-f0-9]+\["items"\]/)
   })
 
   it('emits no rename map when there is no name collision', async () => {
