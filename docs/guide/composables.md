@@ -34,12 +34,10 @@ needed between them.
 
 ## Using a composable in a page
 
-Import it from `@composables`:
+Just call it — no import:
 
 ```html
 <script client>
-  import { useCounter } from '@composables'
-
   const { count, doubled, increment } = useCounter(10)
 </script>
 
@@ -47,19 +45,26 @@ Import it from `@composables`:
 <button @click="increment()">+1</button>
 ```
 
-The import compiles to `const { useCounter } = window.__composables` — a plain
-destructure in the page's own scope, which is what lets template directives
-(`@click`, `x-text`, `:show`) resolve `count` and `increment`.
+Every composable is published as a global before your page scripts run, so a
+bare call binds. Because `count` and `increment` are then top-level names in the
+page's own scope, template directives (`@click`, `x-text`, `:show`) resolve them.
 
-::: warning Import it — don't rely on a bare name
-A composable is **not** a bare global. Referencing `useCounter(10)` without the
-import throws `ReferenceError: useCounter is not defined` at runtime.
+::: tip Name collisions
+If your composable shares a name with a built-in (`useFetch`, `useToggle`,
+`useCounter`, …) or with an existing window property (`name`, `status`), stx
+does **not** overwrite it — the bare identifier keeps meaning the original. You
+get a console warning saying so, rather than a silent surprise.
 
-The import also matters when your composable shares a name with a built-in one
-(`useFetch`, `useToggle`, `useCounter`, …). Page scripts destructure the
-built-ins from `window.stx` first, so the `@composables` import — which comes
-after — is what makes *your* version win. Without it the built-in silently
-shadows yours.
+Rename yours, or reach for it explicitly:
+
+```html
+<script client>
+  import { useFetch } from '@composables'
+</script>
+```
+
+That destructures from `window.__composables` after the built-ins are in scope,
+so your version wins.
 :::
 
 ## Basic Composable
@@ -95,8 +100,6 @@ Use it in a page:
 
 ```html
 <script client>
-import { useCounter } from '@composables'
-
 const { count, doubled, increment, decrement, reset } = useCounter(10)
 </script>
 
@@ -546,8 +549,6 @@ onMount(() => {
 
 ```html
 <script client>
-import { useAuth, useAuthenticatedFetch, useDark } from '@composables'
-
 const { user, isAuthenticated, logout } = useAuth()
 const { isDark, toggle: toggleTheme, init: initTheme } = useDark()
 const sidebarOpen = state(true)

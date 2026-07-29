@@ -105,6 +105,69 @@ describe('stx#1780: composables directory populates window.__composables', () =>
     expect(out).toMatch(/return \{[^}]*\bpending\b[^}]*\baskOp\b[^}]*\}/)
   })
 
+  it('publishes each composable as a bare global so pages need no import', async () => {
+    const code = await getComposableScript(dir)
+    const win: any = {}
+    // eslint-disable-next-line no-new-func
+    new Function('window', 'console', code!)(win, { warn() {} })
+
+    // The ergonomic the composables directory exists for: `useOpConfirm(...)`
+    // with no import line. A page's <script client> resolves free identifiers
+    // against the global scope, so this is what makes a bare call bind.
+    expect(typeof win.useOpConfirm).toBe('function')
+    expect(win.CONFIRM_WORD).toBe('DELETE')
+  })
+
+  it('does not clobber a built-in of the same name, and warns instead', async () => {
+    const collide = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-collide-'))
+    try {
+      await Bun.write(path.join(collide, 'useFetch.ts'), `export function useFetch(u: string) { return { mine: true, u } }\n`)
+      clearComposableCache()
+      const code = await getComposableScript(collide)
+
+      const warnings: string[] = []
+      const builtin = () => 'BUILTIN'
+      const win: any = { stx: { useFetch: builtin } }
+      // eslint-disable-next-line no-new-func
+      new Function('window', 'console', code!)(win, { warn: (...a: unknown[]) => warnings.push(a.join(' ')) })
+
+      // The page destructures built-ins from window.stx, which would shadow our
+      // global anyway — so overwriting it buys nothing and risks breaking code
+      // that reads the global directly.
+      expect(win.useFetch).toBeUndefined()
+      expect(win.stx.useFetch).toBe(builtin)
+      // ...but the user's version is still reachable via the explicit import.
+      expect(win.__composables.useFetch('x').mine).toBe(true)
+      // And the shadowing is announced, not silent.
+      expect(warnings.some(w => w.includes('useFetch') && w.includes('built-in'))).toBe(true)
+    }
+    finally {
+      clearComposableCache()
+      await fs.promises.rm(collide, { recursive: true, force: true })
+    }
+  })
+
+  it('does not overwrite an existing window property', async () => {
+    const collide = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-winprop-'))
+    try {
+      await Bun.write(path.join(collide, 'name.ts'), `export const name = 'mine'\n`)
+      clearComposableCache()
+      const code = await getComposableScript(collide)
+
+      const warnings: string[] = []
+      const win: any = { name: 'the real window.name' }
+      // eslint-disable-next-line no-new-func
+      new Function('window', 'console', code!)(win, { warn: (...a: unknown[]) => warnings.push(a.join(' ')) })
+
+      expect(win.name).toBe('the real window.name')
+      expect(warnings.some(w => w.includes('name'))).toBe(true)
+    }
+    finally {
+      clearComposableCache()
+      await fs.promises.rm(collide, { recursive: true, force: true })
+    }
+  })
+
   it('injects composables after the stores tag so a composable can use a store', async () => {
     const page = `<script client>\nimport { useOpConfirm } from '@composables'\nconst { pending } = useOpConfirm({ endpoint: '/x' })\n</script>\n<div @show="pending()">x</div>`
     const out = await processDirectives(page, {}, 'page.stx', { composablesDir: dir, debug: false } as any, new Set())

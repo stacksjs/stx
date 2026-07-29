@@ -191,11 +191,38 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
     .map(name => `  try { __c[${JSON.stringify(name)}] = ${name}; } catch (e) {}`)
     .join('\n')
 
+  // Publish each composable as a bare global so pages can just call
+  // `useThing()` with no import — the ergonomic that makes a composables
+  // directory worth having. A page's <script client> destructures the built-ins
+  // from window.stx and otherwise resolves free identifiers against the global
+  // scope, so a plain `window.<name>` is what makes a bare call bind.
+  //
+  // Names already taken are SKIPPED, not clobbered. Two cases, both real:
+  // a built-in of the same name (useFetch, useToggle, useCounter, …), where the
+  // page's local destructure from window.stx would shadow our global anyway so
+  // assigning achieves nothing; and a genuine window property (name, status,
+  // length), where overwriting would break the page. Either way we warn instead
+  // of failing silently, and `import { x } from '@composables'` still resolves
+  // to the user's version because that destructure comes after the built-ins.
+  const globalNames = JSON.stringify([...exportedNames])
   const code = `;(function(){
 window.__composables = window.__composables || {};
 var __c = window.__composables;
 ${chunks.join('\n\n')}
 ${assignments}
+  var __names = ${globalNames};
+  for (var __i = 0; __i < __names.length; __i++) {
+    var __n = __names[__i];
+    if (!(__n in __c)) continue;
+    var __takenByBuiltin = !!(window.stx && __n in window.stx);
+    if (__takenByBuiltin || __n in window) {
+      console.warn('[stx] composable "' + __n + '" is not available as a bare identifier: '
+        + (__takenByBuiltin ? 'a built-in of that name already exists' : 'window already defines that property')
+        + '. Rename it, or use: import { ' + __n + ' } from "@composables"');
+      continue;
+    }
+    window[__n] = __c[__n];
+  }
 })();`
 
   _cachedComposableScripts.set(resolvedDir, code)
