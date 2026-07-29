@@ -30,6 +30,7 @@ import { defaultConfig } from './config'
 import { extractVariables } from './variable-extractor'
 import { injectRouterScript, processDirectives } from './process'
 import { extractBridgeData, processClientScript } from './client-script'
+import { findSfcTemplateBlock } from './sfc-template'
 import type { StxOptions } from './types'
 
 // ============================================================================
@@ -82,36 +83,11 @@ function parseTemplate(content: string): {
   clientScripts: string[]
   signalsScripts: string[]
 } {
-  // SFC Support: Extract <template> content if present (balanced matching for nested <template>)
-  // Preserve templates with x-for, x-if, @for, @if, :for, :if — those are client-side elements
+  // SFC Support: extract the explicit wrapper, preserving runtime templates.
   let workingContent = content
-  const templateOpenMatch = content.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>/i)
-  if (templateOpenMatch && templateOpenMatch.index !== undefined) {
-    const openEnd = templateOpenMatch.index + templateOpenMatch[0].length
-    let depth = 1
-    let pos = openEnd
-    while (depth > 0 && pos < content.length) {
-      const nextOpen = content.indexOf('<template', pos)
-      const nextClose = content.indexOf('</template>', pos)
-      if (nextClose === -1) break
-      if (nextOpen !== -1 && nextOpen < nextClose) {
-        // Check it's actually a tag (not text)
-        const after = content[nextOpen + '<template'.length]
-        if (after === '>' || after === ' ' || after === '\n' || after === '\t') {
-          depth++
-        }
-        pos = nextOpen + '<template'.length
-      }
-else {
-        depth--
-        if (depth === 0) {
-          workingContent = content.slice(openEnd, nextClose).trim()
-          break
-        }
-        pos = nextClose + '</template>'.length
-      }
-    }
-  }
+  const templateBlock = findSfcTemplateBlock(content)
+  if (templateBlock)
+    workingContent = templateBlock.content.trim()
 
   // Extract all script tags and categorize them
   const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi

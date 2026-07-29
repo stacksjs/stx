@@ -8,6 +8,7 @@ import { isDevelopment } from './env'
 import { escapeHtml } from './expressions'
 import { performanceMonitor } from './performance-utils'
 import { injectRouterScript } from './process'
+import { findSfcTemplateBlock } from './sfc-template'
 
 export const plugin: BunPlugin = {
   name: 'bun-plugin-stx',
@@ -84,14 +85,11 @@ export const plugin: BunPlugin = {
 
         // Extract script and template sections with performance monitoring
         const { scriptContent, templateContent, allScripts } = performanceMonitor.time('script-extraction', () => {
-          // SFC Support: Extract <template> content if present
-          // This allows Vue-style single file components with explicit <template> tags
-          // Preserve templates with id, x-for, x-if, @for, @if, :for, :if — those are client-side elements
+          // SFC Support: extract the explicit wrapper, preserving runtime templates.
           let workingContent = content
-          const templateTagMatch = content.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>([\s\S]*?)<\/template>/i)
-          if (templateTagMatch) {
-            workingContent = templateTagMatch[1].trim()
-          }
+          const templateBlock = findSfcTemplateBlock(content)
+          if (templateBlock)
+            workingContent = templateBlock.content.trim()
 
           // Extract all script tags (both inline and external) from original content
           const allScriptMatches = content.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) || []

@@ -10,6 +10,7 @@ import type { StxOptions } from './types'
 import { serve as bunServe } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
+import { findSfcTemplateBlock } from './sfc-template'
 import { readMarkdownFile } from './assets'
 import { processDirectives } from './process'
 import { extractVariables } from './utils'
@@ -113,32 +114,11 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     // Read and process file
     let content = await Bun.file(filePath).text()
 
-    // SFC Support: Extract <template> content if present
-    // Preserve templates with id, x-for, x-if, @for, @if, :for, :if — those are client-side elements
+    // SFC Support: extract the explicit wrapper, preserving runtime templates.
     let workingContent = content
-    const templateOpenMatch = content.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>/i)
-    if (templateOpenMatch && templateOpenMatch.index !== undefined) {
-      const contentStart = templateOpenMatch.index + templateOpenMatch[0].length
-      let depth = 1
-      let pos = contentStart
-      while (pos < content.length && depth > 0) {
-        const openIdx = content.indexOf('<template', pos)
-        const closeIdx = content.indexOf('</template>', pos)
-        if (closeIdx === -1) break
-        if (openIdx !== -1 && openIdx < closeIdx) {
-          depth++
-          pos = openIdx + '<template'.length
-        }
-        else {
-          depth--
-          if (depth === 0) {
-            workingContent = content.substring(contentStart, closeIdx).trim()
-            break
-          }
-          pos = closeIdx + '</template>'.length
-        }
-      }
-    }
+    const templateBlock = findSfcTemplateBlock(content)
+    if (templateBlock)
+      workingContent = templateBlock.content.trim()
 
     // Extract all script tags and categorize them from the PAGE content
     const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi

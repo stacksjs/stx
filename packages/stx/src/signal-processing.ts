@@ -213,6 +213,8 @@ export function hasSignalsSyntax(template: string): boolean {
     /\breactive\s*(?:<[^>]*>)?\s*\(/, // reactive() Vue-compat alias
     /\bwatch\s*(?:<[^>]*>)?\s*\(/, // watch() Vue-compat alias
     /\bwatchEffect\s*(?:<[^>]*>)?\s*\(/, // watchEffect() Vue-compat alias
+    /\buseReactiveProp\s*(?:<[^>]*>)?\s*\(/, // reactive component prop bridge
+    /\s:(?:if|else-if|else|for|show|text|html|model)\s*=/, // colon-form reactive directives
     /data-stx(?:-auto)?(?![-\w])/, // data-stx or data-stx-auto (not data-stx-ref, data-stx-id, etc.)
     /data-stx-scoped/, // client scripts need the signals runtime
   ]

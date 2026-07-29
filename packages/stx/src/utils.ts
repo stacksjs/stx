@@ -23,6 +23,7 @@ import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
 import { getPublicEnvDefine } from './public-env'
 import { processScopedStyles } from './style-scoping'
+import { findSfcTemplateBlock } from './sfc-template'
 
 // Re-export from extracted modules for backward compatibility
 export {
@@ -865,12 +866,11 @@ export async function renderComponentWithSlot(
     // SFC Support: Extract <template>, <script>, and <style> sections
     let workingContent = componentContent
 
-    // Extract <template> content if present (Vue-style SFC)
-    // Preserve templates with id, x-for, x-if, @for, @if, :for, :if — those are client-side elements
-    const templateMatch = workingContent.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|@for|@if|:for|:if)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>([\s\S]*?)<\/template>/i)
-    if (templateMatch) {
-      workingContent = templateMatch[1].trim()
-    }
+    // Extract the explicit Vue-style SFC wrapper, while preserving runtime
+    // <template :for>, <template @if>, slot, and keyed template elements.
+    const templateBlock = findSfcTemplateBlock(workingContent)
+    if (templateBlock)
+      workingContent = templateBlock.content.trim()
 
     // Extract all script content from the component (SFC support)
     // Look in original content since template section won't have scripts
@@ -995,7 +995,9 @@ export async function renderComponentWithSlot(
 
     // Check if component has signal scripts - if so, skip event directive processing
     // because the runtime will handle @click, @keydown etc. via processElement()
-    const hasSignalScripts = clientScripts.some(s => /\b(state|derived|effect)\s*(?:<[^<>()]*>)?\s*\(/.test(s))
+    const hasSignalScripts = clientScripts.some(s =>
+      /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useReactiveProp|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
+    )
 
     // First, process any nested components in this component
     const componentOptions = {

@@ -67,6 +67,7 @@
  */
 
 import type { StxOptions } from './types'
+import { findSfcTemplateBlock } from './sfc-template'
 import path from 'node:path'
 import { processConditionals } from './conditionals'
 import { isProduction, isTest } from './env'
@@ -936,16 +937,11 @@ catch (error: unknown) {
           console.warn(`[stx] partial ES import extraction skipped for ${includeFilePath}:`, err instanceof Error ? err.message : err)
       }
 
-      // Extract <template> content if present (Vue-style SFC)
-      // Only match <template> WITHOUT id or a client directive attribute.
-      // Templates with those attributes are client-side loop/conditional elements
-      // that must be preserved — including the `@else`/`@else-if` (and `:else` /
-      // `x-else`) branches a reactive `@if` chain compiles to; stripping one arm
-      // of the chain unbalances it (see #1784). `@else` matches `@else-if` too.
-      const templateMatch = workingContent.match(/<template\b(?![^>]*(?:\b(?:id|x-for|x-if|x-else|@for|@if|@else|:for|:if|:else)\s*=|\s#[\w-]|\bv-slot|\bslot\s*=))[^>]*>([\s\S]*?)<\/template>/i)
-      if (templateMatch) {
-        workingContent = templateMatch[1].trim()
-      }
+      // Extract the explicit wrapper, preserving client loop, conditional,
+      // keyed, and slot templates.
+      const templateBlock = findSfcTemplateBlock(workingContent)
+      if (templateBlock)
+        workingContent = templateBlock.content.trim()
 
       // Strip script blocks first, then extract / remove styles. The
       // `<style>` extractor below uses a regex that doesn't understand

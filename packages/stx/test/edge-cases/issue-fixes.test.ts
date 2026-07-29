@@ -767,3 +767,71 @@ describe('#1697 — layout scope rebind walks document.body', () => {
     expect(dclSection).toMatch(/!\s*scopeVars\.__mounted/)
   })
 })
+
+describe('reactive template elements are not mistaken for SFC wrappers', () => {
+  it('distinguishes runtime templates from an explicit SFC wrapper', async () => {
+    const { findSfcTemplateBlock } = await import('../../src/sfc-template')
+
+    expect(findSfcTemplateBlock('<table><template :for="row in rows"><tr></tr></template></table>')).toBeNull()
+    expect(findSfcTemplateBlock('<template @if="open"><p>Open</p></template>')).toBeNull()
+    expect(findSfcTemplateBlock('<template @else><p>Closed</p></template>')).toBeNull()
+
+    const wrapped = findSfcTemplateBlock(`
+<script client>const rows = state([])</script>
+<template>
+  <table>
+    <template :for="row in rows"><tr><td>{{ row.name }}</td></tr></template>
+  </table>
+</template>`)
+
+    expect(wrapped).not.toBeNull()
+    expect(wrapped!.content).toContain('<table>')
+    expect(wrapped!.content).toContain('<template :for="row in rows">')
+  })
+
+  it('keeps the complete root and reactive loop when rendering a component', async () => {
+    const componentsDir = path.join(TMP, 'reactive-template-components')
+    fs.mkdirSync(componentsDir, { recursive: true })
+
+    try {
+      fs.writeFileSync(
+        path.join(componentsDir, 'ReactiveTable.stx'),
+        `<script client>
+interface Row { name: string }
+const rows = useReactiveProp('rows', [] as Row[])
+</script>
+<div class="table-shell">
+  <table>
+    <tbody>
+      <template :for="row in rows">
+        <tr><td>{{ row.name }}</td></tr>
+      </template>
+    </tbody>
+  </table>
+</div>`,
+      )
+
+      const output = await processDirectives(
+        `<script client>
+const rows = state([{ name: 'Alpha' }])
+</script>
+<ReactiveTable :rows="rows" />`,
+        {},
+        path.join(TMP, 'reactive-table-view.stx'),
+        { componentsDir } as StxOptions,
+        new Set<string>(),
+      )
+
+      expect(output).toContain('class="table-shell"')
+      expect(output).toContain('<table>')
+      expect(output).toContain('<template :for="row in rows">')
+      expect(output).toContain('{{ row.name }}')
+      expect(output).toContain(':rows="rows"')
+      expect(output).toContain('data-stx-scope="stx_reactive_table_')
+      expect(output).toMatch(/useReactiveProp\(["']rows["']/)
+    }
+    finally {
+      fs.rmSync(componentsDir, { recursive: true, force: true })
+    }
+  })
+})
