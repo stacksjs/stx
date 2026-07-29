@@ -45,14 +45,15 @@ describe('client-script-bundler: import/local name shadow (#1767)', () => {
 
     // Bun renamed the component's local:
     expect(out).toMatch(/\bitems2\b/)
-    // ...and the fix re-exposes ORIGINAL name -> renamed binding, so the
-    // registrar binds the template's `items` to the derived, not the import:
-    expect(out).toMatch(/__stxScopeRenames\s*=\s*\{\s*"items":\s*items2\s*\}/)
+    // ...and the isolated bundle re-exposes the original public name from the
+    // renamed local binding, so templates receive the derived value.
+    expect(out).toMatch(/"items":\s*items2/)
+    expect(out).toMatch(/var items = __stxBundle_[a-f0-9]+\["items"\]/)
   })
 
   it('emits no rename map when there is no name collision', async () => {
     const script = `import { items as allItems } from './data'\nconst list = derived(() => allItems.map(x => x))`
     const out = await bundleClientScript(script, templatePath, { projectRoot })
-    expect(out).not.toContain('__stxScopeRenames')
+    expect(out).not.toContain('"items": items2')
   })
 })

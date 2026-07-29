@@ -372,48 +372,58 @@ export async function bundleClientScript(
       break
     }
 
-    // Capture Bun's export-rename map BEFORE stripping (stacksjs/stx#1767).
-    // When an inlined import shares a top-level name with a component-declared
-    // const, Bun.build keeps the import under the bare name and RENAMES the
-    // local (`foo` -> `foo2`); the catch-all export we added above then comes
-    // back as `export { foo2 as foo }`. That `as` clause is the only record of
-    // the rename. If we strip it blindly, the scope registrar re-harvests the
-    // bare `foo` — now the raw import — and binds the template to the wrong
-    // value. So collect [originalName, renamedBinding] pairs here and re-expose
-    // them below, letting the registrar bind the original name to the correct
-    // (renamed) identifier without touching the import the local closes over.
-    const renamePairs: Array<[string, string]> = []
+    // Capture entry exports before stripping them. Bun may rename a page
+    // declaration when it shadows an imported module binding (`items2 as
+    // items`), so retain both the public name and its actual local binding.
+    const exposedBindings: Array<[string, string]> = []
     for (const exp of bundled.matchAll(/^\s*export\s*\{([^}]*)\}\s*;?\s*$/gm)) {
       for (const spec of exp[1].split(',')) {
         const asMatch = spec.trim().match(/^([A-Za-z_$][\w$]*)\s+as\s+([A-Za-z_$][\w$]*)$/)
-        if (asMatch && asMatch[1] !== asMatch[2])
-          renamePairs.push([asMatch[2], asMatch[1]]) // [exported/original name, renamed local binding]
+        if (asMatch) {
+          exposedBindings.push([asMatch[2], asMatch[1]])
+          continue
+        }
+
+        const name = spec.trim()
+        if (/^[A-Za-z_$][\w$]*$/.test(name))
+          exposedBindings.push([name, name])
       }
     }
 
-    // Strip ESM export artifacts from the output
-    // Bun.build with format: 'esm' may add `export { ... }` at the end
+    // External runtime imports must remain at top level so the downstream
+    // auto-import transform can replace them with window.stx bindings.
+    const externalImports = bundled.match(/^\s*import\s+[^;]+;?\s*$/gm) || []
+
+    // Isolate every Bun bundle in its own function scope. Layout and page
+    // scripts are bundled independently, and Bun commonly assigns identical
+    // internal names such as `state2` in each output. Concatenating those
+    // outputs into one stx setup function otherwise causes a parse-time
+    // duplicate declaration. Only the entry's explicit public bindings are
+    // re-exposed outside the closure, using `var` so separate setup blocks can
+    // intentionally share a public name without creating a syntax error.
     bundled = bundled
+      .replace(/^\s*import\s+[^;]+;?\s*$/gm, '')
       .replace(/^\s*export\s*\{[^}]*\}\s*;?\s*$/gm, '')
       .replace(/^\s*export\s+default\s+.*$/gm, '')
       .trim()
 
-    // Re-expose renamed component declarations under their ORIGINAL names as a
-    // plain map (originalName -> renamed binding). The scope registrar merges
-    // this so the template binds to the component's declaration, not the
-    // shadowing import. We do NOT reassign the bare name (`var foo = foo2`):
-    // the renamed local's closure still reads the import under `foo`, so
-    // clobbering it would break the binding it depends on. See #1767.
-    if (renamePairs.length > 0) {
-      const entries = renamePairs.map(([orig, id]) => `${JSON.stringify(orig)}: ${id}`).join(', ')
-      bundled += `\nvar __stxScopeRenames = { ${entries} };`
-    }
+    const namespace = `__stxBundle_${hash}`
+    const returnedBindings = exposedBindings
+      .map(([publicName, localName]) => `${JSON.stringify(publicName)}: ${localName}`)
+      .join(', ')
+    const publicDeclarations = exposedBindings
+      .map(([publicName]) => `var ${publicName} = ${namespace}[${JSON.stringify(publicName)}];`)
+      .join('\n')
 
-    // Strip any remaining external import statements (stx, @stores etc.)
-    // These will be handled by transformAutoImports and transformStoreImports
-    // Keep them as-is — the existing transforms expect to find them
-    // (Actually, external imports stay as `import { x } from 'stx'` in ESM output,
-    //  which is exactly what transformAutoImports needs to rewrite)
+    bundled = `${externalImports.join('\n')}
+var ${namespace} = (function() {
+${bundled}
+return { ${returnedBindings} };
+})();
+${publicDeclarations}`.trim()
+
+    // External imports stay intact for transformAutoImports and
+    // transformStoreImports, which run after this bundling step.
 
     console.log('[stx:bundler] bundled:', hash, 'output:', bundled.length, 'bytes')
 
