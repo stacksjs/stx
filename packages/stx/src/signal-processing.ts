@@ -1248,6 +1248,7 @@ function ${setupFnName}() {
 ${bridge}${mergedContent}
   return { ${mergedExports} };
 }
+window.__stx_latestSetup=${setupFnName};
 if(window.stx)window.stx._latestSetup=${setupFnName};
 </script>`
 

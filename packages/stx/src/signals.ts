@@ -4296,7 +4296,7 @@ catch (e) {}
     _tg: { enter: tgEnter, leave: tgLeave, flip: tgFlip, snapshot: tgSnapshot },  // <TransitionGroup> helpers (#1742)
     _scopes: {},  // Component-level scopes
     _scopeCounter: 0,  // Counter for generating unique scope IDs during SPA navigation
-    _latestSetup: null,  // Latest SFC setup function (for SPA re-initialization)
+    _latestSetup: window.__stx_latestSetup || null,  // Latest SFC setup function (including scripts parsed before the runtime)
     _stores: new Map(),  // Global store registry — survives SPA navigation
 
     // ── Store System ──
