@@ -67,6 +67,8 @@ export const activeClasses = themeStyle.item.active
 </script>
 
 <script client>
+import { findActiveSidebarHref } from './route-selection'
+
 const emit = defineEmits()
 const sidebarUidProp = '{{ sidebarUid }}'
 const collapsedProp = {{ collapsed }}
@@ -100,10 +102,31 @@ function setActiveRow(button) {
   const classes = activeClassList()
   pane.querySelectorAll('[data-sidebar-item][data-active="true"]').forEach((el) => {
     el.removeAttribute('data-active')
+    el.removeAttribute('aria-current')
     el.classList.remove(...classes)
   })
   button.setAttribute('data-active', 'true')
+  button.setAttribute('aria-current', 'page')
   button.classList.add(...classes)
+}
+
+function syncRouteSelection(url) {
+  const links = [...pane.querySelectorAll('a[data-sidebar-item][href]')]
+  let currentPath = window.location.pathname
+  if (url) {
+    try {
+      currentPath = new URL(url, window.location.origin).pathname
+    }
+    catch {}
+  }
+  const href = findActiveSidebarHref(currentPath, links.map(link => link.getAttribute('href') || ''))
+  const active = href ? links.find(link => link.getAttribute('href') === href) : null
+  if (active)
+    setActiveRow(active)
+}
+
+function onRouteChange(event) {
+  syncRouteSelection(event?.detail?.url)
 }
 
 // ---------------------------------------------------------------------------
@@ -323,18 +346,22 @@ onMount(() => {
 
   pane.addEventListener('click', onClick)
   pane.addEventListener('keydown', onKeyDown)
+  window.addEventListener('stx:navigate', onRouteChange)
+  window.addEventListener('popstate', onRouteChange)
 
   const scrollArea = pane.querySelector('[data-sidebar-scroll]')
   const thumb = pane.querySelector('[data-sidebar-scroll-thumb]')
   if (scrollArea && thumb) attachOverlayScrollbar(scrollArea, thumb)
 
-  // Ensure the initial active row carries the theme's highlight classes.
+  // Route-derived selection wins over stale server-declared state on direct
+  // loads, nested routes, SPA transitions, and browser history navigation.
+  syncRouteSelection()
   const active = pane.querySelector('[data-sidebar-item][data-active="true"]')
   if (active) active.classList.add(...activeClassList())
   syncRowVisibility()
 })
 
-defineExpose({ collapsed, toggle: toggleCollapse })
+defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
 </script>
 
 <aside
