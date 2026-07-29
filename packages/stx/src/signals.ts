@@ -321,7 +321,7 @@ else {
         const val = target[prop];
         // If it's a signal or derived, call it to get the value
         if (val && typeof val === 'function' && (val._isSignal || val._isDerived)) {
-          if (preserveSignal && preserveSignal(prop)) return val;
+          if (preserveSignal && preserveSignal(prop, val)) return val;
           return val();
         }
         // If it's an stx store, return a recursively-unwrapping wrapper so
@@ -1454,8 +1454,18 @@ catch (e) {
 
   function expressionUsesSignalApi(expression, name) {
     var escapedName = name.replace(/[-/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');
-    var signalApi = new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\.\\\\s*(?:(?:set|update|subscribe)\\\\s*\\\\(|value\\\\b)');
-    return signalApi.test(expression);
+    return expressionUsesSignalMethod(expression, name)
+      || expressionUsesSignalValue(expression, name);
+  }
+
+  function expressionUsesSignalMethod(expression, name) {
+    var escapedName = name.replace(/[-/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');
+    return new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\.\\\\s*(?:set|update|subscribe)\\\\s*\\\\(').test(expression);
+  }
+
+  function expressionUsesSignalValue(expression, name) {
+    var escapedName = name.replace(/[-/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');
+    return new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\.\\\\s*value\\\\b').test(expression);
   }
 
   function expressionCallsSignal(expression, name) {
@@ -1464,10 +1474,25 @@ catch (e) {
   }
 
   function createExpressionAutoUnwrapProxy(scope, expression) {
-    return createAutoUnwrapProxy(scope, function(prop) {
+    return createAutoUnwrapProxy(scope, function(prop, signal) {
       if (typeof prop !== 'string') return false;
-      return expressionCallsSignal(expression, prop)
-        || expressionUsesSignalApi(expression, prop);
+      if (expressionCallsSignal(expression, prop) || expressionUsesSignalMethod(expression, prop))
+        return true;
+      if (!expressionUsesSignalValue(expression, prop))
+        return false;
+
+      // A :for item is itself represented by a signal. If that item's value
+      // is an object with a real value field, item.value means the field,
+      // not the signal wrapper API. Primitive signals still support
+      // count.value, matching the explicit ref syntax.
+      try {
+        var currentValue = signal();
+        return !(currentValue && typeof currentValue === 'object'
+          && Object.prototype.hasOwnProperty.call(currentValue, 'value'));
+      }
+      catch (e) {
+        return true;
+      }
     });
   }
 

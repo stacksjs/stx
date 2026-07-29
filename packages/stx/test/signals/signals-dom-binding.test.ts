@@ -470,11 +470,12 @@ else {
         ':class': 'selected() === item.id ? "selected" : "idle"',
         '@click': 'choose(item.id)',
       })
+      button.appendChild(createTextNode('{{ item.value }}'))
       button.appendChild(createTextNode('{{ selected() === item.id ? "Selected" : "Choose" }}'))
       container.appendChild(button)
       domElements.set(scopeId, container)
 
-      const items = stx.state([{ id: 10 }, { id: 20 }])
+      const items = stx.state([{ id: 10, value: 'Ten' }, { id: 20, value: 'Twenty' }])
       const selected = stx.state(0)
       const choose = (id: number) => selected.set(id)
       stx._scopes = stx._scopes || {}
@@ -487,6 +488,7 @@ else {
       expect(renderedButtons).toHaveLength(2)
       expect(renderedButtons[1]._eventListeners.click).toHaveLength(1)
       expect(renderedButtons[1].className).toBe('idle')
+      expect(renderedButtons[1].childNodes[0].childNodes[0].textContent).toBe('Twenty')
 
       renderedButtons[1]._eventListeners.click[0].handler({
         target: renderedButtons[1],
@@ -497,7 +499,27 @@ else {
       expect(selected()).toBe(20)
       expect(renderedButtons[0].className).toBe('idle')
       expect(renderedButtons[1].className).toBe('selected')
-      expect(renderedButtons[1].childNodes[0].childNodes[0].textContent).toBe('Selected')
+      expect(renderedButtons[1].childNodes[1].childNodes[0].textContent).toBe('Selected')
+    })
+
+    it('keeps explicit value access for primitive signals', () => {
+      const scopeId = 'explicit_signal_value_scope'
+      const container = createElement('div', { 'data-stx-scope': scopeId })
+      const output = createElement('span')
+      output.appendChild(createTextNode('{{ count.value }}'))
+      container.appendChild(output)
+      domElements.set(scopeId, container)
+
+      const count = stx.state(7)
+      stx._scopes = stx._scopes || {}
+      stx._scopes[scopeId] = { count }
+
+      if (mockDocument._domContentLoadedHandler)
+        mockDocument._domContentLoadedHandler()
+
+      expect(output.childNodes[0].childNodes[0].textContent).toBe(7)
+      count.set(9)
+      expect(output.childNodes[0].childNodes[0].textContent).toBe(9)
     })
   })
 
