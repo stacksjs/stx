@@ -286,6 +286,32 @@ describe('#1695 — bare function ref in event handler shorthand', () => {
   })
 })
 
+describe('client store registration', () => {
+  it('exposes registerStoresClient through the generated runtime', () => {
+    const runtime = generateSignalsRuntimeDev()
+
+    expect(runtime).toContain('registerStoresClient: function(stores)')
+    expect(runtime).toContain("new CustomEvent('stx:stores-ready'")
+  })
+
+  it('makes registerStoresClient available to reactive client setup code', async () => {
+    const out = await processDirectives(
+      `<script client>
+const authStore = defineStore('auth', () => ({ ready: state(true) }))
+registerStoresClient({ authStore })
+</script>
+<p :if="authStore.ready()">Ready</p>`,
+      {},
+      path.join(TMP, 'client-store-registration.stx'),
+      {} as StxOptions,
+      new Set<string>(),
+    )
+
+    expect(out).toMatch(/defineStore,\s*registerStoresClient,\s*useStore/)
+    expect(out).toContain('registerStoresClient({ authStore })')
+  })
+})
+
 describe('#1705 — partials register component imports for parent resolution', () => {
   // Pre-fix, `import { Dialog } from '@stacksjs/components'` inside a
   // partial's <script> block was stripped during signal-script transform

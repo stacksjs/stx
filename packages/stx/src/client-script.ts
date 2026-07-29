@@ -341,7 +341,7 @@ const STX_AUTO_IMPORTS = [
   'provide', 'inject', 'nextTick', 'getCurrentInstance',
   'onErrorCaptured', 'useSlots', 'useAttrs',
   // Store/state management
-  'createStore', 'defineStore', 'useStore', 'action', 'createSelector',
+  'createStore', 'defineStore', 'registerStoresClient', 'useStore', 'action', 'createSelector',
   // JSX
   'h', 'Fragment',
 ]

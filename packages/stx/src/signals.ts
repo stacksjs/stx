@@ -4498,6 +4498,16 @@ catch (e) {}
       return result;
     },
 
+    registerStoresClient: function(stores) {
+      window.__STX_STORES__ = window.__STX_STORES__ || {};
+      var names = Object.keys(stores || {});
+      for (var i = 0; i < names.length; i++) {
+        var name = names[i];
+        window.__STX_STORES__[name] = stores[name];
+      }
+      window.dispatchEvent(new CustomEvent('stx:stores-ready', { detail: names }));
+    },
+
     useStore: function(id) {
       var store = window.stx._stores.get(id);
       if (!store && window.__STX_STORES__) {
