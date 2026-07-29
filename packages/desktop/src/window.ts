@@ -2,7 +2,7 @@
 import type { SidebarConfig, WindowInstance, WindowOptions } from './types'
 import process from 'node:process'
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 // =============================================================================
 // Configuration
@@ -92,6 +92,10 @@ function prepareSidebarConfig(options: WindowOptions): SidebarConfig | undefined
  * Used when CRAFT_BINARY_PATH is not set.
  */
 const DEFAULT_SEARCH_PATHS = [
+  // Beside the running executable — a packaged .app bundles the craft binary
+  // into Contents/MacOS/ next to its own binary (see packageApp's
+  // macos.additionalExecutables), so a shipped app resolves it first.
+  join(dirname(process.execPath), 'craft'),
   // Global bun installation
   join(process.env.HOME || '', '.bun/bin/craft'),
   // Absolute path to craft in standard location
