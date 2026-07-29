@@ -4,13 +4,13 @@ Composables are reusable functions that encapsulate logic. They are the primary 
 
 ## Convention
 
-- Put composables in the `functions/` directory (auto-discovered by stx)
+- Put composables in the `composables/` (or `functions/`) directory — stx discovers both
 - Name them with the `use` prefix: `useAuth()`, `useDark()`, `useFetch()`
 - Export a single function per file
 - Composables can use signals, lifecycle hooks, and other composables
 
 ```
-functions/
+composables/
   useAuth.ts
   useDark.ts
   useDebounce.ts
@@ -18,6 +18,49 @@ functions/
   useLocalStorage.ts
   useMediaQuery.ts
 ```
+
+Every `.ts` file in that directory (except `index.ts`, `types.ts` and `.d.ts`)
+is bundled and injected ahead of your page scripts. Override the location with
+`composablesDir` in `stx.config.ts`:
+
+```typescript
+export default {
+  composablesDir: 'src/composables',
+}
+```
+
+All composables share one scope, so one can call another directly — no import
+needed between them.
+
+## Using a composable in a page
+
+Import it from `@composables`:
+
+```html
+<script client>
+  import { useCounter } from '@composables'
+
+  const { count, doubled, increment } = useCounter(10)
+</script>
+
+<p x-text="count()"></p>
+<button @click="increment()">+1</button>
+```
+
+The import compiles to `const { useCounter } = window.__composables` — a plain
+destructure in the page's own scope, which is what lets template directives
+(`@click`, `x-text`, `:show`) resolve `count` and `increment`.
+
+::: warning Import it — don't rely on a bare name
+A composable is **not** a bare global. Referencing `useCounter(10)` without the
+import throws `ReferenceError: useCounter is not defined` at runtime.
+
+The import also matters when your composable shares a name with a built-in one
+(`useFetch`, `useToggle`, `useCounter`, …). Page scripts destructure the
+built-ins from `window.stx` first, so the `@composables` import — which comes
+after — is what makes *your* version win. Without it the built-in silently
+shadows yours.
+:::
 
 ## Basic Composable
 
@@ -52,6 +95,8 @@ Use it in a page:
 
 ```html
 <script client>
+import { useCounter } from '@composables'
+
 const { count, doubled, increment, decrement, reset } = useCounter(10)
 </script>
 
@@ -501,6 +546,8 @@ onMount(() => {
 
 ```html
 <script client>
+import { useAuth, useAuthenticatedFetch, useDark } from '@composables'
+
 const { user, isAuthenticated, logout } = useAuth()
 const { isDark, toggle: toggleTheme, init: initTheme } = useDark()
 const sidebarOpen = state(true)

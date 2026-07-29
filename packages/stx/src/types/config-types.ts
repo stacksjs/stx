@@ -593,8 +593,37 @@ export interface StxConfig {
   _rootComponentsDir?: string
   /** Path to layouts directory, defaults to 'layouts' in the project root */
   layoutsDir?: string
-  /** Path to stores directory for auto-discovered store definitions */
+  /**
+   * Path to the stores directory, resolved against `root`.
+   *
+   * Every `.ts` file in it (except `index.ts`, `types.ts` and `.d.ts`) is
+   * discovered, bundled, and injected ahead of any page script, so a
+   * `defineStore(...)` call has already run by the time `useStore('id')` looks
+   * it up. Files are ordered so stores that call `useStore()` load after the
+   * ones they depend on.
+   *
+   * @default 'stores'
+   */
   storesDir?: string
+
+  /**
+   * Path to the composables directory, resolved against `root`.
+   *
+   * Every `.ts` file in it (except `index.ts`, `types.ts` and `.d.ts`) is
+   * discovered, bundled, and injected ahead of any page script. Exported
+   * bindings are registered on `window.__composables`, which is what
+   * `import { useThing } from '@composables'` compiles to — a plain destructure
+   * in the page's own scope, so template directives can see the names.
+   *
+   * All composables share one scope, so they can call each other directly
+   * without importing.
+   *
+   * When unset, stx probes `composables/` and then `functions/`, so an app
+   * already using either layout works with no configuration.
+   *
+   * @default 'composables' (falls back to 'functions')
+   */
+  composablesDir?: string
   /** Default layout to use for pages without DOCTYPE, relative to layoutsDir */
   defaultLayout?: string
   /** Plugins to load — npm packages, local paths, or [path, options] tuples */
