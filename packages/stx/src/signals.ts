@@ -3848,12 +3848,24 @@ catch (e) {}
   function useReactiveProp(name, defaultValue, opts) {
     opts = opts || {};
     var parse = opts.parse || function(v) {
+      // Infer the prop's intended scalar type from its default. A string prop
+      // with an empty value must stay "", not become the boolean true. This
+      // mirrors typed component props and keeps form/error text stable when a
+      // parent forwards an empty signal value through a DOM attribute.
+      if (typeof defaultValue === 'string') return v == null ? '' : String(v);
+      if (typeof defaultValue === 'boolean') {
+        if (v === '' || v === 'true') return true;
+        if (v === 'false' || v === null || v === undefined) return false;
+        return Boolean(v);
+      }
       if (v === '' || v === 'true') return true;
       if (v === 'false') return false;
       if (typeof v === 'string' && (v.charAt(0) === '[' || v.charAt(0) === '{')) {
         try { return JSON.parse(v); }
         catch (e) {}
       }
+      if (typeof defaultValue === 'number')
+        return v != null && v !== '' && !isNaN(Number(v)) ? Number(v) : defaultValue;
       if (v != null && v !== '' && !isNaN(Number(v))) return Number(v);
       return v;
     };

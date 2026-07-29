@@ -67,4 +67,34 @@ describe('component lifecycle ownership', () => {
 
     expect(unreadCounts()).toEqual({ inbox: 15 })
   })
+
+  it('preserves empty and boolean values according to the prop default type', async () => {
+    document.body.innerHTML = `
+      <main data-stx-content>
+        <div id="typed-props" data-stx-scope="typed_props" text="" open=""></div>
+      </main>
+    `
+    shimAttributes(document.body)
+
+    const root = document.querySelector('#typed-props')
+    window.stx._scopes.typed_props = {
+      __mountCallbacks: [],
+      __destroyCallbacks: [],
+    }
+
+    window.__STX_CURRENT_ELEMENT__ = root
+    const text = window.stx.useReactiveProp('text', '')
+    const open = window.stx.useReactiveProp('open', false)
+    window.__STX_CURRENT_ELEMENT__ = null
+
+    expect(text()).toBe('')
+    expect(open()).toBe(true)
+
+    root.setAttribute('text', 'true')
+    root.setAttribute('open', 'false')
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(text()).toBe('true')
+    expect(open()).toBe(false)
+  })
 })
