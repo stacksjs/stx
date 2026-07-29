@@ -1961,6 +1961,21 @@ catch (e2) {
           : attrCapturedScope;
         effect(() => {
           const v = evalAttrExpr(value, bindingScope);
+          // Form control values are live DOM properties. Setting only the HTML
+          // attribute does not update a <select>'s chosen option and can leave
+          // inputs displaying stale text after a reactive update.
+          if (attrName === 'value' && 'value' in el) {
+            var controlValue = v;
+            if (typeof v === 'object' && v !== null) {
+              try { controlValue = JSON.stringify(v); }
+              catch (e) { controlValue = String(v); }
+            }
+            controlValue = v === false || v === null || v === undefined ? '' : String(controlValue);
+            el.value = controlValue;
+            if (controlValue === '') el.removeAttribute(attrName);
+            else el.setAttribute(attrName, controlValue);
+            return;
+          }
           if (v === false || v === null || v === undefined) {
             el.removeAttribute(attrName);
           }

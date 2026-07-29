@@ -27,6 +27,7 @@ describe('STX Signals - DOM Binding Behavior', () => {
       parentElement: null,
       style: { display: '' },
       className: '',
+      value: '',
       textContent: '',
       innerHTML: '',
       _eventListeners: {},
@@ -481,6 +482,31 @@ else {
       expect(label.getAttribute('for')).toBe('config-provider')
       expect(label.hasAttribute(':for')).toBe(false)
       expect(label._removed).toBe(false)
+    })
+  })
+
+  describe(':value form control binding', () => {
+    it('updates the live select value on initialization and signal changes', () => {
+      const scopeId = 'select_value_scope'
+      const container = createElement('div', { 'data-stx-scope': scopeId })
+      const select = createElement('select', { ':value': 'range' })
+      container.appendChild(select)
+      domElements.set(scopeId, container)
+
+      const range = stx.state('month')
+      stx._scopes = stx._scopes || {}
+      stx._scopes[scopeId] = { range }
+
+      if (mockDocument._domContentLoadedHandler)
+        mockDocument._domContentLoadedHandler()
+
+      expect(select.value).toBe('month')
+      expect(select.getAttribute('value')).toBe('month')
+      expect(select.hasAttribute(':value')).toBe(false)
+
+      range.set('week')
+      expect(select.value).toBe('week')
+      expect(select.getAttribute('value')).toBe('week')
     })
   })
 
