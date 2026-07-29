@@ -88,33 +88,40 @@ describe('rewriteStxImportSpecifiers', () => {
   it('preserves a renamed specifier as a local alias', () => {
     const out = rewriteStxImportSpecifiers(' state as state2 ')
 
-    expect(out).toStartWith('const state2 = state;')
+    expect(out).toStartWith('var state2 = state;')
   })
 
   it('emits no binding for plain specifiers already destructured', () => {
     const out = rewriteStxImportSpecifiers(' state, derived ')
 
-    expect(out).not.toContain('const ')
+    expect(out).not.toContain('var ')
     expect(out).toContain('stx import stripped')
   })
 
   it('carries every renamed specifier in one declaration', () => {
     const out = rewriteStxImportSpecifiers('state as state2, derived, effect as effect3')
 
-    expect(out).toStartWith('const state2 = state, effect3 = effect;')
+    expect(out).toStartWith('var state2 = state, effect3 = effect;')
   })
 
   it('erases type-only specifiers, which have no runtime binding', () => {
-    expect(rewriteStxImportSpecifiers('type Signal, type Ref as R')).not.toContain('const ')
-    expect(rewriteStxImportSpecifiers('type Signal, state as state2')).toStartWith('const state2 = state;')
+    expect(rewriteStxImportSpecifiers('type Signal, type Ref as R')).not.toContain('var ')
+    expect(rewriteStxImportSpecifiers('type Signal, state as state2')).toStartWith('var state2 = state;')
   })
 
   it('ignores a self-rename, which would redeclare the destructured name', () => {
-    expect(rewriteStxImportSpecifiers('state as state')).not.toContain('const ')
+    expect(rewriteStxImportSpecifiers('state as state')).not.toContain('var ')
   })
 
   it('tolerates trailing commas and whitespace', () => {
-    expect(rewriteStxImportSpecifiers(' state as state2 , ')).toStartWith('const state2 = state;')
+    expect(rewriteStxImportSpecifiers(' state as state2 , ')).toStartWith('var state2 = state;')
     expect(rewriteStxImportSpecifiers('   ')).toBe('// [stx import stripped — resolved via window.stx in __stx_setup]')
+  })
+
+  it('can repeat an alias chosen by independently bundled composables', () => {
+    const first = rewriteStxImportSpecifiers('state as state2')
+    const second = rewriteStxImportSpecifiers('state as state2')
+
+    expect(() => new Function('state', `${first}\n${second}`)).not.toThrow()
   })
 })

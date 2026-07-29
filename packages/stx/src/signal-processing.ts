@@ -1687,5 +1687,9 @@ export function rewriteStxImportSpecifiers(specifiers: string): string {
   if (aliases.length === 0)
     return STX_IMPORT_STRIPPED
 
-  return `const ${aliases.join(', ')}; ${STX_IMPORT_STRIPPED}`
+  // Multiple independently bundled composables are merged into one setup
+  // function. Bun can choose the same alias (for example state2) in more than
+  // one bundle, so use a repeatable function-scoped declaration. Every alias
+  // here points back to the same canonical STX runtime binding.
+  return `var ${aliases.join(', ')}; ${STX_IMPORT_STRIPPED}`
 }
