@@ -31,8 +31,13 @@ import type { Preferences, WindowInstance, WindowOptions } from '@stacksjs/deskt
 import { createPreferences, createWindow, setAutoLaunch } from '@stacksjs/desktop'
 import { renderTemplate } from './render'
 
-/** Anything JSON-serializable a route may hand back, or a `Response` to take over entirely. */
-export type RouteResult = Response | Record<string, unknown> | unknown[] | string | number | boolean | null | void
+/**
+ * What a route may hand back: a `Response` to take over the reply entirely,
+ * `undefined` for a `204`, or any JSON-serializable value to send as JSON.
+ * Typed as `unknown` so a handler can return a plain interface without the
+ * value needing an index signature.
+ */
+export type RouteResult = Response | unknown
 
 /** A route handler receives the request and the app's preference store. */
 export type RouteHandler<T extends Record<string, unknown>> = (
