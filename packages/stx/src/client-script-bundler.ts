@@ -160,6 +160,20 @@ function createBundlePlugin(
         external: true,
       }))
 
+      // Browser-rooted URLs belong to the host application, not the local
+      // filesystem. Keep imports such as `/__deps/charts.js` in the generated
+      // browser bundle so the application's HTTP server can resolve them.
+      // Preserve genuine absolute filesystem imports when the target exists.
+      build.onResolve({ filter: /^\// }, (args) => {
+        if (fs.existsSync(args.path))
+          return { path: args.path }
+
+        return {
+          path: args.path,
+          external: true,
+        }
+      })
+
       // Relative imports (`./x`, `../x`) — rebase against the original
       // `<script client>` source file, not the temp entry's directory.
       // Record resolved paths so the bundler can fold their mtimes into
