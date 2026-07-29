@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.111...v0.2.112)
+
+## 🐛 Bug Fixes
+
+- **stx**: keep keyed :for lists in order when a row renders several nodes ([e37d140](https://github.com/stacksjs/stx/commit/e37d140)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: let scoped styles target a component's own root element ([43dad5a](https://github.com/stacksjs/stx/commit/43dad5a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: skip non-identifier context keys when running a server script ([d4bfcca](https://github.com/stacksjs/stx/commit/d4bfcca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: match AppKit selection and row metrics in the macos sidebar ([c241ebb](https://github.com/stacksjs/stx/commit/c241ebb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: publish .stx sources so tag resolution works from npm ([baaeb6c](https://github.com/stacksjs/stx/commit/baaeb6c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: resolve relative link and asset URLs against the current document ([8ef3265](https://github.com/stacksjs/stx/commit/8ef3265)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: reclaim orphaned scope registry entries on SPA navigation ([b57004b](https://github.com/stacksjs/stx/commit/b57004b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **includes**: register top-level declarations from non-signal client scripts ([a851878](https://github.com/stacksjs/stx/commit/a851878)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: carry the destination container's attributes across SPA swaps ([805e485](https://github.com/stacksjs/stx/commit/805e485)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: reconcile <head> stylesheet/font <link>s on SPA swap ([fcb6162](https://github.com/stacksjs/stx/commit/fcb6162)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.112 ([87705d7](https://github.com/stacksjs/stx/commit/87705d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.110...v0.2.111)
 
 ## 🐛 Bug Fixes
