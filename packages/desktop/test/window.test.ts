@@ -19,7 +19,17 @@ mock.module('ts-craft', () => ({
   },
 }))
 
-import { createWindow, createWindowWithHTML, isWebviewAvailable, openDevWindow } from '../src/window'
+// The binary fallback spawns a real Craft window when a binary is present on
+// the machine, so stub `spawn` and record what would have been launched.
+const spawned: Array<{ command: string, args: string[] }> = []
+mock.module('node:child_process', () => ({
+  spawn: (command: string, args: string[]) => {
+    spawned.push({ command, args })
+    return { on: () => {}, kill: () => {}, unref: () => {} }
+  },
+}))
+
+import { craftWindowArguments, createWindow, createWindowWithHTML, isWebviewAvailable, openDevWindow } from '../src/window'
 
 describe('Window Management', () => {
   let consoleLogSpy: any
@@ -27,6 +37,7 @@ describe('Window Management', () => {
   let consoleErrorSpy: any
 
   beforeEach(() => {
+    spawned.length = 0
     consoleLogSpy = spyOn(console, 'log').mockImplementation(() => {})
     consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
     consoleErrorSpy = spyOn(console, 'error').mockImplementation(() => {})
@@ -49,42 +60,71 @@ describe('Window Management', () => {
     })
   })
 
-  describe('createWindow', () => {
-    it('should attempt to create a window and fall back on error', async () => {
-      const window = await createWindow('http://localhost:3000')
-
-      // craft will attempt to create window and fall back to null on error
-      expect(window).toBeNull()
-      expect(consoleErrorSpy).toHaveBeenCalled()
+  describe('craftWindowArguments', () => {
+    it('describes a plain window with defaults and no opt-in flags', () => {
+      expect(craftWindowArguments('http://localhost:3000')).toEqual([
+        '--url', 'http://localhost:3000',
+        '--title', 'stx Desktop',
+        '--width', '1200',
+        '--height', '800',
+      ])
     })
 
-    it('should handle errors gracefully', async () => {
-      const result = await createWindow('http://localhost:3000', {
-        title: 'Test Window',
-        width: 800,
-        height: 600,
+    it('describes a menu bar window', () => {
+      const args = craftWindowArguments('http://127.0.0.1:4000', {
+        title: 'Barista',
+        width: 320,
+        height: 740,
+        systemTray: true,
+        hideDockIcon: true,
+        titlebarHidden: true,
+        alwaysOnTop: true,
+        resizable: false,
+        darkMode: true,
       })
 
-      expect(result).toBeNull()
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Falling back to browser...')
+      expect(args).toContain('--system-tray')
+      expect(args).toContain('--hide-dock-icon')
+      expect(args).toContain('--titlebar-hidden')
+      expect(args).toContain('--always-on-top')
+      expect(args).toContain('--no-resize')
+      expect(args).toContain('--dark')
+      expect(args.slice(0, 8)).toEqual([
+        '--url', 'http://127.0.0.1:4000',
+        '--title', 'Barista',
+        '--width', '320',
+        '--height', '740',
+      ])
     })
 
-    it('should accept window options', async () => {
+    it('omits devtools only when they are explicitly disabled', () => {
+      expect(craftWindowArguments('http://localhost:3000', {})).not.toContain('--no-devtools')
+      expect(craftWindowArguments('http://localhost:3000', { devTools: false })).toContain('--no-devtools')
+    })
+  })
+
+  describe('createWindow', () => {
+    it('falls back to the craft binary when ts-craft cannot open the window', async () => {
+      const window = await createWindow('http://localhost:3000')
+
+      expect(window).not.toBeNull()
+      expect(spawned).toHaveLength(1)
+      expect(spawned[0].args).toEqual(craftWindowArguments('http://localhost:3000'))
+    })
+
+    it('passes window options through to the binary', async () => {
       await createWindow('http://localhost:8080', {
         title: 'Custom Title',
         width: 1920,
         height: 1080,
       })
 
-      // Should have tried to create window with these options
-      expect(consoleErrorSpy).toHaveBeenCalled()
-    })
-
-    it('should use default options when none provided', async () => {
-      await createWindow('http://localhost:3000')
-
-      // Should use defaults: title: 'stx Desktop', 1200x800
-      expect(consoleErrorSpy).toHaveBeenCalled()
+      expect(spawned[0].args).toEqual([
+        '--url', 'http://localhost:8080',
+        '--title', 'Custom Title',
+        '--width', '1920',
+        '--height', '1080',
+      ])
     })
 
     it('should be an async function', () => {
@@ -161,16 +201,6 @@ describe('Window Management', () => {
   })
 
   describe('Error handling', () => {
-    it('should handle invalid URLs gracefully', async () => {
-      const window = await createWindow('not-a-valid-url')
-      expect(window).toBeNull()
-    })
-
-    it('should handle empty URLs', async () => {
-      const window = await createWindow('')
-      expect(window).toBeNull()
-    })
-
     it('should handle invalid port numbers', async () => {
       const result = await openDevWindow(-1)
       // In test environment, browser fallback is skipped

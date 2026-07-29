@@ -258,10 +258,43 @@ function createWindowInstance(id: string, app: any): WindowInstance {
 // =============================================================================
 
 /**
+ * Translate window options into Craft binary arguments.
+ *
+ * ts-craft is a thin wrapper around this command line, so the same options
+ * describe a window whether the JS package is installed or not.
+ */
+export function craftWindowArguments(url: string, options: WindowOptions = {}): string[] {
+  const args = [
+    '--url', url,
+    '--title', options.title || 'stx Desktop',
+    '--width', String(options.width ?? 1200),
+    '--height', String(options.height ?? 800),
+  ]
+
+  if (options.darkMode) args.push('--dark')
+  if (options.hotReload) args.push('--hot-reload')
+  if (options.resizable === false) args.push('--no-resize')
+  if (options.frameless) args.push('--frameless')
+  if (options.alwaysOnTop) args.push('--always-on-top')
+  if (options.titlebarHidden) args.push('--titlebar-hidden')
+  if (options.systemTray) args.push('--system-tray')
+  if (options.hideDockIcon) args.push('--hide-dock-icon')
+  if (options.devTools === false) args.push('--no-devtools')
+  if (options.nativeSidebar) args.push('--native-sidebar')
+  if (options.sidebarWidth !== undefined) args.push('--sidebar-width', String(options.sidebarWidth))
+
+  const sidebarConfig = prepareSidebarConfig(options)
+  if (sidebarConfig) args.push('--sidebar-config', JSON.stringify(sidebarConfig))
+
+  return args
+}
+
+/**
  * Create a native window with URL
  *
- * Uses ts-craft to create native desktop windows. Falls back to returning null
- * if ts-craft is not available.
+ * Prefers the ts-craft package for its richer typings, and falls back to
+ * spawning the Craft binary directly when it isn't installed — the binary is
+ * what ts-craft drives anyway, so an app needs only one of the two.
  *
  * ## Window Control
  *
@@ -282,71 +315,66 @@ function createWindowInstance(id: string, app: any): WindowInstance {
  *
  * @param url - URL to load in the window
  * @param options - Window configuration options
- * @returns WindowInstance if successful, null if ts-craft unavailable
+ * @returns WindowInstance if successful, null if no Craft runtime is available
  */
 export async function createWindow(url: string, options: WindowOptions = {}): Promise<WindowInstance | null> {
-  const {
-    title = 'stx Desktop',
-    width = 1200,
-    height = 800,
-    darkMode = false,
-    hotReload = false,
-    resizable = true,
-    frameless = false,
-    alwaysOnTop = false,
-    titlebarHidden = false,
-    systemTray = false,
-    hideDockIcon = false,
-    devTools = false,
-    nativeSidebar = false,
-  } = options
+  const id = `craft-window-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const craftPath = getCraftBinaryPath()
 
   try {
-    // Dynamically import ts-craft
     const { createApp } = await import('ts-craft')
-
-    const craftPath = getCraftBinaryPath()
 
     const app = createApp({
       url,
       craftPath,
-      // Menu bar windows need `systemTray`, `hideDockIcon` and `titlebarHidden`
-      // to reach the binary; ts-craft's WindowOptions doesn't type every field
-      // yet, so cast to its own window type to pass them through.
+      // ts-craft's WindowOptions doesn't type every field the binary honors
+      // (titlebarHidden, hideDockIcon, sidebar config), so cast to its own
+      // window type to pass them through.
       window: {
-        title,
-        width,
-        height,
-        darkMode,
-        hotReload,
-        resizable,
-        frameless,
-        alwaysOnTop,
-        titlebarHidden,
-        systemTray,
-        hideDockIcon,
-        devTools,
-        nativeSidebar,
+        title: options.title || 'stx Desktop',
+        width: options.width ?? 1200,
+        height: options.height ?? 800,
+        darkMode: options.darkMode ?? false,
+        hotReload: options.hotReload ?? false,
+        resizable: options.resizable ?? true,
+        frameless: options.frameless ?? false,
+        alwaysOnTop: options.alwaysOnTop ?? false,
+        titlebarHidden: options.titlebarHidden ?? false,
+        systemTray: options.systemTray ?? false,
+        hideDockIcon: options.hideDockIcon ?? false,
+        devTools: options.devTools ?? false,
+        nativeSidebar: options.nativeSidebar ?? false,
         sidebarWidth: options.sidebarWidth,
         sidebarConfig: prepareSidebarConfig(options) as Record<string, unknown> | undefined,
       } as NonNullable<Parameters<typeof createApp>[0]>['window'],
     })
 
-    // Generate unique ID
-    const id = `craft-window-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-
-    // Store the window instance
     activeWindows.set(id, { app, url, options })
-
-    // Show the window
     await app.show()
 
     return createWindowInstance(id, app)
   }
-  catch (error) {
-    console.error('Failed to create native window:', error)
-    console.warn('Falling back to browser...')
-    return null
+  catch (tsCraftError) {
+    if (!craftPath) {
+      console.error('Failed to create native window: no craft binary found and ts-craft is not installed')
+      console.error(`  (ts-craft error: ${(tsCraftError as Error).message})`)
+      return null
+    }
+
+    try {
+      const { spawn } = await import('node:child_process')
+      const child = spawn(craftPath, craftWindowArguments(url, options), { stdio: 'inherit' })
+      child.on('error', err => console.warn('craft child error:', err.message))
+
+      const app = { close: () => child.kill() }
+      activeWindows.set(id, { app, url, options })
+
+      return createWindowInstance(id, app)
+    }
+    catch (binaryError) {
+      console.error('Failed to spawn craft binary:', (binaryError as Error).message)
+      return null
+    }
   }
 }
 
