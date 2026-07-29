@@ -550,6 +550,28 @@ export function slotContentHasExpressions(slotContent: string): boolean {
   return /\{\{[\s\S]*?\}\}|\{!![\s\S]*?!!\}/.test(withoutScripts)
 }
 
+/**
+ * Collect client variables whose initializer returns a signal-like value.
+ *
+ * Component scripts are removed before their template body reaches the
+ * expression pipeline. Recording these names in the component context keeps
+ * interpolations such as `{{ title() }}` client-owned even when a static prop
+ * named `title` also exists in the server context.
+ */
+export function componentClientSignalNames(scripts: string[]): string[] {
+  const names = new Set<string>()
+  const declaration = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:state|derived|computed|ref|reactive|signal|useReactiveProp|useLocalStorage|useSessionStorage|useCookie|useDebouncedValue)\s*(?:<[^>]*>)?\s*\(/g
+
+  for (const script of scripts) {
+    let match: RegExpExecArray | null
+    while ((match = declaration.exec(script)) !== null)
+      names.add(match[1])
+    declaration.lastIndex = 0
+  }
+
+  return [...names]
+}
+
 export async function renderComponentWithSlot(
   componentPath: string,
   props: Record<string, unknown>,
@@ -998,6 +1020,9 @@ export async function renderComponentWithSlot(
     const hasSignalScripts = clientScripts.some(s =>
       /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useReactiveProp|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
     )
+    const clientSignalNames = componentClientSignalNames(clientScripts)
+    if (clientSignalNames.length > 0)
+      componentContext.__stx_client_signal_names = clientSignalNames
 
     // First, process any nested components in this component
     const componentOptions = {
@@ -1020,6 +1045,20 @@ export async function renderComponentWithSlot(
     // Process the component content recursively with the new context
     // eslint-disable-next-line ts/no-top-level-await
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
+
+    // Component expansion happens before the caller's final expression pass.
+    // Record any mustaches the component deliberately left unresolved so the
+    // caller does not evaluate them against its unrelated scope and erase
+    // client signal output such as `{{ title() }}`.
+    const preservedExpressions = new Set<string>(
+      Array.isArray(parentContext.__stx_preserved_client_expressions)
+        ? parentContext.__stx_preserved_client_expressions as string[]
+        : [],
+    )
+    for (const match of result.matchAll(/\{\{([\s\S]*?)\}\}/g))
+      preservedExpressions.add(match[1].trim())
+    if (preservedExpressions.size > 0)
+      parentContext.__stx_preserved_client_expressions = [...preservedExpressions]
 
     // Generate unique scope ID for this component instance
     const scopeId = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}_${Math.random().toString(36).slice(2, 8)}`

@@ -700,7 +700,18 @@ export function processExpressions(template: string, context: Record<string, any
   // as empty. `<Alert>{{ error }}</Alert>` produced a styled, empty box.
   const hasSignals = options?.forceSignals === true
     || context?.__stx_force_signals === true
+    || Array.isArray(context?.__stx_client_signal_names)
     || usesSignalsInScript(template)
+  const clientSignalNames = new Set<string>(
+    Array.isArray(context?.__stx_client_signal_names)
+      ? context.__stx_client_signal_names
+      : [],
+  )
+  const preservedClientExpressions = new Set<string>(
+    Array.isArray(context?.__stx_preserved_client_expressions)
+      ? context.__stx_preserved_client_expressions
+      : [],
+  )
 
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
   output = output.replace(/\{\{\{([\s\S]*?)\}\}\}/g, (match, expr, offset) => {
@@ -762,6 +773,13 @@ export function processExpressions(template: string, context: Record<string, any
   output = output.replace(/\{\{([\s\S]*?)\}\}/g, (match, expr, offset) => {
     const trimmedExpr = expr.trim()
 
+    // A nested component has already classified these expressions as
+    // client-owned. Parent processing runs another expression pass after
+    // component expansion, so preserve the exact expressions instead of
+    // evaluating them against the unrelated parent scope.
+    if (preservedClientExpressions.has(trimmedExpr))
+      return match
+
     // Skip common JS built-ins that should be evaluated server-side
     const jsBuiltins = ['parseInt', 'parseFloat', 'String', 'Number', 'Boolean', 'Array', 'Object', 'JSON', 'Math', 'Date', 'encodeURIComponent', 'decodeURIComponent', 'encodeURI', 'decodeURI', 'true', 'false', 'null', 'undefined']
 
@@ -772,6 +790,7 @@ export function processExpressions(template: string, context: Record<string, any
     const firstVarName = identifierMatch?.[1]
     // eslint-disable-next-line pickier/no-unused-vars
     const firstVarInContext = firstVarName && (firstVarName in context || jsBuiltins.includes(firstVarName))
+    const firstVarIsClientSignal = Boolean(firstVarName && clientSignalNames.has(firstVarName))
 
     // Detect if this looks like a client-side signal expression
     // Signals are typically function calls like loading(), sessions().length, etc.
@@ -791,6 +810,20 @@ export function processExpressions(template: string, context: Record<string, any
     // Only preserve for client-side if evaluation fails AND it looks like a signal
     try {
       const value = evaluateExpression(expr, context)
+
+      // A component prop can have a static server value and then be shadowed
+      // by a client signal with the same name:
+      //
+      //   const title = useReactiveProp('title', '')
+      //   <h2>{{ title() }}</h2>
+      //
+      // The server context contains `title: "Hello"`, so context-only
+      // detection cannot distinguish this from a server helper and used to
+      // evaluate the expression away. The component renderer records locally
+      // declared client signals before stripping its script, allowing the
+      // interpolation to survive for the scoped runtime.
+      if (firstVarIsClientSignal)
+        return match
 
       // For signal-based templates: if the expression references variables NOT in the
       // server-side context (i.e. client-only signals), preserve it for client-side
@@ -814,6 +847,9 @@ export function processExpressions(template: string, context: Record<string, any
       return value !== undefined && value !== null ? escapeHtml(String(value)) : ''
     }
     catch (error: unknown) {
+      if (firstVarIsClientSignal)
+        return match
+
       // For signal-based templates, preserve expressions that reference runtime variables
       // This includes loop variables (page, event, etc.) and component-defined functions (fmt, etc.)
       if (hasSignals && !expressionUsesOnlyContextVars(trimmedExpr, context)) {

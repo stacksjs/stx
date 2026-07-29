@@ -79,3 +79,43 @@ describe('usesSignalsInScript recognizes client-only directives (#1748)', () => 
     expect(usesSignalsInScript('@foreach(rows as r)<td>{{ r.status }}</td>@endforeach')).toBe(false)
   })
 })
+
+describe('{{ }} interpolation from reactive component props', () => {
+  let tempDir: string
+  let componentsDir: string
+
+  beforeAll(async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'stx-reactive-prop-text-'))
+    componentsDir = join(tempDir, 'components')
+    await mkdir(componentsDir, { recursive: true })
+    await writeFile(
+      join(componentsDir, 'preference-list.stx'),
+      `<script client>
+const title = useReactiveProp('title', 'Fallback')
+const description = useReactiveProp('description', '')
+</script>
+<section>
+  <h2>{{ title() }}</h2>
+  <p>{{ description() }}</p>
+</section>`,
+    )
+  })
+
+  afterAll(async () => {
+    await rm(tempDir, { recursive: true, force: true })
+  })
+
+  it('preserves reactive prop calls that shadow static server props', async () => {
+    const out = await processDirectives(
+      '<preference-list title="Filter Rules" description="Mailbox filters" />',
+      {},
+      join(tempDir, 'page.stx'),
+      { componentsDir, partialsDir: componentsDir } as any,
+      new Set<string>(),
+    )
+
+    expect(out).toContain('{{ title() }}')
+    expect(out).toContain('{{ description() }}')
+    expect(out).toContain('&quot;title&quot;:&quot;Filter Rules&quot;')
+  })
+})
