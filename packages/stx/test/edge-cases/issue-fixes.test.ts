@@ -528,6 +528,42 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(runtime).toMatch(/!isNaN\(Number\(v\)\)/)
   })
 
+  it('serializes object bindings and parses structured reactive props', () => {
+    expect(runtime).toContain('attrValue = JSON.stringify(v)')
+    expect(runtime).toContain('return JSON.parse(v)')
+  })
+
+  it('emits camelCase reactive props as stable kebab-case DOM attributes', async () => {
+    const componentsDir = path.join(TMP, 'reactive-prop-components')
+    fs.mkdirSync(componentsDir, { recursive: true })
+    try {
+      fs.writeFileSync(
+        path.join(componentsDir, 'ReactivePager.stx'),
+        `<script client>
+const currentPage = useReactiveProp('current-page', 1)
+</script>
+<p :text="currentPage()"></p>`,
+      )
+
+      const output = await processDirectives(
+        `<script client>
+const page = state(2)
+</script>
+<ReactivePager :currentPage="page()" />`,
+        {},
+        path.join(TMP, 'reactive-pager-view.stx'),
+        { componentsDir } as StxOptions,
+        new Set<string>(),
+      )
+
+      expect(output).toContain(':current-page="page()"')
+      expect(output).not.toContain(':currentPage=')
+    }
+    finally {
+      fs.rmSync(componentsDir, { recursive: true, force: true })
+    }
+  })
+
   it('signal-processing destructures useReactiveProp in the setup wrapper', () => {
     const setupSrc = require('node:fs').readFileSync(
       require('node:path').resolve(__dirname, '../../src/signal-processing.ts'),

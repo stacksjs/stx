@@ -1851,7 +1851,12 @@ else if (v === true) {
             el.setAttribute(attrName, '');
           }
 else {
-            el.setAttribute(attrName, v);
+            var attrValue = v;
+            if (typeof v === 'object') {
+              try { attrValue = JSON.stringify(v); }
+              catch (e) { attrValue = String(v); }
+            }
+            el.setAttribute(attrName, attrValue);
           }
         });
         el.removeAttribute(name);
@@ -3677,6 +3682,10 @@ catch (e) {}
     var parse = opts.parse || function(v) {
       if (v === '' || v === 'true') return true;
       if (v === 'false') return false;
+      if (typeof v === 'string' && (v.charAt(0) === '[' || v.charAt(0) === '{')) {
+        try { return JSON.parse(v); }
+        catch (e) {}
+      }
       if (v != null && v !== '' && !isNaN(Number(v))) return Number(v);
       return v;
     };

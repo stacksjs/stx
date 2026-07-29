@@ -986,7 +986,7 @@ function emitClientReactiveAttrs(html: string, clientReactive: Record<string, st
 
   // Build the reactive attributes string
   const reactiveAttrs = Object.entries(clientReactive)
-    .map(([key, expr]) => `:${key}="${expr.replace(/"/g, '&quot;')}"`)
+    .map(([key, expr]) => `:${pascalToKebab(key)}="${expr.replace(/"/g, '&quot;')}"`)
     .join(' ')
 
   // Insert after the tag name
