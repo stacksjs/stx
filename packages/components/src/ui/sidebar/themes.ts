@@ -67,6 +67,8 @@ export interface SidebarTheme {
   layers: {
     /** Liquid Glass edge highlight — a bright rim that subtly shimmers. */
     shimmerRim?: boolean
+    /** Frosted material behind the pane (a real `backdrop-filter`). */
+    frosted?: boolean
     /** Soft tint gradient blended over the material. */
     tint?: string
   }
@@ -114,13 +116,22 @@ const macos: SidebarTheme = {
     // hint of the backdrop through. A half-transparent pane reads as a web
     // imitation, and over a dark page it inverts into a dark bar entirely.
     'bg-[#f2f2f4]/90 dark:bg-[#1c1c1e]/88',
-    'backdrop-blur-[50px] backdrop-saturate-[1.7]',
     'text-black dark:text-white',
     'select-none',
   ].join(' '),
   selection: 'accent',
   layers: {
     shimmerRim: true,
+    // The blur itself is real CSS in Sidebar.stx rather than a utility.
+    // Expressed as `backdrop-blur-[50px]` / `backdrop-saturate-[180%]` the
+    // arbitrary values did not survive the stx dev server's class
+    // extraction: the pane computed `backdrop-filter: none`, and an earlier
+    // `backdrop-saturate-[1.7]` reached the generator with its brackets
+    // stripped, so it was read as a percentage and compiled to
+    // `saturate(0.017)` — draining the colour out of the whole backdrop.
+    // Crosswind parses and generates both correctly on its own, so the
+    // material is written as plain CSS to stay out of that path entirely.
+    frosted: true,
   },
   scrollArea: 'flex-1 overflow-y-auto overflow-x-hidden px-[10px] pb-[10px]',
   sectionHeader: [

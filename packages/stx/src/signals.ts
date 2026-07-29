@@ -2439,6 +2439,13 @@ else {
     }
 
     let currentElements = [];
+    // One entry per list item, each holding EVERY node that item rendered.
+    // currentElements stays flat for transition snapshots, but the keyed
+    // diff below must pair a key with all of its nodes: a template row
+    // routinely yields several (an element plus its surrounding text nodes),
+    // and indexing a flat list by key position then paired the wrong node
+    // with each key, leaving the list rotated after an update.
+    let currentGroups = [];
     let currentKeys = [];
     let loadingElement = null;
     let emptyElement = null;
@@ -2580,6 +2587,7 @@ catch (e) {
           // Dispose scopes registered by items before they leave the DOM (#1727).
           currentElements.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
           currentElements = [];
+          currentGroups = [];
           currentKeys = [];
           showLoading();
           return;
@@ -2628,6 +2636,7 @@ catch (e) {
           // Dispose scopes registered by items before they leave the DOM (#1727).
           currentElements.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
           currentElements = [];
+          currentGroups = [];
           currentKeys = [];
           hideEmpty();
           return;
@@ -2668,6 +2677,7 @@ catch (e) {
         // Dispose scopes registered by items before they leave the DOM (#1727).
         currentElements.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
         currentElements = [];
+        currentGroups = [];
         currentKeys = [];
         if (emptyExpr) {
           const emptyContent = evalLazy(emptyExpr);
@@ -2702,11 +2712,12 @@ catch (e) {
       for (let i = 0; i < currentKeys.length; i++) {
         const k = currentKeys[i];
         if (!oldKeyMap.has(k)) oldKeyMap.set(k, []);
-        oldKeyMap.get(k).push(currentElements[i]);
+        oldKeyMap.get(k).push(currentGroups[i] || []);
       }
 
       // Build new element list, reusing existing DOM nodes by key
       const newElements = [];
+      const newGroups = [];
       const usedKeys = new Set();
 
       for (let i = 0; i < list.length; i++) {
@@ -2714,10 +2725,12 @@ catch (e) {
         const existing = oldKeyMap.get(key);
 
         if (existing && existing.length > 0 && !usedKeys.has(key)) {
-          // Reuse existing element — move to correct position
-          const el = existing.shift();
-          parent.insertBefore(el, placeholder);
-          newElements.push(el);
+          // Reuse this item's nodes — move the whole group into position, in
+          // order, so a multi-node row stays contiguous and correctly ordered.
+          const group = existing.shift();
+          group.forEach(el => parent.insertBefore(el, placeholder));
+          newElements.push(...group);
+          newGroups.push(group);
           usedKeys.add(key);
           // Update the item signal so bindings re-evaluate with new data.
           // This is the fix for #1669 — without this, reused elements show
@@ -2732,14 +2745,16 @@ catch (e) {
           const elements = createItemElements(list[i], i, key);
           elements.forEach(el => { parent.insertBefore(el, placeholder); if (tgReady) tgEnter(el, tgName); });
           newElements.push(...elements);
+          newGroups.push(elements);
         }
       }
 
       // Remove old elements whose keys are no longer in the list.
       // Dispose any scopes registered inside removed items before the
       // remove() call (#1727).
-      for (const [key, elements] of oldKeyMap) {
+      for (const [key, groups] of oldKeyMap) {
         if (!usedKeys.has(key)) {
+          const elements = groups.flat();
           // In a transition group, run the leave animation and let it remove the
           // node; otherwise remove immediately. Scopes are disposed up-front
           // either way (their destroy hooks shouldn't wait on a CSS transition).
@@ -2749,6 +2764,7 @@ catch (e) {
       }
 
       currentElements = newElements;
+      currentGroups = newGroups;
       currentKeys = newKeys;
 
       // ── <TransitionGroup> play (#1742) ────────────────────────────

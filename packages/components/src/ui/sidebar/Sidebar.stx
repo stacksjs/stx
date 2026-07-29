@@ -31,6 +31,7 @@ export const sidebarUid = $props.id || `stx-sidebar-${Math.random().toString(36)
 const themeStyle = resolveSidebarTheme(theme)
 export const selectionModel = themeStyle.selection
 export const hasShimmerRim = themeStyle.layers.shimmerRim === true
+export const isFrosted = themeStyle.layers.frosted === true
 export const tintClasses = themeStyle.layers.tint || ''
 export const scrollAreaClasses = themeStyle.scrollArea
 
@@ -342,6 +343,7 @@ defineExpose({ collapsed, toggle: toggleCollapse })
   data-stx-sidebar
   data-sidebar-theme="{{ theme }}"
   data-sidebar-selection="{{ selectionModel }}"
+  @if(isFrosted)data-sidebar-frosted@endif
   data-window-key="true"
   data-active-class="{{ activeClasses }}"
   class="{{ paneClasses }}"
@@ -450,6 +452,20 @@ defineExpose({ collapsed, toggle: toggleCollapse })
 }
 @media (prefers-reduced-motion: reduce) {
   .stx-sidebar-rim::after { animation: none; }
+}
+
+/* Frosted sidebar material. Hand-written CSS on purpose: as the utilities
+   `backdrop-blur-[50px]` / `backdrop-saturate-[180%]` the arbitrary values
+   did not survive class extraction in the stx dev server, leaving the pane
+   with `backdrop-filter: none`; an earlier `backdrop-saturate-[1.7]` lost
+   its brackets on the way to the generator, was read as a percentage, and
+   compiled to `saturate(0.017)`, which drained the colour out of the whole
+   backdrop. In a Craft window with webSidebarMaterial the native
+   NSVisualEffectView supplies the real vibrancy; this approximates it
+   everywhere else. */
+[data-sidebar-frosted] {
+  -webkit-backdrop-filter: saturate(180%) blur(50px);
+  backdrop-filter: saturate(180%) blur(50px);
 }
 
 /* ---------------------------------------------------------------------------
