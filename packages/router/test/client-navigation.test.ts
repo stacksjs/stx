@@ -183,6 +183,64 @@ describe('router browser navigation behavior', () => {
     expect(pageScript?.textContent).toContain('__ratesSetupReady')
   })
 
+  it('re-executes component scripts beside their routed template roots', async () => {
+    const window = installRouter(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app">
+          <meta name="stx-layout-group" content="app">
+        </head>
+        <body><main>Home</main></body>
+      </html>
+    `, async () => response(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app">
+          <meta name="stx-layout-group" content="app">
+        </head>
+        <body>
+          <main>
+            <section id="order-form">Orders</section>
+            <script>
+              window.__routedComponentRoot = document.currentScript.previousElementSibling.id
+            </script>
+          </main>
+        </body>
+      </html>
+    `))
+
+    await window.stxRouter.navigate('/orders')
+    await waitForRouterSwap()
+
+    const pageScript = window.document.querySelector('script[data-stx-page][data-stx-positioned]')
+    expect(pageScript?.previousElementSibling?.id).toBe('order-form')
+  })
+
+  it('preserves component script adjacency for fragment swaps', async () => {
+    const window = installRouter(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app">
+          <meta name="stx-layout-group" content="app">
+        </head>
+        <body><main>Home</main></body>
+      </html>
+    `, async () => response(`
+      <section id="error-panel">Errors</section>
+      <script>window.__errorPanelMounted = true</script>
+    `, {
+      'X-STX-Fragment': 'true',
+      'X-STX-Layout': 'layouts/app',
+      'X-STX-Layout-Group': 'app',
+    }))
+
+    await window.stxRouter.navigate('/errors')
+    await waitForRouterSwap()
+
+    const pageScript = window.document.querySelector('script[data-stx-page][data-stx-positioned]')
+    expect(pageScript?.previousElementSibling?.id).toBe('error-panel')
+  })
+
   it('does a native full navigation for non-stx documents instead of corrupting the shell', async () => {
     // A route on the same origin rendered by another engine (e.g. a BunPress
     // blog) carries none of the stx layout markers. The router must NOT splice

@@ -232,6 +232,10 @@ export function getRouterScript(): string {
   function hasStaticImport(code){
     return /(?:^|\\n)[ \\t]*import(?:[ \\t]+|[{*'"])/.test(code);
   }
+  function generatedSetupName(code){
+    var match=code.match(/function (__stx_setup_[A-Za-z0-9_]+)\\s*\\(/);
+    return match?match[1]:'';
+  }
   function isSignalsRuntimeScript(script,code){
     return !!(script&&script.hasAttribute&&script.hasAttribute('data-stx-runtime'))
       ||(code.indexOf('_cleanupContainer')!==-1&&code.indexOf('signals runtime loading')!==-1)
@@ -428,10 +432,15 @@ else {
       function doFragSwap(){
         // Extract scripts from fragment before injecting HTML
         var fragScripts=[];
+        var fragScriptId=0;
         var fragStyles=[];
         var fragCrosswindCSS=null;
         var cleanFrag=html.replace(new RegExp('<scr'+'ipt\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/scr'+'ipt>','gi'),function(m,attrs,code){
-          if(code&&code.trim()&&!isSignalsRuntimeScript({hasAttribute:function(name){return name==='data-stx-runtime'&&attrs.indexOf('data-stx-runtime')!==-1}},code))fragScripts.push(code);
+          if(code&&code.trim()&&!isSignalsRuntimeScript({hasAttribute:function(name){return name==='data-stx-runtime'&&attrs.indexOf('data-stx-runtime')!==-1}},code)){
+            var slot='fragment-'+(++fragScriptId);
+            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code)});
+            return '<scr'+'ipt type="application/stx-pending" data-stx-route-script="'+slot+'"></scr'+'ipt>';
+          }
           return '';
         });
         cleanFrag=cleanFrag.replace(new RegExp('<sty'+'le\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/sty'+'le>','gi'),function(m,attrs,css){
@@ -480,7 +489,9 @@ else {
         // Execute page scripts FIRST — they define setup functions and set _latestSetup
         log('[router] frag scripts:', fragScripts.length);
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
-        fragScripts.forEach(function(code){
+        fragScripts.sort(function(a,b){return (a.setupName?1:0)-(b.setupName?1:0)});
+        fragScripts.forEach(function(entry){
+          var code=entry.text;
           log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
           // Skip scripts that were already executed (layout-level partials
           // like theme.stx, stores.stx, nav.stx). Their top-level const/let
@@ -512,7 +523,13 @@ else {
           }
           ns.textContent=(hasImport||isAlreadyScoped)?code:'{'+code+'}';
           ns.setAttribute('data-stx-page','');
-          document.body.appendChild(ns);
+          var placeholder=document.querySelector('script[data-stx-route-script="'+entry.slot+'"]');
+          if(placeholder&&placeholder.parentNode){
+            ns.setAttribute('data-stx-positioned','');
+            placeholder.parentNode.replaceChild(ns,placeholder);
+          }else{
+            document.body.appendChild(ns);
+          }
         });
         log('[router] scripts done. _latestSetup:', !!window.stx._latestSetup);
         // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
@@ -621,10 +638,35 @@ else {
         var newGroup=getDocLayoutGroup(doc,newLayout);
         isLayoutChange=curGroup!==newGroup||(curLayout&&newLayout&&curLayout!==newLayout);
       }
+      var incomingSetupName=newBody?(newBody.getAttribute('data-stx')||''):'';
+      // Scripts assigned through innerHTML are inert. Preserve executable
+      // scripts as placeholders so re-execution keeps document.currentScript
+      // beside the component template it owns.
+      var routedBodyScripts=[];
+      var routedBodyScriptId=0;
+      function prepareRoutedBodyScripts(root){
+        if(!root)return;
+        root.querySelectorAll('script').forEach(function(s){
+          var text=s.textContent||'';
+          if(s.hasAttribute('src')){s.remove();return}
+          var type=(s.getAttribute('type')||'').trim().toLowerCase();
+          var executable=!type||type==='text/javascript'||type==='application/javascript'||type==='module';
+          if(!executable||!text.trim())return;
+          if(isSignalsRuntimeScript(s,text)||text.indexOf('__stxRouter')!==-1){s.remove();return}
+          var slot='document-'+(++routedBodyScriptId);
+          var setupName=generatedSetupName(text);
+          if(setupName)incomingSetupName=setupName;
+          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName});
+          s.textContent='';
+          s.setAttribute('type','application/stx-pending');
+          s.setAttribute('data-stx-route-script',slot);
+        });
+      }
+      prepareRoutedBodyScripts(isLayoutChange?newBody:newContent);
       if(isLayoutChange&&newBody){
         log('[router] full body swap for layout change');
         // Replace entire body content — layout chrome and all
-        var bodyHTML=newBody.innerHTML.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt\\\\s*>','gi'),'');
+        var bodyHTML=newBody.innerHTML;
         document.body.innerHTML=bodyHTML;
         // Copy body attributes (class, data-stx, etc.)
         Array.from(newBody.attributes).forEach(function(attr){document.body.setAttribute(attr.name,attr.value)});
@@ -646,8 +688,9 @@ else {
         var attrMap={};
         Array.prototype.forEach.call(newContent.attributes,function(a){attrMap[a.name]=a.value});
         setContainerAttrs(currentContent,attrMap);
-        var cleanHTML=newContent.innerHTML.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt\\\\s*>','gi'),'');
+        var cleanHTML=newContent.innerHTML;
         currentContent.innerHTML=cleanHTML;
+        if(incomingSetupName)document.body.setAttribute('data-stx',incomingSetupName);
       }
 
       // ── Load new external <head> scripts ──
@@ -673,25 +716,11 @@ else {
       // Remove previously injected page scripts
       document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
 
-      var scripts=[];
-      function addScript(text, runAlways){
-        scripts.push({text:text,runAlways:!!runAlways});
+      var scripts=routedBodyScripts.slice();
+      function addScript(text, runAlways, slot){
+        scripts.push({text:text,runAlways:!!runAlways,slot:slot||''});
       }
       if(isLayoutChange){
-        // Layout change: collect ALL scripts from the new document body
-        // (layout scripts, component mounts, setup functions — everything)
-        var newBodyEl=doc.querySelector('body');
-        if(newBodyEl){
-          newBodyEl.querySelectorAll('script').forEach(function(s){
-            var text=s.textContent||'';
-            if(s.hasAttribute('src'))return;
-            if(!text.trim())return;
-            // Skip the signals runtime IIFE — it's already loaded
-            if(isSignalsRuntimeScript(s,text))return;
-            if(text.indexOf('__stxRouter')!==-1)return;
-            addScript(text,true);
-          });
-        }
         // Also collect setup functions from <head>
         doc.querySelectorAll('head script').forEach(function(s){
           var text=s.textContent||'';
@@ -701,13 +730,6 @@ else {
           if(text.indexOf('__stx_setup_')!==-1)addScript(text,true);
         });
       } else {
-        // Same layout: collect scripts from the container
-        newContent.querySelectorAll('script').forEach(function(s){
-          var text=s.textContent||'';
-          if(s.hasAttribute('src'))return;
-          if(!text.trim())return;
-          addScript(text,true);
-        });
         // Collect page scripts from <head> AND <body> (outside container).
         // SSG builds place the setup function in <body> before <main>, not
         // in <head>. Without this, SPA navigation on static sites never
@@ -727,6 +749,16 @@ else {
           if(seenSetups[key])return;
           seenSetups[key]=1;
           addScript(text,true);
+        });
+      }
+      // Component setup scripts also assign window.stx._latestSetup. Run the
+      // destination page setup last so stx:load hydrates with the page scope,
+      // not whichever nested component happened to render last.
+      if(incomingSetupName){
+        scripts.sort(function(a,b){
+          var aPage=(a.setupName||generatedSetupName(a.text))===incomingSetupName?1:0;
+          var bPage=(b.setupName||generatedSetupName(b.text))===incomingSetupName?1:0;
+          return aPage-bPage;
         });
       }
 
@@ -784,7 +816,13 @@ else {
           var alreadyScoped=text.trimStart().charAt(0)==='('||text.trimStart().charAt(0)===';'||text.indexOf('window.stx.mount')>-1;
           ns.textContent=(hasImport||alreadyScoped)?text:'{'+text+'}';
           ns.setAttribute('data-stx-page','');
-          document.body.appendChild(ns);
+          var placeholder=entry.slot?document.querySelector('script[data-stx-route-script="'+entry.slot+'"]'):null;
+          if(placeholder&&placeholder.parentNode){
+            ns.setAttribute('data-stx-positioned','');
+            placeholder.parentNode.replaceChild(ns,placeholder);
+          }else{
+            document.body.appendChild(ns);
+          }
         });
         // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
         window.dispatchEvent(new Event('stx:load'));
