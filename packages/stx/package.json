@@ -117,6 +117,7 @@
   "dependencies": {
     "@cwcss/crosswind": "^0.2.12",
     "@stacksjs/clapp": "^0.2.0",
+    "@stacksjs/desktop": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
     "@stacksjs/ts-i18n": "^0.1.11",
     "bun-plugin-stx": "workspace:*",
@@ -125,8 +126,5 @@
     "ts-broadcasting": "^0.0.9",
     "ts-images": "^0.1.9",
     "ts-syntax-highlighter": "^0.2.1"
-  },
-  "optionalDependencies": {
-    "@stacksjs/desktop": "workspace:*"
   }
 }

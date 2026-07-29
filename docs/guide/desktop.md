@@ -20,12 +20,21 @@ The `@stacksjs/desktop` package provides a complete API for building native desk
 
 ### Installation
 
-The desktop package is included in the STX monorepo:
+`@stacksjs/stx` bundles the desktop package, so one dependency covers both the
+templating and the native side:
 
 ```bash
-cd packages/desktop
-bun install
+bun add @stacksjs/stx
 ```
+
+```typescript
+import { createWindow } from '@stacksjs/stx/desktop'
+```
+
+Importing `@stacksjs/desktop` directly works too, and is equivalent.
+
+Native rendering needs the Craft binary. `createWindow` finds it on `PATH`, in
+`~/.bun/bin`, or at `CRAFT_BINARY_PATH` if you keep it elsewhere.
 
 ### Basic Usage
 
@@ -64,9 +73,9 @@ This will:
 #### Basic Window
 
 ```typescript
-import { createWindow } from '@stacksjs/desktop'
+import { createWindow } from '@stacksjs/stx/desktop'
 
-const window = await createWindow({
+const window = await createWindow('http://localhost:3000', {
   title: 'My Application',
   width: 800,
   height: 600,
@@ -78,19 +87,10 @@ const window = await createWindow({
 #### Window with HTML Content
 
 ```typescript
-import { createWindowWithHTML } from '@stacksjs/desktop'
+import { createWindowWithHTML } from '@stacksjs/stx/desktop'
 
-const window = await createWindowWithHTML({
+const window = await createWindowWithHTML('<h1>Hello from STX Desktop!</h1>', {
   title: 'Custom Window',
-  html: `
-    <!DOCTYPE html>
-    <html>
-      <head><title>My App</title></head>
-      <body>
-        <h1>Hello from STX Desktop!</h1>
-      </body>
-    </html>
-  `,
   width: 600,
   height: 400
 })
@@ -115,14 +115,20 @@ const window = await openDevWindow(3000, {
 
 ```typescript
 interface WindowOptions {
-  title: string          // Window title
-  width: number          // Window width in pixels
-  height: number         // Window height in pixels
-  url?: string           // URL to load
-  html?: string          // HTML content to display
-  resizable?: boolean    // Allow resizing (default: true)
-  darkMode?: boolean     // Dark mode support (default: false)
-  hotReload?: boolean    // Enable hot reload (default: false)
+  title?: string          // Window title
+  width?: number          // Window width in pixels (default: 1200)
+  height?: number         // Window height in pixels (default: 800)
+  resizable?: boolean     // Allow resizing (default: true)
+  darkMode?: boolean      // Dark mode support (default: false)
+  hotReload?: boolean     // Reload the webview on file changes (default: false)
+  alwaysOnTop?: boolean   // Float above other windows
+  frameless?: boolean     // No title bar or window chrome
+  titlebarHidden?: boolean // Transparent titlebar, content extends under it
+  systemTray?: boolean    // Show a menu bar icon for this window
+  hideDockIcon?: boolean  // Menu bar only — no Dock icon
+  devTools?: boolean      // Webview inspector (right-click → Inspect Element)
+  nativeSidebar?: boolean // Finder-style sidebar with vibrancy
+  sidebarWidth?: number   // Sidebar width in pixels
 }
 ```
 
