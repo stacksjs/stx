@@ -1,5 +1,106 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.113...v0.2.114)
+
+## 🚀 Features
+
+- **desktop**: resolve the craft binary beside the running executable ([1e6ad3d](https://github.com/stacksjs/stx/commit/1e6ad3d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: re-export Craft packaging so apps never import craft directly ([57ce98a](https://github.com/stacksjs/stx/commit/57ce98a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: add createMenuBarApp and a bundled desktop entrypoint ([8003ffc](https://github.com/stacksjs/stx/commit/8003ffc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: open windows through the craft binary when ts-craft is absent ([1c49732](https://github.com/stacksjs/stx/commit/1c49732)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **composables**: publish composables as bare globals — no import needed ([455a4a5](https://github.com/stacksjs/stx/commit/455a4a5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **composables**: auto-register a composables directory for @composables imports ([1d00bd9](https://github.com/stacksjs/stx/commit/1d00bd9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: support Vue lifecycle aliases ([dc13f2d](https://github.com/stacksjs/stx/commit/dc13f2d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **stx**: let menu bar routes return typed objects ([aae0f33](https://github.com/stacksjs/stx/commit/aae0f33)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: sync sidebar route selection ([a0a8afb](https://github.com/stacksjs/stx/commit/a0a8afb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: pass menu bar window options through to craft ([77f3298](https://github.com/stacksjs/stx/commit/77f3298)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: load runtime before page scripts ([2e3cd6e](https://github.com/stacksjs/stx/commit/2e3cd6e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: expose preferred media composables ([feb3052](https://github.com/stacksjs/stx/commit/feb3052)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve conditional component props ([db2fcd7](https://github.com/stacksjs/stx/commit/db2fcd7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: hydrate dynamic route params ([e749592](https://github.com/stacksjs/stx/commit/e749592)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: hydrate routed components with page scope ([00b256f](https://github.com/stacksjs/stx/commit/00b256f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: preserve component script positions ([fd87a42](https://github.com/stacksjs/stx/commit/fd87a42)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: interpolate component client scripts as JS, not HTML ([68dfe9f](https://github.com/stacksjs/stx/commit/68dfe9f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: preserve runtime during page swaps ([62dec33](https://github.com/stacksjs/stx/commit/62dec33)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve empty option values ([6af62e8](https://github.com/stacksjs/stx/commit/6af62e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: unwrap loop record value fields ([f35fa9f](https://github.com/stacksjs/stx/commit/f35fa9f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: evaluate mixed signal expressions ([1cdde42](https://github.com/stacksjs/stx/commit/1cdde42)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: stop the data-stx marker truncating attributes that contain > ([1d48c78](https://github.com/stacksjs/stx/commit/1d48c78)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: preserve called signals in expressions ([2859ed8](https://github.com/stacksjs/stx/commit/2859ed8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: align component event and prop bindings ([48ef3d3](https://github.com/stacksjs/stx/commit/48ef3d3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: isolate named-only slots ([b2a18cf](https://github.com/stacksjs/stx/commit/b2a18cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve nested component slots ([0e3ab01](https://github.com/stacksjs/stx/commit/0e3ab01)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: bind structural component directives ([a1cb5d4](https://github.com/stacksjs/stx/commit/a1cb5d4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve typed reactive props ([03a214d](https://github.com/stacksjs/stx/commit/03a214d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: expose bundled component state ([bdb3fca](https://github.com/stacksjs/stx/commit/bdb3fca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: bind live form values ([16e161c](https://github.com/stacksjs/stx/commit/16e161c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: resolve sibling feature components ([ac0770f](https://github.com/stacksjs/stx/commit/ac0770f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve reactive prop interpolation ([387ba9d](https://github.com/stacksjs/stx/commit/387ba9d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: observe view transition readiness ([04add1f](https://github.com/stacksjs/stx/commit/04add1f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: normalize reactive prop names ([d92f8c8](https://github.com/stacksjs/stx/commit/d92f8c8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: invalidate child component cache ([8b81707](https://github.com/stacksjs/stx/commit/8b81707)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve consecutive runtime aliases ([bc1191d](https://github.com/stacksjs/stx/commit/bc1191d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve signal APIs in handlers ([0879527](https://github.com/stacksjs/stx/commit/0879527)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: prioritize local template helpers ([bf3a5f4](https://github.com/stacksjs/stx/commit/bf3a5f4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve literal component bindings ([42f4490](https://github.com/stacksjs/stx/commit/42f4490)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: resolve signal component runtime imports ([91c057c](https://github.com/stacksjs/stx/commit/91c057c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: bundle signal component imports ([196cefb](https://github.com/stacksjs/stx/commit/196cefb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: invalidate client bundle cache ([cdf962f](https://github.com/stacksjs/stx/commit/cdf962f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: bundle multiline client imports ([295e877](https://github.com/stacksjs/stx/commit/295e877)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: detect static imports precisely ([8bc5661](https://github.com/stacksjs/stx/commit/8bc5661)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve native component semantics ([cff9d28](https://github.com/stacksjs/stx/commit/cff9d28)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve reactive component ownership ([56c833d](https://github.com/stacksjs/stx/commit/56c833d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: expose static props reactively ([0469007](https://github.com/stacksjs/stx/commit/0469007)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: stabilize reactive component props ([bae56bb](https://github.com/stacksjs/stx/commit/bae56bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: forward bindings to component roots ([c8ba9f1](https://github.com/stacksjs/stx/commit/c8ba9f1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve reactive template elements ([cb8fc53](https://github.com/stacksjs/stx/commit/cb8fc53)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve structured reactive props ([7227704](https://github.com/stacksjs/stx/commit/7227704)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: disambiguate dynamic for bindings ([102c90e](https://github.com/stacksjs/stx/commit/102c90e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve projected caller scope ([823a585](https://github.com/stacksjs/stx/commit/823a585)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: allow merged runtime aliases ([0e1bbc6](https://github.com/stacksjs/stx/commit/0e1bbc6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: resolve component mount roots ([531f661](https://github.com/stacksjs/stx/commit/531f661)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: match queued setup markers ([41d23d8](https://github.com/stacksjs/stx/commit/41d23d8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: adopt unmarked initial setup ([03fe487](https://github.com/stacksjs/stx/commit/03fe487)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: queue setup before runtime load ([9216170](https://github.com/stacksjs/stx/commit/9216170)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: version client bundle cache ([010f75e](https://github.com/stacksjs/stx/commit/010f75e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: isolate merged client bundles ([19eb487](https://github.com/stacksjs/stx/commit/19eb487)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: dispatch component emit events ([187cda3](https://github.com/stacksjs/stx/commit/187cda3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: forward server component events ([37fa588](https://github.com/stacksjs/stx/commit/37fa588)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: transform canonical runtime imports ([7070f58](https://github.com/stacksjs/stx/commit/7070f58)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: preserve browser-root imports ([515e7d1](https://github.com/stacksjs/stx/commit/515e7d1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: avoid prop bridge collisions ([e3cee58](https://github.com/stacksjs/stx/commit/e3cee58)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: scan layout scripts structurally ([ec66545](https://github.com/stacksjs/stx/commit/ec66545)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **serve**: scan server script elements structurally ([c8be213](https://github.com/stacksjs/stx/commit/c8be213)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: keep component examples inert ([15870e4](https://github.com/stacksjs/stx/commit/15870e4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: expose client store registration ([df0bb28](https://github.com/stacksjs/stx/commit/df0bb28)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: ignore script tags in html comments ([666bbe6](https://github.com/stacksjs/stx/commit/666bbe6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ♻️ Code Refactoring
+
+- **desktop**: depend on the published craft-native package ([b8203c0](https://github.com/stacksjs/stx/commit/b8203c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: build every window.stx destructure from one shared list ([4c0351e](https://github.com/stacksjs/stx/commit/4c0351e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 📚 Documentation
+
+- **config**: document storesDir and composablesDir, correct the composables guide ([44d9b28](https://github.com/stacksjs/stx/commit/44d9b28)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **claude**: trim derivable content, lazy-load desktop, drop the > caveat ([9336e0e](https://github.com/stacksjs/stx/commit/9336e0e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧪 Tests
+
+- **stx**: cover form model submission ([a7576c7](https://github.com/stacksjs/stx/commit/a7576c7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.114 ([3bb4a36](https://github.com/stacksjs/stx/commit/3bb4a36)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.112...v0.2.113)
 
 ## 🐛 Bug Fixes
