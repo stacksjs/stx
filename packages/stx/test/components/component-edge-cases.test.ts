@@ -74,7 +74,8 @@ describe('Component Edge Cases', () => {
 
     await Bun.write(
       path.join(COMPONENTS_DIR, 'delivery-helper.ts'),
-      `export function loadDeliveries(): string { return 'loaded from helper' }`,
+      `import { state } from '@stacksjs/stx'
+export function loadDeliveries(): string { return state('loaded from helper')() }`,
     )
 
     await Bun.write(
@@ -253,6 +254,7 @@ Usage:
 
       expect(result).toContain('loaded from helper')
       expect(result).not.toContain(`from './delivery-helper'`)
+      expect(result).not.toContain(`from '@stacksjs/stx'`)
       expect(result).not.toMatch(/^\s*import\s/m)
     })
   })
