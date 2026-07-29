@@ -240,6 +240,30 @@ const count = state(rows.length)
     expect(out).not.toContain('interface FunctionRow')
   })
 
+  it('exposes Vue lifecycle aliases in merged signal scripts', async () => {
+    const view = `
+<main>
+  <p>{{ status() }}</p>
+</main>
+<script client>
+const status = state('ready')
+onMounted(() => status.set('mounted'))
+onUnmounted(() => status.set('unmounted'))
+</script>`
+
+    const out = await processDirectives(
+      view,
+      {},
+      path.join(TMP, 'vue-lifecycle-aliases.stx'),
+      {},
+      new Set<string>(),
+    )
+
+    expect(out).toContain('onMounted, onBeforeUnmount, onUnmounted')
+    expect(out).toMatch(/onMounted:\s*onMount/)
+    expect(out).toMatch(/onUnmounted:\s*onDestroy/)
+  })
+
   it('preserves a layout import map when the layout also has reactive client code', async () => {
     fs.writeFileSync(
       path.join(LAYOUTS, 'import-map-helper.ts'),
