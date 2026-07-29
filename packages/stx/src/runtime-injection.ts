@@ -117,7 +117,7 @@ export async function injectSignalsRuntime(template: string, options: StxOptions
   // Build mode: emit a placeholder reference instead of inlining the full runtime.
   // The production builder will replace this with a fingerprinted <script src> tag.
   if (options.buildMode === 'compile') {
-    const runtimeScript = `<script src="/__stx/runtime.__STX_HASH__.js"></script>`
+    const runtimeScript = `<script data-stx-runtime src="/__stx/runtime.__STX_HASH__.js"></script>`
     const firstScriptInDoc = template.indexOf('<script')
     if (firstScriptInDoc !== -1) {
       return template.slice(0, firstScriptInDoc) + runtimeScript + '\n' + template.slice(firstScriptInDoc)
@@ -132,7 +132,7 @@ export async function injectSignalsRuntime(template: string, options: StxOptions
   // Use cached runtime (identical for every page, never changes during dev session)
   const { getCachedSignalsRuntime } = await import('./caching')
   const runtime = await getCachedSignalsRuntime(options.debug)
-  const runtimeScript = `<script data-stx-scoped>${runtime}</script>`
+  const runtimeScript = `<script data-stx-scoped data-stx-runtime>${runtime}</script>`
 
   // Inject before the first <script in the ENTIRE document, not just <head>.
   // Layout scripts (e.g. <script client>) may appear before <head>.

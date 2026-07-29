@@ -232,6 +232,11 @@ export function getRouterScript(): string {
   function hasStaticImport(code){
     return /(?:^|\\n)[ \\t]*import(?:[ \\t]+|[{*'"])/.test(code);
   }
+  function isSignalsRuntimeScript(script,code){
+    return !!(script&&script.hasAttribute&&script.hasAttribute('data-stx-runtime'))
+      ||(code.indexOf('_cleanupContainer')!==-1&&code.indexOf('signals runtime loading')!==-1)
+      ||code.indexOf("'use strict';var cloakStyle")!==-1;
+  }
   // Record scripts from the initial page load
   document.querySelectorAll('script').forEach(function(s){
     var text=s.textContent||'';
@@ -425,8 +430,8 @@ else {
         var fragScripts=[];
         var fragStyles=[];
         var fragCrosswindCSS=null;
-        var cleanFrag=html.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>([\\\\s\\\\S]*?)<\\\\/scr'+'ipt>','gi'),function(m,code){
-          if(code&&code.trim())fragScripts.push(code);
+        var cleanFrag=html.replace(new RegExp('<scr'+'ipt\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/scr'+'ipt>','gi'),function(m,attrs,code){
+          if(code&&code.trim()&&!isSignalsRuntimeScript({hasAttribute:function(name){return name==='data-stx-runtime'&&attrs.indexOf('data-stx-runtime')!==-1}},code))fragScripts.push(code);
           return '';
         });
         cleanFrag=cleanFrag.replace(new RegExp('<sty'+'le\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/sty'+'le>','gi'),function(m,attrs,css){
@@ -682,7 +687,7 @@ else {
             if(s.hasAttribute('src'))return;
             if(!text.trim())return;
             // Skip the signals runtime IIFE — it's already loaded
-            if(text.indexOf("'use strict';var cloakStyle")!==-1)return;
+            if(isSignalsRuntimeScript(s,text))return;
             if(text.indexOf('__stxRouter')!==-1)return;
             addScript(text,true);
           });
@@ -692,6 +697,7 @@ else {
           var text=s.textContent||'';
           if(s.hasAttribute('src'))return;
           if(!text.trim())return;
+          if(isSignalsRuntimeScript(s,text))return;
           if(text.indexOf('__stx_setup_')!==-1)addScript(text,true);
         });
       } else {
@@ -713,7 +719,7 @@ else {
           if(s.hasAttribute('src'))return;
           if(!text.trim())return;
           // Skip signals runtime and router (they contain __stx_setup references but aren't setup functions)
-          if(text.indexOf("'use strict';var cloakStyle")!==-1)return;
+          if(isSignalsRuntimeScript(s,text))return;
           if(text.indexOf('__stxRouter')!==-1)return;
           if(newContent.contains(s))return;
           if(text.indexOf('__stx_setup_')===-1&&!s.hasAttribute('data-stx-scoped')&&!s.hasAttribute('data-stx-page'))return;

@@ -296,6 +296,38 @@ describe('router browser navigation behavior', () => {
     expect(injectedScripts).toContain('add-post')
   })
 
+  it('does not re-execute the signals runtime during a full-document swap', async () => {
+    const window = installRouter(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app.stx">
+          <meta name="stx-layout-group" content="app">
+        </head>
+        <body><main>Home</main></body>
+      </html>
+    `, async () => response(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app.stx">
+          <meta name="stx-layout-group" content="app">
+          <script data-stx-scoped data-stx-runtime>
+            window.stx = { marker: 'replaced' }
+          </script>
+        </head>
+        <body><main>Orders</main></body>
+      </html>
+    `))
+    ;(window as any).stx.marker = 'original'
+
+    await window.stxRouter.navigate('/orders')
+    await waitForRouterSwap()
+
+    expect((window as any).stx.marker).toBe('original')
+    expect(window.document.querySelector('main')?.textContent).toContain('Orders')
+    expect([...window.document.querySelectorAll('script[data-stx-page]')]
+      .some(script => script.textContent?.includes("marker: 'replaced'"))).toBe(false)
+  })
+
   it('uses query-aware keys for prefetch cache entries', async () => {
     const window = installRouter(`
       <html>
