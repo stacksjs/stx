@@ -54,6 +54,7 @@ describe('getRouterScript — injected CSS defaults', () => {
     // Browser View Transitions can abort when DOM work takes too long. The
     // router should keep navigation stable instead of leaking unhandled errors.
     expect(script).toContain('transition.finished.catch')
+    expect(script).toContain('transition.ready.catch')
     expect(script).toContain('transition.updateCallbackDone.catch')
   })
 

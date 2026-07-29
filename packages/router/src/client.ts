@@ -35,6 +35,7 @@ export function getRouterScript(): string {
     try{
       var transition=document.startViewTransition(callback);
       var onAbort=function(err){log('[router] view transition aborted:',err&&err.message?err.message:err)};
+      if(transition&&transition.ready&&transition.ready.catch)transition.ready.catch(onAbort);
       if(transition&&transition.finished&&transition.finished.catch)transition.finished.catch(onAbort);
       if(transition&&transition.updateCallbackDone&&transition.updateCallbackDone.catch)transition.updateCallbackDone.catch(onAbort);
       return true;
