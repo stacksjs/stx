@@ -258,6 +258,95 @@ function findScriptBodyEnd(src: string, from: number): number {
   return -1
 }
 
+interface ScriptBlock {
+  start: number
+  end: number
+}
+
+function findScriptBlockByAttribute(html: string, attribute: string): ScriptBlock | null {
+  const escapedAttribute = attribute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const openingTag = new RegExp(
+    `<script\\b(?=[^>]*\\b${escapedAttribute}(?:\\s|=|/?>))[^>]*>`,
+    'i',
+  ).exec(html)
+
+  if (!openingTag)
+    return null
+
+  const bodyStart = openingTag.index + openingTag[0].length
+  const closeStart = html.indexOf('</script>', bodyStart)
+  if (closeStart === -1)
+    return null
+
+  const closeEnd = html.indexOf('>', closeStart)
+  if (closeEnd === -1)
+    return null
+
+  return {
+    start: openingTag.index,
+    end: closeEnd + 1,
+  }
+}
+
+function findFirstScriptTag(html: string): number {
+  let searchFrom = 0
+
+  while (searchFrom < html.length) {
+    const tagStart = html.indexOf('<', searchFrom)
+    if (tagStart === -1)
+      return -1
+
+    if (html.startsWith('<!--', tagStart)) {
+      const commentEnd = html.indexOf('-->', tagStart + 4)
+      searchFrom = commentEnd === -1 ? html.length : commentEnd + 3
+      continue
+    }
+
+    const remainder = html.slice(tagStart)
+    const styleTag = /^<style\b[^>]*>/i.exec(remainder)
+    if (styleTag) {
+      const styleEnd = html.toLowerCase().indexOf('</style>', tagStart + styleTag[0].length)
+      searchFrom = styleEnd === -1 ? html.length : styleEnd + '</style>'.length
+      continue
+    }
+
+    if (/^<script\b[^>]*>/i.test(remainder))
+      return tagStart
+
+    searchFrom = tagStart + 1
+  }
+
+  return -1
+}
+
+/**
+ * Layout resolution can move a generated setup script into the document head
+ * after processSignals has already chosen the runtime insertion point. Keep the
+ * runtime's original contract explicit: it must execute before every other
+ * script, including setup, store, and composable bundles.
+ */
+function placeSignalsRuntimeBeforeScripts(html: string): string {
+  const runtime = findScriptBlockByAttribute(html, 'data-stx-runtime')
+  if (!runtime)
+    return html
+
+  const firstScript = findFirstScriptTag(html)
+  if (firstScript === -1 || firstScript === runtime.start)
+    return html
+
+  const runtimeTag = html.slice(runtime.start, runtime.end)
+  const withoutRuntime = html.slice(0, runtime.start) + html.slice(runtime.end)
+  const insertionPoint = findFirstScriptTag(withoutRuntime)
+
+  if (insertionPoint === -1)
+    return runtimeTag + '\n' + withoutRuntime
+
+  return withoutRuntime.slice(0, insertionPoint)
+    + runtimeTag
+    + '\n'
+    + withoutRuntime.slice(insertionPoint)
+}
+
 // =============================================================================
 // CORE TEMPLATE PROCESSING PIPELINE
 // =============================================================================
@@ -405,13 +494,12 @@ export async function processDirectives(
       // that don't go through generateDocumentShell.
       if (isTopLevel) {
         result = injectCloakStyle(result)
+        result = placeSignalsRuntimeBeforeScripts(result)
       }
 
       // Auto-inject store definitions from storesDir.
       // MUST run AFTER the signals runtime (which defines defineStore/state/derived
       // as globals) and BEFORE any page scripts that call useStore().
-      // The signals runtime is the first <script data-stx-scoped> — we inject
-      // right after its closing </script> tag.
       if (isTopLevel) {
         try {
           const { getStoreScript } = await import('./store-loader')
@@ -421,16 +509,9 @@ export async function processDirectives(
           const storeCode = await getStoreScript(resolvedStoresDir)
           if (storeCode) {
             const storeTag = `<script data-stx-stores>${storeCode}</script>`
-            // Find the signals runtime: first <script data-stx-scoped> block
-            const runtimeStart = result.indexOf('<script data-stx-scoped>')
-            if (runtimeStart !== -1) {
-              // Walk forward to find its </script> (browser-style parsing — the
-              // first </script> after the opening tag closes the block)
-              const runtimeClose = result.indexOf('</script>', runtimeStart + 24)
-              if (runtimeClose !== -1) {
-                const insertPos = runtimeClose + '</script>'.length
-                result = result.slice(0, insertPos) + '\n' + storeTag + result.slice(insertPos)
-              }
+            const runtime = findScriptBlockByAttribute(result, 'data-stx-runtime')
+            if (runtime) {
+              result = result.slice(0, runtime.end) + '\n' + storeTag + result.slice(runtime.end)
             }
           }
         }
@@ -456,14 +537,10 @@ export async function processDirectives(
           if (composableCode) {
             const composableTag = `<script data-stx-composables>${composableCode}</script>`
             // Anchor to the stores tag when present, else the signals runtime.
-            const storesTagIdx = result.indexOf('<script data-stx-stores>')
-            const anchorStart = storesTagIdx !== -1 ? storesTagIdx : result.indexOf('<script data-stx-scoped>')
-            if (anchorStart !== -1) {
-              const anchorClose = result.indexOf('</script>', anchorStart)
-              if (anchorClose !== -1) {
-                const insertPos = anchorClose + '</script>'.length
-                result = result.slice(0, insertPos) + '\n' + composableTag + result.slice(insertPos)
-              }
+            const anchor = findScriptBlockByAttribute(result, 'data-stx-stores')
+              || findScriptBlockByAttribute(result, 'data-stx-runtime')
+            if (anchor) {
+              result = result.slice(0, anchor.end) + '\n' + composableTag + result.slice(anchor.end)
             }
           }
         }

@@ -168,15 +168,52 @@ describe('stx#1780: composables directory populates window.__composables', () =>
     }
   })
 
-  it('injects composables after the stores tag so a composable can use a store', async () => {
+  it('injects composables after the signals runtime', async () => {
     const page = `<script client>\nimport { useOpConfirm } from '@composables'\nconst { pending } = useOpConfirm({ endpoint: '/x' })\n</script>\n<div @show="pending()">x</div>`
     const out = await processDirectives(page, {}, 'page.stx', { composablesDir: dir, debug: false } as any, new Set())
 
-    const runtimeIdx = out.indexOf('<script data-stx-scoped>')
+    const runtimeIdx = out.indexOf('data-stx-runtime')
     const composablesIdx = out.indexOf('<script data-stx-composables>')
-    // Composables must land after the signals runtime — they call state()/derived().
     expect(runtimeIdx).toBeGreaterThanOrEqual(0)
     expect(composablesIdx).toBeGreaterThan(runtimeIdx)
+  })
+
+  it('keeps the runtime ahead of layout-hoisted setup and composable scripts', async () => {
+    const layoutDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-composable-layout-'))
+    try {
+      await Bun.write(
+        path.join(layoutDir, 'guest.stx'),
+        `<html><head><title>Guest</title></head><body>@yield('content')</body></html>`,
+      )
+      const page = `@extends('guest')
+@section('content')
+<script client>
+import { useOpConfirm } from '@composables'
+const { pending } = useOpConfirm({ endpoint: '/x' })
+const ready = state(true)
+</script>
+<div @show="ready() && pending()">x</div>
+@endsection`
+
+      const out = await processDirectives(
+        page,
+        {},
+        path.join(layoutDir, 'page.stx'),
+        { layoutsDir: layoutDir, composablesDir: dir, debug: false } as any,
+        new Set(),
+      )
+
+      const runtimeIdx = out.indexOf('data-stx-runtime')
+      const setupIdx = out.indexOf('function __stx_setup_')
+      const composablesIdx = out.indexOf('<script data-stx-composables>')
+
+      expect(runtimeIdx).toBeGreaterThanOrEqual(0)
+      expect(setupIdx).toBeGreaterThan(runtimeIdx)
+      expect(composablesIdx).toBeGreaterThan(runtimeIdx)
+    }
+    finally {
+      await fs.promises.rm(layoutDir, { recursive: true, force: true })
+    }
   })
 
   it('binds preferred media helpers directly from the runtime', async () => {
