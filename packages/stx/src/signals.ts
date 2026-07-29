@@ -4586,9 +4586,24 @@ else {
       var scriptEl = document.currentScript;
 
       function doMount() {
-        // Find component root: next sibling element after the script tag
-        var root = scriptEl ? scriptEl.nextElementSibling : null;
-        if (!root && scriptEl) root = scriptEl.previousElementSibling || scriptEl.parentElement;
+        // Auto-mount scripts are emitted after their component template. Other
+        // generated helper scripts can sit between the rendered root and this
+        // script, so walk past script/style siblings before selecting the root.
+        // Router-injected page scripts are marked data-stx-page and must use the
+        // content-container fallback below instead.
+        var isSpaPageScript = scriptEl && scriptEl.hasAttribute && scriptEl.hasAttribute('data-stx-page');
+        var root = null;
+        if (scriptEl && !isSpaPageScript) {
+          var previous = scriptEl.previousElementSibling;
+          while (previous && (previous.tagName === 'SCRIPT' || previous.tagName === 'STYLE'))
+            previous = previous.previousElementSibling;
+
+          var next = scriptEl.nextElementSibling;
+          while (next && (next.tagName === 'SCRIPT' || next.tagName === 'STYLE'))
+            next = next.nextElementSibling;
+
+          root = previous || next || scriptEl.parentElement;
+        }
 
         // SPA fallback: during router navigation, script is appended to body>
         // (not inside the content container), so nextElementSibling won't find the page content.

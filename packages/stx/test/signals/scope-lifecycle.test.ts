@@ -387,4 +387,12 @@ describe('Auto-initialization', () => {
     expect(runtime).toContain("el.getAttribute('data-stx') === latestSetupName")
     expect(runtime).toContain('if (latestSetup && !hasLatestSetupMarker)')
   })
+
+  it('should resolve component roots past generated helper scripts', () => {
+    const runtime = generateSignalsRuntimeDev()
+    expect(runtime).toContain("scriptEl.hasAttribute('data-stx-page')")
+    expect(runtime).toContain("previous.tagName === 'SCRIPT' || previous.tagName === 'STYLE'")
+    expect(runtime).toContain('previous = previous.previousElementSibling')
+    expect(runtime).toContain('root = previous || next || scriptEl.parentElement')
+  })
 })
