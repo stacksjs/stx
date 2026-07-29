@@ -214,6 +214,7 @@ export type {
 // =============================================================================
 export {
   closeAllWindows,
+  craftWindowArguments,
   createWindow,
   createWindowWithHTML,
   getActiveWindowIds,
@@ -227,6 +228,13 @@ export {
 } from './window'
 
 export type { DesktopConfig } from './window'
+
+// =============================================================================
+// Packaging & Code Signing (re-exported from Craft)
+// =============================================================================
+export { pack, packageApp } from './packaging'
+
+export type { PackageConfig, PackageResult } from './packaging'
 
 // =============================================================================
 // Power Management / Caffeinate

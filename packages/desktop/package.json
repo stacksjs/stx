@@ -54,12 +54,7 @@
     "test:coverage": "bun test --coverage --preload ../../test-utils/happy-dom.ts",
     "typecheck": "bun tsc --noEmit"
   },
-  "peerDependencies": {
-    "craft": "*"
-  },
-  "peerDependenciesMeta": {
-    "craft": {
-      "optional": true
-    }
+  "dependencies": {
+    "craft-native": ">=0.0.37"
   }
 }
