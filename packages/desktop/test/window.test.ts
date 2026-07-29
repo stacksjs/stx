@@ -1,9 +1,9 @@
 /* eslint-disable import/first */
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
 
-// Mock ts-craft before importing window module
+// Mock craft-native before importing window module
 // Note: mock.module() MUST be called before importing the module being mocked
-mock.module('ts-craft', () => ({
+mock.module('craft-native', () => ({
   createApp: () => ({
     show: async () => {
       // Simulate craft error (since binary path issues in test environment)
@@ -50,7 +50,7 @@ describe('Window Management', () => {
   })
 
   describe('isWebviewAvailable', () => {
-    it('should check if ts-craft is available', () => {
+    it('should check if craft-native is available', () => {
       const result = isWebviewAvailable()
       expect(typeof result).toBe('boolean')
     })
@@ -104,7 +104,7 @@ describe('Window Management', () => {
   })
 
   describe('createWindow', () => {
-    it('falls back to the craft binary when ts-craft cannot open the window', async () => {
+    it('falls back to the craft binary when craft-native cannot open the window', async () => {
       const window = await createWindow('http://localhost:3000')
 
       expect(window).not.toBeNull()

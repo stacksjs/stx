@@ -97,7 +97,7 @@ const DEFAULT_SEARCH_PATHS = [
   // Absolute path to craft in standard location
   join(process.env.HOME || '', 'Code/Tools/craft/packages/zig/zig-out/bin/craft'),
   join(process.env.HOME || '', 'Code/craft/packages/zig/zig-out/bin/craft'),
-  // From linked ts-craft in monorepo (both craft and craft-minimal)
+  // From linked craft in monorepo (both craft and craft-minimal)
   join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft'),
   join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft-minimal'),
   join(process.cwd(), '../../../craft/packages/zig/zig-out/bin/craft'),
@@ -203,12 +203,12 @@ function createWindowInstance(id: string, app: any): WindowInstance {
 
     show: () => {
       // The window is shown when created via app.show()
-      // This is a no-op since ts-craft auto-shows windows
+      // This is a no-op since craft-native auto-shows windows
       console.log(`[stx/desktop] Window ${id} shown`)
     },
 
     hide: () => {
-      // ts-craft doesn't expose hide directly from the process side
+      // craft-native doesn't expose hide directly from the process side
       // This would need to be called from inside the webview via window.craft.window.hide()
       console.log(`[stx/desktop] To hide window, use window.craft.window.hide() from inside the webview`)
     },
@@ -260,7 +260,7 @@ function createWindowInstance(id: string, app: any): WindowInstance {
 /**
  * Translate window options into Craft binary arguments.
  *
- * ts-craft is a thin wrapper around this command line, so the same options
+ * craft-native is a thin wrapper around this command line, so the same options
  * describe a window whether the JS package is installed or not.
  */
 export function craftWindowArguments(url: string, options: WindowOptions = {}): string[] {
@@ -292,9 +292,9 @@ export function craftWindowArguments(url: string, options: WindowOptions = {}): 
 /**
  * Create a native window with URL
  *
- * Prefers the ts-craft package for its richer typings, and falls back to
+ * Prefers the craft-native package for its richer typings, and falls back to
  * spawning the Craft binary directly when it isn't installed — the binary is
- * what ts-craft drives anyway, so an app needs only one of the two.
+ * what craft-native drives anyway, so an app needs only one of the two.
  *
  * ## Window Control
  *
@@ -322,12 +322,12 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
   const craftPath = getCraftBinaryPath()
 
   try {
-    const { createApp } = await import('ts-craft')
+    const { createApp } = await import('craft-native')
 
     const app = createApp({
       url,
       craftPath,
-      // ts-craft's WindowOptions doesn't type every field the binary honors
+      // craft-native's WindowOptions doesn't type every field the binary honors
       // (titlebarHidden, hideDockIcon, sidebar config), so cast to its own
       // window type to pass them through.
       window: {
@@ -356,8 +356,8 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
   }
   catch (tsCraftError) {
     if (!craftPath) {
-      console.error('Failed to create native window: no craft binary found and ts-craft is not installed')
-      console.error(`  (ts-craft error: ${(tsCraftError as Error).message})`)
+      console.error('Failed to create native window: no craft binary found and craft-native is not installed')
+      console.error(`  (craft-native error: ${(tsCraftError as Error).message})`)
       return null
     }
 
@@ -382,7 +382,7 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
  * Open a development server window
  * This is specifically for the stx dev server --native flag
  *
- * Uses ts-craft to create a native window, falls back to browser if unavailable.
+ * Uses craft-native to create a native window, falls back to browser if unavailable.
  */
 export async function openDevWindow(port: number, options: WindowOptions = {}): Promise<boolean> {
   const url = `http://localhost:${port}/`
@@ -397,21 +397,21 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
     return false
   }
 
-  // Path 1 — `ts-craft` package, when it's actually installed in the host
+  // Path 1 — `craft-native` package, when it's actually installed in the host
   // workspace. This is the original path; we keep it for projects that
-  // depend on `ts-craft` for richer typings / sidebar config.
+  // depend on `craft-native` for richer typings / sidebar config.
   try {
-    const { createApp } = await import('ts-craft')
+    const { createApp } = await import('craft-native')
 
-    console.log('⚡ Opening native window via ts-craft…')
+    console.log('⚡ Opening native window via craft-native…')
     const useSystemTray = !options.nativeSidebar
     const sidebarConfig = prepareSidebarConfig(options)
     const app = createApp({
       url,
       craftPath: getCraftBinaryPath(),
-      // ts-craft's WindowOptions doesn't type `titlebarHidden` yet, but the
+      // craft-native's WindowOptions doesn't type `titlebarHidden` yet, but the
       // Craft binary honors it (see the `--titlebar-hidden` arg on the binary
-      // fallback path below). Cast to ts-craft's own window type so this
+      // fallback path below). Cast to craft-native's own window type so this
       // forward-compat field passes through without a fresh-literal excess error.
       window: {
         title: options.title || 'stx Development',
@@ -436,7 +436,7 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
     return true
   }
   catch (tsCraftErr) {
-    // Path 2 — native binary spawned directly. ts-craft is just a thin
+    // Path 2 — native binary spawned directly. craft-native is just a thin
     // wrapper around this; if it isn't installed we can still drive Craft
     // via `craft --url … --title … --width … --height …`. In practice this
     // is the path most monorepo users hit, since they have the `craft`
@@ -474,8 +474,8 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
       }
     }
     else {
-      console.warn('⚠  ts-craft not installed and no craft binary found')
-      console.warn(`    (ts-craft error: ${(tsCraftErr as Error).message})`)
+      console.warn('⚠  craft-native not installed and no craft binary found')
+      console.warn(`    (craft-native error: ${(tsCraftErr as Error).message})`)
     }
 
     // Path 3 — give up on native, open the system browser. Skipped in test.
@@ -504,7 +504,7 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
 /**
  * Create a window with HTML content
  *
- * Uses ts-craft to display HTML content in a native window.
+ * Uses craft-native to display HTML content in a native window.
  */
 export async function createWindowWithHTML(html: string, options: WindowOptions = {}): Promise<WindowInstance | null> {
   const {
@@ -519,8 +519,8 @@ export async function createWindowWithHTML(html: string, options: WindowOptions 
   } = options
 
   try {
-    // Dynamically import ts-craft
-    const { createApp } = await import('ts-craft')
+    // Dynamically import craft-native
+    const { createApp } = await import('craft-native')
 
     const craftPath = getCraftBinaryPath()
 
@@ -557,8 +557,8 @@ export async function createWindowWithHTML(html: string, options: WindowOptions 
  */
 export function isWebviewAvailable(): boolean {
   try {
-    // Try to require ts-craft to check if it's available
-    require.resolve('ts-craft')
+    // Try to require craft-native to check if it's available
+    require.resolve('craft-native')
     return true
   }
   catch {
