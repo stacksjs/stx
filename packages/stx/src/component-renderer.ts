@@ -31,6 +31,7 @@ import path from 'node:path'
 
 /** Guard flag to ensure builtins are registered exactly once. */
 let builtinsRegistered = false
+const BOOLEAN_ATTRIBUTE_SENTINEL = '\0stx-boolean-attribute'
 
 /**
  * Standard HTML tags to exclude from component processing.
@@ -144,8 +145,11 @@ function parseComponentProps(
     // --- Dynamic binding: :prop="expression" or :prop (shorthand) ---
     if (attrName.startsWith(':')) {
       const propName = kebabToCamel(attrName.slice(1))
-      // Shorthand: :propName with no value is equivalent to :propName="propName"
-      const expression = attrValue === 'true' ? propName : attrValue
+      // Shorthand: :propName with no value is equivalent to
+      // :propName="propName". Keep an explicitly bound boolean
+      // (`:propName="true"`) distinct so it is evaluated to a literal instead
+      // of being rewritten to a same-named parent variable.
+      const expression = attrValue === BOOLEAN_ATTRIBUTE_SENTINEL ? propName : attrValue
       try {
         if (!isExpressionSafe(expression)) {
           if (options.debug) {
@@ -238,7 +242,7 @@ function parseComponentProps(
     }
 
     // --- Plain static attribute ---
-    resolved.static[attrName] = attrValue
+    resolved.static[attrName] = attrValue === BOOLEAN_ATTRIBUTE_SENTINEL ? 'true' : attrValue
   }
 
   return resolved
@@ -325,7 +329,7 @@ function parseAllAttributes(attributesStr: string): Record<string, string> {
     }
     else {
       // Boolean attribute
-      props[name] = 'true'
+      props[name] = BOOLEAN_ATTRIBUTE_SENTINEL
     }
   }
 

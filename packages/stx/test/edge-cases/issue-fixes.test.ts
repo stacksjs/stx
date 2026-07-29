@@ -867,4 +867,72 @@ function selectRow() {}
       fs.rmSync(componentsDir, { recursive: true, force: true })
     }
   })
+
+  it('preserves explicit boolean literals and dotted component bindings', async () => {
+    const componentsDir = path.join(TMP, 'component-expression-props')
+    fs.mkdirSync(componentsDir, { recursive: true })
+
+    try {
+      fs.writeFileSync(
+        path.join(componentsDir, 'ExpressionTable.stx'),
+        `<script client>
+const rows = useReactiveProp('rows', [])
+const actions = useReactiveProp('actions', false)
+</script>
+<div>
+  <span :if="actions">Actions</span>
+  <template :for="row in rows"><span>{{ row }}</span></template>
+</div>`,
+      )
+
+      const output = await processDirectives(
+        `<script client>
+const overview = state({ recent: ['Alpha'] })
+</script>
+<ExpressionTable :rows="overview.recent" :actions="true" />`,
+        {},
+        path.join(TMP, 'component-expression-props-view.stx'),
+        { componentsDir } as StxOptions,
+        new Set<string>(),
+      )
+
+      expect(output).toContain(':rows="overview.recent"')
+      expect(output).toContain('data-stx-parent-bindings="rows"')
+      expect(output).not.toContain(':actions="actions"')
+      expect(output).toMatch(/data-stx-props="[^"]*&quot;actions&quot;:true/)
+    }
+    finally {
+      fs.rmSync(componentsDir, { recursive: true, force: true })
+    }
+  })
+
+  it('keeps valueless dynamic props as same-name shorthand bindings', async () => {
+    const componentsDir = path.join(TMP, 'component-shorthand-props')
+    fs.mkdirSync(componentsDir, { recursive: true })
+
+    try {
+      fs.writeFileSync(
+        path.join(componentsDir, 'ShorthandFlag.stx'),
+        `<script client>
+const visible = useReactiveProp('visible', false)
+</script>
+<div :show="visible">Visible</div>`,
+      )
+
+      const output = await processDirectives(
+        `<script client>const visible = state(true)</script>
+<ShorthandFlag :visible />`,
+        {},
+        path.join(TMP, 'component-shorthand-props-view.stx'),
+        { componentsDir } as StxOptions,
+        new Set<string>(),
+      )
+
+      expect(output).toContain(':visible="visible"')
+      expect(output).toContain('data-stx-parent-bindings="visible"')
+    }
+    finally {
+      fs.rmSync(componentsDir, { recursive: true, force: true })
+    }
+  })
 })
