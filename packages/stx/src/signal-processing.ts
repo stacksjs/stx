@@ -1658,7 +1658,11 @@ export function findMarkupIndexOutsideScripts(html: string, pattern: RegExp): nu
   return -1
 }
 
-const STX_IMPORT_STRIPPED = '// [stx import stripped — resolved via window.stx in __stx_setup]'
+// A block comment is intentional. Bun can emit consecutive external imports
+// without preserving a newline between the regex replacements below. A `//`
+// marker could therefore swallow the next generated alias declaration and
+// leave bindings such as `ref92` undefined at runtime.
+const STX_IMPORT_STRIPPED = '/* [stx import stripped, resolved via window.stx in __stx_setup] */'
 
 /**
  * Turn the specifier list of an `import { … } from 'stx'` into local aliases.

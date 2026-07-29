@@ -115,7 +115,7 @@ describe('rewriteStxImportSpecifiers', () => {
 
   it('tolerates trailing commas and whitespace', () => {
     expect(rewriteStxImportSpecifiers(' state as state2 , ')).toStartWith('var state2 = state;')
-    expect(rewriteStxImportSpecifiers('   ')).toBe('// [stx import stripped — resolved via window.stx in __stx_setup]')
+    expect(rewriteStxImportSpecifiers('   ')).toBe('/* [stx import stripped, resolved via window.stx in __stx_setup] */')
   })
 
   it('can repeat an alias chosen by independently bundled composables', () => {
@@ -123,5 +123,14 @@ describe('rewriteStxImportSpecifiers', () => {
     const second = rewriteStxImportSpecifiers('state as state2')
 
     expect(() => new Function('state', `${first}\n${second}`)).not.toThrow()
+  })
+
+  it('does not swallow a consecutive generated alias without a newline', () => {
+    const first = rewriteStxImportSpecifiers('useHead as useHead2')
+    const second = rewriteStxImportSpecifiers('ref as ref92')
+    const source = `${first}${second}\nreturn ref92`
+
+    expect(source).toContain('*/var ref92 = ref;')
+    expect(new Function('useHead', 'ref', source)(() => {}, () => 'ready')()).toBe('ready')
   })
 })
