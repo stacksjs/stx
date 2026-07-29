@@ -52,10 +52,23 @@ export function scanScriptTags(
   opts: { skipAttrs?: RegExp } = {},
 ): Array<{ fullMatch: string, attrs: string, body: string, start: number, end: number }> {
   const out: Array<{ fullMatch: string, attrs: string, body: string, start: number, end: number }> = []
-  // Reset shared stateful regex; inner loop drives `.lastIndex` itself.
-  SCRIPT_OPEN_RE.lastIndex = 0
-  let m: RegExpExecArray | null
-  while ((m = SCRIPT_OPEN_RE.exec(html)) !== null) {
+  let cursor = 0
+  while (cursor < html.length) {
+    // Find the next script opening from the current HTML position. HTML
+    // comments are opaque to the browser parser, so skip a comment before
+    // accepting a tag-like substring inside it as a real element.
+    SCRIPT_OPEN_RE.lastIndex = cursor
+    const m = SCRIPT_OPEN_RE.exec(html)
+    if (!m) break
+
+    const commentStart = html.indexOf('<!--', cursor)
+    if (commentStart !== -1 && commentStart < m.index) {
+      const commentEnd = html.indexOf('-->', commentStart + 4)
+      if (commentEnd === -1) break
+      cursor = commentEnd + 3
+      continue
+    }
+
     const attrs = m[1]
     const bodyStart = m.index + m[0].length
     const closeIdx = html.toLowerCase().indexOf('</script>', bodyStart)
@@ -63,7 +76,7 @@ export function scanScriptTags(
     const end = closeIdx + '</script>'.length
     if (opts.skipAttrs && opts.skipAttrs.test(attrs)) {
       // Still advance past the close tag so we don't match nested openings.
-      SCRIPT_OPEN_RE.lastIndex = end
+      cursor = end
       continue
     }
     out.push({
@@ -73,7 +86,7 @@ export function scanScriptTags(
       start: m.index,
       end,
     })
-    SCRIPT_OPEN_RE.lastIndex = end
+    cursor = end
   }
   return out
 }

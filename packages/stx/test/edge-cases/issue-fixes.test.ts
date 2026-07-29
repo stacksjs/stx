@@ -211,6 +211,42 @@ function submitSearch() { console.log('submit fired') }
     expect(out).toContain('.search-input')
     expect(out).toContain('border: 1px solid red')
   })
+
+  it('preserves a layout import map when the layout also has reactive client code', async () => {
+    fs.writeFileSync(
+      path.join(LAYOUTS, 'import-map-helper.ts'),
+      `import { state } from '@stacksjs/stx'
+export const ready = state(true)`,
+    )
+    fs.writeFileSync(
+      path.join(LAYOUTS, 'import-map.stx'),
+      `<!doctype html>
+<html>
+<head>
+  <!-- Dynamic imports used by a later <script> resolve through this map. -->
+  <script type="importmap">{"imports":{"@stacksjs/charts":"/charts.js"}}</script>
+</head>
+<body>
+  <script client>import { ready } from './import-map-helper'</script>
+  <main>@yield('content')</main>
+</body>
+</html>`,
+    )
+
+    const out = await processDirectives(
+      `@extends('import-map')
+@section('content')
+  <p :if="ready()">Ready</p>
+@endsection`,
+      {},
+      path.join(TMP, 'import-map-page.stx'),
+      { layoutsDir: LAYOUTS } as StxOptions,
+      new Set<string>(),
+    )
+
+    expect(out).toContain('<script type="importmap">{"imports":{"@stacksjs/charts":"/charts.js"}}</script>')
+    expect(out).not.toContain('{"imports":{"@stacksjs/charts":"/charts.js"}}\n\n\n})()')
+  })
 })
 
 describe('#1695 — bare function ref in event handler shorthand', () => {
