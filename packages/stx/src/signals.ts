@@ -3841,15 +3841,34 @@ catch (e) {}
 
   function useDark(options) {
     var cm = useColorMode(options);
-    return {
-      get isDark() { return cm.isDark; },
-      toggle: function() { cm.toggle(); },
-      set: function(dark) { cm.set(dark ? 'dark' : 'light'); },
-      subscribe: function(fn) {
-        return cm.subscribe(function(mode) { fn(mode === 'dark'); });
-      }
-    };
+    var dark = state(cm.isDark);
+    var setSignal = dark.set;
+    cm.subscribe(function(mode) { setSignal(mode === 'dark'); });
+    dark.toggle = function() { cm.toggle(); };
+    dark.set = function(value) { cm.set(value ? 'dark' : 'light'); };
+    Object.defineProperty(dark, 'isDark', { get: function() { return dark(); } });
+    return dark;
   }
+
+  function useMediaQuery(query) {
+    var mql = window.matchMedia(query);
+    var matches = state(mql.matches);
+    var onChange = function(event) { matches.set(event.matches); };
+    if (mql.addEventListener) mql.addEventListener('change', onChange);
+    else if (mql.addListener) mql.addListener(onChange);
+    onDestroy(function() {
+      if (mql.removeEventListener) mql.removeEventListener('change', onChange);
+      else if (mql.removeListener) mql.removeListener(onChange);
+    });
+    Object.defineProperty(matches, 'matches', { get: function() { return matches(); } });
+    Object.defineProperty(matches, 'value', { get: function() { return matches(); } });
+    return matches;
+  }
+
+  function usePreferredDark() { return useMediaQuery('(prefers-color-scheme: dark)'); }
+  function usePreferredLight() { return useMediaQuery('(prefers-color-scheme: light)'); }
+  function usePreferredReducedMotion() { return useMediaQuery('(prefers-reduced-motion: reduce)'); }
+  function usePreferredContrast() { return useMediaQuery('(prefers-contrast: more)'); }
 
   // Vue-compat aliases
   var ref = state;
@@ -4570,6 +4589,11 @@ catch (e) {}
     useWebSocket,
     useColorMode,
     useDark,
+    useMediaQuery,
+    usePreferredDark,
+    usePreferredLight,
+    usePreferredReducedMotion,
+    usePreferredContrast,
     useHead,
     useSeoMeta,
     // Client-side no-op for definePageMeta — the real implementation registers

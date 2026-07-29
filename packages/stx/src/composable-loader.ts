@@ -26,6 +26,7 @@
 import path from 'node:path'
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
+import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
 
 const _cachedComposableScripts = new Map<string, string>()
@@ -138,11 +139,17 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
   const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
   const chunks: string[] = []
   const exportedNames = new Set<string>()
+  const declaredNames = new Set<string>()
 
   for (const file of composableFiles) {
     try {
       let code = await Bun.file(file).text()
       const composableName = path.basename(file, '.ts')
+
+      for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Z_a-z$][\w$]*)/g)) {
+        if (match[1])
+          declaredNames.add(match[1])
+      }
 
       // Collect exported bindings BEFORE the export keywords are stripped.
       // `default` is skipped: an anonymous default has no name to destructure
@@ -205,10 +212,17 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
   // of failing silently, and `import { x } from '@composables'` still resolves
   // to the user's version because that destructure comes after the built-ins.
   const globalNames = JSON.stringify([...exportedNames])
+  const joinedChunks = chunks.join('\n\n')
+  const runtimeBindings = STX_RUNTIME_GLOBALS
+    .filter(name => !declaredNames.has(name) && new RegExp(`\\b${name}\\b`).test(joinedChunks))
+    .map(name => `var ${name} = __stx[${JSON.stringify(name)}];`)
+    .join('\n')
   const code = `;(function(){
 window.__composables = window.__composables || {};
 var __c = window.__composables;
-${chunks.join('\n\n')}
+var __stx = window.stx || {};
+${runtimeBindings}
+${joinedChunks}
 ${assignments}
   var __names = ${globalNames};
   for (var __i = 0; __i < __names.length; __i++) {

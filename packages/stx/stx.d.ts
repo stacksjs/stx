@@ -233,6 +233,14 @@ declare function useColorMode(): {
   setMode: (mode: 'light' | 'dark' | 'auto') => void
 }
 declare function useDark(): StxSignal<boolean>
+declare function useMediaQuery(query: string): StxSignal<boolean> & {
+  readonly matches: boolean
+  readonly value: boolean
+}
+declare function usePreferredDark(): ReturnType<typeof useMediaQuery>
+declare function usePreferredLight(): ReturnType<typeof useMediaQuery>
+declare function usePreferredReducedMotion(): ReturnType<typeof useMediaQuery>
+declare function usePreferredContrast(): ReturnType<typeof useMediaQuery>
 
 // ============================================================================
 // Head / SEO

@@ -599,7 +599,12 @@ catch {
   const provide = (_key: unknown, _value: unknown) => {}
   const inject = (_key: unknown, defaultValue?: unknown) => defaultValue
   const useColorMode = () => ({ value: 'light' })
-  const useDark = () => ({ value: false })
+  const useDark = () => state(false)
+  const useMediaQuery = (_query: string) => state(false)
+  const usePreferredDark = () => useMediaQuery('(prefers-color-scheme: dark)')
+  const usePreferredLight = () => useMediaQuery('(prefers-color-scheme: light)')
+  const usePreferredReducedMotion = () => useMediaQuery('(prefers-reduced-motion: reduce)')
+  const usePreferredContrast = () => useMediaQuery('(prefers-contrast: more)')
 
   // Mock window object for browser-only code
   // This allows scripts that reference window to be parsed without errors
@@ -762,6 +767,7 @@ catch {
       'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',
       'ref', 'reactive', 'computed', 'watch', 'onMounted', 'onUnmounted', 'nextTick',
       'defineEmits', 'defineExpose', 'defineSlots', 'provide', 'inject', 'useColorMode', 'useDark',
+      'useMediaQuery', 'usePreferredDark', 'usePreferredLight', 'usePreferredReducedMotion', 'usePreferredContrast',
       'window', 'document', 'console', 'confirm', 'alert', 'fetch',
       'params',
       ...propArgNames,
@@ -780,6 +786,7 @@ catch {
       definePageMeta, useRoute, useRouter, useHead, useSeoMeta,
       ref, reactive, computed, watch, onMounted, onUnmounted, nextTick,
       defineEmits, defineExpose, defineSlots, provide, inject, useColorMode, useDark,
+      useMediaQuery, usePreferredDark, usePreferredLight, usePreferredReducedMotion, usePreferredContrast,
       windowProxy, mockDocument, mockConsole, mockWindow.confirm, mockWindow.alert, mockWindow.fetch,
       paramsObj,
       ...propArgValues,

@@ -178,4 +178,27 @@ describe('stx#1780: composables directory populates window.__composables', () =>
     expect(runtimeIdx).toBeGreaterThanOrEqual(0)
     expect(composablesIdx).toBeGreaterThan(runtimeIdx)
   })
+
+  it('binds preferred media helpers directly from the runtime', async () => {
+    const mediaDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-media-composable-'))
+    try {
+      await Bun.write(
+        path.join(mediaDir, 'dark.ts'),
+        `export const preferredDark = usePreferredDark()\n`,
+      )
+      clearComposableCache()
+      const code = await getComposableScript(mediaDir)
+      const preferredDark = () => true
+      const win: any = { stx: { usePreferredDark: () => preferredDark } }
+
+      // eslint-disable-next-line no-new-func
+      new Function('window', 'console', code!)(win, { warn() {} })
+
+      expect(win.__composables.preferredDark).toBe(preferredDark)
+    }
+    finally {
+      clearComposableCache()
+      await fs.promises.rm(mediaDir, { recursive: true, force: true })
+    }
+  })
 })
