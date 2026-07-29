@@ -461,6 +461,44 @@ else {
       render()
       expect(results).toEqual(['X', 'Y'])
     })
+
+    it('passes loop item values to event handler expressions', () => {
+      const scopeId = 'loop_event_scope'
+      const container = createElement('div', { 'data-stx-scope': scopeId })
+      const button = createElement('button', {
+        ':for': 'item in items()',
+        ':class': 'selected() === item.id ? "selected" : "idle"',
+        '@click': 'choose(item.id)',
+      })
+      button.appendChild(createTextNode('{{ selected() === item.id ? "Selected" : "Choose" }}'))
+      container.appendChild(button)
+      domElements.set(scopeId, container)
+
+      const items = stx.state([{ id: 10 }, { id: 20 }])
+      const selected = stx.state(0)
+      const choose = (id: number) => selected.set(id)
+      stx._scopes = stx._scopes || {}
+      stx._scopes[scopeId] = { items, selected, choose }
+
+      if (mockDocument._domContentLoadedHandler)
+        mockDocument._domContentLoadedHandler()
+
+      const renderedButtons = container.childNodes.filter((node: any) => node.tagName === 'BUTTON')
+      expect(renderedButtons).toHaveLength(2)
+      expect(renderedButtons[1]._eventListeners.click).toHaveLength(1)
+      expect(renderedButtons[1].className).toBe('idle')
+
+      renderedButtons[1]._eventListeners.click[0].handler({
+        target: renderedButtons[1],
+        preventDefault() {},
+        stopPropagation() {},
+      })
+
+      expect(selected()).toBe(20)
+      expect(renderedButtons[0].className).toBe('idle')
+      expect(renderedButtons[1].className).toBe('selected')
+      expect(renderedButtons[1].childNodes[0].childNodes[0].textContent).toBe('Selected')
+    })
   })
 
   describe(':for directive disambiguation', () => {

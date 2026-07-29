@@ -327,7 +327,7 @@ else {
         // If it's an stx store, return a recursively-unwrapping wrapper so
         // store.signalProp resolves to the value in template expressions
         if (val && typeof val === 'object' && val._isStxStore) {
-          return createAutoUnwrapProxy(val);
+          return createAutoUnwrapProxy(val, preserveSignal);
         }
         return val;
       },
@@ -1463,6 +1463,14 @@ catch (e) {
     return new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\(').test(expression);
   }
 
+  function createExpressionAutoUnwrapProxy(scope, expression) {
+    return createAutoUnwrapProxy(scope, function(prop) {
+      if (typeof prop !== 'string') return false;
+      return expressionCallsSignal(expression, prop)
+        || expressionUsesSignalApi(expression, prop);
+    });
+  }
+
   function executeHandler(expr, event, el) {
     try {
       // Skip placeholder expressions like __TITLE__ (build-time placeholders)
@@ -1798,12 +1806,12 @@ catch (e) {
                   // Check for pipe syntax (Feature #2)
                   const pipeResult = parsePipeExpression(expr, capturedScope);
                   if (pipeResult) {
-                    const unwrapScope = createAutoUnwrapProxy(capturedScope);
+                    const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
                     bindingNode.textContent = executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
                   }
 else {
                     // Use auto-unwrap proxy (Feature #1)
-                    const unwrapScope = createAutoUnwrapProxy(capturedScope);
+                    const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
                     const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
                     bindingNode.textContent = fn(...Object.values(unwrapScope));
                   }
@@ -1923,12 +1931,12 @@ else if (part) {
         // Check for pipe syntax (Feature #2)
         const pipeResult = parsePipeExpression(expr, activeScope);
         if (pipeResult) {
-          const unwrapScope = createAutoUnwrapProxy(activeScope);
+          const unwrapScope = createExpressionAutoUnwrapProxy(activeScope, expr);
           return maybeUnwrapSignal(executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope));
         }
 
         // Use auto-unwrap proxy (Feature #1)
-        const unwrapScope = createAutoUnwrapProxy(activeScope);
+        const unwrapScope = createExpressionAutoUnwrapProxy(activeScope, expr);
         const fn = new Function('__scope__', 'with(__scope__) { return (' + expr + ') }');
         return maybeUnwrapSignal(fn(unwrapScope));
       }
@@ -2272,7 +2280,7 @@ catch (e) {
       effect(() => {
         var value;
         try {
-          var unwrapScope = createAutoUnwrapProxy(capturedScope);
+          var unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
           var fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
           value = fn(...Object.values(unwrapScope));
         } catch (e1) {
@@ -2325,7 +2333,7 @@ catch (e) {
       if (direct && typeof direct === 'function' && (direct._isSignal || direct._isDerived))
         return direct();
       try {
-        var unwrapScope = createAutoUnwrapProxy(capturedScope);
+        var unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
         var fn = new Function('__scope__', 'with(__scope__) { return (' + expr + ') }');
         return fn(unwrapScope);
       }
@@ -2397,7 +2405,7 @@ else {
         // First pass: auto-unwrap proxy — handles expressions that read
         // signals as primitives (e.g. { 'active': count > 5 } where count
         // is a signal).
-        const unwrapScope = createAutoUnwrapProxy(capturedScope);
+        const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
         value = fn.apply(null, safeKeys.map(k => unwrapScope[k]));
       } catch (e1) {
         // Retry with raw scope — handles call-expressions like activeTab()
@@ -2420,11 +2428,11 @@ else {
         });
       }
 else if (Array.isArray(value)) {
-        var _clsArr = originalClasses + ' ' + value.filter(Boolean).join(' ');
+        var _clsArr = [originalClasses, value.filter(Boolean).join(' ')].filter(Boolean).join(' ');
         if (typeof el.className === 'string') el.className = _clsArr; else el.setAttribute('class', _clsArr);
       }
 else {
-        var _clsStr = originalClasses + (value ? ' ' + value : '');
+        var _clsStr = [originalClasses, value || ''].filter(Boolean).join(' ');
         if (typeof el.className === 'string') el.className = _clsStr; else el.setAttribute('class', _clsStr);
       }
     });
@@ -2442,7 +2450,7 @@ else {
       // values, which would make theme() try to call a primitive and
       // throw TypeError.
       try {
-        const unwrapScope = createAutoUnwrapProxy(capturedScope);
+        const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
         const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
         return fn(...Object.values(unwrapScope));
       }
@@ -3103,7 +3111,7 @@ catch (e) {
       if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
       var scope = { ...globalHelpers, ...capturedComponentScope, ...(b.capturedElementScope || {}) };
       try {
-        var unwrapScope = createAutoUnwrapProxy(scope);
+        var unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);
         // new Function body is non-strict, so with() works.
         var fn = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
         return fn(unwrapScope);
@@ -3254,7 +3262,7 @@ catch (e2) {
       try {
         // Use captured componentScope (with @for vars) merged with element scope
         const scope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
-        const unwrapScope = createAutoUnwrapProxy(scope);
+        const unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(unwrapScope));
       }
