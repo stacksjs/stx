@@ -28,6 +28,24 @@ describe('hasUserImports', () => {
     expect(hasUserImports(`import { auth } from '../scripts/auth'`)).toBe(true)
   })
 
+  it('bundles multiline named imports', () => {
+    expect(hasUserImports(`
+import {
+  fetchNotificationDeliveries,
+  retryNotificationDelivery,
+} from '../../../../functions/notifications/deliveries'
+`)).toBe(true)
+  })
+
+  it('ignores multiline type-only imports', () => {
+    expect(hasUserImports(`
+import type {
+  NotificationDelivery,
+  NotificationDeliveryStatus,
+} from '../../../../functions/notifications/deliveries'
+`)).toBe(false)
+  })
+
   it('ignores type-only imports, which the transpiler strips', () => {
     expect(hasUserImports(`import type { Foo } from '@stacksjs/browser'`)).toBe(false)
   })

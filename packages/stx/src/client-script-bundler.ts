@@ -55,13 +55,11 @@ const EXTERNAL_PATTERNS = [
  * - `import { ... } from '@composables'` (handled by transformStoreImports)
  */
 export function hasUserImports(code: string): boolean {
-  // Match all import statements
-  const importRegex = /^\s*import\s+(?!type\s)/gm
-  const imports = code.match(importRegex)
-  if (!imports) return false
-
-  // Check each import — is it a user import or a framework import?
-  const fullImportRegex = /^\s*import\s+(?!type\s).*?\s+from\s+['"]([^'"]+)['"]/gm
+  // Check each value import. The declaration body is deliberately multiline:
+  // formatters commonly expand a named import list across several lines.
+  // The old `.*?` stopped at the first newline, so those valid imports skipped
+  // bundling and leaked into a classic browser script.
+  const fullImportRegex = /^[ \t]*import[ \t]+(?!type(?:[ \t]|{))[\s\S]*?\s+from\s+['"]([^'"]+)['"][ \t]*;?/gm
   let match: RegExpExecArray | null
   while ((match = fullImportRegex.exec(code)) !== null) {
     const source = match[1]
@@ -79,7 +77,7 @@ export function hasUserImports(code: string): boolean {
   // that bypasses the extractor can't trip Bun.build with an unsupported
   // loader. The `?inline`/`?raw` query suffix is tolerated to match how
   // bundlers conventionally disambiguate CSS variants.
-  const sideEffectRegex = /^\s*import\s+['"]([^'"]+)['"]/gm
+  const sideEffectRegex = /^[ \t]*import[ \t]+['"]([^'"]+)['"]/gm
   while ((match = sideEffectRegex.exec(code)) !== null) {
     const source = match[1]
     if (/\.css(?:\?.*)?$/.test(source))
