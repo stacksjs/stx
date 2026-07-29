@@ -49,6 +49,28 @@ describe('component rendering security', () => {
     expect(output).not.toContain('save(&quot;x&quot;) <script>')
   })
 
+  it('binds forwarded events from server-only components in the parent script', async () => {
+    const dir = await makeTempDir()
+    const componentsDir = path.join(dir, 'components')
+    await fs.promises.mkdir(componentsDir, { recursive: true })
+    await Bun.write(path.join(componentsDir, 'Button.stx'), '<button><slot /></button>')
+
+    const output = await processDirectives(
+      `<Button @click="openModal()">Open</Button>
+<script client>
+function openModal() {}
+</script>`,
+      {},
+      path.join(dir, 'page.stx'),
+      { componentsDir, debug: false },
+      new Set(),
+    )
+
+    expect(output).toContain('id="__stx_evt_0"')
+    expect(output).toContain(`addEventListener('click'`)
+    expect(output).toContain(`scope.__stx_execute('openModal()'`)
+  })
+
   it('escapes builtin component event handlers and static attributes', async () => {
     const dir = await makeTempDir()
     const output = await processDirectives(

@@ -1003,8 +1003,10 @@ export async function renderComponentWithSlot(
       componentsDir: path.dirname(componentFilePath),
       // Skip runtime injection for nested components - parent will inject it
       skipSignalsRuntime: true,
-      // Skip event directive processing for signal components - runtime handles @click etc.
-      skipEventDirectives: hasSignalScripts,
+      // Signal components bind events through their scoped runtime. Components
+      // with no client script must leave forwarded DOM events for the parent
+      // page, since they have no local script in which to attach a handler.
+      skipEventDirectives: hasSignalScripts || clientScripts.length === 0,
       // Components must never get auto-layout wrapping — they are fragments, not pages
       defaultLayout: undefined,
     }
