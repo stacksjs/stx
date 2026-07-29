@@ -17,7 +17,7 @@ import path from 'node:path'
 
 // Import from expressions
 import { extractAndStripCssImports, extractBridgeData, processClientScript, renderVendorStyleTags } from './client-script'
-import { processExpressions, unescapeHtml } from './expressions'
+import { interpolateScriptExpressions, processExpressions, unescapeHtml } from './expressions'
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
@@ -937,8 +937,26 @@ export async function renderComponentWithSlot(
         // `const duration = {{ duration }}` in `<script client>`). Without
         // this substitution the literal `{{ ... }}` survives into the
         // emitted <script> tag and crashes with `Unexpected token '{'`.
-        if (cleanContent.includes('{{') && cleanContent.includes('}}'))
-          cleanContent = processExpressions(cleanContent, componentContext, componentFilePath)
+        //
+        // Must use the JS-aware interpolator, NOT processExpressions: this is a
+        // script body, not HTML. processExpressions HTML-escapes its output, so
+        // any interpolated value containing a quote emitted `&quot;` into the
+        // JS — `const cls = &quot;foo&quot;;` — and the whole client bundle died
+        // with `Unexpected token '&'`. That broke every @stacksjs/components
+        // component that seeds a client signal from a server prop (Dialog,
+        // Drawer, Tabs, Notification, …). interpolateScriptExpressions emits
+        // JSON.stringify(value) for `{{ }}` (strings become valid JS literals),
+        // raw String(value) for `{!! !!}`, and leaves unresolved expressions
+        // alone for the client runtime — the same rules the page-level path in
+        // process.ts already applies to non-component scripts. See #1757.
+        // The gate must cover BOTH markers. Checking only `{{`/`}}` meant a
+        // client script whose sole interpolation was `{!! expr !!}` skipped
+        // interpolation entirely and emitted the raw marker into the JS —
+        // `const e = {!! JSON.stringify(x) !!};` — another syntax error.
+        const hasMustache = cleanContent.includes('{{') && cleanContent.includes('}}')
+        const hasRawMarker = cleanContent.includes('{!!') && cleanContent.includes('!!}')
+        if (hasMustache || hasRawMarker)
+          cleanContent = interpolateScriptExpressions(cleanContent, componentContext)
         // Remove ts/lang attributes from output since it's now JavaScript
         const cleanAttrs = attrs.replace(/\s*\bts\b/g, '').replace(/\s*\blang\s*=\s*["']?(ts|typescript)["']?/gi, '')
         clientScripts.push(`<script${cleanAttrs}>${cleanContent}</script>`)
