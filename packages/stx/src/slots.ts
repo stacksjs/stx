@@ -138,6 +138,134 @@ function findMatchingTemplateClose(content: string, startIndex: number): number 
   return depth === 0 ? i : -1
 }
 
+interface NamedSlotRange {
+  start: number
+  end: number
+  slotName: string
+  content: string
+  propsBinding?: string
+}
+
+const VOID_ELEMENTS = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+])
+
+function findTagEnd(content: string, startIndex: number): number {
+  let quote: string | null = null
+  for (let index = startIndex; index < content.length; index++) {
+    const character = content[index]
+    if (quote) {
+      if (character === '\\') {
+        index++
+        continue
+      }
+      if (character === quote)
+        quote = null
+      continue
+    }
+    if (character === '"' || character === '\'') {
+      quote = character
+      continue
+    }
+    if (character === '>')
+      return index + 1
+  }
+  return -1
+}
+
+/**
+ * Named slot templates belong to the component they are direct children of.
+ * A global regex also collected templates owned by nested components. Removing
+ * both an outer slot and one of its nested slots with source indices from the
+ * original string corrupted everything after the outer range.
+ */
+function findDirectNamedSlotTemplates(content: string): NamedSlotRange[] {
+  const slots: NamedSlotRange[] = []
+  const stack: string[] = []
+  const slotOpenPattern = /^<template\s+(?:#([a-zA-Z][\w-]*)|v-slot:([a-zA-Z][\w-]*)|slot="([a-zA-Z][\w-]*)")(?:\s*=\s*"([^"]*)")?[^>]*>$/i
+  let cursor = 0
+
+  while (cursor < content.length) {
+    const tagStart = content.indexOf('<', cursor)
+    if (tagStart === -1)
+      break
+
+    if (content.startsWith('<!--', tagStart)) {
+      const commentEnd = content.indexOf('-->', tagStart + 4)
+      cursor = commentEnd === -1 ? content.length : commentEnd + 3
+      continue
+    }
+
+    const tagEnd = findTagEnd(content, tagStart + 1)
+    if (tagEnd === -1)
+      break
+
+    const tag = content.slice(tagStart, tagEnd)
+    const tagMatch = tag.match(/^<\s*(\/?)\s*([a-zA-Z][\w-]*)/)
+    if (!tagMatch) {
+      cursor = tagEnd
+      continue
+    }
+
+    const closing = tagMatch[1] === '/'
+    const tagName = tagMatch[2].toLowerCase()
+    if (closing) {
+      const matchingIndex = stack.lastIndexOf(tagName)
+      if (matchingIndex !== -1)
+        stack.splice(matchingIndex)
+      cursor = tagEnd
+      continue
+    }
+
+    if (tagName === 'template' && stack.length === 0) {
+      const slotMatch = tag.match(slotOpenPattern)
+      if (slotMatch) {
+        const closeEnd = findMatchingTemplateClose(content, tagEnd)
+        if (closeEnd !== -1) {
+          const slotName = slotMatch[1] || slotMatch[2] || slotMatch[3]
+          slots.push({
+            start: tagStart,
+            end: closeEnd,
+            slotName,
+            content: content.slice(tagEnd, closeEnd - '</template>'.length).trim(),
+            propsBinding: slotMatch[4] || undefined,
+          })
+          cursor = closeEnd
+          continue
+        }
+      }
+    }
+
+    const selfClosing = /\/\s*>$/.test(tag)
+    if (!selfClosing && !VOID_ELEMENTS.has(tagName)) {
+      stack.push(tagName)
+      if (tagName === 'script' || tagName === 'style') {
+        const rawClose = content.toLowerCase().indexOf(`</${tagName}>`, tagEnd)
+        if (rawClose !== -1) {
+          cursor = rawClose
+          continue
+        }
+      }
+    }
+    cursor = tagEnd
+  }
+
+  return slots
+}
+
 /**
  * Parse slot content from component children.
  *
@@ -154,43 +282,13 @@ export function parseSlots(childContent: string): ParsedSlots {
 
   let workingContent = childContent
 
-  // Find named slot templates with proper nesting support
-  // Patterns:
-  // - <template #header>...</template>
-  // - <template #row="{ item }">...</template>
-  // - <template v-slot:header>...</template>
-  // - <template slot="header">...</template>
-  const slotOpenRegex = /<template\s+(?:#([a-zA-Z][\w-]*)|v-slot:([a-zA-Z][\w-]*)|slot="([a-zA-Z][\w-]*)")(?:\s*=\s*"([^"]*)")?[^>]*>/gi
-
-  const slotsToRemove: { start: number; end: number; slotName: string; content: string; propsBinding?: string }[] = []
-
-  let match
-  while ((match = slotOpenRegex.exec(childContent)) !== null) {
-    const [fullOpenTag, hashName, vSlotName, slotAttrName, propsBinding] = match
-    const slotName = hashName || vSlotName || slotAttrName
-    const openTagEnd = match.index + fullOpenTag.length
-
-    // Find the matching closing </template> tag
-    const closeEnd = findMatchingTemplateClose(childContent, openTagEnd)
-
-    if (closeEnd !== -1) {
-      // Extract content between opening and closing tags
-      const content = childContent.slice(openTagEnd, closeEnd - '</template>'.length).trim()
-
-      slotsToRemove.push({
-        start: match.index,
-        end: closeEnd,
-        slotName,
-        content,
-        propsBinding: propsBinding || undefined,
-      })
-
-      result.named.set(slotName, {
-        name: slotName,
-        content,
-        propsBinding: propsBinding || undefined,
-      })
-    }
+  const slotsToRemove = findDirectNamedSlotTemplates(childContent)
+  for (const slot of slotsToRemove) {
+    result.named.set(slot.slotName, {
+      name: slot.slotName,
+      content: slot.content,
+      propsBinding: slot.propsBinding,
+    })
   }
 
   // Remove slots from working content in reverse order to preserve indices

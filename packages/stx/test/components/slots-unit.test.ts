@@ -93,6 +93,26 @@ describe('parseSlots', () => {
     expect(result.named.size).toBe(1)
     expect(result.named.get('content')?.content).toContain('Inner template')
   })
+
+  it('leaves nested component slots with their owning component', () => {
+    const result = parseSlots(`
+      <template #header>
+        <Input>
+          <template #iconLeft><span>Search</span></template>
+        </Input>
+      </template>
+      <Table :data="rows" :emptyDescription="emptyDescription">
+        <template #cell-type="{ value }"><span>{{ value }}</span></template>
+      </Table>
+      <template #footer><p>Pagination</p></template>
+    `)
+
+    expect([...result.named.keys()]).toEqual(['header', 'footer'])
+    expect(result.named.get('header')?.content).toContain('<template #iconLeft>')
+    expect(result.default).toContain('<Table :data="rows" :emptyDescription="emptyDescription">')
+    expect(result.default).toContain('<template #cell-type="{ value }">')
+    expect(result.default).toContain('</Table>')
+  })
 })
 
 describe('parseSlotElement', () => {
