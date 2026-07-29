@@ -16,7 +16,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 // Import from expressions
-import { extractBridgeData, processClientScript } from './client-script'
+import { extractAndStripCssImports, extractBridgeData, processClientScript, renderVendorStyleTags } from './client-script'
 import { processExpressions, unescapeHtml } from './expressions'
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
@@ -1044,14 +1044,27 @@ export async function renderComponentWithSlot(
       output = `<div data-stx-scope="${scopeId}"${propsJson}${hydrateJson}>${result}</div>`
 
       // Modify client scripts to register variables in this scope
-      const scopedScripts = clientScripts.map(script => {
+      const scopedScripts = await Promise.all(clientScripts.map(async (script) => {
         // Extract script content
         const scriptMatch = script.match(/<script([^>]*)>([\s\S]*)<\/script>/i)
         if (!scriptMatch) return script
 
         const [, attrs, rawContent] = scriptMatch
+        const cssExtraction = extractAndStripCssImports(rawContent, {
+          filePath: componentFilePath,
+          projectRoot: process.cwd(),
+        })
+        let bundledContent = cssExtraction.code
+        const vendorStyleTags = renderVendorStyleTags(cssExtraction.styles)
+        const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
+        if (hasUserImports(bundledContent)) {
+          bundledContent = await bundleClientScript(bundledContent, componentFilePath, {
+            projectRoot: process.cwd(),
+            minify: options.buildMode === 'compile',
+          })
+        }
         // Transform store imports before IIFE wrapping (import statements can't be inside functions)
-        const content = transformStoreImports(rawContent)
+        const content = transformStoreImports(bundledContent)
         // Wrap script content to register in scope
         // Add data-stx-scoped attribute to prevent double-processing by processScriptSetup
         // Pull the full component-system API into scope, not just the
@@ -1098,10 +1111,10 @@ finally {
         // running any side-effectful setup like fetches) only when the trigger
         // fires. Keep data-stx-scoped so the build passes don't reprocess it.
         if (hydrateTrigger) {
-          return `<script type="stx/island" data-stx-island="${scopeId}" data-stx-scoped${attrs}>${wrappedContent}</script>`
+          return `${vendorStyleTags}<script type="stx/island" data-stx-island="${scopeId}" data-stx-scoped${attrs}>${wrappedContent}</script>`
         }
-        return `<script data-stx-scoped${attrs}>${wrappedContent}</script>`
-      })
+        return `${vendorStyleTags}<script data-stx-scoped${attrs}>${wrappedContent}</script>`
+      }))
 
       // Emit setup immediately after its root. The browser still executes it
       // before DOMContentLoaded, while useReactiveProp can now read and observe

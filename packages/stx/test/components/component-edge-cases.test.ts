@@ -73,6 +73,23 @@ describe('Component Edge Cases', () => {
     )
 
     await Bun.write(
+      path.join(COMPONENTS_DIR, 'delivery-helper.ts'),
+      `export function loadDeliveries(): string { return 'loaded from helper' }`,
+    )
+
+    await Bun.write(
+      path.join(COMPONENTS_DIR, 'imported-signal.stx'),
+      `<script client>
+import {
+  loadDeliveries,
+} from './delivery-helper'
+
+const status = state(loadDeliveries())
+</script>
+<p>{{ status }}</p>`,
+    )
+
+    await Bun.write(
       path.join(COMPONENTS_DIR, 'documented-card.stx'),
       `<!--
 Usage:
@@ -217,6 +234,26 @@ Usage:
       expect(result).toContain('<p>Live content</p>')
       expect(result).toContain('Documentation-only content')
       expect(result.match(/class="documented-card"/g)).toHaveLength(1)
+    })
+  })
+
+  describe('signal component imports', () => {
+    it('bundles multiline imports before wrapping the component scope', async () => {
+      const result = await renderComponentWithSlot(
+        'imported-signal',
+        {},
+        '',
+        COMPONENTS_DIR,
+        {},
+        path.join(TEMP_DIR, 'test.stx'),
+        makeOptions(),
+        new Set(),
+        new Set(),
+      )
+
+      expect(result).toContain('loaded from helper')
+      expect(result).not.toContain(`from './delivery-helper'`)
+      expect(result).not.toMatch(/^\s*import\s/m)
     })
   })
 
