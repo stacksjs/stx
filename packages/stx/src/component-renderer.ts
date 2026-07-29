@@ -956,7 +956,12 @@ async function processCustomElementTags(
           const eventAttrs = Object.entries(resolvedProps.events)
             .map(([event, handler]) => `${event}="${escapeAttribute(handler)}"`)
             .join(' ')
-          finalContent = finalContent.substring(0, root.insertPos) + ' ' + eventAttrs + finalContent.substring(root.insertPos)
+          const parentEvents = Object.keys(resolvedProps.events)
+            .map(event => event.replace(/^@/, '').split('.')[0])
+            .join(' ')
+          finalContent = finalContent.substring(0, root.insertPos)
+            + ` data-stx-parent-events="${parentEvents}" ${eventAttrs}`
+            + finalContent.substring(root.insertPos)
         }
       }
 
@@ -986,9 +991,14 @@ function emitClientReactiveAttrs(html: string, clientReactive: Record<string, st
   const reactiveAttrs = Object.entries(clientReactive)
     .map(([key, expr]) => `:${pascalToKebab(key)}="${expr.replace(/"/g, '&quot;')}"`)
     .join(' ')
+  const parentBindings = Object.keys(clientReactive)
+    .map(key => pascalToKebab(key))
+    .join(' ')
 
   // Insert after the tag name
-  return html.substring(0, root.insertPos) + ' ' + reactiveAttrs + html.substring(root.insertPos)
+  return html.substring(0, root.insertPos)
+    + ` data-stx-parent-bindings="${parentBindings}" ${reactiveAttrs}`
+    + html.substring(root.insertPos)
 }
 
 /**

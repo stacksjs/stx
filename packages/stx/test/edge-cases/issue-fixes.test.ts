@@ -536,6 +536,16 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(evalAttrSection).not.toContain('Object.values(unwrapScope)')
   })
 
+  it('evaluates forwarded props and events in the caller scope', () => {
+    expect(runtime).toContain("el.getAttribute('data-stx-parent-bindings')")
+    expect(runtime).toContain("el.getAttribute('data-stx-parent-events')")
+    expect(runtime).toContain('el.__stx_parent_scope = { ...componentScope }')
+    expect(runtime).toContain('bindParentComponentProps(el, el.__stx_parent_scope)')
+    expect(runtime).toContain('el.__stx_parent_props_bound = true')
+    expect(runtime).toContain('resolveComponentCallerScope(el, pageScopeSnapshot)')
+    expect(runtime).toContain('resolveComponentCallerScope(el, spaPageScopeSnapshot)')
+  })
+
   it('default parse coerces "true"/"false"/numbers/empty to typed values', () => {
     // Default parser heuristic — boolean attrs without an explicit parse opt
     // still work right out of the gate (`open=""` → true, `open="false"` → false).
@@ -846,7 +856,8 @@ function selectRow() {}
       expect(output).toContain(':rows="rows"')
       expect(output).toContain('data-stx-scope="stx_reactive_table_')
       expect(output).toMatch(/useReactiveProp\(["']rows["']/)
-      expect(output).toMatch(/<div\s+@select="selectRow\(\$event\.detail\)"\s+:rows="rows"\s+data-stx-scope=/)
+      expect(output).toMatch(/<div[^>]+data-stx-parent-events="select"[^>]+@select="selectRow\(\$event\.detail\)"/)
+      expect(output).toMatch(/<div[^>]+data-stx-parent-bindings="rows"[^>]+:rows="rows"/)
       expect(output).not.toMatch(/<script[^>]*@select=/)
       expect(output).not.toMatch(/<script[^>]*:rows=/)
       expect(output).toMatch(/<div[^>]+data-stx-scope="(stx_reactive_table_[^"]+)"[^>]*>[\s\S]*?<script data-stx-scoped[^>]*>[\s\S]*?document\.querySelector\('\[data-stx-scope="\1"\]'\)/)

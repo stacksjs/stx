@@ -1590,6 +1590,66 @@ catch (e) {
       && /^\\s*\\(?\\s*\\w+(?:\\s*,\\s*\\w+)?\\s*\\)?\\s+(?:in|of)\\s+.+\\s*$/.test(expr);
   }
 
+  function bindParentComponentProps(el, callerScope) {
+    if (!el || !el.getAttribute || el.__stx_parent_props_bound) return;
+    var names = (el.getAttribute('data-stx-parent-bindings') || '').split(/\\s+/).filter(Boolean);
+    if (!names.length) return;
+    el.__stx_parent_props_bound = true;
+    var scope = { ...callerScope, ...globalHelpers };
+
+    names.forEach(function(name) {
+      var sourceName = ':' + name;
+      if (!el.hasAttribute(sourceName)) return;
+      var expression = el.getAttribute(sourceName);
+      effect(function() {
+        var value;
+        try {
+          var unwrapScope = createAutoUnwrapProxy(scope);
+          var fn = new Function('__scope__', 'with(__scope__) { return (' + expression + ') }');
+          value = fn(unwrapScope);
+          if (value && typeof value === 'function' && (value._isSignal || value._isDerived)) value = value();
+        }
+        catch (e) {
+          if (!(e instanceof ReferenceError) && !(e instanceof TypeError))
+            console.warn('[STX] Parent component prop error:', expression, e);
+          value = undefined;
+        }
+
+        if (value === false || value === null || value === undefined) {
+          el.removeAttribute(name);
+        }
+        else if (value === true) {
+          el.setAttribute(name, '');
+        }
+        else {
+          var serialized = value;
+          if (typeof value === 'object') {
+            try { serialized = JSON.stringify(value); }
+            catch (e) { serialized = String(value); }
+          }
+          el.setAttribute(name, serialized);
+        }
+      });
+      el.removeAttribute(sourceName);
+    });
+  }
+
+  function resolveComponentCallerScope(el, pageScope) {
+    var resolved = { ...pageScope };
+    var ancestors = [];
+    var current = el && (el.parentElement || el.parentNode);
+    while (current && current !== document) {
+      if (current.getAttribute && current.hasAttribute('data-stx-scope'))
+        ancestors.push(current.getAttribute('data-stx-scope'));
+      current = current.parentElement || current.parentNode;
+    }
+    ancestors.reverse().forEach(function(scopeId) {
+      var ancestorScope = window.stx._scopes && window.stx._scopes[scopeId];
+      if (ancestorScope) Object.assign(resolved, ancestorScope);
+    });
+    return resolved;
+  }
+
   function processElement(el, scope = componentScope) {
     // Debug: log every element with x-class or @click
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
@@ -1774,7 +1834,8 @@ else if (part) {
       if (v && typeof v === 'function' && (v._isSignal || v._isDerived)) return v();
       return v;
     };
-    const evalAttrExpr = (rawExpr) => {
+    const evalAttrExpr = (rawExpr, evaluationScope) => {
+      const activeScope = evaluationScope || attrCapturedScope;
       // Decode HTML entities that browsers may encode in attribute values
       // e.g. :text="a > b" may be stored as :text="a &gt; b" in HTML
       var expr = rawExpr.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&#x27;/g,"'");
@@ -1782,14 +1843,14 @@ else if (part) {
         if (/^__[A-Z_]+__$/.test(expr.trim())) return expr;
 
         // Check for pipe syntax (Feature #2)
-        const pipeResult = parsePipeExpression(expr, attrCapturedScope);
+        const pipeResult = parsePipeExpression(expr, activeScope);
         if (pipeResult) {
-          const unwrapScope = createAutoUnwrapProxy(attrCapturedScope);
+          const unwrapScope = createAutoUnwrapProxy(activeScope);
           return maybeUnwrapSignal(executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope));
         }
 
         // Use auto-unwrap proxy (Feature #1)
-        const unwrapScope = createAutoUnwrapProxy(attrCapturedScope);
+        const unwrapScope = createAutoUnwrapProxy(activeScope);
         const fn = new Function('__scope__', 'with(__scope__) { return (' + expr + ') }');
         return maybeUnwrapSignal(fn(unwrapScope));
       }
@@ -1798,7 +1859,7 @@ catch (e) {
         // Retry without auto-unwrap so signal functions remain callable
         try {
           const fn = new Function('__scope__', 'with(__scope__) { return (' + expr + ') }');
-          return maybeUnwrapSignal(fn(attrCapturedScope));
+          return maybeUnwrapSignal(fn(activeScope));
         }
 catch (e2) {
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Attribute expression error:', expr, e2);
@@ -1842,8 +1903,12 @@ catch (e2) {
           || (name.startsWith('x-') && !X_HANDLED[name.split('.')[0]] && !X_HANDLED[name])) {
         let attrName = name.startsWith('@bind:') ? name.slice(6) : name.startsWith('x-bind:') ? name.slice(7) : name.startsWith('x-') ? name.slice(2) : name.slice(1);
         if (el.namespaceURI === SVG_NS && SVG_ATTR_CASE[attrName]) attrName = SVG_ATTR_CASE[attrName];
+        var parentBindingNames = (el.getAttribute && el.getAttribute('data-stx-parent-bindings') || '').split(/\\s+/);
+        var bindingScope = el.__stx_parent_scope && parentBindingNames.includes(attrName)
+          ? el.__stx_parent_scope
+          : attrCapturedScope;
         effect(() => {
-          const v = evalAttrExpr(value);
+          const v = evalAttrExpr(value, bindingScope);
           if (v === false || v === null || v === undefined) {
             el.removeAttribute(attrName);
           }
@@ -1889,7 +1954,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
         if (scope.$refs) scope.$refs[value] = el;
         if (componentScope.$refs) componentScope.$refs[value] = el;
       }
-else if (name.startsWith('@') || name.startsWith(':')) {
+      else if (name.startsWith('@') || name.startsWith(':')) {
         // Event handlers: @click, :click, @submit.prevent, :keydown.enter, etc.
         const parts = name.slice(1).split('.');
         const eventName = parts[0];
@@ -1906,7 +1971,10 @@ else if (name.startsWith('@') || name.startsWith(':')) {
         el[eventKey] = true;
 
         // Capture scope at setup time so @for loop variables are available when event fires
-        const eventCapturedScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
+        const parentEventNames = (el.getAttribute && el.getAttribute('data-stx-parent-events') || '').split(/\\s+/);
+        const eventCapturedScope = el.__stx_parent_scope && parentEventNames.includes(eventName)
+          ? { ...el.__stx_parent_scope, ...globalHelpers }
+          : { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
 
         console.log('[stx] binding event:', eventName, 'on', el.tagName, 'expr:', value.substring(0, 40));
         el.addEventListener(eventName, (event) => {
@@ -2558,17 +2626,15 @@ catch (e) {
         Array.from(templateContent.childNodes).forEach(node => {
           const clone = node.cloneNode(true);
           if (clone.nodeType === 1) {
-            processElement(clone, itemScope);
-            clone.removeAttribute('x-cloak');
-            clone.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
+            // Structural directives need a live parent. Keep the iteration
+            // scope on the clone until the keyed diff inserts it, then bind.
+            clone.__stx_for_scope = itemScope;
           }
           elements.push(clone);
         });
       } else {
         const clone = templateContent.cloneNode(true);
-        processElement(clone, itemScope);
-        clone.removeAttribute('x-cloak');
-        clone.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
+        clone.__stx_for_scope = itemScope;
         elements.push(clone);
       }
       return elements;
@@ -2738,8 +2804,13 @@ catch (e) {
         if (existing && existing.length > 0 && !usedKeys.has(key)) {
           // Reuse this item's nodes — move the whole group into position, in
           // order, so a multi-node row stays contiguous and correctly ordered.
+          // A structural directive may intentionally have detached one of the
+          // group's nodes. Its own placeholder owns reinsertion, so keyed reuse
+          // must not resurrect that hidden node.
           const group = existing.shift();
-          group.forEach(el => parent.insertBefore(el, placeholder));
+          group.forEach(el => {
+            if (el.parentNode === parent) parent.insertBefore(el, placeholder);
+          });
           newElements.push(...group);
           newGroups.push(group);
           usedKeys.add(key);
@@ -2754,7 +2825,17 @@ catch (e) {
         } else {
           // New item — create DOM elements with a fresh item signal
           const elements = createItemElements(list[i], i, key);
-          elements.forEach(el => { parent.insertBefore(el, placeholder); if (tgReady) tgEnter(el, tgName); });
+          elements.forEach(el => {
+            parent.insertBefore(el, placeholder);
+            if (el.nodeType === 1) {
+              var itemScope = el.__stx_for_scope || passedScope;
+              delete el.__stx_for_scope;
+              processElement(el, itemScope);
+              el.removeAttribute('x-cloak');
+              el.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
+            }
+            if (tgReady && el.isConnected) tgEnter(el, tgName);
+          });
           newElements.push(...elements);
           newGroups.push(elements);
         }
@@ -4193,6 +4274,8 @@ catch (e) {}
       var scopeId = el.getAttribute('data-stx-scope');
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
       if (!scopeVars) return;
+      el.__stx_parent_scope = { ...componentScope };
+      bindParentComponentProps(el, el.__stx_parent_scope);
       Object.assign(componentScope, scopeVars);
       el.__stx_disposers = trackEffects(function() { processElement(el, componentScope); });
       if (scopeVars.__mountCallbacks && !scopeVars.__mounted) {
@@ -4967,6 +5050,7 @@ else {
         }
       }
     });
+    var pageScopeSnapshot = { ...componentScope };
 
     // Process mount queue (from stx.mount() calls during loading) only after
     // caller setup is available for Vue-style projected slot ownership.
@@ -5039,6 +5123,12 @@ else {
       }
 
       if (!scopeVars) return;
+
+      // Forwarded props and events belong to the caller. Capture its scope
+      // before this component's locals are merged, so identical child names
+      // cannot shadow expressions such as :total-items="totalItems".
+      el.__stx_parent_scope = resolveComponentCallerScope(el, pageScopeSnapshot);
+      bindParentComponentProps(el, el.__stx_parent_scope);
 
       // Merge component scope vars into componentScope (don't restore - keep for head elements)
       // This ensures expressions can access component variables even for elements
@@ -5366,6 +5456,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
         }
       });
     }
+    var spaPageScopeSnapshot = { ...componentScope };
 
     // Initialize x-data scopes after SPA fragment swap.
     // On full page load, the reactive bridge <script> calls initScope(). But after SPA
@@ -5415,6 +5506,8 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
         return;
       }
       if (!scopeVars) return;
+      el.__stx_parent_scope = resolveComponentCallerScope(el, spaPageScopeSnapshot);
+      bindParentComponentProps(el, el.__stx_parent_scope);
       Object.assign(componentScope, scopeVars);
       if (el.__stx_disposers) return;
       var disposeEffects = trackEffects(function() { processElement(el, componentScope); });

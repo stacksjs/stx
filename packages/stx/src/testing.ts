@@ -92,7 +92,16 @@ export function shimAttributes(root: any): void {
         const m: Map<string, string> = el.__attrMap
         const arr: any = []
         let i = 0
-        for (const [name, value] of m) arr[i++] = { name, value }
+        for (const [name, value] of m) {
+          arr[i++] = {
+            name,
+            value,
+            *[Symbol.iterator]() {
+              yield name
+              yield value
+            },
+          }
+        }
         arr.length = i
         arr.get = (k: string) => m.get(k)
         arr.set = (k: string, v: string) => m.set(k, v)
