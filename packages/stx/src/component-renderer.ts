@@ -991,17 +991,28 @@ function emitClientReactiveAttrs(html: string, clientReactive: Record<string, st
     return html
   }
 
+  // Structural directives belong to the rendered component root, not to the
+  // child's prop bridge. Treating `:if` as a reactive prop caused
+  // bindParentComponentProps() to consume and remove it before processElement()
+  // could mount or unmount the component. Keep the directive expression on the
+  // root while forwarding only actual props through data-stx-parent-bindings.
+  const structuralBindings = new Set(['if', 'for', 'show'])
+
   // Build the reactive attributes string
   const reactiveAttrs = Object.entries(clientReactive)
     .map(([key, expr]) => `:${pascalToKebab(key)}="${expr.replace(/"/g, '&quot;')}"`)
     .join(' ')
   const parentBindings = Object.keys(clientReactive)
+    .filter(key => !structuralBindings.has(key))
     .map(key => pascalToKebab(key))
     .join(' ')
+  const parentBindingAttr = parentBindings
+    ? ` data-stx-parent-bindings="${parentBindings}"`
+    : ''
 
   // Insert after the tag name
   return html.substring(0, root.insertPos)
-    + ` data-stx-parent-bindings="${parentBindings}" ${reactiveAttrs}`
+    + `${parentBindingAttr} ${reactiveAttrs}`
     + html.substring(root.insertPos)
 }
 

@@ -548,8 +548,11 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
   })
 
   it('default parse coerces "true"/"false"/numbers/empty to typed values', () => {
-    // Default parser heuristic — boolean attrs without an explicit parse opt
-    // still work right out of the gate (`open=""` → true, `open="false"` → false).
+    // The declared default controls scalar parsing, while untyped props retain
+    // the fallback heuristic.
+    expect(runtime).toContain("typeof defaultValue === 'string'")
+    expect(runtime).toContain("typeof defaultValue === 'boolean'")
+    expect(runtime).toContain("typeof defaultValue === 'number'")
     expect(runtime).toMatch(/v === '' \|\| v === 'true'/)
     expect(runtime).toMatch(/v === 'false'/)
     expect(runtime).toMatch(/!isNaN\(Number\(v\)\)/)
@@ -585,6 +588,39 @@ const page = state(2)
 
       expect(output).toContain(':current-page="page()"')
       expect(output).not.toContain(':currentPage=')
+    }
+    finally {
+      fs.rmSync(componentsDir, { recursive: true, force: true })
+    }
+  })
+
+  it('keeps structural bindings on a component root outside the prop bridge', async () => {
+    const componentsDir = path.join(TMP, 'structural-component-bindings')
+    fs.mkdirSync(componentsDir, { recursive: true })
+    try {
+      fs.writeFileSync(
+        path.join(componentsDir, 'ConditionalPanel.stx'),
+        `<script client>
+const title = useReactiveProp('title', '')
+</script>
+<section>{{ title() }}</section>`,
+      )
+
+      const output = await processDirectives(
+        `<script client>
+const visible = state(false)
+const title = state('')
+</script>
+<ConditionalPanel :if="visible()" :title="title" />`,
+        {},
+        path.join(TMP, 'structural-component-view.stx'),
+        { componentsDir } as StxOptions,
+        new Set<string>(),
+      )
+
+      expect(output).toContain(':if="visible()"')
+      expect(output).toContain('data-stx-parent-bindings="title"')
+      expect(output).not.toContain('data-stx-parent-bindings="if title"')
     }
     finally {
       fs.rmSync(componentsDir, { recursive: true, force: true })
