@@ -13,7 +13,7 @@ import path from 'node:path'
 
 // Directive processors
 import { injectCrosswindCSS } from './dev-server/crosswind'
-import { matchHtmlComment, maskAtElementPosition } from './html-masking'
+import { matchHtmlComment, matchStyleElement, maskAtElementPosition, stashScriptElements } from './html-masking'
 import { processA11yDirectives } from './a11y'
 import { generateLifecycleRuntime } from './composables'
 import { processTemplateBindings } from './reactive-bindings'
@@ -756,10 +756,23 @@ async function processDirectivesInternal(
   // See stacksjs/stx#1698.
   if (layoutPath) {
     const orphans: string[] = []
-    output = output.replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, (m) => {
-      orphans.push(m)
-      return ''
-    })
+    const scripts = stashScriptElements(output)
+    const styles = maskAtElementPosition(
+      scripts.output,
+      matchStyleElement,
+      (_token, index) => `\x00STX_ORPHAN_STYLE_${index}\x00`,
+    )
+    output = styles.output.replace(
+      /\x00STX_(SCRIPT|ORPHAN_STYLE)_(\d+)\x00/g,
+      (_match, kind: string, index: string) => {
+        const token = kind === 'SCRIPT'
+          ? scripts.scripts[Number(index)]
+          : styles.tokens[Number(index)]
+        if (token)
+          orphans.push(token)
+        return ''
+      },
+    )
     if (orphans.length > 0) {
       const joined = orphans.join('\n')
       sections.content = sections.content
@@ -1454,30 +1467,21 @@ else {
   // findScriptBodyEnd walks the body as JS, tracking string/comment/regex
   // state, and returns the index of the *real* close tag.
   {
-    const serverScriptRe = /<script\s+server\b[^>]*>/gi
-    let serverMatch: RegExpExecArray | null
+    const { scanScriptTags } = await import('./signal-processing')
     const serverRemoveRanges: { start: number, end: number }[] = []
-    while ((serverMatch = serverScriptRe.exec(output)) !== null) {
-      const tagEnd = serverMatch.index + serverMatch[0].length
-      const closeIdx = findScriptBodyEnd(output, tagEnd)
-      if (closeIdx === -1) {
-        // Unclosed server script — don't strip a partial range, just
-        // skip it and let the (broken) output surface so the author sees
-        // the problem in their template rather than silently swallowing
-        // half the file.
+    for (const script of scanScriptTags(output)) {
+      if (!/\bserver\b/i.test(script.attrs))
         continue
-      }
-      let rangeEnd = closeIdx + '</script>'.length
+
+      const bodyStart = script.start + script.fullMatch.indexOf('>') + 1
+      const closeStart = findScriptBodyEnd(output, bodyStart)
+      if (closeStart === -1)
+        continue
+
+      let rangeEnd = closeStart + '</script>'.length
       // Also consume trailing whitespace
       while (rangeEnd < output.length && /\s/.test(output[rangeEnd])) rangeEnd++
-      serverRemoveRanges.push({ start: serverMatch.index, end: rangeEnd })
-      // Resume scanning AFTER the real close tag. The regex's own lastIndex
-      // sits just past the OPEN tag, so tag-like text inside the consumed
-      // body (e.g. a JS comment mentioning `<script server>`) would re-match
-      // and produce an overlapping removal range — and overlapping ranges
-      // corrupt the document when sliced out back-to-front (the outer
-      // range's indices go stale the moment the inner one is removed).
-      serverScriptRe.lastIndex = rangeEnd
+      serverRemoveRanges.push({ start: script.start, end: rangeEnd })
     }
     // Remove in reverse order to preserve indices
     for (let ri = serverRemoveRanges.length - 1; ri >= 0; ri--) {

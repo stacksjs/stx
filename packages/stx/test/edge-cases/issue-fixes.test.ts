@@ -212,6 +212,34 @@ function submitSearch() { console.log('submit fired') }
     expect(out).toContain('border: 1px solid red')
   })
 
+  it('does not treat script tag examples inside client comments as orphan assets', async () => {
+    const view = `@extends('default')
+
+@section('content')
+  <h1>Functions</h1>
+@endsection
+
+<script client>
+interface FunctionRow { name: string }
+// Data moved out of a former <script server> block.
+const rows: FunctionRow[] = [{ name: 'sendInvoice' }]
+const count = state(rows.length)
+</script>`
+
+    const out = await processDirectives(
+      view,
+      {},
+      path.join(TMP, 'script-example-comment.stx'),
+      { layoutsDir: LAYOUTS } as StxOptions,
+      new Set<string>(),
+    )
+
+    expect(out).toContain('<h1>Functions</h1>')
+    expect(out).toContain('name: "sendInvoice"')
+    expect(out).toContain('const count = state(rows.length)')
+    expect(out).not.toContain('interface FunctionRow')
+  })
+
   it('preserves a layout import map when the layout also has reactive client code', async () => {
     fs.writeFileSync(
       path.join(LAYOUTS, 'import-map-helper.ts'),
