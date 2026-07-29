@@ -462,6 +462,28 @@ else {
     })
   })
 
+  describe(':for directive disambiguation', () => {
+    it('binds :for as an HTML attribute when it is not a loop expression', () => {
+      const scopeId = 'label_scope'
+      const container = createElement('div', { 'data-stx-scope': scopeId })
+      const label = createElement('label', { ':for': "'config-' + field.key" })
+      container.appendChild(label)
+      domElements.set(scopeId, container)
+
+      stx._scopes = stx._scopes || {}
+      stx._scopes[scopeId] = {
+        field: { key: 'provider' },
+      }
+
+      if (mockDocument._domContentLoadedHandler)
+        mockDocument._domContentLoadedHandler()
+
+      expect(label.getAttribute('for')).toBe('config-provider')
+      expect(label.hasAttribute(':for')).toBe(false)
+      expect(label._removed).toBe(false)
+    })
+  })
+
   describe('Text interpolation with captured scope', () => {
     it('should capture scope at binding time, not evaluation time', () => {
       // Create a signal that changes

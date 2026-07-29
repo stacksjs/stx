@@ -1585,6 +1585,11 @@ catch (e) {
     processElement(el, scope);
   }
 
+  function isForDirectiveExpression(expr) {
+    return typeof expr === 'string'
+      && /^\\s*\\(?\\s*\\w+(?:\\s*,\\s*\\w+)?\\s*\\)?\\s+(?:in|of)\\s+.+\\s*$/.test(expr);
+  }
+
   function processElement(el, scope = componentScope) {
     // Debug: log every element with x-class or @click
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
@@ -1703,8 +1708,9 @@ else if (part) {
     }
 
     // Handle @for / :for / x-for first (reactive list)
-    if (el.hasAttribute('@for') || el.hasAttribute(':for') || el.hasAttribute('x-for')) {
-      var forAttr = el.hasAttribute(':for') ? ':for' : el.hasAttribute('x-for') ? 'x-for' : '@for';
+    var hasColonForLoop = el.hasAttribute(':for') && isForDirectiveExpression(el.getAttribute(':for'));
+    if (el.hasAttribute('@for') || hasColonForLoop || el.hasAttribute('x-for')) {
+      var forAttr = hasColonForLoop ? ':for' : el.hasAttribute('x-for') ? 'x-for' : '@for';
       bindFor(el, scope, forAttr);
       return;
     }
@@ -1802,7 +1808,7 @@ catch (e2) {
     };
 
     // Known directive names to exclude from generic :attr binding
-    var DIRECTIVE_NAMES = {class:1, style:1, text:1, html:1, show:1, model:1, 'if':1, 'for':1, ref:1};
+    var DIRECTIVE_NAMES = {class:1, style:1, text:1, html:1, show:1, model:1, 'if':1, ref:1};
     // SVG attributes are case-sensitive, but the HTML parser lowercases
     // prefixed attribute names — ':viewBox' arrives as ':viewbox' because
     // the spec's "adjust SVG attributes" step only covers unprefixed names.
