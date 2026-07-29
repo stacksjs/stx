@@ -507,6 +507,12 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(runtime).toMatch(/root\.getAttribute\(name\)/)
   })
 
+  it('falls back to serialized static component props', () => {
+    expect(runtime).toContain("root.getAttribute('data-stx-props')")
+    expect(runtime).toContain('JSON.parse(serializedProps)')
+    expect(runtime).toContain('staticValue = parsedProps[camelName]')
+  })
+
   it('sets up a MutationObserver to catch parent-driven attribute changes', () => {
     expect(runtime).toContain('new MutationObserver(')
     expect(runtime).toMatch(/attributeFilter:\s*\[name\]/)

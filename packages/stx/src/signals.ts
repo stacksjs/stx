@@ -3690,13 +3690,26 @@ catch (e) {}
       return v;
     };
     var root = window.__STX_CURRENT_ELEMENT__;
+    var staticValue = defaultValue;
+    if (root && root.getAttribute) {
+      var serializedProps = root.getAttribute('data-stx-props');
+      if (serializedProps) {
+        try {
+          var parsedProps = JSON.parse(serializedProps);
+          var camelName = name.replace(/-([a-z0-9])/g, function(_, c) { return c.toUpperCase(); });
+          if (Object.prototype.hasOwnProperty.call(parsedProps, name)) staticValue = parsedProps[name];
+          else if (Object.prototype.hasOwnProperty.call(parsedProps, camelName)) staticValue = parsedProps[camelName];
+        }
+        catch (e) {}
+      }
+    }
     var initial;
     var lastRaw = null;
     if (root && root.hasAttribute && root.hasAttribute(name)) {
       lastRaw = root.getAttribute(name);
       initial = parse(lastRaw);
     } else {
-      initial = defaultValue;
+      initial = staticValue;
     }
     var s = state(initial);
     if (!root) return s;
@@ -3705,7 +3718,7 @@ catch (e) {}
       var raw = hasAttr ? root.getAttribute(name) : null;
       if (raw === lastRaw) return;
       lastRaw = raw;
-      var next = hasAttr ? parse(raw) : defaultValue;
+      var next = hasAttr ? parse(raw) : staticValue;
       if (next !== s()) s.set(next);
     });
     observer.observe(root, { attributes: true, attributeFilter: [name] });
