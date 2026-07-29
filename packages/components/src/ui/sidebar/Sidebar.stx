@@ -29,6 +29,7 @@ export const className = $props.className || ''
 export const sidebarUid = $props.id || `stx-sidebar-${Math.random().toString(36).slice(2, 8)}`
 
 const themeStyle = resolveSidebarTheme(theme)
+export const selectionModel = themeStyle.selection
 export const hasShimmerRim = themeStyle.layers.shimmerRim === true
 export const tintClasses = themeStyle.layers.tint || ''
 export const scrollAreaClasses = themeStyle.scrollArea
@@ -277,6 +278,21 @@ function toggleCollapse() {
 // root element unless the app manages its own theme (data-theme attribute).
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Key-window tracking — AppKit dims a source-list selection from the accent
+// to a neutral fill the moment the window resigns key. `data-window-key` on
+// the pane drives the two selection rule sets in the scoped CSS above.
+// ---------------------------------------------------------------------------
+
+function trackKeyWindow() {
+  function sync() {
+    pane.setAttribute('data-window-key', document.hasFocus() ? 'true' : 'false')
+  }
+  sync()
+  window.addEventListener('focus', sync)
+  window.addEventListener('blur', sync)
+}
+
 function followSystemAppearance() {
   const media = window.matchMedia('(prefers-color-scheme: dark)')
   function sync() {
@@ -292,6 +308,7 @@ onMount(() => {
   if (!pane) return
 
   followSystemAppearance()
+  trackKeyWindow()
 
   if (persistKeyProp) {
     try {
@@ -321,6 +338,8 @@ defineExpose({ collapsed, toggle: toggleCollapse })
   id="{{ sidebarUid }}"
   data-stx-sidebar
   data-sidebar-theme="{{ theme }}"
+  data-sidebar-selection="{{ selectionModel }}"
+  data-window-key="true"
   data-active-class="{{ activeClasses }}"
   class="{{ paneClasses }}"
   :style="`width: ${sidebarWidth()}`"
@@ -430,10 +449,69 @@ defineExpose({ collapsed, toggle: toggleCollapse })
   .stx-sidebar-rim::after { animation: none; }
 }
 
-/* Rows collapse like AppKit outlines: fixed row height animates to zero. */
+/* ---------------------------------------------------------------------------
+ * Selection, `accent` model (macOS and its derivatives).
+ *
+ * AppKit paints a source-list selection in two states. In a key window the
+ * row takes the system accent and its label, icon, count and disclosure
+ * chevron all turn white; the label also goes semibold. When the window
+ * resigns key the fill drops to a neutral gray and the label stays dark.
+ * Measured from Mail.app: key fill is the accent, non-key fill sits about
+ * 5.5% black over the pane, and the icons desaturate to secondary gray.
+ *
+ * These are attribute rules rather than utility classes because the row's
+ * children have to recolor together, and because the controller toggles
+ * `data-active` on the client — CSS keyed on the attribute keeps the
+ * previously selected row's own icon tint intact when selection moves.
+ * ------------------------------------------------------------------------- */
+[data-sidebar-selection="accent"] {
+  --stx-sidebar-accent: #007aff;
+  --stx-sidebar-selection-idle: rgba(0, 0, 0, 0.055);
+  --stx-sidebar-on-selection: #fff;
+  --stx-sidebar-icon-idle: #8e8e93;
+}
+@media (prefers-color-scheme: dark) {
+  [data-sidebar-selection="accent"] {
+    --stx-sidebar-accent: #0a84ff;
+    --stx-sidebar-selection-idle: rgba(255, 255, 255, 0.11);
+    --stx-sidebar-icon-idle: #98989d;
+  }
+}
+
+/* Per-item tint, published by SidebarItem as a custom property. */
+[data-sidebar-selection="accent"] [data-sidebar-icon] {
+  color: var(--stx-sidebar-icon, currentColor);
+}
+
+[data-sidebar-selection="accent"][data-window-key="true"] [data-sidebar-item][data-active="true"] {
+  background: var(--stx-sidebar-accent);
+  color: var(--stx-sidebar-on-selection);
+  font-weight: 590;
+}
+[data-sidebar-selection="accent"][data-window-key="true"] [data-sidebar-item][data-active="true"] [data-sidebar-icon],
+[data-sidebar-selection="accent"][data-window-key="true"] [data-sidebar-item][data-active="true"] [data-sidebar-count],
+[data-sidebar-selection="accent"][data-window-key="true"] [data-sidebar-item][data-active="true"] [data-sidebar-chevron] {
+  color: var(--stx-sidebar-on-selection);
+}
+/* Hover must not lighten the selected row out from under the accent. */
+[data-sidebar-selection="accent"][data-window-key="true"] [data-sidebar-item][data-active="true"]:hover {
+  background: var(--stx-sidebar-accent);
+}
+
+/* Window resigned key: neutral fill, label stays dark, icons desaturate. */
+[data-sidebar-selection="accent"][data-window-key="false"] [data-sidebar-item][data-active="true"] {
+  background: var(--stx-sidebar-selection-idle);
+  font-weight: 590;
+}
+[data-sidebar-selection="accent"][data-window-key="false"] [data-sidebar-icon] {
+  color: var(--stx-sidebar-icon-idle);
+}
+
+/* Rows collapse like AppKit outlines: fixed row height animates to zero.
+   The 32px pitch is the row itself — AppKit leaves no gap, so a run of
+   selected or hovered rows reads as one continuous block. */
 [data-sidebar-row] {
-  height: 32px; /* 30px row + 2px gap */
-  padding-bottom: 2px;
+  height: 32px;
   transition: height 0.22s ease, opacity 0.16s ease;
 }
 [data-sidebar-row][data-collapsed] {

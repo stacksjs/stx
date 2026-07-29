@@ -36,8 +36,12 @@ export const countClasses = themeStyle.count
 // Nested rows are indented; the icon tint accepts macOS system color names
 // ("blue", "yellow", …) or any CSS color.
 export const indentStyle = depth > 0 ? `padding-left: ${depth * themeStyle.indentPerLevel}px` : ''
+// The tint is published as a custom property rather than `color:` directly.
+// An inline `color` would outrank any stylesheet rule, so a selected row
+// could never turn its icon white the way AppKit does, and toggling
+// selection on the client could not restore the original tint afterwards.
 const tint = resolveIconColor(iconColor)
-export const iconStyle = tint ? `color: ${tint}` : ''
+export const iconStyle = tint ? `--stx-sidebar-icon: ${tint}` : ''
 export const isLink = Boolean(href) && !disabled
 </script>
 
@@ -52,34 +56,34 @@ export const isLink = Boolean(href) && !disabled
     <a href="{{ href }}" data-sidebar-item data-label="{{ label }}" class="{{ rowClasses }}" @if(active)data-active="true" aria-current="page"@endif>
       <span class="{{ disclosureClasses }}" @if(expandable)data-sidebar-disclosure role="button" aria-label="Toggle {{ label }}"@endif>
         @if(expandable)
-          <span class="{{ chevronClasses }}" aria-hidden="true"></span>
+          <span data-sidebar-chevron class="{{ chevronClasses }}" aria-hidden="true"></span>
         @endif
       </span>
       @if(image)
         <span class="{{ iconSlotClasses }}"><img src="{{ image }}" alt="" class="{{ imageClasses }}" /></span>
       @elseif(icon)
-        <span class="{{ iconSlotClasses }}"><span class="{{ iconClasses }}" @if(iconStyle)style="{{ iconStyle }}"@endif aria-hidden="true"></span></span>
+        <span class="{{ iconSlotClasses }}"><span data-sidebar-icon class="{{ iconClasses }}" @if(iconStyle)style="{{ iconStyle }}"@endif aria-hidden="true"></span></span>
       @endif
       <span class="{{ labelClasses }}">{{ label }}</span>
       @if(count !== '' && count !== null && count !== undefined)
-        <span class="{{ countClasses }}">{{ count }}</span>
+        <span data-sidebar-count class="{{ countClasses }}">{{ count }}</span>
       @endif
     </a>
   @else
     <button type="button" data-sidebar-item data-label="{{ label }}" class="{{ rowClasses }}" @if(active)data-active="true" aria-current="page"@endif @if(disabled)data-disabled disabled aria-disabled="true"@endif>
       <span class="{{ disclosureClasses }}" @if(expandable)data-sidebar-disclosure role="button" aria-label="Toggle {{ label }}"@endif>
         @if(expandable)
-          <span class="{{ chevronClasses }}" aria-hidden="true"></span>
+          <span data-sidebar-chevron class="{{ chevronClasses }}" aria-hidden="true"></span>
         @endif
       </span>
       @if(image)
         <span class="{{ iconSlotClasses }}"><img src="{{ image }}" alt="" class="{{ imageClasses }}" /></span>
       @elseif(icon)
-        <span class="{{ iconSlotClasses }}"><span class="{{ iconClasses }}" @if(iconStyle)style="{{ iconStyle }}"@endif aria-hidden="true"></span></span>
+        <span class="{{ iconSlotClasses }}"><span data-sidebar-icon class="{{ iconClasses }}" @if(iconStyle)style="{{ iconStyle }}"@endif aria-hidden="true"></span></span>
       @endif
       <span class="{{ labelClasses }}">{{ label }}</span>
       @if(count !== '' && count !== null && count !== undefined)
-        <span class="{{ countClasses }}">{{ count }}</span>
+        <span data-sidebar-count class="{{ countClasses }}">{{ count }}</span>
       @endif
     </button>
   @endif

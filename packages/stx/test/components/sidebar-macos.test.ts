@@ -34,8 +34,10 @@ describe('macOS sidebar component', () => {
     expect(result).toContain('data-sidebar-theme="macos"')
     expect(result).toContain('data-section-id="favorites"')
     expect(result).toContain('data-item-id="icloud"')
-    // macOS system blue tint on the icon
-    expect(result).toContain('color: #0088ff')
+    // macOS system blue tint on the icon, published as a custom property so a
+    // selected row can override it to white without an inline `color` winning
+    expect(result).toContain('--stx-sidebar-icon: #0088ff')
+    expect(result).toContain('data-sidebar-icon')
     // plain gray text count, not a pill badge
     expect(result).toContain('tabular-nums')
     expect(result).toContain('>248<')
@@ -43,6 +45,35 @@ describe('macOS sidebar component', () => {
     expect(result).toContain('data-active="true"')
     // Liquid Glass edge highlight layer
     expect(result).toContain('stx-sidebar-rim')
+  })
+
+  it('paints selection with AppKit two-state accent model', async () => {
+    const result = await render(`<body><Sidebar theme="macos" placement="static" :sections="[
+      { id: 's', items: [{ id: 'a', label: 'A', icon: 'i-f7-tray', active: true }] },
+    ]" /></body>`)
+
+    // The pane advertises the model and starts key; the controller flips
+    // data-window-key on window blur.
+    expect(result).toContain('data-sidebar-selection="accent"')
+    expect(result).toContain('data-window-key="true"')
+    // Key window: accent fill, white label/icon/count.
+    expect(result).toContain('--stx-sidebar-accent: #007aff')
+    expect(result).toContain('background: var(--stx-sidebar-accent)')
+    // Non-key window: neutral fill, label stays dark.
+    expect(result).toContain('--stx-sidebar-selection-idle')
+    expect(result).toContain('[data-window-key="false"]')
+    // The theme no longer stacks a competing background class on the row.
+    expect(result).toContain('data-active-class=""')
+  })
+
+  it('leaves legacy themes on the utility-class selection model', async () => {
+    const result = await render(`<body><Sidebar theme="workspace" placement="static" :sections="[
+      { id: 's', items: [{ id: 'a', label: 'A', active: true }] },
+    ]" /></body>`)
+
+    expect(result).toContain('data-sidebar-selection="classes"')
+    // workspace still paints the row through item.active classes
+    expect(result).toContain('bg-[#e7e7e5]')
   })
 
   it('flattens nested children with depth indent and ancestor ids', async () => {

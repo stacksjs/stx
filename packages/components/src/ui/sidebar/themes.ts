@@ -6,11 +6,22 @@
  *
  * The flagship theme is `macos` — a faithful recreation of the sidebar in
  * the latest macOS (Tahoe, macOS 26/27 "Liquid Glass"). Its metrics were
- * measured from native apps (Mail, Music, Notes) at @2x:
+ * measured pixel-by-pixel from Mail.app's source list at @2x:
  *
- *   row pitch 32px = 30px row + 2px gap · highlight radius 9px
- *   label 13px · count 13px secondary gray · section header 11px semibold
+ *   row pitch 32px, and the highlight fills the whole 32px — AppKit leaves
+ *     no gap between rows, so consecutive selected/hovered rows touch
+ *   highlight radius 8px
+ *   label 13px · count 13px secondary gray · section header 11px semibold,
+ *     Title Case (NOT uppercase — uppercasing section headers is the single
+ *     most common tell of a web sidebar imitating macOS)
  *   icon 17px in a fixed 22px slot · disclosure gutter 18px · child indent 16px
+ *   pane 234px wide, #f1f2f3 in light appearance, ~90% opaque so the
+ *     backdrop bleeds through faintly rather than tinting the pane
+ *
+ * Selection follows AppKit's two-state model (`selection` below): in a key
+ * window the row takes the system accent with a white label, icon and count;
+ * when the window resigns key it falls back to a neutral fill with the label
+ * left dark. Icons desaturate to gray in the same non-key state.
  *
  * Legacy themes (`workspace`, `desktop`, `solid`, `transparent`, `vibrancy`)
  * are preserved verbatim from the previous variant maps. `tahoe` now aliases
@@ -35,10 +46,23 @@ export const macosColors = {
 
 export type MacosColor = keyof typeof macosColors
 
+/**
+ * How a theme paints the selected row.
+ *
+ * `accent` reproduces AppKit: the pane owns CSS custom properties for the
+ * key/non-key fills, and scoped rules recolor the row's label, icon, count
+ * and chevron together. `classes` is the older utility-class model, where
+ * `item.active` is simply added to the row element and children are left
+ * alone. Legacy themes stay on `classes` so they render exactly as before.
+ */
+export type SidebarSelectionModel = 'accent' | 'classes'
+
 /** Class groups a sidebar theme provides. All values are utility classes. */
 export interface SidebarTheme {
   /** The <aside> pane itself: material, text color, borders. */
   pane: string
+  /** Which selection model the Sidebar controller and scoped CSS apply. */
+  selection: SidebarSelectionModel
   /** Extra overlay layers rendered inside the pane (visual only). */
   layers: {
     /** Liquid Glass edge highlight — a bright rim that subtly shimmers. */
@@ -83,11 +107,18 @@ const macos: SidebarTheme = {
     // Frosted sidebar material. In a Craft window with `webSidebarMaterial`
     // the native vibrancy shows through; in a browser the backdrop blur
     // approximates it over whatever sits behind the pane.
-    'bg-white/55 dark:bg-[#1e1e23]/55',
-    'backdrop-blur-[60px] backdrop-saturate-[1.8]',
+    //
+    // The opacity is deliberately high. Sampling Mail.app over a saturated
+    // blue wallpaper, the pane moved by one or two 8-bit steps (#f1f2f2 to
+    // #f1f2f3) — AppKit's sidebar material is nearly opaque and only lets a
+    // hint of the backdrop through. A half-transparent pane reads as a web
+    // imitation, and over a dark page it inverts into a dark bar entirely.
+    'bg-[#f2f2f4]/90 dark:bg-[#1c1c1e]/88',
+    'backdrop-blur-[50px] backdrop-saturate-[1.7]',
     'text-black dark:text-white',
     'select-none',
   ].join(' '),
+  selection: 'accent',
   layers: {
     shimmerRim: true,
   },
@@ -104,18 +135,22 @@ const macos: SidebarTheme = {
     'opacity-0 group-hover/section:opacity-100 transition-opacity duration-150',
     'transition-transform duration-200',
   ].join(' '),
-  sectionGroup: 'flex flex-col gap-[2px]',
+  // No gap: AppKit rows are contiguous, the 32px pitch IS the row.
+  sectionGroup: 'flex flex-col',
   item: {
     base: [
       'flex w-full items-center',
-      'h-[30px] rounded-[9px] pl-[4px] pr-[8px]',
+      'h-[32px] rounded-[8px] pl-[4px] pr-[8px]',
       'text-[13px] leading-[16px] font-normal',
       'text-black dark:text-white',
       'transition-colors duration-150 ease-out',
       'cursor-default',
     ].join(' '),
     hover: 'hover:bg-black/4 dark:hover:bg-white/6',
-    active: 'bg-black/8 dark:bg-white/14',
+    // Selection is painted by the `accent` model in Sidebar.stx's scoped CSS,
+    // which has to recolor the label, icon and count together. Leaving this
+    // empty keeps the controller from also stacking a conflicting background.
+    active: '',
     pressed: 'active:bg-black/10 dark:active:bg-white/18',
     disabled: 'opacity-40 pointer-events-none',
     disclosure: 'flex h-[16px] w-[18px] shrink-0 items-center justify-center',
@@ -142,6 +177,7 @@ const macos: SidebarTheme = {
  * existing apps keep rendering identically. New work should use `macos`.
  */
 const workspace: SidebarTheme = {
+  selection: 'classes',
   pane: 'bg-[#f4f4f3] dark:bg-neutral-950 text-zinc-950 dark:text-white select-none',
   layers: {},
   scrollArea: 'flex-1 overflow-y-auto overflow-x-hidden px-5 py-5',
@@ -166,6 +202,7 @@ const workspace: SidebarTheme = {
 }
 
 const desktop: SidebarTheme = {
+  selection: 'classes',
   pane: 'bg-[#f3f3f1]/48 dark:bg-neutral-950/32 backdrop-blur-3xl backdrop-saturate-150 text-zinc-950 dark:text-white select-none',
   layers: {
     tint: 'bg-[linear-gradient(112deg,rgba(255,255,255,0.20)_0%,rgba(255,255,255,0.04)_45%,rgba(226,226,222,0.16)_100%)] dark:bg-[linear-gradient(112deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.02)_46%,rgba(255,255,255,0.06)_100%)]',
