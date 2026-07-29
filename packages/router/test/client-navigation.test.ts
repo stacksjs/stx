@@ -153,6 +153,36 @@ describe('router browser navigation behavior', () => {
     expect(window.document.title).toBe('Blog - Chris Breuer')
   })
 
+  it('keeps bundled page scripts classic when import text only appears in comments', async () => {
+    const window = installRouter(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/site">
+          <meta name="stx-layout-group" content="site">
+        </head>
+        <body><main>Home</main></body>
+      </html>
+    `, async () => {
+      return response(`
+        <section>Rates</section>
+        <script>
+          // [stx import stripped - resolved through window.stx]
+          window.__ratesSetupReady = true
+        </script>
+      `, {
+        'X-STX-Fragment': 'true',
+        'X-STX-Layout': 'layouts/site',
+        'X-STX-Layout-Group': 'site',
+      })
+    })
+    await window.stxRouter.navigate('/rates')
+    await waitForRouterSwap()
+
+    const pageScript = window.document.querySelector('script[data-stx-page]')
+    expect(pageScript?.getAttribute('type')).not.toBe('module')
+    expect(pageScript?.textContent).toContain('__ratesSetupReady')
+  })
+
   it('does a native full navigation for non-stx documents instead of corrupting the shell', async () => {
     // A route on the same origin rendered by another engine (e.g. a BunPress
     // blog) carries none of the stx layout markers. The router must NOT splice

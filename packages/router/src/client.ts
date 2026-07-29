@@ -228,6 +228,9 @@ export function getRouterScript(): string {
     var h=0;for(var i=0;i<code.length;i++){h=((h<<5)-h)+code.charCodeAt(i);h|=0}
     return h;
   }
+  function hasStaticImport(code){
+    return /(?:^|\\n)[ \\t]*import(?:[ \\t]+|[{*'"])/.test(code);
+  }
   // Record scripts from the initial page load
   document.querySelectorAll('script').forEach(function(s){
     var text=s.textContent||'';
@@ -497,7 +500,7 @@ else {
           }
           executedScriptHashes[h]=1;
           var ns=document.createElement('script');
-          var hasImport=code.indexOf('import ')!==-1;
+          var hasImport=hasStaticImport(code);
           if(hasImport){
             ns.type='module';
           }
@@ -757,7 +760,7 @@ else {
           // need special handling.
           var h=hashScript(text);
           var isSetup=text.indexOf('__stx_setup_')!==-1;
-          var hasImport=text.indexOf('import ')!==-1;
+          var hasImport=hasStaticImport(text);
           if(!runAlways&&!isSetup&&executedScriptHashes[h])return;
           executedScriptHashes[h]=1;
           // Wrap scripts with import statements as modules (Bug 3 fix)
