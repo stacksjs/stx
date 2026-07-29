@@ -380,4 +380,10 @@ describe('Auto-initialization', () => {
     const runtime = generateSignalsRuntimeDev()
     expect(runtime).toContain('Object.assign(componentScope, result)')
   })
+
+  it('should adopt the queued setup when layout expansion removes data-stx', () => {
+    const runtime = generateSignalsRuntimeDev()
+    expect(runtime).toContain("!document.querySelector('[data-stx]')")
+    expect(runtime).toContain('window.stx._latestSetup()')
+  })
 })
