@@ -537,6 +537,24 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(evalAttrSection).not.toContain('Object.values(unwrapScope)')
   })
 
+  it('preserves explicitly called signals in generic template expressions', () => {
+    const start = runtime.indexOf('function toValue(')
+    const end = runtime.indexOf('// Event Handler Shorthand', start)
+    const toValueSection = runtime.slice(start, end)
+
+    expect(toValueSection).toContain('expressionCallsSignal(expr, prop)')
+    expect(toValueSection).toContain('expressionUsesSignalApi(expr, prop)')
+  })
+
+  it('preserves called list and condition signals inside :for', () => {
+    const start = runtime.indexOf('function bindFor(')
+    const end = runtime.indexOf('function bindShow(', start)
+    const bindForSection = runtime.slice(start, end)
+
+    expect(bindForSection).toContain('expressionCallsSignal(expression, prop)')
+    expect(bindForSection).toContain('expressionUsesSignalApi(expression, prop)')
+  })
+
   it('evaluates forwarded props and events in the caller scope', () => {
     expect(runtime).toContain("el.getAttribute('data-stx-parent-bindings')")
     expect(runtime).toContain("el.getAttribute('data-stx-parent-events')")

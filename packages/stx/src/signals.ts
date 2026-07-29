@@ -1334,13 +1334,25 @@ finally {
       const pipeResult = parsePipeExpression(expr, baseScope);
       if (pipeResult) {
         // Use auto-unwrap proxy for pipe expressions
-        const unwrapScope = enableAutoUnwrap ? createAutoUnwrapProxy(baseScope) : baseScope;
+        const unwrapScope = enableAutoUnwrap
+          ? createAutoUnwrapProxy(baseScope, function(prop) {
+              if (typeof prop !== 'string') return false;
+              return expressionCallsSignal(expr, prop)
+                || expressionUsesSignalApi(expr, prop);
+            })
+          : baseScope;
         const piped = executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
         return (piped && typeof piped === 'function' && (piped._isSignal || piped._isDerived)) ? piped() : piped;
       }
 
       // Use auto-unwrap proxy if enabled (Feature #1)
-      const scope = enableAutoUnwrap ? createAutoUnwrapProxy(baseScope) : baseScope;
+      const scope = enableAutoUnwrap
+        ? createAutoUnwrapProxy(baseScope, function(prop) {
+            if (typeof prop !== 'string') return false;
+            return expressionCallsSignal(expr, prop)
+              || expressionUsesSignalApi(expr, prop);
+          })
+        : baseScope;
       const fn = new Function(...Object.keys(baseScope), 'return ' + expr);
       const result = fn(...Object.values(scope));
       // Post-eval unwrap — see evalAttrExpr note for the reason.
@@ -2655,7 +2667,11 @@ else {
         }
         // Use passedScope instead of componentScope to preserve context through nested processing
         const scope = { ...globalHelpers, ...passedScope, ...(capturedScope || {}), ...extraScope };
-        const unwrapScope = createAutoUnwrapProxy(scope);
+        const unwrapScope = createAutoUnwrapProxy(scope, function(prop) {
+          if (typeof prop !== 'string') return false;
+          return expressionCallsSignal(expression, prop)
+            || expressionUsesSignalApi(expression, prop);
+        });
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(unwrapScope));
       }
@@ -2672,7 +2688,11 @@ catch (e) {
       try {
         if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
         const scope = { ...globalHelpers, ...passedScope, ...(capturedScope || {}), ...extraScope };
-        const unwrapScope = createAutoUnwrapProxy(scope);
+        const unwrapScope = createAutoUnwrapProxy(scope, function(prop) {
+          if (typeof prop !== 'string') return false;
+          return expressionCallsSignal(expression, prop)
+            || expressionUsesSignalApi(expression, prop);
+        });
         // new Function body is non-strict, so with() works — only accessed
         // properties trigger the proxy's get trap and register as dependencies
         const fn = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
