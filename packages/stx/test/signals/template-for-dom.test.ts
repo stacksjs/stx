@@ -75,4 +75,26 @@ describe('template for DOM binding', () => {
     modelSelect.dispatchEvent(new window.Event('change'))
     expect(selectedMethod()).toBe(1)
   })
+
+  it('preserves an explicitly empty value on an option binding', async () => {
+    window.__stx_setup_empty_option = () => ({
+      optionValue: window.stx.state(''),
+    })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_empty_option">
+        <select>
+          <option :value="optionValue">All statuses</option>
+        </select>
+      </main>
+    `
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const option = document.querySelector('option')
+    expect(option.hasAttribute('value')).toBe(true)
+    expect(option.getAttribute('value')).toBe('')
+    expect(option.value).toBe('')
+  })
 })

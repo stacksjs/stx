@@ -2031,7 +2031,7 @@ catch (e2) {
             }
             controlValue = v === false || v === null || v === undefined ? '' : String(controlValue);
             el.value = controlValue;
-            if (controlValue === '') el.removeAttribute(attrName);
+            if (controlValue === '' && el.tagName !== 'OPTION') el.removeAttribute(attrName);
             else el.setAttribute(attrName, controlValue);
             return;
           }
