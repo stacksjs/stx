@@ -285,12 +285,15 @@ function toggleCollapse() {
 // ---------------------------------------------------------------------------
 
 function trackKeyWindow() {
-  function sync() {
-    pane.setAttribute('data-window-key', document.hasFocus() ? 'true' : 'false')
-  }
-  sync()
-  window.addEventListener('focus', sync)
-  window.addEventListener('blur', sync)
+  // Driven by real focus/blur events only — never by an initial
+  // `document.hasFocus()` reading. A freshly loaded page, a background tab
+  // that has not been clicked yet, and an embedded webview that does not
+  // report focus at all all answer `false`, which would open the sidebar in
+  // the dimmed non-key state and leave it there. Starting from the key state
+  // and reacting to an actual blur keeps the default correct everywhere and
+  // still dims exactly when AppKit would.
+  window.addEventListener('focus', () => pane.setAttribute('data-window-key', 'true'))
+  window.addEventListener('blur', () => pane.setAttribute('data-window-key', 'false'))
 }
 
 function followSystemAppearance() {

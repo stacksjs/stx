@@ -15,6 +15,20 @@ import { generateComponentId, scopeCss } from './web-components/css-scoping'
 /**
  * Result of processing scoped styles in a template
  */
+/**
+ * Matches `scoped` only as a standalone attribute.
+ *
+ * A plain `\bscoped\b` also matches inside `data-stx-scoped`, the marker this
+ * module writes onto a style tag it has already handled — so every later
+ * scoping pass processed the same block again, prefixing the selectors a
+ * second and third time. The selector list grew combinatorially and, worse,
+ * ended up carrying a variant with no scope attribute at all, which leaked a
+ * component's styles to the whole page. Hyphens are word characters for this
+ * purpose, so the boundaries are spelled out explicitly.
+ */
+const SCOPED_STYLE_ATTR = String.raw`(?<![\w-])scoped(?![\w-])`
+const SCOPED_STYLE_PROBE = new RegExp(`<style\\s+[^>]*${SCOPED_STYLE_ATTR}`, 'i')
+
 export interface ScopedStyleResult {
   /** The modified HTML with scope attributes added to root elements and scoped style tags */
   html: string
@@ -39,7 +53,7 @@ export interface ScopedStyleResult {
  */
 export function processScopedStyles(template: string, filePath: string): ScopedStyleResult {
   // Quick check: does the template have any <style scoped>?
-  if (!/<style\s+[^>]*\bscoped\b/i.test(template)) {
+  if (!SCOPED_STYLE_PROBE.test(template)) {
     return { html: template, hasScoped: false }
   }
 
@@ -48,7 +62,7 @@ export function processScopedStyles(template: string, filePath: string): ScopedS
   let output = template
 
   // Extract and process all <style scoped> blocks
-  const scopedStyleRegex = /<style\s+([^>]*\bscoped\b[^>]*)>([\s\S]*?)<\/style>/gi
+  const scopedStyleRegex = new RegExp(`<style\\s+([^>]*${SCOPED_STYLE_ATTR}[^>]*)>([\\s\\S]*?)</style>`, 'gi')
   let hasScoped = false
 
   output = output.replace(scopedStyleRegex, (_match, attrs: string, cssContent: string) => {
@@ -56,7 +70,7 @@ export function processScopedStyles(template: string, filePath: string): ScopedS
     // Scope the CSS: prefix selectors with the attribute selector
     const scopedCss = scopeCssWithAttribute(cssContent, scopeAttr)
     // Remove 'scoped' from attrs, add data-stx-scoped marker
-    const cleanAttrs = attrs.replace(/\bscoped\b/gi, '').trim()
+    const cleanAttrs = attrs.replace(new RegExp(SCOPED_STYLE_ATTR, 'gi'), '').trim()
     const attrStr = cleanAttrs ? ` ${cleanAttrs}` : ''
     return `<style data-stx-scoped="${componentId}"${attrStr}>${scopedCss}</style>`
   })

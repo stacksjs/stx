@@ -19,8 +19,12 @@ describe('Style Scoping', () => {
       const result = processScopedStyles(html, '/components/card.stx')
 
       expect(result.hasScoped).toBe(true)
-      // CSS should be scoped with attribute selector
-      expect(result.html).toMatch(/\[data-v-stx-\w+\]\s*\.card\s*\{/)
+      // CSS is scoped with an attribute selector, in both positions: as an
+      // ancestor (so rules still reach markup a child component rendered) and
+      // on the compound itself (so a rule can target the component's own root,
+      // which cannot be its own ancestor).
+      expect(result.html).toMatch(/\[data-v-stx-\w+\]\s*\.card\b/)
+      expect(result.html).toMatch(/\.card\[data-v-stx-\w+\]/)
       // The scoped attribute should not remain on the style tag
       expect(result.html).not.toContain('<style scoped>')
       // Should have data-stx-scoped marker

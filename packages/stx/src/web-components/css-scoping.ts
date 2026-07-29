@@ -290,12 +290,73 @@ function scopeSelector(
       continue
     }
 
-    // Scope regular selectors
+    // Scope regular selectors.
+    //
+    // Two forms are emitted, because the scope marker sits on every element
+    // the component renders — including its ROOT:
+    //
+    //   `.id sel`  matches anything inside the component, so a rule keeps
+    //              working when it targets markup a CHILD component rendered
+    //              (children carry their own marker, not this one).
+    //   `sel.id`   matches when the subject IS the component root. Without
+    //              it a rule like `[data-state="on"] .row` can never fire for
+    //              state the component keeps on its own root element, since
+    //              the root cannot also be its own ancestor.
+    //
+    // Both carry identical specificity and identical declarations, so an
+    // element matched by both is unaffected.
     const fullPrefix = prefix ? `${prefix} .${componentId}` : `.${componentId}`
     scopedSelectors.push(`${fullPrefix} ${sel}`)
+    const rootScoped = scopeFirstCompound(sel, componentId)
+    if (rootScoped)
+      scopedSelectors.push(prefix ? `${prefix} ${rootScoped}` : rootScoped)
   }
 
   return scopedSelectors.join(', ')
+}
+
+/**
+ * Attach the scope marker to a selector's FIRST compound, so the component's
+ * own root element can be the thing the selector starts from.
+ *
+ * The marker goes before any pseudo-class or pseudo-element in that compound
+ * (`.rim::after` becomes `.rim.id::after`, never the invalid `.rim::after.id`)
+ * and combinator scanning ignores anything inside `[...]` or `(...)`.
+ *
+ * Returns an empty string for selectors that have no element to attach to.
+ */
+function scopeFirstCompound(selector: string, componentId: string): string {
+  let depth = 0
+  let end = selector.length
+  for (let i = 0; i < selector.length; i++) {
+    const ch = selector[i]
+    if (ch === '[' || ch === '(') depth++
+    else if (ch === ']' || ch === ')') depth--
+    else if (depth === 0 && (ch === ' ' || ch === '>' || ch === '+' || ch === '~')) {
+      end = i
+      break
+    }
+  }
+
+  const compound = selector.slice(0, end)
+  const rest = selector.slice(end)
+  if (!compound)
+    return ''
+
+  // Insert before the first pseudo — a pseudo-element must stay last.
+  let insertAt = compound.length
+  let pdepth = 0
+  for (let i = 0; i < compound.length; i++) {
+    const ch = compound[i]
+    if (ch === '[' || ch === '(') pdepth++
+    else if (ch === ']' || ch === ')') pdepth--
+    else if (depth === 0 && pdepth === 0 && ch === ':') {
+      insertAt = i
+      break
+    }
+  }
+
+  return `${compound.slice(0, insertAt)}.${componentId}${compound.slice(insertAt)}${rest}`
 }
 
 /**
