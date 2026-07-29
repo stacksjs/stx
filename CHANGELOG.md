@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.112...v0.2.113)
+
+## 🐛 Bug Fixes
+
+- **stx**: load the crosswind the served project installed, not stx's own ([1cca08e](https://github.com/stacksjs/stx/commit/1cca08e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.113 ([a83ee3c](https://github.com/stacksjs/stx/commit/a83ee3c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.111...v0.2.112)
 
 ## 🐛 Bug Fixes
