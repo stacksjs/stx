@@ -487,6 +487,7 @@ export async function userComponentFileExists(
   const originalFilePath = parentContext.__originalFilePath as string | undefined
   if (originalFilePath) push(path.join(path.dirname(originalFilePath), 'components'))
   push(componentsDir)
+  push(options._rootComponentsDir)
   push(path.join(path.dirname(parentFilePath), 'components'))
   push(options.componentsDir)
   const pluginDirs = (options as any)._pluginComponentDirs
@@ -674,6 +675,9 @@ export async function renderComponentWithSlot(
 
       // Then search global componentsDir and parent-relative paths
       if (componentsDir) searchDirs.push(componentsDir)
+      const rootComponentsDir = options._rootComponentsDir
+      if (typeof rootComponentsDir === 'string' && !searchDirs.includes(rootComponentsDir))
+        searchDirs.push(rootComponentsDir)
       const parentRelative = path.join(path.dirname(parentFilePath), 'components')
       if (!searchDirs.includes(parentRelative)) {
         searchDirs.push(parentRelative)
@@ -1027,6 +1031,11 @@ export async function renderComponentWithSlot(
     // First, process any nested components in this component
     const componentOptions = {
       ...options,
+      // Nested components first resolve beside their parent, but they must retain
+      // the configured component tree as a fallback. Without this root, a layout
+      // in `components/Dashboard/UI` cannot render a sibling feature component in
+      // `components/Dashboard/Analytics`.
+      _rootComponentsDir: options._rootComponentsDir || options.componentsDir,
       componentsDir: path.dirname(componentFilePath),
       // Skip runtime injection for nested components - parent will inject it
       skipSignalsRuntime: true,

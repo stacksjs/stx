@@ -589,6 +589,8 @@ export interface StxConfig {
   partialsDir: string
   /** Path to components directory, defaults to 'components' in the same directory as the template */
   componentsDir: string
+  /** @internal Configured component root retained while nested components resolve locally. */
+  _rootComponentsDir?: string
   /** Path to layouts directory, defaults to 'layouts' in the project root */
   layoutsDir?: string
   /** Path to stores directory for auto-discovered store definitions */

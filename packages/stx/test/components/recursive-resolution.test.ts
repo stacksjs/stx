@@ -40,6 +40,17 @@ describe('Recursive component resolution under componentsDir', () => {
       `<div class="page-layout-shell"><slot /></div>`,
     )
 
+    // A nested shell can reference a component in a sibling feature folder.
+    await fs.promises.mkdir(path.join(COMPONENTS_DIR, 'Dashboard', 'Analytics'), { recursive: true })
+    await Bun.write(
+      path.join(COMPONENTS_DIR, 'Dashboard', 'UI', 'AnalyticsShell.stx'),
+      `<section class="analytics-shell"><AnalyticsPageHeader title="Traffic" /></section>`,
+    )
+    await Bun.write(
+      path.join(COMPONENTS_DIR, 'Dashboard', 'Analytics', 'AnalyticsPageHeader.stx'),
+      `<header class="analytics-page-header">{{ title }}</header>`,
+    )
+
     // node_modules at depth 1 — should be skipped, even though the
     // file inside has a name that would otherwise match.
     await fs.promises.mkdir(path.join(COMPONENTS_DIR, 'node_modules', 'evil'), { recursive: true })
@@ -112,6 +123,25 @@ describe('Recursive component resolution under componentsDir', () => {
     // The deeper file should win — not the shadowed PageLayout.stx
     // we planted inside node_modules.
     expect(result).not.toContain('poisoned')
+  })
+
+  it('retains the root component tree while rendering nested components', async () => {
+    const deps = new Set<string>()
+    const result = await renderComponentWithSlot(
+      'AnalyticsShell',
+      {},
+      '',
+      COMPONENTS_DIR,
+      {},
+      path.join(TEMP_DIR, 'test.stx'),
+      { componentsDir: COMPONENTS_DIR },
+      new Set(),
+      deps,
+    )
+    expect(result).toContain('class="analytics-shell"')
+    expect(result).toContain('class="analytics-page-header"')
+    expect(result).toContain('Traffic')
+    expect(result).not.toContain('Error loading component')
   })
 
   it('does not descend into node_modules', async () => {
