@@ -3843,6 +3843,20 @@ catch (e) {}
       return v;
     };
     var root = window.__STX_CURRENT_ELEMENT__;
+    var kebabName = name.replace(/([A-Z])/g, function(_, c) { return '-' + c.toLowerCase(); });
+    var lowerName = name.toLowerCase();
+    var attributeNames = [name];
+    if (kebabName !== name) attributeNames.push(kebabName);
+    if (lowerName !== name && lowerName !== kebabName) attributeNames.push(lowerName);
+    function readAttribute() {
+      if (!root || !root.hasAttribute) return { has: false, raw: null };
+      for (var i = 0; i < attributeNames.length; i++) {
+        var candidate = attributeNames[i];
+        if (root.hasAttribute(candidate))
+          return { has: true, raw: root.getAttribute(candidate) };
+      }
+      return { has: false, raw: null };
+    }
     var staticValue = defaultValue;
     if (root && root.getAttribute) {
       var serializedProps = root.getAttribute('data-stx-props');
@@ -3858,8 +3872,9 @@ catch (e) {}
     }
     var initial;
     var lastRaw = null;
-    if (root && root.hasAttribute && root.hasAttribute(name)) {
-      lastRaw = root.getAttribute(name);
+    var initialAttribute = readAttribute();
+    if (initialAttribute.has) {
+      lastRaw = initialAttribute.raw;
       initial = parse(lastRaw);
     } else {
       initial = staticValue;
@@ -3867,14 +3882,15 @@ catch (e) {}
     var s = state(initial);
     if (!root) return s;
     var observer = new MutationObserver(function() {
-      var hasAttr = root.hasAttribute(name);
-      var raw = hasAttr ? root.getAttribute(name) : null;
+      var attribute = readAttribute();
+      var hasAttr = attribute.has;
+      var raw = attribute.raw;
       if (raw === lastRaw) return;
       lastRaw = raw;
       var next = hasAttr ? parse(raw) : staticValue;
       if (next !== s()) s.set(next);
     });
-    observer.observe(root, { attributes: true, attributeFilter: [name] });
+    observer.observe(root, { attributes: true, attributeFilter: attributeNames });
     onDestroy(function() { observer.disconnect(); });
     return s;
   }

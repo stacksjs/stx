@@ -499,12 +499,13 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(stxAssign![0]).toContain('useReactiveProp')
   })
 
-  it('reads the named attribute off __STX_CURRENT_ELEMENT__', () => {
+  it('reads camelCase and kebab-case attributes off __STX_CURRENT_ELEMENT__', () => {
     // Component-mount sets __STX_CURRENT_ELEMENT__ before the setup fn runs;
     // useReactiveProp captures it to know which element to observe.
     expect(runtime).toContain('window.__STX_CURRENT_ELEMENT__')
-    expect(runtime).toMatch(/root\.hasAttribute\(name\)/)
-    expect(runtime).toMatch(/root\.getAttribute\(name\)/)
+    expect(runtime).toContain("name.replace(/([A-Z])/g")
+    expect(runtime).toContain('root.hasAttribute(candidate)')
+    expect(runtime).toContain('root.getAttribute(candidate)')
   })
 
   it('falls back to serialized static component props', () => {
@@ -515,7 +516,7 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
 
   it('sets up a MutationObserver to catch parent-driven attribute changes', () => {
     expect(runtime).toContain('new MutationObserver(')
-    expect(runtime).toMatch(/attributeFilter:\s*\[name\]/)
+    expect(runtime).toMatch(/attributeFilter:\s*attributeNames/)
     // Cleanup on component teardown
     expect(runtime).toMatch(/onDestroy\(function\s*\(\)\s*\{\s*observer\.disconnect/)
   })
