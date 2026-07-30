@@ -133,4 +133,19 @@ describe('macOS sidebar component', () => {
     expect(result).not.toContain(`getElementById('${sidebarId}')`)
     expect(result).toContain('querySelector("[data-stx-sidebar]")')
   })
+
+  it('bridges string props without embedding quote characters', async () => {
+    const result = await render(`<body><Sidebar
+      theme="macos"
+      placement="static"
+      shellSelector="#app-shell"
+      widthVar="--dashboard-sidebar-width"
+      :sections="[{ id: 's', items: [{ id: 'a', label: 'A' }] }]"
+    /></body>`)
+
+    expect(result).toContain('var shellSelectorProp = "#app-shell"')
+    expect(result).toContain('var widthVarProp = "--dashboard-sidebar-width"')
+    expect(result).toContain('var persistKeyProp = ""')
+    expect(result).not.toContain('var persistKeyProp = \'\\"\\"\'')
+  })
 })
