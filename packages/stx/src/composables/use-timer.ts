@@ -246,13 +246,27 @@ export function useThrottle<T extends (...args: any[]) => any>(
  * ```
  */
 export function useInterval(
-  interval: number = 1000,
-  options: IntervalOptions = {},
+  interval: number | ((counter: number) => void) = 1000,
+  options: IntervalOptions | number = {},
 ): IntervalRef {
+  // Accept the callback-first form too — `useInterval(() => …, 1000)` is what
+  // most callers reach for, and silently ignoring the callback (the previous
+  // behaviour) produced a timer that ticked into the void.
+  let callback: ((counter: number) => void) | null = null
+  if (typeof interval === 'function') {
+    callback = interval
+    interval = typeof options === 'number' ? options : 1000
+    options = {}
+  }
+
+  const delay = (interval as number) || 1000
+  const config: IntervalOptions = typeof options === 'number' ? {} : options
+
   let count = 0
   let id: ReturnType<typeof setInterval> | null = null
   let running = false
   const listeners: Set<(counter: number) => void> = new Set()
+  if (callback) listeners.add(callback)
 
   const tick = () => {
     count++
@@ -262,8 +276,8 @@ export function useInterval(
   const resume = () => {
     if (running) return
     running = true
-    id = setInterval(tick, interval)
-    if (options.immediate) tick()
+    id = setInterval(tick, delay)
+    if (config.immediate) tick()
   }
 
   const pause = () => {

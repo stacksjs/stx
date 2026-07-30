@@ -574,7 +574,7 @@ Every reactive primitive, composable, and lifecycle hook is attached to `window.
 
 | Don't write | Use instead | Why |
 |---|---|---|
-| `document.querySelector('#el')` / `getElementById` | `const myRef = ref()` + `x-ref="myRef"` on the element | `ref()` is reactive and scope-aware; manual queries break on nested scopes, re-renders, and SPA nav |
+| `document.querySelector('#el')` / `getElementById` | `const myRef = ref()` + `x-ref="myRef"` on the element, read as `myRef()` | `ref()` is reactive and scope-aware; manual queries break on nested scopes, re-renders, and SPA nav |
 | `el.addEventListener('click', handler)` | `@click="handler($event)"` in the markup | Auto-removed on scope teardown; tracked by signals; works under SPA nav |
 | `window.addEventListener('scroll', handler, { passive: true })` | `useEventListener('scroll', handler, { passive: true })` (defaults to `window`; pass `{ target: el }` to bind elsewhere) | Auto-cleanup on unmount; HMR-safe |
 | `localStorage.getItem('foo')` / `setItem` | `useLocalStorage('foo', defaultValue)` for one signal, or `defineStore(..., { persist: true })` for a whole store | Reactive — writes propagate to every reader; syncs across tabs |

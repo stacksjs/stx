@@ -2127,6 +2127,14 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
         // Store ref in scope.$refs and componentScope.$refs
         if (scope.$refs) scope.$refs[value] = el;
         if (componentScope.$refs) componentScope.$refs[value] = el;
+        // Also fill a same-named signal declared in the script block, so the
+        // documented ref() + x-ref pair works and reading the signal returns
+        // the element. Without this the signal stayed empty and every read of
+        // it silently returned undefined.
+        var refTarget = (scope && scope[value]) || componentScope[value];
+        if (refTarget && typeof refTarget === 'function' && refTarget._isSignal && typeof refTarget.set === 'function') {
+          refTarget.set(el);
+        }
       }
       else if (name.startsWith('@') || name.startsWith(':')) {
         // Event handlers: @click, :click, @submit.prevent, :keydown.enter, etc.
@@ -3593,6 +3601,15 @@ else if (timer === null) {
   }
 
   function useInterval(interval, options) {
+    // Accept the callback-first form too — useInterval(fn, 1000) is what most
+    // callers reach for, and silently ignoring the callback (the previous
+    // behaviour) produced a timer that ticked into the void.
+    var callback = null;
+    if (typeof interval === 'function') {
+      callback = interval;
+      interval = typeof options === 'number' ? options : 1000;
+      options = {};
+    }
     interval = interval || 1000;
     options = options || {};
     var count = 0;
@@ -3620,6 +3637,7 @@ else if (timer === null) {
       listeners.forEach(function(fn) { fn(count); });
       resume();
     }
+    if (callback) listeners.push(callback);
     resume();
     onDestroy(function() { pause(); listeners = []; });
     return {
