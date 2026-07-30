@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.117...v0.2.118)
+
+## 🐛 Bug Fixes
+
+- **stx**: declare ambient types for subpath entrypoints too ([9e5f6c7](https://github.com/stacksjs/stx/commit/9e5f6c7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.118 ([2c1c14b](https://github.com/stacksjs/stx/commit/2c1c14b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.116...v0.2.117)
 
 ## 🐛 Bug Fixes
