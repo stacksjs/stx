@@ -1469,9 +1469,25 @@ async function processOtherDirectives(
   // meta registered via useHead/useSeoMeta used to be dropped server-side and
   // only applied on the client, which SEO/social crawlers never see. Creating
   // the <head> here makes that meta server-rendered.
-  const injectIntoHead = (html: string, snippet: string): string => {
+  const injectIntoHead = (html: string, snippet: string, replaceExistingTitle = true): string => {
     if (!snippet)
       return html
+
+    // A named layout may already own a fallback <title> while the page adds a
+    // higher-precedence @title()/useHead() value. Appending another title to
+    // the end of <head> is not enough because browsers use the first one.
+    // Replace the layout fallback and remove the incoming title from the
+    // remaining snippet so every document still has exactly one.
+    const incomingTitle = snippet.match(/<title\b[^>]*>[\s\S]*?<\/title>/i)
+    const existingTitle = html.match(/<title\b[^>]*>[\s\S]*?<\/title>/i)
+    if (incomingTitle && existingTitle) {
+      if (replaceExistingTitle)
+        html = html.replace(existingTitle[0], incomingTitle[0])
+      snippet = snippet.replace(incomingTitle[0], '').trim()
+      if (!snippet)
+        return html
+    }
+
     if (/<\/head>/i.test(html))
       return html.replace(/<\/head>/i, `${snippet}\n</head>`)
     if (/<head\b[^>]*>/i.test(html))
@@ -1500,7 +1516,7 @@ async function processOtherDirectives(
 
   // Also inject head content from @head directive blocks
   if (headResult.headContent)
-    output = injectIntoHead(output, headResult.headContent)
+    output = injectIntoHead(output, headResult.headContent, !headConfig.title)
 
   // Auto-inject CSP meta tag if enabled
   if (opts.csp?.enabled && opts.csp.addMetaTag) {

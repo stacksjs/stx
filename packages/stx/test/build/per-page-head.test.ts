@@ -149,4 +149,34 @@ describe('per-page head on the auto-shell path (#1756)', () => {
     expect(result).toContain('<h1>About</h1>')
     expect(result).not.toContain('<title>Config Title</title>')
   })
+
+  it('replaces a full-document layout title with the page @title', async () => {
+    const dir = tmp()
+    const layoutsDir = join(dir, 'layouts')
+    const { mkdirSync } = await import('node:fs')
+    mkdirSync(layoutsDir, { recursive: true })
+    writeFileSync(
+      join(layoutsDir, 'guest.stx'),
+      '<html><head><title>Layout Title</title></head><body>@yield(\'content\')</body></html>',
+      'utf8',
+    )
+    const pagePath = join(dir, 'login.stx')
+    writeFileSync(
+      pagePath,
+      '@extends(\'guest\')\n@section(\'content\')\n@title(\'Login - Dashboard\')\n<h1>Login</h1>\n@endsection\n',
+      'utf8',
+    )
+
+    const result = await processDirectives(
+      await Bun.file(pagePath).text(),
+      {},
+      pagePath,
+      shellOptions({ layoutsDir }),
+      new Set(),
+    )
+
+    expect(result).toContain('<title>Login - Dashboard</title>')
+    expect(result).not.toContain('<title>Layout Title</title>')
+    expect(result.match(/<title\b/g)).toHaveLength(1)
+  })
 })
