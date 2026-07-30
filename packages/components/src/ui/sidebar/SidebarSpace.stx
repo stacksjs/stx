@@ -1,0 +1,134 @@
+<script server>
+import { resolveSidebarTheme } from './themes'
+
+// One scene of a swipeable sidebar: a pinned grid, a title, the rows, and the
+// space's own actions. Everything below the title is the ordinary Sidebar
+// machinery — `<SidebarSection>` flattens the item tree and `<SidebarItem>`
+// renders the rows — so a space inherits disclosure, counts, icon tints,
+// route selection and keyboard navigation for free.
+export const id = $props.id || ''
+export const label = $props.label || ''
+export const icon = $props.icon || ''
+export const pinned = $props.pinned || []
+export const sections = $props.sections || []
+export const action = $props.action || null
+export const clear = $props.clear || null
+export const theme = $props.theme || 'arc'
+export const active = $props.active ?? false
+
+const themeStyle = resolveSidebarTheme(theme)
+export const scrollAreaClasses = themeStyle.scrollArea
+
+// The title takes the space's accent, which is how Arc signals which space you
+// are looking at even before the panel color registers.
+export const titleClasses = [
+  'flex items-center gap-[8px]',
+  'px-[8px] pb-[4px] pt-[10px]',
+  'text-[13px] font-semibold leading-[16px]',
+].join(' ')
+
+// Actions read as quieter than rows: no card on hover, just a wash.
+export const actionClasses = [
+  'flex w-full items-center gap-[8px]',
+  'h-[30px] rounded-[8px] px-[6px]',
+  'text-[13px] leading-[16px]',
+  'opacity-55 transition-[background-color,opacity] duration-150 ease-out',
+  'hover:bg-white/45 hover:opacity-100 dark:hover:bg-white/8',
+  'cursor-default',
+].join(' ')
+
+export const clearClasses = [
+  'flex items-center gap-[4px] rounded-[6px] px-[5px] py-[2px]',
+  'text-[11px] leading-[14px]',
+  'opacity-45 transition-opacity duration-150',
+  'hover:opacity-90',
+  'cursor-default',
+].join(' ')
+</script>
+
+<script client>
+const emit = defineEmits()
+
+function onAction(event) {
+  const button = event.target.closest('[data-space-action]')
+  if (!button) return
+  emit('spaceAction', {
+    spaceId: button.dataset.spaceOwner,
+    actionId: button.dataset.spaceAction,
+    role: button.dataset.spaceActionRole,
+  })
+}
+</script>
+
+<section
+  data-space
+  data-space-id="{{ id }}"
+  data-space-active="{{ active ? 'true' : 'false' }}"
+  class="flex min-w-0 flex-1 flex-col"
+  role="tabpanel"
+  aria-label="{{ label || id }}"
+  @click="onAction($event)"
+>
+  <div class="{{ scrollAreaClasses }} stx-sidebar-scroll">
+    <SidebarPinned :items="pinned" />
+
+    @if(label)
+      <div class="{{ titleClasses }}">
+        @if(icon)
+          <span class="{{ icon }} h-[15px] w-[15px] shrink-0 stx-space-title-icon" aria-hidden="true"></span>
+        @endif
+        <span class="truncate">{{ label }}</span>
+      </div>
+    @endif
+
+    @foreach(sections as section)
+      <SidebarSection
+        :id="section.id"
+        :label="section.label"
+        :items="section.items"
+        :collapsible="section.collapsible"
+        :collapsed="section.collapsed"
+        :theme="theme"
+      />
+    @endforeach
+
+    @if(clear)
+      <div class="flex items-center gap-[8px] px-[8px] pt-[10px]">
+        <span class="h-px flex-1 bg-current opacity-15" aria-hidden="true"></span>
+        <button
+          type="button"
+          data-space-action="{{ clear.id }}"
+          data-space-action-role="clear"
+          data-space-owner="{{ id }}"
+          class="{{ clearClasses }}"
+        >
+          @if(clear.icon)
+            <span class="{{ clear.icon }} h-[10px] w-[10px]" aria-hidden="true"></span>
+          @endif
+          <span>{{ clear.label }}</span>
+        </button>
+      </div>
+    @endif
+
+    @if(action)
+      <button
+        type="button"
+        data-space-action="{{ action.id }}"
+        data-space-action-role="action"
+        data-space-owner="{{ id }}"
+        class="{{ actionClasses }}"
+      >
+        <span class="{{ action.icon }} h-[14px] w-[14px] shrink-0" aria-hidden="true"></span>
+        <span class="truncate">{{ action.label }}</span>
+      </button>
+    @endif
+  </div>
+</section>
+
+<style scoped>
+/* The title icon rides the space accent. Published as a custom property by
+   SidebarSpaces so it crossfades along with the panel instead of cutting. */
+.stx-space-title-icon {
+  color: var(--stx-space-accent, currentColor);
+}
+</style>

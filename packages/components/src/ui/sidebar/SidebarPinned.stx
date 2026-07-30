@@ -1,0 +1,88 @@
+<script server>
+import { resolveIconColor } from './themes'
+
+// Arc's favorites grid — the block of square tiles above a space's rows.
+//
+// These are deliberately NOT sidebar rows. They carry no `data-sidebar-item`,
+// so the Sidebar controller's selection, arrow-key navigation and disclosure
+// logic skip them entirely: a pinned tile is a shortcut, not a place in the
+// list. Their own click handler emits `pinnedClick` and that is the whole
+// contract.
+export const items = ($props.items || []).map(item => ({
+  id: item.id,
+  label: item.label || '',
+  icon: item.icon || '',
+  image: item.image || '',
+  href: item.href || '',
+  iconStyle: resolveIconColor(item.iconColor) ? `color: ${resolveIconColor(item.iconColor)}` : '',
+}))
+
+export const columns = $props.columns || 4
+
+// Tiles are translucent white so they pick up whichever space color sits
+// behind them, rather than fighting it with a fixed fill.
+export const tileClasses = [
+  'grid h-[46px] place-items-center rounded-[10px]',
+  'bg-white/45 dark:bg-white/8',
+  'transition-[background-color,transform] duration-150 ease-out',
+  'hover:bg-white/72 dark:hover:bg-white/14',
+  'active:scale-[0.96]',
+].join(' ')
+</script>
+
+<script client>
+const emit = defineEmits()
+
+function onPinnedClick(event) {
+  const tile = event.target.closest('[data-space-pinned-item]')
+  if (!tile) return
+  emit('pinnedClick', { id: tile.dataset.pinnedId, href: tile.getAttribute('href') || '', event })
+}
+</script>
+
+@if(items.length > 0)
+  <div
+    data-space-pinned
+    class="grid gap-[6px] px-[8px] pb-[10px] pt-[2px]"
+    style="grid-template-columns: repeat({{ columns }}, minmax(0, 1fr))"
+    role="list"
+    aria-label="Pinned"
+    @click="onPinnedClick($event)"
+  >
+    @foreach(items as item)
+      @if(item.href)
+        <a
+          href="{{ item.href }}"
+          data-space-pinned-item
+          data-pinned-id="{{ item.id }}"
+          class="{{ tileClasses }}"
+          role="listitem"
+          title="{{ item.label }}"
+          aria-label="{{ item.label }}"
+        >
+          @if(item.image)
+            <img src="{{ item.image }}" alt="" class="h-[22px] w-[22px] rounded-[5px] object-cover" />
+          @else
+            <span class="{{ item.icon }} h-[20px] w-[20px]" @if(item.iconStyle)style="{{ item.iconStyle }}"@endif aria-hidden="true"></span>
+          @endif
+        </a>
+      @else
+        <button
+          type="button"
+          data-space-pinned-item
+          data-pinned-id="{{ item.id }}"
+          class="{{ tileClasses }}"
+          role="listitem"
+          title="{{ item.label }}"
+          aria-label="{{ item.label }}"
+        >
+          @if(item.image)
+            <img src="{{ item.image }}" alt="" class="h-[22px] w-[22px] rounded-[5px] object-cover" />
+          @else
+            <span class="{{ item.icon }} h-[20px] w-[20px]" @if(item.iconStyle)style="{{ item.iconStyle }}"@endif aria-hidden="true"></span>
+          @endif
+        </button>
+      @endif
+    @endforeach
+  </div>
+@endif

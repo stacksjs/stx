@@ -1,0 +1,98 @@
+<script server>
+// The rail along the bottom of an Arc sidebar: one small icon per space, plus
+// an optional trailing "+". It is the discoverable counterpart to the swipe —
+// the gesture is what you use once you know the spaces exist, the rail is how
+// you find out.
+//
+// The buttons are markup only. `<SidebarSpaces>` owns the single click handler
+// and flips `data-space-current`, so the rail never holds its own copy of
+// which space is active — there is exactly one source of truth.
+export const spaces = ($props.spaces || []).map(space => ({
+  id: space.id,
+  label: space.label || space.id,
+  icon: space.icon || 'i-f7-circle',
+}))
+
+export const active = $props.active || (spaces[0] && spaces[0].id) || ''
+export const showAdd = $props.showAdd ?? false
+export const addLabel = $props.addLabel || 'New space'
+</script>
+
+<div
+  data-space-switcher
+  class="flex h-[38px] shrink-0 items-center gap-[1px] px-[8px] pb-[6px]"
+  role="tablist"
+  aria-label="Spaces"
+  aria-orientation="horizontal"
+>
+  @foreach(spaces as space)
+    <button
+      type="button"
+      data-space-target="{{ space.id }}"
+      data-space-current="{{ space.id === active ? 'true' : 'false' }}"
+      class="stx-space-tab"
+      role="tab"
+      aria-selected="{{ space.id === active ? 'true' : 'false' }}"
+      aria-label="{{ space.label }}"
+      title="{{ space.label }}"
+      tabindex="{{ space.id === active ? '0' : '-1' }}"
+    >
+      <span class="{{ space.icon }} h-[15px] w-[15px]" aria-hidden="true"></span>
+    </button>
+  @endforeach
+
+  <span class="flex-1"></span>
+
+  @if(showAdd)
+    <button
+      type="button"
+      data-space-add
+      class="stx-space-tab"
+      aria-label="{{ addLabel }}"
+      title="{{ addLabel }}"
+    >
+      <span class="i-f7-plus h-[14px] w-[14px]" aria-hidden="true"></span>
+    </button>
+  @endif
+</div>
+
+<style scoped>
+/* Rail buttons are painted here rather than with utility classes because the
+   current one has to pick up `--stx-space-accent`, which changes as you swipe.
+   A class swap would have to be re-applied on every transition; an attribute
+   rule keyed on `data-space-current` just follows along. */
+.stx-space-tab {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 26px;
+  border-radius: 7px;
+  color: currentColor;
+  opacity: 0.4;
+  background: transparent;
+  transition: opacity 150ms ease, background-color 150ms ease, color 300ms ease;
+  cursor: default;
+}
+.stx-space-tab:hover {
+  opacity: 0.75;
+  background: rgba(255, 255, 255, 0.4);
+}
+.stx-space-tab[data-space-current="true"] {
+  opacity: 1;
+  color: var(--stx-space-accent, currentColor);
+  background: rgba(255, 255, 255, 0.55);
+}
+.stx-space-tab:focus-visible {
+  outline: 2px solid var(--stx-space-accent, currentColor);
+  outline-offset: 1px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .stx-space-tab:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .stx-space-tab[data-space-current="true"] {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+</style>
