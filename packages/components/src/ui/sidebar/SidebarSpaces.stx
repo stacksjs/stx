@@ -253,6 +253,12 @@ function endWheel() {
   settle(offset, wheelVelocity, 'swipe')
 }
 
+/** Drop an in-flight wheel gesture without settling it. */
+function cancelWheelGesture() {
+  clearTimeout(wheelIdle)
+  wheelOffset = null
+}
+
 // --- Touch and pen ----------------------------------------------------------
 // Mouse drags are deliberately left alone: in a sidebar, press-and-move is far
 // more likely to be a text selection or a sloppy click than a swipe, and
@@ -352,10 +358,9 @@ function onShortcut(event) {
 // browser:
 //
 //   gestures  A WKWebView's wheel stream is still phase-less, but the host sees
-//             the real NSEvent. When Craft forwards it, the idle-timeout
-//             heuristic above is dropped entirely in favor of begin/change/end
-//             and the momentum flag — which is the difference between "close
-//             enough" and indistinguishable from AppKit.
+//             the real NSEvent. When Craft forwards it, begin/change/end
+//             supersede the idle-timeout heuristic above — the difference
+//             between "close enough" and indistinguishable from AppKit.
 //   nativeUI  The host may want to own the switcher (a real segmented control
 //             in the window toolbar, a Touch Bar strip, a menu). We publish the
 //             space list to it and follow whatever it selects.
@@ -366,13 +371,19 @@ const craftTeardown = []
 
 function bindCraftGestures() {
   const gestures = window.craft?.gestures
-  if (typeof gestures?.onSwipe !== 'function') return false
+  if (typeof gestures?.onSwipe !== 'function') return
 
   let offset = null
   const off = gestures.onSwipe((swipe) => {
     if (!swipe || swipe.axis !== 'horizontal') return
 
     if (swipe.phase === 'begin') {
+      // Take over from the wheel path. The bridge exposes `onSwipe`
+      // unconditionally but a host that does not implement gestures never
+      // emits, so the wheel listener stays bound and this is the only moment
+      // we know the native stream is real. Cancelling any in-flight wheel
+      // gesture here stops the two paths settling the same swipe twice.
+      cancelWheelGesture()
       beginGesture()
       offset = gestureStart
       return
@@ -393,7 +404,6 @@ function bindCraftGestures() {
   })
 
   if (typeof off === 'function') craftTeardown.push(off)
-  return true
 }
 
 function bindCraftSidebar(spaces) {
@@ -450,10 +460,9 @@ onMount(() => {
   viewport.addEventListener('pointerup', onPointerUp)
   viewport.addEventListener('pointercancel', onPointerUp)
 
-  // Native phases win; only fall back to inferring them from wheel events.
-  if (!bindCraftGestures())
-    viewport.addEventListener('wheel', onWheel, { passive: false })
-
+  // Both stay bound. Native phases take over the moment one actually arrives.
+  viewport.addEventListener('wheel', onWheel, { passive: false })
+  bindCraftGestures()
   bindCraftSidebar(spaces)
 
   if (initial !== startIndex)

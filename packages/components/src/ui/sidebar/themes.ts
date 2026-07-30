@@ -277,15 +277,21 @@ const arc: SidebarTheme = {
     ].join(' '),
   },
   scrollArea: 'flex-1 overflow-y-auto overflow-x-hidden px-[8px] pb-[8px]',
+  // Text takes its color from the panel rather than declaring its own, and is
+  // muted with opacity instead. On the plain warm panel `currentColor` is the
+  // pane's own `#2c2a28`, so this renders identically to a hardcoded value —
+  // but inside a space it becomes `--stx-space-ink` and the whole list shifts
+  // hue with the panel on every swipe. Opacity is safe on these because each
+  // is a standalone span; the row itself keeps a solid color, since fading a
+  // row would take its white selection card down with it.
   sectionHeader: [
     'group/section flex w-full items-center',
     'px-[8px] pt-[14px] pb-[4px]',
     'text-[11px] font-medium leading-[13px]',
-    'text-[#2c2a28]/55 dark:text-[#ededf0]/50',
+    'opacity-55',
   ].join(' '),
   sectionChevron: [
     'i-f7-chevron-down h-[10px] w-[10px] ml-auto',
-    'text-[#2c2a28]/40 dark:text-[#ededf0]/40',
     'opacity-0 group-hover/section:opacity-100 transition-opacity duration-150',
     'transition-transform duration-200',
   ].join(' '),
@@ -296,15 +302,17 @@ const arc: SidebarTheme = {
       'flex w-full items-center',
       'h-[30px] rounded-[8px] pl-[6px] pr-[8px]',
       'text-[13px] leading-[16px] font-normal',
-      'text-[#2c2a28]/85 dark:text-[#ededf0]/85',
+      'text-current',
       'transition-[background-color,box-shadow,color] duration-150 ease-out',
       'cursor-default',
     ].join(' '),
     hover: 'hover:bg-white/55 dark:hover:bg-white/8',
-    // The signature: a raised white card rather than an accent fill.
+    // The signature: a raised white card rather than an accent fill. The label
+    // stays on the panel ink — Arc does not recolor a selected row, the card
+    // under it carries the emphasis.
     active: [
       'bg-white dark:bg-white/14',
-      'text-[#1b1a19] dark:text-white font-medium',
+      'font-medium',
       'shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35)]',
       'ring-1 ring-black/5 dark:ring-white/8',
     ].join(' '),
@@ -312,8 +320,7 @@ const arc: SidebarTheme = {
     disabled: 'opacity-40 pointer-events-none',
     disclosure: 'flex h-[16px] w-[16px] shrink-0 items-center justify-center',
     chevron: [
-      'i-f7-chevron-right h-[10px] w-[10px]',
-      'text-[#2c2a28]/45 dark:text-[#ededf0]/45',
+      'i-f7-chevron-right h-[10px] w-[10px] opacity-45',
       'transition-transform duration-200 ease-out',
     ].join(' '),
     iconSlot: 'flex h-[18px] w-[18px] shrink-0 items-center justify-center mr-[8px]',
@@ -322,8 +329,7 @@ const arc: SidebarTheme = {
     label: 'flex-1 truncate text-left',
     count: [
       'ml-[8px] shrink-0 tabular-nums',
-      'text-[12px] leading-[16px]',
-      'text-[#2c2a28]/45 dark:text-[#ededf0]/45',
+      'text-[12px] leading-[16px] opacity-45',
     ].join(' '),
     indentPerLevel: 14,
   },

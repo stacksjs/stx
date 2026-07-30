@@ -29,17 +29,18 @@ export const actionClasses = [
 // panel rather than the macOS neutral.
 export const isArc = theme === 'arc'
 
+// Like the rest of the Arc chrome, these take their color from the panel so
+// they follow a space's ink instead of staying a fixed dark on top of it.
 export const arcActionClasses = [
   'grid h-[28px] w-[28px] place-items-center rounded-[7px]',
-  'text-[#2c2a28]/50 dark:text-[#ededf0]/50',
-  'transition-colors duration-150',
-  'hover:bg-black/[0.05] hover:text-[#2c2a28] dark:hover:bg-white/10 dark:hover:text-[#ededf0]',
+  'opacity-50 transition-[background-color,opacity] duration-150',
+  'hover:bg-black/[0.05] hover:opacity-100 dark:hover:bg-white/10',
 ].join(' ')
 
 export const arcProfileClasses = [
   'flex w-full items-center gap-[8px]',
   'h-[38px] rounded-[8px] px-[6px]',
-  'text-[13px] font-medium text-[#2c2a28] dark:text-[#ededf0]',
+  'text-[13px] font-medium',
   'transition-colors duration-150',
   'hover:bg-black/[0.05] dark:hover:bg-white/8',
 ].join(' ')
@@ -94,7 +95,7 @@ function onAction(event) {
         @endif
         <span class="min-w-0 flex-1 truncate text-left">{{ name }}</span>
         @if(detail)
-          <span class="shrink-0 text-[12px] text-[#2c2a28]/45 dark:text-[#ededf0]/45">{{ detail }}</span>
+          <span class="shrink-0 text-[12px] opacity-45">{{ detail }}</span>
         @endif
       </button>
     @endif

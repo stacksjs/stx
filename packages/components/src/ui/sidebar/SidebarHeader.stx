@@ -3,7 +3,6 @@
 // the left, floating "Liquid Glass" toolbar buttons on the right, and the
 // whole strip acts as a window drag region inside a Craft window.
 export const theme = $props.theme || $props.variant || 'macos'
-export const showWindowControls = $props.showWindowControls ?? true
 export const actions = $props.actions || [] // [{ id, icon, label }]
 export const title = $props.title || ''
 export const subtitle = $props.subtitle || ''
@@ -29,25 +28,43 @@ export const toolbarButtonClasses = [
   'active:bg-white/95 dark:active:bg-white/25',
 ].join(' ')
 
-// Arc's header is quieter than macOS'. No traffic lights and no floating glass
-// buttons — just a recessed search field and flat ghost icons, sized to sit on
-// the warm panel without competing with the row cards below it.
+// Arc's header is quieter than macOS'. No floating glass buttons — just a
+// recessed search field and flat ghost icons, sized to sit on the panel
+// without competing with the row cards below it.
 export const isArc = theme === 'arc'
 
+// Window chrome. A macOS sidebar owns the traffic lights, so they are on by
+// default there. Arc's sidebar can go either way — a browser window puts the
+// lights and the back/forward controls in the sidebar, while an app that only
+// borrows the look wants a bare strip — so on this theme both are opt-in.
+export const showWindowControls = $props.showWindowControls ?? !isArc
+export const showNavigation = $props.showNavigation ?? false
+
+// Back / forward / reload, as in Arc's URL strip. Flat and ghosted, not glass.
+export const navButtons = [
+  { id: 'back', icon: 'i-f7-arrow-left', label: 'Back' },
+  { id: 'forward', icon: 'i-f7-arrow-right', label: 'Forward' },
+  { id: 'reload', icon: 'i-f7-arrow-clockwise', label: 'Reload' },
+]
+
+// Arc's chrome takes its color from the panel rather than declaring its own.
+// On a plain warm panel that resolves to the theme's ink; inside a space it
+// follows `--stx-space-ink` and crossfades along with the panel on every
+// swipe. A hardcoded `text-[#2c2a28]` would stay dark over a saturated space
+// and would not move when the space changed.
 export const arcSearchClasses = [
   'h-[30px] w-full rounded-[8px] border-0',
   'bg-black/[0.045] dark:bg-white/[0.07]',
   'pl-[28px] pr-[8px]',
-  'text-[13px] text-[#2c2a28] dark:text-[#ededf0]',
-  'placeholder:text-[#2c2a28]/40 dark:placeholder:text-[#ededf0]/40',
+  'text-[13px] text-current',
+  'placeholder:text-current placeholder:opacity-40',
   'focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/15',
 ].join(' ')
 
 export const arcActionClasses = [
   'grid h-[28px] w-[28px] place-items-center rounded-[7px]',
-  'text-[#2c2a28]/55 dark:text-[#ededf0]/55',
-  'transition-colors duration-150',
-  'hover:bg-black/[0.05] hover:text-[#2c2a28] dark:hover:bg-white/10 dark:hover:text-[#ededf0]',
+  'opacity-55 transition-[background-color,opacity] duration-150',
+  'hover:bg-black/[0.05] hover:opacity-100 dark:hover:bg-white/10',
 ].join(' ')
 </script>
 
@@ -108,13 +125,35 @@ function onWindowControl(action) {
   @endif
 @elseif(isArc)
   <div class="flex flex-col gap-[8px] px-[10px] pb-[8px] pt-[12px]">
+    @if(showWindowControls || showNavigation)
+      <div class="flex items-center px-[2px] [-webkit-app-region:drag]">
+        @if(showWindowControls)
+          <div class="flex items-center gap-[7px] [-webkit-app-region:no-drag]">
+            <button type="button" class="{{ trafficLightClasses }} bg-[#ff5f57]" aria-label="Close window" @click="onWindowControl('close')"></button>
+            <button type="button" class="{{ trafficLightClasses }} bg-[#febc2e]" aria-label="Minimize window" @click="onWindowControl('minimize')"></button>
+            <button type="button" class="{{ trafficLightClasses }} bg-[#28c840]" aria-label="Zoom window" @click="onWindowControl('zoom')"></button>
+          </div>
+        @endif
+        <span class="flex-1"></span>
+        @if(showNavigation)
+          <div class="flex items-center gap-[2px] [-webkit-app-region:no-drag]">
+            @foreach(navButtons as nav)
+              <button type="button" class="{{ arcActionClasses }}" aria-label="{{ nav.label }}" data-sidebar-action="{{ nav.id }}" @click="onAction($event)">
+                <span class="{{ nav.icon }} h-[14px] w-[14px]" aria-hidden="true"></span>
+              </button>
+            @endforeach
+          </div>
+        @endif
+      </div>
+    @endif
+
     @if(title || logo || actions.length > 0)
       <div class="flex items-center gap-[8px]">
         @if(logo)
           <img src="{{ logo }}" alt="{{ title }}" class="h-[20px] w-[20px] rounded-[6px] object-cover" />
         @endif
         @if(title)
-          <span class="min-w-0 flex-1 truncate text-[13px] font-medium text-[#2c2a28] dark:text-[#ededf0]">{{ title }}</span>
+          <span class="min-w-0 flex-1 truncate text-[13px] font-medium">{{ title }}</span>
         @else
           <span class="flex-1"></span>
         @endif
@@ -129,7 +168,7 @@ function onWindowControl(action) {
 
     @if(showSearch)
       <div class="relative">
-        <span class="i-f7-search absolute left-[9px] top-1/2 h-[13px] w-[13px] -translate-y-1/2 text-[#2c2a28]/40 dark:text-[#ededf0]/40" aria-hidden="true"></span>
+        <span class="i-f7-search absolute left-[9px] top-1/2 h-[13px] w-[13px] -translate-y-1/2 opacity-40" aria-hidden="true"></span>
         <input
           type="text"
           placeholder="{{ searchPlaceholder }}"

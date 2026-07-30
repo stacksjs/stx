@@ -607,7 +607,13 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
 @property --stx-space-ink { syntax: "<color>"; inherits: true; initial-value: #2c2a28; }
 @property --stx-space-accent { syntax: "<color>"; inherits: true; initial-value: #5b5b63; }
 
-[data-sidebar-spaces="true"] {
+/* The doubled attribute is for specificity, not for matching: the theme's own
+   `dark:bg-…` / `dark:text-…` utilities compile to `.dark .x`, which ties with
+   a single attribute plus the scope marker. A tie would leave the outcome to
+   stylesheet order — true today, but not something the space color should
+   depend on. */
+
+[data-sidebar-spaces="true"][data-stx-sidebar] {
   --stx-space-from: var(--stx-space-light-from, #f2f0ec);
   --stx-space-to: var(--stx-space-light-to, #e6e3dd);
   --stx-space-ink: var(--stx-space-light-ink, #2c2a28);
@@ -629,7 +635,7 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
 }
 
 @media (prefers-color-scheme: dark) {
-  [data-sidebar-spaces="true"] {
+  [data-sidebar-spaces="true"][data-stx-sidebar] {
     --stx-space-from: var(--stx-space-dark-from, #17171b);
     --stx-space-to: var(--stx-space-dark-to, #0e0e11);
     --stx-space-ink: var(--stx-space-dark-ink, #ededf0);
@@ -641,7 +647,7 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-sidebar-spaces="true"] { transition: none; }
+  [data-sidebar-spaces="true"][data-stx-sidebar] { transition: none; }
 }
 
 /* Rows collapse like AppKit outlines: fixed row height animates to zero.
