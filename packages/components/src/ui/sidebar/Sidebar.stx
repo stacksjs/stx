@@ -429,7 +429,7 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
   @endif
 
   @if(hasSpaces)
-    <div class="relative z-10 flex min-h-0 flex-1 flex-col">
+    <div class="stx-sidebar-spaces-slot relative z-10 flex min-h-0 flex-1 flex-col">
       <SidebarSpaces
         :spaces="spaces"
         :space="activeSpace"
@@ -648,6 +648,18 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
 
 @media (prefers-reduced-motion: reduce) {
   [data-sidebar-spaces="true"][data-stx-sidebar] { transition: none; }
+}
+
+/* A component carrying a client script renders inside a scope wrapper, and
+   that wrapper is a plain block we cannot put classes on from here — so the
+   spaces root's own `flex-1` sizes itself against the wrapper instead of
+   against this column, and the switcher rail floats up under the last row
+   rather than sitting on the floor of the pane. Collapsing the wrapper out of
+   layout makes the spaces root the flex item, which is what it was written to
+   be. The selector deliberately spares the root itself, for the case where
+   there is no wrapper at all. */
+.stx-sidebar-spaces-slot > *:not([data-stx-sidebar-spaces]):not(script):not(style) {
+  display: contents;
 }
 
 /* Rows collapse like AppKit outlines: fixed row height animates to zero.

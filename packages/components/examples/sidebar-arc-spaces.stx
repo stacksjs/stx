@@ -1,0 +1,197 @@
+<script server>
+// Arc's spaces — the swipeable version of the sidebar.
+//
+// Each entry below is a whole scene: its own pinned tiles, its own folders and
+// tabs, its own bottom action, and its own color. Swipe horizontally over the
+// list (or click the rail at the bottom, or press ⌘⌥←/→) and the panel
+// crossfades to the next one.
+//
+// Everything here is data. There is no per-space markup, no carousel wiring
+// and no color bookkeeping — a space names one seed color and the panel,
+// the text and the accent are all mixed from it.
+export const spaces = [
+  {
+    id: 'personal',
+    label: 'Personal',
+    icon: 'i-f7-house-fill',
+    tint: 'green',
+    sections: [
+      {
+        id: 'notes',
+        items: [
+          { id: 'quieter', label: 'A quieter way to think', icon: 'i-f7-doc-text' },
+          {
+            id: 'routines',
+            label: 'Routines',
+            icon: 'i-f7-folder-fill',
+            iconColor: 'green',
+            count: 2,
+            children: [
+              { id: 'sunday-reset', label: 'Sunday reset' },
+              { id: 'morning-pages', label: 'Morning pages' },
+            ],
+          },
+          { id: 'home', label: 'Home', icon: 'i-f7-folder-fill', iconColor: 'green', count: 2, expandable: true, expanded: false },
+          {
+            id: 'dentist',
+            label: 'Dentist Follow-up',
+            icon: 'i-f7-folder-fill',
+            iconColor: 'green',
+            count: 2,
+            children: [
+              { id: 'dentist-follow-up', label: 'Dentist follow-up' },
+              { id: 'prescription', label: 'Prescription and annual checkup' },
+            ],
+          },
+          { id: 'other', label: 'Other', icon: 'i-f7-folder-fill', iconColor: 'green', count: 4, expandable: true, expanded: false },
+        ],
+      },
+    ],
+    action: { label: 'New Note' },
+  },
+
+  {
+    id: 'space-4',
+    label: 'Space 4',
+    icon: 'i-f7-globe',
+    tint: 'indigo',
+    // The favorites grid. Tiles are shortcuts, not rows — they stay out of the
+    // list's selection and arrow-key navigation.
+    pinned: [
+      { id: 'profile', label: 'Profile', icon: 'i-f7-person-crop-circle' },
+      { id: 'stacks', label: 'Stacks', icon: 'i-f7-bolt-fill', iconColor: 'indigo' },
+      { id: 'github', label: 'GitHub', icon: 'i-f7-chevron-left-slash-chevron-right' },
+      { id: 'npm', label: 'npm', icon: 'i-f7-cube-box-fill', iconColor: 'orange' },
+      { id: 'figma', label: 'Figma', icon: 'i-f7-pencil-outline', iconColor: 'pink' },
+      { id: 'office', label: 'Office', icon: 'i-f7-square-grid-2x2-fill', iconColor: 'blue' },
+      { id: 'youtube', label: 'YouTube', icon: 'i-f7-play-rectangle-fill', iconColor: 'red' },
+      { id: 'news', label: 'News', icon: 'i-f7-antenna-radiowaves-left-right' },
+    ],
+    sections: [
+      {
+        id: 'tabs',
+        items: [
+          {
+            id: 'arc-basics',
+            label: 'Arc Basics',
+            icon: 'i-f7-folder-fill',
+            iconColor: 'indigo',
+            children: [
+              { id: 'getting-started', label: 'Getting Started', icon: 'i-f7-square-fill', iconColor: 'blue' },
+              { id: 'arc-resources', label: 'Arc Resources', icon: 'i-f7-star-fill', iconColor: 'pink' },
+              { id: 'import', label: 'Import Logins & Bookmarks', icon: 'i-f7-square-arrow-down', iconColor: 'pink' },
+              { id: 'arc-max', label: 'Try Arc Max', icon: 'i-f7-play-rectangle-fill', iconColor: 'red' },
+              { id: 'tbc', label: 'The Browser Company', icon: 'i-f7-play-rectangle-fill', iconColor: 'red' },
+              { id: 'keeping-tabs', label: 'Keeping Tabs', icon: 'i-f7-doc-richtext' },
+            ],
+          },
+          { id: 'google', label: 'Google', icon: 'i-f7-search', iconColor: 'blue', active: true },
+        ],
+      },
+    ],
+    clear: { label: 'Clear' },
+    action: { label: 'New Tab' },
+  },
+
+  {
+    id: 'development',
+    label: 'Development',
+    icon: 'i-f7-star-fill',
+    tint: 'blue',
+    pinned: [
+      { id: 'profile-dev', label: 'Profile', icon: 'i-f7-person-crop-circle' },
+      { id: 'stacks-dev', label: 'Stacks', icon: 'i-f7-bolt-fill', iconColor: 'indigo' },
+      { id: 'github-dev', label: 'GitHub', icon: 'i-f7-chevron-left-slash-chevron-right' },
+      { id: 'npm-dev', label: 'npm', icon: 'i-f7-cube-box-fill', iconColor: 'orange' },
+    ],
+    sections: [
+      {
+        id: 'work',
+        items: [
+          { id: 'stacks-folder', label: 'Stacks', icon: 'i-f7-folder-fill', iconColor: 'blue', expandable: true, expanded: false },
+          { id: 'docs-folder', label: 'Docs', icon: 'i-f7-folder-fill', iconColor: 'blue', expandable: true, expanded: false },
+          { id: 'tools-folder', label: 'Tools', icon: 'i-f7-folder-fill', iconColor: 'blue', expandable: true, expanded: false },
+          { id: 'chatgpt', label: 'ChatGPT', icon: 'i-f7-circle-grid-hex-fill', iconColor: 'teal' },
+          { id: 'lemon', label: 'Lemon Squeezy', icon: 'i-f7-bolt-fill', iconColor: 'yellow' },
+          { id: 'jetbrains', label: 'Jetbrains Ideas', icon: 'i-f7-square-fill', iconColor: 'green' },
+          { id: 'aws', label: 'AWS access portal', icon: 'i-f7-cube-box-fill', iconColor: 'orange', active: true },
+        ],
+      },
+    ],
+    clear: { label: 'Clear' },
+    action: { label: 'New Tab' },
+  },
+
+  {
+    id: 'study',
+    label: 'Study',
+    icon: 'i-f7-book-fill',
+    tint: 'orange',
+    sections: [
+      {
+        id: 'reading',
+        label: 'Reading',
+        items: [
+          { id: 'oklab', label: 'A perceptual color space', icon: 'i-f7-doc-text' },
+          { id: 'appkit', label: 'AppKit source lists', icon: 'i-f7-doc-text' },
+        ],
+      },
+    ],
+    action: { label: 'New Tab' },
+  },
+]
+</script>
+
+<script client>
+// Spaces emit as bubbling DOM events, so the page listens on the Sidebar even
+// though the events originate several components deeper.
+function onSpaceChange(event) {
+  console.log('space →', event.detail.id, 'via', event.detail.source)
+}
+
+function onSpaceAdd() {
+  console.log('new space requested')
+}
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidebar — Arc spaces</title>
+  <style>
+    body {
+      background: linear-gradient(160deg, #1c1f27 0%, #2b2f3a 45%, #3a3140 100%);
+      min-height: 100vh;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="grid min-h-screen place-items-center p-8">
+  <div class="flex h-[92vh] w-[1020px] overflow-hidden rounded-[26px] shadow-[0_30px_90px_rgba(0,0,0,0.5),0_0_0_0.5px_rgba(0,0,0,0.2)]">
+    <Sidebar
+      :spaces="spaces"
+      space="space-4"
+      width="264"
+      placement="static"
+      spacePersistKey="arc.space"
+      showSpaceAdd
+      @spaceChange="onSpaceChange($event)"
+      @spaceAdd="onSpaceAdd()"
+    >
+      <template #header>
+        <SidebarHeader
+          theme="arc"
+          showWindowControls
+          showNavigation
+          showSearch
+          searchPlaceholder="Search or Enter URL…"
+        />
+      </template>
+    </Sidebar>
+
+    <main class="flex-1 bg-white/95 backdrop-blur-2xl dark:bg-neutral-900/95"></main>
+  </div>
+</body>
+</html>

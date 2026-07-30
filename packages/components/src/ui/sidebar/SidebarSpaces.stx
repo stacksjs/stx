@@ -542,10 +542,15 @@ defineExpose({
  * A component with a client script renders inside a scope wrapper, so the
  * track's direct children are those wrappers rather than the `<section>` each
  * space defines — utility classes on the section would style the wrong box and
- * every panel would collapse to its content width. Sizing `> *` is agnostic to
- * whether a wrapper is there. With the track at `n × 100%` and n equal
- * children, each panel lands at exactly one viewport wide. */
-.stx-space-track > * {
+ * every panel would collapse to its content width. Sizing the children is
+ * agnostic to whether a wrapper is there. With the track at `n × 100%` and n
+ * equal children, each panel lands at exactly one viewport wide.
+ *
+ * `script` and `style` must be excluded, not merely ignored: each space also
+ * emits its scoped stylesheet and its setup script as siblings here, and
+ * setting `display` on those overrides the user-agent's `display: none` — the
+ * sidebar renders its own source code as columns of text. */
+.stx-space-track > *:not(script):not(style) {
   flex: 1 1 0;
   min-width: 0;
   display: flex;
