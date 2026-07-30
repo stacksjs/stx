@@ -205,9 +205,18 @@ cpSync(resolve('./src/components'), resolve('./dist/components'), { recursive: t
 // per-app stx.d.ts workaround required.
 copyFileSync(resolve('./stx.d.ts'), resolve('./dist/stx.d.ts'))
 
-const indexDtsPath = resolve('./dist/index.d.ts')
-const indexDtsContent = await Bun.file(indexDtsPath).text()
+// Every documented entrypoint gets the reference, not just `.`. An app that
+// only imports a subpath (`@stacksjs/stx/menubar`, say) never loads index.d.ts,
+// so without this its `*.stx` imports and runtime globals go undeclared.
 const referenceLine = '/// <reference path="./stx.d.ts" />'
-if (!indexDtsContent.includes(referenceLine)) {
-  await Bun.write(indexDtsPath, `${referenceLine}\n${indexDtsContent}`)
+const ambientEntrypoints = ['index', 'menubar', 'desktop', 'craft-entry', 'ssg', 'pwa', 'database']
+
+for (const entrypoint of ambientEntrypoints) {
+  const declarationPath = resolve(`./dist/${entrypoint}.d.ts`)
+  if (!existsSync(declarationPath))
+    continue
+
+  const content = await Bun.file(declarationPath).text()
+  if (!content.includes(referenceLine))
+    await Bun.write(declarationPath, `${referenceLine}\n${content}`)
 }
