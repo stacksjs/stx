@@ -30,10 +30,10 @@
 
 /**
  * Generate the x-element runtime script
- * This is injected once per page that uses x-* directives
+ * This is injected once per page that declares an x-data scope
  */
 export function generateXElementRuntime(): string {
-  return `<script data-stx-scoped>
+  return `<script data-stx-scoped data-stx-x-element-runtime>
 (function() {
   'use strict';
 
@@ -324,26 +324,38 @@ else {
  * Check if template uses x-* directives
  */
 export function hasXElementDirectives(template: string): boolean {
-  return /\bx-(data|model|text|show|init|html)\b/.test(template) || /\s:[a-z]/.test(template)
+  // XElement only creates a reactive scope from x-data. Other x-* directives
+  // are either descendants of that scope or belong to the signals runtime.
+  // Treating x-model or every :binding as sufficient injected this runtime into
+  // every signals component even though init() had no [x-data] root to mount.
+  return /\bx-data(?:\s|=)/.test(template)
 }
 
 /**
  * Process x-element directives in template
- * Injects the runtime if x-* directives are found
+ * Injects one runtime if an x-data scope is found
  */
 export function processXElementDirectives(template: string): string {
-  if (!hasXElementDirectives(template)) {
-    return template
+  const runtimePattern = /<script\b(?=[^>]*\bdata-stx-x-element-runtime\b)[^>]*>[\s\S]*?<\/script>\s*/gi
+  const existingRuntimes = template.match(runtimePattern) || []
+  const withoutRuntimes = existingRuntimes.length > 0
+    ? template.replace(runtimePattern, '')
+    : template
+
+  if (!hasXElementDirectives(withoutRuntimes)) {
+    return withoutRuntimes
   }
 
-  // Inject the runtime before </body> or at the end
-  const runtime = generateXElementRuntime()
+  // Components are processed recursively before they are assembled into the
+  // page. Reuse one child runtime and discard the rest when the outer pass sees
+  // the complete document.
+  const runtime = existingRuntimes[0]?.trim() || generateXElementRuntime()
 
   // Use lastIndexOf to find the real </body> — earlier ones may be inside <script> strings
-  const bodyCloseIdx = template.lastIndexOf('</body>')
+  const bodyCloseIdx = withoutRuntimes.lastIndexOf('</body>')
   if (bodyCloseIdx !== -1) {
-    return template.slice(0, bodyCloseIdx) + runtime + '\n' + template.slice(bodyCloseIdx)
+    return withoutRuntimes.slice(0, bodyCloseIdx) + runtime + '\n' + withoutRuntimes.slice(bodyCloseIdx)
   }
 
-  return template + '\n' + runtime
+  return withoutRuntimes + '\n' + runtime
 }
