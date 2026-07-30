@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.115...v0.2.116)
+
+## 🚀 Features
+
+- **desktop**: re-export craft's binary resolver for build scripts ([281ab47](https://github.com/stacksjs/stx/commit/281ab47)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **stx**: preserve conditional component events ([500a59b](https://github.com/stacksjs/stx/commit/500a59b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: harden component hydration ([c7e7951](https://github.com/stacksjs/stx/commit/c7e7951)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ♻️ Code Refactoring
+
+- **desktop**: resolve the craft binary through craft's own contract ([398a347](https://github.com/stacksjs/stx/commit/398a347)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.116 ([71c48b4](https://github.com/stacksjs/stx/commit/71c48b4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.114...v0.2.115)
 
 ## 🐛 Bug Fixes
