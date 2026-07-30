@@ -637,6 +637,7 @@ export function loggerMiddleware<T>(
     console.group(`[stx-store${name ? `:${name}` : ''}] Update`)
     // eslint-disable-next-line no-console
     console.log('Previous:', prev)
+    // eslint-disable-next-line no-console
     console.log('Next:', value)
     console.groupEnd()
     nextSet(value)
@@ -1207,7 +1208,7 @@ export function generateStoreImportRuntime(): string {
           resolve(store);
         }
 else if (Date.now() - start > timeout) {
-          reject(new Error('Timeout waiting for store: ' + storeName));
+          reject(new Error('Timeout waiting for store: '.concat(storeName)));
         }
 else {
           requestAnimationFrame(check);
@@ -1284,7 +1285,7 @@ export function transformStoreImports(code: string): string {
  * }
  * ```
  */
-export function registerStoresClient(stores: Record<string, DefinedStoreWithGettersAndActions<any, any, any>>): void {
+export function registerStoresClient(stores: Record<string, object>): void {
   if (typeof window === 'undefined') return
 
   const w = window as any
