@@ -1728,26 +1728,46 @@ catch (e) {
       el.setAttribute('data-stx-deferred-parent-bindings', JSON.stringify(deferred));
   }
 
-  function hasPendingLoopAncestor(el) {
-    var loopAncestor = el && (el.parentElement || el.parentNode);
-    while (loopAncestor && loopAncestor !== document) {
-      var loopExpression = loopAncestor.getAttribute && (
-        loopAncestor.getAttribute('@for')
-        || loopAncestor.getAttribute(':for')
-        || loopAncestor.getAttribute('x-for')
+  function hasPendingLoopBoundary(el) {
+    var loopBoundary = el;
+    while (loopBoundary && loopBoundary !== document) {
+      var loopExpression = loopBoundary.getAttribute && (
+        loopBoundary.getAttribute('@for')
+        || loopBoundary.getAttribute(':for')
+        || loopBoundary.getAttribute('x-for')
       );
       if (loopExpression && isForDirectiveExpression(loopExpression))
         return true;
-      loopAncestor = loopAncestor.parentElement || loopAncestor.parentNode;
+      loopBoundary = loopBoundary.parentElement || loopBoundary.parentNode;
     }
     return false;
+  }
+
+  function syncComponentPropSignal(el, name, value) {
+    if (!el || !el.getAttribute || value === undefined) return;
+    var scopeId = el.getAttribute('data-stx-scope');
+    var scopeVars = scopeId && window.stx._scopes && window.stx._scopes[scopeId];
+    if (!scopeVars) return;
+    var camelName = name.replace(/-([a-z0-9])/g, function(_, character) {
+      return character.toUpperCase();
+    });
+    var propSignal = scopeVars[name] || scopeVars[camelName];
+    if (!propSignal || !propSignal._isSignal || typeof propSignal.set !== 'function') return;
+    var directValues = el.__stx_direct_prop_values || (el.__stx_direct_prop_values = {});
+    var directValue = {
+      raw: el.hasAttribute(name) ? el.getAttribute(name) : null,
+      value: value,
+    };
+    directValues[name] = directValue;
+    directValues[camelName] = directValue;
+    if (propSignal() !== value) propSignal.set(value);
   }
 
   function bindParentComponentProps(el, callerScope) {
     if (!el || !el.getAttribute || el.__stx_parent_props_bound) return;
     var names = (el.getAttribute('data-stx-parent-bindings') || '').split(/\\s+/).filter(Boolean);
     if (!names.length) return;
-    if (hasPendingLoopAncestor(el)) {
+    if (hasPendingLoopBoundary(el)) {
       preserveDeferredParentComponentProps(el);
       return;
     }
@@ -1803,6 +1823,13 @@ catch (e) {
           }
           el.setAttribute(name, serialized);
         }
+        // The component setup scope is already registered for normal and
+        // cloned signal components. Update its prop signal directly so object
+        // identity and synchronous Vue-like prop delivery do not depend on a
+        // MutationObserver round trip through a serialized DOM attribute.
+        // The attribute remains the public DOM reflection and observer fallback
+        // for scopes that register after this binding pass.
+        syncComponentPropSignal(el, name, value);
       });
       el.removeAttribute(sourceName);
       delete deferred[name];
@@ -1878,9 +1905,17 @@ catch (e) {
     if (el.nodeType === Node.ELEMENT_NODE
       && el.hasAttribute
       && el.hasAttribute('data-stx-scope')
-      && hasPendingLoopAncestor(el)) {
+      && hasPendingLoopBoundary(el)) {
       preserveDeferredParentComponentProps(el);
-      return;
+      var ownLoopExpression = el.getAttribute('@for')
+        || el.getAttribute(':for')
+        || el.getAttribute('x-for');
+      // A component nested under another pending loop must remain inert until
+      // its caller item scope exists. A component that IS the loop source still
+      // needs bindFor to run now; its cloned instances will hydrate after the
+      // loop directive has been removed from each clone.
+      if (!ownLoopExpression || !isForDirectiveExpression(ownLoopExpression))
+        return;
     }
 
     if (el.nodeType === Node.ELEMENT_NODE && el.tagName === 'BUTTON' && el.hasAttribute && el.hasAttribute('@click')) {
@@ -2947,6 +2982,32 @@ else if (typeof value === 'string') {
 
     const placeholder = document.createComment('stx-for');
     const isTemplate = el.tagName === 'TEMPLATE';
+    const componentSetupTemplates = [];
+    if (!isTemplate && el.hasAttribute('data-stx-scope')) {
+      const componentScopeId = el.getAttribute('data-stx-scope');
+      let setupSibling = el.nextSibling;
+      while (setupSibling) {
+        const nextSetupSibling = setupSibling.nextSibling;
+        if (setupSibling.nodeType === Node.TEXT_NODE && !(setupSibling.textContent || '').trim()) {
+          setupSibling = nextSetupSibling;
+          continue;
+        }
+        if (setupSibling.nodeType === Node.COMMENT_NODE) {
+          setupSibling = nextSetupSibling;
+          continue;
+        }
+        if (setupSibling.nodeType === Node.ELEMENT_NODE
+          && setupSibling.tagName === 'SCRIPT'
+          && setupSibling.hasAttribute('data-stx-scoped')
+          && (setupSibling.textContent || '').indexOf(componentScopeId) !== -1) {
+          componentSetupTemplates.push(setupSibling.cloneNode(true));
+          setupSibling.remove();
+          setupSibling = nextSetupSibling;
+          continue;
+        }
+        break;
+      }
+    }
 
     // Check if element also has @if / :if - need to handle together
     const ifExpr = el.getAttribute('@if') || el.getAttribute(':if');
@@ -2983,6 +3044,11 @@ else if (typeof value === 'string') {
     const capturedScope = findElementScope(el) || findElementScope(parent);
 
     parent.insertBefore(placeholder, el);
+    // Component setup scripts execute while the server-rendered loop source is
+    // still in the document. That source becomes a template, not a live
+    // instance, so reclaim all registered scopes before removing it. Every
+    // rendered iteration receives remapped setup scripts and fresh scopes.
+    disposeSubtreeScopes(el);
     parent.removeChild(el);
 
     // Capture :key expression BEFORE removing the attribute
@@ -3179,6 +3245,9 @@ catch (e) {
         const clone = templateContent.cloneNode(true);
         clone.__stx_for_scope = itemScope;
         elements.push(clone);
+        componentSetupTemplates.forEach(function(setupTemplate) {
+          elements.push(setupTemplate.cloneNode(true));
+        });
       }
       remapForComponentScopes(elements);
       return elements;
@@ -4456,7 +4525,19 @@ catch (e) {}
       var raw = attribute.raw;
       if (raw === lastRaw) return;
       lastRaw = raw;
-      var next = hasAttr ? parse(raw) : staticValue;
+      var directValues = root.__stx_direct_prop_values;
+      var directValue = directValues && directValues[name];
+      var next;
+      if (directValue && directValue.raw === raw) {
+        next = directValue.value;
+        delete directValues[name];
+        for (var directKey in directValues) {
+          if (directValues[directKey] === directValue) delete directValues[directKey];
+        }
+      }
+      else {
+        next = hasAttr ? parse(raw) : staticValue;
+      }
       if (next !== s()) s.set(next);
     });
     observer.observe(root, { attributes: true, attributeFilter: attributeNames });

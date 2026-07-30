@@ -206,6 +206,68 @@ describe('template for DOM binding', () => {
     expect(child.hasAttribute('data-stx-deferred-parent-bindings')).toBeFalse()
   })
 
+  it('binds object props when a signal component is its own loop root', async () => {
+    const dnsResource = { id: 'dns', name: 'stacksjs.com', status: 'configured' }
+    const loadBalancerResource = { id: 'load-balancer', name: 'Load balancer', status: 'attention' }
+    const groups = window.stx.state([
+      {
+        label: 'Network',
+        resources: [dnsResource, loadBalancerResource],
+      },
+    ])
+    window.__stx_setup_component_root_loop = () => ({ groups })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_component_root_loop">
+        <section :for="group in groups()">
+          <h2>{{ group.label }}</h2>
+          <div
+            data-stx-scope="compiled_resource_scope"
+            data-stx-parent-bindings="item"
+            :for="resource in group.resources"
+            :item="resource"
+          >
+            <button>
+              <span :text="item()?.name || 'Unnamed resource'"></span>
+              <strong :text="item()?.status || 'inactive'"></strong>
+            </button>
+          </div>
+          <script data-stx-scoped>
+            var root = document.querySelector('[data-stx-scope="compiled_resource_scope"]')
+            window.__STX_CURRENT_ELEMENT__ = root
+            var item = window.stx.useReactiveProp('item', null)
+            window.stx._scopes.compiled_resource_scope = {
+              item: item,
+              __mountCallbacks: [],
+              __destroyCallbacks: []
+            }
+            window.__STX_CURRENT_ELEMENT__ = null
+          </script>
+        </section>
+      </main>
+    `
+    shimAttributes(document.body)
+    let originalScopeDestroyed = false
+    window.stx._scopes.compiled_resource_scope = {
+      __mountCallbacks: [],
+      __destroyCallbacks: [() => {
+        originalScopeDestroyed = true
+      }],
+    }
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const children = Array.from(document.querySelectorAll('[data-stx-scope^="compiled_resource_scope_for_"]')) as HTMLElement[]
+    expect(originalScopeDestroyed).toBeTrue()
+    expect(window.stx._scopes.compiled_resource_scope).toBeUndefined()
+    expect(children).toHaveLength(2)
+    expect(children.map(child => child.querySelector('span')?.textContent)).toEqual(['stacksjs.com', 'Load balancer'])
+    expect(children.map(child => child.querySelector('strong')?.textContent)).toEqual(['configured', 'attention'])
+    expect(window.stx._scopes[children[0]?.getAttribute('data-stx-scope')]?.item()).toBe(dnsResource)
+    expect(window.stx._scopes[children[1]?.getAttribute('data-stx-scope')]?.item()).toBe(loadBalancerResource)
+    expect(children.every(child => child.hasAttribute('data-stx-deferred-parent-bindings'))).toBeFalse()
+  })
+
   it('reapplies a select value after reactive options are inserted', async () => {
     window.__stx_setup_dynamic_select = () => ({
       selected: window.stx.state('2'),
