@@ -380,14 +380,8 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         __filename: route.filePath,
         __dirname: path.dirname(route.filePath),
         params: requestParams ?? {},
+        __stx_runtime_head: {},
       }
-
-      // Reset the head module global BEFORE variable extraction so each page
-      // build starts clean. Without this, useSeoMeta() accumulates state
-      // across pages (and across repeat requests), producing duplicate
-      // <meta> tags in the final HTML.
-      const { resetHead } = await import('../head')
-      resetHead()
 
       for (const scriptBody of serverScripts) {
         try {

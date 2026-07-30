@@ -1581,14 +1581,10 @@ export async function serve(options: ServeOptions): Promise<void> {
     const context: Record<string, any> = {
       __filename: filePath,
       __dirname: nodePath.dirname(filePath),
+      __stx_runtime_head: {},
     }
 
-    const { processDirectives, extractVariables, defaultConfig, generateSpaShell, injectRouterScript, resetHead } = await stxModule
-    // Fresh head state per request — server scripts may call useHead() to set
-    // a per-page <title>/meta. We reset BEFORE extracting so each request
-    // starts clean, then mark the context so processDirectives doesn't reset
-    // again and wipe what useHead just populated.
-    resetHead()
+    const { processDirectives, extractVariables, defaultConfig, generateSpaShell, injectRouterScript } = await stxModule
     injectServeLocaleContext(context)
     injectServeRequestContext(context, reqCtx)
     // Static routes have no dynamic segments — give server scripts the same
@@ -1882,6 +1878,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       __filename: filePath,
       __dirname: nodePath.dirname(filePath),
       __route: routePath,
+      __stx_runtime_head: {},
     }
 
     // Name→value map of the dynamic segments, URL-decoded (path segments
@@ -1912,9 +1909,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     if (reqCtx)
       reqCtx.params = paramsObj
 
-    const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter, resetHead: resetHeadDyn } = await stxModule
-    // Fresh head state per request (see static-route handler above for rationale)
-    resetHeadDyn()
+    const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter } = await stxModule
     injectServeLocaleContext(context)
     // Dynamic ([param].stx-style) routes need the same query/host/cookies/
     // IP ambient context as static routes — this was missed when `host`

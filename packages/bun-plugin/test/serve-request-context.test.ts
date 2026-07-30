@@ -77,6 +77,27 @@ const probeJson = JSON.stringify(probe)
 <div id="probe">PROBE::{{ probeJson }}::END</div>
 `)
 
+  await Bun.write(path.join(dir, 'views', 'title-alpha.stx'), `
+@title('Alpha title')
+<main><p>Alpha page</p></main>
+`)
+  await Bun.write(path.join(dir, 'views', 'title-bravo.stx'), `
+@title('Bravo title')
+<main><p>Bravo page</p></main>
+`)
+  await Bun.write(path.join(dir, 'views', 'seo-alpha.stx'), `<script server>
+await Bun.sleep(15)
+useSeoMeta({ title: 'Alpha SEO', description: 'Alpha description' })
+</script>
+<main><p>Alpha SEO page</p></main>
+`)
+  await Bun.write(path.join(dir, 'views', 'seo-bravo.stx'), `<script server>
+await Bun.sleep(5)
+useSeoMeta({ title: 'Bravo SEO', description: 'Bravo description' })
+</script>
+<main><p>Bravo SEO page</p></main>
+`)
+
   // Driver: boots serve() from source with an onRequest hook that (a) delays
   // /slow so the race window is wide open, and (b) returns a plain object so
   // the merge-into-context contract is exercised.
@@ -169,5 +190,43 @@ describe('concurrent-request singleton race (the #1967 nondeterminism)', () => {
     const probe = parseProbe(await a)
     expect(probe.cookieToken).toBe('slowAAA')
     expect(probe.search).toBe('?mine=1')
+  })
+
+  it('keeps directive head state isolated between concurrent renders', async () => {
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, async (_, index) => {
+        const page = index % 2 === 0 ? 'alpha' : 'bravo'
+        return {
+          page,
+          html: await fetchText(`${BASE}/title-${page}`),
+        }
+      }),
+    )
+
+    for (const response of responses) {
+      const expected = response.page === 'alpha' ? 'Alpha title' : 'Bravo title'
+      expect(response.html).toContain(`<title>${expected}</title>`)
+    }
+  })
+
+  it('keeps server-script SEO state isolated between concurrent renders', async () => {
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, async (_, index) => {
+        const page = index % 2 === 0 ? 'alpha' : 'bravo'
+        return {
+          page,
+          html: await fetchText(`${BASE}/seo-${page}`),
+        }
+      }),
+    )
+
+    for (const response of responses) {
+      const expectedTitle = response.page === 'alpha' ? 'Alpha SEO' : 'Bravo SEO'
+      const expectedDescription = response.page === 'alpha' ? 'Alpha description' : 'Bravo description'
+      const otherDescription = response.page === 'alpha' ? 'Bravo description' : 'Alpha description'
+      expect(response.html).toContain(`<title>${expectedTitle}</title>`)
+      expect(response.html).toContain(`content="${expectedDescription}"`)
+      expect(response.html).not.toContain(otherDescription)
+    }
   })
 })

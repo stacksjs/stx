@@ -179,13 +179,13 @@ export function resetHead(): void {
  */
 export function useHead(config: HeadConfig): void {
   // Merge with current head
-  currentHead = mergeHead(currentHead, config)
+  currentHead = mergeHeadConfigs(currentHead, config)
 }
 
 /**
  * Merge two head configs.
  */
-function mergeHead(base: HeadConfig, override: HeadConfig): HeadConfig {
+export function mergeHeadConfigs(base: HeadConfig, override: HeadConfig): HeadConfig {
   return {
     title: override.title ?? base.title,
     titleTemplate: override.titleTemplate ?? base.titleTemplate,
@@ -217,6 +217,13 @@ function mergeHead(base: HeadConfig, override: HeadConfig): HeadConfig {
  * ```
  */
 export function useSeoMeta(config: SeoMeta): void {
+  useHead(seoMetaToHeadConfig(config))
+}
+
+/**
+ * Convert SEO metadata into a head configuration without mutating global state.
+ */
+export function seoMetaToHeadConfig(config: SeoMeta): HeadConfig {
   const meta: MetaTag[] = []
 
   // Basic meta
@@ -311,13 +318,12 @@ export function useSeoMeta(config: SeoMeta): void {
     link.push({ rel: 'canonical', href: config.canonical })
   }
 
-  // Apply to head
-  useHead({
+  return {
     title: config.title,
     titleTemplate: config.titleTemplate,
     meta,
-    link
-  })
+    link,
+  }
 }
 
 // =============================================================================
@@ -598,7 +604,8 @@ export function processTitleDirective(
       const resolvedTitle = quote
         ? quotedTitle
         : (context[(unquotedTitle || '').trim()] as string) ?? unquotedTitle
-      useHead({ title: resolvedTitle })
+      const existing = (context.__stx_runtime_head as HeadConfig | undefined) ?? {}
+      context.__stx_runtime_head = mergeHeadConfigs(existing, { title: resolvedTitle })
       return ''
     }
   )
@@ -630,7 +637,8 @@ export function processMetaDirective(
         ? { property: name, content: resolvedValue }
         : { name, content: resolvedValue }
 
-      useHead({ meta: [meta] })
+      const existing = (context.__stx_runtime_head as HeadConfig | undefined) ?? {}
+      context.__stx_runtime_head = mergeHeadConfigs(existing, { meta: [meta] })
       return ''
     }
   )

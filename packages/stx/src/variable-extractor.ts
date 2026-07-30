@@ -33,10 +33,7 @@ import process from 'node:process'
 
 // Import from tokenizer to avoid circular dependency
 import { findMatchingDelimiter } from './parser/tokenizer'
-// Import head module so server-side useHead() calls mutate the same currentHead
-// instance that document-shell.ts reads from. Using require() inside the
-// wrapped useHead would create a separate module instance with its own state.
-import { useHead as headUseHead, useSeoMeta as headUseSeoMeta, getHead as headGetHead } from './head'
+import { mergeHeadConfigs, seoMetaToHeadConfig } from './head'
 import { getPublicEnvDefine } from './public-env'
 import { safeEvaluate } from './safe-evaluator'
 
@@ -578,40 +575,14 @@ catch {
     }
   }
   const useRouter = () => ({ push: (_to: unknown) => {}, replace: (_to: unknown) => {}, back: () => {}, forward: () => {}, go: (_n: number) => {} })
-  // useHead is auto-injected so server scripts can call it without explicitly
-  // importing from 'stx'. It mutates module-global currentHead in head.ts,
-  // which the document-shell wrapper then merges into the rendered <head>.
-  // useHead/useSeoMeta auto-injected for <script server>. We mutate the head
-  // module's currentHead AND stash a copy on the context object. Bun's module
-  // resolution can return separate instances of head.ts in some configurations
-  // (symlinked workspace packages), so the context-bound copy is the reliable
-  // path that document-shell.ts in process.ts can read back.
+  // Head composables in server scripts write only to this render context.
+  // Module-global state would leak metadata between concurrent SSR requests.
   const useHead = (head: unknown) => {
-    headUseHead(head as any)
     const existing = (context.__stx_runtime_head as Record<string, any>) || {}
-    const incoming = (head as Record<string, any>) || {}
-    context.__stx_runtime_head = {
-      ...existing,
-      ...(incoming.title && { title: incoming.title }),
-      meta: [...(existing.meta || []), ...(incoming.meta || [])],
-      link: [...(existing.link || []), ...(incoming.link || [])],
-      script: [...(existing.script || []), ...(incoming.script || [])],
-      htmlAttrs: { ...(existing.htmlAttrs || {}), ...(incoming.htmlAttrs || {}) },
-      bodyAttrs: { ...(existing.bodyAttrs || {}), ...(incoming.bodyAttrs || {}) },
-    }
+    context.__stx_runtime_head = mergeHeadConfigs(existing, (head as Record<string, any>) || {})
   }
   const useSeoMeta = (meta: unknown) => {
-    headUseSeoMeta(meta as any)
-    // useSeoMeta builds a meta array internally; read the latest currentHead
-    // and snapshot it onto the context. We REPLACE `meta` (not merge) because
-    // the underlying module-global already accumulates previous calls —
-    // merging again would double every tag that was added before this call.
-    const head = headGetHead()
-    context.__stx_runtime_head = {
-      ...(context.__stx_runtime_head || {}),
-      ...(head.title && { title: head.title }),
-      meta: head.meta ? [...head.meta] : [],
-    }
+    useHead(seoMetaToHeadConfig((meta as Record<string, any>) || {}))
   }
   const ref = (val: unknown) => ({ value: val })
   const reactive = (obj: unknown) => obj

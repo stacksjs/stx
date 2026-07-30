@@ -1486,15 +1486,12 @@ async function processOtherDirectives(
     return html
   }
 
-  // Inject rendered head content from useHead/useSeoMeta calls. Prefer the
-  // context-bound copy (set by variable-extractor's wrapped composables) over
-  // the module-global — the context copy is per-page and survives even when
-  // Bun's resolution serves a different head.ts instance to the page script.
+  // Inject rendered head content from useHead/useSeoMeta calls. A render
+  // context explicitly owns its head state, including an intentionally empty
+  // config, so it must never fall back to another request's global state.
   const { renderHead, getHead } = await import('./head')
   const contextHead = context.__stx_runtime_head as any
-  const headConfig = contextHead && (contextHead.title || contextHead.meta?.length || contextHead.link?.length)
-    ? contextHead
-    : getHead()
+  const headConfig = contextHead ?? getHead()
   if (headConfig.title || headConfig.meta?.length || headConfig.link?.length) {
     const renderedHead = renderHead(headConfig)
     if (renderedHead)
