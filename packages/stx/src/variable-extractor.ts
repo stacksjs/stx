@@ -447,6 +447,32 @@ export async function extractVariables(
     Object.defineProperty($props, key, { value, enumerable: true, configurable: true, writable: true })
   }
 
+  // `$props` is a callable, so any prop it does NOT carry falls through to
+  // Function.prototype. That made an unpassed prop named after a function's own
+  // property resolve to the function's internals instead of undefined:
+  // `$props.name` returned the string "$props" (the arrow function's inferred
+  // name) and `$props.length` returned its arity.
+  //
+  // `export const name = $props.name || ''` therefore produced "$props" rather
+  // than "", so a component with an optional `name` prop rendered the branch
+  // meant to be skipped — <SidebarFooter> showed a phantom profile row labelled
+  // "$props" whenever it was used for actions only. Silent, and `name` is one
+  // of the most common prop names there is.
+  //
+  // Blank them out so an unset prop reads as undefined. Only when the component
+  // did not actually pass one — a real `name` prop still wins, having been
+  // defined above.
+  for (const shadowed of ['name', 'length', 'caller', 'arguments']) {
+    if (Object.prototype.hasOwnProperty.call(propsObj, shadowed))
+      continue
+    try {
+      Object.defineProperty($props, shadowed, { value: undefined, enumerable: false, configurable: true, writable: true })
+    }
+    catch {
+      // Non-configurable in some engine — leave it rather than throw.
+    }
+  }
+
   // Vue-like defineProps. Supports the options-style defaults arg
   // (`{ count: { default: 0 } }`) for parity with the module (props.ts) and
   // client-runtime (signals.ts) impls. Defaults apply only when the prop is
