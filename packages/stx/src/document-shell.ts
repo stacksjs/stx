@@ -40,6 +40,86 @@ export function injectCloakStyle(html: string): string {
 }
 
 /**
+ * Pull the page's own `<link>` / `<style>` off the front of a fragment so the
+ * shell can put them in `<head>` where they belong.
+ *
+ * A fragment page (no `<html>/<head>/<body>` of its own) writes its font links
+ * and scoped styles at the top of the file. Without this they land verbatim in
+ * `<body>`, which *renders* fine — browsers honour `<link>` and `<style>` in
+ * body — but breaks SPA navigation: the router reconciles `head style` and
+ * `head link[rel=stylesheet]` only, so on a container-only swap the incoming
+ * page's CSS is never applied and the form/page paints unstyled. It looked
+ * correct on reload and wrong on navigation, which is what made it hard to see.
+ *
+ * Deliberately conservative: only the leading run is hoisted (whitespace,
+ * comments and `<script>` blocks are stepped over, never moved), so a `<style>`
+ * sitting next to the markup it styles further down the page is left alone.
+ */
+export function hoistLeadingHeadTags(content: string): { body: string, hoisted: string[] } {
+  const hoisted: string[] = []
+  let i = 0
+
+  while (i < content.length) {
+    const rest = content.slice(i)
+
+    const ws = rest.match(/^\s+/)
+    if (ws) { i += ws[0].length; continue }
+
+    if (rest.startsWith('<!--')) {
+      const end = content.indexOf('-->', i)
+      if (end === -1) break
+      i = end + 3
+      continue
+    }
+
+    // Stepped over, not hoisted — a script here is usually the signals/setup
+    // block, and it must keep its position relative to the markup it drives.
+    const scriptOpen = rest.match(/^<script\b[^>]*>/i)
+    if (scriptOpen) {
+      const end = content.toLowerCase().indexOf('</script>', i + scriptOpen[0].length)
+      if (end === -1) break
+      i = end + '</script>'.length
+      continue
+    }
+
+    const link = rest.match(/^<link\b[^>]*>/i)
+    if (link) { hoisted.push(link[0]); i += link[0].length; continue }
+
+    // <meta> too: a fragment declaring `stx-layout` needs it in <head> for the
+    // router's layout-group comparison to read it off the fetched document.
+    const meta = rest.match(/^<meta\b[^>]*>/i)
+    if (meta) { hoisted.push(meta[0]); i += meta[0].length; continue }
+
+    const style = rest.match(/^<style\b[^>]*>[\s\S]*?<\/style>/i)
+    if (style) { hoisted.push(style[0]); i += style[0].length; continue }
+
+    break
+  }
+
+  if (hoisted.length === 0)
+    return { body: content, hoisted }
+
+  // Rebuild the body without the hoisted tags, keeping everything that was
+  // stepped over. Splicing by index would drop the scripts and comments.
+  let body = ''
+  let j = 0
+  while (j < content.length && j < i) {
+    const rest = content.slice(j)
+    const link = rest.match(/^<link\b[^>]*>/i)
+    if (link && hoisted.includes(link[0])) { j += link[0].length; continue }
+    const meta = rest.match(/^<meta\b[^>]*>/i)
+    if (meta && hoisted.includes(meta[0])) { j += meta[0].length; continue }
+    const style = rest.match(/^<style\b[^>]*>[\s\S]*?<\/style>/i)
+    if (style && hoisted.includes(style[0])) { j += style[0].length; continue }
+    body += content[j]
+    j++
+  }
+  body += content.slice(i)
+
+  return { body, hoisted }
+}
+
+/**
  * Generate the full HTML document shell wrapping page content.
  *
  * @param content - The rendered page/layout HTML (no document wrapper)
@@ -113,6 +193,11 @@ export function generateDocumentShell(
   // Compose <head>. The cloak style goes in early (before user styles and
   // scripts) so the [x-cloak] rule is live before first paint — prevents the
   // conditional-directive FOUC (#1736).
+  // The page's own head tags come out of the fragment body — see
+  // hoistLeadingHeadTags. They sit AFTER options.styles (Crosswind) so the page
+  // still wins the cascade exactly as it did when it rendered inside <body>.
+  const { body: pageBody, hoisted: pageHeadTags } = hoistLeadingHeadTags(content)
+
   const headParts = [
     metaTags,
     `  <title>${pageTitle}</title>`,
@@ -121,13 +206,14 @@ export function generateDocumentShell(
     configHeadScripts,
     headRaw ? `  ${headRaw}` : '',
     ...(options.styles || []).map(s => `  ${s}`),
+    ...pageHeadTags.map(s => `  ${s}`),
     ...(options.headScripts || []).map(s => `  ${s}`),
     options.headStack || '',
   ].filter(Boolean)
 
   // Compose body
   const bodyParts = [
-    content,
+    pageBody,
     ...(options.bodyScripts || []).map(s => s),
     options.bodyStack || '',
   ].filter(Boolean)
