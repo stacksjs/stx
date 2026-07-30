@@ -23,6 +23,11 @@
  * when the window resigns key it falls back to a neutral fill with the label
  * left dark. Icons desaturate to gray in the same non-key state.
  *
+ * The other first-class theme is `arc`, a recreation of the Arc browser's
+ * sidebar. It inverts the macOS selection model — a raised white card on a
+ * warm tinted panel instead of an accent fill on gray — so it uses the
+ * `classes` selection model rather than `accent`. See its own block below.
+ *
  * Legacy themes (`workspace`, `desktop`, `solid`, `transparent`, `vibrancy`)
  * are preserved verbatim from the previous variant maps. `tahoe` now aliases
  * `macos` — it always meant "look like macOS", and now it actually does.
@@ -228,6 +233,102 @@ const desktop: SidebarTheme = {
   },
 }
 
+/**
+ * `arc` — the Arc browser sidebar.
+ *
+ * Where macOS paints the selected row with the system accent, Arc raises it:
+ * the active row becomes a white card floating on a warm tinted panel, with a
+ * hairline border and a single-pixel drop shadow. That inversion — light card
+ * on tinted ground, rather than saturated fill on gray — is the whole look, so
+ * this theme uses the `classes` selection model and puts the card in
+ * `item.active` instead of the accent rules the `accent` model applies.
+ *
+ * Metrics taken from Arc 1.5x at @2x:
+ *
+ *   row pitch 30px with 2px between rows — rows are separate cards, not the
+ *     contiguous run AppKit uses, so consecutive selections read as distinct
+ *   selection radius 8px · white fill · 1px hairline · shadow 0 1px 2px/8%
+ *   label 13px, and the selected row goes to 500 (not 600 — Arc keeps the
+ *     weight shift subtle because the card already carries the emphasis)
+ *   section header 11px medium, sentence case, 55% muted
+ *   icon 16px in an 18px slot · child indent 14px
+ *   panel warm off-white (#f7f5f1), noticeably warmer than macOS's neutral
+ *     #f2f2f4 — the warmth is what makes it read as Arc at a glance
+ *
+ * The panel tint is a soft top-down gradient rather than a flat fill, which is
+ * how Arc suggests the current space's color. Apps that want a per-space tint
+ * can override `--stx-sidebar-tint` on the pane; the gradient falls back to the
+ * warm default when it is unset.
+ */
+const arc: SidebarTheme = {
+  selection: 'classes',
+  pane: [
+    'bg-[#f7f5f1]/92 dark:bg-[#1a1a1c]/92',
+    'backdrop-blur-[40px] backdrop-saturate-[160%]',
+    'text-[#2c2a28] dark:text-[#ededf0]',
+    'select-none',
+  ].join(' '),
+  layers: {
+    // Space tint. `--stx-sidebar-tint` lets an app color the panel per space
+    // the way Arc does; unset, it resolves to a warm neutral wash.
+    tint: [
+      'bg-[linear-gradient(180deg,var(--stx-sidebar-tint,rgba(255,251,242,0.55))_0%,rgba(255,255,255,0)_38%)]',
+      'dark:bg-[linear-gradient(180deg,var(--stx-sidebar-tint,rgba(255,255,255,0.05))_0%,rgba(255,255,255,0)_42%)]',
+    ].join(' '),
+  },
+  scrollArea: 'flex-1 overflow-y-auto overflow-x-hidden px-[8px] pb-[8px]',
+  sectionHeader: [
+    'group/section flex w-full items-center',
+    'px-[8px] pt-[14px] pb-[4px]',
+    'text-[11px] font-medium leading-[13px]',
+    'text-[#2c2a28]/55 dark:text-[#ededf0]/50',
+  ].join(' '),
+  sectionChevron: [
+    'i-f7-chevron-down h-[10px] w-[10px] ml-auto',
+    'text-[#2c2a28]/40 dark:text-[#ededf0]/40',
+    'opacity-0 group-hover/section:opacity-100 transition-opacity duration-150',
+    'transition-transform duration-200',
+  ].join(' '),
+  // 2px gutter: Arc rows are discrete cards, unlike AppKit's contiguous run.
+  sectionGroup: 'flex flex-col space-y-[2px]',
+  item: {
+    base: [
+      'flex w-full items-center',
+      'h-[30px] rounded-[8px] pl-[6px] pr-[8px]',
+      'text-[13px] leading-[16px] font-normal',
+      'text-[#2c2a28]/85 dark:text-[#ededf0]/85',
+      'transition-[background-color,box-shadow,color] duration-150 ease-out',
+      'cursor-default',
+    ].join(' '),
+    hover: 'hover:bg-white/55 dark:hover:bg-white/8',
+    // The signature: a raised white card rather than an accent fill.
+    active: [
+      'bg-white dark:bg-white/14',
+      'text-[#1b1a19] dark:text-white font-medium',
+      'shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35)]',
+      'ring-1 ring-black/5 dark:ring-white/8',
+    ].join(' '),
+    pressed: 'active:bg-white/80 dark:active:bg-white/18',
+    disabled: 'opacity-40 pointer-events-none',
+    disclosure: 'flex h-[16px] w-[16px] shrink-0 items-center justify-center',
+    chevron: [
+      'i-f7-chevron-right h-[10px] w-[10px]',
+      'text-[#2c2a28]/45 dark:text-[#ededf0]/45',
+      'transition-transform duration-200 ease-out',
+    ].join(' '),
+    iconSlot: 'flex h-[18px] w-[18px] shrink-0 items-center justify-center mr-[8px]',
+    icon: 'h-[16px] w-[16px]',
+    image: 'h-[18px] w-[18px] rounded-[5px] object-cover shadow-sm',
+    label: 'flex-1 truncate text-left',
+    count: [
+      'ml-[8px] shrink-0 tabular-nums',
+      'text-[12px] leading-[16px]',
+      'text-[#2c2a28]/45 dark:text-[#ededf0]/45',
+    ].join(' '),
+    indentPerLevel: 14,
+  },
+}
+
 const solid: SidebarTheme = {
   ...macos,
   pane: 'bg-stone-100 dark:bg-neutral-900 text-black dark:text-white select-none',
@@ -252,6 +353,7 @@ export const sidebarThemes: Record<string, SidebarTheme> = {
   'tahoe': macos,
   'macos-tahoe': macos,
   'macos-latest': macos,
+  arc,
   workspace,
   desktop,
   solid,

@@ -24,6 +24,25 @@ export const actionClasses = [
   'transition-colors duration-150',
   'hover:bg-black/5 dark:hover:bg-white/10',
 ].join(' ')
+
+// Arc keeps the footer to a quiet strip of ghost icons, tuned to the warm
+// panel rather than the macOS neutral.
+export const isArc = theme === 'arc'
+
+export const arcActionClasses = [
+  'grid h-[28px] w-[28px] place-items-center rounded-[7px]',
+  'text-[#2c2a28]/50 dark:text-[#ededf0]/50',
+  'transition-colors duration-150',
+  'hover:bg-black/[0.05] hover:text-[#2c2a28] dark:hover:bg-white/10 dark:hover:text-[#ededf0]',
+].join(' ')
+
+export const arcProfileClasses = [
+  'flex w-full items-center gap-[8px]',
+  'h-[38px] rounded-[8px] px-[6px]',
+  'text-[13px] font-medium text-[#2c2a28] dark:text-[#ededf0]',
+  'transition-colors duration-150',
+  'hover:bg-black/[0.05] dark:hover:bg-white/8',
+].join(' ')
 </script>
 
 <script client>
@@ -58,6 +77,32 @@ function onAction(event) {
         @foreach(actions as action)
           <button type="button" class="{{ actionClasses }}" aria-label="{{ action.label }}" data-sidebar-action="{{ action.id }}" @click="onAction($event)">
             <span class="{{ action.icon }} h-[16px] w-[16px]" aria-hidden="true"></span>
+          </button>
+        @endforeach
+      </div>
+    @endif
+    <slot />
+  </div>
+@elseif(isArc)
+  <div class="shrink-0 px-[10px] pb-[10px] pt-[4px]">
+    @if(name)
+      <button type="button" class="{{ arcProfileClasses }}" @click="onProfileClick()">
+        @if(avatar)
+          <img src="{{ avatar }}" alt="" class="h-[24px] w-[24px] rounded-full object-cover" />
+        @else
+          <span class="grid h-[24px] w-[24px] place-items-center rounded-full bg-black/8 text-[12px] font-semibold dark:bg-white/12">{{ name.charAt(0) }}</span>
+        @endif
+        <span class="min-w-0 flex-1 truncate text-left">{{ name }}</span>
+        @if(detail)
+          <span class="shrink-0 text-[12px] text-[#2c2a28]/45 dark:text-[#ededf0]/45">{{ detail }}</span>
+        @endif
+      </button>
+    @endif
+    @if(actions.length > 0)
+      <div class="flex items-center gap-[2px]">
+        @foreach(actions as action)
+          <button type="button" class="{{ arcActionClasses }}" aria-label="{{ action.label }}" data-sidebar-action="{{ action.id }}" @click="onAction($event)">
+            <span class="{{ action.icon }} h-[15px] w-[15px]" aria-hidden="true"></span>
           </button>
         @endforeach
       </div>

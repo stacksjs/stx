@@ -28,6 +28,27 @@ export const toolbarButtonClasses = [
   'hover:bg-white/80 dark:hover:bg-white/20',
   'active:bg-white/95 dark:active:bg-white/25',
 ].join(' ')
+
+// Arc's header is quieter than macOS'. No traffic lights and no floating glass
+// buttons — just a recessed search field and flat ghost icons, sized to sit on
+// the warm panel without competing with the row cards below it.
+export const isArc = theme === 'arc'
+
+export const arcSearchClasses = [
+  'h-[30px] w-full rounded-[8px] border-0',
+  'bg-black/[0.045] dark:bg-white/[0.07]',
+  'pl-[28px] pr-[8px]',
+  'text-[13px] text-[#2c2a28] dark:text-[#ededf0]',
+  'placeholder:text-[#2c2a28]/40 dark:placeholder:text-[#ededf0]/40',
+  'focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/15',
+].join(' ')
+
+export const arcActionClasses = [
+  'grid h-[28px] w-[28px] place-items-center rounded-[7px]',
+  'text-[#2c2a28]/55 dark:text-[#ededf0]/55',
+  'transition-colors duration-150',
+  'hover:bg-black/[0.05] hover:text-[#2c2a28] dark:hover:bg-white/10 dark:hover:text-[#ededf0]',
+].join(' ')
 </script>
 
 <script client>
@@ -85,6 +106,39 @@ function onWindowControl(action) {
       </div>
     </div>
   @endif
+@elseif(isArc)
+  <div class="flex flex-col gap-[8px] px-[10px] pb-[8px] pt-[12px]">
+    @if(title || logo || actions.length > 0)
+      <div class="flex items-center gap-[8px]">
+        @if(logo)
+          <img src="{{ logo }}" alt="{{ title }}" class="h-[20px] w-[20px] rounded-[6px] object-cover" />
+        @endif
+        @if(title)
+          <span class="min-w-0 flex-1 truncate text-[13px] font-medium text-[#2c2a28] dark:text-[#ededf0]">{{ title }}</span>
+        @else
+          <span class="flex-1"></span>
+        @endif
+        @foreach(actions as action)
+          <button type="button" class="{{ arcActionClasses }}" aria-label="{{ action.label }}" data-sidebar-action="{{ action.id }}" @click="onAction($event)">
+            <span class="{{ action.icon }} h-[15px] w-[15px]" aria-hidden="true"></span>
+          </button>
+        @endforeach
+        <slot name="actions" />
+      </div>
+    @endif
+
+    @if(showSearch)
+      <div class="relative">
+        <span class="i-f7-search absolute left-[9px] top-1/2 h-[13px] w-[13px] -translate-y-1/2 text-[#2c2a28]/40 dark:text-[#ededf0]/40" aria-hidden="true"></span>
+        <input
+          type="text"
+          placeholder="{{ searchPlaceholder }}"
+          class="{{ arcSearchClasses }}"
+          @input="onSearchInput($event)"
+        />
+      </div>
+    @endif
+  </div>
 @else
   <div class="flex h-13 items-center gap-3 border-b border-black/5 px-4 dark:border-white/10">
     @if(logo)

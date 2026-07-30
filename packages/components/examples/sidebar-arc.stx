@@ -1,0 +1,91 @@
+<script server>
+// Recreation of an Arc-style sidebar — the agent-orchestrator layout: a search
+// field, pinned project folders, and a running list of threads.
+//
+// Where the macOS examples fill the selected row with the system accent, Arc
+// raises it into a white card on a warm panel. That inversion is the `arc`
+// theme's whole job; everything else here is the same Sidebar component the
+// Finder/Mail/Music/Notes examples use.
+export const sections = [
+  {
+    id: 'project',
+    items: [
+      { id: 'cift', label: 'Cift', icon: 'i-f7-circle-fill', iconColor: '#e0a800' },
+    ],
+  },
+  {
+    id: 'folders',
+    label: 'Folders',
+    items: [
+      { id: 'calendar-sync', label: 'Calendar sync', icon: 'i-f7-folder', expanded: false, children: [] },
+      { id: 'landing-seo', label: 'Landing & SEO', icon: 'i-f7-folder', expanded: false, children: [] },
+      { id: 'ui-polish', label: 'UI polish', icon: 'i-f7-folder', expanded: false, children: [] },
+    ],
+  },
+  {
+    id: 'threads',
+    label: 'Threads',
+    items: [
+      { id: 'new-thread', label: 'New thread', icon: 'i-f7-plus' },
+      { id: 'untitled-1', label: 'Untitled', icon: 'i-f7-bubble-left' },
+      { id: 'dedicated-chat', label: 'let\'s create a chat dedicated to cift\'s onboarding', icon: 'i-f7-bubble-left' },
+      { id: 'untitled-2', label: 'Untitled', icon: 'i-f7-bubble-left' },
+      { id: 'task-list', label: 'Task list: things vanish and teleport in the grid', icon: 'i-f7-bubble-left' },
+      { id: 'follow-up-23', label: 'Follow-up on #23 on branch cift-1.7-lane-polish', icon: 'i-f7-bubble-left', active: true },
+      { id: 'ran-tests', label: 'did you run tests and validated them?', icon: 'i-f7-bubble-left' },
+      { id: 'backlog', label: 'Cift project task backlog', icon: 'i-f7-bubble-left' },
+      { id: 'big-dump', label: 'here is a big list dump of everything left', icon: 'i-f7-bubble-left' },
+    ],
+  },
+]
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidebar — Arc</title>
+  <style>
+    body {
+      background: linear-gradient(160deg, #d9cfc0 0%, #c9bda9 40%, #a99a83 100%);
+      min-height: 100vh;
+      margin: 0;
+    }
+    /* Per-space tint. Arc colors the panel from the active space; the `arc`
+       theme reads this custom property and falls back to a warm neutral. */
+    [data-sidebar-theme="arc"] {
+      --stx-sidebar-tint: rgba(255, 244, 224, 0.72);
+    }
+  </style>
+</head>
+<body class="grid min-h-screen place-items-center p-8">
+  <div class="flex h-[92vh] w-[1020px] overflow-hidden rounded-[26px] shadow-[0_30px_90px_rgba(0,0,0,0.42),0_0_0_0.5px_rgba(0,0,0,0.14)]">
+    <Sidebar :sections="sections" theme="arc" width="248" placement="static">
+      <template #header>
+        <SidebarHeader
+          theme="arc"
+          showSearch
+          searchPlaceholder="Search threads"
+          :actions="[
+            { id: 'new-thread', icon: 'i-f7-square-pencil', label: 'New thread' },
+          ]"
+        />
+      </template>
+
+      <template #footer>
+        <SidebarFooter
+          theme="arc"
+          :actions="[
+            { id: 'settings', icon: 'i-f7-gear', label: 'Settings' },
+            { id: 'archive', icon: 'i-f7-archivebox', label: 'Archive' },
+            { id: 'help', icon: 'i-f7-question-circle', label: 'Help' },
+          ]"
+        />
+      </template>
+    </Sidebar>
+
+    <main class="flex-1 bg-[#fdfcfa]/95 backdrop-blur-2xl dark:bg-neutral-900/95"></main>
+  </div>
+</body>
+</html>
