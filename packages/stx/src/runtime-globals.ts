@@ -13,10 +13,10 @@
  * script but threw in a page, `onMounted()` resolved in a page but threw in an
  * `@include`d component. See #1785.
  *
- * Two entries were also phantoms — `inject` and `nextTick` were destructured by
+ * Two entries were also phantoms - `inject` and `nextTick` were destructured by
  * one site but never defined on `window.stx` at all, so they silently evaluated
- * to `undefined` and threw "is not a function" when called. They are omitted
- * here; re-add them only alongside a real implementation.
+ * to `undefined` and threw "is not a function" when called. `nextTick` now has a
+ * signals-runtime implementation; `inject` remains omitted until it does too.
  *
  * Adding a runtime global is now a one-line change here. `runtime-globals.test.ts`
  * asserts every name actually exists on `window.stx` and that all three call
@@ -35,7 +35,7 @@
 export const STX_RUNTIME_GLOBALS: readonly string[] = [
   'batch', 'computed', 'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps',
   'defineSlots', 'defineStore', 'derived', 'effect', 'goBack', 'goForward', 'navigate',
-  'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted', 'provide', 'reactive',
+  'nextTick', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted', 'provide', 'reactive',
   'ref', 'registerStoresClient', 'state', 'useAsync', 'useClickOutside', 'useColorMode',
   'useCookie', 'useCounter', 'useDark', 'useDebounce', 'useDebouncedValue', 'useEventListener',
   'useFetch', 'useFocus', 'useHead', 'useInterval', 'useLocalStorage', 'useMediaQuery',

@@ -13,9 +13,10 @@ import { generateSignalsRuntimeDev } from '../src/signals'
 // with nothing at build time: nextTick() resolved in a component script but threw
 // in a page; onMounted() resolved in a page but threw in an @include'd component.
 //
-// Two entries were phantoms — `inject` and `nextTick` were destructured by one
+// Two entries were phantoms - `inject` and `nextTick` were destructured by one
 // site but never defined on window.stx at all, so they evaluated to undefined and
-// threw "is not a function" when called.
+// threw "is not a function" when called. nextTick is now implemented by the
+// signals runtime; inject remains omitted.
 //
 // All three now build from STX_RUNTIME_GLOBALS. These tests are the part that
 // keeps it that way.
@@ -169,8 +170,27 @@ function goBack() { return 'page-local' }
       expect(STX_RUNTIME_GLOBALS).toContain(name)
   })
 
-  it('drops the phantom names that were never implemented', () => {
+  it('exposes nextTick now that the signals runtime implements it', async () => {
+    expect(STX_RUNTIME_GLOBALS).toContain('nextTick')
+
+    const page = await processDirectives(
+      `<script client>
+const ready = state(false)
+nextTick(() => ready.set(true))
+</script>
+<p :text="ready()"></p>`,
+      {},
+      'next-tick.stx',
+      { debug: false } as any,
+      new Set(),
+    )
+    const pageScript = (page.match(/<script[^>]*>[\s\S]*?<\/script>/gi) || [])
+      .find(block => block.includes('__stx_setup_'))
+    expect(pageScript).toBeDefined()
+    expect(destructuredNames(pageScript!).has('nextTick')).toBe(true)
+  })
+
+  it('drops the phantom inject name that is not implemented', () => {
     expect(STX_RUNTIME_GLOBALS).not.toContain('inject')
-    expect(STX_RUNTIME_GLOBALS).not.toContain('nextTick')
   })
 })

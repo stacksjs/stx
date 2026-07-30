@@ -4043,6 +4043,15 @@ else if (timer === null) {
     };
   }
 
+  // Queue work after the current synchronous signal/effect flush. This mirrors
+  // the Composition API nextTick contract and gives template refs a chance to
+  // resolve after a structural directive inserts their elements.
+  function nextTick(fn) {
+    return Promise.resolve().then(function() {
+      if (fn) fn();
+    });
+  }
+
   function useAsync(fn, options) {
     options = options || {};
     var asyncState = 'idle';
@@ -4897,6 +4906,7 @@ catch (e) {}
     useCounter,
     useClickOutside,
     useFocus,
+    nextTick,
     useAsync,
     useLocalStorage,
     useSessionStorage,
@@ -5424,6 +5434,7 @@ else {
   window.useCounter = useCounter;
   window.useClickOutside = useClickOutside;
   window.useFocus = useFocus;
+  window.nextTick = nextTick;
   window.useAsync = useAsync;
   window.useLocalStorage = useLocalStorage;
   window.useEventListener = useEventListener;
