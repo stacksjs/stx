@@ -133,6 +133,29 @@ useIntervalFn(load, 15000)
 })
 
 describe('client bundle build queue', () => {
+  it('shares one queue across isolated module instances', async () => {
+    const moduleUrl = new URL('../src/client-script-bundler.ts', import.meta.url)
+    const first = await import(`${moduleUrl.href}?instance=first`)
+    const second = await import(`${moduleUrl.href}?instance=second`)
+    let active = 0
+    let maximumActive = 0
+
+    const run = (queue: typeof queueClientBundleBuild): Promise<void> =>
+      queue(async () => {
+        active++
+        maximumActive = Math.max(maximumActive, active)
+        await Bun.sleep(5)
+        active--
+      })
+
+    await Promise.all([
+      run(first.queueClientBundleBuild),
+      run(second.queueClientBundleBuild),
+    ])
+
+    expect(maximumActive).toBe(1)
+  })
+
   it('serializes distinct builds and continues after a failed build', async () => {
     let active = 0
     let maximumActive = 0

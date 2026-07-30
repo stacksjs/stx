@@ -249,7 +249,11 @@ function createBundlePlugin(
  * making the temp paths unique and leaving the duplicated work in place.
  */
 const inFlightBundles = new Map<string, Promise<string>>()
-let clientBundleBuildQueue: Promise<void> = Promise.resolve()
+const CLIENT_BUNDLE_QUEUE = Symbol.for('stx.client-bundle-build-queue')
+
+interface ClientBundleGlobal {
+  [CLIENT_BUNDLE_QUEUE]?: Promise<void>
+}
 
 /**
  * Run one client bundle build at a time.
@@ -264,8 +268,10 @@ let clientBundleBuildQueue: Promise<void> = Promise.resolve()
  * build.
  */
 export function queueClientBundleBuild<T>(task: () => Promise<T>): Promise<T> {
-  const result = clientBundleBuildQueue.then(task, task)
-  clientBundleBuildQueue = result.then(
+  const shared = globalThis as ClientBundleGlobal
+  const queue = shared[CLIENT_BUNDLE_QUEUE] ?? Promise.resolve()
+  const result = queue.then(task, task)
+  shared[CLIENT_BUNDLE_QUEUE] = result.then(
     () => undefined,
     () => undefined,
   )
