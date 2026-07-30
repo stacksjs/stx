@@ -2496,7 +2496,23 @@ catch (e) {
       });
     }
     else if (tag === 'select') {
-      effect(() => { el.value = getValue(); });
+      var syncSelect = () => { el.value = getValue() ?? ''; };
+      el.__stx_model_sync = syncSelect;
+      effect(syncSelect);
+      if (!el.__stx_model_observer && typeof window.MutationObserver !== 'undefined') {
+        el.__stx_model_observer = new window.MutationObserver(syncSelect);
+        el.__stx_model_observer.observe(el, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['value'],
+        });
+        el.__stx_destroy = el.__stx_destroy || [];
+        el.__stx_destroy.push(function() {
+          if (el.__stx_model_observer) el.__stx_model_observer.disconnect();
+          el.__stx_model_observer = null;
+        });
+      }
       el.addEventListener('change', () => setValue(coerceValue(el.value)));
     }
 else {
