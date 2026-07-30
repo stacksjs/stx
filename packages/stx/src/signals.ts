@@ -1703,17 +1703,70 @@ catch (e) {
     return null;
   }
 
+  function readDeferredParentComponentProps(el) {
+    var serialized = el.getAttribute('data-stx-deferred-parent-bindings');
+    if (!serialized) return {};
+    try {
+      var parsed = JSON.parse(serialized);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    }
+    catch (e) {
+      return {};
+    }
+  }
+
+  function preserveDeferredParentComponentProps(el) {
+    var names = (el.getAttribute('data-stx-parent-bindings') || '').split(/\\s+/).filter(Boolean);
+    if (!names.length) return;
+    var deferred = readDeferredParentComponentProps(el);
+    names.forEach(function(name) {
+      var sourceName = ':' + name;
+      if (el.hasAttribute(sourceName))
+        deferred[name] = el.getAttribute(sourceName);
+    });
+    if (Object.keys(deferred).length)
+      el.setAttribute('data-stx-deferred-parent-bindings', JSON.stringify(deferred));
+  }
+
+  function hasPendingLoopAncestor(el) {
+    var loopAncestor = el && (el.parentElement || el.parentNode);
+    while (loopAncestor && loopAncestor !== document) {
+      var loopExpression = loopAncestor.getAttribute && (
+        loopAncestor.getAttribute('@for')
+        || loopAncestor.getAttribute(':for')
+        || loopAncestor.getAttribute('x-for')
+      );
+      if (loopExpression && isForDirectiveExpression(loopExpression))
+        return true;
+      loopAncestor = loopAncestor.parentElement || loopAncestor.parentNode;
+    }
+    return false;
+  }
+
   function bindParentComponentProps(el, callerScope) {
     if (!el || !el.getAttribute || el.__stx_parent_props_bound) return;
     var names = (el.getAttribute('data-stx-parent-bindings') || '').split(/\\s+/).filter(Boolean);
     if (!names.length) return;
+    if (hasPendingLoopAncestor(el)) {
+      preserveDeferredParentComponentProps(el);
+      return;
+    }
+    var deferred = readDeferredParentComponentProps(el);
+    var bindings = names.map(function(name) {
+      var sourceName = ':' + name;
+      var expression = el.hasAttribute(sourceName) ? el.getAttribute(sourceName) : deferred[name];
+      return typeof expression === 'string'
+        ? { name: name, sourceName: sourceName, expression: expression }
+        : null;
+    }).filter(Boolean);
+    if (!bindings.length) return;
     el.__stx_parent_props_bound = true;
     var scope = { ...globalHelpers, ...callerScope };
 
-    names.forEach(function(name) {
-      var sourceName = ':' + name;
-      if (!el.hasAttribute(sourceName)) return;
-      var expression = el.getAttribute(sourceName);
+    bindings.forEach(function(binding) {
+      var name = binding.name;
+      var sourceName = binding.sourceName;
+      var expression = binding.expression;
       effect(function() {
         var value;
         try {
@@ -1752,7 +1805,12 @@ catch (e) {
         }
       });
       el.removeAttribute(sourceName);
+      delete deferred[name];
     });
+    if (Object.keys(deferred).length)
+      el.setAttribute('data-stx-deferred-parent-bindings', JSON.stringify(deferred));
+    else
+      el.removeAttribute('data-stx-deferred-parent-bindings');
   }
 
   function resolveComponentCallerScope(el, pageScope) {
@@ -1792,8 +1850,10 @@ catch (e) {
       var current = scopeEl;
       while (current && current !== root) {
         if (current.hasAttribute
-          && (current.hasAttribute('@for') || current.hasAttribute(':for') || current.hasAttribute('x-for')))
+          && (current.hasAttribute('@for') || current.hasAttribute(':for') || current.hasAttribute('x-for'))) {
+          preserveDeferredParentComponentProps(scopeEl);
           return;
+        }
         current = current.parentElement || current.parentNode;
       }
       scopeEl.__stx_parent_scope = resolveComponentCallerScope(scopeEl, callerScope);
@@ -1813,6 +1873,13 @@ catch (e) {
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute && el.hasAttribute('stx-hydrate') && !el.__stx_hydrated) {
       var trigger = el.getAttribute('stx-hydrate') || 'idle';
       deferHydration(el, trigger, scope);
+      return;
+    }
+    if (el.nodeType === Node.ELEMENT_NODE
+      && el.hasAttribute
+      && el.hasAttribute('data-stx-scope')
+      && hasPendingLoopAncestor(el)) {
+      preserveDeferredParentComponentProps(el);
       return;
     }
 

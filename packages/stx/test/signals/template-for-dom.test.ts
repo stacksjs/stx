@@ -189,7 +189,9 @@ describe('template for DOM binding', () => {
       </main>
     `
     shimAttributes(document.body)
+    const deferredChild = document.querySelector('[data-stx-scope="compiled_status_scope"]')
     document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    deferredChild.removeAttribute(':status')
     deployments.set([{ name: 'production', status: 'attention' }])
     loading.set(false)
     await new Promise(resolve => setTimeout(resolve, 20))
@@ -201,6 +203,7 @@ describe('template for DOM binding', () => {
     const childScope = window.stx._scopes[scopeId]
     expect(childScope.status()).toBe('attention')
     expect(child.querySelector('span')?.textContent).toBe('attention')
+    expect(child.hasAttribute('data-stx-deferred-parent-bindings')).toBeFalse()
   })
 
   it('reapplies a select value after reactive options are inserted', async () => {
