@@ -64,6 +64,8 @@
 export interface Signal<T> {
   /** Read the current value */
   (): T
+  /** Vue-compatible value accessor */
+  value: T
   /** Set a new value */
   set(value: T): void
   /** Update the value using a function */
@@ -86,6 +88,8 @@ export interface Signal<T> {
 export interface DerivedSignal<T> {
   /** Read the current computed value */
   (): T
+  /** Vue-compatible read-only value accessor */
+  readonly value: T
   /** Internal marker */
   readonly _isDerived: true
 }
@@ -226,6 +230,11 @@ else {
 
   // Mark as signal
   Object.defineProperty(signal, '_isSignal', { value: true, writable: false })
+  Object.defineProperty(signal, 'value', {
+    get: () => signal(),
+    set: (newValue: T) => signal.set(newValue),
+    configurable: true,
+  })
 
   return signal
 }
@@ -317,6 +326,10 @@ finally {
   }) as DerivedSignal<T>
 
   Object.defineProperty(signal, '_isDerived', { value: true, writable: false })
+  Object.defineProperty(signal, 'value', {
+    get: () => signal(),
+    configurable: true,
+  })
 
   return signal
 }

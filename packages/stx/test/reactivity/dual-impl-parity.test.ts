@@ -31,9 +31,10 @@ interface ReactiveImpl {
     set: (v: T) => void
     update: (fn: (v: T) => T) => void
     subscribe: (cb: (next: T, prev: T) => void) => () => void
+    value: T
     _isSignal: true
   }
-  derived: <T>(fn: () => T) => { (): T, _isDerived: true }
+  derived: <T>(fn: () => T) => { (): T, readonly value: T, _isDerived: true }
   effect: (fn: () => void) => () => void
   batch: (fn: () => void) => void
   untrack: <T>(v: unknown) => T
@@ -95,6 +96,13 @@ for (const name of ['signals-api', 'runtime'] as const) {
       expect(s()).toBe(2)
       s.update(v => v * 10)
       expect(s()).toBe(20)
+    })
+
+    it('state.value reads and writes the signal', () => {
+      const s = impl.state(3)
+      expect(s.value).toBe(3)
+      s.value = 8
+      expect(s()).toBe(8)
     })
 
     it('state.subscribe fires on .set() with new + previous values', () => {
@@ -161,6 +169,14 @@ for (const name of ['signals-api', 'runtime'] as const) {
       expect(sum()).toBe(14)
       b.set(20)
       expect(sum()).toBe(30)
+    })
+
+    it('derived.value reads the current computed value', () => {
+      const source = impl.state(4)
+      const doubled = impl.derived(() => source() * 2)
+      expect(doubled.value).toBe(8)
+      source.set(6)
+      expect(doubled.value).toBe(12)
     })
 
     it('derived carries the _isDerived brand (not _isSignal — that is for state only)', () => {
