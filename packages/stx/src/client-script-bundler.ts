@@ -219,6 +219,34 @@ function createBundlePlugin(
         console.warn(`[stx:bundler] could not resolve ${args.path[0]}/ import:`, args.path)
         return { path: resolved }
       })
+
+      // Feed source modules to Bun from a normal filesystem read. Bun's
+      // internal reader can intermittently report "Unseekable reading file"
+      // for generated JavaScript inside linked workspace packages, even when
+      // the same file is immediately readable through node:fs. Dashboard
+      // bundles commonly traverse those links through @stacksjs/browser.
+      //
+      // This also records package-resolved and nested inputs, not only the
+      // relative and aliased imports handled above, so their mtimes participate
+      // in cache validation.
+      build.onLoad({ filter: /\.(?:[cm]?[jt]sx?|json)$/ }, (args) => {
+        const extension = path.extname(args.path).toLowerCase()
+        const loader = extension === '.json'
+          ? 'json'
+          : extension === '.tsx'
+            ? 'tsx'
+            : extension === '.jsx'
+              ? 'jsx'
+              : extension === '.ts' || extension === '.mts' || extension === '.cts'
+                ? 'ts'
+                : 'js'
+
+        inputFiles.add(args.path)
+        return {
+          contents: fs.readFileSync(args.path, 'utf8'),
+          loader,
+        }
+      })
     },
   }
 }
