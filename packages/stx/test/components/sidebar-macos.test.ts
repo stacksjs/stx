@@ -138,14 +138,15 @@ describe('macOS sidebar component', () => {
     const result = await render(`<body><Sidebar
       theme="macos"
       placement="static"
-      shellSelector="#app-shell"
-      widthVar="--dashboard-sidebar-width"
+      persist-key="stacks-dashboard-sidebar"
+      shell-selector="#app-shell"
+      width-var="--dashboard-sidebar-width"
       :sections="[{ id: 's', items: [{ id: 'a', label: 'A' }] }]"
     /></body>`)
 
     expect(result).toContain('var shellSelectorProp = "#app-shell"')
     expect(result).toContain('var widthVarProp = "--dashboard-sidebar-width"')
-    expect(result).toContain('var persistKeyProp = ""')
-    expect(result).not.toContain('var persistKeyProp = \'\\"\\"\'')
+    expect(result).toContain('var persistKeyProp = "stacks-dashboard-sidebar"')
+    expect(result).not.toContain('var persistKeyProp = \'"\\"stacks-dashboard-sidebar\\""\'')
   })
 })

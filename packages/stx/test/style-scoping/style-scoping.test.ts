@@ -108,6 +108,33 @@ describe('Style Scoping', () => {
       expect(result.html).toMatch(/<br data-v-stx-\w+/)
     })
 
+    /**
+     * The scope attribute is injected by a regex over the whole template,
+     * which cannot tell an HTML tag from a `<` that merely appears inside a
+     * <style> or <script> body. Left unguarded it rewrote CSS as if it were
+     * markup — `syntax: "<color>"` became `syntax: "<color data-v-hash>"`, an
+     * invalid descriptor, so the browser dropped the entire at-rule and the
+     * property silently stopped being animatable.
+     */
+    it('should not rewrite angle brackets inside style and script bodies', () => {
+      const html = [
+        '<div class="card">Content</div>',
+        '<style scoped>',
+        '@property --tint { syntax: "<color>"; inherits: true; initial-value: #fff; }',
+        '.card::before { content: "<"; }',
+        '</style>',
+        '<script>if (a < b) { go() }</script>',
+      ].join('\n')
+      const result = processScopedStyles(html, '/components/card.stx')
+
+      expect(result.html).toContain('syntax: "<color>"')
+      expect(result.html).toContain('content: "<"')
+      expect(result.html).toContain('if (a < b)')
+      // The markup around them is still scoped, which is what makes the
+      // absence above meaningful rather than a no-op.
+      expect(result.html).toMatch(/<div data-v-stx-\w+/)
+    })
+
     it('should not duplicate scope attribute on already-scoped elements', () => {
       const html = '<div>Content</div><style scoped>.x { color: red; }</style>'
       const result = processScopedStyles(html, '/test.stx')

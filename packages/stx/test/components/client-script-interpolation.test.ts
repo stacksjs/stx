@@ -114,4 +114,46 @@ describe('stx#1757: {{ }} in a component <script client> emits valid JS', () => 
     const out = await render(`<div><unresolved-prop /></div>`)
     expect(out).toMatch(/\{\{\s*notAServerExport\s*\}\}/)
   })
+
+  it('preserves string values through layout and component processing', async () => {
+    await createPartialFile(
+      'layout-prop-bridge.stx',
+      `<script server>
+export const collapseMode = $props.collapseMode || 'hidden'
+export const persistKey = $props.persistKey || ''
+export const shellSelector = $props.shellSelector || ''
+</script>
+<script client>
+const collapseModeProp = {{ collapseMode }}
+const persistKeyProp = {{ persistKey }}
+const shellSelectorProp = {{ shellSelector }}
+</script>
+<aside></aside>`,
+    )
+    const layoutPath = await createPartialFile(
+      'dashboard-layout.stx',
+      `<html><body>
+<layout-prop-bridge
+  persist-key="dashboard-sidebar"
+  shell-selector="[data-stx-content]"
+/>
+<main data-stx-content>@slot('content')</main>
+</body></html>`,
+    )
+
+    const out = await processDirectives(
+      `@layout('${layoutPath}')@section('content')Dashboard@endsection`,
+      {},
+      'page.stx',
+      opts,
+      new Set(),
+    )
+    const js = componentScript(out, 'collapseModeProp')
+
+    expect(js).toContain('const collapseModeProp = "hidden"')
+    expect(js).toContain('const persistKeyProp = "dashboard-sidebar"')
+    expect(js).toContain('const shellSelectorProp = "[data-stx-content]"')
+    expect(js).not.toContain(`const collapseModeProp = '"hidden"'`)
+    expect(js).not.toContain(`const shellSelectorProp = '"[data-stx-content]"'`)
+  })
 })
