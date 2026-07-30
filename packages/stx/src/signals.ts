@@ -2185,11 +2185,15 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
         console.log('[stx] binding event:', eventName, 'on', el.tagName, 'expr:', value.substring(0, 40));
         el.addEventListener(eventName, (event) => {
           console.log('[stx] event fired:', eventName, 'on', el.tagName);
-          // A component listener belongs to the component root. Ignore native
-          // events bubbling out of its internal markup, otherwise a form
-          // component with @submit fires the parent once for the native form
-          // submit and again for defineEmits('submit').
-          if (isForwardedComponentEvent && event.target !== el) return;
+          // Vue-style component listeners fall through to the rendered native
+          // root unless the child emits the same event. Signal components use
+          // a scope wrapper, so native events arrive here from a descendant.
+          // Ignore that native event only after defineEmits() has declared or
+          // emitted the same name, preventing submit/click handlers from
+          // firing once for the native event and again for the CustomEvent.
+          var componentEmits = el.__stx_component_emits;
+          if (isForwardedComponentEvent && event.target !== el
+            && componentEmits && componentEmits[eventName]) return;
 
           // Vue-style component handlers receive the emitted payload directly.
           // Native root events still receive the Event object so server-only
@@ -4733,10 +4737,23 @@ catch (e) {}
       }
       return result;
     },
-    defineEmits: function() {
+    defineEmits: function(events) {
       var el = window.__STX_CURRENT_ELEMENT__ || null;
+      var declaredEvents = Array.isArray(events)
+        ? events
+        : (events && typeof events === 'object' ? Object.keys(events) : []);
+      if (el && declaredEvents.length) {
+        el.__stx_component_emits = el.__stx_component_emits || Object.create(null);
+        declaredEvents.forEach(function(event) {
+          el.__stx_component_emits[event] = true;
+        });
+      }
       return function(event, payload) {
         var target = el || document.body;
+        if (el) {
+          el.__stx_component_emits = el.__stx_component_emits || Object.create(null);
+          el.__stx_component_emits[event] = true;
+        }
         target.dispatchEvent(new CustomEvent(event, { detail: payload, bubbles: true, cancelable: true }));
       };
     },

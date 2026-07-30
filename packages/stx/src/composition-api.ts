@@ -210,8 +210,18 @@ export type EmitFn<T extends string = string> = (event: T, ...args: any[]) => vo
  * emit('change', 'newValue')
  * ```
  */
-export function defineEmits<T extends Record<string, any[]> = Record<string, any[]>>(_events?: string[] | T): EmitFn<Extract<keyof T, string>> {
+export function defineEmits<T extends Record<string, any[]> = Record<string, any[]>>(events?: string[] | T): EmitFn<Extract<keyof T, string>> {
   const instance = currentInstance
+  const element = instance?.el as (HTMLElement & { __stx_component_emits?: Record<string, boolean> }) | undefined
+  const declaredEvents = Array.isArray(events)
+    ? events
+    : events && typeof events === 'object' ? Object.keys(events) : []
+
+  if (element && declaredEvents.length > 0) {
+    const emittedEvents = element.__stx_component_emits ||= Object.create(null) as Record<string, boolean>
+    for (const event of declaredEvents)
+      emittedEvents[event] = true
+  }
 
   const emit = (event: string, ...args: any[]) => {
     // Server-side: no-op (SSR doesn't need events)
@@ -219,8 +229,10 @@ export function defineEmits<T extends Record<string, any[]> = Record<string, any
       return
 
     // Client-side: dispatch CustomEvent on the component's scope element
-    if (instance?.el) {
-      instance.el.dispatchEvent(new CustomEvent(event, {
+    if (element) {
+      const emittedEvents = element.__stx_component_emits ||= Object.create(null) as Record<string, boolean>
+      emittedEvents[event] = true
+      element.dispatchEvent(new CustomEvent(event, {
         detail: args.length === 1 ? args[0] : args,
         bubbles: true,
         cancelable: true,
