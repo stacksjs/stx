@@ -1924,6 +1924,7 @@ catch (e) {
   function findConditionalComponentSetupSiblings(root) {
     if (!root || !root.hasAttribute || !root.hasAttribute('data-stx-scope')) return [];
     var scopeId = root.getAttribute('data-stx-scope');
+    var templateScopeId = root.getAttribute('data-stx-template-scope') || scopeId;
     if (!scopeId) return [];
 
     var scripts = [];
@@ -1947,7 +1948,8 @@ catch (e) {
       if (sibling.nodeType === Node.ELEMENT_NODE
         && sibling.tagName === 'SCRIPT'
         && sibling.hasAttribute('data-stx-scoped')
-        && (sibling.textContent || '').indexOf(scopeId) !== -1) {
+        && ((sibling.textContent || '').indexOf(scopeId) !== -1
+          || (templateScopeId && (sibling.textContent || '').indexOf(templateScopeId) !== -1))) {
         scripts.push(sibling);
         sibling = next;
         continue;
@@ -2908,6 +2910,7 @@ else if (typeof value === 'string') {
   }
 
   var __forComponentScopeCounter = 0;
+  var __forComponentSetupFactories = new Map();
 
   function forEachGroupElement(nodes, callback) {
     nodes.forEach(function(node) {
@@ -2932,6 +2935,10 @@ else if (typeof value === 'string') {
       if (!oldId) return;
       if (!scopeMap[oldId])
         scopeMap[oldId] = oldId + '_for_' + (++__forComponentScopeCounter);
+      // Keep the compiler's original id through any additional structural
+      // clones. DOM cloneNode() preserves attributes but not expando fields.
+      if (!node.hasAttribute('data-stx-template-scope'))
+        node.setAttribute('data-stx-template-scope', oldId);
       node.setAttribute('data-stx-scope', scopeMap[oldId]);
     });
 
@@ -2944,7 +2951,7 @@ else if (typeof value === 'string') {
           var attribute = Array.isArray(rawAttribute)
             ? { name: rawAttribute[0], value: rawAttribute[1] }
             : rawAttribute;
-          if (!attribute || attribute.name === 'data-stx-scope') return;
+          if (!attribute || attribute.name === 'data-stx-scope' || attribute.name === 'data-stx-template-scope') return;
           var value = attribute.value;
           if (typeof value !== 'string') return;
           oldIds.forEach(function(oldId) {
@@ -2953,13 +2960,6 @@ else if (typeof value === 'string') {
           });
           if (value !== attribute.value) node.setAttribute(attribute.name, value);
         });
-      }
-      if (node.tagName === 'SCRIPT' && node.hasAttribute('data-stx-scoped')) {
-        var script = node.textContent || '';
-        oldIds.forEach(function(oldId) {
-          script = script.split(oldId).join(scopeMap[oldId]);
-        });
-        node.textContent = script;
       }
     });
   }
@@ -2973,41 +2973,91 @@ else if (typeof value === 'string') {
     });
     if (!roots.length) return;
 
-    // Scripts cloned from template.content are inert in some browsers and DOM
-    // implementations. Recreate only setup scripts whose target scope has not
-    // registered yet; scripts that executed automatically are left alone.
+    function hasPendingStructuralAncestor(root) {
+      var cursor = root && root.parentElement;
+      while (cursor && cursor.nodeType === Node.ELEMENT_NODE) {
+        if (cursor.hasAttribute('@for')
+          || cursor.hasAttribute(':for')
+          || cursor.hasAttribute('x-for')
+          || cursor.hasAttribute('@if')
+          || cursor.hasAttribute(':if')
+          || cursor.hasAttribute('x-if')
+          || cursor.hasAttribute('@else-if')
+          || cursor.hasAttribute(':else-if')
+          || cursor.hasAttribute('x-else-if')
+          || cursor.hasAttribute('@else')
+          || cursor.hasAttribute(':else')
+          || cursor.hasAttribute('x-else'))
+          return true;
+        cursor = cursor.parentElement;
+      }
+      return false;
+    }
+
+    // Scripts cloned from template.content are inert in browsers. Compile each
+    // distinct component setup body once, then run that cached function for
+    // every loop instance. Temporarily restoring the template's original scope
+    // id lets existing compiled setup code locate the correct root without
+    // rewriting and reparsing the full script for every row.
     scripts.forEach(function(old) {
       var text = old.textContent || '';
-      var pendingScopeIds = roots.map(function(root) {
+      var pendingRoots = roots.filter(function(root) {
         var scopeId = root.getAttribute('data-stx-scope');
-        return scopeId && text.indexOf(scopeId) !== -1
-          && !(window.stx._scopes && window.stx._scopes[scopeId])
-          ? scopeId
-          : null;
-      }).filter(Boolean);
-      if (!pendingScopeIds.length || !old.parentNode) return;
-      var fresh = document.createElement('script');
-      Array.from(old.attributes || []).forEach(function(rawAttribute) {
-        var attribute = Array.isArray(rawAttribute)
-          ? { name: rawAttribute[0], value: rawAttribute[1] }
-          : rawAttribute;
-        if (!attribute || !attribute.name) return;
-        fresh.setAttribute(attribute.name, attribute.value);
+        var originalScopeId = root.getAttribute('data-stx-template-scope') || scopeId;
+        return scopeId
+          && originalScopeId
+          && text.indexOf(originalScopeId) !== -1
+          && !hasPendingStructuralAncestor(root)
+          && !(window.stx._scopes && window.stx._scopes[scopeId]);
       });
-      fresh.textContent = text;
-      fresh.__stx_ran = true;
-      old.parentNode.replaceChild(fresh, old);
-      // Some DOM implementations keep dynamically replaced inline scripts
-      // inert. The setup code is framework-compiled and the signals runtime
-      // already uses Function for expressions, so execute it as a fallback
-      // only when replacement did not synchronously register its target.
-      var needsFallback = pendingScopeIds.some(function(scopeId) {
-        return !(window.stx._scopes && window.stx._scopes[scopeId]);
-      });
-      if (needsFallback) {
-        try { (new Function(text))(); }
-        catch (e) { console.error('[stx] cloned component setup error:', e); }
+      if (!pendingRoots.length) return;
+
+      var setup = __forComponentSetupFactories.get(text);
+      if (!setup) {
+        try {
+          setup = new Function(text);
+          __forComponentSetupFactories.set(text, setup);
+        }
+        catch (e) {
+          console.error('[stx] cloned component setup compile error:', e);
+          return;
+        }
       }
+
+      pendingRoots.forEach(function(root) {
+        var scopeId = root.getAttribute('data-stx-scope');
+        var originalScopeId = root.getAttribute('data-stx-template-scope') || scopeId;
+        if (!scopeId || !originalScopeId) return;
+
+        root.setAttribute('data-stx-scope', originalScopeId);
+        try {
+          setup();
+          var registeredScope = window.stx._scopes && (window.stx._scopes[originalScopeId] || window.stx._scopes[scopeId]);
+          if (registeredScope && originalScopeId !== scopeId) {
+            delete window.stx._scopes[originalScopeId];
+            window.stx._scopes[scopeId] = registeredScope;
+          }
+        }
+        catch (e) {
+          console.error('[stx] cloned component setup error:', e);
+        }
+        finally {
+          root.setAttribute('data-stx-scope', scopeId);
+        }
+      });
+
+      // A component that is itself a structural source still needs its setup
+      // sibling when bindFor/bindIf turns that source into a clone template.
+      // Final row instances have no structural attribute and can discard it.
+      var isStructuralSource = pendingRoots.some(function(root) {
+        return root.hasAttribute('@for')
+          || root.hasAttribute(':for')
+          || root.hasAttribute('x-for')
+          || root.hasAttribute('@if')
+          || root.hasAttribute(':if')
+          || root.hasAttribute('x-if');
+      });
+      if (!isStructuralSource && old.parentNode) old.parentNode.removeChild(old);
     });
 
     roots.forEach(function(root) {
@@ -3058,6 +3108,7 @@ else if (typeof value === 'string') {
     const componentSetupTemplates = [];
     if (!isTemplate && el.hasAttribute('data-stx-scope')) {
       const componentScopeId = el.getAttribute('data-stx-scope');
+      const componentTemplateScopeId = el.getAttribute('data-stx-template-scope') || componentScopeId;
       let setupSibling = el.nextSibling;
       while (setupSibling) {
         const nextSetupSibling = setupSibling.nextSibling;
@@ -3072,7 +3123,8 @@ else if (typeof value === 'string') {
         if (setupSibling.nodeType === Node.ELEMENT_NODE
           && setupSibling.tagName === 'SCRIPT'
           && setupSibling.hasAttribute('data-stx-scoped')
-          && (setupSibling.textContent || '').indexOf(componentScopeId) !== -1) {
+          && ((setupSibling.textContent || '').indexOf(componentScopeId) !== -1
+            || (componentTemplateScopeId && (setupSibling.textContent || '').indexOf(componentTemplateScopeId) !== -1))) {
           componentSetupTemplates.push(setupSibling.cloneNode(true));
           setupSibling.remove();
           setupSibling = nextSetupSibling;

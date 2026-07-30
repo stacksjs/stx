@@ -149,10 +149,9 @@ describe('template for DOM binding', () => {
     expect(children.map(child => child.getAttribute('label'))).toEqual(['Name', 'Status'])
     expect(children.map(child => child.textContent?.trim())).toEqual(['Name', 'Status'])
 
-    const scripts = Array.from(document.querySelectorAll('section > script[data-stx-scoped]')) as HTMLScriptElement[]
-    expect(scripts).toHaveLength(2)
-    expect(scripts[0]?.textContent).toContain(scopeIds[0]!)
-    expect(scripts[1]?.textContent).toContain(scopeIds[1]!)
+    // The setup body is compiled once and reused for each row. Per-instance
+    // script clones are removed after their independent scopes register.
+    expect(document.querySelectorAll('section > script[data-stx-scoped]')).toHaveLength(0)
   })
 
   it('binds a nested signal component prop from an element loop item', async () => {
