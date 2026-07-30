@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { processClientScript } from '../src/client-script'
 import { hasUserImports } from '../src/client-script-bundler'
+import { injectBrowserRuntime } from '../src/runtime-injection'
 
 /**
  * `@stacksjs/browser` used to be treated as external on the grounds that its
@@ -58,5 +59,26 @@ import type {
     expect(output).not.toContain(`from '@stacksjs/stx'`)
     expect(output).not.toContain(`from "@stacksjs/stx"`)
     expect(output).toMatch(/var \{ (?:onMount, state|state, onMount) \} = window\.stx \|\| window/)
+  })
+
+  it('auto-imports browser utilities and Stacks-only composables', async () => {
+    const output = await processClientScript(`
+const load = debounce(() => {}, 250)
+const visibility = useDocumentVisibility()
+const controls = useIntervalFn(load, 15000)
+`)
+
+    expect(output).toContain('var { debounce, useDocumentVisibility, useIntervalFn } = window.StacksBrowser || {}')
+  })
+
+  it('loads the browser runtime when a browser utility is auto-imported', () => {
+    const output = injectBrowserRuntime(`
+<html>
+  <head></head>
+  <body><script client>const load = debounce(() => {}, 250)</script></body>
+</html>
+`)
+
+    expect(output).toContain(`import '@stacksjs/browser'`)
   })
 })

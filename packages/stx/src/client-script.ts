@@ -356,6 +356,11 @@ const BROWSER_CORE_IMPORTS = [
   'browserQuery', 'BrowserQueryBuilder', 'BrowserQueryError',
   'browserAuth', 'configureBrowser', 'getBrowserConfig',
   'createBrowserDb', 'createBrowserModel', 'isBrowser',
+  // Browser utilities promised by the Stacks browser auto-import manifest
+  'debounce', 'throttle', 'retry', 'sleep', 'wait', 'delay', 'waitUntil', 'waitWhile',
+  'lazy', 'clamp', 'rand', 'readableSize',
+  // Stacks composables that are not part of the STX-native runtime
+  'useDocumentVisibility', 'useIntervalFn',
 ]
 
 /**

@@ -50,6 +50,9 @@ export function injectBrowserRuntime(template: string): string {
   // and wouldn't appear in normal application code
   const coreSymbols = [
     'browserQuery', 'BrowserQueryBuilder', 'configureBrowser', 'createBrowserModel',
+    'debounce', 'throttle', 'retry', 'sleep', 'wait', 'delay', 'waitUntil', 'waitWhile',
+    'lazy', 'clamp', 'rand', 'readableSize',
+    'useDocumentVisibility', 'useIntervalFn',
   ]
 
   // Check for core browser utilities in CLIENT code only
