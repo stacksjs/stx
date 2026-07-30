@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.118...v0.2.119)
+
+## 🚀 Features
+
+- **desktop**: self-update from GitHub Releases ([08c9ad3](https://github.com/stacksjs/stx/commit/08c9ad3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **stx**: make useInterval(fn, ms) and x-ref actually work ([7476382](https://github.com/stacksjs/stx/commit/7476382)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.119 ([dfabaf1](https://github.com/stacksjs/stx/commit/dfabaf1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.117...v0.2.118)
 
 ## 🐛 Bug Fixes
