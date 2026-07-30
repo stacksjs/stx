@@ -4461,6 +4461,30 @@ catch (e) {}
     return s;
   }
 
+  var __stxGeneratedIdCounter = 0;
+
+  // Stable, scope-aware DOM ids for component authoring. A component setup
+  // runs with window.__STX_CURRENT_ELEMENT__ pointing at its compiled root, so
+  // the data-stx scope id is already the canonical per-instance identity. The
+  // local counter supports multiple useId() calls in one component while the
+  // global fallback covers page scripts and manually-mounted roots.
+  function useId(prefix) {
+    var normalizedPrefix = String(prefix || 'stx')
+      .trim()
+      .replace(/[^a-zA-Z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'stx';
+    var root = window.__STX_CURRENT_ELEMENT__;
+    if (root && root.getAttribute) {
+      var scopeId = root.getAttribute('data-stx-scope') || root.getAttribute('data-stx') || '';
+      if (scopeId) {
+        root.__stx_id_counter = (root.__stx_id_counter || 0) + 1;
+        return normalizedPrefix + '-' + String(scopeId).replace(/[^a-zA-Z0-9_-]+/g, '-') + '-' + root.__stx_id_counter;
+      }
+    }
+    __stxGeneratedIdCounter++;
+    return normalizedPrefix + '-' + __stxGeneratedIdCounter;
+  }
+
   // Reactive prop binding. Bridges the gap between a parent's clientReactive
   // attribute (e.g. :open="modalOpen()" on a component) and the component's
   // internal state. Returns a signal whose value tracks the named attribute
@@ -5107,6 +5131,7 @@ catch (e) {}
     useLocalStorage,
     useSessionStorage,
     useCookie,
+    useId,
     useReactiveProp,
     useEventListener,
     useWebSocket,

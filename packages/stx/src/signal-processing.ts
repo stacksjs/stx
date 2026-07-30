@@ -229,6 +229,7 @@ export function hasSignalsSyntax(template: string): boolean {
     /\breactive\s*(?:<[^>]*>)?\s*\(/, // reactive() Vue-compat alias
     /\bwatch\s*(?:<[^>]*>)?\s*\(/, // watch() Vue-compat alias
     /\bwatchEffect\s*(?:<[^>]*>)?\s*\(/, // watchEffect() Vue-compat alias
+    /\buseId\s*\(/, // stable component/page DOM ids
     /\buseReactiveProp\s*(?:<[^>]*>)?\s*\(/, // reactive component prop bridge
     /\s:(?:if|else-if|else|for|show|text|html|model)\s*=/, // colon-form reactive directives
     /data-stx(?:-auto)?(?![-\w])/, // data-stx or data-stx-auto (not data-stx-ref, data-stx-id, etc.)
@@ -1177,7 +1178,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
   // APIs without bare state/derived calls, and we still want those merged
   // into the single setup function so their reactivity wires into the same
   // componentScope as the page's bindings.
-  const SIGNAL_API_RE = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useStore|useLocalStorage|useSessionStorage|useCookie|useReactiveProp|useFetch|useRef|useEventListener|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useMediaQuery|usePreferredDark|usePreferredLight|usePreferredReducedMotion|usePreferredContrast|useWebSocket|useRoute|useSearchParams|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose|defineSlots|useOptimistic)\s*(?:<[^>]*>)?\s*\(/
+  const SIGNAL_API_RE = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useStore|useLocalStorage|useSessionStorage|useCookie|useId|useReactiveProp|useFetch|useRef|useEventListener|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useMediaQuery|usePreferredDark|usePreferredLight|usePreferredReducedMotion|usePreferredContrast|useWebSocket|useRoute|useSearchParams|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose|defineSlots|useOptimistic)\s*(?:<[^>]*>)?\s*\(/
   // (useSessionStorage was already in SIGNAL_API_RE before the runtime
   // shipped — strict-mode hinted at it; the runtime implementation just
   // landed alongside this.)

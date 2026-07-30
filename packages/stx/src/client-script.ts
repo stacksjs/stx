@@ -316,7 +316,7 @@ const STX_AUTO_IMPORTS = [
   // Data fetching
   'useFetch', 'useQuery', 'useMutation', 'useOptimistic',
   // Reactive component props (parent attr -> child signal bridge)
-  'useReactiveProp',
+  'useId', 'useReactiveProp',
   // Persistence
   'useLocalStorage', 'useSessionStorage', 'useCookie',
   // Networking

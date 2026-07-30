@@ -703,6 +703,28 @@ const title = state('')
   })
 })
 
+describe('useId component identity', () => {
+  it('defines and exposes the scope-aware id helper', () => {
+    const runtime = generateSignalsRuntimeDev()
+    expect(runtime).toContain('function useId(prefix)')
+    const stxRuntime = runtime.slice(runtime.indexOf('window.stx = {'))
+    expect(stxRuntime).toContain('useId,')
+  })
+
+  it('treats useId-only client scripts as reactive setup scripts', async () => {
+    const { processScriptSetup } = await import('../../src/signal-processing')
+    const source = `<script client>
+const fieldId = useId('field')
+</script>
+<label :for="fieldId">Name</label>
+<input :id="fieldId">
+`
+    const result = await processScriptSetup(source, '/tmp/use-id.stx')
+    expect(result.setupCode).toContain('useId')
+    expect(result.output).not.toContain('<script client>')
+  })
+})
+
 describe('#1668 bug 7 — extractExports tokenizer handles regex literals', () => {
   // Pre-fix, top-level regex literals broke the hand-rolled tokenizer:
   // - `/'/` triggered the string-skipper (the `'` looked like an open quote)
