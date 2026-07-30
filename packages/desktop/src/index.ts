@@ -237,6 +237,29 @@ export { craftBinaryNotFoundMessage, pack, packageApp, resolveCraftBinary } from
 export type { PackageConfig, PackageResult } from './packaging'
 
 // =============================================================================
+// Self-Update (re-exported from Craft, plus GitHub Releases helpers)
+// =============================================================================
+export {
+  AutoUpdater,
+  createGitHubUpdateManifest,
+  createGitHubUpdater,
+  generateUpdateManifest,
+  githubLatestAssetUrl,
+  githubReleaseAssetUrl,
+  UPDATE_MANIFEST_ASSET,
+} from './self-update'
+
+export type {
+  GitHubManifestOptions,
+  GitHubUpdaterOptions,
+  PlatformUpdate,
+  UpdateManifest,
+  UpdaterConfig,
+  UpdaterEvent,
+  UpdateProgress,
+} from './self-update'
+
+// =============================================================================
 // Power Management / Caffeinate
 // =============================================================================
 export {
