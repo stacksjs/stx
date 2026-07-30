@@ -116,7 +116,7 @@ describe('Component scoping', () => {
       const runtime = generateSignalsRuntimeDev()
 
       // Should check if value is a signal
-      expect(runtime).toContain('scope[expr]._isSignal')
+      expect(runtime).toContain('capturedScope[expr]._isSignal')
     })
 
     it('should find element scope for model binding', () => {
