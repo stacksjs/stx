@@ -3851,8 +3851,16 @@ else if (timer === null) {
   }
 
   function useClickOutside(target, handler) {
+    function resolveTarget() {
+      if (typeof target === 'string') return document.querySelector(target);
+      if (target && typeof target === 'object') {
+        if ('current' in target) return target.current;
+        if ('value' in target) return target.value;
+      }
+      return target;
+    }
     function listener(event) {
-      var el = typeof target === 'string' ? document.querySelector(target) : target;
+      var el = resolveTarget();
       if (!el) return;
       if (el === event.target || el.contains(event.target)) return;
       handler(event);
