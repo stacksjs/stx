@@ -264,9 +264,19 @@ export async function renderString(
 }
 
 /**
- * Internal: render a template string with a given file path context.
+ * Render template content that is already in memory, resolving includes and
+ * components relative to `filePath`.
+ *
+ * Use this when the template cannot be read from disk at runtime — most often an
+ * app compiled to a single binary, where the `.stx` file is embedded at build
+ * time via `import source from './app.stx' with { type: 'text' }` and
+ * `filePath` only anchors relative lookups.
+ *
+ * @param content - The stx template source
+ * @param filePath - Path the template came from, used to resolve relative includes
+ * @param renderOptions - Additional rendering options
  */
-async function renderTemplateString(
+export async function renderTemplateString(
   content: string,
   filePath: string,
   renderOptions: RenderOptions = {},

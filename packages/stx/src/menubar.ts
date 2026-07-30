@@ -29,7 +29,7 @@
  */
 import type { Preferences, WindowInstance, WindowOptions } from '@stacksjs/desktop'
 import { createPreferences, createWindow, setAutoLaunch } from '@stacksjs/desktop'
-import { renderTemplate } from './render'
+import { renderTemplate, renderTemplateString } from './render'
 
 /**
  * What a route may hand back: a `Response` to take over the reply entirely,
@@ -68,6 +68,18 @@ export interface MenuBarAppOptions<T extends Record<string, unknown>> {
   name: string
   /** Path to the `.stx` template rendered into the popup window. */
   template: string
+  /**
+   * Template source, when it cannot be read from `template` at runtime.
+   *
+   * An app compiled to a single binary has no `.stx` file on disk, so embed it
+   * at build time and pass it here; `template` then only anchors relative
+   * includes.
+   *
+   * ```typescript
+   * import templateSource from './app.stx' with { type: 'text' }
+   * ```
+   */
+  templateSource?: string
   /** Default preference values. The store is created and persisted for you. */
   preferences?: T
   /**
@@ -183,11 +195,11 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
 
   async function renderPopup(): Promise<Response> {
     const context = await options.context?.(preferences) ?? {}
-    const html = await renderTemplate(options.template, {
-      context,
-      wrapInDocument: true,
-      title: options.name,
-    })
+    const renderOptions = { context, wrapInDocument: true, title: options.name }
+    const html = options.templateSource
+      ? await renderTemplateString(options.templateSource, options.template, renderOptions)
+      : await renderTemplate(options.template, renderOptions)
+
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
   }
 

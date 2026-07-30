@@ -116,7 +116,22 @@ window: { width: 360, height: 520, darkMode: false }
 
 ## Shipping it
 
-Package the app with [Craft](https://github.com/stacksjs/craft), which sets
+A shipped app is compiled to a single binary, so the `.stx` file is no longer on
+disk to read. Embed it at build time and pass it as `templateSource` — the app
+then renders identically whether run from source or from a bundle:
+
+```typescript
+import templateSource from './timer.stx' with { type: 'text' }
+
+createMenuBarApp({
+  name: 'Timer',
+  template: new URL('./timer.stx', import.meta.url).pathname,
+  templateSource,
+  // …
+})
+```
+
+Package it with [Craft](https://github.com/stacksjs/craft), which sets
 `LSUIElement` so it ships without a Dock icon:
 
 ```typescript
