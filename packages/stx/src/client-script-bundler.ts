@@ -15,7 +15,13 @@ import type { BunPlugin } from 'bun'
 import { getPublicEnvDefine } from './public-env'
 import { stateDir } from './state-dir'
 
-const BUNDLE_CACHE_VERSION = 4
+const BUNDLE_CACHE_VERSION = 5
+const BUNDLE_CACHE_METADATA_VERSION = 1
+
+interface BundleCacheMetadata {
+  metadataVersion: number
+  files: Array<{ path: string, mtimeMs: number }>
+}
 
 // Known imports that are NOT user imports — handled by other transforms.
 //
@@ -265,8 +271,11 @@ export async function bundleClientScript(
     let depsValid = true
     if (await depsFile.exists()) {
       try {
-        const stored = JSON.parse(await depsFile.text()) as { files: Array<{ path: string, mtimeMs: number }> }
-        for (const dep of stored.files) {
+        const stored = JSON.parse(await depsFile.text()) as BundleCacheMetadata
+        if (stored.metadataVersion !== BUNDLE_CACHE_METADATA_VERSION || !Array.isArray(stored.files))
+          depsValid = false
+
+        for (const dep of Array.isArray(stored.files) ? stored.files : []) {
           try {
             const current = fs.statSync(dep.path).mtimeMs
             if (current !== dep.mtimeMs) {
@@ -452,7 +461,10 @@ ${publicAssignments}`.trim()
         return null
       }
     }).filter((d): d is { path: string, mtimeMs: number } => d !== null)
-    await Bun.write(depsPath, JSON.stringify({ files: depsSnapshot }))
+    await Bun.write(depsPath, JSON.stringify({
+      metadataVersion: BUNDLE_CACHE_METADATA_VERSION,
+      files: depsSnapshot,
+    } satisfies BundleCacheMetadata))
 
     return bundled
   }

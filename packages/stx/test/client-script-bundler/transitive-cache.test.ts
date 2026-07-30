@@ -93,8 +93,27 @@ describe('client-script-bundler transitive cache (#1723)', () => {
 
     // The sidecar must reference the helper.
     const sidecar = JSON.parse(await Bun.file(path.join(cacheDir, depsFiles[0])).text())
+    expect(sidecar.metadataVersion).toBe(1)
     const filePaths = sidecar.files.map((f: { path: string }) => f.path)
     expect(filePaths).toContain(helperPath)
+  })
+
+  it('rebuilds legacy cache entries without versioned metadata', async () => {
+    await Bun.write(helperPath, 'export function formatPrice(n: number) { return `$${n}.00 FRESH` }')
+    await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+
+    const entries = await fs.promises.readdir(cacheDir)
+    const jsFile = entries.find(entry => entry.endsWith('.js'))
+    const depsFile = entries.find(entry => entry.endsWith('.deps.json'))
+    expect(jsFile).toBeDefined()
+    expect(depsFile).toBeDefined()
+
+    await Bun.write(path.join(cacheDir, jsFile!), 'var stale_bundle = true')
+    await Bun.write(path.join(cacheDir, depsFile!), JSON.stringify({ files: [] }))
+
+    const rebuilt = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+    expect(rebuilt).toContain('FRESH')
+    expect(rebuilt).not.toContain('stale_bundle')
   })
 
   it('invalidates when a recorded dep is deleted (defensive)', async () => {
