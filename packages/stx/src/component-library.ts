@@ -118,7 +118,13 @@ function extractClientMethods(source: string, file: string): Record<string, stri
 
   for (const script of scripts) {
     if (!/\bclient\b/i.test(script[1]) || /\bcomponent\b|\bstx:component\b/i.test(script[1])) continue
-    const code = script[2]
+    let code: string
+    try {
+      code = new Bun.Transpiler({ loader: 'ts' }).transformSync(script[2])
+    }
+    catch (error) {
+      throw new Error(`${file}: failed to transpile <script client> (${(error as Error).message})`)
+    }
     const functionPattern = /(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)\s*\{/g
     let match: RegExpExecArray | null
     while ((match = functionPattern.exec(code))) {
@@ -798,16 +804,33 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
   let bundle: string | undefined
   if (config.bundle !== false) {
     bundle = path.join(outputDir, 'bundle.js')
-    const result = await Bun.build({
-      entrypoints: [path.join(outputDir, 'index.js')],
-      outdir: outputDir,
-      naming: 'bundle.js',
-      target: 'browser',
-      format: 'esm',
-      minify: config.minify ?? true,
-      sourcemap: config.sourcemap || 'none',
-    })
-    if (!result.success) throw new AggregateError(result.logs, 'Failed to bundle component library')
+    let result: Awaited<ReturnType<typeof Bun.build>>
+    try {
+      result = await Bun.build({
+        entrypoints: [path.join(outputDir, 'index.js')],
+        outdir: outputDir,
+        naming: 'bundle.js',
+        target: 'browser',
+        format: 'esm',
+        minify: config.minify ?? true,
+        sourcemap: config.sourcemap || 'none',
+      })
+    }
+    catch (error) {
+      const logs = error instanceof AggregateError ? error.errors : [error]
+      const details = logs.map(log => String(log).trim()).filter(Boolean).join('\n')
+      throw new AggregateError(
+        logs,
+        `Failed to bundle component library${details ? `\n${details}` : ''}`,
+      )
+    }
+    if (!result.success) {
+      const details = result.logs.map(log => String(log).trim()).filter(Boolean).join('\n')
+      throw new AggregateError(
+        result.logs,
+        `Failed to bundle component library${details ? `\n${details}` : ''}`,
+      )
+    }
     files.push(bundle)
     if (config.sourcemap === 'external') files.push(`${bundle}.map`)
   }

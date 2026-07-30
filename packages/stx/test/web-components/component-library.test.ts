@@ -114,6 +114,28 @@ describe('component library compiler', () => {
     expect(jsx).toContain('onActivate?:')
   })
 
+  it('transpiles TypeScript client method signatures before emitting JavaScript', async () => {
+    const { input, output } = await workspace()
+    await fixture(input, 'TypedChart.stx', `
+<template><button @click="chartData">Chart</button></template>
+<script client>
+interface Activity {
+  total: number
+}
+
+function chartData(data: Activity): number {
+  return data.total
+}
+</script>`)
+
+    await buildComponentLibrary({ inputDir: input, outputDir: output, prefix: 'typed' })
+
+    const moduleSource = await readFile(path.join(output, 'typed-typed-chart.js'), 'utf8')
+    expect(moduleSource).toContain('chartData(data)')
+    expect(moduleSource).not.toContain('data: Activity')
+    expect(moduleSource).not.toContain(': number')
+  })
+
   it('generates a standards-compliant custom elements manifest', async () => {
     const { input, output } = await workspace()
     await fixture(input, 'Button.stx', buttonSource)
@@ -396,5 +418,14 @@ describe('component library compiler', () => {
 
     const empty = await workspace()
     expect(buildComponentLibrary({ inputDir: empty.input, outputDir: empty.output })).rejects.toThrow('No .stx components found')
+
+    const invalidBundle = await workspace()
+    await fixture(invalidBundle.input, 'InvalidBundle.stx', `
+<script component>{"methods":{"broken":"broken() { this is invalid }"}}</script>
+<template><p>broken</p></template>`)
+    expect(buildComponentLibrary({
+      inputDir: invalidBundle.input,
+      outputDir: invalidBundle.output,
+    })).rejects.toThrow('Expected')
   })
 })
