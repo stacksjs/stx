@@ -69,6 +69,18 @@ export interface SidebarProps {
   widthVar?: string
   collapsedClass?: string
   className?: string
+  /**
+   * Mirror the OS light/dark preference onto the root element's `dark` class.
+   * Defaults to true.
+   *
+   * A native sidebar follows the system appearance and Crosswind's `dark:`
+   * variants are class-based, so something has to write that class — but the
+   * document's color scheme is the app's business, not a navigation pane's.
+   * Set this to `false` in any app that owns its own light/dark control, or the
+   * sidebar will quietly overwrite the choice when it mounts. (A `data-theme`
+   * attribute on the root also stops it, re-checked on every change.)
+   */
+  followSystemAppearance?: boolean
   onCollapse?: (collapsed: boolean) => void
   onSectionToggle?: (sectionId: string) => void
   onItemToggle?: (event: { id: string, expanded: boolean }) => void

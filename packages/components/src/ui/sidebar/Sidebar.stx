@@ -37,6 +37,14 @@ export const widthVar = $props.widthVar || '--stx-sidebar-width'
 export const collapsedClass = $props.collapsedClass || ''
 export const className = $props.className || ''
 
+// Mirror the OS light/dark preference onto the root element's `dark` class.
+// A native sidebar follows the system appearance, and Crosswind's `dark:`
+// variants are class-based, so something has to write that class — but it is
+// the document's business, not a navigation pane's. Left on by default so a
+// sidebar dropped into a page with no theme controller still behaves; turn it
+// off in any app that owns its own light/dark switch.
+export const followSystemAppearance = $props.followSystemAppearance ?? true
+
 // Unique id so the client controller can find this pane even with several
 // sidebars on the page.
 export const sidebarUid = $props.id || `stx-sidebar-${Math.random().toString(36).slice(2, 8)}`
@@ -106,6 +114,7 @@ const persistKeyProp = {{ persistKey }}
 const shellSelectorProp = {{ shellSelector }}
 const widthVarProp = {{ widthVar }}
 const collapsedClassProp = {{ collapsedClass }}
+const followSystemAppearanceProp = {{ followSystemAppearance }}
 
 const collapsed = state(collapsedProp)
 const sidebarWidth = derived(() => {
@@ -349,6 +358,20 @@ function trackKeyWindow() {
 }
 
 function followSystemAppearance() {
+  // Writing the `dark` class puts a navigation component in charge of the
+  // whole document's color scheme, which is only defensible while nothing
+  // else wants the job. Two ways to say it does:
+  //
+  //   `follow-system-appearance="false"` — typed, discoverable, and the one to
+  //     reach for. An app with its own light/dark control wants this.
+  //   `data-theme` on the root — the runtime signal, for apps that decide at
+  //     load time. Re-checked on every sync, so claiming it later also works.
+  //
+  // Before the prop existed only the second was available, which meant an app
+  // that set `.dark` itself watched the sidebar quietly undo it on mount, with
+  // nothing in the component's API to suggest why.
+  if (!followSystemAppearanceProp) return
+
   const media = window.matchMedia('(prefers-color-scheme: dark)')
   function sync() {
     if (document.documentElement.dataset.theme) return
