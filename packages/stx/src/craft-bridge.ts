@@ -197,6 +197,12 @@ else if (data.type === 'event' && data.method) {
     });
   }
 
+  // Live component handles, keyed by id, so an event coming back from the host
+  // can be routed to the callbacks registered on the right one. Without this
+  // the onSelect/onSpaceChange callbacks were stored and never invoked.
+  const sidebars = new Map();
+  const spacesSidebars = new Map();
+
   function createNativeUIFacade() {
     class Sidebar {
       constructor(id) {
@@ -216,7 +222,39 @@ else if (data.type === 'event' && data.method) {
         return this;
       }
       destroy() {
+        sidebars.delete(this.id);
         sendNativeUI('destroyComponent', { id: this.id, type: 'sidebar' });
+      }
+    }
+
+    /**
+     * An Arc-style sidebar of swipeable spaces.
+     *
+     * Separate from Sidebar rather than an option on it: a source list selects
+     * one row out of many, while a spaces sidebar selects one whole SCENE, and
+     * a host that renders the switcher natively (a segmented control in the
+     * toolbar, a Touch Bar strip) needs the space list, not the item list.
+     */
+    class SpacesSidebar {
+      constructor(id) {
+        this.id = id;
+        this._spaceCallbacks = [];
+      }
+      setSpaces(spaces) {
+        sendNativeUI('setSidebarSpaces', { sidebarId: this.id, spaces });
+        return this;
+      }
+      setActiveSpace(spaceId) {
+        sendNativeUI('setActiveSpace', { sidebarId: this.id, spaceId });
+        return this;
+      }
+      onSpaceChange(callback) {
+        this._spaceCallbacks.push(callback);
+        return this;
+      }
+      destroy() {
+        spacesSidebars.delete(this.id);
+        sendNativeUI('destroyComponent', { id: this.id, type: 'spacesSidebar' });
       }
     }
 
@@ -256,12 +294,33 @@ else if (data.type === 'event' && data.method) {
       }
     }
 
+    // Host -> page. The host names the component in the payload; we look up the
+    // handle and fan out to whatever the page registered on it.
+    on('sidebar.select', function(params) {
+      const sidebar = sidebars.get(params && params.sidebarId);
+      if (sidebar) sidebar._selectCallbacks.forEach(fn => fn(params.itemId));
+    });
+    on('sidebar.spaceChange', function(params) {
+      const sidebar = spacesSidebars.get(params && params.sidebarId);
+      if (sidebar) sidebar._spaceCallbacks.forEach(fn => fn(params.spaceId));
+    });
+
     return {
       createSidebar(options) {
         const opts = options || {};
         const id = opts.id || 'sidebar-' + Date.now() + '-' + Math.random().toString(36).slice(2);
         sendNativeUI('createSidebar', Object.assign({}, opts, { id }));
-        return new Sidebar(id);
+        const sidebar = new Sidebar(id);
+        sidebars.set(id, sidebar);
+        return sidebar;
+      },
+      createSpacesSidebar(options) {
+        const opts = options || {};
+        const id = opts.id || 'spaces-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        sendNativeUI('createSpacesSidebar', Object.assign({}, opts, { id }));
+        const sidebar = new SpacesSidebar(id);
+        spacesSidebars.set(id, sidebar);
+        return sidebar;
       },
       createFileBrowser(options) {
         const opts = options || {};
@@ -408,6 +467,26 @@ else if (data.type === 'event' && data.method) {
       env: () => request('process.env'),
       cwd: () => request('process.cwd'),
       platform: () => request('process.platform'),
+    },
+
+    // Gesture stream
+    //
+    // A webview's wheel events carry no phase information, so a page can only
+    // guess where a trackpad swipe begins and ends — typically with an idle
+    // timeout, which mistimes the release and cannot see momentum at all. The
+    // host holds the real NSEvent, so it forwards the phases instead:
+    //
+    //   { axis: 'horizontal' | 'vertical',
+    //     phase: 'begin' | 'change' | 'end',
+    //     deltaX, deltaY,            // points since the last event
+    //     velocityX, velocityY,      // points per second, at 'end'
+    //     momentum: boolean }        // the OS is coasting, not the finger
+    //
+    // Consumers must stay correct when nothing ever arrives: a host without
+    // gesture support simply never emits, so keep the wheel path bound and let
+    // a begin phase take over from it.
+    gestures: {
+      onSwipe: (callback) => on('gesture.swipe', callback),
     },
 
     // Native component helpers

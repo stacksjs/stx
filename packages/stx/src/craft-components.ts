@@ -72,6 +72,19 @@ interface CraftSidebarSection {
   items: CraftSidebarItem[]
 }
 
+/**
+ * One Arc-style scene: a whole sidebar's worth of sections under its own name
+ * and color, swiped between rather than selected within.
+ */
+interface CraftSidebarSpace {
+  id: string
+  label?: string
+  icon?: string
+  /** Seed color. A macOS system color name or any CSS color. */
+  tint?: string
+  sections: CraftSidebarSection[]
+}
+
 interface CraftSidebarConfig {
   id: string
   variant: string
@@ -86,6 +99,10 @@ interface CraftSidebarConfig {
   searchPlaceholder?: string
   selectedItem?: string
   sections: CraftSidebarSection[]
+  /** Non-empty when the sidebar is a stack of spaces rather than one list. */
+  spaces: CraftSidebarSpace[]
+  /** Id of the space to open on. */
+  selectedSpace?: string
 }
 
 /**
@@ -338,8 +355,17 @@ export const CRAFT_COMPONENTS: Record<string, CraftComponentDefinition> = {
       'searchPlaceholder',
       'selectedItem',
       'sections',
+      'spaces',
+      'selectedSpace',
     ],
     render: renderCraftSidebar,
+  },
+  'sidebar-space': {
+    nativeType: 'craft-sidebar-space',
+    fallbackTag: 'section',
+    fallbackClasses: 'craft-sidebar-space',
+    nativeProps: ['id', 'label', 'icon', 'tint'],
+    render: renderCraftSidebarSpace,
   },
   'sidebar-section': {
     nativeType: 'craft-sidebar-section',
@@ -750,6 +776,48 @@ export const CRAFT_COMPONENT_STYLES = `
   background: rgba(255, 255, 255, 0.24);
 }
 
+/* Spaces fallback. Stacked in document order behind a rail — legible without
+   a native host, and deliberately not a second swipe implementation. */
+.craft-sidebar-spaces {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.craft-sidebar-space-title {
+  padding: 10px 8px 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.craft-sidebar-space-switcher {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding-top: 6px;
+}
+.craft-sidebar-space-tab {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.4;
+  cursor: default;
+}
+.craft-sidebar-space-tab[data-selected="true"] {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.55);
+}
+
 .craft-code-editor {
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 13px;
@@ -826,11 +894,36 @@ export const CRAFT_COMPONENT_RUNTIME = `
     var config = parseConfig(sidebar);
     if (!config) return;
 
+    var hasSpaces = !!(config.spaces && config.spaces.length);
+    // Spaces need a host that can swipe between whole scenes. Falling back to
+    // createSidebar would flatten every space into one list, which is worse
+    // than the web rendering already on the page — so leave that in place.
+    if (hasSpaces && typeof nativeUI.createSpacesSidebar !== 'function') return;
+
     try {
       var nativeConfig = Object.assign({}, config);
       delete nativeConfig.sections;
-      var nativeSidebar = nativeUI.createSidebar(nativeConfig);
-      if (nativeSidebar && config.sections) {
+      delete nativeConfig.spaces;
+
+      var nativeSidebar = hasSpaces
+        ? nativeUI.createSpacesSidebar(nativeConfig)
+        : nativeUI.createSidebar(nativeConfig);
+
+      if (nativeSidebar && hasSpaces && nativeSidebar.setSpaces) {
+        nativeSidebar.setSpaces(config.spaces);
+      }
+      if (nativeSidebar && hasSpaces && config.selectedSpace && nativeSidebar.setActiveSpace) {
+        nativeSidebar.setActiveSpace(config.selectedSpace);
+      }
+      if (nativeSidebar && hasSpaces && nativeSidebar.onSpaceChange) {
+        nativeSidebar.onSpaceChange(function(spaceId) {
+          sidebar.dispatchEvent(new CustomEvent('craft-sidebar:space', {
+            bubbles: true,
+            detail: { spaceId: spaceId, sidebarId: config.id }
+          }));
+        });
+      }
+      if (nativeSidebar && !hasSpaces && config.sections) {
         config.sections.forEach(function(section) {
           if (nativeSidebar.addSection) nativeSidebar.addSection(section);
         });
@@ -902,9 +995,15 @@ else {
   }
 
   // Process sidebar containers before generic self-closing tags so nested
-  // @craft-sidebar-item nodes can be collected into the native config.
+  // @craft-sidebar-space / -section / -item nodes can be collected into the
+  // native config.
+  //
+  // The `(?![-\w])` guard keeps `@craft-sidebar` from also matching the start
+  // of `@craft-sidebar-space`: without it, `\s*` matches nothing and `[^>]*`
+  // swallows `-space …`, so a standalone space tag appearing before a real
+  // sidebar would be rendered as a sidebar.
   content = content.replace(
-    /<@craft-sidebar\s*([^>]*)>([\s\S]*?)<\/@craft-sidebar>/g,
+    /<@craft-sidebar(?![-\w])\s*([^>]*)>([\s\S]*?)<\/@craft-sidebar>/g,
     // eslint-disable-next-line pickier/no-unused-vars
     (match, propsStr, children) => {
       return renderCraftComponent('sidebar', propsStr, children.trim(), config, classPrefix)
@@ -912,7 +1011,7 @@ else {
   )
 
   content = content.replace(
-    /<@craft-sidebar\s*([^>]*?)\/>/g,
+    /<@craft-sidebar(?![-\w])\s*([^>]*?)\/>/g,
     // eslint-disable-next-line pickier/no-unused-vars
     (match, propsStr) => {
       return renderCraftComponent('sidebar', propsStr, '', config, classPrefix)
@@ -1025,8 +1124,22 @@ else {
 
 function renderCraftSidebar(props: Record<string, unknown>, children: string): string {
   const id = normalizeId(String(props.id || `craft-sidebar-${hashString(children || JSON.stringify(props))}`))
-  const sections = normalizeSidebarSections(props.sections) || extractSidebarSections(children)
-  const selectedItem = String(props.selectedItem || props.selected || sections[0]?.items[0]?.id || '')
+  const spaces = normalizeSidebarSpaces(props.spaces) || extractSidebarSpaces(children)
+  // A space carries its own sections, so the sidebar's own list is only read
+  // when there are no spaces — the two are alternatives, not layers.
+  const sections = spaces.length
+    ? []
+    : normalizeSidebarSections(props.sections) || extractSidebarSections(children)
+  const selectedSpace = String(props.selectedSpace || spaces[0]?.id || '')
+  // The implicit selection belongs to the space that is actually open, not to
+  // the first one declared.
+  const openSpace = spaces.find(space => space.id === selectedSpace) || spaces[0]
+  const selectedItem = String(
+    props.selectedItem
+    || props.selected
+    || (spaces.length ? openSpace?.sections[0]?.items[0]?.id : sections[0]?.items[0]?.id)
+    || '',
+  )
   const config: CraftSidebarConfig = {
     id,
     variant: String(props.variant || 'desktop'),
@@ -1041,6 +1154,8 @@ function renderCraftSidebar(props: Record<string, unknown>, children: string): s
     searchPlaceholder: props.searchPlaceholder ? String(props.searchPlaceholder) : undefined,
     selectedItem,
     sections,
+    spaces,
+    selectedSpace: selectedSpace || undefined,
   }
   const fallbackClasses = String(props.__fallbackClasses || 'craft-sidebar craft-sidebar-tahoe')
   const width = Number(props.width || props.sidebarWidth || 286)
@@ -1048,15 +1163,27 @@ function renderCraftSidebar(props: Record<string, unknown>, children: string): s
   const search = config.searchPlaceholder
     ? `<div class="craft-sidebar-search"><input type="search" placeholder="${escapeHtml(config.searchPlaceholder)}"></div>`
     : ''
-  const sectionHtml = sections.length
-    ? sections.map(section => renderSidebarSectionFallback(section, selectedItem)).join('')
-    : children
+  let body: string
+  if (spaces.length)
+    body = renderSidebarSpacesFallback(spaces, selectedSpace, selectedItem)
+  else if (sections.length)
+    body = sections.map(section => renderSidebarSectionFallback(section, selectedItem)).join('')
+  else
+    body = children
 
   return `<aside class="${escapeAttribute(fallbackClasses)}" data-craft="craft-sidebar" data-craft-native-sidebar data-craft-sidebar-id="${escapeAttribute(id)}" data-native="${native}" style="--craft-sidebar-width:${width}px">
   ${search}
-  ${sectionHtml}
+  ${body}
 </aside>
 <script type="application/json" data-craft-sidebar-config="${escapeAttribute(id)}">${escapeScriptJson(config)}</script>`
+}
+
+function renderCraftSidebarSpace(props: Record<string, unknown>, children: string): string {
+  const id = normalizeId(String(props.id || props.label || 'space'))
+  return `<section class="craft-sidebar-space" data-craft="craft-sidebar-space" data-space-id="${escapeAttribute(id)}">
+    ${props.label ? `<div class="craft-sidebar-space-title">${escapeHtml(String(props.label))}</div>` : ''}
+    ${children}
+  </section>`
 }
 
 function renderCraftSidebarSection(props: Record<string, unknown>, children: string): string {
@@ -1114,6 +1241,65 @@ function extractSidebarItems(content: string): CraftSidebarItem[] {
   }
 
   return items
+}
+
+function extractSidebarSpaces(children: string): CraftSidebarSpace[] {
+  const spaces: CraftSidebarSpace[] = []
+  const spacePattern = /<@craft-sidebar-space\s*([^>]*?)(?:\/>|>([\s\S]*?)<\/@craft-sidebar-space>)/g
+  let spaceMatch: RegExpExecArray | null
+
+  while ((spaceMatch = spacePattern.exec(children)) !== null) {
+    const props = parseProps(spaceMatch[1] || '')
+    const body = spaceMatch[2] || ''
+    const label = String(props.label || props.title || `Space ${spaces.length + 1}`)
+    spaces.push({
+      id: String(props.id || normalizeId(label)),
+      label,
+      icon: props.icon ? String(props.icon) : undefined,
+      tint: props.tint ? String(props.tint) : undefined,
+      sections: extractSidebarSections(body),
+    })
+  }
+
+  return spaces
+}
+
+function normalizeSidebarSpaces(value: unknown): CraftSidebarSpace[] | undefined {
+  if (!value) return undefined
+  if (Array.isArray(value)) return value as CraftSidebarSpace[]
+  if (typeof value !== 'string') return undefined
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed as CraftSidebarSpace[] : undefined
+  }
+  catch {
+    return undefined
+  }
+}
+
+/**
+ * Web fallback for a spaces sidebar.
+ *
+ * Deliberately not a swipe track — that belongs to `<SidebarSpaces>` in
+ * `@stacksjs/components`, which owns the gesture, the palette crossfade and
+ * the keyboard model. Here the job is only to stay legible when the native
+ * sidebar is absent, so every space renders in document order behind a
+ * radio-style rail. Anything more would be a second, worse implementation.
+ */
+function renderSidebarSpacesFallback(
+  spaces: CraftSidebarSpace[],
+  selectedSpace: string,
+  selectedItem: string,
+): string {
+  const rail = spaces.map(space => `<button class="craft-sidebar-space-tab" type="button" data-space-target="${escapeAttribute(space.id)}" data-selected="${space.id === selectedSpace ? 'true' : 'false'}" title="${escapeAttribute(space.label || space.id)}">${space.icon ? `<span class="craft-sidebar-item-icon" data-icon="${escapeAttribute(space.icon)}"></span>` : escapeHtml((space.label || space.id).charAt(0))}</button>`).join('')
+
+  const panels = spaces.map(space => `<section class="craft-sidebar-space" data-space-id="${escapeAttribute(space.id)}" data-selected="${space.id === selectedSpace ? 'true' : 'false'}">
+    ${space.label ? `<div class="craft-sidebar-space-title">${escapeHtml(space.label)}</div>` : ''}
+    ${space.sections.map(section => renderSidebarSectionFallback(section, selectedItem)).join('')}
+  </section>`).join('')
+
+  return `<div class="craft-sidebar-spaces">${panels}</div>
+  <div class="craft-sidebar-space-switcher">${rail}</div>`
 }
 
 function normalizeSidebarSections(value: unknown): CraftSidebarSection[] | undefined {
