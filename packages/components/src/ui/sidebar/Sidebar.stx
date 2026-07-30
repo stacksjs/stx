@@ -1,12 +1,25 @@
 <script server>
+import { normalizeSpaces, spaceIndexOf } from './spaces'
 import { resolveSidebarTheme } from './themes'
 
 // Data: [{ id, label, collapsible?, collapsed?, items: [{ id, label, icon,
 // iconColor, image, href, count, active?, disabled?, expanded?, children? }] }]
 export const sections = $props.sections || []
 
+// Arc-style spaces: [{ id, label, icon, tint, pinned, sections, action, clear }].
+// Passing them turns the sidebar into a swipeable stack of scenes instead of
+// one list. `theme` then defaults to `arc`, because spaces are that theme's
+// idea — a macOS source list has no equivalent.
+export const spaces = $props.spaces || []
+export const hasSpaces = spaces.length > 0
+export const activeSpace = $props.space || $props.activeSpace || ''
+export const showSpaceSwitcher = $props.showSpaceSwitcher ?? true
+export const showSpaceAdd = $props.showSpaceAdd ?? false
+export const spaceAddLabel = $props.spaceAddLabel || 'New space'
+export const spacePersistKey = $props.spacePersistKey || ''
+
 // `theme` is the new name; `variant` is accepted for backwards compatibility.
-export const theme = $props.theme || $props.variant || 'macos'
+export const theme = $props.theme || $props.variant || (hasSpaces ? 'arc' : 'macos')
 export const width = $props.width || 250
 export const position = $props.position || 'left'
 export const placement = $props.placement || 'fixed'
@@ -50,6 +63,19 @@ export const paneClasses = [
   borderClasses,
   className,
 ].filter(Boolean).join(' ')
+
+// The pane carries its own width and, for spaces, the active space's palette.
+// Both are server-rendered rather than bound reactively so the sidebar is the
+// right size and the right color in the very first paint, before any client
+// script runs. The controller keeps `width` in step afterwards.
+const initialWidth = collapsed ? (collapseMode === 'hidden' ? 0 : minWidth) : width
+const normalizedSpaces = hasSpaces ? normalizeSpaces(spaces) : []
+const initialSpace = normalizedSpaces[spaceIndexOf(normalizedSpaces, activeSpace)] || null
+
+export const paneStyle = [
+  `width: ${initialWidth}px`,
+  initialSpace ? initialSpace.style : '',
+].filter(Boolean).join('; ')
 
 // Normalized ahead of the loop so template bindings stay simple accessors.
 export const sectionList = sections.map(section => ({
@@ -344,6 +370,13 @@ onMount(() => {
   }
   applyCollapseEffects(collapsed())
 
+  // Width is server-rendered onto the pane so it is correct in the first
+  // paint; from here on the effect keeps it in step with the collapse state.
+  // (A reactive `:style` binding would have owned the whole attribute, which
+  // would mean no width until hydration and would wipe the space palette
+  // rendered alongside it.)
+  effect(() => { pane.style.width = sidebarWidth() })
+
   pane.addEventListener('click', onClick)
   pane.addEventListener('keydown', onKeyDown)
   window.addEventListener('stx:navigate', onRouteChange)
@@ -372,13 +405,14 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
   data-window-key="true"
   data-active-class="{{ activeClasses }}"
   class="{{ paneClasses }}"
-  :style="`width: ${sidebarWidth()}`"
+  style="{{ paneStyle }}"
+  @if(hasSpaces)data-sidebar-spaces="true"@endif
   :aria-hidden="String(collapsed() && collapseModeProp === 'hidden')"
   role="navigation"
   aria-label="Sidebar"
   tabindex="0"
 >
-  @if(tintClasses)
+  @if(tintClasses && !hasSpaces)
     <div class="absolute inset-0 pointer-events-none {{ tintClasses }}"></div>
   @endif
   @if(hasShimmerRim)
@@ -391,27 +425,41 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
     </div>
   @endif
 
-  <div class="relative z-10 min-h-0 flex-1">
-    <div data-sidebar-scroll class="{{ scrollAreaClasses }} h-full stx-sidebar-scroll">
-      @if(sectionList.length > 0)
-        <nav class="flex flex-col">
-          @foreach(sectionList as section)
-            <SidebarSection
-              :id="section.id"
-              :label="section.label"
-              :items="section.items"
-              :collapsible="section.collapsible"
-              :collapsed="section.collapsed"
-              :theme="theme"
-            />
-          @endforeach
-        </nav>
-      @else
-        <slot />
-      @endif
+  @if(hasSpaces)
+    <div class="relative z-10 flex min-h-0 flex-1 flex-col">
+      <SidebarSpaces
+        :spaces="spaces"
+        :space="activeSpace"
+        :theme="theme"
+        :showSwitcher="showSpaceSwitcher"
+        :showAdd="showSpaceAdd"
+        :addLabel="spaceAddLabel"
+        :persistKey="spacePersistKey"
+      />
     </div>
-    <div data-sidebar-scroll-thumb class="stx-sidebar-scroll-thumb" aria-hidden="true"></div>
-  </div>
+  @else
+    <div class="relative z-10 min-h-0 flex-1">
+      <div data-sidebar-scroll class="{{ scrollAreaClasses }} h-full stx-sidebar-scroll">
+        @if(sectionList.length > 0)
+          <nav class="flex flex-col">
+            @foreach(sectionList as section)
+              <SidebarSection
+                :id="section.id"
+                :label="section.label"
+                :items="section.items"
+                :collapsible="section.collapsible"
+                :collapsed="section.collapsed"
+                :theme="theme"
+              />
+            @endforeach
+          </nav>
+        @else
+          <slot />
+        @endif
+      </div>
+      <div data-sidebar-scroll-thumb class="stx-sidebar-scroll-thumb" aria-hidden="true"></div>
+    </div>
+  @endif
 
   @if($slots.footer)
     <div class="relative z-10 flex-shrink-0">
@@ -537,12 +585,72 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
   color: var(--stx-sidebar-icon-idle);
 }
 
+/* ---------------------------------------------------------------------------
+ * Spaces — the `arc` theme's swipeable scenes.
+ *
+ * The panel takes the active space's color, and switching spaces *crossfades*
+ * it rather than cutting. That crossfade is why the four properties below are
+ * registered with `@property`: an unregistered custom property is a token the
+ * browser cannot interpolate, so `transition` on it does nothing. Typed as
+ * `<color>`, they animate like any other color.
+ *
+ * Each space publishes both appearances as inline variables (SidebarSpaces
+ * writes them on swipe, the server writes the first one), and these rules pick
+ * between them. Keeping the choice in CSS is what lets a dark-mode space
+ * render correctly server-side, before any script runs.
+ * ------------------------------------------------------------------------- */
+@property --stx-space-from { syntax: "<color>"; inherits: true; initial-value: #f2f0ec; }
+@property --stx-space-to { syntax: "<color>"; inherits: true; initial-value: #e6e3dd; }
+@property --stx-space-ink { syntax: "<color>"; inherits: true; initial-value: #2c2a28; }
+@property --stx-space-accent { syntax: "<color>"; inherits: true; initial-value: #5b5b63; }
+
+[data-sidebar-spaces="true"] {
+  --stx-space-from: var(--stx-space-light-from, #f2f0ec);
+  --stx-space-to: var(--stx-space-light-to, #e6e3dd);
+  --stx-space-ink: var(--stx-space-light-ink, #2c2a28);
+  --stx-space-accent: var(--stx-space-light-accent, #5b5b63);
+  /* Two layers: a sheen falling off over the top third, then the space color.
+     The sheen is what keeps a saturated space from reading as a flat swatch. */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0) 32%),
+    linear-gradient(180deg, var(--stx-space-from) 0%, var(--stx-space-to) 100%);
+  color: var(--stx-space-ink);
+  /* Width is listed here because this rule outranks the pane's
+     `transition-[width]` utility class and would otherwise drop it. */
+  transition:
+    --stx-space-from 420ms ease,
+    --stx-space-to 420ms ease,
+    --stx-space-ink 420ms ease,
+    --stx-space-accent 420ms ease,
+    width 300ms ease-out;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-sidebar-spaces="true"] {
+    --stx-space-from: var(--stx-space-dark-from, #17171b);
+    --stx-space-to: var(--stx-space-dark-to, #0e0e11);
+    --stx-space-ink: var(--stx-space-dark-ink, #ededf0);
+    --stx-space-accent: var(--stx-space-dark-accent, #b9b9c2);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 30%),
+      linear-gradient(180deg, var(--stx-space-from) 0%, var(--stx-space-to) 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sidebar-spaces="true"] { transition: none; }
+}
+
 /* Rows collapse like AppKit outlines: fixed row height animates to zero.
    The 32px pitch is the row itself — AppKit leaves no gap, so a run of
-   selected or hovered rows reads as one continuous block. */
+   selected or hovered rows reads as one continuous block. Arc's rows are
+   discrete cards with their own gutter, so the theme overrides the pitch. */
 [data-sidebar-row] {
-  height: 32px;
+  height: var(--stx-sidebar-row-h, 32px);
   transition: height 0.22s ease, opacity 0.16s ease;
+}
+[data-sidebar-theme="arc"] {
+  --stx-sidebar-row-h: 30px;
 }
 [data-sidebar-row][data-collapsed] {
   height: 0;

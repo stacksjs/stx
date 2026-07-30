@@ -2,7 +2,12 @@ export { default as Sidebar } from './Sidebar.stx'
 export { default as SidebarFooter } from './SidebarFooter.stx'
 export { default as SidebarHeader } from './SidebarHeader.stx'
 export { default as SidebarItem } from './SidebarItem.stx'
+export { default as SidebarPinned } from './SidebarPinned.stx'
 export { default as SidebarSection } from './SidebarSection.stx'
+export { default as SidebarSpace } from './SidebarSpace.stx'
+export { default as SidebarSpaces } from './SidebarSpaces.stx'
+export { default as SidebarSpaceSwitcher } from './SidebarSpaceSwitcher.stx'
+export * from './spaces'
 export * from './themes'
 
 /**
@@ -61,6 +66,23 @@ export type SidebarThemeChoice = MacOSSidebarTheme | LegacySidebarTheme
 export interface SidebarProps {
   /** Sections with their items. Omit to compose children via the default slot. */
   sections?: SidebarSectionData[]
+  /**
+   * Arc-style spaces. Passing them replaces the single list with a swipeable
+   * stack of scenes and defaults `theme` to `arc`. Mutually exclusive with
+   * `sections` — a space carries its own.
+   */
+  spaces?: SidebarSpaceData[]
+  /** Id of the space to open on. Defaults to the first. */
+  space?: string
+  /** Show the space switcher rail along the bottom. Defaults to true. */
+  showSpaceSwitcher?: boolean
+  /** Show a trailing "+" in the rail, emitting `spaceAdd`. */
+  showSpaceAdd?: boolean
+  spaceAddLabel?: string
+  /** localStorage key that remembers the last space. */
+  spacePersistKey?: string
+  onSpaceChange?: (event: SidebarSpaceChangeEvent) => void
+  onSpaceAdd?: () => void
   /** Visual theme. Defaults to `macos`. */
   theme?: SidebarThemeChoice
   /** @deprecated Use `theme`. */
