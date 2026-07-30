@@ -12,6 +12,7 @@ describe('conditional component props', () => {
     installNodeConstants()
     // eslint-disable-next-line no-new-func
     new Function(generateSignalsRuntimeDev())()
+    globalThis.MutationObserver = window.MutationObserver
   })
 
   it('preserves a nested component caller scope before an initially false branch detaches', async () => {
@@ -121,5 +122,53 @@ describe('conditional component props', () => {
     emit('submit', { id: 1 })
     formComponent.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true }))
     expect(submitted()).toBe(1)
+  })
+
+  it('keeps a named component model synchronized through a child select', async () => {
+    const environment = window.stx.state('production')
+    window.__stx_setup_named_select_model = () => ({ environment })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_named_select_model">
+        <div data-stx-scope="named_select_model" data-stx-parent-events="update:value" data-stx-parent-bindings="value">
+          <select x-model="liveValue">
+            <option value="production">Production</option>
+            <option value="staging">Staging</option>
+          </select>
+        </div>
+      </main>
+    `
+    const component = document.querySelector('[data-stx-scope="named_select_model"]')
+    const select = component.querySelector('select')
+    component.setAttribute('@update:value', 'environment = $event')
+    component.setAttribute(':value', 'environment')
+    select.setAttribute('@change', 'handleChange')
+    shimAttributes(document.body)
+
+    const previousElement = window.__STX_CURRENT_ELEMENT__
+    window.__STX_CURRENT_ELEMENT__ = component
+    const liveValue = window.stx.useReactiveProp('value', '')
+    const emit = window.stx.defineEmits()
+    window.__STX_CURRENT_ELEMENT__ = previousElement
+    window.stx._scopes.named_select_model = {
+      liveValue,
+      handleChange(event: Event) {
+        emit('update:value', (event.target as HTMLSelectElement).value)
+      },
+      __mountCallbacks: [],
+      __destroyCallbacks: [],
+    }
+
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+    expect(select.value).toBe('production')
+
+    select.value = 'staging'
+    select.dispatchEvent(new window.Event('change', { bubbles: true }))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    expect(environment()).toBe('staging')
+    expect(liveValue()).toBe('staging')
+    expect(select.value).toBe('staging')
   })
 })

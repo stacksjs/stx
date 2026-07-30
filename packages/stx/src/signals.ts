@@ -1325,7 +1325,7 @@ finally {
     return null;
   }
 
-  function toValue(expr, el, enableAutoUnwrap = true) {
+  function toValue(expr, el, enableAutoUnwrap = true, extraScope = {}) {
     try {
       // Skip placeholder expressions like __TITLE__ (build-time placeholders)
       if (/^__[A-Z_]+__$/.test(expr.trim())) {
@@ -1333,7 +1333,7 @@ finally {
       }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
-      const baseScope = { ...globalHelpers, ...componentScope, ...(elementScope || {}) };
+      const baseScope = { ...globalHelpers, ...componentScope, ...(elementScope || {}), ...extraScope };
 
       // Check for pipe syntax (Feature #2)
       const pipeResult = parsePipeExpression(expr, baseScope);
@@ -1412,8 +1412,8 @@ catch (e) {
       const [, varName, op, valueExpr] = assignMatch;
       const signal = scope[varName];
       if (signal && signal._isSignal) {
-        return () => {
-          const addValue = toValue(valueExpr, null, true);
+        return ($event) => {
+          const addValue = toValue(valueExpr, null, true, { ...scope, $event: $event });
           signal.update(n => {
             switch (op) {
               case '+': return n + addValue;
@@ -1434,8 +1434,8 @@ catch (e) {
       const [, varName, valueExpr] = simpleAssignMatch;
       const signal = scope[varName];
       if (signal && signal._isSignal) {
-        return () => {
-          const newValue = toValue(valueExpr, null, true);
+        return ($event) => {
+          const newValue = toValue(valueExpr, null, true, { ...scope, $event: $event });
           signal.set(newValue);
         };
       }
