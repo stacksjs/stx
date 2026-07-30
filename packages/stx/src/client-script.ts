@@ -330,7 +330,7 @@ const STX_AUTO_IMPORTS = [
   // Utilities
   'useToggle', 'useCounter', 'useClickOutside', 'useFocus', 'useAsync',
   // Color Mode
-  'useColorMode', 'useDark', 'useMediaQuery', 'usePreferredDark', 'usePreferredLight', 'usePreferredReducedMotion', 'usePreferredContrast',
+  'useColorMode', 'useDark', 'useMediaQuery', 'useScrollLock', 'usePreferredDark', 'usePreferredLight', 'usePreferredReducedMotion', 'usePreferredContrast',
   // Vue-style reactivity (alternative API)
   'ref', 'reactive', 'computed', 'watch', 'watchEffect', 'watchMultiple',
   // Vue-style lifecycle hooks

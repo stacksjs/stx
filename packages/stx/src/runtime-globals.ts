@@ -41,7 +41,7 @@ export const STX_RUNTIME_GLOBALS: readonly string[] = [
   'useFetch', 'useFocus', 'useHead', 'useId', 'useInterval', 'useLocalStorage', 'useMediaQuery',
   'useMutation', 'useOptimistic', 'usePreferredContrast', 'usePreferredDark',
   'usePreferredLight', 'usePreferredReducedMotion', 'useQuery', 'useReactiveProp',
-  'useRef', 'useRoute', 'useSearchParams', 'useSeoMeta', 'useSessionStorage', 'useStore',
+  'useRef', 'useRoute', 'useScrollLock', 'useSearchParams', 'useSeoMeta', 'useSessionStorage', 'useStore',
   'useThrottle', 'useTimeout', 'useToggle', 'useWebSocket', 'watch', 'watchEffect', 'withDefaults',
 ]
 

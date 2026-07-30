@@ -598,6 +598,7 @@ catch {
   const useColorMode = () => ({ value: 'light' })
   const useDark = () => state(false)
   const useMediaQuery = (_query: string) => state(false)
+  const useScrollLock = () => state(false)
   const usePreferredDark = () => useMediaQuery('(prefers-color-scheme: dark)')
   const usePreferredLight = () => useMediaQuery('(prefers-color-scheme: light)')
   const usePreferredReducedMotion = () => useMediaQuery('(prefers-reduced-motion: reduce)')
@@ -764,7 +765,7 @@ catch {
       'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',
       'ref', 'reactive', 'computed', 'watch', 'onMounted', 'onUnmounted', 'nextTick',
       'defineEmits', 'defineExpose', 'defineSlots', 'provide', 'inject', 'useColorMode', 'useDark',
-      'useMediaQuery', 'usePreferredDark', 'usePreferredLight', 'usePreferredReducedMotion', 'usePreferredContrast',
+      'useMediaQuery', 'useScrollLock', 'usePreferredDark', 'usePreferredLight', 'usePreferredReducedMotion', 'usePreferredContrast',
       'window', 'document', 'console', 'confirm', 'alert', 'fetch',
       'params',
       ...propArgNames,
@@ -783,7 +784,7 @@ catch {
       definePageMeta, useRoute, useRouter, useHead, useSeoMeta,
       ref, reactive, computed, watch, onMounted, onUnmounted, nextTick,
       defineEmits, defineExpose, defineSlots, provide, inject, useColorMode, useDark,
-      useMediaQuery, usePreferredDark, usePreferredLight, usePreferredReducedMotion, usePreferredContrast,
+      useMediaQuery, useScrollLock, usePreferredDark, usePreferredLight, usePreferredReducedMotion, usePreferredContrast,
       windowProxy, mockDocument, mockConsole, mockWindow.confirm, mockWindow.alert, mockWindow.fetch,
       paramsObj,
       ...propArgValues,

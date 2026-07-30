@@ -4511,6 +4511,61 @@ catch (e) {}
     return matches;
   }
 
+  var scrollLockStates = new WeakMap();
+
+  function resolveScrollLockTarget(target) {
+    var value = target;
+    if (typeof value === 'function') value = value();
+    if (value && typeof value === 'object' && 'current' in value) value = value.current;
+    if (value && typeof value === 'object' && !value.nodeType && 'value' in value) value = value.value;
+    return value || document.body || document.documentElement;
+  }
+
+  function acquireScrollLock(element) {
+    if (!element) return;
+    var existing = scrollLockStates.get(element);
+    if (existing) {
+      existing.count += 1;
+      return;
+    }
+    scrollLockStates.set(element, { count: 1, overflow: element.style.overflow });
+    element.style.overflow = 'hidden';
+  }
+
+  function releaseScrollLock(element) {
+    if (!element) return;
+    var existing = scrollLockStates.get(element);
+    if (!existing) return;
+    existing.count -= 1;
+    if (existing.count > 0) return;
+    element.style.overflow = existing.overflow;
+    scrollLockStates.delete(element);
+  }
+
+  function useScrollLock(target) {
+    var locked = state(false);
+    var lockedElement = null;
+    var unsubscribe = locked.subscribe(function(value) {
+      if (value) {
+        if (lockedElement) return;
+        lockedElement = resolveScrollLockTarget(target);
+        acquireScrollLock(lockedElement);
+      }
+      else if (lockedElement) {
+        releaseScrollLock(lockedElement);
+        lockedElement = null;
+      }
+    });
+    onDestroy(function() {
+      unsubscribe();
+      if (lockedElement) {
+        releaseScrollLock(lockedElement);
+        lockedElement = null;
+      }
+    });
+    return locked;
+  }
+
   function usePreferredDark() { return useMediaQuery('(prefers-color-scheme: dark)'); }
   function usePreferredLight() { return useMediaQuery('(prefers-color-scheme: light)'); }
   function usePreferredReducedMotion() { return useMediaQuery('(prefers-reduced-motion: reduce)'); }
@@ -5275,6 +5330,7 @@ catch (e) {}
     useColorMode,
     useDark,
     useMediaQuery,
+    useScrollLock,
     usePreferredDark,
     usePreferredLight,
     usePreferredReducedMotion,

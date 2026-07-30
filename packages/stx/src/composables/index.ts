@@ -67,6 +67,8 @@ export {
   type MediaQueryRef,
 } from './use-media-query'
 
+export { useScrollLock } from './use-scroll-lock'
+
 // Network
 export {
   useNetwork,
