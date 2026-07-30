@@ -3935,7 +3935,13 @@ else if (!value && isInserted) {
           childrenProcessed = true;
           setTimeout(function() {
             var childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
-            processElement(el, childScope);
+            // A false single-element conditional is detached before the
+            // DOMContentLoaded component-scope pass. When it becomes visible,
+            // hydrate any component roots in the restored subtree first so
+            // projected slot bindings and component-local directives receive
+            // the same lifecycle as components inserted by template :if.
+            hydrateComponentScopes([el], childScope);
+            if (!el.__stx_disposers) processElement(el, childScope);
             // Remove x-cloak from the inserted subtree — the initial
             // cloak removal (after processElement on the root) already
             // ran before this deferred processing, so newly-inserted

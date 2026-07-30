@@ -322,4 +322,40 @@ describe('conditional component props', () => {
     await new Promise(resolve => setTimeout(resolve, 20))
     expect(button.textContent.trim()).toBe('Saving...')
   })
+
+  it('hydrates projected slot conditionals when an initially hidden parent opens', async () => {
+    const editing = window.stx.state(false)
+    const saving = window.stx.state(false)
+    window.__stx_setup_hidden_slot_component = () => ({ editing, saving })
+    window.stx._scopes.hidden_slot_button = {
+      __mountCallbacks: [],
+      __destroyCallbacks: [],
+    }
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_hidden_slot_component">
+        <section :if="editing()">
+          <div data-stx-scope="hidden_slot_button">
+            <button>
+              <span :if="!saving()">Save metadata</span>
+              <span :if="saving()">Saving...</span>
+            </button>
+          </div>
+        </section>
+      </main>
+    `
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    editing.set(true)
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const button = document.querySelector('[data-stx-scope="hidden_slot_button"] button')
+    expect(button.textContent.trim()).toBe('Save metadata')
+
+    saving.set(true)
+    await new Promise(resolve => setTimeout(resolve, 20))
+    expect(button.textContent.trim()).toBe('Saving...')
+  })
 })
