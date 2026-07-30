@@ -164,7 +164,7 @@ describe('Directive bindings', () => {
 
     it('should look up signal in scope for @model', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('scope[expr]._isSignal')
+      expect(runtime).toContain('capturedScope[expr]._isSignal')
     })
   })
 
@@ -293,7 +293,7 @@ describe('Text interpolation', () => {
   it('should create span elements for interpolated values', () => {
     const runtime = generateSignalsRuntimeDev()
     expect(runtime).toContain("document.createElement('span')")
-    expect(runtime).toContain('span.textContent')
+    expect(runtime).toContain('bindingNode.textContent')
   })
 
   it('should wrap interpolation in effect for reactivity', () => {
@@ -302,7 +302,7 @@ describe('Text interpolation', () => {
     expect(runtime).toContain('effect(() => {')
     // Text interpolation uses new Function with captured scope
     expect(runtime).toContain('new Function(...Object.keys(capturedScope)')
-    expect(runtime).toContain('span.textContent')
+    expect(runtime).toContain('bindingNode.textContent')
   })
 })
 
