@@ -321,6 +321,12 @@ else {
         const val = target[prop];
         // If it's a signal or derived, call it to get the value
         if (val && typeof val === 'function' && (val._isSignal || val._isDerived)) {
+          // Loop variables are implementation-detail signals so keyed rows can
+          // update reactively. In template expressions they must behave like
+          // their item value, including for objects with fields named value,
+          // set, or subscribe. Otherwise item.value is mistaken for the
+          // signal compatibility API and resolves to the whole item object.
+          if (val._isStxLoopItem) return val();
           if (preserveSignal && preserveSignal(prop, val)) return val;
           return val();
         }
@@ -3221,6 +3227,7 @@ catch (e) {
     // The item is wrapped in a signal so bindings track it reactively.
     const createItemElements = (item, index, key) => {
       const itemSignal = state(item);
+      itemSignal._isStxLoopItem = true;
       const indexSignal = state(index);
       if (key) itemSignalMap.set(key, { item: itemSignal, index: indexSignal });
 

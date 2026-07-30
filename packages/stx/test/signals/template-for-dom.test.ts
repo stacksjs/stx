@@ -207,8 +207,8 @@ describe('template for DOM binding', () => {
   })
 
   it('binds object props when a signal component is its own loop root', async () => {
-    const dnsResource = { id: 'dns', name: 'stacksjs.com', status: 'configured' }
-    const loadBalancerResource = { id: 'load-balancer', name: 'Load balancer', status: 'attention' }
+    const dnsResource = { id: 'dns', name: 'stacksjs.com', status: 'configured', value: '4 records' }
+    const loadBalancerResource = { id: 'load-balancer', name: 'Load balancer', status: 'attention', value: '2 targets' }
     const groups = window.stx.state([
       {
         label: 'Network',
@@ -223,21 +223,25 @@ describe('template for DOM binding', () => {
           <h2>{{ group.label }}</h2>
           <div
             data-stx-scope="compiled_resource_scope"
-            data-stx-parent-bindings="item"
+            data-stx-parent-bindings="item value"
             :for="resource in group.resources"
             :item="resource"
+            :value="resource.value"
           >
             <button>
               <span :text="item()?.name || 'Unnamed resource'"></span>
               <strong :text="item()?.status || 'inactive'"></strong>
+              <em :text="value()"></em>
             </button>
           </div>
           <script data-stx-scoped>
             var root = document.querySelector('[data-stx-scope="compiled_resource_scope"]')
             window.__STX_CURRENT_ELEMENT__ = root
             var item = window.stx.useReactiveProp('item', null)
+            var value = window.stx.useReactiveProp('value', '')
             window.stx._scopes.compiled_resource_scope = {
               item: item,
+              value: value,
               __mountCallbacks: [],
               __destroyCallbacks: []
             }
@@ -263,6 +267,8 @@ describe('template for DOM binding', () => {
     expect(children).toHaveLength(2)
     expect(children.map(child => child.querySelector('span')?.textContent)).toEqual(['stacksjs.com', 'Load balancer'])
     expect(children.map(child => child.querySelector('strong')?.textContent)).toEqual(['configured', 'attention'])
+    expect(children.map(child => child.querySelector('em')?.textContent)).toEqual(['4 records', '2 targets'])
+    expect(children.map(child => child.getAttribute('value'))).toEqual(['4 records', '2 targets'])
     expect(window.stx._scopes[children[0]?.getAttribute('data-stx-scope')]?.item()).toBe(dnsResource)
     expect(window.stx._scopes[children[1]?.getAttribute('data-stx-scope')]?.item()).toBe(loadBalancerResource)
     expect(children.every(child => child.hasAttribute('data-stx-deferred-parent-bindings'))).toBeFalse()
