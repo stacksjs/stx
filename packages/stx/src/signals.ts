@@ -2814,6 +2814,49 @@ else {
     let loadingElement = null;
     let emptyElement = null;
 
+    // A <template :for> can contain another structural directive. That
+    // nested directive replaces its source node with a placeholder and owns
+    // additional live siblings around that placeholder. Track an explicit
+    // boundary for every template iteration so keyed reuse moves the complete
+    // live range, including nodes created by nested :for / :if bindings.
+    // Moving only the original cloned nodes pulled static siblings past the
+    // nested range on the next outer update (header, then rows became rows,
+    // then header).
+    const liveGroupNodes = (group) => {
+      if (!isTemplate || !group || group.length < 2) return group || [];
+      const start = group[0];
+      const end = group[group.length - 1];
+      if (!start || !end || start.parentNode !== parent || end.parentNode !== parent)
+        return group.filter(groupNode => groupNode && groupNode.parentNode === parent);
+
+      const nodes = [];
+      let currentNode = start;
+      while (currentNode) {
+        nodes.push(currentNode);
+        if (currentNode === end) break;
+        currentNode = currentNode.nextSibling;
+      }
+      return nodes;
+    };
+
+    const removeGroup = (group) => {
+      const liveNodes = liveGroupNodes(group);
+      const liveSet = new Set(liveNodes);
+      liveNodes.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
+      group.forEach(groupNode => {
+        if (liveSet.has(groupNode)) return;
+        disposeSubtreeScopes(groupNode);
+        groupNode.remove();
+      });
+    };
+
+    const clearRenderedItems = () => {
+      currentGroups.forEach(removeGroup);
+      currentElements = [];
+      currentGroups = [];
+      currentKeys = [];
+    };
+
     // Helper to evaluate with captured scope (auto-unwraps signals)
     // NOTE: This eagerly reads ALL signals in scope — use evalLazy inside effects
     // to avoid over-broad dependency tracking.
@@ -2916,6 +2959,7 @@ catch (e) {
 
       const elements = [];
       if (isTemplate) {
+        elements.push(document.createComment('stx-for-item-start'));
         Array.from(templateContent.childNodes).forEach(node => {
           const clone = node.cloneNode(true);
           if (clone.nodeType === 1) {
@@ -2925,6 +2969,7 @@ catch (e) {
           }
           elements.push(clone);
         });
+        elements.push(document.createComment('stx-for-item-end'));
       } else {
         const clone = templateContent.cloneNode(true);
         clone.__stx_for_scope = itemScope;
@@ -2955,10 +3000,7 @@ catch (e) {
         const isLoading = evalLazy(loadingExpr);
         if (isLoading) {
           // Dispose scopes registered by items before they leave the DOM (#1727).
-          currentElements.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
-          currentElements = [];
-          currentGroups = [];
-          currentKeys = [];
+          clearRenderedItems();
           showLoading();
           return;
         }
@@ -3004,10 +3046,7 @@ catch (e) {
         const ifValue = evalLazy(ifExpr);
         if (!ifValue) {
           // Dispose scopes registered by items before they leave the DOM (#1727).
-          currentElements.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
-          currentElements = [];
-          currentGroups = [];
-          currentKeys = [];
+          clearRenderedItems();
           hideEmpty();
           return;
         }
@@ -3045,10 +3084,7 @@ catch (e) {
       // Check empty state (Feature #3)
       if (list.length === 0) {
         // Dispose scopes registered by items before they leave the DOM (#1727).
-        currentElements.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
-        currentElements = [];
-        currentGroups = [];
-        currentKeys = [];
+        clearRenderedItems();
         if (emptyExpr) {
           const emptyContent = evalLazy(emptyExpr);
           if (emptyContent && typeof emptyContent === 'string') {
@@ -3101,9 +3137,10 @@ catch (e) {
           // group's nodes. Its own placeholder owns reinsertion, so keyed reuse
           // must not resurrect that hidden node.
           const group = existing.shift();
-          group.forEach(el => {
-            if (el.parentNode === parent) parent.insertBefore(el, placeholder);
-          });
+          const liveNodes = liveGroupNodes(group);
+          const fragment = document.createDocumentFragment();
+          liveNodes.forEach(groupNode => fragment.appendChild(groupNode));
+          parent.insertBefore(fragment, placeholder);
           newElements.push(...group);
           newGroups.push(group);
           usedKeys.add(key);
@@ -3139,11 +3176,28 @@ catch (e) {
       // remove() call (#1727).
       for (const [key, groups] of oldKeyMap) {
         if (!usedKeys.has(key)) {
-          const elements = groups.flat();
           // In a transition group, run the leave animation and let it remove the
           // node; otherwise remove immediately. Scopes are disposed up-front
           // either way (their destroy hooks shouldn't wait on a CSS transition).
-          elements.forEach(el => { disposeSubtreeScopes(el); if (!(tgReady && tgLeave(el, tgName))) el.remove(); });
+          groups.forEach((group) => {
+            if (tgReady) {
+              const liveNodes = liveGroupNodes(group);
+              const transitioned = new Set();
+              liveNodes.forEach((el) => {
+                disposeSubtreeScopes(el);
+                if (tgLeave(el, tgName)) transitioned.add(el);
+                else el.remove();
+              });
+              group.forEach((el) => {
+                if (transitioned.has(el) || liveNodes.includes(el)) return;
+                disposeSubtreeScopes(el);
+                el.remove();
+              });
+            }
+            else {
+              removeGroup(group);
+            }
+          });
           itemSignalMap.delete(key);
         }
       }

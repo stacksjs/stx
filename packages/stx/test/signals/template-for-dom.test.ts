@@ -76,6 +76,38 @@ describe('template for DOM binding', () => {
     expect(selectedMethod()).toBe(1)
   })
 
+  it('keeps static siblings before nested template loop rows after outer updates', async () => {
+    const groups = window.stx.state([
+      { type: 'First', items: [{ id: 1, title: 'One' }] },
+    ])
+    window.__stx_setup_nested_template_for = () => ({ groups })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_nested_template_for">
+        <section>
+          <template :for="group in groups()">
+            <h3>{{ group.type }}</h3>
+            <template :for="item in group.items">
+              <button>{{ item.title }}</button>
+            </template>
+          </template>
+        </section>
+      </main>
+    `
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    groups.set([
+      { type: 'Second', items: [{ id: 2, title: 'Two' }, { id: 3, title: 'Three' }] },
+    ])
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const elements = Array.from(document.querySelector('section').children) as HTMLElement[]
+    expect(elements.map(element => element.tagName)).toEqual(['H3', 'BUTTON', 'BUTTON'])
+    expect(elements.map(element => element.textContent?.trim())).toEqual(['Second', 'Two', 'Three'])
+  })
+
   it('reapplies a select value after reactive options are inserted', async () => {
     window.__stx_setup_dynamic_select = () => ({
       selected: window.stx.state('2'),
