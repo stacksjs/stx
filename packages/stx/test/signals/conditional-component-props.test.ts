@@ -163,6 +163,37 @@ describe('conditional component props', () => {
     expect(submitted()).toBe(1)
   })
 
+  it('keeps explicitly called parent signals callable in forwarded event expressions', async () => {
+    const page = window.stx.state(1)
+    const goToPage = (value: number) => page.set(value)
+
+    window.__stx_setup_forwarded_signal_event = () => ({ goToPage, page })
+    window.stx._scopes.forwarded_signal_button = {
+      __mountCallbacks: [],
+      __destroyCallbacks: [],
+    }
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_forwarded_signal_event">
+        <div
+          data-stx-scope="forwarded_signal_button"
+          data-stx-parent-events="click"
+          @click="goToPage(page() + 1)"
+        >
+          <button type="button">Next</button>
+        </div>
+      </main>
+    `
+    const component = document.querySelector('[data-stx-scope="forwarded_signal_button"]')
+    component.setAttribute('@click', 'goToPage(page() + 1)')
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    component.querySelector('button').dispatchEvent(new window.Event('click', { bubbles: true }))
+    expect(page()).toBe(2)
+  })
+
   it('keeps a named component model synchronized through a child select', async () => {
     const environment = window.stx.state('production')
     window.__stx_setup_named_select_model = () => ({ environment })

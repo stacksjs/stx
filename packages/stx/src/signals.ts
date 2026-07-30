@@ -2465,7 +2465,8 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
                 // handler like \`pick(option.value)\` receives the whole item.
                 // It is not an error, so it lands silently: the wrong value is
                 // stored and only surfaces much later.
-                if (v && typeof v === 'function' && v._isSignal && !v._isStxLoopItem && expressionUsesSignalApi(value, k)) {
+                if (v && typeof v === 'function' && v._isSignal && !v._isStxLoopItem
+                  && (expressionCallsSignal(value, k) || expressionUsesSignalApi(value, k))) {
                   return 'var ' + k + ' = __s["' + k + '"]';
                 }
                 return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
