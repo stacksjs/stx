@@ -234,6 +234,22 @@ function createBundlePlugin(
  * @param options - Bundling options
  * @returns Bundled code with all imports resolved and inlined
  */
+/**
+ * Bundles currently in flight, keyed by cache hash.
+ *
+ * A dev server renders several pages at once and they all extend the same
+ * layout, so the identical script is bundled concurrently. Each of those builds
+ * used to write the same temp entry and the same output directory, and each
+ * removed both in its `finally` — so one build's cleanup deleted another's
+ * inputs mid-flight. The loser produced an empty bundle, and the empty bundle
+ * was then written to the cache, where it stayed: every later request got a
+ * layout whose entire controller had silently vanished, with no error anywhere.
+ *
+ * Sharing one promise per hash removes the collision at the source rather than
+ * making the temp paths unique and leaving the duplicated work in place.
+ */
+const inFlightBundles = new Map<string, Promise<string>>()
+
 export async function bundleClientScript(
   code: string,
   filePath: string,
@@ -301,6 +317,35 @@ export async function bundleClientScript(
     }
     console.log('[stx:bundler] cache invalidated by dep change:', hash)
   }
+
+  // Share a single build between concurrent callers for the same script.
+  const running = inFlightBundles.get(hash)
+  if (running)
+    return await running
+
+  const build = buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath })
+  inFlightBundles.set(hash, build)
+  try {
+    return await build
+  }
+  finally {
+    inFlightBundles.delete(hash)
+  }
+}
+
+async function buildBundle(
+  code: string,
+  filePath: string,
+  options: {
+    projectRoot: string
+    minify: boolean
+    cacheDir: string
+    hash: string
+    cachePath: string
+    depsPath: string
+  },
+): Promise<string> {
+  const { projectRoot, minify, cacheDir, hash, cachePath, depsPath } = options
 
   // Write temp entry file (Bun.build needs a real file)
   const tmpDir = stateDir(projectRoot, 'bundle-tmp')
@@ -445,6 +490,24 @@ ${publicAssignments}`.trim()
     // transformStoreImports, which run after this bundling step.
 
     console.log('[stx:bundler] bundled:', hash, 'output:', bundled.length, 'bytes')
+
+    // A script that declared something must come back with it. Losing every
+    // binding means the build produced nothing usable — a tree-shake that took
+    // the whole entry, or an output file that was not there to read — and the
+    // page will render with its controller silently missing.
+    //
+    // Returning the unbundled source degrades to "imports unresolved" rather
+    // than "script absent", which is the failure the caller can actually see.
+    // Not caching it is the important half: an empty bundle written to disk
+    // outlives whatever transient condition caused it, and every later request
+    // is served the same emptiness with no error to explain it.
+    if (declNames.length > 0 && exposedBindings.length === 0) {
+      console.warn(
+        `[stx:bundler] dropped every binding for ${path.basename(filePath)} (${hash}); `
+        + 'serving the unbundled source and not caching this result',
+      )
+      return code
+    }
 
     // Cache the result + the dependency snapshot. The sidecar lists
     // every input file resolved through the plugin (relative imports
