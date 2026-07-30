@@ -70,7 +70,7 @@ export const activeClasses = themeStyle.item.active
 import { findActiveSidebarHref } from './route-selection'
 
 const emit = defineEmits()
-const sidebarUidProp = '{{ sidebarUid }}'
+const componentRoot = window.__STX_CURRENT_ELEMENT__
 const collapsedProp = {{ collapsed }}
 const collapsibleProp = {{ collapsible }}
 const collapseModeProp = '{{ collapseMode }}'
@@ -330,7 +330,7 @@ function followSystemAppearance() {
 }
 
 onMount(() => {
-  pane = document.getElementById(sidebarUidProp)
+  pane = componentRoot?.querySelector('[data-stx-sidebar]')
   if (!pane) return
 
   followSystemAppearance()

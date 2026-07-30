@@ -121,4 +121,16 @@ describe('macOS sidebar component', () => {
     expect(result).toContain('id="shell"')
     expect(result).toContain('<aside')
   })
+
+  it('keeps generated instance ids out of the bundled controller', async () => {
+    const result = await render(`<body><Sidebar theme="macos" placement="static" :sections="[
+      { id: 's', items: [{ id: 'a', label: 'A' }] },
+    ]" /></body>`)
+    const sidebarId = result.match(/\bid="(stx-sidebar-[^"]+)"/)?.[1]
+
+    expect(sidebarId).toStartWith('stx-sidebar-')
+    expect(result).not.toContain(`getElementById("${sidebarId}")`)
+    expect(result).not.toContain(`getElementById('${sidebarId}')`)
+    expect(result).toContain('querySelector("[data-stx-sidebar]")')
+  })
 })
