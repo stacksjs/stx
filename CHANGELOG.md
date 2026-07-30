@@ -1,5 +1,100 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.119...v0.2.120)
+
+## 🚀 Features
+
+- **components**: let an app keep ownership of its color scheme ([36d541d](https://github.com/stacksjs/stx/commit/36d541d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **composables**: add scroll locking ([3b5546e](https://github.com/stacksjs/stx/commit/3b5546e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dev**: allow explicit Crosswind source ([4cf4f5f](https://github.com/stacksjs/stx/commit/4cf4f5f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: take Arc chrome color from the panel ([62ed1e1](https://github.com/stacksjs/stx/commit/62ed1e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **craft**: wrap the native spaces sidebar ([a6fa95a](https://github.com/stacksjs/stx/commit/a6fa95a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: accept spaces on Sidebar ([5002376](https://github.com/stacksjs/stx/commit/5002376)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: swipe between sidebar spaces ([0c3c9e8](https://github.com/stacksjs/stx/commit/0c3c9e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: add the parts of an Arc sidebar space ([0c91ed0](https://github.com/stacksjs/stx/commit/0c91ed0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: derive sidebar space palettes from one seed ([a65d273](https://github.com/stacksjs/stx/commit/a65d273)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: add the `arc` sidebar theme ([e60009a](https://github.com/stacksjs/stx/commit/e60009a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: add stable component ids ([1cf9781](https://github.com/stacksjs/stx/commit/1cf9781)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: support checkbox array models ([2102ad5](https://github.com/stacksjs/stx/commit/2102ad5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **signals**: read a loop item's value field in event handlers ([b057391](https://github.com/stacksjs/stx/commit/b057391)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bundler**: stop concurrent builds corrupting each other ([1dcc6f5](https://github.com/stacksjs/stx/commit/1dcc6f5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **types**: align runtime composables ([fbb7e4e](https://github.com/stacksjs/stx/commit/fbb7e4e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: align value accessors ([bda3226](https://github.com/stacksjs/stx/commit/bda3226)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **head**: replace layout fallback titles ([562b1bc](https://github.com/stacksjs/stx/commit/562b1bc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **props**: keep the author's spelling for forwarded attributes ([2669c82](https://github.com/stacksjs/stx/commit/2669c82)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **shell**: hoist a fragment page's head tags into <head> ([18e90aa](https://github.com/stacksjs/stx/commit/18e90aa)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: mask scoped-style carve-outs at element position ([3401053](https://github.com/stacksjs/stx/commit/3401053)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: hydrate conditional component roots ([dc2fa51](https://github.com/stacksjs/stx/commit/dc2fa51)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: keep the spaces track from breaking its own layout ([d57b160](https://github.com/stacksjs/stx/commit/d57b160)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: sync section disclosure state ([4de0639](https://github.com/stacksjs/stx/commit/4de0639)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **props**: normalize static kebab case names ([bcf6495](https://github.com/stacksjs/stx/commit/bcf6495)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: stop scoped styles rewriting angle brackets in CSS ([a88bb5c](https://github.com/stacksjs/stx/commit/a88bb5c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: avoid a partial spaces integration ([5778345](https://github.com/stacksjs/stx/commit/5778345)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: preserve interpolated string values ([a9de3bd](https://github.com/stacksjs/stx/commit/a9de3bd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: reuse the controller bundle ([1685665](https://github.com/stacksjs/stx/commit/1685665)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ssr**: isolate head state per render ([933eb54](https://github.com/stacksjs/stx/commit/933eb54)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **props**: stop $props leaking Function internals for unpassed props ([771c95f](https://github.com/stacksjs/stx/commit/771c95f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: hydrate scopes opened by conditionals ([bb58645](https://github.com/stacksjs/stx/commit/bb58645)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: defer nested component loop roots ([506bce9](https://github.com/stacksjs/stx/commit/506bce9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bundler**: reject legacy client cache metadata ([c2a3172](https://github.com/stacksjs/stx/commit/c2a3172)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: prevent component prop feedback loops ([41d55a6](https://github.com/stacksjs/stx/commit/41d55a6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ssg**: load icon collections on demand ([cd28458](https://github.com/stacksjs/stx/commit/cd28458)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: unbreak CI typecheck and format check ([2f0b680](https://github.com/stacksjs/stx/commit/2f0b680)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: bind indeterminate input state ([9d1ce70](https://github.com/stacksjs/stx/commit/9d1ce70)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: hydrate components in conditional chains ([70339fd](https://github.com/stacksjs/stx/commit/70339fd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: unwrap loop item value fields ([480afb2](https://github.com/stacksjs/stx/commit/480afb2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: preserve loop component setup scripts ([34dab33](https://github.com/stacksjs/stx/commit/34dab33)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **auto-imports**: bundle browser helpers synchronously ([9c33c54](https://github.com/stacksjs/stx/commit/9c33c54)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **auto-imports**: bind browser helpers in signal components ([81b7673](https://github.com/stacksjs/stx/commit/81b7673)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **auto-imports**: load browser utilities in client scripts ([95f3ff9](https://github.com/stacksjs/stx/commit/95f3ff9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: hydrate components in conditional templates ([efcb42d](https://github.com/stacksjs/stx/commit/efcb42d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: support component root loops ([8cb51ad](https://github.com/stacksjs/stx/commit/8cb51ad)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: defer components under pending loops ([77bf6da](https://github.com/stacksjs/stx/commit/77bf6da)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: hydrate conditional loop components ([89e0833](https://github.com/stacksjs/stx/commit/89e0833)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: bind nested loop component props ([467cfe4](https://github.com/stacksjs/stx/commit/467cfe4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: expose nextTick at runtime ([a180db5](https://github.com/stacksjs/stx/commit/a180db5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: isolate structural component instances ([e40e3ca](https://github.com/stacksjs/stx/commit/e40e3ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **composables**: resolve template refs outside ([51f7672](https://github.com/stacksjs/stx/commit/51f7672)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: preserve nested loop ordering ([e20e67a](https://github.com/stacksjs/stx/commit/e20e67a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **events**: preserve assignment payloads ([e4d1a99](https://github.com/stacksjs/stx/commit/e4d1a99)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **models**: sync selects after option rendering ([586a5a6](https://github.com/stacksjs/stx/commit/586a5a6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **vue**: preserve self-closing model components ([cd95f4b](https://github.com/stacksjs/stx/commit/cd95f4b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: forward native root events ([1eab54e](https://github.com/stacksjs/stx/commit/1eab54e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **lint**: allow client scopes in layouts ([96213a1](https://github.com/stacksjs/stx/commit/96213a1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stores**: accept setup store registration ([3819399](https://github.com/stacksjs/stx/commit/3819399)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stores**: export client registration ([807d71e](https://github.com/stacksjs/stx/commit/807d71e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: normalize cloned DOM attributes ([29b82cd](https://github.com/stacksjs/stx/commit/29b82cd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **components**: bind only used runtime globals ([5d34af7](https://github.com/stacksjs/stx/commit/5d34af7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: cache loop component setup ([7690383](https://github.com/stacksjs/stx/commit/7690383)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: deduplicate x-element injection ([75a5d07](https://github.com/stacksjs/stx/commit/75a5d07)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📚 Documentation
+
+- document sidebar spaces ([4dd51a5](https://github.com/stacksjs/stx/commit/4dd51a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧪 Tests
+
+- **signals**: align model scope assertion ([0dce83b](https://github.com/stacksjs/stx/commit/0dce83b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: pin the sidebar spaces contract ([c1bbc09](https://github.com/stacksjs/stx/commit/c1bbc09)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: align runtime assertions ([ae9e631](https://github.com/stacksjs/stx/commit/ae9e631)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: cover conditional form submits ([3019162](https://github.com/stacksjs/stx/commit/3019162)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.120 ([c9f9f5b](https://github.com/stacksjs/stx/commit/c9f9f5b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: require craft-native 0.0.55 ([d3149f8](https://github.com/stacksjs/stx/commit/d3149f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.118...v0.2.119)
 
 ## 🚀 Features
