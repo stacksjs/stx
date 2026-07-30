@@ -38,6 +38,7 @@ declare module '*.md' {
 
 interface StxSignal<T> {
   (): T
+  value: T
   set: (value: T) => void
   update: (fn: (current: T) => T) => void
   subscribe: (cb: (value: T) => void) => () => void
@@ -46,6 +47,7 @@ interface StxSignal<T> {
 
 interface StxDerivedSignal<T> {
   (): T
+  readonly value: T
   // Derived signals carry `_isDerived: true` (distinguishes them from state
   // signals, which carry `_isSignal: true`). The two branches are exposed
   // separately as `isSignal()` / `isDerived()`. Surfaced by the dual-impl
@@ -155,6 +157,9 @@ declare function useEventListener(
   _handler: (event: Event) => void,
   _options?: boolean | AddEventListenerOptions,
 ): StxCleanup
+declare function useScrollLock(
+  _target?: HTMLElement | null | { current?: HTMLElement | null, value?: HTMLElement | null } | (() => HTMLElement | null | undefined),
+): StxSignal<boolean>
 declare function useMeta(_meta: Record<string, string>): void
 declare function useClickOutside(_target: HTMLElement | StxRef<HTMLElement | null> | string | null, _handler: (event: MouseEvent) => void): StxCleanup
 declare function useFocus(_target: HTMLElement | StxRef<HTMLElement | null> | string | null): { focused: StxSignal<boolean>, focus: () => void, blur: () => void }
@@ -496,6 +501,7 @@ interface StxRuntimeRegistry {
   useAsync: typeof useAsync
   useLocalStorage: typeof useLocalStorage
   useEventListener: typeof useEventListener
+  useScrollLock: typeof useScrollLock
   useWebSocket: typeof useWebSocket
   useColorMode: typeof useColorMode
   useDark: typeof useDark
