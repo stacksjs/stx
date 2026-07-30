@@ -3,6 +3,7 @@ import type { SidebarConfig, WindowInstance, WindowOptions } from './types'
 import process from 'node:process'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { craftBinaryNotFoundMessage, resolveCraftBinary } from 'craft-native'
 
 // =============================================================================
 // Configuration
@@ -88,70 +89,42 @@ function prepareSidebarConfig(options: WindowOptions): SidebarConfig | undefined
 // =============================================================================
 
 /**
- * Default paths to search for craft binary.
- * Used when CRAFT_BINARY_PATH is not set.
- */
-const DEFAULT_SEARCH_PATHS = [
-  // Beside the running executable — a packaged .app bundles the craft binary
-  // into Contents/MacOS/ next to its own binary (see packageApp's
-  // macos.additionalExecutables), so a shipped app resolves it first.
-  join(dirname(process.execPath), 'craft'),
-  // Global bun installation
-  join(process.env.HOME || '', '.bun/bin/craft'),
-  // Absolute path to craft in standard location
-  join(process.env.HOME || '', 'Code/Tools/craft/packages/zig/zig-out/bin/craft'),
-  join(process.env.HOME || '', 'Code/craft/packages/zig/zig-out/bin/craft'),
-  // From linked craft in monorepo (both craft and craft-minimal)
-  join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft'),
-  join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft-minimal'),
-  join(process.cwd(), '../../../craft/packages/zig/zig-out/bin/craft'),
-  join(process.cwd(), '../../../craft/packages/zig/zig-out/bin/craft-minimal'),
-  // If running from stx repo root
-  join(process.cwd(), '../craft/packages/zig/zig-out/bin/craft'),
-  join(process.cwd(), '../craft/packages/zig/zig-out/bin/craft-minimal'),
-  // Local craft installation
-  join(process.cwd(), 'node_modules/.bin/craft'),
-]
-
-/**
- * Find craft binary in configured locations.
+ * Find the craft binary.
+ *
+ * Craft ships through the pantry registry, so the canonical answer is "whatever
+ * `craft` resolves to on PATH" — `resolveCraftBinary` in craft-native owns that
+ * contract, including the `CRAFT_BIN` escape hatch for local builds. This
+ * function only layers on the overrides that are part of the desktop package's
+ * own API, plus the one location craft cannot know about: inside a packaged app
+ * bundle, where `packageApp` puts the binary next to the app's executable.
  *
  * Resolution order:
- * 1. CRAFT_BINARY_PATH environment variable
- * 2. config.craftBinaryPath (set via setDesktopConfig)
- * 3. config.additionalSearchPaths
- * 4. DEFAULT_SEARCH_PATHS (monorepo locations)
+ * 1. `CRAFT_BINARY_PATH` environment variable
+ * 2. `config.craftBinaryPath` (set via `setDesktopConfig`)
+ * 3. `config.additionalSearchPaths`
+ * 4. Beside the running executable (a packaged `.app`)
+ * 5. `craft`'s own contract — `CRAFT_BIN`, else PATH
  *
- * @returns Path to craft binary or undefined if not found
+ * @returns The string to spawn. Never undefined: a bare `'craft'` defers to PATH,
+ *   and an ENOENT from the spawn produces craft's pantry-aware guidance.
  */
-function getCraftBinaryPath(): string | undefined {
-  // 1. Check environment variable first (highest priority)
-  const envPath = process.env.CRAFT_BINARY_PATH
-  if (envPath && existsSync(envPath)) {
-    return envPath
+function getCraftBinaryPath(): string {
+  const overrides = [
+    process.env.CRAFT_BINARY_PATH,
+    currentConfig.craftBinaryPath,
+    ...(currentConfig.additionalSearchPaths || []),
+    // A packaged app bundles craft into Contents/MacOS/ beside its own binary
+    // (see packageApp's macos.additionalExecutables), so a shipped app resolves
+    // its own copy rather than depending on the user having pantry.
+    join(dirname(process.execPath), 'craft'),
+  ]
+
+  for (const candidate of overrides) {
+    if (candidate && existsSync(candidate))
+      return candidate
   }
 
-  // 2. Check configured path
-  if (currentConfig.craftBinaryPath && existsSync(currentConfig.craftBinaryPath)) {
-    return currentConfig.craftBinaryPath
-  }
-
-  // 3. Check additional configured paths
-  const additionalPaths = currentConfig.additionalSearchPaths || []
-  for (const searchPath of additionalPaths) {
-    if (existsSync(searchPath)) {
-      return searchPath
-    }
-  }
-
-  // 4. Check default paths
-  for (const searchPath of DEFAULT_SEARCH_PATHS) {
-    if (existsSync(searchPath)) {
-      return searchPath
-    }
-  }
-
-  return undefined
+  return resolveCraftBinary()
 }
 
 // =============================================================================
@@ -358,17 +331,17 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
 
     return createWindowInstance(id, app)
   }
-  catch (tsCraftError) {
-    if (!craftPath) {
-      console.error('Failed to create native window: no craft binary found and craft-native is not installed')
-      console.error(`  (craft-native error: ${(tsCraftError as Error).message})`)
-      return null
-    }
-
+  catch {
+    // createApp couldn't drive the window (most often the binary isn't
+    // installed). Spawn it ourselves — craft-native is a thin wrapper over this
+    // same command line — and let an ENOENT report craft's pantry-aware guidance
+    // rather than a bare spawn error.
     try {
       const { spawn } = await import('node:child_process')
       const child = spawn(craftPath, craftWindowArguments(url, options), { stdio: 'inherit' })
-      child.on('error', err => console.warn('craft child error:', err.message))
+      child.on('error', (err: NodeJS.ErrnoException) => {
+        console.error(err.code === 'ENOENT' ? craftBinaryNotFoundMessage(craftPath) : `craft child error: ${err.message}`)
+      })
 
       const app = { close: () => child.kill() }
       activeWindows.set(id, { app, url, options })
@@ -439,47 +412,38 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
     console.log(`✓ Native window opened at ${url}`)
     return true
   }
-  catch (tsCraftErr) {
-    // Path 2 — native binary spawned directly. craft-native is just a thin
-    // wrapper around this; if it isn't installed we can still drive Craft
-    // via `craft --url … --title … --width … --height …`. In practice this
-    // is the path most monorepo users hit, since they have the `craft`
-    // binary in `~/.bun/bin` but no JS package.
+  catch {
+    // Path 2 — spawn the binary directly. craft-native is a thin wrapper over
+    // this same command line, so a machine with craft installed but no JS
+    // package still gets a native window.
     const craftPath = getCraftBinaryPath()
-    if (craftPath) {
-      try {
-        console.log(`⚡ Opening native window via craft binary (${craftPath})…`)
-        const { spawn } = await import('node:child_process')
-        const args: string[] = [
-          '--url', url,
-          '--title', options.title || 'stx Development',
-          '--width', String(options.width || 1400),
-          '--height', String(options.height || 900),
-        ]
-        if (options.darkMode) args.push('--dark')
-        if (options.hotReload ?? true) args.push('--hot-reload')
-        if (options.titlebarHidden) args.push('--titlebar-hidden')
+    try {
+      console.log(`⚡ Opening native window via craft binary (${craftPath})…`)
+      const { spawn } = await import('node:child_process')
+      const child = spawn(craftPath, craftWindowArguments(url, {
+        title: 'stx Development',
+        width: 1400,
+        height: 900,
+        // Hot reload is the point of a dev window, so it defaults on here.
+        hotReload: true,
+        ...options,
+      }), { stdio: 'inherit' })
 
-        const child = spawn(craftPath, args, { stdio: 'inherit' })
+      // Bridge the child's lifetime to the host process so closing the
+      // window cleanly exits the dev server (matches `bun --bun … --native`
+      // expectations).
+      child.on('exit', () => process.exit(0))
+      child.on('error', (err: NodeJS.ErrnoException) => {
+        console.warn(err.code === 'ENOENT' ? craftBinaryNotFoundMessage(craftPath) : `craft child error: ${err.message}`)
+      })
 
-        // Bridge the child's lifetime to the host process so closing the
-        // window cleanly exits the dev server (matches `bun --bun … --native`
-        // expectations).
-        child.on('exit', () => process.exit(0))
-        child.on('error', err => console.warn('craft child error:', err.message))
-
-        const id = `dev-window-${port}`
-        activeWindows.set(id, { app: { close: () => child.kill() }, url, options })
-        console.log(`✓ Native window opened at ${url}`)
-        return true
-      }
-      catch (binaryErr) {
-        console.warn('⚠  Could not spawn craft binary:', (binaryErr as Error).message)
-      }
+      const id = `dev-window-${port}`
+      activeWindows.set(id, { app: { close: () => child.kill() }, url, options })
+      console.log(`✓ Native window opened at ${url}`)
+      return true
     }
-    else {
-      console.warn('⚠  craft-native not installed and no craft binary found')
-      console.warn(`    (craft-native error: ${(tsCraftErr as Error).message})`)
+    catch (binaryErr) {
+      console.warn('⚠  Could not spawn craft binary:', (binaryErr as Error).message)
     }
 
     // Path 3 — give up on native, open the system browser. Skipped in test.

@@ -33,8 +33,17 @@ import { createWindow } from '@stacksjs/stx/desktop'
 
 Importing `@stacksjs/desktop` directly works too, and is equivalent.
 
-Native rendering needs the Craft binary. `createWindow` finds it on `PATH`, in
-`~/.bun/bin`, or at `CRAFT_BINARY_PATH` if you keep it elsewhere.
+Native rendering needs the Craft binary, which ships through the
+[pantry](https://pantry.dev) registry:
+
+```bash
+pantry install craft
+```
+
+`createWindow` resolves it from `PATH`. Point `CRAFT_BINARY_PATH` (or
+`setDesktopConfig({ craftBinaryPath })`) at a local build to override that. A
+packaged app carries its own copy inside the bundle, so shipped apps don't
+require pantry on the user's machine.
 
 ### Basic Usage
 

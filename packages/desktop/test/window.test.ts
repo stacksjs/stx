@@ -29,7 +29,7 @@ mock.module('node:child_process', () => ({
   },
 }))
 
-import { craftWindowArguments, createWindow, createWindowWithHTML, isWebviewAvailable, openDevWindow } from '../src/window'
+import { craftWindowArguments, createWindow, createWindowWithHTML, isWebviewAvailable, openDevWindow, resetDesktopConfig, setDesktopConfig } from '../src/window'
 
 describe('Window Management', () => {
   let consoleLogSpy: any
@@ -100,6 +100,32 @@ describe('Window Management', () => {
     it('omits devtools only when they are explicitly disabled', () => {
       expect(craftWindowArguments('http://localhost:3000', {})).not.toContain('--no-devtools')
       expect(craftWindowArguments('http://localhost:3000', { devTools: false })).toContain('--no-devtools')
+    })
+  })
+
+  describe('craft binary resolution', () => {
+    afterEach(() => {
+      resetDesktopConfig()
+    })
+
+    it('defers to PATH (craft ships via pantry) when nothing overrides it', async () => {
+      await createWindow('http://localhost:3000')
+      // A bare 'craft' lets the OS resolve whatever pantry installed, rather
+      // than this package probing a list of guessed paths.
+      expect(spawned[0].command).toBe('craft')
+    })
+
+    it('prefers an explicitly configured binary over PATH', async () => {
+      // An existing file is required — point at one that is certainly present.
+      setDesktopConfig({ craftBinaryPath: process.execPath })
+      await createWindow('http://localhost:3000')
+      expect(spawned[0].command).toBe(process.execPath)
+    })
+
+    it('ignores a configured path that does not exist', async () => {
+      setDesktopConfig({ craftBinaryPath: '/nope/craft' })
+      await createWindow('http://localhost:3000')
+      expect(spawned[0].command).toBe('craft')
     })
   })
 
