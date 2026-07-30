@@ -171,4 +171,61 @@ describe('conditional component props', () => {
     expect(liveValue()).toBe('staging')
     expect(select.value).toBe('staging')
   })
+
+  it('hydrates component scopes cloned from an active template conditional', async () => {
+    const show = window.stx.state(true)
+    const parentStatus = window.stx.state('attention')
+    window.__stx_setup_template_conditional_component = () => ({ parentStatus, show })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_template_conditional_component">
+        <template :if="show()">
+          <section>
+            <div
+              data-stx-scope="conditional_badge"
+              data-stx-parent-bindings="status"
+              :status="parentStatus()"
+            >
+              <span class="label">{{ label() }}</span>
+            </div>
+            <script data-stx-scoped>
+              (function() {
+                var scopes = window.stx._scopes = window.stx._scopes || {}
+                var scope = scopes.conditional_badge = scopes.conditional_badge || {}
+                var previousElement = window.__STX_CURRENT_ELEMENT__
+                window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="conditional_badge"]')
+                try {
+                  var status = window.stx.useReactiveProp('status', 'configured')
+                  var label = window.stx.derived(function() { return status() })
+                  Object.assign(scope, {
+                    status: status,
+                    label: label,
+                    __mountCallbacks: scope.__mountCallbacks || [],
+                    __destroyCallbacks: scope.__destroyCallbacks || [],
+                  })
+                }
+                finally {
+                  window.__STX_CURRENT_ELEMENT__ = previousElement
+                }
+              })()
+            </script>
+          </section>
+        </template>
+      </main>
+    `
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const badge = document.querySelector('[data-stx-scope="conditional_badge"]')
+    expect(badge).not.toBeNull()
+    expect(badge.getAttribute('status')).toBe('attention')
+    expect(badge.__stx_parent_scope.parentStatus).toBe(parentStatus)
+    expect(badge.querySelector('.label').textContent).toBe('attention')
+    expect(window.stx._scopes.conditional_badge.status()).toBe('attention')
+
+    parentStatus.set('deployed')
+    await new Promise(resolve => setTimeout(resolve, 20))
+    expect(badge.querySelector('.label').textContent).toBe('deployed')
+  })
 })

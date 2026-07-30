@@ -2891,7 +2891,7 @@ else if (typeof value === 'string') {
     });
   }
 
-  function hydrateForComponentScopes(nodes, itemScope) {
+  function hydrateComponentScopes(nodes, callerScope) {
     var roots = [];
     var scripts = [];
     forEachGroupElement(nodes, function(node) {
@@ -2940,12 +2940,12 @@ else if (typeof value === 'string') {
     roots.forEach(function(root) {
       var scopeId = root.getAttribute('data-stx-scope');
       var scopeVars = scopeId && window.stx._scopes && window.stx._scopes[scopeId];
-      var callerScope = resolveComponentCallerScope(root, itemScope);
-      root.__stx_parent_scope = callerScope;
-      bindParentComponentProps(root, callerScope);
+      var resolvedCallerScope = resolveComponentCallerScope(root, callerScope);
+      root.__stx_parent_scope = resolvedCallerScope;
+      bindParentComponentProps(root, resolvedCallerScope);
       if (!scopeVars || root.__stx_disposers) return;
       scopeVars.__el = root;
-      var childScope = { ...callerScope, ...scopeVars };
+      var childScope = { ...resolvedCallerScope, ...scopeVars };
       root.__stx_disposers = trackEffects(function() {
         processElement(root, childScope);
       });
@@ -3434,7 +3434,7 @@ catch (e) {
             parent.insertBefore(el, placeholder);
             if (tgReady && el.isConnected) tgEnter(el, tgName);
           });
-          hydrateForComponentScopes(elements, elements.find(function(node) {
+          hydrateComponentScopes(elements, elements.find(function(node) {
             return node && node.__stx_for_scope;
           })?.__stx_for_scope || passedScope);
           elements.forEach(el => {
@@ -3793,8 +3793,14 @@ catch (e2) {
     // leaked into the rendered UI until the condition toggled.
     const processTemplateNodes = (nodes) => {
       const childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
+      // Components compiled inside a <template :if> carry setup scripts in the
+      // template content. Browser-cloned scripts are inert, so register their
+      // scopes and forwarded props before walking the inserted branch. This is
+      // the same component hydration path used by <template :for>.
+      hydrateComponentScopes(nodes, childScope);
       nodes.forEach(node => {
-        processElement(node, childScope);
+        if (!node.__stx_disposers && node.tagName !== 'SCRIPT')
+          processElement(node, childScope);
         if (node.nodeType === 1) {
           node.removeAttribute('x-cloak');
           node.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
