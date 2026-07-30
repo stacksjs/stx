@@ -271,6 +271,40 @@ describe('router browser navigation behavior', () => {
     expect(pageScript?.previousElementSibling?.id).toBe('error-panel')
   })
 
+  it('keeps scoped setup scripts beside routed component-root loops', async () => {
+    const window = installRouter(`
+      <html>
+        <head>
+          <meta name="stx-layout" content="layouts/app">
+          <meta name="stx-layout-group" content="app">
+        </head>
+        <body><main>Home</main></body>
+      </html>
+    `, async () => response(`
+      <div data-stx-scope="health-card" :for="check in checks()">{{ label() }}</div>
+      <script data-stx-scoped>
+        window.stx._scopes['health-card'] = { label: window.stx.state('dependency') }
+      </script>
+      <script>window.__healthPageReady = true</script>
+    `, {
+      'X-STX-Fragment': 'true',
+      'X-STX-Layout': 'layouts/app',
+      'X-STX-Layout-Group': 'app',
+    }))
+
+    await window.stxRouter.navigate('/health')
+    await waitForRouterSwap()
+
+    const scopedSetup = window.document.querySelector('main > script[data-stx-scoped]')
+    expect(scopedSetup?.getAttribute('type')).toBe('application/stx-pending')
+    expect(scopedSetup?.textContent).toContain('health-card')
+    expect(scopedSetup?.previousElementSibling?.getAttribute('data-stx-scope')).toBe('health-card')
+    expect([...window.document.querySelectorAll('body > script[data-stx-page]')]
+      .some(script => script.textContent?.includes('health-card'))).toBeFalse()
+    expect(window.document.querySelector('script[data-stx-page][data-stx-positioned]')?.textContent)
+      .toContain('__healthPageReady')
+  })
+
   it('does a native full navigation for non-stx documents instead of corrupting the shell', async () => {
     // A route on the same origin rendered by another engine (e.g. a BunPress
     // blog) carries none of the stx layout markers. The router must NOT splice

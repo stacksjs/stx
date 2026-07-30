@@ -438,8 +438,13 @@ else {
         var cleanFrag=html.replace(new RegExp('<scr'+'ipt\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/scr'+'ipt>','gi'),function(m,attrs,code){
           if(code&&code.trim()&&!isSignalsRuntimeScript({hasAttribute:function(name){return name==='data-stx-runtime'&&attrs.indexOf('data-stx-runtime')!==-1}},code)){
             var slot='fragment-'+(++fragScriptId);
-            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code)});
-            return '<scr'+'ipt type="application/stx-pending" data-stx-route-script="'+slot+'"></scr'+'ipt>';
+            var scoped=/(?:^|\\s)data-stx-scoped(?:\\s|=|$)/i.test(attrs);
+            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped});
+            // Retain scoped setup code in its inert placeholder. A placeholder
+            // inside template.content is unreachable through document, so the
+            // repeated component runtime must execute it for each clone.
+            return '<scr'+'ipt type="application/stx-pending" data-stx-route-script="'+slot+'"'
+              +(scoped?' data-stx-scoped':'')+'>'+code+'<\\/scr'+'ipt>';
           }
           return '';
         });
@@ -493,6 +498,29 @@ else {
         fragScripts.forEach(function(entry){
           var code=entry.text;
           log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
+          var placeholder=document.querySelector('script[data-stx-route-script="'+entry.slot+'"]');
+          var nestedScopedTemplate=false;
+          var scopedLoopSetup=false;
+          if(entry.scoped&&placeholder){
+            document.querySelectorAll('template').forEach(function(template){
+              if(template.contains(placeholder)||(template.content&&template.content.contains(placeholder)))
+                nestedScopedTemplate=true;
+            });
+            var loopRoot=placeholder.previousSibling;
+            while(loopRoot&&(
+              (loopRoot.nodeType===Node.TEXT_NODE&&!(loopRoot.textContent||'').trim())
+              ||loopRoot.nodeType===Node.COMMENT_NODE
+            ))loopRoot=loopRoot.previousSibling;
+            if(loopRoot&&loopRoot.nodeType===Node.ELEMENT_NODE&&loopRoot.hasAttribute('data-stx-scope')
+              &&(loopRoot.hasAttribute(':for')||loopRoot.hasAttribute('@for')||loopRoot.hasAttribute('x-for'))){
+              var loopScopeId=loopRoot.getAttribute('data-stx-scope');
+              scopedLoopSetup=!!loopScopeId&&code.indexOf(loopScopeId)!==-1;
+            }
+          }
+          if(entry.scoped&&(!placeholder||!placeholder.parentNode||nestedScopedTemplate||scopedLoopSetup)){
+            log('[router] leaving loop-scoped script for component hydration');
+            return;
+          }
           // Skip scripts that were already executed (layout-level partials
           // like theme.stx, stores.stx, nav.stx). Their top-level const/let
           // declarations would throw "Identifier has already been declared"
@@ -523,7 +551,6 @@ else {
           }
           ns.textContent=(hasImport||isAlreadyScoped)?code:'{'+code+'}';
           ns.setAttribute('data-stx-page','');
-          var placeholder=document.querySelector('script[data-stx-route-script="'+entry.slot+'"]');
           if(placeholder&&placeholder.parentNode){
             ns.setAttribute('data-stx-positioned','');
             placeholder.parentNode.replaceChild(ns,placeholder);
