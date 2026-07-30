@@ -71,13 +71,23 @@ export const COMPONENT_SCOPE_LOCAL_GLOBALS: readonly string[] = ['onMount', 'onD
  * A local declaration is intentionally allowed to shadow a runtime convenience
  * global, just as an explicit import would. Omitting it from this destructure
  * prevents duplicate-binding syntax errors.
+ * @param source optionally limits bindings to identifiers referenced by one
+ * component script. Page-level callers omit it and retain the full authoring
+ * surface.
  */
 export function buildRuntimeGlobalsDestructure(
   declaration: 'const' | 'var' = 'const',
   exclude: readonly string[] = [],
+  source?: string,
 ): string {
-  const names = exclude.length
+  let names = exclude.length
     ? STX_RUNTIME_GLOBALS.filter(name => !exclude.includes(name))
     : STX_RUNTIME_GLOBALS
+  if (source !== undefined) {
+    names = names.filter((name) => {
+      const escaped = name.replace(/[$()*+.?[\\\]^{|}-]/g, '\\$&')
+      return new RegExp(`(^|[^\\w$])${escaped}(?![\\w$])`).test(source)
+    })
+  }
   return `${declaration} { ${names.join(', ')} } = window.stx;`
 }

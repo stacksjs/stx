@@ -1152,7 +1152,7 @@ export async function renderComponentWithSlot(
         // setup uses in signal-processing.ts.
         const wrappedContent = `
 (function() {
-  ${buildRuntimeGlobalsDestructure('const', [...COMPONENT_SCOPE_LOCAL_GLOBALS, ...componentLocalNames])}
+  ${buildRuntimeGlobalsDestructure('const', [...COMPONENT_SCOPE_LOCAL_GLOBALS, ...componentLocalNames], content)}
   const __scope = window.stx._scopes = window.stx._scopes || {};
   const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
   const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;

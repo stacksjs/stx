@@ -76,6 +76,15 @@ describe('stx#1785: runtime globals come from one source', () => {
     expect(buildRuntimeGlobalsDestructure()).toBe(buildRuntimeGlobalsDestructure('const'))
   })
 
+  it('limits component bindings to referenced runtime globals', () => {
+    const generated = buildRuntimeGlobalsDestructure(
+      'const',
+      COMPONENT_SCOPE_LOCAL_GLOBALS,
+      'const count = state(0); nextTick(() => count.set(1))',
+    )
+    expect(destructuredNames(generated)).toEqual(new Set(['nextTick', 'state']))
+  })
+
   it('the page setup destructure is exactly the shared list', async () => {
     const page = await processDirectives(
       `<script client>\nconst a = state(1)\n</script>\n<p x-text="a()"></p>`,
