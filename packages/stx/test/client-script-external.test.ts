@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import path from 'node:path'
-import { processClientScript } from '../src/client-script'
+import { injectBrowserCoreAutoImports, processClientScript } from '../src/client-script'
 import { hasUserImports } from '../src/client-script-bundler'
 import { processDirectives } from '../src/process'
 import { injectBrowserRuntime } from '../src/runtime-injection'
@@ -63,14 +63,27 @@ import type {
     expect(output).toMatch(/var \{ (?:onMount, state|state, onMount) \} = window\.stx \|\| window/)
   })
 
-  it('auto-imports browser utilities and Stacks-only composables', async () => {
-    const output = await processClientScript(`
+  it('auto-imports browser utilities and Stacks-only composables as bundle inputs', () => {
+    const output = injectBrowserCoreAutoImports(`
 const load = debounce(() => {}, 250)
 const visibility = useDocumentVisibility()
 const controls = useIntervalFn(load, 15000)
 `)
 
-    expect(output).toContain('var { debounce, useDocumentVisibility, useIntervalFn } = window.StacksBrowser || {}')
+    expect(output.imports).toEqual(['debounce', 'useDocumentVisibility', 'useIntervalFn'])
+    expect(output.code).toContain(`import { debounce, useDocumentVisibility, useIntervalFn } from '@stacksjs/browser'`)
+  })
+
+  it('does not shadow locally declared browser helper names', () => {
+    const output = injectBrowserCoreAutoImports(`
+function debounce(callback) {
+  return callback
+}
+const load = debounce(() => {})
+`)
+
+    expect(output.imports).toEqual([])
+    expect(output.code).not.toContain(`from '@stacksjs/browser'`)
   })
 
   it('loads the browser runtime when a browser utility is auto-imported', () => {
@@ -99,7 +112,7 @@ useIntervalFn(load, 15000)
       new Set(),
     )
 
-    expect(output).toContain('var { debounce, useDocumentVisibility, useIntervalFn } = window.StacksBrowser || {}')
+    expect(output).not.toContain('window.StacksBrowser')
   })
 
   it('auto-imports browser utilities in scoped signal components', async () => {
@@ -114,7 +127,7 @@ useIntervalFn(load, 15000)
       new Set(),
     )
 
-    expect(output).toContain('var { debounce, useDocumentVisibility, useIntervalFn } = window.StacksBrowser || {}')
+    expect(output).not.toContain('window.StacksBrowser')
     expect(output).toContain('__scopeVars')
   })
 })

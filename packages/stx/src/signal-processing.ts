@@ -10,7 +10,7 @@
  */
 
 import type { StxOptions } from './types'
-import { generateBrowserAutoImportDestructuring, generateServerDataBridge } from './client-script'
+import { generateServerDataBridge, injectBrowserCoreAutoImports } from './client-script'
 import { findIfBlocks } from './parser'
 import { buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
@@ -1213,6 +1213,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
   const resolvedParts: string[] = []
   for (let i = 0; i < signalScripts.length; i++) {
     let scriptContent = signalScripts[i].content
+    scriptContent = injectBrowserCoreAutoImports(scriptContent).code
     if (hasUserImports(scriptContent)) {
       console.log('[stx:bundler] bundling signal script imports')
       scriptContent = await bundleClientScript(scriptContent, filePath || '', {
@@ -1257,7 +1258,6 @@ export async function processScriptSetup(template: string, filePath?: string, se
   // no fetch. Generated against the deduped merged content so a name declared
   // by any signal script is never clobbered.
   const bridge = generateServerDataBridge(mergedContent, serverData)
-  const browserAutoImports = generateBrowserAutoImportDestructuring(mergedContent, mergedExportNames)
 
   // Generate the setup function that provides signal APIs. Mark the script
   // with data-stx-scoped so the client-script loop skips it.
@@ -1265,7 +1265,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
 <script data-stx-scoped>
 function ${setupFnName}() {
   ${buildRuntimeGlobalsDestructure('const', mergedExportNames)}
-${browserAutoImports}${bridge}${mergedContent}
+${bridge}${mergedContent}
   return { ${mergedExports} };
 }
 window.__stx_latestSetup=${setupFnName};

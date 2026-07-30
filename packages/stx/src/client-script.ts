@@ -363,6 +363,56 @@ const BROWSER_CORE_IMPORTS = [
   'useDocumentVisibility', 'useIntervalFn',
 ]
 
+export interface BrowserCoreAutoImportResult {
+  code: string
+  imports: string[]
+}
+
+/**
+ * Turn bare core browser helper usage into a real module import before the
+ * client bundler runs.
+ *
+ * Inline signal scripts execute synchronously while the document is parsed.
+ * Loading `window.StacksBrowser` from a later module script is therefore too
+ * late. A real import lets Bun inline and tree-shake the selected browser
+ * helpers together with the component, exactly like an explicit user import.
+ */
+export function injectBrowserCoreAutoImports(code: string): BrowserCoreAutoImportResult {
+  const explicitlyImported = new Set<string>()
+  for (const match of code.matchAll(/^\s*import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"][^'"]+['"]\s*;?\s*$/gm)) {
+    for (const specifier of match[1].split(',')) {
+      const localName = specifier.trim().split(/\s+as\s+/).pop()?.replace(/^type\s+/, '').trim()
+      if (localName)
+        explicitlyImported.add(localName)
+    }
+  }
+
+  const locallyDeclared = new Set<string>()
+  for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g))
+    locallyDeclared.add(match[1])
+  for (const match of code.matchAll(/\b(?:const|let|var)\s*\{([^}]*)\}/g)) {
+    for (const binding of match[1].split(',')) {
+      const localName = binding.trim().split(/[:=]/).pop()?.trim()
+      if (localName)
+        locallyDeclared.add(localName)
+    }
+  }
+
+  const imports = BROWSER_CORE_IMPORTS.filter((symbol) => {
+    if (explicitlyImported.has(symbol) || locallyDeclared.has(symbol))
+      return false
+    return new RegExp(`\\b${symbol}\\b`).test(code)
+  })
+
+  if (imports.length === 0)
+    return { code, imports }
+
+  return {
+    code: `import { ${imports.join(', ')} } from '@stacksjs/browser'\n${code}`,
+    imports,
+  }
+}
+
 /**
  * Detect model usage in code.
  * Models are PascalCase identifiers used with query methods.
@@ -1108,6 +1158,7 @@ export async function processClientScript(
   let code = scriptContent
   let autoImportCode = ''
   let wasBundled = false
+  let bundledBrowserImports: string[] = []
 
   // 0a. Extract side-effect CSS imports BEFORE the bundler sees them.
   // Bun.build has no `.css` loader configured here and would either crash
@@ -1120,6 +1171,12 @@ export async function processClientScript(
   })
   code = cssExtraction.code
   const vendorStyleTags = renderVendorStyleTags(cssExtraction.styles)
+
+  // Browser helpers are bundle inputs so inline scripts can use them
+  // synchronously without waiting for a global module bootstrap.
+  const browserCoreImports = injectBrowserCoreAutoImports(code)
+  code = browserCoreImports.code
+  bundledBrowserImports = browserCoreImports.imports
 
   // 0b. Bundle user imports via Bun.build (if any detected)
   const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
@@ -1138,7 +1195,7 @@ export async function processClientScript(
     code = autoImportResult.code
     autoImportCode = generateAutoImportDestructuring(
       autoImportResult.stxImports,
-      autoImportResult.browserImports,
+      autoImportResult.browserImports.filter(name => !bundledBrowserImports.includes(name)),
     )
   }
 

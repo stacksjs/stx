@@ -16,7 +16,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 // Import from expressions
-import { extractAndStripCssImports, extractBridgeData, generateBrowserAutoImportDestructuring, processClientScript, renderVendorStyleTags } from './client-script'
+import { extractAndStripCssImports, extractBridgeData, injectBrowserCoreAutoImports, processClientScript, renderVendorStyleTags } from './client-script'
 import { interpolateScriptExpressions, processExpressions, unescapeHtml } from './expressions'
 import { COMPONENT_SCOPE_LOCAL_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
@@ -1123,6 +1123,7 @@ export async function renderComponentWithSlot(
         })
         let bundledContent = cssExtraction.code
         const vendorStyleTags = renderVendorStyleTags(cssExtraction.styles)
+        bundledContent = injectBrowserCoreAutoImports(bundledContent).code
         const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
         if (hasUserImports(bundledContent)) {
           bundledContent = await bundleClientScript(bundledContent, componentFilePath, {
@@ -1138,7 +1139,6 @@ export async function renderComponentWithSlot(
         // Transform store imports before IIFE wrapping (import statements can't be inside functions)
         const content = transformStoreImports(bundledContent)
         const componentLocalNames = extractVariableNames(content)
-        const browserAutoImports = generateBrowserAutoImportDestructuring(content, componentLocalNames)
         // Wrap script content to register in scope
         // Add data-stx-scoped attribute to prevent double-processing by processScriptSetup
         // Pull the full component-system API into scope, not just the
@@ -1153,7 +1153,6 @@ export async function renderComponentWithSlot(
         const wrappedContent = `
 (function() {
   ${buildRuntimeGlobalsDestructure('const', [...COMPONENT_SCOPE_LOCAL_GLOBALS, ...componentLocalNames])}
-${browserAutoImports}
   const __scope = window.stx._scopes = window.stx._scopes || {};
   const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
   const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;
