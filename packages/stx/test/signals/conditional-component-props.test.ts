@@ -268,6 +268,79 @@ describe('conditional component props', () => {
     expect(badge.querySelector('.label').textContent).toBe('deployed')
   })
 
+  it('finishes hydrating a direct conditional component after its sibling setup registers', async () => {
+    const show = window.stx.state(true)
+    const parentTitle = window.stx.state('Ready')
+    window.__stx_setup_direct_conditional_component = () => ({ parentTitle, show })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_direct_conditional_component">
+        <div
+          data-stx-scope="direct_conditional_card"
+          data-stx-parent-bindings="title"
+          :if="show()"
+          :title="parentTitle()"
+        >
+          <span class="title">{{ liveTitle() }}</span>
+        </div>
+        <script data-stx-scoped>
+          (function() {
+            var scopes = window.stx._scopes = window.stx._scopes || {}
+            var scope = scopes.direct_conditional_card = scopes.direct_conditional_card || {}
+            var previousElement = window.__STX_CURRENT_ELEMENT__
+            window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="direct_conditional_card"]')
+            try {
+              var liveTitle = window.stx.useReactiveProp('title', '')
+              Object.assign(scope, {
+                liveTitle: liveTitle,
+                __mountCallbacks: scope.__mountCallbacks || [],
+                __destroyCallbacks: scope.__destroyCallbacks || [],
+              })
+            }
+            finally {
+              window.__STX_CURRENT_ELEMENT__ = previousElement
+            }
+          })()
+        </script>
+      </main>
+    `
+    shimAttributes(document.body)
+    const card = document.querySelector('[data-stx-scope="direct_conditional_card"]')
+    const setupScript = document.querySelector('script[data-stx-scoped]')
+    const previousElement = window.__STX_CURRENT_ELEMENT__
+    window.__STX_CURRENT_ELEMENT__ = card
+    const liveTitle = window.stx.useReactiveProp('title', '')
+    window.__STX_CURRENT_ELEMENT__ = previousElement
+    window.stx._scopes.direct_conditional_card = {
+      liveTitle,
+      __mountCallbacks: [],
+      __destroyCallbacks: [],
+    }
+
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    expect(card).not.toBeNull()
+    expect(card.getAttribute('title')).toBe('Ready')
+    expect(card.querySelector('.title').textContent).toBe('Ready')
+    expect(window.stx._scopes.direct_conditional_card.liveTitle()).toBe('Ready')
+
+    parentTitle.set('Deployed')
+    await new Promise(resolve => setTimeout(resolve, 20))
+    expect(card.querySelector('.title').textContent).toBe('Deployed')
+
+    show.set(false)
+    await new Promise(resolve => setTimeout(resolve, 20))
+    expect(card.isConnected).toBe(false)
+    expect(setupScript.isConnected).toBe(false)
+
+    show.set(true)
+    await new Promise(resolve => setTimeout(resolve, 20))
+    expect(card.isConnected).toBe(true)
+    expect(setupScript.isConnected).toBe(true)
+    expect(card.querySelector('.title').textContent).toBe('Deployed')
+  })
+
   it('hydrates a component selected by an if/else-if chain with caller-owned slot state', async () => {
     const loading = window.stx.state(false)
     const ready = window.stx.state(true)

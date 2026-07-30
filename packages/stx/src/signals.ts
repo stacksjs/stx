@@ -1916,6 +1916,47 @@ catch (e) {
     });
   }
 
+  // Component setup scripts are emitted immediately after their scoped root.
+  // When that root itself carries :if, detaching only the element leaves the
+  // sibling setup script outside the conditional node group. Scripts inserted
+  // through innerHTML are inert, so the later hydration pass has no script to
+  // execute and the component keeps raw directives and interpolations.
+  function findConditionalComponentSetupSiblings(root) {
+    if (!root || !root.hasAttribute || !root.hasAttribute('data-stx-scope')) return [];
+    var scopeId = root.getAttribute('data-stx-scope');
+    if (!scopeId) return [];
+
+    var scripts = [];
+    var sibling = root.nextSibling;
+    while (sibling) {
+      var next = sibling.nextSibling;
+      if (sibling.nodeType === Node.TEXT_NODE && !(sibling.textContent || '').trim()) {
+        sibling = next;
+        continue;
+      }
+      if (sibling.nodeType === Node.COMMENT_NODE) {
+        sibling = next;
+        continue;
+      }
+      if (sibling.nodeType === Node.ELEMENT_NODE
+        && sibling.tagName === 'STYLE'
+        && sibling.hasAttribute('data-stx-vendor')) {
+        sibling = next;
+        continue;
+      }
+      if (sibling.nodeType === Node.ELEMENT_NODE
+        && sibling.tagName === 'SCRIPT'
+        && sibling.hasAttribute('data-stx-scoped')
+        && (sibling.textContent || '').indexOf(scopeId) !== -1) {
+        scripts.push(sibling);
+        sibling = next;
+        continue;
+      }
+      break;
+    }
+    return scripts;
+  }
+
   function processElement(el, scope = componentScope) {
     // Debug: log every element with x-class or @click
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
@@ -3717,10 +3758,18 @@ catch (e2) {
               // events, directives, and projected slot expressions inert.
               // Hydrate those scopes before the normal subtree walk, matching
               // the single-template :if and :for insertion paths.
+              var previouslyTrackedNodes = new Set();
+              branch.nodes.forEach(function (n) {
+                if (n && n.__stx_disposers) previouslyTrackedNodes.add(n);
+              });
               hydrateComponentScopes(branch.nodes, childScope);
               branch.nodes.forEach(function (n) {
                 if (n.nodeType !== 1) return; // whitespace/text between template children
-                if (!n.__stx_disposers)
+                // A scoped component receives its disposer in the outer scope
+                // walk immediately after processElement returns from binding
+                // this conditional. That first pass intentionally stops at
+                // :if, so a disposer does not mean its children were hydrated.
+                if (previouslyTrackedNodes.has(n) || !n.__stx_disposers)
                   processElement(n, childScope);
                 n.removeAttribute('x-cloak');
                 n.querySelectorAll('[x-cloak]').forEach(function (c) { c.removeAttribute('x-cloak'); });
@@ -3750,10 +3799,11 @@ catch (e2) {
 
     const placeholder = document.createComment('stx-if');
     let isInserted = true;
-    let currentNodes = [];
 
     // Handle <template> elements specially - clone their content
     const isTemplate = el.tagName === 'TEMPLATE';
+    const componentSetupSiblings = isTemplate ? [] : findConditionalComponentSetupSiblings(el);
+    let currentNodes = isTemplate ? [] : [el, ...componentSetupSiblings];
 
     // Capture BOTH element scope AND passedScope NOW before anything changes
     // passedScope may contain @for iteration variables or parent component signals
@@ -3905,7 +3955,8 @@ else if (!value && isInserted) {
 else {
         if (value && !isInserted) {
           console.log('[stx] bindIf INSERTING element for :if=' + expr);
-          parent.insertBefore(el, placeholder.nextSibling);
+          const insertionAnchor = placeholder.nextSibling;
+          currentNodes.forEach(node => parent.insertBefore(node, insertionAnchor));
           el.__stx_shown_at = performance.now();
           isInserted = true;
         }
@@ -3920,7 +3971,7 @@ else if (!value && isInserted) {
           // once (#1737). Permanent disposal stays in bindFor (item removal)
           // and cleanupContainer (SPA navigation). The double-bind guards make
           // re-show idempotent, so toggling doesn't leak.
-          el.remove();
+          currentNodes.forEach(node => node.remove());
           isInserted = false;
           console.log('[stx] bindIf REMOVED, el.isConnected:', el.isConnected);
         }
@@ -3940,8 +3991,10 @@ else if (!value && isInserted) {
             // hydrate any component roots in the restored subtree first so
             // projected slot bindings and component-local directives receive
             // the same lifecycle as components inserted by template :if.
-            hydrateComponentScopes([el], childScope);
-            if (!el.__stx_disposers) processElement(el, childScope);
+            var wasTrackedBeforeConditionalHydration = !!el.__stx_disposers;
+            hydrateComponentScopes(currentNodes, childScope);
+            if (wasTrackedBeforeConditionalHydration || !el.__stx_disposers)
+              processElement(el, childScope);
             // Remove x-cloak from the inserted subtree — the initial
             // cloak removal (after processElement on the root) already
             // ran before this deferred processing, so newly-inserted
