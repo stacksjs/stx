@@ -580,6 +580,36 @@ export { screenCapture } from './screen-capture'
 export type { CapturableWindow, ScreenCaptureAPI } from './screen-capture'
 
 // =============================================================================
+// Screen Sharing Detection (is the screen being shared or recorded?)
+// =============================================================================
+export {
+  DEFAULT_WATCH_INTERVAL_MS,
+  MAX_WATCH_INTERVAL_MS,
+  MIN_WATCH_INTERVAL_MS,
+  screenSharing,
+  watchScreenSharing,
+} from './screen-sharing'
+export type {
+  ScreenSharingAPI,
+  ScreenSharingKind,
+  ScreenSharingSignals,
+  ScreenSharingSource,
+  ScreenSharingState,
+} from './screen-sharing'
+
+// =============================================================================
+// Focus / Do Not Disturb
+// =============================================================================
+export { focus, hasFocusShortcuts } from './focus'
+export type {
+  FocusAPI,
+  FocusAuthorization,
+  FocusResult,
+  FocusShortcutOptions,
+  FocusStatus,
+} from './focus'
+
+// =============================================================================
 // Local HTTP Server (OAuth callbacks)
 // =============================================================================
 export { localServer } from './local-server'

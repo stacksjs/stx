@@ -84,6 +84,7 @@ export interface CraftEventMap {
   'craft:powerWake': void
   'craft:networkChange': { type: import('./network').ConnectionType, online: boolean }
   'craft:screen:change': void
+  'craft:screenSharing:change': import('./screen-sharing').ScreenSharingState
   'craft:theme': import('./theme').ThemeInfo
 
   // bluetooth
