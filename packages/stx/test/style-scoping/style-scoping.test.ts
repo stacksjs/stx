@@ -135,6 +135,21 @@ describe('Style Scoping', () => {
       expect(result.html).toMatch(/<div data-v-stx-\w+/)
     })
 
+    /**
+     * The carve-out above must be element-position aware, not a global regex.
+     * `aria-label="<script>…</script>"` is an attribute value, not an element:
+     * treating it as one tears a hole through the middle of a real tag and
+     * hands the raw script back afterwards, unescaped.
+     */
+    it('should not treat an attribute-embedded script as a real element', () => {
+      const html = '<a aria-label="<script>alert(1)</script>" href="/x">go</a>'
+        + '<style scoped>.x { color: red; }</style>'
+      const result = processScopedStyles(html, '/components/link.stx')
+
+      // The anchor survives intact and is scoped, rather than being cut in two.
+      expect(result.html).toMatch(/<a data-v-stx-\w+ aria-label="<script>alert\(1\)<\/script>" href="\/x">go<\/a>/)
+    })
+
     it('should not duplicate scope attribute on already-scoped elements', () => {
       const html = '<div>Content</div><style scoped>.x { color: red; }</style>'
       const result = processScopedStyles(html, '/test.stx')

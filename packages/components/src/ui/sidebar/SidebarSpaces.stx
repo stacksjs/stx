@@ -478,7 +478,8 @@ onDestroy(() => {
 
 defineExpose({
   index,
-  goTo: position => goTo(position, { source: 'api' }),
+  /** Accepts an index or a space id — callers think in ids, the track in indexes. */
+  goTo: target => goTo(typeof target === 'number' ? target : ids.indexOf(target), { source: 'api' }),
   next: () => goTo(index() + 1, { source: 'api' }),
   previous: () => goTo(index() - 1, { source: 'api' }),
 })
