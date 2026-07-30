@@ -3684,9 +3684,18 @@ catch (e2) {
           (function (branch) {
             setTimeout(function () {
               var childScope = { ...globalHelpers, ...capturedComponentScope, ...(branch.capturedElementScope || {}) };
+              // Components compiled inside any branch of an if/else-if/else
+              // chain carry scoped setup scripts with them. Branch nodes are
+              // detached before those scripts can execute, so simply
+              // re-inserting the selected branch leaves component props,
+              // events, directives, and projected slot expressions inert.
+              // Hydrate those scopes before the normal subtree walk, matching
+              // the single-template :if and :for insertion paths.
+              hydrateComponentScopes(branch.nodes, childScope);
               branch.nodes.forEach(function (n) {
                 if (n.nodeType !== 1) return; // whitespace/text between template children
-                processElement(n, childScope);
+                if (!n.__stx_disposers)
+                  processElement(n, childScope);
                 n.removeAttribute('x-cloak');
                 n.querySelectorAll('[x-cloak]').forEach(function (c) { c.removeAttribute('x-cloak'); });
               });

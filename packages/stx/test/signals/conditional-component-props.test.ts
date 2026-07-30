@@ -228,4 +228,59 @@ describe('conditional component props', () => {
     await new Promise(resolve => setTimeout(resolve, 20))
     expect(badge.querySelector('.label').textContent).toBe('deployed')
   })
+
+  it('hydrates a component selected by an if/else-if chain with caller-owned slot state', async () => {
+    const loading = window.stx.state(false)
+    const ready = window.stx.state(true)
+    const saving = window.stx.state(false)
+    window.__stx_setup_chain_component = () => ({ loading, ready, saving })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_chain_component">
+        <section :if="loading()">Loading</section>
+        <section :else-if="ready()">
+          <div data-stx-scope="chain_button">
+            <button :disabled="liveDisabled()">
+              {{ saving() ? 'Saving...' : 'Save changes' }}
+            </button>
+            <script data-stx-scoped>
+              (function() {
+                var scopes = window.stx._scopes = window.stx._scopes || {}
+                var scope = scopes.chain_button = scopes.chain_button || {}
+                var previousElement = window.__STX_CURRENT_ELEMENT__
+                window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="chain_button"]')
+                try {
+                  var liveDisabled = window.stx.state(false)
+                  Object.assign(scope, {
+                    liveDisabled: liveDisabled,
+                    __mountCallbacks: scope.__mountCallbacks || [],
+                    __destroyCallbacks: scope.__destroyCallbacks || [],
+                  })
+                }
+                finally {
+                  window.__STX_CURRENT_ELEMENT__ = previousElement
+                }
+              })()
+            </script>
+          </div>
+        </section>
+        <section :else>Unavailable</section>
+      </main>
+    `
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const buttonComponent = document.querySelector('[data-stx-scope="chain_button"]')
+    const button = buttonComponent.querySelector('button')
+    expect(buttonComponent.__stx_parent_scope.saving).toBe(saving)
+    expect(window.stx._scopes.chain_button.liveDisabled()).toBe(false)
+    expect(button.hasAttribute(':disabled')).toBe(false)
+    expect(button.textContent.trim()).toBe('Save changes')
+    expect(button.textContent).not.toContain('{{')
+
+    saving.set(true)
+    await new Promise(resolve => setTimeout(resolve, 20))
+    expect(button.textContent.trim()).toBe('Saving...')
+  })
 })
