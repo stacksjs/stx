@@ -220,6 +220,17 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
       return null
     }
 
+    // Strategy 0: an explicit development checkout. This is opt-in so a
+    // machine-local clone never shadows the version declared by an app.
+    if (process.env.CROSSWIND_SRC) {
+      const explicitPath = path.resolve(process.env.CROSSWIND_SRC)
+      const explicitModule = await loadFrom([explicitPath])
+      if (!explicitModule)
+        throw new Error(`CROSSWIND_SRC did not resolve to a Crosswind module: ${explicitPath}`)
+      crosswindModule = explicitModule
+      return crosswindModule
+    }
+
     // Strategy 1: the crosswind the PROJECT installed. This comes first
     // because a bare import resolves relative to stx, not to the app, so
     // stx's own copy used to win even when the app declared a newer one —

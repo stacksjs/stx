@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import path from 'node:path'
-import { loadCrosswindConfig } from '../../src/dev-server/crosswind'
+import { loadCrosswind, loadCrosswindConfig, resetCrosswindCache } from '../../src/dev-server/crosswind'
 
 // =============================================================================
 // Regression: the crosswind config loader must NOT emit noisy error stacks
@@ -17,6 +17,7 @@ import { loadCrosswindConfig } from '../../src/dev-server/crosswind'
 // =============================================================================
 
 const TMP_ROOT = path.join('/tmp', `stx-crosswind-config-${process.pid}-${Date.now()}`)
+const ORIGINAL_CROSSWIND_SRC = process.env.CROSSWIND_SRC
 
 async function mkTmpDir(name: string): Promise<string> {
   const dir = path.join(TMP_ROOT, name)
@@ -25,7 +26,30 @@ async function mkTmpDir(name: string): Promise<string> {
 }
 
 afterEach(async () => {
+  resetCrosswindCache()
+  if (ORIGINAL_CROSSWIND_SRC === undefined)
+    delete process.env.CROSSWIND_SRC
+  else
+    process.env.CROSSWIND_SRC = ORIGINAL_CROSSWIND_SRC
   await Bun.$`rm -rf ${TMP_ROOT}`.quiet().nothrow()
+})
+
+describe('loadCrosswind (dev-server)', () => {
+  it('prefers an explicit CROSSWIND_SRC module', async () => {
+    const dir = await mkTmpDir('explicit-source')
+    const source = path.join(dir, 'index.ts')
+    await Bun.write(source, `
+      export class CSSGenerator {}
+      export const config = { source: 'explicit' }
+    `)
+    process.env.CROSSWIND_SRC = source
+    resetCrosswindCache()
+
+    const result = await loadCrosswind()
+
+    expect(result).not.toBeNull()
+    expect((result as any)?.config?.source).toBe('explicit')
+  })
 })
 
 describe('loadCrosswindConfig (dev-server)', () => {
