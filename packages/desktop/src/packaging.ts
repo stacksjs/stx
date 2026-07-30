@@ -22,3 +22,10 @@
 export { pack, packageApp } from 'craft-native'
 
 export type { PackageConfig, PackageResult } from 'craft-native'
+
+/**
+ * Craft's binary resolution contract — PATH (craft installs via pantry), with
+ * `CRAFT_BIN` for local builds. Re-exported so a build script bundling the
+ * runtime into its app finds the same binary the window layer will spawn.
+ */
+export { craftBinaryNotFoundMessage, resolveCraftBinary } from 'craft-native'
