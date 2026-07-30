@@ -1766,7 +1766,14 @@ catch (e) {
     };
     directValues[name] = directValue;
     directValues[camelName] = directValue;
-    if (propSignal() !== value) propSignal.set(value);
+    // This runs inside the parent binding effect. Reading the child prop
+    // signal normally would subscribe that effect to its own output. Parent
+    // expressions that return a fresh array or object would then recurse:
+    // syncing the child retriggers the parent, which creates another value.
+    // Compare without dependency tracking so the effect only follows the
+    // caller-owned signals used by the binding expression.
+    if (!Object.is(peek(function() { return propSignal(); }), value))
+      propSignal.set(value);
   }
 
   function bindParentComponentProps(el, callerScope) {

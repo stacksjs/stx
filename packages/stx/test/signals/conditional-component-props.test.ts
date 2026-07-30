@@ -77,6 +77,45 @@ describe('conditional component props', () => {
     expect(selected()).toBe('staging')
   })
 
+  it('does not subscribe a parent binding effect to the child prop it synchronizes', async () => {
+    const source = window.stx.state([{ value: 'production', label: 'Production' }])
+    const freshOptions = () => source().map((option: { value: string, label: string }) => ({ ...option }))
+    window.__stx_setup_fresh_component_props = () => ({ freshOptions })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_fresh_component_props">
+        <div
+          data-stx-scope="fresh_options_select"
+          data-stx-parent-bindings="options"
+          :options="freshOptions()"
+        ></div>
+      </main>
+    `
+    const component = document.querySelector('[data-stx-scope="fresh_options_select"]')
+    shimAttributes(document.body)
+
+    const previousElement = window.__STX_CURRENT_ELEMENT__
+    window.__STX_CURRENT_ELEMENT__ = component
+    const options = window.stx.useReactiveProp('options', [])
+    window.__STX_CURRENT_ELEMENT__ = previousElement
+    window.stx._scopes.fresh_options_select = {
+      options,
+      __mountCallbacks: [],
+      __destroyCallbacks: [],
+    }
+
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    expect(options()).toEqual([{ value: 'production', label: 'Production' }])
+
+    source.set([{ value: 'staging', label: 'Staging' }])
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    expect(options()).toEqual([{ value: 'staging', label: 'Staging' }])
+    expect(component.getAttribute('options')).toBe(JSON.stringify(options()))
+  })
+
   it('falls native events through signal component wrappers without duplicating emitted events', async () => {
     const nativeClicks = window.stx.state(0)
     const submitted = window.stx.state(0)
