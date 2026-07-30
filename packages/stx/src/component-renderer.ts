@@ -188,6 +188,7 @@ function parseComponentProps(
 
     // --- {{ }} interpolation ---
     if (typeof attrValue === 'string' && attrValue.includes('{{') && attrValue.includes('}}')) {
+      const propName = kebabToCamel(attrName)
       const singleExprMatch = attrValue.match(/^\{\{\s*([\s\S]+?)\s*\}\}$/)
       if (singleExprMatch) {
         // Entire value is a single expression
@@ -196,20 +197,20 @@ function parseComponentProps(
           if (isExpressionSafe(expression)) {
             const valueFn = createSafeFunction(expression, Object.keys(context))
             const evaluated = valueFn(...Object.values(context))
-            resolved.static[attrName] = evaluated != null ? String(evaluated) : ''
+            resolved.static[propName] = evaluated != null ? String(evaluated) : ''
           }
           else {
             if (options.debug) {
               console.error(`Unsafe expression in ${attrName}: ${expression}`)
             }
-            resolved.static[attrName] = attrValue
+            resolved.static[propName] = attrValue
           }
         }
         catch (error) {
           if (options.debug) {
             console.error(`Error evaluating expression for ${attrName}:`, error)
           }
-          resolved.static[attrName] = attrValue
+          resolved.static[propName] = attrValue
         }
       }
       else {
@@ -236,13 +237,13 @@ function parseComponentProps(
             }
           }
         }
-        resolved.static[attrName] = result
+        resolved.static[propName] = result
       }
       continue
     }
 
     // --- Plain static attribute ---
-    resolved.static[attrName] = attrValue === BOOLEAN_ATTRIBUTE_SENTINEL ? 'true' : attrValue
+    resolved.static[kebabToCamel(attrName)] = attrValue === BOOLEAN_ATTRIBUTE_SENTINEL ? 'true' : attrValue
   }
 
   return resolved
