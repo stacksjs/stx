@@ -207,6 +207,10 @@ describe('template for DOM binding', () => {
   })
 
   it('binds object props when a signal component is its own loop root', async () => {
+    const originalWarn = console.warn
+    const warnings: string[] = []
+    console.warn = (...args: unknown[]) => warnings.push(args.map(String).join(' '))
+
     const dnsResource = { id: 'dns', name: 'stacksjs.com', status: 'configured', value: '4 records' }
     const loadBalancerResource = { id: 'load-balancer', name: 'Load balancer', status: 'attention', value: '2 targets' }
     const groups = window.stx.state([
@@ -268,10 +272,12 @@ describe('template for DOM binding', () => {
     expect(children.map(child => child.querySelector('span')?.textContent)).toEqual(['stacksjs.com', 'Load balancer'])
     expect(children.map(child => child.querySelector('strong')?.textContent)).toEqual(['configured', 'attention'])
     expect(children.map(child => child.querySelector('em')?.textContent)).toEqual(['4 records', '2 targets'])
+    expect(warnings).toEqual([])
     expect(children.map(child => child.getAttribute('value'))).toEqual(['4 records', '2 targets'])
     expect(window.stx._scopes[children[0]?.getAttribute('data-stx-scope')]?.item()).toBe(dnsResource)
     expect(window.stx._scopes[children[1]?.getAttribute('data-stx-scope')]?.item()).toBe(loadBalancerResource)
     expect(children.every(child => child.hasAttribute('data-stx-deferred-parent-bindings'))).toBeFalse()
+    console.warn = originalWarn
   })
 
   it('reapplies a select value after reactive options are inserted', async () => {

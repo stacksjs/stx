@@ -1749,6 +1749,21 @@ catch (e) {
     return false;
   }
 
+  function hasPendingAncestorLoopBoundary(el) {
+    var loopBoundary = el && (el.parentElement || el.parentNode);
+    while (loopBoundary && loopBoundary !== document) {
+      var loopExpression = loopBoundary.getAttribute && (
+        loopBoundary.getAttribute('@for')
+        || loopBoundary.getAttribute(':for')
+        || loopBoundary.getAttribute('x-for')
+      );
+      if (loopExpression && isForDirectiveExpression(loopExpression))
+        return true;
+      loopBoundary = loopBoundary.parentElement || loopBoundary.parentNode;
+    }
+    return false;
+  }
+
   function syncComponentPropSignal(el, name, value) {
     if (!el || !el.getAttribute || value === undefined) return;
     var scopeId = el.getAttribute('data-stx-scope');
@@ -1918,17 +1933,13 @@ catch (e) {
     if (el.nodeType === Node.ELEMENT_NODE
       && el.hasAttribute
       && el.hasAttribute('data-stx-scope')
-      && hasPendingLoopBoundary(el)) {
+      && hasPendingAncestorLoopBoundary(el)) {
       preserveDeferredParentComponentProps(el);
-      var ownLoopExpression = el.getAttribute('@for')
-        || el.getAttribute(':for')
-        || el.getAttribute('x-for');
-      // A component nested under another pending loop must remain inert until
-      // its caller item scope exists. A component that IS the loop source still
-      // needs bindFor to run now; its cloned instances will hydrate after the
-      // loop directive has been removed from each clone.
-      if (!ownLoopExpression || !isForDirectiveExpression(ownLoopExpression))
-        return;
+      // Even when the component is itself a loop root, an ancestor loop must
+      // create its caller item scope first. The ancestor's bindFor pass will
+      // clone and hydrate this component with that scope, then its own loop can
+      // evaluate expressions such as group.resources.
+      return;
     }
 
     if (el.nodeType === Node.ELEMENT_NODE && el.tagName === 'BUTTON' && el.hasAttribute && el.hasAttribute('@click')) {
