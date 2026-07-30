@@ -41,11 +41,11 @@ export interface StxStrictOptions {
   /** Used for view/component + store-file classification. */
   filePath?: string
   /**
-   * Override the view/component verdict that drives the view-level
-   * `<script client>` rule. Default: a path containing `/components/`
-   * (or `/Components/`) is a component, everything else is a view.
+   * Override the view/component/layout verdict that drives the view-level
+   * `<script client>` rule. Layouts and components own client scopes, while
+   * page views should keep client behavior in a component.
    */
-  fileKind?: 'view' | 'component'
+  fileKind?: 'view' | 'component' | 'layout'
   /** Enable/disable individual rules. Unlisted rules default to ON. */
   rules?: Partial<Record<StxStrictRuleId, boolean>>
 }
@@ -177,7 +177,11 @@ function ruleBareFunctionRef(src: string, spans: Array<[number, number]>, out: S
 // Rule 2 — view-level <script client>
 // ---------------------------------------------------------------------------
 
-function ruleViewLevelScriptClient(src: string, fileKind: 'view' | 'component', out: StxStrictDiagnostic[]): void {
+function ruleViewLevelScriptClient(
+  src: string,
+  fileKind: 'view' | 'component' | 'layout',
+  out: StxStrictDiagnostic[],
+): void {
   if (fileKind !== 'view') return
   const re = /<script\b([^>]*)>/gi
   let m: RegExpExecArray | null
@@ -380,8 +384,12 @@ export function lintStxStrict(source: string, options: StxStrictOptions = {}): S
   const out: StxStrictDiagnostic[] = []
   const spans = rawTextSpans(source)
   const filePath = (options.filePath ?? '').replace(/\\/g, '/')
-  const fileKind: 'view' | 'component' = options.fileKind
-    ?? (/\/components?\//i.test(filePath) ? 'component' : 'view')
+  const fileKind: 'view' | 'component' | 'layout' = options.fileKind
+    ?? (/\/components?\//i.test(filePath)
+      ? 'component'
+      : /\/layouts?\//i.test(filePath)
+        ? 'layout'
+        : 'view')
 
   if (isRuleOn(options.rules, 'stx/no-bare-function-ref-in-event'))
     ruleBareFunctionRef(source, spans, out)

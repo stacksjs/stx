@@ -73,6 +73,14 @@ describe('stx/no-view-level-script-client', () => {
     expect(count('<script client>x</script>', R, { filePath: 'resources/components/Card.stx' })).toBe(0)
   })
 
+  it('does NOT flag <script client> in a layout file', () => {
+    expect(count('<script client>onMount(init)</script>', R, { filePath: 'resources/views/layouts/default.stx' })).toBe(0)
+  })
+
+  it('does NOT flag <script client> when fileKind is forced to layout', () => {
+    expect(count('<script client>onMount(init)</script>', R, { fileKind: 'layout' })).toBe(0)
+  })
+
   it('does NOT flag a plain <script> (server) in a view', () => {
     expect(count('<script>const x = 1</script>', R, { fileKind: 'view' })).toBe(0)
   })
