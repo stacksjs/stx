@@ -3,7 +3,7 @@ import dts from 'bun-plugin-dtsx'
 console.log('Building @stacksjs/desktop...')
 
 await Bun.build({
-  entrypoints: ['./src/index.ts', './src/test-utils.ts'],
+  entrypoints: ['./src/index.ts', './src/browser.ts', './src/test-utils.ts'],
   outdir: './dist',
   target: 'bun',
   format: 'esm',
