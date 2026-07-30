@@ -15,6 +15,12 @@ interface CrosswindModule {
   config: CrosswindConfig
   build?: (config: CrosswindConfig) => Promise<CrosswindBuildResult>
   defaultConfig?: CrosswindConfig
+  /**
+   * Crosswind's own extractor. Preferred over the local fallback below —
+   * it is the authority on what counts as a class candidate, and it keeps
+   * up with syntax this package would otherwise have to mirror by hand.
+   */
+  extractClasses?: (content: string) => Set<string>
 }
 
 interface CrosswindConfig {
@@ -120,6 +126,10 @@ async function tryImportCrosswind(importPath: string): Promise<CrosswindModule |
         config: pkg.config,
         build: pkg.build,
         defaultConfig: pkg.defaultConfig,
+        // Named explicitly, like the rest — this adapter deliberately does not
+        // spread the module, so anything not listed here is invisible to the
+        // caller no matter what the package exports.
+        extractClasses: pkg.extractClasses,
       }
     }
   }
@@ -458,7 +468,20 @@ export function getCachedCSS(): string {
 }
 
 /**
- * Extract all CSS class names from HTML content
+ * Extract all CSS class names from HTML content.
+ *
+ * This is the FALLBACK. `generateCrosswindCSS` prefers Crosswind's own
+ * `extractClasses`, and the difference is not cosmetic: this function only
+ * understands `class=""` and quoted literals inside `x-class` / `:class`, so
+ * every class that lives in code — a helper returning a class string, an icon
+ * keyed by status, anything inside a `<script client>` block — is invisible to
+ * it. Those classes silently generate no CSS and the element renders unstyled,
+ * which is what drove projects to pre-generate whole icon stylesheets and ship
+ * them alongside the page.
+ *
+ * Keeping a second, weaker copy of Crosswind's extraction rules in this package
+ * is what let the two drift apart in the first place. It stays only for the
+ * case where the installed Crosswind predates the export.
  */
 export function extractClassNames(htmlContent: string): Set<string> {
   const classes = new Set<string>()
@@ -502,7 +525,11 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
       return ''
     }
 
-    const classes = extractClassNames(htmlContent)
+    // Crosswind's extractor when the installed version exports it, ours only
+    // as a fallback. See `extractClassNames` for why the difference matters.
+    const classes = typeof hw.extractClasses === 'function'
+      ? hw.extractClasses(htmlContent)
+      : extractClassNames(htmlContent)
 
     if (classes.size === 0) {
       return ''

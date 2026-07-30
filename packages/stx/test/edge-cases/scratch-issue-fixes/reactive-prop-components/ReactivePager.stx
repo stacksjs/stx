@@ -1,0 +1,4 @@
+<script client>
+const currentPage = useReactiveProp('current-page', 1)
+</script>
+<p :text="currentPage()"></p>

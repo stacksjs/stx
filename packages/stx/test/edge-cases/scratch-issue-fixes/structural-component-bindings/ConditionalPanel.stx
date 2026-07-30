@@ -1,0 +1,4 @@
+<script client>
+const title = useReactiveProp('title', '')
+</script>
+<section>{{ title() }}</section>
