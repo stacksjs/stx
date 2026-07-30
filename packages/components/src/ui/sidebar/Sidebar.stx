@@ -188,7 +188,10 @@ function toggleRowDisclosure(row) {
 
 function toggleSection(section) {
   const expanded = section.getAttribute('data-expanded') !== 'false'
-  section.setAttribute('data-expanded', String(!expanded))
+  const nextExpanded = !expanded
+  section.setAttribute('data-expanded', String(nextExpanded))
+  section.querySelector('[data-sidebar-section-header]')
+    ?.setAttribute('aria-expanded', String(nextExpanded))
   syncRowVisibility()
   emit('sectionToggle', section.dataset.sectionId)
 }

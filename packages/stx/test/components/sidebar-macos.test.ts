@@ -93,6 +93,14 @@ describe('macOS sidebar component', () => {
     expect(result).toContain('padding-left: 16px')
   })
 
+  it('keeps section disclosure state accessible after toggling', async () => {
+    const result = await render(`<body><Sidebar theme="macos" placement="static" :sections="[
+      { id: 'library', label: 'Library', items: [{ id: 'components', label: 'Components' }] },
+    ]" /></body>`)
+
+    expect(result).toContain('setAttribute("aria-expanded", String(nextExpanded))')
+  })
+
   it('renders named header and footer slots gated by $slots', async () => {
     const result = await render(`<body><Sidebar theme="macos" placement="static" :sections="[{ id: 's', items: [{ id: 'a', label: 'A' }] }]">
       <template #header>
