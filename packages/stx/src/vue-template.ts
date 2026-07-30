@@ -82,11 +82,16 @@ function findNextOpenTag(html: string, startFrom: number): ParsedTag | null {
   if (!match)
     return null
 
+  const selfClosing = /\/\s*>$/.test(match[0]) || VOID_ELEMENTS.has(match[1].toLowerCase())
+  const attrs = selfClosing
+    ? match[2].replace(/\/\s*$/, '')
+    : match[2]
+
   return {
     full: match[0],
     tag: match[1],
-    attrs: match[2],
-    selfClosing: match[3].includes('/') || VOID_ELEMENTS.has(match[1].toLowerCase()),
+    attrs,
+    selfClosing,
     start: match.index,
     end: match.index + match[0].length,
   }

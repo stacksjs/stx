@@ -288,6 +288,19 @@ describe('Directive Transform: v-model', () => {
       expect(result).toContain('@update:title="pageTitle = $event"')
     })
 
+    it('should preserve multiline self-closing components with named v-model', () => {
+      const result = processVueTemplate(`<Select
+        v-model:value="environment"
+        :options="environmentOptions"
+        label="Environment"
+      />`)
+
+      expect(result).toContain(':value="environment"')
+      expect(result).toContain('@update:value="environment = $event"')
+      expect(result).toMatch(/<Select[\s\S]*\/>/)
+      expect(result).not.toContain('/ :value=')
+    })
+
     it('should transform multiple named v-models', () => {
       const result = processVueTemplate('<UserForm v-model:first="firstName" v-model:last="lastName">x</UserForm>')
       expect(result).toContain(':first="firstName"')
