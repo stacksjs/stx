@@ -1676,10 +1676,22 @@ catch (e) {
       && /^\\s*\\(?\\s*\\w+(?:\\s*,\\s*\\w+)?\\s*\\)?\\s+(?:in|of)\\s+.+\\s*$/.test(expr);
   }
 
+  function getElementAttributes(el) {
+    if (!el || !el.attributes) return [];
+    return Array.from(el.attributes).map(function(attr) {
+      // Browser DOM exposes Attr records through NamedNodeMap. HappyDOM and
+      // other standards-oriented DOM implementations may expose Map entries
+      // for cloned nodes instead. Normalize both shapes so reactive nodes
+      // created by :for hydrate exactly like their browser counterparts.
+      if (Array.isArray(attr)) return { name: attr[0], value: attr[1] };
+      return attr;
+    });
+  }
+
   function getModelBinding(el) {
     if (!el || !el.attributes) return null;
     var prefixes = ['x-model', ':model', '@model'];
-    var attrs = Array.from(el.attributes);
+    var attrs = getElementAttributes(el);
     for (var i = 0; i < attrs.length; i++) {
       var name = attrs[i] && attrs[i].name;
       if (!name) continue;
@@ -2015,9 +2027,9 @@ catch (e2) {
 
     // Handle attributes
     if (el.hasAttribute && (el.hasAttribute('x-class') || el.hasAttribute('@click'))) {
-      console.log('[stx] attr loop entry:', el.tagName, 'attrs:', Array.from(el.attributes).map(a => a.name).join(', '));
+      console.log('[stx] attr loop entry:', el.tagName, 'attrs:', getElementAttributes(el).map(a => a.name).join(', '));
     }
-    Array.from(el.attributes).forEach(attr => {
+    getElementAttributes(el).forEach(attr => {
       const name = attr.name;
       const value = attr.value;
       if (!name) return;

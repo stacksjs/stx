@@ -123,4 +123,50 @@ describe('template for DOM binding', () => {
     expect(option.getAttribute('value')).toBe('')
     expect(option.value).toBe('')
   })
+
+  it('binds events on nodes created by a template loop inside an if chain', async () => {
+    const selected = window.stx.state<string[]>([])
+    window.__stx_setup_loop_event = () => ({
+      categories: window.stx.state([{ id: '4', name: 'Clothing' }]),
+      categoryIds: selected,
+      formOpen: window.stx.state(true),
+      toggleCategory(event: Event) {
+        const input = event.target as HTMLInputElement
+        selected.set(input.checked ? [input.value] : [])
+      },
+    })
+
+    // HappyDOM strips @ attributes inside template.content, while :change
+    // exercises the same runtime event branch used by @change in browsers.
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_loop_event">
+        <section :if="formOpen()">
+          <div :if="categories().length === 0">No categories</div>
+          <div :else>
+            <template :for="category in categories()">
+              <label>
+                <input
+                  type="checkbox"
+                  :value="category.id"
+                  :checked="categoryIds().includes(category.id)"
+                  :change="toggleCategory($event)"
+                >
+                <span>{{ category.name }}</span>
+              </label>
+            </template>
+          </div>
+        </section>
+      </main>
+    `
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const checkbox = document.querySelector('input')
+    expect(checkbox).not.toBeNull()
+    checkbox.checked = true
+    checkbox.dispatchEvent(new window.Event('change'))
+
+    expect(selected()).toEqual(['4'])
+  })
 })
