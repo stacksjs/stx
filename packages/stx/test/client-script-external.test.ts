@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test'
+import path from 'node:path'
 import { processClientScript } from '../src/client-script'
 import { hasUserImports } from '../src/client-script-bundler'
+import { processDirectives } from '../src/process'
 import { injectBrowserRuntime } from '../src/runtime-injection'
 
 /**
@@ -80,5 +82,39 @@ const controls = useIntervalFn(load, 15000)
 `)
 
     expect(output).toContain(`import '@stacksjs/browser'`)
+  })
+
+  it('auto-imports browser utilities in signal page setup wrappers', async () => {
+    const output = await processDirectives(
+      `<script client>
+const ready = state(false)
+const load = debounce(() => ready.set(true), 250)
+const visibility = useDocumentVisibility()
+useIntervalFn(load, 15000)
+</script>
+<button :if="ready()">Ready</button>`,
+      {},
+      'browser-auto-import-page.stx',
+      { debug: false } as any,
+      new Set(),
+    )
+
+    expect(output).toContain('var { debounce, useDocumentVisibility, useIntervalFn } = window.StacksBrowser || {}')
+  })
+
+  it('auto-imports browser utilities in scoped signal components', async () => {
+    const output = await processDirectives(
+      `<div><browser-auto-import /></div>`,
+      {},
+      'browser-auto-import-host.stx',
+      {
+        componentsDir: path.join(import.meta.dir, 'fixtures', 'runtime-globals'),
+        debug: false,
+      } as any,
+      new Set(),
+    )
+
+    expect(output).toContain('var { debounce, useDocumentVisibility, useIntervalFn } = window.StacksBrowser || {}')
+    expect(output).toContain('__scopeVars')
   })
 })

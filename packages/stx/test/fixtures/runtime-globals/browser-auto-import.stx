@@ -1,0 +1,8 @@
+<script client>
+const ready = state(false)
+const load = debounce(() => ready.set(true), 250)
+const visibility = useDocumentVisibility()
+useIntervalFn(load, 15000)
+</script>
+
+<button :if="ready()" type="button">Ready</button>

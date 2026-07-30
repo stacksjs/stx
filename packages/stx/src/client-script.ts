@@ -565,6 +565,27 @@ export function generateAutoImportDestructuring(stxImports: string[], browserImp
 }
 
 /**
+ * Generate the browser-runtime bindings needed by a signal setup wrapper.
+ *
+ * Signal pages and Vue-like signal components use specialized scoped wrappers
+ * instead of {@link processClientScript}. They already pull every STX runtime
+ * global from `window.stx`, but still need the selected Stacks browser helpers
+ * used by their script. Keeping detection here makes classic scripts, signal
+ * pages, and signal components share the same browser auto-import contract.
+ */
+export function generateBrowserAutoImportDestructuring(
+  code: string,
+  exclude: readonly string[] = [],
+): string {
+  const { browserImports } = transformAutoImports(code)
+  const excluded = new Set(exclude)
+  return generateAutoImportDestructuring(
+    [],
+    browserImports.filter(name => !excluded.has(name)),
+  )
+}
+
+/**
  * Report auto-imported symbols the client runtime never actually provided.
  *
  * Destructuring a name that is absent from `window.stx` or
