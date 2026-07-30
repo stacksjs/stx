@@ -51,4 +51,41 @@ describe('form model submission', () => {
     expect(searchQuery()).toBe('rejected')
     expect(appliedSearch()).toBe('rejected')
   })
+
+  it('binds a prevented submit event when a conditional form becomes visible', async () => {
+    const editorOpen = window.stx.state(false)
+    const submissions = window.stx.state(0)
+
+    window.__stx_setup_conditional_form = () => ({
+      editorOpen,
+      savePost() {
+        submissions.update((count: number) => count + 1)
+      },
+    })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_conditional_form">
+        <div data-editor>
+          <form>
+            <button type="submit">Create post</button>
+          </form>
+        </div>
+      </main>
+    `
+    document.querySelector('[data-editor]').setAttribute(':if', 'editorOpen()')
+    document.querySelector('form').setAttribute('@submit.prevent', 'savePost()')
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    editorOpen.set(true)
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const form = document.querySelector('form')
+    const submit = new window.Event('submit', { bubbles: true, cancelable: true })
+    form.dispatchEvent(submit)
+
+    expect(submit.defaultPrevented).toBe(true)
+    expect(submissions()).toBe(1)
+  })
 })
