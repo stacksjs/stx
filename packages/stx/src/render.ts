@@ -341,7 +341,17 @@ export async function renderTemplateString(
         const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
         if (!contentMatch)
           return fullScript
-        return await processClientScript(contentMatch[1], { eventBindings, templateContent: output, serverData })
+        // `filePath` anchors the bundler's relative-import resolution. Without
+        // it the bundler saw an empty path, rebased `./x` against the process
+        // cwd, failed to find the module, and fell back to emitting the raw
+        // `import` statement inside an IIFE — a SyntaxError at runtime, with
+        // the only clue a "File not found" line in the build log.
+        return await processClientScript(contentMatch[1], {
+          eventBindings,
+          templateContent: output,
+          serverData,
+          filePath,
+        })
       }))
       const scriptsHtml = transformedScripts.join('\n')
       const bodyEndMatch = output.match(/(<\/body>)/i)
