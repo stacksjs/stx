@@ -14,13 +14,35 @@
  * bridge directly should use the namespaced public modules.
  */
 
-// Augment the global window type so callers can import from this module
-// without each one redeclaring `(window as any).craft`. Kept as a loose
-// shape because the bridge is built from the Zig side and we don't want
-// the TS layer to drift out of sync if a single field renames.
+// The bridge is built on the Zig side and exposes far more namespaces than
+// craft-native's published types declare (audio, bluetooth, menu, updater,
+// touchbar, iap, …). Widen the published interface instead of re-declaring
+// `Window.craft` here: craft-native already declares that property globally as
+// `CraftBridgeAPI & CraftEventEmitter`, so a second, looser declaration is a
+// conflicting merge (TS2717) — and the narrower published type wins, which made
+// every `craft.<ns>` access fail with TS2339 and every `craft[ns]` lookup with
+// TS7053.
+//
+// An index signature keeps the declared namespaces exactly as typed while
+// letting the ones the bridge ships ahead of the types resolve, which preserves
+// the original intent: don't make the TS layer drift out of sync when a single
+// field renames.
+declare module 'craft-native' {
+  interface CraftBridgeAPI {
+    [namespace: string]: any
+  }
+
+  // `app` IS a declared namespace with precise signatures, so widen it by
+  // naming the two macOS dock methods the bridge ships rather than with an
+  // index signature — that keeps a typo in `craft.app.*` an error.
+  interface CraftAppAPI {
+    setBadge: (count: number) => Promise<void>
+    bounce: (type?: 'critical' | 'informational') => Promise<void>
+  }
+}
+
 declare global {
   interface Window {
-    craft?: Record<string, any>
     __craftPendingDeepLink?: string
     __craftCurrentTheme?: { appearance: 'light' | 'dark' }
   }

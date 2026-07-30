@@ -19,8 +19,8 @@
  * const update = await updater.checkForUpdates()
  * ```
  */
-import { AutoUpdater, generateUpdateManifest } from 'craft-native'
 import type { UpdateManifest, UpdaterConfig } from 'craft-native'
+import { AutoUpdater, generateUpdateManifest } from 'craft-native'
 
 export { AutoUpdater, generateUpdateManifest }
 export type { PlatformUpdate, UpdateManifest, UpdaterConfig, UpdaterEvent, UpdateProgress } from 'craft-native'
