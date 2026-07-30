@@ -444,4 +444,30 @@ describe('template for DOM binding', () => {
     checkboxes[1]!.dispatchEvent(new window.Event('change'))
     expect(selected()).toEqual(['1'])
   })
+
+  it('binds checkbox indeterminate state through the live DOM property', async () => {
+    const mixed = window.stx.state(true)
+    window.__stx_setup_checkbox_indeterminate = () => ({ mixed })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_checkbox_indeterminate">
+        <input id="mixed-checkbox" type="checkbox" :indeterminate="mixed()">
+      </main>
+    `
+    const checkbox = document.querySelector('#mixed-checkbox') as HTMLInputElement
+    Object.defineProperty(checkbox, 'indeterminate', {
+      configurable: true,
+      value: false,
+      writable: true,
+    })
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    expect(checkbox.indeterminate).toBe(true)
+    expect(checkbox.hasAttribute('indeterminate')).toBe(false)
+
+    mixed.set(false)
+    expect(checkbox.indeterminate).toBe(false)
+  })
 })

@@ -2217,14 +2217,22 @@ catch (e2) {
             }
             return;
           }
-          // Checked and selected are live DOM properties, just like value.
+          // Checked, selected, and indeterminate are live DOM properties, just like value.
           // Updating only the HTML attribute leaves a user-touched checkbox or
           // radio in its previous state because the property becomes dirty.
-          if ((attrName === 'checked' || attrName === 'selected') && attrName in el) {
+          // Indeterminate has no corresponding effective HTML attribute at all.
+          if ((attrName === 'checked' || attrName === 'selected' || attrName === 'indeterminate') && attrName in el) {
             var selectedState = Boolean(v);
             el[attrName] = selectedState;
-            if (selectedState) el.setAttribute(attrName, '');
-            else el.removeAttribute(attrName);
+            if (attrName === 'indeterminate') {
+              el.removeAttribute(attrName);
+            }
+            else if (selectedState) {
+              el.setAttribute(attrName, '');
+            }
+            else {
+              el.removeAttribute(attrName);
+            }
             return;
           }
           if (v === false || v === null || v === undefined) {
