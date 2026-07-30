@@ -10,6 +10,7 @@ declare const document: any
 describe('template for DOM binding', () => {
   beforeAll(() => {
     installNodeConstants()
+    globalThis.MutationObserver = window.MutationObserver
     // eslint-disable-next-line no-new-func
     new Function(generateSignalsRuntimeDev())()
   })
@@ -155,14 +156,13 @@ describe('template for DOM binding', () => {
   })
 
   it('binds a nested signal component prop from an element loop item', async () => {
-    const deployments = window.stx.state([
-      { name: 'production', status: 'attention' },
-    ])
-    window.__stx_setup_element_loop_component = () => ({ deployments })
+    const deployments = window.stx.state([])
+    const loading = window.stx.state(true)
+    window.__stx_setup_element_loop_component = () => ({ deployments, loading })
 
     document.body.innerHTML = `
       <main data-stx="__stx_setup_element_loop_component">
-        <section>
+        <section :if="!loading()">
           <button :for="deployment in deployments()">
             <span>{{ deployment.name }}</span>
             <div
@@ -172,18 +172,17 @@ describe('template for DOM binding', () => {
             >
               <span :text="status()"></span>
             </div>
+            <script>window.__stx_unrelated_component_runtime = true</script>
             <script data-stx-scoped>
-              (function() {
-                var root = document.querySelector('[data-stx-scope="compiled_status_scope"]')
-                window.__STX_CURRENT_ELEMENT__ = root
-                var status = window.stx.useReactiveProp('status', 'configured')
-                window.stx._scopes.compiled_status_scope = {
-                  status: status,
-                  __mountCallbacks: [],
-                  __destroyCallbacks: []
-                }
-                window.__STX_CURRENT_ELEMENT__ = null
-              })()
+              var root = document.querySelector('[data-stx-scope="compiled_status_scope"]')
+              window.__STX_CURRENT_ELEMENT__ = root
+              var status = window.stx.useReactiveProp('status', 'configured')
+              window.stx._scopes.compiled_status_scope = {
+                status: status,
+                __mountCallbacks: [],
+                __destroyCallbacks: []
+              }
+              window.__STX_CURRENT_ELEMENT__ = null
             </script>
           </button>
         </section>
@@ -191,11 +190,17 @@ describe('template for DOM binding', () => {
     `
     shimAttributes(document.body)
     document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    deployments.set([{ name: 'production', status: 'attention' }])
+    loading.set(false)
     await new Promise(resolve => setTimeout(resolve, 20))
 
     const child = document.querySelector('[data-stx-scope^="compiled_status_scope_for_"]')
     expect(child).not.toBeNull()
     expect(child.getAttribute('status')).toBe('attention')
+    const scopeId = child.getAttribute('data-stx-scope')
+    const childScope = window.stx._scopes[scopeId]
+    expect(childScope.status()).toBe('attention')
+    expect(child.querySelector('span')?.textContent).toBe('attention')
   })
 
   it('reapplies a select value after reactive options are inserted', async () => {

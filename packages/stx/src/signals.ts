@@ -1783,6 +1783,19 @@ catch (e) {
     root.querySelectorAll('[data-stx-scope]').forEach(function(scopeEl) { scopeEls.push(scopeEl); });
     scopeEls.forEach(function(scopeEl) {
       if (scopeEl.__stx_parent_props_bound) return;
+      // A component inside a descendant loop cannot resolve its caller props
+      // until bindFor creates the iteration scope. Binding it while the outer
+      // conditional is being detached would consume expressions such as
+      // :status="deployment.status" before the deployment item exists, leaving every
+      // later clone with the child's default prop. bindFor hydrates these
+      // component scopes after insertion with the correct per-item scope.
+      var current = scopeEl;
+      while (current && current !== root) {
+        if (current.hasAttribute
+          && (current.hasAttribute('@for') || current.hasAttribute(':for') || current.hasAttribute('x-for')))
+          return;
+        current = current.parentElement || current.parentNode;
+      }
       scopeEl.__stx_parent_scope = resolveComponentCallerScope(scopeEl, callerScope);
       bindParentComponentProps(scopeEl, scopeEl.__stx_parent_scope);
     });
@@ -2790,12 +2803,14 @@ else if (typeof value === 'string') {
     // registered yet; scripts that executed automatically are left alone.
     scripts.forEach(function(old) {
       var text = old.textContent || '';
-      var needsRun = roots.some(function(root) {
+      var pendingScopeIds = roots.map(function(root) {
         var scopeId = root.getAttribute('data-stx-scope');
         return scopeId && text.indexOf(scopeId) !== -1
-          && !(window.stx._scopes && window.stx._scopes[scopeId]);
-      });
-      if (!needsRun || !old.parentNode) return;
+          && !(window.stx._scopes && window.stx._scopes[scopeId])
+          ? scopeId
+          : null;
+      }).filter(Boolean);
+      if (!pendingScopeIds.length || !old.parentNode) return;
       var fresh = document.createElement('script');
       Array.from(old.attributes || []).forEach(function(rawAttribute) {
         var attribute = Array.isArray(rawAttribute)
@@ -2807,6 +2822,17 @@ else if (typeof value === 'string') {
       fresh.textContent = text;
       fresh.__stx_ran = true;
       old.parentNode.replaceChild(fresh, old);
+      // Some DOM implementations keep dynamically replaced inline scripts
+      // inert. The setup code is framework-compiled and the signals runtime
+      // already uses Function for expressions, so execute it as a fallback
+      // only when replacement did not synchronously register its target.
+      var needsFallback = pendingScopeIds.some(function(scopeId) {
+        return !(window.stx._scopes && window.stx._scopes[scopeId]);
+      });
+      if (needsFallback) {
+        try { (new Function(text))(); }
+        catch (e) { console.error('[stx] cloned component setup error:', e); }
+      }
     });
 
     roots.forEach(function(root) {
