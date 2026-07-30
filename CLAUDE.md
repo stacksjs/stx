@@ -487,6 +487,7 @@ stx doctor [--json]
 ## Additional Documentation
 
 - **[Lazy Hydration](docs/features/lazy-hydration.md)** — `stx-hydrate` attribute documentation with trigger types and usage examples
+- **[Sidebar Spaces](docs/features/sidebar-spaces.md)** — Arc-style swipeable sidebar scenes: `<Sidebar :spaces>`, per-space color, gestures, and the Craft wrapping
 - **[Deployment](docs/features/deployment.md)** — Deployment guide for static sites and SSR apps
 
 ---
