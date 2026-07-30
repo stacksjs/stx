@@ -249,6 +249,28 @@ function createBundlePlugin(
  * making the temp paths unique and leaving the duplicated work in place.
  */
 const inFlightBundles = new Map<string, Promise<string>>()
+let clientBundleBuildQueue: Promise<void> = Promise.resolve()
+
+/**
+ * Run one client bundle build at a time.
+ *
+ * Bun.build can return transient "Unseekable reading file" failures when
+ * separate builds concurrently traverse the same linked workspace dependency.
+ * Dashboard renders commonly compile the layout and page controllers together,
+ * so distinct content hashes still share much of their dependency graph.
+ *
+ * Cache reads remain concurrent and identical builds still share one promise.
+ * Only cold Bun.build work is queued, and a rejected task cannot stall the next
+ * build.
+ */
+export function queueClientBundleBuild<T>(task: () => Promise<T>): Promise<T> {
+  const result = clientBundleBuildQueue.then(task, task)
+  clientBundleBuildQueue = result.then(
+    () => undefined,
+    () => undefined,
+  )
+  return result
+}
 
 export async function bundleClientScript(
   code: string,
@@ -323,7 +345,9 @@ export async function bundleClientScript(
   if (running)
     return await running
 
-  const build = buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath })
+  const build = queueClientBundleBuild(() =>
+    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath }),
+  )
   inFlightBundles.set(hash, build)
   try {
     return await build

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import path from 'node:path'
 import { injectBrowserCoreAutoImports, processClientScript } from '../src/client-script'
-import { hasUserImports } from '../src/client-script-bundler'
+import { hasUserImports, queueClientBundleBuild } from '../src/client-script-bundler'
 import { processDirectives } from '../src/process'
 import { injectBrowserRuntime } from '../src/runtime-injection'
 
@@ -129,5 +129,43 @@ useIntervalFn(load, 15000)
 
     expect(output).not.toContain('window.StacksBrowser')
     expect(output).toContain('__scopeVars')
+  })
+})
+
+describe('client bundle build queue', () => {
+  it('serializes distinct builds and continues after a failed build', async () => {
+    let active = 0
+    let maximumActive = 0
+    const order: string[] = []
+
+    const task = (name: string, fail = false): Promise<string> =>
+      queueClientBundleBuild(async () => {
+        active++
+        maximumActive = Math.max(maximumActive, active)
+        order.push(`start:${name}`)
+        await Bun.sleep(5)
+        active--
+        order.push(`finish:${name}`)
+        if (fail)
+          throw new Error(name)
+        return name
+      })
+
+    const results = await Promise.allSettled([
+      task('first'),
+      task('failed', true),
+      task('last'),
+    ])
+
+    expect(maximumActive).toBe(1)
+    expect(order).toEqual([
+      'start:first',
+      'finish:first',
+      'start:failed',
+      'finish:failed',
+      'start:last',
+      'finish:last',
+    ])
+    expect(results.map(result => result.status)).toEqual(['fulfilled', 'rejected', 'fulfilled'])
   })
 })
