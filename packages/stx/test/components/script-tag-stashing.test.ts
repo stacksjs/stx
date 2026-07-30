@@ -167,6 +167,20 @@ describe('stashScriptElements — tag/quote-aware (XSS guard)', () => {
     expect(output).toContain('\x00STX_SCRIPT_0\x00')
   })
 
+  it('does not stash script-like text inside comments or style bodies', () => {
+    const input = `
+      <!-- classes live in <script> state -->
+      <style>.note::after { content: '<script>no()</script>'; }</style>
+      <script>yes()</script>
+    `
+    const { output, scripts } = stashScriptElements(input)
+
+    expect(scripts).toEqual(['<script>yes()</script>'])
+    expect(output).toContain('<!-- classes live in <script> state -->')
+    expect(output).toContain(`content: '<script>no()</script>'`)
+    expect(output).toContain('\x00STX_SCRIPT_0\x00')
+  })
+
   it('end-to-end: an attribute-embedded <script> is HTML-escaped, not executed', async () => {
     const output = await processOnce(
       '<StxLink to="/x" aria-label="<script>alert(1)</script>">go</StxLink>',

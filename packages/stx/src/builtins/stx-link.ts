@@ -9,6 +9,7 @@
  */
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
+import { forwardStaticAttrs } from './attrs'
 
 /**
  * Escape a string for safe use inside an HTML attribute value.
@@ -94,15 +95,7 @@ export const StxLinkBuiltin: BuiltinComponentDef = {
 
     // Forward any extra static attributes that are not consumed props
     const consumedStatic = new Set(['to', 'class', 'className', 'activeClass', 'exactActiveClass', 'prefetch'])
-    for (const [key, value] of Object.entries(props.static)) {
-      if (consumedStatic.has(key)) continue
-      if (typeof value === 'boolean') {
-        if (value) attrs.push(escapeAttr(key))
-      }
-      else {
-        attrs.push(`${escapeAttr(key)}="${escapeAttr(value)}"`)
-      }
-    }
+    attrs.push(...forwardStaticAttrs(props, consumedStatic))
 
     return `<a ${attrs.join(' ')}>${slotContent}</a>`
   },

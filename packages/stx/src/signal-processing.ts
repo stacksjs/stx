@@ -16,6 +16,7 @@ import { buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { injectSignalsRuntime, injectBrowserRuntime } from './runtime-injection'
+import { matchScriptElement, scanAtElementPosition } from './html-masking'
 
 // Counter for unique signal setup function names (avoids Date.now() collisions)
 let signalSetupCounter = 0
@@ -45,7 +46,6 @@ let signalSetupCounter = 0
  */
 const TAG_ATTR_RUN = `(?:"[^"]*"|'[^']*'|[^>"'])*`
 
-const SCRIPT_OPEN_RE = /<script\b([^>]*)>/gi
 const SINGLE_ELEMENT_RE = /^<([a-zA-Z][a-zA-Z0-9-]*)\b((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s*)>([\s\S]*)<\/\1>$/s
 
 /**
@@ -68,41 +68,28 @@ export function scanScriptTags(
   opts: { skipAttrs?: RegExp } = {},
 ): Array<{ fullMatch: string, attrs: string, body: string, start: number, end: number }> {
   const out: Array<{ fullMatch: string, attrs: string, body: string, start: number, end: number }> = []
-  let cursor = 0
-  while (cursor < html.length) {
-    // Find the next script opening from the current HTML position. HTML
-    // comments are opaque to the browser parser, so skip a comment before
-    // accepting a tag-like substring inside it as a real element.
-    SCRIPT_OPEN_RE.lastIndex = cursor
-    const m = SCRIPT_OPEN_RE.exec(html)
-    if (!m) break
-
-    const commentStart = html.indexOf('<!--', cursor)
-    if (commentStart !== -1 && commentStart < m.index) {
-      const commentEnd = html.indexOf('-->', commentStart + 4)
-      if (commentEnd === -1) break
-      cursor = commentEnd + 3
+  for (const item of scanAtElementPosition(html, matchScriptElement)) {
+    const opening = item.token.match(/^<script\b([^>]*)>/i)
+    const closing = item.token.match(/<\/script\s*>$/i)
+    if (!opening || !closing)
       continue
+
+    const attrs = opening[1]
+    if (opts.skipAttrs) {
+      opts.skipAttrs.lastIndex = 0
+      if (opts.skipAttrs.test(attrs))
+        continue
     }
 
-    const attrs = m[1]
-    const bodyStart = m.index + m[0].length
-    const closeIdx = html.toLowerCase().indexOf('</script>', bodyStart)
-    if (closeIdx === -1) break // unclosed — stop scanning
-    const end = closeIdx + '</script>'.length
-    if (opts.skipAttrs && opts.skipAttrs.test(attrs)) {
-      // Still advance past the close tag so we don't match nested openings.
-      cursor = end
-      continue
-    }
+    const bodyStart = opening[0].length
+    const bodyEnd = item.token.length - closing[0].length
     out.push({
-      fullMatch: html.slice(m.index, end),
+      fullMatch: item.token,
       attrs,
-      body: html.slice(bodyStart, closeIdx),
-      start: m.index,
-      end,
+      body: item.token.slice(bodyStart, bodyEnd),
+      start: item.start,
+      end: item.end,
     })
-    cursor = end
   }
   return out
 }

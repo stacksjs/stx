@@ -91,6 +91,7 @@ function parseComponentProps(
 ): ResolvedProps {
   const resolved: ResolvedProps = {
     static: {},
+    staticNames: {},
     serverDynamic: {},
     clientReactive: {},
     events: {},
@@ -113,10 +114,30 @@ function parseComponentProps(
   // destructure (you can't write `const { nav-html } = …`) and silently
   // becomes undefined — which used to force userland workarounds like
   // pre-rendering the component's HTML and dropping it via `{{{ raw }}}`.
+  //
+  // `aria-*` and `data-*` are excluded. Those are not component props under any
+  // reading — they are DOM attributes by specification, and the author who
+  // wrote `aria-label` means the attribute of that exact name. Camelizing them
+  // makes the value unreachable under the name it was written with AND, when a
+  // builtin forwards unconsumed attributes onto real markup, emits the
+  // nonexistent attribute `ariaLabel`.
   const kebabToCamel = (key: string): string => {
     if (!key.includes('-') || key.startsWith('@') || key.startsWith(':') || key.startsWith('x-') || key.startsWith('__'))
       return key
+    if (key.startsWith('aria-') || key.startsWith('data-'))
+      return key
     return key.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase())
+  }
+
+  /**
+   * Record a static prop under its camelized name, remembering the spelling the
+   * author used so a builtin forwarding it as an HTML attribute can restore it.
+   */
+  const setStatic = (attrName: string, value: string | boolean): void => {
+    const propName = kebabToCamel(attrName)
+    resolved.static[propName] = value
+    if (propName !== attrName)
+      resolved.staticNames[propName] = attrName
   }
 
   for (const [rawAttrName, attrValue] of Object.entries(rawProps)) {
@@ -188,7 +209,6 @@ function parseComponentProps(
 
     // --- {{ }} interpolation ---
     if (typeof attrValue === 'string' && attrValue.includes('{{') && attrValue.includes('}}')) {
-      const propName = kebabToCamel(attrName)
       const singleExprMatch = attrValue.match(/^\{\{\s*([\s\S]+?)\s*\}\}$/)
       if (singleExprMatch) {
         // Entire value is a single expression
@@ -197,20 +217,20 @@ function parseComponentProps(
           if (isExpressionSafe(expression)) {
             const valueFn = createSafeFunction(expression, Object.keys(context))
             const evaluated = valueFn(...Object.values(context))
-            resolved.static[propName] = evaluated != null ? String(evaluated) : ''
+            setStatic(attrName, evaluated != null ? String(evaluated) : '')
           }
           else {
             if (options.debug) {
               console.error(`Unsafe expression in ${attrName}: ${expression}`)
             }
-            resolved.static[propName] = attrValue
+            setStatic(attrName, attrValue)
           }
         }
         catch (error) {
           if (options.debug) {
             console.error(`Error evaluating expression for ${attrName}:`, error)
           }
-          resolved.static[propName] = attrValue
+          setStatic(attrName, attrValue)
         }
       }
       else {
@@ -237,13 +257,13 @@ function parseComponentProps(
             }
           }
         }
-        resolved.static[propName] = result
+        setStatic(attrName, result)
       }
       continue
     }
 
     // --- Plain static attribute ---
-    resolved.static[kebabToCamel(attrName)] = attrValue === BOOLEAN_ATTRIBUTE_SENTINEL ? 'true' : attrValue
+    setStatic(attrName, attrValue === BOOLEAN_ATTRIBUTE_SENTINEL ? 'true' : attrValue)
   }
 
   return resolved

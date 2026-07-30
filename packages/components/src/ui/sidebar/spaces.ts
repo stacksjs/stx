@@ -35,7 +35,7 @@
  * @module
  */
 
-import type { SidebarSectionData } from './index'
+import type { SidebarSectionData } from './rows'
 import { macosColors, type MacosColor } from './themes'
 
 /** The four surfaces a space paints, in one appearance. */
@@ -100,6 +100,14 @@ export interface SidebarSpaceData {
   action?: SidebarSpaceActionData
   /** Small trailing action on the rule above `action` — Arc's "Clear". */
   clear?: SidebarSpaceActionData
+}
+
+/** Payload of the `spaceChange` event. */
+export interface SidebarSpaceChangeEvent {
+  id: string
+  index: number
+  /** What moved the sidebar — useful for telling a user gesture from a restore. */
+  source: 'swipe' | 'switcher' | 'keyboard' | 'native' | 'restore' | 'api'
 }
 
 /** A space with its palette resolved and its inline custom properties built. */

@@ -34,7 +34,7 @@
 import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
 import { createDetailedErrorMessage } from './utils'
 import { createPlaceholder } from './placeholder'
-import { maskAtElementPosition, matchScriptElement, matchStyleElement, type TokenMatcher } from './html-masking'
+import { maskAtElementPosition, matchScriptElement, matchStyleElement, restoreStashedScripts, stashScriptElements, type TokenMatcher } from './html-masking'
 
 /**
  * Add basic filter support to expressions
@@ -447,11 +447,14 @@ export function escapeHtml(unsafe: string): string {
  * or has reactive attributes (@if, @for) with function call expressions
  */
 export function usesSignalsInScript(template: string): boolean {
-  // Check for signals in script blocks
-  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
-  let match: RegExpExecArray | null
-  while ((match = scriptRegex.exec(template)) !== null) {
-    const content = match[1]
+  // Check genuine script elements only. Tag-like text inside comments,
+  // attributes, or style bodies is not executable script.
+  const { scripts } = stashScriptElements(template)
+  for (const script of scripts) {
+    const match = script.match(/^<script\b([^>]*)>([\s\S]*?)<\/script\s*>$/i)
+    if (!match || /\bserver\b|\bsrc\s*=/.test(match[1]))
+      continue
+    const content = match[2]
     if (/\b(state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
       return true
     }
@@ -627,21 +630,29 @@ export function interpolateScriptsInTemplate(
   context: Record<string, any>,
   options: InterpolateScriptsOptions = {},
 ): string {
-  return template.replace(
-    /<script\b([^>]*)>([\s\S]*?)<\/script>/gi,
-    (full, attrs: string, body: string) => {
-      // Skip external scripts (no inline body) and opt-outs
-      if (/\bsrc\s*=/.test(attrs)) return full
-      if (/\bdata-raw\b/.test(attrs)) return full
-      // Don't touch `type="application/json"` — its "body" is data not code
-      if (/\btype\s*=\s*["']application\/json["']/.test(attrs)) return full
-      // Optionally skip server scripts (their body is executed as JS server-side,
-      // so `{{ expr }}` in them would be syntax errors).
-      if (options.skipServer && /\bserver\b/.test(attrs)) return full
-      const interpolated = interpolateScriptExpressions(body, context)
-      return `<script${attrs}>${interpolated}</script>`
-    },
-  )
+  const { output, scripts } = stashScriptElements(template)
+  const interpolatedScripts = scripts.map((full) => {
+    const match = full.match(/^<script\b([^>]*)>([\s\S]*?)<\/script\s*>$/i)
+    const opening = full.match(/^<script\b[^>]*>/i)
+    const closingStart = full.search(/<\/script\s*>$/i)
+    if (!match || !opening || closingStart === -1)
+      return full
+
+    const attrs = match[1]
+    const body = match[2]
+    // Skip external scripts (no inline body) and opt-outs
+    if (/\bsrc\s*=/.test(attrs)) return full
+    if (/\bdata-raw\b/.test(attrs)) return full
+    // Don't touch `type="application/json"` — its "body" is data not code
+    if (/\btype\s*=\s*["']application\/json["']/.test(attrs)) return full
+    // Optionally skip server scripts (their body is executed as JS server-side,
+    // so `{{ expr }}` in them would be syntax errors).
+    if (options.skipServer && /\bserver\b/.test(attrs)) return full
+    const interpolated = interpolateScriptExpressions(body, context)
+    return opening[0] + interpolated + full.slice(closingStart)
+  })
+
+  return restoreStashedScripts(output, interpolatedScripts)
 }
 
 /**

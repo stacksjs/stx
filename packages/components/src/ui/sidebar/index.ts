@@ -1,3 +1,6 @@
+import type { SidebarItemData, SidebarSectionData } from './rows'
+import type { SidebarSpaceChangeEvent, SidebarSpaceData } from './spaces'
+
 export { default as Sidebar } from './Sidebar.stx'
 export { default as SidebarFooter } from './SidebarFooter.stx'
 export { default as SidebarHeader } from './SidebarHeader.stx'
@@ -7,50 +10,9 @@ export { default as SidebarSection } from './SidebarSection.stx'
 export { default as SidebarSpace } from './SidebarSpace.stx'
 export { default as SidebarSpaces } from './SidebarSpaces.stx'
 export { default as SidebarSpaceSwitcher } from './SidebarSpaceSwitcher.stx'
+export * from './rows'
 export * from './spaces'
 export * from './themes'
-
-/**
- * One navigation row.
- *
- * ```ts
- * { id: 'icloud', label: 'iCloud', icon: 'i-f7-tray', iconColor: 'blue', count: 248, active: true }
- * ```
- */
-export interface SidebarItemData {
-  id: string
-  label: string
-  /** Iconify utility class, e.g. `i-f7-tray`. F7 icons mirror SF Symbols. */
-  icon?: string
-  /** macOS system color name (`"blue"`, `"red"`, `"yellow"`, …) or any CSS color. */
-  iconColor?: string
-  /** Image URL rendered instead of an icon (album art, avatars). */
-  image?: string
-  href?: string
-  /** Right-aligned count — rendered as plain gray text like native macOS. */
-  count?: string | number
-  /** @deprecated Use `count`. */
-  badge?: string | number
-  active?: boolean
-  disabled?: boolean
-  /** Nested rows, indented and collapsible under this one. */
-  children?: SidebarItemData[]
-  /** Show a disclosure chevron even without children. */
-  expandable?: boolean
-  /** Initial disclosure state when the item has children. Defaults to true. */
-  expanded?: boolean
-}
-
-/** A titled group of rows (e.g. "Favorites"). Untitled when `label` is empty. */
-export interface SidebarSectionData {
-  id: string
-  label?: string
-  items: SidebarItemData[]
-  /** Section headers collapse their group on click. Defaults to true. */
-  collapsible?: boolean
-  /** Initial collapse state. Defaults to false (expanded). */
-  collapsed?: boolean
-}
 
 /**
  * Sidebar themes. `macos` recreates the sidebar of the latest macOS

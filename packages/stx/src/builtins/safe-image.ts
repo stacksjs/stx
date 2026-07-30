@@ -42,6 +42,7 @@
  */
 
 import type { BuiltinComponentDef, RenderContext, ResolvedProps } from '../component-registry'
+import { forwardStaticAttrs } from './attrs'
 
 const DEFAULT_FALLBACK = '/images/safe-image-default.svg'
 
@@ -100,17 +101,7 @@ export const SafeImageBuiltin: BuiltinComponentDef = {
     const consumed = new Set([
       'src', 'alt', 'fallback', 'class', 'className', 'fallbackClassName',
     ])
-    for (const [key, value] of Object.entries(props.static)) {
-      if (consumed.has(key))
-        continue
-      if (typeof value === 'boolean') {
-        if (value)
-          imgAttrs.push(escapeAttr(key))
-      }
-      else {
-        imgAttrs.push(`${escapeAttr(key)}="${escapeAttr(value)}"`)
-      }
-    }
+    imgAttrs.push(...forwardStaticAttrs(props, consumed))
 
     const imgTag = `<img ${imgAttrs.join(' ')} />`
 

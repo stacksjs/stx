@@ -190,4 +190,25 @@ describe('interpolateScriptsInTemplate — tag-level handling', () => {
     // With nothing evaluable, the script should be unchanged.
     expect(out).toBe(html)
   })
+
+  it('ignores script-like text inside HTML comments and style bodies', () => {
+    const html = `
+      <!-- Dynamic classes live in <script> state and {{ value }} stays prose. -->
+      <style>.note::after { content: '<script>{{ value }}</script>'; }</style>
+      <script>const value = {{ value }}</script>
+    `
+    const out = interpolateScriptsInTemplate(html, { value: 'ready' })
+
+    expect(out).toContain('<!-- Dynamic classes live in <script> state and {{ value }} stays prose. -->')
+    expect(out).toContain(`content: '<script>{{ value }}</script>'`)
+    expect(out).toContain('const value = "ready"')
+  })
+
+  it('ignores script-like text inside quoted attributes', () => {
+    const html = '<div title="<script>const value = {{ value }}</script>"></div><script>const value = {{ value }}</script>'
+    const out = interpolateScriptsInTemplate(html, { value: 7 })
+
+    expect(out).toContain('title="<script>const value = {{ value }}</script>"')
+    expect(out).toContain('<script>const value = 7</script>')
+  })
 })

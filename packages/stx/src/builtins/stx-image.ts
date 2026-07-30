@@ -27,6 +27,7 @@
  */
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
+import { forwardStaticAttrs } from './attrs'
 
 // Default responsive breakpoints (matching Tailwind defaults)
 const DEFAULT_BREAKPOINTS: Record<string, number> = {
@@ -298,15 +299,7 @@ export const StxImageBuiltin: BuiltinComponentDef = {
       'placeholder', 'placeholderColor', 'class', 'className', 'style',
       'format', 'provider', 'quality', 'densities', 'preload', 'picture',
     ])
-    for (const [key, value] of Object.entries(props.static)) {
-      if (consumedStatic.has(key)) continue
-      if (typeof value === 'boolean') {
-        if (value) imgAttrs.push(escapeAttr(key))
-      }
-      else {
-        imgAttrs.push(`${escapeAttr(key)}="${escapeAttr(value)}"`)
-      }
-    }
+    imgAttrs.push(...forwardStaticAttrs(props, consumedStatic))
 
     const imgTag = `<img ${imgAttrs.join(' ')} />`
 

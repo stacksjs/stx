@@ -27,6 +27,12 @@
  */
 export type TokenMatcher = (html: string, i: number) => number
 
+export interface ElementPositionToken {
+  start: number
+  end: number
+  token: string
+}
+
 // Sticky (`y`) open matchers anchor at `lastIndex` without slicing; global (`g`)
 // close matchers scan forward from `lastIndex`. This keeps maskAtElementPosition
 // O(n) overall instead of O(n²) (no per-`<` substring copy).
@@ -68,30 +74,53 @@ export function matchHtmlComment(html: string, i: number): number {
 }
 
 /**
- * Mask every token (per `match`) that begins at element position, replacing it
- * with `placeholder(token, index)`. Returns the rewritten string plus the ordered
- * list of removed tokens. Restore by replacing each placeholder with `tokens[i]`.
+ * Return the end of an opaque HTML region at `i`.
  *
- * Note: HTML attributes do not use backslash escaping, so a `"`/`'` always
- * toggles the surrounding quote — matching how browsers parse attribute values.
+ * Comments and raw-text elements are opaque to the browser tokenizer. A
+ * `<script>` substring inside an HTML comment, a style body, or another script
+ * body is text, not an element. Unclosed opaque regions consume the remainder
+ * of the document, matching browser parsing closely enough for template scans.
  */
-export function maskAtElementPosition(
-  html: string,
-  match: TokenMatcher,
-  placeholder: (token: string, index: number) => string,
-): { output: string, tokens: string[] } {
-  const tokens: string[] = []
-  let output = ''
+function matchOpaqueRegion(html: string, i: number): number {
+  if (html.startsWith('<!--', i)) {
+    const end = matchHtmlComment(html, i)
+    return end === -1 ? html.length : end
+  }
+
+  for (const [open, close] of [
+    [SCRIPT_OPEN, SCRIPT_CLOSE],
+    [STYLE_OPEN, STYLE_CLOSE],
+  ] as const) {
+    open.lastIndex = i
+    const opening = open.exec(html)
+    if (!opening || opening.index !== i)
+      continue
+
+    close.lastIndex = open.lastIndex
+    const closing = close.exec(html)
+    return closing ? closing.index + closing[0].length : html.length
+  }
+
+  return -1
+}
+
+/**
+ * Find tokens that begin where an HTML element can actually start.
+ *
+ * The walk also treats comments and script/style raw-text bodies as opaque, so
+ * callers never see tag-like text nested inside those regions.
+ */
+export function scanAtElementPosition(html: string, match: TokenMatcher): ElementPositionToken[] {
+  const tokens: ElementPositionToken[] = []
   let i = 0
   const n = html.length
-  let inTag = false // between `<` and `>` of a (non-masked) tag
+  let inTag = false
   let quote: string | null = null
 
   while (i < n) {
     const ch = html[i]
 
     if (inTag) {
-      output += ch
       if (quote) {
         if (ch === quote)
           quote = null
@@ -106,27 +135,59 @@ export function maskAtElementPosition(
       continue
     }
 
-    if (ch === '<') {
-      const end = match(html, i)
-      if (end > i) {
-        output += placeholder(html.slice(i, end), tokens.length)
-        tokens.push(html.slice(i, end))
-        i = end
-        continue
-      }
-      // Not a maskable token. If it's a tag start, track its attribute/quote
-      // state; otherwise treat `<` as ordinary text.
-      if (/^<\/?[a-zA-Z]/.test(html.slice(i, i + 2))) {
-        inTag = true
-      }
-      output += ch
+    if (ch !== '<') {
       i++
       continue
     }
 
-    output += ch
+    const end = match(html, i)
+    if (end > i) {
+      tokens.push({ start: i, end, token: html.slice(i, end) })
+      i = end
+      continue
+    }
+
+    const opaqueEnd = matchOpaqueRegion(html, i)
+    if (opaqueEnd > i) {
+      i = opaqueEnd
+      continue
+    }
+
+    if (/^<\/?[a-zA-Z]/.test(html.slice(i, i + 2)))
+      inTag = true
     i++
   }
+
+  return tokens
+}
+
+/**
+ * Mask every token (per `match`) that begins at element position, replacing it
+ * with `placeholder(token, index)`. Returns the rewritten string plus the ordered
+ * list of removed tokens. Restore by replacing each placeholder with `tokens[i]`.
+ *
+ * Note: HTML attributes do not use backslash escaping, so a `"`/`'` always
+ * toggles the surrounding quote — matching how browsers parse attribute values.
+ */
+export function maskAtElementPosition(
+  html: string,
+  match: TokenMatcher,
+  placeholder: (token: string, index: number) => string,
+): { output: string, tokens: string[] } {
+  const matches = scanAtElementPosition(html, match)
+  if (matches.length === 0)
+    return { output: html, tokens: [] }
+
+  const tokens = matches.map(item => item.token)
+  let output = ''
+  let cursor = 0
+  for (let index = 0; index < matches.length; index++) {
+    const item = matches[index]
+    output += html.slice(cursor, item.start)
+    output += placeholder(item.token, index)
+    cursor = item.end
+  }
+  output += html.slice(cursor)
 
   return { output, tokens }
 }

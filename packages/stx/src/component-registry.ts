@@ -35,6 +35,22 @@ export interface RenderContext {
 export interface ResolvedProps {
   /** Static attribute values — e.g. title="Hello", disabled */
   static: Record<string, string | boolean>
+  /**
+   * Original attribute spelling for any `static` key that was camelized,
+   * keyed by the camelized name — e.g. `{ activeClass: 'active-class' }`.
+   *
+   * A static attribute is two things at once, and they disagree about naming.
+   * To a `.stx` component it is a prop, and `active-class` has to arrive as
+   * `$props.activeClass` because a kebab key cannot be destructured. To a
+   * builtin that forwards unconsumed attributes onto real markup it is an HTML
+   * attribute, and must go out spelled the way the author wrote it. Keeping the
+   * original here lets both be true; without it, forwarding emitted
+   * `activeClass="…"` and the browser saw an unknown attribute.
+   *
+   * Only present for names that actually changed, so `key in staticNames` is a
+   * meaningful test.
+   */
+  staticNames: Record<string, string>
   /** Server-side dynamic bindings — e.g. :count="items.length" (evaluated at compile time) */
   serverDynamic: Record<string, unknown>
   /** Client-side reactive bindings — expression string preserved for signals */
