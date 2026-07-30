@@ -154,6 +154,50 @@ describe('template for DOM binding', () => {
     expect(scripts[1]?.textContent).toContain(scopeIds[1]!)
   })
 
+  it('binds a nested signal component prop from an element loop item', async () => {
+    const deployments = window.stx.state([
+      { name: 'production', status: 'attention' },
+    ])
+    window.__stx_setup_element_loop_component = () => ({ deployments })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_element_loop_component">
+        <section>
+          <button :for="deployment in deployments()">
+            <span>{{ deployment.name }}</span>
+            <div
+              data-stx-scope="compiled_status_scope"
+              data-stx-parent-bindings="status"
+              :status="deployment.status"
+            >
+              <span :text="status()"></span>
+            </div>
+            <script data-stx-scoped>
+              (function() {
+                var root = document.querySelector('[data-stx-scope="compiled_status_scope"]')
+                window.__STX_CURRENT_ELEMENT__ = root
+                var status = window.stx.useReactiveProp('status', 'configured')
+                window.stx._scopes.compiled_status_scope = {
+                  status: status,
+                  __mountCallbacks: [],
+                  __destroyCallbacks: []
+                }
+                window.__STX_CURRENT_ELEMENT__ = null
+              })()
+            </script>
+          </button>
+        </section>
+      </main>
+    `
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const child = document.querySelector('[data-stx-scope^="compiled_status_scope_for_"]')
+    expect(child).not.toBeNull()
+    expect(child.getAttribute('status')).toBe('attention')
+  })
+
   it('reapplies a select value after reactive options are inserted', async () => {
     window.__stx_setup_dynamic_select = () => ({
       selected: window.stx.state('2'),

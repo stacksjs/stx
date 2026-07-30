@@ -2812,10 +2812,10 @@ else if (typeof value === 'string') {
     roots.forEach(function(root) {
       var scopeId = root.getAttribute('data-stx-scope');
       var scopeVars = scopeId && window.stx._scopes && window.stx._scopes[scopeId];
-      if (!scopeVars || root.__stx_disposers) return;
       var callerScope = resolveComponentCallerScope(root, itemScope);
       root.__stx_parent_scope = callerScope;
       bindParentComponentProps(root, callerScope);
+      if (!scopeVars || root.__stx_disposers) return;
       scopeVars.__el = root;
       var childScope = { ...callerScope, ...scopeVars };
       root.__stx_disposers = trackEffects(function() {
