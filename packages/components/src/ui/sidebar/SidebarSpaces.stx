@@ -1,0 +1,545 @@
+<script server>
+import { normalizeSpaces, spaceIndexOf } from './spaces'
+
+// Arc's swipeable spaces.
+//
+// Every space is rendered up front, side by side on one track that is
+// `n × 100%` wide; switching is a transform on the track rather than a
+// re-render. That is what makes the gesture feel native — the next space is
+// already painted, so it tracks the finger at 1:1 instead of appearing after
+// the gesture ends. It also means each space keeps its own scroll position,
+// its own disclosure state and its own DOM, exactly like Arc.
+export const spaceList = normalizeSpaces($props.spaces || [])
+export const theme = $props.theme || 'arc'
+
+// `space` names the space to open on. `active` is accepted as an alias so the
+// prop reads naturally next to `<SidebarSpaceSwitcher :active>`.
+export const activeId = $props.space || $props.active || (spaceList[0] && spaceList[0].id) || ''
+export const activeIndex = spaceIndexOf(spaceList, activeId)
+
+export const showSwitcher = $props.showSwitcher ?? true
+export const showAdd = $props.showAdd ?? false
+export const addLabel = $props.addLabel || 'New space'
+export const persistKey = $props.persistKey || ''
+
+// One panel is `100 / n` percent of the track, so the server-rendered
+// transform matches exactly what the controller computes on the client and the
+// track does not jump on hydration.
+const panelCount = Math.max(1, spaceList.length)
+export const trackWidth = panelCount * 100
+export const initialShift = activeIndex * (100 / panelCount)
+
+// Everything the controller needs, in one attribute.
+//
+// It travels as data rather than as interpolated constants in the client
+// script on purpose: `<script client>` blocks are bundled and cached by
+// content, so baking per-instance values into one would either bust that cache
+// on every render or — worse, once a bundle is reused — hand a second sidebar
+// the first one's configuration. Rows and sections are already in the DOM, so
+// only each space's identity and palette have to ship here; those are what a
+// swipe repaints.
+export const config = JSON.stringify({
+  persistKey,
+  index: activeIndex,
+  spaces: spaceList.map(space => ({
+    id: space.id,
+    label: space.label,
+    icon: space.icon,
+    tint: space.tint,
+  })),
+})
+</script>
+
+<script client>
+const emit = defineEmits()
+const componentRoot = window.__STX_CURRENT_ELEMENT__
+
+const index = state(0)
+
+let root = null
+let viewport = null
+let track = null
+let persistKey = ''
+let ids = []
+let tints = []
+
+// ---------------------------------------------------------------------------
+// Geometry
+//
+// Position is measured in *panels*, not pixels: 1.5 means halfway between the
+// second and third space. Keeping the gesture in panel units makes every
+// threshold below independent of how wide the sidebar happens to be, so a
+// 220px pane and a 320px pane need the same flick to advance.
+// ---------------------------------------------------------------------------
+
+const SETTLE_MS = 420
+const SETTLE_EASE = 'cubic-bezier(0.22, 0.61, 0.36, 1)'
+// Distance past the first/last space is compressed towards this asymptote, the
+// same thing UIScrollView does at the end of a list: the track keeps answering
+// the finger, but tells you there is nothing further.
+const RUBBER_LIMIT = 0.28
+// Commit thresholds. Either drag a third of the way, or flick — 1.5 panels per
+// second — in the direction you were already going.
+const COMMIT_DISTANCE = 0.3
+const COMMIT_VELOCITY = 0.0015
+
+function panelStep() {
+  return 100 / Math.max(1, ids.length)
+}
+
+function paint(offset, animate) {
+  track.style.transition = animate ? `transform ${SETTLE_MS}ms ${SETTLE_EASE}` : 'none'
+  track.style.transform = `translate3d(${-offset * panelStep()}%, 0, 0)`
+}
+
+function rubber(distance) {
+  return (1 - 1 / (distance / RUBBER_LIMIT + 1)) * RUBBER_LIMIT
+}
+
+function withResistance(offset) {
+  const last = ids.length - 1
+  if (offset < 0) return -rubber(-offset)
+  if (offset > last) return last + rubber(offset - last)
+  return offset
+}
+
+function clampIndex(value) {
+  return Math.max(0, Math.min(ids.length - 1, value))
+}
+
+function animates() {
+  return !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+// ---------------------------------------------------------------------------
+// Painting the space
+//
+// The palette lands on the Sidebar pane rather than on this component, because
+// Arc tints the *whole* sidebar — search field, rows and rail together. Used
+// standalone, the component's own root takes the color instead.
+// ---------------------------------------------------------------------------
+
+function tintTarget() {
+  return root.closest('[data-stx-sidebar]') || root
+}
+
+function applyTint(position) {
+  const tint = tints[position]
+  if (!tint) return
+  const style = tintTarget().style
+  style.setProperty('--stx-space-light-from', tint.light.from)
+  style.setProperty('--stx-space-light-to', tint.light.to)
+  style.setProperty('--stx-space-light-ink', tint.light.ink)
+  style.setProperty('--stx-space-light-accent', tint.light.accent)
+  style.setProperty('--stx-space-dark-from', tint.dark.from)
+  style.setProperty('--stx-space-dark-to', tint.dark.to)
+  style.setProperty('--stx-space-dark-ink', tint.dark.ink)
+  style.setProperty('--stx-space-dark-accent', tint.dark.accent)
+}
+
+function markCurrent(position) {
+  const id = ids[position]
+
+  root.querySelectorAll('[data-space-target]').forEach((tab) => {
+    const current = tab.dataset.spaceTarget === id
+    tab.setAttribute('data-space-current', String(current))
+    tab.setAttribute('aria-selected', String(current))
+    tab.tabIndex = current ? 0 : -1
+  })
+
+  root.querySelectorAll('[data-space]').forEach((panel) => {
+    const current = panel.dataset.spaceId === id
+    panel.setAttribute('data-space-active', String(current))
+    // Off-screen spaces leave the tab order entirely. Without this, Tab walks
+    // through every row of every space the user cannot see — with hundreds of
+    // rows across a handful of spaces, the keyboard becomes unusable.
+    panel.inert = !current
+  })
+}
+
+function persist(position) {
+  if (!persistKey) return
+  try { window.localStorage?.setItem(persistKey, ids[position]) } catch {}
+}
+
+function restored() {
+  if (!persistKey) return -1
+  try {
+    const saved = window.localStorage?.getItem(persistKey)
+    return saved ? ids.indexOf(saved) : -1
+  }
+  catch { return -1 }
+}
+
+/** Move to a space. Always repaints — a rejected swipe still animates home. */
+function goTo(next, options) {
+  const opts = options || {}
+  const target = clampIndex(next)
+  const changed = target !== index()
+
+  paint(target, opts.animate !== false && animates())
+  if (!changed) return
+
+  index.set(target)
+  applyTint(target)
+  markCurrent(target)
+  persist(target)
+  nativeSidebar?.setActiveSpace?.(ids[target])
+  emit('spaceChange', { id: ids[target], index: target, source: opts.source || 'api' })
+}
+
+// ---------------------------------------------------------------------------
+// Gestures
+//
+// All three input paths (wheel, pointer, native) funnel into the same two
+// helpers: they track live with `paint(withResistance(offset), false)` while
+// moving, then hand the final offset and velocity to `settle`.
+// ---------------------------------------------------------------------------
+
+let gestureStart = 0
+
+function beginGesture() {
+  gestureStart = index()
+  track.style.transition = 'none'
+}
+
+function settle(offset, velocity, source) {
+  const moved = offset - gestureStart
+  const direction = Math.sign(moved) || Math.sign(velocity)
+  const dragged = Math.abs(moved) > COMMIT_DISTANCE
+  const flicked = Math.abs(velocity) > COMMIT_VELOCITY && Math.sign(velocity) === direction
+  const commit = direction !== 0 && (dragged || flicked)
+  goTo(commit ? gestureStart + direction : gestureStart, { source })
+}
+
+// --- Trackpad ---------------------------------------------------------------
+// A DOM wheel stream carries no phase information, so the gesture has to be
+// inferred: claim it only when the first event is unambiguously horizontal,
+// then end it after a short idle gap. Craft replaces this with the real
+// NSEvent phases when it is available — see `bindCraftGestures`.
+
+let wheelOffset = null
+let wheelIdle = null
+let wheelVelocity = 0
+let wheelLastAt = 0
+
+function onWheel(event) {
+  if (ids.length < 2) return
+  if (event.ctrlKey) return // pinch-zoom, not a swipe
+
+  if (wheelOffset === null) {
+    if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
+    beginGesture()
+    wheelOffset = gestureStart
+    wheelLastAt = event.timeStamp
+  }
+
+  event.preventDefault()
+  const delta = event.deltaX / (viewport.clientWidth || 1)
+  const elapsed = Math.max(1, event.timeStamp - wheelLastAt)
+  wheelLastAt = event.timeStamp
+  wheelVelocity = delta / elapsed
+  wheelOffset += delta
+  paint(withResistance(wheelOffset), false)
+
+  clearTimeout(wheelIdle)
+  wheelIdle = setTimeout(endWheel, 90)
+}
+
+function endWheel() {
+  if (wheelOffset === null) return
+  const offset = wheelOffset
+  wheelOffset = null
+  settle(offset, wheelVelocity, 'swipe')
+}
+
+// --- Touch and pen ----------------------------------------------------------
+// Mouse drags are deliberately left alone: in a sidebar, press-and-move is far
+// more likely to be a text selection or a sloppy click than a swipe, and
+// claiming it would break both.
+
+let pointerId = null
+let pointerStartX = 0
+let pointerStartY = 0
+let pointerOffset = null
+let pointerLastX = 0
+let pointerLastAt = 0
+let pointerVelocity = 0
+
+function onPointerDown(event) {
+  if (event.pointerType === 'mouse') return
+  if (ids.length < 2) return
+  pointerId = event.pointerId
+  pointerStartX = pointerLastX = event.clientX
+  pointerStartY = event.clientY
+  pointerLastAt = event.timeStamp
+  pointerOffset = null
+  pointerVelocity = 0
+}
+
+function onPointerMove(event) {
+  if (event.pointerId !== pointerId) return
+
+  if (pointerOffset === null) {
+    // Axis lock. The first 8px of travel decides swipe or scroll, and the
+    // decision stands for the rest of the gesture — re-deciding mid-drag is
+    // what makes web carousels feel slippery.
+    const dx = event.clientX - pointerStartX
+    const dy = event.clientY - pointerStartY
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+    if (Math.abs(dx) <= Math.abs(dy)) { pointerId = null; return }
+    beginGesture()
+    pointerOffset = gestureStart
+    viewport.setPointerCapture(event.pointerId)
+  }
+
+  const delta = (pointerLastX - event.clientX) / (viewport.clientWidth || 1)
+  const elapsed = Math.max(1, event.timeStamp - pointerLastAt)
+  pointerLastX = event.clientX
+  pointerLastAt = event.timeStamp
+  pointerVelocity = delta / elapsed
+  pointerOffset += delta
+  paint(withResistance(pointerOffset), false)
+}
+
+function onPointerUp(event) {
+  if (event.pointerId !== pointerId) return
+  const offset = pointerOffset
+  pointerId = null
+  pointerOffset = null
+  if (offset === null) return
+  settle(offset, pointerVelocity, 'swipe')
+}
+
+// ---------------------------------------------------------------------------
+// Pointer clicks and keyboard
+// ---------------------------------------------------------------------------
+
+function onClick(event) {
+  if (event.target.closest('[data-space-add]')) {
+    emit('spaceAdd')
+    return
+  }
+  const tab = event.target.closest('[data-space-target]')
+  if (tab) goTo(ids.indexOf(tab.dataset.spaceTarget), { source: 'switcher' })
+}
+
+function onRailKeyDown(event) {
+  // Standard tablist keys, active only while a rail button holds focus so they
+  // never shadow the Sidebar's own ←/→ disclosure handling on the rows.
+  if (!event.target.closest('[data-space-target]')) return
+  const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
+  if (step === 0) return
+  event.preventDefault()
+  goTo(index() + step, { source: 'keyboard' })
+  root.querySelector('[data-space-target][data-space-current="true"]')?.focus()
+}
+
+function onShortcut(event) {
+  // Arc's own binding. Both modifiers are required so it cannot collide with
+  // browser history navigation or with the row disclosure keys.
+  if (!event.metaKey || !event.altKey) return
+  const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
+  if (step === 0) return
+  event.preventDefault()
+  goTo(index() + step, { source: 'keyboard' })
+}
+
+// ---------------------------------------------------------------------------
+// Craft
+//
+// Two independent integrations, both optional, both a no-op in a plain
+// browser:
+//
+//   gestures  A WKWebView's wheel stream is still phase-less, but the host sees
+//             the real NSEvent. When Craft forwards it, the idle-timeout
+//             heuristic above is dropped entirely in favor of begin/change/end
+//             and the momentum flag — which is the difference between "close
+//             enough" and indistinguishable from AppKit.
+//   nativeUI  The host may want to own the switcher (a real segmented control
+//             in the window toolbar, a Touch Bar strip, a menu). We publish the
+//             space list to it and follow whatever it selects.
+// ---------------------------------------------------------------------------
+
+let nativeSidebar = null
+const craftTeardown = []
+
+function bindCraftGestures() {
+  const gestures = window.craft?.gestures
+  if (typeof gestures?.onSwipe !== 'function') return false
+
+  let offset = null
+  const off = gestures.onSwipe((swipe) => {
+    if (!swipe || swipe.axis !== 'horizontal') return
+
+    if (swipe.phase === 'begin') {
+      beginGesture()
+      offset = gestureStart
+      return
+    }
+    if (offset === null) return
+
+    if (swipe.phase === 'end') {
+      const settled = offset
+      offset = null
+      // Craft reports velocity in points per second; the thresholds here are
+      // panels per millisecond.
+      settle(settled, (swipe.velocityX || 0) / (viewport.clientWidth || 1) / 1000, 'swipe')
+      return
+    }
+
+    offset += (swipe.deltaX || 0) / (viewport.clientWidth || 1)
+    paint(withResistance(offset), false)
+  })
+
+  if (typeof off === 'function') craftTeardown.push(off)
+  return true
+}
+
+function bindCraftSidebar(spaces) {
+  const nativeUI = window.craft?.nativeUI
+  if (typeof nativeUI?.createSpacesSidebar !== 'function') return
+
+  try {
+    nativeSidebar = nativeUI.createSpacesSidebar({
+      id: root.id || undefined,
+      spaces: spaces.map(space => ({ id: space.id, label: space.label, icon: space.icon })),
+      activeSpace: ids[index()],
+    })
+    nativeSidebar?.onSpaceChange?.((spaceId) => {
+      goTo(ids.indexOf(spaceId), { source: 'native' })
+    })
+  }
+  catch (error) {
+    console.warn('[stx] Craft spaces sidebar unavailable', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+onMount(() => {
+  // `closest` first so the component works whether the scope element is the
+  // spaces root itself or an ancestor wrapper around it.
+  root = componentRoot?.closest?.('[data-stx-sidebar-spaces]')
+    || componentRoot?.querySelector?.('[data-stx-sidebar-spaces]')
+  if (!root) return
+  viewport = root.querySelector('[data-space-viewport]')
+  track = root.querySelector('[data-space-track]')
+  if (!viewport || !track) return
+
+  const config = JSON.parse(root.dataset.spaceConfig || '{}')
+  const spaces = config.spaces || []
+  persistKey = config.persistKey || ''
+  ids = spaces.map(space => space.id)
+  tints = spaces.map(space => space.tint)
+  if (ids.length === 0) return
+
+  const startIndex = clampIndex(config.index || 0)
+  const saved = restored()
+  const initial = saved === -1 ? startIndex : saved
+  index.set(initial)
+  paint(initial, false)
+  applyTint(initial)
+  markCurrent(initial)
+
+  root.addEventListener('click', onClick)
+  root.addEventListener('keydown', onRailKeyDown)
+  window.addEventListener('keydown', onShortcut)
+  viewport.addEventListener('pointerdown', onPointerDown)
+  viewport.addEventListener('pointermove', onPointerMove)
+  viewport.addEventListener('pointerup', onPointerUp)
+  viewport.addEventListener('pointercancel', onPointerUp)
+
+  // Native phases win; only fall back to inferring them from wheel events.
+  if (!bindCraftGestures())
+    viewport.addEventListener('wheel', onWheel, { passive: false })
+
+  bindCraftSidebar(spaces)
+
+  if (initial !== startIndex)
+    emit('spaceChange', { id: ids[initial], index: initial, source: 'restore' })
+})
+
+onDestroy(() => {
+  window.removeEventListener('keydown', onShortcut)
+  clearTimeout(wheelIdle)
+  craftTeardown.forEach(off => off())
+  nativeSidebar?.destroy?.()
+})
+
+defineExpose({
+  index,
+  goTo: position => goTo(position, { source: 'api' }),
+  next: () => goTo(index() + 1, { source: 'api' }),
+  previous: () => goTo(index() - 1, { source: 'api' }),
+})
+</script>
+
+<div
+  data-stx-sidebar-spaces
+  data-space-config="{{ config }}"
+  class="relative flex min-h-0 flex-1 flex-col"
+>
+  <div data-space-viewport class="stx-space-viewport relative min-h-0 flex-1 overflow-hidden">
+    <div
+      data-space-track
+      class="stx-space-track flex h-full"
+      style="width: {{ trackWidth }}%; transform: translate3d(-{{ initialShift }}%, 0, 0)"
+    >
+      @foreach(spaceList as space)
+        <SidebarSpace
+          :id="space.id"
+          :label="space.label"
+          :icon="space.icon"
+          :pinned="space.pinned"
+          :sections="space.sections"
+          :action="space.action"
+          :clear="space.clear"
+          :active="space.id === activeId"
+          :theme="theme"
+        />
+      @endforeach
+    </div>
+  </div>
+
+  @if(showSwitcher)
+    <SidebarSpaceSwitcher
+      :spaces="spaceList"
+      :active="activeId"
+      :showAdd="showAdd"
+      :addLabel="addLabel"
+    />
+  @endif
+</div>
+
+<style scoped>
+.stx-space-viewport {
+  /* Vertical scrolling stays with the browser; horizontal belongs to us. */
+  touch-action: pan-y;
+  /* Stops a horizontal swipe from escaping into the browser's back gesture
+     once the track hits its first or last space. */
+  overscroll-behavior-x: contain;
+}
+
+.stx-space-track {
+  will-change: transform;
+  /* The track is composited on its own layer, so a swipe never repaints the
+     rows it is dragging. */
+  backface-visibility: hidden;
+}
+
+/* Panels are sized from the track, not from themselves.
+ *
+ * A component with a client script renders inside a scope wrapper, so the
+ * track's direct children are those wrappers rather than the `<section>` each
+ * space defines — utility classes on the section would style the wrong box and
+ * every panel would collapse to its content width. Sizing `> *` is agnostic to
+ * whether a wrapper is there. With the track at `n × 100%` and n equal
+ * children, each panel lands at exactly one viewport wide. */
+.stx-space-track > * {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+</style>
