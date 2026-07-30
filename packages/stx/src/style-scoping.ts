@@ -104,13 +104,43 @@ function scopeCssWithAttribute(css: string, scopeAttr: string): string {
 }
 
 /**
+ * Elements whose *contents* are text, not markup.
+ *
+ * The attribute injector below recognizes elements by regex, which cannot tell
+ * an HTML tag from a `<` that happens to appear inside CSS or JavaScript. Left
+ * alone it rewrites things like `@property { syntax: "<color>" }` into
+ * `syntax: "<color data-v-hash>"` — silently invalidating the rule — and would
+ * do the same to `content: "<"`, a `<length>` syntax descriptor, or a `a < b`
+ * comparison in an inline script. So these regions are cut out first and
+ * stitched back verbatim.
+ */
+const TEXT_CONTENT_ELEMENT = /<(style|script)\b[^>]*>[\s\S]*?<\/\1\s*>/gi
+
+/**
  * Add a scope attribute to all top-level HTML elements in the template.
  *
- * Skips `<style>`, `<script>`, `<template>`, `<!DOCTYPE>`, and `<html>`/`<head>`/`<body>` tags.
+ * Skips `<style>`, `<script>`, `<template>`, `<!DOCTYPE>`, and `<html>`/`<head>`/`<body>` tags,
+ * along with everything *inside* `<style>` and `<script>`.
  * For component fragments (no document wrapper), adds to all root-level elements.
  * For full documents, adds to elements inside `<body>`.
  */
 function addScopeAttribute(html: string, scopeAttr: string): string {
+  let output = ''
+  let cursor = 0
+
+  TEXT_CONTENT_ELEMENT.lastIndex = 0
+  let block: RegExpExecArray | null
+  while ((block = TEXT_CONTENT_ELEMENT.exec(html)) !== null) {
+    output += injectScopeAttribute(html.slice(cursor, block.index), scopeAttr)
+    output += block[0]
+    cursor = block.index + block[0].length
+  }
+
+  return output + injectScopeAttribute(html.slice(cursor), scopeAttr)
+}
+
+/** Inject the scope attribute into every content tag in a markup-only region. */
+function injectScopeAttribute(html: string, scopeAttr: string): string {
   // Strategy: add the attribute to every HTML element tag that is NOT
   // a meta tag, script, style, or template wrapper.
   // We use a regex that finds opening tags and injects the attribute.
