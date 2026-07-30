@@ -108,6 +108,52 @@ describe('template for DOM binding', () => {
     expect(elements.map(element => element.textContent?.trim())).toEqual(['Second', 'Two', 'Three'])
   })
 
+  it('gives repeated signal components independent scopes and caller props', async () => {
+    const fields = window.stx.state([
+      { label: 'Name' },
+      { label: 'Status' },
+    ])
+    window.__stx_setup_repeated_components = () => ({ fields })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_repeated_components">
+        <section>
+          <template :for="field in fields()">
+            <div
+              data-stx-scope="compiled_child_scope"
+              data-stx-parent-bindings="label"
+              :label="field.label"
+            >
+              <span :text="field.label"></span>
+            </div>
+            <script data-stx-scoped>
+              window.stx._scopes.compiled_child_scope = {
+                __mountCallbacks: [],
+                __destroyCallbacks: []
+              }
+            </script>
+          </template>
+        </section>
+      </main>
+    `
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const children = Array.from(document.querySelectorAll('section > [data-stx-scope]')) as HTMLElement[]
+    const scopeIds = children.map(child => child.getAttribute('data-stx-scope'))
+    expect(children).toHaveLength(2)
+    expect(new Set(scopeIds).size).toBe(2)
+    expect(scopeIds.every(scopeId => scopeId?.startsWith('compiled_child_scope_for_'))).toBe(true)
+    expect(children.map(child => child.getAttribute('label'))).toEqual(['Name', 'Status'])
+    expect(children.map(child => child.textContent?.trim())).toEqual(['Name', 'Status'])
+
+    const scripts = Array.from(document.querySelectorAll('section > script[data-stx-scoped]')) as HTMLScriptElement[]
+    expect(scripts).toHaveLength(2)
+    expect(scripts[0]?.textContent).toContain(scopeIds[0]!)
+    expect(scripts[1]?.textContent).toContain(scopeIds[1]!)
+  })
+
   it('reapplies a select value after reactive options are inserted', async () => {
     window.__stx_setup_dynamic_select = () => ({
       selected: window.stx.state('2'),

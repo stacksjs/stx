@@ -2719,6 +2719,118 @@ else if (typeof value === 'string') {
     });
   }
 
+  var __forComponentScopeCounter = 0;
+
+  function forEachGroupElement(nodes, callback) {
+    nodes.forEach(function(node) {
+      if (!node || node.nodeType !== Node.ELEMENT_NODE) return;
+      callback(node);
+      if (node.querySelectorAll) {
+        node.querySelectorAll('*').forEach(function(child) { callback(child); });
+      }
+    });
+  }
+
+  // A signal component expanded inside <template :for> carries a compiled
+  // data-stx-scope id and setup script. cloneNode() used to duplicate that id
+  // for every row, so all instances shared the first child's props and state.
+  // Give each cloned component tree its own ids before insertion, and rewrite
+  // the setup scripts that target those ids.
+  function remapForComponentScopes(nodes) {
+    var scopeMap = {};
+    forEachGroupElement(nodes, function(node) {
+      if (!node.hasAttribute || !node.hasAttribute('data-stx-scope')) return;
+      var oldId = node.getAttribute('data-stx-scope');
+      if (!oldId) return;
+      if (!scopeMap[oldId])
+        scopeMap[oldId] = oldId + '_for_' + (++__forComponentScopeCounter);
+      node.setAttribute('data-stx-scope', scopeMap[oldId]);
+    });
+
+    var oldIds = Object.keys(scopeMap);
+    if (!oldIds.length) return;
+
+    forEachGroupElement(nodes, function(node) {
+      if (node.attributes) {
+        Array.from(node.attributes).forEach(function(rawAttribute) {
+          var attribute = Array.isArray(rawAttribute)
+            ? { name: rawAttribute[0], value: rawAttribute[1] }
+            : rawAttribute;
+          if (!attribute || attribute.name === 'data-stx-scope') return;
+          var value = attribute.value;
+          if (typeof value !== 'string') return;
+          oldIds.forEach(function(oldId) {
+            if (value.indexOf(oldId) !== -1)
+              value = value.split(oldId).join(scopeMap[oldId]);
+          });
+          if (value !== attribute.value) node.setAttribute(attribute.name, value);
+        });
+      }
+      if (node.tagName === 'SCRIPT' && node.hasAttribute('data-stx-scoped')) {
+        var script = node.textContent || '';
+        oldIds.forEach(function(oldId) {
+          script = script.split(oldId).join(scopeMap[oldId]);
+        });
+        node.textContent = script;
+      }
+    });
+  }
+
+  function hydrateForComponentScopes(nodes, itemScope) {
+    var roots = [];
+    var scripts = [];
+    forEachGroupElement(nodes, function(node) {
+      if (node.hasAttribute && node.hasAttribute('data-stx-scope')) roots.push(node);
+      if (node.tagName === 'SCRIPT' && node.hasAttribute('data-stx-scoped')) scripts.push(node);
+    });
+    if (!roots.length) return;
+
+    // Scripts cloned from template.content are inert in some browsers and DOM
+    // implementations. Recreate only setup scripts whose target scope has not
+    // registered yet; scripts that executed automatically are left alone.
+    scripts.forEach(function(old) {
+      var text = old.textContent || '';
+      var needsRun = roots.some(function(root) {
+        var scopeId = root.getAttribute('data-stx-scope');
+        return scopeId && text.indexOf(scopeId) !== -1
+          && !(window.stx._scopes && window.stx._scopes[scopeId]);
+      });
+      if (!needsRun || !old.parentNode) return;
+      var fresh = document.createElement('script');
+      Array.from(old.attributes || []).forEach(function(rawAttribute) {
+        var attribute = Array.isArray(rawAttribute)
+          ? { name: rawAttribute[0], value: rawAttribute[1] }
+          : rawAttribute;
+        if (!attribute || !attribute.name) return;
+        fresh.setAttribute(attribute.name, attribute.value);
+      });
+      fresh.textContent = text;
+      fresh.__stx_ran = true;
+      old.parentNode.replaceChild(fresh, old);
+    });
+
+    roots.forEach(function(root) {
+      var scopeId = root.getAttribute('data-stx-scope');
+      var scopeVars = scopeId && window.stx._scopes && window.stx._scopes[scopeId];
+      if (!scopeVars || root.__stx_disposers) return;
+      var callerScope = resolveComponentCallerScope(root, itemScope);
+      root.__stx_parent_scope = callerScope;
+      bindParentComponentProps(root, callerScope);
+      scopeVars.__el = root;
+      var childScope = { ...callerScope, ...scopeVars };
+      root.__stx_disposers = trackEffects(function() {
+        processElement(root, childScope);
+      });
+      if (scopeVars.__mountCallbacks && !scopeVars.__mounted) {
+        scopeVars.__mounted = true;
+        scopeVars.__mountCallbacks.forEach(function(fn) {
+          try { fn(); }
+          catch (e) { console.error('[stx] onMount error:', e); }
+        });
+      }
+    });
+  }
+
   function bindFor(el, passedScope = componentScope, attrName = '@for') {
     if (el.__stx_for_bound) return;
     el.__stx_for_bound = true;
@@ -2975,6 +3087,7 @@ catch (e) {
         clone.__stx_for_scope = itemScope;
         elements.push(clone);
       }
+      remapForComponentScopes(elements);
       return elements;
     };
 
@@ -3157,14 +3270,20 @@ catch (e) {
           const elements = createItemElements(list[i], i, key);
           elements.forEach(el => {
             parent.insertBefore(el, placeholder);
+            if (tgReady && el.isConnected) tgEnter(el, tgName);
+          });
+          hydrateForComponentScopes(elements, elements.find(function(node) {
+            return node && node.__stx_for_scope;
+          })?.__stx_for_scope || passedScope);
+          elements.forEach(el => {
             if (el.nodeType === 1) {
               var itemScope = el.__stx_for_scope || passedScope;
               delete el.__stx_for_scope;
-              processElement(el, itemScope);
+              if (!el.__stx_disposers && el.tagName !== 'SCRIPT')
+                processElement(el, itemScope);
               el.removeAttribute('x-cloak');
               el.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
             }
-            if (tgReady && el.isConnected) tgEnter(el, tgName);
           });
           newElements.push(...elements);
           newGroups.push(elements);
@@ -3505,6 +3624,22 @@ catch (e2) {
       childrenProcessed = true;
     };
 
+    // A <template :if> inserts clones of template.content rather than the
+    // template element itself. Those clones still need the normal directive
+    // and interpolation pass. Previously the initially-visible branch was
+    // inserted and left inert, so bindings such as :text and {{ expression }}
+    // leaked into the rendered UI until the condition toggled.
+    const processTemplateNodes = (nodes) => {
+      const childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
+      nodes.forEach(node => {
+        processElement(node, childScope);
+        if (node.nodeType === 1) {
+          node.removeAttribute('x-cloak');
+          node.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
+        }
+      });
+    };
+
     // Evaluate the :if expression — use direct signal read for simple refs,
     // falling back to evalExpr for complex expressions
     const fullScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
@@ -3533,16 +3668,8 @@ catch (e2) {
           currentNodes = Array.from(el.content.childNodes).map(n => n.cloneNode(true));
           const insertionAnchor = placeholder.nextSibling;
           currentNodes.forEach(node => parent.insertBefore(node, insertionAnchor));
-          // Process the new nodes — use LIVE componentScope so all functions are available
-          const childScope = { ...componentScope, ...(capturedElementScope || {}) };
-          currentNodes.forEach(node => {
-            if (node.nodeType === 1) {
-              processElement(node, childScope);
-              // Remove x-cloak from processed clones
-              node.removeAttribute('x-cloak');
-              node.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
-            }
-          });
+          processTemplateNodes(currentNodes);
+          childrenProcessed = true;
           // Stamp insertion time for click propagation guard
           currentNodes.forEach(function(n) { if (n.nodeType === 1) n.__stx_shown_at = performance.now(); });
           isInserted = true;
@@ -3554,6 +3681,15 @@ else if (!value && isInserted) {
           currentNodes.forEach(node => node.remove());
           currentNodes = [];
           isInserted = false;
+          childrenProcessed = false;
+        }
+        else if (value && isInserted && !childrenProcessed) {
+          // Initial template content is cloned before the effect runs. Process
+          // it after the condition is confirmed so hidden branches stay inert.
+          childrenProcessed = true;
+          setTimeout(function() {
+            if (isInserted) processTemplateNodes(currentNodes);
+          }, 0);
         }
       }
 else {

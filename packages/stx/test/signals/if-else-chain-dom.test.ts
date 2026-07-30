@@ -243,6 +243,20 @@ describe('reactive if/else chains — DOM behavior (#1734, regression #1737)', (
     const rendered = Array.from(scope.children).map((element: any) => element.textContent.trim())
     expect(rendered).toEqual(['first', 'second', 'third'])
   })
+
+  it('binds directives and interpolation in an initially visible template if branch', async () => {
+    await processScope(
+      { label: window.stx.state('Name') },
+      `<template :if="label()">`
+      + `<label><span :text="label()"></span><small>{{ label() }}</small></label>`
+      + `</template>`,
+    )
+
+    const label = document.querySelector('[data-stx-scope="test"] label')
+    expect(label.textContent).toBe('NameName')
+    expect(label.querySelector('[\\:text]')).toBeNull()
+    expect(label.textContent).not.toContain('{{')
+  })
 })
 
 describe('reactive if/else chains — minified runtime parity (#1737)', () => {
