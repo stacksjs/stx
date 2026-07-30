@@ -1524,8 +1524,16 @@ catch (e) {
         return;
       }
 
-      const fn = new Function(...Object.keys(scope), '$event', expr);
-      fn(...Object.values(scope), event);
+      // Loop items arrive as signals (see createItemElements). Unwrap them for
+      // the same reason the inline @event path does: \`item.value\` in a handler
+      // means the item's field, not the signal API.
+      const handlerScope = {};
+      Object.keys(scope).forEach(function(k) {
+        const v = scope[k];
+        handlerScope[k] = (v && typeof v === 'function' && v._isStxLoopItem) ? v() : v;
+      });
+      const fn = new Function(...Object.keys(handlerScope), '$event', expr);
+      fn(...Object.values(handlerScope), event);
     }
 catch (e) {
       // Event handlers fire on user interaction, not reactive re-runs — there's no
@@ -2448,7 +2456,16 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
               // primitive reads.
               var unwrapVars = Object.keys(eventCapturedScope).map(function(k) {
                 var v = eventCapturedScope[k];
-                if (v && typeof v === 'function' && v._isSignal && expressionUsesSignalApi(value, k)) {
+                // A :for item is a signal only as an implementation detail, so
+                // that keyed rows can update in place. Its \`.value\` is a field
+                // on the item, never the signal compatibility API — the same
+                // rule createAutoUnwrapProxy states for binding expressions.
+                // Without the carve-out, expressionUsesSignalApi sees
+                // \`option.value\` and hands the handler the raw signal, so a
+                // handler like \`pick(option.value)\` receives the whole item.
+                // It is not an error, so it lands silently: the wrong value is
+                // stored and only surfaces much later.
+                if (v && typeof v === 'function' && v._isSignal && !v._isStxLoopItem && expressionUsesSignalApi(value, k)) {
                   return 'var ' + k + ' = __s["' + k + '"]';
                 }
                 return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
