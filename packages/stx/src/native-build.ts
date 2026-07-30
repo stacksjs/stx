@@ -19,6 +19,7 @@ import { spawn, execSync } from 'node:child_process'
 import { tmpdir, homedir, platform as osPlatform } from 'node:os'
 import { injectCraftBridge } from './craft-bridge'
 import { processCraftComponents, CRAFT_COMPONENT_STYLES } from './craft-components'
+import { renderTemplate } from './render'
 
 export type NativeTarget = 'macos' | 'windows' | 'linux' | 'ios' | 'android'
 export type NativeFormat = 'app' | 'dmg' | 'pkg' | 'msi' | 'zip' | 'deb' | 'rpm' | 'appimage' | 'ipa' | 'apk'
@@ -94,6 +95,32 @@ export interface NativeBuildConfig {
   /** Enable system tray/menubar */
   systemTray?: boolean
 
+  /**
+   * Run without a dock icon — a pure menubar app. Defaults to whatever
+   * `systemTray` is, since a tray app that also claims a dock slot is almost
+   * never what's wanted; set it explicitly to `false` to keep both.
+   */
+  menubarOnly?: boolean
+
+  /**
+   * Extra `Info.plist` keys, merged into the generated plist (macOS).
+   *
+   * Any capability macOS gates behind a purpose string needs one of these —
+   * `NSFocusStatusUsageDescription` for Focus, `NSMicrophoneUsageDescription`
+   * for audio, and so on. Without the key the system denies the request
+   * silently, so there is no way to build a working app without this hook.
+   */
+  infoPlist?: Record<string, string | number | boolean>
+
+  /** Minimum macOS version (`LSMinimumSystemVersion`). */
+  minimumSystemVersion?: string
+
+  /** `LSApplicationCategoryType`, e.g. `public.app-category.productivity`. */
+  category?: string
+
+  /** `NSHumanReadableCopyright`. */
+  copyright?: string
+
   /** Enable hot reload (dev mode) */
   hotReload?: boolean
 
@@ -105,6 +132,9 @@ export interface NativeBuildConfig {
 
   /** Additional environment variables */
   env?: Record<string, string>
+
+  /** Template context passed to the stx renderer. */
+  context?: Record<string, unknown>
 
   /** Verbose output */
   verbose?: boolean
@@ -146,8 +176,14 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
       mkdirSync(outputDir, { recursive: true })
     }
 
-    // Read and process the stx template
-    let html = await Bun.file(config.input).text()
+    // Compile the stx template. This used to read the file as raw text and
+    // hand it straight to Craft, so every directive, component and
+    // `<script server>` block shipped verbatim into the app — `build:native`
+    // only ever worked for templates that were already plain HTML.
+    let html = await renderTemplate(config.input, {
+      context: config.context,
+      options: { isDev: false },
+    })
 
     // Inject Craft bridge
     html = injectCraftBridge(html, { debug: config.verbose })
@@ -265,73 +301,72 @@ async function buildMacOS(
     ? `--native-sidebar --sidebar-width ${config.sidebar?.width || 240} --sidebar-config "$(cat "$RESOURCES/sidebar-config.json")"`
     : ''
 
+  // Copy the Craft runtime into the bundle. This has to happen before the
+  // launcher is written, because the launcher execs the *bundled* copy.
+  const craftBinaryDest = join(macOSDir, 'craft')
+  copyFileSync(craftPath, craftBinaryDest)
+  chmodSync(craftBinaryDest, 0o755)
+
+  // The launcher used to exec `craftPath` — the absolute path Craft happened
+  // to live at on the *build* machine — and pass the whole document through
+  // `--html "$(cat …)"`. Neither survives distribution: the path does not
+  // exist on the user's Mac, and a document past ARG_MAX fails to exec. Run
+  // the bundled runtime and point it at the file.
+  const menubarOnly = config.menubarOnly ?? config.systemTray
+  const launcherFlags = [
+    `--title "${config.window?.title || appName}"`,
+    `--width ${config.window?.width || 1200}`,
+    `--height ${config.window?.height || 800}`,
+    menubarOnly ? '--menubar-only' : (config.systemTray ? '--system-tray' : ''),
+    config.devTools ? '' : '--no-devtools',
+    config.window?.frameless ? '--frameless' : '',
+    config.window?.transparent ? '--transparent' : '',
+    config.window?.alwaysOnTop ? '--always-on-top' : '',
+    config.window?.resizable === false ? '--no-resize' : '',
+    sidebarFlags,
+  ].filter(Boolean)
+
   const launcherScript = `#!/bin/bash
+set -euo pipefail
 DIR="$( cd "$( dirname "\${BASH_SOURCE[0]}" )" && pwd )"
 RESOURCES="$DIR/../Resources"
-"${craftPath}" --html "$(cat "$RESOURCES/index.html")" \\
-  --title "${config.window?.title || appName}" \\
-  --width ${config.window?.width || 1200} \\
-  --height ${config.window?.height || 800} \\
-  ${config.systemTray ? '--system-tray' : ''} \\
-  ${config.devTools ? '--dev-tools' : ''} \\
-  ${config.window?.frameless ? '--frameless' : ''} \\
-  ${config.window?.alwaysOnTop ? '--always-on-top' : ''} \\
-  ${sidebarFlags}
+exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
+  ${launcherFlags.join(' \\\n  ')}
 `
   const launcherPath = join(macOSDir, appName)
   await Bun.write(launcherPath, launcherScript)
   chmodSync(launcherPath, 0o755)
 
-  // Copy Craft binary
-  const craftBinaryDest = join(macOSDir, 'craft')
-  try {
-    copyFileSync(craftPath, craftBinaryDest)
-    chmodSync(craftBinaryDest, 0o755)
-  }
-  catch {
-    // Craft might be in PATH, create symlink script instead
-    const craftWrapperScript = `#!/bin/bash\nexec "${craftPath}" "$@"`
-    await Bun.write(craftBinaryDest, craftWrapperScript)
-    chmodSync(craftBinaryDest, 0o755)
+  // Copy icon if provided. Must precede the plist so `CFBundleIconFile` is
+  // only declared when the file is actually there — a dangling reference
+  // makes Finder fall back to the generic icon with no diagnostic.
+  const hasIcon = Boolean(config.icon && await Bun.file(config.icon).exists())
+  if (hasIcon) {
+    copyFileSync(config.icon!, join(resourcesDir, 'AppIcon.icns'))
   }
 
-  // Create Info.plist
-  const infoPlist = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleExecutable</key>
-    <string>${appName}</string>
-    <key>CFBundleIdentifier</key>
-    <string>${bundleId}</string>
-    <key>CFBundleName</key>
-    <string>${appName}</string>
-    <key>CFBundleDisplayName</key>
-    <string>${appName}</string>
-    <key>CFBundleShortVersionString</key>
-    <string>${appVersion}</string>
-    <key>CFBundleVersion</key>
-    <string>${appVersion}</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleSignature</key>
-    <string>????</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>10.15</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>NSSupportsAutomaticGraphicsSwitching</key>
-    <true/>
-    <key>LSUIElement</key>
-    <${config.systemTray ? 'true' : 'false'}/>
-</dict>
-</plist>`
-  await Bun.write(join(contentsDir, 'Info.plist'), infoPlist)
-
-  // Copy icon if provided
-  if (config.icon && await Bun.file(config.icon).exists()) {
-    copyFileSync(config.icon, join(resourcesDir, 'AppIcon.icns'))
+  const plistEntries: Record<string, string | number | boolean> = {
+    CFBundleExecutable: appName,
+    CFBundleIdentifier: bundleId,
+    CFBundleName: appName,
+    CFBundleDisplayName: appName,
+    CFBundleShortVersionString: appVersion,
+    CFBundleVersion: appVersion,
+    CFBundlePackageType: 'APPL',
+    CFBundleSignature: '????',
+    LSMinimumSystemVersion: config.minimumSystemVersion || '13.0',
+    NSHighResolutionCapable: true,
+    NSSupportsAutomaticGraphicsSwitching: true,
+    LSUIElement: config.menubarOnly ?? Boolean(config.systemTray),
+    ...(hasIcon ? { CFBundleIconFile: 'AppIcon' } : {}),
+    ...(config.category ? { LSApplicationCategoryType: config.category } : {}),
+    ...(config.copyright ? { NSHumanReadableCopyright: config.copyright } : {}),
+    // Last, so an app can override any of the above — including the usage
+    // description strings macOS requires for permission-gated APIs.
+    ...(config.infoPlist || {}),
   }
+
+  await Bun.write(join(contentsDir, 'Info.plist'), renderInfoPlist(plistEntries))
 
   // Create DMG if requested
   if (format === 'dmg') {
@@ -344,6 +379,42 @@ RESOURCES="$DIR/../Resources"
   }
 
   return { success: true, target: 'macos', format: 'app', outputPath: appBundlePath }
+}
+
+/**
+ * Escape a string for an XML text node. Bundle identifiers, app names and
+ * copyright lines are all user-supplied; an unescaped `&` or `<` produces a
+ * plist macOS refuses to parse, which surfaces as an app that simply will not
+ * launch.
+ */
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+/** Serialize a flat key/value map as an `Info.plist` document. */
+function renderInfoPlist(entries: Record<string, string | number | boolean>): string {
+  const body = Object.entries(entries)
+    .map(([key, value]) => {
+      const rendered = typeof value === 'boolean'
+        ? `<${value}/>`
+        : typeof value === 'number'
+          ? `<integer>${value}</integer>`
+          : `<string>${escapeXml(String(value))}</string>`
+      return `    <key>${escapeXml(key)}</key>\n    ${rendered}`
+    })
+    .join('\n')
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+${body}
+</dict>
+</plist>
+`
 }
 
 /**
@@ -365,15 +436,19 @@ async function buildWindows(
   const htmlPath = join(appDir, 'index.html')
   await Bun.write(htmlPath, html)
 
+  // Ship the runtime alongside the app, and launch that copy — the build
+  // machine's Craft path means nothing on the user's machine.
+  copyFileSync(craftPath, join(appDir, 'craft.exe'))
+
   // Create batch launcher
   const launcherBat = `@echo off
 set DIR=%~dp0
-"${craftPath}" --html-file "%DIR%index.html" ^
+"%DIR%craft.exe" --html-file "%DIR%index.html" ^
   --title "${config.window?.title || appName}" ^
   --width ${config.window?.width || 1200} ^
   --height ${config.window?.height || 800} ^
   ${config.systemTray ? '--system-tray' : ''} ^
-  ${config.devTools ? '--dev-tools' : ''}
+  ${config.devTools ? '' : '--no-devtools'}
 `
   await Bun.write(join(appDir, `${appName}.bat`), launcherBat)
 
@@ -409,15 +484,22 @@ async function buildLinux(
   const htmlPath = join(appDir, 'index.html')
   await Bun.write(htmlPath, html)
 
+  // Ship the runtime alongside the app, and launch that copy — the build
+  // machine's Craft path means nothing on the user's machine.
+  const craftDest = join(appDir, 'craft')
+  copyFileSync(craftPath, craftDest)
+  chmodSync(craftDest, 0o755)
+
   // Create launcher script
   const launcherScript = `#!/bin/bash
+set -euo pipefail
 DIR="$( cd "$( dirname "\${BASH_SOURCE[0]}" )" && pwd )"
-"${craftPath}" --html-file "$DIR/index.html" \\
+exec "$DIR/craft" --html-file "$DIR/index.html" \\
   --title "${config.window?.title || appName}" \\
   --width ${config.window?.width || 1200} \\
   --height ${config.window?.height || 800} \\
   ${config.systemTray ? '--system-tray' : ''} \\
-  ${config.devTools ? '--dev-tools' : ''}
+  ${config.devTools ? '' : '--no-devtools'}
 `
   const launcherPath = join(appDir, appName.toLowerCase())
   await Bun.write(launcherPath, launcherScript)
@@ -498,11 +580,20 @@ async function buildAndroid(
  * Find Craft binary in common locations
  */
 async function findCraftBinary(): Promise<string | null> {
+  // CRAFT_BIN is Craft's documented override and what the rest of the
+  // workspace already resolves through, so it wins over any guess.
+  if (process.env.CRAFT_BIN && await Bun.file(process.env.CRAFT_BIN).exists()) {
+    return process.env.CRAFT_BIN
+  }
+
   const possiblePaths = [
-    // Monorepo locations
-    join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft-minimal'),
-    join(process.cwd(), '../craft/packages/zig/zig-out/bin/craft-minimal'),
-    join(homedir(), 'Code/craft/packages/zig/zig-out/bin/craft-minimal'),
+    // Local builds. The binary is `craft`; the previous list looked for
+    // `craft-minimal`, a name the build has never produced, so a checked-out
+    // Craft was never found and every build fell through to PATH.
+    join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft'),
+    join(process.cwd(), '../craft/packages/zig/zig-out/bin/craft'),
+    join(homedir(), 'Code/Tools/craft/packages/zig/zig-out/bin/craft'),
+    join(homedir(), 'Code/craft/packages/zig/zig-out/bin/craft'),
     // Installed locations
     '/usr/local/bin/craft',
     '/usr/bin/craft',

@@ -172,6 +172,43 @@ function reportValidationError(validation: ValidationResult, exitCode = 1): neve
 }
 
 /**
+ * Parse `--info-plist` into the key/value map the native builder merges into
+ * the generated `Info.plist`.
+ *
+ * Fails loudly rather than silently dropping the option: the keys that go here
+ * are the usage-description strings macOS requires for permission-gated APIs,
+ * and an app missing one is denied at runtime with no diagnostic — the worst
+ * possible time to discover a typo'd flag.
+ */
+function parseInfoPlistOption(raw?: string): Record<string, string | number | boolean> | undefined {
+  if (!raw)
+    return undefined
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  }
+  catch (error) {
+    console.error(`❌ --info-plist is not valid JSON: ${(error as Error).message}`)
+    process.exit(1)
+  }
+
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    console.error('❌ --info-plist must be a JSON object, e.g. \'{"NSFocusStatusUsageDescription":"…"}\'')
+    process.exit(1)
+  }
+
+  for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+    if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
+      console.error(`❌ --info-plist value for "${key}" must be a string, number or boolean`)
+      process.exit(1)
+    }
+  }
+
+  return parsed as Record<string, string | number | boolean>
+}
+
+/**
  * Run tests using Bun's test runner with happy-dom for browser environment
  */
 async function runTests(
@@ -2338,6 +2375,11 @@ catch (error) {
     .option('--height <height>', 'Window height', { default: '800' })
     .option('--title <title>', 'Window title')
     .option('--system-tray', 'Enable system tray/menubar mode')
+    .option('--menubar-only', 'Run without a dock icon (implied by --system-tray)')
+    .option('--category <type>', 'LSApplicationCategoryType (macOS)')
+    .option('--copyright <text>', 'NSHumanReadableCopyright (macOS)')
+    .option('--min-system-version <v>', 'LSMinimumSystemVersion (macOS)')
+    .option('--info-plist <json>', 'Extra Info.plist keys as a JSON object (macOS)')
     .option('--dev-tools', 'Enable developer tools')
     .option('--frameless', 'Create frameless window')
     .option('--always-on-top', 'Keep window always on top')
@@ -2361,6 +2403,11 @@ catch (error) {
       height: string
       title?: string
       systemTray?: boolean
+      menubarOnly?: boolean
+      category?: string
+      copyright?: string
+      minSystemVersion?: string
+      infoPlist?: string
       devTools?: boolean
       frameless?: boolean
       alwaysOnTop?: boolean
@@ -2422,6 +2469,11 @@ catch (error) {
             alwaysOnTop: options.alwaysOnTop,
           },
           systemTray: options.systemTray,
+          menubarOnly: options.menubarOnly,
+          category: options.category,
+          copyright: options.copyright,
+          minimumSystemVersion: options.minSystemVersion,
+          infoPlist: parseInfoPlistOption(options.infoPlist),
           devTools: options.devTools,
           craftPath: options.craftPath,
           verbose: options.verbose,
