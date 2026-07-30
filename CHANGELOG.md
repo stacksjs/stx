@@ -1,5 +1,32 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.120...v0.2.121)
+
+## 🚀 Features
+
+- **desktop**: add a browser entry point for code running inside a Craft window ([0c5ddc7](https://github.com/stacksjs/stx/commit/0c5ddc7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: add focus and screen-sharing APIs ([cb96e23](https://github.com/stacksjs/stx/commit/cb96e23)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **signals**: preserve called signals in forwarded events ([3aab7df](https://github.com/stacksjs/stx/commit/3aab7df)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: transpile typed client methods ([e79925c](https://github.com/stacksjs/stx/commit/e79925c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bundler**: load linked sources reliably ([6b7e777](https://github.com/stacksjs/stx/commit/6b7e777)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bundler**: share client build queue globally ([fce4bfb](https://github.com/stacksjs/stx/commit/fce4bfb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bundler**: serialize client builds ([2e83ea5](https://github.com/stacksjs/stx/commit/2e83ea5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **render**: give the client-script bundler the template path ([4352d2b](https://github.com/stacksjs/stx/commit/4352d2b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: compile the template and ship a launcher that works off-machine ([e520284](https://github.com/stacksjs/stx/commit/e520284)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **test**: add the workspace happy-dom preload three packages point at ([46dc10c](https://github.com/stacksjs/stx/commit/46dc10c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **crosswind**: use Crosswind's extractor instead of a weaker copy ([725a892](https://github.com/stacksjs/stx/commit/725a892)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.121 ([9ddb7fa](https://github.com/stacksjs/stx/commit/9ddb7fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.119...v0.2.120)
 
 ## 🚀 Features
