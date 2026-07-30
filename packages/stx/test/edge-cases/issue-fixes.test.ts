@@ -567,7 +567,7 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
   it('evaluates forwarded props and events in the caller scope', () => {
     expect(runtime).toContain("el.getAttribute('data-stx-parent-bindings')")
     expect(runtime).toContain("el.getAttribute('data-stx-parent-events')")
-    expect(runtime).toContain('el.__stx_parent_scope = { ...componentScope }')
+    expect(runtime).toContain('el.__stx_parent_scope = el.__stx_parent_scope')
     expect(runtime).toContain('bindParentComponentProps(el, el.__stx_parent_scope)')
     expect(runtime).toContain('el.__stx_parent_props_bound = true')
     expect(runtime).toContain('resolveComponentCallerScope(el, pageScopeSnapshot)')
@@ -855,7 +855,7 @@ describe('#1697 — layout scope rebind walks document.body', () => {
   })
 
   it('DOMContentLoaded path also marks scopes mounted (so cross-nav doesn\'t re-fire onMount)', () => {
-    const dclIdx = runtime.indexOf('DOMContentLoaded')
+    const dclIdx = runtime.indexOf("document.addEventListener('DOMContentLoaded'")
     expect(dclIdx).toBeGreaterThan(-1)
     const dclSection = runtime.slice(dclIdx, dclIdx + 8000)
     expect(dclSection).toMatch(/!\s*scopeVars\.__mounted/)

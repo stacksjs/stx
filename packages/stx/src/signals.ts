@@ -4544,7 +4544,8 @@ catch (e) {}
       var scopeId = el.getAttribute('data-stx-scope');
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
       if (!scopeVars) return;
-      el.__stx_parent_scope = { ...componentScope };
+      el.__stx_parent_scope = el.__stx_parent_scope
+        || resolveComponentCallerScope(el, componentScope);
       bindParentComponentProps(el, el.__stx_parent_scope);
       Object.assign(componentScope, scopeVars);
       el.__stx_disposers = trackEffects(function() { processElement(el, componentScope); });
@@ -5406,7 +5407,8 @@ else {
       // Forwarded props and events belong to the caller. Capture its scope
       // before this component's locals are merged, so identical child names
       // cannot shadow expressions such as :total-items="totalItems".
-      el.__stx_parent_scope = resolveComponentCallerScope(el, pageScopeSnapshot);
+      el.__stx_parent_scope = el.__stx_parent_scope
+        || resolveComponentCallerScope(el, pageScopeSnapshot);
       bindParentComponentProps(el, el.__stx_parent_scope);
 
       // Merge component scope vars into componentScope (don't restore - keep for head elements)
@@ -5787,7 +5789,8 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
         return;
       }
       if (!scopeVars) return;
-      el.__stx_parent_scope = resolveComponentCallerScope(el, spaPageScopeSnapshot);
+      el.__stx_parent_scope = el.__stx_parent_scope
+        || resolveComponentCallerScope(el, spaPageScopeSnapshot);
       bindParentComponentProps(el, el.__stx_parent_scope);
       Object.assign(componentScope, scopeVars);
       if (el.__stx_disposers) return;
