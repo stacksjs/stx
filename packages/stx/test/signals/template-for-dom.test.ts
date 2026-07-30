@@ -168,5 +168,54 @@ describe('template for DOM binding', () => {
     checkbox.dispatchEvent(new window.Event('change'))
 
     expect(selected()).toEqual(['4'])
+    expect(checkbox.checked).toBe(true)
+
+    selected.set([])
+    expect(checkbox.checked).toBe(false)
+    selected.set(['4'])
+    expect(checkbox.checked).toBe(true)
+  })
+
+  it('binds checkbox arrays with x-model inside template loops', async () => {
+    const selected = window.stx.state<string[]>(['2'])
+    window.__stx_setup_checkbox_model = () => ({
+      categories: window.stx.state([
+        { id: '1', name: 'First' },
+        { id: '2', name: 'Second' },
+      ]),
+      selected,
+    })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_checkbox_model">
+        <section :if="categories().length > 0">
+          <div :if="categories().length === 0">No categories</div>
+          <div :else>
+            <template :for="category in categories()">
+              <label>
+                <input type="checkbox" :value="category.id" x-model="selected">
+                <span>{{ category.name }}</span>
+              </label>
+            </template>
+          </div>
+        </section>
+      </main>
+    `
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const checkboxes = Array.from(document.querySelectorAll('input')) as HTMLInputElement[]
+    expect(checkboxes).toHaveLength(2)
+    expect(checkboxes[0]?.checked).toBe(false)
+    expect(checkboxes[1]?.checked).toBe(true)
+
+    checkboxes[0]!.checked = true
+    checkboxes[0]!.dispatchEvent(new window.Event('change'))
+    expect(selected()).toEqual(['2', '1'])
+
+    checkboxes[1]!.checked = false
+    checkboxes[1]!.dispatchEvent(new window.Event('change'))
+    expect(selected()).toEqual(['1'])
   })
 })

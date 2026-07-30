@@ -2071,6 +2071,7 @@ catch (e2) {
               el.value = desiredValue;
               if (desiredValue === '' && el.tagName !== 'OPTION') el.removeAttribute(attrName);
               else if (el.getAttribute(attrName) !== desiredValue) el.setAttribute(attrName, desiredValue);
+              if (typeof el.__stx_model_sync === 'function') el.__stx_model_sync();
             };
             applyControlValue();
 
@@ -2093,6 +2094,16 @@ catch (e2) {
                 el.__stx_value_observer = null;
               });
             }
+            return;
+          }
+          // Checked and selected are live DOM properties, just like value.
+          // Updating only the HTML attribute leaves a user-touched checkbox or
+          // radio in its previous state because the property becomes dirty.
+          if ((attrName === 'checked' || attrName === 'selected') && attrName in el) {
+            var selectedState = Boolean(v);
+            el[attrName] = selectedState;
+            if (selectedState) el.setAttribute(attrName, '');
+            else el.removeAttribute(attrName);
             return;
           }
           if (v === false || v === null || v === undefined) {
@@ -2450,9 +2461,35 @@ catch (e) {
       }
     };
 
-    if (tag === 'input' && (type === 'checkbox' || type === 'radio')) {
-      effect(() => { el.checked = getValue(); });
-      el.addEventListener('change', () => setValue(el.checked));
+    if (tag === 'input' && type === 'checkbox') {
+      var syncCheckbox = () => {
+        var current = getValue();
+        el.checked = Array.isArray(current)
+          ? current.some(function(item) { return String(item) === String(el.value); })
+          : Boolean(current);
+      };
+      el.__stx_model_sync = syncCheckbox;
+      effect(syncCheckbox);
+      el.addEventListener('change', () => {
+        var current = getValue();
+        if (!Array.isArray(current)) {
+          setValue(el.checked);
+          return;
+        }
+
+        var checkboxValue = coerceValue(el.value);
+        var next = current.filter(function(item) { return String(item) !== String(checkboxValue); });
+        if (el.checked) next.push(checkboxValue);
+        setValue(next);
+      });
+    }
+    else if (tag === 'input' && type === 'radio') {
+      var syncRadio = () => { el.checked = String(getValue()) === String(el.value); };
+      el.__stx_model_sync = syncRadio;
+      effect(syncRadio);
+      el.addEventListener('change', () => {
+        if (el.checked) setValue(coerceValue(el.value));
+      });
     }
     else if (tag === 'select') {
       effect(() => { el.value = getValue(); });
