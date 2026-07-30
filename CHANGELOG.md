@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.116...v0.2.117)
+
+## 🐛 Bug Fixes
+
+- **stx**: render menu bar templates that are embedded in a compiled binary ([4281c75](https://github.com/stacksjs/stx/commit/4281c75)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.117 ([dfc8462](https://github.com/stacksjs/stx/commit/dfc8462)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.115...v0.2.116)
 
 ## 🚀 Features
