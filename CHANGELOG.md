@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.134...v0.2.135)
+
+## ⚡ Performance Improvements
+
+- **serve**: avoid duplicate fragment scripts ([45b174f](https://github.com/stacksjs/stx/commit/45b174f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.135 ([e8cea2d](https://github.com/stacksjs/stx/commit/e8cea2d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.133...v0.2.134)
 
 ## ⚡ Performance Improvements
