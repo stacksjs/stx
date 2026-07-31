@@ -32,6 +32,7 @@ export { preloadIconCollection } from './builtins'
 // Core functionality - these are the primary modules
 export * from './reactivity'
 export * from './head'
+export * from './page-response'
 export * from './route-middleware'
 export * from './runtime'
 export * from './forms'

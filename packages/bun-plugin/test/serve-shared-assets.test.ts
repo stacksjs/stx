@@ -27,6 +27,10 @@ beforeAll(async () => {
     path.join(dir, 'views', 'index.stx'),
     '<script>const count = state(0)</script><main class="flex">{{ count() }}<ProjectPanel>Project component</ProjectPanel><FactoryProbe /><FactoryProbe /><script data-stx-scoped client>window.__fragmentProbeRuns = (window.__fragmentProbeRuns || 0) + 1</script></main>',
   )
+  await Bun.write(
+    path.join(dir, 'views', '[...all].stx'),
+    '<script server>definePageMeta({ status: 404 })</script><main data-not-found>Missing</main>',
+  )
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
 serve({
@@ -165,5 +169,18 @@ describe('serve shared STX assets', () => {
     expect(firstInstanceIndex).toBeGreaterThan(factoryPreludeIndex)
     expect((html.match(/const factoryProbe = state\(0\);/g) || [])).toHaveLength(1)
     expect((html.match(/window\.__stxComponentFactories\[[^\n]+/g) || [])).toHaveLength(2)
+  })
+
+  it('honors page response status for full and fragment responses', async () => {
+    const fullResponse = await fetch(`${BASE}/missing-page`)
+    const fragmentResponse = await fetch(`${BASE}/missing-page`, {
+      headers: { 'X-STX-Router': 'true' },
+    })
+
+    expect(fullResponse.status).toBe(404)
+    expect(await fullResponse.text()).toContain('data-not-found')
+    expect(fragmentResponse.status).toBe(404)
+    expect(fragmentResponse.headers.get('x-stx-fragment')).toBe('true')
+    expect(await fragmentResponse.text()).toContain('Missing')
   })
 })

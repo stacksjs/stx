@@ -19,7 +19,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { stateDir, stateDirName } from '@stacksjs/stx'
+import { extractPageResponseStatus, stateDir, stateDirName } from '@stacksjs/stx'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 
 // Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
@@ -142,6 +142,8 @@ export interface ServeRequestContext {
   locale: string | null
   /** Dynamic route params (`[id].stx` → `{ id }`) — set by the dynamic-route renderer. */
   params: Record<string, string>
+  /** Static HTTP response status declared by the matched page. */
+  responseStatus?: number
   /** Extra keys merged from a non-Response `onRequest` return (app-owned). */
   [key: string]: unknown
 }
@@ -1560,6 +1562,8 @@ export async function serve(options: ServeOptions): Promise<void> {
   // Lazy template processing function
   async function processTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
     const content = await Bun.file(filePath).text()
+    if (reqCtx)
+      reqCtx.responseStatus = extractPageResponseStatus(content) ?? 200
     const skipCacheHint = /(?:^|[^\w$])__stx_skip_cache\s*=\s*true/.test(content)
 
     // Cache fast path — if every dependency mtime matches the previous
@@ -1870,6 +1874,8 @@ export async function serve(options: ServeOptions): Promise<void> {
   ): Promise<string> {
 
     const content = await Bun.file(filePath).text()
+    if (reqCtx)
+      reqCtx.responseStatus = extractPageResponseStatus(content) ?? 200
 
     // Extract server scripts only — client scripts stay for processDirectives to transform
     const { serverScripts: dynServerScripts, templateContent } = extractServerScriptsFromTemplate(content)
@@ -2592,6 +2598,7 @@ export async function serve(options: ServeOptions): Promise<void> {
               // Try to serve the requested page (lazy load on demand)
               const content = await getRoute(path, reqCtx)
               if (content) {
+                const responseStatus = reqCtx.responseStatus ?? 200
                 // SPA navigation: return only <main> content as fragment
                 const isSpaNav = req.headers.get('X-STX-Router') === 'true'
                 if (isSpaNav) {
@@ -2749,6 +2756,7 @@ export async function serve(options: ServeOptions): Promise<void> {
                   const pageTitle = titleMatch ? titleMatch[1].trim() : ''
 
                   return new Response(fragment, {
+                    status: responseStatus,
                     headers: {
                       'Content-Type': 'text/html; charset=utf-8',
                       'X-STX-Fragment': 'true',
@@ -2775,6 +2783,7 @@ export async function serve(options: ServeOptions): Promise<void> {
                   },
                 )
                 return new Response(injectHmrClient(cleaned), {
+                  status: responseStatus,
                   headers: {
                     'Content-Type': 'text/html; charset=utf-8',
                     'Cache-Control': 'no-store',
@@ -2787,6 +2796,7 @@ export async function serve(options: ServeOptions): Promise<void> {
               const contentWithExt = await getRoute(`${path}.html`, reqCtx)
               if (contentWithExt) {
                 return new Response(injectHmrClient(contentWithExt), {
+                  status: reqCtx.responseStatus ?? 200,
                   headers: {
                     'Content-Type': 'text/html; charset=utf-8',
                     'Cache-Control': 'no-store',

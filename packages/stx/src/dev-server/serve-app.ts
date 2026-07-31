@@ -28,6 +28,7 @@ import {
 } from '../route-middleware'
 import { getPageMeta, resetHead } from '../head'
 import { clearComponentCache } from '../utils'
+import { extractPageResponseStatus } from '../page-response'
 import {
   buildCrosswindCSS,
   colors,
@@ -43,6 +44,7 @@ import {
 interface BuiltPage {
   route: Route
   content: string
+  status?: number
   /**
    * Streaming-SSR boundaries (#1746 Phase 3): present when the page's
    * `<script server>` exports `streamBoundaries` — a map of `data-suspense` id →
@@ -50,6 +52,15 @@ interface BuiltPage {
    * boundary's fallback placeholder; these resolve + stream after.
    */
   boundaries?: { id: string, render: () => Promise<string> }[]
+}
+
+async function readPageResponseStatus(filePath: string): Promise<number | undefined> {
+  try {
+    return extractPageResponseStatus(await Bun.file(filePath).text())
+  }
+  catch {
+    return undefined
+  }
 }
 
 // Helper to serve static files with proper content types
@@ -336,7 +347,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
               if (valid) {
                 let output = memEntry.output
                 if (shell) output = stripDocumentWrapper(output, { preserveHead: true })
-                return { route, content: output }
+                return { route, content: output, status: await readPageResponseStatus(route.filePath) }
               }
             }
           }
@@ -347,13 +358,14 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         if (cached) {
           let output = cached
           if (shell) output = stripDocumentWrapper(output, { preserveHead: true })
-          return { route, content: output }
+          return { route, content: output, status: await readPageResponseStatus(route.filePath) }
         }
       }
 
       const content = cacheEnabled
         ? await readFileCached(route.filePath)
         : await Bun.file(route.filePath).text()
+      const responseStatus = extractPageResponseStatus(content)
 
       // Extract and classify script tags using unified classifier.
       // Server scripts are removed (their vars are extracted into context
@@ -471,7 +483,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
       else
         boundaries = undefined
 
-      return { route, content: output, boundaries }
+      return { route, content: output, status: responseStatus, boundaries }
     }
     catch (error) {
       console.error(`${colors.red}Error building ${colors.bright}${route.pattern}${colors.reset}:`, error)
@@ -649,6 +661,7 @@ catch {
           if (rebuilt) builtPage = rebuilt
         }
         if (builtPage) {
+          const responseStatus = builtPage.status ?? 200
           // Get page metadata (middleware, etc.)
           const pageMeta = getPageMeta()
 
@@ -744,6 +757,7 @@ catch {
             const routerContainer = (projectConfig as any)?.router?.container || 'main'
             content = extractContainerContent(content, routerContainer)
             return new Response(content, {
+              status: responseStatus,
               headers: {
                 'Content-Type': 'text/html',
                 'X-STX-Fragment': 'true',
@@ -806,6 +820,7 @@ catch {
             // 30s per-boundary cap so a hung data source can't hold the stream
             // (and the connection) open forever — it degrades to an error UI.
             return streamToResponse(renderStreamingPage(content, builtPage.boundaries, { timeoutMs: 30000 }), {
+              status: responseStatus,
               headers: {
                 'Cache-Control': 'no-store, no-cache, must-revalidate',
                 'Pragma': 'no-cache',
@@ -815,6 +830,7 @@ catch {
           }
 
           return new Response(content, {
+            status: responseStatus,
             headers: {
               'Content-Type': 'text/html',
               'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -851,6 +867,7 @@ catch {
             }
 
             return new Response(content, {
+              status: builtPage.status ?? 200,
               headers: {
                 'Content-Type': 'text/html',
                 'Cache-Control': 'no-store, no-cache, must-revalidate',

@@ -107,6 +107,8 @@ export interface SeoMeta {
 export interface PageMeta {
   title?: string
   description?: string
+  /** Static HTTP response status for this page. */
+  status?: number
   layout?: string | false
   middleware?: string | string[]
   transition?: string | { name: string; mode?: string }
