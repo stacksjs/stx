@@ -323,7 +323,7 @@ export function getRouterScript(): string {
     // Re-localizing would map it back to the *current* locale and no-op.
     if(!force) url=withCurrentLocale(url);
     log('[router] navigate() called:',url,'isNavigating:',isNavigating);
-    if(isNavigating)return;
+    if(isNavigating)return Promise.resolve(false);
     // Resolve against the current document URL, matching native <a> semantics.
     // With location.origin as the base, any relative href ('?status=resolved',
     // '#anchor', './sibling') resolved to the SITE ROOT — so filter tabs,
@@ -331,13 +331,13 @@ export function getRouterScript(): string {
     // the SPA interceptor was active (#1777).
     var t=new URL(url,location.href);
 
-    if(t.origin!==location.origin){location.href=url;return}
+    if(t.origin!==location.origin){location.href=url;return Promise.resolve(false)}
 
     if(t.pathname===location.pathname&&t.hash){
       if(pushState!==false)history.pushState({},'',t.href);
       var el=document.querySelector(t.hash);
       if(el)el.scrollIntoView({behavior:'smooth'});
-      return;
+      return Promise.resolve(true);
     }
 
     // Skip if user clicks a link to the page they're already on. We
@@ -346,7 +346,7 @@ export function getRouterScript(): string {
     // entry — without this allowance, hitting back would early-return
     // and the visible page content would be left frozen on the
     // forward-navigation page.
-    if(pushState!==false&&t.href===location.href&&!t.hash&&!force)return;
+    if(pushState!==false&&t.href===location.href&&!t.hash&&!force)return Promise.resolve(false);
 
     isNavigating=true;
     document.body.classList.add(o.loadingClass);
@@ -365,22 +365,22 @@ export function getRouterScript(): string {
       if(checkLayoutChange(layoutCache[targetPath],url,layoutGroupCache[targetPath])){
         // Layout changed — fetch full page and do full document swap
         log('[router] cache hit but layout changed — fetching full page');
-        fetch(url,{headers:{'Accept':'text/html'}}).then(function(r){
+        return fetch(url,{headers:{'Accept':'text/html'}}).then(function(r){
           if(!r.ok)throw new Error(r.status);
           return r.text();
         }).then(function(html){
           log('[router] full page fetched from cache path, len:',html.length);
-          swap(html,targetPath,pushState,targetHash);
+          return swap(html,targetPath,pushState,targetHash);
         }).catch(function(err){
           console.error('[router] full page fetch error:',err);
           location.href=url;
         }).finally(done);
-        return;
       }
       pendingContainerAttrs=attrsCache[targetPath]||'';
-      swap(cache[targetPath],targetPath,pushState,targetHash);
-      applyTitle(titleCache[targetPath]);
-      done();
+      return Promise.resolve(swap(cache[targetPath],targetPath,pushState,targetHash)).then(function(){
+        applyTitle(titleCache[targetPath]);
+        return true;
+      }).finally(done);
     }
 else {
       if(force&&cache[targetPath])evictCache(targetPath);
@@ -388,7 +388,7 @@ else {
       // the page content. Custom app-shell containers need full documents so
       // the router does not inject a <main> fragment into the wrong element.
       var wantsFragment=shouldUseFragmentResponse();
-      fetch(url,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
+      return fetch(url,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
         if(!r.ok)throw new Error(r.status);
         var isFragment=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
         var newLayout=r.headers.get('X-STX-Layout')||'';
@@ -413,10 +413,12 @@ else {
         if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
         if(o.cache)setCache(targetPath,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
         pendingContainerAttrs=result.isFragment?(result.containerAttrs||''):'';
-        swap(result.html,targetPath,pushState,targetHash);
-        // Fragment swaps carry no <head>; apply the title from the header.
-        // Full-document swaps already set document.title from the <title> tag.
-        if(result.isFragment)applyTitle(result.title);
+        return Promise.resolve(swap(result.html,targetPath,pushState,targetHash)).then(function(){
+          // Fragment swaps carry no <head>; apply the title from the header.
+          // Full-document swaps already set document.title from the <title> tag.
+          if(result.isFragment)applyTitle(result.title);
+          return true;
+        });
       }).catch(function(err){
         console.error('[router] fetch error:',err);
         location.href=url;
@@ -438,10 +440,10 @@ else {
   function swap(html,url,pushState,hash){
     var isFragment=html.indexOf('<!--stx-fragment-->')===0;
     if(isFragment)html=html.slice('<!--stx-fragment-->'.length);
-    if(!isFragment&&!isStxDocument(html)){log('[router] non-stx document — full navigation to:',url);location.href=url;return}
+    if(!isFragment&&!isStxDocument(html)){log('[router] non-stx document — full navigation to:',url);location.href=url;return Promise.resolve(false)}
     var currentContent=getContainer();
     log('[router] swap: isFragment='+isFragment+' container='+!!currentContent+' tag='+(currentContent&&currentContent.tagName)+' selector='+containerSel+' htmlLen='+html.length);
-    if(!currentContent){log('[router] no container — falling back');location.href=url;return}
+    if(!currentContent){log('[router] no container — falling back');location.href=url;return Promise.resolve(false)}
 
     // Fragment mode: server returned just the page content (no document wrapper)
     if(isFragment){
@@ -599,16 +601,23 @@ else {
         // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
         window.dispatchEvent(new Event('stx:load'));
       }
-      if(runViewTransition(doFragSwap)){}
-      else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){doFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
-      return;
+      return new Promise(function(resolve,reject){
+        function completeFragSwap(){
+          try{
+            doFragSwap();
+            resolve(true);
+          }catch(err){reject(err)}
+        }
+        if(runViewTransition(completeFragSwap)){}
+        else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){completeFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
+      });
     }
 
     // Full document mode: parse with DOMParser and extract container content
     var parser=new DOMParser();
     var doc=parser.parseFromString(html,'text/html');
     var newContent=doc.querySelector(containerSel)||doc.querySelector('[data-stx-content]')||doc.querySelector('main');
-    if(!newContent){location.href=url;return}
+    if(!newContent){location.href=url;return Promise.resolve(false)}
 
     // Clean up existing signals/effects
     if(window.stx&&window.stx._cleanupContainer){
@@ -900,18 +909,26 @@ else {
       }
     }
 
-    if(runViewTransition(doSwap)){
-    }
+    return new Promise(function(resolve,reject){
+      function completeSwap(){
+        try{
+          doSwap();
+          resolve(true);
+        }catch(err){reject(err)}
+      }
+      if(runViewTransition(completeSwap)){
+      }
 else {
-      // Fallback fade for browsers without View Transitions API
-      currentContent.style.transition='opacity 0.12s ease-out';
-      currentContent.style.opacity='0';
-      setTimeout(function(){
-        doSwap();
-        currentContent.style.opacity='1';
-        setTimeout(function(){currentContent.style.transition=''},150);
-      },120);
-    }
+        // Fallback fade for browsers without View Transitions API
+        currentContent.style.transition='opacity 0.12s ease-out';
+        currentContent.style.opacity='0';
+        setTimeout(function(){
+          completeSwap();
+          currentContent.style.opacity='1';
+          setTimeout(function(){currentContent.style.transition=''},150);
+        },120);
+      }
+    });
   }
 
   // ── Link interception ──

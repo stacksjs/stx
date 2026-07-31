@@ -151,7 +151,6 @@ describe('router browser navigation behavior', () => {
     })
 
     await window.stxRouter.navigate('/products/candle')
-    await waitForRouterSwap()
 
     expect(calls.length).toBe(2)
     expect(window.document.querySelector('nav')?.textContent).toBe('Product nav')
