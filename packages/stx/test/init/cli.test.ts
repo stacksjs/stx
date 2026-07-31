@@ -18,16 +18,17 @@ function runCli(args: string[]): Promise<{ stdout: string, stderr: string, exitC
     const cli = spawn('bun', [CLI_PATH, ...args], {
       cwd: TEST_DIR,
       env: { ...process.env },
+      stdio: ['ignore', 'pipe', 'pipe'],
     })
 
     let stdout = ''
     let stderr = ''
 
-    cli.stdout.on('data', (data) => {
+    cli.stdout!.on('data', (data) => {
       stdout += data.toString()
     })
 
-    cli.stderr.on('data', (data) => {
+    cli.stderr!.on('data', (data) => {
       stderr += data.toString()
     })
 
