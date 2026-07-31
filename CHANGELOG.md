@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.127...v0.2.128)
+
+## 🚀 Features
+
+- **desktop**: surface the focus strategy and enumerable-shortcuts signal ([6d5f4aa](https://github.com/stacksjs/stx/commit/6d5f4aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: make Craft the bundle executable instead of a shell launcher ([12c1e1e](https://github.com/stacksjs/stx/commit/12c1e1e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.128 ([e2e3952](https://github.com/stacksjs/stx/commit/e2e3952)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.126...v0.2.127)
 
 ## 🐛 Bug Fixes
