@@ -380,6 +380,13 @@ export interface BrowserCoreAutoImportResult {
  * helpers together with the component, exactly like an explicit user import.
  */
 export function injectBrowserCoreAutoImports(code: string): BrowserCoreAutoImportResult {
+  // Detection reads the code with comments and literals blanked out. A helper
+  // name is only an import if it is actually called — matching the bare word
+  // anywhere pulled packages in off prose, and the copy "Your Mac can sleep"
+  // was enough to add an `@stacksjs/browser` import that a compiled binary
+  // cannot resolve, taking the whole client bundle down with it.
+  const searchable = stripCommentsAndLiterals(code)
+
   const explicitlyImported = new Set<string>()
   for (const match of code.matchAll(/^\s*import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"][^'"]+['"]\s*;?\s*$/gm)) {
     for (const specifier of match[1].split(',')) {
@@ -390,9 +397,9 @@ export function injectBrowserCoreAutoImports(code: string): BrowserCoreAutoImpor
   }
 
   const locallyDeclared = new Set<string>()
-  for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g))
+  for (const match of searchable.matchAll(/\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g))
     locallyDeclared.add(match[1])
-  for (const match of code.matchAll(/\b(?:const|let|var)\s*\{([^}]*)\}/g)) {
+  for (const match of searchable.matchAll(/\b(?:const|let|var)\s*\{([^}]*)\}/g)) {
     for (const binding of match[1].split(',')) {
       const localName = binding.trim().split(/[:=]/).pop()?.trim()
       if (localName)
@@ -403,10 +410,11 @@ export function injectBrowserCoreAutoImports(code: string): BrowserCoreAutoImpor
   const imports = BROWSER_CORE_IMPORTS.filter((symbol) => {
     if (explicitlyImported.has(symbol) || locallyDeclared.has(symbol))
       return false
-    return new RegExp(`\\b${symbol}\\b`).test(code)
+    // Followed by a `(` — a call, not a mention.
+    return new RegExp(`\\b${symbol}\\s*\\(`).test(searchable)
   })
 
-  const models = detectModelUsage(code).filter(model =>
+  const models = detectModelUsage(searchable).filter(model =>
     !explicitlyImported.has(model) && !locallyDeclared.has(model))
 
   if (imports.length === 0 && models.length === 0)
@@ -451,6 +459,56 @@ const JS_BUILTINS = new Set([
   'ResizeObserver', 'PerformanceObserver', 'Notification', 'Bun', 'Buffer', 'Process',
   'Modal', 'Intl',
 ])
+
+/**
+ * Blank out comments and string literals, preserving length and line structure
+ * so offsets still line up, so that identifier detection only ever sees code.
+ */
+export function stripCommentsAndLiterals(code: string): string {
+  let out = ''
+  let i = 0
+
+  while (i < code.length) {
+    const two = code.slice(i, i + 2)
+
+    if (two === '//') {
+      while (i < code.length && code[i] !== '\n') out += ' ', i++
+      continue
+    }
+
+    if (two === '/*') {
+      while (i < code.length && code.slice(i, i + 2) !== '*/')
+        out += code[i] === '\n' ? '\n' : ' ', i++
+      out += '  '
+      i += 2
+      continue
+    }
+
+    const ch = code[i]
+    if (ch === '"' || ch === '\'' || ch === '`') {
+      const quote = ch
+      out += ' '
+      i++
+      while (i < code.length && code[i] !== quote) {
+        if (code[i] === '\\') {
+          out += '  '
+          i += 2
+          continue
+        }
+        out += code[i] === '\n' ? '\n' : ' '
+        i++
+      }
+      out += ' '
+      i++
+      continue
+    }
+
+    out += ch
+    i++
+  }
+
+  return out
+}
 
 function detectModelUsage(code: string): string[] {
   const models: Set<string> = new Set()
