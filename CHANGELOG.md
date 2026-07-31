@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.141...v0.2.142)
+
+## 🐛 Bug Fixes
+
+- **server**: avoid caching render failures ([a18622e](https://github.com/stacksjs/stx/commit/a18622e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.142 ([5c99d49](https://github.com/stacksjs/stx/commit/5c99d49)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.140...v0.2.141)
 
 ## 🚀 Features
