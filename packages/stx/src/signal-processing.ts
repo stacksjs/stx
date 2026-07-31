@@ -15,7 +15,7 @@ import { findIfBlocks } from './parser'
 import { buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
-import { injectSignalsRuntime, injectBrowserRuntime } from './runtime-injection'
+import { injectSignalsRuntime } from './runtime-injection'
 import { matchScriptElement, scanAtElementPosition } from './html-masking'
 import { importOnce } from './lazy-module'
 
@@ -1545,8 +1545,9 @@ export function extractExports(setupContent: string): string {
 /**
  * Main orchestrator for signal processing.
  *
- * Detects signal syntax, wraps scripts in setup functions,
- * injects the signals runtime and browser runtime.
+ * Detects signal syntax, wraps scripts in setup functions, and injects the
+ * signals runtime. Browser helpers and model bootstraps enter the same client
+ * bundle as the setup code, so rendered pages never depend on bare specifiers.
  */
 export async function processSignals(template: string, options: StxOptions, filePath?: string, serverData?: Record<string, unknown>): Promise<string> {
   if (!hasSignalsSyntax(template)) {
@@ -1567,9 +1568,6 @@ export async function processSignals(template: string, options: StxOptions, file
 
   // Inject the signals runtime
   output = await injectSignalsRuntime(output, options)
-
-  // Inject browser runtime if needed (for auto-imports from @stacksjs/browser)
-  output = injectBrowserRuntime(output)
 
   // Inject setup code after runtime.
   //

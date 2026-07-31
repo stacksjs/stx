@@ -367,6 +367,7 @@ const BROWSER_CORE_IMPORTS = [
 export interface BrowserCoreAutoImportResult {
   code: string
   imports: string[]
+  models: string[]
 }
 
 /**
@@ -405,12 +406,30 @@ export function injectBrowserCoreAutoImports(code: string): BrowserCoreAutoImpor
     return new RegExp(`\\b${symbol}\\b`).test(code)
   })
 
-  if (imports.length === 0)
-    return { code, imports }
+  const models = detectModelUsage(code).filter(model =>
+    !explicitlyImported.has(model) && !locallyDeclared.has(model))
+
+  if (imports.length === 0 && models.length === 0)
+    return { code, imports, models }
+
+  const browserImports = [
+    imports.length > 0
+      ? `import { ${imports.join(', ')} } from '@stacksjs/browser'`
+      : '',
+    // App models are registered as a side effect of the package bootstrap,
+    // then transformAutoImports binds the detected names from StacksBrowser.
+    models.length > 0
+      ? `import '@stacksjs/browser'`
+      : '',
+    models.length > 0
+      ? `const { ${models.join(', ')} } = window.StacksBrowser || {}`
+      : '',
+  ].filter(Boolean).join('\n')
 
   return {
-    code: `import { ${imports.join(', ')} } from '@stacksjs/browser'\n${code}`,
+    code: `${browserImports}\n${code}`,
     imports,
+    models,
   }
 }
 
@@ -1177,7 +1196,7 @@ export async function processClientScript(
   // synchronously without waiting for a global module bootstrap.
   const browserCoreImports = injectBrowserCoreAutoImports(code)
   code = browserCoreImports.code
-  bundledBrowserImports = browserCoreImports.imports
+  bundledBrowserImports = [...browserCoreImports.imports, ...browserCoreImports.models]
 
   // 0b. Bundle user imports via Bun.build (if any detected)
   const { hasUserImports, bundleClientScript } = await importOnce('stx/client-script-bundler', () => import('./client-script-bundler'))

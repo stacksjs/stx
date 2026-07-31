@@ -99,12 +99,6 @@ export function hasUserImports(code: string): boolean {
     const source = match[1]
     if (/\.css(?:\?.*)?$/.test(source))
       continue
-    // injectBrowserRuntime() adds this module bootstrap to initialize
-    // window.StacksBrowser. It must remain a native module import, not be
-    // bundled as page code. Explicit named imports still take the user-import
-    // path above and are bundled normally.
-    if (source === '@stacksjs/browser')
-      continue
     const isExternal = EXTERNAL_PATTERNS.some(p => p.test(source))
     if (!isExternal) {
       logBundlerDiagnostic('detected side-effect import:', source)

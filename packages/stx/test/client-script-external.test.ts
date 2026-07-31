@@ -17,14 +17,10 @@ describe('hasUserImports', () => {
     expect(hasUserImports(`import { describeThrownError } from '@stacksjs/browser'`)).toBe(true)
   })
 
-  it('keeps the injected browser runtime bootstrap as a native module import', async () => {
+  it('treats an injected browser runtime bootstrap as a bundle input', () => {
     const code = `import '@stacksjs/browser'`
 
-    expect(hasUserImports(code)).toBe(false)
-
-    const output = await processClientScript(code, { attrs: `type="module"` })
-    expect(output).toContain(`<script type="module" data-stx-scoped>`)
-    expect(output).toContain(`@stacksjs/browser`)
+    expect(hasUserImports(code)).toBe(true)
   })
 
   it('leaves the stx runtime external', () => {
@@ -81,6 +77,7 @@ const controls = useIntervalFn(load, 15000)
 `)
 
     expect(output.imports).toEqual(['debounce', 'useDocumentVisibility', 'useIntervalFn'])
+    expect(output.models).toEqual([])
     expect(output.code).toContain(`import { debounce, useDocumentVisibility, useIntervalFn } from '@stacksjs/browser'`)
   })
 
@@ -93,6 +90,7 @@ const load = debounce(() => {})
 `)
 
     expect(output.imports).toEqual([])
+    expect(output.models).toEqual([])
     expect(output.code).not.toContain(`from '@stacksjs/browser'`)
   })
 
@@ -123,6 +121,29 @@ useIntervalFn(load, 15000)
     )
 
     expect(output).not.toContain('window.StacksBrowser')
+    expect(output).not.toMatch(/^\s*import\s+['"]@stacksjs\/browser['"]/m)
+  })
+
+  it('adds a bundled browser bootstrap for model auto-imports', () => {
+    const output = injectBrowserCoreAutoImports(`
+const users = await User.all()
+`)
+
+    expect(output.imports).toEqual([])
+    expect(output.models).toEqual(['User'])
+    expect(output.code).toContain(`import '@stacksjs/browser'`)
+    expect(output.code).toContain(`const { User } = window.StacksBrowser || {}`)
+    expect(hasUserImports(output.code)).toBe(true)
+  })
+
+  it('does not bootstrap a locally declared model-shaped identifier', () => {
+    const output = injectBrowserCoreAutoImports(`
+const User = createFixtureModel()
+const users = await User.all()
+`)
+
+    expect(output.models).toEqual([])
+    expect(output.code).not.toContain(`const { User } = window.StacksBrowser`)
   })
 
   it('auto-imports browser utilities in scoped signal components', async () => {

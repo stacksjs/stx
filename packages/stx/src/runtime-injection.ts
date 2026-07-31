@@ -10,8 +10,9 @@
 import type { StxOptions } from './types'
 
 /**
- * Inject @stacksjs/browser initialization script into the template.
- * This sets up window.StacksBrowser for auto-imports to work.
+ * Inject an @stacksjs/browser initialization input into a template that will
+ * continue through STX client-script processing. The later bundling pass turns
+ * this package specifier into browser-ready code.
  *
  * IMPORTANT: Only checks CLIENT scripts (not <script server>).
  * Server scripts should use the server ORM directly, not browser functions.
@@ -78,7 +79,8 @@ export function injectBrowserRuntime(template: string): string {
     return template
   }
 
-  // Inject a module script that loads @stacksjs/browser
+  // Inject a module input that loads @stacksjs/browser. The regular client
+  // script pass bundles it before the rendered document leaves the compiler.
   // The browser module auto-initializes and loads all app models dynamically
   // This must run before component scripts
   const browserScript = `<script type="module">

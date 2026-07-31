@@ -128,7 +128,7 @@ describe('Signal Scoped Components', () => {
     expect(html).not.toMatch(/id="__stx_evt_\d+"[^>]*>Click me/)
   })
 
-  it('should prepend scope scripts before HTML for correct initialization order', async () => {
+  it('should place scope registration beside the HTML before the document closes', async () => {
     const componentFile = path.join(TEMP_DIR, 'components', 'InitOrder.stx')
     await Bun.write(componentFile, `
       <div class="init-test">Test</div>
@@ -157,11 +157,14 @@ describe('Signal Scoped Components', () => {
 
     const html = await getHtmlOutput(result)
 
-    // Find positions of script and HTML
+    // The runtime hydrates on DOMContentLoaded, so the component markup can be
+    // parsed before its adjacent registration script. Keeping the script after
+    // the element also lets it resolve that element immediately by scope id.
     const scriptPos = html.indexOf('window.stx._scopes')
     const htmlPos = html.indexOf('class="init-test"')
+    const bodyEndPos = html.indexOf('</body>')
 
-    // Script should come before the HTML element
-    expect(scriptPos).toBeLessThan(htmlPos)
+    expect(scriptPos).toBeGreaterThan(htmlPos)
+    expect(scriptPos).toBeLessThan(bodyEndPos)
   })
 })
