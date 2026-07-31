@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.122...v0.2.123)
+
+## 🐛 Bug Fixes
+
+- **components**: preserve structural conditions ([72c8939](https://github.com/stacksjs/stx/commit/72c8939)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.121...v0.2.122)
 
 ## 🚀 Features
