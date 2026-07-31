@@ -5,7 +5,7 @@
  */
 
 import path from 'node:path'
-import { hasLocalConfig } from 'bunfig/discovery'
+import { hasLocalConfig } from 'bunfig'
 import { stateDir } from '../state-dir'
 import { colors } from './terminal-colors'
 
