@@ -1,5 +1,43 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.139...v0.2.140)
+
+## 🐛 Bug Fixes
+
+- **build**: compile desktop workspace dependency ([4de6a62](https://github.com/stacksjs/stx/commit/4de6a62)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: await completed navigation swaps ([f3bb8cc](https://github.com/stacksjs/stx/commit/f3bb8cc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **directives**: isolate server execution globals ([4643eaf](https://github.com/stacksjs/stx/commit/4643eaf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: replace stale lifecycle listeners ([ac01826](https://github.com/stacksjs/stx/commit/ac01826)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bundler**: preserve browser runtime bootstrap ([58155f3](https://github.com/stacksjs/stx/commit/58155f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💅 Styles
+
+- format source files ([2db8e1f](https://github.com/stacksjs/stx/commit/2db8e1f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧪 Tests
+
+- **stx**: isolate generated fixtures ([ca93a66](https://github.com/stacksjs/stx/commit/ca93a66)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: refresh lifecycle contracts ([8dea9aa](https://github.com/stacksjs/stx/commit/8dea9aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **init**: use deterministic subprocesses ([cddcd91](https://github.com/stacksjs/stx/commit/cddcd91)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cli**: use deterministic subprocesses ([918df5a](https://github.com/stacksjs/stx/commit/918df5a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cli**: capture subprocess streams ([3bb3938](https://github.com/stacksjs/stx/commit/3bb3938)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: refresh runtime assertions ([6524682](https://github.com/stacksjs/stx/commit/6524682)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: align runtime contracts ([4776bb4](https://github.com/stacksjs/stx/commit/4776bb4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🤖 Continuous Integration
+
+- scope unit tests to project sources ([c089038](https://github.com/stacksjs/stx/commit/c089038)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.140 ([2d1c9d1](https://github.com/stacksjs/stx/commit/2d1c9d1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: update crosswind to 0.2.14 ([7bc21c2](https://github.com/stacksjs/stx/commit/7bc21c2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: update crosswind to 0.2.13 ([4ae615c](https://github.com/stacksjs/stx/commit/4ae615c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.138...v0.2.139)
 
 ## 🚀 Features
