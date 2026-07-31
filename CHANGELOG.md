@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.143...v0.2.144)
+
+## 🐛 Bug Fixes
+
+- **compiler**: preserve PascalCase input components ([e39140d](https://github.com/stacksjs/stx/commit/e39140d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.144 ([51a8965](https://github.com/stacksjs/stx/commit/51a8965)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.142...v0.2.143)
 
 ## 💅 Styles
