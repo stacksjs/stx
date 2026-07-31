@@ -48,6 +48,11 @@ describe('stx JavaScript and TypeScript Directives', () => {
   afterAll(cleanupTestDirs)
 
   it('should process @js directive on the server and remove it from output', async () => {
+    const processGlobal = globalThis as Record<string, unknown>
+    const originalTitle = processGlobal.title
+    const originalNodeAvailable = processGlobal.nodeAvailable
+    const hadOwnTitle = Object.prototype.hasOwnProperty.call(processGlobal, 'title')
+    const hadOwnNodeAvailable = Object.prototype.hasOwnProperty.call(processGlobal, 'nodeAvailable')
     const testFile = await createTestFile('js-directive.stx', `
       <!DOCTYPE html>
       <html>
@@ -97,6 +102,13 @@ describe('stx JavaScript and TypeScript Directives', () => {
 
     // Node.js globals should be available
     expect(outputHtml).toContain('<p>Node available: true</p>')
+
+    // Template assignments stay inside the render context and never leak into
+    // the long-lived build/test process.
+    expect(Object.prototype.hasOwnProperty.call(processGlobal, 'title')).toBe(hadOwnTitle)
+    expect(Object.prototype.hasOwnProperty.call(processGlobal, 'nodeAvailable')).toBe(hadOwnNodeAvailable)
+    expect(processGlobal.title).toBe(originalTitle)
+    expect(processGlobal.nodeAvailable).toBe(originalNodeAvailable)
   })
 
   it('should process @ts directive on the server and remove it from output', async () => {

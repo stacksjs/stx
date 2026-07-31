@@ -95,9 +95,17 @@ async function processCodeBlocks(
   // Process each match
   for (const { fullMatch, content, index } of matches) {
     try {
-      // Create a function with all context variables in scope
-      const keys = Object.keys(context)
-      const values = Object.values(context)
+      // Create a function with all context variables in scope. Server-side
+      // directives historically exposed Node's `global` object implicitly,
+      // which let a template mutate the build process and leak values into
+      // every template compiled afterwards. Keep the familiar `global.foo`
+      // syntax, but bind it to this template's isolated context.
+      const executionContext = {
+        ...context,
+        global: context,
+      }
+      const keys = Object.keys(executionContext)
+      const values = Object.values(executionContext)
 
       // For TypeScript, strip the TypeScript-specific syntax first
       let strippedContent = content.trim()
