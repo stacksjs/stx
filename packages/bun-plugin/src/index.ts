@@ -38,7 +38,7 @@
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, classifyScript, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -280,28 +280,16 @@ export { content as default };
             workingContent = templateTagMatch[1].trim()
           }
 
-          // Extract all script tags and categorize them using the unified classifier
-          const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-          const clientScripts: string[] = []
-          const serverScripts: string[] = []
-          const signalsScripts: string[] = []
-          let scriptMatch: RegExpExecArray | null
-
-          while ((scriptMatch = scriptRegex.exec(content)) !== null) {
-            const classified = classifyScript(scriptMatch[1], scriptMatch[2], scriptMatch[0])
-
-            switch (classified.type) {
-              case 'signals':
-              signalsScripts.push(classified.fullTag)
-              break
-              case 'client':
-              clientScripts.push(classified.fullTag)
-              break
-              case 'server':
-              serverScripts.push(classified.content)
-              break
-            }
-          }
+          // Extract all script tags and categorize them using the unified
+          // classifier. This must go through classifyAllScripts rather than a
+          // local `/<script…>…<\/script>/g` loop: the shared scanner skips HTML
+          // comments, so a comment that merely mentions a script tag no longer
+          // produces a bogus span that the removal pass below would delete.
+          const classified = classifyAllScripts(content)
+          const clientScripts: string[] = classified.client.map(s => s.fullTag)
+          const serverScripts: string[] = classified.server.map(s => s.content)
+          // signals scripts are intentionally left in `templateContent` for
+          // processSignals — the removal loops below skip them
 
           // Remove non-signals script tags from template, keep signals scripts for processSignals
           let templateContent = workingContent
