@@ -58,7 +58,10 @@ export * from './printing'
 export * from './screen'
 export * from './screen-capture'
 export * from './screen-sharing'
-export * from './self-update'
+// `self-update` is deliberately absent: it re-exports craft-native's
+// AutoUpdater, which spawns processes to stage an update. That belongs to the
+// host side, and pulling it in here drags node:child_process back into the
+// bundle — the exact problem this entry exists to solve.
 export * from './serial'
 export * from './service-menu'
 export * from './shell'

@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.125...v0.2.126)
+
+## 🐛 Bug Fixes
+
+- **server-script**: join a multi-line import before converting it ([a04d18d](https://github.com/stacksjs/stx/commit/a04d18d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.126 ([62f0c7c](https://github.com/stacksjs/stx/commit/62f0c7c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.124...v0.2.125)
 
 ## 🐛 Bug Fixes
