@@ -355,6 +355,25 @@ export interface ServeOptions {
   layoutsDir?: string
   partialsDir?: string
   /**
+   * Additional source directories that can affect rendered HTML.
+   *
+   * The server already watches pages, components, layouts, partials, public
+   * assets, and `resources/assets`. Add application-specific roots here when
+   * server scripts or client bundles read code or data elsewhere, such as
+   * `functions/`, `stores/`, or a generated manifest directory.
+   */
+  watchDirs?: string[]
+  /**
+   * Cache rendered static routes between requests.
+   *
+   * Cache entries vary by the complete request context and are invalidated by
+   * dependency signatures plus source watchers. Dynamic file routes and pages
+   * that call `definePageMeta({ cache: false })` remain uncached.
+   *
+   * Default: `false`.
+   */
+  renderCache?: boolean
+  /**
    * Public directory served at the URL root, like Nuxt/Vite/Next/Astro.
    * Any file under this directory is reachable at the matching URL path —
    * `public/images/hero.jpg` → `GET /images/hero.jpg`.
@@ -789,15 +808,11 @@ export async function serve(options: ServeOptions): Promise<void> {
     signature: Map<string, number>
   }
   const htmlCache = new Map<string, HtmlCacheEntry>()
-  // Rendered-HTML cache is OFF in the dev server (stacksjs/stx#1926).
-  // `templateSignatureFresh` compares dependency mtimes, but transitive
-  // `@include`s sometimes don't get registered into the dependency set
-  // during `processDirectives` — so editing a deeply-included partial
-  // intermittently served stale HTML on alternating reloads. The dev
-  // server must be the source of truth on every request; a fresh render
-  // is ~50ms, which is a fine price for correctness. Flip this to `true`
-  // only if the dependency-tracking gap is fully closed.
-  const ENABLE_HTML_CACHE = false
+  // Opt-in because generic server scripts may read external state that no
+  // filesystem watcher can observe. For applications whose static views are
+  // source-derived, the signature and watcher invalidation below provide a
+  // fast path without weakening HMR.
+  const ENABLE_HTML_CACHE = options.renderCache === true
   // Crosswind-generated CSS cache, keyed by sorted class-set. Lives here for
   // the same reason as `htmlCache`: so the watcher can wipe it on a source
   // edit and pick up a new utility's CSS the next render.
@@ -860,21 +875,23 @@ export async function serve(options: ServeOptions): Promise<void> {
         const f = String(filename)
         // Source files that affect rendered HTML.
         const isStxLike = f.endsWith('.stx') || f.endsWith('.md') || f.endsWith('.html')
+        const isCode = f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.tsx')
+          || f.endsWith('.mts') || f.endsWith('.cts')
+        const isData = f.endsWith('.json')
         // Asset files served straight to the browser. They don't change
-        // server-rendered HTML, so we skip the routes/htmlCache reset for
-        // them — but we still need to fire HMR so the browser drops its
-        // cached copy and re-fetches.
+        // server-rendered HTML unless imported by a template, but we still
+        // need to fire HMR so the browser drops its cached copy and re-fetches.
         const isCss = f.endsWith('.css')
         const isAsset = isCss
-          || f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.tsx')
-          || f.endsWith('.mts') || f.endsWith('.cts')
+          || isCode
           || f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.png')
           || f.endsWith('.gif') || f.endsWith('.svg') || f.endsWith('.webp') || f.endsWith('.avif')
           || f.endsWith('.woff') || f.endsWith('.woff2') || f.endsWith('.ttf') || f.endsWith('.otf')
-        if (!isStxLike && !isAsset) return
+        if (!isStxLike && !isAsset && !isData) return
 
-        if (isStxLike) {
-          sourceFiles = null
+        if (isStxLike || isCode || isData) {
+          if (isStxLike)
+            sourceFiles = null
           routes.clear()
           // Wipe the rendered-HTML cache and Crosswind CSS cache too. The
           // signature check should catch most edits, but it relies on every
@@ -924,6 +941,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     partialsDir,
     publicDir,
     'resources/assets',
+    ...(options.watchDirs ?? []),
   ]) {
     if (!dir) continue
     startWatcher(dir)
@@ -1158,14 +1176,29 @@ export async function serve(options: ServeOptions): Promise<void> {
   }
 
   /** Render cache must vary by locale/host/cookies — same `.stx` file can serve different `t()`/host/cookie-gated output. */
-  function htmlCacheKey(filePath: string): string {
+  function htmlCacheKey(filePath: string, reqCtx?: ServeRequestContext): string {
+    if (reqCtx) {
+      // `onRequest` may merge arbitrary app-owned values into the request
+      // context. Vary by the complete snapshot so an opt-in cache can never
+      // cross user, host, query, IP, locale, or hook-derived boundaries.
+      try {
+        return `${filePath}\0${JSON.stringify(reqCtx)}`
+      }
+      catch {
+        // A non-serializable hook value is not safely cacheable. Make this
+        // request unique while preserving the normal render path.
+        return `${filePath}\0uncacheable:${crypto.randomUUID()}`
+      }
+    }
+
     const loc = i18nConfig ? (activeServeLocale ?? i18nConfig.defaultLocale) : ''
     const search = activeServeSearch || ''
     const host = activeServeHost || ''
     const cookies = activeServeCookieHeader
-    if (!loc && !search && !host && !cookies)
+    const ip = activeServeIp
+    if (!loc && !search && !host && !cookies && !ip)
       return filePath
-    return `${filePath}\0${loc}\0${search}\0${host}\0${cookies}`
+    return `${filePath}\0${loc}\0${search}\0${host}\0${cookies}\0${ip}`
   }
 
   const builtInMiddleware: Record<string, MiddlewareHandler> = authConfig === null ? {} : {
@@ -1571,7 +1604,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     // typical 5-dep page; a fresh render is ~50ms, so even on miss we only
     // pay the stat cost once. Query-driven pages opt out entirely.
     if (ENABLE_HTML_CACHE && !skipCacheHint) {
-      const cacheKey = htmlCacheKey(filePath)
+      const cacheKey = htmlCacheKey(filePath, reqCtx)
       const cachedEntry = htmlCache.get(cacheKey)
       if (cachedEntry && await templateSignatureFresh(cachedEntry.signature))
         return cachedEntry.html
@@ -1694,7 +1727,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     // in is now part of the invalidation signature.
     if (ENABLE_HTML_CACHE && !context.__stx_skip_cache && !skipCacheHint) {
       const signature = await buildTemplateSignature(filePath, dependencies)
-      htmlCache.set(htmlCacheKey(filePath), { html: output, signature })
+      htmlCache.set(htmlCacheKey(filePath, reqCtx), { html: output, signature })
     }
 
     return output
