@@ -16,6 +16,7 @@ Complete reference for all stx template directives. stx uses Laravel Blade-inspi
 - [Security](#security)
 - [Accessibility](#accessibility)
 - [Animations](#animations)
+- [Pre-paint Appearance](#pre-paint-appearance)
 - [Code Execution](#code-execution)
 - [Utility](#utility)
 - [Comments & Escaping](#comments--escaping)
@@ -859,3 +860,33 @@ Usage:
 - [Configuration Reference](/api/config)
 - [Component System](/api/components)
 - [Migration from Blade](/guide/migration-from-blade)
+
+# Pre-paint appearance
+
+Use `@appearanceBootstrap({...})` when persisted appearance must be applied to
+the root element before the browser parses the application shell. The compiler
+emits a synchronous, CSP-aware script at the directive location. This avoids a
+light or layout flash without placing raw browser JavaScript in an stx template.
+
+```stx
+@appearanceBootstrap({
+  storageKey: 'app-appearance',
+  appearance: {
+    key: 'sidebarStyle',
+    attribute: 'appearance',
+    allowed: ['macos', 'arc'],
+    default: 'macos',
+  },
+  colorMode: {
+    key: 'colorMode',
+    attribute: 'color-mode',
+    default: 'system',
+  },
+})
+```
+
+The storage value is a JSON object. The example reads `sidebarStyle` and
+`colorMode`, writes `data-appearance` and `data-color-mode`, toggles the root
+`dark` class, and writes `data-theme`. Stored values are accepted only when
+they match the configured appearance allowlist or one of `light`, `dark`, and
+`system`. Invalid or unavailable storage falls back to the declared defaults.
