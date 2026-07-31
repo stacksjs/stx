@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { checkA11y, getScreenReaderOnlyStyle, processA11yDirectives, scanA11yIssues } from '../../src/a11y'
+import { autoFixA11y, checkA11y, getScreenReaderOnlyStyle, processA11yDirectives, scanA11yIssues } from '../../src/a11y'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
 
@@ -116,6 +116,26 @@ describe('Accessibility Features', () => {
 
       expect(violations.length).toBe(1)
       expect(violations[0].type).toBe('input-missing-label')
+    })
+
+    test('should not treat PascalCase stx components as native controls', async () => {
+      const html = `
+        <Input label="Email" />
+        <Select ariaLabel="Status" />
+        <Textarea label="Notes" />
+        <Button iconOnly />
+      `
+      const violations = await checkA11y(html, 'test.stx')
+
+      expect(violations).toEqual([])
+    })
+
+    test('should not auto-fix PascalCase stx components as native controls', () => {
+      const html = `<Input name="email" /><Select name="status" /><Textarea name="notes" />`
+      const result = autoFixA11y(html)
+
+      expect(result.fixCount).toBe(0)
+      expect(result.fixed).toBe(html)
     })
 
     test('should detect skipped heading levels', async () => {

@@ -152,6 +152,48 @@ export function hasDOMSupport(): boolean {
 }
 
 /**
+ * Protect PascalCase stx components before parsing template source as HTML.
+ *
+ * HTML parsers treat tag names case-insensitively, so components such as
+ * `<Input>` and `<Button>` otherwise become native form controls and produce
+ * false accessibility violations. Native HTML in stx templates is lowercase.
+ */
+function protectStxComponentTags(source: string): {
+  protectedSource: string
+  restore: (value: string) => string
+} {
+  const componentNames = new Map<string, string>()
+  const protectedSource = source.replace(
+    /<(\/?)([A-Z][\w:.-]*)(?=[\s/>])/g,
+    (_match, closing: string, componentName: string) => {
+      let protectedName = componentNames.get(componentName)
+
+      if (!protectedName) {
+        protectedName = `stx-a11y-component-${componentNames.size}`
+        componentNames.set(componentName, protectedName)
+      }
+
+      return `<${closing}${protectedName}`
+    },
+  )
+
+  const originalNames = new Map(
+    [...componentNames.entries()].map(([originalName, protectedName]) => [protectedName, originalName]),
+  )
+
+  return {
+    protectedSource,
+    restore: value => value.replace(
+      /<(\/?)(stx-a11y-component-\d+)(?=[\s/>])/g,
+      (match, closing: string, protectedName: string) => {
+        const originalName = originalNames.get(protectedName)
+        return originalName ? `<${closing}${originalName}` : match
+      },
+    ),
+  }
+}
+
+/**
  * Regex-based accessibility checker for non-DOM environments.
  * Provides a subset of checks that can be performed with regex parsing.
  *
@@ -406,9 +448,11 @@ function checkA11yWithRegex(html: string, _filePath: string): A11yViolation[] {
  * ```
  */
 export async function checkA11y(html: string, filePath: string): Promise<A11yViolation[]> {
+  const { protectedSource } = protectStxComponentTags(html)
+
   // Use regex-based checking if DOM is not available
   if (!hasDOMSupport()) {
-    return checkA11yWithRegex(html, filePath)
+    return checkA11yWithRegex(protectedSource, filePath)
   }
 
   const violations: A11yViolation[] = []
@@ -416,7 +460,7 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
   try {
     // Parse HTML by setting innerHTML on a temporary container
     const container = globalThis.document.createElement('div')
-    container.innerHTML = html
+    container.innerHTML = protectedSource
 
     // Check 1: Images without alt text
     container.querySelectorAll('img').forEach((img: Element) => {
@@ -494,7 +538,7 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     // Check 5: Missing language attribute
     // Check if the HTML fragment contains an <html> tag
     const htmlElement = container.querySelector('html')
-    if (html.includes('<html') && htmlElement && !htmlElement.hasAttribute('lang')) {
+    if (protectedSource.includes('<html') && htmlElement && !htmlElement.hasAttribute('lang')) {
       violations.push({
         type: 'missing-lang',
         element: '<html>',
@@ -525,7 +569,7 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     })
 
     // Check 7: Missing skip navigation link
-    if (html.includes('<nav') || html.includes('<header')) {
+    if (protectedSource.includes('<nav') || protectedSource.includes('<header')) {
       const hasSkipLink = container.querySelector('a[href="#main"], a[href="#content"], .skip-link, [class*="skip"]')
       if (!hasSkipLink && container.querySelectorAll('a').length > 5) {
         violations.push({
@@ -627,7 +671,7 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     })
 
     // Check 13: Missing landmark regions
-    if (html.includes('<body') && !container.querySelector('main, [role="main"]')) {
+    if (protectedSource.includes('<body') && !container.querySelector('main, [role="main"]')) {
       violations.push({
         type: 'missing-main-landmark',
         element: '<body>',
@@ -794,7 +838,8 @@ export function autoFixA11y(
 ): A11yFixResult {
   const mergedConfig = { ...defaultAutoFixConfig, ...config }
   const fixes: A11yFixResult['fixes'] = []
-  let fixed = html
+  const { protectedSource, restore } = protectStxComponentTags(html)
+  let fixed = protectedSource
 
   // Fix 1: Images without alt text
   if (mergedConfig.fixMissingAlt) {
@@ -982,7 +1027,7 @@ export function autoFixA11y(
 
   return {
     original: html,
-    fixed,
+    fixed: restore(fixed),
     fixCount: fixes.length,
     fixes,
   }
