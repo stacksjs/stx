@@ -21,6 +21,23 @@ describe('Component Resolution', () => {
     await Bun.write(path.join(COMPONENTS_DIR, 'with-script.stx'), `<script>\nconst computed = "Hello " + name;\n</script>\n<div>{{ computed }}</div>`)
     await Bun.write(path.join(COMPONENTS_DIR, 'wrapper.stx'), `<div class="wrapper"><h2>{{ heading }}</h2><div class="content"><slot /></div></div>`)
     await Bun.write(path.join(COMPONENTS_DIR, 'circular-a.stx'), `<div>A: @component('circular-a')</div>`)
+    await Bun.write(
+      path.join(COMPONENTS_DIR, 'cached-server.stx'),
+      `<script server cache>
+globalThis.__stxCachedServerCalls = (globalThis.__stxCachedServerCalls || 0) + 1
+export const call = globalThis.__stxCachedServerCalls
+export const label = $props.label
+</script>
+<div>{{ label }}-{{ call }}</div>`,
+    )
+    await Bun.write(
+      path.join(COMPONENTS_DIR, 'uncached-server.stx'),
+      `<script server>
+globalThis.__stxUncachedServerCalls = (globalThis.__stxUncachedServerCalls || 0) + 1
+export const call = globalThis.__stxUncachedServerCalls
+</script>
+<div>{{ call }}</div>`,
+    )
   })
 
   afterAll(async () => {
@@ -180,6 +197,57 @@ describe('Component Resolution', () => {
     )
 
     expect(result).toContain('<h1>Test</h1>')
+  })
+
+  it('memoizes server components that explicitly opt into prop and slot caching', async () => {
+    clearComponentCache()
+    ;(globalThis as any).__stxCachedServerCalls = 0
+    const render = (label: string) => renderComponentWithSlot(
+      'cached-server',
+      { label },
+      '<span>slot</span>',
+      COMPONENTS_DIR,
+      {},
+      path.join(TEMP_DIR, 'test.stx'),
+      {},
+      new Set(),
+      new Set(),
+    )
+
+    const first = await render('Alpha')
+    const repeated = await render('Alpha')
+    const changed = await render('Beta')
+
+    expect(first).toContain('Alpha-1')
+    expect(repeated).toContain('Alpha-1')
+    expect(changed).toContain('Beta-2')
+    expect((globalThis as any).__stxCachedServerCalls).toBe(2)
+
+    clearComponentCache()
+    const afterInvalidation = await render('Alpha')
+    expect(afterInvalidation).toContain('Alpha-3')
+    delete (globalThis as any).__stxCachedServerCalls
+  })
+
+  it('keeps ordinary server components dynamic across renders', async () => {
+    clearComponentCache()
+    ;(globalThis as any).__stxUncachedServerCalls = 0
+    const render = () => renderComponentWithSlot(
+      'uncached-server',
+      {},
+      '',
+      COMPONENTS_DIR,
+      {},
+      path.join(TEMP_DIR, 'test.stx'),
+      {},
+      new Set(),
+      new Set(),
+    )
+
+    expect(await render()).toContain('>1</div>')
+    expect(await render()).toContain('>2</div>')
+    expect((globalThis as any).__stxUncachedServerCalls).toBe(2)
+    delete (globalThis as any).__stxUncachedServerCalls
   })
 
   it('should track dependencies', async () => {

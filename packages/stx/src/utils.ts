@@ -47,7 +47,51 @@ export {
 
 // Cache for components to avoid repeated file reads (LRU with max 500 entries)
 const componentsCache = new LRUCache<string, string>(500)
+// Resolving a nested component can walk every configured component tree.
+// Keep successful resolutions for the dev-server lifetime; clearDevCaches()
+// invalidates this alongside component contents on every watched source edit.
+const componentResolutionCache = new LRUCache<string, string>(1000)
+interface ComponentRenderCacheEntry {
+  output: string
+  dependencies: string[]
+}
+// Components that explicitly declare `<script server cache>` promise that
+// their rendered fragment is a pure function of props and slots. Memoizing
+// those fragments avoids recompiling large repeated lists on every request.
+const componentRenderCache = new LRUCache<string, ComponentRenderCacheEntry>(2000)
 let scopeIdCounter = 0
+
+function serializeComponentRenderInput(value: unknown): string | null {
+  const seen = new WeakSet<object>()
+
+  try {
+    const normalize = (input: unknown): unknown => {
+      if (input === undefined) return { __stxType: 'undefined' }
+      if (typeof input === 'bigint') return { __stxType: 'bigint', value: input.toString() }
+      if (typeof input === 'function' || typeof input === 'symbol')
+        throw new TypeError('Non-serializable component input')
+      if (input === null || typeof input !== 'object') return input
+      if (seen.has(input as object))
+        throw new TypeError('Circular component input')
+
+      seen.add(input as object)
+      if (input instanceof Date)
+        return { __stxType: 'date', value: input.toISOString() }
+      if (Array.isArray(input))
+        return input.map(normalize)
+
+      const normalized: Record<string, unknown> = {}
+      for (const key of Object.keys(input as Record<string, unknown>).sort())
+        normalized[key] = normalize((input as Record<string, unknown>)[key])
+      return normalized
+    }
+
+    return JSON.stringify(normalize(value))
+  }
+  catch {
+    return null
+  }
+}
 
 /** Escape a string for safe use in an HTML attribute value */
 function escapeAttr(str: string): string {
@@ -739,12 +783,21 @@ export async function renderComponentWithSlot(
       searchDirs.length = 0
       searchDirs.push(...normalizedSearchDirs)
 
+      const resolutionCacheKey = `${baseName}\0${parentFilePath}\0${normalizedSearchDirs.join('\0')}`
+      const cachedResolution = componentResolutionCache.get(resolutionCacheKey)
+      if (cachedResolution) {
+        if (await fileExists(cachedResolution))
+          componentFilePath = cachedResolution
+        else
+          componentResolutionCache.delete(resolutionCacheKey)
+      }
+
       // If path starts with ./ or ../, resolve from current template directory
-      if (baseName.startsWith('./') || baseName.startsWith('../')) {
+      if (!componentFilePath && (baseName.startsWith('./') || baseName.startsWith('../'))) {
         componentFilePath = path.resolve(path.dirname(parentFilePath), `${baseName}.stx`)
         triedPaths.push(componentFilePath)
       }
-      else {
+      else if (!componentFilePath) {
         // Search in all directories with all naming variants
         for (const dir of searchDirs) {
           if (!dir) continue
@@ -809,6 +862,9 @@ export async function renderComponentWithSlot(
           if (componentFilePath) break
         }
       }
+
+      if (componentFilePath)
+        componentResolutionCache.set(resolutionCacheKey, componentFilePath)
     }
 
     // Check if component exists
@@ -904,6 +960,30 @@ export async function renderComponentWithSlot(
     const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
     const scriptMatches = [...componentContent.matchAll(scriptRegex)]
     const clientScripts: string[] = []
+    const cacheableServerComponent = scriptMatches.some(match =>
+      /\bserver\b/.test(match[1] || '') && /\bcache\b/.test(match[1] || ''),
+    ) && scriptMatches.every(match => /\bserver\b/.test(match[1] || ''))
+    let componentRenderCacheKey: string | null = null
+    let dependencyBaseline: Set<string> | null = null
+
+    if (cacheableServerComponent) {
+      const serializedInput = serializeComponentRenderInput({
+        props,
+        slot: slotContent,
+        buildMode: options.buildMode ?? '',
+        skipEventDirectives: options.skipEventDirectives === true,
+      })
+      if (serializedInput !== null) {
+        componentRenderCacheKey = `${componentFilePath}\0${serializedInput}`
+        const cachedRender = componentRenderCache.get(componentRenderCacheKey)
+        if (cachedRender) {
+          for (const dependency of cachedRender.dependencies)
+            dependencies.add(dependency)
+          return cachedRender.output
+        }
+        dependencyBaseline = new Set(dependencies)
+      }
+    }
 
     for (const match of scriptMatches) {
       const attrs = match[1] || ''
@@ -1224,6 +1304,13 @@ else {
       if (scopedStyleResult.hasScoped) {
         output = scopedStyleResult.html
       }
+    }
+
+    if (componentRenderCacheKey && dependencyBaseline) {
+      componentRenderCache.set(componentRenderCacheKey, {
+        output,
+        dependencies: [...dependencies].filter(dependency => !dependencyBaseline.has(dependency)),
+      })
     }
 
     return output
@@ -1744,6 +1831,8 @@ export function createDetailedErrorMessage(
  */
 export function clearComponentCache(): void {
   componentsCache.clear()
+  componentResolutionCache.clear()
+  componentRenderCache.clear()
 }
 
 /**
