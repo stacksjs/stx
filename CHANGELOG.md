@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.136...v0.2.137)
+
+## 🐛 Bug Fixes
+
+- **serve**: order component factories in fragments ([639b504](https://github.com/stacksjs/stx/commit/639b504)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **stx**: pool repeated component setup ([1fbc9ec](https://github.com/stacksjs/stx/commit/1fbc9ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.137 ([bb708a8](https://github.com/stacksjs/stx/commit/bb708a8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.135...v0.2.136)
 
 ## 🐛 Bug Fixes
