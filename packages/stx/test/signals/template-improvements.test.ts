@@ -16,7 +16,7 @@ import { generateSignalsRuntime, generateSignalsRuntimeDev } from '../../src/sig
 describe('Feature #1: Auto-unwrap signals in expressions', () => {
   it('should have createAutoUnwrapProxy function', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain('function createAutoUnwrapProxy(scope)')
+    expect(runtime).toContain('function createAutoUnwrapProxy(scope, preserveSignal)')
   })
 
   it('should auto-unwrap signals when accessed via proxy', () => {
@@ -27,13 +27,13 @@ describe('Feature #1: Auto-unwrap signals in expressions', () => {
 
   it('should use auto-unwrap proxy in toValue function', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain('createAutoUnwrapProxy(baseScope)')
+    expect(runtime).toContain('createAutoUnwrapProxy(baseScope, function(prop)')
     expect(runtime).toContain('enableAutoUnwrap')
   })
 
   it('should use auto-unwrap proxy in text interpolation', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain('const unwrapScope = createAutoUnwrapProxy(capturedScope)')
+    expect(runtime).toContain('const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr)')
   })
 })
 
@@ -73,7 +73,7 @@ describe('Feature #2: Pipe syntax for formatters', () => {
 
   it('should use pipe syntax in attribute expressions', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain('parsePipeExpression(expr, attrCapturedScope)')
+    expect(runtime).toContain('parsePipeExpression(expr, activeScope)')
   })
 })
 
