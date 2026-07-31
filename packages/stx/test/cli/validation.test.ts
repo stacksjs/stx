@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -13,33 +12,18 @@ async function runCLI(args: string[], _options: { expectError?: boolean } = {}):
   stderr: string
   exitCode: number
 }> {
-  return new Promise((resolve) => {
-    const child = spawn('bun', [CLI_PATH, ...args], {
-      cwd: TEMP_DIR,
-      stdio: 'pipe',
-    })
-
-    let stdout = ''
-    let stderr = ''
-
-    child.stdout?.on('data', (data) => {
-      stdout += data.toString()
-    })
-
-    child.stderr?.on('data', (data) => {
-      stderr += data.toString()
-    })
-
-    child.on('close', (exitCode) => {
-      resolve({ stdout, stderr, exitCode: exitCode || 0 })
-    })
-
-    // Timeout after 10 seconds
-    setTimeout(() => {
-      child.kill()
-      resolve({ stdout, stderr, exitCode: 1 })
-    }, 10000)
+  const child = Bun.spawnSync(['bun', CLI_PATH, ...args], {
+    cwd: TEMP_DIR,
+    stdout: 'pipe',
+    stderr: 'pipe',
+    timeout: 10000,
   })
+
+  return {
+    stdout: new TextDecoder().decode(child.stdout),
+    stderr: new TextDecoder().decode(child.stderr),
+    exitCode: child.exitCode,
+  }
 }
 
 describe('CLI Validation', () => {
