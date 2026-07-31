@@ -1,4 +1,0 @@
-<script client>
-const visible = useReactiveProp('visible', false)
-</script>
-<div :show="visible">Visible</div>

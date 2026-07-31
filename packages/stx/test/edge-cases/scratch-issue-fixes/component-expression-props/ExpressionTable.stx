@@ -1,8 +1,0 @@
-<script client>
-const rows = useReactiveProp('rows', [])
-const actions = useReactiveProp('actions', false)
-</script>
-<div>
-  <span :if="actions">Actions</span>
-  <template :for="row in rows"><span>{{ row }}</span></template>
-</div>

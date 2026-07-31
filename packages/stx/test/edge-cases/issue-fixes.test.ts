@@ -6,11 +6,14 @@
 import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 
-const TMP = path.resolve(__dirname, './scratch-issue-fixes')
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-issue-fixes-'))
+
+afterAll(() => fs.rmSync(TMP, { recursive: true, force: true }))
 
 describe('#1699 — HTML comments are masked before directive expansion', () => {
   it('does not expand @push directive name inside an HTML comment', async () => {
@@ -162,8 +165,6 @@ describe('#1698 — view-level <script>/<style> salvaged when @extends is used',
 </body></html>`,
     )
   })
-  afterAll(() => fs.rmSync(TMP, { recursive: true, force: true }))
-
   it('preserves a view-level <script client> when the view uses @extends + explicit @section', async () => {
     const view = `@extends('default')
 
@@ -381,7 +382,7 @@ describe('#1705 — partials register component imports for parent resolution', 
   // with `ENOENT: open 'dialog'`. The fix runs processESImports against
   // the partial's raw content during processIncludes so __importedComponents
   // is populated before the strip pass.
-  const TMP = path.resolve(__dirname, './scratch-1705')
+  const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-1705-'))
 
   beforeAll(() => {
     fs.mkdirSync(path.join(TMP, 'partials'), { recursive: true })
