@@ -16,17 +16,22 @@ beforeAll(async () => {
   dir = await mkdtemp(path.join(tmpdir(), 'stx-shared-assets-'))
 
   await Bun.write(
-    path.join(dir, 'components', 'FactoryProbe.stx'),
+    path.join(dir, 'framework-components', 'FactoryProbe.stx'),
     '<script client>const factoryProbe = state(0)</script><span x-text="factoryProbe"></span>',
   )
   await Bun.write(
+    path.join(dir, 'resources', 'components', 'ProjectPanel.stx'),
+    '<section data-project-component><slot /></section>',
+  )
+  await Bun.write(
     path.join(dir, 'views', 'index.stx'),
-    '<script>const count = state(0)</script><main class="flex">{{ count() }}<FactoryProbe /><FactoryProbe /><script data-stx-scoped client>window.__fragmentProbeRuns = (window.__fragmentProbeRuns || 0) + 1</script></main>',
+    '<script>const count = state(0)</script><main class="flex">{{ count() }}<ProjectPanel>Project component</ProjectPanel><FactoryProbe /><FactoryProbe /><script data-stx-scoped client>window.__fragmentProbeRuns = (window.__fragmentProbeRuns || 0) + 1</script></main>',
   )
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
 serve({
   patterns: ['views'],
+  componentsDir: ${JSON.stringify(path.join(dir, 'framework-components'))},
   port: ${PORT},
   onRequest(req) {
     if (new URL(req.url).pathname.startsWith('/_stx/'))
@@ -58,6 +63,14 @@ afterAll(async () => {
 })
 
 describe('serve shared STX assets', () => {
+  it('resolves project components alongside an explicit framework component directory', async () => {
+    const html = await (await fetch(BASE)).text()
+
+    expect(html).toContain('<section data-project-component>Project component</section>')
+    expect(html).not.toContain('<ProjectPanel')
+    expect(html).not.toContain('<FactoryProbe')
+  })
+
   it('preflights every supported API method and dashboard request header', async () => {
     const response = await fetch(BASE, {
       method: 'OPTIONS',
