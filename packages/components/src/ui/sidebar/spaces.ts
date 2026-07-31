@@ -34,9 +34,9 @@
  *
  * @module
  */
-
 import type { SidebarSectionData } from './rows'
-import { macosColors, type MacosColor } from './themes'
+import type { MacosColor } from './themes'
+import { macosColors } from './themes'
 
 /** The four surfaces a space paints, in one appearance. */
 export interface SidebarSpaceTintColors {

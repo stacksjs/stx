@@ -2737,12 +2737,8 @@ export async function serve(options: ServeOptions): Promise<void> {
 
                   // Clear stale _latestSetup from previous page, then append new page scripts
                   const clearStale = '<script data-stx-page>if(window.stx)window.stx._latestSetup=null;</script>'
-                  const componentFactoryScripts = pageSetupScripts.filter(script =>
-                    script.includes('data-stx-component-factories'),
-                  )
-                  const trailingPageScripts = pageSetupScripts.filter(script =>
-                    !script.includes('data-stx-component-factories'),
-                  )
+                  const componentFactoryScripts = pageSetupScripts.filter(script => script.includes('data-stx-component-factories'))
+                  const trailingPageScripts = pageSetupScripts.filter(script => !script.includes('data-stx-component-factories'))
                   // Component instance calls can live inside <main>, while their
                   // request-scoped factory prelude is normally emitted in the
                   // document head. Keep the prelude ahead of fragment content so
