@@ -23,6 +23,17 @@ interface BundleCacheMetadata {
   files: Array<{ path: string, mtimeMs: number }>
 }
 
+export function shouldLogBundlerDiagnostics(
+  environment: { STX_DEBUG?: string } = process.env as { STX_DEBUG?: string },
+): boolean {
+  return environment.STX_DEBUG === 'true' || environment.STX_DEBUG === '1'
+}
+
+function logBundlerDiagnostic(...message: unknown[]): void {
+  if (shouldLogBundlerDiagnostics())
+    console.log('[stx:bundler]', ...message)
+}
+
 // Known imports that are NOT user imports — handled by other transforms.
 //
 // `@stacksjs/browser` is deliberately NOT here. It used to be, on the grounds
@@ -71,7 +82,7 @@ export function hasUserImports(code: string): boolean {
     const source = match[1]
     const isExternal = EXTERNAL_PATTERNS.some(p => p.test(source))
     if (!isExternal) {
-      console.log('[stx:bundler] detected user import:', source)
+      logBundlerDiagnostic('detected user import:', source)
       return true
     }
   }
@@ -96,7 +107,7 @@ export function hasUserImports(code: string): boolean {
       continue
     const isExternal = EXTERNAL_PATTERNS.some(p => p.test(source))
     if (!isExternal) {
-      console.log('[stx:bundler] detected side-effect import:', source)
+      logBundlerDiagnostic('detected side-effect import:', source)
       return true
     }
   }
@@ -217,7 +228,7 @@ function createBundlePlugin(
         ]
         for (const candidate of candidates) {
           if (fs.existsSync(candidate) && fs.statSync(candidate, { throwIfNoEntry: false })?.isFile()) {
-            console.log(`[stx:bundler] resolved ${args.path[0]}/ import:`, args.path, '→', candidate)
+            logBundlerDiagnostic(`resolved ${args.path[0]}/ import:`, args.path, '→', candidate)
             inputFiles.add(candidate)
             return { path: candidate }
           }
@@ -379,10 +390,10 @@ export async function bundleClientScript(
       }
     }
     if (depsValid) {
-      console.log('[stx:bundler] cache hit:', hash)
+      logBundlerDiagnostic('cache hit:', hash)
       return await cacheFile.text()
     }
-    console.log('[stx:bundler] cache invalidated by dep change:', hash)
+    logBundlerDiagnostic('cache invalidated by dep change:', hash)
   }
 
   // Share a single build between concurrent callers for the same script.
@@ -452,7 +463,7 @@ async function buildBundle(
 
   await Bun.write(tmpEntry, code + exportLine)
 
-  console.log('[stx:bundler] bundling:', hash, 'from:', path.basename(filePath))
+  logBundlerDiagnostic('bundling:', hash, 'from:', path.basename(filePath))
 
   // Collected during build by the plugin's onResolve hooks. Each entry
   // is an absolute path that contributed to the bundle; we snapshot
@@ -558,7 +569,7 @@ ${publicAssignments}`.trim()
     // External imports stay intact for transformAutoImports and
     // transformStoreImports, which run after this bundling step.
 
-    console.log('[stx:bundler] bundled:', hash, 'output:', bundled.length, 'bytes')
+    logBundlerDiagnostic('bundled:', hash, 'output:', bundled.length, 'bytes')
 
     // A script that declared something must come back with it. Losing every
     // binding means the build produced nothing usable — a tree-shake that took

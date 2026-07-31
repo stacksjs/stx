@@ -1203,7 +1203,6 @@ export async function processScriptSetup(template: string, filePath?: string, se
     let scriptContent = signalScripts[i].content
     scriptContent = injectBrowserCoreAutoImports(scriptContent).code
     if (hasUserImports(scriptContent)) {
-      console.log('[stx:bundler] bundling signal script imports')
       scriptContent = await bundleClientScript(scriptContent, filePath || '', {
         projectRoot: process.cwd(),
       })

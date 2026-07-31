@@ -1181,7 +1181,6 @@ export async function processClientScript(
   // 0b. Bundle user imports via Bun.build (if any detected)
   const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
   if (hasUserImports(code)) {
-    console.log('[stx:bundler] user imports detected, bundling...')
     code = await bundleClientScript(code, options.filePath || '', {
       projectRoot: options.projectRoot,
       minify: options.production,
