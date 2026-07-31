@@ -25,9 +25,10 @@ import { extractBridgeData, processClientScript } from './client-script'
 import { processReactiveDirectives } from './reactive'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
-import { injectCspMetaTag, processCspDirectives } from './csp'
+import { addNonceToInlineContent, injectCspMetaTag, processCspDirectives } from './csp'
 import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
+import { processAppearanceBootstrapDirective } from './appearance-bootstrap'
 import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError, StxValidationError } from './error-handling'
 // Use static import for head module so we share the same currentHead instance
 // with variable-extractor.ts. Dynamic await import() can resolve to a separate
@@ -1446,6 +1447,11 @@ async function processOtherDirectives(
   const serverData = extractBridgeData(context as Record<string, unknown>)
   output = await processSignals(output, opts, pageFilePath, serverData)
 
+  // Apply persisted appearance after signal analysis so this compiler-owned
+  // script cannot cause a static page to load the signals runtime. It remains
+  // at the directive's original position and bypasses client bundling.
+  output = processAppearanceBootstrapDirective(output, context)
+
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, opts)
 
@@ -1671,6 +1677,11 @@ else {
   if (clientScriptsTransformed) {
     context.__stx_event_bindings = []
   }
+
+  // Nonces must be applied last. Compiler-owned runtime, scoped, analytics,
+  // and appearance scripts may be introduced after @csp was processed.
+  if (opts.csp?.enabled && opts.csp.useNonce && typeof context.cspNonce === 'string')
+    output = addNonceToInlineContent(output, context.cspNonce)
 
   // Note: Crosswind CSS injection is done at the top level in processDirectives
   // to avoid duplicate injection for includes/layouts/components
