@@ -848,6 +848,54 @@ catch {
  * @param scriptContent - ES module style script content
  * @returns CommonJS compatible script
  */
+/**
+ * Whether an import statement is finished, or continues on the next line.
+ *
+ * Finished means the module specifier has been reached and its quotes are
+ * closed, with no unclosed brace left over. A side-effect import
+ * (`import './setup'`) is complete as soon as its string closes; a named
+ * import is not complete until both the brace list and the specifier are.
+ *
+ * Exported for the tests, because the failure it prevents is invisible from
+ * the outside: an unjoined import produces a syntax error in generated code,
+ * and the page then renders with every server variable undefined.
+ */
+export function isCompleteImport(statement: string): boolean {
+  let braces = 0
+  let quote: string | null = null
+  let sawFrom = false
+  let closedSpecifier = false
+
+  for (let index = 0; index < statement.length; index++) {
+    const character = statement[index]
+
+    if (quote) {
+      if (character === quote) {
+        quote = null
+        // The specifier is the string that follows `from`, or the whole
+        // statement for a side-effect import.
+        if (sawFrom || braces === 0)
+          closedSpecifier = true
+      }
+      continue
+    }
+
+    if (character === '\'' || character === '"' || character === '`') {
+      quote = character
+      continue
+    }
+
+    if (character === '{')
+      braces++
+    else if (character === '}')
+      braces--
+    else if (statement.startsWith('from', index) && braces === 0)
+      sawFrom = true
+  }
+
+  return quote === null && braces === 0 && closedSpecifier
+}
+
 export function convertToCommonJS(scriptContent: string, filePath?: string): string {
   const templateDir = filePath ? path.dirname(filePath) : process.cwd()
   const lines = scriptContent.split('\n')
@@ -907,10 +955,36 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
     }
 
     // Convert ES import statements to require() with resolved paths
-    if (line.startsWith('import ')) {
-      const defaultImportMatch = line.match(/^import\s+(\w+)\s+from\s+['"](.+)['"]/)
-      const namedImportMatch = line.match(/^import\s+\{([^}]+)\}\s+from\s+['"](.+)['"]/)
-      const sideEffectMatch = line.match(/^import\s+['"](.+)['"]/)
+    if (line.startsWith('import ') || line === 'import' || line.startsWith('import{')) {
+      /*
+       * An import may span several lines, which is how anybody writes one with
+       * more than three names:
+       *
+       *   import {
+       *     alpha,
+       *     beta,
+       *   } from './somewhere'
+       *
+       * Parsed a line at a time, `import {` matched none of the patterns below
+       * and fell through to be emitted verbatim, which is a syntax error in the
+       * generated module. The script then failed to execute and the page
+       * rendered with every server variable undefined and nothing logged. So
+       * the statement is joined before it is matched.
+       */
+      let statement = line
+      let consumed = 0
+
+      while (!isCompleteImport(statement) && i + consumed + 1 < lines.length) {
+        consumed++
+        statement = `${statement} ${lines[i + consumed].trim()}`
+      }
+
+      i += consumed
+
+      const defaultImportMatch = statement.match(/^import\s+(\w+)\s+from\s+['"](.+?)['"]/)
+      const namedImportMatch = statement.match(/^import\s+\{([^}]*)\}\s+from\s+['"](.+?)['"]/)
+      const sideEffectMatch = statement.match(/^import\s+['"](.+?)['"]/)
+      const line_ = statement
 
       // Resolve relative paths against the template's directory
       const resolveSource = (source: string) => {
@@ -943,7 +1017,7 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
         convertedLines.push(`await import('${resolved}')`)
       }
       else {
-        convertedLines.push(line)
+        convertedLines.push(line_)
       }
       i++
       continue
