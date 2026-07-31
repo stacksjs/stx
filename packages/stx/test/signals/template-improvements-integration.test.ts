@@ -24,8 +24,9 @@ describe('Template Improvements Integration', () => {
   describe('Auto-unwrap with @for loops', () => {
     it('should inject globalHelpers into @for scope', () => {
       const runtime = generateSignalsRuntimeDev()
-      // Verify globalHelpers is included in @for scope
-      expect(runtime).toContain('...globalHelpers, ...extraScope')
+      // Verify global helpers and row-local values share the evaluation scope.
+      expect(runtime).toContain('const baseScope = { ...globalHelpers')
+      expect(runtime).toContain('...extraScope }')
     })
 
     it('should support @for with @loading state', () => {
@@ -49,7 +50,7 @@ describe('Template Improvements Integration', () => {
 
     it('should use auto-unwrap in attribute bindings', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('createAutoUnwrapProxy(attrCapturedScope)')
+      expect(runtime).toContain('createExpressionAutoUnwrapProxy(activeScope, expr)')
     })
   })
 

@@ -39,11 +39,11 @@ describe('signals runtime — SVG attribute case adjustment', () => {
   it('adjusts attrName before the binding effect runs setAttribute', () => {
     const bindIdx = runtime.indexOf('el.namespaceURI === SVG_NS && SVG_ATTR_CASE[attrName]')
     expect(bindIdx).toBeGreaterThan(-1)
-    // The adjustment happens between attrName derivation and the effect(...)
-    // that applies setAttribute(attrName, v).
-    const after = runtime.slice(bindIdx, bindIdx + 600)
-    expect(after).toContain('effect(')
-    expect(after).toContain('el.setAttribute(attrName, v)')
+    // The adjustment happens before the effect that applies the live value.
+    const effectIdx = runtime.indexOf('effect(', bindIdx)
+    const setAttributeIdx = runtime.indexOf('el.setAttribute(attrName, attrValue)', effectIdx)
+    expect(effectIdx).toBeGreaterThan(bindIdx)
+    expect(setAttributeIdx).toBeGreaterThan(effectIdx)
   })
 
   it('the adjustment table maps every lowercased key to a camelCase value', () => {

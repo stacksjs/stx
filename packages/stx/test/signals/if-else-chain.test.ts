@@ -174,7 +174,7 @@ describe('if/else chain runtime wiring (#1734)', () => {
   it('binder inherits the #1733 retry-without-unwrap eval, via with() for narrow subscription (#1738)', () => {
     // The chain's per-branch evaluator must retry without the unwrap proxy
     // so x-else-if="count() === 0" works on day one (#1733)...
-    expect(runtime).toContain('var unwrapScope = createAutoUnwrapProxy(scope);')
+    expect(runtime).toContain('var unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);')
     // ...and both passes evaluate via with(__scope__) so the effect subscribes
     // ONLY to the signals the branch references, not every signal in scope
     // (#1738). The proxy pass uses unwrapScope; the retry pass uses the raw

@@ -43,9 +43,8 @@ describe('Alpine x-* directive support in signals runtime', () => {
   })
 
   it('should handle x-model alongside @model and :model', () => {
-    expect(runtime).toContain("el.hasAttribute('x-model')")
-    expect(runtime).toContain("el.hasAttribute('@model')")
-    expect(runtime).toContain("el.hasAttribute(':model')")
+    expect(runtime).toContain("var prefixes = ['x-model', ':model', '@model']")
+    expect(runtime).toContain("name.indexOf(prefixes[j] + '.') === 0")
   })
 
   it('should handle x-text and x-html in attribute processing', () => {
