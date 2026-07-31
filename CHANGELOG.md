@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.133...v0.2.134)
+
+## ⚡ Performance Improvements
+
+- **serve**: cache generated crosswind assets ([e0fed41](https://github.com/stacksjs/stx/commit/e0fed41)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.134 ([e472ed1](https://github.com/stacksjs/stx/commit/e472ed1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.132...v0.2.133)
 
 ## ⚡ Performance Improvements
