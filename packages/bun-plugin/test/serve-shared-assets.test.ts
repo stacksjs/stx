@@ -58,6 +58,22 @@ afterAll(async () => {
 })
 
 describe('serve shared STX assets', () => {
+  it('preflights every supported API method and dashboard request header', async () => {
+    const response = await fetch(BASE, {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://localhost:3000',
+        'Access-Control-Request-Method': 'PATCH',
+        'Access-Control-Request-Headers': 'authorization,x-csrf-token',
+      },
+    })
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('access-control-allow-origin')).toBe('*')
+    expect(response.headers.get('access-control-allow-methods')).toBe('GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS')
+    expect(response.headers.get('access-control-allow-headers')).toBe('Content-Type, Authorization, X-CSRF-Token, X-Requested-With')
+  })
+
   it('references shared runtime and router scripts from rendered pages', async () => {
     const html = await (await fetch(BASE)).text()
 

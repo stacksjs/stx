@@ -2001,8 +2001,8 @@ export async function serve(options: ServeOptions): Promise<void> {
   // CORS headers for cross-origin requests (needed for Craft WebView)
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With',
   }
 
   // ── Site-aware response post-processing ────────────────────────
