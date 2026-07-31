@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.145...v0.2.146)
+
+## 🐛 Bug Fixes
+
+- **client**: preserve bundled runtime aliases ([de8d0da](https://github.com/stacksjs/stx/commit/de8d0da)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.146 ([1d573e4](https://github.com/stacksjs/stx/commit/1d573e4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.144...v0.2.145)
 
 ## 🐛 Bug Fixes
