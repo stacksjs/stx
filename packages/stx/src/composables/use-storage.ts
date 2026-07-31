@@ -155,7 +155,18 @@ catch (e) {
     const onStorage = (event: StorageEvent) => {
       if (event.key === key && event.storageArea === getStorage()) {
         const prevValue = currentValue
-        currentValue = event.newValue ? serializer.read(event.newValue) : defaultValue
+        // Guarded like read() above (stacksjs/stx#1793): the default serializer
+        // swallows its own parse errors, but a custom one can throw — and here
+        // that throw lands inside a window listener, fired by a different tab
+        // at an arbitrary later time, with a stack pointing at the runtime
+        // rather than at the consumer. Keep the last good value on failure.
+        try {
+          currentValue = event.newValue ? serializer.read(event.newValue) : defaultValue
+        }
+        catch (e) {
+          console.warn(`[useStorage] Failed to read key "${key}" from a cross-tab update:`, e)
+          return
+        }
         notify(currentValue, prevValue)
       }
     }

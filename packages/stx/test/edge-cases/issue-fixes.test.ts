@@ -464,9 +464,13 @@ describe('useSessionStorage — close the gap strict-mode lint already pointed a
     // collide with useLocalStorage's getItem/setItem lines.
     const body = runtime.match(/function useSessionStorage\(key, defaultValue\)\s*\{[\s\S]*?\n  \}/)
     expect(body).not.toBeNull()
-    expect(body![0]).toContain('sessionStorage.getItem(key)')
-    expect(body![0]).toContain('sessionStorage.setItem(key,')
-    expect(body![0]).not.toContain('localStorage.getItem')
+    // Reads and writes go through the guarded storage helpers (#1793) rather
+    // than calling getItem/setItem inline, so assert on the store handed to
+    // them — that's the part this test has always been about. The guards
+    // themselves are covered behaviourally in signals/use-storage-guards.test.ts.
+    expect(body![0]).toContain('stxStorageRead(sessionStorage,')
+    expect(body![0]).toContain('stxStorageWrite(sessionStorage,')
+    expect(body![0]).not.toContain('localStorage')
   })
 
   it('filters cross-tab storage events to the sessionStorage area', () => {
