@@ -56,7 +56,7 @@ const EXTERNAL_PATTERNS = [
  * Returns false for:
  * - `import type { ... }` (type-only — stripped by TS transpiler)
  * - `import { ... } from 'stx'` (auto-imported from window.stx)
- * - `import { ... } from '@stacksjs/browser'` (auto-imported)
+ * - `import '@stacksjs/browser'` (the framework-injected module bootstrap)
  * - `import { ... } from '@stores'` (handled by transformStoreImports)
  * - `import { ... } from '@composables'` (handled by transformStoreImports)
  */
@@ -87,6 +87,12 @@ export function hasUserImports(code: string): boolean {
   while ((match = sideEffectRegex.exec(code)) !== null) {
     const source = match[1]
     if (/\.css(?:\?.*)?$/.test(source))
+      continue
+    // injectBrowserRuntime() adds this module bootstrap to initialize
+    // window.StacksBrowser. It must remain a native module import, not be
+    // bundled as page code. Explicit named imports still take the user-import
+    // path above and are bundled normally.
+    if (source === '@stacksjs/browser')
       continue
     const isExternal = EXTERNAL_PATTERNS.some(p => p.test(source))
     if (!isExternal) {

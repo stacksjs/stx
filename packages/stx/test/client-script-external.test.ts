@@ -17,6 +17,16 @@ describe('hasUserImports', () => {
     expect(hasUserImports(`import { describeThrownError } from '@stacksjs/browser'`)).toBe(true)
   })
 
+  it('keeps the injected browser runtime bootstrap as a native module import', async () => {
+    const code = `import '@stacksjs/browser'`
+
+    expect(hasUserImports(code)).toBe(false)
+
+    const output = await processClientScript(code, { attrs: `type="module"` })
+    expect(output).toContain(`<script type="module" data-stx-scoped>`)
+    expect(output).toContain(`@stacksjs/browser`)
+  })
+
   it('leaves the stx runtime external', () => {
     expect(hasUserImports(`import { state } from 'stx'`)).toBe(false)
     expect(hasUserImports(`import { state } from '@stacksjs/stx'`)).toBe(false)
