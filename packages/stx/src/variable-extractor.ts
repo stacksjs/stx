@@ -1382,11 +1382,102 @@ function extractDestructuredNames(pattern: string): string[] {
 /**
  * Parse variable declarations (including multi-line objects and arrays)
  */
+/**
+ * Split `const name: Type = value` into its parts.
+ *
+ * The pattern this supports used to require the `=` to follow the name
+ * directly, so any TypeScript annotation made the declaration unparseable. That
+ * is not a small failure: an unparseable declaration throws out of
+ * `convertToCommonJS`, the whole server script falls back to static
+ * extraction, and the page renders with every variable undefined and no error.
+ * A single `const rows: any = await db...` was enough to blank a page.
+ *
+ * The annotation is erased at runtime, so it only has to be skipped. It is
+ * scanned rather than matched because it can contain almost anything: `=` in a
+ * generic default, braces in an object type, commas and angle brackets in a
+ * generic argument list.
+ *
+ * Returns null when the line is not a simple declaration, which leaves the
+ * destructuring and multi-line paths below to handle it as before.
+ */
+export function splitDeclaration(line: string): { type: string, name: string, value: string } | null {
+  const head = /^(?:export\s+)?(const|let|var)\s+([A-Za-z_$][\w$]*)/.exec(line)
+  if (!head)
+    return null
+
+  let index = head[0].length
+  const isSpace = (character: string) => character === ' ' || character === '\t'
+
+  while (index < line.length && isSpace(line[index]!))
+    index++
+
+  // An annotation runs from the colon to the `=` that starts the initializer.
+  if (line[index] === ':') {
+    let depth = 0
+    let quote: string | null = null
+    index++
+
+    for (; index < line.length; index++) {
+      const character = line[index]!
+
+      if (quote) {
+        if (character === '\\') {
+          index++
+          continue
+        }
+        if (character === quote)
+          quote = null
+        continue
+      }
+
+      if (character === '\'' || character === '"' || character === '`') {
+        quote = character
+        continue
+      }
+
+      if (character === '(' || character === '[' || character === '{' || character === '<') {
+        depth++
+        continue
+      }
+
+      if (character === ')' || character === ']' || character === '}' || character === '>') {
+        depth--
+        continue
+      }
+
+      // The initializer's `=`, but not `==`, `=>`, `<=`, `>=` or `!=`.
+      if (character === '=' && depth <= 0) {
+        const next = line[index + 1]
+        const previous = line[index - 1]
+        if (next !== '=' && next !== '>' && previous !== '=' && previous !== '!' && previous !== '<' && previous !== '>')
+          break
+      }
+    }
+
+    if (line[index] !== '=')
+      return null
+  }
+
+  while (index < line.length && isSpace(line[index]!))
+    index++
+
+  if (line[index] !== '=')
+    return null
+
+  return {
+    type: head[1]!,
+    name: head[2]!,
+    value: line.slice(index + 1).trim(),
+  }
+}
+
 function parseVariableDeclaration(lines: string[], startIndex: number): VariableDeclarationResult {
   const firstLine = lines[startIndex].trim()
 
-  // Extract type and check for simple pattern
-  const match = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\w+)\s*=\s*(.*)$/)
+  // Extract type and check for simple pattern. `splitDeclaration` handles the
+  // TypeScript annotation the old pattern could not see past.
+  const split = splitDeclaration(firstLine)
+  const match = split ? ([firstLine, split.type, split.name, split.value] as unknown as RegExpMatchArray) : null
 
   // Try destructuring pattern if simple doesn't match
   if (!match) {
