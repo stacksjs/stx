@@ -1,5 +1,4 @@
 import { afterAll, afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,32 +12,18 @@ const CLI_PATH = path.resolve(__dirname, '../../bin/cli.ts')
 
 // Helper function to run the CLI command
 function runCli(args: string[]): Promise<{ stdout: string, stderr: string, exitCode: number }> {
-  return new Promise((resolve) => {
-    // Use bun to run the CLI
-    const cli = spawn('bun', [CLI_PATH, ...args], {
-      cwd: TEST_DIR,
-      env: { ...process.env },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
+  const cli = Bun.spawnSync(['bun', CLI_PATH, ...args], {
+    cwd: TEST_DIR,
+    env: { ...process.env },
+    stdout: 'pipe',
+    stderr: 'pipe',
+    timeout: 10000,
+  })
 
-    let stdout = ''
-    let stderr = ''
-
-    cli.stdout!.on('data', (data) => {
-      stdout += data.toString()
-    })
-
-    cli.stderr!.on('data', (data) => {
-      stderr += data.toString()
-    })
-
-    cli.on('close', (exitCode) => {
-      resolve({
-        stdout,
-        stderr,
-        exitCode: exitCode || 0,
-      })
-    })
+  return Promise.resolve({
+    stdout: new TextDecoder().decode(cli.stdout),
+    stderr: new TextDecoder().decode(cli.stderr),
+    exitCode: cli.exitCode,
   })
 }
 
