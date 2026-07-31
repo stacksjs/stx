@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.128...v0.2.129)
+
+## ⚡ Performance Improvements
+
+- **bundler**: retain client cache entries ([fa423b0](https://github.com/stacksjs/stx/commit/fa423b0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.127...v0.2.128)
 
 ## 🚀 Features
