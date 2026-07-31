@@ -2360,6 +2360,22 @@ export async function serve(options: ServeOptions): Promise<void> {
                 return new Response(content, { headers })
               }
 
+              const crosswindAsset = path.match(/^\/_stx\/crosswind\.([a-f0-9]{16})\.css$/)
+              if (crosswindAsset) {
+                const stx = await stxModule
+                const content = stx.getCrosswindServeAsset(crosswindAsset[1]!)
+                if (content === undefined)
+                  return new Response('Crosswind asset not found', { status: 404 })
+                const headers = {
+                  'Content-Type': 'text/css; charset=utf-8',
+                  'Cache-Control': 'public, max-age=31536000, immutable',
+                  ...corsHeaders,
+                }
+                if (req.method === 'HEAD')
+                  return new Response(null, { headers })
+                return new Response(content, { headers })
+              }
+
               // Custom onRequest handler — short-circuits if a Response is
               // returned. A plain-object return is merged into the request
               // context instead, giving the hook a race-free way to hand
@@ -2621,6 +2637,12 @@ export async function serve(options: ServeOptions): Promise<void> {
                         continue
                       }
                       headStyles.push(styleMatch[0])
+                    }
+
+                    const crosswindLinkRe = /<link\b[^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*>/gi
+                    let crosswindLinkMatch: RegExpExecArray | null
+                    while ((crosswindLinkMatch = crosswindLinkRe.exec(headContent)) !== null) {
+                      headStyles.push(crosswindLinkMatch[0])
                     }
                   }
 

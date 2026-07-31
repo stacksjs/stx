@@ -19,7 +19,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { composeShellWithPage, processShell } from '../../src/app-shell'
-import { injectCrosswindCSS } from '../../src/dev-server/crosswind'
+import { getCrosswindServeAsset, injectCrosswindCSS } from '../../src/dev-server/crosswind'
 
 describe('crosswind + app shell composition (#1749)', () => {
   let dir: string
@@ -66,5 +66,18 @@ describe('crosswind + app shell composition (#1749)', () => {
     // Preflight (box-sizing reset) must appear once, not duplicated.
     const resets = out.match(/box-sizing:\s*border-box/g) || []
     expect(resets.length).toBe(1)
+  })
+
+  it('registers content-addressed CSS in serve mode', async () => {
+    const out = await injectCrosswindCSS(
+      '<html><head></head><body><div class="flex gap-4">x</div></body></html>',
+      undefined,
+      true,
+    )
+    const match = out.match(/href="\/_stx\/crosswind\.([a-f0-9]{16})\.css"/)
+
+    expect(match).not.toBeNull()
+    expect(out).not.toContain('<style data-crosswind="generated">')
+    expect(getCrosswindServeAsset(match![1]!)).toContain('display: flex')
   })
 })

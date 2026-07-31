@@ -559,7 +559,7 @@ export async function processDirectives(
       // page render injects first, the early-return in injectCrosswindCSS fires on
       // the outer render, and layout-only utility classes never get scanned.
       if (isTopLevel && context.__stx_inject_css !== false) {
-        result = await injectCrosswindCSS(result)
+        result = await injectCrosswindCSS(result, undefined, options.buildMode === 'serve')
       }
 
       if (isTopLevel) {

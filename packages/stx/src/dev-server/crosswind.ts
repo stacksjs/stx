@@ -70,6 +70,7 @@ let isBuilding = false
 // dev sessions where every navigation adds a new class signature.
 const MAX_CACHE = 256
 const cssByClassSet = new Map<string, string>()
+const serveCssByHash = new Map<string, string>()
 let diskCacheRoot: string | null = null
 let configFingerprint: string | null = null
 
@@ -89,6 +90,26 @@ function setLruCache(key: string, value: string): void {
   else if (cssByClassSet.size >= MAX_CACHE)
     cssByClassSet.delete(cssByClassSet.keys().next().value as string)
   cssByClassSet.set(key, value)
+}
+
+function registerServeCss(css: string): string {
+  const hash = shortHash(css)
+  if (serveCssByHash.has(hash))
+    serveCssByHash.delete(hash)
+  else if (serveCssByHash.size >= MAX_CACHE)
+    serveCssByHash.delete(serveCssByHash.keys().next().value as string)
+  serveCssByHash.set(hash, css)
+  return hash
+}
+
+export function getCrosswindServeAsset(hash: string): string | undefined {
+  const css = serveCssByHash.get(hash)
+  if (css === undefined)
+    return
+
+  serveCssByHash.delete(hash)
+  serveCssByHash.set(hash, css)
+  return css
 }
 
 async function readDiskCache(key: string): Promise<string | null> {
@@ -291,6 +312,7 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
  */
 export function resetCssCache(): void {
   cssByClassSet.clear()
+  serveCssByHash.clear()
 }
 
 export function resetCrosswindCache(): void {
@@ -299,6 +321,7 @@ export function resetCrosswindCache(): void {
   cachedConfig = null
   cachedCSS = ''
   cssByClassSet.clear()
+  serveCssByHash.clear()
   // Don't blow away the on-disk cache here — tests reach for this
   // function to clear in-process state, and nuking the disk cache
   // every time would force every test to re-pay the regen cost. The
@@ -734,7 +757,7 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
  * Inject generated CSS into HTML content
  * Tries to inject before </head>, falls back to <body> or prepends
  */
-export async function injectCrosswindCSS(htmlContent: string, appDir?: string): Promise<string> {
+export async function injectCrosswindCSS(htmlContent: string, appDir?: string, serveMode = false): Promise<string> {
   // Generate CSS for ALL utility classes in the (possibly shell-composed)
   // content. We must NOT early-return just because a `data-crosswind="generated"`
   // style already exists: when a page is composed into a pre-processed app shell,
@@ -753,33 +776,34 @@ export async function injectCrosswindCSS(htmlContent: string, appDir?: string): 
     return htmlContent
   }
 
-  // Create a style tag with the generated CSS
-  const styleTag = `<style data-crosswind="generated">\n${css}\n</style>`
+  const assetTag = serveMode
+    ? `<link data-crosswind="generated" rel="stylesheet" href="/_stx/crosswind.${registerServeCss(css)}.css">`
+    : `<style data-crosswind="generated">\n${css}\n</style>`
 
   // If one or more generated styles already exist (e.g. from the composed
   // shell, or a recursive layout render), replace the first with the complete
   // one and drop any duplicates — keeping a single Preflight reset.
-  const existing = /<style data-crosswind="generated">[\s\S]*?<\/style>/g
+  const existing = /(?:<style\b[^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*>[\s\S]*?<\/style>|<link\b[^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*>)/g
   if (existing.test(htmlContent)) {
     let placed = false
     return htmlContent.replace(existing, () => {
       if (placed)
         return ''
       placed = true
-      return styleTag
+      return assetTag
     })
   }
 
   // Try to inject before </head>
   if (htmlContent.includes('</head>')) {
-    return htmlContent.replace('</head>', `${styleTag}\n</head>`)
+    return htmlContent.replace('</head>', `${assetTag}\n</head>`)
   }
 
   // Fallback: inject at the beginning of <body> or at the start
   if (htmlContent.includes('<body')) {
-    return htmlContent.replace(/<body([^>]*)>/, `<body$1>\n${styleTag}`)
+    return htmlContent.replace(/<body([^>]*)>/, `<body$1>\n${assetTag}`)
   }
 
   // Last resort: prepend to content
-  return styleTag + htmlContent
+  return assetTag + htmlContent
 }

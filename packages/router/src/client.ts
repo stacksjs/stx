@@ -451,6 +451,7 @@ else {
         var fragScripts=[];
         var fragScriptId=0;
         var fragStyles=[];
+        var fragCrosswindHrefs=[];
         var fragCrosswindCSS=null;
         var cleanFrag=html.replace(new RegExp('<scr'+'ipt\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/scr'+'ipt>','gi'),function(m,attrs,code){
           if(code&&code.trim()&&!isSignalsRuntimeScript({hasAttribute:function(name){return name==='data-stx-runtime'&&attrs.indexOf('data-stx-runtime')!==-1}},code)){
@@ -473,6 +474,12 @@ else {
           }
           return '';
         });
+        cleanFrag=cleanFrag.replace(new RegExp('<link\\\\b([^>]*)>','gi'),function(m,attrs){
+          if(attrs.indexOf('data-crosswind')===-1)return m;
+          var hrefMatch=attrs.match(/\\bhref=(["'])(.*?)\\1/i);
+          if(hrefMatch&&hrefMatch[2])fragCrosswindHrefs.push(hrefMatch[2]);
+          return '';
+        });
         // Remove old page styles (not crosswind — that gets merged)
         document.querySelectorAll('style[data-stx-page]').forEach(function(s){s.remove()});
         // Merge crosswind CSS from fragment into existing crosswind style
@@ -488,6 +495,19 @@ else {
             document.head.appendChild(cw);
           }
         }
+        fragCrosswindHrefs.forEach(function(href){
+          var absolute=new URL(href,location.href).href;
+          var exists=false;
+          document.querySelectorAll('head link[data-crosswind][href]').forEach(function(link){
+            if(new URL(link.getAttribute('href'),location.href).href===absolute)exists=true;
+          });
+          if(exists)return;
+          var link=document.createElement('link');
+          link.setAttribute('data-crosswind','generated');
+          link.setAttribute('rel','stylesheet');
+          link.setAttribute('href',href);
+          document.head.appendChild(link);
+        });
         // Add new page styles
         fragStyles.forEach(function(s){
           var el=document.createElement('style');

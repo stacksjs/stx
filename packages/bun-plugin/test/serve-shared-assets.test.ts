@@ -17,7 +17,7 @@ beforeAll(async () => {
 
   await Bun.write(
     path.join(dir, 'views', 'index.stx'),
-    '<script>const count = state(0)</script><main>{{ count() }}</main>',
+    '<script>const count = state(0)</script><main class="flex">{{ count() }}</main>',
   )
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
@@ -59,6 +59,7 @@ describe('serve shared STX assets', () => {
 
     expect(html).toContain('<script data-stx-runtime src="/_stx/runtime.js"></script>')
     expect(html).toContain('<script data-stx-router src="/_stx/router.js"></script>')
+    expect(html).toMatch(/<link data-crosswind="generated" rel="stylesheet" href="\/_stx\/crosswind\.[a-f0-9]{16}\.css">/)
     expect(html).not.toContain('window.stx.state')
     expect(html).not.toContain('__stxRouter=true')
   })
@@ -89,5 +90,17 @@ describe('serve shared STX assets', () => {
 
     expect(revalidated.status).toBe(304)
     expect(await revalidated.text()).toBe('')
+  })
+
+  it('serves content-addressed Crosswind CSS immutably', async () => {
+    const html = await (await fetch(BASE)).text()
+    const href = html.match(/href="(\/_stx\/crosswind\.[a-f0-9]{16}\.css)"/)?.[1]
+    expect(href).toBeTruthy()
+
+    const response = await fetch(`${BASE}${href}`)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('text/css; charset=utf-8')
+    expect(response.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    expect(await response.text()).toContain('display: flex')
   })
 })
