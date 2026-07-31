@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.129...v0.2.130)
+
+## 🐛 Bug Fixes
+
+- **server-script**: parse a declaration that carries a type annotation ([1ba17e5](https://github.com/stacksjs/stx/commit/1ba17e5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.130 ([ba1c82a](https://github.com/stacksjs/stx/commit/ba1c82a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.128...v0.2.129)
 
 ## ⚡ Performance Improvements
