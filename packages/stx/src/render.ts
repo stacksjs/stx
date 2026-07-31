@@ -32,12 +32,21 @@ import { injectRouterScript, processDirectives } from './process'
 import { extractBridgeData, processClientScript } from './client-script'
 import { findSfcTemplateBlock } from './sfc-template'
 import type { StxOptions } from './types'
+import { isMarkdownPath, renderMarkdownView } from './markdown-view'
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface RenderOptions {
+  /**
+   * Markdown renderer for `.md` templates.
+   *
+   * Lets a docs site supply its own - bunpress, for instance - without stx
+   * taking a dependency on one.
+   */
+  markdownRenderer?: (source: string) => string | Promise<string>
+
   /** Additional context variables to inject */
   context?: Record<string, unknown>
   /** STX options override */
@@ -215,7 +224,25 @@ export async function renderTemplate(
     throw new Error(`Template file not found: ${resolvedPath}`)
   }
 
-  const content = await file.text()
+  let content = await file.text()
+  let markdownFrontmatter: Record<string, any> | null = null
+
+  // A .md file is a template like any other: convert it, then let the normal
+  // pipeline process the result, so stx syntax works inside prose.
+  if (isMarkdownPath(resolvedPath)) {
+    const view = await renderMarkdownView(content, { renderer: renderOptions.markdownRenderer })
+    content = view.html
+    markdownFrontmatter = view.frontmatter
+  }
+
+  // Frontmatter is context, and it loses to an explicit context value so a
+  // caller can always override what the file declares.
+  if (markdownFrontmatter) {
+    renderOptions = {
+      ...renderOptions,
+      context: { ...markdownFrontmatter, ...(renderOptions.context || {}) },
+    }
+  }
 
   // If layout is specified, render page first, then wrap in layout
   if (renderOptions.layout) {

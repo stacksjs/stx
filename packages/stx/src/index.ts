@@ -241,3 +241,4 @@ export type {
 
 // Default export for the stx module
 export default {}
+export { isMarkdownPath, type MarkdownRenderer, type MarkdownView, protectCodeBlocks, renderMarkdownView } from './markdown-view'
