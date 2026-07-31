@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.144...v0.2.145)
+
+## 🐛 Bug Fixes
+
+- **client**: bundle browser auto-import bootstraps ([6a2137a](https://github.com/stacksjs/stx/commit/6a2137a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **server**: resolve project-root script imports ([23b5585](https://github.com/stacksjs/stx/commit/23b5585)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.145 ([8a8b670](https://github.com/stacksjs/stx/commit/8a8b670)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.143...v0.2.144)
 
 ## 🐛 Bug Fixes
