@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { access, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { isRenderableCacheCandidate } from '../src/serve'
 
 const PORT = 43_000 + (process.pid % 1000)
 const BASE = `http://localhost:${PORT}`
@@ -96,6 +97,12 @@ afterAll(async () => {
 })
 
 describe('opt-in rendered HTML cache', () => {
+  test('never caches recovered compiler failures', () => {
+    expect(isRenderableCacheCandidate('<main>ready</main>')).toBe(true)
+    expect(isRenderableCacheCandidate('<!-- Template Processing failed: transient compiler error -->')).toBe(false)
+    expect(isRenderableCacheCandidate('<!-- stx rendering error -->')).toBe(false)
+  })
+
   test('prewarms discovered static routes without a browser request', async () => {
     const deadline = Date.now() + 10_000
     let prewarmed = false

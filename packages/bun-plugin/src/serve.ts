@@ -582,6 +582,11 @@ export interface ServeOptions {
   }
 }
 
+export function isRenderableCacheCandidate(html: string): boolean {
+  return !html.includes('<!-- Template Processing failed:')
+    && !html.includes('<!-- stx rendering error -->')
+}
+
 /**
  * Middleware handler — a Laravel-style gate that either passes through
  * (returns `void`/`null`/`undefined`) or terminates the pipeline by
@@ -1744,7 +1749,12 @@ export async function serve(options: ServeOptions): Promise<void> {
     // `context.__stx_skip_cache = true`). The dependency set was populated
     // by processDirectives — every layout / component / partial it pulled
     // in is now part of the invalidation signature.
-    if (ENABLE_HTML_CACHE && !context.__stx_skip_cache && !skipCacheHint) {
+    if (
+      ENABLE_HTML_CACHE
+      && !context.__stx_skip_cache
+      && !skipCacheHint
+      && isRenderableCacheCandidate(output)
+    ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
       htmlCache.set(htmlCacheKey(filePath, reqCtx), { html: output, signature })
     }
