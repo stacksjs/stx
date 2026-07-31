@@ -19,6 +19,7 @@ import { createRouter, type Route } from './router'
 import { buildRuntimeAsset, buildRouterAsset, type BuiltAsset } from './build-assets'
 import { compileTemplate, type CompiledTemplate } from './template-compiler'
 import { generateManifest, writeManifest, type ManifestRoute, type ManifestAssets } from './manifest'
+import { injectColorModeBootScript } from './color-mode-boot'
 import { ensureDocumentShell } from './document-shell'
 import { extractContainerContent } from './app-shell'
 import { injectCrosswindCSS } from './dev-server/crosswind'
@@ -157,6 +158,7 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   const layoutsDir = options.layoutsDir ?? projectConfig.layoutsDir ?? 'layouts'
   const publicDir = options.publicDir ?? projectConfig.publicDir ?? 'public'
   const headConfigDefault = projectConfig.app?.head || {}
+  const colorModeConfig = projectConfig.app?.colorMode
   const routerContainer: string = projectConfig.router?.container || 'main'
 
   // ── 1. Clean output directory ──
@@ -229,7 +231,16 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
       // Uses the head config loaded once at the top of the build (from stx.config.ts).
       compiled.html = ensureDocumentShell(compiled.html, headConfigDefault, {
         bodyScripts: [`<script src="/__stx/${routerAsset.filename}"></script>`],
+        ...(colorModeConfig && { colorMode: colorModeConfig }),
       })
+
+      // A page that brought its own <html><head> makes ensureDocumentShell a
+      // no-op, so the boot script has to be inserted into that head directly.
+      // Idempotent, so this is a no-op when the shell above already placed it.
+      // Statically built pages are where a theme flash is most visible — there
+      // is no dev server to blame it on. (#1794)
+      if (colorModeConfig)
+        compiled.html = injectColorModeBootScript(compiled.html, colorModeConfig)
 
       // Relocate data-stx scope attribute to <body>. processScriptSetup attaches
       // the scope to the first non-meta element at compile time because <body>

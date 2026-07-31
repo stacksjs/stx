@@ -998,6 +998,55 @@ const colorMode = useColorMode()
 | `toggle()` | `() => void` | Toggle between light and dark |
 | `subscribe(fn)` | `(fn: (mode, preference) => void) => () => void` | Listen to changes |
 
+#### Applying the theme before first paint
+
+`useColorMode` runs as part of the client runtime — it reads storage after the
+bundle has loaded and hydration has begun. That is too late to decide the
+theme: every cold load paints the default theme first and then corrects it, so
+any user whose stored preference differs from the default sees a flash.
+
+Declare `app.colorMode` in `stx.config.ts` and stx inlines a small
+render-blocking script at the top of `<head>`, above the stylesheets, which
+stamps the root element before the browser paints:
+
+```ts
+// stx.config.ts
+export default {
+  app: {
+    colorMode: { storageKey: 'theme', attribute: 'data-theme' },
+  },
+}
+```
+
+It takes the same options as the composable, and publishes them to the client —
+so a bare `useColorMode()` picks up the configured storage key and attribute
+instead of repeating them at the call site:
+
+```html
+<script>
+// Already agrees with what the boot script applied pre-paint.
+const colorMode = useColorMode()
+</script>
+```
+
+This replaces the hand-written theme-bootstrap snippet apps otherwise inline in
+their layout, and removes the risk of that snippet drifting from the
+composable's configuration.
+
+Notes:
+
+- The boot script mirrors `useColorMode` exactly, including the current
+  either/or behaviour of `attribute` vs `darkClass` and the `light | dark |
+  auto` storage vocabulary (`'system'` is not accepted). Mirroring matters more
+  than being lenient: if the two disagreed, hydration would undo what the boot
+  script applied and the flash would come back.
+- Storage failures degrade to `initialMode` rather than throwing. The script
+  sits above the application shell, where an uncaught error would block the
+  rest of the document.
+- Injection is idempotent and applies to auto-generated shells, layouts that
+  render their own `<head>`, and statically built pages alike. Pages with no
+  `<head>` (SPA fragments) are skipped.
+
 ### useDark
 
 ```typescript

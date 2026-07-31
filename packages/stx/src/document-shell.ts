@@ -9,7 +9,9 @@
  * @module document-shell
  */
 
+import type { ColorModeBootConfig } from './color-mode-boot'
 import type { AppHeadConfig } from './types/config-types'
+import { generateColorModeBootScript } from './color-mode-boot'
 
 /**
  * Inline x-cloak rule shipped in the SSR <head> (stacksjs/stx#1736).
@@ -142,6 +144,13 @@ export function generateDocumentShell(
     /** Stacks to inject (from @push directives) */
     headStack?: string
     bodyStack?: string
+    /**
+     * Pre-paint color-mode config (stacksjs/stx#1794). When present, the boot
+     * script is emitted at the very top of <head> — above the stylesheets,
+     * because a stylesheet link ahead of it would block its execution and
+     * delay the one thing it exists to do early.
+     */
+    colorMode?: ColorModeBootConfig
   } = {},
 ): string {
   const {
@@ -200,6 +209,9 @@ export function generateDocumentShell(
 
   const headParts = [
     metaTags,
+    // Directly after <meta charset>, ahead of every stylesheet: the theme has
+    // to be on the root element before first paint, and CSS blocks scripts.
+    options.colorMode ? `  ${generateColorModeBootScript(options.colorMode)}` : '',
     `  <title>${pageTitle}</title>`,
     `  ${CLOAK_STYLE}`,
     linkTags,

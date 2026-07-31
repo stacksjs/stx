@@ -233,11 +233,38 @@ declare function useWebSocket(_url: string, _options?: {
 // Color mode
 // ============================================================================
 
-declare function useColorMode(): {
-  mode: StxSignal<'light' | 'dark' | 'auto'>
-  setMode: (mode: 'light' | 'dark' | 'auto') => void
+interface StxColorModeOptions {
+  /** localStorage key holding the preference. @default 'stx-color-mode' */
+  storageKey?: string
+  /** Mode used when nothing valid is stored. @default 'auto' */
+  initialMode?: 'light' | 'dark' | 'auto'
+  /** Class applied to `<html>` when dark. @default 'dark' */
+  darkClass?: string
+  /** Attribute applied to `<html>` INSTEAD of the class, e.g. 'data-theme'. */
+  attribute?: string
+  /** Suppress CSS transitions across a mode switch. @default true */
+  disableTransitions?: boolean
 }
-declare function useDark(): StxSignal<boolean>
+
+/**
+ * Omitting the options picks up whatever `app.colorMode` in `stx.config.ts`
+ * published via the pre-paint boot script (stacksjs/stx#1794), so the storage
+ * key and attribute don't have to be repeated at the call site.
+ */
+declare function useColorMode(_options?: StxColorModeOptions): {
+  /** Current resolved mode. */
+  readonly mode: 'light' | 'dark'
+  /** User preference, which may be 'auto'. */
+  readonly preference: 'light' | 'dark' | 'auto'
+  readonly isDark: boolean
+  set: (mode: 'light' | 'dark' | 'auto') => void
+  toggle: () => void
+  subscribe: (fn: (mode: 'light' | 'dark', preference: 'light' | 'dark' | 'auto') => void) => () => void
+}
+declare function useDark(_options?: StxColorModeOptions): StxSignal<boolean> & {
+  readonly isDark: boolean
+  toggle: () => void
+}
 declare function useMediaQuery(query: string): StxSignal<boolean> & {
   readonly matches: boolean
   readonly value: boolean
@@ -500,6 +527,7 @@ interface StxRuntimeRegistry {
   useFocus: typeof useFocus
   useAsync: typeof useAsync
   useLocalStorage: typeof useLocalStorage
+  useSessionStorage: typeof useSessionStorage
   useEventListener: typeof useEventListener
   useScrollLock: typeof useScrollLock
   useWebSocket: typeof useWebSocket

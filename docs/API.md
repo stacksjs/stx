@@ -5628,6 +5628,28 @@ console.log(preference) // 'light', 'dark', or 'auto' (user choice)
 | `attribute` | `string` | — | Use data attribute instead of class (e.g. `'data-theme'`) |
 | `disableTransitions` | `boolean` | `true` | Prevent CSS transition flash during switch |
 
+#### Pre-paint bootstrap
+
+`useColorMode` is part of the client runtime, so on its own it can only apply
+the theme *after* hydration — every cold load paints the default theme first
+and corrects it, flashing for anyone whose stored preference differs.
+
+Declare `app.colorMode` in `stx.config.ts` and stx inlines a render-blocking
+script at the top of `<head>` that stamps the root element before first paint:
+
+```ts
+// stx.config.ts
+export default {
+  app: {
+    colorMode: { storageKey: 'theme', attribute: 'data-theme' },
+  },
+}
+```
+
+It takes the same options and publishes them to the client, so a bare
+`useColorMode()` picks them up rather than repeating them at the call site.
+Full details in [composables-ref](/api/composables-ref#applying-the-theme-before-first-paint).
+
 ### useDark(options?)
 
 Convenience wrapper around `useColorMode` — just `isDark`, `toggle`, and `set`.

@@ -52,6 +52,7 @@ import { processServerBindings } from './server-bindings'
 import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
+import { injectColorModeBootScript } from './color-mode-boot'
 import { ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags } from './document-shell'
 
 // Extracted modules
@@ -465,7 +466,9 @@ export async function processDirectives(
         // CONFIG head (not the merged runtime head — renderHead below handles
         // useHead) into the existing head, idempotently. See stacksjs/stx#1765.
         const alreadyShelled = hasDocumentShell(result)
-        result = ensureDocumentShell(result, headConfig)
+        result = ensureDocumentShell(result, headConfig, {
+          ...((options as any).app?.colorMode && { colorMode: (options as any).app.colorMode }),
+        })
         if (alreadyShelled)
           result = injectConfigHeadTags(result, baseHeadConfig)
 
@@ -499,6 +502,14 @@ export async function processDirectives(
       // that don't go through generateDocumentShell.
       if (isTopLevel) {
         result = injectCloakStyle(result)
+        // Same reasoning for the color-mode boot script (#1794), one step
+        // earlier in the head: the theme has to be on the root element before
+        // first paint, which the post-hydration useColorMode cannot do. Also
+        // idempotent — a no-op on auto-shell pages, where generateDocumentShell
+        // already positioned it, and on any page when app.colorMode is unset.
+        const colorModeConfig = (options as any).app?.colorMode
+        if (colorModeConfig)
+          result = injectColorModeBootScript(result, colorModeConfig)
         result = placeSignalsRuntimeBeforeScripts(result)
       }
 

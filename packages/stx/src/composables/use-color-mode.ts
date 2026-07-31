@@ -65,11 +65,19 @@ export interface DarkRef {
  * ```
  */
 export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
+  // The pre-paint boot script (stacksjs/stx#1794) publishes the app's
+  // configured options on this global. Reading them makes a bare
+  // useColorMode() agree with whatever already landed on <html> before first
+  // paint — without this the composable would fall back to its own defaults,
+  // read a different storage key, and undo the theme on hydration.
+  // eslint-disable-next-line ts/no-explicit-any
+  const boot = (typeof window !== 'undefined' ? (window as any).__STX_COLOR_MODE__ : null) as Partial<ColorModeOptions> | null
+
   const {
-    storageKey = 'stx-color-mode',
-    initialMode = 'auto',
-    darkClass = 'dark',
-    attribute,
+    storageKey = boot?.storageKey ?? 'stx-color-mode',
+    initialMode = boot?.initialMode ?? 'auto',
+    darkClass = boot?.darkClass ?? 'dark',
+    attribute = boot?.attribute,
     disableTransitions = true,
   } = options
 

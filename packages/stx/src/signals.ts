@@ -4453,10 +4453,18 @@ else if (timer === null) {
 
   function useColorMode(options) {
     options = options || {};
-    var storageKey = options.storageKey || 'stx-color-mode';
-    var initialMode = options.initialMode || 'auto';
-    var darkClass = options.darkClass || 'dark';
-    var attribute = options.attribute || null;
+    // The pre-paint boot script (stacksjs/stx#1794) publishes the app's
+    // configured options here. Reading them makes a bare useColorMode() agree
+    // with whatever already landed on <html> before first paint — without this
+    // the composable would fall back to its own defaults, read a different
+    // storage key, and undo the theme on hydration, reintroducing the very
+    // flash the boot script exists to prevent.
+    var boot = null;
+    try { boot = window.__STX_COLOR_MODE__ || null; } catch (e) {}
+    var storageKey = options.storageKey || (boot && boot.storageKey) || 'stx-color-mode';
+    var initialMode = options.initialMode || (boot && boot.initialMode) || 'auto';
+    var darkClass = options.darkClass || (boot && boot.darkClass) || 'dark';
+    var attribute = options.attribute || (boot && boot.attribute) || null;
     var disableTransitions = options.disableTransitions !== false;
     var preference = initialMode;
     var resolved = 'light';

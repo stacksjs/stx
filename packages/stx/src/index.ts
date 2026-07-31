@@ -57,6 +57,7 @@ export * from './broadcasting'
 export * from './caching'
 export * from './components'
 export * from './component-library'
+export * from './color-mode-boot'
 export * from './config'
 // craft-bridge, craft-compiler, craft-components, craft-ssr, native-build
 // moved to stx/craft

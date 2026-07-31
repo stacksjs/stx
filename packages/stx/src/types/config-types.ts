@@ -2,6 +2,7 @@
  * Configuration Types for stx
  */
 
+import type { ColorModeBootConfig } from '../color-mode-boot'
 import type { CustomDirective, Middleware } from './directive-types'
 import type { MiddlewareMode } from '../route-middleware'
 import type { ComponentConfig, DocGeneratorConfig, WebComponentConfig } from './component-types'
@@ -471,6 +472,31 @@ export interface StxConfig {
    */
   app?: {
     head?: AppHeadConfig
+    /**
+     * Pre-paint color mode (stacksjs/stx#1794).
+     *
+     * Declaring this makes stx inline a small render-blocking script as the
+     * first thing in `<head>`, which reads the persisted preference and stamps
+     * the root element before the browser paints. Without it, `useColorMode`
+     * can only apply the theme after hydration, which flashes the wrong theme
+     * on every cold load for users whose stored preference differs from the
+     * default.
+     *
+     * The options are the same ones `useColorMode` takes, and the boot script
+     * publishes them to the client — so `useColorMode()` with no arguments
+     * picks up the configured key and attribute instead of repeating them.
+     *
+     * @example
+     * ```ts
+     * // stx.config.ts
+     * export default {
+     *   app: {
+     *     colorMode: { storageKey: 'theme', attribute: 'data-theme' },
+     *   },
+     * }
+     * ```
+     */
+    colorMode?: ColorModeBootConfig
     /**
      * Defaults for the native dev window (`stx dev --native`).
      * Only used when the user passes `--native`. Sensible per-app sizes
