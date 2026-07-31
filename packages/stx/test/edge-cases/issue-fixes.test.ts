@@ -922,7 +922,7 @@ describe('#1697 — layout scope rebind walks document.body', () => {
   })
 
   it('DOMContentLoaded path also marks scopes mounted (so cross-nav doesn\'t re-fire onMount)', () => {
-    const dclIdx = runtime.indexOf("document.addEventListener('DOMContentLoaded'")
+    const dclIdx = runtime.indexOf('const stxDomReadyHandler = () => {')
     expect(dclIdx).toBeGreaterThan(-1)
     const dclSection = runtime.slice(dclIdx, dclIdx + 8000)
     expect(dclSection).toMatch(/!\s*scopeVars\.__mounted/)
@@ -995,7 +995,10 @@ function selectRow(row) {}
       expect(output).toMatch(/<div[^>]+data-stx-parent-bindings="rows"[^>]+:rows="rows"/)
       expect(output).not.toMatch(/<script[^>]*@select=/)
       expect(output).not.toMatch(/<script[^>]*:rows=/)
-      expect(output).toMatch(/<div[^>]+data-stx-scope="(stx_reactive_table_[^"]+)"[^>]*>[\s\S]*?<script data-stx-scoped[^>]*>[\s\S]*?document\.querySelector\('\[data-stx-scope="\1"\]'\)/)
+      const scopeMatch = output.match(/<div[^>]+data-stx-scope="(stx_reactive_table_[^"]+)"[^>]*>/)
+      expect(scopeMatch).not.toBeNull()
+      expect(output).toContain(`document.querySelector('[data-stx-scope="' + __scopeId + '"]')`)
+      expect(output).toContain(`})("${scopeMatch![1]}");`)
       expect(output).toContain('window.__STX_CURRENT_ELEMENT__ = __previousCurrentElement')
     }
     finally {
