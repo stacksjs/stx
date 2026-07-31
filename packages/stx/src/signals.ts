@@ -114,9 +114,13 @@ console.log('[stx] entering IIFE');
 
   // Inject x-cloak CSS to prevent FOUC (Flash of Unstyled Content)
   // Elements with x-cloak are hidden until the runtime removes the attribute after mount
-  var cloakStyle = document.createElement('style');
-  cloakStyle.textContent = '[x-cloak] { display: none !important; }';
-  document.head.appendChild(cloakStyle);
+  var cloakStyle = document.getElementById ? document.getElementById('stx-cloak-style') : null;
+  if (!cloakStyle) {
+    cloakStyle = document.createElement('style');
+    cloakStyle.id = 'stx-cloak-style';
+    cloakStyle.textContent = '[x-cloak] { display: none !important; }';
+    document.head.appendChild(cloakStyle);
+  }
 
   // ==========================================================================
   // Reactive Core
@@ -6054,8 +6058,13 @@ else {
   // Auto-initialization
   // ==========================================================================
 
-  console.log('[stx] registering DOMContentLoaded handler');
-  document.addEventListener('DOMContentLoaded', () => {
+  // A dev runtime may be evaluated again by HMR, an embed, or a test harness.
+  // Replace the previous listener so only the latest runtime closure can own
+  // componentScope and reactive subscriptions.
+  if (window.__stxDomReadyHandler) {
+    document.removeEventListener('DOMContentLoaded', window.__stxDomReadyHandler);
+  }
+  const stxDomReadyHandler = () => {
     console.log('[stx] DOMContentLoaded fired — processing scopes');
     // Track which scoped elements have been processed
     const processedScopes = new Set();
@@ -6276,7 +6285,10 @@ catch (e) {
         }
       }
     });
-  });
+  };
+  window.__stxDomReadyHandler = stxDomReadyHandler;
+  console.log('[stx] registering DOMContentLoaded handler');
+  document.addEventListener('DOMContentLoaded', stxDomReadyHandler);
 
   // ==========================================================================
   // Scope Disposal
@@ -6441,10 +6453,15 @@ catch (e) { console.warn('[stx] destroy hook error:', e); }
   // Re-initialize components after SPA content swap.
   // Debounce to handle rapid re-fires (HMR triggers navigate which triggers stx:load again).
   var _stxLoadTimer = null;
-  window.addEventListener('stx:load', function() {
+  if (window.__stxLoadHandler) {
+    window.removeEventListener('stx:load', window.__stxLoadHandler);
+  }
+  function stxLoadHandler() {
     if (_stxLoadTimer) { clearTimeout(_stxLoadTimer); }
     _stxLoadTimer = setTimeout(_handleStxLoad, 5);
-  });
+  }
+  window.__stxLoadHandler = stxLoadHandler;
+  window.addEventListener('stx:load', stxLoadHandler);
   function _handleStxLoad() {
     _stxLoadTimer = null;
     console.log('[stx:load] START. mountQueue:', mountQueue.length, '_latestSetup:', !!window.stx._latestSetup);

@@ -12,6 +12,10 @@ describe('component caller scope ownership', () => {
     installNodeConstants()
     // eslint-disable-next-line no-new-func
     new Function(generateSignalsRuntimeDev())()
+    // Re-evaluation is valid under HMR and embedded test harnesses. The latest
+    // runtime must replace the previous DOM and router event listeners.
+    // eslint-disable-next-line no-new-func
+    new Function(generateSignalsRuntimeDev())()
   })
 
   it('keeps a forwarded prop bound to the parent when the child uses the same name', async () => {
