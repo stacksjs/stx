@@ -17,8 +17,25 @@
  *   - Loading indicator bar
  *   - Configurable via window.STX_ROUTER_OPTIONS or window.__stxRouterConfig
  */
+let cachedRouterScript: string | undefined
+
+function minifyRouterScript(source: string): string {
+  try {
+    const transpiler = new Bun.Transpiler({ loader: 'js', minifyWhitespace: true })
+    return transpiler.transformSync(source)
+      .replace(/\}(var |let |const |function )/g, '};$1')
+      .trim()
+  }
+  catch {
+    return source
+  }
+}
+
 export function getRouterScript(): string {
-  return `
+  if (cachedRouterScript)
+    return cachedRouterScript
+
+  const source = `
 ;(function(){
   'use strict';
   var ROUTER_REV=3;
@@ -1060,4 +1077,6 @@ else {
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 `
+  cachedRouterScript = minifyRouterScript(source)
+  return cachedRouterScript
 }

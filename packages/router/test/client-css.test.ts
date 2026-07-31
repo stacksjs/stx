@@ -47,7 +47,7 @@ describe('getRouterScript — injected CSS defaults', () => {
   it('guards the view-transition CSS behind viewTransitions:true AND browser support', () => {
     // The runtime check prevents dead CSS on browsers without the API,
     // and respects opt-out via { viewTransitions: false }.
-    expect(script).toMatch(/o\.viewTransitions\s*&&\s*['"]startViewTransition['"]\s+in\s+document/)
+    expect(script).toMatch(/o\.viewTransitions\s*&&\s*['"]startViewTransition['"]\s*in\s*document/)
   })
 
   it('observes View Transition promise rejections', () => {
@@ -68,6 +68,6 @@ describe('getRouterScript — injected CSS defaults', () => {
   })
 
   it('ID-guards the injected style tag so SPA navs don\'t duplicate it', () => {
-    expect(script).toContain("getElementById('stx-r-css')")
+    expect(script).toMatch(/getElementById\(['"]stx-r-css['"]\)/)
   })
 })
