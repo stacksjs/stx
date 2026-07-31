@@ -16,8 +16,12 @@ beforeAll(async () => {
   dir = await mkdtemp(path.join(tmpdir(), 'stx-shared-assets-'))
 
   await Bun.write(
+    path.join(dir, 'components', 'FactoryProbe.stx'),
+    '<script client>const factoryProbe = state(0)</script><span x-text="factoryProbe"></span>',
+  )
+  await Bun.write(
     path.join(dir, 'views', 'index.stx'),
-    '<script>const count = state(0)</script><main class="flex">{{ count() }}<script data-stx-scoped client>window.__fragmentProbeRuns = (window.__fragmentProbeRuns || 0) + 1</script></main>',
+    '<script>const count = state(0)</script><main class="flex">{{ count() }}<FactoryProbe /><FactoryProbe /><script data-stx-scoped client>window.__fragmentProbeRuns = (window.__fragmentProbeRuns || 0) + 1</script></main>',
   )
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
@@ -117,5 +121,20 @@ describe('serve shared STX assets', () => {
     expect(response.headers.get('x-stx-fragment')).toBe('true')
     expect(html).toContain('__fragmentProbeRuns')
     expect(uniqueScripts.size).toBe(scripts.length)
+  })
+
+  it('places pooled component factories before their fragment instances', async () => {
+    const response = await fetch(BASE, {
+      headers: { 'X-STX-Router': 'true' },
+    })
+    const html = await response.text()
+    const factoryPreludeIndex = html.indexOf('data-stx-component-factories')
+    const firstInstanceIndex = html.indexOf('window.__stxComponentFactories[')
+
+    expect(response.headers.get('x-stx-fragment')).toBe('true')
+    expect(factoryPreludeIndex).toBeGreaterThanOrEqual(0)
+    expect(firstInstanceIndex).toBeGreaterThan(factoryPreludeIndex)
+    expect((html.match(/const factoryProbe = state\(0\);/g) || [])).toHaveLength(1)
+    expect((html.match(/window\.__stxComponentFactories\[[^\n]+/g) || [])).toHaveLength(2)
   })
 })

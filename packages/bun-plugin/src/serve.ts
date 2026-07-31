@@ -2730,7 +2730,17 @@ export async function serve(options: ServeOptions): Promise<void> {
 
                   // Clear stale _latestSetup from previous page, then append new page scripts
                   const clearStale = '<script data-stx-page>if(window.stx)window.stx._latestSetup=null;</script>'
-                  fragment = `${headStyles.join('\n')}\n${fragment}\n${clearStale}\n${pageSetupScripts.join('\n')}`
+                  const componentFactoryScripts = pageSetupScripts.filter(script =>
+                    script.includes('data-stx-component-factories'),
+                  )
+                  const trailingPageScripts = pageSetupScripts.filter(script =>
+                    !script.includes('data-stx-component-factories'),
+                  )
+                  // Component instance calls can live inside <main>, while their
+                  // request-scoped factory prelude is normally emitted in the
+                  // document head. Keep the prelude ahead of fragment content so
+                  // calls never run before the shared factory is registered.
+                  fragment = `${headStyles.join('\n')}\n${componentFactoryScripts.join('\n')}\n${fragment}\n${clearStale}\n${trailingPageScripts.join('\n')}`
 
                   // Carry the page <title> (from the full page, before it was
                   // reduced to the <main> fragment) so the SPA router can keep
