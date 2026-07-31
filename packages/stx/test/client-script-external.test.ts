@@ -69,6 +69,28 @@ import type {
     expect(output).toMatch(/var \{ (?:onMount, state|state, onMount) \} = window\.stx \|\| window/)
   })
 
+  it('preserves renamed runtime imports emitted by a client bundle', async () => {
+    const output = await processClientScript(
+      `import { ref as ref91 } from '@stacksjs/stx'\nconst user = ref91(null)`,
+    )
+
+    expect(output).toContain('var { ref } = window.stx || window')
+    expect(output).toContain('var ref91 = ref;')
+    expect(output).toContain('const user = ref91(null)')
+  })
+
+  it('does not auto-import locally declared browser helpers', async () => {
+    const output = await processClientScript(`
+function retry(callback) {
+  return callback()
+}
+const result = retry(() => 'ready')
+`)
+
+    expect(output).not.toContain('window.StacksBrowser')
+    expect(output).toContain('function retry(callback)')
+  })
+
   it('auto-imports browser utilities and Stacks-only composables as bundle inputs', () => {
     const output = injectBrowserCoreAutoImports(`
 const load = debounce(() => {}, 250)

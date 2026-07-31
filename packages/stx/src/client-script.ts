@@ -512,6 +512,23 @@ interface AutoImportResult {
   browserImports: string[]
 }
 
+function collectLocalBindings(code: string): Set<string> {
+  const bindings = new Set<string>()
+
+  for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g))
+    bindings.add(match[1])
+
+  for (const match of code.matchAll(/\b(?:const|let|var)\s*\{([^}]*)\}/g)) {
+    for (const binding of match[1].split(',')) {
+      const localName = binding.trim().split(/[:=]/).pop()?.trim()
+      if (localName && /^[A-Za-z_$][\w$]*$/.test(localName))
+        bindings.add(localName)
+    }
+  }
+
+  return bindings
+}
+
 /**
  * Transform auto-imports from 'stx' and '@stacksjs/browser'
  *
@@ -556,28 +573,47 @@ function transformAutoImports(code: string): AutoImportResult {
     }
 
     // Parse imported names
-    const importedNames = imports
-      .split(',')
-      .map((s: string) => s.trim().split(/\s+as\s+/)[0]) // Get original name
-      .filter((s: string) => s.length > 0)
+    const aliases: string[] = []
+    for (const rawSpecifier of imports.split(',')) {
+      const specifier = rawSpecifier.trim()
+      if (!specifier || specifier.startsWith('type '))
+        continue
 
-    importedNames.forEach(name => {
-      existingImports.add(name)
+      const aliasMatch = specifier.match(/^([A-Za-z_$][\w$]*)(?:\s+as\s+([A-Za-z_$][\w$]*))?$/)
+      if (!aliasMatch)
+        continue
+
+      const importedName = aliasMatch[1]
+      const localName = aliasMatch[2] || importedName
+      existingImports.add(importedName)
+      existingImports.add(localName)
       if (source === 'stx' || source === '@stacksjs/stx') {
-        usedStxImports.add(name)
+        usedStxImports.add(importedName)
       }
-else {
-        usedBrowserImports.add(name)
+      else {
+        usedBrowserImports.add(importedName)
       }
-    })
 
-    // Remove the import statement - will be re-added with all needed imports
-    transformedCode = transformedCode.replace(match[0], '// [auto-import processed]')
+      if (localName !== importedName)
+        aliases.push(`${localName} = ${importedName}`)
+    }
+
+    // External imports produced by Bun can be renamed to avoid a collision
+    // inside the bundle, for example `ref as ref91`. The generated bundle
+    // calls the renamed binding, so stripping the whole import loses the
+    // alias and crashes hydration. Bind aliases to the canonical runtime
+    // symbol after the wrapper destructures it from window.stx.
+    const replacement = aliases.length > 0
+      ? `var ${aliases.join(', ')}; /* [auto-import processed] */`
+      : '// [auto-import processed]'
+    transformedCode = transformedCode.replace(match[0], replacement)
   }
+
+  const locallyDeclared = collectLocalBindings(transformedCode)
 
   // Detect usage of auto-importable symbols that weren't explicitly imported
   for (const symbol of STX_AUTO_IMPORTS) {
-    if (existingImports.has(symbol)) continue
+    if (existingImports.has(symbol) || locallyDeclared.has(symbol)) continue
     // Check if symbol is used in code (as identifier boundary)
     const symbolRegex = new RegExp(`\\b${symbol}\\s*\\(`, 'g')
     if (symbolRegex.test(transformedCode)) {
@@ -587,7 +623,7 @@ else {
 
   // Check core browser utilities
   for (const symbol of BROWSER_CORE_IMPORTS) {
-    if (existingImports.has(symbol)) continue
+    if (existingImports.has(symbol) || locallyDeclared.has(symbol)) continue
     const symbolRegex = new RegExp(`\\b${symbol}\\b`, 'g')
     if (symbolRegex.test(transformedCode)) {
       usedBrowserImports.add(symbol)
@@ -597,7 +633,7 @@ else {
   // Dynamically detect app-specific models (PascalCase with query methods)
   const detectedModels = detectModelUsage(transformedCode)
   for (const model of detectedModels) {
-    if (!existingImports.has(model)) {
+    if (!existingImports.has(model) && !locallyDeclared.has(model)) {
       usedBrowserImports.add(model)
     }
   }
