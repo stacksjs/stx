@@ -2,10 +2,32 @@
  * Tests for SFC <style scoped> processing
  */
 import { describe, expect, it } from 'bun:test'
-import { processScopedStyles } from '../../src/style-scoping'
+import { dedupeScopedStyles, processScopedStyles } from '../../src/style-scoping'
 import { processDirectives } from '../../src/process'
 
 describe('Style Scoping', () => {
+  describe('dedupeScopedStyles', () => {
+    it('keeps one stylesheet for repeated component instances', () => {
+      const style = '<style data-stx-scoped="stx-card">.card { color: red; }</style>'
+      const html = `<article>First</article>${style}<article>Second</article>${style}`
+
+      const result = dedupeScopedStyles(html)
+
+      expect(result.match(/data-stx-scoped="stx-card"/g)).toHaveLength(1)
+      expect(result).toContain('<article>First</article>')
+      expect(result).toContain('<article>Second</article>')
+    })
+
+    it('preserves distinct scoped styles', () => {
+      const html = [
+        '<style data-stx-scoped="stx-card">.card { color: red; }</style>',
+        '<style data-stx-scoped="stx-panel">.panel { color: blue; }</style>',
+      ].join('')
+
+      expect(dedupeScopedStyles(html)).toBe(html)
+    })
+  })
+
   describe('processScopedStyles', () => {
     it('should pass through templates without <style scoped>', () => {
       const html = '<div class="foo">Hello</div><style>.foo { color: red; }</style>'

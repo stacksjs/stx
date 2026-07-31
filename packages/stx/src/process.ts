@@ -51,7 +51,7 @@ import { runComposers } from './view-composers'
 import { processServerBindings } from './server-bindings'
 import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
-import { processScopedStyles } from './style-scoping'
+import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
 import { ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags } from './document-shell'
 
 // Extracted modules
@@ -560,6 +560,10 @@ export async function processDirectives(
       // the outer render, and layout-only utility classes never get scanned.
       if (isTopLevel && context.__stx_inject_css !== false) {
         result = await injectCrosswindCSS(result)
+      }
+
+      if (isTopLevel) {
+        result = dedupeScopedStyles(result)
       }
 
       // Restore @@ escape placeholders to literal @ AFTER all directive processing
