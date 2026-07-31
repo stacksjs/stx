@@ -2610,6 +2610,8 @@ export async function serve(options: ServeOptions): Promise<void> {
 
                   let fragment = content
                   let containerAttrs = ''
+                  let mainContentStart = -1
+                  let mainContentEnd = -1
 
                   // Extract styles from <head> AND body (Crosswind CSS, page styles, @push('styles'))
                   // The router's doFragSwap injects these into <head> during SPA swap
@@ -2678,6 +2680,8 @@ export async function serve(options: ServeOptions): Promise<void> {
 
                     // Extract only the <main> inner content (not sidebar, header, or layout)
                     const mainStart = mainOpenMatch.index! + mainOpenMatch[0].length
+                    mainContentStart = mainStart
+                    mainContentEnd = mainCloseIdx
                     fragment = fragment.slice(mainStart, mainCloseIdx).trim()
                   }
                   // Extract ALL page-specific scripts from the full page response.
@@ -2686,10 +2690,21 @@ export async function serve(options: ServeOptions): Promise<void> {
                   // the dynamic route params, and the reactive bridge (initScope calls).
                   // Excludes: signals runtime IIFE, x-element runtime, router script.
                   const pageSetupScripts: string[] = []
+                  const pageSetupScriptOffsets = new Set<number>()
+                  const appendOutsideMainScript = (match: RegExpExecArray): void => {
+                    const offset = match.index
+                    const insideMain = mainContentStart !== -1
+                      && offset >= mainContentStart
+                      && offset < mainContentEnd
+                    if (insideMain || pageSetupScriptOffsets.has(offset))
+                      return
+                    pageSetupScriptOffsets.add(offset)
+                    pageSetupScripts.push(match[0])
+                  }
                   const routeParamsRe = /<script\b[^>]*data-stx-route-params[^>]*>[\s\S]*?<\/script>/gi
                   let setupMatch: RegExpExecArray | null
                   while ((setupMatch = routeParamsRe.exec(content)) !== null) {
-                    pageSetupScripts.push(setupMatch[0])
+                    appendOutsideMainScript(setupMatch)
                   }
                   const allScriptRe = /<script\b[^>]*data-stx-scoped[^>]*>[\s\S]*?<\/script>/gi
                   while ((setupMatch = allScriptRe.exec(content)) !== null) {
@@ -2698,13 +2713,13 @@ export async function serve(options: ServeOptions): Promise<void> {
                     if (scriptContent.includes('__stx_early_mounts')) continue
                     // Skip the reactive bridge runtime definition (window.__stx_reactive)
                     if (scriptContent.includes('data-stx-reactive') && scriptContent.includes('window.__stx_reactive')) continue
-                    pageSetupScripts.push(scriptContent)
+                    appendOutsideMainScript(setupMatch)
                   }
                   // Also include reactive bridge initScope calls (they're in a separate script tag)
                   // eslint-disable-next-line no-super-linear-backtracking, regexp/no-super-linear-backtracking
                   const bridgeInitRe = /<script\b[^>]*data-stx-reactive[^>]*>(?![\s\S]*window\.__stx_reactive)[\s\S]*?<\/script>/gi
                   while ((setupMatch = bridgeInitRe.exec(content)) !== null) {
-                    pageSetupScripts.push(setupMatch[0])
+                    appendOutsideMainScript(setupMatch)
                   }
 
                   // Strip the signals runtime IIFE — keep only page-specific scripts

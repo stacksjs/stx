@@ -17,7 +17,7 @@ beforeAll(async () => {
 
   await Bun.write(
     path.join(dir, 'views', 'index.stx'),
-    '<script>const count = state(0)</script><main class="flex">{{ count() }}</main>',
+    '<script>const count = state(0)</script><main class="flex">{{ count() }}<script data-stx-scoped client>window.__fragmentProbeRuns = (window.__fragmentProbeRuns || 0) + 1</script></main>',
   )
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
@@ -102,5 +102,20 @@ describe('serve shared STX assets', () => {
     expect(response.headers.get('content-type')).toBe('text/css; charset=utf-8')
     expect(response.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
     expect(await response.text()).toContain('display: flex')
+  })
+
+  it('does not append scripts already present inside a page fragment', async () => {
+    const response = await fetch(BASE, {
+      headers: { 'X-STX-Router': 'true' },
+    })
+    const html = await response.text()
+    const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+      .map(match => match[1].trim())
+      .filter(Boolean)
+    const uniqueScripts = new Set(scripts)
+
+    expect(response.headers.get('x-stx-fragment')).toBe('true')
+    expect(html).toContain('__fragmentProbeRuns')
+    expect(uniqueScripts.size).toBe(scripts.length)
   })
 })
