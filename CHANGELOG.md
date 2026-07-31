@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.140...v0.2.141)
+
+## 🚀 Features
+
+- **server**: prewarm rendered route cache ([3e58f24](https://github.com/stacksjs/stx/commit/3e58f24)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **server**: add safe render caching ([92c5e56](https://github.com/stacksjs/stx/commit/92c5e56)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **compiler**: deduplicate cold lazy imports ([c5f04fb](https://github.com/stacksjs/stx/commit/c5f04fb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **bundler**: silence routine diagnostics ([4240508](https://github.com/stacksjs/stx/commit/4240508)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.141 ([7e7af0e](https://github.com/stacksjs/stx/commit/7e7af0e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.139...v0.2.140)
 
 ## 🐛 Bug Fixes
