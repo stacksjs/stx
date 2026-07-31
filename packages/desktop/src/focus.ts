@@ -24,6 +24,18 @@ import { hasBridge } from './_bridge'
  */
 export type FocusAuthorization = 'notDetermined' | 'restricted' | 'denied' | 'authorized' | 'unsupported'
 
+/**
+ * How the shortcut is run.
+ *
+ * `cli` execs `/usr/bin/shortcuts` and reports the shortcut's real exit
+ * status. `url` opens `shortcuts://run-shortcut`, the only route the App
+ * Sandbox permits — but it is fire-and-forget: LaunchServices confirms it
+ * handed the URL over, never that the shortcut ran. `auto` picks `url` under
+ * sandbox and `cli` everywhere else, so a real status is used where one
+ * exists.
+ */
+export type FocusStrategy = 'auto' | 'cli' | 'url'
+
 export interface FocusStatus {
   /** False when Focus isn't available on this platform. */
   supported: boolean
@@ -41,15 +53,32 @@ export interface FocusShortcutOptions {
   onShortcut?: string
   /** Shortcut to run when turning Focus off. */
   offShortcut?: string
+  /** Defaults to `auto`. */
+  strategy?: FocusStrategy
 }
 
 export interface FocusResult {
   ok: boolean
-  strategy?: 'shortcut'
-  /** Exit status of the Shortcuts CLI. */
+  strategy?: 'shortcut' | 'url'
+  /** Exit status of the Shortcuts CLI. Absent for the `url` strategy. */
   exitCode?: number
+  /**
+   * `url` strategy only: the request reached Shortcuts. Not a claim that the
+   * shortcut ran — that signal does not exist on this route.
+   */
+  dispatched?: boolean
   shortcut?: string
   error?: string
+}
+
+export interface FocusShortcutList {
+  /**
+   * False when enumeration was not possible — inside the App Sandbox, or off
+   * platform. An empty `shortcuts` then means *could not check*, not *none
+   * installed*, and must not send the user through setup again.
+   */
+  canList: boolean
+  shortcuts: string[]
 }
 
 export interface FocusAPI {
@@ -68,6 +97,8 @@ export interface FocusAPI {
   runShortcut: (name: string) => Promise<FocusResult>
   /** Every shortcut installed for the current user. Empty off-platform. */
   listShortcuts: () => Promise<string[]>
+  /** Same, plus whether enumeration was possible at all. */
+  listShortcutsResult: () => Promise<FocusShortcutList>
 }
 
 const UNSUPPORTED: FocusStatus = { supported: false, isFocused: null, authorization: 'unsupported' }
@@ -109,6 +140,12 @@ export const focus: FocusAPI = {
     if (!hasBridge('focus')) return []
     return await window.craft!.focus.listShortcuts()
   },
+
+  async listShortcutsResult() {
+    if (!hasBridge('focus')) return { canList: false, shortcuts: [] }
+    const r = await window.craft!.focus.listShortcutsResult()
+    return { canList: Boolean(r?.canList), shortcuts: (r?.shortcuts as string[]) || [] }
+  },
 }
 
 /**
@@ -121,5 +158,17 @@ export const focus: FocusAPI = {
 export async function hasFocusShortcuts(...names: string[]): Promise<boolean> {
   if (names.length === 0) return false
   const installed = new Set(await focus.listShortcuts())
+  return names.every(name => installed.has(name))
+}
+
+/**
+ * Like `hasFocusShortcuts`, but distinguishes "not installed" from "could not
+ * check". Prefer this anywhere the answer drives a setup prompt.
+ */
+export async function focusShortcutsReady(...names: string[]): Promise<boolean | 'unknown'> {
+  if (names.length === 0) return false
+  const { canList, shortcuts } = await focus.listShortcutsResult()
+  if (!canList) return 'unknown'
+  const installed = new Set(shortcuts)
   return names.every(name => installed.has(name))
 }

@@ -600,13 +600,15 @@ export type {
 // =============================================================================
 // Focus / Do Not Disturb
 // =============================================================================
-export { focus, hasFocusShortcuts } from './focus'
+export { focus, focusShortcutsReady, hasFocusShortcuts } from './focus'
 export type {
   FocusAPI,
   FocusAuthorization,
   FocusResult,
+  FocusShortcutList,
   FocusShortcutOptions,
   FocusStatus,
+  FocusStrategy,
 } from './focus'
 
 // =============================================================================
