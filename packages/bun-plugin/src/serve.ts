@@ -1615,6 +1615,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...(layoutsDir && { layoutsDir }),
       ...(partialsDir && { partialsDir }),
       autoShell: true,
+      buildMode: 'serve' as const,
       ssr: stxConfig.ssr ?? defaultStxConfig.ssr ?? true,
       app: stxConfig.app || {},
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
@@ -1933,6 +1934,7 @@ export async function serve(options: ServeOptions): Promise<void> {
       ...(layoutsDir && { layoutsDir }),
       ...(partialsDir && { partialsDir }),
       autoShell: true,
+      buildMode: 'serve' as const,
       ssr: stxConfig.ssr ?? defaultStxConfig.ssr ?? true,
       app: stxConfig.app || {},
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
@@ -2042,8 +2044,9 @@ export async function serve(options: ServeOptions): Promise<void> {
   }
 
   /** SPA router defaults for static sites — merged with site.config + stx.config. */
-  function getRouterInjectOptions(): { router: Record<string, unknown> } {
+  function getRouterInjectOptions(): { buildMode: 'serve', router: Record<string, unknown> } {
     return {
+      buildMode: 'serve',
       router: {
         interceptAllLinks: true,
         container: 'main',
@@ -2332,6 +2335,29 @@ export async function serve(options: ServeOptions): Promise<void> {
                     'X-Accel-Buffering': 'no', // proxies (rpx, nginx) — don't buffer
                   },
                 })
+              }
+
+              // Shared STX client assets. Serve mode references these from
+              // every rendered document instead of inlining the same runtime
+              // and router payload on every page. ETag revalidation keeps
+              // package changes correct across dev-server restarts.
+              if (path === '/_stx/runtime.js' || path === '/_stx/router.js') {
+                const stx = await stxModule
+                const content = path === '/_stx/runtime.js'
+                  ? await stx.getCachedSignalsRuntime(stxConfig.debug === true)
+                  : await stx.getCachedRouterScript()
+                const etag = `"${Bun.hash(content).toString(16)}"`
+                const headers = {
+                  'Content-Type': 'application/javascript; charset=utf-8',
+                  'Cache-Control': 'public, max-age=0, must-revalidate',
+                  'ETag': etag,
+                  ...corsHeaders,
+                }
+                if (req.headers.get('if-none-match') === etag)
+                  return new Response(null, { status: 304, headers })
+                if (req.method === 'HEAD')
+                  return new Response(null, { headers })
+                return new Response(content, { headers })
               }
 
               // Custom onRequest handler — short-circuits if a Response is

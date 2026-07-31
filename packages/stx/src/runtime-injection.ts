@@ -113,8 +113,24 @@ export async function injectSignalsRuntime(template: string, options: StxOptions
   // Don't inject if actual signals runtime is already present
   // Check for the runtime's unique signature (state, derived, effect assignment),
   // not just any 'window.stx =' which could be scope registration from includes
-  if (template.includes('window.stx.state') || template.includes('STX Signals Runtime')) {
+  if (template.includes('data-stx-runtime') || template.includes('window.stx.state') || template.includes('STX Signals Runtime')) {
     return template
+  }
+
+  // Serve mode: reference the shared runtime instead of repeating it in every
+  // rendered document. The Bun serve adapter owns this endpoint and returns
+  // the same cached runtime with ETag revalidation.
+  if (options.buildMode === 'serve') {
+    const runtimeScript = `<script data-stx-runtime src="/_stx/runtime.js"></script>`
+    const firstScriptInDoc = template.indexOf('<script')
+    if (firstScriptInDoc !== -1) {
+      return template.slice(0, firstScriptInDoc) + runtimeScript + '\n' + template.slice(firstScriptInDoc)
+    }
+    if (template.includes('</head>')) {
+      const idx = template.indexOf('</head>')
+      return template.slice(0, idx) + runtimeScript + '\n' + template.slice(idx)
+    }
+    return runtimeScript + '\n' + template
   }
 
   // Build mode: emit a placeholder reference instead of inlining the full runtime.
@@ -173,7 +189,7 @@ export async function injectRouterScript(template: string, options?: StxOptions)
   }
 
   // Don't inject if already present (check for the router's own guard, not config references)
-  if (template.includes('__stxRouter)return') || template.includes('__stxRouter=true')) {
+  if (template.includes('data-stx-router') || template.includes('__stxRouter)return') || template.includes('__stxRouter=true')) {
     return template
   }
 
@@ -201,8 +217,10 @@ export async function injectRouterScript(template: string, options?: StxOptions)
   // Build mode: emit a placeholder reference instead of inlining the full router script.
   const { getCachedRouterScript } = await import('./caching')
   const routerScript = options?.buildMode === 'compile'
-    ? `<script src="/__stx/router.__STX_HASH__.js"></script>`
-    : `<script>${await getCachedRouterScript()}</script>`
+    ? `<script data-stx-router src="/__stx/router.__STX_HASH__.js"></script>`
+    : options?.buildMode === 'serve'
+      ? `<script data-stx-router src="/_stx/router.js"></script>`
+      : `<script data-stx-router>${await getCachedRouterScript()}</script>`
 
   // Use string concatenation to avoid $-interpretation in .replace()
   const bodyCloseIdx = template.lastIndexOf('</body>')

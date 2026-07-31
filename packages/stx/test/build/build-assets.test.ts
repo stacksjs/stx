@@ -109,5 +109,17 @@ describe('Build Assets', () => {
       // Dev mode: inline runtime
       expect(result).not.toContain('/__stx/runtime.')
     })
+
+    it('should reference the shared runtime in serve mode', async () => {
+      const html = `<script>const count = state(0)</script><div>{{ count() }}</div>`
+      const result = await processDirectives(html, {}, '/test.stx', {
+        ...defaultConfig,
+        ...defaultOpts,
+        buildMode: 'serve',
+      }, new Set())
+
+      expect(result).toContain('<script data-stx-runtime src="/_stx/runtime.js"></script>')
+      expect(result).not.toContain('window.stx.state')
+    })
   })
 })

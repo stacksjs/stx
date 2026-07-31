@@ -706,7 +706,7 @@ export interface StxConfig {
    * Build mode for the processing pipeline.
    * - `undefined` (default): dev mode, inline everything per request
    * - `'compile'`: build mode, emit asset reference placeholders instead of inline code
-   * - `'serve'`: production serve mode, hydrate pre-compiled templates
+   * - `'serve'`: serve mode, reference shared runtime and router assets
    */
   buildMode?: 'compile' | 'serve' | 'spa'
 
