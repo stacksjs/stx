@@ -64,6 +64,7 @@ import { safeEvaluate } from './safe-evaluator'
 import { isProduction, isTest } from './env'
 import { warnUnbalancedTags } from './template-tag-balance'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
+import { initializeComponentClientFactories, injectComponentClientFactories } from './component-client-factories'
 
 // Re-export public API from extracted modules (preserves backwards compatibility)
 export { injectRouterScript } from './runtime-injection'
@@ -380,6 +381,8 @@ export async function processDirectives(
 
   // Track if this is the top-level call (not a recursive call from layout/include)
   const isTopLevel = !context.__stxProcessingDepth
+  if (isTopLevel)
+    initializeComponentClientFactories(context)
   if (!context.__stxProcessingDepth) {
     context.__stxProcessingDepth = 0
   }
@@ -1322,6 +1325,12 @@ async function processOtherDirectives(
 
   // Second component pass — catch components introduced by @include (e.g. StxLink in sidebar partials)
   output = await processComponents(output, context, filePath, opts, dependencies)
+
+  // File components compile their reactive client setup into request-scoped
+  // factories. Emit every factory once, before the tiny per-instance calls.
+  // This is the same compile-once, instantiate-many shape used by SFC runtimes.
+  if (context.__stxProcessingDepth === 1)
+    output = injectComponentClientFactories(output, context)
 
   // Strip any `@push(...) ... @endpush` markers that survived past
   // include resolution. The page-level push pass at line 495 ran

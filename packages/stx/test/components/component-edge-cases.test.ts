@@ -91,6 +91,14 @@ const status = state(loadDeliveries())
     )
 
     await Bun.write(
+      path.join(COMPONENTS_DIR, 'reactive-pill.stx'),
+      `<script client>
+const count = state(0)
+</script>
+<button type="button" x-text="count"></button>`,
+    )
+
+    await Bun.write(
       path.join(COMPONENTS_DIR, 'documented-card.stx'),
       `<!--
 Usage:
@@ -256,6 +264,58 @@ Usage:
       expect(result).not.toContain(`from './delivery-helper'`)
       expect(result).not.toContain(`from '@stacksjs/stx'`)
       expect(result).not.toMatch(/^\s*import\s/m)
+    })
+
+    it('compiles repeated reactive component setup once and instantiates every scope', async () => {
+      const result = await processDirectives(
+        '<ReactivePill /><ReactivePill /><ReactivePill />',
+        {},
+        path.join(TEMP_DIR, 'repeated-reactive-page.stx'),
+        makeOptions(),
+        new Set(),
+      )
+
+      const scopeIds = [...result.matchAll(/<[^>]+\bdata-stx-scope="([^"]+)"/g)].map(match => match[1])
+      const factoryPrelude = result.match(/<script data-stx-scoped data-stx-component-factories>([\s\S]*?)<\/script>/)
+      const instanceCalls = [...result.matchAll(/window\.__stxComponentFactories\["([a-f0-9]+)"\]\("([^"]+)"\);/g)]
+
+      expect(scopeIds).toHaveLength(3)
+      expect(new Set(scopeIds).size).toBe(3)
+      expect(factoryPrelude).not.toBeNull()
+      expect((result.match(/const count = state\(0\);/g) || [])).toHaveLength(1)
+      expect(instanceCalls).toHaveLength(3)
+      expect(new Set(instanceCalls.map(match => match[1])).size).toBe(1)
+      expect(instanceCalls.map(match => match[2]).sort()).toEqual([...scopeIds].sort())
+      expect(result.indexOf('data-stx-component-factories')).toBeLessThan(result.indexOf('window.__stxComponentFactories['))
+
+      const previousStx = (window as any).stx
+      const previousFactories = (window as any).__stxComponentFactories
+      try {
+        document.body.innerHTML = result
+        ;(window as any).__stxComponentFactories = undefined
+        ;(window as any).stx = {
+          state(value: unknown) {
+            const signal = () => value
+            ;(signal as any).set = (next: unknown) => {
+              value = next
+            }
+            return signal
+          },
+        }
+
+        new Function(factoryPrelude![1])()
+        for (const match of result.matchAll(/<script data-stx-scoped client>(window\.__stxComponentFactories\[[\s\S]*?)<\/script>/g))
+          new Function(match[1])()
+
+        const scopes = (window as any).stx._scopes
+        expect(Object.keys(scopes).sort()).toEqual([...scopeIds].sort())
+        expect(new Set(scopeIds.map(id => scopes[id].count)).size).toBe(3)
+      }
+      finally {
+        document.body.innerHTML = ''
+        ;(window as any).stx = previousStx
+        ;(window as any).__stxComponentFactories = previousFactories
+      }
     })
   })
 

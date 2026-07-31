@@ -17,6 +17,7 @@ import path from 'node:path'
 
 // Import from expressions
 import { extractAndStripCssImports, extractBridgeData, injectBrowserCoreAutoImports, processClientScript, renderVendorStyleTags } from './client-script'
+import { COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY, registerComponentClientFactory } from './component-client-factories'
 import { interpolateScriptExpressions, processExpressions, unescapeHtml } from './expressions'
 import { COMPONENT_SCOPE_LOCAL_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
@@ -900,7 +901,11 @@ export async function renderComponentWithSlot(
     // Include both individual props and a `props` object for Vue-style access
     // Filter internal variables from parent context to prevent leaking into child components,
     // but preserve specific internal vars needed for component resolution
-    const internalKeysToPreserve = new Set(['__originalFilePath', '__importedComponents'])
+    const internalKeysToPreserve = new Set([
+      '__originalFilePath',
+      '__importedComponents',
+      COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY,
+    ])
     const filteredParentContext: Record<string, unknown> = {}
     for (const [key, val] of Object.entries(parentContext)) {
       if (!key.startsWith('__') || internalKeysToPreserve.has(key)) {
@@ -1230,13 +1235,12 @@ export async function renderComponentWithSlot(
         // tearing down the whole inline IIFE before any reactive binding
         // gets a chance to wire up. Mirrors the destructure the page-level
         // setup uses in signal-processing.ts.
-        const wrappedContent = `
-(function() {
+        const factoryBody = `function(__scopeId) {
   ${buildRuntimeGlobalsDestructure('const', [...COMPONENT_SCOPE_LOCAL_GLOBALS, ...componentLocalNames], content)}
   const __scope = window.stx._scopes = window.stx._scopes || {};
-  const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
+  const __scopeVars = __scope[__scopeId] = __scope[__scopeId] || {};
   const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;
-  window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="${scopeId}"]');
+  window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="' + __scopeId + '"]');
 
   // Scope-specific lifecycle callbacks
   __scopeVars.__mountCallbacks = __scopeVars.__mountCallbacks || [];
@@ -1258,7 +1262,13 @@ catch (e) {}
 finally {
   window.__STX_CURRENT_ELEMENT__ = __previousCurrentElement;
 }
-})();`
+}`
+        const factoryId = hydrateTrigger
+          ? null
+          : registerComponentClientFactory(parentContext, factoryBody)
+        const wrappedContent = factoryId
+          ? `window.__stxComponentFactories[${JSON.stringify(factoryId)}](${JSON.stringify(scopeId)});`
+          : `(${factoryBody})(${JSON.stringify(scopeId)});`
         // Islands (#1746): when this component is deferred via client="<trigger>",
         // emit the setup script as an INERT type="stx/island" so the browser does
         // NOT run it at parse — the runtime executes it (registering the scope +
