@@ -58,6 +58,32 @@ The canonical syntax is JSX tags. No imports — components are resolved by tag 
 
 Static props pass strings (`variant="primary"`). Dynamic props bind expressions (`:disabled="isDeleting"`). Event listeners use `@event` (`@click="save()"`).
 
+### Pure server component memoization
+
+Repeated server-only components can opt into render memoization with
+`<script server cache>`. Use it only when the rendered fragment is a pure
+function of the component's props and slots:
+
+```stx
+<script server cache>
+export const label = $props.label || ''
+export const tone = $props.tone || 'neutral'
+</script>
+
+<span class="badge badge-{{ tone }}">{{ label }}</span>
+```
+
+stx keys the cached fragment by component file, props, slot content, build
+mode, and event-processing mode. Nested component dependencies are retained,
+and the development watcher clears the cache whenever component source
+changes.
+
+Do not enable this for components that read request data, authentication,
+cookies, the database, the clock, random values, mutable globals, or any other
+input that is not passed through props or slots. Components with client scripts
+are never memoized by this mechanism because each instance needs its own
+reactive scope.
+
 ### `@component` Directive
 
 The Blade-style directive form is the other equally first-class way to invoke a component. It pairs naturally with the rest of the `@`-prefixed server directives (`@if`, `@foreach`, `@include`, etc.) and is the easiest way to pass props that don't fit cleanly into HTML attributes (functions, deeply nested objects):
