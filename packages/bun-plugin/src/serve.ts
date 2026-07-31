@@ -374,6 +374,21 @@ export interface ServeOptions {
    */
   renderCache?: boolean
   /**
+   * Choose what separates rendered cache entries.
+   *
+   * `request` varies by the complete request context and is the safe default
+   * for server-rendered pages. `source` uses one entry per route file and is
+   * intended for source-derived shells whose live data loads on the client.
+   */
+  renderCacheVary?: 'request' | 'source'
+  /**
+   * Render every discovered static route in the background after startup.
+   *
+   * Requires `renderCache: true`. Pass a positive number to control worker
+   * concurrency, or `true` for the default of four workers.
+   */
+  prewarmRenderCache?: boolean | number
+  /**
    * Public directory served at the URL root, like Nuxt/Vite/Next/Astro.
    * Any file under this directory is reachable at the matching URL path —
    * `public/images/hero.jpg` → `GET /images/hero.jpg`.
@@ -813,6 +828,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   // source-derived, the signature and watcher invalidation below provide a
   // fast path without weakening HMR.
   const ENABLE_HTML_CACHE = options.renderCache === true
+  const RENDER_CACHE_VARY = options.renderCacheVary ?? 'request'
   // Crosswind-generated CSS cache, keyed by sorted class-set. Lives here for
   // the same reason as `htmlCache`: so the watcher can wipe it on a source
   // edit and pick up a new utility's CSS the next render.
@@ -1177,6 +1193,9 @@ export async function serve(options: ServeOptions): Promise<void> {
 
   /** Render cache must vary by locale/host/cookies — same `.stx` file can serve different `t()`/host/cookie-gated output. */
   function htmlCacheKey(filePath: string, reqCtx?: ServeRequestContext): string {
+    if (RENDER_CACHE_VARY === 'source')
+      return filePath
+
     if (reqCtx) {
       // `onRequest` may merge arbitrary app-owned values into the request
       // context. Vary by the complete snapshot so an opt-in cache can never
@@ -3081,6 +3100,41 @@ export async function serve(options: ServeOptions): Promise<void> {
   }
   if (actualPort !== port && !options.quiet) {
     console.warn(`\x1b[33m[stx]\x1b[0m port ${port} in use — using \x1b[1m${actualPort}\x1b[0m instead`)
+  }
+
+  if (ENABLE_HTML_CACHE && options.prewarmRenderCache) {
+    const requestedConcurrency = typeof options.prewarmRenderCache === 'number'
+      ? Math.floor(options.prewarmRenderCache)
+      : 4
+    const concurrency = Math.max(1, requestedConcurrency)
+
+    // Warm through the real HTTP pipeline so request hooks, middleware,
+    // fragment handling, and response hooks behave exactly as they do for a
+    // browser request. Source-varying caches make the loopback Host irrelevant;
+    // request-varying caches still benefit callers that use this origin.
+    void (async () => {
+      const files = await discoverFiles()
+      const pending = [...new Set(
+        files
+          .map(stxViewFileToRoutePath)
+          .filter((routePath): routePath is string => routePath !== null),
+      )]
+      let nextIndex = 0
+
+      await Promise.all(Array.from({ length: Math.min(concurrency, pending.length) }, async () => {
+        while (nextIndex < pending.length) {
+          const routePath = pending[nextIndex++]
+          try {
+            const response = await fetch(`http://127.0.0.1:${actualPort}${routePath}`)
+            await response.arrayBuffer()
+          }
+          catch {
+            // Prewarming is opportunistic. A normal request still renders and
+            // populates the same cache entry if a route fails during startup.
+          }
+        }
+      }))
+    })().catch(() => {})
   }
 
   // Graceful drain, auto-enabled with reusePort (i.e. exactly the

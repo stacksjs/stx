@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { access, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -36,13 +36,37 @@ const manifest = await Bun.file('data/manifest.json').text()
 </script>
 <main>cache-marker:{{ marker }} data:{{ manifest }}</main>
 `)
+  await Bun.write(path.join(fixtureDir, 'views', 'prewarm.stx'), `<script server>
+await Bun.write('prewarmed.txt', 'ready')
+const marker = crypto.randomUUID()
+</script>
+<main>prewarm-marker:{{ marker }}</main>
+`)
+  await Bun.write(path.join(fixtureDir, 'components', 'CompilerProbe.stx'), `<script server>
+const { label = '' } = defineProps()
+</script>
+<script client>
+const count = state(0)
+</script>
+<button @click="count.set(count() + 1)">{{ label }}:{{ count() }}</button>
+`)
+  for (let index = 0; index < 8; index++) {
+    await Bun.write(path.join(fixtureDir, 'views', `warm-${index}.stx`), `<script server>
+await Bun.write('prewarmed-${index}.txt', 'ready')
+</script>
+<main><CompilerProbe label="warm-${index}" /></main>
+`)
+  }
   await Bun.write(path.join(fixtureDir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SOURCE)}
 
 serve({
   patterns: ['views'],
   port: ${PORT},
   quiet: true,
+  componentsDir: 'components',
   renderCache: true,
+  renderCacheVary: 'source',
+  prewarmRenderCache: 8,
   watchDirs: ['data'],
 })
 `)
@@ -72,6 +96,40 @@ afterAll(async () => {
 })
 
 describe('opt-in rendered HTML cache', () => {
+  test('prewarms discovered static routes without a browser request', async () => {
+    const deadline = Date.now() + 10_000
+    let prewarmed = false
+    while (Date.now() < deadline) {
+      try {
+        await Promise.all([
+          access(path.join(fixtureDir, 'prewarmed.txt')),
+          ...Array.from({ length: 8 }, (_, index) =>
+            access(path.join(fixtureDir, `prewarmed-${index}.txt`))),
+        ])
+        prewarmed = true
+        break
+      }
+      catch {
+        await Bun.sleep(50)
+      }
+    }
+
+    expect(prewarmed).toBe(true)
+
+    const pages = await Promise.all(
+      Array.from({ length: 8 }, async (_, index) => {
+        const response = await fetch(`${BASE}/warm-${index}`)
+        expect(response.status).toBe(200)
+        return await response.text()
+      }),
+    )
+    for (const [index, html] of pages.entries()) {
+      expect(html).toContain(`warm-${index}:`)
+      expect(html).not.toContain('Template processing failed')
+      expect(html).not.toContain('Unexpected end of file')
+    }
+  })
+
   test('reuses a static render for the same request context', async () => {
     const first = await page()
     const second = await page()
