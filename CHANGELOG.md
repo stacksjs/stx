@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.130...v0.2.131)
+
+## ⚡ Performance Improvements
+
+- **components**: memoize sidebar rows ([fb1cf3e](https://github.com/stacksjs/stx/commit/fb1cf3e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: memoize pure server components ([409b0b1](https://github.com/stacksjs/stx/commit/409b0b1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📚 Documentation
+
+- **stx**: document server component caching ([1092bbb](https://github.com/stacksjs/stx/commit/1092bbb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.131 ([b7dfa0b](https://github.com/stacksjs/stx/commit/b7dfa0b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.129...v0.2.130)
 
 ## 🐛 Bug Fixes
