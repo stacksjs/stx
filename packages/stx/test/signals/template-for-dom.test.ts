@@ -201,6 +201,10 @@ describe('template for DOM binding', () => {
     })
     shimAttributes(document.body)
     document.dispatchEvent(new window.Event('DOMContentLoaded'))
+
+    const immediateButtons = [...document.querySelectorAll('nav [data-stx-scope] button')] as HTMLButtonElement[]
+    expect(immediateButtons.map(button => button.textContent?.trim())).toEqual(['1', '2', '3'])
+
     await new Promise(resolve => setTimeout(resolve, 50))
 
     const roots = [...document.querySelectorAll('nav [data-stx-scope]')] as HTMLElement[]
@@ -213,6 +217,95 @@ describe('template for DOM binding', () => {
 
     buttons[1].dispatchEvent(new window.Event('click', { bubbles: true }))
     expect(selected()).toBe(2)
+  })
+
+  it('hydrates projected slots after a cloned component registers reactive props', async () => {
+    const pages = window.stx.state([1, 2, 3])
+    const current = window.stx.state(1)
+    const selected = window.stx.state(0)
+    const select = (page: number) => selected.set(page)
+    window.__stx_setup_reactive_button_loop = () => ({})
+    window.stx._scopes.compiled_reactive_pagination = {
+      __mountCallbacks: [],
+      __destroyCallbacks: [],
+      current,
+      pages,
+      select,
+      selected,
+    }
+
+    const setupScript = (scopeId: string) => `
+      <script data-stx-scoped>
+        (function() {
+          const { useReactiveProp } = window.stx
+          const scopes = window.stx._scopes = window.stx._scopes || {}
+          const scope = scopes['${scopeId}'] = scopes['${scopeId}'] || {}
+          const previousElement = window.__STX_CURRENT_ELEMENT__
+          window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="${scopeId}"]')
+          try {
+            const liveLoading = useReactiveProp('loading', false)
+            Object.assign(scope, {
+              __mountCallbacks: [],
+              __destroyCallbacks: [],
+              liveLoading,
+            })
+          }
+          finally {
+            window.__STX_CURRENT_ELEMENT__ = previousElement
+          }
+        })()
+      <\/script>
+    `
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_reactive_button_loop">
+        <div data-stx-scope="compiled_reactive_pagination"><nav>
+          <template :for="page in pages()">
+            <template :if="page === current()">
+              <div
+                data-stx-scope="compiled_reactive_active_button"
+                data-stx-parent-events="click"
+                @click="select(page)"
+              >
+                <button>
+                  <template :if="liveLoading()"><span>Loading</span></template>
+                  <span>{{ page }}</span>
+                </button>
+              </div>
+              ${setupScript('compiled_reactive_active_button')}
+            </template>
+            <template :if="page !== current()">
+              <div
+                data-stx-scope="compiled_reactive_inactive_button"
+                data-stx-parent-events="click"
+                @click="select(page)"
+              >
+                <button>
+                  <template :if="liveLoading()"><span>Loading</span></template>
+                  {{ page }}
+                </button>
+              </div>
+              ${setupScript('compiled_reactive_inactive_button')}
+            </template>
+          </template>
+        </nav></div>
+      </main>
+    `
+    const loopTemplate = document.querySelector('template')
+    loopTemplate.content.querySelectorAll('[data-stx-scope]').forEach((root: HTMLElement) => {
+      root.setAttribute('@click', 'select(page)')
+    })
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    const roots = [...document.querySelectorAll('nav [data-stx-scope]')] as HTMLElement[]
+    const buttons = roots.map(root => root.querySelector('button') as HTMLButtonElement)
+    expect(buttons.map(button => button.textContent?.trim())).toEqual(['1', '2', '3'])
+    expect(roots.map(root => (root as any).__stx_parent_scope.page())).toEqual([1, 2, 3])
+
+    buttons[2].dispatchEvent(new window.Event('click', { bubbles: true }))
+    expect(selected()).toBe(3)
   })
 
   it('binds a nested signal component prop from an element loop item', async () => {

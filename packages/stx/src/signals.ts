@@ -3833,37 +3833,38 @@ catch (e2) {
         pick.el.__stx_shown_at = performance.now();
         if (!pick.childrenProcessed) {
           pick.childrenProcessed = true;
-          // Defer child processing (same rationale as bindIf, CLAUDE.md
-          // item 35): keep child effects from subscribing to THIS chain
-          // effect's tracked signals.
-          (function (branch) {
-            setTimeout(function () {
-              var childScope = { ...globalHelpers, ...capturedComponentScope, ...(branch.capturedElementScope || {}) };
-              // Components compiled inside any branch of an if/else-if/else
-              // chain carry scoped setup scripts with them. Branch nodes are
-              // detached before those scripts can execute, so simply
-              // re-inserting the selected branch leaves component props,
-              // events, directives, and projected slot expressions inert.
-              // Hydrate those scopes before the normal subtree walk, matching
-              // the single-template :if and :for insertion paths.
-              var previouslyTrackedNodes = new Set();
-              branch.nodes.forEach(function (n) {
-                if (n && n.__stx_disposers) previouslyTrackedNodes.add(n);
-              });
-              hydrateComponentScopes(branch.nodes, childScope);
-              branch.nodes.forEach(function (n) {
-                if (n.nodeType !== 1) return; // whitespace/text between template children
-                // A scoped component receives its disposer in the outer scope
-                // walk immediately after processElement returns from binding
-                // this conditional. That first pass intentionally stops at
-                // :if, so a disposer does not mean its children were hydrated.
-                if (previouslyTrackedNodes.has(n) || !n.__stx_disposers)
-                  processElement(n, childScope);
-                n.removeAttribute('x-cloak');
-                n.querySelectorAll('[x-cloak]').forEach(function (c) { c.removeAttribute('x-cloak'); });
-              });
-            }, 0);
-          })(pick);
+          // Hydrate before the outer scope walk can see the inserted branch.
+          // Chromium executes scripts cloned from template.content as soon as
+          // they are connected, so deferring this pass allowed the global walk
+          // to process projected slot expressions without the loop caller
+          // scope. peek() keeps this synchronous pass from subscribing child
+          // reads to the current chain effect.
+          peek(function () {
+            var childScope = { ...globalHelpers, ...capturedComponentScope, ...(pick.capturedElementScope || {}) };
+            // Components compiled inside any branch of an if/else-if/else
+            // chain carry scoped setup scripts with them. Branch nodes are
+            // detached before those scripts can execute, so simply
+            // re-inserting the selected branch leaves component props,
+            // events, directives, and projected slot expressions inert.
+            // Hydrate those scopes before the normal subtree walk, matching
+            // the single-template :if and :for insertion paths.
+            var previouslyTrackedNodes = new Set();
+            pick.nodes.forEach(function (n) {
+              if (n && n.__stx_disposers) previouslyTrackedNodes.add(n);
+            });
+            hydrateComponentScopes(pick.nodes, childScope);
+            pick.nodes.forEach(function (n) {
+              if (n.nodeType !== 1) return; // whitespace/text between template children
+              // A scoped component receives its disposer in the outer scope
+              // walk immediately after processElement returns from binding
+              // this conditional. That first pass intentionally stops at
+              // :if, so a disposer does not mean its children were hydrated.
+              if (previouslyTrackedNodes.has(n) || !n.__stx_disposers)
+                processElement(n, childScope);
+              n.removeAttribute('x-cloak');
+              n.querySelectorAll('[x-cloak]').forEach(function (c) { c.removeAttribute('x-cloak'); });
+            });
+          });
         }
       }
 
@@ -4034,10 +4035,13 @@ else if (!value && isInserted) {
         else if (value && isInserted && !childrenProcessed) {
           // Initial template content is cloned before the effect runs. Process
           // it after the condition is confirmed so hidden branches stay inert.
+          // Keep hydration synchronous so the outer scope walk cannot bind
+          // caller-owned slot expressions first, while peek() prevents child
+          // reads from subscribing to this conditional effect.
           childrenProcessed = true;
-          setTimeout(function() {
+          peek(function() {
             if (isInserted) processTemplateNodes(currentNodes);
-          }, 0);
+          });
         }
       }
 else {
