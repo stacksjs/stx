@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.138...v0.2.139)
+
+## 🚀 Features
+
+- **serve**: honor page response status ([f2cd73f](https://github.com/stacksjs/stx/commit/f2cd73f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧪 Tests
+
+- **serve**: cover project component fallback ([c6915f1](https://github.com/stacksjs/stx/commit/c6915f1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.139 ([212bc51](https://github.com/stacksjs/stx/commit/212bc51)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.137...v0.2.138)
 
 ## 🐛 Bug Fixes
