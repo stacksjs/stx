@@ -121,6 +121,20 @@ export interface NativeBuildConfig {
   /** `NSHumanReadableCopyright`. */
   copyright?: string
 
+  /**
+   * How the macOS bundle is shaped.
+   *
+   * `executable` makes Craft itself `CFBundleExecutable` and hands it a
+   * `Resources/craft.json` manifest — one program in the bundle, and the only
+   * shape the Mac App Store accepts, since CFBundleExecutable must be a Mach-O
+   * image. `launcher` writes a shell script that re-execs a bundled Craft with
+   * flags, which is what older runtimes need.
+   *
+   * Defaults to `executable` when the resolved Craft can read a manifest
+   * (0.0.57+) and `launcher` when it cannot.
+   */
+  bundleStyle?: 'executable' | 'launcher'
+
   /** Enable hot reload (dev mode) */
   hotReload?: boolean
 
@@ -301,41 +315,72 @@ async function buildMacOS(
     ? `--native-sidebar --sidebar-width ${config.sidebar?.width || 240} --sidebar-config "$(cat "$RESOURCES/sidebar-config.json")"`
     : ''
 
-  // Copy the Craft runtime into the bundle. This has to happen before the
-  // launcher is written, because the launcher execs the *bundled* copy.
-  const craftBinaryDest = join(macOSDir, 'craft')
-  copyFileSync(craftPath, craftBinaryDest)
-  chmodSync(craftBinaryDest, 0o755)
-
-  // The launcher used to exec `craftPath` — the absolute path Craft happened
-  // to live at on the *build* machine — and pass the whole document through
-  // `--html "$(cat …)"`. Neither survives distribution: the path does not
-  // exist on the user's Mac, and a document past ARG_MAX fails to exec. Run
-  // the bundled runtime and point it at the file.
   const menubarOnly = config.menubarOnly ?? config.systemTray
-  const launcherFlags = [
-    `--title "${config.window?.title || appName}"`,
-    `--width ${config.window?.width || 1200}`,
-    `--height ${config.window?.height || 800}`,
-    menubarOnly ? '--menubar-only' : (config.systemTray ? '--system-tray' : ''),
-    config.devTools ? '' : '--no-devtools',
-    config.window?.frameless ? '--frameless' : '',
-    config.window?.transparent ? '--transparent' : '',
-    config.window?.alwaysOnTop ? '--always-on-top' : '',
-    config.window?.resizable === false ? '--no-resize' : '',
-    sidebarFlags,
-  ].filter(Boolean)
+  const style = config.bundleStyle || (await supportsBundleManifest(craftPath) ? 'executable' : 'launcher')
 
-  const launcherScript = `#!/bin/bash
+  if (style === 'executable') {
+    // Craft *is* the executable. It reads `Resources/craft.json` beside it and
+    // configures itself, so the bundle contains exactly one program.
+    //
+    // The alternative — a shell script as CFBundleExecutable that re-execs
+    // craft with flags — costs a process on every launch and is rejected by
+    // the Mac App Store outright, because CFBundleExecutable has to be a
+    // Mach-O image. It is kept only for older runtimes that cannot read a
+    // manifest.
+    const executablePath = join(macOSDir, appName)
+    copyFileSync(craftPath, executablePath)
+    chmodSync(executablePath, 0o755)
+
+    const manifest: Record<string, unknown> = {
+      html: 'index.html',
+      title: config.window?.title || appName,
+      width: config.window?.width || 1200,
+      height: config.window?.height || 800,
+      devTools: Boolean(config.devTools),
+    }
+    if (menubarOnly) manifest.menubarOnly = true
+    else if (config.systemTray) manifest.systemTray = true
+    if (config.window?.frameless) manifest.frameless = true
+    if (config.window?.transparent) manifest.transparent = true
+    if (config.window?.alwaysOnTop) manifest.alwaysOnTop = true
+    if (config.window?.resizable === false) manifest.resizable = false
+
+    await Bun.write(join(resourcesDir, 'craft.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+  }
+  else {
+    // Legacy shape: a launcher script next to a bundled runtime.
+    const craftBinaryDest = join(macOSDir, 'craft')
+    copyFileSync(craftPath, craftBinaryDest)
+    chmodSync(craftBinaryDest, 0o755)
+
+    const sidebarFlags = config.sidebar?.enabled
+      ? `--native-sidebar --sidebar-width ${config.sidebar?.width || 240} --sidebar-config "$(cat "$RESOURCES/sidebar-config.json")"`
+      : ''
+
+    const launcherFlags = [
+      `--title "${config.window?.title || appName}"`,
+      `--width ${config.window?.width || 1200}`,
+      `--height ${config.window?.height || 800}`,
+      menubarOnly ? '--menubar-only' : (config.systemTray ? '--system-tray' : ''),
+      config.devTools ? '' : '--no-devtools',
+      config.window?.frameless ? '--frameless' : '',
+      config.window?.transparent ? '--transparent' : '',
+      config.window?.alwaysOnTop ? '--always-on-top' : '',
+      config.window?.resizable === false ? '--no-resize' : '',
+      sidebarFlags,
+    ].filter(Boolean)
+
+    const launcherScript = `#!/bin/bash
 set -euo pipefail
 DIR="$( cd "$( dirname "\${BASH_SOURCE[0]}" )" && pwd )"
 RESOURCES="$DIR/../Resources"
 exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
   ${launcherFlags.join(' \\\n  ')}
 `
-  const launcherPath = join(macOSDir, appName)
-  await Bun.write(launcherPath, launcherScript)
-  chmodSync(launcherPath, 0o755)
+    const launcherPath = join(macOSDir, appName)
+    await Bun.write(launcherPath, launcherScript)
+    chmodSync(launcherPath, 0o755)
+  }
 
   // Copy icon if provided. Must precede the plist so `CFBundleIconFile` is
   // only declared when the file is actually there — a dangling reference
@@ -379,6 +424,38 @@ exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
   }
 
   return { success: true, target: 'macos', format: 'app', outputPath: appBundlePath }
+}
+
+/**
+ * Whether this Craft build reads `Resources/craft.json`.
+ *
+ * Support arrived in 0.0.57. An older runtime handed the manifest shape would
+ * open a default window with no content and no error, so the shape is chosen
+ * from what the binary can actually do rather than assumed.
+ */
+async function supportsBundleManifest(craftPath: string): Promise<boolean> {
+  try {
+    // Both streams: Craft prints `--version` through its log facility, which
+    // goes to stderr. A version probe should not care which stream a tool
+    // picked, and reading only stdout silently reported "no manifest support"
+    // for every Craft that has it.
+    const proc = Bun.spawn([craftPath, '--version'], { stdout: 'pipe', stderr: 'pipe' })
+    const [stdout, stderr] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+    ])
+    await proc.exited
+    const out = `${stdout}\n${stderr}`
+
+    const version = out.match(/(\d+)\.(\d+)\.(\d+)/)
+    if (!version) return false
+    const [major, minor, patch] = version.slice(1).map(Number)
+    if (major > 0 || minor > 0) return true
+    return patch >= 57
+  }
+  catch {
+    return false
+  }
 }
 
 /**
