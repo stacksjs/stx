@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.142...v0.2.143)
+
+## 💅 Styles
+
+- **server**: format render cache guard ([10ab8d0](https://github.com/stacksjs/stx/commit/10ab8d0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.143 ([73642d7](https://github.com/stacksjs/stx/commit/73642d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.141...v0.2.142)
 
 ## 🐛 Bug Fixes
