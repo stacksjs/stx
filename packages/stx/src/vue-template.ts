@@ -82,7 +82,8 @@ function findNextOpenTag(html: string, startFrom: number): ParsedTag | null {
   if (!match)
     return null
 
-  const selfClosing = /\/\s*>$/.test(match[0]) || VOID_ELEMENTS.has(match[1].toLowerCase())
+  const selfClosing = /\/\s*>$/.test(match[0])
+    || (match[1] === match[1].toLowerCase() && VOID_ELEMENTS.has(match[1]))
   const attrs = selfClosing
     ? match[2].replace(/\/\s*$/, '')
     : match[2]
@@ -492,7 +493,7 @@ function transformVModel(html: string): string {
       continue
     }
 
-    const isNative = NATIVE_ELEMENTS.has(tag.tag.toLowerCase())
+    const isNative = NATIVE_ELEMENTS.has(tag.tag)
 
     if (isNative) {
       // Native element: convert to @model

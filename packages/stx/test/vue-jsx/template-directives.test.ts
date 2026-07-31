@@ -288,6 +288,25 @@ describe('Directive Transform: v-model', () => {
       expect(result).toContain('@update:title="pageTitle = $event"')
     })
 
+    it('keeps PascalCase components named after void elements paired', () => {
+      const result = processVueTemplate(
+        '<Input v-model:value="query"><template #icon>Search</template></Input>',
+      )
+
+      expect(result).toContain(':value="query"')
+      expect(result).toContain('@update:value="query = $event"')
+      expect(result).toContain('<template #icon>Search</template></Input>')
+      expect(result).not.toContain('@update:value="query = $event" />')
+    })
+
+    it('treats default v-model on PascalCase Input as a component binding', () => {
+      const result = processVueTemplate('<Input v-model="query">Search</Input>')
+
+      expect(result).toContain(':modelValue="query"')
+      expect(result).toContain('@update:modelValue="query = $event"')
+      expect(result).not.toContain('@model="query"')
+    })
+
     it('should preserve multiline self-closing components with named v-model', () => {
       const result = processVueTemplate(`<Select
         v-model:value="environment"
