@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.126...v0.2.127)
+
+## 🐛 Bug Fixes
+
+- **a11y**: ignore PascalCase components ([041663e](https://github.com/stacksjs/stx/commit/041663e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **router**: minify injected client ([4281a22](https://github.com/stacksjs/stx/commit/4281a22)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.127 ([7928908](https://github.com/stacksjs/stx/commit/7928908)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.125...v0.2.126)
 
 ## 🐛 Bug Fixes
