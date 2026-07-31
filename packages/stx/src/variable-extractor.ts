@@ -898,6 +898,7 @@ export function isCompleteImport(statement: string): boolean {
 
 export function convertToCommonJS(scriptContent: string, filePath?: string): string {
   const templateDir = filePath ? path.dirname(filePath) : process.cwd()
+  const projectRoot = process.cwd()
   const lines = scriptContent.split('\n')
   const convertedLines: string[] = []
 
@@ -990,6 +991,9 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
       const resolveSource = (source: string) => {
         if (source.startsWith('.')) {
           return path.resolve(templateDir, source)
+        }
+        if (source.startsWith('~/') || source.startsWith('@/')) {
+          return path.resolve(projectRoot, source.slice(2))
         }
         return source
       }
@@ -1134,7 +1138,7 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
     }
   }
 
-  return resolveDynamicImports(convertedLines.join('\n'), templateDir)
+  return resolveDynamicImports(convertedLines.join('\n'), templateDir, projectRoot)
 }
 
 /**
@@ -1155,7 +1159,7 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
  * tracked so a literal `"await import('./foo')"` inside JS source
  * stays untouched.
  */
-function resolveDynamicImports(source: string, templateDir: string): string {
+function resolveDynamicImports(source: string, templateDir: string, projectRoot: string): string {
   const len = source.length
   let out = ''
   let i = 0
@@ -1214,8 +1218,10 @@ function resolveDynamicImports(source: string, templateDir: string): string {
       const match = matchDynamicImportAt(source, i)
       if (match) {
         const { quote, path: importPath, end } = match
-        if (importPath.startsWith('.')) {
-          const resolved = path.resolve(templateDir, importPath)
+        if (importPath.startsWith('.') || importPath.startsWith('~/') || importPath.startsWith('@/')) {
+          const resolved = importPath.startsWith('.')
+            ? path.resolve(templateDir, importPath)
+            : path.resolve(projectRoot, importPath.slice(2))
           out += `await import(${quote}${resolved}${quote})`
           i = end
           continue

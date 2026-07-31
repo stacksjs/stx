@@ -39,6 +39,14 @@ describe('convertToCommonJS — dynamic import path resolution', () => {
     expect(out).toContain(`await import('node:fs')`)
   })
 
+  it('resolves a project-root tilde dynamic import', () => {
+    const out = convertToCommonJS(
+      `const data = await import('~/resources/data')`,
+      templateFile,
+    )
+    expect(out).toContain(`await import('${resolve(process.cwd(), 'resources/data')}')`)
+  })
+
   it('leaves absolute-path dynamic imports untouched', () => {
     const out = convertToCommonJS(
       `const m = await import('/abs/path/foo')`,

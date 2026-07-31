@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { convertToCommonJS, isCompleteImport } from '../../src/variable-extractor'
+import { convertToCommonJS, extractVariables, isCompleteImport } from '../../src/variable-extractor'
 
 /**
  * A `<script server>` import may span several lines, which is how anybody
@@ -48,6 +48,22 @@ describe('isCompleteImport', () => {
 })
 
 describe('convertToCommonJS with multi-line imports', () => {
+  it('resolves project-root tilde imports in server scripts', async () => {
+    const context: Record<string, unknown> = {}
+
+    await extractVariables(
+      `import { buildSidebarRoleMap } from '~/packages/stx/test/fixtures/server-imports/sidebar'
+export const sidebarRoleMap = buildSidebarRoleMap()`,
+      context,
+      '/project/resources/views/layouts/dashboard.stx',
+    )
+
+    expect(context.sidebarRoleMap).toBe(JSON.stringify({
+      deployments: ['admin'],
+      errors: ['admin', 'developer'],
+    }))
+  })
+
   it('converts an import split over several lines', () => {
     const source = [
       'import {',
