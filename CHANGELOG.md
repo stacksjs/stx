@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.121...v0.2.122)
+
+## 🚀 Features
+
+- **directives**: add pre-paint appearance bootstrap ([e9825bb](https://github.com/stacksjs/stx/commit/e9825bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📚 Documentation
+
+- **directives**: document appearance bootstrap ([36e6acc](https://github.com/stacksjs/stx/commit/36e6acc)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.120...v0.2.121)
 
 ## 🚀 Features
