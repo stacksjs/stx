@@ -526,7 +526,11 @@ function expressionUsesOnlyContextVars(expr: string, context: Record<string, any
   exprWithoutStrings = tplResult
 
   // Find all identifiers (variable names at the start of property access chains)
-  const identifierRegex = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\b/g
+  // A leading `$` is part of the identifier for framework context values such
+  // as `$slots`. Word-boundary matching started at the `s` in `$slots`, then
+  // looked for `slots` in context and misclassified the server-known value as
+  // client state.
+  const identifierRegex = /(?<![a-zA-Z0-9_$])([a-zA-Z_$][a-zA-Z0-9_$]*)/g
   let identifierMatch: RegExpExecArray | null
 
   while ((identifierMatch = identifierRegex.exec(exprWithoutStrings)) !== null) {

@@ -49,6 +49,17 @@ describe('client-signal {{ }} preservation', () => {
     expect(tpl).not.toContain('{{')
   })
 
+  it('bakes dollar-prefixed framework context such as slots', () => {
+    const out = processExpressions(
+      '<input :if="ready()" class="{{ $slots.iconLeft ? \'pl-8\' : \'\' }}">',
+      { $slots: { iconLeft: '<span>Icon</span>' } },
+      'input.stx',
+    )
+
+    expect(out).toContain('class="pl-8"')
+    expect(out).not.toContain('$slots')
+  })
+
   it('runtime binds classes on SVG via setAttribute (SVGElement.className is read-only)', () => {
     // Guards the companion client fix: `bindClass` must not do `el.className = …`
     // on an SVG element (throws, aborting hydration for the rest of the page).
