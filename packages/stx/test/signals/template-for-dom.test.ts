@@ -154,6 +154,67 @@ describe('template for DOM binding', () => {
     expect(document.querySelectorAll('section > script[data-stx-scoped]')).toHaveLength(0)
   })
 
+  it('hydrates projected text slots inside component conditions for every loop row', async () => {
+    const pages = window.stx.state([1, 2, 3])
+    const current = window.stx.state(1)
+    const selected = window.stx.state(0)
+    const select = (page: number) => selected.set(page)
+    window.__stx_setup_conditional_loop_components = () => ({ current, pages, select, selected })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_conditional_loop_components">
+        <nav>
+          <template :for="page in pages()">
+            <template :if="page === current()">
+              <div
+                data-stx-scope="compiled_active_button"
+                data-stx-parent-events="click"
+                @click="select(page)"
+              ><button>{{ page }}</button></div>
+              <script data-stx-scoped>
+                window.stx._scopes.compiled_active_button = {
+                  __mountCallbacks: [],
+                  __destroyCallbacks: []
+                }
+              </script>
+            </template>
+            <template :if="page !== current()">
+              <div
+                data-stx-scope="compiled_inactive_button"
+                data-stx-parent-events="click"
+                @click="select(page)"
+              ><button>{{ page }}</button></div>
+              <script data-stx-scoped>
+                window.stx._scopes.compiled_inactive_button = {
+                  __mountCallbacks: [],
+                  __destroyCallbacks: []
+                }
+              </script>
+            </template>
+          </template>
+        </nav>
+      </main>
+    `
+    const loopTemplate = document.querySelector('template')
+    loopTemplate.content.querySelectorAll('[data-stx-scope]').forEach((root: HTMLElement) => {
+      root.setAttribute('@click', 'select(page)')
+    })
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    const roots = [...document.querySelectorAll('nav [data-stx-scope]')] as HTMLElement[]
+    const buttons = roots.map(root => root.querySelector('button') as HTMLButtonElement)
+    const scopeIds = roots.map(root => root.getAttribute('data-stx-scope'))
+    expect(buttons.map(button => button.textContent?.trim())).toEqual(['1', '2', '3'])
+    expect(new Set(scopeIds).size).toBe(3)
+    expect(scopeIds.every(scopeId => scopeId?.includes('_for_'))).toBe(true)
+    expect(roots.map(root => (root as any).__stx_parent_scope.page())).toEqual([1, 2, 3])
+
+    buttons[1].dispatchEvent(new window.Event('click', { bubbles: true }))
+    expect(selected()).toBe(2)
+  })
+
   it('binds a nested signal component prop from an element loop item', async () => {
     const deployments = window.stx.state([])
     const loading = window.stx.state(true)

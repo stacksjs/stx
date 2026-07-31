@@ -2021,7 +2021,10 @@ catch (e) {
       }
     }
     if (el.nodeType === Node.TEXT_NODE) {
-      const text = el.textContent;
+      // DOM textContent is specified as a string, but lightweight DOM
+      // implementations and user-created nodes can retain a numeric value
+      // assigned by a binding. Normalize before interpolation detection.
+      const text = el.textContent == null ? '' : String(el.textContent);
       if (text && text.includes('{{')) {
         const parts = text.split(/(\\{\\{[\\s\\S]+?\\}\\})/g);
         if (parts.length > 1) {
@@ -2931,13 +2934,24 @@ else if (typeof value === 'string') {
   var __forComponentSetupFactories = new Map();
 
   function forEachGroupElement(nodes, callback) {
-    nodes.forEach(function(node) {
+    function visit(node, insideTemplateContent) {
       if (!node || node.nodeType !== Node.ELEMENT_NODE) return;
-      callback(node);
-      if (node.querySelectorAll) {
-        node.querySelectorAll('*').forEach(function(child) { callback(child); });
-      }
-    });
+      callback(node, insideTemplateContent);
+
+      // HTMLTemplateElement children live in template.content, outside the
+      // element's ordinary descendant tree. Component roots and setup scripts
+      // wrapped by caller-owned :if/:for directives must still be discoverable
+      // for scope remapping before those templates are cloned.
+      var entersTemplateContent = node.tagName === 'TEMPLATE' && node.content;
+      var childRoot = entersTemplateContent
+        ? node.content
+        : node;
+      Array.from(childRoot.childNodes || []).forEach(function(child) {
+        visit(child, insideTemplateContent || entersTemplateContent);
+      });
+    }
+
+    nodes.forEach(function(node) { visit(node, false); });
   }
 
   // A signal component expanded inside <template :for> carries a compiled
@@ -2985,7 +2999,11 @@ else if (typeof value === 'string') {
   function hydrateComponentScopes(nodes, callerScope) {
     var roots = [];
     var scripts = [];
-    forEachGroupElement(nodes, function(node) {
+    forEachGroupElement(nodes, function(node, insideTemplateContent) {
+      // A template's content is inert source material. Remapping must traverse
+      // it, but setup and event hydration belong to the live clones inserted by
+      // bindIf/bindFor, where the correct iteration scope is available.
+      if (insideTemplateContent) return;
       if (node.hasAttribute && node.hasAttribute('data-stx-scope')) roots.push(node);
       if (node.tagName === 'SCRIPT' && node.hasAttribute('data-stx-scoped')) scripts.push(node);
     });
