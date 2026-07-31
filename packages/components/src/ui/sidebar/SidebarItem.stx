@@ -1,4 +1,4 @@
-<script server>
+<script server cache>
 import { resolveIconColor, resolveSidebarTheme } from './themes'
 
 export const id = $props.id || ''

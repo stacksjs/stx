@@ -1,0 +1,17 @@
+<script server cache>
+export const sections = $props.sections || []
+export const theme = $props.theme || 'macos'
+</script>
+
+<nav class="flex flex-col">
+  @foreach(sections as section)
+    <SidebarSection
+      :id="section.id"
+      :label="section.label"
+      :items="section.items"
+      :collapsible="section.collapsible"
+      :collapsed="section.collapsed"
+      :theme="theme"
+    />
+  @endforeach
+</nav>
