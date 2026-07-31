@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.131...v0.2.132)
+
+## ⚡ Performance Improvements
+
+- **serve**: externalize shared client assets ([853bebd](https://github.com/stacksjs/stx/commit/853bebd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.132 ([7b0fa22](https://github.com/stacksjs/stx/commit/7b0fa22)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.130...v0.2.131)
 
 ## ⚡ Performance Improvements
