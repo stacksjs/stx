@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.137...v0.2.138)
+
+## 🐛 Bug Fixes
+
+- **serve**: preflight API mutations ([6c4bf10](https://github.com/stacksjs/stx/commit/6c4bf10)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.138 ([5024b31](https://github.com/stacksjs/stx/commit/5024b31)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.136...v0.2.137)
 
 ## 🐛 Bug Fixes
