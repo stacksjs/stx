@@ -5,7 +5,7 @@
     "": {
       "name": "stx",
       "dependencies": {
-        "@cwcss/crosswind": "^0.2.13",
+        "@cwcss/crosswind": "^0.2.14",
         "very-happy-dom": "^0.1.9",
       },
       "devDependencies": {
@@ -1594,7 +1594,7 @@
       "name": "@stacksjs/components",
       "version": "0.2.119",
       "dependencies": {
-        "@cwcss/crosswind": "^0.2.13",
+        "@cwcss/crosswind": "^0.2.14",
         "@stacksjs/stx": "workspace:*",
         "bun-plugin-stx": "workspace:*",
         "ts-syntax-highlighter": "^0.2.1",
@@ -1668,7 +1668,7 @@
         "stx": "./dist/cli.js",
       },
       "dependencies": {
-        "@cwcss/crosswind": "^0.2.13",
+        "@cwcss/crosswind": "^0.2.14",
         "@stacksjs/clapp": "^0.2.0",
         "@stacksjs/desktop": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
@@ -1754,7 +1754,7 @@
 
     "@csstools/css-tokenizer": ["@csstools/css-tokenizer@4.0.0", "", {}, "sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA=="],
 
-    "@cwcss/crosswind": ["@cwcss/crosswind@0.2.13", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.15" }, "bin": { "crosswind": "./dist/cli.js" } }, "sha512-MZTVeVkg2ik/GoKQNIdM4BdNZH3tmWgbtnS5I5ziVpFgow/UZDD0mb1jwXeclLfmWiNJS7PzEVHSn+hNQprBwg=="],
+    "@cwcss/crosswind": ["@cwcss/crosswind@0.2.14", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.15" }, "bin": { "crosswind": "./dist/cli.js" } }, "sha512-Gj+NbYToRWg68PpkSy/Jb/SXwATEdkGHviOAsYOgUGo3oeFbmQQ+yr4e9AXU7aii+X6CXh2DW3+bTDWhRYtCzA=="],
 
     "@exodus/bytes": ["@exodus/bytes@1.15.1", "", { "peerDependencies": { "@noble/hashes": "^1.8.0 || ^2.0.0" }, "optionalPeers": ["@noble/hashes"] }, "sha512-S6mL0yNB/Abt9Ei4tq8gDhcczc4S3+vQ4ra7vxnAf+YHC02srtqxKKZghx2Dq6p0e66THKwR6r8N6P95wEty7Q=="],
 
