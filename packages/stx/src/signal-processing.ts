@@ -17,6 +17,7 @@ import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { injectSignalsRuntime, injectBrowserRuntime } from './runtime-injection'
 import { matchScriptElement, scanAtElementPosition } from './html-masking'
+import { importOnce } from './lazy-module'
 
 // Counter for unique signal setup function names (avoids Date.now() collisions)
 let signalSetupCounter = 0
@@ -1197,7 +1198,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
   // Bundle user imports and resolve store imports for each script, then
   // concatenate. Scripts are processed in document order, so later scripts
   // (usually the page) can see earlier declarations (usually the layout).
-  const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
+  const { hasUserImports, bundleClientScript } = await importOnce('stx/client-script-bundler', () => import('./client-script-bundler'))
   const resolvedParts: string[] = []
   for (let i = 0; i < signalScripts.length; i++) {
     let scriptContent = signalScripts[i].content

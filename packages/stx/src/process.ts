@@ -65,6 +65,7 @@ import { isProduction, isTest } from './env'
 import { warnUnbalancedTags } from './template-tag-balance'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 import { initializeComponentClientFactories, injectComponentClientFactories } from './component-client-factories'
+import { importOnce } from './lazy-module'
 
 // Re-export public API from extracted modules (preserves backwards compatibility)
 export { injectRouterScript } from './runtime-injection'
@@ -506,7 +507,7 @@ export async function processDirectives(
       // as globals) and BEFORE any page scripts that call useStore().
       if (isTopLevel) {
         try {
-          const { getStoreScript } = await import('./store-loader')
+          const { getStoreScript } = await importOnce('stx/store-loader', () => import('./store-loader'))
           // Prefer the resolved storesDir from options (set by serve-app.ts to
           // point at the real app directory). Fall back to config lookup.
           const resolvedStoresDir = (options as any).storesDir as string | undefined
@@ -535,7 +536,7 @@ export async function processDirectives(
       // <script client>, which is what consumes them.
       if (isTopLevel) {
         try {
-          const { getComposableScript } = await import('./composable-loader')
+          const { getComposableScript } = await importOnce('stx/composable-loader', () => import('./composable-loader'))
           const resolvedComposablesDir = (options as any).composablesDir as string | undefined
           const composableCode = await getComposableScript(resolvedComposablesDir)
           if (composableCode) {
@@ -1126,7 +1127,7 @@ async function extractServerScriptVariables(output: string, context: Record<stri
       continue
 
     try {
-      const { extractVariables } = await import('./variable-extractor')
+      const { extractVariables } = await importOnce('stx/variable-extractor', () => import('./variable-extractor'))
       /* Layouts and partials extracted here run AFTER the child page's
          `<script server>` has populated context (in render.ts). Passing
          `preserveExisting` means a layout-level stub like
@@ -1144,7 +1145,7 @@ async function extractServerScriptVariables(output: string, context: Record<stri
 
 async function interpolateClientScriptExpressions(output: string, context: Record<string, any>, filePath: string): Promise<string> {
   try {
-    const { interpolateScriptsInTemplate } = await import('./expressions')
+    const { interpolateScriptsInTemplate } = await importOnce('stx/expressions', () => import('./expressions'))
     return interpolateScriptsInTemplate(output, context, { skipServer: true })
   }
   catch (e) {
@@ -1218,7 +1219,7 @@ async function processOtherDirectives(
   // expressions so each boundary's inner template is captured raw (re-rendered
   // later, per request, with its $boundary data). Leaves a data-suspense
   // placeholder + fallback in the shell. No-op unless the page uses @stream.
-  const { processStreamDirectives } = await import('./streaming')
+  const { processStreamDirectives } = await importOnce('stx/streaming', () => import('./streaming'))
   output = processStreamDirectives(output, context)
 
   // Process loops FIRST - BEFORE components so that loop variables are evaluated
@@ -1238,56 +1239,56 @@ async function processOtherDirectives(
   output = processAnimationDirectives(output, context, filePath, opts)
 
   // Process defer directives (@defer for lazy loading)
-  const { processDeferDirectives } = await import('./defer')
+  const { processDeferDirectives } = await importOnce('stx/defer', () => import('./defer'))
   output = processDeferDirectives(output, context, filePath)
 
   // Process teleport directives (@teleport for DOM portals)
-  const { processTeleportDirectives } = await import('./teleport')
+  const { processTeleportDirectives } = await importOnce('stx/teleport', () => import('./teleport'))
   output = processTeleportDirectives(output, context, filePath)
 
   // Process transition directives (@transition for animations)
-  const { processTransitionDirectives, processTransitionAttributes } = await import('./transitions')
+  const { processTransitionDirectives, processTransitionAttributes } = await importOnce('stx/transitions', () => import('./transitions'))
   output = processTransitionDirectives(output, context, filePath)
   output = processTransitionAttributes(output)
 
   // Process error boundary directives (@errorBoundary for graceful error handling)
-  const { processErrorBoundaryDirectives } = await import('./error-boundaries')
+  const { processErrorBoundaryDirectives } = await importOnce('stx/error-boundaries', () => import('./error-boundaries'))
   output = processErrorBoundaryDirectives(output, context, filePath)
 
   // Process suspense directives (@suspense for coordinating async loading)
-  const { processSuspenseDirectives } = await import('./suspense')
+  const { processSuspenseDirectives } = await importOnce('stx/suspense', () => import('./suspense'))
   output = processSuspenseDirectives(output, context, filePath)
 
   // Process async component directives (@async for lazy loading)
-  const { processAsyncDirectives } = await import('./async-components')
+  const { processAsyncDirectives } = await importOnce('stx/async-components', () => import('./async-components'))
   output = processAsyncDirectives(output, context, filePath)
 
   // Process keep-alive directives (@keepAlive for caching component state)
-  const { processKeepAliveDirectives } = await import('./keep-alive')
+  const { processKeepAliveDirectives } = await importOnce('stx/keep-alive', () => import('./keep-alive'))
   output = processKeepAliveDirectives(output, context, filePath)
 
   // Process virtual scrolling directives (@virtualList, @virtualGrid, @infiniteList)
-  const { processVirtualListDirectives, processVirtualGridDirectives, processInfiniteListDirectives } = await import('./virtual-scrolling')
+  const { processVirtualListDirectives, processVirtualGridDirectives, processInfiniteListDirectives } = await importOnce('stx/virtual-scrolling', () => import('./virtual-scrolling'))
   output = processVirtualListDirectives(output, context, filePath)
   output = processVirtualGridDirectives(output, context, filePath)
   output = processInfiniteListDirectives(output, context, filePath)
 
   // Process partial hydration directives (@client:load, @client:idle, @client:visible, etc.)
-  const { processPartialHydrationDirectives, processStaticDirectives } = await import('./partial-hydration')
+  const { processPartialHydrationDirectives, processStaticDirectives } = await importOnce('stx/partial-hydration', () => import('./partial-hydration'))
   output = processPartialHydrationDirectives(output, context, filePath)
   output = processStaticDirectives(output)
 
   // Process computed directives (@computed, @watch)
-  const { processComputedDirectives, processWatchDirectives } = await import('./computed')
+  const { processComputedDirectives, processWatchDirectives } = await importOnce('stx/computed', () => import('./computed'))
   output = processComputedDirectives(output, context, filePath)
   output = processWatchDirectives(output, context, filePath)
 
   // Process form validation directives (@error, @errors, @hasErrors)
-  const { processFormValidationDirectives } = await import('./forms-validation')
+  const { processFormValidationDirectives } = await importOnce('stx/forms-validation', () => import('./forms-validation'))
   output = processFormValidationDirectives(output, context, filePath)
 
   // Process head directives (@head, @title, @meta)
-  const { processHeadDirective, processTitleDirective, processMetaDirective, resetHead } = await import('./head')
+  const { processHeadDirective, processTitleDirective, processMetaDirective, resetHead } = await importOnce('stx/head', () => import('./head'))
   // Reset head state unless the caller has already populated it via useHead() /
   // useSeoMeta() from a server script. variable-extractor stashes both on the
   // context as `__stx_runtime_head` when these composables fire, so its presence
@@ -1443,7 +1444,7 @@ async function processOtherDirectives(
 
   // Process x-element directives (x-data, x-model, x-text, etc.)
   // Injects lightweight reactivity runtime for two-way binding
-  const { processXElementDirectives } = await import('./x-element')
+  const { processXElementDirectives } = await importOnce('stx/x-element', () => import('./x-element'))
   output = processXElementDirectives(output)
 
   // Process STX signals for reactive UI (state, derived, effect, :if, :for, :model, etc.)
@@ -1473,7 +1474,7 @@ async function processOtherDirectives(
   // off by default because every render adds an FS stat call per <img>.
   if (opts.media?.image?.autoSiblings) {
     const publicDir = opts.publicDir || 'public'
-    const { rewriteImagesWithSiblings } = await import('./image-optimization/auto-sibling')
+    const { rewriteImagesWithSiblings } = await importOnce('stx/image-optimization/auto-sibling', () => import('./image-optimization/auto-sibling'))
     output = await rewriteImagesWithSiblings(output, { publicDir })
   }
 
@@ -1524,7 +1525,7 @@ async function processOtherDirectives(
   // Inject rendered head content from useHead/useSeoMeta calls. A render
   // context explicitly owns its head state, including an intentionally empty
   // config, so it must never fall back to another request's global state.
-  const { renderHead, getHead } = await import('./head')
+  const { renderHead, getHead } = await importOnce('stx/head', () => import('./head'))
   const contextHead = context.__stx_runtime_head as any
   const headConfig = contextHead ?? getHead()
   if (headConfig.title || headConfig.meta?.length || headConfig.link?.length) {
@@ -1554,7 +1555,7 @@ async function processOtherDirectives(
 
   // Auto-inject PWA tags if enabled
   if (opts.pwa?.enabled && opts.pwa.autoInject !== false) {
-    const { injectPwaTags } = await import('./pwa/inject')
+    const { injectPwaTags } = await importOnce('stx/pwa/inject', () => import('./pwa/inject'))
     output = injectPwaTags(output, opts)
   }
 
@@ -1609,7 +1610,7 @@ else {
   // findScriptBodyEnd walks the body as JS, tracking string/comment/regex
   // state, and returns the index of the *real* close tag.
   {
-    const { scanScriptTags } = await import('./signal-processing')
+    const { scanScriptTags } = await importOnce('stx/signal-processing', () => import('./signal-processing'))
     const serverRemoveRanges: { start: number, end: number }[] = []
     for (const script of scanScriptTags(output)) {
       if (!/\bserver\b/i.test(script.attrs))
@@ -1661,7 +1662,7 @@ else {
   // JSON-LD block in `;(function(){'use strict'; …}())` corrupts it and
   // strips the type, which is what surfaced the original report (Google
   // never saw the Product schema).
-  const { scanScriptTags } = await import('./signal-processing')
+  const { scanScriptTags } = await importOnce('stx/signal-processing', () => import('./signal-processing'))
   for (const s of scanScriptTags(output, {
     skipAttrs: /\bserver\b|\bsrc\s*=|\bdata-stx-scoped\b|\bdata-stx-router\b|\btype\s*=\s*["'](?!(?:text\/javascript|application\/javascript|module)["'])[^"']*["']/,
   })) {

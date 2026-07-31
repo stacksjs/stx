@@ -38,6 +38,7 @@ import fs from 'node:fs'
 import type { ParsedEvent, EventModifiers } from './events'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
+import { importOnce } from './lazy-module'
 
 // =============================================================================
 // Vendor CSS Side-Effect Imports
@@ -1179,7 +1180,7 @@ export async function processClientScript(
   bundledBrowserImports = browserCoreImports.imports
 
   // 0b. Bundle user imports via Bun.build (if any detected)
-  const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
+  const { hasUserImports, bundleClientScript } = await importOnce('stx/client-script-bundler', () => import('./client-script-bundler'))
   if (hasUserImports(code)) {
     code = await bundleClientScript(code, options.filePath || '', {
       projectRoot: options.projectRoot,

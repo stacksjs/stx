@@ -26,6 +26,7 @@ import { processDirectives } from './process'
 import { getPublicEnvDefine } from './public-env'
 import { processScopedStyles } from './style-scoping'
 import { findSfcTemplateBlock } from './sfc-template'
+import { importOnce } from './lazy-module'
 
 // Re-export from extracted modules for backward compatibility
 export {
@@ -631,7 +632,7 @@ export async function renderComponentWithSlot(
   dependencies: Set<string>,
 ): Promise<string> {
   // Import locally to avoid circular dependency at module load time
-  const { extractVariables } = await import('./variable-extractor')
+  const { extractVariables } = await importOnce('stx/variable-extractor', () => import('./variable-extractor'))
 
   // Initialize processedComponents if it's undefined
   const components = processedComponents ?? new Set<string>()
@@ -914,7 +915,7 @@ export async function renderComponentWithSlot(
     }
     // Parse slot content once — `$slots` lets component templates branch on
     // what the caller provided (e.g. `@if($slots.header)`), mirroring Vue.
-    const { extractSlotContent } = await import('./slots')
+    const { extractSlotContent } = await importOnce('stx/slots', () => import('./slots'))
     const parsedSlotContent = extractSlotContent(slotContent)
     const $slots: Record<string, string> = {}
     if (parsedSlotContent.defaultSlot?.trim())
@@ -1101,7 +1102,7 @@ export async function renderComponentWithSlot(
 
     // Process slots using the new slots module (supports named and scoped slots)
     // (slot content was already parsed once for `$slots` above)
-    const { applySlots } = await import('./slots')
+    const { applySlots } = await importOnce('stx/slots', () => import('./slots'))
     const { defaultSlot, namedSlots } = parsedSlotContent
 
     // Apply slots to the template (handles named slots, scoped slots, and default slots)
@@ -1209,14 +1210,14 @@ export async function renderComponentWithSlot(
         let bundledContent = cssExtraction.code
         const vendorStyleTags = renderVendorStyleTags(cssExtraction.styles)
         bundledContent = injectBrowserCoreAutoImports(bundledContent).code
-        const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
+        const { hasUserImports, bundleClientScript } = await importOnce('stx/client-script-bundler', () => import('./client-script-bundler'))
         if (hasUserImports(bundledContent)) {
           bundledContent = await bundleClientScript(bundledContent, componentFilePath, {
             projectRoot: process.cwd(),
             minify: options.buildMode === 'compile',
           })
         }
-        const { rewriteStxImportSpecifiers } = await import('./signal-processing')
+        const { rewriteStxImportSpecifiers } = await importOnce('stx/signal-processing', () => import('./signal-processing'))
         bundledContent = bundledContent.replace(
           /^\s*import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"](?:stx|@stacksjs\/stx|@stacksjs\/browser)['"]\s*;?\s*$/gm,
           (_match, specifiers: string) => rewriteStxImportSpecifiers(specifiers),
