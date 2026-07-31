@@ -241,7 +241,12 @@ function createBundlePlugin(
                 ? 'ts'
                 : 'js'
 
-        inputFiles.add(args.path)
+        // The generated entry is deleted after every build. Recording it in
+        // the persistent dependency sidecar makes every later lookup miss,
+        // because cache validation correctly sees that the file disappeared.
+        // Track only durable source inputs.
+        if (args.path !== tmpEntry)
+          inputFiles.add(args.path)
         return {
           contents: fs.readFileSync(args.path, 'utf8'),
           loader,

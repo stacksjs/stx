@@ -96,6 +96,7 @@ describe('client-script-bundler transitive cache (#1723)', () => {
     expect(sidecar.metadataVersion).toBe(1)
     const filePaths = sidecar.files.map((f: { path: string }) => f.path)
     expect(filePaths).toContain(helperPath)
+    expect(filePaths.some((file: string) => file.includes('bundle-tmp'))).toBe(false)
   })
 
   it('rebuilds legacy cache entries without versioned metadata', async () => {
