@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.135...v0.2.136)
+
+## 🐛 Bug Fixes
+
+- **stx**: resolve dollar-prefixed context ([08ce5e1](https://github.com/stacksjs/stx/commit/08ce5e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.136 ([c970d77](https://github.com/stacksjs/stx/commit/c970d77)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.134...v0.2.135)
 
 ## ⚡ Performance Improvements
