@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.146...v0.2.147)
+
+## 🚀 Features
+
+- **color-mode**: pre-paint bootstrap so useColorMode can replace the inline theme script ([7d560e6](https://github.com/stacksjs/stx/commit/7d560e6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **client-script**: only auto-import helpers that are actually called ([c8b415a](https://github.com/stacksjs/stx/commit/c8b415a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: guard every storage read and write in useLocalStorage/useSessionStorage ([304b8fc](https://github.com/stacksjs/stx/commit/304b8fc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: skip HTML comments when classifying script tags ([31db337](https://github.com/stacksjs/stx/commit/31db337)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.147 ([f5adb38](https://github.com/stacksjs/stx/commit/f5adb38)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.145...v0.2.146)
 
 ## 🐛 Bug Fixes
