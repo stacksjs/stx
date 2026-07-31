@@ -171,6 +171,17 @@ function parseComponentProps(
       // (`:propName="true"`) distinct so it is evaluated to a literal instead
       // of being rewritten to a same-named parent variable.
       const expression = attrValue === BOOLEAN_ATTRIBUTE_SENTINEL ? propName : attrValue
+
+      // Colon-prefixed structural directives are client-owned by definition.
+      // Evaluating them as ordinary props is incorrect for expressions such as
+      // `typeof page === 'number'`: a loop variable absent from the server
+      // context evaluates to false instead of throwing, which used to erase the
+      // directive and render every component branch.
+      if (propName === 'if' || propName === 'for' || propName === 'show') {
+        resolved.clientReactive[propName] = expression
+        continue
+      }
+
       try {
         if (!isExpressionSafe(expression)) {
           if (options.debug) {
@@ -999,42 +1010,53 @@ async function processCustomElementTags(
 }
 
 /**
- * Emit client-reactive bindings as `:attr="expression"` attributes on the
- * outermost HTML element of the rendered component output.
+ * Emit caller-owned client-reactive bindings on rendered component output.
  *
- * This allows the client-side runtime to bind signal expressions to the
- * appropriate DOM elements.
+ * Reactive props and `:show` bind to the rendered root. Structural `:if` and
+ * `:for` directives wrap the whole expansion so a parent controls the complete
+ * component, including setup scripts and children with their own root
+ * conditionals.
  */
 // eslint-disable-next-line pickier/no-unused-vars
 function emitClientReactiveAttrs(html: string, clientReactive: Record<string, string>): string {
-  const root = findRenderedComponentRoot(html)
-  if (!root) {
-    return html
-  }
+  const componentControlBindings = new Set(['if', 'for'])
+  const rootStructuralBindings = new Set(['show'])
+  const rootBindings = Object.entries(clientReactive)
+    .filter(([key]) => !componentControlBindings.has(key))
+  const parentBindings = rootBindings
+    .filter(([key]) => !rootStructuralBindings.has(key))
+    .map(([key]) => pascalToKebab(key))
+    .join(' ')
 
-  // Structural directives belong to the rendered component root, not to the
-  // child's prop bridge. Treating `:if` as a reactive prop caused
-  // bindParentComponentProps() to consume and remove it before processElement()
-  // could mount or unmount the component. Keep the directive expression on the
-  // root while forwarding only actual props through data-stx-parent-bindings.
-  const structuralBindings = new Set(['if', 'for', 'show'])
+  let output = html
+  const root = rootBindings.length > 0
+    ? findRenderedComponentRoot(output)
+    : null
 
-  // Build the reactive attributes string
-  const reactiveAttrs = Object.entries(clientReactive)
+  if (root) {
+    const reactiveAttrs = rootBindings
     .map(([key, expr]) => `:${pascalToKebab(key)}="${expr.replace(/"/g, '&quot;')}"`)
     .join(' ')
-  const parentBindings = Object.keys(clientReactive)
-    .filter(key => !structuralBindings.has(key))
-    .map(key => pascalToKebab(key))
-    .join(' ')
-  const parentBindingAttr = parentBindings
-    ? ` data-stx-parent-bindings="${parentBindings}"`
-    : ''
+    const parentBindingAttr = parentBindings
+      ? ` data-stx-parent-bindings="${parentBindings}"`
+      : ''
 
-  // Insert after the tag name
-  return html.substring(0, root.insertPos)
-    + `${parentBindingAttr} ${reactiveAttrs}`
-    + html.substring(root.insertPos)
+    output = output.substring(0, root.insertPos)
+      + `${parentBindingAttr} ${reactiveAttrs}`
+      + output.substring(root.insertPos)
+  }
+
+  const ifExpression = clientReactive.if
+  if (ifExpression) {
+    output = `<template :if="${ifExpression.replace(/"/g, '&quot;')}">${output}</template>`
+  }
+
+  const forExpression = clientReactive.for
+  if (forExpression) {
+    output = `<template :for="${forExpression.replace(/"/g, '&quot;')}">${output}</template>`
+  }
+
+  return output
 }
 
 /**

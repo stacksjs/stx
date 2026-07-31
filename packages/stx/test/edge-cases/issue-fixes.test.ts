@@ -626,7 +626,7 @@ const page = state(2)
     }
   })
 
-  it('keeps structural bindings on a component root outside the prop bridge', async () => {
+  it('wraps structural component bindings around the complete expansion', async () => {
     const componentsDir = path.join(TMP, 'structural-component-bindings')
     fs.mkdirSync(componentsDir, { recursive: true })
     try {
@@ -634,8 +634,10 @@ const page = state(2)
         path.join(componentsDir, 'ConditionalPanel.stx'),
         `<script client>
 const title = useReactiveProp('title', '')
+const interaction = useReactiveProp('interaction', 'action')
 </script>
-<section>{{ title() }}</section>`,
+<button :if="interaction() === 'toggle'">Toggle {{ title() }}</button>
+<button :else>Action {{ title() }}</button>`,
       )
 
       const output = await processDirectives(
@@ -643,16 +645,58 @@ const title = useReactiveProp('title', '')
 const visible = state(false)
 const title = state('')
 </script>
-<ConditionalPanel :if="visible()" :title="title" />`,
+<ConditionalPanel :if="visible()" :title="title" interaction="action" />`,
         {},
         path.join(TMP, 'structural-component-view.stx'),
         { componentsDir } as StxOptions,
         new Set<string>(),
       )
 
-      expect(output).toContain(':if="visible()"')
+      expect(output).toMatch(/<template\b[^>]*:if="visible\(\)"[^>]*>/)
       expect(output).toContain('data-stx-parent-bindings="title"')
       expect(output).not.toContain('data-stx-parent-bindings="if title"')
+      expect(output).not.toMatch(/<[^>]+data-stx-scope[^>]+:if="visible\(\)"/)
+      const wrapperStart = output.search(/<template\b[^>]*:if="visible\(\)"[^>]*>/)
+      expect(wrapperStart).toBeLessThan(output.indexOf('data-stx-parent-bindings="title"', wrapperStart))
+      expect(output.indexOf('</template>', wrapperStart)).toBeGreaterThan(output.indexOf('<button :else', wrapperStart))
+    }
+    finally {
+      fs.rmSync(componentsDir, { recursive: true, force: true })
+    }
+  })
+
+  it('nests component conditions inside component loops so loop values stay in scope', async () => {
+    const componentsDir = path.join(TMP, 'structural-component-loop-bindings')
+    fs.mkdirSync(componentsDir, { recursive: true })
+    try {
+      fs.writeFileSync(
+        path.join(componentsDir, 'PageButton.stx'),
+        `<button><slot /></button>`,
+      )
+
+      const output = await processDirectives(
+        `<script client>
+const pages = state([1, 'ellipsis'])
+const current = state(1)
+</script>
+<PageButton
+  :for="page in pages()"
+  :if="typeof page === 'number' && page === current()"
+>{{ page }}</PageButton>`,
+        {},
+        path.join(TMP, 'structural-component-loop-view.stx'),
+        { componentsDir } as StxOptions,
+        new Set<string>(),
+      )
+
+      const templateTags = [...output.matchAll(/<template\b[^>]*>/g)]
+      const forStart = templateTags.find(match => match[0].includes(':for='))?.index ?? -1
+      const ifStart = templateTags.find(match => match[0].includes(':if='))?.index ?? -1
+      const buttonStart = output.indexOf('<button', ifStart)
+      expect(forStart).toBeGreaterThanOrEqual(0)
+      expect(ifStart).toBeGreaterThan(forStart)
+      expect(buttonStart).toBeGreaterThan(ifStart)
+      expect(output).not.toMatch(/<button[^>]+:(?:for|if)=/)
     }
     finally {
       fs.rmSync(componentsDir, { recursive: true, force: true })
