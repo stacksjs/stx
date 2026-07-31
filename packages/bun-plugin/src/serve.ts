@@ -1751,9 +1751,9 @@ export async function serve(options: ServeOptions): Promise<void> {
     // in is now part of the invalidation signature.
     if (
       ENABLE_HTML_CACHE
-      && !context.__stx_skip_cache
-      && !skipCacheHint
-      && isRenderableCacheCandidate(output)
+        && !context.__stx_skip_cache
+        && !skipCacheHint
+        && isRenderableCacheCandidate(output)
     ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
       htmlCache.set(htmlCacheKey(filePath, reqCtx), { html: output, signature })
