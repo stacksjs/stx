@@ -1173,6 +1173,19 @@ export async function serve(options: ServeOptions): Promise<void> {
     // that — stacksjs/stacks#1967).
     context.__stxServeSearch = search
     ;(globalThis as { __stxServeSearch?: string }).__stxServeSearch = search
+
+    // The query string as an object, the counterpart to `params`.
+    //
+    // File-based routing handed a server script its route parameters and then
+    // left the query string reachable only through `__stxServeSearch` — an
+    // internal, double-underscored name nobody would guess. So the ordinary
+    // case of a filtered, paginated list page had no supported way to read
+    // `?state=closed&page=2`.
+    //
+    // Always an object, like `params`, so `query.state` on a request with no
+    // query string is undefined rather than a crash. A repeated key keeps its
+    // last value, matching what `URLSearchParams.get` returns.
+    context.query = Object.fromEntries(new URLSearchParams(search ?? ''))
     if (host)
       context.host = host
     context.cookies = cookies

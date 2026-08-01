@@ -59,6 +59,11 @@ const probe = {
   merged: typeof __stxServeContext !== 'undefined' ? (__stxServeContext.mergedFromHook ?? null) : null,
   routeParamsId: route.params.id ?? null,
   routeQueryX: route.query.x ?? null,
+  // query is the counterpart to params: the query string as an object,
+  // rather than an internal string name nobody would guess.
+  queryX: query?.x ?? null,
+  queryMissing: query?.nope ?? null,
+  queryIsObject: typeof query === 'object' && query !== null,
 }
 const probeJson = JSON.stringify(probe)
 </script>
@@ -71,6 +76,7 @@ const probeJson = JSON.stringify(probe)
 const probe = {
   cookieToken: cookies?.token ?? null,
   search: typeof __stxServeSearch !== 'undefined' ? __stxServeSearch : null,
+  queryX: query?.x ?? null,
 }
 const probeJson = JSON.stringify(probe)
 </script>
@@ -145,6 +151,33 @@ describe('dynamic route params in <script server>', () => {
     expect(probe.paramsId).toBe('café-42')
     expect(probe.routeParamsId).toBe('café-42')
     expect(probe.routeQueryX).toBe('1')
+  })
+
+  /**
+   * `query` is the counterpart to `params`. Without it the query string was
+   * reachable only through `__stxServeSearch` - an internal, double-underscored
+   * name - so the ordinary filtered, paginated list page had no supported way
+   * to read `?state=closed&page=2`.
+   */
+  it('exposes the query string as an object beside params', async () => {
+    const probe = parseProbe(await fetchText(`${BASE}/probe/x?x=1`))
+
+    expect(probe.queryX).toBe('1')
+    expect(probe.queryIsObject).toBe(true)
+  })
+
+  it('is an empty object, not a crash, when there is no query string', async () => {
+    const probe = parseProbe(await fetchText(`${BASE}/probe/x`))
+
+    expect(probe.queryIsObject).toBe(true)
+    expect(probe.queryX).toBeNull()
+    expect(probe.queryMissing).toBeNull()
+  })
+
+  it('reaches static routes too, not only dynamic ones', async () => {
+    const probe = parseProbe(await fetchText(`${BASE}/slow?x=static`))
+
+    expect(probe.queryX).toBe('static')
   })
 
   it('carries escaped client route params in SPA fragments', async () => {
