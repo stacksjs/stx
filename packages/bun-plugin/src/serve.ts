@@ -149,9 +149,13 @@ export interface ServeRequestContext {
 }
 
 export function buildDynamicRouteRegexes(fileRouteBase: string): RegExp[] {
+  // Catch-all first: `[...path]` has to become a group that spans separators,
+  // and the ordinary rule below would otherwise turn it into `([^/]+)` - which
+  // silently makes every multi-segment URL a 404.
   const toPattern = (p: string): string => p
-    .replace(/\[([^\]]+)\]/g, '([^/]+)') // [param] → capture group
-    .replace(/\//g, '\\/') // escape slashes
+    .replace(/\[\.\.\.([^\]]+)\]/g, '(.+)')
+    .replace(/\[([^\]]+)\]/g, '([^/]+)')
+    .replace(/\//g, '\\/')
 
   const patterns: RegExp[] = [new RegExp(`^${toPattern(fileRouteBase)}$`)]
 
@@ -1912,7 +1916,11 @@ export async function serve(options: ServeOptions): Promise<void> {
         const match = normalizedPath.match(regex)
         if (match) {
           // Extract param names and values
-          const paramNames = [...fileRouteBase.matchAll(/\[([^\]]+)\]/g)].map(m => m[1])
+          // `[...path]` is written with dots; the parameter is called `path`.
+          // Keeping them means params.path is undefined while the value sits
+          // under a key nobody would think to read.
+          const paramNames = [...fileRouteBase.matchAll(/\[([^\]]+)\]/g)]
+            .map(m => m[1].replace(/^\.\.\./, ''))
           const paramValues = match.slice(1)
 
           // Process template with dynamic params in context
