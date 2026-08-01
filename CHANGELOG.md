@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.150...v0.2.151)
+
+## 🐛 Bug Fixes
+
+- **plugin**: compile catch-all file routes as catch-alls ([a945545](https://github.com/stacksjs/stx/commit/a945545)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.151 ([d4cc0e1](https://github.com/stacksjs/stx/commit/d4cc0e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.149...v0.2.150)
 
 ## 🐛 Bug Fixes
