@@ -327,6 +327,17 @@ export function stripTypeScript(scriptContent: string): string {
 }
 
 /**
+ * Whether a script failure was a module that could not be found.
+ *
+ * Matched on the message because the failure arrives as a plain Error from the
+ * runtime's loader rather than a typed one, and the wording differs between
+ * Bun and Node.
+ */
+export function isModuleResolutionFailure(message: string): boolean {
+  return /cannot find module|could not resolve|module not found|failed to resolve/i.test(message)
+}
+
+/**
  * Extract variables from script content and add them to context
  *
  * @param scriptContent - The JavaScript/TypeScript code from a <script> tag
@@ -823,8 +834,30 @@ catch {
     // bug looks identical from the outside — the page just renders with empty
     // variables and NO error, which is very hard to debug. Set STX_DEBUG=1 to
     // surface the real cause and the offending file.
-    if (process.env.STX_DEBUG) {
-      const msg = primaryError instanceof Error ? primaryError.message : String(primaryError)
+    const msg = primaryError instanceof Error ? primaryError.message : String(primaryError)
+
+    /*
+     * A module that cannot be resolved is always a bug.
+     *
+     * The silence above is deliberate for scripts that legitimately fail here -
+     * a page using only client APIs like reactive() or Chart.js - but an import
+     * that does not resolve is never that. It means a wrong path, and every
+     * binding in the script, not just the imported one, comes back undefined.
+     * The page then renders its empty-state branch and reads as a correct
+     * answer rather than a failure.
+     *
+     * That is worth an unconditional warning. An off-by-one in a relative
+     * import - `../../../../` where the file needed five - cost hours to find,
+     * because the only symptom was a repository browser calmly reporting that
+     * a repository which plainly exists could not be found.
+     */
+    if (isModuleResolutionFailure(msg)) {
+      console.warn(
+        `[stx] server <script> in ${filePath ?? '<unknown>'} imports a module that does not resolve, `
+        + `so every variable in that script is undefined. Cause: ${msg}`,
+      )
+    }
+    else if (process.env.STX_DEBUG) {
       console.warn(`[stx] server <script> did not execute in ${filePath ?? '<unknown>'} — falling back to static extraction. Cause: ${msg}`)
     }
     // Fallback: Try alternative parsing approaches

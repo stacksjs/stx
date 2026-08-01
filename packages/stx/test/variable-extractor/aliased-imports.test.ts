@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { convertToCommonJS, extractVariables } from '../../src/variable-extractor'
+import { convertToCommonJS, extractVariables, isModuleResolutionFailure } from '../../src/variable-extractor'
 
 /**
  * `import { a as b }` in a `<script server>`.
@@ -81,6 +81,58 @@ describe('aliased named imports', () => {
       expect(ctx.max).toBe(7)
     }
     finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+/**
+ * An import that does not resolve must never be silent.
+ *
+ * When a server script throws, stx falls back to static extraction and says
+ * nothing - deliberately, because a page using only client APIs legitimately
+ * lands there. An unresolvable import is not that case: it means a wrong path,
+ * and it takes every binding in the script down with it, not just the imported
+ * one. The page then renders its empty-state branch and reads as a correct
+ * answer rather than a failure.
+ *
+ * An off-by-one in a relative import - four `../` where the file needed five -
+ * cost hours to find for exactly this reason.
+ */
+describe('isModuleResolutionFailure', () => {
+  it('recognises the wordings Bun and Node use', () => {
+    expect(isModuleResolutionFailure('Cannot find module \'../x\'')).toBe(true)
+    expect(isModuleResolutionFailure('Could not resolve: "../x"')).toBe(true)
+    expect(isModuleResolutionFailure('Module not found')).toBe(true)
+    expect(isModuleResolutionFailure('Failed to resolve entry')).toBe(true)
+  })
+
+  it('does not claim an ordinary runtime error', () => {
+    // These are the failures the silence exists for.
+    expect(isModuleResolutionFailure('document is not defined')).toBe(false)
+    expect(isModuleResolutionFailure('x.map is not a function')).toBe(false)
+  })
+})
+
+describe('an unresolvable import is reported', () => {
+  it('warns rather than falling through quietly', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'stx-badimport-'))
+    const warnings: string[] = []
+    const original = console.warn
+    console.warn = (...args: unknown[]) => { warnings.push(args.join(' ')) }
+
+    try {
+      const ctx: Record<string, any> = {}
+      await extractVariables(
+        `import { nope } from './does-not-exist'\nconst value = 1\n`,
+        ctx,
+        path.join(dir, 'page.stx'),
+      )
+
+      expect(warnings.some(w => w.includes('does not resolve'))).toBe(true)
+    }
+    finally {
+      console.warn = original
       await rm(dir, { recursive: true, force: true })
     }
   })
