@@ -1006,15 +1006,40 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
       }
       else if (namedImportMatch) {
         const [, names, source] = namedImportMatch
-        const cleanNames = names.trim()
         const resolved = resolveSource(source)
-        convertedLines.push(`const { ${cleanNames} } = await import('${resolved}')`)
-        for (const n of cleanNames.split(',')) {
-          const cleanName = n.trim().split(/\s+as\s+/).pop()?.trim()
-          if (cleanName) {
-            convertedLines.push(`module.exports.${cleanName} = ${cleanName};`)
+
+        /*
+         * An import turns into destructuring, and the two spell renaming
+         * differently: `import { a as b }` is `const { a: b }`. Pasting the
+         * import spelling through produced `const { a as b } = await import(…)`,
+         * which is a SyntaxError - so the whole script failed to parse and every
+         * binding in it came back undefined, with nothing logged. A template
+         * whose values all vanish renders its empty-state branch, which reads as
+         * a correct answer rather than a failure.
+         */
+        const specifiers: string[] = []
+        const exported: string[] = []
+
+        for (const raw of names.split(',')) {
+          const specifier = raw.trim()
+          if (!specifier)
+            continue
+
+          const aliased = specifier.split(/\s+as\s+/)
+          if (aliased.length === 2) {
+            const [imported, local] = [aliased[0]!.trim(), aliased[1]!.trim()]
+            specifiers.push(`${imported}: ${local}`)
+            exported.push(local)
+          }
+          else {
+            specifiers.push(specifier)
+            exported.push(specifier)
           }
         }
+
+        convertedLines.push(`const { ${specifiers.join(', ')} } = await import('${resolved}')`)
+        for (const local of exported)
+          convertedLines.push(`module.exports.${local} = ${local};`)
       }
       else if (sideEffectMatch) {
         const resolved = resolveSource(sideEffectMatch[1])
