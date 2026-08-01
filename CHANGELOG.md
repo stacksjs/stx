@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.148...v0.2.149)
+
+## 🚀 Features
+
+- render markdown files as stx templates ([d7c6320](https://github.com/stacksjs/stx/commit/d7c6320)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **router**: bind route params to the groups they came from ([f658ba8](https://github.com/stacksjs/stx/commit/f658ba8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.149 ([1c229a8](https://github.com/stacksjs/stx/commit/1c229a8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.146...v0.2.147)
 
 ## 🚀 Features
