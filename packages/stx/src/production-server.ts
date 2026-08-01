@@ -16,6 +16,7 @@ import { loadManifest, type BuildManifest, type ManifestRoute } from './manifest
 import { hydrateTemplateStream, hydrateFragment } from './template-hydrator'
 import type { CompiledTemplate } from './template-compiler'
 import { extractLayoutMetadata, type LayoutMetadata } from './app-shell'
+import { patternToRegex } from 'stx-router'
 
 /**
  * Production server configuration.
@@ -123,12 +124,11 @@ export async function startProductionServer(options: ProductionServerOptions = {
   for (const route of manifest.routes) {
     if (route.hasParams) {
       // Convert pattern like '/player/:id' to regex
-      const paramNames: string[] = []
-      const regexStr = route.pattern.replace(/:([^/]+)/g, (_, name) => {
-        paramNames.push(name)
-        return '([^/]+)'
-      })
-      paramRoutes.push({ regex: new RegExp(`^${regexStr}$`), route, paramNames })
+      // Shared compiler: the hand-rolled version captured `path*` as a name
+      // including the asterisk and could not match across separators, so
+      // catch-all routes worked in development and not in production.
+      const { regex, params: paramNames } = patternToRegex(route.pattern)
+      paramRoutes.push({ regex, route, paramNames })
     }
     else {
       exactRoutes.set(route.pattern, route)

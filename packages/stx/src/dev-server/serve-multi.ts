@@ -12,6 +12,7 @@ import { partialsCache } from '../includes'
 import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { clearComponentCache } from '../utils'
+import { bracketPathToRegex } from 'stx-router'
 import {
   colors,
   findAvailablePort,
@@ -376,10 +377,12 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
           // Check if this is a dynamic route (contains [param] segments)
           if (routePath.includes('[')) {
-            const paramNames = [...routePath.matchAll(/\[([^\]]+)\]/g)].map(m => m[1])
-            const regexStr = routePath.replace(/\[([^\]]+)\]/g, '([^/]+)')
+            // One compiler, shared with the file router. Hand-rolling this is
+            // what made `[...path]` bind under the name `...path` and compile
+            // to a segment that could not span a separator.
+            const { regex, params: paramNames } = bracketPathToRegex(routePath)
             dynamicRoutes.push({
-              pattern: new RegExp(`^${regexStr}$`),
+              pattern: regex,
               paramNames,
               filePath: absolutePath,
               routeTemplate: routePath,

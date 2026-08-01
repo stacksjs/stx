@@ -100,3 +100,32 @@ export function matchRoute(pathname: string, routes: { pattern: string, regex: R
 
   return null
 }
+
+/**
+ * Compile a *file-style* route path - the one with `[param]` brackets - into a
+ * regex and its parameter names.
+ *
+ * File-based routers keep re-deriving this by hand, and the hand-rolled version
+ * is always the same two lines:
+ *
+ *   paramNames = [...p.matchAll(/\[([^\]]+)\]/g)].map(m => m[1])
+ *   regex      = p.replace(/\[([^\]]+)\]/g, '([^/]+)')
+ *
+ * which is correct for `[id]` and wrong for `[...path]` in two ways at once:
+ * the name keeps its dots, so a lookup by `path` finds nothing, and the segment
+ * compiles to `([^/]+)`, which cannot span a separator, so any multi-segment
+ * URL simply fails to match. Both symptoms, one cause, and neither is obvious
+ * from the outside - the route just quietly does not exist.
+ *
+ * Exported so nothing has to write those two lines again.
+ */
+export function bracketPathToRegex(routePath: string): { regex: RegExp, params: string[] } {
+  // Reuse the one compiler rather than adding a fourth dialect: convert the
+  // bracket spelling to the `:name` spelling, then hand it over.
+  const pattern = routePath
+    .replace(/\[\[([^\]]+)\]\]/g, ':$1?')
+    .replace(/\[([^\]]+)\]/g, ':$1')
+    .replace(/:\.\.\.([^/]+)/g, ':$1*')
+
+  return patternToRegex(pattern)
+}

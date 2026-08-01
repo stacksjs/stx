@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { matchRoute, patternToRegex } from '../src/matcher'
+import { bracketPathToRegex, matchRoute, patternToRegex } from '../src/matcher'
 
 /**
  * Parameter names must line up with the capture groups they came from.
@@ -77,5 +77,49 @@ describe('matchRoute binds the right value to each name', () => {
   it('requires a catch-all to have at least one segment', () => {
     // `(.+)` not `(.*)`: /docs and /docs/ are not the same route as /docs/x.
     expect(matchRoute('/docs/', [route('/docs/:path*')])).toBeNull()
+  })
+})
+
+/**
+ * `bracketPathToRegex` exists because three separate file-based routers in stx
+ * each hand-rolled this and each got catch-alls wrong the same way.
+ */
+describe('bracketPathToRegex', () => {
+  it('strips the dots from a catch-all name', () => {
+    // The bug: the name kept its dots, so params.path was undefined while
+    // params['...path'] held the value.
+    expect(bracketPathToRegex('/[owner]/[repository]/tree/[ref]/[...path]').params)
+      .toEqual(['owner', 'repository', 'ref', 'path'])
+  })
+
+  it('lets a catch-all span separators', () => {
+    const { regex, params } = bracketPathToRegex('/[owner]/[repository]/tree/[ref]/[...path]')
+    const m = '/stacks/stacks/tree/main/storage/framework'.match(regex)
+
+    expect(m).not.toBeNull()
+    expect(m![params.indexOf('path') + 1]).toBe('storage/framework')
+  })
+
+  it('still matches a single segment through a catch-all', () => {
+    const { regex, params } = bracketPathToRegex('/[owner]/[repository]/tree/[ref]/[...path]')
+    const m = '/stacks/stacks/tree/main/app'.match(regex)
+
+    expect(m![params.indexOf('path') + 1]).toBe('app')
+  })
+
+  it('handles ordinary params', () => {
+    expect(bracketPathToRegex('/[owner]/[repository]/pull/[number]').params)
+      .toEqual(['owner', 'repository', 'number'])
+  })
+
+  it('handles an optional param', () => {
+    expect(bracketPathToRegex('/blog/[[slug]]').params).toEqual(['slug'])
+  })
+
+  it('leaves a static path alone', () => {
+    const { regex, params } = bracketPathToRegex('/about')
+
+    expect(params).toEqual([])
+    expect('/about'.match(regex)).not.toBeNull()
   })
 })

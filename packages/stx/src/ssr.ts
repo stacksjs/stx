@@ -37,6 +37,7 @@ import path from 'node:path'
 import { errorLogger } from './error-handling'
 import { processDirectives } from './process'
 import { extractVariables } from './utils'
+import { patternToRegex } from 'stx-router'
 
 // =============================================================================
 // Types
@@ -462,15 +463,10 @@ export function createApp(config: AppConfig = {}) {
       if (route.method !== method && route.method !== '*') continue
 
       // Convert route pattern to regex
-      const paramNames: string[] = []
-      const regexPattern = route.pattern
-        .replace(/\/:(\w+)/g, (_, name) => {
-          paramNames.push(name)
-          return '/([^/]+)'
-        })
-        .replace(/\//g, '\\/')
-
-      const regex = new RegExp(`^${regexPattern}$`)
+      // Shared compiler. The hand-rolled version matched `\w+` only, so a
+      // catch-all name (`path*`) never matched and the route silently did not
+      // exist under SSR.
+      const { regex, params: paramNames } = patternToRegex(route.pattern)
       const match = pathname.match(regex)
 
       if (match) {

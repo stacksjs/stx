@@ -2,7 +2,7 @@
 export { createRouter, findErrorPage, formatRoutes, Router } from './file-router'
 
 // Route pattern matching
-export { filePathToPattern, matchRoute, patternToRegex } from './matcher'
+export { bracketPathToRegex, filePathToPattern, matchRoute, patternToRegex } from './matcher'
 
 // Named routes
 export { defineRoute, defineRoutes, resetRoutes, route, setAppUrl } from './named-routes'
