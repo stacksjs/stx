@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.149...v0.2.150)
+
+## 🐛 Bug Fixes
+
+- one route compiler instead of four ([1eafb27](https://github.com/stacksjs/stx/commit/1eafb27)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.150 ([11c65a9](https://github.com/stacksjs/stx/commit/11c65a9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.148...v0.2.149)
 
 ## 🚀 Features
