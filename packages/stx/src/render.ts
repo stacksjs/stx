@@ -285,7 +285,7 @@ export async function renderTemplate(
 export async function renderString(
   template: string,
   context: Record<string, unknown> = {},
-  options?: { templateOnly?: boolean },
+  options: Omit<RenderOptions, 'context'> = {},
 ): Promise<string> {
   return renderTemplateString(template, process.cwd(), { context, ...options })
 }
@@ -330,7 +330,7 @@ export async function renderTemplateString(
     // the outer layout render, and any utility classes that only appear in
     // the layout (sticky, z-50, w-60, backdrop-blur-xl, …) silently drop
     // out of the generated CSS.
-    __stx_inject_css: renderOptions.injectCSS !== false,
+    __stx_inject_css: renderOptions.injectCSS === true,
     ...(renderOptions.context || {}),
   }
 
