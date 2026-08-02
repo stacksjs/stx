@@ -268,6 +268,32 @@ export function findComponentTags(html: string, tagPattern: RegExp, skipTags?: S
  * A legacy HTML-entity-escaped JSON format is still accepted as a fallback so
  * that any externally-produced markup keeps working.
  */
+/**
+ * Decode the entities in a static attribute value.
+ *
+ * An attribute in a template is HTML source, so `title="Tom &amp; Jerry"` names
+ * the string `Tom & Jerry`, and a component that receives it as a prop should
+ * see that string rather than the encoding of it.
+ *
+ * The narrowness is the point. This runs on attribute values, at parse time, and
+ * on nothing else: a value that reached a component any other way - from the
+ * component's own script, from the parent's context, from a `:bound="expression"`
+ * - was never encoded, so decoding it can only destroy escaping somebody meant.
+ * That is exactly what a blanket "this looks like HTML, unescape it" pass over
+ * the component context used to do, and it turned escaped user text back into
+ * live markup.
+ */
+export function decodeAttributeEntities(value: string): string {
+  return value
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, '\'')
+    .replace(/&#x27;/gi, '\'')
+    // Last, so that `&amp;lt;` decodes to `&lt;` rather than to `<`.
+    .replace(/&amp;/g, '&')
+}
+
 export function decodeStxProp(attrValue: string, options?: { debug?: boolean }): unknown {
   // Preferred format: base64-encoded JSON.
   try {
@@ -943,8 +969,15 @@ export async function processCustomElements(
           }
         }
         else {
-          // Static attribute
-          props[attrName] = attrValue
+          // Static attribute. Its value is HTML source, so the entities in it
+          // are the author's way of writing characters the attribute syntax
+          // would otherwise eat: `title="Tom &amp; Jerry"` means `Tom & Jerry`.
+          //
+          // This is the only place a prop needs decoding, and it is deliberately
+          // done here rather than later over the whole component context, which
+          // is what used to happen and which unescaped values an application had
+          // escaped on purpose.
+          props[attrName] = decodeAttributeEntities(attrValue as string)
         }
       }
 

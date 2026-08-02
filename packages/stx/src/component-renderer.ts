@@ -22,7 +22,7 @@ import type { StxOptions } from './types'
 import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
 import { registerBuiltins } from './builtins'
-import { decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, restoreStashedScripts, stashScriptElements } from './component-processing'
+import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, restoreStashedScripts, stashScriptElements } from './component-processing'
 import { maskAtElementPosition, matchHtmlComment } from './html-masking'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
@@ -274,7 +274,14 @@ function parseComponentProps(
     }
 
     // --- Plain static attribute ---
-    setStatic(attrName, attrValue === BOOLEAN_ATTRIBUTE_SENTINEL ? 'true' : attrValue)
+    // Its value is HTML source, so `title="Tom &amp; Jerry"` names the string
+    // `Tom & Jerry`. Only here: a value that arrived from an expression or from
+    // the component's own script was never encoded, and decoding it would undo
+    // escaping the application meant.
+    setStatic(
+      attrName,
+      attrValue === BOOLEAN_ATTRIBUTE_SENTINEL ? 'true' : decodeAttributeEntities(attrValue),
+    )
   }
 
   return resolved

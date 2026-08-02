@@ -18,7 +18,7 @@ import path from 'node:path'
 // Import from expressions
 import { extractAndStripCssImports, extractBridgeData, injectBrowserCoreAutoImports, processClientScript, renderVendorStyleTags } from './client-script'
 import { COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY, registerComponentClientFactory } from './component-client-factories'
-import { interpolateScriptExpressions, processExpressions, unescapeHtml } from './expressions'
+import { interpolateScriptExpressions, processExpressions } from './expressions'
 import { COMPONENT_SCOPE_LOCAL_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
@@ -1108,21 +1108,20 @@ export async function renderComponentWithSlot(
     // Apply slots to the template (handles named slots, scoped slots, and default slots)
     templateContent = await applySlots(templateContent, defaultSlot, namedSlots, componentContext)
 
-    // Handle HTML content in component props
-    for (const [key, value] of Object.entries(componentContext)) {
-      if (typeof value === 'string') {
-        // Check if the content looks like HTML (has tags)
-        if (
-          (value.includes('<') && value.includes('>'))
-          || value.includes('&lt;')
-          || value.includes('&quot;')
-        ) {
-          // If this is a content prop, we need to make sure it's not double-escaped
-          const unescaped = unescapeHtml(value)
-          componentContext[key] = unescaped
-        }
-      }
-    }
+    // Entity decoding used to happen here, over every string in the component's
+    // context, on the theory that a value which "looks like HTML" must have been
+    // escaped on its way in. It undid escaping the application had done on
+    // purpose: a component that rendered `&lt;script&gt;` - because it had
+    // carefully escaped somebody's issue body, README or comment - had it turned
+    // back into `<script>` before the page was written, and stx then wrapped the
+    // resurrected tag in its scoped-script runtime and ran it. Any application
+    // rendering user text through a component had a stored cross-site scripting
+    // hole it could not close from its own code.
+    //
+    // The real need was narrower: a *static* attribute is HTML source, so
+    // `<Card title="Tom &amp; Jerry" />` has to arrive as `Tom & Jerry`. That
+    // decoding now happens where the attribute is parsed, on attribute values
+    // only, and nothing decodes a value again afterwards.
 
     // Check if component has signal scripts - if so, skip event directive processing
     // because the runtime will handle @click, @keydown etc. via processElement()

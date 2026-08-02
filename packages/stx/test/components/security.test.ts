@@ -199,3 +199,76 @@ describe('comment-mask does not defeat attribute escaping', () => {
     expect(output).toContain('<!-- @if(true) hidden @endif -->')
   })
 })
+
+/**
+ * Escaping an application did on purpose has to survive being rendered.
+ *
+ * Component rendering used to walk the whole component context after the props
+ * were merged and, for every string that "looked like HTML", undo its entity
+ * escaping. An application that carefully escaped user text - an issue body, a
+ * comment, a README - and passed it to a component got `<script>` back, which
+ * stx then wrapped in its scoped-script runtime and ran. There was nothing the
+ * application could do about it from its own code.
+ */
+describe('component rendering does not undo escaping', () => {
+  it('leaves escaped markup escaped when a component renders it raw', async () => {
+    const dir = await makeTempDir()
+    const componentsDir = path.join(dir, 'components')
+    await fs.promises.mkdir(componentsDir, { recursive: true })
+    await Bun.write(path.join(componentsDir, 'Body.stx'), '<div class="body">{!! html !!}</div>')
+
+    const output = await processDirectives(
+      '<Body :html="rendered" />',
+      { rendered: '<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>' },
+      path.join(dir, 'page.stx'),
+      { componentsDir, debug: false },
+      new Set(),
+    )
+
+    expect(output).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(output).not.toContain('<script>alert(1)</script>')
+  })
+
+  it('leaves escaped markup escaped when the component computed it itself', async () => {
+    const dir = await makeTempDir()
+    const componentsDir = path.join(dir, 'components')
+    await fs.promises.mkdir(componentsDir, { recursive: true })
+    await Bun.write(
+      path.join(componentsDir, 'Own.stx'),
+      '<script server>\nconst html = \'<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>\'\n</script>\n<div class="body">{!! html !!}</div>',
+    )
+
+    const output = await processDirectives(
+      '<Own />',
+      {},
+      path.join(dir, 'page.stx'),
+      { componentsDir, debug: false },
+      new Set(),
+    )
+
+    expect(output).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(output).not.toContain('<script>alert(1)</script>')
+  })
+
+  /**
+   * The narrow case the blanket decoding was there for, and the reason it is
+   * now done where the attribute is parsed instead.
+   */
+  it('still decodes the entities in a static attribute', async () => {
+    const dir = await makeTempDir()
+    const componentsDir = path.join(dir, 'components')
+    await fs.promises.mkdir(componentsDir, { recursive: true })
+    await Bun.write(path.join(componentsDir, 'Title.stx'), '<h1>{{ title }}</h1>')
+
+    const output = await processDirectives(
+      '<Title title="Tom &amp; Jerry" />',
+      {},
+      path.join(dir, 'page.stx'),
+      { componentsDir, debug: false },
+      new Set(),
+    )
+
+    expect(output).toContain('Tom &amp; Jerry')
+    expect(output).not.toContain('&amp;amp;')
+  })
+})
