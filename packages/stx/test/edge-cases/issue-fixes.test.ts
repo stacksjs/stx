@@ -110,7 +110,8 @@ describe('#1699 — HTML comments are masked before directive expansion', () => 
     //    binding. We use the run-time scoped script (mount or merged setup —
     //    different code paths produce different wrappers) as a proxy: if
     //    the body parses, the backtick didn't poison it.
-    const scopedMatch = out.match(/<script data-stx-scoped>([\s\S]*?)<\/script>/)
+    // Attribute-tolerant: emitters also stamp data-stx-run (#1773).
+    const scopedMatch = out.match(/<script\b[^>]*\bdata-stx-scoped\b[^>]*>([\s\S]*?)<\/script>/)
     expect(scopedMatch).not.toBeNull()
     const scopedBody = scopedMatch![1]
     expect(() => new Function(scopedBody)).not.toThrow()

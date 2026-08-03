@@ -60,10 +60,17 @@ export function injectComponentClientFactories(
   if (repeatedFactories.length === 0)
     return output
 
+  // Each definition is isolated (stacksjs/stx#1773, D4). These all share one
+  // <script>, so a single throw while evaluating one factory body aborted the
+  // element and every LATER component in it silently never registered — the
+  // component then renders completely dead (literal moustaches, stuck :show)
+  // with nothing pointing at the component that actually broke. One try/catch
+  // per factory contains the blast radius to the one that failed and names it.
   const definitions = repeatedFactories
-    .map(([id, factory]) => `  factories[${JSON.stringify(id)}] = factories[${JSON.stringify(id)}] || ${factory.body};`)
+    .map(([id, factory]) => `  try { factories[${JSON.stringify(id)}] = factories[${JSON.stringify(id)}] || ${factory.body}; }\n`
+      + `  catch (e) { console.error('[stx] component factory ' + ${JSON.stringify(id)} + ' failed to register; instances of it will not hydrate.', e); }`)
     .join('\n')
-  const prelude = `<script data-stx-scoped data-stx-component-factories>
+  const prelude = `<script data-stx-scoped data-stx-run="always" data-stx-component-factories>
 (function() {
   const factories = window.__stxComponentFactories = window.__stxComponentFactories || {};
 ${definitions}

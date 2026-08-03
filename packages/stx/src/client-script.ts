@@ -1359,7 +1359,7 @@ ${eventCode}
       ? `\n  return { ${declarations.join(', ')} };`
       : ''
 
-    return `${vendorStyleTags}<script data-stx-scoped>
+    return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always">
 window.stx.mount(function() {
   'use strict';
 ${autoImportCode}${code}
@@ -1388,7 +1388,7 @@ ${eventCode}${returnStmt}
   }
 
   // Fallback: legacy IIFE (no template bindings, or explicit mount, or SFC-wrapped)
-  return `${vendorStyleTags}<script data-stx-scoped>
+  return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always">
 ;(function() {
   'use strict';
 ${autoImportCode}${code}

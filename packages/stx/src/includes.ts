@@ -1073,7 +1073,7 @@ catch (error: unknown) {
           // Transform the script to register scope variables
           // Add data-stx-scoped attribute to prevent re-processing by processScriptSetup
           const transformedScript = transformSignalScript(resolvedContent, signalScopeId)
-          preservedScript += `${vendorStyleTags}<script data-stx-scoped>${transformedScript}</script>\n`
+          preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always">${transformedScript}</script>\n`
           continue
         }
 
@@ -1131,7 +1131,7 @@ catch (e) {
           // pattern-matches on.
           const tail = buildScopeRegistrationTail(resolvedContent, signalScopeId)
           const wrapped = wrapClientScript(resolvedContent, tail)
-          preservedScript += `${vendorStyleTags}<script data-stx-scoped${extraAttrs ? ` ${extraAttrs}` : ''}>${wrapped}</script>\n`
+          preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always"${extraAttrs ? ` ${extraAttrs}` : ''}>${wrapped}</script>\n`
         }
       }
 

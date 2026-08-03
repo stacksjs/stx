@@ -264,6 +264,27 @@ export function getRouterScript(): string {
   // Layout-level scripts (theme, nav setup) execute on initial page load and
   // should NOT re-execute when navigating to another page with the same layout.
   var executedScriptHashes={};
+
+  // ── Re-execution contract (stacksjs/stx#1773) ──
+  // Whether a generated script may run again after an SPA swap used to be
+  // SNIFFED from its source: does it start with '(' or ';', or mention
+  // window.stx.mount. That is a property of the emitted shape, not of intent,
+  // so every change to how scripts are wrapped was one edit away from silently
+  // reclassifying them — and the symptom of getting it wrong is a component
+  // that renders completely dead (literal moustaches, stuck :show) only on a
+  // REVISIT, because nav-away already disposed its scope.
+  //
+  // Emitters now declare it: data-stx-run="always" on self-contained scope
+  // IIFEs and mount() wrappers, which own their scope and whose registration
+  // _cleanupContainer removed on the way out. Anything unstamped falls back to
+  // the old sniff, so a page rendered by an older server behaves exactly as
+  // before.
+  function runsAlways(declared, code){
+    if(declared==='always')return true;
+    if(declared==='once')return false;
+    var head=code.trimStart();
+    return head.charAt(0)==='('||head.charAt(0)===';'||code.indexOf('window.stx.mount')>-1;
+  }
   function hashScript(code){
     var h=0;for(var i=0;i<code.length;i++){h=((h<<5)-h)+code.charCodeAt(i);h|=0}
     return h;
@@ -485,12 +506,15 @@ else {
           if(code&&code.trim()&&!isSignalsRuntimeScript({hasAttribute:function(name){return name==='data-stx-runtime'&&attrs.indexOf('data-stx-runtime')!==-1}},code)){
             var slot='fragment-'+(++fragScriptId);
             var scoped=/(?:^|\\s)data-stx-scoped(?:\\s|=|$)/i.test(attrs);
-            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped});
+            var runDecl=(attrs.match(/data-stx-run\\s*=\\s*["']?(always|once)["']?/i)||[])[1];
+            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():''});
             // Retain scoped setup code in its inert placeholder. A placeholder
             // inside template.content is unreachable through document, so the
             // repeated component runtime must execute it for each clone.
             return '<scr'+'ipt type="application/stx-pending" data-stx-route-script="'+slot+'"'
-              +(scoped?' data-stx-scoped':'')+'>'+code+'<\\/scr'+'ipt>';
+              +(scoped?' data-stx-scoped':'')
+              +(runDecl?' data-stx-run="'+runDecl.toLowerCase()+'"':'')
+              +'>'+code+'<\\/scr'+'ipt>';
           }
           return '';
         });
@@ -593,17 +617,14 @@ else {
           // re-execute because each page has its own setup.
           var h=hashScript(code);
           var isSetup=code.indexOf('__stx_setup_')!==-1;
-          // Compute isAlreadyScoped first so the dedup check can exempt
-          // self-contained IIFE scripts. data-stx-scoped scope IIFEs
-          // (the (function(){ ... })() shape) must re-execute on every
-          // navigation. They own their own scope and won't collide
-          // with prior runs, AND _cleanupContainer deleted their
-          // entry from window.stx._scopes on the way out. Without
-          // this exemption, navigating away and back leaves the page
-          // leaf with no scope registered: bindIf/@event never re-bind
-          // and all :if branches stay visible at once.
-          // Mirrors the full-doc swap path's runAlways escape below.
-          var isAlreadyScoped=code.trimStart().charAt(0)==='('||code.trimStart().charAt(0)===';'||code.indexOf('window.stx.mount')>-1;
+          // Self-contained scope scripts must re-execute on every navigation:
+          // they own their scope, won't collide with prior runs, and
+          // _cleanupContainer deleted their entry from window.stx._scopes on
+          // the way out. Skipping one leaves the page leaf with no scope
+          // registered — bindIf/@event never re-bind and every :if branch
+          // stays visible at once. Declared by the emitter via data-stx-run,
+          // sniffed only as a fallback (#1773).
+          var isAlreadyScoped=runsAlways(entry.run,code);
           if(!isSetup&&!isAlreadyScoped&&executedScriptHashes[h]){
             log('[router] skipping already-executed script (hash dedup)');
             return;
@@ -760,7 +781,7 @@ else {
           var slot='document-'+(++routedBodyScriptId);
           var setupName=generatedSetupName(text);
           if(setupName)incomingSetupName=setupName;
-          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName});
+          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||''});
           s.textContent='';
           s.setAttribute('type','application/stx-pending');
           s.setAttribute('data-stx-route-script',slot);
@@ -945,7 +966,7 @@ else {
           // Skip the wrap for module scripts — they get their own scope from
           // ESM, and top-level 'import' is illegal inside a block, which
           // would throw SyntaxError before the script ever runs.
-          var alreadyScoped=text.trimStart().charAt(0)==='('||text.trimStart().charAt(0)===';'||text.indexOf('window.stx.mount')>-1;
+          var alreadyScoped=runsAlways(typeof entry==='string'?'':entry.run,text);
           ns.textContent=(hasImport||alreadyScoped)?text:'{'+text+'}';
           ns.setAttribute('data-stx-page','');
           var placeholder=entry.slot?document.querySelector('script[data-stx-route-script="'+entry.slot+'"]'):null;

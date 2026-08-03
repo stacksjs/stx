@@ -276,7 +276,8 @@ Usage:
       )
 
       const scopeIds = [...result.matchAll(/<[^>]+\bdata-stx-scope="([^"]+)"/g)].map(match => match[1])
-      const factoryPrelude = result.match(/<script data-stx-scoped data-stx-component-factories>([\s\S]*?)<\/script>/)
+      // Attribute-tolerant: the prelude also carries data-stx-run (#1773).
+      const factoryPrelude = result.match(/<script\b[^>]*\bdata-stx-component-factories\b[^>]*>([\s\S]*?)<\/script>/)
       const instanceCalls = [...result.matchAll(/window\.__stxComponentFactories\["([a-f0-9]+)"\]\("([^"]+)"\);/g)]
 
       expect(scopeIds).toHaveLength(3)

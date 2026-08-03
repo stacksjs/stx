@@ -190,6 +190,43 @@ Same layout group (app → app)           Different layout group (app → auth)
   hosted output keeps swapping as before. Override the id with `STX_BUILD_ID`
   when several processes render one deployment
 
+## Hydration Invariant
+
+Preserved moustaches are the framework's de-facto error UI: any failure in the
+detect → extract → bundle → ship → rebind relay collapses into the same visible
+symptom, literal `{{ }}` on screen. To stop those failures being silent, the
+runtime asserts an invariant at the end of both hydration entry points
+(`DOMContentLoaded` and `stx:load`):
+
+- **Stranded scopes** — an element carrying `data-stx-scope` that is not
+  registered, or registered but never processed, is reported by `console.error`
+  with its scope id **and recovered** by processing it with the ambient scope.
+- **Literal `{{ }}`** — reported. Diagnostic only; without a scope there is
+  nothing to interpolate against. `<pre>`, `<code>`, `<template>`, `<script>`,
+  `<style>`, `<textarea>`, `[data-stx-ignore]` and anything not connected to the
+  document are excluded, so pages that legitimately print template syntax stay
+  quiet.
+- **Expressions that never evaluated** — `evalAttrExpr` swallows `ReferenceError`
+  and `TypeError` because a signal may not exist on an effect's first pass.
+  Those are now *recorded* and cleared as soon as the same expression succeeds,
+  so only expressions still broken when hydration finishes are reported. A
+  `is not a function` error additionally prints the signal-call hint (templates
+  read a signal by bare name; scripts call it).
+
+The sweep never throws — a diagnostic that can break hydration is worse than no
+diagnostic — and repairs each element at most once.
+
+Two supporting contracts:
+
+- **`data-stx-run="always|once"`** on generated scripts declares whether they may
+  re-execute after an SPA swap. This used to be sniffed from the source shape
+  (does it start with `(` or `;`), which meant every change to how scripts were
+  wrapped could silently reclassify them. Unstamped scripts fall back to the
+  sniff, so older servers behave as before.
+- **Per-factory isolation** — repeated component factories share one `<script>`,
+  so each definition is wrapped individually; one throw no longer drops every
+  later component in the prelude.
+
 ## Component Prop Flow
 
 Props are categorized into three types during parsing:
