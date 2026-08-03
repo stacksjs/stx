@@ -438,9 +438,37 @@ else {
 // =============================================================================
 
 /**
+ * Handle returned by {@link createApp} — the server application surface.
+ */
+export interface StxServerApp {
+  /** Main fetch handler for Bun.serve() */
+  fetch: (request: Request) => Promise<Response>
+  /** Register a GET route */
+  get: (pattern: string, handler: RouteHandler, middleware?: Middleware[]) => StxServerApp
+  /** Register a POST route */
+  post: (pattern: string, handler: RouteHandler, middleware?: Middleware[]) => StxServerApp
+  /** Register a PUT route */
+  put: (pattern: string, handler: RouteHandler, middleware?: Middleware[]) => StxServerApp
+  /** Register a DELETE route */
+  delete: (pattern: string, handler: RouteHandler, middleware?: Middleware[]) => StxServerApp
+  /** Register a PATCH route */
+  patch: (pattern: string, handler: RouteHandler, middleware?: Middleware[]) => StxServerApp
+  /** Register middleware for all routes */
+  use: (middleware: Middleware) => StxServerApp
+  /** Render a view with data */
+  render: (template: string, data?: Record<string, unknown>, ctx?: RequestContext) => Promise<Response>
+  /** Redirect helper */
+  redirect: (url: string, status?: 302 | 301 | 303 | 307 | 308) => Response
+  /** Redirect back with input (for form validation) */
+  back: (ctx: RequestContext, errors?: ValidationErrors, oldInput?: Record<string, string>) => Response
+  /** Start the server */
+  listen: (port?: number) => ReturnType<typeof Bun.serve>
+}
+
+/**
  * Create a STX server application
  */
-export function createApp(config: AppConfig = {}) {
+export function createApp(config: AppConfig = {}): StxServerApp {
   const {
     viewsDir = './views',
     layoutsDir = './layouts',

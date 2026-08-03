@@ -292,7 +292,15 @@ export function useMediaQuery(query: string): { readonly value: boolean } {
  * const { isMobile, isTablet, isDesktop } = useBreakpoints()
  * ```
  */
-export function useBreakpoints() {
+/** Handle returned by {@link useBreakpoints}. */
+export interface BreakpointsRef {
+  isMobile: { readonly value: boolean }
+  isTablet: { readonly value: boolean }
+  isDesktop: { readonly value: boolean }
+  isLargeDesktop: { readonly value: boolean }
+}
+
+export function useBreakpoints(): BreakpointsRef {
   return {
     isMobile: useMediaQuery('(max-width: 639px)'),
     isTablet: useMediaQuery('(min-width: 640px) and (max-width: 1023px)'),

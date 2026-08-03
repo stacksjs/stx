@@ -780,7 +780,7 @@ function applyCorsHeaders(response: Response, config: CorsConfig, origin?: strin
 /**
  * Create an edge handler.
  */
-export function createEdgeHandler(config: EdgeHandlerConfig) {
+export function createEdgeHandler(config: EdgeHandlerConfig): (_request: Request, _platformContext?: Record<string, unknown>) => Promise<Response> {
   const runtime = detectRuntime()
 
   return async (request: Request, platformContext?: Record<string, unknown>): Promise<Response> => {

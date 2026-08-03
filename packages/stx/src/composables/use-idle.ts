@@ -48,6 +48,27 @@ export interface IdleRef {
   isIdle: () => boolean
 }
 
+/** Narrowed view of {@link IdleRef} exposing only the idle flag. */
+export interface IdleStateRef {
+  get: () => boolean
+  subscribe: (fn: (isIdle: boolean) => void) => () => void
+  reset: () => void
+}
+
+/** Narrowed view of {@link IdleRef} exposing only the last-active timestamp. */
+export interface LastActiveRef {
+  get: () => number
+  subscribe: (fn: (timestamp: number) => void) => () => void
+  reset: () => void
+}
+
+/** Handle returned by {@link useAutoLogout}. */
+export interface AutoLogoutRef {
+  get: () => IdleState
+  subscribe: (fn: (state: IdleState) => void) => () => void
+  reset: () => void
+}
+
 const DEFAULT_EVENTS = [
   'mousemove',
   'mousedown',
@@ -248,7 +269,7 @@ export function useIdle(options: IdleOptions = {}): IdleRef {
  * })
  * ```
  */
-export function useIdleState(timeout = 60000) {
+export function useIdleState(timeout = 60000): IdleStateRef {
   const idle = useIdle({ timeout })
 
   return {
@@ -272,7 +293,7 @@ export function useIdleState(timeout = 60000) {
  * })
  * ```
  */
-export function useLastActive() {
+export function useLastActive(): LastActiveRef {
   const idle = useIdle({ timeout: Number.POSITIVE_INFINITY })
 
   return {
@@ -299,7 +320,7 @@ export function useAutoLogout(
   timeout: number,
   onLogout: () => void,
   options: { warningTime?: number, onWarning?: (remainingTime: number) => void } = {},
-) {
+): AutoLogoutRef {
   const { warningTime = 30000, onWarning } = options
 
   let warningInterval: ReturnType<typeof setInterval> | null = null

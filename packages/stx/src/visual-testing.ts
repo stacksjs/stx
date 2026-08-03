@@ -135,10 +135,36 @@ export const defaultViewports: Viewport[] = [
 // Snapshot Testing
 // =============================================================================
 
+/** Handle returned by {@link createSnapshotTester}. */
+export interface SnapshotTester {
+  snapshot: (html: string, name: string) => Promise<SnapshotResult>
+  snapshotJson: (data: unknown, name: string) => Promise<SnapshotResult>
+  matchInlineSnapshot: (actual: string, expected?: string) => { passed: boolean, expected: string }
+  getConfig: () => Required<VisualTestConfig>
+}
+
+/** Handle returned by {@link createVisualRegressionTester}. */
+export interface VisualRegressionTester {
+  compareScreenshots: (name: string, actual: Buffer, viewport?: string) => Promise<ScreenshotResult>
+  testViewports: (name: string, captureScreenshot: (viewport: Viewport) => Promise<Buffer>, viewports?: Viewport[]) => Promise<ScreenshotResult[]>
+  getSnapshotTester: () => SnapshotTester
+}
+
+/** Handle returned by {@link createStoryTester}. */
+export interface StoryTester {
+  addStory: (story: Story) => void
+  addStories: (storyList: Story[]) => void
+  getStories: () => Story[]
+  getStoriesForComponent: (component: string) => Story[]
+  testStory: (storyId: string) => Promise<VisualTestResult>
+  testAllStories: () => Promise<VisualTestResult[]>
+  generateStoryIndex: () => Promise<string>
+}
+
 /**
  * Create a snapshot tester
  */
-export function createSnapshotTester(config: VisualTestConfig = {}) {
+export function createSnapshotTester(config: VisualTestConfig = {}): SnapshotTester {
   const cfg: Required<VisualTestConfig> = {
     snapshotDir: config.snapshotDir || '__snapshots__',
     screenshotDir: config.screenshotDir || '__screenshots__',
@@ -279,7 +305,7 @@ export function createSnapshotTester(config: VisualTestConfig = {}) {
 /**
  * Create a visual regression tester
  */
-export function createVisualRegressionTester(config: VisualTestConfig = {}) {
+export function createVisualRegressionTester(config: VisualTestConfig = {}): VisualRegressionTester {
   const snapshotTester = createSnapshotTester(config)
   const cfg = snapshotTester.getConfig()
 
@@ -409,7 +435,7 @@ catch (error) {
 /**
  * Create a story-based visual tester
  */
-export function createStoryTester(config: VisualTestConfig = {}) {
+export function createStoryTester(config: VisualTestConfig = {}): StoryTester {
   const visualTester = createVisualRegressionTester(config)
   const snapshotTester = visualTester.getSnapshotTester()
   const stories: Map<string, Story> = new Map()

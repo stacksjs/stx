@@ -172,7 +172,7 @@ export function useWakeLock(): WakeLockRef {
  * })
  * ```
  */
-export function useAutoWakeLock() {
+export function useAutoWakeLock(): WakeLockRef {
   const wakeLock = useWakeLock()
 
   // Auto-request on creation
@@ -226,7 +226,7 @@ export function useAutoWakeLock() {
  * wakeLock.check() // Releases wake lock
  * ```
  */
-export function useConditionalWakeLock(condition: () => boolean) {
+export function useConditionalWakeLock(condition: () => boolean): WakeLockRef & { check: () => Promise<void> } {
   const wakeLock = useWakeLock()
 
   async function check() {

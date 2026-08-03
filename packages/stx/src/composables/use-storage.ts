@@ -214,15 +214,21 @@ catch (e) {
 
 /**
  * Shorthand for useStorage with localStorage
+ *
+ * The return type is annotated rather than inferred on purpose: the shipped
+ * declarations are emitted by bun-plugin-dtsx, which resolves an unannotated
+ * export to `void`. Consumers importing from `@stacksjs/stx/composables` then
+ * got `Property 'value' does not exist on type 'void'` for a function that
+ * plainly returns a StorageRef. See stacksjs/stx#1796.
  */
-export function useLocalStorage<T>(key: string, defaultValue: T, options?: Omit<UseStorageOptions<T>, 'storage'>) {
+export function useLocalStorage<T>(key: string, defaultValue: T, options?: Omit<UseStorageOptions<T>, 'storage'>): StorageRef<T> {
   return useStorage(key, defaultValue, { ...options, storage: 'local' })
 }
 
 /**
  * Shorthand for useStorage with sessionStorage
  */
-export function useSessionStorage<T>(key: string, defaultValue: T, options?: Omit<UseStorageOptions<T>, 'storage'>) {
+export function useSessionStorage<T>(key: string, defaultValue: T, options?: Omit<UseStorageOptions<T>, 'storage'>): StorageRef<T> {
   return useStorage(key, defaultValue, { ...options, storage: 'session' })
 }
 

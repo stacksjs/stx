@@ -52,6 +52,22 @@ export interface EventSourceOptions {
   onError?: (event: Event) => void
 }
 
+/** Handle returned by {@link useSSE}. */
+export interface SSERef<T = unknown> {
+  data: {
+    // Nullable until the first message arrives — `subscribe` already said so,
+    // and `get` has always behaved the same way.
+    get: () => T | null
+    subscribe: (fn: (data: T | null) => void) => () => void
+  }
+  status: {
+    get: () => EventSourceStatus
+    subscribe: (fn: (status: EventSourceStatus) => void) => () => void
+  }
+  close: () => void
+  open: () => void
+}
+
 export interface EventSourceRef<T = unknown> {
   get: () => EventSourceState<T>
   subscribe: (fn: (state: EventSourceState<T>) => void) => () => void
@@ -297,7 +313,7 @@ export function useEventSource<T = unknown>(
  * })
  * ```
  */
-export function useSSE<T = unknown>(url: string) {
+export function useSSE<T = unknown>(url: string): SSERef<T> {
   const sse = useEventSource<T>(url)
 
   return {

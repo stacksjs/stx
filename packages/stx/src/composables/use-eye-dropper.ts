@@ -30,6 +30,17 @@ export interface EyeDropperOptions {
   onError?: (error: Error) => void
 }
 
+/** Handle returned by {@link useColorHistory}. */
+export interface ColorHistoryRef {
+  // `current` is null until a colour has been picked, matching `subscribe`.
+  get: () => { current: string | null, history: string[] }
+  subscribe: (fn: (state: { current: string | null, history: string[] }) => void) => () => void
+  pick: () => Promise<string | null>
+  clearHistory: () => void
+  removeFromHistory: (color: string) => void
+  isSupported: () => boolean
+}
+
 export interface EyeDropperRef {
   get: () => EyeDropperState
   subscribe: (fn: (state: EyeDropperState) => void) => () => void
@@ -262,7 +273,7 @@ export function hexToHsl(hex: string): { h: number, s: number, l: number } | nul
 export function useColorHistory(options: {
   maxHistory?: number
   onPick?: (color: string) => void
-} = {}) {
+} = {}): ColorHistoryRef {
   const { maxHistory = 20, onPick } = options
   const eyeDropper = useEyeDropper({ onPick })
   const subscribers = new Set<(state: { current: string | null, history: string[] }) => void>()

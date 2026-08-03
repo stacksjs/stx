@@ -22,6 +22,33 @@ export interface TextSelectionOptions {
   onClear?: () => void
 }
 
+/** Handle returned by {@link useElementTextSelection}. */
+export interface ElementTextSelectionRef {
+  get: () => string
+  subscribe: (fn: (text: string) => void) => () => void
+  clear: () => void
+  selectAll: () => void
+}
+
+/** Handle returned by {@link useSelectionPopup}. */
+export interface SelectionPopupRef {
+  get: () => TextSelectionState
+  subscribe: (fn: (state: TextSelectionState) => void) => () => void
+  isShowing: () => boolean
+}
+
+/** Handle returned by {@link useCopySelection}. */
+export interface CopySelectionRef {
+  get: () => TextSelectionState
+  subscribe: (fn: (state: TextSelectionState) => void) => () => void
+  copy: () => Promise<boolean>
+  copyAsMarkdown: () => Promise<boolean>
+  copyWithPrefix: (prefix: string) => Promise<boolean>
+  copyWithWrapper: (start: string, end: string) => Promise<boolean>
+  getText: () => string
+  clear: () => void
+}
+
 export interface TextSelectionRef {
   get: () => TextSelectionState
   subscribe: (fn: (state: TextSelectionState) => void) => () => void
@@ -206,7 +233,7 @@ export function useTextSelection(options: TextSelectionOptions = {}): TextSelect
  * })
  * ```
  */
-export function useElementTextSelection(element: Element | null) {
+export function useElementTextSelection(element: Element | null): ElementTextSelectionRef {
   const selection = useTextSelection()
   const subscribers = new Set<(text: string) => void>()
 
@@ -271,7 +298,7 @@ export function useSelectionPopup(options: {
   onShow?: (text: string, position: { x: number, y: number }) => void
   onHide?: () => void
   minLength?: number
-}) {
+}): SelectionPopupRef {
   const { onShow, onHide, minLength = 1 } = options
 
   let isShowing = false
@@ -318,7 +345,7 @@ export function useSelectionPopup(options: {
  * copy.copyWithPrefix('> ')
  * ```
  */
-export function useCopySelection() {
+export function useCopySelection(): CopySelectionRef {
   const selection = useTextSelection()
 
   async function copyToClipboard(text: string): Promise<boolean> {

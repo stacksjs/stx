@@ -42,6 +42,14 @@ export interface DeviceOrientationRef {
   requestPermission: () => Promise<boolean>
 }
 
+/** Handle returned by {@link useParallax}. */
+export interface ParallaxRef {
+  get: () => { x: number, y: number }
+  subscribe: (fn: (state: { x: number, y: number }) => void) => () => void
+  isSupported: () => boolean
+  requestPermission: () => Promise<boolean>
+}
+
 export interface DeviceMotionRef {
   get: () => DeviceMotionState
   subscribe: (fn: (state: DeviceMotionState) => void) => () => void
@@ -320,7 +328,7 @@ export function useDeviceMotion(): DeviceMotionRef {
  * })
  * ```
  */
-export function useParallax() {
+export function useParallax(): ParallaxRef {
   const orientation = useDeviceOrientation()
   const subscribers = new Set<(state: { x: number, y: number }) => void>()
 
