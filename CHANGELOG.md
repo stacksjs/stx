@@ -1,5 +1,35 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.152...v0.2.153)
+
+## 💥 Breaking Changes
+
+- fix(storage)!: useLocalStorage returns a Signal on every import path ([eb27f38](https://github.com/stacksjs/stx/commit/eb27f38)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🚀 Features
+
+- **serve**: support application-aware browser targets ([ea8c11c](https://github.com/stacksjs/stx/commit/ea8c11c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **hydration**: assert a post-hydration invariant instead of failing silently ([5a80a17](https://github.com/stacksjs/stx/commit/5a80a17)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **router**: full navigation when the fetched build differs from the loaded one ([ee63d3a](https://github.com/stacksjs/stx/commit/ee63d3a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **color-mode**: apply class and attribute together, accept 'system' ([dcbed82](https://github.com/stacksjs/stx/commit/dcbed82)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **cli**: restore --pages on stx dev ([f598a19](https://github.com/stacksjs/stx/commit/f598a19)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **app-shell**: stop treating any mention of <!DOCTYPE as a document ([6065c95](https://github.com/stacksjs/stx/commit/6065c95)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: drop leftover debug logging from the runtime ([11b729d](https://github.com/stacksjs/stx/commit/11b729d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **shell**: emit htmlAttrs on <html> instead of dropping them ([7af7eaf](https://github.com/stacksjs/stx/commit/7af7eaf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: expose useSessionStorage as a bare window global ([316f9e2](https://github.com/stacksjs/stx/commit/316f9e2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.153 ([c66e73c](https://github.com/stacksjs/stx/commit/c66e73c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.151...v0.2.152)
 
 ## 🚀 Features
