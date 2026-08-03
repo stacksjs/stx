@@ -11,17 +11,58 @@
 
 export type ColorMode = 'light' | 'dark' | 'auto'
 
+/**
+ * What may be *written* into storage for "follow the system".
+ *
+ * `'system'` is a common spelling for the same concept, and an app that already
+ * persists it must not have that overwritten (stacksjs/stx#1788).
+ */
+export type AutoValue = 'auto' | 'system'
+
+/** Accepted on input anywhere a ColorMode is; normalised to ColorMode. */
+export type ColorModeInput = ColorMode | 'system'
+
 export interface ColorModeOptions {
   /** localStorage key (default: 'stx-color-mode') */
   storageKey?: string
-  /** Initial mode (default: 'auto') */
-  initialMode?: ColorMode
-  /** CSS class applied to <html> when dark (default: 'dark') */
-  darkClass?: string
-  /** Use a data-attribute instead of a class (e.g. 'data-theme') */
-  attribute?: string
+  /** Initial mode (default: 'auto'). `'system'` is accepted as an alias. */
+  initialMode?: ColorModeInput
+  /**
+   * CSS class applied to `<html>` when dark (default: 'dark').
+   *
+   * Applied alongside `attribute` when both are set — they are not
+   * alternatives in practice: the class drives the utility framework's `dark:`
+   * variants, the attribute drives everything else. Pass `null` to opt out of
+   * the class entirely.
+   */
+  darkClass?: string | null
+  /** Data-attribute set to the resolved mode on `<html>`, e.g. 'data-theme'. */
+  attribute?: string | null
+  /**
+   * Spelling written to storage for "follow the system" (default: whatever is
+   * already stored, else `'auto'`).
+   *
+   * Both spellings are always *read*. This only controls what gets written, so
+   * an app whose own pre-paint script expects `'system'` keeps working.
+   */
+  autoValue?: AutoValue
   /** Disable CSS transitions during mode switch to prevent flash (default: true) */
   disableTransitions?: boolean
+}
+
+/** Storage tokens meaning "follow the system". */
+const AUTO_VALUES: readonly string[] = ['auto', 'system']
+
+/**
+ * Map any accepted spelling onto the canonical vocabulary, or null if the value
+ * is not a color-mode preference at all.
+ */
+export function normalizeColorMode(value: unknown): ColorMode | null {
+  if (value === 'light' || value === 'dark')
+    return value
+  if (typeof value === 'string' && AUTO_VALUES.includes(value))
+    return 'auto'
+  return null
 }
 
 export interface ColorModeRef {
@@ -31,8 +72,8 @@ export interface ColorModeRef {
   readonly preference: ColorMode
   /** Convenience: true when resolved mode is dark */
   readonly isDark: boolean
-  /** Set mode explicitly */
-  set: (mode: ColorMode) => void
+  /** Set mode explicitly ('system' accepted as an alias for 'auto') */
+  set: (mode: ColorModeInput) => void
   /** Toggle between light and dark (resets 'auto' to the opposite of current) */
   toggle: () => void
   /** Subscribe to mode changes */
@@ -76,12 +117,15 @@ export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
   const {
     storageKey = boot?.storageKey ?? 'stx-color-mode',
     initialMode = boot?.initialMode ?? 'auto',
+    // `??` not `||`, so an explicit `darkClass: null` opts out of the class
+    // rather than falling through to the default.
     darkClass = boot?.darkClass ?? 'dark',
-    attribute = boot?.attribute,
+    attribute = boot?.attribute ?? null,
+    autoValue: autoValueOption = boot?.autoValue,
     disableTransitions = true,
   } = options
 
-  let preference: ColorMode = initialMode
+  let preference: ColorMode = normalizeColorMode(initialMode) ?? 'auto'
   let resolved: 'light' | 'dark' = 'light'
   const listeners: Set<(mode: 'light' | 'dark', preference: ColorMode) => void> = new Set()
   const cleanups: Array<() => void> = []
@@ -110,16 +154,20 @@ export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
       el.style.setProperty('transition', 'none', 'important')
     }
 
-    if (attribute) {
+    // Both, when both are configured (#1788). Passing `attribute` used to
+    // silently disable `darkClass`, which made the composable unusable for any
+    // app whose `dark:` utilities key off the class while its own CSS reads the
+    // attribute — they are complements, not alternatives.
+    if (attribute)
       el.setAttribute(attribute, mode)
-    }
-    else {
-      if (mode === 'dark') {
+    // Explicit add/remove rather than toggle(cls, force): very-happy-dom
+    // ignores the force argument and plain-toggles, so every test asserting a
+    // light mode would silently see the dark class ADDED.
+    if (darkClass) {
+      if (mode === 'dark')
         el.classList.add(darkClass)
-      }
-      else {
+      else
         el.classList.remove(darkClass)
-      }
     }
 
     if (disableTransitions) {
@@ -130,31 +178,40 @@ export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
     }
   }
 
-  function persist(pref: ColorMode) {
-    if (!isBrowser) return
-    try { localStorage.setItem(storageKey, pref) }
-    catch { /* quota / private mode */ }
+  function readRaw(): string | null {
+    if (!isBrowser) return null
+    try { return localStorage.getItem(storageKey) }
+    catch { /* private mode */ return null }
   }
 
-  function readPersisted(): ColorMode | null {
-    if (!isBrowser) return null
-    try {
-      const v = localStorage.getItem(storageKey)
-      if (v === 'light' || v === 'dark' || v === 'auto') return v
-    }
-    catch { /* private mode */ }
-    return null
+  // The spelling written back for 'auto'. An explicit option wins; otherwise
+  // whatever the app already had in storage, so its own pre-paint script keeps
+  // reading a value it recognises.
+  const storedRaw = readRaw()
+  let autoValue: AutoValue = autoValueOption
+    ?? (storedRaw !== null && AUTO_VALUES.includes(storedRaw) ? storedRaw as AutoValue : 'auto')
+
+  function persist(pref: ColorMode) {
+    if (!isBrowser) return
+    try { localStorage.setItem(storageKey, pref === 'auto' ? autoValue : pref) }
+    catch { /* quota / private mode */ }
   }
 
   // ---------------------------------------------------------------------------
   // Core update
   // ---------------------------------------------------------------------------
 
-  function update(pref: ColorMode) {
-    preference = pref
-    resolved = resolve(pref)
+  /**
+   * @param persistChoice - Only an explicit user choice is written back.
+   *   Initialisation must not persist: it would stamp the resolved default over
+   *   a stored value this composable didn't recognise, destroying it (#1788).
+   */
+  function update(pref: ColorModeInput, persistChoice = true) {
+    preference = normalizeColorMode(pref) ?? 'auto'
+    resolved = resolve(preference)
     applyToDOM(resolved)
-    persist(pref)
+    if (persistChoice)
+      persist(preference)
     listeners.forEach(fn => fn(resolved, preference))
   }
 
@@ -162,8 +219,7 @@ export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
   // Initialise
   // ---------------------------------------------------------------------------
 
-  const persisted = readPersisted()
-  update(persisted ?? initialMode)
+  update(normalizeColorMode(storedRaw) ?? initialMode, false)
 
   // ---------------------------------------------------------------------------
   // System preference change listener
@@ -184,8 +240,12 @@ export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
     // Cross-tab sync via storage event
     const onStorage = (e: StorageEvent) => {
       if (e.key !== storageKey) return
-      const v = e.newValue as ColorMode | null
-      if (v === 'light' || v === 'dark' || v === 'auto') {
+      const v = normalizeColorMode(e.newValue)
+      if (v) {
+        // Track the other tab's spelling too, so a write from here doesn't
+        // convert the key out from under it.
+        if (v === 'auto' && e.newValue && AUTO_VALUES.includes(e.newValue))
+          autoValue = e.newValue as AutoValue
         preference = v
         resolved = resolve(v)
         applyToDOM(resolved)
@@ -212,7 +272,7 @@ export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
     get mode() { return resolved },
     get preference() { return preference },
     get isDark() { return resolved === 'dark' },
-    set(mode: ColorMode) { update(mode) },
+    set(mode: ColorModeInput) { update(mode) },
     toggle() {
       update(resolved === 'dark' ? 'light' : 'dark')
     },

@@ -4445,15 +4445,33 @@ else if (timer === null) {
     // flash the boot script exists to prevent.
     var boot = null;
     try { boot = window.__STX_COLOR_MODE__ || null; } catch (e) {}
-    var storageKey = options.storageKey || (boot && boot.storageKey) || 'stx-color-mode';
-    var initialMode = options.initialMode || (boot && boot.initialMode) || 'auto';
-    var darkClass = options.darkClass || (boot && boot.darkClass) || 'dark';
-    var attribute = options.attribute || (boot && boot.attribute) || null;
+    // Explicit-undefined checks rather than ||, so an explicit darkClass:null
+    // or attribute:null opts out instead of falling through to the default.
+    function pick(a, b, fallback) {
+      if (a !== undefined) return a;
+      if (b !== undefined && b !== null) return b;
+      return fallback;
+    }
+    var storageKey = pick(options.storageKey, boot && boot.storageKey, 'stx-color-mode');
+    var initialMode = pick(options.initialMode, boot && boot.initialMode, 'auto');
+    var darkClass = pick(options.darkClass, boot && boot.darkClass, 'dark');
+    var attribute = pick(options.attribute, boot && boot.attribute, null);
+    var autoValueOption = pick(options.autoValue, boot && boot.autoValue, undefined);
     var disableTransitions = options.disableTransitions !== false;
-    var preference = initialMode;
     var resolved = 'light';
     var listeners = [];
     var cleanups = [];
+
+    // Storage tokens meaning "follow the system". 'system' is a common spelling
+    // for the same concept; rejecting it used to send the app down a silent
+    // data-loss path — read 'system', fail to recognise it, fall back to
+    // 'auto', then OVERWRITE the stored value with 'auto' (#1788).
+    function normalizeMode(v) {
+      if (v === 'light' || v === 'dark') return v;
+      if (v === 'auto' || v === 'system') return 'auto';
+      return null;
+    }
+    var preference = normalizeMode(initialMode) || 'auto';
 
     function getSystem() {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -4462,27 +4480,42 @@ else if (timer === null) {
     function applyDOM(mode) {
       var el = document.documentElement;
       if (disableTransitions) el.style.setProperty('transition', 'none', 'important');
-      if (attribute) { el.setAttribute(attribute, mode); }
-      else { if (mode === 'dark') el.classList.add(darkClass); else el.classList.remove(darkClass); }
+      // Both, when both are configured. The class drives the utility
+      // framework's dark: variants, the attribute drives everything else —
+      // complements, not alternatives.
+      if (attribute) el.setAttribute(attribute, mode);
+      // Explicit add/remove, not toggle(cls, force) — very-happy-dom ignores
+      // the force argument and plain-toggles, inverting every light-mode test.
+      if (darkClass) { if (mode === 'dark') el.classList.add(darkClass); else el.classList.remove(darkClass); }
       if (disableTransitions) { el.offsetHeight; el.style.removeProperty('transition'); }
     }
-    function persist(pref) { try { localStorage.setItem(storageKey, pref); }
-catch (e) {} }
-    function readPersisted() {
-      try { var v = localStorage.getItem(storageKey); if (v === 'light' || v === 'dark' || v === 'auto') return v; }
-catch (e) {}
-      return null;
+    function readRaw() {
+      try { return localStorage.getItem(storageKey); }
+catch (e) { return null; }
     }
-    function update(pref) {
-      preference = pref;
-      resolved = resolve(pref);
+    // The spelling written back for 'auto': an explicit option wins, else
+    // whatever the app already stored, so its own pre-paint script keeps
+    // reading a value it recognises.
+    var storedRaw = readRaw();
+    var autoValue = autoValueOption !== undefined
+      ? autoValueOption
+      : ((storedRaw === 'auto' || storedRaw === 'system') ? storedRaw : 'auto');
+
+    function persist(pref) {
+      try { localStorage.setItem(storageKey, pref === 'auto' ? autoValue : pref); }
+catch (e) {} }
+    // persistChoice: only an explicit user choice is written back. Persisting
+    // on init would stamp the resolved default over a stored value this
+    // composable didn't recognise, destroying it.
+    function update(pref, persistChoice) {
+      preference = normalizeMode(pref) || 'auto';
+      resolved = resolve(preference);
       applyDOM(resolved);
-      persist(pref);
+      if (persistChoice !== false) persist(preference);
       listeners.forEach(function(fn) { fn(resolved, preference); });
     }
 
-    var persisted = readPersisted();
-    update(persisted || initialMode);
+    update(normalizeMode(storedRaw) || initialMode, false);
 
     var mql = window.matchMedia('(prefers-color-scheme: dark)');
     var onSystemChange = function() {
@@ -4497,8 +4530,11 @@ catch (e) {}
 
     var onStorage = function(e) {
       if (e.key !== storageKey) return;
-      var v = e.newValue;
-      if (v === 'light' || v === 'dark' || v === 'auto') {
+      var v = normalizeMode(e.newValue);
+      if (v) {
+        // Track the other tab's spelling too, so a write from here doesn't
+        // convert the key out from under it.
+        if (v === 'auto' && (e.newValue === 'auto' || e.newValue === 'system')) autoValue = e.newValue;
         preference = v; resolved = resolve(v); applyDOM(resolved);
         listeners.forEach(function(fn) { fn(resolved, preference); });
       }

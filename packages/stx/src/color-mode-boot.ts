@@ -30,15 +30,17 @@
  * hydration. If they disagree the flash comes back — the boot script would set
  * one thing and hydration would immediately undo it, which is worse than not
  * having a boot script at all. So this mirrors the runtime's `applyDOM` and
- * `readPersisted` precisely, including two limitations that are NOT fixed here:
+ * preference reading precisely:
  *
- *   - `attribute` and `darkClass` are either/or, never both (stacksjs/stx#1788)
- *   - the persisted vocabulary is exactly `light | dark | auto` — `'system'`
- *     is not accepted (also #1788)
+ *   - `attribute` and `darkClass` both apply when both are configured, and
+ *     `darkClass: null` opts out of the class (stacksjs/stx#1788)
+ *   - the accepted vocabulary is `light | dark | auto | system`, with
+ *     `'system'` an alias for `'auto'` (also #1788)
  *
- * Mirroring the limitation is intentional. When #1788 lands, both sides change
- * together; `test/directives/color-mode-boot.test.ts` pins them to the same
- * expectations so drift fails the suite rather than shipping a flash.
+ * `test/directives/color-mode-boot.test.ts` pins both sides to the same
+ * expectations so drift fails the suite rather than shipping a flash. This
+ * script never writes to storage — reading is all it needs, and a write here
+ * would race the composable's own persistence.
  *
  * The script publishes its resolved configuration on `window.__STX_COLOR_MODE__`
  * so a bare `useColorMode()` call picks up the app's configured storage key and
@@ -53,7 +55,10 @@ export const COLOR_MODE_BOOT_MARKER = 'data-stx-color-mode-boot'
 /** The global the boot script publishes its resolved config on. */
 export const COLOR_MODE_BOOT_GLOBAL = '__STX_COLOR_MODE__'
 
-export type ColorModeBootMode = 'light' | 'dark' | 'auto'
+export type ColorModeBootMode = 'light' | 'dark' | 'auto' | 'system'
+
+/** Spelling written to storage for "follow the system". */
+export type ColorModeBootAutoValue = 'auto' | 'system'
 
 /**
  * Pre-paint options. A strict subset of `ColorModeOptions` — only the fields
@@ -64,25 +69,39 @@ export type ColorModeBootMode = 'light' | 'dark' | 'auto'
 export interface ColorModeBootConfig {
   /** localStorage key holding the preference. @default 'stx-color-mode' */
   storageKey?: string
-  /** Mode used when nothing valid is stored. @default 'auto' */
-  initialMode?: ColorModeBootMode
-  /** Class applied to `<html>` when dark. @default 'dark' */
-  darkClass?: string
   /**
-   * Attribute applied to `<html>` instead of the class, e.g. `'data-theme'`.
-   * Mirrors `useColorMode`: setting this suppresses the class entirely.
+   * Mode used when nothing valid is stored. @default 'auto'
+   * `'system'` is accepted as an alias for `'auto'`.
    */
-  attribute?: string
+  initialMode?: ColorModeBootMode
+  /**
+   * Class applied to `<html>` when dark. @default 'dark'
+   * Pass `null` to opt out — the attribute alone then carries the mode.
+   */
+  darkClass?: string | null
+  /**
+   * Attribute set to the resolved mode on `<html>`, e.g. `'data-theme'`.
+   * Applied *alongside* `darkClass`, mirroring `useColorMode` (#1788).
+   */
+  attribute?: string | null
+  /**
+   * Spelling `useColorMode` writes back for "follow the system". Published to
+   * the client so the composable doesn't convert an app's existing `'system'`
+   * key to `'auto'`. @default whatever is stored, else 'auto'
+   */
+  autoValue?: ColorModeBootAutoValue
 }
 
 interface ResolvedBootConfig {
   storageKey: string
-  initialMode: ColorModeBootMode
-  darkClass: string
+  initialMode: 'light' | 'dark' | 'auto'
+  darkClass: string | null
   attribute: string | null
+  autoValue: ColorModeBootAutoValue | null
 }
 
-const MODES = new Set<string>(['light', 'dark', 'auto'])
+const MODES = new Set<string>(['light', 'dark', 'auto', 'system'])
+const AUTO_VALUES = new Set<string>(['auto', 'system'])
 // Deliberately narrow: these values are interpolated into an inline <script>,
 // and into setAttribute/classList calls. Anything outside these shapes is a
 // configuration mistake worth failing loudly on rather than escaping around.
@@ -91,20 +110,30 @@ const CLASS_PATTERN = /^[\w-]+$/
 
 function resolveConfig(options: ColorModeBootConfig): ResolvedBootConfig {
   const storageKey = options.storageKey ?? 'stx-color-mode'
-  const initialMode = options.initialMode ?? 'auto'
-  const darkClass = options.darkClass ?? 'dark'
+  const rawInitial = options.initialMode ?? 'auto'
+  // `=== undefined`, not `??` — an explicit null is an opt-out, not an absence.
+  const darkClass = options.darkClass === undefined ? 'dark' : options.darkClass
   const attribute = options.attribute ?? null
+  const autoValue = options.autoValue ?? null
 
   if (typeof storageKey !== 'string' || storageKey.length === 0)
     throw new Error('colorMode.storageKey must be a non-empty string')
-  if (!MODES.has(initialMode))
-    throw new Error(`colorMode.initialMode must be one of light, dark, auto — got ${JSON.stringify(initialMode)}`)
-  if (typeof darkClass !== 'string' || !CLASS_PATTERN.test(darkClass))
-    throw new Error(`colorMode.darkClass must be a single CSS class name — got ${JSON.stringify(darkClass)}`)
+  if (!MODES.has(rawInitial))
+    throw new Error(`colorMode.initialMode must be one of light, dark, auto, system — got ${JSON.stringify(rawInitial)}`)
+  if (darkClass !== null && (typeof darkClass !== 'string' || !CLASS_PATTERN.test(darkClass)))
+    throw new Error(`colorMode.darkClass must be a single CSS class name, or null to opt out — got ${JSON.stringify(darkClass)}`)
   if (attribute !== null && (typeof attribute !== 'string' || !ATTRIBUTE_PATTERN.test(attribute)))
     throw new Error(`colorMode.attribute must be a valid HTML attribute name — got ${JSON.stringify(attribute)}`)
+  if (autoValue !== null && !AUTO_VALUES.has(autoValue))
+    throw new Error(`colorMode.autoValue must be 'auto' or 'system' — got ${JSON.stringify(autoValue)}`)
+  if (darkClass === null && attribute === null)
+    throw new Error('colorMode needs at least one of darkClass or attribute — with both null nothing would mark the mode on <html>')
 
-  return { storageKey, initialMode, darkClass, attribute }
+  // Normalised for the script: 'system' is an input spelling, not a distinct
+  // mode. The spelling survives via autoValue, which is what gets written back.
+  const initialMode = rawInitial === 'system' ? 'auto' : rawInitial
+
+  return { storageKey, initialMode, darkClass, attribute, autoValue }
 }
 
 /**
@@ -134,7 +163,9 @@ export function generateColorModeBootScript(options: ColorModeBootConfig = {}): 
   const config = resolveConfig(options)
   const c = serializeForScript(config)
 
-  const body = `(function(){"use strict";var c=${c};var p=c.initialMode;try{var v=localStorage.getItem(c.storageKey);if(v==="light"||v==="dark"||v==="auto")p=v}catch(e){}var m=p;if(p==="auto"){try{m=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){m="light"}}var r=document.documentElement;if(c.attribute){r.setAttribute(c.attribute,m)}else if(m==="dark"){r.classList.add(c.darkClass)}else{r.classList.remove(c.darkClass)}try{window.${COLOR_MODE_BOOT_GLOBAL}={storageKey:c.storageKey,initialMode:c.initialMode,darkClass:c.darkClass,attribute:c.attribute,preference:p,mode:m}}catch(e){}}());`
+  // `a` carries the spelling actually found in storage so the composable writes
+  // the same one back — an app persisting 'system' must not have it converted.
+  const body = `(function(){"use strict";var c=${c};var p=c.initialMode;var a=c.autoValue;try{var v=localStorage.getItem(c.storageKey);if(v==="light"||v==="dark"){p=v}else if(v==="auto"||v==="system"){p="auto";if(!a)a=v}}catch(e){}var m=p;if(p==="auto"){try{m=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){m="light"}}var r=document.documentElement;if(c.attribute)r.setAttribute(c.attribute,m);if(c.darkClass){if(m==="dark")r.classList.add(c.darkClass);else r.classList.remove(c.darkClass)}try{window.${COLOR_MODE_BOOT_GLOBAL}={storageKey:c.storageKey,initialMode:c.initialMode,darkClass:c.darkClass,attribute:c.attribute,autoValue:a||"auto",preference:p,mode:m}}catch(e){}}());`
 
   return `<script ${COLOR_MODE_BOOT_MARKER}>${body}</script>`
 }

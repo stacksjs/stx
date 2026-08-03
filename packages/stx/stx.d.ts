@@ -237,11 +237,19 @@ interface StxColorModeOptions {
   /** localStorage key holding the preference. @default 'stx-color-mode' */
   storageKey?: string
   /** Mode used when nothing valid is stored. @default 'auto' */
-  initialMode?: 'light' | 'dark' | 'auto'
-  /** Class applied to `<html>` when dark. @default 'dark' */
-  darkClass?: string
-  /** Attribute applied to `<html>` INSTEAD of the class, e.g. 'data-theme'. */
-  attribute?: string
+  initialMode?: 'light' | 'dark' | 'auto' | 'system'
+  /**
+   * Class applied to `<html>` when dark. @default 'dark'
+   * Applied alongside `attribute`; pass `null` to opt out of the class.
+   */
+  darkClass?: string | null
+  /** Attribute set to the resolved mode on `<html>`, e.g. 'data-theme'. */
+  attribute?: string | null
+  /**
+   * Spelling written to storage for "follow the system".
+   * @default whatever is already stored, else 'auto'
+   */
+  autoValue?: 'auto' | 'system'
   /** Suppress CSS transitions across a mode switch. @default true */
   disableTransitions?: boolean
 }
@@ -257,7 +265,7 @@ declare function useColorMode(_options?: StxColorModeOptions): {
   /** User preference, which may be 'auto'. */
   readonly preference: 'light' | 'dark' | 'auto'
   readonly isDark: boolean
-  set: (mode: 'light' | 'dark' | 'auto') => void
+  set: (mode: 'light' | 'dark' | 'auto' | 'system') => void
   toggle: () => void
   subscribe: (fn: (mode: 'light' | 'dark', preference: 'light' | 'dark' | 'auto') => void) => () => void
 }

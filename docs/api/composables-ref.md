@@ -987,10 +987,21 @@ const colorMode = useColorMode()
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `storageKey` | `string` | `'stx-color-mode'` | localStorage key |
-| `initialMode` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Initial mode |
-| `darkClass` | `string` | `'dark'` | Class added to `<html>` |
-| `attribute` | `string \| null` | `null` | Alternative: set attribute instead of class |
+| `initialMode` | `'light' \| 'dark' \| 'auto' \| 'system'` | `'auto'` | Initial mode. `'system'` is an alias for `'auto'` |
+| `darkClass` | `string \| null` | `'dark'` | Class added to `<html>` when dark. `null` opts out |
+| `attribute` | `string \| null` | `null` | Attribute set to the resolved mode, e.g. `data-theme`. Applied **alongside** `darkClass` |
+| `autoValue` | `'auto' \| 'system'` | stored value, else `'auto'` | Spelling written back for "follow the system" |
 | `disableTransitions` | `boolean` | `true` | Disable transitions during toggle |
+
+`attribute` and `darkClass` are complements, not alternatives — the class drives
+a utility framework's `dark:` variants while the attribute drives everything
+else, and apps generally need both. Set `darkClass: null` for attribute-only.
+
+Both `'auto'` and `'system'` are accepted wherever a preference is read
+(storage, cross-tab sync, `set()`). Whichever spelling is already in storage is
+the one written back, so an app with its own pre-paint script keeps reading a
+value it recognises. A stored value that isn't a preference at all is left
+untouched until the user makes an explicit choice — initialisation never writes.
 
 **ColorModeHandle:**
 
@@ -1040,11 +1051,11 @@ composable's configuration.
 
 Notes:
 
-- The boot script mirrors `useColorMode` exactly, including the current
-  either/or behaviour of `attribute` vs `darkClass` and the `light | dark |
-  auto` storage vocabulary (`'system'` is not accepted). Mirroring matters more
-  than being lenient: if the two disagreed, hydration would undo what the boot
-  script applied and the flash would come back.
+- The boot script mirrors `useColorMode` exactly — both apply the class and the
+  attribute, both accept `auto` and `system`, and the script publishes the
+  spelling it found so the composable writes the same one back. Mirroring
+  matters more than being lenient: if the two disagreed, hydration would undo
+  what the boot script applied and the flash would come back.
 - Storage failures degrade to `initialMode` rather than throwing. The script
   sits above the application shell, where an uncaught error would block the
   rest of the document.

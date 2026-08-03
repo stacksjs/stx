@@ -151,10 +151,23 @@ describe('generateColorModeBootScript', () => {
   })
 
   it('rejects configuration that cannot be applied safely', () => {
-    expect(() => generateColorModeBootScript({ initialMode: 'system' as never })).toThrow(/light, dark, auto/)
+    expect(() => generateColorModeBootScript({ initialMode: 'midnight' as never })).toThrow(/light, dark, auto, system/)
     expect(() => generateColorModeBootScript({ darkClass: 'has space' })).toThrow(/CSS class/)
     expect(() => generateColorModeBootScript({ attribute: 'not valid!' })).toThrow(/attribute name/)
     expect(() => generateColorModeBootScript({ storageKey: '' })).toThrow(/non-empty/)
+    expect(() => generateColorModeBootScript({ autoValue: 'sys' as never })).toThrow(/auto.*system/)
+  })
+
+  it('rejects a config where nothing would mark the mode', () => {
+    // darkClass:null opts out of the class, so an attribute has to carry it.
+    expect(() => generateColorModeBootScript({ darkClass: null, attribute: null })).toThrow(/at least one/)
+    expect(() => generateColorModeBootScript({ darkClass: null, attribute: 'data-theme' })).not.toThrow()
+  })
+
+  it('accepts system as an initialMode alias', () => {
+    // 'system' is a spelling of 'auto', not a fourth mode (#1788).
+    expect(() => generateColorModeBootScript({ initialMode: 'system' })).not.toThrow()
+    expect(generateColorModeBootScript({ initialMode: 'system' })).toContain('"initialMode":"auto"')
   })
 })
 
@@ -218,18 +231,50 @@ describe('boot script behaviour', () => {
   })
 
   it('ignores a stored value outside the accepted vocabulary', () => {
-    // Mirrors useColorMode's readPersisted, which accepts light|dark|auto only.
-    // 'system' is deliberately NOT accepted here — see stacksjs/stx#1788.
-    store.seed('stx-color-mode', 'system')
+    store.seed('stx-color-mode', 'midnight')
     runBootScript(generateColorModeBootScript({ initialMode: 'light' }))
     expect(root().getAttribute('class') || '').not.toContain('dark')
   })
 
-  it('sets the attribute instead of the class when one is configured', () => {
+  it('accepts a stored "system" as auto', () => {
+    // Rejecting it used to send the app down a silent data-loss path: read
+    // 'system' → unrecognised → fall back to 'auto' → overwrite (#1788).
+    store.seed('stx-color-mode', 'system')
+    systemPrefersDark = true
+    runBootScript(generateColorModeBootScript({ initialMode: 'light' }))
+    expect(root().getAttribute('class')).toContain('dark')
+  })
+
+  it('publishes the stored spelling so the composable writes it back', () => {
+    store.seed('stx-color-mode', 'system')
+    runBootScript(generateColorModeBootScript())
+    expect(g.window.__STX_COLOR_MODE__.autoValue).toBe('system')
+  })
+
+  it('defaults autoValue to auto when nothing is stored', () => {
+    runBootScript(generateColorModeBootScript())
+    expect(g.window.__STX_COLOR_MODE__.autoValue).toBe('auto')
+  })
+
+  it('lets an explicit autoValue win over what is stored', () => {
+    store.seed('stx-color-mode', 'system')
+    runBootScript(generateColorModeBootScript({ autoValue: 'auto' }))
+    expect(g.window.__STX_COLOR_MODE__.autoValue).toBe('auto')
+  })
+
+  it('sets the attribute AND the class when an attribute is configured', () => {
+    // They are complements, not alternatives: the class drives the utility
+    // framework's dark: variants, the attribute drives everything else (#1788).
     store.seed('stx-color-mode', 'dark')
     runBootScript(generateColorModeBootScript({ attribute: 'data-theme' }))
     expect(root().getAttribute('data-theme')).toBe('dark')
-    // Either/or, exactly like useColorMode's applyDOM (see #1788).
+    expect(root().getAttribute('class')).toContain('dark')
+  })
+
+  it('lets darkClass:null opt out of the class', () => {
+    store.seed('stx-color-mode', 'dark')
+    runBootScript(generateColorModeBootScript({ attribute: 'data-theme', darkClass: null }))
+    expect(root().getAttribute('data-theme')).toBe('dark')
     expect(root().getAttribute('class') || '').not.toContain('dark')
   })
 
