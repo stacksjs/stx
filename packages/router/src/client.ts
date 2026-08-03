@@ -503,6 +503,22 @@ else {
         var fragCrosswindHrefs=[];
         var fragCrosswindCSS=null;
         var cleanFrag=html.replace(new RegExp('<scr'+'ipt\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/scr'+'ipt>','gi'),function(m,attrs,code){
+          // A data block is not code, and everything below this line assumes it
+          // is: the body gets stashed in fragScripts, re-emitted as a pending
+          // placeholder, then wrapped in braces and executed. Wrapping a JSON
+          // object in braces reparses it as a labelled block, so its first ':'
+          // is a SyntaxError on every single fragment swap
+          // (stacksjs/stx#1801). @structuredData renders at its call site,
+          // which inside a layout is @section('content') — i.e. in the routed
+          // container — so the natural way to write it hit this.
+          //
+          // Left exactly as found rather than stripped: crawlers read
+          // structured data wherever it sits, and the browser will not execute
+          // a non-JS type anyway. Mirrors prepareRoutedBodyScripts' notion of
+          // executable, which this path never had.
+          var typeMatch=attrs.match(/\\btype\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
+          var scriptType=((typeMatch&&(typeMatch[1]||typeMatch[2]||typeMatch[3]))||'').trim().toLowerCase();
+          if(scriptType&&scriptType!=='text/javascript'&&scriptType!=='application/javascript'&&scriptType!=='module')return m;
           if(code&&code.trim()&&!isSignalsRuntimeScript({hasAttribute:function(name){return name==='data-stx-runtime'&&attrs.indexOf('data-stx-runtime')!==-1}},code)){
             var slot='fragment-'+(++fragScriptId);
             var scoped=/(?:^|\\s)data-stx-scoped(?:\\s|=|$)/i.test(attrs);
