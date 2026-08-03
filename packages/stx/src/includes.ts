@@ -894,6 +894,27 @@ catch (error: unknown) {
         }
       }
 
+      // Strip the partial's own stx comments before anything else looks at
+      // it. `processDirectives` removes `{{-- --}}` once, near the top of
+      // its pipeline, and only expands includes ~700 lines later — so a
+      // comment written inside a partial arrived after the only pass that
+      // would have removed it.
+      //
+      // It did not merely survive, it corrupted the output. `{{--` opens
+      // what the expression processor reads as a mustache, so the comment
+      // body was evaluated and swallowed and the trailing `--}}` rendered
+      // into the page as literal text. Nesting a `{{ }}` inside the comment
+      // made it worse: the inner `}}` closed the accidental expression
+      // early and the remainder leaked too.
+      //
+      // Stripping here rather than in the caller keeps comments inert in
+      // the one place it matters — their contents are never parsed, so a
+      // commented-out `@if` or `{{ }}` stays commented out. `stx init`
+      // scaffolds every component with a `{{-- Component: … --}}` header,
+      // so this was the first thing a new component did wrong.
+      if (partialContent)
+        partialContent = partialContent.replace(/\{\{--[\s\S]*?--\}\}/g, '')
+
       // Streaming SSR (#1746): extract @stream boundaries from the RAW partial
       // before any of the partial's own processing (expressions, loops,
       // conditionals) runs — so each boundary's inner template is captured
