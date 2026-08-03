@@ -37,6 +37,15 @@ export interface DevServerOptions {
    * draws under a transparent, full-size-content titlebar. Implies `native`.
    */
   titlebarHidden?: boolean
+  /**
+   * Directory holding page templates, relative to the stx root.
+   *
+   * Overrides `pagesDir` from `stx.config.ts`; falls back to it, then to
+   * `pages`. This is what `stx dev --pages <dir>` sets, mirroring
+   * `stx build --pages` (stacksjs/stx#1781). Leave unset to let config decide —
+   * passing a value unconditionally would override a config `pagesDir`.
+   */
+  pagesDir?: string
   /** STX template processing options */
   stxOptions?: StxOptions
   /** Markdown-specific options */
@@ -133,8 +142,14 @@ export function getMimeType(ext: string): string {
 
 /**
  * Default dev server options
+ *
+ * `pagesDir` is excluded rather than defaulted: it has no static default. Its
+ * absence is meaningful — it's what lets `stx.config.ts` `pagesDir` apply.
+ * Baking `'pages'` in here would override a configured `views/` for anyone who
+ * spread these defaults (#1781). serveApp resolves it as
+ * option → config → `'pages'`.
  */
-export const DEFAULT_DEV_OPTIONS: Required<Omit<DevServerOptions, 'stxOptions' | 'markdown'>> = {
+export const DEFAULT_DEV_OPTIONS: Required<Omit<DevServerOptions, 'stxOptions' | 'markdown' | 'pagesDir'>> = {
   port: 3000,
   watch: true,
   native: false,

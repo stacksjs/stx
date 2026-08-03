@@ -135,19 +135,29 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   const stxRoot = projectConfig.root && projectConfig.root !== '.'
     ? path.join(absoluteAppDir, projectConfig.root)
     : absoluteAppDir
-  const pagesDirName = projectConfig.pagesDir || 'pages'
+  // CLI flag wins over config, config over the default. `--pages` is only
+  // forwarded when actually passed, so it can't shadow a config `pagesDir`.
+  const pagesDirName = options.pagesDir || projectConfig.pagesDir || 'pages'
   const pagesDir = path.join(stxRoot, pagesDirName)
 
   // Check if pages directory exists
   if (!fs.existsSync(pagesDir)) {
-    console.error(`${colors.red}Error: No '${pagesDirName}' directory found in ${colors.bright}${stxRoot}${colors.reset}`)
-    console.log(`${colors.dim}Create a ${pagesDirName}/ directory with .stx files to define your routes.${colors.reset}`)
-    console.log(`${colors.dim}Example: ${pagesDirName}/index.stx for the homepage.${colors.reset}`)
+    // Name the path that was actually looked at. The old message read as
+    // scaffolding advice ("create a pages/ directory"), but the common case is
+    // an existing project run from one directory off — so lead with where it
+    // looked and how to point it elsewhere (#1781).
+    console.error(`${colors.red}Error: No '${pagesDirName}' directory found${colors.reset}`)
+    console.log(`${colors.dim}Looked in: ${colors.bright}${pagesDir}${colors.reset}`)
+    console.log(`${colors.dim}Run stx dev from the app directory, pass it as an argument (stx dev <dir>),${colors.reset}`)
+    console.log(`${colors.dim}point at another directory with --pages <dir>, or set pagesDir in stx.config.ts.${colors.reset}`)
+    console.log(`${colors.dim}Starting fresh? Create ${pagesDirName}/index.stx for the homepage.${colors.reset}`)
     return false
   }
 
-  // Create router from stx root (where pages/ lives)
-  const routes = createRouter(stxRoot)
+  // Create router from stx root (where pages/ lives). pagesDirName is passed
+  // explicitly so a --pages override reaches route discovery too — createRouter
+  // otherwise re-reads pagesDir from config and would scan the wrong directory.
+  const routes = createRouter(stxRoot, { pagesDir: pagesDirName })
 
   if (routes.length === 0) {
     console.error(`${colors.red}Error: No page files found in ${colors.bright}${pagesDir}${colors.reset}`)

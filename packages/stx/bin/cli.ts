@@ -605,6 +605,10 @@ else {
   cli
     .command('dev [file]', 'Start a development server for an STX app or file')
     .option('--port <port>', 'Port to use for the dev server', { default: 3000 })
+    // Parity with `stx build --pages` (#1781). Intentionally NO default: an
+    // unconditional 'pages' would override `pagesDir` from stx.config.ts, which
+    // is how Stacks apps point at views/.
+    .option('--pages <dir>', 'Directory containing page templates (default: pagesDir from stx.config.ts, else "pages")')
     .option('--no-watch', 'Disable file watching and auto-reload')
     .option('--native', 'Open in a native desktop window using Zyte')
     .option('--titlebar-hidden', 'Hide the native titlebar but keep the traffic-light buttons (web content draws under a transparent full-size titlebar). Implies --native.')
@@ -617,6 +621,7 @@ else {
     .option('--debug-directives', 'Log directive ordering and intermediate template state during rendering')
     .example('stx dev')
     .example('stx dev --port 8080')
+    .example('stx dev --pages src/pages')
     .example('stx dev template.stx')
     .example('stx dev components/hero.stx --port 8080')
     .example('stx dev **/*.stx')
@@ -670,6 +675,8 @@ else {
             hotReload: options.hmr !== false,
             profile: options.profile === true,
             debugDirectives: options.debugDirectives === true,
+            // Spread so an omitted --pages stays absent and config wins (#1781)
+            ...(options.pages && { pagesDir: options.pages }),
           } as DevServerOptions)
 
           if (!success) {
@@ -687,11 +694,12 @@ else {
                 port: options.port,
                 watch: options.watch !== false,
                 native: options.native || options.titlebarHidden || false,
-            titlebarHidden: options.titlebarHidden === true,
+                titlebarHidden: options.titlebarHidden === true,
                 cache: options.cache !== false,
                 hotReload: options.hmr !== false,
                 profile: options.profile === true,
                 debugDirectives: options.debugDirectives === true,
+                ...(options.pages && { pagesDir: options.pages }),
               } as DevServerOptions)
 
               if (!success) {
