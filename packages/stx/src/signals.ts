@@ -1972,12 +1972,6 @@ catch (e) {
   }
 
   function processElement(el, scope = componentScope) {
-    // Debug: log every element with x-class or @click
-    if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
-      if (el.hasAttribute('x-class') || el.hasAttribute('@click')) {
-        console.log('[stx] processElement:', el.tagName, 'x-class:', el.hasAttribute('x-class'), '@click:', el.hasAttribute('@click'));
-      }
-    }
     // Lazy hydration: if this element has stx-hydrate and hasn't been hydrated
     // yet, defer its subtree processing until the trigger fires.
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute && el.hasAttribute('stx-hydrate') && !el.__stx_hydrated) {
@@ -2223,17 +2217,10 @@ catch (e2) {
     var KEY_MAP = {enter:'Enter', tab:'Tab', escape:'Escape', space:' ', up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight', 'delete':'Delete', backspace:'Backspace'};
 
     // Handle attributes
-    if (el.hasAttribute && (el.hasAttribute('x-class') || el.hasAttribute('@click'))) {
-      console.log('[stx] attr loop entry:', el.tagName, 'attrs:', getElementAttributes(el).map(a => a.name).join(', '));
-    }
     getElementAttributes(el).forEach(attr => {
       const name = attr.name;
       const value = attr.value;
       if (!name) return;
-
-      if (el.hasAttribute && (el.hasAttribute('x-class') || el.hasAttribute('@click'))) {
-        console.log('[stx] attr iter:', el.tagName, 'name:', name);
-      }
 
       // Dynamic attribute binding: @bind:attr, x-bind:attr, :attr, OR x-attr
       // x-attr (e.g. x-class, x-style, x-href, x-src) is the canonical binding prefix.
@@ -2329,7 +2316,6 @@ else {
         el.removeAttribute(name);
       }
 else if (name === '@class' || name === ':class' || name === 'x-class') {
-        console.log('[stx] HIT x-class handler:', el.tagName);
         bindClass(el, value, scope);
         el.removeAttribute(name);
       }
@@ -2387,9 +2373,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
           ? { ...globalHelpers, ...el.__stx_parent_scope }
           : { ...globalHelpers, ...scope, ...(findElementScope(el) || {}) };
 
-        console.log('[stx] binding event:', eventName, 'on', el.tagName, 'expr:', value.substring(0, 40));
         el.addEventListener(eventName, (event) => {
-          console.log('[stx] event fired:', eventName, 'on', el.tagName);
           // Vue-style component listeners fall through to the rendered native
           // root unless the child emits the same event. Signal components use
           // a scope wrapper, so native events arrive here from a descendant.
@@ -2510,7 +2494,7 @@ catch (e) {
         // Skip script elements entirely
         if (child.tagName === 'SCRIPT') return;
         // Skip elements already processed by stx.mount() — they have their own scope and effects
-        if (child.__stx_scope) { console.log('[processElement] skip __stx_scope:', child.tagName); return; }
+        if (child.__stx_scope) return;
         // Skip data-stx-scope elements — they are managed by the reactive (x-data) runtime
         if (child.hasAttribute && child.hasAttribute('data-stx-scope')) return;
         processElement(child, scope);
