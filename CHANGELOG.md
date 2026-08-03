@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.151...v0.2.152)
+
+## 🚀 Features
+
+- **serve**: expose the query string as `query` in server scripts ([54382f0](https://github.com/stacksjs/stx/commit/54382f0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **types**: annotate return types so exported functions stop shipping as `void` ([28007d9](https://github.com/stacksjs/stx/commit/28007d9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **includes**: strip a partial's own stx comments ([a3061f6](https://github.com/stacksjs/stx/commit/a3061f6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **render**: make inline CSS injection opt-in ([c215f1b](https://github.com/stacksjs/stx/commit/c215f1b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: stop undoing an application's HTML escaping ([ebd8b96](https://github.com/stacksjs/stx/commit/ebd8b96)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **variable-extractor**: report an import that does not resolve ([4cae8c7](https://github.com/stacksjs/stx/commit/4cae8c7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **variable-extractor**: rewrite aliased imports into destructuring form ([c7effd0](https://github.com/stacksjs/stx/commit/c7effd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.152 ([f78bd42](https://github.com/stacksjs/stx/commit/f78bd42)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.150...v0.2.151)
 
 ## 🐛 Bug Fixes
