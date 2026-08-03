@@ -39,6 +39,7 @@
       "import": "./dist/preload.js"
     },
     "./serve": {
+      "types": "./dist/serve.d.ts",
       "bun": "./dist/serve.js",
       "import": "./dist/serve.js"
     },

@@ -355,6 +355,11 @@ export function render404Page(opts: {
 export interface ServeOptions {
   patterns: string[]
   port?: number
+  /**
+   * Initial same-origin path opened by the `o + Enter` browser shortcut.
+   * Defaults to `/`.
+   */
+  openPath?: string
   componentsDir?: string
   layoutsDir?: string
   partialsDir?: string
@@ -583,6 +588,18 @@ export interface ServeOptions {
      * for proxied paths or static files served by `routes`.
      */
     protectedPaths?: string[]
+  }
+}
+
+export function resolveServeOpenUrl(port: number, openPath = '/'): string {
+  const baseUrl = `http://localhost:${port}`
+
+  try {
+    const url = new URL(openPath || '/', `${baseUrl}/`)
+    return url.origin === baseUrl ? url.toString() : `${baseUrl}/`
+  }
+  catch {
+    return `${baseUrl}/`
   }
 }
 
@@ -3193,11 +3210,12 @@ export async function serve(options: ServeOptions): Promise<void> {
     const elapsed = (performance.now() - startTime).toFixed(0)
     const routeCount = (sourceFiles as string[] | null)?.length || 0
     const patternsStr = patterns.join(', ')
+    const openUrl = resolveServeOpenUrl(actualPort, options.openPath)
 
     console.log()
     console.log(`  \x1b[36m\x1b[1mstx\x1b[0m`)
     console.log()
-    console.log(`  \x1b[32m➜\x1b[0m  \x1b[1mLocal\x1b[0m:   \x1b[36mhttp://localhost:${actualPort}/\x1b[0m`)
+    console.log(`  \x1b[32m➜\x1b[0m  \x1b[1mLocal\x1b[0m:   \x1b[36m${openUrl}\x1b[0m`)
     console.log(`  \x1b[32m➜\x1b[0m  \x1b[1mRoutes\x1b[0m:  \x1b[2m${routeCount} files from ${patternsStr}\x1b[0m`)
     console.log()
     console.log(`  \x1b[2mready in ${elapsed}ms\x1b[0m`)
@@ -3215,7 +3233,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         const cmd = line.trim().toLowerCase()
         if (cmd === 'o') {
           const openCmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open'
-          Bun.spawn([openCmd, `http://localhost:${actualPort}/`])
+          Bun.spawn([openCmd, openUrl])
         }
         else if (cmd === 'q') {
           process.exit(0)
