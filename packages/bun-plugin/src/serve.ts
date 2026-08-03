@@ -19,7 +19,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { extractPageResponseStatus, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, extractPageResponseStatus, getBuildId, stateDir, stateDirName } from '@stacksjs/stx'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 
 // Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
@@ -2842,6 +2842,10 @@ export async function serve(options: ServeOptions): Promise<void> {
                       'X-STX-Layout': pageLayout,
                       'X-STX-Layout-Group': pageLayoutGroup,
                       ...(pageTitle && { 'X-STX-Title': encodeURIComponent(pageTitle) }),
+                      // Which build rendered this fragment. A watch-mode
+                      // restart changes it, letting the router notice that the
+                      // runtime already loaded in the page predates it (#1772).
+                      [BUILD_ID_HEADER]: getBuildId(),
                       ...(containerAttrs && { 'X-STX-Container-Attrs': encodeURIComponent(containerAttrs) }),
                       'Cache-Control': 'no-store',
                       ...corsHeaders,

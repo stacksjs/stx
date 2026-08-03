@@ -15,6 +15,7 @@ import {
   stopHmrServer,
 } from '../hot-reload'
 import { partialsCache } from '../includes'
+import { BUILD_ID_HEADER, getBuildId } from '../build-id'
 import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { createRouter, matchRoute, formatRoutes, findErrorPage } from '../router'
@@ -774,6 +775,10 @@ catch {
                 'X-STX-Layout': layoutMetadata.layout,
                 'X-STX-Layout-Group': layoutMetadata.group,
                 ...(pageTitle && { 'X-STX-Title': encodeURIComponent(pageTitle) }),
+                // Which build rendered this fragment. A watch-mode restart
+                // changes it, letting the router notice that the runtime
+                // already loaded in the page predates it (#1772).
+                [BUILD_ID_HEADER]: getBuildId(),
                 'Cache-Control': 'no-store, no-cache, must-revalidate',
               },
             })

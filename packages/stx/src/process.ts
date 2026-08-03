@@ -53,6 +53,7 @@ import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
 import { injectColorModeBootScript } from './color-mode-boot'
+import { injectBuildId } from './build-id'
 import { applyHtmlAttrs, ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags, mergeHtmlAttrs } from './document-shell'
 
 // Extracted modules
@@ -517,6 +518,10 @@ export async function processDirectives(
         const colorModeConfig = (options as any).app?.colorMode
         if (colorModeConfig)
           result = injectColorModeBootScript(result, colorModeConfig)
+        // Stamp the build that rendered this page, so the router can spot a
+        // loaded runtime being asked to hydrate a fragment from a newer build
+        // and fall back to a full navigation instead (#1772).
+        result = injectBuildId(result)
         result = placeSignalsRuntimeBeforeScripts(result)
       }
 

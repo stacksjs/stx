@@ -179,6 +179,16 @@ Same layout group (app → app)           Different layout group (app → auth)
 - **Layout groups**: `'auth'` (layouts containing auth/guest), `'app'` (everything else)
 - **Prefetch integration**: Prefetch cache stores layout info alongside HTML, enabling instant layout change detection on hover before navigation occurs
 - **No reloads**: True SPA transitions across layout boundaries (like Vue Router/React Router)
+- **Except on build skew**: every rendered page carries `<meta name="stx-build">`
+  and on-demand fragments carry `X-STX-Build`. If the server's id differs from
+  the one baked into the loaded page, the router does a full navigation instead
+  of a swap. This is the `bun --watch` case — a save restarts the server, so the
+  next fragment comes from a newer build than the runtime already running. When
+  the binding format drifted between the two, that runtime cannot hydrate the
+  fragment: literal `{{ }}`, dead bindings, stale canvas, and never reproducible
+  from a clean boot. The check acts only when both ids are known, so statically
+  hosted output keeps swapping as before. Override the id with `STX_BUILD_ID`
+  when several processes render one deployment
 
 ## Component Prop Flow
 

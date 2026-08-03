@@ -47,6 +47,28 @@ export function getRouterScript(): string {
   var containerSel=o.container;
   var debug=!!o.debug;
   function log(){if(debug&&typeof console!=='undefined'&&console.log)console.log.apply(console,arguments)}
+
+  // ── Build skew (stacksjs/stx#1772) ──
+  // The build that rendered THIS document, and therefore the build the runtime
+  // executing right now came from. Under bun --watch a save restarts the server,
+  // so the next navigation can fetch a fragment produced by a newer build; when
+  // the scoped-script or binding format drifted between the two, the old runtime
+  // cannot hydrate the new fragment — literal moustaches, dead bindings, stale
+  // canvas. Sporadic, and never on a clean boot.
+  //
+  // Conservative on purpose: act only when BOTH ids are known. A missing id is
+  // "no information", never "mismatch", so statically hosted output (no headers)
+  // and older servers behave exactly as before.
+  var buildMeta=document.querySelector('meta[name="stx-build"]');
+  var loadedBuild=buildMeta?(buildMeta.getAttribute('content')||''):'';
+  window.__stxBuild=loadedBuild;
+  function isBuildSkew(incoming){
+    return !!(loadedBuild&&incoming&&incoming!==loadedBuild);
+  }
+  function reloadForSkew(url,incoming){
+    log('[router] build skew: page is',loadedBuild,'server is',incoming,'— full navigation');
+    location.href=url;
+  }
   function runViewTransition(callback){
     if(!o.viewTransitions||!document.startViewTransition)return false;
     try{
@@ -390,6 +412,10 @@ else {
       var wantsFragment=shouldUseFragmentResponse();
       return fetch(url,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
         if(!r.ok)throw new Error(r.status);
+        // Before anything is parsed or swapped: a fragment from a different
+        // build must not be handed to this page's runtime (#1772).
+        var incomingBuild=r.headers.get('X-STX-Build')||'';
+        if(isBuildSkew(incomingBuild)){reloadForSkew(url,incomingBuild);return null}
         var isFragment=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
         var newLayout=r.headers.get('X-STX-Layout')||'';
         var newGroup=r.headers.get('X-STX-Layout-Group')||'';
@@ -616,6 +642,11 @@ else {
     // Full document mode: parse with DOMParser and extract container content
     var parser=new DOMParser();
     var doc=parser.parseFromString(html,'text/html');
+    // Full documents carry the build id as a meta rather than a header, and
+    // this path also serves cached HTML, so check here too (#1772).
+    var docBuildMeta=doc.querySelector('meta[name="stx-build"]');
+    var docBuild=docBuildMeta?(docBuildMeta.getAttribute('content')||''):'';
+    if(isBuildSkew(docBuild)){reloadForSkew(url,docBuild);return Promise.resolve(false)}
     var newContent=doc.querySelector(containerSel)||doc.querySelector('[data-stx-content]')||doc.querySelector('main');
     if(!newContent){location.href=url;return Promise.resolve(false)}
 
