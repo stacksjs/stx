@@ -5946,6 +5946,12 @@ else {
   window.nextTick = nextTick;
   window.useAsync = useAsync;
   window.useLocalStorage = useLocalStorage;
+  // Paired with the line above. Both are in STX_RUNTIME_GLOBALS, so a
+  // <script client> block gets either via the setup destructure — but code
+  // that reads the bare window global directly (a plain <script>, or a
+  // bundled module that wasn't rewritten) found useLocalStorage defined and
+  // useSessionStorage undefined.
+  window.useSessionStorage = useSessionStorage;
   window.useEventListener = useEventListener;
   window.useWebSocket = useWebSocket;
   window.useColorMode = useColorMode;

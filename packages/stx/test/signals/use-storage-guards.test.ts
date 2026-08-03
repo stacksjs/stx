@@ -323,3 +323,19 @@ describe('useLocalStorage guards (module impl)', () => {
     expect(ref.value).toBe('default')
   })
 })
+
+describe('bare window globals', () => {
+  // Both names are in STX_RUNTIME_GLOBALS, so a <script client> block gets
+  // either through the setup destructure. Code reading the window global
+  // directly — a plain <script>, or a bundled module that wasn't rewritten —
+  // depends on these assignments, and useSessionStorage was missing one.
+  it('exposes both storage composables on window', () => {
+    expect(typeof g.window.useLocalStorage).toBe('function')
+    expect(typeof g.window.useSessionStorage).toBe('function')
+  })
+
+  it('exposes both on window.stx', () => {
+    expect(typeof g.window.stx.useLocalStorage).toBe('function')
+    expect(typeof g.window.stx.useSessionStorage).toBe('function')
+  })
+})
