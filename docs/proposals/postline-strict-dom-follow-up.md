@@ -57,3 +57,20 @@ Add a regression fixture with a layout and two views that each contain a
 different prohibited DOM call. Assert that the watcher reports all three real
 source paths once and that subsequent fragment compiles do not replay unchanged
 diagnostics.
+
+## Scoped runtime bootstrap ordering
+
+Observed while reloading Postline's `/accounts` page in a fresh browser document
+on 2026-08-03. The compiled response contains a generated scoped block that
+immediately calls `window.stx.mount(...)`, but the page has not loaded or
+initialized the STX browser runtime before that block executes. Every full-page
+reload therefore reports:
+
+```text
+TypeError: Cannot read properties of undefined (reading 'mount')
+```
+
+The generated runtime bootstrap must execute before scoped client scripts, or
+those scripts must be deferred until the runtime is ready. Add a full-page
+rendering fixture with a layout and a scoped client block, then assert that the
+document loads without an exception and the block mounts exactly once.
