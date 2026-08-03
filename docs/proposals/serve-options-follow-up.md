@@ -13,6 +13,16 @@ on 2026-08-03.
 - Remove the existing `ts/no-explicit-any` warnings in
   `packages/bun-plugin/src/serve.ts`. Pickier currently reports 21 warnings in
   that module. The new `openPath` implementation does not add any of them.
+- Decide how missing Iconify collections should be handled during development.
+  A real Postline `buddy dev` run warns that the `lucide` collection is not
+  installed and renders those icons as nothing. Consider making collection
+  discovery/install guidance actionable before rendering, or providing a
+  development fallback that does not silently remove icons.
+- Resolve the class-order warnings exposed by Pickier in the refreshed Stacks
+  dashboard templates. Postline currently reports three warnings in
+  `Dashboard/Content/BlogDashboard.stx` and two in
+  `Dashboard/Content/ContentTaxonomyDashboard.stx` after upgrading its vendored
+  defaults to Stacks 0.70.252.
 
 ## Resolved during this work
 
