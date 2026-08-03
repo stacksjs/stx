@@ -14,6 +14,22 @@ export { type HydrationOptions } from './hydration'
 // shapes with different field sets; those are kept private to their modules
 // to avoid silently shadowing the user-facing one. Surfaced by stacksjs/stx#1707.
 export { type CookieOptions } from './composables/use-cookie'
+// Storage composables were reachable ONLY via the './composables' subpath, so
+// `import { useLocalStorage } from '@stacksjs/stx'` failed with TS2614 while
+// `state`/`derived` imported fine — and a `functions/` composable (which the
+// docs recommend for anything with persistence) had to reach for the subpath,
+// where the same identifier used to return a different shape. See #1797.
+export {
+  clearStorage,
+  getStorageKeys,
+  getStorageSize,
+  type StorageRef,
+  type StorageType,
+  useLocalStorage,
+  useSessionStorage,
+  useStorage,
+  type UseStorageOptions,
+} from './composables/use-storage'
 export { formatSize, getTotalSize } from './deploy'
 export { type ImageRenderResult, type ImageVariant, type ProcessedImage, clearImageCache, getFallbackVariant, getMimeType, groupVariantsByFormat, optimizeImage, processImage } from './image-optimization'
 export { type AnalysisResult } from './analyzer'

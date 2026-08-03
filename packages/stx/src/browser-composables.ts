@@ -5,6 +5,22 @@
  * Reusable composable functions for browser APIs.
  * All composables follow the `use*` naming convention.
  *
+ * @deprecated Vestigial. Nothing in the repo imports this module and it is not
+ * re-exported from `src/index.ts` or `composables/index.ts` — it ships only
+ * because the package's `./*` wildcard export makes
+ * `@stacksjs/stx/browser-composables` resolve.
+ *
+ * Everything here exists in a canonical form elsewhere, and the duplicates
+ * disagree: `useLocalStorage` here returns `{ value, remove }`, while the
+ * canonical `composables/use-storage.ts` and the signals runtime both return a
+ * Signal. That third shape is a documented source of downstream confusion —
+ * at least one Stacks app's agent guide taught the `{ value, remove }`
+ * destructure for `<script client>` blocks, where it yields `undefined` for
+ * both (stacksjs/stx#1797).
+ *
+ * Import from `@stacksjs/stx` or `@stacksjs/stx/composables` instead. Slated
+ * for removal in the next major.
+ *
  * @module browser-composables
  */
 
@@ -28,6 +44,11 @@ function unref<T>(value: MaybeRef<T>): T {
 
 /**
  * Reactive localStorage with automatic serialization.
+ *
+ * @deprecated Returns `{ value, remove }` — a third shape for this name, and
+ * one the signals runtime cannot see. Use `useLocalStorage` from
+ * `@stacksjs/stx`, which returns a Signal (`s()` reads, `s.set(v)` writes) on
+ * every import path (stacksjs/stx#1797).
  *
  * @example
  * ```typescript
@@ -82,6 +103,9 @@ export function useLocalStorage<T>(
 
 /**
  * Reactive sessionStorage with automatic serialization.
+ *
+ * @deprecated See {@link useLocalStorage} above — use the Signal-returning
+ * version from `@stacksjs/stx` (stacksjs/stx#1797).
  *
  * @example
  * ```typescript

@@ -17,7 +17,12 @@
  * ```
  */
 
-// Storage
+// Storage. `useLocalStorage` / `useSessionStorage` return a Signal<T> matching
+// the runtime contract and the ambient stx.d.ts; the old StorageRef shape was
+// removed in #1797 as part of the dual-impl unification. Migrate `.value` reads
+// to `s()` and `.value = x` writes to `s.set(x)` (`.set()` is unchanged); for
+// `.remove()` / `.subscribe()` / custom serializers use `useStorage`, which
+// still returns a StorageRef.
 export {
   useStorage,
   useLocalStorage,

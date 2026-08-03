@@ -874,6 +874,35 @@ draftCart.set([...draftCart(), item])
 </script>
 ```
 
+Both return the same signal whether they come from the bare global in a
+`<script client>` block, `import … from '@stacksjs/stx'`, or
+`'@stacksjs/stx/composables'`.
+
+> **Changed in #1797.** The `/composables` subpath used to return a
+> `StorageRef` (`.value`, `.get()`, `.remove()`, `.subscribe()`) while the
+> runtime returned a signal, so `.value` worked or silently yielded `undefined`
+> depending on which entry point an import resolved to. Migration is narrow —
+> `.value` reads, `.value = x` writes and `.set()` all still work, because
+> `Signal` carries a Vue-compatible `.value` accessor. Only `.get()` → `s()`
+> and `.remove()` need changing.
+
+### useStorage
+
+```typescript
+useStorage<T>(key: string, defaultValue: T, options?: UseStorageOptions<T>): StorageRef<T>
+```
+
+The richer object API, unchanged: `.value`, `.get()`, `.set()`, `.remove()`,
+`.subscribe()`, plus `storage: 'local' | 'session'`, a custom `serializer`, and
+`mergeDefaults`. Reach for it when you need `remove()`, a non-JSON encoding, or
+subscription with the previous value; otherwise prefer the signals above.
+
+```ts
+const cart = useStorage('cart', [], { storage: 'session', mergeDefaults: true })
+cart.subscribe((next, prev) => sync(next, prev))
+cart.remove()
+```
+
 ### useCookie
 
 ```typescript
