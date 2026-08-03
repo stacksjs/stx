@@ -4938,9 +4938,22 @@ catch (e) {}
       if (config.bodyAttrs && config.bodyAttrs.class) {
         config.bodyAttrs.class.split(' ').forEach(function(cls) { if (cls) document.body.classList.add(cls); });
       }
-      // Html lang
-      if (config.htmlAttrs && config.htmlAttrs.lang) {
-        document.documentElement.setAttribute('lang', config.htmlAttrs.lang);
+      // Html attributes. Every key, not just lang — the module impl
+      // (head.ts updateHead) has always applied all of them, and a root-level
+      // class is the main reason to reach for htmlAttrs at all (#1798).
+      // class merges rather than replaces, matching bodyAttrs.class above:
+      // the color-mode boot script owns a class on this same element.
+      if (config.htmlAttrs) {
+        for (var hk in config.htmlAttrs) {
+          if (!config.htmlAttrs.hasOwnProperty(hk)) continue;
+          var hv = config.htmlAttrs[hk];
+          if (hv == null) continue;
+          if (hk === 'class') {
+            String(hv).split(' ').forEach(function(cls) { if (cls) document.documentElement.classList.add(cls); });
+          } else {
+            document.documentElement.setAttribute(hk, hv);
+          }
+        }
       }
     }
     // Apply immediately if DOM is ready, otherwise on mount

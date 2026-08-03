@@ -27,6 +27,191 @@ import { generateColorModeBootScript } from './color-mode-boot'
 export const CLOAK_STYLE = '<style data-stx-cloak>[x-cloak]{display:none !important}</style>'
 
 /**
+ * Markers recording which `<html>` attributes stx itself wrote from `htmlAttrs`
+ * (stacksjs/stx#1798).
+ *
+ * The router needs them to reconcile the root element across an SPA layout
+ * change. It cannot just diff `<html>` against the incoming document: by then
+ * the color-mode boot script has added its own `dark` class / `data-theme`, and
+ * `animation.ts` has added `data-reduced-motion`, none of which exist in the
+ * server response — a blind diff would strip them on every navigation and
+ * flash the wrong theme. These say exactly what stx put there, so the router
+ * can remove precisely that much and leave runtime state alone.
+ *
+ * `class` is tracked separately because it is the one attribute that gets
+ * *merged* into at runtime, so it has to be reconciled token-by-token rather
+ * than replaced wholesale.
+ */
+export const HTML_ATTRS_MARKER = 'data-stx-html-attrs'
+export const HTML_CLASS_MARKER = 'data-stx-html-class'
+
+/** Attribute names safe to emit unquoted-name into an open tag. */
+const SAFE_ATTR_NAME = /^[A-Za-z_:][\w:.-]*$/
+
+function escapeAttr(value: string): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+/**
+ * Build the attribute string for the shell's `<html>` open tag.
+ *
+ * `htmlAttrs.lang` wins over the `lang` option so `useHead({ htmlAttrs: { lang } })`
+ * is not emitted twice (two `lang=` attributes on one element is a parse error
+ * that browsers resolve by keeping the first — i.e. silently ignoring the
+ * more specific one).
+ *
+ * @param htmlAttrs - Attributes from config `app.head.htmlAttrs` / `useHead()`
+ * @param lang - The `lang` option, used unless `htmlAttrs.lang` overrides it
+ * @returns Leading-space-prefixed attribute string, e.g. ` lang="en" class="marketing"`
+ */
+export function buildHtmlAttrs(htmlAttrs: Record<string, string> = {}, lang: string = 'en'): string {
+  const rest: string[] = []
+  const managed: string[] = []
+  let className = ''
+  let resolvedLang = lang
+
+  for (const [rawName, value] of Object.entries(htmlAttrs || {})) {
+    if (value == null)
+      continue
+    const name = rawName.trim()
+    if (!SAFE_ATTR_NAME.test(name))
+      continue
+    const lower = name.toLowerCase()
+    if (lower === 'lang') {
+      resolvedLang = String(value)
+      continue
+    }
+    if (lower === 'class') {
+      className = String(value).trim()
+      continue
+    }
+    rest.push(` ${name}="${escapeAttr(String(value))}"`)
+    managed.push(name)
+  }
+
+  let out = ` lang="${escapeAttr(resolvedLang)}"`
+  if (className)
+    out += ` class="${escapeAttr(className)}"`
+  out += rest.join('')
+  // Markers only when there is something for the router to undo.
+  if (className)
+    out += ` ${HTML_CLASS_MARKER}="${escapeAttr(className)}"`
+  if (managed.length)
+    out += ` ${HTML_ATTRS_MARKER}="${escapeAttr(managed.join(' '))}"`
+  return out
+}
+
+/**
+ * Merge a page's `htmlAttrs` over the config's.
+ *
+ * Per-key override, except `class`, which unions: a global
+ * `app.head.htmlAttrs.class` (`h-full`, a font class, …) shouldn't silently
+ * vanish the moment one page adds a class of its own. Same rule as
+ * `applyHtmlAttrs`, so "class unions, everything else overrides" holds at every
+ * point htmlAttrs are combined.
+ */
+export function mergeHtmlAttrs(
+  base: Record<string, string> = {},
+  override: Record<string, string> = {},
+): Record<string, string> {
+  const merged = { ...base, ...override }
+  if (base.class && override.class) {
+    const tokens = base.class.split(/\s+/).filter(Boolean)
+    for (const token of override.class.split(/\s+/).filter(Boolean)) {
+      if (!tokens.includes(token))
+        tokens.push(token)
+    }
+    merged.class = tokens.join(' ')
+  }
+  return merged
+}
+
+/**
+ * Merge `htmlAttrs` into a document that rendered its OWN `<html>` tag.
+ *
+ * `generateDocumentShell` only runs for pages without a shell, so a page or
+ * layout that writes `<html>` itself — the common case, and what SSG emits —
+ * would otherwise drop `useHead({ htmlAttrs })` entirely. Whether the attribute
+ * lands should not depend on who wrote the document element.
+ *
+ * `class` unions with what the template already put there (the template's own
+ * classes are never dropped); every other attribute is overwritten. Only the
+ * classes stx contributed are recorded in the marker, so an SPA navigation
+ * removes those and leaves the hand-written ones in place.
+ */
+export function applyHtmlAttrs(html: string, htmlAttrs: Record<string, string> = {}): string {
+  if (!htmlAttrs || Object.keys(htmlAttrs).length === 0)
+    return html
+
+  const openTag = html.match(/<html\b([^>]*)>/i)
+  if (!openTag)
+    return html
+
+  const existing: Record<string, string> = {}
+  const order: string[] = []
+  const attrRe = /([A-Za-z_:][\w:.-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g
+  let m: RegExpExecArray | null
+  while ((m = attrRe.exec(openTag[1])) !== null) {
+    const name = m[1]
+    if (!(name in existing))
+      order.push(name)
+    existing[name] = m[2] ?? m[3] ?? m[4] ?? ''
+  }
+
+  const addedClasses: string[] = []
+  const managed: string[] = []
+
+  for (const [rawName, value] of Object.entries(htmlAttrs)) {
+    if (value == null)
+      continue
+    const name = rawName.trim()
+    if (!SAFE_ATTR_NAME.test(name))
+      continue
+    const lower = name.toLowerCase()
+
+    if (lower === 'class') {
+      const present = (existing.class || '').split(/\s+/).filter(Boolean)
+      for (const token of String(value).split(/\s+/).filter(Boolean)) {
+        if (!present.includes(token)) {
+          present.push(token)
+          addedClasses.push(token)
+        }
+      }
+      if (!('class' in existing))
+        order.push('class')
+      existing.class = present.join(' ')
+      continue
+    }
+
+    if (!(name in existing))
+      order.push(name)
+    existing[name] = String(value)
+    if (lower !== 'lang')
+      managed.push(name)
+  }
+
+  if (addedClasses.length) {
+    if (!(HTML_CLASS_MARKER in existing))
+      order.push(HTML_CLASS_MARKER)
+    existing[HTML_CLASS_MARKER] = addedClasses.join(' ')
+  }
+  if (managed.length) {
+    if (!(HTML_ATTRS_MARKER in existing))
+      order.push(HTML_ATTRS_MARKER)
+    existing[HTML_ATTRS_MARKER] = managed.join(' ')
+  }
+
+  const rebuilt = order.map(name => ` ${name}="${escapeAttr(existing[name])}"`).join('')
+  // Function replacement: an attribute value containing `$&` or `$1` would
+  // otherwise be re-expanded as a replacement pattern.
+  return html.replace(openTag[0], () => `<html${rebuilt}>`)
+}
+
+/**
  * Insert the inline x-cloak <style> before </head> if a head exists and the
  * style isn't already present. Idempotent (guards on the data-stx-cloak
  * marker). No-op when the output has no </head> — those paths fall back to
@@ -160,6 +345,7 @@ export function generateDocumentShell(
     link = [],
     script: headScriptTags = [],
     headRaw = '',
+    htmlAttrs = {},
     bodyClass = '',
     bodyAttrs = {},
   } = headConfig
@@ -195,7 +381,8 @@ export function generateDocumentShell(
     return ''
   }).filter(Boolean).join('\n')
 
-  // Build body attributes
+  // Build <html> and <body> attributes
+  const htmlAttrStr = buildHtmlAttrs(htmlAttrs, lang)
   const bodyAttrStr = Object.entries(bodyAttrs).map(([k, v]) => ` ${k}="${v}"`).join('')
   const bodyClassStr = bodyClass ? ` class="${bodyClass}"` : ''
 
@@ -231,7 +418,7 @@ export function generateDocumentShell(
   ].filter(Boolean)
 
   return `<!DOCTYPE html>
-<html lang="${lang}">
+<html${htmlAttrStr}>
 <head>
 ${headParts.join('\n')}
 </head>

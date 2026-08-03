@@ -497,10 +497,34 @@ export default {
       title: 'My App',
       meta: [{ name: 'description', content: '...' }],
       bodyClass: 'dark min-h-screen',
+      htmlAttrs: { class: 'h-full', 'data-app': 'storefront' },
     },
   },
 }
 ```
+
+### Attributes on `<html>`
+
+`htmlAttrs` is the only way to reach the root element once a template stops
+writing its own shell — which matters when design tokens are scoped to it
+(`html.marketing { --bg: … }`) rather than to `:root` globally.
+
+Set them globally in config, or per-page/per-layout from `<script server>`:
+
+```html
+<script server>
+useHead({ htmlAttrs: { class: 'marketing' } })
+</script>
+```
+
+Page-level `class` unions with the config one; every other attribute overrides.
+`htmlAttrs.lang` takes precedence over the `lang` option.
+
+The router reconciles these across SPA navigation, so a class one layout scopes
+its tokens to is removed when you navigate to a layout that doesn't declare it.
+It reconciles only what stx wrote (tracked via `data-stx-html-class` /
+`data-stx-html-attrs` on the root element) — classes and attributes added at
+runtime, like the pre-paint color-mode `dark` class, are left alone.
 
 Layouts are pure content fragments:
 ```html

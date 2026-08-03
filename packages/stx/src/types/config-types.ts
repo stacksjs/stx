@@ -437,6 +437,18 @@ export interface AppHeadConfig {
   script?: Array<{ src?: string, content?: string, [key: string]: any }>
   /** Additional raw HTML to inject in <head> */
   headRaw?: string
+  /**
+   * Attributes for the `<html>` element.
+   *
+   * `class` is the reason this exists: design tokens scoped to the root
+   * element (`html.marketing { --bg: … }`) need a class the page cannot
+   * otherwise set once it stops hand-writing its own document shell.
+   * `htmlAttrs.lang` takes precedence over the `lang` option.
+   *
+   * Also settable per-page via `useHead({ htmlAttrs })`, which merges over
+   * this. Reconciled by the router on SPA layout changes (stacksjs/stx#1798).
+   */
+  htmlAttrs?: Record<string, string>
   /** Body class */
   bodyClass?: string
   /** Body attributes */

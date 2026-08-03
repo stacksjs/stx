@@ -53,7 +53,7 @@ import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
 import { injectColorModeBootScript } from './color-mode-boot'
-import { ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags } from './document-shell'
+import { applyHtmlAttrs, ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags, mergeHtmlAttrs } from './document-shell'
 
 // Extracted modules
 import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, preEvalLiteralReactiveIfs, processSignals } from './signal-processing'
@@ -456,7 +456,7 @@ export async function processDirectives(
           link: [...(baseHeadConfig.link || []), ...(runtimeHead.link || [])],
           script: [...(baseHeadConfig.script || []), ...(runtimeHead.script || [])],
           headRaw: [baseHeadConfig.headRaw, pageHeadRaw].filter(Boolean).join('\n'),
-          ...(runtimeHead.htmlAttrs && { htmlAttrs: { ...(baseHeadConfig.htmlAttrs || {}), ...runtimeHead.htmlAttrs } }),
+          ...(runtimeHead.htmlAttrs && { htmlAttrs: mergeHtmlAttrs(baseHeadConfig.htmlAttrs, runtimeHead.htmlAttrs) }),
           ...(runtimeHead.bodyAttrs && { bodyAttrs: { ...(baseHeadConfig.bodyAttrs || {}), ...runtimeHead.bodyAttrs } }),
         }
         // A page/layout that already rendered its own <html><head> (the common
@@ -469,8 +469,15 @@ export async function processDirectives(
         result = ensureDocumentShell(result, headConfig, {
           ...((options as any).app?.colorMode && { colorMode: (options as any).app.colorMode }),
         })
-        if (alreadyShelled)
+        if (alreadyShelled) {
           result = injectConfigHeadTags(result, baseHeadConfig)
+          // …and the same for <html> attributes: generateDocumentShell was a
+          // no-op, so merge them into the tag the template wrote (#1798).
+          // Uses the MERGED config here, not baseHeadConfig — unlike head tags,
+          // nothing downstream applies htmlAttrs server-side, so a per-page
+          // useHead({ htmlAttrs }) would otherwise land only after hydration.
+          result = applyHtmlAttrs(result, headConfig.htmlAttrs)
+        }
 
         // Inject layout meta tag for SPA layout-change detection
         const layoutComment = result.match(/<!-- stx-layout: ([^ ]+) -->/)

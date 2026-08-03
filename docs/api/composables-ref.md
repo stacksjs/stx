@@ -604,7 +604,12 @@ useHead({
 | `link` | `Array<Record<string, string>>` | Appends `<link>` tags (deduped by rel+href) |
 | `script` | `Array<{ src?: string, innerHTML?: string, async?: boolean, defer?: boolean }>` | Appends `<script>` tags |
 | `bodyAttrs` | `{ class?: string }` | Adds classes to `<body>` |
-| `htmlAttrs` | `{ lang?: string }` | Sets attributes on `<html>` |
+| `htmlAttrs` | `Record<string, string>` | Sets attributes on `<html>`. `class` merges (it never clobbers the pre-paint color-mode class); everything else is set outright |
+
+Called from `<script server>`, `htmlAttrs` also lands in the server-rendered
+`<html>` tag — the way to put a class on the root element from a layout, e.g.
+for design tokens scoped as `html.marketing { --bg: … }`. The router reconciles
+those across SPA navigation. See [Document Shell](../ARCHITECTURE.md#document-shell).
 
 ### useSeoMeta
 

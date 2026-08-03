@@ -857,6 +857,34 @@ else {
         document.documentElement.lang=doc.documentElement.lang;
       }
 
+      // ── Reconcile <html> attributes (stacksjs/stx#1798) ──
+      // A layout that scopes its design tokens to the root element
+      // (html.marketing { --bg: … }) needs that class to LEAVE when you
+      // navigate to a layout that doesn't want it — otherwise both token sets
+      // match at once and the second layout paints with the first one's
+      // palette. Head stylesheets are additive across a swap, so the class is
+      // the only thing disambiguating them.
+      //
+      // Only what stx wrote is touched, per the markers emitted by
+      // document-shell.ts. Diffing the whole element against the incoming
+      // document would strip the color-mode boot's dark class and
+      // data-reduced-motion, which exist only on the live page.
+      if(doc.documentElement){
+        var curRoot=document.documentElement,incRoot=doc.documentElement;
+        var tokens=function(el,attr){var v=el.getAttribute(attr);return v?v.split(/\\s+/).filter(Boolean):[]};
+        var prevCls=tokens(curRoot,'data-stx-html-class'),nextCls=tokens(incRoot,'data-stx-html-class');
+        prevCls.forEach(function(c){if(nextCls.indexOf(c)===-1)curRoot.classList.remove(c)});
+        nextCls.forEach(function(c){curRoot.classList.add(c)});
+        if(nextCls.length)curRoot.setAttribute('data-stx-html-class',nextCls.join(' '));
+        else curRoot.removeAttribute('data-stx-html-class');
+
+        var prevNames=tokens(curRoot,'data-stx-html-attrs'),nextNames=tokens(incRoot,'data-stx-html-attrs');
+        prevNames.forEach(function(n){if(nextNames.indexOf(n)===-1)curRoot.removeAttribute(n)});
+        nextNames.forEach(function(n){var v=incRoot.getAttribute(n);if(v!==null)curRoot.setAttribute(n,v)});
+        if(nextNames.length)curRoot.setAttribute('data-stx-html-attrs',nextNames.join(' '));
+        else curRoot.removeAttribute('data-stx-html-attrs');
+      }
+
       window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
 
       // Execute page scripts FIRST — they define setup functions and set _latestSetup

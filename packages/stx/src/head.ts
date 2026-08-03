@@ -542,10 +542,20 @@ export function applyHead(config: HeadConfig = currentHead): void {
     }
   }
 
-  // Update html attributes
+  // Update html attributes.
+  // `class` merges instead of replacing — the pre-paint color-mode boot script
+  // owns a class on this same element, and setAttribute('class', …) would drop
+  // it and flash the wrong theme. Kept in step with the runtime impl in
+  // signals.ts (stacksjs/stx#1798); see CLAUDE.md on the dual implementations.
   if (config.htmlAttrs) {
     for (const [key, value] of Object.entries(config.htmlAttrs)) {
-      document.documentElement.setAttribute(key, value)
+      if (key === 'class') {
+        for (const cls of String(value).split(/\s+/).filter(Boolean))
+          document.documentElement.classList.add(cls)
+      }
+      else {
+        document.documentElement.setAttribute(key, value)
+      }
     }
   }
 

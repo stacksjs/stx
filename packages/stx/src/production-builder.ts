@@ -20,7 +20,7 @@ import { buildRuntimeAsset, buildRouterAsset, type BuiltAsset } from './build-as
 import { compileTemplate, type CompiledTemplate } from './template-compiler'
 import { generateManifest, writeManifest, type ManifestRoute, type ManifestAssets } from './manifest'
 import { injectColorModeBootScript } from './color-mode-boot'
-import { ensureDocumentShell } from './document-shell'
+import { applyHtmlAttrs, ensureDocumentShell } from './document-shell'
 import { extractContainerContent } from './app-shell'
 import { injectCrosswindCSS } from './dev-server/crosswind'
 import { loadStxConfig } from './config'
@@ -241,6 +241,13 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
       // is no dev server to blame it on. (#1794)
       if (colorModeConfig)
         compiled.html = injectColorModeBootScript(compiled.html, colorModeConfig)
+
+      // Same for `app.head.htmlAttrs` — the shell only writes them onto an
+      // <html> tag it generated itself (#1798). Idempotent (class unions,
+      // everything else is rewritten to the value it already has), so this is
+      // harmless on pages the shell above did handle.
+      if (headConfigDefault.htmlAttrs)
+        compiled.html = applyHtmlAttrs(compiled.html, headConfigDefault.htmlAttrs)
 
       // Relocate data-stx scope attribute to <body>. processScriptSetup attaches
       // the scope to the first non-meta element at compile time because <body>
