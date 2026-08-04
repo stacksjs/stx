@@ -51,6 +51,8 @@ const label = derived(() => 'live')
   )
 
   fs.writeFileSync(path.join(dir, 'partials', 'plain.stx'), '<span>{{ mystery }}</span>')
+  fs.mkdirSync(path.join(dir, 'components'), { recursive: true })
+  fs.writeFileSync(path.join(dir, 'components', 'Alert.stx'), '<div class="alert"><slot /></div>')
 })
 
 afterAll(() => {
@@ -60,7 +62,7 @@ afterAll(() => {
 const options = () => ({
   ...defaultConfig,
   partialsDir: path.join(dir, 'partials'),
-  componentsDir: path.join(dir, 'partials'),
+  componentsDir: path.join(dir, 'components'),
 }) as any
 
 /** Render, returning the output AND the context so the stamp is inspectable. */
@@ -122,5 +124,37 @@ const n = state(0)
 </script>
 <div>@include("plain")</div>`)
     expect(out).not.toContain('{{ mystery }}')
+  })
+})
+
+/**
+ * The cases each retired override used to carry.
+ *
+ * Before removing any of them, each needed a test naming the case it protected —
+ * they had none, which is why a green suite could not tell "safe to delete" from
+ * "untested". These are those tests.
+ */
+describe('cases the per-caller overrides used to carry', () => {
+  it('preserves slot content authored by the CALLER', async () => {
+    // options.__stx_force_signals existed for this: `<Alert>{{ error }}</Alert>`
+    // is written by the caller, so judging it by the COMPONENT's own script
+    // rendered it as an empty styled box.
+    const { out } = await render(`<script client>
+const error = state('boom')
+</script>
+<Alert>{{ error() }}</Alert>`)
+    expect(out).toContain('{{ error() }}')
+  })
+
+  it('keeps a signal alive when a static prop of the same name shadows it', async () => {
+    // This is the case the client-signal NAME SET protects, which is a
+    // different thing from the gate boolean — the Set drives the
+    // firstVarIsClientSignal early-returns. Deleting the gate term is safe;
+    // emptying the Set is not.
+    const { out } = await render(`<script client>
+const title = state('SIGNAL')
+</script>
+<div>{{ title() }}</div>`)
+    expect(out).toContain('{{ title() }}')
   })
 })

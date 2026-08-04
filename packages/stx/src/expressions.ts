@@ -667,7 +667,7 @@ export function interpolateScriptsInTemplate(
 /**
  * Process template expressions including variables, filters, and operations
  */
-export function processExpressions(template: string, context: Record<string, any>, filePath: string, options?: { forceSignals?: boolean }): string {
+export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {
   let output = template
 
   // Protect <style> and <script> blocks that contain NO stx template
@@ -705,37 +705,23 @@ export function processExpressions(template: string, context: Record<string, any
 
   // Check if this template uses signals - if so, we need to preserve expressions
   // that reference runtime variables (like loop variables or signal calls).
-  // `forceSignals` is set by the @include path: a partial's <script> is stripped
-  // (includes.ts) before this runs, so usesSignalsInScript(template) can't see its
-  // own state()/derived(). The caller computes the gate on the partial's FULL
-  // content and passes it here, so {{ }} over the partial's own signals are
-  // preserved for the runtime — exactly like a top-level page. See stacksjs/stx#1758.
-  //
-  // `__stx_force_signals` is the same gate for SLOT CONTENT. A component
-  // rendering `<slot />` receives markup authored by its caller, and any
-  // {{ }} in it refers to the CALLER's scope - which the component's own
-  // script knows nothing about. Judging by the component's script alone,
-  // those expressions looked unresolvable-and-not-signal-backed, so they were
-  // evaluated server-side against a context that never had them and rendered
-  // as empty. `<Alert>{{ error }}</Alert>` produced a styled, empty box.
-  // `__stx_signals_gate` is the single gate (#1800): computed once per render
-  // unit on that unit's ORIGINAL source — before any script stripping or slot
+  // `__stx_signals_gate` is THE gate (#1800): computed once per render unit on
+  // that unit's ORIGINAL source — before any script stripping or slot
   // substitution — and stamped on the context, so it reaches every nested
-  // expression pass through the normal `{ ...context }` spread. That transport
-  // is the point. The three legacy inputs below split across two mechanisms: a
-  // per-call option, which does NOT survive into the per-iteration contexts
-  // loops.ts builds, and context keys, which do. So `{{ label() }}` over a
-  // partial's own derived() was preserved outside a server @foreach and emptied
-  // inside one.
+  // expression pass through the normal `{ ...context }` spread.
   //
-  // Deliberately WIDEN-ONLY: OR-ed with, never preferred over, the legacy
-  // inputs. Preferring the stamp would be a narrowing change and would regress
-  // the component-injected-reactivity case. Each legacy input is retired in its
-  // own commit with the regression test named in #1800.
+  // Transport was the actual defect. Three per-caller overrides used to sit
+  // here, split across two mechanisms: a per-call option, which does NOT survive
+  // into the per-iteration contexts loops.ts builds, and context keys, which do.
+  // All three are now retired — each case they carried has a regression test
+  // naming it (the #1758 partial, caller-authored slot content, and the
+  // bundler's name list).
+  //
+  // NOTE: retiring the client-signal-names GATE TERM is not the same as
+  // emptying `clientSignalNames` below. That Set drives `firstVarIsClientSignal`
+  // and its early returns, which is what keeps `{{ title() }}` alive when a
+  // static prop shadows the signal. The Set stays.
   const hasSignals = context?.__stx_signals_gate === true
-    || options?.forceSignals === true
-    || context?.__stx_force_signals === true
-    || Array.isArray(context?.__stx_client_signal_names)
     || usesSignalsInScript(template)
   const clientSignalNames = new Set<string>(
     Array.isArray(context?.__stx_client_signal_names)

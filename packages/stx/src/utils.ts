@@ -943,7 +943,6 @@ export async function renderComponentWithSlot(
       // the only clue was that the box appeared at all. Flagging the component
       // as signal-bearing lets the existing "unresolvable here, preserve for
       // the client" rule do its job.
-      ...(slotContentHasExpressions(slotContent) && { __stx_force_signals: true }),
       // #1800: one gate for this component render unit, computed on the FULL
       // pre-strip source PLUS the caller's slot markup — whose {{ }} name the
       // CALLER's signals, which this component's own script cannot see.

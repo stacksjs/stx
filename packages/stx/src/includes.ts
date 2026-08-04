@@ -1178,8 +1178,7 @@ catch (e) {
       // for the runtime to bind — the partial renders permanently blank. Recover the
       // gate from the FULL partial content so a partial with a client signal script
       // preserves {{ }} just like a top-level page. See stacksjs/stx#1758.
-      const partialHasSignals = usesSignalsInScript(partialContent)
-      processedContent = processExpressions(processedContent, includeContext, includeFilePath, { forceSignals: partialHasSignals })
+      processedContent = processExpressions(processedContent, includeContext, includeFilePath)
 
       // Append preserved style and script for SFC support
       if (preservedStyle) {
