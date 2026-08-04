@@ -39,7 +39,7 @@ import type { ParsedEvent, EventModifiers } from './events'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { importOnce } from './lazy-module'
-import { STX_RUNTIME_GLOBALS } from './runtime-globals'
+import { STX_RUNTIME_GLOBALS, usesReactiveRuntime } from './runtime-globals'
 import { escapeScriptBody } from './script-emit'
 
 // =============================================================================
@@ -1329,7 +1329,12 @@ ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
   //    - Uses signal APIs → auto-mount (existing behavior)
   //    - Has template-referenced declarations → auto-mount (Phase 2: auto-binding)
   //    - Otherwise → legacy IIFE
-  const usesSignals = /\b(state|derived|effect|ref|reactive|computed|watch|watchEffect|useLocalStorage|useSessionStorage|useRef|useEventListener|useFetch|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useWebSocket|useRoute|useSearchParams|onMount|onDestroy|onMounted|onBeforeUnmount|onUnmounted|batch|untrack|peek)\s*(?:<[^>]*>)?\s*\(/.test(scriptContent)
+  // Derived from the runtime globals, not a hand-maintained alternation
+  // (#1819). The literal listed 36 names against 71 globals, so a client block
+  // built out of useStore/useQuery/useMutation/useCookie and friends was
+  // classified as "not using signals", skipped the stx.mount() wrapper, and
+  // fell through to the legacy IIFE path with no reactivity.
+  const usesSignals = usesReactiveRuntime(scriptContent)
   const isSfcWrapped = /function __stx_setup_/.test(code)
   const alreadyMounts = /\bstx\.mount\s*\(|\bstx\.mountEl\s*\(/.test(scriptContent)
 

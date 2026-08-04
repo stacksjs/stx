@@ -101,3 +101,45 @@ export function buildRuntimeGlobalsDestructure(
   }
   return `${declaration} { ${names.join(', ')} } = window.stx;`
 }
+
+/**
+ * Runtime globals that are COMPILE-TIME macros rather than reactive APIs.
+ *
+ * Calling one of these does not make a script reactive — they are consumed by
+ * the compiler and produce no runtime subscription — so the auto-mount test
+ * below must not treat them as evidence that a block needs mounting.
+ */
+export const COMPILE_TIME_ONLY_GLOBALS: readonly string[] = [
+  'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps', 'defineSlots', 'withDefaults',
+]
+
+/**
+ * Names whose presence in a client script means it needs the signals runtime
+ * and an `stx.mount()` wrapper.
+ *
+ * DERIVED, not hand-maintained (stacksjs/stx#1819). This was a literal regex
+ * alternation of 36 names against 71 runtime globals, so a block built out of
+ * the newer reactive composables — `useStore`, `useQuery`, `useMutation`,
+ * `useCookie`, `watchMultiple` and a dozen more — was classified as "not using
+ * signals", skipped mounting, and fell through to the legacy IIFE path with no
+ * reactivity at all.
+ *
+ * Exactly the drift #1804 removed for STX_AUTO_IMPORTS, one file away.
+ */
+export const REACTIVE_RUNTIME_GLOBALS: readonly string[] = STX_RUNTIME_GLOBALS
+  .filter(name => !COMPILE_TIME_ONLY_GLOBALS.includes(name))
+
+/**
+ * Does this script call anything that needs the reactive runtime?
+ *
+ * Matches a CALL, not a mention: a bare word can be a property, a string or a
+ * comment. Tolerates a generic argument list, since `state<Foo>(…)` is valid
+ * TypeScript and common.
+ */
+export function usesReactiveRuntime(source: string): boolean {
+  if (!source)
+    return false
+  return REACTIVE_RUNTIME_GLOBALS.some(name =>
+    new RegExp(`\\b${name}\\s*(?:<[^>]*>)?\\s*\\(`).test(source),
+  )
+}

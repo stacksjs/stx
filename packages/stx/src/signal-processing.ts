@@ -12,7 +12,7 @@
 import type { StxOptions } from './types'
 import { generateServerDataBridge, injectBrowserCoreAutoImports } from './client-script'
 import { findIfBlocks } from './parser'
-import { buildRuntimeGlobalsDestructure } from './runtime-globals'
+import { buildRuntimeGlobalsDestructure, usesReactiveRuntime } from './runtime-globals'
 import { escapeScriptBody } from './script-emit'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
@@ -218,14 +218,31 @@ export function hasSignalsSyntax(template: string): boolean {
     /\breactive\s*(?:<[^>]*>)?\s*\(/, // reactive() Vue-compat alias
     /\bwatch\s*(?:<[^>]*>)?\s*\(/, // watch() Vue-compat alias
     /\bwatchEffect\s*(?:<[^>]*>)?\s*\(/, // watchEffect() Vue-compat alias
-    /\buseId\s*\(/, // stable component/page DOM ids
-    /\buseReactiveProp\s*(?:<[^>]*>)?\s*\(/, // reactive component prop bridge
+    // Any event handler. A page whose only client-side behaviour is a @click
+    // still needs the runtime to bind it, and the previous list covered only
+    // the @-prefixed DIRECTIVES — event binding was absent entirely, so a page
+    // could emit stx.mount() with no runtime and die on its first line (#1820).
+    /\s@[a-z][\w.:-]*\s*=/i,
+    // ANY colon-bound attribute, not a fixed list of seven. Arbitrary attribute
+    // binding (:value, :disabled, :href, :data-x) is the common case and none
+    // of it used to count. The `.` exclusion keeps this off Vue-style
+    // `:prop.sync` spellings that are not ours, and requiring a value keeps it
+    // off bare `:` in text.
+    /\s:[a-z][\w-]*\s*=\s*["']/i,
     /\s:(?:if|else-if|else|for|show|text|html|model)\s*=/, // colon-form reactive directives
     /data-stx(?:-auto)?(?![-\w])/, // data-stx or data-stx-auto (not data-stx-ref, data-stx-id, etc.)
     /data-stx-scoped/, // client scripts need the signals runtime
   ]
 
-  return signalsPatterns.some(pattern => pattern.test(template))
+  if (signalsPatterns.some(pattern => pattern.test(template)))
+    return true
+
+  // Every reactive runtime global, not just useId/useReactiveProp. Only two of
+  // the 71 were listed, so a client block using useStore, useQuery, useFetch,
+  // useColorMode or useLocalStorage did not count as needing the runtime
+  // (#1820). Derived from the same list the auto-mount test uses, so the two
+  // decisions cannot drift apart again.
+  return usesReactiveRuntime(template)
 }
 
 /**
