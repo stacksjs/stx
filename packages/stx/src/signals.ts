@@ -4033,9 +4033,6 @@ catch (e2) {
     const fullScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
     const directSignal = fullScope[expr];
 
-    if (directSignal) {
-      console.log('[stx] bindIf direct signal for :if=' + expr, 'signal identity:', directSignal === componentScope[expr] ? 'SAME' : 'DIFFERENT', 'signal():', directSignal());
-    }
     effect(() => {
       var value;
       if (directSignal && (directSignal._isSignal || directSignal._isDerived)) {
@@ -4115,6 +4112,11 @@ else if (!value && isInserted) {
         // if) fire too. The if attribute was already removed, so no recursion.
         if (value && isInserted && !childrenProcessed) {
           childrenProcessed = true;
+          // Until this deferred pass runs, the shown subtree still holds literal
+          // {{ }}. Flag it so the hydration audit doesn't report those as a
+          // binding miss in the gap before the setTimeout fires — a :for nested
+          // in a :if binds a macrotask after the synchronous stx:load audit (#1773).
+          el.__stx_if_pending = true;
           setTimeout(function() {
             var childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
             // A false single-element conditional is detached before the
@@ -4132,6 +4134,8 @@ else if (!value && isInserted) {
             // :if children still have x-cloak and stay hidden.
             el.removeAttribute('x-cloak');
             el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
+            // Deferred bind complete — the audit may inspect this subtree now.
+            el.__stx_if_pending = false;
           }, 0);
         }
       }
@@ -6331,7 +6335,7 @@ else {
         componentScope = { ...componentScope, ...scopeVars };
       }
 
-      console.log('[stx] calling processElement on scope:', scopeId, 'componentScope total keys:', Object.keys(componentScope).length, 'has openEventModal:', 'openEventModal' in componentScope, 'scopeVars keys:', Object.keys(scopeVars).length);
+      console.log('[stx] calling processElement on scope:', scopeId, 'componentScope keys:', Object.keys(componentScope).length, 'scopeVars keys:', Object.keys(scopeVars).length);
       var disposeEffects = trackEffects(function() { processElement(el); });
       el.__stx_disposers = disposeEffects;
       console.log('[stx] scope processed OK:', scopeId);
@@ -6589,6 +6593,9 @@ catch (e) {
       if (p.nodeType !== Node.ELEMENT_NODE) continue;
       if (AUDIT_SKIP_TAGS[p.tagName]) return true;
       if (p.hasAttribute && p.hasAttribute('data-stx-ignore')) return true;
+      // A :if whose deferred child-binding pass hasn't run yet legitimately holds
+      // literal {{ }} that binds a macrotask later — not a hydration miss (#1773).
+      if (p.__stx_if_pending) return true;
     }
     return false;
   }
