@@ -111,3 +111,20 @@ jobs:
         run: pantry publish --npm --access public --skip bun-plugin,components,config,create-stx,desktop,iconify-core,iconify-generator,markdown,router,sanitizer,stx
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # The Chrome Web Store takes a zip of the extension directory. Building it
+      # here means a release always has an uploadable artifact attached, so
+      # submitting is a download-and-upload rather than a local build someone
+      # has to remember the steps for (stacksjs/stx#1754). The upload itself
+      # still needs a maintainer account.
+      - name: Package the devtools extension
+        run: bun run package
+        working-directory: packages/devtools-extension
+
+      - name: Attach the extension to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: packages/devtools-extension/release/*.zip
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

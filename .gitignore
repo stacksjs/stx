@@ -62,3 +62,6 @@ pantry
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
 .claude/worktrees/
+
+# devtools-extension store package (built by `bun run package`)
+packages/devtools-extension/release/
