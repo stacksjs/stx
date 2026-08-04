@@ -14,6 +14,7 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { classifyAllScripts } from './script-classifier'
+import { startsDocument } from './document-shell'
 export { extractLayoutMetadata } from 'stx-router/layout-metadata'
 export type { LayoutMetadata } from 'stx-router/layout-metadata'
 
@@ -252,56 +253,6 @@ ${routerScript}
   return html
 }
 
-/**
- * Does this string OPEN a full HTML document?
- *
- * Anchored, but tolerant of what stx's own pipeline prepends: whitespace, HTML
- * comments, and `<script>` blocks (the signals runtime, scoped setup scripts,
- * theme guards) all routinely land ahead of a layout's markup.
- *
- * The check used to be `/<!DOCTYPE\b/i` — unanchored — so the literal text
- * `<!DOCTYPE` ANYWHERE made a fragment look like a document and sent it through
- * wrapper-stripping. Easy to hit on any page that documents HTML: a doctype in
- * a comment, in a `<pre><code>` sample, or in a JS string (stacksjs#1787). The
- * `<html>` half was already anchored, so the asymmetry was clearly accidental.
- *
- * Note this is the opposite bias from `hasDocumentShell` in document-shell.ts,
- * which stays permissive on purpose: there, a false negative double-wraps a
- * complete document, so leaning towards "yes, it's a document" is the safe
- * direction. Here a false positive shreds a fragment, so it leans the other way.
- */
-function startsDocument(html: string): boolean {
-  let i = 0
-  while (i < html.length) {
-    const rest = html.slice(i)
-
-    const ws = rest.match(/^\s+/)
-    if (ws) {
-      i += ws[0].length
-      continue
-    }
-
-    if (rest.startsWith('<!--')) {
-      const end = html.indexOf('-->', i)
-      if (end === -1)
-        return false
-      i = end + 3
-      continue
-    }
-
-    const scriptOpen = rest.match(/^<script\b[^>]*>/i)
-    if (scriptOpen) {
-      const end = html.toLowerCase().indexOf('</script>', i + scriptOpen[0].length)
-      if (end === -1)
-        return false
-      i = end + '</script>'.length
-      continue
-    }
-
-    return /^<!DOCTYPE\b/i.test(rest) || /^<html[\s>]/i.test(rest)
-  }
-  return false
-}
 
 /**
  * Strip document wrapper (DOCTYPE, html, head, body) from page content,

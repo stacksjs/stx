@@ -20,7 +20,7 @@
  * is to emit markup verbatim.
  */
 import { describe, expect, it } from 'bun:test'
-import { generateDocumentShell, injectConfigHeadTags } from '../../src/document-shell'
+import { generateDocumentShell, hasDocumentShell, injectConfigHeadTags } from '../../src/document-shell'
 
 const BREAKOUT = `x</title><script>alert(1)</script>`
 const ATTR_BREAKOUT = `" onload="alert(1)`
@@ -102,5 +102,55 @@ describe('documented raw escape hatches stay raw', () => {
   it('does not escape inline script content', () => {
     const out = shell({ script: [{ content: 'window.__X__ = 1 < 2' }] })
     expect(out).toContain('window.__X__ = 1 < 2')
+  })
+})
+
+/**
+ * Shell detection is anchored (stacksjs/stx#1792, part one item 3).
+ *
+ * It used to be an unanchored `/<html[\s>]/i.test(html)`, so a DOCTYPE or an
+ * html tag mentioned ANYWHERE — including inside a comment — reported a shell
+ * that was not there.
+ *
+ * The cascade was silent and severe: no shell means no `<head>`, so the cloak
+ * style never ships and every element stx deliberately hid renders VISIBLE; no
+ * `<meta name="stx-layout">`; and without that the router's document sniff
+ * fails and every navigation hard-reloads. The reporter ended up writing a
+ * house rule telling authors not to name the tag in prose — a framework needing
+ * a prose workaround in comments has a bug, not a convention.
+ */
+describe('shell detection is anchored', () => {
+  it('ignores a comment that names the html tag', () => {
+    expect(hasDocumentShell('<!-- see the root <html> element -->\n<main>hi</main>')).toBe(false)
+  })
+
+  it('ignores a comment that names a doctype', () => {
+    expect(hasDocumentShell('<!-- add <!DOCTYPE html> at the top -->\n<main>hi</main>')).toBe(false)
+  })
+
+  it('ignores a doctype inside page content, such as a code sample', () => {
+    // Docs pages and install snippets legitimately print one.
+    expect(hasDocumentShell('<main><pre><!DOCTYPE html></pre></main>')).toBe(false)
+  })
+
+  it('still detects a real document', () => {
+    expect(hasDocumentShell('<!DOCTYPE html><html><head></head><body></body></html>')).toBe(true)
+    expect(hasDocumentShell('\n  <html><head></head><body></body></html>')).toBe(true)
+  })
+
+  it('steps over a leading comment, script or style before the wrapper', () => {
+    // All three legitimately precede the wrapper in real output; treating such
+    // a document as a fragment would wrap it and nest <html>.
+    expect(hasDocumentShell('<!-- generated --><!DOCTYPE html><html></html>')).toBe(true)
+    expect(hasDocumentShell('<script>var a=1</script><html></html>')).toBe(true)
+    expect(hasDocumentShell('<style>body{margin:0}</style><html><body></body></html>')).toBe(true)
+  })
+
+  it('wraps a fragment whose comment mentions the tag', () => {
+    // The end-to-end consequence: this used to come back unwrapped, with no
+    // <head> and therefore no cloak style.
+    const out = generateDocumentShell('<!-- the root <html> element --><main>hi</main>', {} as never, {} as never)
+    expect(out).toContain('<head')
+    expect(out).toContain('data-stx-cloak')
   })
 })

@@ -467,8 +467,82 @@ ${bodyParts.join('\n')}
  * which made the check spuriously fail and auto-shell wrap the user's
  * complete HTML doc as if it were just body content.
  */
+/**
+ * Does this string OPEN a full HTML document?
+ *
+ * Anchored, but tolerant of what stx's own pipeline prepends: whitespace, HTML
+ * comments, and `<script>` blocks (the signals runtime, scoped setup scripts,
+ * theme guards) all routinely land ahead of a layout's markup.
+ *
+ * The check used to be `/<!DOCTYPE\b/i` — unanchored — so the literal text
+ * `<!DOCTYPE` ANYWHERE made a fragment look like a document and sent it through
+ * wrapper-stripping. Easy to hit on any page that documents HTML: a doctype in
+ * a comment, in a `<pre><code>` sample, or in a JS string (stacksjs#1787). The
+ * `<html>` half was already anchored, so the asymmetry was clearly accidental.
+ *
+ * Note this is the opposite bias from `hasDocumentShell` in document-shell.ts,
+ * which stays permissive on purpose: there, a false negative double-wraps a
+ * complete document, so leaning towards "yes, it's a document" is the safe
+ * direction. Here a false positive shreds a fragment, so it leans the other way.
+ */
+export function startsDocument(html: string): boolean {
+  let i = 0
+  while (i < html.length) {
+    const rest = html.slice(i)
+
+    const ws = rest.match(/^\s+/)
+    if (ws) {
+      i += ws[0].length
+      continue
+    }
+
+    if (rest.startsWith('<!--')) {
+      const end = html.indexOf('-->', i)
+      if (end === -1)
+        return false
+      i = end + 3
+      continue
+    }
+
+    // Step over leading <script> and <style>. Both legitimately precede the
+    // wrapper in real output (an injected boot script, a hoisted style), and
+    // treating such a document as a fragment would wrap it and nest <html>.
+    const preamble = rest.match(/^<(script|style)\b[^>]*>/i)
+    if (preamble) {
+      const closeTag = `</${preamble[1].toLowerCase()}>`
+      const end = html.toLowerCase().indexOf(closeTag, i + preamble[0].length)
+      if (end === -1)
+        return false
+      i = end + closeTag.length
+      continue
+    }
+
+    return /^<!DOCTYPE\b/i.test(rest) || /^<html[\s>]/i.test(rest)
+  }
+  return false
+}
+
+/**
+ * Does this output already carry a document wrapper?
+ *
+ * ANCHORED, and it has to be. The test used to be an unanchored
+ * `/<html[\s>]/i.test(html)`, so a DOCTYPE or an html tag mentioned ANYWHERE —
+ * including inside an HTML comment — reported a shell that was not there
+ * (stacksjs/stx#1792, part one item 3).
+ *
+ * The cascade was silent and severe: no shell means no `<head>`, so
+ * `injectCloakStyle` bails and every element stx deliberately cloaked renders
+ * VISIBLE; no `<meta name="stx-layout">`; and with neither that meta nor
+ * `data-stx-content` the router's document sniff fails, so every navigation
+ * hard-reloads. One comment mentioning the root element was enough, and the
+ * reporter ended up writing a house rule telling authors not to name the tag in
+ * prose.
+ *
+ * Shares `startsDocument` with the app-shell path, which was anchored for the
+ * same reason in #1787 and had been the outlier's correct twin ever since.
+ */
 export function hasDocumentShell(html: string): boolean {
-  return /<!DOCTYPE\b/i.test(html) || /<html[\s>]/i.test(html)
+  return startsDocument(html)
 }
 
 /**
