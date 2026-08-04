@@ -2708,7 +2708,11 @@ catch (e) {
       });
     }
     else if (tag === 'select') {
-      var syncSelect = () => { el.value = getValue() ?? ''; };
+      // Same equality guard as the text branch. Harmless here — a select has
+      // no caret — but an unconditional write is still a needless DOM mutation
+      // on every signal change, and the inconsistency invites the text-branch
+      // bug being reintroduced by copying this one (#1799).
+      var syncSelect = () => { var next = getValue() ?? ''; if (el.value !== next) el.value = next; };
       el.__stx_model_sync = syncSelect;
       effect(syncSelect);
       if (!el.__stx_model_observer && typeof window.MutationObserver !== 'undefined') {
@@ -2728,7 +2732,41 @@ catch (e) {
       el.addEventListener('change', () => setValue(coerceValue(el.value)));
     }
 else {
-      effect(() => { el.value = getValue() ?? ''; });
+      // Writing el.value moves the text cursor to the END of the control, and
+      // typing forms a loop: input -> setValue -> the signal changes -> this
+      // effect re-runs -> the write. So every keystroke reset the caret
+      // (stacksjs/stx#1799).
+      //
+      // Invisible while appending at the end of a field, which is why a login
+      // form with x-model felt fine and a textarea people actually edit did
+      // not. Worse inside :for, where key-based reuse updates the item signal
+      // on reuse (#1669) and re-evaluates the reused row's bindings on every
+      // character.
+      //
+      // The equality guard alone fixes typing, because the value this effect
+      // computes IS the value just typed. The offset is preserved as well for
+      // the case the guard cannot cover: a value that legitimately changed
+      // from elsewhere while the field is focused — a formatter rewriting
+      // input, a remote sync.
+      effect(() => {
+        var next = getValue() ?? '';
+        if (el.value === next) return;
+        var active = typeof document !== 'undefined' && document.activeElement === el;
+        var start = null;
+        var end = null;
+        if (active) {
+          // selectionStart throws on input types that do not support
+          // selection (number, email, date), so it cannot be assumed present.
+          try { start = el.selectionStart; end = el.selectionEnd; }
+          catch (e) { start = null; end = null; }
+        }
+        el.value = next;
+        if (active && start !== null && typeof el.setSelectionRange === 'function') {
+          // Clamp: the incoming value may be shorter than the old offset.
+          try { el.setSelectionRange(Math.min(start, next.length), Math.min(end == null ? start : end, next.length)); }
+          catch (e) { /* type does not support selection */ }
+        }
+      });
       el.addEventListener(modifiers.includes('lazy') ? 'change' : 'input', () => setValue(coerceValue(el.value)));
     }
 
