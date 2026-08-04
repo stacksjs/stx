@@ -257,3 +257,50 @@ describe('useColorMode — dual-impl parity', () => {
     })
   }
 })
+
+/**
+ * An explicit `null` from `app.colorMode` opts out (stacksjs/stx#1813).
+ *
+ * `useColorMode` resolves options as call-site → boot global → default, and the
+ * boot global is published from `app.colorMode`. Both impls treated a
+ * boot-global `null` as "unspecified" and fell through to the default, so
+ * config — the one path the global exists to serve — could not express an
+ * opt-out.
+ *
+ * The asymmetry hid because it only bites where the fallback is non-null:
+ * `attribute: null` looked like it worked (its fallback is null too), while
+ * `darkClass: null` silently became `'dark'`. Opting out of the class therefore
+ * required repeating the option at every call site, defeating the single-source
+ * arrangement the global was added for.
+ */
+describe('explicit null in the boot global (#1813)', () => {
+  for (const [name, create] of IMPLS) {
+    describe(name, () => {
+      it('honours darkClass:null from the boot global', () => {
+        g.window.__STX_COLOR_MODE__ = { storageKey: 'app_theme', attribute: 'data-theme', darkClass: null, initialMode: 'auto' }
+        const cm = create({})
+        cm.set('dark')
+        // The whole point: no class is managed, only the attribute.
+        expect(root().getAttribute('class') ?? '').not.toContain('dark')
+        expect(root().getAttribute('data-theme')).toBe('dark')
+        cm.dispose?.()
+      })
+
+      it('still defaults darkClass when the boot global omits it', () => {
+        g.window.__STX_COLOR_MODE__ = { storageKey: 'app_theme', attribute: 'data-theme', initialMode: 'auto' }
+        const cm = create({})
+        cm.set('dark')
+        expect(root().getAttribute('class') ?? '').toContain('dark')
+        cm.dispose?.()
+      })
+
+      it('lets a call-site option still win over the boot global', () => {
+        g.window.__STX_COLOR_MODE__ = { darkClass: null }
+        const cm = create({ darkClass: 'night' })
+        cm.set('dark')
+        expect(root().getAttribute('class') ?? '').toContain('night')
+        cm.dispose?.()
+      })
+    })
+  }
+})

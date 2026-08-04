@@ -451,10 +451,12 @@ function warnMissingDirs(loaded: StxConfig, cwd: string): void {
     const abs = path.isAbsolute(value) ? value : path.join(cwd, value)
     if (fs.existsSync(abs))
       continue
+    const prefixed = !!loaded.root && loaded.root !== '.'
     console.warn(
-      `[stx] ${String(key)} resolves to "${abs}", which does not exist. `
-      + `Configured as "${value}"${loaded.root && loaded.root !== '.' ? ` under root "${loaded.root}"` : ''} — `
-      + 'a value that already includes the root gets it prefixed twice.',
+      `[stx] ${String(key)} resolves to "${abs}", which does not exist. Configured as "${value}"`
+      + (prefixed
+        ? ` and prefixed with root "${loaded.root}" — a value that already includes the root gets it twice.`
+        : '.'),
     )
   }
 }

@@ -10,11 +10,15 @@
  * with low false-positive rate).
  *
  * Phase 1 covers the five highest-hit footguns from the issue:
- *   1. stx/no-bare-function-ref-in-event       `@click="toggleLike"` (no parens)
- *   2. stx/no-view-level-script-client         `<script client>` in a view file
- *   3. stx/store-value-imports-must-be-local   value import escaping resources/stores/
- *   4. stx/no-signal-call-in-for-iteration-var calling the `:for` loop var like a signal
- *   5. stx/no-backticks-in-html-comments       a backtick inside an HTML comment
+ *   1. stx/no-bare-function-ref-in-event       `@click="store.method"` (member path)
+ *   2. stx/store-value-imports-must-be-local   value import escaping resources/stores/
+ *   3. stx/no-signal-call-in-for-iteration-var calling the `:for` loop var like a signal
+ *   4. stx/no-backticks-in-html-comments       a backtick inside an HTML comment
+ *
+ * `stx/no-view-level-script-client` was removed in #1815: it asserted at error
+ * severity that a view-level `<script client>` is silently dropped, which is
+ * false — it is the primary documented authoring pattern, and its symbols reach
+ * the built page. The rule told people to break working code.
  *
  * Remaining footguns (web-components, template tags, @include loop-var
  * forwarding, etc.) are Phase 2.
@@ -22,7 +26,6 @@
 
 export type StxStrictRuleId =
   | 'stx/no-bare-function-ref-in-event'
-  | 'stx/no-view-level-script-client'
   | 'stx/store-value-imports-must-be-local'
   | 'stx/no-signal-call-in-for-iteration-var'
   | 'stx/no-backticks-in-html-comments'
@@ -157,14 +160,24 @@ function ruleBareFunctionRef(src: string, spans: Array<[number, number]>, out: S
     const base = m[1].toLowerCase().split(':')[0]
     if (DIRECTIVE_ATTR_NAMES.has(base)) continue // @if/@for/etc are directives, not events
     const value = m[3].trim()
-    // A bare ref is a pure identifier or member path with no call, operator,
-    // assignment, arrow, or whitespace — i.e. `handler` or `store.method`.
-    if (/^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/.test(value)) {
+    // MEMBER PATHS ONLY — a plain identifier fires (stacksjs/stx#1815).
+    //
+    // The runtime invokes a bare identifier with $event, matching
+    // Alpine/Vue/Svelte (signals.ts, added in #1695). This rule predated that
+    // fix and was never narrowed, so it reported the COMMON case as broken at
+    // error severity — and its suggested remedy is a downgrade even where it
+    // applies, because `fn()` passes no $event.
+    //
+    // A member path genuinely does not fire: the runtime's match is
+    // plain-identifier-only, so `@click="store.method"` falls through to the
+    // generic evaluator and is discarded as an identifier statement. Requiring
+    // a dot keeps the rule correct and still useful.
+    if (/^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+$/.test(value)) {
       const at = src.indexOf(m[3], m.index)
       const { line, column } = offsetToLineCol(src, at < 0 ? m.index : at)
       out.push({
         ruleId: 'stx/no-bare-function-ref-in-event',
-        message: `Event handler @${m[1]}="${value}" is a bare reference and will not fire. Call it: @${m[1]}="${value}()".`,
+        message: `Event handler @${m[1]}="${value}" is a member path, which the runtime does not invoke — it only auto-calls a plain identifier. Call it: @${m[1]}="${value}($event)".`,
         line,
         column,
         severity: 'error',
@@ -173,35 +186,6 @@ function ruleBareFunctionRef(src: string, spans: Array<[number, number]>, out: S
   }
 }
 
-// ---------------------------------------------------------------------------
-// Rule 2 — view-level <script client>
-// ---------------------------------------------------------------------------
-
-function ruleViewLevelScriptClient(
-  src: string,
-  fileKind: 'view' | 'component' | 'layout',
-  out: StxStrictDiagnostic[],
-): void {
-  if (fileKind !== 'view') return
-  const re = /<script\b([^>]*)>/gi
-  let m: RegExpExecArray | null
-  // eslint-disable-next-line no-cond-assign
-  while ((m = re.exec(src)) !== null) {
-    // `client` as a standalone attribute (not part of e.g. `data-client`).
-    // The captured attr string excludes the closing `>`, so allow end-of-string
-    // after `client` as well as a following space / `=` / `/`.
-    if (/(?:^|\s)client(?=[\s/=]|$)/i.test(m[1])) {
-      const { line, column } = offsetToLineCol(src, m.index)
-      out.push({
-        ruleId: 'stx/no-view-level-script-client',
-        message: `<script client> at the top level of a view is silently dropped — only components get client scopes. Move it into a component, or use <script> (server).`,
-        line,
-        column,
-        severity: 'error',
-      })
-    }
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Rule 3 — store value imports must resolve inside resources/stores/
@@ -393,8 +377,6 @@ export function lintStxStrict(source: string, options: StxStrictOptions = {}): S
 
   if (isRuleOn(options.rules, 'stx/no-bare-function-ref-in-event'))
     ruleBareFunctionRef(source, spans, out)
-  if (isRuleOn(options.rules, 'stx/no-view-level-script-client'))
-    ruleViewLevelScriptClient(source, fileKind, out)
   if (filePath && isRuleOn(options.rules, 'stx/store-value-imports-must-be-local'))
     ruleStoreValueImports(source, filePath, out)
   if (isRuleOn(options.rules, 'stx/no-signal-call-in-for-iteration-var'))

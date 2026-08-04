@@ -20,16 +20,32 @@ function count(src: string, rule: StxStrictRuleId, opts = {}): number {
 describe('stx/no-bare-function-ref-in-event', () => {
   const R = 'stx/no-bare-function-ref-in-event'
 
-  it('flags @click="handler" (no parens)', () => {
-    expect(count('<button @click="toggleLike">x</button>', R)).toBe(1)
+  it('does NOT flag a plain identifier — the runtime invokes it', () => {
+    // The runtime auto-calls a bare identifier with $event, matching
+    // Alpine/Vue/Svelte (#1695). This rule predated that fix and reported the
+    // COMMON case as broken at error severity, so following it meant editing
+    // working code — and its remedy is a downgrade even where it applies,
+    // because `fn()` passes no $event (#1815).
+    expect(count('<button @click="toggleLike">x</button>', R)).toBe(0)
   })
 
   it('flags a bare member path @submit="form.handleSubmit"', () => {
+    // Still correct: the runtime's auto-call is plain-identifier-only, so a
+    // member path genuinely falls through and is discarded.
     expect(count('<form @submit="form.handleSubmit"></form>', R)).toBe(1)
   })
 
-  it('flags handlers with modifiers @click.stop.prevent="open"', () => {
-    expect(count('<a @click.stop.prevent="open">x</a>', R)).toBe(1)
+  it('does NOT flag a plain identifier carrying modifiers', () => {
+    expect(count('<a @click.stop.prevent="open">x</a>', R)).toBe(0)
+  })
+
+  it('flags a member path with modifiers', () => {
+    expect(count('<a @click.stop.prevent="store.open">x</a>', R)).toBe(1)
+  })
+
+  it('suggests passing $event, not dropping it', () => {
+    const d = lintStxStrict('<form @submit="form.handleSubmit"></form>').find(x => x.ruleId === R)!
+    expect(d.message).toContain('($event)')
   })
 
   it('does NOT flag a called handler @click="toggleLike()"', () => {
@@ -55,38 +71,6 @@ describe('stx/no-bare-function-ref-in-event', () => {
 
   it('does NOT flag bare refs inside <script> bodies', () => {
     expect(count('<script>const x = "@click=\\"foo\\""</script>', R)).toBe(0)
-  })
-})
-
-describe('stx/no-view-level-script-client', () => {
-  const R = 'stx/no-view-level-script-client'
-
-  it('flags <script client> in a view file', () => {
-    expect(count('<script client>const x = 1</script>', R, { filePath: 'resources/views/home.stx' })).toBe(1)
-  })
-
-  it('flags <script client> when fileKind is forced to view', () => {
-    expect(count('<script client>x</script>', R, { fileKind: 'view' })).toBe(1)
-  })
-
-  it('does NOT flag <script client> in a component file', () => {
-    expect(count('<script client>x</script>', R, { filePath: 'resources/components/Card.stx' })).toBe(0)
-  })
-
-  it('does NOT flag <script client> in a layout file', () => {
-    expect(count('<script client>onMount(init)</script>', R, { filePath: 'resources/views/layouts/default.stx' })).toBe(0)
-  })
-
-  it('does NOT flag <script client> when fileKind is forced to layout', () => {
-    expect(count('<script client>onMount(init)</script>', R, { fileKind: 'layout' })).toBe(0)
-  })
-
-  it('does NOT flag a plain <script> (server) in a view', () => {
-    expect(count('<script>const x = 1</script>', R, { fileKind: 'view' })).toBe(0)
-  })
-
-  it('does NOT mistake data-client / a client substring for the attribute', () => {
-    expect(count('<script data-client="x">y</script>', R, { fileKind: 'view' })).toBe(0)
   })
 })
 
@@ -165,8 +149,10 @@ describe('stx/no-backticks-in-html-comments', () => {
 })
 
 describe('stx-strict — adversarial FP/FN review regressions (stacksjs/stx#1744)', () => {
-  it('R1: flags colon-namespaced events (@update:modelValue="handler")', () => {
-    expect(count('<MyComp @update:modelValue="handler" />', 'stx/no-bare-function-ref-in-event')).toBe(1)
+  it('R1: treats a colon-namespaced attribute as an event, not a directive', () => {
+    // The classification is what mattered here; a plain identifier is fine
+    // either way now, so assert on a member path to keep the check meaningful.
+    expect(count('<MyComp @update:modelValue="store.handler" />', 'stx/no-bare-function-ref-in-event')).toBe(1)
   })
 
   it('R1: @model:foo is still treated as the model directive (not flagged)', () => {
@@ -215,7 +201,7 @@ describe('lintStxStrict — composition + options', () => {
   it('reports multiple rules in one pass, sorted by position', () => {
     const src = [
       '<!-- `bad` -->',
-      '<button @click="save">x</button>',
+      '<button @click="store.save">x</button>',
     ].join('\n')
     const found = ids(src, { fileKind: 'view' })
     expect(found).toContain('stx/no-backticks-in-html-comments')
@@ -226,16 +212,16 @@ describe('lintStxStrict — composition + options', () => {
   })
 
   it('respects rule toggles', () => {
-    const src = '<button @click="save">x</button>'
+    const src = '<button @click="store.save">x</button>'
     expect(count(src, 'stx/no-bare-function-ref-in-event', { rules: { 'stx/no-bare-function-ref-in-event': false } })).toBe(0)
   })
 
   it('reports accurate 1-based line/column', () => {
-    const src = 'line1\n<button @click="save">x</button>'
+    const src = 'line1\n<button @click="store.save">x</button>'
     const d = lintStxStrict(src).find(x => x.ruleId === 'stx/no-bare-function-ref-in-event')!
     expect(d.line).toBe(2)
-    // column points at the value `save`
-    expect(src.split('\n')[1].slice(d.column - 1)).toStartWith('save')
+    // column points at the value
+    expect(src.split('\n')[1].slice(d.column - 1)).toStartWith('store.save')
   })
 
   it('a clean view produces no diagnostics', () => {
