@@ -567,6 +567,30 @@ export async function processDirectives(
         }
       }
 
+      // Framework composables the page actually calls but the runtime does not
+      // provide (#1805). Bundled from the real modules rather than hand-ported,
+      // demand-driven, and skip-never-clobber so the runtime's own signal-based
+      // versions always win. Injected before the user composables so a user
+      // composable can build on one.
+      if (isTopLevel) {
+        try {
+          const { getFrameworkComposableScript } = await importOnce(
+            'stx/framework-composables',
+            () => import('./framework-composables'),
+          )
+          const frameworkScript = await getFrameworkComposableScript(result)
+          if (frameworkScript) {
+            const anchor = findScriptBlockByAttribute(result, 'data-stx-stores')
+              || findScriptBlockByAttribute(result, 'data-stx-runtime')
+            if (anchor)
+              result = result.slice(0, anchor.end) + '\n' + frameworkScript + result.slice(anchor.end)
+          }
+        }
+        catch {
+          // Framework composables are an enhancement; never fail a render.
+        }
+      }
+
       // Auto-inject composables from composablesDir (default: composables/, then
       // functions/). Populates window.__composables, which is what
       // `import { useThing } from '@composables'` compiles to — without it that

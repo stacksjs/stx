@@ -12,9 +12,8 @@
 import type { StxOptions } from './types'
 import { generateServerDataBridge, injectBrowserCoreAutoImports } from './client-script'
 import { findIfBlocks } from './parser'
-import { STX_RUNTIME_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
+import { buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { escapeScriptBody } from './script-emit'
-import { reportUnresolvedIdentifiers } from './unresolved-identifiers'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { injectSignalsRuntime } from './runtime-injection'
@@ -1264,16 +1263,6 @@ export async function processScriptSetup(template: string, filePath?: string, se
   // no fetch. Generated against the deduped merged content so a name declared
   // by any signal script is never clobbered.
   const bridge = generateServerDataBridge(mergedContent, serverData)
-
-  // Name, at compile time, any composable this script calls that exists in the
-  // module tree but never reaches the browser. Without this the author gets a
-  // bare ReferenceError at runtime for a function that is exported, documented
-  // and type-checks (#1805). A warning, not a failure — see #1810.
-  reportUnresolvedIdentifiers(
-    mergedContent,
-    [...STX_RUNTIME_GLOBALS, ...mergedExportNames],
-    filePath || '<template>',
-  )
 
   // Generate the setup function that provides signal APIs. Mark the script
   // with data-stx-scoped so the client-script loop skips it.
