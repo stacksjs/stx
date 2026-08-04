@@ -12,6 +12,7 @@ import { partialsCache } from '../includes'
 import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { clearComponentCache } from '../utils'
+import { formatBuildFailure } from '../build-message'
 import { bracketPathToRegex } from 'stx-router'
 import {
   colors,
@@ -339,31 +340,47 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
             },
           }
 
-          // Build stx file
-          const result = await Bun.build({
-            entrypoints: [absolutePath],
-            outdir: outputDir,
-            plugins: [publicAssetsPlugin, stxPlugin],
-            define: {
-              'process.env.NODE_ENV': '"development"',
-            },
-            ...options.stxOptions,
-          })
+          // Build stx file.
+          //
+          // Isolated per view (#1810). The markdown branch above already had its
+          // own try/catch; this one did not, so a THROW — as opposed to a
+          // non-throwing `!result.success` — escaped the loop entirely and took
+          // down every remaining view with it. One unparseable file, often one
+          // the app never references, aborted the whole dev server.
+          let htmlContent: string
+          try {
+            const result = await Bun.build({
+              entrypoints: [absolutePath],
+              outdir: outputDir,
+              plugins: [publicAssetsPlugin, stxPlugin],
+              define: {
+                'process.env.NODE_ENV': '"development"',
+              },
+              ...options.stxOptions,
+            })
 
-          if (!result.success) {
-            console.error(`${colors.red}Build failed for ${colors.bright}${filePath}${colors.reset}:`, result.logs)
+            if (!result.success) {
+              console.error(`${colors.red}Build failed for ${colors.bright}${filePath}${colors.reset}:`, formatBuildFailure(result.logs, absolutePath))
+              continue
+            }
+
+            // Find the HTML output
+            const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
+            if (!htmlOutput) {
+              console.error(`${colors.red}No HTML output found for ${colors.bright}${filePath}${colors.reset}`)
+              continue
+            }
+
+            // Read the file content (router injected by plugin)
+            htmlContent = await Bun.file(htmlOutput.path).text()
+          }
+          catch (error) {
+            // formatBuildFailure recovers the location Bun computed and left off
+            // BuildMessage.message, and prefers the real path over the
+            // transpiler's synthetic entry name.
+            console.error(`${colors.red}Build failed for ${colors.bright}${filePath}${colors.reset}:\n  ${formatBuildFailure(error, absolutePath)}`)
             continue
           }
-
-          // Find the HTML output
-          const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
-          if (!htmlOutput) {
-            console.error(`${colors.red}No HTML output found for ${colors.bright}${filePath}${colors.reset}`)
-            continue
-          }
-
-          // Read the file content (router injected by plugin)
-          const htmlContent = await Bun.file(htmlOutput.path).text()
 
           // Generate route path based on file location relative to common directory
           const relativePath = path.relative(commonDir, absolutePath)
@@ -415,7 +432,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       return true
     }
     catch (error) {
-      console.error(`${colors.red}Error processing files:${colors.reset}`, error)
+      console.error(`${colors.red}Error processing files:${colors.reset}`, formatBuildFailure(error))
       return false
     }
   }

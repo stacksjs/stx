@@ -14,6 +14,7 @@ import fs from 'node:fs' // kept for mkdir/rmSync (no Bun equivalent for dir ops
 import type { BunPlugin } from 'bun'
 import { getPublicEnvDefine } from './public-env'
 import { stateDir } from './state-dir'
+import { formatBuildFailure } from './build-message'
 
 const BUNDLE_CACHE_VERSION = 5
 const BUNDLE_CACHE_METADATA_VERSION = 1
@@ -606,15 +607,16 @@ ${publicAssignments}`.trim()
     return bundled
   }
   catch (error) {
-    // Bun.build throws an AggregateError-like with `errors[]` for
-    // resolution / compile failures; surface those messages so the
-    // caller has something better than "Bundle failed" in the log.
-    const msg = error instanceof Error ? error.message : String(error)
-    const bunErrors = (error as { errors?: Array<{ message?: string }> })?.errors
-    const detail = Array.isArray(bunErrors) && bunErrors.length > 0
-      ? `\n  ${bunErrors.map(e => `- ${e?.message ?? e}`).join('\n  ')}`
-      : ''
-    console.warn(`[stx:bundler] error: ${msg}${detail}`)
+    // Bun.build throws an AggregateError whose `errors[]` holds BuildMessages;
+    // formatBuildFailure unwraps those and recovers the line/column Bun put on
+    // `position` and left off `message` (#1810).
+    //
+    // The source path must be threaded in: the entrypoint here is a temp file
+    // under .stx/bundle-tmp, so Bun reports THAT, sending the reader to a
+    // generated file instead of their view. A BuildMessage also fails
+    // `instanceof Error`, so the usual message-or-String idiom reduced it to a
+    // bare "Unexpected ===" with no location at all.
+    console.warn(`[stx:bundler] error: ${formatBuildFailure(error, filePath || undefined)}`)
     // Fall back to original code
     return code
   }
