@@ -54,7 +54,7 @@ import { processDynamicComponents } from './dynamic-components'
 import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
 import { injectColorModeBootScript, normalizeCriticalHeadOrder } from './color-mode-boot'
 import { injectBuildId } from './build-id'
-import { applyHtmlAttrs, ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags, mergeHtmlAttrs } from './document-shell'
+import { applyHtmlAttrs, ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags, mergeHtmlAttrs, startsDocument } from './document-shell'
 
 // Extracted modules
 import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, preEvalLiteralReactiveIfs, processSignals } from './signal-processing'
@@ -776,10 +776,24 @@ async function processDirectivesInternal(
 
   // Auto-layout: if no explicit layout and no @nolayout, auto-detect layout
   if (!layoutPath && !hasNoLayout && opts.defaultLayout) {
-    const hasDoctype = /<!DOCTYPE\s/i.test(output)
+    // ANCHORED, via the same scanner the document shell uses (#1792 item 1).
+    // This was an unanchored /<!DOCTYPE\s/i over the WHOLE template, so a
+    // doctype inside a code sample, a docs page or an install snippet silently
+    // disabled layout resolution: layoutPath stayed empty, both lookups were
+    // skipped, and the page returned as-is with no layout, no stx-layout
+    // marker, and no warning anywhere. A whole marketing site ended up
+    // hand-rolling 24 documents with a correct layout sitting unused on disk.
+    //
+    // startsDocument also closes the opposite hole: the old test had no <html>
+    // arm, so a full document that merely omitted its doctype WAS wrapped —
+    // its own <html> spliced into the layout's <main>.
+    //
+    // @nolayout remains the explicit opt-out; a page that genuinely opens with
+    // a doctype still opts out implicitly, which is what layouts.test.ts pins.
+    const isDocument = startsDocument(output)
     const hasSections = /@section\s*\(/.test(output)
 
-    if (!hasDoctype || hasSections) {
+    if (!isDocument || hasSections) {
       // Try to find _layout.stx by walking up directories from the file
       let autoLayoutPath = ''
 
