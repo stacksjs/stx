@@ -463,6 +463,10 @@ export async function processDirectives(
 
         // Title precedence: useHead()/@title > @head <title> > @section('title') > config
         const pageTitle = runtimeHead.title || pageHeadTitle || sectionTitle
+        // The last two come out of author-written markup, so they are already
+        // HTML — entities final, and any {{ }} already escaped. A useHead title
+        // is a plain JS string and must be escaped by the shell (#1792 item 4).
+        const titleIsHtml = !runtimeHead.title && (!!pageHeadTitle || !!sectionTitle)
 
         const headConfig = {
           ...baseHeadConfig,
@@ -482,6 +486,7 @@ export async function processDirectives(
         // useHead) into the existing head, idempotently. See stacksjs/stx#1765.
         const alreadyShelled = hasDocumentShell(result)
         result = ensureDocumentShell(result, headConfig, {
+          ...(titleIsHtml && { titleIsHtml: true }),
           ...((options as any).app?.colorMode && { colorMode: (options as any).app.colorMode }),
         })
         if (alreadyShelled) {

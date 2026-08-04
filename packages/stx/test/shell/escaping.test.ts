@@ -20,6 +20,8 @@
  * is to emit markup verbatim.
  */
 import { describe, expect, it } from 'bun:test'
+import { defaultConfig } from '../../src/config'
+import { processDirectives } from '../../src/process'
 import { generateDocumentShell, hasDocumentShell, injectConfigHeadTags } from '../../src/document-shell'
 
 const BREAKOUT = `x</title><script>alert(1)</script>`
@@ -152,5 +154,75 @@ describe('shell detection is anchored', () => {
     const out = generateDocumentShell('<!-- the root <html> element --><main>hi</main>', {} as never, {} as never)
     expect(out).toContain('<head')
     expect(out).toContain('data-stx-cloak')
+  })
+})
+
+/**
+ * A title lifted out of author-written markup is ALREADY HTML.
+ *
+ * `@head <title>` and `@section('title')` carry entities in their final form,
+ * and any `{{ }}` in them has already been escaped by the expression pass.
+ * Escaping such a title a second time renders `Caf&eacute; &amp; Bar` as
+ * `Caf&amp;eacute; &amp;amp; Bar`.
+ *
+ * This matters more than a cosmetic bug: a security fix that visibly mangles
+ * ordinary titles is a security fix that gets reverted. A `useHead({ title })`
+ * value is a plain JS string and stays escaped — that is the XSS path.
+ */
+describe('titles that are already HTML are not double-encoded', () => {
+  const base = { ...defaultConfig, partialsDir: '/tmp', componentsDir: '/tmp', autoShell: true } as never
+
+  async function render(template: string) {
+    const out = await processDirectives(template, {}, '/t.stx', base, new Set<string>())
+    return out.match(/<title>[\s\S]*?<\/title>/)?.[0] ?? ''
+  }
+
+  it('preserves entities in an @head title', async () => {
+    const title = await render('@head\n<title>Caf&eacute; &amp; Bar</title>\n@endhead\n<main>hi</main>')
+    expect(title).toBe('<title>Caf&eacute; &amp; Bar</title>')
+    expect(title).not.toContain('&amp;eacute;')
+  })
+
+  it('still escapes a title that arrives as a plain string', async () => {
+    // The XSS path must stay closed while the raw path stays raw.
+    const out = await processDirectives(
+      '<script server>\nuseHead({ title: "x</title><script>alert(1)</scr" + "ipt>" })\n</script>\n<main>hi</main>',
+      {},
+      '/t.stx',
+      base,
+      new Set<string>(),
+    )
+    expect(out).not.toContain('<script>alert(1)</script>')
+  })
+})
+
+/**
+ * Server values interpolated INTO a client script are escaped too
+ * (found while verifying #1792 item 2).
+ *
+ * `interpolateScriptExpressions` emitted `JSON.stringify(value)` raw, so a
+ * server value containing markup closed the surrounding `<script>` and injected
+ * into the document. JSON quoting does nothing here — the HTML parser ends the
+ * element at the first closing tag regardless of JS string context.
+ *
+ * The codebase already knew the rule: `generateServerDataBridge` does exactly
+ * this escape 200 lines away, with a comment explaining why. This sibling path
+ * was simply missed.
+ */
+describe('script interpolation escapes markup', () => {
+  it('does not let a server value close the script element', async () => {
+    const { interpolateScriptExpressions } = await import('../../src/expressions')
+    const out = interpolateScriptExpressions(
+      'const name = {{ userName }};',
+      { userName: `</script><img src=x onerror=alert(1)>` } as never,
+    )
+    expect(out).not.toContain('</script>')
+    expect(out).toContain('\\u003c')
+  })
+
+  it('leaves an ordinary value readable', async () => {
+    const { interpolateScriptExpressions } = await import('../../src/expressions')
+    expect(interpolateScriptExpressions('const n = {{ name }};', { name: 'Ada' } as never))
+      .toBe('const n = "Ada";')
   })
 })

@@ -146,7 +146,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${data.title || path.basename(absolutePath)}</title>
+  <title>${escapeTitle(data.title || path.basename(absolutePath))}</title>
   <!-- Syntax highlighting styles -->
   <style id="syntax-theme">
     :root {
@@ -679,7 +679,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
             if (mainMatch) {
               const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
               const title = titleMatch ? titleMatch[1] : ''
-              const partialHtml = `<!DOCTYPE html><html><head><title>${title}</title></head><body><main>${mainMatch[1]}</main></body></html>`
+              const partialHtml = `<!DOCTYPE html><html><head><title>${escapeTitle(title)}</title></head><body><main>${mainMatch[1]}</main></body></html>`
               return new Response(partialHtml, {
                 headers: {
                   'Content-Type': 'text/html',
@@ -794,4 +794,11 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   }
 
   return true
+}
+
+// Frontmatter is file content, not framework input — escape it. <title> is
+// RCDATA, so an unescaped closing tag in a title ends the element early and the
+// rest is parsed as markup (#1792 item 4).
+function escapeTitle(value: unknown): string {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }

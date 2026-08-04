@@ -598,7 +598,12 @@ export function interpolateScriptExpressions(
     try {
       const value = evaluateExpression(expr, context)
       if (value === undefined) return match
-      return JSON.stringify(value)
+      // Escape `<` so a value containing markup can't close the surrounding
+      // <script> and inject into the document, and so the emitted text never
+      // contains a literal script tag that a downstream scanner would treat as
+      // a real boundary. generateServerDataBridge already does exactly this
+      // (client-script.ts); this sibling path was missed (#1792).
+      return JSON.stringify(value).replace(/</g, '\\u003c')
     }
     catch {
       return match

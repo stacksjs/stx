@@ -76,7 +76,7 @@ export async function serveMarkdownFile(filePath: string, options: DevServerOpti
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${data.title || path.basename(absolutePath)}</title>
+  <title>${escapeTitle(data.title || path.basename(absolutePath))}</title>
   <!-- Syntax highlighting styles -->
   <style id="syntax-theme">
     :root {
@@ -341,4 +341,11 @@ export async function serveMarkdownFile(filePath: string, options: DevServerOpti
   }
 
   return true
+}
+
+// Frontmatter is file content, not framework input — escape it. <title> is
+// RCDATA, so an unescaped closing tag in a title ends the element early and the
+// rest is parsed as markup (#1792 item 4).
+function escapeTitle(value: unknown): string {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }

@@ -347,6 +347,19 @@ export function generateDocumentShell(
   options: {
     /** Page-specific title (overrides config) */
     title?: string
+    /**
+     * The title is already HTML and must NOT be escaped again.
+     *
+     * Set when the title was lifted out of author-written markup — an
+     * `@head <title>` block or `@section('title')` — where entities are already
+     * in their final form and any interpolation has already been escaped by
+     * `{{ }}`. Escaping it a second time renders `Caf&eacute; &amp; Bar` as
+     * `Caf&amp;eacute; &amp;amp; Bar`.
+     *
+     * A title from `useHead({ title })` is a plain JS string and must stay
+     * escaped — that is the XSS path (#1792 item 4).
+     */
+    titleIsHtml?: boolean
     /** Extra styles to inject in <head> (e.g. Crosswind CSS, scoped styles) */
     styles?: string[]
     /** Extra scripts to inject before </body> (e.g. signals runtime, router) */
@@ -423,7 +436,7 @@ export function generateDocumentShell(
     // Directly after <meta charset>, ahead of every stylesheet: the theme has
     // to be on the root element before first paint, and CSS blocks scripts.
     options.colorMode ? `  ${generateColorModeBootScript(options.colorMode)}` : '',
-    `  <title>${escapeText(pageTitle)}</title>`,
+    `  <title>${options.titleIsHtml ? pageTitle : escapeText(pageTitle)}</title>`,
     `  ${CLOAK_STYLE}`,
     linkTags,
     configHeadScripts,
