@@ -301,6 +301,26 @@ export function getRouterScript(): string {
       ||(code.indexOf('_cleanupContainer')!==-1&&code.indexOf('signals runtime loading')!==-1)
       ||code.indexOf("'use strict';var cloakStyle")!==-1;
   }
+  // A fragment never carries the signals runtime: the server strips the runtime
+  // IIFE out of it, and every re-execution path here filters it out again. So a
+  // page that never needed a runtime cannot hydrate a fragment that does — the
+  // setup function would be defined but never invoked, scope IIFEs throw while
+  // destructuring window.stx, and every x-cloak element stays display:none
+  // forever against the cloak style shipped on EVERY page. Hand those off to a
+  // real navigation, which loads the destination's own runtime (#1809).
+  //
+  // The discriminators matter. x-cloak and data-stx-scoped are NOT usable: each
+  // fragment inlines the head styles, cloak rule included, and the appearance
+  // bootstrap emits a self-contained data-stx-scoped script on pages with no
+  // reactivity at all. A bare window.stx is not usable either — the server
+  // prepends a _latestSetup=null clear script to every fragment. Any of those
+  // would make this always true and disable SPA navigation everywhere.
+  function fragmentNeedsRuntime(frag){
+    return frag.indexOf('__stx_setup_')!==-1
+      ||frag.indexOf('data-stx-scope=')!==-1
+      ||frag.indexOf('data-stx-reactive')!==-1
+      ||/=\\s*window\\.stx\\s*;/.test(frag);
+  }
   // Record scripts from the initial page load
   document.querySelectorAll('script').forEach(function(s){
     var text=s.textContent||'';
@@ -494,6 +514,14 @@ else {
 
     // Fragment mode: server returned just the page content (no document wrapper)
     if(isFragment){
+      // Before _cleanupContainer, not after: handing off later would dispose
+      // the OUTGOING page's scopes and then reload anyway. Inside doFragSwap
+      // would be later still — innerHTML is already replaced by then.
+      if(!window.stx&&fragmentNeedsRuntime(html)){
+        log('[router] fragment needs the signals runtime and this page has none — full navigation to:',url);
+        location.href=url;
+        return Promise.resolve(false);
+      }
       if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(currentContent);
       function doFragSwap(){
         // Extract scripts from fragment before injecting HTML
