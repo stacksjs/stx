@@ -400,27 +400,63 @@ export const defaultConfig: StxConfig = {
  * 3. Auto-detect: resources/views/pages/
  * 4. Default to '.' (project root)
  */
-function resolveStxRoot(configRoot?: string, configPagesDir?: string): { root: string, pagesDir: string } {
+function resolveStxRoot(configRoot?: string, configPagesDir?: string, cwd?: string): { root: string, pagesDir: string } {
   const defaultPagesDir = configPagesDir || 'pages'
 
   // Explicit config wins
   if (configRoot) return { root: configRoot, pagesDir: defaultPagesDir }
 
+  // Probe the directory the CALLER asked about, not process.cwd(). loadStxConfig
+  // computes an effectiveCwd for exactly this reason — its docstring says the
+  // cwd parameter exists so `stx <app-dir>` invoked from outside the app does
+  // not read a parent's config — and this function was the one place that
+  // ignored it. Running `stx dev ./my-app` from a parent therefore auto-detected
+  // against the WRONG tree, so every directory key resolved somewhere else.
+  const base = cwd || process.cwd()
+
   // Auto-detect Stacks convention: resources/ has views/, layouts/, components/
-  const resourcesViews = path.join(process.cwd(), 'resources', 'views')
-  const resourcesLayouts = path.join(process.cwd(), 'resources', 'layouts')
+  const resourcesViews = path.join(base, 'resources', 'views')
+  const resourcesLayouts = path.join(base, 'resources', 'layouts')
   if (fs.existsSync(resourcesViews) && fs.existsSync(resourcesLayouts)) {
     return { root: 'resources', pagesDir: 'views' }
   }
 
   // Auto-detect: check for resources/views/pages/ (nested convention)
-  const resourcesViewsPages = path.join(process.cwd(), 'resources', 'views', 'pages')
+  const resourcesViewsPages = path.join(base, 'resources', 'views', 'pages')
   if (fs.existsSync(resourcesViewsPages)) {
     return { root: 'resources/views', pagesDir: defaultPagesDir }
   }
 
   // Default: project root
   return { root: '.', pagesDir: defaultPagesDir }
+}
+
+/**
+ * Warn once per directory key that was configured but does not exist.
+ *
+ * Directory keys are prefixed with `root`, and `root` may itself be inferred, so
+ * a plausible-looking value can resolve somewhere that was never on disk —
+ * `componentsDir: 'resources/components'` under an inferred `root: 'resources'`
+ * becomes `resources/resources/components`. Components and layouts then fail
+ * SILENTLY (the lookups just miss and the tag renders as-is), which is how six
+ * separate findings in stacksjs/stx#1792 trace back to one unnoticed config
+ * line. Naming the resolved path turns each of them into a ten-second fix.
+ */
+function warnMissingDirs(loaded: StxConfig, cwd: string): void {
+  const keys: Array<keyof StxConfig> = ['componentsDir', 'layoutsDir', 'partialsDir']
+  for (const key of keys) {
+    const value = loaded[key]
+    if (typeof value !== 'string' || !value)
+      continue
+    const abs = path.isAbsolute(value) ? value : path.join(cwd, value)
+    if (fs.existsSync(abs))
+      continue
+    console.warn(
+      `[stx] ${String(key)} resolves to "${abs}", which does not exist. `
+      + `Configured as "${value}"${loaded.root && loaded.root !== '.' ? ` under root "${loaded.root}"` : ''} — `
+      + 'a value that already includes the root gets it prefixed twice.',
+    )
+  }
 }
 
 /**
@@ -487,7 +523,7 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
     applyStateDir(loaded)
 
     // Resolve the source root and pages directory for .stx files
-    const resolved = resolveStxRoot(loaded.root, loaded.pagesDir)
+    const resolved = resolveStxRoot(loaded.root, loaded.pagesDir, effectiveCwd)
     loaded.root = resolved.root
     loaded.pagesDir = resolved.pagesDir
 
@@ -504,6 +540,8 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
         loaded.layoutsDir = path.join(rootPrefix, loaded.layoutsDir)
       }
     }
+
+    warnMissingDirs(loaded, effectiveCwd)
 
     // Load plugins from config
     if (loaded.plugins && loaded.plugins.length > 0) {
