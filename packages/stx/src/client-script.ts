@@ -40,6 +40,7 @@ import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { importOnce } from './lazy-module'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
+import { escapeScriptBody } from './script-emit'
 
 // =============================================================================
 // Vendor CSS Side-Effect Imports
@@ -1318,8 +1319,7 @@ export async function processClientScript(
     const extraAttrs = attrs.replace(/\btype\s*=\s*["']module["']/i, '').trim()
     const attrStr = `type="module" data-stx-scoped${extraAttrs ? ` ${extraAttrs}` : ''}`
     return `${vendorStyleTags}<script ${attrStr}>
-${autoImportCode}${code}
-${eventCode}
+${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
 </script>`
   }
 
@@ -1342,8 +1342,7 @@ ${eventCode}
     return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always">
 window.stx.mount(function() {
   'use strict';
-${autoImportCode}${code}
-${eventCode}${returnStmt}
+${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}${returnStmt}`)}
 })</script>`
   }
 
@@ -1371,7 +1370,6 @@ ${eventCode}${returnStmt}
   return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always">
 ;(function() {
   'use strict';
-${autoImportCode}${code}
-${eventCode}
+${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
 })()</script>`
 }

@@ -13,6 +13,7 @@ import type { StxOptions } from './types'
 import { generateServerDataBridge, injectBrowserCoreAutoImports } from './client-script'
 import { findIfBlocks } from './parser'
 import { STX_RUNTIME_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
+import { escapeScriptBody } from './script-emit'
 import { reportUnresolvedIdentifiers } from './unresolved-identifiers'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
@@ -1264,7 +1265,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
 <script data-stx-scoped>
 function ${setupFnName}() {
   ${buildRuntimeGlobalsDestructure('const', mergedExportNames)}
-${bridge}${mergedContent}
+${escapeScriptBody(`${bridge}${mergedContent}`)}
   return { ${mergedExports} };
 }
 window.__stx_latestSetup=${setupFnName};
