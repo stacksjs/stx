@@ -88,10 +88,20 @@ export function injectSeo(html: string, site: SiteConfig, page: PageMeta = {}, p
   const headEnd = html.search(/<\/head>/i)
   const head = headEnd === -1 ? html : html.slice(0, headEnd)
 
+  // The document shell ALWAYS emits a <title> — its default is 'stx App' — so a
+  // plain "is there a title?" test reported one as declared on every page, and
+  // site.seo.title could never take effect (stacksjs/stx#1792 item 6). A
+  // placeholder title is treated as absent so the configured one replaces it.
+  const PLACEHOLDER_TITLES = /^(?:stx App|stx Project|Document|Untitled)$/i
+  const existingTitle = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(head)?.[1]?.trim()
+  const titleIsPlaceholder = existingTitle === undefined
+    || existingTitle === ''
+    || PLACEHOLDER_TITLES.test(existingTitle)
+
   const declared = (tag: string): boolean => {
     const title = /^<title[\s>]/i.test(tag)
     if (title)
-      return /<title[\s>]/i.test(head)
+      return /<title[\s>]/i.test(head) && !titleIsPlaceholder
 
     const canonical = /rel="canonical"/i.test(tag)
     if (canonical)
@@ -104,22 +114,35 @@ export function injectSeo(html: string, site: SiteConfig, page: PageMeta = {}, p
     return new RegExp(`<meta[^>]+(?:property|name)=["']${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'i').test(head)
   }
 
-  const missing = tags.filter(tag => !declared(tag))
+  let missing = tags.filter(tag => !declared(tag))
 
   if (missing.length === 0)
     return html
+
+  // A placeholder <title> must be REPLACED, not joined. Appending a second one
+  // does nothing useful: browsers take the first, which is the placeholder we
+  // are trying to displace.
+  let output = html
+  const titleTag = missing.find(tag => /^<title[\s>]/i.test(tag))
+  if (titleTag && titleIsPlaceholder && /<title[^>]*>[\s\S]*?<\/title>/i.test(output)) {
+    output = output.replace(/<title[^>]*>[\s\S]*?<\/title>/i, () => titleTag)
+    missing = missing.filter(tag => tag !== titleTag)
+    if (missing.length === 0)
+      return output
+  }
 
   const block = `<!-- SEO -->\n${missing.join('\n')}\n<!-- /SEO -->`
 
   // Injected at the END of the head rather than the start: a tag that is
   // there to fill a gap should not sit in front of the ones the page wrote.
-  if (headEnd !== -1)
-    return `${html.slice(0, headEnd)}${block}\n${html.slice(headEnd)}`
+  const outEnd = output.search(/<\/head>/i)
+  if (outEnd !== -1)
+    return `${output.slice(0, outEnd)}${block}\n${output.slice(outEnd)}`
 
-  if (/<head[^>]*>/i.test(html))
-    return html.replace(/<head([^>]*)>/i, `<head$1>\n${block}`)
+  if (/<head[^>]*>/i.test(output))
+    return output.replace(/<head([^>]*)>/i, `<head$1>\n${block}`)
 
-  return `${block}\n${html}`
+  return `${block}\n${output}`
 }
 
 function escapeAttr(s: string): string {

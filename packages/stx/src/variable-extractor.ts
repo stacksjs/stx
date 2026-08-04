@@ -566,8 +566,18 @@ catch {
   // Mock onDestroy() - no-op on server
   const onDestroy = (_fn: () => void) => {}
 
-  // Mock Vue/Nuxt-like composables commonly used in dashboard pages
-  const definePageMeta = (_meta: unknown) => {}
+  // definePageMeta forwards title/description into the head, matching the real
+  // implementation in head.ts. It used to be a no-op stub, so a documented API
+  // — head.ts:340 shows `definePageMeta({ title: 'Dashboard' })` — silently did
+  // nothing in a <script server> block, which is the only place it runs
+  // (stacksjs/stx#1792 item 5). Declared as a function so it can call useHead
+  // below it via hoisting.
+  function definePageMeta(meta: unknown): void {
+    const config = (meta as Record<string, unknown>) || {}
+    if (config.title !== undefined || config.description !== undefined) {
+      useSeoMeta({ title: config.title, description: config.description })
+    }
+  }
   // useRoute() mirrors what the browser's useRoute() reads from
   // window.stx._rp — the serve path passes real params/search via context
   // (stacksjs/stacks#1967), so `useRoute().params.id` agrees on both sides.
@@ -964,6 +974,7 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
     if (line.startsWith('definePageMeta(')) {
       let depth = 0
       let done = false
+      const callStart = i
       for (let j = i; j < lines.length && !done; j++) {
         let inString: string | null = null
         let escaped = false
@@ -985,6 +996,27 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
         }
       }
       if (!done) i = lines.length
+
+      // The call is stripped because its object can hold Nuxt-style entries
+      // (validate(){}, middleware: [...]) that mean nothing here, and executing
+      // arbitrary identifiers would throw where it previously did not. But
+      // title and description DO mean something — `definePageMeta({ title })`
+      // is documented and forwards correctly in head.ts, and stripping it was
+      // why it silently did nothing in a server script (#1792 item 5).
+      //
+      // So: lift those two out statically and re-emit them as a useSeoMeta call
+      // the sandbox already implements. String literals only — an expression
+      // cannot be evaluated safely at this point anyway.
+      const callText = lines.slice(callStart, i).join('\n')
+      const lifted: string[] = []
+      for (const key of ['title', 'description']) {
+        const match = new RegExp(`\\b${key}\\s*:\\s*(['"\`])((?:\\\\.|(?!\\1)[^\\\\])*)\\1`).exec(callText)
+        if (match)
+          lifted.push(`${key}: ${JSON.stringify(match[2])}`)
+      }
+      if (lifted.length > 0)
+        convertedLines.push(`useSeoMeta({ ${lifted.join(', ')} });`)
+
       continue
     }
 
