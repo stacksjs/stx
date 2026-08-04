@@ -15,5 +15,9 @@
  */
 export default {
   name: '@stacksjs/components',
-  components: './src/ui',
+  // BOTH roots. src/components is a SIBLING of src/ui, not a child, and
+  // src/index.ts exports CodeBlock, Footer, Hero and Installation from it — so
+  // registering only ./src/ui left four documented, importable components
+  // unresolvable as tags (#1823).
+  components: ['./src/ui', './src/components'],
 }

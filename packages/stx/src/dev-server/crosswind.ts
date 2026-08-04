@@ -666,16 +666,37 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
       ...(userConfig.safelist || []),
     ]
 
-    // Create config — CSSGenerator constructor handles theme.extend merging
+    // Merge preflights rather than replacing them (#1822). theme and safelist
+    // right above both merge, and a user preflight is additive by nature —
+    // silently dropping the built-in one because a project added a font-face
+    // rule loses the entire base layer.
+    const preflights = [
+      ...((baseConfig as any).preflights || []),
+      ...((userConfig as any).preflights || []),
+    ]
+
+    // Create config — CSSGenerator constructor handles theme.extend merging.
+    //
+    // `content` and `output` are stx-owned: classes are collected by scanning
+    // the rendered page, not by globbing, and the CSS is returned rather than
+    // written. They are pinned AFTER the user spread on purpose.
+    //
+    // `preflight` and `minify` used to be pinned here too, which made two
+    // documented, type-checked config keys silently do nothing — and they were
+    // ignored twice over, since toCSS() is called with literal arguments below
+    // and the underlying package spells the flag `includePreflight` anyway.
+    // Honouring them is the honest option of the three (#1822).
+    const includePreflight = (userConfig as any).preflight !== false
+    const minify = (userConfig as any).minify === true
+
     const crosswindConfig: CrosswindConfig = {
       ...baseConfig,
       ...userConfig,
       content: [],
       output: '',
-      preflight: true,
-      minify: false,
       theme,
       safelist,
+      ...(preflights.length > 0 && { preflights }),
     }
 
     // Generate CSS using Crosswind's CSSGenerator
@@ -690,7 +711,7 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
       generator.generate(className)
     }
 
-    let css = generator.toCSS(true, false)
+    let css = generator.toCSS(includePreflight, minify)
 
     // Generate shortcut CSS rules — CSSGenerator expands shortcuts into
     // individual utility classes but doesn't emit grouped .shortcut { ... } rules
@@ -701,7 +722,7 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
       for (const p of parts) generator.generate(p)
     }
     // Re-generate to include any new utility classes from shortcuts
-    css = generator.toCSS(true, false)
+    css = generator.toCSS(includePreflight, minify)
 
     // Build grouped shortcut rules — extract declarations from generated CSS
     // and combine them under a single .shortcut-name selector

@@ -577,8 +577,14 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
 
           // Collect resource directories (resolved relative to plugin package)
           if (plugin.components) {
-            const dir = path.resolve(pluginDir, plugin.components)
-            pluginComponentDirs.push(dir)
+            // An array is accepted so a package can register more than one
+            // component root. @stacksjs/components ships src/ui AND
+            // src/components as siblings, and registering only the first left
+            // four exported, documented components unresolvable as tags
+            // (#1823).
+            const dirs = Array.isArray(plugin.components) ? plugin.components : [plugin.components]
+            for (const entry of dirs)
+              pluginComponentDirs.push(path.resolve(pluginDir, entry))
           }
           if (plugin.pages) {
             const dir = path.resolve(pluginDir, plugin.pages)

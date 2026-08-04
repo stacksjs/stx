@@ -57,7 +57,30 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   mkdirSync(outDir, { recursive: true })
 
   const glob = new Glob(`${pagesDir}/**/*.stx`)
-  const entrypoints = await Array.fromAsync(glob.scan('.'))
+  const discovered = await Array.fromAsync(glob.scan('.'))
+
+  // Layouts, partials and components nested under pagesDir are not pages
+  // (#1821). Everything matching used to be published, so a conventional
+  // `pagesDir: 'views'` + `layoutsDir: 'views/layouts'` shipped
+  // /layouts/default and /layouts/marketing as public routes AND sitemap
+  // entries — layout shells with no content, so a crawler indexed empty pages
+  // and a visitor got a broken half-rendered document.
+  const excludeDirs = options.excludeDirs ?? ['layouts', 'partials', 'components']
+  const excluded: string[] = []
+  const entrypoints = discovered.filter((file) => {
+    const rel = file.slice(pagesDir.length).replace(/^[\\/]+/, '')
+    const segments = rel.split(/[\\/]/).slice(0, -1)
+    if (segments.some(seg => excludeDirs.includes(seg))) {
+      excluded.push(file)
+      return false
+    }
+    // A leading underscore is the file-router's own private-file convention.
+    return !rel.split(/[\\/]/).some(seg => seg.startsWith('_'))
+  })
+
+  if (excluded.length > 0)
+    console.warn(`[stx] ${excluded.length} file(s) under ${pagesDir}/ skipped as non-pages: ${excludeDirs.join(', ')}`)
+
   if (entrypoints.length === 0)
     throw new Error(`No .stx files found in ${pagesDir}/`)
 

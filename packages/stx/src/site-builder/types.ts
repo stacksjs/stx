@@ -42,6 +42,20 @@ export interface SiteConfig {
   seo?: SiteSeo
   /** Pages directory (default: "pages") */
   pagesDir?: string
+  /**
+   * Directories under `pagesDir` that are NOT pages.
+   *
+   * Layouts, partials and components are routinely nested inside the pages
+   * directory — the config actively encourages it (`pagesDir: 'views'` with
+   * `layoutsDir: 'views/layouts'`) — and every `.stx` under `pagesDir` used to
+   * become a build entrypoint, a public route and a sitemap entry. A layout
+   * shell is `@yield('content')` with no content, so crawlers indexed empty
+   * pages and anyone following the URL got a broken half-rendered document
+   * (stacksjs/stx#1821).
+   *
+   * Defaults to the conventional names. Set `[]` to publish everything.
+   */
+  excludeDirs?: string[]
   /** Public assets directory copied verbatim into outDir (default: "public") */
   publicDir?: string
   /** Output directory (default: "dist") */

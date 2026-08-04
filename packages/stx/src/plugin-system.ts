@@ -218,7 +218,13 @@ export interface StxPlugin {
   // =========================================================================
 
   /** Directory of .stx components — auto-registered, available in all templates */
-  components?: string
+  /**
+   * Component directory, or directories.
+   *
+   * An array lets one package register several roots — @stacksjs/components
+   * ships src/ui and src/components as siblings (#1823).
+   */
+  components?: string | string[]
 
   /** Directory of composable functions — importable via @/functions/ */
   functions?: string
