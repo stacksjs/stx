@@ -19,6 +19,7 @@ import { generateSitemap, type SitemapEntry } from './sitemap'
 import { generateRobots } from './robots'
 import { injectRouterScript } from './router'
 import { injectThemeBootstrap } from './theme'
+import { buildIsolatingFailures } from '../isolated-build'
 import {
   applyTranslations,
   buildAlternateLinks,
@@ -60,16 +61,29 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   if (entrypoints.length === 0)
     throw new Error(`No .stx files found in ${pagesDir}/`)
 
-  const result = await Bun.build({
-    entrypoints,
+  // One malformed view must not fail the whole site (#1810). The batch build
+  // runs first, so a healthy build pays nothing; only if it throws do we rebuild
+  // one page at a time to find out which ones are actually broken.
+  //
+  // Note `result.success` is dead on Bun >= 1.2 — Bun.build THROWS by default,
+  // so that branch never ran and the logs it would have printed (which carry
+  // position) were never read.
+  const isolated = await buildIsolatingFailures(entrypoints, subset => Bun.build({
+    entrypoints: subset,
     outdir: outDir,
     plugins: [stxPlugin()],
     naming: { entry: '[name].[ext]' },
-  })
+  }))
 
-  if (!result.success) {
-    console.error(result.logs)
-    throw new Error('Build failed')
+  if (isolated.failed.length > 0) {
+    for (const { entrypoint, error } of isolated.failed)
+      console.error(`[stx] failed to build ${entrypoint}:\n  ${error}`)
+
+    // Every page failing is a real build failure, not one bad view.
+    if (isolated.succeeded.length === 0)
+      throw new Error(`Build failed: none of the ${entrypoints.length} page(s) could be built`)
+
+    console.error(`[stx] ${isolated.failed.length} of ${entrypoints.length} page(s) skipped; the rest were built.`)
   }
 
   // Drop empty chunk-*.js files — bun-plugin-stx emits a 0-byte JS sibling
