@@ -152,6 +152,47 @@ describe('hydration audit — literal moustaches', () => {
     expect(auditErrors(hydrate('<main><p>{{ not closed</p></main>'))).toHaveLength(0)
   })
 
+  it('stays silent for a :if subtree whose deferred bind has not run yet', () => {
+    // bindIf defers processing the shown subtree to a macrotask, so children
+    // do not subscribe to the parent effect's signals (note 35). Between the
+    // insert and that setTimeout the subtree legitimately still holds literal
+    // {{ }} — the synchronous audit must not call that a miss, or every page
+    // with a conditional reports a false failure on first paint.
+    g.window.stx._scopes.if_pending = { show: true, label: 'ok' }
+    const out = auditErrors(hydrate(
+      '<div data-stx-scope="if_pending"><section :if="show"><p>{{ label }}</p></section></div>',
+    ))
+    expect(out.filter(e => e.includes('literal {{ }}'))).toHaveLength(0)
+  })
+
+  it('still reports a miss OUTSIDE the pending :if in the same pass', () => {
+    // The exemption has to be narrow: a real miss elsewhere on the page must
+    // not be masked by an unrelated conditional being mid-flight.
+    g.window.stx._scopes.if_narrow = { show: true, label: 'ok' }
+    const out = auditErrors(hydrate(
+      '<div data-stx-scope="if_narrow"><section :if="show"><p>{{ label }}</p></section></div>'
+      + '<main><p>{{ stranded }}</p></main>',
+    ))
+    const literals = out.filter(e => e.includes('literal {{ }}'))
+    expect(literals).toHaveLength(1)
+    expect(literals[0]).toContain('stranded')
+    expect(literals[0]).not.toContain('label')
+  })
+
+  it('lifts the exemption once the deferred bind has run', async () => {
+    // Temporary, not permanent: if the flag stuck, a genuine miss inside any
+    // conditional would be unreportable forever.
+    g.window.stx._scopes.if_lift = { show: true, label: 'ok' }
+    hydrate('<div data-stx-scope="if_lift"><section :if="show"><p>{{ label }}</p></section></div>')
+    const section = g.document.querySelector('section')
+    expect(section.__stx_if_pending).toBe(true)
+
+    await new Promise(resolve => setTimeout(resolve, 30))
+
+    expect(section.__stx_if_pending).toBe(false)
+    expect(g.document.querySelector('p').textContent).toBe('ok')
+  })
+
   it('caps the report so one broken loop cannot flood the console', () => {
     const rows = Array.from({ length: 40 }, (_, i) => `<p>{{ row${i} }}</p>`).join('')
     const out = auditErrors(hydrate(`<main>${rows}</main>`))
