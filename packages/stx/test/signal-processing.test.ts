@@ -173,6 +173,90 @@ describe('convertSignalLoopsToAttributes — server-data detection', () => {
     expect(output).toContain('@foreach(state.users as idx => user)')
     expect(output).not.toMatch(/@for\s*=/)
   })
+
+  it('keeps a nested loop over the outer loop variable server-side', () => {
+    const input = `
+      @foreach (board as ev)
+        <tbody>
+          @foreach (ev.selections as s)
+            <tr><td>{{ s.label }}</td></tr>
+          @endforeach
+        </tbody>
+      @endforeach
+    `
+    const output = convertSignalLoopsToAttributes(input, { board: [] })
+    expect(output).toContain('@foreach (board as ev)')
+    expect(output).toContain('@foreach (ev.selections as s)')
+    expect(output).not.toMatch(/@for\s*=/)
+  })
+
+  it('keeps a third-level loop over an inner loop variable server-side', () => {
+    const input = `
+      @foreach (board as ev)
+        @foreach (ev.selections as s)
+          @foreach (s.cells as cell)
+            <td>{{ cell.price }}</td>
+          @endforeach
+        @endforeach
+      @endforeach
+    `
+    const output = convertSignalLoopsToAttributes(input, { board: [] })
+    expect(output).toContain('@foreach (s.cells as cell)')
+    expect(output).not.toMatch(/@for\s*=/)
+  })
+
+  it('keeps a nested loop over the outer index variable server-side', () => {
+    const input = `
+      @foreach (rows as idx => row)
+        @foreach (idx.parts as part)
+          <span>{{ part }}</span>
+        @endforeach
+      @endforeach
+    `
+    const output = convertSignalLoopsToAttributes(input, { rows: [] })
+    expect(output).toContain('@foreach (idx.parts as part)')
+    expect(output).not.toMatch(/@for\s*=/)
+  })
+
+  it('still converts a nested loop over client state inside a server loop', () => {
+    const input = `
+      @foreach (board as ev)
+        @foreach (clientPicks as pick)
+          <span>{{ pick }}</span>
+        @endforeach
+      @endforeach
+    `
+    const output = convertSignalLoopsToAttributes(input, { board: [] })
+    expect(output).toContain('@foreach (board as ev)')
+    expect(output).toMatch(/@for\s*=\s*"pick in clientPicks"/)
+  })
+
+  it('does not treat a loop variable as server data outside its own block', () => {
+    const input = `
+      @foreach (board as ev)
+        <p>{{ ev.title }}</p>
+      @endforeach
+      @foreach (ev.selections as s)
+        <span>{{ s }}</span>
+      @endforeach
+    `
+    const output = convertSignalLoopsToAttributes(input, { board: [] })
+    expect(output).toContain('@foreach (board as ev)')
+    expect(output).toMatch(/@for\s*=\s*"s in ev.selections"/)
+  })
+
+  it('inherits server-side scope from a literal outer iterable', () => {
+    const input = `
+      @foreach ([1, 2, 3] as n)
+        @foreach (n.parts as part)
+          <span>{{ part }}</span>
+        @endforeach
+      @endforeach
+    `
+    const output = convertSignalLoopsToAttributes(input, {})
+    expect(output).toContain('@foreach (n.parts as part)')
+    expect(output).not.toMatch(/@for\s*=/)
+  })
 })
 
 /**

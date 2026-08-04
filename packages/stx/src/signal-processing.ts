@@ -885,6 +885,12 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
   const forDirectiveStart = /@(for|foreach)\s*\(/g
   let match: RegExpExecArray | null
   const replacements: Array<{ start: number, end: number, replacement: string }> = []
+  // Loops left for processLoops, with the variables they bind and the span they
+  // cover. A nested loop iterating one of those variables — `@foreach (ev.rows as r)`
+  // inside `@foreach (board as ev)` — is server-side too, even though `ev` is a loop
+  // binding that never appears in the context object. Matches arrive in document
+  // order, so an enclosing loop is always recorded before the loops inside it.
+  const serverScopes: Array<{ start: number, end: number, vars: string[] }> = []
 
   while ((match = forDirectiveStart.exec(output)) !== null) {
     const directive = match[1] // 'for' or 'foreach'
@@ -921,32 +927,8 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
     // test/signal-processing.test.ts.
     const parsed = parseLoopExpression(expr)
 
-    if (parsed.iterable) {
-      const iter = parsed.iterable.trim()
-      // Literal iterables (array/object/string/number) are self-contained and
-      // always resolvable server-side — let processLoops handle them.
-      if (iter.startsWith('[') || iter.startsWith('{') || iter.startsWith('\'') || iter.startsWith('"') || iter.startsWith('`') || /^-?\d/.test(iter)) {
-        continue
-      }
-      if (context) {
-        // Extract the root variable name (e.g. "items" from "items" or "obj.items")
-        const rootVar = iter.split(/[.[(]/)[0].trim()
-        if (rootVar && rootVar in context) {
-          // This iterable is server-side data — skip conversion, let processLoops handle it
-          continue
-        }
-      }
-    }
-
-    // Convert Blade-style "iterable as item" / "iterable as idx => item" to
-    // JS-style "item in iterable" / "(item, idx) in iterable" for the client runtime
-    if (parsed.style === 'as') {
-      expr = parsed.indexVar
-        ? `(${parsed.itemVar}, ${parsed.indexVar}) in ${parsed.iterable}`
-        : `${parsed.itemVar} in ${parsed.iterable}`
-    }
-
-    // Find matching @endfor or @endforeach
+    // Find matching @endfor or @endforeach. The span is needed before the
+    // server-side check so a skipped loop can still register its scope.
     const endTag = directive === 'for' ? '@endfor' : '@endforeach'
     let forDepth = 1
     let endIdx = afterExpr
@@ -970,6 +952,40 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
     }
 
     if (forDepth !== 0) continue
+
+    // Leave the block for processLoops and remember the variables it binds, so
+    // loops nested inside it can recognize their iterable as server-side data.
+    const keepServerSide = (): void => {
+      const vars = [parsed.itemVar, parsed.indexVar].filter(Boolean) as string[]
+      if (vars.length) serverScopes.push({ start: startIdx, end: endIdx, vars })
+    }
+
+    if (parsed.iterable) {
+      const iter = parsed.iterable.trim()
+      // Literal iterables (array/object/string/number) are self-contained and
+      // always resolvable server-side — let processLoops handle them.
+      if (iter.startsWith('[') || iter.startsWith('{') || iter.startsWith('\'') || iter.startsWith('"') || iter.startsWith('`') || /^-?\d/.test(iter)) {
+        keepServerSide()
+        continue
+      }
+      // Extract the root variable name (e.g. "items" from "items" or "obj.items")
+      const rootVar = iter.split(/[.[(]/)[0].trim()
+      const fromContext = context ? rootVar in context : false
+      const fromEnclosingLoop = serverScopes.some(s => startIdx > s.start && startIdx < s.end && s.vars.includes(rootVar))
+      if (rootVar && (fromContext || fromEnclosingLoop)) {
+        // This iterable is server-side data — skip conversion, let processLoops handle it
+        keepServerSide()
+        continue
+      }
+    }
+
+    // Convert Blade-style "iterable as item" / "iterable as idx => item" to
+    // JS-style "item in iterable" / "(item, idx) in iterable" for the client runtime
+    if (parsed.style === 'as') {
+      expr = parsed.indexVar
+        ? `(${parsed.itemVar}, ${parsed.indexVar}) in ${parsed.iterable}`
+        : `${parsed.itemVar} in ${parsed.iterable}`
+    }
 
     const content = output.substring(afterExpr, endIdx - endTag.length).trim()
 
