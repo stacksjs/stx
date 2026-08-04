@@ -660,7 +660,12 @@ else {
             document.body.appendChild(ns);
           }
         });
-        log('[router] scripts done. _latestSetup:', !!window.stx._latestSetup);
+        // Guarded: the router ships on every page, the signals runtime only on
+        // pages that have a client script. log() is debug-gated but its
+        // ARGUMENTS are evaluated at the call site regardless, so an unguarded
+        // read here threw on every runtime-less page — aborting the swap and
+        // falling back to a full document load (#1809).
+        log('[router] scripts done. _latestSetup:', !!(window.stx&&window.stx._latestSetup));
         // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
         window.dispatchEvent(new Event('stx:load'));
       }
