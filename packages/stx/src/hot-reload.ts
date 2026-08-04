@@ -349,8 +349,14 @@ catch (e) {
             console.log('[stx] Reloading...', msg.path || '');
             // Use SPA router for progressive update instead of full page reload.
             // Falls back to hard reload only when the router isn't available.
-            if (typeof window.navigate === 'function') {
-              window.navigate(window.location.pathname + window.location.search, false, true);
+            // Call the ROUTER directly, not window.navigate: the runtime helper
+            // takes (url, options) and silently dropped the third argument, so
+            // force never arrived and the same-URL early return made this a
+            // no-op on every page that had the router (#1807). pushState=false
+            // keeps the address bar untouched (this is a reload, not a
+            // navigation) and force=true bypasses the early return.
+            if (window.stxRouter && typeof window.stxRouter.navigate === 'function') {
+              window.stxRouter.navigate(window.location.pathname + window.location.search, false, true);
             } else {
               window.location.reload();
             }

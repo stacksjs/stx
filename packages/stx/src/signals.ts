@@ -1030,17 +1030,26 @@ finally {
   // Navigation API
   // ==========================================================================
 
-  function navigate(url, forceReload) {
-    if (forceReload) {
-      window.location.href = url;
+  // Second argument is an options object: { replace, reload }.
+  //
+  // It used to be a bare forceReload boolean while the shipped declaration
+  // promised { replace?: boolean } — so the one call the type system invited,
+  // navigate(url, { replace: true }), took the truthy branch and did a full
+  // document load that PUSHED a history entry: the opposite of replace, at the
+  // cost of the SPA router, with no error (#1807).
+  //
+  // A bare boolean is still accepted and still means "full reload", because
+  // that was the real shipped behaviour and docs and examples contain it.
+  function navigate(url, options) {
+    var opts = (options && typeof options === 'object') ? options : { reload: !!options };
+    var replace = !!opts.replace;
+    var reload = !!(opts.reload || opts.forceReload);
+    if (!reload && window.stxRouter && typeof window.stxRouter.navigate === 'function') {
+      window.stxRouter.navigate(url, { replace: replace });
       return;
     }
-    if (window.stxRouter && typeof window.stxRouter.navigate === 'function') {
-      window.stxRouter.navigate(url);
-    }
-else {
-      window.location.href = url;
-    }
+    if (replace) window.location.replace(url);
+    else window.location.href = url;
   }
 
   function goBack() { window.history.back(); }
@@ -1095,20 +1104,39 @@ else {
     };
     window.addEventListener('popstate', syncFromUrl);
     window.addEventListener('stx:navigate', syncFromUrl);
+    // Own-property reads only. The backing object comes from Object.fromEntries,
+    // so it inherits Object.prototype — an unguarded params()[key] returned a
+    // FUNCTION for 'toString', 'constructor', 'valueOf' and friends, which is
+    // neither a string nor undefined and matches no declared return type.
+    var own = function(key) {
+      var current = params();
+      return Object.prototype.hasOwnProperty.call(current, key);
+    };
+    var commit = function(url) {
+      window.history.pushState({}, '', url);
+      syncFromUrl();
+    };
     return {
       data: params,
-      get: function(key) { return params()[key]; },
+      get: function(key) { return own(key) ? params()[key] : undefined; },
+      has: own,
       set: function(key, value) {
         var url = new URL(window.location.href);
         url.searchParams.set(key, value);
-        window.history.pushState({}, '', url);
-        syncFromUrl();
+        commit(url);
+      },
+      // delete and has were DECLARED but absent, so the compiler endorsed calls
+      // that threw in the browser; setAll and data were present but undeclared
+      // (#1806). Deleting writes history the same way set does, for consistency.
+      'delete': function(key) {
+        var url = new URL(window.location.href);
+        url.searchParams['delete'](key);
+        commit(url);
       },
       setAll: function(obj) {
         var url = new URL(window.location.href);
         Object.keys(obj).forEach(function(k) { url.searchParams.set(k, obj[k]); });
-        window.history.pushState({}, '', url);
-        syncFromUrl();
+        commit(url);
       }
     };
   }

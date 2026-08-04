@@ -381,7 +381,20 @@ export function getRouterScript(): string {
     return containerSel==='main'||containerSel==='[data-stx-content]';
   }
 
+  // Write the address bar. The mode travels in the same slot as the legacy
+  // pushState boolean: false still means "do not touch history", true still
+  // pushes, and the string 'replace' replaces. Threading a fourth argument
+  // through swap() to each of the three history sites would have been the
+  // alternative (#1807).
+  function writeHistory(mode,href){
+    if(mode==='replace')history.replaceState({},'',href);
+    else history.pushState({},'',href);
+  }
+
+  // Second arg accepts the legacy pushState boolean OR an options object
+  // { replace }. Callers inside this file still pass the boolean.
   function navigate(url,pushState,force){
+    if(pushState&&typeof pushState==='object')pushState=pushState.replace?'replace':true;
     // Lang-picker passes force=true with an already-localized path (/en/...).
     // Re-localizing would map it back to the *current* locale and no-op.
     if(!force) url=withCurrentLocale(url);
@@ -397,7 +410,7 @@ export function getRouterScript(): string {
     if(t.origin!==location.origin){location.href=url;return Promise.resolve(false)}
 
     if(t.pathname===location.pathname&&t.hash){
-      if(pushState!==false)history.pushState({},'',t.href);
+      if(pushState!==false)writeHistory(pushState,t.href);
       var el=document.querySelector(t.hash);
       if(el)el.scrollIntoView({behavior:'smooth'});
       return Promise.resolve(true);
@@ -618,7 +631,7 @@ else {
         currentContent.innerHTML=cleanFrag;
         // Remove old page scripts
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
-        if(pushState!==false)history.pushState({},'',url+(hash||''));
+        if(pushState!==false)writeHistory(pushState,url+(hash||''));
         updateNav(url);
         updateActiveLinks();
         if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
@@ -937,7 +950,7 @@ else {
       }
 
       // Push history state (before active link updates so location.pathname is current)
-      if(pushState!==false)history.pushState({},'',url+(hash||''));
+      if(pushState!==false)writeHistory(pushState,url+(hash||''));
 
       // Update active nav links
       updateNav(url);

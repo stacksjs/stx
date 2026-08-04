@@ -109,7 +109,22 @@ declare function useRef<T = HTMLElement>(_name: string): { current: T | null }
 // Routing / navigation
 // ============================================================================
 
-declare function navigate(_url: string, _options?: { replace?: boolean }): void
+interface StxNavigateOptions {
+  /** Replace the current history entry instead of pushing a new one. */
+  replace?: boolean
+  /** Bypass the SPA router and perform a full document load. */
+  reload?: boolean
+}
+
+/**
+ * Navigate via the SPA router.
+ *
+ * The second argument is deliberately NOT typed to also accept a boolean. The
+ * legacy positional `forceReload` boolean still works at runtime — it was the
+ * shape that actually shipped — but keeping it out of the type means nothing
+ * that type-checks today changes meaning (#1807).
+ */
+declare function navigate(_url: string, _options?: StxNavigateOptions): void
 declare function goBack(): void
 declare function goForward(): void
 declare function useRoute(): {
@@ -119,11 +134,23 @@ declare function useRoute(): {
   hash: string
 }
 declare function setRouteParams(_params: Record<string, string>): void
+/**
+ * Reactive access to the URL query string.
+ *
+ * The declaration was wrong in both directions (#1806): it promised `delete`
+ * and `has`, which did not exist at runtime, and omitted `setAll` and `data`,
+ * which did. `delete`/`has` are now implemented rather than dropped; `get`
+ * returns `undefined` for a missing key, not `null`, which is what the runtime
+ * and the docs have always said.
+ */
 declare function useSearchParams(): {
-  get: (key: string) => string | null
-  set: (key: string, value: string) => void
-  delete: (key: string) => void
-  has: (key: string) => boolean
+  /** The backing signal — read it to make a binding reactive to the query. */
+  data: StxSignal<Record<string, string>>
+  get: (_key: string) => string | undefined
+  has: (_key: string) => boolean
+  set: (_key: string, _value: string) => void
+  delete: (_key: string) => void
+  setAll: (_values: Record<string, string>) => void
 }
 
 // ============================================================================
