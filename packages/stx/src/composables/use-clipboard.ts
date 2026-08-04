@@ -3,6 +3,7 @@
  *
  * Provides easy access to the Clipboard API with fallbacks.
  */
+import { onDestroy } from '../signals-api'
 
 export interface ClipboardRef {
   /** Current clipboard text (if readable) */
@@ -15,8 +16,23 @@ export interface ClipboardRef {
   copy: (text: string) => Promise<boolean>
   /** Read text from clipboard (requires permission) */
   read: () => Promise<string>
-  /** Subscribe to copy events */
+  /**
+   * Subscribe to clipboard state changes.
+   *
+   * Fires on copy AND on the auto-reset that follows it, both times with the
+   * copied text — read `copied` off the ref to tell them apart. Without the
+   * reset notification a subscriber mirroring `copied` latches at true forever,
+   * which makes the "Copied!" -> "Copy" affordance impossible to build.
+   */
   subscribe: (callback: (text: string) => void) => () => void
+  /**
+   * Cancel a pending auto-reset and drop every subscriber.
+   *
+   * Registered with `onDestroy` too, but call it directly outside a component
+   * scope: `signals-api`'s lifecycle queues are not drained on the module path,
+   * so the hook alone does not fire there.
+   */
+  stop: () => void
 }
 
 /**
@@ -73,7 +89,7 @@ catch (e) {
         notify(text)
 
         if (copiedTimeout) clearTimeout(copiedTimeout)
-        copiedTimeout = setTimeout(() => { copied = false }, timeout)
+        copiedTimeout = setTimeout(() => { copied = false; notify(currentText) }, timeout)
 
         return true
       }
@@ -89,7 +105,7 @@ catch {
       notify(text)
 
       if (copiedTimeout) clearTimeout(copiedTimeout)
-      copiedTimeout = setTimeout(() => { copied = false }, timeout)
+      copiedTimeout = setTimeout(() => { copied = false; notify(currentText) }, timeout)
 
       return true
     }
@@ -111,6 +127,18 @@ catch {
     }
   }
 
+  // Otherwise the timer outlives the component and fires notify() into
+  // subscribers of a scope that is already gone.
+  const stop = () => {
+    if (copiedTimeout) {
+      clearTimeout(copiedTimeout)
+      copiedTimeout = null
+    }
+    subscribers.clear()
+  }
+
+  onDestroy(stop)
+
   return {
     get text() { return currentText },
     get isSupported() { return isSupported },
@@ -121,6 +149,7 @@ catch {
       subscribers.add(callback)
       return () => subscribers.delete(callback)
     },
+    stop,
   }
 }
 

@@ -6240,10 +6240,20 @@ else {
       const setupName = el.getAttribute('data-stx');
       console.log('[DOMContentLoaded] data-stx:', setupName, 'el:', el.tagName, 'fn exists:', !!(setupName && window[setupName]));
       if (setupName && window[setupName]) {
-        const result = window[setupName]();
-        console.log('[DOMContentLoaded] setup returned:', result ? Object.keys(result).slice(0, 10) : 'null');
-        if (typeof result === 'object') {
-          Object.assign(componentScope, result);
+        // Contained, like the two sibling setup call sites. An uncaught throw
+        // here aborted the whole forEach and everything after it in this
+        // handler, so ONE bad name in ONE page's setup left every root on the
+        // page unhydrated — the user sees raw {{ }}, and the console names the
+        // identifier without saying it cost them the document (#1805).
+        try {
+          const result = window[setupName]();
+          console.log('[DOMContentLoaded] setup returned:', result ? Object.keys(result).slice(0, 10) : 'null');
+          if (typeof result === 'object' && result !== null) {
+            Object.assign(componentScope, result);
+          }
+        }
+        catch (e) {
+          console.error('[stx] page setup "' + setupName + '" threw; this root will not hydrate:', e);
         }
       }
     });
