@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.2.153",
   "private": true,
-  "description": "Browser-extension bridge + panel for Stacks DevTools \u2014 consumes the in-page window.__stxDevtools introspection protocol.",
+  "description": "Browser-extension bridge + panel for Stacks DevTools — consumes the in-page window.__stxDevtools introspection protocol.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
   "homepage": "https://github.com/stacksjs/stx#readme",
@@ -30,8 +30,6 @@
   "scripts": {
     "build": "bun --bun build.ts",
     "preview": "bun scripts/gen-preview.ts",
-    "test": "bun test",
-    "icons": "bun scripts/gen-icons.ts",
-    "package": "bun run build && bun scripts/package.ts"
+    "test": "bun test"
   }
 }
