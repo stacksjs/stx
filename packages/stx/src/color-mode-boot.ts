@@ -187,19 +187,122 @@ export function injectColorModeBootScript(html: string, options: ColorModeBootCo
   if (html.includes(COLOR_MODE_BOOT_MARKER))
     return html
 
+  const insertAt = bootInsertionPoint(html)
+  if (insertAt === null)
+    return html
+
+  const script = generateColorModeBootScript(options)
+  return `${html.slice(0, insertAt)}\n  ${script}${html.slice(insertAt)}`
+}
+
+/**
+ * Offset of the canonical boot-script position: just inside `<head>`, after a
+ * leading `<meta charset>`.
+ *
+ * `<meta charset>` is stepped over when it leads the head — the spec wants it
+ * inside the first 1024 bytes, and pushing it down behind this script erodes
+ * that budget for no reason.
+ */
+function bootInsertionPoint(html: string): number | null {
+  const headOpen = /<head\b[^>]*>/i.exec(html)
+  if (!headOpen)
+    return null
+
+  let insertAt = headOpen.index + headOpen[0].length
+  const charset = /^\s*<meta\b[^>]*\bcharset\b[^>]*>/i.exec(html.slice(insertAt))
+  if (charset)
+    insertAt += charset[0].length
+
+  return insertAt
+}
+
+const BOOT_SCRIPT_TAG = new RegExp(`<script\\b[^>]*\\b${COLOR_MODE_BOOT_MARKER}\\b[^>]*>[\\s\\S]*?<\\/script>`, 'i')
+const CHARSET_META = /<meta\b[^>]*\bcharset\b[^>]*>/i
+
+/**
+ * Pull `<meta charset>` to the top of `<head>`.
+ *
+ * The SEO meta block is injected at the head opening, which pushes a
+ * page-supplied `<meta charset>` down behind it and the `<title>`. The spec
+ * wants the encoding declaration inside the document's first 1024 bytes, and
+ * hoisting the boot script above it (see below) spends ~800 of those — so
+ * without this, the two fixes together would push charset out of budget on any
+ * page with a normal-sized SEO block.
+ *
+ * A no-op when there is no charset meta, no `<head>`, or it already leads.
+ */
+function hoistCharsetMeta(html: string): string {
   const headOpen = /<head\b[^>]*>/i.exec(html)
   if (!headOpen)
     return html
 
-  let insertAt = headOpen.index + headOpen[0].length
+  const headStart = headOpen.index + headOpen[0].length
+  const headEnd = html.toLowerCase().indexOf('</head>', headStart)
+  const head = html.slice(headStart, headEnd === -1 ? html.length : headEnd)
 
-  // Keep <meta charset> first — the spec wants it inside the first 1024 bytes,
-  // and pushing it down behind this script erodes that budget for no reason.
-  const afterHead = html.slice(insertAt)
-  const charset = /^\s*<meta\b[^>]*\bcharset\b[^>]*>/i.exec(afterHead)
-  if (charset)
-    insertAt += charset[0].length
+  const meta = CHARSET_META.exec(head)
+  if (!meta || head.slice(0, meta.index).trim() === '')
+    return html
 
-  const script = generateColorModeBootScript(options)
-  return `${html.slice(0, insertAt)}\n  ${script}${html.slice(insertAt)}`
+  const withoutMeta = head.slice(0, meta.index) + head.slice(meta.index + meta[0].length)
+  return html.slice(0, headStart) + `\n  ${meta[0]}` + withoutMeta + html.slice(headStart + head.length)
+}
+
+/**
+ * Re-assert the ordering of the two head tags whose position is load-bearing:
+ * `<meta charset>` first, then the color-mode boot script, then everything else.
+ *
+ * Run this LAST, after every other head injection. Ordering the injectors
+ * against each other would hold only until the next one is added; re-asserting
+ * the result once at the end holds regardless of what ran before.
+ */
+export function normalizeCriticalHeadOrder(html: string): string {
+  return hoistColorModeBootScript(hoistCharsetMeta(html))
+}
+
+/**
+ * Move an already-injected boot script back to the top of `<head>`.
+ *
+ * `injectColorModeBootScript` puts it first, but later stages of the pipeline
+ * then insert *ahead* of it and push it down (#1803): the signals runtime is
+ * relocated before the first `<script>` on the page — which is this one — and
+ * the store and composable bundles anchor themselves to the runtime tag. The
+ * boot script ended up fifth, behind all three.
+ *
+ * That is not merely a paint-timing problem. The bundles that overtook it read
+ * `window.__STX_COLOR_MODE__`, which this script publishes, so a `useColorMode()`
+ * inside a store saw `undefined` and silently fell back to the default storage
+ * key and a null attribute — writing the user's preference somewhere the boot
+ * script will never read it back, and never applying the configured attribute.
+ *
+ * Run this last, after every other head injection. Ordering the injectors
+ * against each other would work only until the next one is added; re-asserting
+ * the position once at the end holds regardless of what ran before.
+ *
+ * A no-op when the document has no boot script or it is already in place.
+ */
+export function hoistColorModeBootScript(html: string): string {
+  const tag = BOOT_SCRIPT_TAG.exec(html)
+  if (!tag)
+    return html
+
+  const target = bootInsertionPoint(html)
+  if (target === null)
+    return html
+
+  // Already in place. Compare on content, not offset: the tag is inserted with
+  // leading whitespace, so an exact-offset test would re-hoist every time and
+  // grow the indentation on each pass.
+  if (tag.index <= target || html.slice(target, tag.index).trim() === '')
+    return html
+
+  const withoutTag = html.slice(0, tag.index) + html.slice(tag.index + tag[0].length)
+  // Recompute against the shortened string: removing the tag cannot move the
+  // insertion point (the tag always follows <head>), but deriving it again
+  // keeps this correct if that ever stops holding.
+  const insertAt = bootInsertionPoint(withoutTag)
+  if (insertAt === null)
+    return html
+
+  return `${withoutTag.slice(0, insertAt)}\n  ${tag[0]}${withoutTag.slice(insertAt)}`
 }

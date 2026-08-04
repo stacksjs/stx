@@ -52,7 +52,7 @@ import { processServerBindings } from './server-bindings'
 import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
-import { injectColorModeBootScript } from './color-mode-boot'
+import { injectColorModeBootScript, normalizeCriticalHeadOrder } from './color-mode-boot'
 import { injectBuildId } from './build-id'
 import { applyHtmlAttrs, ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags, mergeHtmlAttrs } from './document-shell'
 
@@ -576,6 +576,16 @@ export async function processDirectives(
           // Composable loading is optional
         }
       }
+
+      // Re-assert the boot script's position now every other head injection has
+      // run (#1803). It was inserted first, then overtaken: the signals runtime
+      // is relocated before the first <script> on the page — which is the boot
+      // script — and the store and composable bundles anchor to the runtime.
+      // Those bundles read window.__STX_COLOR_MODE__, so a useColorMode() in a
+      // store saw undefined and silently fell back to the default storage key
+      // and a null attribute.
+      if (isTopLevel)
+        result = normalizeCriticalHeadOrder(result)
 
       // Generate and inject Crosswind CSS AFTER document shell wrapping
       // so bodyClass from stx.config.ts (e.g. 'bg-[#0a0a0f]') is included in the scan.

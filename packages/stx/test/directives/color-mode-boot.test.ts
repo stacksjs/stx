@@ -13,7 +13,7 @@
  * worse than shipping no boot script at all.
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
-import { COLOR_MODE_BOOT_MARKER, generateColorModeBootScript, injectColorModeBootScript } from '../../src/color-mode-boot'
+import { COLOR_MODE_BOOT_MARKER, generateColorModeBootScript, hoistColorModeBootScript, injectColorModeBootScript } from '../../src/color-mode-boot'
 import { defaultConfig } from '../../src/config'
 import { generateDocumentShell } from '../../src/document-shell'
 import { processDirectives } from '../../src/process'
@@ -344,6 +344,103 @@ describe('wiring through processDirectives', () => {
   it('stays out of the way when app.colorMode is unset', async () => {
     const result = await processDirectives('<h1>Hello</h1>', {}, '/test.stx', base as any, new Set<string>())
     expect(result).not.toContain(COLOR_MODE_BOOT_MARKER)
+  })
+
+  it('stays ahead of the signals runtime and every other injected script (#1803)', async () => {
+    // The boot script is inserted first, then overtaken. placeSignalsRuntimeBeforeScripts
+    // moves the runtime before the first <script> on the page — which is the
+    // boot script — and the store and composable bundles then anchor to the
+    // runtime tag. It ended up fifth.
+    //
+    // Not just a paint-timing problem: those bundles READ what this script
+    // publishes. A useColorMode() in a store saw window.__STX_COLOR_MODE__
+    // undefined and silently fell back to the default storage key and a null
+    // attribute — persisting the user's choice somewhere the boot script never
+    // reads back, and never applying the configured attribute.
+    const page = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
+      + '<body><script client>const n = state(0)</script><h1>Hi</h1></body></html>'
+    const result = await processDirectives(page, {}, '/test.stx', {
+      ...base,
+      app: { colorMode: { storageKey: 'theme', attribute: 'data-theme' } },
+    } as any, new Set<string>())
+
+    expect(result).toContain('data-stx-runtime')
+    expect(result.indexOf(COLOR_MODE_BOOT_MARKER)).toBeLessThan(result.indexOf('data-stx-runtime'))
+
+    // Nothing may precede it inside <head> except <meta charset>. Slice to the
+    // boot script's own opening tag, not to the marker, which sits inside it.
+    const head = result.slice(result.indexOf('<head'), result.indexOf('</head>'))
+    const before = head.slice(0, head.lastIndexOf('<script', head.indexOf(COLOR_MODE_BOOT_MARKER)))
+    expect(before).not.toContain('<script')
+    expect(before).not.toContain('<link')
+    expect(before).not.toContain('<title')
+    expect(before).toContain('charset')
+  })
+
+  it('keeps <meta charset> ahead of it after the hoist', async () => {
+    // The charset declaration must stay inside the spec's first 1024 bytes.
+    const page = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
+      + '<body><script client>const n = state(0)</script><h1>Hi</h1></body></html>'
+    const result = await processDirectives(page, {}, '/test.stx', {
+      ...base,
+      app: { colorMode: { storageKey: 'theme' } },
+    } as any, new Set<string>())
+
+    expect(result.indexOf('charset')).toBeLessThan(result.indexOf(COLOR_MODE_BOOT_MARKER))
+  })
+
+  it('emits exactly one boot script after hoisting', async () => {
+    const page = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
+      + '<body><script client>const n = state(0)</script><h1>Hi</h1></body></html>'
+    const result = await processDirectives(page, {}, '/test.stx', {
+      ...base,
+      app: { colorMode: { storageKey: 'theme' } },
+    } as any, new Set<string>())
+
+    expect(result.match(new RegExp(COLOR_MODE_BOOT_MARKER, 'g'))).toHaveLength(1)
+  })
+})
+
+describe('hoistColorModeBootScript', () => {
+  const BOOT = `<script ${COLOR_MODE_BOOT_MARKER}>(function(){}());</script>`
+
+  it('moves a displaced boot script back to the top of <head>', () => {
+    const html = `<html><head><meta charset="utf-8"><script src="/runtime.js"></script>${BOOT}</head><body></body></html>`
+    const out = hoistColorModeBootScript(html)
+    expect(out.indexOf(COLOR_MODE_BOOT_MARKER)).toBeLessThan(out.indexOf('/runtime.js'))
+    expect(out.indexOf('charset')).toBeLessThan(out.indexOf(COLOR_MODE_BOOT_MARKER))
+    expect(out.match(new RegExp(COLOR_MODE_BOOT_MARKER, 'g'))).toHaveLength(1)
+  })
+
+  it('is a no-op when it is already in place', () => {
+    const html = `<html><head><meta charset="utf-8">\n  ${BOOT}<title>x</title></head><body></body></html>`
+    expect(hoistColorModeBootScript(html)).toBe(html)
+  })
+
+  it('is a no-op when there is no boot script', () => {
+    const html = '<html><head><title>x</title></head><body></body></html>'
+    expect(hoistColorModeBootScript(html)).toBe(html)
+  })
+
+  it('is a no-op when there is no <head>', () => {
+    const html = `<div>${BOOT}</div>`
+    expect(hoistColorModeBootScript(html)).toBe(html)
+  })
+
+  it('preserves the script body verbatim', () => {
+    // The body carries the serialised config; a lossy move would ship the
+    // wrong storage key, which is the very bug being fixed.
+    const boot = `<script ${COLOR_MODE_BOOT_MARKER}>var c={"storageKey":"bughq_theme"};</script>`
+    const html = `<html><head><meta charset="utf-8"><link rel="stylesheet" href="/a.css">${boot}</head><body></body></html>`
+    const out = hoistColorModeBootScript(html)
+    expect(out).toContain('"storageKey":"bughq_theme"')
+    expect(out.indexOf(COLOR_MODE_BOOT_MARKER)).toBeLessThan(out.indexOf('stylesheet'))
+  })
+
+  it('is idempotent', () => {
+    const html = `<html><head><script src="/runtime.js"></script>${BOOT}</head><body></body></html>`
+    const once = hoistColorModeBootScript(html)
+    expect(hoistColorModeBootScript(once)).toBe(once)
   })
 })
 
