@@ -15,6 +15,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { useClipboard } from '../../src/composables/use-clipboard'
+import { runDestroyCallbacks } from '../../src/signals-api'
 
 const g = globalThis as any
 let written: string[] = []
@@ -114,6 +115,21 @@ describe('useClipboard auto-reset', () => {
     await clipboard.copy('x')
 
     expect(seen).toEqual([])
+  })
+
+  it('cancels the pending timer through onDestroy too', async () => {
+    // When this was written, onDestroy was dead code on the module path — the
+    // queue was never drained (#1811) — which is why stop() had to be exposed.
+    // Now that the queue drains, the hook the composable registers does its job.
+    const clipboard = useClipboard({ timeout: 20 })
+    const seen: boolean[] = []
+    clipboard.subscribe(() => { seen.push(clipboard.copied) })
+
+    await clipboard.copy('x')
+    runDestroyCallbacks()
+    await tick(40)
+
+    expect(seen).toEqual([true])
   })
 
   it('still copies to the clipboard', async () => {

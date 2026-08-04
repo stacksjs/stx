@@ -509,6 +509,57 @@ export function onDestroy(callback: LifecycleCallback): void {
   destroyCallbacks.push(callback)
 }
 
+/**
+ * Run and clear every callback registered with {@link onMount}.
+ *
+ * Both queues used to be write-only: `onMount` and `onDestroy` pushed, and
+ * nothing anywhere drained them (stacksjs/stx#1811). Two consequences, and the
+ * first is the one that bites — a composable registering cleanup via
+ * `onDestroy` got no cleanup, silently. The code reads as correct, passes
+ * review, and does nothing. The second is a slow leak: nothing cleared the
+ * arrays, so every registration retained its closure for the life of the
+ * process, and the retained objects were precisely the ones the author expected
+ * to be released.
+ *
+ * The client runtime drains its equivalents, so leaving these undrained also
+ * broke the dual-implementation parity CLAUDE.md item 40 requires: the same
+ * public API did something on one side and nothing on the other.
+ *
+ * Drains before invoking, so a callback that registers another is queued for
+ * the next drain rather than running inside this one.
+ *
+ * Errors are contained per callback: one throwing hook must not swallow the
+ * rest, which is the same lesson as the page-setup loop in #1805.
+ */
+export function runMountCallbacks(): void {
+  drain(mountCallbacks, 'onMount')
+}
+
+/** Run and clear every callback registered with {@link onDestroy}. */
+export function runDestroyCallbacks(): void {
+  drain(destroyCallbacks, 'onDestroy')
+}
+
+function drain(queue: LifecycleCallback[], label: string): void {
+  const pending = queue.splice(0, queue.length)
+  for (const callback of pending) {
+    try {
+      callback()
+    }
+    catch (error) {
+      console.error(`[stx] ${label} callback threw:`, error)
+    }
+  }
+}
+
+/**
+ * How many callbacks are queued. Exposed for tests and diagnostics — a queue
+ * that only ever grows is the shape of the defect above.
+ */
+export function pendingLifecycleCounts(): { mount: number, destroy: number } {
+  return { mount: mountCallbacks.length, destroy: destroyCallbacks.length }
+}
+
 // =============================================================================
 // Utility Functions
 // =============================================================================
