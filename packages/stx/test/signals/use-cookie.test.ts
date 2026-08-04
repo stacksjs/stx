@@ -5,6 +5,7 @@
  */
 import { beforeEach, describe, expect, it } from 'bun:test'
 import { generateSignalsRuntimeDev } from '../../src/signals'
+import { runtimeWindowStxSurface } from '../../test-utils/runtime-surface'
 
 // ─── Runtime exposure ──────────────────────────────────────────────────────
 describe('useCookie — runtime exposure', () => {
@@ -15,10 +16,7 @@ describe('useCookie — runtime exposure', () => {
   })
 
   it('runtime exposes useCookie on window.stx', () => {
-    // window.stx = { state, ..., useLocalStorage, useCookie, ... }
-    const stxAssign = runtime.match(/window\.stx\s*=\s*\{[\s\S]*?\};/)
-    expect(stxAssign).not.toBeNull()
-    expect(stxAssign![0]).toContain('useCookie')
+    expect(runtimeWindowStxSurface(runtime).has('useCookie')).toBe(true)
   })
 
   it('includes the cookie deletion path (max-age=0 on empty value)', () => {

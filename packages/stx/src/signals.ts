@@ -740,6 +740,12 @@ catch (e) { console.warn('[stx] dispose error:', e); } });
     return typeof v === 'function' && v._isSignal === true;
   }
 
+  // The derived brand is set at creation; this predicate was declared and
+  // auto-imported for years without ever existing here (#1804).
+  function isDerived(v) {
+    return typeof v === 'function' && v._isDerived === true;
+  }
+
   function untrack(v) {
     return isSignal(v) || (typeof v === 'function' && v._isDerived) ? v() : v;
   }
@@ -4171,8 +4177,23 @@ else if (!value && isInserted) {
 
   // provide() — share values across components (like Vue's provide/inject)
   // Usage: provide('Modal', Modal) — makes Modal accessible in all components
+  //
+  // inject() was auto-imported but implemented nowhere, so half of the pair
+  // worked: provide() succeeded and the failure surfaced only in the consumer
+  // (#1804). Values are recorded in a private registry as well as on window,
+  // because the global write collides with native properties — provide('name',
+  // x) lands on window.name, which the browser coerces to a string.
+  var __stxProvided = Object.create(null);
+
   function provide(name, value) {
+    __stxProvided[name] = value;
     window[name] = value;
+  }
+
+  function inject(name, defaultValue) {
+    if (name in __stxProvided) return __stxProvided[name];
+    if (name in window) return window[name];
+    return defaultValue;
   }
 
   // ==========================================================================
@@ -4453,6 +4474,33 @@ else if (timer === null) {
   function nextTick(fn) {
     return Promise.resolve().then(function() {
       if (fn) fn();
+    });
+  }
+
+  // Watch several sources at once, calling back with (newValues, oldValues).
+  // Declared and auto-imported but never implemented here (#1804). NOT an alias
+  // of $watch, which spreads the values and passes no oldValues — callers
+  // written against the declared contract would silently receive the wrong
+  // arguments. Sources may be signals, Vue-style refs, or plain values.
+  function watchMultiple(sources, callback, options) {
+    options = options || {};
+    var read = function() {
+      return sources.map(function(s) {
+        if (typeof s === 'function') return s();
+        if (s && typeof s === 'object' && 'value' in s) return s.value;
+        return s;
+      });
+    };
+    var oldValues = read();
+    var first = true;
+    return effect(function() {
+      var newValues = read();
+      if (first) {
+        first = false;
+        if (!options.immediate) return;
+      }
+      callback(newValues, oldValues);
+      oldValues = newValues;
     });
   }
 
@@ -5459,16 +5507,25 @@ catch (e) {} }
   // Component mount system
   var mountQueue = [];
 
-  window.stx = {
+  // MERGE, never replace (#1804). Three client bundles assign window.stx and
+  // the last one used to erase the others. Object.assign also preserves the
+  // object IDENTITY, which matters because the generated store runtime captures
+  // window.stx in a closure variable — replacing the object leaves that closure
+  // calling a detached one.
+  window.stx = Object.assign(window.stx || {}, {
     hydrate: hydrateSubtree,
     state,
     derived,
     effect,
     batch,
     isSignal,
+    isDerived,
     untrack,
     peek,
+    inject,
+    watchMultiple,
     onMount,
+    onBeforeMount: onMount,
     onDestroy,
     onMounted: onMount,
     onBeforeUnmount: onDestroy,
@@ -5583,6 +5640,11 @@ catch (e) {} }
       if (el) el.__stx_exposed = exposed;
     },
     defineSlots: function() {
+      return window.__STX_CURRENT_SLOTS__ || {};
+    },
+    // Vue spells the same lookup useSlots(); it was auto-imported with no
+    // implementation behind it (#1804).
+    useSlots: function() {
       return window.__STX_CURRENT_SLOTS__ || {};
     },
 
@@ -6001,7 +6063,7 @@ else {
         doMount();
       }
     }
-  };
+  });
 
   // Also expose globally for convenience
   window.state = state;

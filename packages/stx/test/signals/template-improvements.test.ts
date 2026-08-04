@@ -390,7 +390,8 @@ describe('Minified runtime compatibility', () => {
 describe('Integration: Features working together', () => {
   it('should have all core functions exposed on window.stx', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain('window.stx = {')
+    // Merged, not replaced (#1804).
+    expect(runtime).toContain('window.stx = Object.assign(window.stx || {}, {')
     expect(runtime).toContain('state,')
     expect(runtime).toContain('derived,')
     expect(runtime).toContain('effect,')

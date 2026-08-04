@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 import { processDirectives } from '../src/process'
+import { STX_AUTO_IMPORTS } from '../src/client-script'
 import { COMPONENT_SCOPE_LOCAL_GLOBALS, STX_RUNTIME_GLOBALS, buildRuntimeGlobalsDestructure } from '../src/runtime-globals'
 import { generateSignalsRuntimeDev } from '../src/signals'
+import { runtimeWindowStxSurface } from '../test-utils/runtime-surface'
 
 // Regression: stacksjs/stx#1785
 //
@@ -23,21 +25,7 @@ import { generateSignalsRuntimeDev } from '../src/signals'
 
 /** Names the runtime actually assigns to `window.stx`. */
 function realRuntimeSurface(): Set<string> {
-  const src = generateSignalsRuntimeDev()
-  const start = src.indexOf('window.stx = {')
-  if (start === -1) throw new Error('could not locate the window.stx assignment in the runtime')
-  const open = src.indexOf('{', start)
-  let depth = 0
-  let end = open
-  for (let i = open; i < src.length; i++) {
-    if (src[i] === '{') depth++
-    else if (src[i] === '}') {
-      depth--
-      if (depth === 0) { end = i; break }
-    }
-  }
-  const body = src.slice(open + 1, end)
-  return new Set([...body.matchAll(/^\s*([A-Za-z_$][\w$]*)\s*[:,]/gm)].map(m => m[1]))
+  return runtimeWindowStxSurface(generateSignalsRuntimeDev())
 }
 
 /** Pull the `{ … } = window.stx` name set out of a generated script. */
@@ -199,7 +187,65 @@ nextTick(() => ready.set(true))
     expect(destructuredNames(pageScript!).has('nextTick')).toBe(true)
   })
 
-  it('drops the phantom inject name that is not implemented', () => {
-    expect(STX_RUNTIME_GLOBALS).not.toContain('inject')
+  it('carries inject now that the runtime implements it', () => {
+    // Was excluded as a phantom: destructured by one call site, defined
+    // nowhere, so provide() worked and the failure surfaced only in the
+    // consumer. The runtime implements it as of #1804, and the
+    // 'every declared global actually exists on window.stx' test above is what
+    // keeps this honest.
+    expect(STX_RUNTIME_GLOBALS).toContain('inject')
+  })
+})
+
+/**
+ * The classic `<script>` / `<script client>` path used to carry its OWN
+ * 82-name copy of this list (stacksjs/stx#1804). It drifted: 16 of those names
+ * were not on `window.stx` at all.
+ *
+ * The failure mode is what makes this worth a guard. The generated prologue
+ * DESTRUCTURES (`var { … } = window.stx`), so a missing name is not an error —
+ * it binds `undefined`, the script ships, and the author eventually sees
+ * "undefined is not a function" at a call site with nothing naming the
+ * identifier or explaining why. `provide` resolved and `inject` did not;
+ * `onMounted` resolved and `onUpdated` did not.
+ */
+describe('stx#1804: auto-imports and runtime globals are one list', () => {
+  it('offers exactly the names the setup-script path offers', () => {
+    // Two lists mean two chances to drift. There is now one.
+    expect([...STX_AUTO_IMPORTS]).toEqual([...STX_RUNTIME_GLOBALS])
+  })
+
+  it('every auto-imported name exists on window.stx', () => {
+    const real = realRuntimeSurface()
+    expect(STX_AUTO_IMPORTS.filter(name => !real.has(name))).toEqual([])
+  })
+
+  it('no longer offers names with no client implementation', () => {
+    // Each of these is a real export somewhere in the tree — JSX runtime,
+    // composition-api, state-management — with no counterpart on window.stx.
+    // Offering them is worse than not: a ReferenceError names the identifier,
+    // an undefined binding does not.
+    for (const name of [
+      'h', 'Fragment', 'useMeta', 'getCurrentInstance', 'useAttrs',
+      'onErrorCaptured', 'onBeforeUpdate', 'onUpdated', 'createStore',
+      'createSelector', 'action',
+    ]) {
+      expect(STX_AUTO_IMPORTS).not.toContain(name)
+    }
+  })
+
+  it('keeps the five that were implemented rather than dropped', () => {
+    // These were dead too, but cheap and already declared — so the runtime
+    // grew them instead of retiring them.
+    for (const name of ['isDerived', 'inject', 'useSlots', 'watchMultiple', 'onBeforeMount'])
+      expect(STX_AUTO_IMPORTS).toContain(name)
+  })
+
+  it('exposes the four names that resolved in one path but not the other', () => {
+    // On window.stx and in STX_AUTO_IMPORTS, but missing from the setup-script
+    // destructure — so they worked in a classic <script> and threw
+    // ReferenceError inside a signals setup script. Same bug class as #1785.
+    for (const name of ['untrack', 'peek', 'isSignal', 'setRouteParams'])
+      expect(STX_RUNTIME_GLOBALS).toContain(name)
   })
 })

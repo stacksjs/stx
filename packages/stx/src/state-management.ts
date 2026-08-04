@@ -1218,7 +1218,10 @@ else {
     });
   };
 
-  window.stx = s;
+  // Merge, never replace (#1804). s was seeded from window.stx above, so this
+  // keeps both any earlier keys and the object identity the waitForStore
+  // closure captured.
+  window.stx = Object.assign(window.stx || {}, s);
 })();
 `
 }

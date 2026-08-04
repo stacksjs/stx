@@ -15,8 +15,16 @@
  *
  * Two entries were also phantoms - `inject` and `nextTick` were destructured by
  * one site but never defined on `window.stx` at all, so they silently evaluated
- * to `undefined` and threw "is not a function" when called. `nextTick` now has a
- * signals-runtime implementation; `inject` remains omitted until it does too.
+ * to `undefined` and threw "is not a function" when called. Both are now
+ * implemented by the signals runtime (`inject` as of #1804).
+ *
+ * This list is also the source of `STX_AUTO_IMPORTS` (client-script.ts), which
+ * used to be a fourth hand-maintained copy for the classic `<script client>`
+ * path. It had drifted to 82 names against a runtime surface of 66, so 16 names
+ * — `h`, `Fragment`, `createStore`, `useMeta`, `getCurrentInstance` and others —
+ * were destructured off `window.stx` for every client script and silently bound
+ * to `undefined`, failing at the call site as "undefined is not a function" with
+ * nothing pointing at the missing name. One list, one guard (#1804).
  *
  * Adding a runtime global is now a one-line change here. `runtime-globals.test.ts`
  * asserts every name actually exists on `window.stx` and that all three call
@@ -34,15 +42,17 @@
  */
 export const STX_RUNTIME_GLOBALS: readonly string[] = [
   'batch', 'computed', 'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps',
-  'defineSlots', 'defineStore', 'derived', 'effect', 'goBack', 'goForward', 'navigate',
-  'nextTick', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted', 'provide', 'reactive',
-  'ref', 'registerStoresClient', 'state', 'useAsync', 'useClickOutside', 'useColorMode',
+  'defineSlots', 'defineStore', 'derived', 'effect', 'goBack', 'goForward', 'inject',
+  'isDerived', 'isSignal', 'navigate',
+  'nextTick', 'onBeforeMount', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted',
+  'peek', 'provide', 'reactive',
+  'ref', 'registerStoresClient', 'setRouteParams', 'state', 'untrack', 'useAsync', 'useClickOutside', 'useColorMode',
   'useCookie', 'useCounter', 'useDark', 'useDebounce', 'useDebouncedValue', 'useEventListener',
   'useFetch', 'useFocus', 'useHead', 'useId', 'useInterval', 'useLocalStorage', 'useMediaQuery',
   'useMutation', 'useOptimistic', 'usePreferredContrast', 'usePreferredDark',
   'usePreferredLight', 'usePreferredReducedMotion', 'useQuery', 'useReactiveProp',
-  'useRef', 'useRoute', 'useScrollLock', 'useSearchParams', 'useSeoMeta', 'useSessionStorage', 'useStore',
-  'useThrottle', 'useTimeout', 'useToggle', 'useWebSocket', 'watch', 'watchEffect', 'withDefaults',
+  'useRef', 'useRoute', 'useScrollLock', 'useSearchParams', 'useSeoMeta', 'useSessionStorage', 'useSlots', 'useStore',
+  'useThrottle', 'useTimeout', 'useToggle', 'useWebSocket', 'watch', 'watchEffect', 'watchMultiple', 'withDefaults',
 ]
 
 /**

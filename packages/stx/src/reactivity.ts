@@ -991,8 +991,10 @@ export function generateClientRuntime(): string {
     window[name] = value;
   }
 
-  // Expose globally for <script client> blocks
-  window.stx = {
+  // Expose globally for <script client> blocks.
+  // MERGE, never replace (#1804): several client bundles write window.stx
+  // and a wholesale assignment erases whichever ran first.
+  window.stx = Object.assign(window.stx || {}, {
     // Reactivity
     ref,
     reactive,
@@ -1028,7 +1030,7 @@ export function generateClientRuntime(): string {
     // SSR detection
     isClient: function() { return true; },
     isServer: function() { return false; }
-  };
+  });
   window.provide = provide;
 })();
 </script>`;

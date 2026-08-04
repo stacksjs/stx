@@ -82,16 +82,27 @@ declare function onMount(_fn: () => void | StxCleanup): void
 declare function onDestroy(_fn: () => void): void
 declare function onBeforeMount(_fn: () => void): void
 declare function onMounted(_fn: () => void | StxCleanup): void
-declare function onBeforeUpdate(_fn: () => void): void
-declare function onUpdated(_fn: () => void): void
 declare function onBeforeUnmount(_fn: () => void): void
 declare function onUnmounted(_fn: () => void): void
-declare function onErrorCaptured(_fn: (error: unknown, instance: HTMLElement | null, info: string) => boolean | void): void
+// onBeforeUpdate / onUpdated / onErrorCaptured are NOT declared: they exist in
+// reactivity.ts and composition-api.ts but have no client-runtime counterpart,
+// so declaring them promised a global that resolved to undefined (#1804).
 
 // ============================================================================
 // Template refs
 // ============================================================================
 
+/** Stable per-component id, unique across instances. */
+declare function useId(_prefix?: string): string
+/**
+ * Signal tracking a parent-driven `:prop="signal()"` attribute on the
+ * component's root element. One-way: parent to child.
+ */
+declare function useReactiveProp<T = unknown>(
+  _name: string,
+  _defaultValue?: T,
+  _options?: { parse?: (_value: string) => T },
+): StxSignal<T>
 declare function useRef<T = HTMLElement>(_name: string): { current: T | null }
 
 // ============================================================================
@@ -160,7 +171,6 @@ declare function useEventListener(
 declare function useScrollLock(
   _target?: HTMLElement | null | { current?: HTMLElement | null, value?: HTMLElement | null } | (() => HTMLElement | null | undefined),
 ): StxSignal<boolean>
-declare function useMeta(_meta: Record<string, string>): void
 declare function useClickOutside(_target: HTMLElement | StxRef<HTMLElement | null> | string | null, _handler: (event: MouseEvent) => void): StxCleanup
 declare function useFocus(_target: HTMLElement | StxRef<HTMLElement | null> | string | null): { focused: StxSignal<boolean>, focus: () => void, blur: () => void }
 
@@ -208,6 +218,44 @@ declare function useAsync<T>(_fn: () => Promise<T>): {
 
 declare function useLocalStorage<T>(_key: string, _defaultValue: T): StxSignal<T>
 declare function useSessionStorage<T>(_key: string, _defaultValue: T): StxSignal<T>
+
+/**
+ * Options accepted by the auto-imported `useCookie` global.
+ *
+ * This describes the CLIENT RUNTIME's cookie composable, which is what a bare
+ * `useCookie(...)` in a `<script client>` block resolves to. The module export
+ * `@stacksjs/stx/composables` accepts a slightly wider `expires` (Date, epoch ms
+ * or parseable string); the runtime calls `.toUTCString()` on it, so only a Date
+ * works there. See #1710.
+ */
+interface StxCookieOptions {
+  /** Max age in seconds. */
+  maxAge?: number
+  /** Expiration date. */
+  expires?: Date
+  /** Cookie path. Defaults to '/'. */
+  path?: string
+  /** Cookie domain. */
+  domain?: string
+  /** Secure flag. Defaults to true when location.protocol is https:. */
+  secure?: boolean
+  /** SameSite attribute. Defaults to 'Lax'. */
+  sameSite?: 'Strict' | 'Lax' | 'None' | 'strict' | 'lax' | 'none'
+  /** Value returned when the cookie is absent. Defaults to ''. */
+  defaultValue?: string
+  /** Custom encoder. Defaults to encodeURIComponent. */
+  encode?: (_value: string) => string
+  /** Custom decoder. Defaults to decodeURIComponent. */
+  decode?: (_value: string) => string
+}
+
+/**
+ * Reactive binding to a single cookie (#1808).
+ *
+ * Returns a signal, like `useLocalStorage` — writes serialise straight to
+ * `document.cookie`, and `.set('')` deletes by emitting `max-age=0`.
+ */
+declare function useCookie(_name: string, _options?: StxCookieOptions): StxSignal<string>
 
 // ============================================================================
 // WebSocket
@@ -317,6 +365,8 @@ interface StxSeoMetaConfig {
 
 declare function useHead(_config: StxHeadConfig): void
 declare function useSeoMeta(_config: StxSeoMetaConfig): void
+/** No-op on the client; the real one runs at SSR/SSG time. */
+declare function definePageMeta(_meta: Record<string, unknown>): void
 
 // ============================================================================
 // Vue-style reactivity (alternative API)
@@ -348,9 +398,9 @@ declare function defineExpose<T extends Record<string, any>>(_exposed: T): void
 declare function defineSlots<T extends Record<string, (..._args: any[]) => any> = Record<string, (..._args: any[]) => any>>(): T
 declare function provide<T>(_key: string | symbol, _value: T): void
 declare function inject<T>(_key: string | symbol, _defaultValue?: T): T | undefined
-declare function getCurrentInstance(): any
 declare function useSlots(): Record<string, any>
-declare function useAttrs(): Record<string, any>
+// getCurrentInstance / useAttrs are NOT declared — composition-api.ts exports
+// them for server use; no client-runtime counterpart exists (#1804).
 declare function $computed<T>(_getter: () => T): StxRef<T>
 declare function $watch<T>(
   _source: (() => T) | StxRef<T> | StxSignal<T>,
@@ -462,16 +512,18 @@ declare function defineStore<S extends Record<string, any>, G extends Record<str
   },
 ): () => S & G & A
 declare function useStore<T = any>(_id: string): T
-declare function createStore<T>(_setup: () => T, _options?: StxStoreOptions): () => T
-declare function action<T extends (..._args: any[]) => any>(_fn: T): T
-declare function createSelector<T, R>(_selector: (state: T) => R): (state: T) => R
+declare function registerStoresClient(_stores: Record<string, unknown>): void
+// createStore / createSelector are exported by state-management.ts for server
+// use and `action` has no implementation anywhere; none reaches window.stx, so
+// none is declared as an ambient global (#1804).
 
 // ============================================================================
 // JSX runtime (Vue/React style)
 // ============================================================================
 
-declare function h(_tag: string | Function, _props?: Record<string, any> | null, ..._children: any[]): any
-declare const Fragment: unique symbol
+// h / Fragment belong to the JSX runtime (jsx-runtime.ts) and are resolved by
+// the transform, not destructured off window.stx — so they are not ambient
+// globals (#1804). Import them explicitly if you call them directly.
 
 // ============================================================================
 // window.stx registry

@@ -10,6 +10,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { generateSignalsRuntimeDev } from '../../src/signals'
+import { runtimeWindowStxSurface } from '../../test-utils/runtime-surface'
 
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-issue-fixes-'))
 
@@ -455,9 +456,7 @@ describe('useSessionStorage — close the gap strict-mode lint already pointed a
   })
 
   it('runtime exposes useSessionStorage on window.stx', () => {
-    const stxAssign = runtime.match(/window\.stx\s*=\s*\{[\s\S]*?\};/)
-    expect(stxAssign).not.toBeNull()
-    expect(stxAssign![0]).toContain('useSessionStorage')
+    expect(runtimeWindowStxSurface(runtime).has('useSessionStorage')).toBe(true)
   })
 
   it('uses sessionStorage (not localStorage) for backing reads/writes', () => {
@@ -509,9 +508,7 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
   })
 
   it('runtime exposes useReactiveProp on window.stx', () => {
-    const stxAssign = runtime.match(/window\.stx\s*=\s*\{[\s\S]*?\};/)
-    expect(stxAssign).not.toBeNull()
-    expect(stxAssign![0]).toContain('useReactiveProp')
+    expect(runtimeWindowStxSurface(runtime).has('useReactiveProp')).toBe(true)
   })
 
   it('reads camelCase and kebab-case attributes off __STX_CURRENT_ELEMENT__', () => {
@@ -757,8 +754,7 @@ describe('useId component identity', () => {
   it('defines and exposes the scope-aware id helper', () => {
     const runtime = generateSignalsRuntimeDev()
     expect(runtime).toContain('function useId(prefix)')
-    const stxRuntime = runtime.slice(runtime.indexOf('window.stx = {'))
-    expect(stxRuntime).toContain('useId,')
+    expect(runtimeWindowStxSurface(runtime).has('useId')).toBe(true)
   })
 
   it('treats useId-only client scripts as reactive setup scripts', async () => {
@@ -930,7 +926,9 @@ describe('#1697 — layout scope rebind walks document.body', () => {
   it('DOMContentLoaded path also marks scopes mounted (so cross-nav doesn\'t re-fire onMount)', () => {
     const dclIdx = runtime.indexOf('const stxDomReadyHandler = () => {')
     expect(dclIdx).toBeGreaterThan(-1)
-    const dclSection = runtime.slice(dclIdx, dclIdx + 8000)
+    // To the end, not a fixed byte window: the handler grows, and a slice that
+    // falls short makes this pass-or-fail on unrelated edits above the marker.
+    const dclSection = runtime.slice(dclIdx)
     expect(dclSection).toMatch(/!\s*scopeVars\.__mounted/)
   })
 })

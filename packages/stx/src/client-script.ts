@@ -39,6 +39,7 @@ import type { ParsedEvent, EventModifiers } from './events'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { importOnce } from './lazy-module'
+import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 
 // =============================================================================
 // Vendor CSS Side-Effect Imports
@@ -303,49 +304,28 @@ ${s.contents}
 // =============================================================================
 
 /**
- * Exports from 'stx' that are auto-imported
+ * Exports from 'stx' auto-imported into classic `<script>` / `<script client>`
+ * blocks.
+ *
+ * Derived from {@link STX_RUNTIME_GLOBALS} rather than hand-maintained (#1804).
+ * This was a separate 82-name literal, and it had drifted: 16 of those names
+ * were not on `window.stx` at all. Because the generated prologue destructures
+ * (`var { … } = window.stx`), a missing name is not an error — it binds
+ * `undefined`, and the author sees "undefined is not a function" at the call
+ * site with nothing naming the identifier or saying why. `provide` worked and
+ * `inject` did not; `onMounted` worked and `onUpdated` did not.
+ *
+ * Five of the 16 (`isDerived`, `inject`, `useSlots`, `watchMultiple`,
+ * `onBeforeMount`) are now implemented in the runtime and live in the shared
+ * list. The remaining 11 are server- or compile-time only — `h` and `Fragment`
+ * belong to the JSX runtime, `useMeta`/`getCurrentInstance`/`useAttrs`/
+ * `onErrorCaptured`/`onBeforeUpdate`/`onUpdated`/`createStore`/`createSelector`
+ * are module exports with no client counterpart, and `action` has no
+ * implementation anywhere — so they are no longer offered. A `ReferenceError`
+ * naming the identifier beats a silent `undefined`.
  */
-const STX_AUTO_IMPORTS = [
-  // Signals (modern reactivity)
-  'state', 'derived', 'effect', 'batch', 'untrack', 'peek', 'isSignal', 'isDerived',
-  // Lifecycle
-  'onMount', 'onDestroy',
-  // Template refs
-  'useRef',
-  // Navigation
-  'navigate', 'goBack', 'goForward', 'useRoute', 'setRouteParams', 'useSearchParams',
-  // Data fetching
-  'useFetch', 'useQuery', 'useMutation', 'useOptimistic',
-  // Reactive component props (parent attr -> child signal bridge)
-  'useId', 'useReactiveProp',
-  // Persistence
-  'useLocalStorage', 'useSessionStorage', 'useCookie',
-  // Networking
-  'useWebSocket',
-  // Head / SEO / page meta
-  'useHead', 'useSeoMeta', 'definePageMeta',
-  // DOM utilities
-  'useEventListener', 'useMeta',
-  // Timers
-  'useDebounce', 'useDebouncedValue', 'useThrottle', 'useInterval', 'useTimeout',
-  // Utilities
-  'useToggle', 'useCounter', 'useClickOutside', 'useFocus', 'useAsync',
-  // Color Mode
-  'useColorMode', 'useDark', 'useMediaQuery', 'useScrollLock', 'usePreferredDark', 'usePreferredLight', 'usePreferredReducedMotion', 'usePreferredContrast',
-  // Vue-style reactivity (alternative API)
-  'ref', 'reactive', 'computed', 'watch', 'watchEffect', 'watchMultiple',
-  // Vue-style lifecycle hooks
-  'onBeforeMount', 'onMounted', 'onBeforeUpdate', 'onUpdated', 'onBeforeUnmount', 'onUnmounted',
-  // Component definition
-  'defineProps', 'withDefaults', 'defineEmits', 'defineExpose', 'defineSlots',
-  // Composition API (Vue-compatible)
-  'provide', 'inject', 'nextTick', 'getCurrentInstance',
-  'onErrorCaptured', 'useSlots', 'useAttrs',
-  // Store/state management
-  'createStore', 'defineStore', 'registerStoresClient', 'useStore', 'action', 'createSelector',
-  // JSX
-  'h', 'Fragment',
-]
+export const STX_AUTO_IMPORTS: readonly string[] = STX_RUNTIME_GLOBALS
+
 
 /**
  * Core exports from '@stacksjs/browser' that are auto-imported.
