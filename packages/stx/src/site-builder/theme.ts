@@ -19,6 +19,7 @@
  */
 
 import type { SiteConfig } from './types'
+import { COLOR_MODE_BOOT_MARKER } from '../color-mode-boot'
 
 export interface ThemeOptions {
   /** Default theme on first visit. Falls back to 'auto' (system preference). */
@@ -76,6 +77,27 @@ const TOGGLE_HANDLER = (storageKey: string, lightColor: string, darkColor: strin
 export function injectThemeBootstrap(html: string, site: SiteConfig): string {
   if (site.theme === false) return html
 
+  // Stand down when app.colorMode is driving the theme (stacksjs/stx#1812).
+  //
+  // These are two independent pre-paint theme systems that share no contract:
+  // different storage keys, different mechanisms (a `dark` class vs a
+  // configured attribute), different defaults. This one was gated only on
+  // "have I already run", so an app that configures app.colorMode and never
+  // configures site.theme still got it, running on defaults it never chose.
+  //
+  // The result was that the FOUC guard CAUSED a FOUC: it reads a storage key
+  // nothing writes, so it always resolves to its own default and stamps
+  // class="dark" on the root element at the top of <head> — before the
+  // color-mode boot script sets the correct value. A light-preference user got
+  // the dark class from first paint until hydration, which is the exact thing
+  // the guard exists to prevent, and `dark` on the root is the default
+  // dark-mode strategy for Crosswind/Tailwind-style utilities.
+  //
+  // The browser-chrome <meta> tags below are complementary rather than
+  // conflicting — color-mode-boot does not manage theme-color — so those still
+  // apply. Only the class, the guard and the toggle handler stand down.
+  const colorModeOwnsTheme = html.includes(COLOR_MODE_BOOT_MARKER)
+
   const opts: ThemeOptions = (typeof site.theme === 'object' && site.theme !== null) ? site.theme : {}
   const defaultTheme = opts.default ?? 'dark'
   const storageKey = opts.storageKey ?? 'theme'
@@ -83,7 +105,7 @@ export function injectThemeBootstrap(html: string, site: SiteConfig): string {
   const darkColor = opts.colors?.dark ?? '#000000'
 
   // 1) Add class="dark" (or "light") to <html> for the initial paint
-  if (defaultTheme === 'dark') {
+  if (defaultTheme === 'dark' && !colorModeOwnsTheme) {
     if (!/<html\b[^>]*\bclass=/.test(html))
       html = html.replace(/<html\b([^>]*)>/i, '<html$1 class="dark">')
     else if (!/<html\b[^>]*\bclass="[^"]*\bdark\b/.test(html))
@@ -117,13 +139,13 @@ export function injectThemeBootstrap(html: string, site: SiteConfig): string {
 
   // 3) FOUC guard as the first thing in <head> (after the meta tags so
   // the JS update has the unmediated <meta name="theme-color"> to find)
-  if (!html.includes('__stxThemeGuard') && /<head\b[^>]*>/i.test(html)) {
+  if (!colorModeOwnsTheme && !html.includes('__stxThemeGuard') && /<head\b[^>]*>/i.test(html)) {
     const guard = `<script data-stx-theme-guard="1">${FOUC_SCRIPT(defaultTheme, storageKey, lightColor, darkColor)};window.__stxThemeGuard=1;</script>`
     html = html.replace(/<head\b([^>]*)>/i, `<head$1>\n  ${guard}`)
   }
 
   // 4) Toggle click handler before </body>
-  if (!html.includes('__stxThemeToggle') && /<\/body>/i.test(html)) {
+  if (!colorModeOwnsTheme && !html.includes('__stxThemeToggle') && /<\/body>/i.test(html)) {
     const handler = `<script data-stx-theme-toggle="1">${TOGGLE_HANDLER(storageKey, lightColor, darkColor)};window.__stxThemeToggle=1;</script>`
     html = html.replace(/<\/body>/i, `${handler}\n</body>`)
   }
