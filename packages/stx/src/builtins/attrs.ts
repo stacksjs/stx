@@ -15,6 +15,7 @@
 
 import type { ResolvedProps } from '../component-registry'
 import { escapeAttr } from './escape'
+import { BOOLEAN_ATTRIBUTE_SENTINEL, stripControlChars } from '../prop-sentinels'
 
 /**
  * Render the static props a builtin did not consume as HTML attributes.
@@ -45,7 +46,21 @@ export function forwardStaticAttrs(props: ResolvedProps, consumed: Set<string>):
       continue
     }
 
-    attrs.push(`${escapeAttr(name)}="${escapeAttr(value)}"`)
+    // A bare attribute arrives as the sentinel STRING, not a JS boolean, so the
+    // check above misses it and the raw marker — leading NUL included — was
+    // emitted as the attribute's value (#1816). It reached output through
+    // element-level directives: a signal-driven @if/@else chain is rewritten
+    // into attributes on the element, so `@else` lands on a builtin as a bare
+    // attribute and gets forwarded here.
+    if (value === BOOLEAN_ATTRIBUTE_SENTINEL) {
+      attrs.push(escapeAttr(name))
+      continue
+    }
+
+    // stripControlChars is belt and braces: a NUL in a response makes the whole
+    // document invalid UTF-8, which is a disproportionate failure for the cost
+    // of one check.
+    attrs.push(`${escapeAttr(name)}="${escapeAttr(stripControlChars(String(value)))}"`)
   }
 
   return attrs

@@ -26,12 +26,14 @@ import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultili
 import { maskAtElementPosition, matchHtmlComment } from './html-masking'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
+import { BOOLEAN_ATTRIBUTE_SENTINEL } from './prop-sentinels'
 import fs from 'node:fs'
 import path from 'node:path'
 
 /** Guard flag to ensure builtins are registered exactly once. */
 let builtinsRegistered = false
-const BOOLEAN_ATTRIBUTE_SENTINEL = '\0stx-boolean-attribute'
+// Shared with the builtins via a leaf module — importing it back from here
+// would be a cycle (this file imports ./builtins).
 
 /**
  * Standard HTML tags to exclude from component processing.
@@ -379,6 +381,27 @@ function parseAllAttributes(attributesStr: string): Record<string, string> {
   }
 
   return props
+}
+
+/**
+ * Serialise forwarded `@`-attributes onto a component's root element.
+ *
+ * Every `@`-prefixed attribute is classified as an event, but structural
+ * directives share the prefix — a signal-driven `@if`/`@else` chain is rewritten
+ * into element attributes, so `@else` arrives here as a BARE attribute whose
+ * value is the boolean sentinel. Emitting that verbatim wrote a NUL byte into
+ * the response, which makes the document invalid UTF-8 and, worse, makes `grep`
+ * treat it as binary and go silent — a verification step that greps rendered
+ * HTML then returns nothing and reads as a pass (stacksjs/stx#1816).
+ */
+function serialiseForwardedEvents(events: Record<string, string>): string {
+  return Object.entries(events)
+    .map(([event, handler]) => (
+      handler === BOOLEAN_ATTRIBUTE_SENTINEL
+        ? event
+        : `${event}="${escapeAttribute(handler)}"`
+    ))
+    .join(' ')
 }
 
 function escapeAttribute(value: string): string {
@@ -945,9 +968,7 @@ async function processCustomElementTags(
 
         // Forward @event attributes from parent to builtin's root element
         if (Object.keys(resolvedProps.events).length > 0) {
-          const eventAttrs = Object.entries(resolvedProps.events)
-            .map(([event, handler]) => `${event}="${escapeAttribute(handler)}"`)
-            .join(' ')
+          const eventAttrs = serialiseForwardedEvents(resolvedProps.events)
           rendered = rendered.replace(/^(\s*<[a-zA-Z][a-zA-Z0-9-]*)/, `$1 ${eventAttrs}`)
         }
 
@@ -1002,9 +1023,7 @@ async function processCustomElementTags(
       if (Object.keys(resolvedProps.events).length > 0) {
         const root = findRenderedComponentRoot(finalContent)
         if (root) {
-          const eventAttrs = Object.entries(resolvedProps.events)
-            .map(([event, handler]) => `${event}="${escapeAttribute(handler)}"`)
-            .join(' ')
+          const eventAttrs = serialiseForwardedEvents(resolvedProps.events)
           const parentEvents = Object.keys(resolvedProps.events)
             .map(event => event.replace(/^@/, '').split('.')[0])
             .join(' ')
