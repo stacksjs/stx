@@ -261,6 +261,37 @@ describe('reactivity - watch()', () => {
     expect(syncValue).toBe(5)
   })
 
+  it('fires a default (post) flush watcher in a runtime without requestAnimationFrame', async () => {
+    // `post` is watch()'s DEFAULT flush, and it used to schedule through a
+    // nested `requestAnimationFrame` with no feature check — so every default
+    // watcher threw `TypeError: requestAnimationFrame is not a function` in a
+    // non-DOM runtime (SSR, bun, node). The throw happened inside the
+    // scheduled callback rather than the caller's stack, so it surfaced as an
+    // unhandled error detached from the watch that caused it, and every
+    // existing test here pinned `flush: 'sync'` and never touched the path.
+    const original = globalThis.requestAnimationFrame
+    // @ts-expect-error — modelling a runtime that has no rAF at all
+    delete globalThis.requestAnimationFrame
+
+    try {
+      const count = ref(0)
+      let observed: number | undefined
+
+      watch(count, (newVal) => {
+        observed = newVal
+      })
+
+      count.value = 7
+      await new Promise(resolve => setTimeout(resolve, 20))
+
+      expect(observed).toBe(7)
+    }
+    finally {
+      if (original)
+        globalThis.requestAnimationFrame = original
+    }
+  })
+
   it('should track ref changes with sync flush', () => {
     const count = ref(0)
     const values: number[] = []

@@ -454,6 +454,34 @@ export function computed<T>(getter: () => T): Ref<T> {
  * watch(count, callback, { immediate: true, deep: true })
  * ```
  */
+/**
+ * Run `fn` after the next render.
+ *
+ * In a browser that means a double `requestAnimationFrame` — the first frame
+ * lands before the browser paints, the second after, which is what makes
+ * `flush: 'post'` observe an updated DOM.
+ *
+ * Outside a browser there is no rAF and no DOM to wait for, so this falls back
+ * to a macrotask. It used to call `requestAnimationFrame` unconditionally,
+ * which threw `TypeError: requestAnimationFrame is not a function` in every
+ * non-DOM runtime — SSR, bun, node — for any `watch(..., { flush: 'post' })`.
+ * Because the throw happened inside a scheduled callback rather than the
+ * caller's stack, it surfaced as an unhandled error detached from the code
+ * that caused it.
+ *
+ * Matches the guarded pattern already used in `signals.ts`.
+ */
+function afterRender(fn: () => void): void {
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(fn)
+    })
+    return
+  }
+
+  setTimeout(fn, 0)
+}
+
 export function watch<T>(
   source: Ref<T> | (() => T),
   callback: WatchCallback<T>,
@@ -507,9 +535,7 @@ export function watch<T>(
     }
     else {
       // 'post' - after DOM updates
-      requestAnimationFrame(() => {
-        requestAnimationFrame(fn)
-      })
+      afterRender(fn)
     }
   }
 
