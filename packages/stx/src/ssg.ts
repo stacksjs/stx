@@ -674,7 +674,11 @@ async function renderPage(
   // Inject the SPA router script so client-side navigation works in the
   // static build. Without this, links do full page reloads instead of
   // SPA fragment swaps.
-  html = await injectRouterScript(html)
+  // Forward the resolved router config. It used to be called with no options,
+  // so runtime-injection emitted no __stxRouterConfig at all and the SSG page
+  // silently fell back to the client's own defaults — the same source
+  // navigating differently depending on which binary rendered it (#1792 P2).
+  html = await injectRouterScript(html, { router: (options as any).router })
 
   // Belt-and-suspenders: ensure Crosswind CSS is injected even if a race
   // condition inside processDirectives' parallel chunks skipped it. The

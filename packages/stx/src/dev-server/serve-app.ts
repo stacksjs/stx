@@ -433,7 +433,10 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
       // Inject SPA router (skip when using shell — router goes in shell composition)
       if (!shell) {
-        output = await injectRouterScript(output)
+        // Same reason as the SSG path: without the config, this page falls
+        // back to the client's own defaults while a bun-plugin-served page gets
+        // the serve defaults (#1792 P2).
+        output = await injectRouterScript(output, { router: (merged as any).router })
       }
 
       // Interpolate {{ }} / {!! !!} inside the merged __stx_setup_ function

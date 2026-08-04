@@ -79,7 +79,7 @@ export const PROHIBITED_DOM_PATTERNS: Array<{
     suggestion: 'Use useEventListener() or @click directives',
   },
   {
-    pattern: /window\.localStorage(?![A-Za-z])/g,
+    pattern: /(?:\bwindow\.)?localStorage(?![A-Za-z])/g,
     message: 'window.localStorage is prohibited',
     suggestion: 'Use useLocalStorage() from composables',
   },
@@ -169,8 +169,21 @@ export function validateClientScript(
   const errors: string[] = []
 
   for (const { pattern, message, suggestion } of PROHIBITED_DOM_PATTERNS) {
-    // Skip patterns that are explicitly allowed
-    if (allowPatterns.some(allowed => message.includes(allowed) || pattern.source.includes(allowed))) {
+    // Skip patterns that are explicitly allowed.
+    //
+    // Matched against the human MESSAGE only. It used to also test the regex
+    // SOURCE, which fails open and catastrophically so: `allowPatterns: ['(']`
+    // disabled almost every rule, because '(' is a substring of nearly every
+    // regex source (#1792 P3). Nobody writes that deliberately — but a value
+    // like `['\\.']` or `['\\s']`, which reads as escaping something in a
+    // filename, silently disables the validator wholesale.
+    //
+    // Matching the message keeps the documented ergonomic (`['querySelector']`
+    // allows the querySelector rule) while making the effect knowable from the
+    // rule list rather than from the regexes. An entry with no word character
+    // is rejected outright: it can only be punctuation, which names no rule and
+    // can only ever disable rules by accident.
+    if (allowPatterns.some(allowed => /\w/.test(allowed) && message.includes(allowed))) {
       continue
     }
 

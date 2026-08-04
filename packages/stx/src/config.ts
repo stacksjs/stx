@@ -114,7 +114,11 @@ export const defaultConfig: StxConfig = {
   },
   router: {
     enabled: true,
-    container: '#app-content',
+    // 'main', matching stx-router's own default, bun-plugin serve, the CLI and
+    // what `stx new` scaffolds. '#app-content' matched no scaffolded layout and
+    // no real page, so a project inheriting this default silently had no
+    // container and every navigation fell back to a full load (#1792 P2).
+    container: 'main',
     linkSelector: 'a[href]',
     viewTransitions: true,
     scrollToTop: true,
