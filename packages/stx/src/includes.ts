@@ -990,6 +990,11 @@ catch (error: unknown) {
       // Create a new context with local variables
       // Make sure parent variables are accessible in includes
       const includeContext = { ...context }
+      // #1800: the partial's <script> was stripped above, so stamp the gate from
+      // the PRE-strip source. Plain assignment, not a merge — the gate describes
+      // THIS partial, and any parent-scoped override still ORs in separately
+      // inside processExpressions.
+      includeContext.__stx_signals_gate = usesSignalsInScript(partialContent)
 
       // Add local variables to the context, ensuring array references are preserved
       for (const [key, value] of Object.entries(localVars)) {

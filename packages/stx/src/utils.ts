@@ -18,7 +18,7 @@ import path from 'node:path'
 // Import from expressions
 import { extractAndStripCssImports, extractBridgeData, injectBrowserCoreAutoImports, processClientScript, renderVendorStyleTags } from './client-script'
 import { COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY, registerComponentClientFactory } from './component-client-factories'
-import { interpolateScriptExpressions, processExpressions } from './expressions'
+import { interpolateScriptExpressions, processExpressions, usesSignalsInScript } from './expressions'
 import { COMPONENT_SCOPE_LOCAL_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
@@ -944,6 +944,10 @@ export async function renderComponentWithSlot(
       // as signal-bearing lets the existing "unresolvable here, preserve for
       // the client" rule do its job.
       ...(slotContentHasExpressions(slotContent) && { __stx_force_signals: true }),
+      // #1800: one gate for this component render unit, computed on the FULL
+      // pre-strip source PLUS the caller's slot markup — whose {{ }} name the
+      // CALLER's signals, which this component's own script cannot see.
+      __stx_signals_gate: usesSignalsInScript(componentContent) || slotContentHasExpressions(slotContent),
     }
 
     // Fill in `defineProps` destructuring defaults for any prop the caller

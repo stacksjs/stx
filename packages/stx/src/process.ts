@@ -383,6 +383,20 @@ export async function processDirectives(
   }
 
   // Track if this is the top-level call (not a recursive call from layout/include)
+  // Single preservation gate (#1800): decide preserve-vs-interpolate ONCE, on
+  // the original template with its scripts still attached, and stamp it so the
+  // per-iteration passes in loops.ts — which only ever see a fragment — inherit
+  // it through the usual context spread.
+  //
+  // `=== undefined` so an outer stamp (a component's, set on its PRE-strip
+  // source) is never overwritten by a recursive call on the stripped body. That
+  // also means the first template stamped against a given context object wins:
+  // every caller today passes a per-request or freshly-spread context, so this
+  // is safe, but a caller that reused ONE context object across two different
+  // templates would silently give the second the first's gate.
+  if (context.__stx_signals_gate === undefined)
+    context.__stx_signals_gate = usesSignalsInScript(template)
+
   const isTopLevel = !context.__stxProcessingDepth
   if (isTopLevel)
     initializeComponentClientFactories(context)

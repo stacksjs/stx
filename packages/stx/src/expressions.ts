@@ -713,7 +713,22 @@ export function processExpressions(template: string, context: Record<string, any
   // those expressions looked unresolvable-and-not-signal-backed, so they were
   // evaluated server-side against a context that never had them and rendered
   // as empty. `<Alert>{{ error }}</Alert>` produced a styled, empty box.
-  const hasSignals = options?.forceSignals === true
+  // `__stx_signals_gate` is the single gate (#1800): computed once per render
+  // unit on that unit's ORIGINAL source — before any script stripping or slot
+  // substitution — and stamped on the context, so it reaches every nested
+  // expression pass through the normal `{ ...context }` spread. That transport
+  // is the point. The three legacy inputs below split across two mechanisms: a
+  // per-call option, which does NOT survive into the per-iteration contexts
+  // loops.ts builds, and context keys, which do. So `{{ label() }}` over a
+  // partial's own derived() was preserved outside a server @foreach and emptied
+  // inside one.
+  //
+  // Deliberately WIDEN-ONLY: OR-ed with, never preferred over, the legacy
+  // inputs. Preferring the stamp would be a narrowing change and would regress
+  // the component-injected-reactivity case. Each legacy input is retired in its
+  // own commit with the regression test named in #1800.
+  const hasSignals = context?.__stx_signals_gate === true
+    || options?.forceSignals === true
     || context?.__stx_force_signals === true
     || Array.isArray(context?.__stx_client_signal_names)
     || usesSignalsInScript(template)
