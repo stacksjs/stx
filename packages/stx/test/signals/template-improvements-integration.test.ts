@@ -72,7 +72,9 @@ describe('Template Improvements Integration', () => {
     it('should create reactive signals for data, loading, error', () => {
       const runtime = generateSignalsRuntimeDev()
       expect(runtime).toContain('const data = state(options.initialData')
-      expect(runtime).toContain('const loading = state(true)')
+      // `state(immediate)`, not `state(true)`: a deferred request must not start
+    // in a loading state, or a spinner bound to it never clears (#1818).
+    expect(runtime).toContain('const loading = state(immediate)')
       expect(runtime).toContain('const error = state(null)')
     })
 

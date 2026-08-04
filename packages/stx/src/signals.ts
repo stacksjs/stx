@@ -930,7 +930,13 @@ finally {
 
   function useFetch(urlOrFn, options = {}) {
     const data = state(options.initialData ?? null);
-    const loading = state(true);
+    // Starts false when nothing will be requested. It used to start true
+    // unconditionally while the only thing clearing it was the fetch that
+    // immediate:false suppresses — so the documented way to declare a deferred
+    // request produced a composable stuck loading forever, which is exactly the
+    // case where a template is most likely driving a spinner off it (#1818).
+    const immediate = options.immediate !== false;
+    const loading = state(immediate);
     const error = state(null);
     if (options.suspense) registerSuspense(loading, error);
 
@@ -984,19 +990,26 @@ finally {
       }
     };
 
-    // Auto-fetch on mount unless disabled
-    if (options.immediate !== false) {
-      onMount(fetchData);
-    }
-
-    // If urlOrFn is a function, watch for changes and refetch
+    // A reactive URL drives its own fetching: effect() runs eagerly on creation,
+    // so the first run IS the mount fetch. Registering onMount as well issued
+    // two requests for every function URL (#1818).
     if (typeof urlOrFn === 'function') {
+      var firstUrlRun = true;
       effect(() => {
         const url = urlOrFn();
-        if (url && options.immediate !== false) {
-          fetchData();
+        if (!url) return;
+        // Honour immediate:false for the FIRST evaluation only. A later change
+        // to the URL is a new request the caller asked for by changing it, not
+        // the initial one they deferred.
+        if (firstUrlRun) {
+          firstUrlRun = false;
+          if (!immediate) return;
         }
+        fetchData();
       });
+    }
+else if (immediate) {
+      onMount(fetchData);
     }
 
     return {
@@ -1224,11 +1237,16 @@ finally {
       onMount(fetchData);
     }
 
-    // refetchOnFocus
+    // refetchOnFocus — removed on destroy, like refetchInterval right below.
+    // It used to add a listener and never remove it, so every instance leaked
+    // one for the life of the page and each SPA navigation added more; every
+    // stale listener still fired, refetching for components long gone (#1818).
     if (options.refetchOnFocus) {
-      document.addEventListener('visibilitychange', function() {
+      var onVisibility = function() {
         if (!document.hidden) fetchData();
-      });
+      };
+      document.addEventListener('visibilitychange', onVisibility);
+      onDestroy(function() { document.removeEventListener('visibilitychange', onVisibility); });
     }
 
     // refetchInterval
