@@ -1293,13 +1293,23 @@ async function processOtherDirectives(
   output = processLoops(output, context, filePath, opts)
 
 
+  // Dynamic components FIRST (#1817). The static pass resolves any unknown
+  // lowercase tag to a component file, and `component` is not an HTML element,
+  // so it claimed <component :is> and looked for a file literally named
+  // component.stx — emitting an error string, complete with absolute server
+  // filesystem paths, into the page and destroying the slot content. The
+  // dynamic handler never saw the tag. That took out the whole headless-
+  // primitive family in @stacksjs/components.
+  //
+  // Running it first also means whatever it resolves TO is still ahead of the
+  // static pass, so a dynamically-chosen component's own nested components,
+  // builtins and links are processed normally.
+  output = await processDynamicComponents(output, context, filePath, opts, dependencies)
+
   // Process all components: @import, @component, custom elements, builtins
   // Single unified pass replaces processImportDirectives, processBuiltInComponents,
   // processComponentDirectives, processCustomElements, and expandStxLinks
   output = await processComponents(output, context, filePath, opts, dependencies)
-
-  // Process dynamic components (<component :is="expr">)
-  output = await processDynamicComponents(output, context, filePath, opts, dependencies)
 
   // Process animations and transitions
   output = processAnimationDirectives(output, context, filePath, opts)

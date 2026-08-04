@@ -41,6 +41,12 @@ const htmlTags = new Set([
   'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio',
   'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button',
   'canvas', 'caption', 'cite', 'code', 'col', 'colgroup',
+  // `component` is not an HTML element, but it IS stx's dynamic-component tag.
+  // Without it here the static scan resolves <component :is> to a file named
+  // component.stx and emits an error string containing absolute server paths
+  // (#1817). The dynamic pass owns this tag; anything it leaves behind is not
+  // ours to guess at.
+  'component',
   'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt',
   'em', 'embed',
   'fieldset', 'figcaption', 'figure', 'footer', 'form',
