@@ -152,6 +152,8 @@ describe('Package Installation', () => {
 
       expect(packageJson.dependencies).toBeDefined()
       expect(packageJson.dependencies['@stacksjs/stx']).toBeDefined()
+      expect(packageJson.dependencies['@iconify-json/f7']).toBeDefined()
+      expect(packageJson.devDependencies['@iconify-json/f7']).toBeUndefined()
     })
 
     it('should have dev dependencies', async () => {

@@ -96,6 +96,15 @@ function onWindowControl(action) {
         <button type="button" class="{{ trafficLightClasses }} bg-[#febc2e]" aria-label="Minimize window" @click="onWindowControl('minimize')"></button>
         <button type="button" class="{{ trafficLightClasses }} bg-[#28c840]" aria-label="Zoom window" @click="onWindowControl('zoom')"></button>
       </div>
+    @elseif(logo || title)
+      <div class="flex min-w-0 items-center gap-[8px] [-webkit-app-region:no-drag]">
+        @if(logo)
+          <img src="{{ logo }}" alt="" class="h-[24px] w-[24px] shrink-0 object-contain" />
+        @endif
+        @if(title)
+          <span class="truncate text-[13px] font-semibold tracking-[-0.01em] text-[#1d1d1f] dark:text-[#f5f5f7]">{{ title }}</span>
+        @endif
+      </div>
     @else
       <span></span>
     @endif
