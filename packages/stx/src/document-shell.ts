@@ -57,6 +57,33 @@ function escapeAttr(value: string): string {
 }
 
 /**
+ * Escape a value being emitted as element TEXT rather than as an attribute.
+ *
+ * `<title>` is RCDATA: markup inside it is not parsed, but the closing tag is
+ * still recognised, so an unescaped title containing a closing title tag ends
+ * the element early and everything after it is parsed as markup. A title is
+ * routinely user-influenced — frontmatter, a server script, a database row —
+ * which made this a stored XSS (stacksjs/stx#1792, part one item 4).
+ *
+ * Escaping `<` is what closes it; `&` is escaped too so an existing entity in a
+ * legitimate title round-trips instead of being double-decoded.
+ */
+function escapeText(value: string): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+/** Emit `k="v"` pairs with every value attribute-escaped. */
+function attrPairs(entries: Record<string, unknown>, skip?: (key: string) => boolean): string {
+  return Object.entries(entries)
+    .filter(([k]) => !skip?.(k))
+    .map(([k, v]) => `${k}="${escapeAttr(String(v))}"`)
+    .join(' ')
+}
+
+/**
  * Build the attribute string for the shell's `<html>` open tag.
  *
  * `htmlAttrs.lang` wins over the `lang` option so `useHead({ htmlAttrs: { lang } })`
@@ -359,21 +386,18 @@ export function generateDocumentShell(
   ]
   const allMeta = [...defaultMeta, ...meta]
   const metaTags = allMeta.map(m => {
-    const attrs = Object.entries(m).map(([k, v]) => `${k}="${v}"`).join(' ')
-    return `  <meta ${attrs}>`
+    return `  <meta ${attrPairs(m)}>`
   }).join('\n')
 
   // Build <link> tags
   const linkTags = link.map(l => {
-    const attrs = Object.entries(l).map(([k, v]) => `${k}="${v}"`).join(' ')
-    return `  <link ${attrs}>`
+    return `  <link ${attrPairs(l)}>`
   }).join('\n')
 
   // Build <head> script tags (from config)
   const configHeadScripts = headScriptTags.map(s => {
     if (s.src) {
-      const attrs = Object.entries(s).filter(([k]) => k !== 'content').map(([k, v]) => `${k}="${v}"`).join(' ')
-      return `  <script ${attrs}></script>`
+      return `  <script ${attrPairs(s, k => k === 'content')}></script>`
     }
     if (s.content) {
       return `  <script>${s.content}</script>`
@@ -383,8 +407,8 @@ export function generateDocumentShell(
 
   // Build <html> and <body> attributes
   const htmlAttrStr = buildHtmlAttrs(htmlAttrs, lang)
-  const bodyAttrStr = Object.entries(bodyAttrs).map(([k, v]) => ` ${k}="${v}"`).join('')
-  const bodyClassStr = bodyClass ? ` class="${bodyClass}"` : ''
+  const bodyAttrStr = Object.entries(bodyAttrs).map(([k, v]) => ` ${k}="${escapeAttr(String(v))}"`).join('')
+  const bodyClassStr = bodyClass ? ` class="${escapeAttr(bodyClass)}"` : ''
 
   // Compose <head>. The cloak style goes in early (before user styles and
   // scripts) so the [x-cloak] rule is live before first paint — prevents the
@@ -399,7 +423,7 @@ export function generateDocumentShell(
     // Directly after <meta charset>, ahead of every stylesheet: the theme has
     // to be on the root element before first paint, and CSS blocks scripts.
     options.colorMode ? `  ${generateColorModeBootScript(options.colorMode)}` : '',
-    `  <title>${pageTitle}</title>`,
+    `  <title>${escapeText(pageTitle)}</title>`,
     `  ${CLOAK_STYLE}`,
     linkTags,
     configHeadScripts,
@@ -483,20 +507,20 @@ export function injectConfigHeadTags(html: string, headConfig: AppHeadConfig = {
             : ''
     if (dedup && head.includes(dedup))
       continue
-    parts.push(`  <meta ${Object.entries(m).map(([k, v]) => `${k}="${v}"`).join(' ')}>`)
+    parts.push(`  <meta ${attrPairs(m)}>`)
   }
 
   for (const l of link as Record<string, string>[]) {
     if (l.href && head.includes(`href="${l.href}"`))
       continue
-    parts.push(`  <link ${Object.entries(l).map(([k, v]) => `${k}="${v}"`).join(' ')}>`)
+    parts.push(`  <link ${attrPairs(l)}>`)
   }
 
   for (const s of script as Record<string, any>[]) {
     if (s.src) {
       if (head.includes(`src="${s.src}"`))
         continue
-      parts.push(`  <script ${Object.entries(s).filter(([k]) => k !== 'content').map(([k, v]) => `${k}="${v}"`).join(' ')}></script>`)
+      parts.push(`  <script ${attrPairs(s, k => k === 'content')}></script>`)
     }
     else if (s.content) {
       if (head.includes(s.content))
