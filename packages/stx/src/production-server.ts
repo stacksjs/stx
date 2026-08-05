@@ -16,6 +16,7 @@ import { loadManifest, type BuildManifest, type ManifestRoute } from './manifest
 import { hydrateTemplateStream, hydrateFragment } from './template-hydrator'
 import type { CompiledTemplate } from './template-compiler'
 import { extractLayoutMetadata, type LayoutMetadata } from './app-shell'
+import { pageShipsSignalsRuntime } from './runtime-injection'
 import { patternToRegex } from 'stx-router'
 
 /**
@@ -98,6 +99,9 @@ export async function startProductionServer(options: ProductionServerOptions = {
   const compiledTemplates = new Map<string, CompiledTemplate>()
   const fragmentCache = new Map<string, string>()
   const layoutMetadataCache = new Map<string, LayoutMetadata>()
+  // Read off the FULL compiled page, not the fragment: the runtime script sits
+  // in <head>, which the fragment excludes by construction (#1827).
+  const runtimeCache = new Map<string, boolean>()
 
   for (const route of manifest.routes) {
     try {
@@ -105,6 +109,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
       const compiled = JSON.parse(await Bun.file(compiledPath).text()) as CompiledTemplate
       compiledTemplates.set(route.pattern, compiled)
       layoutMetadataCache.set(route.pattern, extractLayoutMetadata(compiled.html))
+      runtimeCache.set(route.pattern, pageShipsSignalsRuntime(compiled.html))
 
       // Pre-load fragments
       const fragmentPath = path.join(outputDir, route.fragmentPath)
@@ -253,6 +258,13 @@ export async function startProductionServer(options: ProductionServerOptions = {
             headers: {
               'Content-Type': 'text/html',
               'X-STX-Fragment': 'true',
+              // Lets a runtime-less page hand this navigation to a full load
+              // rather than swapping in a fragment it can never hydrate (#1827).
+              // Only sent when known: an unrecognised route leaves the router on
+              // its own markup sniff rather than asserting a wrong answer.
+              ...(runtimeCache.has(matchedRoute.pattern)
+                ? { 'X-STX-Runtime': runtimeCache.get(matchedRoute.pattern) ? 'true' : 'false' }
+                : {}),
               ...(layoutMetadata
                 ? {
                     'X-STX-Layout': layoutMetadata.layout,

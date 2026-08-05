@@ -309,17 +309,73 @@ export function getRouterScript(): string {
   // forever against the cloak style shipped on EVERY page. Hand those off to a
   // real navigation, which loads the destination's own runtime (#1809).
   //
-  // The discriminators matter. x-cloak and data-stx-scoped are NOT usable: each
+  // The SERVER decides this now, and says so in X-STX-Runtime, which travels
+  // into the fragment marker as rt=1 / rt=0 so it survives the prefetch cache.
+  // It is answering a question it knows the answer to exactly — did I put a
+  // runtime in this page — where the router could only guess from markup.
+  //
+  // Guessing missed a whole page shape (#1827). Every marker below originates in
+  // a client SCRIPT, so a page with reactive syntax and no script anywhere — a
+  // <script server>-only login form built from :if / x-model / :disabled — emits
+  // none of them, while the server ships it the runtime. Whatever root marker it
+  // does get lands on <body>, which a fragment excludes by construction. So
+  //   <p :if="error" x-cloak>Invalid credentials</p>
+  // swapped into a runtime-less page keeps the x-cloak the server stamped on it,
+  // and only the runtime ever removes that: server-rendered text, in the DOM, at
+  // display:none forever.
+  //
+  // The same held for x-data on the routed container, whose scope attribute is
+  // hoisted out of the fragment body into X-STX-Container-Attrs. Asking the
+  // server covers both without either being enumerated.
+  //
+  // The sniff stays as the fallback for a server too old to declare it. Its
+  // discriminators matter. x-cloak and data-stx-scoped are NOT usable: each
   // fragment inlines the head styles, cloak rule included, and the appearance
   // bootstrap emits a self-contained data-stx-scoped script on pages with no
   // reactivity at all. A bare window.stx is not usable either — the server
   // prepends a _latestSetup=null clear script to every fragment. Any of those
   // would make this always true and disable SPA navigation everywhere.
-  function fragmentNeedsRuntime(frag){
-    return frag.indexOf('__stx_setup_')!==-1
+  function fragmentNeedsRuntime(frag,declared){
+    if(declared==='1')return true;
+    if(declared==='0')return false;
+    if(frag.indexOf('__stx_setup_')!==-1
       ||frag.indexOf('data-stx-scope=')!==-1
       ||frag.indexOf('data-stx-reactive')!==-1
-      ||/=\\s*window\\.stx\\s*;/.test(frag);
+      ||/=\\s*window\\.stx\\s*;/.test(frag))return true;
+    var content=stripInertRegions(frag);
+    return BARE_DIRECTIVE.test(content)||content.indexOf('{{')!==-1;
+  }
+  // Documentation is both the largest population of runtime-less pages and the
+  // likeliest to contain directive syntax as literal CONTENT, so the fallback
+  // reads past the regions where that content lives. A page of stx examples must
+  // not full-reload on every hop through the docs — that is the regression
+  // #1809 existed to remove.
+  function stripInertRegions(frag){
+    return frag
+      .replace(new RegExp('<scr'+'ipt\\\\b[\\\\s\\\\S]*?<\\\\/scr'+'ipt>','gi'),'')
+      .replace(/<style\\b[\\s\\S]*?<\\/style>/gi,'')
+      .replace(/<pre\\b[\\s\\S]*?<\\/pre>/gi,'')
+      .replace(/<code\\b[\\s\\S]*?<\\/code>/gi,'')
+      .replace(/<!--[\\s\\S]*?-->/g,'');
+  }
+  // Anchored on the whitespace before an attribute name and the = that follows,
+  // so it reads attribute POSITIONS rather than characters. Bare ':' and '@' are
+  // everywhere in ordinary content — 'xlink:href', 'background: red', '10:00',
+  // an email address — and none of those sit in that position.
+  //
+  // The x- arm is deliberately open rather than a list of known directives:
+  // x-attr is a GENERIC binding prefix, so x-href / x-src / x-value / x-alt bind
+  // exactly like x-text does. Measured over the 339 rendered docs pages, the
+  // open form costs nothing over an allowlist (3 matches either way, all three
+  // of them pages the CURRENT four-marker sniff already matches because they
+  // document its marker names) while covering directives an allowlist forgets.
+  var BARE_DIRECTIVE=/\\s(?::[a-z][\\w-]*|@[a-z][\\w.-]*|x-[a-z][\\w-]*)\\s*=\\s*["']/i;
+  // The fragment marker doubles as the carrier for the server's declaration.
+  // Encoding it in the HTML rather than threading a parameter keeps it inside
+  // the one value that already reaches swap() through every path, the prefetch
+  // cache included.
+  function fragmentMarker(declared){
+    return '<!--stx-fragment'+(declared==='true'?' rt=1':declared==='false'?' rt=0':'')+'-->';
   }
   // Record scripts from the initial page load
   document.querySelectorAll('script').forEach(function(s){
@@ -475,6 +531,7 @@ else {
         var newGroup=r.headers.get('X-STX-Layout-Group')||'';
         var newTitle=r.headers.get('X-STX-Title')||'';
         var newCAttrs=r.headers.get('X-STX-Container-Attrs')||'';
+        var newRuntime=r.headers.get('X-STX-Runtime')||'';
         // Layout change? Fetch the FULL page (no X-STX-Router header) and do full document swap
         if(isFragment&&checkLayoutChange(newLayout,url,newGroup)){
           log('[router] layout change — fetching full page for document swap');
@@ -487,10 +544,10 @@ else {
             });
           });
         }
-        return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout,layoutGroup:newGroup,title:newTitle,containerAttrs:newCAttrs}});
+        return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout,layoutGroup:newGroup,title:newTitle,containerAttrs:newCAttrs,runtime:newRuntime}});
       }).then(function(result){
         if(!result)return;
-        if(result.isFragment)result.html='<!--stx-fragment-->'+result.html;
+        if(result.isFragment)result.html=fragmentMarker(result.runtime)+result.html;
         if(o.cache)setCache(targetPath,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
         pendingContainerAttrs=result.isFragment?(result.containerAttrs||''):'';
         return Promise.resolve(swap(result.html,targetPath,pushState,targetHash)).then(function(){
@@ -518,8 +575,10 @@ else {
   }
 
   function swap(html,url,pushState,hash){
-    var isFragment=html.indexOf('<!--stx-fragment-->')===0;
-    if(isFragment)html=html.slice('<!--stx-fragment-->'.length);
+    var fragMark=/^<!--stx-fragment(?: rt=([01]))?-->/.exec(html);
+    var isFragment=!!fragMark;
+    var declaredRuntime=fragMark&&fragMark[1]?fragMark[1]:'';
+    if(isFragment)html=html.slice(fragMark[0].length);
     if(!isFragment&&!isStxDocument(html)){log('[router] non-stx document — full navigation to:',url);location.href=url;return Promise.resolve(false)}
     var currentContent=getContainer();
     log('[router] swap: isFragment='+isFragment+' container='+!!currentContent+' tag='+(currentContent&&currentContent.tagName)+' selector='+containerSel+' htmlLen='+html.length);
@@ -530,7 +589,7 @@ else {
       // Before _cleanupContainer, not after: handing off later would dispose
       // the OUTGOING page's scopes and then reload anyway. Inside doFragSwap
       // would be later still — innerHTML is already replaced by then.
-      if(!window.stx&&fragmentNeedsRuntime(html)){
+      if(!window.stx&&fragmentNeedsRuntime(html,declaredRuntime)){
         log('[router] fragment needs the signals runtime and this page has none — full navigation to:',url);
         location.href=url;
         return Promise.resolve(false);
@@ -1132,7 +1191,8 @@ else {
         var pLayout=r.headers.get('X-STX-Layout')||'';
         var pGroup=r.headers.get('X-STX-Layout-Group')||'';
         var pTitle=r.headers.get('X-STX-Title')||'';
-        return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup,title:pTitle}});
+        var pRuntime=r.headers.get('X-STX-Runtime')||'';
+        return r.text().then(function(html){return{html:isFrag?fragmentMarker(pRuntime)+html:html,layout:pLayout,layoutGroup:pGroup,title:pTitle}});
       }).then(function(result){
         if(o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title);
       }).catch(function(){}).finally(function(){delete prefetching[key]});
@@ -1231,7 +1291,7 @@ else {
       var key=cacheKey(url);
       if(!cache[key]){
         var wantsFragment=shouldUseFragmentResponse();
-        fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';var pTitle=r.headers.get('X-STX-Title')||'';return r.text().then(function(html){return{html:isFrag?'<!--stx-fragment-->'+html:html,layout:pLayout,layoutGroup:pGroup,title:pTitle}})}).then(function(result){setCache(key,result.html,result.layout,result.layoutGroup,result.title)}).catch(function(){});
+        fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';var pTitle=r.headers.get('X-STX-Title')||'';var pRuntime=r.headers.get('X-STX-Runtime')||'';return r.text().then(function(html){return{html:isFrag?fragmentMarker(pRuntime)+html:html,layout:pLayout,layoutGroup:pGroup,title:pTitle}})}).then(function(result){setCache(key,result.html,result.layout,result.layoutGroup,result.title)}).catch(function(){});
       }
     },
     clearCache:function(){for(var k in cache)delete cache[k];for(var lk in layoutCache)delete layoutCache[lk];for(var gk in layoutGroupCache)delete layoutGroupCache[gk];cacheOrder.length=0},

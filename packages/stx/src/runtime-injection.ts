@@ -108,6 +108,25 @@ import '@stacksjs/browser'
 }
 
 /**
+ * Does this rendered page ship the signals runtime?
+ *
+ * Answers the question the SPA router cannot: a fragment never carries the
+ * runtime, so swapping one into a page that has none leaves it permanently
+ * unhydrated. The router used to guess from markers in the fragment markup and
+ * missed the shape that has no markers at all — reactive syntax with no setup
+ * function, whose only stamp is `data-stx-auto` on `<body>`, which the fragment
+ * excludes (stacksjs/stx#1827). The server knows, because it is the thing that
+ * decided; it reports the answer in `X-STX-Runtime` on fragment responses.
+ *
+ * Deliberately keyed on the same marker `injectSignalsRuntime` writes and
+ * checks below, so the two cannot disagree about what "has a runtime" means.
+ * Pass the FULL page, before it is reduced to the container's inner content.
+ */
+export function pageShipsSignalsRuntime(fullPageHtml: string): boolean {
+  return fullPageHtml.includes('data-stx-runtime')
+}
+
+/**
  * Inject STX signals runtime into the template.
  * The runtime provides client-side reactivity.
  */

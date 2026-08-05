@@ -15,6 +15,7 @@ import {
   stopHmrServer,
 } from '../hot-reload'
 import { partialsCache } from '../includes'
+import { pageShipsSignalsRuntime } from '../runtime-injection'
 import { BUILD_ID_HEADER, getBuildId } from '../build-id'
 import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
@@ -751,6 +752,10 @@ catch {
           // Shell mode: SPA navigation returns page fragment only
           if (shell && isSpaNavigation(request)) {
             const layoutMetadata = extractLayoutMetadata(content)
+            // Read from the FULL page: the runtime script lives in <head>, and
+            // the fragment is about to be reduced to the container's inner
+            // content. See pageShipsSignalsRuntime (stacksjs/stx#1827).
+            const shipsRuntime = pageShipsSignalsRuntime(content)
             // Capture the page <title> from the FULL page before reducing to
             // the fragment, so the SPA router can update document.title on
             // swap (fragments carry no <head>). URI-encoded so any title text
@@ -777,6 +782,10 @@ catch {
                 'X-STX-Fragment': 'true',
                 'X-STX-Layout': layoutMetadata.layout,
                 'X-STX-Layout-Group': layoutMetadata.group,
+                // Whether this page needs the signals runtime, so a runtime-less
+                // page knows to hand this navigation to a full load instead of
+                // swapping in a fragment that can never hydrate (#1827).
+                'X-STX-Runtime': shipsRuntime ? 'true' : 'false',
                 ...(pageTitle && { 'X-STX-Title': encodeURIComponent(pageTitle) }),
                 // Which build rendered this fragment. A watch-mode restart
                 // changes it, letting the router notice that the runtime

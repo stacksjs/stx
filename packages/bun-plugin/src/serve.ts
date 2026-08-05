@@ -2851,6 +2851,17 @@ export async function serve(options: ServeOptions): Promise<void> {
                   const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
                   const pageTitle = titleMatch ? titleMatch[1].trim() : ''
 
+                  // Whether the destination needs the signals runtime — read off
+                  // the FULL page, since the runtime script lives in <head> and
+                  // the fragment above is only the container's inner content.
+                  // The router cannot work this out from the fragment: a page
+                  // with reactive syntax but no setup function carries no marker
+                  // at all inside <main> (stacksjs/stx#1827). Mirrors
+                  // pageShipsSignalsRuntime in stx's runtime-injection.ts —
+                  // inlined rather than imported because '@stacksjs/stx'
+                  // resolves to dist here, which lags src.
+                  const shipsRuntime = content.includes('data-stx-runtime')
+
                   return new Response(fragment, {
                     status: responseStatus,
                     headers: {
@@ -2858,6 +2869,7 @@ export async function serve(options: ServeOptions): Promise<void> {
                       'X-STX-Fragment': 'true',
                       'X-STX-Layout': pageLayout,
                       'X-STX-Layout-Group': pageLayoutGroup,
+                      'X-STX-Runtime': shipsRuntime ? 'true' : 'false',
                       ...(pageTitle && { 'X-STX-Title': encodeURIComponent(pageTitle) }),
                       // Which build rendered this fragment. A watch-mode
                       // restart changes it, letting the router notice that the
