@@ -12,6 +12,8 @@
 import path from 'node:path'
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
+import { STX_RUNTIME_GLOBALS } from './runtime-globals'
+import { transformStoreImports } from './store-imports'
 
 const _cachedStoreScripts = new Map<string, string>()
 
@@ -89,12 +91,28 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   // but in the browser these are already globals — just strip the imports.
   const chunks: string[] = []
 
+  // Names the store files declare themselves. A local `const useCookie = …`
+  // must win over the runtime global of the same name, exactly as it would in a
+  // client script, so those are excluded from the preamble below.
+  const declaredNames = new Set<string>()
+
   const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
 
   for (const file of sortedFiles) {
     try {
       let code = await Bun.file(file).text()
       const storeName = path.basename(file, '.ts')
+
+      for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Z_a-z$][\w$]*)/g)) {
+        if (match[1])
+          declaredNames.add(match[1])
+      }
+
+      // Rewrite `@stores` / `@composables` imports to their runtime globals, so
+      // a store can use another store or a composable the same way a page can.
+      // The transform named for stores was applied only by the composable
+      // loader; stores themselves never got it (#1838).
+      code = transformStoreImports(code)
 
       // Strip import statements BEFORE transpiling — defineStore/state/derived
       // are runtime globals, not real modules. If we leave them, the transpiler
@@ -120,7 +138,29 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
     return null
   }
 
-  const code = `;(function(){\n${chunks.join('\n\n')}\n})();`
+  // Destructure the runtime globals the store files actually reference.
+  //
+  // signals.js puts roughly a dozen names directly on `window` — state, effect,
+  // batch, navigate, defineStore — but the other ~34 live only on `window.stx`.
+  // A <script client> block gets this preamble generated for it, so a bare
+  // `useCookie(...)` works there; a store file got none, so the identical line
+  // was a ReferenceError (#1838).
+  //
+  // It failed unreadably, too: store files are stripped of `export` and
+  // concatenated into ONE shared IIFE, so the throw aborted every store, not
+  // just the one at fault, and the developer saw `Store not found` raised later
+  // by an unrelated `useStore(...)` call.
+  //
+  // Only referenced names are emitted, and locally-declared ones are skipped so
+  // a store's own binding still shadows the global. Same construction as
+  // composable-loader.ts, deliberately — one mechanism, not two.
+  const joinedChunks = chunks.join('\n\n')
+  const runtimeBindings = STX_RUNTIME_GLOBALS
+    .filter(name => !declaredNames.has(name) && new RegExp(`\\b${name}\\b`).test(joinedChunks))
+    .map(name => `var ${name} = __stx[${JSON.stringify(name)}];`)
+    .join('\n')
+
+  const code = `;(function(){\nvar __stx = window.stx || {};\n${runtimeBindings}\n${joinedChunks}\n})();`
   _cachedStoreScripts.set(resolvedDir, code)
   return code
 }
