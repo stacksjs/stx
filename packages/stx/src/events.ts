@@ -359,6 +359,34 @@ function wrapHandler(handler: string, modifiers: EventModifiers): string {
 }
 
 /**
+ * `@click="doThing"` names a function, so it must be INVOKED — not evaluated.
+ *
+ * The declarative runtime learned this in #1695: without it the expression falls
+ * through to a generic `new Function` and runs as a discarded identifier
+ * statement, so the click silently does nothing. Every IMPERATIVE binding path
+ * still evaluated it, in three separate places — the inline `else` branch
+ * emitted by client-script.ts, the `__stx_runHandler` fallback below, and
+ * `__stx_execute` in the x-data bridge — so the declarative path disagreed with
+ * all three (#1824).
+ *
+ * Normalising here, at emit time, rather than inside each of those runtimes:
+ * the handler text is already known when it is emitted, so one transform covers
+ * every path, and the rule stays out of the generated template literals.
+ *
+ * Restricted to a plain identifier, matching the runtime's own check exactly —
+ * a dotted path would require `obj` to exist before `typeof obj.fn` could be
+ * asked. The `_isSignal` exclusion is the runtime's too, and it matters because
+ * signals ARE functions: without it `@click="count"` would read the signal
+ * instead of doing nothing.
+ */
+export function asInvocableStatement(handler: string): string {
+  const name = handler.trim()
+  if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name))
+    return handler
+  return `if (typeof ${name} === 'function' && !${name}._isSignal) ${name}($event);`
+}
+
+/**
  * Generate the event listener code for a single event
  */
 function generateEventListener(event: ParsedEvent): string {
@@ -366,7 +394,9 @@ function generateEventListener(event: ParsedEvent): string {
   // Sanitize element ID for safe injection into JS string literals
   const elementId = event.elementId.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
   const checks = generateModifierChecks(event)
-  const handler = wrapHandler(event.handler, modifiers)
+  // Before wrapHandler, so a debounced/throttled bare reference is invoked
+  // inside the arrow body rather than left as a discarded identifier.
+  const handler = wrapHandler(asInvocableStatement(event.handler), modifiers)
 
   const options: string[] = []
   if (modifiers.once) options.push('once: true')
@@ -483,9 +513,16 @@ function generateRuntimeScript(elements: ElementWithEvents[]): string {
     };
   }
 
-  // Non-reactive fallback runner. The handler is embedded HTML-entity-encoded so
-  // the surrounding <script> can never contain raw markup (e.g. </script>); we
-  // decode it to JS only in memory here, then run it with $event/$el in scope.
+  // Non-reactive fallback runner. The handler is embedded HTML-entity-encoded
+  // so the surrounding script element can never contain raw markup, including
+  // its own closing tag; we decode it to JS only in memory here, then run it
+  // with $event/$el in scope.
+  //
+  // This comment must not spell that closing tag out. It used to, as an
+  // example, and a browser ends the script element at the FIRST one it sees —
+  // so everything below this line, __stx_runHandler included, was emitted as
+  // page text and no listener was ever bound. The comment about escaping was
+  // the thing that needed escaping.
   function __stx_runHandler(h, $event, $el) {
     var code = h
       .replace(/&lt;/g, '<')

@@ -36,6 +36,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import type { ParsedEvent, EventModifiers } from './events'
+import { asInvocableStatement } from './events'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { importOnce } from './lazy-module'
@@ -934,7 +935,12 @@ function generateModifierChecks(modifiers: EventModifiers): string {
  */
 // eslint-disable-next-line pickier/no-unused-vars
 function generateSingleEventBinding(binding: ParsedEvent, index: number): string {
-  const { elementId, event, handler, modifiers } = binding
+  const { elementId, event, modifiers } = binding
+  // `@click="doThing"` names a function and must be invoked, matching what the
+  // declarative runtime does (#1695). This path evaluated it as a bare
+  // identifier, so the reference form silently did nothing here while working
+  // on any page the runtime happened to bind (#1824).
+  const handler = asInvocableStatement(binding.handler)
   const checks = generateModifierChecks(modifiers)
 
   const options: string[] = []
