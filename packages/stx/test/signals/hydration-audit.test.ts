@@ -152,6 +152,15 @@ describe('hydration audit — literal moustaches', () => {
     expect(auditErrors(hydrate('<main><p>{{ not closed</p></main>'))).toHaveLength(0)
   })
 
+  it('stays silent for literal {{ }} inside an un-hydrated deferred island', () => {
+    // client=visible|idle islands defer hydration until their trigger fires, so
+    // their {{ }} legitimately stay literal in the meantime — not a miss. The
+    // stranded-scope pass already skips stx-hydrate; the literal sweep must too
+    // (same class as the :if deferred-bind case).
+    const out = auditErrors(hydrate('<div data-stx-scope="island" stx-hydrate="visible"><p>{{ islandVal }}</p></div>'))
+    expect(out).toHaveLength(0)
+  })
+
   it('stays silent for a :if subtree whose deferred bind has not run yet', () => {
     // bindIf defers processing the shown subtree to a macrotask, so children
     // do not subscribe to the parent effect's signals (note 35). Between the

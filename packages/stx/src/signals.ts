@@ -6729,6 +6729,11 @@ catch (e) {
       // A :if whose deferred child-binding pass hasn't run yet legitimately holds
       // literal {{ }} that binds a macrotask later — not a hydration miss (#1773).
       if (p.__stx_if_pending) return true;
+      // A deferred island (client=visible|idle|…) is unhydrated ON PURPOSE until
+      // its trigger fires, so its {{ }} legitimately stay literal in the meantime
+      // — not a miss (#1746). The stranded-scope pass already skips stx-hydrate;
+      // the literal sweep must too.
+      if (p.hasAttribute && p.hasAttribute('stx-hydrate') && !p.__stx_hydrated) return true;
     }
     return false;
   }
