@@ -3941,7 +3941,7 @@ Today that exits 1 and prints `violating blocks: 20`. Gotcha: the line numbers i
 | `el.setAttribute(k, v)` | `:k="v"` | `signals.js:1784-1800` | `index.stx:137,144`, `register.stx:188` |
 | `addEventListener` / `on*=` attr | `@click` / `@change` / `@input`, or `useEventListener()` | `signals.js:1830-1840`, `signals.js:3645-3652` | `dashboard.stx:429`, `StartMenu.stx:52` |
 | `window.location.*`, `location.assign/replace/href=` | `navigate(url)` / `navigate(url, true)` | `signals.js:941-952` | 29 sites across 8 files |
-| `window.history.replaceState` | `useSearchParams().set/setAll` | `signals.js:1004-1016` | `dashboard.stx:593` |
+| `window.history.replaceState` | `useSearchParams().set/delete/setAll` **with `{ replace: true }`** — the default pushes | `signals.js:1004-1016` | `dashboard.stx:593` |
 | `setTimeout` / `setInterval` | `useTimeout()` / `useInterval()` | `signals.js:3271-3300`, `3229-3268` | `settings.stx:203,406,512`, `issue/[id].stx:354`, `AutofixPanel.stx:189` |
 | self-rescheduling poll | `useQuery(url, { refetchInterval })` or `useInterval` | `signals.js:1110-1113` | `AutofixPanel.stx:189` |
 | `document.cookie = …` | `useCookie(name, opts)` | `signals.js:3568-3599` | 21 sites across 8 files |
@@ -4198,16 +4198,24 @@ if (qs.get('project')) {
 }
 ```
 
-**RIGHT (c):** `useSearchParams()` owns history rewriting (`signals.js:1004-1016`) and resyncs its signal after every write:
+**RIGHT (c):** `useSearchParams()` owns history rewriting and resyncs its signal after every write:
 
 ```js
 const params = useSearchParams()
 const activeProject = useCookie('bughq_project', { maxAge: 31536000, sameSite: 'Lax' })
 if (params.get('project')) {
   activeProject.set(params.get('project'))
-  params.setAll({ project: undefined })   // rewrites the URL, then syncFromUrl()
+  // { replace: true } is load-bearing, not tidiness. This is a ONE-SHOT param:
+  // it has been consumed into the cookie, so it must not survive a Back press.
+  // The default is pushState, which leaves the URL still carrying ?project= as
+  // the previous history entry — Back would replay the consumption (#1825).
+  params.delete('project', { replace: true })
 }
 ```
+
+The mirror of the WRONG snippet above is exact: that code reached for
+`history.replaceState` precisely because replace is the correct semantic here,
+and `{ replace: true }` is how the composable expresses it.
 
 **External URLs are not an exception.** `resources/views/pricing.stx:26` does `location.assign(data.url)` to reach Stripe. Write `navigate(data.url, true)` — same document load, one declared API, one fewer strict violation.
 
@@ -4619,7 +4627,7 @@ grep -rn '<StxLink[^>]*\bprefetch\b' resources/   # must return nothing
 
 ### 9.7 MUST — programmatic navigation is `navigate()`, never `location.*` or `history.*`
 
-**RULE.** In any `<script>` block, use the auto-imported `navigate(url)`. Use `navigate(url, true)` when you genuinely need a document load. Use `goBack()` / `goForward()` for history. Use `useSearchParams().set()` to rewrite the query string. Never write `window.location`, `location.href =`, `location.assign()`, `location.replace()` or `history.replaceState()`.
+**RULE.** In any `<script>` block, use the auto-imported `navigate(url)`. Use `navigate(url, true)` when you genuinely need a document load. Use `goBack()` / `goForward()` for history. Use `useSearchParams().set()` to rewrite the query string, and pass `{ replace: true }` when the URL change must not become a Back destination — consuming a one-shot param such as an OAuth `?code=` needs it, or Back replays the callback (#1825). Never write `window.location`, `location.href =`, `location.assign()`, `location.replace()` or `history.replaceState()`.
 
 **WHY.** `navigate` is defined at `signals.js:940-951` and published as a global at `signals.js:4635` (also `window.stx.navigate`, `signals.js:4148`). It delegates to `window.stxRouter.navigate` when the router is live (`signals.js:946-947`) and falls back to `location.href` only when it is not — strictly safer than the hand-written form. `goBack`/`goForward`: `signals.js:953-954`. `useSearchParams()` owns history rewriting: `signals.js:1004-1024`.
 

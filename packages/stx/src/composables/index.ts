@@ -375,7 +375,9 @@ export {
   goForward,
   useRoute,
   useSearchParams,
+  type NavigateOptions,
   type RouteInfo,
+  type SearchParamsCommitOptions,
   type SearchParamsRef,
 } from './use-router'
 

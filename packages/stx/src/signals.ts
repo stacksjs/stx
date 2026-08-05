@@ -1125,31 +1125,58 @@ else if (immediate) {
       var current = params();
       return Object.prototype.hasOwnProperty.call(current, key);
     };
-    var commit = function(url) {
-      window.history.pushState({}, '', url);
+    // pushState by default; replaceState when the caller asks for it (#1825).
+    //
+    // The canonical reason to delete a param is to CONSUME a one-shot value —
+    // an OAuth callback result, ?checkout=success, a flash token — and the
+    // point of consuming it is that it must not survive a Back press. Under
+    // pushState the pre-delete URL, the one still carrying the param, becomes
+    // the previous entry, so Back replays the callback and whatever consuming
+    // it triggered runs again.
+    //
+    // Default stays pushState so nothing that works today changes, and the
+    // option is spelled { replace } to match navigate(), which already takes it.
+    var commit = function(url, options) {
+      // A plain truthy read of the replace property looks equivalent and is
+      // not: it asks whether the value HAS a replace property, and every string
+      // has String.prototype.replace — so delete(key, 'push') would have
+      // replaced, the exact opposite of what it reads as. Requiring an object
+      // also keeps this identical to the module implementation in
+      // composables/use-router.ts; with optional chaining alone the two
+      // disagreed on the empty string, which short-circuits in one and hits
+      // String.prototype.replace in the other.
+      //
+      // NB: no backticks anywhere in this block. This runtime is assembled as a
+      // template literal, so a backtick in a COMMENT ends the string and the
+      // rest of the runtime is parsed as code.
+      var replace = !!(options && typeof options === 'object' && options.replace);
+      if (replace)
+        window.history.replaceState({}, '', url);
+      else
+        window.history.pushState({}, '', url);
       syncFromUrl();
     };
     return {
       data: params,
       get: function(key) { return own(key) ? params()[key] : undefined; },
       has: own,
-      set: function(key, value) {
+      set: function(key, value, options) {
         var url = new URL(window.location.href);
         url.searchParams.set(key, value);
-        commit(url);
+        commit(url, options);
       },
       // delete and has were DECLARED but absent, so the compiler endorsed calls
       // that threw in the browser; setAll and data were present but undeclared
       // (#1806). Deleting writes history the same way set does, for consistency.
-      'delete': function(key) {
+      'delete': function(key, options) {
         var url = new URL(window.location.href);
         url.searchParams['delete'](key);
-        commit(url);
+        commit(url, options);
       },
-      setAll: function(obj) {
+      setAll: function(obj, options) {
         var url = new URL(window.location.href);
         Object.keys(obj).forEach(function(k) { url.searchParams.set(k, obj[k]); });
-        commit(url);
+        commit(url, options);
       }
     };
   }

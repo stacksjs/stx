@@ -5367,14 +5367,42 @@ const search = useSearchParams()
 
 // Read a param
 const page = search.get('page')  // '2'
+search.has('page')               // true
 
-// Set a single param (pushes to history)
+// Set a single param (pushes a history entry)
 search.set('page', '3')
 
 // Set multiple params at once
 search.setAll({ page: '1', sort: 'name', order: 'asc' })
+
+// Remove one
+search.delete('page')
 </script>
 ```
+
+#### Consuming a one-shot param
+
+Every mutator takes an optional `{ replace: true }` that swaps the `pushState`
+for a `replaceState`. Reach for it whenever the param is a **one-shot value** —
+an OAuth callback result, `?checkout=success`, a flash token:
+
+```html
+<script client>
+const search = useSearchParams()
+
+onMount(() => {
+  const code = search.get('code')
+  if (!code) return
+  exchangeForSession(code)
+  // Without { replace: true } the URL that still carries `code` stays in
+  // history, so pressing Back replays the callback and re-runs the exchange.
+  search.delete('code', { replace: true })
+})
+</script>
+```
+
+`{ replace }` is spelled the same way [`navigate()`](#navigateurl) spells it, and
+the default is unchanged: a mutation pushes unless you say otherwise.
 
 ---
 

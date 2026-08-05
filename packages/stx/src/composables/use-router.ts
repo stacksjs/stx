@@ -21,6 +21,18 @@ export interface RouteInfo {
   params: Record<string, string>
 }
 
+/**
+ * How a search-param mutation is written to session history.
+ *
+ * Spelled `{ replace }` to match `navigate()`, which already takes it — before
+ * this the two halves of the routing API disagreed on whether replacing was
+ * expressible at all.
+ */
+export interface SearchParamsCommitOptions {
+  /** Replace the current history entry instead of pushing a new one. */
+  replace?: boolean
+}
+
 export interface SearchParamsRef {
   /** Reactive signal containing current search params */
   data: { (): Record<string, string>, set: (v: Record<string, string>) => void }
@@ -28,12 +40,24 @@ export interface SearchParamsRef {
   get: (key: string) => string | undefined
   /** Whether the param is present. */
   has: (key: string) => boolean
-  /** Set a single param and push to history */
-  set: (key: string, value: string) => void
-  /** Remove a param and push to history */
-  delete: (key: string) => void
-  /** Set multiple params and push to history */
-  setAll: (obj: Record<string, string>) => void
+  /**
+   * Set a single param. Pushes a history entry unless `replace` is passed.
+   *
+   * Pass `{ replace: true }` when the URL change should not be a place the user
+   * can go Back to — see `delete` for the case that makes this necessary.
+   */
+  set: (key: string, value: string, options?: SearchParamsCommitOptions) => void
+  /**
+   * Remove a param. Pushes a history entry unless `replace` is passed.
+   *
+   * CONSUMING a one-shot param — an OAuth callback result, `?checkout=success`,
+   * a flash token — needs `{ replace: true }`. With the default push, the URL
+   * that still carries the param becomes the previous history entry, so Back
+   * replays the callback and re-runs whatever consuming it triggered (#1825).
+   */
+  delete: (key: string, options?: SearchParamsCommitOptions) => void
+  /** Set multiple params. Pushes a history entry unless `replace` is passed. */
+  setAll: (obj: Record<string, string>, options?: SearchParamsCommitOptions) => void
 }
 
 export interface NavigateOptions {
@@ -178,8 +202,17 @@ export function useSearchParams(): SearchParamsRef {
   window.addEventListener('popstate', sync)
   window.addEventListener('stx:navigate', sync)
 
-  const commit = (url: URL) => {
-    window.history.pushState({}, '', url)
+  const commit = (url: URL, options?: SearchParamsCommitOptions) => {
+    // Deliberately the same test as the client runtime's commit
+    // (signals.ts) — `options?.replace` alone diverges from it on '',
+    // because optional chaining only short-circuits on null/undefined and
+    // String.prototype.replace is truthy. Same call, two entry points, opposite
+    // history semantics is exactly what this composable must not have.
+    const replace = !!(options && typeof options === 'object' && options.replace)
+    if (replace)
+      window.history.replaceState({}, '', url)
+    else
+      window.history.pushState({}, '', url)
     sync()
   }
   // Own-property reads only: the backing object would otherwise inherit
@@ -190,20 +223,20 @@ export function useSearchParams(): SearchParamsRef {
     data: data as any,
     get: key => (has(key) ? data()[key] : undefined),
     has,
-    set: (key, value) => {
+    set: (key, value, options) => {
       const url = new URL(window.location.href)
       url.searchParams.set(key, value)
-      commit(url)
+      commit(url, options)
     },
-    delete: (key) => {
+    delete: (key, options) => {
       const url = new URL(window.location.href)
       url.searchParams.delete(key)
-      commit(url)
+      commit(url, options)
     },
-    setAll: (obj) => {
+    setAll: (obj, options) => {
       const url = new URL(window.location.href)
       for (const [k, v] of Object.entries(obj)) url.searchParams.set(k, v)
-      commit(url)
+      commit(url, options)
     },
   }
 }

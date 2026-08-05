@@ -134,6 +134,12 @@ declare function useRoute(): {
   hash: string
 }
 declare function setRouteParams(_params: Record<string, string>): void
+/** How a search-param mutation is written to session history (#1825). */
+interface StxSearchParamsCommitOptions {
+  /** Replace the current history entry instead of pushing a new one. */
+  replace?: boolean
+}
+
 /**
  * Reactive access to the URL query string.
  *
@@ -148,9 +154,19 @@ declare function useSearchParams(): {
   data: StxSignal<Record<string, string>>
   get: (_key: string) => string | undefined
   has: (_key: string) => boolean
-  set: (_key: string, _value: string) => void
-  delete: (_key: string) => void
-  setAll: (_values: Record<string, string>) => void
+  /** Set a param. Pushes a history entry unless `{ replace: true }` is passed. */
+  set: (_key: string, _value: string, _options?: StxSearchParamsCommitOptions) => void
+  /**
+   * Remove a param. Pushes a history entry unless `{ replace: true }` is passed.
+   *
+   * CONSUMING a one-shot param — an OAuth callback result, `?checkout=success`,
+   * a flash token — needs `{ replace: true }`. Under the default push, the URL
+   * that still carries the param becomes the previous history entry, so Back
+   * replays the callback and re-runs whatever consuming it triggered (#1825).
+   */
+  delete: (_key: string, _options?: StxSearchParamsCommitOptions) => void
+  /** Set several params. Pushes a history entry unless `{ replace: true }` is passed. */
+  setAll: (_values: Record<string, string>, _options?: StxSearchParamsCommitOptions) => void
 }
 
 // ============================================================================

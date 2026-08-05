@@ -289,7 +289,7 @@ const route = useRoute()
 ### useSearchParams
 
 ```typescript
-useSearchParams(): SearchParamsHandle
+useSearchParams(): SearchParamsRef
 ```
 
 Reactive URL search parameters. Syncs with `popstate` and `stx:navigate` events.
@@ -307,14 +307,20 @@ search.setAll({ page: '1', sort: 'name' })
 </script>
 ```
 
-**SearchParamsHandle:**
+**SearchParamsRef:**
 
 | Property/Method | Type | Description |
 |-----------------|------|-------------|
 | `data` | `Signal<Record<string, string>>` | Reactive params signal |
 | `get(key)` | `(key: string) => string \| undefined` | Read a param |
-| `set(key, value)` | `(key: string, value: string) => void` | Set a param (pushes history) |
-| `setAll(obj)` | `(obj: Record<string, string>) => void` | Set multiple params |
+| `has(key)` | `(key: string) => boolean` | Whether the param is present |
+| `set(key, value, options?)` | `(key, value, options?: { replace?: boolean }) => void` | Set a param. Pushes a history entry unless `replace` |
+| `delete(key, options?)` | `(key, options?: { replace?: boolean }) => void` | Remove a param. Pushes unless `replace` |
+| `setAll(obj, options?)` | `(obj, options?: { replace?: boolean }) => void` | Set several params. Pushes unless `replace` |
+
+Consuming a **one-shot** param — an OAuth callback result, `?checkout=success`,
+a flash token — needs `{ replace: true }`. Under the default push, the URL still
+carrying the param stays in history, so Back replays the callback.
 
 ## DOM
 

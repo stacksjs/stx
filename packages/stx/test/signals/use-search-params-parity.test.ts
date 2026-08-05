@@ -24,6 +24,7 @@ const g = globalThis as any
 let realWindow: any
 let stx: any
 let pushed: string[] = []
+let replaced: string[] = []
 
 beforeAll(() => {
   // eslint-disable-next-line no-new-func
@@ -57,6 +58,15 @@ function installWindow(search: string, withRuntime = true) {
         loc.search = next.search
         pushed.push(next.search)
       },
+      // Recorded separately so a test can tell "the URL changed" from "the URL
+      // changed AND the old one is still reachable with Back" — which is the
+      // whole distinction #1825 is about.
+      replaceState: (_s: unknown, _t: string, url: unknown) => {
+        const next = new URL(String(url), 'http://localhost')
+        loc.href = next.href
+        loc.search = next.search
+        replaced.push(next.search)
+      },
     },
     addEventListener: () => {},
     removeEventListener: () => {},
@@ -64,7 +74,7 @@ function installWindow(search: string, withRuntime = true) {
   g.location = loc
 }
 
-beforeEach(() => { pushed = [] })
+beforeEach(() => { pushed = []; replaced = [] })
 afterEach(() => {
   g.window = realWindow
   delete g.location
@@ -167,6 +177,79 @@ for (const [name, create] of impls) {
       const sp = create()
       sp.set('b', '2')
       expect(sp.data()).toEqual({ a: '1', b: '2' })
+    })
+
+    // ---- history semantics (#1825) ----
+    //
+    // The canonical reason to delete a param is to CONSUME a one-shot value —
+    // an OAuth callback result, ?checkout=success, a flash token. Under the
+    // default pushState the pre-delete URL, still carrying the param, becomes
+    // the previous history entry, so Back replays the callback.
+
+    it('pushes by default, so today\'s behaviour is unchanged', () => {
+      installWindow('?code=abc')
+      const sp = create()
+      sp.delete('code')
+      expect(pushed).toEqual([''])
+      expect(replaced).toEqual([])
+    })
+
+    it('replaces the entry when asked, so Back cannot replay the param', () => {
+      installWindow('?code=abc')
+      const sp = create()
+      sp.delete('code', { replace: true })
+      expect(replaced).toEqual([''])
+      expect(pushed).toEqual([])
+      expect(sp.has('code')).toBe(false)
+    })
+
+    it('honours replace on set', () => {
+      installWindow('?a=1')
+      create().set('a', '2', { replace: true })
+      expect(replaced).toEqual(['?a=2'])
+      expect(pushed).toEqual([])
+    })
+
+    it('honours replace on setAll', () => {
+      installWindow('?a=1')
+      create().setAll({ a: '9', b: '8' }, { replace: true })
+      expect(replaced).toEqual(['?a=9&b=8'])
+      expect(pushed).toEqual([])
+    })
+
+    it('treats an options bag without `replace` as a push', () => {
+      installWindow('?a=1')
+      create().delete('a', {})
+      expect(pushed).toEqual([''])
+      expect(replaced).toEqual([])
+    })
+
+    // A truthy-property test — `options && options.replace` — reads as "did the
+    // caller ask to replace" and actually asks "does this value have a .replace
+    // property". Every string has String.prototype.replace, so `'push'` would
+    // have replaced. `''` was worse: it diverged BETWEEN the two
+    // implementations, because optional chaining short-circuits on null and
+    // undefined only. Anything that is not an options object pushes.
+    it.each([
+      ['a string that says the opposite', 'push'],
+      ['the word replace as a bare string', 'replace'],
+      ['an empty string', ''],
+      ['a bare true', true],
+      ['a number', 1],
+      ['null', null],
+      ['undefined', undefined],
+    ])('pushes for %s', (_label, arg) => {
+      installWindow('?a=1')
+      create().delete('a', arg as any)
+      expect(replaced).toEqual([])
+      expect(pushed).toEqual([''])
+    })
+
+    it('replaces for any truthy `replace` inside a real options object', () => {
+      installWindow('?a=1')
+      create().delete('a', { replace: 1 } as any)
+      expect(replaced).toEqual([''])
+      expect(pushed).toEqual([])
     })
   })
 }

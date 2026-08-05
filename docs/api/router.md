@@ -446,14 +446,26 @@ route.params    // {} (from stxRouter if available)
 
 ### useSearchParams()
 
-Reactive URL search parameters with get/set methods. Automatically syncs with `popstate` and `stx:navigate` events.
+Reactive URL search parameters. Automatically syncs with `popstate` and `stx:navigate` events.
 
 ```ts
 const search = useSearchParams()
 
 search.get('page')              // '2'
-search.set('page', '3')         // Updates URL and pushes history
+search.has('page')              // true
+search.set('page', '3')         // Updates the URL, pushes a history entry
 search.setAll({ page: '1', sort: 'name' })  // Set multiple params
+search.delete('page')           // Remove one
+```
+
+Every mutator takes an optional `{ replace: true }`, which replaces the current
+history entry instead of pushing a new one:
+
+```ts
+// Consuming a one-shot param — an OAuth callback, ?checkout=success, a flash
+// token. Without `replace` the URL still carrying `code` stays in history, so
+// Back replays the callback.
+search.delete('code', { replace: true })
 ```
 
 ## Next Steps
