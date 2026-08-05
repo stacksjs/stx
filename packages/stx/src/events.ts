@@ -48,6 +48,8 @@
  * @module events
  */
 
+import { templateHasReactiveContext } from './runtime-globals'
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -589,17 +591,20 @@ export function processEventDirectives(
   context: Record<string, unknown>,
   _filePath: string,
 ): string {
-  // When signals are used, skip event processing - the signals runtime handles events
-  // Note: data-stx-ref (from @ref) should NOT trigger this — only data-stx or data-stx-auto
-  // The `(?:<[^<>()]*>)?` segment lets TypeScript-typed calls like
-  // `state<string>('')` still register as signal usage; without it the regex
-  // only matches the untyped form and TS-first templates fall through to the
-  // event-stripping path, dropping @submit/@click bindings on the form.
-  const usesSignals = /\b(?:state|derived|effect)\s*(?:<[^<>()]*>)?\s*\(/.test(template)
-    || /@(?:model|show|for|if)\s*=/.test(template)
-    || /data-stx(?:-auto)?(?![-\w])/.test(template)
-
-  if (usesSignals) {
+  // When the signals runtime will be on the page, leave the markup alone — the
+  // runtime binds `@click` declaratively from the attribute.
+  //
+  // This used to be a third, independent answer to "will the runtime be here?",
+  // matching only state/derived/effect plus four directives. A client block
+  // built out of useStore (or any of the other ~65 reactive globals) failed it,
+  // so the handler was stripped out of the markup and rebound imperatively — to
+  // code that resolves the handler through a `[data-stx-scope]` ancestor that
+  // page-level client blocks never get, and otherwise falls back to evaluating
+  // the bare name, which lives in the setup closure and is not a global. The
+  // result was a ReferenceError on click and every handler on the page dead
+  // (#1824). It disagreed with signal-processing.ts, and the disagreement was
+  // the bug, so both now call the same predicate.
+  if (templateHasReactiveContext(template)) {
     return template
   }
 

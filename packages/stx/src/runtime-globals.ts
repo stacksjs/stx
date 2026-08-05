@@ -143,3 +143,100 @@ export function usesReactiveRuntime(source: string): boolean {
     new RegExp(`\\b${name}\\s*(?:<[^>]*>)?\\s*\\(`).test(source),
   )
 }
+
+/**
+ * Template syntax that establishes a REACTIVE CONTEXT: a signal, a bound
+ * attribute, a reactive directive, or a client script scope.
+ *
+ * Deliberately excludes a bare `@event=` handler — see `HAS_EVENT_HANDLER`.
+ */
+const TEMPLATE_REACTIVE_PATTERNS: readonly RegExp[] = [
+  /@if\s*=/, // @if="condition"
+  /@for\s*=/, // @for="item in items"
+  /@show\s*=/, // @show="visible"
+  /@model\s*=/, // @model="value"
+  /@bind:/, // @bind:attr="value"
+  /@class\s*=/, // @class="{ active: isActive }"
+  /@style\s*=/, // @style="{ color: textColor }"
+  /\bx-data\s*=/, // x-data="{ ... }" Alpine-style (reactive bridge needs signals runtime)
+  /\bstate\s*(?:<[^>]*>)?\s*\(/, // state() signal API
+  /\bderived\s*(?:<[^>]*>)?\s*\(/, // derived() signal API
+  /\beffect\s*(?:<[^>]*>)?\s*\(/, // effect() signal API
+  /\bref\s*(?:<[^>]*>)?\s*\(/, // ref() Vue-compat alias
+  /\bcomputed\s*(?:<[^>]*>)?\s*\(/, // computed() Vue-compat alias
+  /\breactive\s*(?:<[^>]*>)?\s*\(/, // reactive() Vue-compat alias
+  /\bwatch\s*(?:<[^>]*>)?\s*\(/, // watch() Vue-compat alias
+  /\bwatchEffect\s*(?:<[^>]*>)?\s*\(/, // watchEffect() Vue-compat alias
+  // ANY colon-bound attribute, not a fixed list of seven. Arbitrary attribute
+  // binding (:value, :disabled, :href, :data-x) is the common case and none
+  // of it used to count. The `.` exclusion keeps this off Vue-style
+  // `:prop.sync` spellings that are not ours, and requiring a value keeps it
+  // off bare `:` in text.
+  /\s:[a-z][\w-]*\s*=\s*["']/i,
+  /\s:(?:if|else-if|else|for|show|text|html|model)\s*=/, // colon-form reactive directives
+  /data-stx(?:-auto)?(?![-\w])/, // data-stx or data-stx-auto (not data-stx-ref, data-stx-id, etc.)
+  /data-stx-scoped/, // client scripts need the signals runtime
+]
+
+/**
+ * A bare event handler: `@click="fn"`, `@submit.prevent="fn()"`.
+ *
+ * Needs the runtime (something must bind it) but does NOT by itself establish a
+ * reactive context — which is exactly the distinction the two predicates below
+ * turn on.
+ */
+const HAS_EVENT_HANDLER = /\s@[a-z][\w.:-]*\s*=/i
+
+/**
+ * Does this template have a reactive context — a signal, a bound attribute, a
+ * reactive directive, or a client script — that will own its event handlers?
+ *
+ * This is the question `processEventDirectives` (events.ts) needs. It decides
+ * whether to leave `@click` in the markup for the signals runtime to bind, or to
+ * strip it and bind it imperatively through `__stx_runHandler`.
+ *
+ * It used to answer that with its own regex matching only `state`/`derived`/
+ * `effect` plus four directives, so a client block built out of `useStore` (or
+ * any of the other ~65 reactive globals) failed it. The handler was stripped and
+ * rebound to code that resolves it through a `[data-stx-scope]` ancestor that
+ * page-level client blocks never get, then fell back to evaluating the bare
+ * name — which lives inside the setup closure and is not a global. Every handler
+ * on the page died with a ReferenceError on click (#1824).
+ *
+ * Note this is NOT the same question as {@link templateNeedsRuntime}: a template
+ * whose only client-side behaviour is `<button @click="doIt()">` needs the
+ * runtime injected, but has no reactive scope to own the handler, so events.ts
+ * must still bind it imperatively. Conflating the two makes that fallback
+ * unreachable.
+ */
+export function templateHasReactiveContext(template: string): boolean {
+  if (!template)
+    return false
+  if (TEMPLATE_REACTIVE_PATTERNS.some(pattern => pattern.test(template)))
+    return true
+  // Every reactive runtime global, not just the handful spelled out above.
+  return usesReactiveRuntime(template)
+}
+
+/**
+ * Will this template get the client signals runtime?
+ *
+ * A reactive context needs it, and so does a lone event handler — something has
+ * to bind that, and the runtime is what binds it when a reactive scope exists.
+ *
+ * This had three independent implementations that disagreed, and every
+ * disagreement was a bug: `hasSignalsSyntax` (signal-processing.ts) decides
+ * whether to INJECT the runtime; the auto-mount test (client-script.ts) decides
+ * whether to wrap a client block in `stx.mount()` — when it said yes and the
+ * first said no, the page emitted `stx.mount(...)` with nothing to mount onto
+ * (#1819, #1820); and events.ts asked the related-but-distinct question above
+ * (#1824).
+ *
+ * They live here because events.ts is a leaf module and importing
+ * signal-processing.ts would close a cycle through client-script.ts.
+ */
+export function templateNeedsRuntime(template: string): boolean {
+  if (!template)
+    return false
+  return HAS_EVENT_HANDLER.test(template) || templateHasReactiveContext(template)
+}
