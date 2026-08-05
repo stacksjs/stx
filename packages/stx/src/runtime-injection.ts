@@ -127,6 +127,55 @@ export function pageShipsSignalsRuntime(fullPageHtml: string): boolean {
 }
 
 /**
+ * Does this rendered output contain a script that will THROW without the
+ * signals runtime?
+ *
+ * The safety net for stacksjs/stx#1820. Two independent decisions used to be
+ * made about the same page — `hasSignalsSyntax` decided whether to inject the
+ * runtime, and the client-script pass separately decided to emit
+ * `window.stx.mount(...)` — and nothing reconciled them. When they disagreed
+ * the page died on its first client line with "Cannot read properties of
+ * undefined (reading 'mount')", taking every handler defined in that block
+ * with it.
+ *
+ * Widening the gate does not fix that; it only makes the disagreement rarer,
+ * and it has already been widened twice. The gate is also evaluated against a
+ * template `processEventDirectives` has already rewritten, so an `@event=`
+ * page cannot match it however many patterns are added. This asks the opposite
+ * question, of the finished output, where no ordering can hide the answer: did
+ * we emit something that requires the runtime?
+ *
+ * Keyed on an UNGUARDED reach for `window.stx`, because that is precisely what
+ * throws. The guarded spellings the compiler also emits are all safe and must
+ * not trigger injection:
+ *
+ *   var { state } = window.stx || window;   // falls back
+ *   var s = window.stx || {};               // falls back
+ *   window.stx = window.stx || {};          // self-initializing
+ *   if (window.stx) window.stx._latestSetup = null;   // guarded
+ *
+ * The appearance bootstrap is the reason this runs before that directive is
+ * processed: it emits a self-contained `data-stx-scoped` script on pages with
+ * no reactivity at all, so keying on the presence of a client script — the
+ * obvious invariant, and the one the issue suggested — would pull the runtime
+ * onto every static page that sets a theme.
+ */
+export function outputNeedsSignalsRuntime(html: string): boolean {
+  // `window.stx.<name>` — a property read, e.g. .mount( or ._scopes
+  // `} = window.stx;` — the runtime-globals destructure, with no `|| window`
+  const reach = /window\.stx\s*\.\s*[A-Za-z_$]|\}\s*=\s*window\.stx\s*;/g
+
+  for (let m = reach.exec(html); m !== null; m = reach.exec(html)) {
+    const preceding = html.slice(Math.max(0, m.index - 80), m.index)
+    if (/if\s*\(\s*window\.stx\s*\)|window\.stx\s*&&/.test(preceding))
+      continue
+    return true
+  }
+
+  return false
+}
+
+/**
  * Inject STX signals runtime into the template.
  * The runtime provides client-side reactivity.
  */

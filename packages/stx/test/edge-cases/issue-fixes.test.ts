@@ -111,10 +111,14 @@ describe('#1699 — HTML comments are masked before directive expansion', () => 
     //    binding. We use the run-time scoped script (mount or merged setup —
     //    different code paths produce different wrappers) as a proxy: if
     //    the body parses, the backtick didn't poison it.
-    // Attribute-tolerant: emitters also stamp data-stx-run (#1773).
-    const scopedMatch = out.match(/<script\b[^>]*\bdata-stx-scoped\b[^>]*>([\s\S]*?)<\/script>/)
-    expect(scopedMatch).not.toBeNull()
-    const scopedBody = scopedMatch![1]
+    // Attribute-tolerant: emitters also stamp data-stx-run (#1773). The signals
+    // runtime is itself emitted as a data-stx-scoped script and now precedes
+    // this one — this page mounts, so it gets a runtime (#1820) — so select the
+    // first scoped script that is NOT the runtime.
+    const scopedMatch = [...out.matchAll(/<script\b([^>]*\bdata-stx-scoped\b[^>]*)>([\s\S]*?)<\/script>/g)]
+      .find(m => !/\bdata-stx-runtime\b/.test(m[1]))
+    expect(scopedMatch).toBeDefined()
+    const scopedBody = scopedMatch![2]
     expect(() => new Function(scopedBody)).not.toThrow()
 
     // 3. The user's symbol survived in that body.

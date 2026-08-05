@@ -71,6 +71,7 @@ import { importOnce } from './lazy-module'
 
 // Re-export public API from extracted modules (preserves backwards compatibility)
 export { injectRouterScript } from './runtime-injection'
+import { injectSignalsRuntime, outputNeedsSignalsRuntime, pageShipsSignalsRuntime } from './runtime-injection'
 export { processJsonDirective, processOnceDirective } from './misc-directives'
 export { validateClientScript } from './script-validation'
 
@@ -1791,6 +1792,25 @@ else {
   if (clientScriptsTransformed) {
     context.__stx_event_bindings = []
   }
+
+  // A page that mounts without a runtime is never correct, so make it
+  // unrepresentable rather than unlikely (stacksjs/stx#1820). processSignals
+  // decides whether to inject the runtime by reading the template; the
+  // client-script pass above decides independently to emit
+  // window.stx.mount(...). Nothing reconciled them, and when they disagreed the
+  // page threw on its first client line — taking every handler defined in that
+  // block with it.
+  //
+  // Widening the gate does not fix that, it only makes the disagreement rarer,
+  // and it has been widened twice. Worse, the gate reads a template
+  // processEventDirectives has already rewritten `@click` out of, so an
+  // event-only page cannot match it however many patterns are added.
+  //
+  // So ask the finished output instead. Both decisions have been made by this
+  // point, which is the whole reason it settles them: no processing order can
+  // hide the answer from a question asked last.
+  if (!pageShipsSignalsRuntime(output) && outputNeedsSignalsRuntime(output))
+    output = await injectSignalsRuntime(output, opts)
 
   // Nonces must be applied last. Compiler-owned runtime, scoped, analytics,
   // and appearance scripts may be introduced after @csp was processed.
