@@ -1794,7 +1794,9 @@ else {
     let processedContent = content
 
     // Validate client scripts for prohibited patterns
-    validateClientScript(content, filePath, options.strict)
+    // `filePath` is the LAYOUT once a view has been composed into one, so pass
+    // the view too — the layout composition already stashes it (#1836).
+    validateClientScript(content, filePath, options.strict, context.__originalFilePath as string | undefined)
 
     // Use callback form of replace to avoid $ pattern interpretation in replacement string
     // Note: processClientScript handles transpilation internally based on attrs

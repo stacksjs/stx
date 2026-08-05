@@ -160,6 +160,12 @@ export function validateClientScript(
   content: string,
   filePath: string,
   strict?: boolean | StrictModeConfig,
+  /**
+   * The view this script was authored in, when `filePath` is a layout that view
+   * was composed into. Reported alongside, because naming only the layout sends
+   * the reader to a file that does not contain the offending code (#1836).
+   */
+  originFilePath?: string,
 ): void {
   const strictConfig = typeof strict === 'boolean'
     ? { enabled: strict, failOnViolation: strict }
@@ -203,17 +209,39 @@ export function validateClientScript(
         }
       })
 
+      // Line numbers are relative to the <script> BODY, not to any file: the
+      // content handed here has already been extracted from a template that may
+      // itself be a composition of a view and a layout. Reporting a bare
+      // `line: 8` invited reading it as a file line, and it indexed neither
+      // file (#1836). Say what it counts, and quote the line so the reader can
+      // find it by searching rather than by counting.
       const locationInfo = lineNumbers.length > 0
-        ? ` (line${lineNumbers.length > 1 ? 's' : ''}: ${lineNumbers.join(', ')})`
+        ? ` (script line${lineNumbers.length > 1 ? 's' : ''} ${lineNumbers.join(', ')})`
         : ''
 
-      errors.push(`  ✗ ${message}${locationInfo}\n    → ${suggestion}`)
+      const quoted = lineNumbers
+        .slice(0, 3)
+        .map(n => `        ${n} | ${(lines[n - 1] ?? '').trim().slice(0, 100)}`)
+        .join('\n')
+      const snippet = quoted ? `\n${quoted}` : ''
+
+      errors.push(`  ✗ ${message}${locationInfo}\n    → ${suggestion}${snippet}`)
     }
   }
 
   if (errors.length > 0 && strictConfig.enabled) {
-    const fileName = filePath.split('/').pop() || filePath
-    const baseMessage = `[STX] DOM API violation in ${fileName}:\n${errors.join('\n')}\n  Tip: prefer useRef(), navigate(), and composables for component code`
+    // Report a path the reader can act on, not a bare basename. `default.stx`
+    // matched nine files in the project that surfaced this, and none of them
+    // contained the offending code — the script was authored in a view and
+    // `filePath` was the layout that view is composed into (#1836).
+    const rel = (p: string): string => {
+      const cwd = `${process.cwd()}/`
+      return p.startsWith(cwd) ? p.slice(cwd.length) : p
+    }
+    const where = originFilePath && originFilePath !== filePath
+      ? `${rel(originFilePath)} (composed into ${rel(filePath)})`
+      : rel(filePath)
+    const baseMessage = `[STX] DOM API violation in ${where}:\n${errors.join('\n')}\n  Tip: prefer useRef(), navigate(), and composables for component code`
 
     if (strictConfig.failOnViolation) {
       throw new Error(baseMessage)
