@@ -206,6 +206,17 @@ export function routeSpecificity(fileRouteBase: string): number {
 }
 
 /**
+ * True when a request path is for a STATIC ASSET (a non-page file extension like
+ * `.jpg`/`.css`/`.js`) rather than a page. Used so a catch-all page can never
+ * shadow an asset request that publicDir should serve — `getRoute` runs before
+ * the publicDir handler (stacksjs/stx#1841). Page extensions (`.stx`/`.md`/
+ * `.html`) return false; those are routable.
+ */
+export function isStaticAssetPath(requestPath: string): boolean {
+  return /\.[a-z0-9]+$/i.test(requestPath) && !/\.(?:stx|md|html)$/i.test(requestPath)
+}
+
+/**
  * Escape a string for safe interpolation into HTML text/attribute context.
  * Used so a crafted request path can't inject markup into the 404 page
  * (reflected-XSS guard).
@@ -1956,8 +1967,21 @@ export async function serve(options: ServeOptions): Promise<void> {
     // the FIRST regex match — so unsorted, /article/15 matched [...all].stx via
     // ^(.+)$ before article/[id].stx, and EVERY dynamic detail route 404'd.
     // routeSpecificity ranks catch-alls last (see its docs, stacksjs/stx#1837).
+    // A catch-all ([...x]) must ALSO never shadow a static-asset request — e.g.
+    // /images/logo.jpg — because getRoute runs before the publicDir handler. When
+    // the path carries a non-page file extension, drop catch-all candidates so
+    // the request falls through to publicDir (and then the real 404 page).
+    // Specific routes may still match (rare, but legitimate). stacksjs/stx#1841.
+    const isAssetRequest = isStaticAssetPath(normalizedPath)
     const dynamicFiles = files
-      .filter(f => f.replace(/^\.\//, '').replace(/\\/g, '/').includes('['))
+      .filter((f) => {
+        const nf = f.replace(/^\.\//, '').replace(/\\/g, '/')
+        if (!nf.includes('['))
+          return false
+        if (isAssetRequest && /\[\.\.\./.test(nf))
+          return false
+        return true
+      })
       .sort((a, b) => routeSpecificity(b) - routeSpecificity(a))
     for (const filePath of dynamicFiles) {
       const normalizedFilePath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')

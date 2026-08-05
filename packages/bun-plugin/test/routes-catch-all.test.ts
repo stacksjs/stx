@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { buildDynamicRouteRegexes, routeSpecificity } from '../src/serve'
+import { buildDynamicRouteRegexes, isStaticAssetPath, routeSpecificity } from '../src/serve'
 
 /**
  * The plugin's dev server compiles file routes itself. Catch-alls were turned
@@ -88,5 +88,54 @@ describe('routeSpecificity (catch-all never shadows a specific route — #1837)'
     const files = ['[...all].stx', 'foo/[id].stx']
     expect(resolve('foo/15', files)).toBe('foo/[id].stx')
     expect(resolve('foo/15', [...files].reverse())).toBe('foo/[id].stx')
+  })
+})
+
+/**
+ * stacksjs/stx#1841 — getRoute runs before the publicDir static handler, and its
+ * catch-all matches `^(.+)$`, so `/images/logo.jpg` returned the 404 page before
+ * publicDir could serve the real file — every public asset was shadowed. A
+ * catch-all must not match a static-asset request; it falls through to publicDir.
+ */
+describe('isStaticAssetPath — catch-all never shadows a static asset (#1841)', () => {
+  it('flags non-page file extensions as assets', () => {
+    for (const p of ['images/logo.jpg', 'a/b/c.png', 'style.css', 'app.js', 'favicon.ico', 'og.webp'])
+      expect(isStaticAssetPath(p)).toBe(true)
+  })
+
+  it('does not flag pages (no extension or a page extension)', () => {
+    for (const p of ['article/15', 'about', 'foo/bar', 'page.stx', 'post.md', 'index.html'])
+      expect(isStaticAssetPath(p)).toBe(false)
+  })
+
+  // Mirrors getRoute: catch-all candidates are dropped for asset requests, so
+  // the resolver returns null (→ publicDir serves the file, then the real 404).
+  const resolveAsset = (target: string, files: string[]): string | null => {
+    const asset = isStaticAssetPath(target)
+    const candidates = files
+      .filter(f => f.includes('[') && !(asset && /\[\.\.\./.test(f)))
+      .sort((a, b) => routeSpecificity(b) - routeSpecificity(a))
+    for (const file of candidates) {
+      for (const regex of buildDynamicRouteRegexes(file.replace(/\.(stx|md|html)$/, ''))) {
+        if (target.match(regex))
+          return file
+      }
+    }
+    return null
+  }
+
+  it('an image path does NOT resolve to the catch-all (falls through to publicDir)', () => {
+    const files = ['[...all].stx', 'foo/[id].stx']
+    expect(resolveAsset('images/background-auth.jpg', files)).toBeNull()
+  })
+
+  it('a real page miss still resolves to the catch-all', () => {
+    const files = ['[...all].stx', 'foo/[id].stx']
+    expect(resolveAsset('some/missing/page', files)).toBe('[...all].stx')
+  })
+
+  it('a specific route may still match an extensioned path', () => {
+    const files = ['[...all].stx', 'download/[file].stx']
+    expect(resolveAsset('download/report.pdf', files)).toBe('download/[file].stx')
   })
 })
