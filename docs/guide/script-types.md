@@ -80,6 +80,25 @@ function greet(name) {            // auto-exported
 <p>{{ greet('Alice') }}</p>
 ```
 
+### Credentials: prefix them with `__`
+
+A `<script client>` block can read server values directly, and stx does that by
+serialising the value into the page — so a server binding your client code
+references **ships in the HTML response body**, visible in view-source.
+
+Prefix anything holding a credential with `__`. Those are never sent, whatever
+the client does with the name:
+
+```html
+<script server>
+const __token = cookies.session        // never leaves the server
+const user = await getUser(__token)    // safe to reference from the client
+</script>
+```
+
+stx warns at build time when it publishes a binding whose name looks like a
+credential. See [Security](./security.md#what-crosses-from-script-server-to-the-browser).
+
 ## `<script client>` -- Browser Execution
 
 Client scripts run in the browser after the page loads. This is where you create reactive state, attach event handlers, run lifecycle hooks, and build interactive features.

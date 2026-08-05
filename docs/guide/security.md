@@ -249,6 +249,50 @@ export class PostPolicy {
 
 ## Data Security
 
+### What crosses from `<script server>` to the browser
+
+A `<script client>` block can read values declared in `<script server>` without
+a fetch. stx does that by serialising the value into the page and declaring it
+as a `var` ahead of your client code — so **anything that crosses ends up in the
+HTML response body**, readable in view-source.
+
+Only values your client code actually *references* cross. A name mentioned in a
+comment, inside a string, or as somebody else's property does not:
+
+```html
+<script server>
+const token = cookies.session          // never referenced below → not sent
+const posts = await db.posts.all()     // referenced → serialised into the page
+</script>
+
+<script client>
+  const list = state(posts)            // a real reference
+  const who = useStore('session').token()  // a property, not this binding
+</script>
+```
+
+**Prefix anything holding a credential with `__`.** That is the opt-out, and it
+is checked in both places that assemble the bridge, so it holds regardless of
+how the value is used:
+
+```html
+<script server>
+const __apiKey = env.API_KEY                      // never crosses
+const __rows = await db.projects.all()
+const projects = __rows.map(({ ingest_key, ...p }) => p)  // safe projection
+</script>
+```
+
+Treat the response body differently from a cookie. A token in a cookie is not
+captured by a HAR export attached to a support ticket, "save page as", the disk
+cache, a session-replay tool, or a screenshot of view-source — a token in the
+body is captured by all of them.
+
+stx warns at build time when it publishes a binding whose name looks like a
+credential (`token`, `secret`, `apiKey`, `webhook`, …) or when a single value
+exceeds 32KB. A warning means the value **is** in the page; rename it with `__`
+and pass a projection instead.
+
 ### Input Validation
 
 Validate user input:

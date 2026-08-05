@@ -442,9 +442,103 @@ const JS_BUILTINS = new Set([
   'Modal', 'Intl',
 ])
 
+/** Index just past the string literal whose opening quote is at `start`. */
+function skipQuoted(code: string, start: number): number {
+  const quote = code[start]
+  let i = start + 1
+  while (i < code.length) {
+    if (code[i] === '\\') {
+      i += 2
+      continue
+    }
+    if (code[i] === quote)
+      return i + 1
+    i++
+  }
+  return code.length
+}
+
+/** Index just past the template literal whose backtick is at `start`. */
+function skipTemplate(code: string, start: number): number {
+  let i = start + 1
+  while (i < code.length) {
+    if (code[i] === '\\') {
+      i += 2
+      continue
+    }
+    if (code[i] === '`')
+      return i + 1
+    if (code[i] === '$' && code[i + 1] === '{') {
+      i = findInterpolationEnd(code, i + 2)
+      if (i < code.length)
+        i++
+      continue
+    }
+    i++
+  }
+  return code.length
+}
+
+/**
+ * Index of the `}` closing an interpolation whose body starts at `start`.
+ *
+ * Literals and comments are skipped whole, so a brace inside them cannot be
+ * mistaken for structure — `` `${ x ? "}" : y }` `` closes at the right place.
+ */
+function findInterpolationEnd(code: string, start: number): number {
+  let depth = 1
+  let i = start
+  while (i < code.length) {
+    const ch = code[i]
+    if (ch === '\\') {
+      i += 2
+      continue
+    }
+    if (ch === '"' || ch === '\'') {
+      i = skipQuoted(code, i)
+      continue
+    }
+    if (ch === '`') {
+      i = skipTemplate(code, i)
+      continue
+    }
+    if (ch === '/' && code[i + 1] === '/') {
+      while (i < code.length && code[i] !== '\n') i++
+      continue
+    }
+    if (ch === '/' && code[i + 1] === '*') {
+      i += 2
+      while (i < code.length && code.slice(i, i + 2) !== '*/') i++
+      i += 2
+      continue
+    }
+    if (ch === '{') {
+      depth++
+      i++
+      continue
+    }
+    if (ch === '}') {
+      depth--
+      if (depth === 0)
+        return i
+      i++
+      continue
+    }
+    i++
+  }
+  return code.length
+}
+
 /**
  * Blank out comments and string literals, preserving length and line structure
  * so offsets still line up, so that identifier detection only ever sees code.
+ *
+ * Template-literal INTERPOLATIONS are kept, because `${...}` is code, not text.
+ * Blanking them hid every identifier that appears only inside one — a helper
+ * called as `${formatDate(d)}` looked unused to the auto-import scanner, and a
+ * server value read as `` `/api/users/${userId}` `` looked unreferenced to the
+ * data bridge, which would have withheld it and left the client throwing on an
+ * undefined name.
  */
 export function stripCommentsAndLiterals(code: string): string {
   let out = ''
@@ -467,7 +561,7 @@ export function stripCommentsAndLiterals(code: string): string {
     }
 
     const ch = code[i]
-    if (ch === '"' || ch === '\'' || ch === '`') {
+    if (ch === '"' || ch === '\'') {
       const quote = ch
       out += ' '
       i++
@@ -475,6 +569,35 @@ export function stripCommentsAndLiterals(code: string): string {
         if (code[i] === '\\') {
           out += '  '
           i += 2
+          continue
+        }
+        out += code[i] === '\n' ? '\n' : ' '
+        i++
+      }
+      out += ' '
+      i++
+      continue
+    }
+
+    if (ch === '`') {
+      out += ' '
+      i++
+      while (i < code.length && code[i] !== '`') {
+        if (code[i] === '\\') {
+          out += '  '
+          i += 2
+          continue
+        }
+        // `${` … `}` is code. Recurse so a nested literal or comment inside the
+        // interpolation is blanked by the same rules.
+        if (code[i] === '$' && code[i + 1] === '{') {
+          const bodyStart = i + 2
+          const bodyEnd = findInterpolationEnd(code, bodyStart)
+          out += '  '
+          out += stripCommentsAndLiterals(code.slice(bodyStart, bodyEnd))
+          if (bodyEnd < code.length)
+            out += ' '
+          i = bodyEnd + 1
           continue
         }
         out += code[i] === '\n' ? '\n' : ' '
@@ -838,6 +961,61 @@ function declaresClientIdentifier(code: string, name: string): boolean {
 }
 
 /**
+ * Does the client script use `name` as a free identifier?
+ *
+ * Anything reached through a `.` is somebody else's property, not this binding:
+ * `session.token()` names a method on a store, and treating it as a reference
+ * published the server's unrelated `token` into the page. `#` covers private
+ * fields for the same reason.
+ *
+ * An object-literal KEY (`{ token: 1 }`) still counts, since it is
+ * indistinguishable here from the shorthand `{ token }` — that errs toward
+ * publishing, which is the pre-existing behaviour rather than a new leak.
+ *
+ * `name` is validated as an identifier by the caller, so it carries no regex
+ * metacharacters.
+ */
+function referencesIdentifier(searchable: string, name: string): boolean {
+  return new RegExp(`(?<![.#\\w$])${name}(?![\\w$])`).test(searchable)
+}
+
+/**
+ * Names that read like a credential. Bridging one is usually a mistake — the
+ * value lands in the response body, where HAR exports, disk cache, "save page
+ * as", session-replay tools and a screenshot of view-source all capture it,
+ * none of which is true of the cookie it was probably read from.
+ */
+const CREDENTIAL_NAME = /token|secret|passw|apikey|api_key|privatekey|private_key|credential|webhook|bearer|jwt|signature/i
+
+/** Warn once per name, so a dev server does not repeat it on every render. */
+const warnedBridgeKeys = new Set<string>()
+
+function warnAboutBridgedValue(name: string, json: string): void {
+  const credential = CREDENTIAL_NAME.test(name)
+  const oversized = json.length > 32_768
+  if (!credential && !oversized)
+    return
+  if (warnedBridgeKeys.has(name))
+    return
+  warnedBridgeKeys.add(name)
+
+  if (credential) {
+    console.warn(
+      `[stx] server→client bridge is publishing "${name}" into the page body. `
+      + `If it holds a credential, rename it with a "__" prefix (never bridged) `
+      + `and pass only what the template needs. See stacksjs/stx#1831.`,
+    )
+  }
+  if (oversized) {
+    console.warn(
+      `[stx] server→client bridge is publishing ${(json.length / 1024).toFixed(1)}KB `
+      + `under "${name}". Every byte ships in the HTML on each request; prefix the `
+      + `binding with "__" and project just the fields the client reads.`,
+    )
+  }
+}
+
+/**
  * Generate the server → client data bridge: `var <name> = <json>;` for each
  * template-context value referenced — but NOT redeclared — by the client script.
  * Lets `<script client>` seed reactive state from `<script server>` data without
@@ -847,12 +1025,26 @@ function declaresClientIdentifier(code: string, name: string): boolean {
 export function generateServerDataBridge(code: string, serverData?: Record<string, unknown>): string {
   if (!serverData)
     return ''
+  // Reference detection reads the code with comments and string literals
+  // blanked. Matching raw text meant a name only had to APPEAR somewhere to be
+  // published — a word in a comment, a segment of a URL — and the value went
+  // into the response body whether or not any client code could use it
+  // (stacksjs/stx#1831).
+  const searchable = stripCommentsAndLiterals(code)
   const lines: string[] = []
   for (const [name, value] of Object.entries(serverData)) {
     if (!/^[A-Za-z_$][\w$]*$/.test(name))
       continue
-    // Only bridge identifiers the client actually references…
-    if (!new RegExp(`\\b${name}\\b`).test(code))
+    // The documented opt-out, re-checked here. extractBridgeData already drops
+    // these, but this is the function that decides what reaches the page, and
+    // an author told to prefix a credential with `__` should get that guarantee
+    // from whichever path assembles the bridge (#1831).
+    if (name.startsWith('__') || name.startsWith('$'))
+      continue
+    // Only bridge identifiers the client actually references as a NAME.
+    // A word boundary alone also matched a property, so reading an unrelated
+    // `session.token()` published the server's `token` binding beside it.
+    if (!referencesIdentifier(searchable, name))
       continue
     // …and does not itself declare (never clobber a client-owned name).
     if (declaresClientIdentifier(code, name))
@@ -866,6 +1058,7 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
     }
     if (json === undefined)
       continue
+    warnAboutBridgedValue(name, json)
     // Escape `<` so a value containing markup (e.g. `</script>`) can't break out
     // of the surrounding tag, AND so the generated text never contains a literal
     // `<script…>` that a downstream tag scanner would treat as a real boundary.
