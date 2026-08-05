@@ -531,6 +531,7 @@ export function getRouterScript(): string {
           return r.text();
         }).then(function(html){
           log('[router] full page fetched from cache path, len:',html.length);
+          pendingLayoutDecl={layout:layoutCache[targetPath]||'',group:layoutGroupCache[targetPath]||''};
           return swap(html,targetPath,pushState,targetHash);
         }).catch(function(err){
           console.error('[router] full page fetch error:',err);
@@ -538,6 +539,7 @@ export function getRouterScript(): string {
         }).finally(done);
       }
       pendingContainerAttrs=attrsCache[targetPath]||'';
+      pendingLayoutDecl=null;
       return Promise.resolve(swap(cache[targetPath],targetPath,pushState,targetHash)).then(function(){
         applyTitle(titleCache[targetPath]);
         return true;
@@ -579,6 +581,7 @@ else {
         if(result.isFragment)result.html=fragmentMarker(result.runtime)+result.html;
         if(o.cache)setCache(targetPath,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
         pendingContainerAttrs=result.isFragment?(result.containerAttrs||''):'';
+        pendingLayoutDecl=result.isFragment?null:{layout:result.layout||'',group:result.layoutGroup||''};
         return Promise.resolve(swap(result.html,targetPath,pushState,targetHash)).then(function(){
           // Fragment swaps carry no <head>; apply the title from the header.
           // Full-document swaps already set document.title from the <title> tag.
@@ -603,6 +606,14 @@ else {
       ||html.indexOf('data-stx-content')!==-1;
   }
 
+  // The layout and group the SERVER declared for the document about to be
+  // swapped in. Set immediately before each swap() call by whichever path
+  // fetched it, and consumed once.
+  //
+  // Threaded this way rather than as a swap() parameter, matching
+  // pendingContainerAttrs — see the note above writeHistory about the cost of
+  // adding an argument to swap() and its three call sites (#1807).
+  var pendingLayoutDecl=null;
   function swap(html,url,pushState,hash){
     var fragMark=/^<!--stx-fragment(?: rt=([01]))?-->/.exec(html);
     var isFragment=!!fragMark;
@@ -920,14 +931,33 @@ else {
       // For same-layout: swap only the container (<main>)
       var newBody=doc.querySelector('body');
       var isLayoutChange=false;
+      var declaredLayout=pendingLayoutDecl;
+      pendingLayoutDecl=null;
       if(newBody){
         var newMeta=doc.querySelector('meta[name="stx-layout"]');
         var curMeta=document.querySelector('meta[name="stx-layout"]');
         var curLayout=curMeta?curMeta.getAttribute('content'):'';
-        var newLayout=newMeta?newMeta.getAttribute('content'):'';
+        // The server's answer wins over the document's metas. We are only here
+        // because checkLayoutChange already said the group changed, based on
+        // exactly these headers — re-deriving from metas and disagreeing meant
+        // paying for the full-document fetch and then discarding the reason we
+        // made it, so the destination's <main> was swapped into the previous
+        // page's chrome (#1833).
+        //
+        // They disagree more easily than they look. The bun-plugin serve path
+        // calls a layout-less page 'default' while the client's own fallback
+        // calls it 'app'; a <head> with attributes silently skips the meta
+        // injection entirely; and the i18n path rewrites every page's group to
+        // i18n:<locale>. Any one of those leaves the metas saying "unchanged"
+        // about a document the headers said had changed.
+        var newLayout=declaredLayout&&declaredLayout.layout
+          ? declaredLayout.layout
+          : (newMeta?newMeta.getAttribute('content'):'');
         var curGroup=getCurrentLayoutGroup();
-        var newGroup=getDocLayoutGroup(doc,newLayout);
-        isLayoutChange=curGroup!==newGroup||(curLayout&&newLayout&&curLayout!==newLayout);
+        var newGroup=declaredLayout&&declaredLayout.group
+          ? declaredLayout.group
+          : getDocLayoutGroup(doc,newLayout);
+        isLayoutChange=curGroup!==newGroup||!!(curLayout&&newLayout&&curLayout!==newLayout);
       }
       var incomingSetupName=newBody?(newBody.getAttribute('data-stx')||''):'';
       // Scripts assigned through innerHTML are inert. Preserve executable

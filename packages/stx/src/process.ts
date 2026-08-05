@@ -505,9 +505,16 @@ export async function processDirectives(
         if (layoutComment && result.includes('<head')) {
           const layoutName = layoutComment[1]
           const layoutGroup = deriveLayoutGroup(layoutName)
+          // Matches <head> with attributes, which the guard above already
+          // admits: it tests `includes('<head')` but the replace looked for the
+          // bare tag, so a layout opening `<head prefix="og: …">` passed the
+          // guard and silently got no metas at all. The router then has nothing
+          // to compare and treats the page as layout-less, which is one of the
+          // ways a cross-group navigation kept the previous page's chrome
+          // (#1833). The same file already spells it this way elsewhere.
           result = result.replace(
-            '<head>',
-            `<head>\n  <meta name="stx-layout" content="${escapeHtmlAttribute(layoutName)}">\n  <meta name="stx-layout-group" content="${escapeHtmlAttribute(layoutGroup)}">`,
+            /<head\b[^>]*>/i,
+            match => `${match}\n  <meta name="stx-layout" content="${escapeHtmlAttribute(layoutName)}">\n  <meta name="stx-layout-group" content="${escapeHtmlAttribute(layoutGroup)}">`,
           )
         }
 
