@@ -32,6 +32,51 @@ async function render(template: string, context: Record<string, any> = {}): Prom
   return processDynamicComponents(template, context, 'probe.stx', options)
 }
 
+describe('<component :is="{{ as }}"> — the form the library actually writes', () => {
+  // The premise above ("`{{ as }}` has already been interpolated by the time
+  // processDynamicComponents runs") holds on the page path and NOT on the
+  // component path, which is where all 26 of these live. There the mustache is
+  // still raw, so evaluating the expression whole found nothing and the element
+  // path — correct in every other respect — was never reached.
+  //
+  // The failure disguised itself. The placeholder comment embeds the expression
+  // it could not resolve, the later expression pass then interpolated the
+  // mustache INSIDE that comment, and the page read
+  // `could not resolve "div"` — which looks like a resolver handed a tag name
+  // and refusing it, rather than one that never saw the value.
+  it('resolves the mustache against context and renders the element', async () => {
+    const out = await render('<component :is="{{ as }}" class="panel">hello</component>', { as: 'div' })
+    expect(out).toBe('<div class="panel">hello</div>')
+  })
+
+  it('keeps the slot content, which the placeholder used to swallow', async () => {
+    const out = await render('<component :is="{{ as }}"><p>dialog-ok</p></component>', { as: 'section' })
+    expect(out).toContain('dialog-ok')
+  })
+
+  it('covers each default the library passes', async () => {
+    for (const tag of ['div', 'h3', 'p', 'span', 'label', 'button', 'ul', 'li']) {
+      const out = await render('<component :is="{{ as }}" class="c">x</component>', { as: tag })
+      expect(out).toBe(`<${tag} class="c">x</${tag}>`)
+    }
+  })
+
+  it('handles the self-closing form', async () => {
+    const out = await render('<component :is="{{ as }}" aria-hidden="true" />', { as: 'div' })
+    expect(out).toContain('aria-hidden="true"')
+    expect(out).not.toContain('could not resolve')
+  })
+
+  it('reports the inner expression when it cannot resolve, not a value', async () => {
+    // Keeping the braces meant the diagnostic was itself interpolated, so it
+    // named whatever the expression evaluated to elsewhere — the single most
+    // misleading thing it could have said.
+    const out = await render('<component :is="{{ nope }}">x</component>')
+    expect(out).toContain('could not resolve "nope"')
+    expect(out).not.toContain('{{')
+  })
+})
+
 describe('<component :is> resolving to an element', () => {
   it('renders an already-interpolated literal tag and keeps the slot', async () => {
     const out = await render('<component :is="div" class="panel">hello</component>')

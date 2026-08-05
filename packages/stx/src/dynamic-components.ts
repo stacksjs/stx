@@ -63,7 +63,20 @@ const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'i
  * tag/component identifier.
  */
 function resolveIsName(expr: string, context: Record<string, any>): string | null {
-  const evaluated = safeEvaluate<string>(expr, context)
+  // `:is="{{ as }}"` is the form every component in the library uses, and this
+  // module runs BEFORE processExpressions — so the mustache is still raw here
+  // and evaluating it whole finds nothing. Unwrap to the inner expression and
+  // resolve that (stacksjs/stx#1826).
+  //
+  // The failure was disguised: the placeholder comment embeds the unresolved
+  // expression, processExpressions then interpolated the mustache INSIDE that
+  // comment, and the page ended up reading `could not resolve "div"` — which
+  // looks like a resolver that was handed a tag name and refused it, rather
+  // than one that never saw the value at all.
+  const mustache = /^\s*\{\{\s*([\s\S]+?)\s*\}\}\s*$/.exec(expr)
+  const source = mustache ? mustache[1] : expr
+
+  const evaluated = safeEvaluate<string>(source, context)
   if (evaluated && typeof evaluated === 'string')
     return evaluated
 
@@ -72,8 +85,23 @@ function resolveIsName(expr: string, context: Record<string, any>): string | nul
   // failure is a rendered "[Error loading component: ENOENT … open 'nope']"
   // string carrying an absolute filesystem path into the page. Unresolvable
   // stays unresolvable, and keeps the placeholder comment it always had.
-  const literal = expr.trim()
+  const literal = source.trim()
   return HTML_TAGS.has(literal) ? literal : null
+}
+
+/**
+ * How the failed expression should read in the placeholder comment.
+ *
+ * The mustache wrapper is dropped rather than kept verbatim, because the later
+ * expression pass rewrites any `{{ … }}` it finds — including inside this
+ * comment. That turned `could not resolve "{{ as }}"` into `could not resolve
+ * "div"`, which reads as a resolver that was handed a tag name and refused it,
+ * rather than one that never saw the value. Reporting the inner expression is
+ * both accurate and inert.
+ */
+function displayExpression(expr: string): string {
+  const mustache = /^\s*\{\{\s*([\s\S]+?)\s*\}\}\s*$/.exec(expr)
+  return mustache ? mustache[1] : expr
 }
 
 /**
@@ -149,7 +177,7 @@ export async function processDynamicComponents(
 
       if (!componentName || typeof componentName !== 'string') {
         // Could not resolve — leave a placeholder comment
-        const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(m.expr)}" -->`
+        const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(displayExpression(m.expr))}" -->`
         result = result.slice(0, m.index) + replacement + result.slice(m.index + m.full.length)
         continue
       }
@@ -247,7 +275,7 @@ async function processSelfClosingDynamicComponents(
       const componentName = resolveIsName(m.expr, context)
 
       if (!componentName || typeof componentName !== 'string') {
-        const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(m.expr)}" -->`
+        const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(displayExpression(m.expr))}" -->`
         result = result.slice(0, m.index) + replacement + result.slice(m.index + m.full.length)
         continue
       }
