@@ -78,3 +78,48 @@ describe('DOM API diagnostics (#1836)', () => {
     expect(out).not.toContain('composed into')
   })
 })
+
+/**
+ * The second half of #1836: advice that cannot be taken.
+ *
+ * The reported script was a deliberate pre-paint theme bootstrap — a plain
+ * `<script>` that must run before first paint, because a hydrated directive
+ * would flash the wrong theme. Suggesting `useLocalStorage()` there is advice
+ * that cannot be followed: the signals runtime does not exist yet, which is the
+ * whole reason the block is written that way.
+ *
+ * The rule itself is right — a bare `<script>` IS client-side in stx, so it
+ * belongs in the validator. What was wrong is that the only remedy offered was
+ * one the code cannot use, which reads as the rule not understanding the code.
+ */
+describe('pre-paint advice (#1836)', () => {
+  it('offers a remedy that works before first paint', () => {
+    const out = capture(() => {
+      validateClientScript('const s = localStorage.getItem("theme") || "system"', '/app/views/login.stx', STRICT)
+    })
+
+    expect(out).toContain('useLocalStorage()')
+    expect(out).toContain('@appearanceBootstrap')
+    expect(out).toContain('before first paint')
+  })
+
+  it('still flags the call, because a bare script is client-side', () => {
+    // Naming the pre-paint escape hatch must not turn the rule off.
+    const out = capture(() => {
+      validateClientScript('localStorage.setItem("k", 1)', '/app/views/x.stx', STRICT)
+    })
+
+    expect(out).toContain('window.localStorage is prohibited')
+  })
+
+  it('leaves the sessionStorage advice alone', () => {
+    // sessionStorage has no pre-paint story worth naming; only the rule that
+    // actually has one gets the extra clause.
+    const out = capture(() => {
+      validateClientScript('window.sessionStorage.getItem("k")', '/app/views/x.stx', STRICT)
+    })
+
+    expect(out).toContain('useSessionStorage()')
+    expect(out).not.toContain('@appearanceBootstrap')
+  })
+})

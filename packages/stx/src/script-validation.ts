@@ -81,7 +81,14 @@ export const PROHIBITED_DOM_PATTERNS: Array<{
   {
     pattern: /(?:\bwindow\.)?localStorage(?![A-Za-z])/g,
     message: 'window.localStorage is prohibited',
-    suggestion: 'Use useLocalStorage() from composables',
+    // The pre-paint case is named because it is the one place the composable
+    // cannot be the answer: a script that must run before first paint runs
+    // before the signals runtime exists, so useLocalStorage() is not defined
+    // yet. Advice that cannot be taken reads as the rule not understanding the
+    // code (#1836) — and a theme bootstrap is the overwhelmingly common reason
+    // to reach for localStorage in a bare <script>, which @appearanceBootstrap
+    // already does properly.
+    suggestion: 'Use useLocalStorage() from composables — or @appearanceBootstrap if this must run before first paint, where the runtime does not exist yet',
   },
   {
     pattern: /window\.sessionStorage(?![A-Za-z])/g,
