@@ -175,6 +175,37 @@ export function buildDynamicRouteRegexes(fileRouteBase: string): RegExp[] {
 }
 
 /**
+ * Rank a dynamic route file by specificity so the resolver can order candidates
+ * most-specific-first and never let a catch-all (`[...x]`) or a broad `[param]`
+ * shadow a more specific route (stacksjs/stx#1837).
+ *
+ * `discoverFiles` returns Bun glob order — where the catch-all frequently lands
+ * first — and `getRoute` takes the FIRST regex match. Without ordering, `/foo/15`
+ * matched `[...all].stx` (`^(.+)$`) before `foo/[id].stx`, so every dynamic
+ * detail route 404'd. Higher score = more specific = tried first:
+ *   - static segment       → +100   (strongly preferred)
+ *   - `[param]` segment     →   +1   (weakly preferred)
+ *   - `[...rest]` catch-all → -10000 (always last)
+ */
+export function routeSpecificity(fileRouteBase: string): number {
+  const segments = fileRouteBase
+    .replace(/^\.\//, '')
+    .replace(/\\/g, '/')
+    .replace(/\.(stx|md|html)$/, '')
+    .split('/')
+  let score = 0
+  for (const segment of segments) {
+    if (/\[\.\.\./.test(segment))
+      score -= 10000
+    else if (segment.includes('['))
+      score += 1
+    else
+      score += 100
+  }
+  return score
+}
+
+/**
  * Escape a string for safe interpolation into HTML text/attribute context.
  * Used so a crafted request path can't inject markup into the 404 page
  * (reflected-XSS guard).
@@ -1918,12 +1949,18 @@ export async function serve(options: ServeOptions): Promise<void> {
 
     // Strategy 6: Dynamic route segments - [param].stx files
     // e.g., /data/product -> pages/data/[model].stx or data/[model].stx
-    for (const filePath of files) {
+    //
+    // Order candidates MOST-SPECIFIC-FIRST so a catch-all ([...all]) or a broad
+    // [param] can never shadow a more specific route. discoverFiles returns Bun
+    // glob order (the catch-all frequently lands first) and the loop below takes
+    // the FIRST regex match — so unsorted, /article/15 matched [...all].stx via
+    // ^(.+)$ before article/[id].stx, and EVERY dynamic detail route 404'd.
+    // routeSpecificity ranks catch-alls last (see its docs, stacksjs/stx#1837).
+    const dynamicFiles = files
+      .filter(f => f.replace(/^\.\//, '').replace(/\\/g, '/').includes('['))
+      .sort((a, b) => routeSpecificity(b) - routeSpecificity(a))
+    for (const filePath of dynamicFiles) {
       const normalizedFilePath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
-
-      // Check if this file has a dynamic segment like [param]
-      if (!normalizedFilePath.includes('['))
-        continue
 
       // Extract the relative path from patterns
       let relativeFilePath = normalizedFilePath
