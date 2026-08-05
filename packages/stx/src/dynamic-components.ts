@@ -19,6 +19,79 @@ function escapeHtmlComment(value: string): string {
     .replace(/>/g, '&gt;')
 }
 
+/**
+ * HTML elements `<component :is>` may resolve to.
+ *
+ * The polymorphic-`as` pattern the shipped component library is built on names
+ * an ELEMENT, not a component: 26 of the 91 components in @stacksjs/components
+ * render `<component :is="{{ as }}">` where `as` defaults to `div` (13 of them),
+ * `button` (4), `ul`, `li`, `label`, `span`, `p` or `h3`. Not one of them names a
+ * component file. Before this list existed there was no element path at all, so
+ * every one of those resolved to a "could not resolve" comment that also
+ * swallowed its slot content (stacksjs/stx#1826).
+ *
+ * Membership here decides ELEMENT vs COMPONENT, and it is checked first, so a
+ * component file named `div.stx` is unreachable through `:is`. That is the
+ * deliberate trade: an element name in `:is` is the documented pattern and a
+ * lowercase component file shadowing an HTML tag is not.
+ */
+const HTML_TAGS = new Set([
+  'a', 'abbr', 'address', 'article', 'aside', 'audio', 'b', 'bdi', 'bdo', 'blockquote', 'button',
+  'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'data', 'datalist', 'dd', 'del',
+  'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'fieldset', 'figcaption', 'figure',
+  'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'i', 'iframe',
+  'img', 'input', 'ins', 'kbd', 'label', 'legend', 'li', 'main', 'mark', 'menu', 'meter', 'nav',
+  'ol', 'optgroup', 'option', 'output', 'p', 'picture', 'pre', 'progress', 'q', 'rp', 'rt',
+  'ruby', 's', 'samp', 'section', 'select', 'small', 'span', 'strong', 'sub', 'summary', 'sup',
+  'table', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'time', 'tr', 'u', 'ul', 'video',
+])
+
+/** Elements that must not be given a closing tag. */
+const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'])
+
+/**
+ * Resolve the `:is` expression to a name.
+ *
+ * `safeEvaluate` reads the expression as a VARIABLE, which is right for
+ * `:is="as"` but wrong for `:is="div"` — and `:is="div"` is what the template
+ * pipeline produces, because `:is="{{ as }}"` has already been interpolated by
+ * the time this module runs. That case evaluated to undefined and took the
+ * "could not resolve" branch, which is #1826.
+ *
+ * So: try the variable first (an app may legitimately hold a name in one), and
+ * fall back to the literal text when the expression is itself a bare
+ * tag/component identifier.
+ */
+function resolveIsName(expr: string, context: Record<string, any>): string | null {
+  const evaluated = safeEvaluate<string>(expr, context)
+  if (evaluated && typeof evaluated === 'string')
+    return evaluated
+
+  // Only a known element name is taken literally. Widening this to any bare
+  // identifier would turn a typo — `:is="nope"` — into a component lookup whose
+  // failure is a rendered "[Error loading component: ENOENT … open 'nope']"
+  // string carrying an absolute filesystem path into the page. Unresolvable
+  // stays unresolvable, and keeps the placeholder comment it always had.
+  const literal = expr.trim()
+  return HTML_TAGS.has(literal) ? literal : null
+}
+
+/**
+ * Render `name` as a plain HTML element carrying the tag's attributes.
+ *
+ * Attributes are passed through verbatim rather than re-serialized from the
+ * parsed prop map: the map lowercases nothing, drops valueless attributes, and
+ * cannot represent a binding, so rebuilding from it loses `aria-hidden`,
+ * `:class` and friends. The one thing that must go is the `:is` binding itself.
+ */
+function renderAsElement(name: string, attrs: string, slotContent: string): string {
+  const cleanedAttrs = attrs.replace(/\s*(?::is|v-bind:is)\s*=\s*"[^"]*"/gi, '').trim()
+  const open = cleanedAttrs ? `<${name} ${cleanedAttrs}>` : `<${name}>`
+  if (VOID_TAGS.has(name))
+    return cleanedAttrs ? `<${name} ${cleanedAttrs}>` : `<${name}>`
+  return `${open}${slotContent}</${name}>`
+}
+
 // =============================================================================
 // Server-Side Processing
 // =============================================================================
@@ -72,12 +145,19 @@ export async function processDynamicComponents(
 
     try {
       // Evaluate the :is expression
-      const componentName = safeEvaluate<string>(m.expr, context)
+      const componentName = resolveIsName(m.expr, context)
 
       if (!componentName || typeof componentName !== 'string') {
         // Could not resolve — leave a placeholder comment
         const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(m.expr)}" -->`
         result = result.slice(0, m.index) + replacement + result.slice(m.index + m.full.length)
+        continue
+      }
+
+      // An element, not a component: emit real markup and keep the slot.
+      if (HTML_TAGS.has(componentName)) {
+        const rendered = renderAsElement(componentName, m.attrs, m.slotContent)
+        result = result.slice(0, m.index) + rendered + result.slice(m.index + m.full.length)
         continue
       }
 
@@ -164,11 +244,18 @@ async function processSelfClosingDynamicComponents(
     const m = matches[i]
 
     try {
-      const componentName = safeEvaluate<string>(m.expr, context)
+      const componentName = resolveIsName(m.expr, context)
 
       if (!componentName || typeof componentName !== 'string') {
         const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(m.expr)}" -->`
         result = result.slice(0, m.index) + replacement + result.slice(m.index + m.full.length)
+        continue
+      }
+
+      // Self-closing form has no slot; DialogBackdrop is written this way.
+      if (HTML_TAGS.has(componentName)) {
+        const rendered = renderAsElement(componentName, m.attrs, '')
+        result = result.slice(0, m.index) + rendered + result.slice(m.index + m.full.length)
         continue
       }
 
