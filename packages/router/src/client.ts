@@ -279,11 +279,28 @@ export function getRouterScript(): string {
   // _cleanupContainer removed on the way out. Anything unstamped falls back to
   // the old sniff, so a page rendered by an older server behaves exactly as
   // before.
+  //
+  // The sniff itself now asks what the script REGISTERS rather than how it is
+  // spelled (#1828). cleanupContainer deletes window.stx._scopes entries,
+  // element disposers and destroy hooks on the way out, so the scripts that
+  // must run again are exactly the ones that put a scope back. That is
+  // detectable; a leading character is not.
+  //
+  // Deliberately NOT "strip leading comments, then test the first character",
+  // which is the obvious repair and is wrong in the expensive direction. Three
+  // emitters open with a comment and MUST NOT re-run: the animation scripts
+  // register matchMedia and DOMContentLoaded listeners plus an
+  // IntersectionObserver, and the STX lifecycle runtime owns a Map of live
+  // instances. Comment-stripping would flip all three to re-running on every
+  // navigation, leaking a listener and an observer each time and resetting the
+  // instance registry — trading a silent missing component for a silent leak.
+  var REGISTERS_SCOPE=/window\\.stx\\.mount|_scopes\\s*\\[|\\.initScope\\s*\\(|__stxComponentFactories\\s*\\[/;
   function runsAlways(declared, code){
     if(declared==='always')return true;
     if(declared==='once')return false;
+    if(REGISTERS_SCOPE.test(code))return true;
     var head=code.trimStart();
-    return head.charAt(0)==='('||head.charAt(0)===';'||code.indexOf('window.stx.mount')>-1;
+    return head.charAt(0)==='('||head.charAt(0)===';';
   }
   function hashScript(code){
     var h=0;for(var i=0;i<code.length;i++){h=((h<<5)-h)+code.charCodeAt(i);h|=0}

@@ -37,7 +37,7 @@ describe('animationGroup directive', () => {
       '/test.stx',
     )
     expect(result).toContain('<div>Content</div>')
-    expect(result).toContain('<script data-stx-scoped>')
+    expect(result).toMatch(/<script\b[^>]*\bdata-stx-scoped\b[^>]*\bdata-stx-run="always"/)
     expect(result).toContain('Animation Group: myGroup')
     expect(result).toContain('#element1')
     expect(result).toContain('.element2')
@@ -107,7 +107,7 @@ describe('motion directive', () => {
       {},
       '/test.stx',
     )
-    expect(result).toContain('<script data-stx-scoped>')
+    expect(result).toMatch(/<script\b[^>]*\bdata-stx-scoped\b[^>]*\bdata-stx-run="once"/)
     expect(result).toContain('prefers-reduced-motion')
     expect(result).toContain('data-reduced-motion')
   })

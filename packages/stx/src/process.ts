@@ -1668,7 +1668,15 @@ async function processOtherDirectives(
 
   if (hasClientScripts && hasStxUsage && !alreadyHasRuntime) {
     const runtimeCode = generateLifecycleRuntime()
-    const runtimeScript = `<script data-stx-scoped>\n${runtimeCode}\n</script>`
+    // run="once": re-running installs a second MutationObserver per navigation
+    // and re-registers window.STX for no gain — nothing here resolves targets
+    // at run time, so a swapped-in page needs nothing from a second execution.
+    //
+    // Not because it would orphan live instances: the `instances` Map it keeps
+    // is write-only (set and delete, never read), and every operation that
+    // matters addresses the instance object directly or via
+    // node.__stx_instance__, so replacing the Map is unobservable (#1828).
+    const runtimeScript = `<script data-stx-scoped data-stx-run="once">\n${runtimeCode}\n</script>`
 
     // Inject in head before other scripts, or at start of body
     if (output.includes('</head>')) {

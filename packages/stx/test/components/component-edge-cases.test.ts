@@ -305,7 +305,11 @@ Usage:
         }
 
         new Function(factoryPrelude![1])()
-        for (const match of result.matchAll(/<script data-stx-scoped client>(window\.__stxComponentFactories\[[\s\S]*?)<\/script>/g))
+        // Attribute-tolerant, like the prelude match above: instance calls now
+        // also carry data-stx-run="always" so the router re-invokes them after
+        // an SPA swap (#1828). Anchoring on the exact tag made this silently
+        // match nothing, so no scope was registered and _scopes was undefined.
+        for (const match of result.matchAll(/<script\b[^>]*\bdata-stx-scoped\b[^>]*>(window\.__stxComponentFactories\[[\s\S]*?)<\/script>/g))
           new Function(match[1])()
 
         const scopes = (window as any).stx._scopes

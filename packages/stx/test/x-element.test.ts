@@ -29,7 +29,10 @@ describe('x-element runtime injection', () => {
   it('marks the generated runtime so document assembly can identify it', () => {
     const runtime = generateXElementRuntime()
 
-    expect(runtime).toContain(`<script data-stx-scoped ${runtimeMarker}>`)
+    expect(runtime).toContain(`<script data-stx-scoped ${runtimeMarker}`)
+    // The runtime re-runs on SPA navigation to init newly swapped [x-data]
+    // content, and now says so rather than relying on the router's sniff (#1828).
+    expect(runtime).toContain('data-stx-run="always"')
   })
 
   it('keeps exactly one runtime when processed components are assembled', () => {

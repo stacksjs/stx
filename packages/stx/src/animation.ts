@@ -127,10 +127,31 @@ function generateTransitionCSS(
 
 /**
  * Generates necessary script to handle motion preferences
+ *
+ * Every script in this module now states its re-run behaviour with
+ * `data-stx-run`, rather than letting the router infer it from the first
+ * character of the body (#1828).
+ *
+ * The split is whether the script resolves its targets at RUN time.
+ *
+ * `always` for the scroll observer, the animation group, and the per-container
+ * stagger and timeline scripts. Each queries the document when it runs —
+ * `.stx-observe`, a selector list, a container id — so a page swapped in later
+ * only gets animated if the script runs again. The scroll observer and the
+ * group script also REMOVE the `stx-out` class that hides their elements, so
+ * skipping them does not merely drop an animation: the content stays hidden.
+ * These two were already being deduped under the old sniff, because their
+ * bodies open with a comment, so that is a real bug this fixes rather than
+ * preserves. The cost is one extra IntersectionObserver per navigation, which
+ * is the cheaper side of the trade.
+ *
+ * `once` for motion preferences and the runtime registry, which write to
+ * `document.documentElement` and to `window.__stxAnimation` — both survive an
+ * SPA navigation, so re-running only re-installs a matchMedia listener.
  */
 function generateMotionPreferencesScript(): string {
   return `
-<script data-stx-scoped>
+<script data-stx-scoped data-stx-run="once">
   // Motion preferences handling
   (function() {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -186,7 +207,7 @@ function hasAnimationDirectives(template: string): boolean {
  */
 function generateIntersectionObserverScript(threshold = 0.1, rootMargin = '0px'): string {
   return `
-<script data-stx-scoped>
+<script data-stx-scoped data-stx-run="always">
   // Intersection Observer for scroll animations
   (function() {
     const initObserver = () => {
@@ -364,7 +385,7 @@ function generateAnimationGroup(
   const { staggerDelay = 50, sequence = false } = options
 
   const script = `
-<script data-stx-scoped>
+<script data-stx-scoped data-stx-run="always">
   // Animation Group: ${groupName}
   (function() {
     const elements = ${JSON.stringify(elements)};
@@ -727,7 +748,7 @@ function generateStaggerScript(
   animationClass: string,
 ): string {
   return `
-<script data-stx-scoped>
+<script data-stx-scoped data-stx-run="always">
 (function() {
   const container = document.getElementById('${containerId}');
   if (!container) return;
@@ -870,7 +891,7 @@ export function createAnimationTimeline(entries: TimelineEntry[]): string {
   const _timelineId = `stx-timeline-${Math.random().toString(36).slice(2, 9)}`
 
   const script = `
-<script data-stx-scoped>
+<script data-stx-scoped data-stx-run="always">
 (function() {
   const timeline = ${JSON.stringify(entries)};
 
@@ -989,7 +1010,7 @@ export function parseAnimationShorthand(shorthand: string): KeyframeAnimationOpt
  */
 export function generateAnimationRuntime(): string {
   return `
-<script data-stx-scoped>
+<script data-stx-scoped data-stx-run="once">
 window.__stxAnimation = {
   // Registry of animations
   animations: new Map(),

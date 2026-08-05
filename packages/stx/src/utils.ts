@@ -1280,7 +1280,23 @@ finally {
         if (hydrateTrigger) {
           return `${vendorStyleTags}<script type="stx/island" data-stx-island="${scopeId}" data-stx-scoped${attrs}>${wrappedContent}</script>`
         }
-        return `${vendorStyleTags}<script data-stx-scoped${attrs}>${wrappedContent}</script>`
+        // run="always": this CALL is what registers window.stx._scopes[scopeId],
+        // and disposeSubtreeScopes deletes that on the way out of every SPA
+        // navigation, so it has to run again on arrival.
+        //
+        // It was the one scope registration the router's fallback could not
+        // recognise (#1828). The shared factory PRELUDE is stamped always, but
+        // the prelude only re-registers the factory — nothing invokes it. The
+        // call itself begins `window.__stxComponentFactories[...]`, which is
+        // neither of the shapes the sniff accepts, so from the first SPA return
+        // it was hash-deduped and the component's scope was simply never put
+        // back. _handleStxLoad then bails at `if (!scopeVars) return`, leaving
+        // empty :text and inert @click with no error.
+        //
+        // Only the multi-instance form was affected: a component used once is
+        // inlined as `(factoryBody)(scopeId)`, which the sniff accepts by its
+        // leading paren. Two of the same component on one page took this path.
+        return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always"${attrs}>${wrappedContent}</script>`
       }))
 
       // Emit setup immediately after its root. The browser still executes it

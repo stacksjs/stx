@@ -11,7 +11,7 @@ describe('stagger directive', () => {
     )
     expect(result).toContain('stx-stagger-container')
     expect(result).toContain('<ul><li>Item 1</li><li>Item 2</li></ul>')
-    expect(result).toContain('<script data-stx-scoped>')
+    expect(result).toMatch(/<script\b[^>]*\bdata-stx-scoped\b[^>]*\bdata-stx-run="always"/)
     expect(result).toContain('<style>')
   })
 

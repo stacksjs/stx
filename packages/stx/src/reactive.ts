@@ -752,8 +752,19 @@ function generateScopeInitializers(scopes: ReactiveScope[], context: Record<stri
   })();`
   }).join('\n')
 
+  // data-stx-run="always": the initializers below call initScope, which
+  // registers each x-data scope into window.stx._scopes, and cleanupContainer
+  // deletes those on the way out of every SPA navigation.
+  //
+  // Defence in depth rather than a live fix. The router's fallback sniff reads
+  // the first character of the body, which here is the 'S' of a leading
+  // "// STX Reactive Runtime" comment, so this classified as run-once — but the
+  // script never reaches that code today: the fragment builder drops it
+  // (serve.ts skips data-stx-reactive scripts), and the full-document path
+  // hardcodes runAlways. The mark means a change to either path cannot quietly
+  // turn the misclassification into a real one (#1828).
   return `
-<script data-stx-scoped data-stx-reactive>
+<script data-stx-scoped data-stx-reactive data-stx-run="always">
 ${generateReactiveRuntime()}
 ${initializers}
 </script>`

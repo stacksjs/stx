@@ -33,7 +33,12 @@
  * This is injected once per page that declares an x-data scope
  */
 export function generateXElementRuntime(): string {
-  return `<script data-stx-scoped data-stx-x-element-runtime>
+  // run="always": on an SPA navigation readyState is no longer 'loading', so
+  // re-executing calls init() directly, and that walk over [x-data] is how
+  // newly swapped-in content gets its XElement instances. The router already
+  // re-ran this, but only because the body happens to open with '(' — the mark
+  // states it, so a change to the wrapper cannot silently stop it (#1828).
+  return `<script data-stx-scoped data-stx-x-element-runtime data-stx-run="always">
 (function() {
   'use strict';
 
