@@ -313,6 +313,18 @@ export function getRouterScript(): string {
     var match=code.match(/function (__stx_setup_[A-Za-z0-9_]+)\\s*\\(/);
     return match?match[1]:'';
   }
+  // Does this fetched DOCUMENT carry the signals runtime?
+  //
+  // Unlike a fragment, a document holds the answer directly, so there is
+  // nothing to infer from markers or ask the server for: look for the script.
+  // Both emitted shapes carry data-stx-runtime — inline, and the serve-mode
+  // src="/_stx/runtime.js" — with the content sniff behind it for a document
+  // rendered by a server old enough not to stamp the attribute.
+  function documentShipsRuntime(doc,html){
+    if(doc&&doc.querySelector&&doc.querySelector('script[data-stx-runtime]'))return true;
+    return html.indexOf("'use strict';var cloakStyle")!==-1
+      ||(html.indexOf('_cleanupContainer')!==-1&&html.indexOf('signals runtime loading')!==-1);
+  }
   function isSignalsRuntimeScript(script,code){
     return !!(script&&script.hasAttribute&&script.hasAttribute('data-stx-runtime'))
       ||(code.indexOf('_cleanupContainer')!==-1&&code.indexOf('signals runtime loading')!==-1)
@@ -806,6 +818,22 @@ else {
     var docBuildMeta=doc.querySelector('meta[name="stx-build"]');
     var docBuild=docBuildMeta?(docBuildMeta.getAttribute('content')||''):'';
     if(isBuildSkew(docBuild)){reloadForSkew(url,docBuild);return Promise.resolve(false)}
+    // Same hand-off as the fragment path, for the same reason (#1809, #1839).
+    // A full document DOES carry the destination's runtime — and this path
+    // throws it away: prepareRoutedBodyScripts drops every script[src] and
+    // everything isSignalsRuntimeScript matches, on the assumption that the
+    // current page already has one. When it does not, nothing puts a runtime
+    // back, so the destination's client code dies on its first line with
+    // "defineStore is not defined" (defineStore lives on window.stx) and the
+    // page renders quietly inert — no error reaches the user.
+    //
+    // Before the swap and before _cleanupContainer, so we neither dispose the
+    // outgoing page's scopes nor half-replace the document and then reload.
+    if(!window.stx&&documentShipsRuntime(doc,html)){
+      log('[router] document needs the signals runtime and this page has none — full navigation to:',url);
+      location.href=url;
+      return Promise.resolve(false);
+    }
     var newContent=doc.querySelector(containerSel)||doc.querySelector('[data-stx-content]')||doc.querySelector('main');
     if(!newContent){location.href=url;return Promise.resolve(false)}
 
