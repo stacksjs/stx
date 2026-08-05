@@ -374,11 +374,25 @@ describe('stx Security Tests', () => {
     })
 
     it('should escape newlines in event handler strings', async () => {
+      // This assertion used to be guarded by `if (result.includes(...))` and to
+      // search the whole document for /\n.*line2.*'/ — which matches the
+      // SCRIPT's own formatting newline, not one inside the handler string. It
+      // never ran: a page with no client script emitted no binding script at
+      // all, so the guard was false and nothing was checked (stacksjs/stx#1834).
+      //
+      // The property that actually matters: the handler is embedded as a JS
+      // string literal, so a RAW newline inside it would end the literal. The
+      // two-character escape must appear instead.
       const template = `<div @click="line1\nline2">Click</div>`
       const result = await processTemplate(template)
-      if (result.includes('__stx_execute')) {
-        expect(result).not.toMatch(/\n.*line2.*'/)
-      }
+
+      const handlerArgs = [...result.matchAll(/__stx_(?:execute|runHandler)\('((?:[^'\\]|\\.)*)'/g)]
+        .map(match => match[1])
+
+      expect(handlerArgs.length).toBeGreaterThan(0)
+      for (const arg of handlerArgs)
+        expect(arg).not.toContain('\n')
+      expect(handlerArgs.some(arg => arg.includes('\\n'))).toBe(true)
     })
 
     it('should block code execution in template expressions', async () => {

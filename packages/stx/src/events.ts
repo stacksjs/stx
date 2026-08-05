@@ -476,13 +476,12 @@ else {
 /**
  * Generate the complete runtime script
  */
-function generateRuntimeScript(elements: ElementWithEvents[]): string {
-  if (elements.length === 0) {
+export function generateRuntimeScript(events: ParsedEvent[]): string {
+  if (events.length === 0) {
     return ''
   }
 
-  const listeners = elements
-    .flatMap(el => el.events)
+  const listeners = events
     .map(generateEventListener)
     .join('\n')
 
@@ -703,7 +702,7 @@ export function processEventDirectives(
   }
 
   // Generate and inject the runtime script
-  const script = generateRuntimeScript(elements)
+  const script = generateRuntimeScript(elements.flatMap(el => el.events))
 
   // Inject before the LAST </body> (earlier ones may be inside script strings)
   const bodyIdx = output.lastIndexOf('</body>')

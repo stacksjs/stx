@@ -20,7 +20,7 @@ import { processTemplateBindings } from './reactive-bindings'
 import { injectAnalytics } from './analytics'
 import { injectHeatmap } from './heatmap'
 import { processAnimationDirectives } from './animation'
-import { processEventDirectives } from './events'
+import { generateRuntimeScript, processEventDirectives } from './events'
 import { extractBridgeData, processClientScript } from './client-script'
 import { processReactiveDirectives } from './reactive'
 import { processMarkdownFileDirectives } from './assets'
@@ -1806,6 +1806,33 @@ else {
   // (e.g., renderComponentWithSlot), bindings must be preserved for the caller.
   if (clientScriptsTransformed) {
     context.__stx_event_bindings = []
+  }
+
+  // Event bindings nobody consumed.
+  //
+  // processEventDirectives parks them for the client-script pass, which is the
+  // right home when a client script exists. When the page has none, nothing
+  // ever emitted them and the handler was simply gone — no listener, no
+  // runtime, no error, on full page load as well as SPA navigation. The
+  // attribute was understood and then discarded, which is the worst version of
+  // being wrong (stacksjs/stx#1834).
+  //
+  // Only at the top level, and only when the client-script pass did not run: a
+  // component's bindings are deliberately left for its caller to consume (see
+  // the guard just above), and emitting them here too would bind the same
+  // handler twice.
+  if (!clientScriptsTransformed && context.__stxProcessingDepth === 1) {
+    const orphaned = (context.__stx_event_bindings || []) as import('./events').ParsedEvent[]
+    if (orphaned.length > 0) {
+      const script = generateRuntimeScript(orphaned)
+      if (script) {
+        // lastIndexOf, never replace: an earlier `</body>` can sit inside a
+        // script's string content (CLAUDE.md item 24).
+        const bodyIdx = output.lastIndexOf('</body>')
+        output = bodyIdx === -1 ? output + script : output.slice(0, bodyIdx) + script + '\n' + output.slice(bodyIdx)
+      }
+      context.__stx_event_bindings = []
+    }
   }
 
   // A page that mounts without a runtime is never correct, so make it
