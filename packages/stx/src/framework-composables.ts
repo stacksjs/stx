@@ -49,6 +49,65 @@ export function clearFrameworkComposableCache(): void {
 }
 
 /**
+ * Choose which files in the composables directory carry runtime code.
+ *
+ * This ran against a `*.ts` glob, which is only ever right when stx runs from
+ * `src/`. A released package runs from `dist/`, where the directory holds 37
+ * `.js` files and 37 `.d.ts` files and not one plain `.ts` — so every file the
+ * bundler opened was type-only, nothing was ever emitted, and every requested
+ * name was reported as unbundlable. The one configuration where the old glob
+ * worked is the one the repo's own tests run in, which is why it never showed
+ * up here (stacksjs/stx#1832).
+ *
+ * Two compounding details, both fixed by going through this function:
+ *
+ *  - `.d.ts` can never contribute runtime code, so it is excluded outright
+ *    rather than left to be caught downstream.
+ *  - The barrel exclusion compared `endsWith('index.ts')`, and `'index.d.ts'`
+ *    does not end with that. The one file the filter existed to skip was the
+ *    only one it let through — and being a barrel of `export … from …`, it was
+ *    also the one shape the export-stripping below cannot parse.
+ *
+ * Exported so the selection can be tested against a dist-shaped listing without
+ * a built package.
+ */
+export function selectComposableFiles(files: string[]): string[] {
+  const byBase = new Map<string, string>()
+
+  for (const file of files) {
+    const base = path.basename(file)
+    if (base.endsWith('.d.ts'))
+      continue
+
+    const stem = base.replace(/\.[jt]s$/, '')
+    if (stem === 'index')
+      continue
+    if (stem === base)
+      continue
+
+    // Source wins when a directory somehow holds both spellings of a module.
+    const existing = byBase.get(stem)
+    if (existing && !existing.endsWith('.js'))
+      continue
+    byBase.set(stem, file)
+  }
+
+  return [...byBase.values()].sort()
+}
+
+/**
+ * Does the page declare this name itself?
+ *
+ * A local definition shadows the auto-import, so warning that it "will throw
+ * ReferenceError" is a confident claim about working code — which costs more
+ * trust than it saves (cf. #1815).
+ */
+function declaresLocally(source: string, name: string): boolean {
+  const escaped = name.replace(/[$()*+.?[\\\]^{|}-]/g, '\\$&')
+  return new RegExp(`(?:^|[^\\w$.])(?:const|let|var|function|class)\\s+${escaped}\\b`).test(source)
+}
+
+/**
  * Which framework composables does this source actually call?
  *
  * Restricted to the server-only set, so a page calling `useLocalStorage` (which
@@ -84,17 +143,21 @@ export function referencedFrameworkComposables(source: string): string[] {
  *
  * Returns null when nothing is needed.
  */
-export async function getFrameworkComposableScript(source: string): Promise<string | null> {
+export async function getFrameworkComposableScript(source: string, composablesDir?: string): Promise<string | null> {
   const names = referencedFrameworkComposables(source)
   if (names.length === 0)
     return null
 
-  const key = names.join(',')
+  const dir = composablesDir ?? path.join(import.meta.dir, 'composables')
+
+  // The directory belongs in the key. The same names resolve to different code
+  // in a different directory, and once the directory became a parameter a
+  // bundle built from one would have been served for another.
+  const key = `${dir}\0${names.join(',')}`
   const cached = _cache.get(key)
   if (cached !== undefined)
     return cached || null
 
-  const dir = path.join(import.meta.dir, 'composables')
   const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
 
   // Find the files that declare the requested names, and take each file whole:
@@ -106,7 +169,8 @@ export async function getFrameworkComposableScript(source: string): Promise<stri
 
   let files: string[] = []
   try {
-    const glob = new Bun.Glob('*.ts')
+    // Both layouts: `.ts` when running from src, `.js` from a built package.
+    const glob = new Bun.Glob('*.{ts,js}')
     for await (const file of glob.scan({ cwd: dir, absolute: true }))
       files.push(file)
   }
@@ -114,7 +178,7 @@ export async function getFrameworkComposableScript(source: string): Promise<stri
     _cache.set(key, '')
     return null
   }
-  files = files.filter(f => !f.endsWith('index.ts')).sort()
+  files = selectComposableFiles(files)
 
   for (const file of files) {
     let code: string
@@ -140,8 +204,18 @@ export async function getFrameworkComposableScript(source: string): Promise<stri
       // import from stx is a runtime global by the time this executes.
       code = code.replace(/^import\s+.*from\s+['"][^'"]+['"]\s*;?\s*$/gm, '')
       code = code.replace(/^import\s+type\s+.*$/gm, '')
-      code = code.replace(/^export\s+(default\s+)?/gm, '')
-      chunks.push(`// ${path.basename(file, '.ts')}\n${transpiler.transformSync(code).trim()}`)
+      // Re-exports and export lists first. Stripping the bare `export ` prefix
+      // off `export { a, b } from './x'` leaves `{ a, b } from './x'`, which is
+      // not a statement — transformSync throws, the file contributes nothing,
+      // and the name is then reported as if the export were simply absent. The
+      // names these mention are declared in the sibling modules this same loop
+      // visits, so dropping the statements loses nothing.
+      code = code.replace(/^export\s+\*\s+(?:as\s+\w+\s+)?from\s*['"][^'"]+['"]\s*;?\s*$/gm, '')
+      code = code.replace(/^export\s+(?:type\s+)?\{[\s\S]*?\}\s*(?:from\s*['"][^'"]+['"]\s*)?;?\s*$/gm, '')
+      code = code.replace(/^export\s+default\s+/gm, '')
+      // Only where a declaration follows, so nothing else can be decapitated.
+      code = code.replace(/^export\s+(?=(?:declare\s+)?(?:abstract\s+)?(?:async\s+)?(?:function|class|const|let|var|type|interface|enum)\b)/gm, '')
+      chunks.push(`// ${path.basename(file).replace(/\.[jt]s$/, '')}\n${transpiler.transformSync(code).trim()}`)
       for (const name of exports) emitted.add(name)
     }
     catch (error) {
@@ -153,7 +227,7 @@ export async function getFrameworkComposableScript(source: string): Promise<stri
   // runtime, so say so at compile time with the name and the fix. This replaces
   // the blanket "server-only export" warning: now that these are bundled on
   // demand, only a genuine bundling failure is worth reporting.
-  const missing = names.filter(n => !emitted.has(n))
+  const missing = names.filter(n => !emitted.has(n) && !declaresLocally(source, n))
   if (missing.length > 0) {
     console.warn(
       `[stx] could not bundle ${missing.join(', ')} from @stacksjs/stx/composables — `
