@@ -76,6 +76,30 @@ function escapeText(value: string): string {
 }
 
 /** Emit `k="v"` pairs with every value attribute-escaped. */
+/**
+ * The identity of a `<meta>` tag, for deduplication.
+ *
+ * Shared by both places that merge config head tags into a page, because they
+ * disagreed: injectConfigHeadTags deduped and generateDocumentShell just
+ * concatenated, so the same `app.head.meta` produced one `<meta charset>` on a
+ * page that owned its document and two on a page built through the shell
+ * (stacksjs/stx#1840). One key, one answer.
+ *
+ * Returns '' for a tag with no identifying attribute, which the callers treat
+ * as "cannot dedup, keep it".
+ */
+export function metaDedupKey(m: Record<string, string>): string {
+  if (m.name)
+    return `name="${m.name}"`
+  if (m.property)
+    return `property="${m.property}"`
+  if (m.charset != null)
+    return 'charset='
+  if (m['http-equiv'])
+    return `http-equiv="${m['http-equiv']}"`
+  return ''
+}
+
 function attrPairs(entries: Record<string, unknown>, skip?: (key: string) => boolean): string {
   return Object.entries(entries)
     .filter(([k]) => !skip?.(k))
@@ -392,12 +416,29 @@ export function generateDocumentShell(
 
   const pageTitle = options.title || configTitle
 
-  // Build <meta> tags
-  const defaultMeta = [
+  // Build <meta> tags.
+  //
+  // The defaults yield to config rather than stacking with it. Declaring
+  // `charset` or `viewport` in app.head.meta — the obvious place for site-wide
+  // head tags — used to emit TWO of each on every page built through the shell,
+  // while a page topped up by injectConfigHeadTags correctly got one. Same
+  // config, different head, depending only on whether the page owned its own
+  // document (stacksjs/stx#1840).
+  //
+  // Config wins for the same reason the page's own head wins in
+  // injectConfigHeadTags: between an author's declaration and a framework
+  // default, the author's is the more specific statement of intent.
+  const defaultMeta: Record<string, string>[] = [
     { charset: 'UTF-8' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
   ]
-  const allMeta = [...defaultMeta, ...meta]
+  const configuredMetaKeys = new Set(
+    (meta as Record<string, string>[]).map(metaDedupKey).filter(Boolean),
+  )
+  const allMeta = [
+    ...defaultMeta.filter(d => !configuredMetaKeys.has(metaDedupKey(d))),
+    ...meta,
+  ]
   const metaTags = allMeta.map(m => {
     return `  <meta ${attrPairs(m)}>`
   }).join('\n')
@@ -583,15 +624,7 @@ export function injectConfigHeadTags(html: string, headConfig: AppHeadConfig = {
   const parts: string[] = []
 
   for (const m of meta as Record<string, string>[]) {
-    const dedup = m.name
-      ? `name="${m.name}"`
-      : m.property
-        ? `property="${m.property}"`
-        : m.charset != null
-          ? 'charset='
-          : m['http-equiv']
-            ? `http-equiv="${m['http-equiv']}"`
-            : ''
+    const dedup = metaDedupKey(m)
     if (dedup && head.includes(dedup))
       continue
     parts.push(`  <meta ${attrPairs(m)}>`)
