@@ -240,3 +240,50 @@ export function templateNeedsRuntime(template: string): boolean {
     return false
   return HAS_EVENT_HANDLER.test(template) || templateHasReactiveContext(template)
 }
+
+/**
+ * `x-` attributes the signals runtime consumes itself.
+ *
+ * The runtime treats any unrecognised `x-foo` as a generic attribute binding
+ * (`x-href`, `x-src`, `x-alt` all work that way), so the ones it handles
+ * through their own code paths have to be excluded — that exclusion is what
+ * this list is.
+ *
+ * It is also what decides whether a component may carry the attribute, which
+ * is why it lives here rather than only inside the generated runtime. Those
+ * were two hand-maintained lists, and they disagreed about exactly two names:
+ * `x-tooltip` and `x-tooltip-position`, the most recently added pair (#1673).
+ * Putting one on a COMPONENT rewrote it to `:tooltip="Settings"`, a signal
+ * binding over an identifier that does not exist — so the tooltip silently
+ * vanished AND the page reported a hydration invariant failure naming the
+ * tooltip's text rather than the tooltip (#1830). The same attribute on a
+ * plain element worked, which made it unguessable from the authoring side.
+ */
+export const RUNTIME_HANDLED_X_ATTRS: readonly string[] = [
+  'x-text', 'x-html', 'x-model', 'x-show', 'x-if', 'x-for', 'x-cloak',
+  'x-ref', 'x-data', 'x-bind', 'x-class', 'x-style',
+  'x-tooltip', 'x-tooltip-position',
+]
+
+/**
+ * `x-` attributes owned by the Alpine-style reactive bridge, not the signals
+ * runtime. They never reach `X_HANDLED`, but must still survive on a component
+ * for the bridge to find them on the rendered element.
+ */
+export const ALPINE_BRIDGE_X_ATTRS: readonly string[] = [
+  'x-init', 'x-transition', 'x-effect', 'x-on',
+]
+
+/**
+ * Every `x-` attribute that must reach the rendered DOM element untouched when
+ * it is written on a component, rather than being captured as a prop binding.
+ */
+export const COMPONENT_PASSTHROUGH_X_ATTRS: readonly string[] = [
+  ...RUNTIME_HANDLED_X_ATTRS,
+  ...ALPINE_BRIDGE_X_ATTRS,
+]
+
+/** The `X_HANDLED` lookup the generated runtime embeds, as JS source. */
+export function runtimeHandledXAttrsLiteral(): string {
+  return `{${RUNTIME_HANDLED_X_ATTRS.map(n => `'${n}':1`).join(',')}}`
+}

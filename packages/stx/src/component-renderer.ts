@@ -27,6 +27,7 @@ import { maskAtElementPosition, matchHtmlComment } from './html-masking'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
 import { BOOLEAN_ATTRIBUTE_SENTINEL } from './prop-sentinels'
+import { COMPONENT_PASSTHROUGH_X_ATTRS } from './runtime-globals'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -108,11 +109,13 @@ function parseComponentProps(
   // Alpine-style element directives that must remain passthrough so the
   // client-side signals runtime can bind them on the rendered DOM element,
   // rather than being captured as component prop bindings here.
-  const ALPINE_PASSTHROUGH = new Set([
-    'x-cloak', 'x-show', 'x-if', 'x-for', 'x-data', 'x-init',
-    'x-transition', 'x-ref', 'x-effect', 'x-model',
-    'x-text', 'x-html', 'x-class', 'x-style', 'x-on', 'x-bind',
-  ])
+  // Derived, not restated. This was a hand-kept list beside the runtime's own
+  // X_HANDLED, and the two disagreed about exactly the pair the runtime added
+  // last: x-tooltip and x-tooltip-position. Anything missing here is rewritten
+  // to a `:` prop binding, so `x-tooltip="Settings"` on a component became
+  // `:tooltip="Settings"` — a binding over an identifier that does not exist,
+  // which loses the tooltip AND fails hydration for the whole page (#1830).
+  const ALPINE_PASSTHROUGH = new Set(COMPONENT_PASSTHROUGH_X_ATTRS)
 
   // Vue-aligned: `<MyComp :nav-html="…" />` should arrive as `props.navHtml`
   // inside the component (and `const { navHtml } = defineProps()` must work).
