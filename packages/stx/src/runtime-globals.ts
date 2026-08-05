@@ -212,10 +212,14 @@ const HAS_EVENT_HANDLER = /\s@[a-z][\w.:-]*\s*=/i
 export function templateHasReactiveContext(template: string): boolean {
   if (!template)
     return false
-  if (TEMPLATE_REACTIVE_PATTERNS.some(pattern => pattern.test(template)))
+  // Quoted syntax is not syntax: a docs page showing `:if="open"` inside a code
+  // sample is text, and counting it shipped the runtime to pages that never
+  // use it (#1835).
+  const live = blankInertHtmlRegions(template)
+  if (TEMPLATE_REACTIVE_PATTERNS.some(pattern => pattern.test(live)))
     return true
   // Every reactive runtime global, not just the handful spelled out above.
-  return usesReactiveRuntime(template)
+  return usesReactiveRuntime(live)
 }
 
 /**
@@ -238,7 +242,9 @@ export function templateHasReactiveContext(template: string): boolean {
 export function templateNeedsRuntime(template: string): boolean {
   if (!template)
     return false
-  return HAS_EVENT_HANDLER.test(template) || templateHasReactiveContext(template)
+  // Blanked for the same reason as above: `@click="go()"` inside a code sample
+  // is documentation, not a handler (#1835).
+  return HAS_EVENT_HANDLER.test(blankInertHtmlRegions(template)) || templateHasReactiveContext(template)
 }
 
 /**
@@ -286,4 +292,39 @@ export const COMPONENT_PASSTHROUGH_X_ATTRS: readonly string[] = [
 /** The `X_HANDLED` lookup the generated runtime embeds, as JS source. */
 export function runtimeHandledXAttrsLiteral(): string {
   return `{${RUNTIME_HANDLED_X_ATTRS.map(n => `'${n}':1`).join(',')}}`
+}
+
+/**
+ * Blank the parts of an HTML template that cannot carry a live directive,
+ * for DETECTION only — never for output.
+ *
+ * `hasSignalsSyntax` and friends scan raw template text, so a documentation
+ * page quoting stx syntax inside a code sample counted as reactive and shipped
+ * the whole ~159KB signals runtime for markup that is inert text
+ * (stacksjs/stx#1835).
+ *
+ * Only TEXT is blanked, and only inside `<pre>` / `<code>` and HTML comments.
+ * Tags are kept intact, including their attributes, because that is where a
+ * directive actually lives:
+ *
+ *   <pre><code>&lt;div :if="open"&gt;</code></pre>   -> blanked, it is text
+ *   <pre><code><span>&lt;div :if="x"&gt;</span></pre> -> span kept, text blanked
+ *   <pre><button @click="go()">run</button></pre>     -> kept, it is a real button
+ *
+ * Dropping whole regions instead would have been simpler and wrong in the
+ * expensive direction: a page whose only reactive element sits inside a `<pre>`
+ * would lose its runtime and break, which is worse than shipping bytes it does
+ * not need.
+ */
+export function blankInertHtmlRegions(html: string): string {
+  if (!html)
+    return html
+
+  const blankText = (segment: string): string =>
+    segment.replace(/(<[^>]*>)|([^<]+)/g, (_match, tag: string, text: string) => tag ?? ' '.repeat(text.length))
+
+  return html
+    .replace(/(<pre\b[^>]*>)([\s\S]*?)(<\/pre>)/gi, (_m, open: string, body: string, close: string) => open + blankText(body) + close)
+    .replace(/(<code\b[^>]*>)([\s\S]*?)(<\/code>)/gi, (_m, open: string, body: string, close: string) => open + blankText(body) + close)
+    .replace(/<!--[\s\S]*?-->/g, match => ' '.repeat(match.length))
 }
