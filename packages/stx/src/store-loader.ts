@@ -28,6 +28,45 @@ const _cachedStoreScripts = new Map<string, string>()
  * back to reading `storesDir` from the stx config at the current working
  * directory — which is only correct when run from the app's own root.
  */
+/**
+ * Every name a store file binds at the top level.
+ *
+ * Destructuring has to be covered, not just `const x = …`. The pattern this
+ * exists to catch is exactly how apps reach a `window.stx`-only composable
+ * today — `const { useColorMode, state } = window.stx` — and missing it is
+ * worse than not emitting the preamble at all: the generated
+ * `var useColorMode = …` and the store's own `const { useColorMode }` land in
+ * the SAME IIFE, which is a duplicate declaration, which is a SyntaxError, which
+ * takes every store on the page down.
+ */
+function collectDeclaredNames(code: string, into: Set<string>): void {
+  // Plain bindings: const x, let y, function f, class C.
+  for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Z_a-z$][\w$]*)/g)) {
+    if (match[1])
+      into.add(match[1])
+  }
+
+  // Object destructuring: the LOCAL name is what matters, so `a: b` binds `b`,
+  // `a = 1` binds `a`, and `...rest` binds `rest`.
+  for (const match of code.matchAll(/\b(?:const|let|var)\s*\{([^{}]*)\}\s*=/g)) {
+    for (const part of (match[1] ?? '').split(',')) {
+      const local = part.includes(':') ? part.split(':').pop() : part
+      const name = (local ?? '').replace(/=.*$/s, '').replace(/^\s*\.\.\./, '').trim()
+      if (/^[A-Z_a-z$][\w$]*$/.test(name))
+        into.add(name)
+    }
+  }
+
+  // Array destructuring: `const [a, , b] = …`. Holes produce empty entries.
+  for (const match of code.matchAll(/\b(?:const|let|var)\s*\[([^\]]*)\]\s*=/g)) {
+    for (const part of (match[1] ?? '').split(',')) {
+      const name = part.replace(/=.*$/s, '').replace(/^\s*\.\.\./, '').trim()
+      if (/^[A-Z_a-z$][\w$]*$/.test(name))
+        into.add(name)
+    }
+  }
+}
+
 export async function getStoreScript(storesDir?: string): Promise<string | null> {
   let resolvedDir: string
   if (storesDir) {
@@ -103,10 +142,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
       let code = await Bun.file(file).text()
       const storeName = path.basename(file, '.ts')
 
-      for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Z_a-z$][\w$]*)/g)) {
-        if (match[1])
-          declaredNames.add(match[1])
-      }
+      collectDeclaredNames(code, declaredNames)
 
       // Rewrite `@stores` / `@composables` imports to their runtime globals, so
       // a store can use another store or a composable the same way a page can.

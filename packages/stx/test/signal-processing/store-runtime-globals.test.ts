@@ -75,6 +75,48 @@ describe('store runtime globals (#1838)', () => {
     expect(script).toContain('useCookie')
   })
 
+  it('does not rebind a name the store destructures — the duplicate-var trap', async () => {
+    // The pattern every app currently uses to reach a window.stx-only
+    // composable. If the preamble rebinds one of these, the generated `var` and
+    // this `const` land in the SAME IIFE — a duplicate declaration, which is a
+    // SyntaxError, which takes every store on the page down rather than one.
+    const dir = await storesDir({
+      'theme.ts': `
+        const { useColorMode, state, onDestroy } = window.stx
+        export const useTheme = defineStore('theme', () => {
+          const cm = useColorMode()
+          const t = state(cm.mode)
+          onDestroy(() => {})
+          return { t }
+        })
+      `,
+    })
+
+    const script = await getStoreScript(dir) ?? ''
+    for (const name of ['useColorMode', 'state', 'onDestroy'])
+      expect(script).not.toContain(`var ${name} = __stx["${name}"];`)
+    // defineStore is NOT destructured there, so it still gets bound.
+    expect(script).toContain('var defineStore = __stx["defineStore"];')
+  })
+
+  it('covers array destructuring and renamed keys too', async () => {
+    const dir = await storesDir({
+      'odd.ts': `
+        const { useCookie: cookieFn } = window.stx
+        const [useToggle] = [window.stx.useToggle]
+        export const useOdd = defineStore('odd', () => ({ a: cookieFn('x'), b: useToggle() }))
+      `,
+    })
+
+    const script = await getStoreScript(dir) ?? ''
+    // The LOCAL names are what collide, so those are the ones to skip.
+    expect(script).not.toContain('var cookieFn = __stx["cookieFn"];')
+    expect(script).not.toContain('var useToggle = __stx["useToggle"];')
+    // The renamed-from key is not a local binding, so binding it is harmless
+    // and correct — the store never declares `useCookie` itself.
+    expect(script).toContain('var useCookie = __stx["useCookie"];')
+  })
+
   it('only emits bindings for names actually referenced', async () => {
     const dir = await storesDir({
       'tiny.ts': `
