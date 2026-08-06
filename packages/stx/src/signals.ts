@@ -1354,9 +1354,19 @@ finally {
       onDestroy(function() { document.removeEventListener('visibilitychange', onVisibility); });
     }
 
-    // refetchInterval
+    // refetchInterval: poll only while the tab is visible and (if given)
+    // enabled holds; optionally stop after an error so a broken endpoint is
+    // not hammered every interval in a backgrounded tab (#1870).
     if (options.refetchInterval) {
-      var intervalId = setInterval(fetchData, options.refetchInterval);
+      var intervalId = setInterval(function() {
+        if (typeof document !== 'undefined' && document.hidden) return;
+        var en = options.enabled;
+        if (typeof en === 'function' ? !en() : en === false) return;
+        var p = fetchData();
+        if (options.stopOnError && p && typeof p.then === 'function') {
+          p.then(function() { if (error()) clearInterval(intervalId); });
+        }
+      }, options.refetchInterval);
       onDestroy(function() { clearInterval(intervalId); });
     }
 
@@ -4438,15 +4448,23 @@ else if (timer === null) {
     return throttled;
   }
 
-  function useInterval(interval, options) {
+  function useInterval(interval, options, thirdOptions) {
     // Accept the callback-first form too — useInterval(fn, 1000) is what most
     // callers reach for, and silently ignoring the callback (the previous
-    // behaviour) produced a timer that ticked into the void.
+    // behaviour) produced a timer that ticked into the void. An options object
+    // may follow the interval — useInterval(fn, 1000, { enabled, whileVisible })
+    // — or replace it — useInterval(fn, { enabled }) (#1870).
     var callback = null;
     if (typeof interval === 'function') {
       callback = interval;
-      interval = typeof options === 'number' ? options : 1000;
-      options = {};
+      if (typeof options === 'number') {
+        interval = options;
+        options = thirdOptions || {};
+      }
+      else {
+        interval = 1000;
+        options = (options && typeof options === 'object') ? options : {};
+      }
     }
     interval = interval || 1000;
     options = options || {};
@@ -4454,7 +4472,18 @@ else if (timer === null) {
     var id = null;
     var running = false;
     var listeners = [];
+    // A tick is skipped (not counted, listeners not called) while the timer is
+    // gated off: enabled is false / returns false, or whileVisible is set
+    // and the document is hidden. This makes "run only while authorized and
+    // visible" expressible without the caller hand-pausing the timer (#1870).
+    function shouldTick() {
+      if (options.whileVisible && typeof document !== 'undefined' && document.hidden) return false;
+      var en = options.enabled;
+      if (typeof en === 'function') return !!en();
+      return en !== false;
+    }
     function tick() {
+      if (!shouldTick()) return;
       count++;
       listeners.forEach(function(fn) { fn(count); });
     }
