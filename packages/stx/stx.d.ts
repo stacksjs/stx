@@ -149,6 +149,17 @@ declare function useRoute(): {
   hash: string
 }
 declare function setRouteParams(_params: Record<string, string>): void
+
+/**
+ * Reactive access to the current route's dynamic segments.
+ *
+ * Published on `window.stx` by 5daaba1f9b but never added to the auto-imported
+ * list, so it was reachable only as `window.stx.useRouteParams()` — exactly the
+ * authoring-surface gap in #1846.
+ */
+declare function useRouteParams(): StxSignal<Record<string, string>>
+/** One dynamic segment, as a signal. */
+declare function useRouteParam(_name: string, _defaultValue?: string): StxSignal<string>
 /** How a search-param mutation is written to session history (#1825). */
 interface StxSearchParamsCommitOptions {
   /** Replace the current history entry instead of pushing a new one. */
@@ -646,6 +657,8 @@ interface StxRuntimeRegistry {
   invalidateRoute: typeof invalidateRoute
   useRoute: typeof useRoute
   setRouteParams: typeof setRouteParams
+  useRouteParams: typeof useRouteParams
+  useRouteParam: typeof useRouteParam
   useSearchParams: typeof useSearchParams
 
   // Composition
