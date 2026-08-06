@@ -338,6 +338,33 @@ export function isModuleResolutionFailure(message: string): boolean {
 }
 
 /**
+ * Whether a script failed because it named something that does not exist.
+ *
+ * The same category as a module that will not resolve, and worth the same
+ * unconditional warning for the same reason: it is never the legitimate case
+ * the silence exists for. A page that uses only client APIs fails here on
+ * `document` or `window`, which is expected and quiet - but those are the
+ * *only* names it fails on, and a script that trips over anything else has a
+ * bug in it.
+ *
+ * A missing binding is particularly cruel because optional chaining does not
+ * help. `foo?.bar` guards an undefined *property*; an undefined *identifier* is
+ * a ReferenceError before the chain is reached, so a script that carefully
+ * writes `someContext?.value` still throws and still takes every variable in
+ * the file down with it. A page then renders its empty-state branch and reads
+ * as a correct answer rather than as a failure, which is exactly the shape that
+ * is expensive to find.
+ */
+export function isMissingBindingFailure(message: string): boolean {
+  if (!/is not defined|can't find variable/i.test(message))
+    return false
+
+  // The genuinely legitimate ones: a server script reaching for a browser
+  // global is the case the quiet fallback is for.
+  return !/\b(document|window|navigator|localStorage|sessionStorage|self)\b/.test(message)
+}
+
+/**
  * Extract variables from script content and add them to context
  *
  * @param scriptContent - The JavaScript/TypeScript code from a <script> tag
@@ -893,6 +920,13 @@ catch {
       console.warn(
         `[stx] server <script> in ${filePath ?? '<unknown>'} imports a module that does not resolve, `
         + `so every variable in that script is undefined. Cause: ${msg}`,
+      )
+    }
+    else if (isMissingBindingFailure(msg)) {
+      console.warn(
+        `[stx] server <script> in ${filePath ?? '<unknown>'} names something that does not exist, `
+        + `so every variable in that script is undefined. Optional chaining does not help here: `
+        + `an undefined identifier throws before the chain is reached. Cause: ${msg}`,
       )
     }
     else if (process.env.STX_DEBUG) {

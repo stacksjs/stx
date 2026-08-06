@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { convertToCommonJS, extractVariables, isModuleResolutionFailure } from '../../src/variable-extractor'
+import { convertToCommonJS, extractVariables, isMissingBindingFailure, isModuleResolutionFailure } from '../../src/variable-extractor'
 
 /**
  * `import { a as b }` in a `<script server>`.
@@ -135,5 +135,37 @@ describe('an unresolvable import is reported', () => {
       console.warn = original
       await rm(dir, { recursive: true, force: true })
     }
+  })
+})
+
+/**
+ * A script that names something which does not exist.
+ *
+ * The same category as an unresolvable import, and it earns the same
+ * unconditional warning for the same reason: a page using only client APIs
+ * fails on `document` or `window`, and on nothing else. Anything else that is
+ * "not defined" is a bug, and it takes every binding in the script with it.
+ *
+ * What makes it worth naming separately is that optional chaining looks like it
+ * should help and does not. `ctx?.value` guards an undefined *property*; an
+ * undefined *identifier* throws before the chain is reached. A view written
+ * carefully in that style still renders every variable undefined, and every
+ * page reads as a correct empty answer.
+ */
+describe('isMissingBindingFailure', () => {
+  it('recognises the wordings the engines use', () => {
+    expect(isMissingBindingFailure('__stxServeContext is not defined')).toBe(true)
+    expect(isMissingBindingFailure("Can't find variable: someHelper")).toBe(true)
+  })
+
+  it('leaves the browser globals alone, which are the legitimate case', () => {
+    expect(isMissingBindingFailure('document is not defined')).toBe(false)
+    expect(isMissingBindingFailure('window is not defined')).toBe(false)
+    expect(isMissingBindingFailure('localStorage is not defined')).toBe(false)
+  })
+
+  it('does not claim an ordinary runtime error', () => {
+    expect(isMissingBindingFailure('x.map is not a function')).toBe(false)
+    expect(isMissingBindingFailure('Cannot find module \'../x\'')).toBe(false)
   })
 })

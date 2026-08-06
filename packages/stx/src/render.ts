@@ -331,6 +331,23 @@ export async function renderTemplateString(
     // the layout (sticky, z-50, w-60, backdrop-blur-xl, …) silently drop
     // out of the generated CSS.
     __stx_inject_css: renderOptions.injectCSS === true,
+    /**
+     * Declared even when there is no request, so naming it is never a crash.
+     *
+     * The serve path sets this to the real request context. Every other path -
+     * a render from a test, a static build, a router that mounts views itself -
+     * never set it at all, which is not the same as setting it to undefined:
+     * an *undeclared* identifier is a ReferenceError, and optional chaining
+     * does not save it. `__stxServeContext?.cookies` throws before the chain is
+     * reached, and because that happens inside the server script's IIFE it
+     * takes every other binding in the file down with it. The page then renders
+     * its empty-state branch and reads as a correct answer.
+     *
+     * Declaring it here costs one key and makes the guarded spelling every
+     * consumer already writes actually work. The serve path overwrites it below
+     * via renderOptions.context, so a real request is unaffected.
+     */
+    __stxServeContext: undefined,
     ...(renderOptions.context || {}),
   }
 
