@@ -937,6 +937,14 @@ export async function serve(options: ServeOptions): Promise<void> {
   interface HtmlCacheEntry {
     html: string
     signature: Map<string, number>
+    /**
+     * The status the render settled on, so a cached hit answers what the
+     * uncached render did. A page that calls `setResponseStatus` decides its
+     * status inside a server script the cache fast path skips, so without
+     * this a "not found" page would be served as 200 the moment it was
+     * rendered twice - the kind of bug that only appears under load.
+     */
+    status: number
   }
   const htmlCache = new Map<string, HtmlCacheEntry>()
   // Opt-in because generic server scripts may read external state that no
@@ -1318,6 +1326,24 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
     context.__stxServeContext = full
     ;(globalThis as { __stxServeContext?: ServeRequestContext }).__stxServeContext = full
+
+    // The status, decided while rendering rather than declared in the source.
+    //
+    // `definePageMeta({ status })` is read out of the file before anything
+    // runs, which is right for a page that is always an error page and no use
+    // to a page that only sometimes is. A page addressed by a dynamic segment
+    // - a repository, a user, an order - cannot know whether the thing exists
+    // until it has looked, and until now it had no way to say so: it rendered
+    // "no such repository" under a 200, which tells a crawler, a cache and a
+    // monitor that the page is fine.
+    //
+    // Last call wins, so a page can decide late. Anything outside the HTTP
+    // range is ignored rather than thrown, because a status is not worth
+    // failing a rendered page over.
+    context.setResponseStatus = (status: number): void => {
+      if (Number.isInteger(status) && status >= 100 && status <= 599)
+        full.responseStatus = status
+    }
   }
 
   /** Render cache must vary by locale/host/cookies — same `.stx` file can serve different `t()`/host/cookie-gated output. */
@@ -1754,8 +1780,11 @@ export async function serve(options: ServeOptions): Promise<void> {
     if (ENABLE_HTML_CACHE && !skipCacheHint) {
       const cacheKey = htmlCacheKey(filePath, reqCtx)
       const cachedEntry = htmlCache.get(cacheKey)
-      if (cachedEntry && await templateSignatureFresh(cachedEntry.signature))
+      if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
+        if (reqCtx)
+          reqCtx.responseStatus = cachedEntry.status
         return cachedEntry.html
+      }
     }
 
     // Extract server script bodies for variable extraction, and remove only
@@ -1880,7 +1909,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         && isRenderableCacheCandidate(output)
     ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
-      htmlCache.set(htmlCacheKey(filePath, reqCtx), { html: output, signature })
+      htmlCache.set(htmlCacheKey(filePath, reqCtx), { html: output, signature, status: reqCtx?.responseStatus ?? 200 })
     }
 
     return output
@@ -1896,6 +1925,13 @@ export async function serve(options: ServeOptions): Promise<void> {
 
     // Normalize the request path
     let normalizedPath = requestPath.startsWith('/') ? requestPath.slice(1) : requestPath
+
+    // A trailing slash names the same page. Without this, `/docs/` looked for
+    // `docs//index.stx` and matched no dynamic regex either, so a link somebody
+    // wrote with a slash on the end, or a browser that added one, 404'd on a
+    // page that plainly exists. The root is already the empty string here, so
+    // there is nothing to strip off it.
+    normalizedPath = normalizedPath.replace(/\/+$/, '')
 
     // Try to find matching file with various strategies
     const possibleFiles: string[] = []

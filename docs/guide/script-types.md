@@ -50,9 +50,41 @@ definePageMeta({
 
 - **Data fetching**: `fetch()`, database queries, file reads
 - **SEO**: `useSeoMeta()`, `definePageMeta()`
+- **The response status**: `setResponseStatus()`, when the page is the only thing that knows it
 - **Variable declarations**: All `const`, `let`, `var`, and `function` declarations are automatically available to `{{ }}` expressions
 - **Use secrets**: API keys, database credentials -- this code never reaches the browser
 - **Import server modules**: Bun APIs, Node.js builtins, server-only npm packages
+
+### Setting the status from the page
+
+`definePageMeta({ status: 404 })` is read out of the source before anything
+runs, which is right for a page that is always an error page. A page addressed
+by a dynamic segment -- a repository, a user, an order -- cannot know whether
+the thing exists until it has looked, so it needs to say so afterwards:
+
+```html
+<!-- views/[owner]/[repository]/index.stx -->
+<script server>
+const repository = await findRepository(params.owner, params.repository)
+
+if (!repository)
+  setResponseStatus(404)
+</script>
+
+@if (repository)
+  <h1>{{ repository.name }}</h1>
+@else
+  <h1>No such repository</h1>
+@endif
+```
+
+Without it the page renders "no such repository" under a 200, which tells a
+crawler, a cache and an uptime check that the page is fine.
+
+The last call wins, so a page can decide late. A status outside the HTTP range
+is ignored rather than thrown: it is not worth failing a page that has already
+rendered. The render cache carries the status with the HTML, so a cached page
+answers what the first render did.
 
 ### What You Cannot Do in `<script server>`
 
