@@ -828,6 +828,38 @@ finally {
     destroyCallbacks.push(fn);
   }
 
+  // Run mount callbacks and keep whatever teardown they hand back.
+  //
+  // A mount callback may return its own cleanup — the shape LifecycleCallback
+  // has always declared, and the shape every peer framework uses. Only the two
+  // component-factory paths honoured it; the other flush sites called fn() and
+  // dropped the result on the floor, so the teardown never ran and nothing said
+  // so. A listener or timer registered that way outlived its element and leaked
+  // once per re-render (#1857).
+  //
+  // The sink argument is where a returned cleanup is parked: a scoped flush
+  // passes that scope's __destroyCallbacks, a global flush passes the module
+  // queue. (No backticks in this comment — it lives inside a template literal.)
+  function runMountCallbacks(list, sink) {
+    if (!list || !list.length) return;
+    var target = sink || destroyCallbacks;
+    for (var i = 0; i < list.length; i++) {
+      try {
+        var cleanup = list[i]();
+        if (typeof cleanup === 'function') target.push(cleanup);
+      }
+      catch (e) { console.error('[stx] onMount error:', e); }
+    }
+  }
+
+  // The scope's own teardown queue, created on demand so a scope that never
+  // returns a cleanup does not carry an empty array around.
+  function scopeDestroySink(scopeVars) {
+    if (!scopeVars) return destroyCallbacks;
+    scopeVars.__destroyCallbacks = scopeVars.__destroyCallbacks || [];
+    return scopeVars.__destroyCallbacks;
+  }
+
   // Drain any early mount/destroy calls captured by the pre-initialization shim
   if (window.__stx_early_mounts) { window.__stx_early_mounts.forEach(function(fn) { mountCallbacks.push(fn); }); window.__stx_early_mounts = null; }
   if (window.__stx_early_destroys) { window.__stx_early_destroys.forEach(function(fn) { destroyCallbacks.push(fn); }); window.__stx_early_destroys = null; }
@@ -1752,7 +1784,7 @@ catch (e) {
         var sv = sid && window.stx._scopes ? window.stx._scopes[sid] : null;
         if (sv && sv.__mountCallbacks && !sv.__mounted) {
           sv.__mounted = true;
-          sv.__mountCallbacks.forEach(function(fn) { try { fn(); } catch (e) { console.error('[stx] onMount error:', e); } });
+          runMountCallbacks(sv.__mountCallbacks, scopeDestroySink(sv));
         }
         window.dispatchEvent(new CustomEvent('stx:hydrated', { detail: { el: el, trigger: trigger } }));
       };
@@ -3319,10 +3351,7 @@ else if (typeof value === 'string') {
       });
       if (scopeVars.__mountCallbacks && !scopeVars.__mounted) {
         scopeVars.__mounted = true;
-        scopeVars.__mountCallbacks.forEach(function(fn) {
-          try { fn(); }
-          catch (e) { console.error('[stx] onMount error:', e); }
-        });
+        runMountCallbacks(scopeVars.__mountCallbacks, scopeDestroySink(scopeVars));
       }
     });
   }
@@ -5686,7 +5715,7 @@ catch (e) {} }
       el.__stx_disposers = trackEffects(function() { processElement(el, componentScope); });
       if (scopeVars.__mountCallbacks && !scopeVars.__mounted) {
         scopeVars.__mounted = true;
-        scopeVars.__mountCallbacks.forEach(function(fn) { try { fn(); } catch (e) { console.error('[stx] onMount error:', e); } });
+        runMountCallbacks(scopeVars.__mountCallbacks, scopeDestroySink(scopeVars));
       }
     });
     // 3. Bind directives across the subtree.
@@ -5697,7 +5726,7 @@ catch (e) {} }
     if (mountCallbacks.length) {
       var cbs = mountCallbacks.slice();
       mountCallbacks.length = 0;
-      cbs.forEach(function(fn) { try { fn(); } catch (e) { console.error('[stx] mount error:', e); } });
+      runMountCallbacks(cbs, destroyCallbacks);
     }
     window.dispatchEvent(new CustomEvent('stx:hydrated', { detail: { el: container, trigger: 'stream' } }));
   }
@@ -6536,7 +6565,7 @@ else {
       el.removeAttribute('x-cloak');
       el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
 
-      mountCallbacks.forEach(fn => fn());
+      runMountCallbacks(mountCallbacks, destroyCallbacks);
     });
 
     // Multi-root fragment fix: a no-body> setup page tags only the FIRST
@@ -6625,16 +6654,14 @@ else {
       var scopeDeferred = el.hasAttribute && el.hasAttribute('stx-hydrate') && !el.__stx_hydrated;
       if (scopeVars && scopeVars.__mountCallbacks && !scopeVars.__mounted && !scopeDeferred) {
         scopeVars.__mounted = true;
-        scopeVars.__mountCallbacks.forEach(fn => fn());
+        runMountCallbacks(scopeVars.__mountCallbacks, scopeDestroySink(scopeVars));
       }
     });
 
     // Run global mount callbacks (from partial <script client> blocks that call onMount)
     // These are pushed during script execution, before DOMContentLoaded
     console.log('[stx] running global mountCallbacks:', mountCallbacks.length);
-    mountCallbacks.forEach(function(fn) {
-      try { fn(); } catch(e) { console.error('[stx] onMount error:', e); }
-    });
+    runMountCallbacks(mountCallbacks, destroyCallbacks);
     mountCallbacks.length = 0;
 
     // Auto-process elements with data-stx-auto (skip already processed scoped elements)
@@ -7213,15 +7240,12 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       var scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
       if (scopeVars && scopeVars.__mountCallbacks && !scopeVars.__mounted) {
         scopeVars.__mounted = true;
-        scopeVars.__mountCallbacks.forEach(function(fn) { fn(); });
+        runMountCallbacks(scopeVars.__mountCallbacks, scopeDestroySink(scopeVars));
       }
     });
 
     // Flush global mountCallbacks (from scripts re-executed after SPA content swap)
-    mountCallbacks.forEach(function(fn) {
-      try { fn(); }
-catch (e) { console.warn('[stx] mount callback error:', e); }
-    });
+    runMountCallbacks(mountCallbacks, destroyCallbacks);
     mountCallbacks.length = 0;
 
     // Everything that should have hydrated has now had its chance (#1773).

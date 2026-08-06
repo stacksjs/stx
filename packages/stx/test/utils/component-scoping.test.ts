@@ -32,8 +32,10 @@ describe('Component scoping', () => {
       // Should look for mount callbacks in scope
       expect(runtime).toContain('__mountCallbacks')
 
-      // Should iterate and run callbacks
-      expect(runtime).toContain('scopeVars.__mountCallbacks.forEach')
+      // Should iterate and run callbacks. Since #1857 every flush goes through
+      // one helper that also keeps whatever cleanup the callback returns,
+      // instead of nine hand-rolled forEach loops that dropped it.
+      expect(runtime).toContain('runMountCallbacks(scopeVars.__mountCallbacks')
     })
 
     it('should support scope lookup in directive bindings', () => {
@@ -149,7 +151,7 @@ describe('Component scoping', () => {
       const runtime = generateSignalsRuntimeDev()
 
       // After processing [data-stx] elements, should run global mount callbacks
-      expect(runtime).toContain('mountCallbacks.forEach(fn => fn())')
+      expect(runtime).toContain('runMountCallbacks(mountCallbacks, destroyCallbacks)')
     })
   })
 })

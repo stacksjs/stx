@@ -15,9 +15,11 @@ describe('Scope-specific lifecycle callbacks', () => {
       // Should process [data-stx-scope] elements
       expect(runtime).toContain('[data-stx-scope]')
 
-      // Should run scope-specific mount callbacks
+      // Should run scope-specific mount callbacks. Since #1857 this goes
+      // through one helper that also parks any returned cleanup on the
+      // scope's own destroy queue.
       expect(runtime).toContain('__mountCallbacks')
-      expect(runtime).toContain('scopeVars.__mountCallbacks.forEach')
+      expect(runtime).toContain('runMountCallbacks(scopeVars.__mountCallbacks')
     })
 
     it('should access scope by ID during processing', () => {
@@ -130,7 +132,7 @@ describe('Lifecycle hooks', () => {
     it('should run mount callbacks for [data-stx] elements', () => {
       const runtime = generateSignalsRuntimeDev()
       expect(runtime).toContain("querySelectorAll('[data-stx]')")
-      expect(runtime).toContain('mountCallbacks.forEach(fn => fn())')
+      expect(runtime).toContain('runMountCallbacks(mountCallbacks, destroyCallbacks)')
     })
   })
 

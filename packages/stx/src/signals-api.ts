@@ -532,19 +532,27 @@ export function onDestroy(callback: LifecycleCallback): void {
  * rest, which is the same lesson as the page-setup loop in #1805.
  */
 export function runMountCallbacks(): void {
-  drain(mountCallbacks, 'onMount')
+  // A mount callback may return its own teardown — the shape LifecycleCallback
+  // declares. It used to be dropped here, so the teardown never ran (#1857).
+  // It is parked on the destroy queue rather than run now, so it fires when
+  // runDestroyCallbacks() is called, which is the point of returning it.
+  drain(mountCallbacks, 'onMount', destroyCallbacks)
 }
 
 /** Run and clear every callback registered with {@link onDestroy}. */
 export function runDestroyCallbacks(): void {
+  // No sink: a cleanup returned by a cleanup has nowhere meaningful to go, and
+  // parking it back on this queue would keep it alive across drains forever.
   drain(destroyCallbacks, 'onDestroy')
 }
 
-function drain(queue: LifecycleCallback[], label: string): void {
+function drain(queue: LifecycleCallback[], label: string, sink?: LifecycleCallback[]): void {
   const pending = queue.splice(0, queue.length)
   for (const callback of pending) {
     try {
-      callback()
+      const cleanup = callback()
+      if (sink && typeof cleanup === 'function')
+        sink.push(cleanup as LifecycleCallback)
     }
     catch (error) {
       console.error(`[stx] ${label} callback threw:`, error)
