@@ -114,6 +114,52 @@ export const COMPILE_TIME_ONLY_GLOBALS: readonly string[] = [
 ]
 
 /**
+ * Public authoring primitives that are NOT reachable as a bare identifier in a
+ * `<script client>` block, each tagged with WHY — so the client/server boundary
+ * is discoverable in source instead of inferred from a `ReferenceError` at
+ * runtime (stacksjs/stx#1846).
+ *
+ * Paired with the export-side guard in `authoring-surface.test.ts`: a newly
+ * exported composable that is reachable by neither client path — a bare global
+ * in {@link STX_RUNTIME_GLOBALS} (path 1), nor the demand-bundle allowlist
+ * `SERVER_ONLY_COMPOSABLES` (path 2) — must be classified here, or the test
+ * fails. Same "force a decision" contract that COMPILE_TIME_ONLY_GLOBALS and
+ * DELIBERATELY_NOT_GLOBAL already apply in their own directions.
+ *
+ * `client-gap` is deliberately distinct from `server-only`: it marks a primitive
+ * that SHOULD be callable from a client script but is not yet wired into either
+ * client path — a tracked gap, not a boundary.
+ */
+export type NonClientCategory =
+  | 'server-only'
+  | 'builtin-component'
+  | 'compile-time-directive'
+  | 'browser-composable'
+  | 'client-gap'
+
+export const NON_CLIENT_PRIMITIVES: Readonly<Record<string, { category: NonClientCategory, reason: string }>> = {
+  // Server-only: returns/needs a Response or build context. The client
+  // equivalent of redirect() is navigate(), which IS a runtime global.
+  redirect: { category: 'server-only', reason: 'returns an HTTP Response for <script server>/edge/build; use navigate() on the client.' },
+
+  // Demand-bundled: reachable from a client script when referenced (inlined by
+  // framework-composables from src/composables) — just not a bare global.
+  useAsyncData: { category: 'browser-composable', reason: 'inlined on demand from src/composables when a script references it; reachable, not a bare global.' },
+
+  // Template surface, resolved at compile time — used as a tag, never called.
+  Teleport: { category: 'compile-time-directive', reason: 'template tag resolved by processTeleportDirectives; not a script callable.' },
+  StxModalBuiltin: { category: 'builtin-component', reason: 'builtin component used as a template tag; drive open/close from the modal store.' },
+  StxToastBuiltin: { category: 'builtin-component', reason: 'builtin component used as a template tag; push toasts via the toast store.' },
+
+  // client-gap: intended for <script client> but wired into neither client path.
+  // These reactive form primitives live in forms(-validation).ts, which the
+  // client bundle does not include; porting them is the remaining half of #1846.
+  defineForm: { category: 'client-gap', reason: 'reactive form primitive intended for <script client>; not yet wired into a client path (#1846 follow-up).' },
+  validateFields: { category: 'client-gap', reason: 'form validation helper intended for <script client>; not yet wired into a client path (#1846 follow-up).' },
+  validateField: { category: 'client-gap', reason: 'singular form validation helper; same client-gap as validateFields (#1846 follow-up).' },
+}
+
+/**
  * Names whose presence in a client script means it needs the signals runtime
  * and an `stx.mount()` wrapper.
  *

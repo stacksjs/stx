@@ -17,10 +17,13 @@
  * `window.stx` — is already guarded by runtime-globals.test.ts, and matters
  * more: it binds a bare identifier to `undefined` (#1804).
  */
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'bun:test'
 import { Window } from 'very-happy-dom'
-import { STX_RUNTIME_GLOBALS } from '../src/runtime-globals'
+import { NON_CLIENT_PRIMITIVES, STX_RUNTIME_GLOBALS } from '../src/runtime-globals'
 import { generateSignalsRuntimeDev } from '../src/signals'
+import { SERVER_ONLY_COMPOSABLES } from '../src/unresolved-identifiers'
 
 /**
  * Runtime members deliberately NOT auto-imported, each with the reason.
@@ -113,5 +116,78 @@ describe('authoring surface (#1846)', () => {
     const members = new Set(runtimeMembers())
     const stale = Object.keys(DELIBERATELY_NOT_GLOBAL).filter(n => !members.has(n))
     expect(stale).toEqual([])
+  })
+})
+
+/**
+ * The export side of the same contract (#1846). The block above guards
+ * window.stx -> (list | excluded); runtime-globals.test.ts guards
+ * list -> window.stx. Neither catches a primitive EXPORTED from the package
+ * that reaches the client by no path at all — the shape of defineForm /
+ * validateFields, which two independent apps hand-rolled after a bare
+ * ReferenceError.
+ *
+ * A primitive is client-reachable by exactly one of two paths: a bare global in
+ * STX_RUNTIME_GLOBALS (path 1), or an on-demand inline from src/composables via
+ * the SERVER_ONLY_COMPOSABLES allowlist (path 2). Anything else must be
+ * classified in NON_CLIENT_PRIMITIVES with a reason, or these fail — so the next
+ * composable added cannot silently go missing.
+ */
+const inList = new Set(STX_RUNTIME_GLOBALS)
+const bundled = new Set(SERVER_ONLY_COMPOSABLES)
+const isReachable = (name: string): boolean => inList.has(name) || bundled.has(name)
+
+/** Every `use*` composable exported from src/composables, read statically. */
+function composableUseExports(): string[] {
+  const dir = join(import.meta.dir, '../src/composables')
+  const names = new Set<string>()
+  for (const file of readdirSync(dir)) {
+    if (!file.endsWith('.ts') || file.endsWith('.d.ts'))
+      continue
+    const src = readFileSync(join(dir, file), 'utf8')
+    for (const m of src.matchAll(/export\s+(?:async\s+)?function\s+(use[A-Z]\w*)/g))
+      names.add(m[1])
+    for (const m of src.matchAll(/export\s+const\s+(use[A-Z]\w*)\s*=/g))
+      names.add(m[1])
+  }
+  return [...names].sort()
+}
+
+describe('authoring surface — export side (#1846)', () => {
+  it('actually enumerates the composables (the guard is not vacuous)', () => {
+    // A path that silently resolves to nothing would make the guard below pass
+    // by measuring an empty set — worse than no guard.
+    const found = composableUseExports()
+    expect(found.length).toBeGreaterThan(50)
+    expect(found).toContain('useAsyncData')
+  })
+
+  it('every use* composable in src/composables is client-reachable or classified', () => {
+    const undecided = composableUseExports().filter(name =>
+      !isReachable(name) && !(name in NON_CLIENT_PRIMITIVES))
+
+    // A name here is exported but reachable by no client path and unexplained.
+    // Decide it: add to STX_RUNTIME_GLOBALS (path 1, needs a window.stx impl +
+    // stx.d.ts entry), or to SERVER_ONLY_COMPOSABLES (path 2, demand-bundled),
+    // or to NON_CLIENT_PRIMITIVES with a category and reason.
+    expect(undecided).toEqual([])
+  })
+
+  it('the primitives #1846 named are each accounted for, never a silent ReferenceError', () => {
+    const named = ['defineForm', 'validateFields', 'redirect', 'useAsyncData', 'Teleport', 'StxModalBuiltin', 'StxToastBuiltin']
+    const unaccounted = named.filter(name =>
+      !isReachable(name) && !(name in NON_CLIENT_PRIMITIVES))
+    expect(unaccounted).toEqual([])
+  })
+
+  it('every NON_CLIENT_PRIMITIVES entry has a reason and does not contradict reachability', () => {
+    for (const [name, info] of Object.entries(NON_CLIENT_PRIMITIVES)) {
+      expect(info.reason.length).toBeGreaterThan(0)
+      // Only a browser-composable may be both classified here and reachable
+      // (path 2 IS its reachability); any other category claiming a name that
+      // is already a client global is a contradiction.
+      if (info.category !== 'browser-composable')
+        expect(isReachable(name)).toBe(false)
+    }
   })
 })
