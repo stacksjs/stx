@@ -41,6 +41,8 @@
  * @module state-management
  */
 
+import { recordStoreMutation, registerStore as registerDevToolsStore } from './devtools'
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -333,11 +335,28 @@ export function createStore<T>(
     }
   }
 
-  // DevTools integration
+  // DevTools integration.
+  //
+  // Two modules install window.__STX_DEVTOOLS__ with incompatible shapes, and
+  // whichever loads last wins: enableDevTools() (devtools.ts:163) renders the
+  // panel, reads devToolsState.stores and has NO onStoreChange; initDevTools()
+  // (below, :807) has onStoreChange but no panel and a different store map.
+  //
+  // So the unguarded `.onStoreChange(...)` that used to live here was a TypeError
+  // on every store write whenever the panel-owning global had loaded last, and
+  // when the other one won, the panel's own store map was never filled -- which
+  // is the empty store panel reported in #1873.
+  //
+  // Mutations now go through devtools' own recorder, which reads the same state
+  // the panel does and no-ops unless devtools are enabled. The global call is
+  // kept, optional-chained, so initDevTools() consumers keep their history and
+  // neither shape can throw.
   const devToolsNotify = devtools
     ? (action: string, newValue: T) => {
-        if (typeof window !== 'undefined' && (window as any).__STX_DEVTOOLS__) {
-          (window as any).__STX_DEVTOOLS__.onStoreChange(name || 'unnamed', action, newValue)
+        recordStoreMutation(name || 'unnamed', action, currentValue, newValue)
+        if (typeof window !== 'undefined') {
+          const hook = (window as any).__STX_DEVTOOLS__
+          hook?.onStoreChange?.(name || 'unnamed', action, newValue)
         }
       }
     : () => {}
@@ -416,6 +435,19 @@ export function createStore<T>(
   // Register globally if named
   if (name) {
     registerStore(name, store)
+    // ...and with devtools, which is a SEPARATE registry (devtools.ts:348) that
+    // nothing called. Its store panel reads devToolsState.stores, so without
+    // this the panel stayed empty no matter how many stores an app defined --
+    // and time travel, which looks a store up by id, had nothing to find. The
+    // call no-ops unless devtools are enabled. See #1873.
+    if (devtools) {
+      registerDevToolsStore(
+        name,
+        (currentValue ?? {}) as Record<string, unknown>,
+        {},
+        [],
+      )
+    }
   }
 
   return store
