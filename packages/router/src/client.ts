@@ -38,11 +38,11 @@ export function getRouterScript(): string {
   const source = `
 ;(function(){
   'use strict';
-  var ROUTER_REV=5;
+  var ROUTER_REV=6;
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
-  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true};
+  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
   var debug=!!o.debug;
@@ -1336,6 +1336,141 @@ else {
     log('[router] navigating to:',href);
     navigate(withCurrentLocale(href));
   },true);
+
+  // ── Form submission ──
+  // A submit IS a navigation, and the router only ever watched clicks. So any
+  // in-app form tore down the SPA with a full document load and discarded
+  // every signal on the page, and the only way out was a hand-written fetch in
+  // a @submit handler with its own loading and error state.
+  //
+  // Gated exactly like links: a form opts in with data-stx-form, or
+  // interceptForms claims them all — the same shape as [data-stx-link] /
+  // interceptAllLinks. Deliberately not on by default: a POST has side
+  // effects, so claiming one has to be a decision rather than something that
+  // starts happening on upgrade (#1863).
+  function formAttrOf(form,submitter,submitterAttr,formAttr){
+    // A submit button overrides the form: formaction / formmethod / formenctype.
+    var v=submitter&&submitter.getAttribute?submitter.getAttribute(submitterAttr):null;
+    return (v!==null&&v!==undefined)?v:form.getAttribute(formAttr);
+  }
+
+  function formTargetUrl(form,submitter){
+    return formAttrOf(form,submitter,'formaction','action')||(location.pathname+location.search);
+  }
+
+  function formMethodOf(form,submitter){
+    return String(formAttrOf(form,submitter,'formmethod','method')||'get').toLowerCase();
+  }
+
+  function formExcluded(form,submitter){
+    if(!form||form.tagName!=='FORM')return true;
+    if(form.hasAttribute('data-stx-no-router')||form.hasAttribute('data-no-router'))return true;
+    // A form aimed at another browsing context is not this page's navigation.
+    if(form.target&&form.target!=='_self')return true;
+    try{
+      // Resolving against location handles relative, absolute and foreign
+      // schemes in one step: mailto: parses to a null origin and is excluded.
+      if(new URL(formTargetUrl(form,submitter),location.href).origin!==location.origin)return true;
+    }
+    catch(e){return true}
+    return false;
+  }
+
+  function setFormPending(form,on){
+    if(on){form.classList.add('stx-submitting');form.setAttribute('aria-busy','true')}
+    else{form.classList.remove('stx-submitting');form.removeAttribute('aria-busy')}
+  }
+
+  function submitForm(form,submitter){
+    var method=formMethodOf(form,submitter);
+    var action=formTargetUrl(form,submitter);
+    var fd=new FormData(form);
+    // A named submit button contributes its value, exactly as a native submit
+    // would. FormData does not include it, so multi-button forms (Save vs
+    // Delete) would otherwise lose the one piece of state that distinguishes them.
+    if(submitter&&submitter.name)fd.append(submitter.name,submitter.value||'');
+
+    if(method==='get'){
+      // A GET form is a link whose href the user filled in. Serialise and hand
+      // it to the ordinary navigation path — no special swap handling, and it
+      // inherits caching, prefetch and the guard-redirect behaviour for free.
+      var qs=new URLSearchParams();
+      fd.forEach(function(v,k){if(typeof v==='string')qs.append(k,v)});
+      var gu=new URL(action,location.href);
+      gu.search=qs.toString();
+      return navigate(gu.pathname+gu.search+gu.hash);
+    }
+
+    setFormPending(form,true);
+    form.dispatchEvent(new CustomEvent('stx:form-submit',{bubbles:true,detail:{action:action,method:method}}));
+
+    var enctype=String(formAttrOf(form,submitter,'formenctype','enctype')||'').toLowerCase();
+    // Respect the declared encoding. Handing FormData to fetch always produces
+    // multipart, which a server expecting urlencoded will read as empty.
+    var body=enctype.indexOf('multipart')===0?fd:new URLSearchParams(fd);
+    var wantsFragment=shouldUseFragmentResponse();
+
+    return fetch(action,{
+      method:method.toUpperCase(),
+      body:body,
+      headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'},
+      credentials:'same-origin',
+    }).then(function(r){
+      // POST/redirect/GET. The server said where the result lives, so go there
+      // through the normal path rather than swapping the POST's body under the
+      // form's own URL — otherwise reloading re-submits.
+      if(r.redirected&&r.url){
+        var rd=new URL(r.url,location.href);
+        if(rd.origin!==location.origin){location.href=r.url;return}
+        return navigate(rd.pathname+rd.search+rd.hash);
+      }
+      return r.text().then(function(html){
+        var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
+        pendingContainerAttrs=isFrag?(r.headers.get('X-STX-Container-Attrs')||''):'';
+        pendingLayoutDecl=isFrag?null:{layout:r.headers.get('X-STX-Layout')||'',group:r.headers.get('X-STX-Layout-Group')||''};
+        var marked=isFrag?fragmentMarker(r.headers.get('X-STX-Runtime')||'')+html:html;
+        // Deliberately NOT cached: this body is the answer to one POST, and
+        // serving it later for a GET of the same path would be a lie.
+        // 'replace' so re-rendered validation errors do not stack one history
+        // entry per attempt.
+        return Promise.resolve(swap(marked,cacheKey(action),'replace','')).then(function(){
+          applyTitle(r.headers.get('X-STX-Title')||'');
+        });
+      });
+    }).catch(function(err){
+      // No native re-submit on failure: that would send the POST a second time.
+      // The app is told instead, and the form is left intact for a retry.
+      console.error('[router] form submit failed:',err);
+      form.dispatchEvent(new CustomEvent('stx:form-error',{bubbles:true,detail:{error:err,action:action}}));
+    }).finally(function(){setFormPending(form,false)});
+  }
+
+  document.addEventListener('submit',function(e){
+    // Bubble phase, and defaultPrevented is honoured, so a page's own @submit
+    // handler always wins. This is a fallback for forms nobody else claimed,
+    // never an override of one that is already handled.
+    if(e.defaultPrevented)return;
+    var form=e.target;
+    if(!form||form.tagName!=='FORM')return;
+    if(!form.hasAttribute('data-stx-form')&&!form.hasAttribute('data-stx-link')&&!o.interceptForms)return;
+    var submitter=e.submitter||null;
+    if(formExcluded(form,submitter))return;
+    // Without a container there is nothing to swap into, so a native submit is
+    // the only thing that can work.
+    if(!getContainer())return;
+    // Constraint validation has already run by the time submit fires, so an
+    // invalid form never reaches here.
+    e.preventDefault();
+    // A synchronous throw in here would be swallowed by dispatchEvent, and
+    // preventDefault has already run — so the form would be silently dead with
+    // nothing in the console. Report it and clear the pending state instead.
+    try{submitForm(form,submitter)}
+    catch(err){
+      console.error('[router] form submit failed:',err);
+      setFormPending(form,false);
+      form.dispatchEvent(new CustomEvent('stx:form-error',{bubbles:true,detail:{error:err}}));
+    }
+  });
 
   // ── Back/forward ──
   window.addEventListener('popstate',function(){
