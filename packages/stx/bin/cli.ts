@@ -2751,12 +2751,19 @@ else {
     return matrix[b.length][a.length]
   }
 
-  // Check for unknown commands and provide suggestions
-  const knownCommands = [
-    'docs', 'iconify', 'dev', 'a11y', 'build', 'components:build', 'start', 'build:native', 'compile', 'test', 'init', 'new',
-    'format', 'perf', 'debug', 'doctor', 'status', 'watch', 'analyze', 'version', 'deploy',
-    'interactive', 'i', 'story', 'story:build', 'story:test', 'screenshot'
-  ]
+  // Derived from what is actually registered, not restated.
+  //
+  // This was a hand-maintained array, and it had drifted: `bundle`, `pwa` and
+  // `images` are fully implemented, appear in `--help`, and were rejected here
+  // before the parser ever saw argv — so three working commands were
+  // unreachable and the error suggested a different one (#1881).
+  //
+  // aliasNames must be unioned in. `new` and `i` are not entries in their own
+  // right, they are aliases of `init` and `interactive`; deriving from command
+  // names alone would break both, which is the trap in the issue's own
+  // suggested fix.
+  const knownCommands = cli.commands.flatMap(command => [command.name, ...(command.aliasNames ?? [])])
+    .filter((name): name is string => Boolean(name))
 
   const args = process.argv.slice(2)
   if (args.length > 0 && !args[0].startsWith('-')) {
