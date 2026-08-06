@@ -867,6 +867,20 @@ export async function serve(options: ServeOptions): Promise<void> {
     verbose: false,
   }) as Record<string, any>
 
+  // Resolve `root` and the template directories through stx's own single
+  // resolution pass (#1851). bunfig hands back the RAW object, and this path
+  // used to consume the literal strings while `loadStxConfig` inferred a root
+  // and prefixed the same keys with it — so `partialsDir: 'resources/partials'`
+  // meant `resources/partials` here and `resources/resources/partials` on the
+  // build path. Silent at 200 OK: the include just failed and its error text
+  // was rendered into the page.
+  try {
+    const stxMod = options.stxModule ? options.stxModule : await defaultStxModule
+    if (stxMod && typeof (stxMod as any).resolveStxDirectories === 'function')
+      (stxMod as any).resolveStxDirectories(stxConfig, process.cwd())
+  }
+  catch { /* best-effort — fall through with the raw object */ }
+
   // Plugin discovery is a separate concern: stx's own `loadStxConfig`
   // is the function that processes the `plugins` array and populates
   // `_pluginComponentDirs` on the loaded config. Bunfig's `loadConfig`

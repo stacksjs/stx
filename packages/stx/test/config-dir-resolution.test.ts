@@ -18,10 +18,10 @@
  *    renders as-is. Six separate findings in the reporting audit trace back to
  *    one unnoticed config line.
  *
- * The doubling itself is left alone here — un-prefixing is a breaking change to
- * how every consumer resolves paths, and belongs in its own change. What ships
- * is the diagnostic, which costs nothing and turns each of those six findings
- * into a ten-second fix.
+ * The doubling was left alone here originally — un-prefixing is a breaking
+ * change to how every consumer resolves paths, and belonged in its own change.
+ * That change is #1851: prefixing is now idempotent, so the assertions below
+ * expect the un-doubled path. What this file still pins is the diagnostic.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
@@ -91,7 +91,7 @@ describe('root inference uses the requested directory', () => {
 })
 
 describe('a directory that does not exist is reported', () => {
-  it('names the resolved path and the doubling', async () => {
+  it('names the resolved path', async () => {
     captureWarnings()
     await loadStxConfig(path.join(root, 'warned'))
     console.warn = realWarn
@@ -99,8 +99,11 @@ describe('a directory that does not exist is reported', () => {
     const misses = warnings.filter(w => w.includes('resolves to'))
     expect(misses.length).toBeGreaterThan(0)
     // The resolved path is the point — it is what makes the cause obvious.
-    expect(misses.join('\n')).toContain('resources/resources/components')
     expect(misses.join('\n')).toContain('componentsDir')
+    // Resolved ONCE under the root now (#1851). The old expectation here was
+    // `resources/resources/components`, which is what the bug produced.
+    expect(misses.join('\n')).toContain('/warned/resources/components')
+    expect(misses.join('\n')).not.toContain('resources/resources')
   })
 
   it('stays quiet when every configured directory exists', async () => {

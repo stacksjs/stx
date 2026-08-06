@@ -435,16 +435,87 @@ function resolveStxRoot(configRoot?: string, configPagesDir?: string, cwd?: stri
   return { root: '.', pagesDir: defaultPagesDir }
 }
 
+/** Roots already announced, so `stx dev` does not repeat itself per reload. */
+const announcedRoots = new Set<string>()
+
+/**
+ * True when `value` already sits under `root`, so prefixing it again would
+ * double the path.
+ *
+ * `resources/partials` under an inferred `root: 'resources'` is the exact case
+ * that produced `resources/resources/partials` and 54 failed includes whose
+ * error text was rendered into the shipped pages (#1851).
+ */
+function alreadyUnderRoot(value: string, root: string): boolean {
+  const normalizedRoot = root.replace(/[\\/]+$/, '')
+  if (!normalizedRoot || normalizedRoot === '.')
+    return true
+  const normalizedValue = value.replace(/\\/g, '/')
+  const rootAsPosix = normalizedRoot.replace(/\\/g, '/')
+  return normalizedValue === rootAsPosix || normalizedValue.startsWith(`${rootAsPosix}/`)
+}
+
+/**
+ * Resolve `root`, `pagesDir` and the template directories, in place.
+ *
+ * This is the ONE resolution pass. It used to live inline in `loadStxConfig`,
+ * while `bun-plugin`'s `serve()` read the same config file through bunfig and
+ * used the literal strings — so the same key meant two different directories
+ * depending on which path rendered the page, and `root` being *inferred* from
+ * the filesystem meant an ordinary Stacks layout hit the disagreement without
+ * anyone opting into anything (#1851).
+ *
+ * Prefixing is idempotent: a value that already starts with `root` is left
+ * alone. Directory strings stay project-root-relative rather than becoming
+ * absolute — see the note in the issue thread; that contract change is
+ * separable from this correctness fix.
+ */
+export function resolveStxDirectories(loaded: StxConfig, cwd: string): StxConfig {
+  const inferred = !loaded.root
+  const resolved = resolveStxRoot(loaded.root, loaded.pagesDir, cwd)
+  loaded.root = resolved.root
+  loaded.pagesDir = resolved.pagesDir
+
+  // An inferred root silently changes the meaning of every other directory key
+  // in the file, so say it once rather than leaving it to be discovered.
+  if (inferred && resolved.root !== '.') {
+    const announceKey = `${cwd}::${resolved.root}`
+    if (!announcedRoots.has(announceKey)) {
+      announcedRoots.add(announceKey)
+      console.warn(
+        `[stx] No "root" in config — inferred "${resolved.root}" from the project layout. `
+        + `Template directories are resolved under it; set root explicitly to pin this.`,
+      )
+    }
+  }
+
+  if (loaded.root && loaded.root !== '.') {
+    const rootPrefix = loaded.root
+    for (const key of ['partialsDir', 'componentsDir', 'layoutsDir'] as const) {
+      const value = loaded[key]
+      if (typeof value !== 'string' || !value)
+        continue
+      if (path.isAbsolute(value) || alreadyUnderRoot(value, rootPrefix))
+        continue
+      loaded[key] = path.join(rootPrefix, value)
+    }
+  }
+
+  return loaded
+}
+
 /**
  * Warn once per directory key that was configured but does not exist.
  *
- * Directory keys are prefixed with `root`, and `root` may itself be inferred, so
- * a plausible-looking value can resolve somewhere that was never on disk —
- * `componentsDir: 'resources/components'` under an inferred `root: 'resources'`
- * becomes `resources/resources/components`. Components and layouts then fail
- * SILENTLY (the lookups just miss and the tag renders as-is), which is how six
- * separate findings in stacksjs/stx#1792 trace back to one unnoticed config
- * line. Naming the resolved path turns each of them into a ten-second fix.
+ * `root` may itself be inferred, so a plausible-looking value can resolve
+ * somewhere that was never on disk. Components and layouts then fail SILENTLY
+ * (the lookups just miss and the tag renders as-is), which is how six separate
+ * findings in stacksjs/stx#1792 trace back to one unnoticed config line. Naming
+ * the resolved path turns each of them into a ten-second fix.
+ *
+ * The message used to say the value had been prefixed with `root` twice, which
+ * is no longer true now that prefixing is idempotent (#1851) — a warning that
+ * misdescribes the cause sends people to the wrong line.
  */
 function warnMissingDirs(loaded: StxConfig, cwd: string): void {
   const keys: Array<keyof StxConfig> = ['componentsDir', 'layoutsDir', 'partialsDir']
@@ -455,12 +526,11 @@ function warnMissingDirs(loaded: StxConfig, cwd: string): void {
     const abs = path.isAbsolute(value) ? value : path.join(cwd, value)
     if (fs.existsSync(abs))
       continue
-    const prefixed = !!loaded.root && loaded.root !== '.'
+    const root = loaded.root
+    const underRoot = !!root && root !== '.'
     console.warn(
       `[stx] ${String(key)} resolves to "${abs}", which does not exist. Configured as "${value}"`
-      + (prefixed
-        ? ` and prefixed with root "${loaded.root}" — a value that already includes the root gets it twice.`
-        : '.'),
+      + (underRoot ? `, resolved under root "${root}".` : '.'),
     )
   }
 }
@@ -528,24 +598,7 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
 
     applyStateDir(loaded)
 
-    // Resolve the source root and pages directory for .stx files
-    const resolved = resolveStxRoot(loaded.root, loaded.pagesDir, effectiveCwd)
-    loaded.root = resolved.root
-    loaded.pagesDir = resolved.pagesDir
-
-    // If root is not '.', prefix directory paths that aren't already absolute
-    if (loaded.root && loaded.root !== '.') {
-      const rootPrefix = loaded.root
-      if (loaded.partialsDir && !path.isAbsolute(loaded.partialsDir)) {
-        loaded.partialsDir = path.join(rootPrefix, loaded.partialsDir)
-      }
-      if (loaded.componentsDir && !path.isAbsolute(loaded.componentsDir)) {
-        loaded.componentsDir = path.join(rootPrefix, loaded.componentsDir)
-      }
-      if (loaded.layoutsDir && !path.isAbsolute(loaded.layoutsDir)) {
-        loaded.layoutsDir = path.join(rootPrefix, loaded.layoutsDir)
-      }
-    }
+    resolveStxDirectories(loaded, effectiveCwd)
 
     warnMissingDirs(loaded, effectiveCwd)
 
