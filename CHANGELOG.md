@@ -1,5 +1,102 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.153...v0.2.154)
+
+## 🚀 Features
+
+- **composables**: useSearchParams mutators take { replace } (#1825) ([40f9215](https://github.com/stacksjs/stx/commit/40f9215)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1825](https://github.com/stacksjs/stx/issues/1825), [#1825](https://github.com/stacksjs/stx/issues/1825))
+- **devtools-extension**: icons, packaging and a store listing (#1754) ([f8c77c3](https://github.com/stacksjs/stx/commit/f8c77c3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1754](https://github.com/stacksjs/stx/issues/1754), [#1754](https://github.com/stacksjs/stx/issues/1754))
+- **composables**: ship the framework's browser-only composables to the client (#1805) ([c139a0c](https://github.com/stacksjs/stx/commit/c139a0c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1805](https://github.com/stacksjs/stx/issues/1805), [#1805](https://github.com/stacksjs/stx/issues/1805))
+- **diagnostics**: name a server-only composable at compile time (#1805) ([2e56305](https://github.com/stacksjs/stx/commit/2e56305)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1805](https://github.com/stacksjs/stx/issues/1805), [#1805](https://github.com/stacksjs/stx/issues/1805))
+
+## 🐛 Bug Fixes
+
+- **serve**: mint a CSRF token before rendering, so a form can carry one ([2f6688c](https://github.com/stacksjs/stx/commit/2f6688c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **strict**: offer a pre-paint remedy for the localStorage rule ([8cc5154](https://github.com/stacksjs/stx/commit/8cc5154)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **shell**: dedup config meta against the shell's own charset/viewport defaults ([2aea676](https://github.com/stacksjs/stx/commit/2aea676)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **strict**: point the DOM API diagnostic at the file that contains the code (#1836) ([ba9381e](https://github.com/stacksjs/stx/commit/ba9381e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1836](https://github.com/stacksjs/stx/issues/1836), [#1836](https://github.com/stacksjs/stx/issues/1836))
+- **signals**: quoted directive syntax is documentation, not reactivity ([630cc24](https://github.com/stacksjs/stx/commit/630cc24)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **events**: wire up an @click on a page that has no client script ([4b3d8b7](https://github.com/stacksjs/stx/commit/4b3d8b7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: honour the layout decision that caused the full-document fetch ([35c13b7](https://github.com/stacksjs/stx/commit/35c13b7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stores**: collect destructured names too, or the preamble redeclares them (#1838) ([a96cbc3](https://github.com/stacksjs/stx/commit/a96cbc3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1838](https://github.com/stacksjs/stx/issues/1838), [#1838](https://github.com/stacksjs/stx/issues/1838))
+- **components**: derive the x- passthrough list from the runtime's own handled set ([3525160](https://github.com/stacksjs/stx/commit/3525160)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: resolve an interpolated :is, the form the library actually writes ([f0ef6d7](https://github.com/stacksjs/stx/commit/f0ef6d7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **composables**: bundle framework composables from a built package, not only from src ([68304ba](https://github.com/stacksjs/stx/commit/68304ba)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stores**: give store files the runtime-globals preamble (#1838) ([6c9a8cf](https://github.com/stacksjs/stx/commit/6c9a8cf)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1838](https://github.com/stacksjs/stx/issues/1838), [#1838](https://github.com/stacksjs/stx/issues/1838))
+- **signals**: don't flag literal {{ }} inside an un-hydrated deferred island ([04ce536](https://github.com/stacksjs/stx/commit/04ce536)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: hand off to a real load on the document path too, not just fragments ([260c4ce](https://github.com/stacksjs/stx/commit/260c4ce)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **bridge**: publish server values the client references, not ones it mentions ([3b234d5](https://github.com/stacksjs/stx/commit/3b234d5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: <component :is> can name an ELEMENT, not just a component (#1826) ([708c0bc](https://github.com/stacksjs/stx/commit/708c0bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1826](https://github.com/stacksjs/stx/issues/1826), [#1826](https://github.com/stacksjs/stx/issues/1826))
+- **router**: re-run the scripts that register a scope, by what they do not how they look ([338e4ba](https://github.com/stacksjs/stx/commit/338e4ba)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **dev-server**: don't let a catch-all page shadow static-asset requests ([2f316c1](https://github.com/stacksjs/stx/commit/2f316c1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **events**: invoke bare handler references, and stop the event script ending itself ([92527f1](https://github.com/stacksjs/stx/commit/92527f1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **dev-server**: order dynamic route candidates by specificity so a catch-all can't shadow specific routes ([9ccbd4e](https://github.com/stacksjs/stx/commit/9ccbd4e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **events**: stop stripping @click from pages that have a reactive scope (#1824) ([88c5da0](https://github.com/stacksjs/stx/commit/88c5da0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1824](https://github.com/stacksjs/stx/issues/1824), [#1824](https://github.com/stacksjs/stx/issues/1824))
+- **signals**: make "mounts without a runtime" unrepresentable ([c5e681b](https://github.com/stacksjs/stx/commit/c5e681b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: let the server declare whether a fragment needs the runtime ([42128d8](https://github.com/stacksjs/stx/commit/42128d8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: align macos sidebar branding ([19bc000](https://github.com/stacksjs/stx/commit/19bc000)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router,strict**: one router default, and close the allowPatterns fail-open (#1792 P2, P3) ([3cfe11a](https://github.com/stacksjs/stx/commit/3cfe11a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1792](https://github.com/stacksjs/stx/issues/1792), [#1792](https://github.com/stacksjs/stx/issues/1792))
+- **seo**: make definePageMeta and site config titles actually set the title (#1792 items 5, 6) ([6834ab1](https://github.com/stacksjs/stx/commit/6834ab1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1792](https://github.com/stacksjs/stx/issues/1792), [#1792](https://github.com/stacksjs/stx/issues/1792))
+- three config/discovery defects (#1821, #1822, #1823) ([4e12377](https://github.com/stacksjs/stx/commit/4e12377)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1821](https://github.com/stacksjs/stx/issues/1821), [#1822](https://github.com/stacksjs/stx/issues/1822), [#1823](https://github.com/stacksjs/stx/issues/1823), [#1821](https://github.com/stacksjs/stx/issues/1821), [#1822](https://github.com/stacksjs/stx/issues/1822), [#1823](https://github.com/stacksjs/stx/issues/1823))
+- **signals**: three useFetch/useQuery lifecycle defects (#1818) ([aebc6a4](https://github.com/stacksjs/stx/commit/aebc6a4)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1818](https://github.com/stacksjs/stx/issues/1818), [#1818](https://github.com/stacksjs/stx/issues/1818))
+- **signals**: derive the runtime gate and auto-mount test from the runtime globals (#1819, #1820) ([44a7c7b](https://github.com/stacksjs/stx/commit/44a7c7b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1819](https://github.com/stacksjs/stx/issues/1819), [#1820](https://github.com/stacksjs/stx/issues/1820), [#1819](https://github.com/stacksjs/stx/issues/1819), [#1820](https://github.com/stacksjs/stx/issues/1820))
+- **site-builder**: don't let one bad view fail the whole site build (#1810) ([8d89cb1](https://github.com/stacksjs/stx/commit/8d89cb1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1810](https://github.com/stacksjs/stx/issues/1810), [#1810](https://github.com/stacksjs/stx/issues/1810))
+- **site-builder**: stand down the legacy theme guard when app.colorMode owns the theme (#1812) ([0f8e3e9](https://github.com/stacksjs/stx/commit/0f8e3e9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1812](https://github.com/stacksjs/stx/issues/1812), [#1812](https://github.com/stacksjs/stx/issues/1812))
+- **loops**: keep a nested @foreach over a loop variable server-side ([d0a9f00](https://github.com/stacksjs/stx/commit/d0a9f00)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: stop the boolean-attribute sentinel reaching the response (#1816) ([ae82914](https://github.com/stacksjs/stx/commit/ae82914)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1816](https://github.com/stacksjs/stx/issues/1816), [#1816](https://github.com/stacksjs/stx/issues/1816))
+- **components**: let <component :is> reach its own handler (#1817) ([9680549](https://github.com/stacksjs/stx/commit/9680549)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1817](https://github.com/stacksjs/stx/issues/1817), [#1817](https://github.com/stacksjs/stx/issues/1817))
+- **color-mode,strict-lint**: honour an explicit null from config; stop two lint rules flagging working code (#1813, #1815) ([c493977](https://github.com/stacksjs/stx/commit/c493977)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1813](https://github.com/stacksjs/stx/issues/1813), [#1815](https://github.com/stacksjs/stx/issues/1815), [#1813](https://github.com/stacksjs/stx/issues/1813), [#1815](https://github.com/stacksjs/stx/issues/1815))
+- **scripts**: escape script bodies at emit time so a closing tag cannot truncate them (#1792 item 2) ([dc04867](https://github.com/stacksjs/stx/commit/dc04867)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1792](https://github.com/stacksjs/stx/issues/1792), [#1792](https://github.com/stacksjs/stx/issues/1792))
+- **config**: probe the requested directory for root, and report a directory that isn't there (#1792 item 8 / P1) ([13bee89](https://github.com/stacksjs/stx/commit/13bee89)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1792](https://github.com/stacksjs/stx/issues/1792), [#1792](https://github.com/stacksjs/stx/issues/1792))
+- **layout**: anchor the auto-layout gate so a doctype in page content cannot disable it (#1792 item 1) ([c58c9ca](https://github.com/stacksjs/stx/commit/c58c9ca)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1792](https://github.com/stacksjs/stx/issues/1792), [#1792](https://github.com/stacksjs/stx/issues/1792))
+- **security**: escape server values injected into client scripts; fix a title double-encode ([d4b6a76](https://github.com/stacksjs/stx/commit/d4b6a76)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals-api**: drain the module-path lifecycle queues (#1811) ([f35c870](https://github.com/stacksjs/stx/commit/f35c870)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1811](https://github.com/stacksjs/stx/issues/1811), [#1811](https://github.com/stacksjs/stx/issues/1811))
+- **shell**: anchor document detection so a comment cannot skip the shell (#1792 item 3) ([f8f3414](https://github.com/stacksjs/stx/commit/f8f3414)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1792](https://github.com/stacksjs/stx/issues/1792), [#1792](https://github.com/stacksjs/stx/issues/1792))
+- **shell**: escape everything the document shell interpolates (#1792 item 4) ([c272106](https://github.com/stacksjs/stx/commit/c272106)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1792](https://github.com/stacksjs/stx/issues/1792), [#1792](https://github.com/stacksjs/stx/issues/1792))
+- **dev-server**: isolate per-view build failures and name the file (#1810) ([f539929](https://github.com/stacksjs/stx/commit/f539929)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1810](https://github.com/stacksjs/stx/issues/1810), [#1810](https://github.com/stacksjs/stx/issues/1810))
+- **runtime**: implement navigate options and useSearchParams delete/has (#1807, #1806) ([e22f581](https://github.com/stacksjs/stx/commit/e22f581)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1807](https://github.com/stacksjs/stx/issues/1807), [#1806](https://github.com/stacksjs/stx/issues/1806), [#1807](https://github.com/stacksjs/stx/issues/1807), [#1806](https://github.com/stacksjs/stx/issues/1806))
+- **runtime**: one auto-import list, backed by the runtime (#1804, #1808) ([80101bf](https://github.com/stacksjs/stx/commit/80101bf)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1804](https://github.com/stacksjs/stx/issues/1804), [#1808](https://github.com/stacksjs/stx/issues/1808), [#1804](https://github.com/stacksjs/stx/issues/1804), [#1808](https://github.com/stacksjs/stx/issues/1808))
+- **router**: hand off to a full load when a fragment needs a runtime this page lacks (#1809) ([5c1a630](https://github.com/stacksjs/stx/commit/5c1a630)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1809](https://github.com/stacksjs/stx/issues/1809), [#1809](https://github.com/stacksjs/stx/issues/1809))
+- **signals**: contain a throwing page setup; make useClipboard's reset observable (#1805) ([acbaebf](https://github.com/stacksjs/stx/commit/acbaebf)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1805](https://github.com/stacksjs/stx/issues/1805), [#1805](https://github.com/stacksjs/stx/issues/1805))
+- **color-mode**: keep the boot script first in <head> (#1803) ([bfd6332](https://github.com/stacksjs/stx/commit/bfd6332)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1803](https://github.com/stacksjs/stx/issues/1803), [#1803](https://github.com/stacksjs/stx/issues/1803))
+- **router**: don't let a debug log break SPA nav on runtime-less pages (#1809) ([0068c36](https://github.com/stacksjs/stx/commit/0068c36)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1809](https://github.com/stacksjs/stx/issues/1809), [#1809](https://github.com/stacksjs/stx/issues/1809))
+- **signals**: don't flag {{ }} pending a deferred :if bind as a hydration miss (#1773) ([295d590](https://github.com/stacksjs/stx/commit/295d590)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1773](https://github.com/stacksjs/stx/issues/1773), [#1773](https://github.com/stacksjs/stx/issues/1773))
+- **signals**: stop x-model resetting the caret on every keystroke ([0dcb6fb](https://github.com/stacksjs/stx/commit/0dcb6fb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **reactivity**: don't require a DOM to flush a 'post' watcher ([0e500c4](https://github.com/stacksjs/stx/commit/0e500c4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: stop executing data scripts on a fragment swap ([14433bb](https://github.com/stacksjs/stx/commit/14433bb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ♻️ Code Refactoring
+
+- **expressions**: retire the three per-caller preservation overrides (#1800, steps 2-3) ([8c4ce7d](https://github.com/stacksjs/stx/commit/8c4ce7d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1800](https://github.com/stacksjs/stx/issues/1800), [#1800](https://github.com/stacksjs/stx/issues/1800))
+- **expressions**: stamp the preservation gate on the context (#1800, step 1) ([45d4bce](https://github.com/stacksjs/stx/commit/45d4bce)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1800](https://github.com/stacksjs/stx/issues/1800), [#1800](https://github.com/stacksjs/stx/issues/1800))
+
+## 📚 Documentation
+
+- land the agent guide (#1791) ([2516610](https://github.com/stacksjs/stx/commit/2516610)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1791](https://github.com/stacksjs/stx/issues/1791), [#1791](https://github.com/stacksjs/stx/issues/1791))
+- resumability research spike (#1753) ([b6e0882](https://github.com/stacksjs/stx/commit/b6e0882)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1753](https://github.com/stacksjs/stx/issues/1753), [#1753](https://github.com/stacksjs/stx/issues/1753))
+- record the template-literal backtick trap in the runtime files ([72ddeeb](https://github.com/stacksjs/stx/commit/72ddeeb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **runtime**: record scoped mount ordering issue ([64a310c](https://github.com/stacksjs/stx/commit/64a310c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **strict**: record diagnostic source mapping issue ([92daf89](https://github.com/stacksjs/stx/commit/92daf89)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **strict**: record Postline DOM follow-ups ([5a54241](https://github.com/stacksjs/stx/commit/5a54241)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: record form binding follow-ups ([dee8c85](https://github.com/stacksjs/stx/commit/dee8c85)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **serve**: record integration follow-ups ([e7cf112](https://github.com/stacksjs/stx/commit/e7cf112)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧪 Tests
+
+- **async-components**: pin re-resolution after SPA navigation (#1829) ([34236a3](https://github.com/stacksjs/stx/commit/34236a3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1829](https://github.com/stacksjs/stx/issues/1829), [#1829](https://github.com/stacksjs/stx/issues/1829))
+- **build**: catch a stale bundled copy of the signals runtime (#1814) ([9b618cc](https://github.com/stacksjs/stx/commit/9b618cc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1814](https://github.com/stacksjs/stx/issues/1814), [#1814](https://github.com/stacksjs/stx/issues/1814))
+- **signals**: pin the :if audit exemption and the plain-value :if crash ([54c7ce4](https://github.com/stacksjs/stx/commit/54c7ce4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.154 ([dd79e98](https://github.com/stacksjs/stx/commit/dd79e98)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **devtools-extension**: drop the store packaging scaffolding ([d0cc127](https://github.com/stacksjs/stx/commit/d0cc127)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.152...v0.2.153)
 
 ## 💥 Breaking Changes
