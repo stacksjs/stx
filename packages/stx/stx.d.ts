@@ -190,6 +190,35 @@ interface StxMutationResult<T> {
 declare function useFetch<T = any>(_url: string, _options?: any): StxQueryResult<T>
 declare function useQuery<T = any>(_url: string, _options?: any): StxQueryResult<T>
 declare function useMutation<T = any>(_url: string, _options?: any): StxMutationResult<T>
+
+/** Context handed to a request interceptor. Mutate it; the return is ignored. */
+interface StxFetchRequestContext {
+  /** Which primitive made the call: 'useFetch' | 'useQuery' | 'useMutation'. */
+  source: string
+  /** Reassignable, so a hook can prefix a baseURL. */
+  url: string
+  /** `headers` is normalised to an object before the hook runs. */
+  options: RequestInit & { headers: Record<string, string> }
+}
+
+/** Context handed to a response interceptor. */
+interface StxFetchResponseContext extends StxFetchRequestContext {
+  response: Response
+}
+
+/**
+ * Install request/response interceptors for every stx data primitive.
+ *
+ * All three funnel through one internal fetch, so a single pair of hooks
+ * carries an auth header or observes a 401 across `useFetch`, `useQuery` and
+ * `useMutation`. Calling this again REPLACES the hooks rather than adding to
+ * them, so a re-evaluated module cannot install the same interceptor twice.
+ */
+declare function configureFetch(_config: {
+  onRequest?: (_ctx: StxFetchRequestContext) => void | Promise<void>
+  onResponse?: (_ctx: StxFetchResponseContext) => void | Promise<void>
+}): void
+
 declare function useOptimistic<T = any, A = any>(
   _base: StxSignal<T> | (() => T) | T,
   _reducer: (_current: T, _action: A) => T,
@@ -591,6 +620,7 @@ interface StxRuntimeRegistry {
   useRef: typeof useRef
   useQuery: typeof useQuery
   useMutation: typeof useMutation
+  configureFetch: typeof configureFetch
   useOptimistic: typeof useOptimistic
 
   // Routing

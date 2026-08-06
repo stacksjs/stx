@@ -41,7 +41,7 @@
  * plumbing, not part of the authoring surface.
  */
 export const STX_RUNTIME_GLOBALS: readonly string[] = [
-  'batch', 'computed', 'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps',
+  'batch', 'computed', 'configureFetch', 'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps',
   'defineSlots', 'defineStore', 'derived', 'effect', 'goBack', 'goForward', 'inject',
   'isDerived', 'isSignal', 'navigate',
   'nextTick', 'onBeforeMount', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted',

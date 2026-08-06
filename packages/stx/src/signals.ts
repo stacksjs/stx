@@ -190,12 +190,57 @@ console.log('[stx] entering IIFE');
     return err;
   }
 
+  // One place an app can reach the data layer. Every stx data primitive goes
+  // through __stxFetch, the only fetch call in this runtime, so a single pair
+  // of hooks covers useFetch, useQuery and useMutation (#1855).
+  //
+  // Without it there is no way to attach an Authorization header or notice a
+  // 401 in one place, which is the reason an app keeps hand-written fetch
+  // calls sitting next to the primitives that were meant to replace them.
+  //
+  // Hooks mutate the context they are handed and their return value is
+  // ignored — the ofetch shape most people will already know. Throwing from a
+  // hook fails the request, which is what a token-refresh flow wants.
+  var __stxFetchHooks = { onRequest: null, onResponse: null };
+
+  function configureFetch(cfg) {
+    cfg = cfg || {};
+    // Replace rather than stack: a module re-evaluated by hot reload or by a
+    // SPA script re-run must not end up with the same interceptor installed
+    // twice, sending two Authorization headers or counting a 401 twice.
+    __stxFetchHooks.onRequest = typeof cfg.onRequest === 'function' ? cfg.onRequest : null;
+    __stxFetchHooks.onResponse = typeof cfg.onResponse === 'function' ? cfg.onResponse : null;
+  }
+
+  // headers may be a function, so it can be evaluated per request rather than
+  // captured once — a token that changes between calls. Object spread over a
+  // function copies no own enumerable properties, so passing one used to
+  // contribute nothing at all, in silence.
+  function __stxHeaders(h) {
+    return (typeof h === 'function' ? h() : h) || {};
+  }
+
   async function __stxFetch(source, url, opts) {
     var t0 = __stxDevtoolsNow();
+    opts = opts || {};
+    if (__stxFetchHooks.onRequest) {
+      // Normalised first so a hook can write ctx.options.headers.Authorization
+      // without having to create the bag itself.
+      opts.headers = __stxHeaders(opts.headers);
+      var reqCtx = { source: source, url: String(url), options: opts };
+      await __stxFetchHooks.onRequest(reqCtx);
+      // Reassignable, so a hook can prefix a baseURL or swap the options
+      // wholesale instead of only mutating them.
+      if (reqCtx.url) url = reqCtx.url;
+      opts = reqCtx.options || opts;
+    }
     var method = (opts && opts.method) || 'GET';
     try {
       var r = await fetch(url, opts);
       __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: r.status, ok: r.ok, ms: __stxDevtoolsNow() - t0 });
+      if (__stxFetchHooks.onResponse) {
+        await __stxFetchHooks.onResponse({ source: source, url: String(url), options: opts, response: r });
+      }
       return r;
     } catch (e) {
       __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: 0, ok: false, error: String((e && e.message) || e), ms: __stxDevtoolsNow() - t0 });
@@ -1029,7 +1074,7 @@ finally {
           method: options.method || 'GET',
           headers: {
             'Content-Type': 'application/json',
-            ...(options.headers || {})
+            ...__stxHeaders(options.headers)
           },
           signal: __signal
         };
@@ -1344,7 +1389,7 @@ else if (immediate) {
       loading.set(true);
       error.set(null);
       try {
-        var fetchOpts = { method: 'GET', headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, signal: __signal };
+        var fetchOpts = { method: 'GET', headers: { 'Content-Type': 'application/json', ...__stxHeaders(options.headers) }, signal: __signal };
         var response = await __stxFetch('useQuery', resolvedUrl, fetchOpts);
         if (__signal && __signal.aborted) return;
         if (!response.ok) throw await __stxHttpError(response);
@@ -1440,7 +1485,7 @@ finally {
         var resolvedUrl = typeof url === 'function' ? url() : url;
         var fetchOpts = {
           method: options.method || 'POST',
-          headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+          headers: { 'Content-Type': 'application/json', ...__stxHeaders(options.headers) },
           body: typeof body === 'string' ? body : JSON.stringify(body)
         };
         var response = await __stxFetch('useMutation', resolvedUrl, fetchOpts);
@@ -5769,6 +5814,7 @@ catch (e) {} }
     useSearchParams,
     useQuery,
     useMutation,
+    configureFetch,
     useOptimistic,
     provide,
     $computed,
