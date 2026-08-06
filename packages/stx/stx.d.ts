@@ -127,6 +127,18 @@ interface StxNavigateOptions {
 declare function navigate(_url: string, _options?: StxNavigateOptions): void
 declare function goBack(): void
 declare function goForward(): void
+
+/**
+ * Re-run the current route against the server and swap the result, without a
+ * document load. Use after a mutation that changed server-rendered content.
+ */
+declare function refresh(): Promise<boolean>
+
+/**
+ * Expire one cached route so the next visit re-fetches it. Defaults to the
+ * current path.
+ */
+declare function invalidateRoute(_url?: string): void
 declare function useRoute(): {
   path: string
   params: Record<string, string>
@@ -627,6 +639,8 @@ interface StxRuntimeRegistry {
   navigate: typeof navigate
   goBack: typeof goBack
   goForward: typeof goForward
+  refresh: typeof refresh
+  invalidateRoute: typeof invalidateRoute
   useRoute: typeof useRoute
   setRouteParams: typeof setRouteParams
   useSearchParams: typeof useSearchParams

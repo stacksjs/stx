@@ -43,10 +43,10 @@
 export const STX_RUNTIME_GLOBALS: readonly string[] = [
   'batch', 'computed', 'configureFetch', 'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps',
   'defineSlots', 'defineStore', 'derived', 'effect', 'goBack', 'goForward', 'inject',
-  'invalidateRoute', 'isDerived', 'isSignal', 'navigate', 'refresh',
+  'invalidateRoute', 'isDerived', 'isSignal', 'navigate',
   'nextTick', 'onBeforeMount', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted',
   'peek', 'provide', 'reactive',
-  'ref', 'registerStoresClient', 'setRouteParams', 'state', 'untrack', 'useAsync', 'useClickOutside', 'useColorMode',
+  'ref', 'refresh', 'registerStoresClient', 'setRouteParams', 'state', 'untrack', 'useAsync', 'useClickOutside', 'useColorMode',
   'useCookie', 'useCounter', 'useDark', 'useDebounce', 'useDebouncedValue', 'useEventListener',
   'useFetch', 'useFocus', 'useHead', 'useId', 'useInterval', 'useLocalStorage', 'useMediaQuery',
   'useMutation', 'useOptimistic', 'usePreferredContrast', 'usePreferredDark',
