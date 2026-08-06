@@ -112,7 +112,13 @@ export function findComponentTags(html: string, tagPattern: RegExp, skipTags?: S
 
     // Check if this matches our tag pattern
     const afterLt = html.slice(tagStart + 1)
-    const tagNameMatch = afterLt.match(new RegExp(`^(${tagPattern.source})`))
+    // A tag name ends at the first character that cannot appear in one.
+    // Without this lookahead the pattern matches a PREFIX of a longer tag:
+    // `<ion-button />` matched `ion`, lost the hyphen that marks it a custom
+    // element, and resolved `ion.stx` from disk — splicing an ENOENT error
+    // into the page. The paired form `<ion-button></ion-button>` was already
+    // ignored, so only self-closing custom elements were affected (#1845).
+    const tagNameMatch = afterLt.match(new RegExp(`^(${tagPattern.source})(?![\\w.:-])`))
 
     if (!tagNameMatch) {
       pos = tagStart + 1
