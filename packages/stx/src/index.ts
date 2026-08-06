@@ -30,6 +30,20 @@ export {
   useStorage,
   type UseStorageOptions,
 } from './composables/use-storage'
+// View composers were unreachable: `runComposers` is wired into the render
+// pipeline (process.ts:1206) and runs on every render, but the two functions that
+// PUT anything in the registry were never exported, so the registry was always
+// empty and the whole layer was dead weight. The module's own docblock tells you
+// to `import { composer } from 'stx'`, which threw. The existing test suite
+// imported from './view-composers' directly, so nothing exercised the public
+// surface and the gap stayed invisible. See #1860.
+export {
+  clearComposers,
+  composer,
+  composerPattern,
+  runComposers,
+  type ViewComposerCallback,
+} from './view-composers'
 export { formatSize, getTotalSize } from './deploy'
 export { type ImageRenderResult, type ImageVariant, type ProcessedImage, clearImageCache, getFallbackVariant, getMimeType, groupVariantsByFormat, optimizeImage, processImage } from './image-optimization'
 export { type AnalysisResult } from './analyzer'
