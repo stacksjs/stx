@@ -439,11 +439,10 @@ function findOutermostForelse(template: string): {
   if (closeParen === -1) continue
 
   const params = template.substring(openParen + 1, closeParen)
-  const asIndex = params.indexOf(' as ')
-  if (asIndex === -1) continue
+  const binding = parseLoopBinding(params)
+  if (!binding) continue
 
-  const arrayExpr = params.substring(0, asIndex).trim()
-  const itemVar = params.substring(asIndex + 4).trim()
+  const { arrayExpr, itemVar } = binding
   const contentStart = closeParen + 1
 
   // Find matching @endforelse using depth tracking
@@ -590,6 +589,42 @@ catch (error: unknown) {
  * @param filePath - Path to template file for error messages
  * @param options - Optional stx configuration
  */
+/**
+ * Split `@foreach(...)` / `@forelse(...)` params into the collection and the
+ * item binding.
+ *
+ * Two spellings are documented and only one was implemented. Blade's
+ * `items as item` worked; the JS-natural `item in items` — which
+ * docs/SCRIPT_VARIABLES.md shows, and which matches the `:for="item in items"`
+ * client directive — did not, and the failure was silent. An unrecognised
+ * binding was skipped with `continue`, so the directive text survived into the
+ * built page and every `{{ }}` inside it resolved against a variable that never
+ * existed. The reported page shipped `data-variant-row="{{ p.id }}"` to the
+ * browser: a literal no selector matches and no binding resolves
+ * (stacksjs/stx#1842).
+ *
+ * The operands are the other way round between the two forms, which is the
+ * whole reason this needs saying once rather than at each call site. Vue's
+ * parenthesised `(item, index)` maps onto the comma form the item parser
+ * already understands.
+ */
+export function parseLoopBinding(params: string): { arrayExpr: string, itemVar: string } | null {
+  const asIndex = params.indexOf(' as ')
+  if (asIndex !== -1) {
+    const arrayExpr = params.slice(0, asIndex).trim()
+    const itemVar = params.slice(asIndex + 4).trim()
+    return arrayExpr && itemVar ? { arrayExpr, itemVar } : null
+  }
+
+  const inMatch = /^\s*(.+?)\s+in\s+([\s\S]+)$/.exec(params)
+  if (!inMatch)
+    return null
+
+  const itemVar = inMatch[1].trim().replace(/^\(([\s\S]*)\)$/, '$1').trim()
+  const arrayExpr = inMatch[2].trim()
+  return itemVar && arrayExpr ? { arrayExpr, itemVar } : null
+}
+
 export function processLoops(template: string, context: Record<string, any>, filePath: string, options?: StxOptions): string {
   let output = template
 
@@ -635,16 +670,14 @@ export function processLoops(template: string, context: Record<string, any>, fil
       // Extract the parameters between the parentheses
       const params = template.substring(openParen + 1, closeParen)
 
-      // Find " as " in the params - this is required for a valid @foreach
-      const asIndex = params.indexOf(' as ')
-      if (asIndex === -1) {
-        // Not a valid @foreach directive (e.g., "@foreach (Blade-style)"), try next match
+      // `items as item` or `item in items`; anything else is not a directive
+      // (e.g. prose mentioning "@foreach (Blade-style)") and is left alone.
+      const binding = parseLoopBinding(params)
+      if (!binding)
         continue
-      }
 
       const start = foreachStart
-      const arrayExpr = params.substring(0, asIndex)
-      const itemVar = params.substring(asIndex + 4)
+      const { arrayExpr, itemVar } = binding
       const contentStart = closeParen + 1
 
       // Now find the matching @endforeach using a stack
@@ -735,6 +768,20 @@ export function processLoops(template: string, context: Record<string, any>, fil
             isObjectEntries = true
           }
           else {
+            // Also say it at build time. The inline comment is only visible to
+            // someone already reading the built HTML, and the reported case was
+            // found exactly that way — by inspecting dist for an attribute that
+            // never arrived, after a build that reported success (#1842).
+            //
+            // The overwhelmingly common cause is naming a value that is not
+            // server data: a plain <script> is CLIENT-side in stx, so its
+            // `const` is not in scope here, and only <script server> is.
+            console.warn(
+              `[stx] @foreach(${trimmedArrayExpr}) in ${filePath}: `
+              + `${trimmedArrayExpr} is not iterable server-side, so the loop rendered nothing. `
+              + `Values a server loop reads must come from <script server> or the page context — `
+              + `a plain <script> runs in the browser.`,
+            )
             const errorMsg = inlineError('Foreach', `Error in @foreach: ${trimmedArrayExpr} is not iterable`, ErrorCodes.TYPE_ERROR)
             result = result.substring(0, start) + errorMsg + result.substring(end)
             continue

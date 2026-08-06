@@ -1,13 +1,23 @@
 # Script Variables in STX
 
-STX provides flexible variable declaration in `<script>` tags with **optional export syntax**.
+STX provides flexible variable declaration in `<script server>` tags with **optional export syntax**.
+
+> **The `server` attribute is required for everything on this page.** Only
+> `<script server>` runs on the server; a bare `<script>` (and `<script client>`)
+> runs in the browser, so its `const` is not in scope for `{{ }}`, `@foreach`,
+> `@if` or any other server directive.
+>
+> This page used to show a bare `<script>` throughout, which is why a documented
+> `@foreach` over a variable declared that way rendered nothing
+> ([#1842](https://github.com/stacksjs/stx/issues/1842)). Every example below now
+> spells it `<script server>`.
 
 ## Quick Start
 
-You can declare variables in `<script>` tags without using the `export` keyword:
+You can declare variables in `<script server>` tags without using the `export` keyword:
 
 ```html
-<script>
+<script server>
 const title = 'My Page'
 const count = 42
 </script>
@@ -23,7 +33,7 @@ Both of these syntaxes work identically:
 ### Without Export (Recommended)
 
 ```html
-<script>
+<script server>
 const title = 'Hello World'
 const description = 'A simple example'
 
@@ -40,7 +50,7 @@ function greet(name) {
 ### With Export (Also Valid)
 
 ```html
-<script>
+<script server>
 export const title = 'Hello World'
 export const description = 'A simple example'
 
@@ -61,7 +71,7 @@ All JavaScript variable and function declarations are automatically available:
 ### Variables
 
 ```html
-<script>
+<script server>
 const myConst = 'constant'
 let myLet = 'variable'
 var myVar = 'legacy variable'
@@ -75,7 +85,7 @@ var myVar = 'legacy variable'
 ### Functions
 
 ```html
-<script>
+<script server>
 // Regular function
 function add(a, b) {
   return a + b
@@ -98,7 +108,7 @@ const divide = function(a, b) {
 ### Objects and Arrays
 
 ```html
-<script>
+<script server>
 const user = {
   name: 'John Doe',
   age: 30,
@@ -122,10 +132,10 @@ const items = [
 
 ## Mixing Export and Non-Export
 
-You can mix both styles in the same `<script>` tag:
+You can mix both styles in the same `<script server>` tag:
 
 ```html
-<script>
+<script server>
 // Without export
 const title = 'My App'
 const version = '1.0.0'
@@ -155,7 +165,7 @@ export function formatTime(date) {
 ### Multi-line Objects
 
 ```html
-<script>
+<script server>
 const config = {
   api: {
     baseUrl: 'https://api.example.com',
@@ -178,7 +188,7 @@ const config = {
 ### Computed Values
 
 ```html
-<script>
+<script server>
 const items = [1, 2, 3, 4, 5]
 const total = items.reduce((sum, n) => sum + n, 0)
 const average = total / items.length
@@ -195,7 +205,7 @@ function formatNumber(num) {
 ### Complex Logic
 
 ```html
-<script>
+<script server>
 const products = [
   { id: 1, name: 'Laptop', price: 999, inStock: true },
   { id: 2, name: 'Mouse', price: 29, inStock: true },
@@ -247,7 +257,7 @@ This happens transparently, so you don't need to worry about it. Just declare yo
 Use `const` for values that don't change:
 
 ```html
-<script>
+<script server>
 const siteTitle = 'My Website'  // ✅ Good
 let siteTitle = 'My Website'    // ⚠️ Works but unnecessary
 </script>
@@ -256,7 +266,7 @@ let siteTitle = 'My Website'    // ⚠️ Works but unnecessary
 ### 2. Use Descriptive Names
 
 ```html
-<script>
+<script server>
 const userFullName = 'John Doe'           // ✅ Clear
 const n = 'John Doe'                      // ❌ Unclear
 </script>
@@ -265,7 +275,7 @@ const n = 'John Doe'                      // ❌ Unclear
 ### 3. Group Related Variables
 
 ```html
-<script>
+<script server>
 // User data
 const userName = 'John Doe'
 const userEmail = 'john@example.com'
@@ -283,7 +293,7 @@ const user = {
 ### 4. Extract Complex Logic to Functions
 
 ```html
-<script>
+<script server>
 const items = [1, 2, 3, 4, 5]
 
 // ✅ Good - reusable and testable
@@ -312,7 +322,7 @@ This feature works with:
 If you prefer the explicit `module.exports` syntax, that still works:
 
 ```html
-<script>
+<script server>
 const title = 'Hello'
 const count = 42
 
