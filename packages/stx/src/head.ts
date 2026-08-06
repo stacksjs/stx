@@ -104,6 +104,26 @@ export interface SeoMeta {
   articleTags?: string[]
 }
 
+/**
+ * Layouts that exist on disk, augmented by the generated
+ * `<state-dir>/layout-types.d.ts` (stacksjs/stx#1879).
+ *
+ * Empty here on purpose. A project that has not generated the declaration —
+ * or has not added the state directory to its tsconfig — keeps `layout` typed
+ * as `string`, so nothing breaks; a project that has gets a type error for a
+ * name with no layout behind it.
+ */
+export interface KnownLayouts {}
+
+/**
+ * A layout name: the generated union when one is available, otherwise any
+ * string.
+ *
+ * `keyof KnownLayouts` is `never` while the interface is empty, which is what
+ * makes the fallback work.
+ */
+export type LayoutName = keyof KnownLayouts extends never ? string : keyof KnownLayouts
+
 export interface PageMeta {
   title?: string
   description?: string
@@ -121,8 +141,12 @@ export interface PageMeta {
    * a full-document swap, and a page asserting a group it does not belong to
    * mis-routes rather than mis-styles. This field is the authoring surface; the
    * meta tag is derived from the layout that actually resolved (#1879).
+   *
+   * Typed as the union of layouts on disk when the generated
+   * `<state-dir>/layout-types.d.ts` is in scope, so a typo is a type error
+   * rather than an unlayouted page.
    */
-  layout?: string | false
+  layout?: LayoutName | false
   middleware?: string | string[]
   transition?: string | { name: string; mode?: string }
   keepAlive?: boolean

@@ -210,6 +210,9 @@ export { deepMergeThemes, mergeCrosswindConfig, type MergedCrosswindConfig } fro
 // Dev-mode invalidation for the store/composable bundles (#1877)
 export { clearStoreCache } from './store-loader'
 export { clearComposableCache } from './composable-loader'
+
+// Generated union of layouts on disk (#1879)
+export { discoverLayoutNames, generateLayoutTypes, LAYOUT_TYPES_FILE, renderLayoutTypes } from './layout-types'
 export { runDoctor, formatDoctorReport, findPantryPackage } from './doctor'
 export type { DoctorCheck, DoctorReport, DoctorOptions, CheckStatus } from './doctor'
 export {
