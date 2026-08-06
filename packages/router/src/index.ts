@@ -34,6 +34,9 @@ export type { LayoutMetadata } from './layout-metadata'
 // Route type generation
 export { generateRouteTypes, generateRouteManifest } from './codegen'
 
+// Which files under a page root are public routes (#1866)
+export { NON_PAGE_DIRS, isNonPageRoutePath, isNonPageRoutePattern } from './page-routes'
+
 // Client-side SPA navigation
 export { getRouterScript } from './client'
 

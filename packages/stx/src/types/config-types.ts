@@ -482,6 +482,29 @@ export interface StxConfig {
    * }
    * ```
    */
+  /**
+   * Canonical site identity (stacksjs/stx#1866).
+   *
+   * `url` is what sitemap.xml and robots.txt are built from. Without it the
+   * static build falls back to `http://localhost` and warns — a sitemap of
+   * localhost URLs is valid XML and useless to a crawler, so it has to be said
+   * out loud rather than discovered after deploy.
+   *
+   * The site-builder path reads the same field from `site.config.ts`; either
+   * file works.
+   *
+   * @example
+   * ```ts
+   * // stx.config.ts
+   * export default {
+   *   site: { url: 'https://example.com' },
+   * }
+   * ```
+   */
+  site?: {
+    /** Absolute origin, e.g. `https://example.com`. */
+    url?: string
+  }
   app?: {
     head?: AppHeadConfig
     /**

@@ -53,6 +53,8 @@ import { createRouter, type Route } from './router'
 import { processDirectives, injectRouterScript } from './process'
 import { extractIslandChunks, injectIslandChunkPrefetch } from './island-chunking'
 import { loadStxConfig } from './config'
+import { resolveSiteUrl, siteUrlFallbackWarning } from './site-url'
+import { generateRobotsTxt } from './seo'
 import { stateDir } from './state-dir'
 import { injectCrosswindCSS } from './dev-server/crosswind'
 import {
@@ -81,6 +83,28 @@ export interface SSGConfig {
   revalidate?: number | false
   /** Generate sitemap.xml */
   sitemap?: boolean
+  /**
+   * Routes to keep out of sitemap.xml (#1866).
+   *
+   * Strings match a URL exactly or as a `/prefix/` when they end in `/`;
+   * RegExps are tested against the URL. A page can also exclude itself with
+   * `definePageMeta({ sitemap: false })` or by declaring a `noindex` robots
+   * meta, which is checked without needing this list.
+   *
+   * @example
+   * ```ts
+   * sitemapExclude: ['/login', '/account/', /^\/admin/]
+   * ```
+   */
+  sitemapExclude?: (string | RegExp)[]
+  /**
+   * Generate robots.txt (default: true).
+   *
+   * Written from the same resolved site URL as the sitemap, with a `Sitemap:`
+   * line pointing at it, and a `Disallow` for every `sitemapExclude` entry —
+   * so the two files cannot disagree about what is public.
+   */
+  robots?: boolean | RobotsConfig
   /** Generate RSS feed */
   rss?: boolean | RSSConfig
   /** Parallel page generation limit (default: 10) */
@@ -124,6 +148,18 @@ export interface SSGConfig {
    * byte-for-byte unchanged (no CDN/proxy transform).
    */
   integrityIslands?: boolean
+}
+
+/** robots.txt options for the static build (#1866). */
+export interface RobotsConfig {
+  /** Extra paths to disallow, on top of `sitemapExclude`. */
+  disallow?: string[]
+  /** Paths to explicitly allow. Defaults to `['/']`. */
+  allow?: string[]
+  /** User agent the rules apply to. Defaults to `*`. */
+  userAgent?: string
+  /** Emit the `Sitemap:` line (default: true when a sitemap is generated). */
+  sitemap?: boolean
 }
 
 export interface RSSConfig {
@@ -776,6 +812,37 @@ interface SitemapEntry {
 /**
  * Generate sitemap.xml
  */
+/**
+ * Whether a generated page should stay out of sitemap.xml (#1866).
+ *
+ * Three independent ways to say no, because they are declared in three
+ * different places: the build config (`sitemapExclude`), the page itself
+ * (`definePageMeta({ sitemap: false })`), and the page's own robots meta — a
+ * page already marked `noindex` asking to be listed in a sitemap is a
+ * contradiction, and apps were adding that meta by hand precisely because the
+ * sitemap ignored them.
+ */
+export function isExcludedFromSitemap(
+  url: string,
+  html: string,
+  pageMeta: Record<string, any> | null | undefined,
+  exclude: (string | RegExp)[],
+): boolean {
+  if (pageMeta?.sitemap === false)
+    return true
+
+  // <meta name="robots" content="noindex, nofollow">, however it was emitted.
+  if (/<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex/i.test(html))
+    return true
+
+  return exclude.some((pattern) => {
+    if (pattern instanceof RegExp)
+      return pattern.test(url)
+    // A trailing slash means "this subtree"; otherwise exact.
+    return pattern.endsWith('/') ? url === pattern.slice(0, -1) || url.startsWith(pattern) : url === pattern
+  })
+}
+
 function generateSitemap(entries: SitemapEntry[], domain: string): string {
   const urls = entries.map(entry => {
     const loc = new URL(entry.loc, domain).href
@@ -876,13 +943,22 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
   // Load user's stx.config.ts for proper layoutsDir, componentsDir, etc.
   const stxConfig = await loadStxConfig()
 
+  // The sitemap used to hardcode http://localhost and read no config at all,
+  // so apps that declared a URL still published localhost URLs to crawlers
+  // with nothing warning about it (#1866).
+  const siteUrl = await resolveSiteUrl({ explicit: options.domain, stxConfig })
+  if (siteUrl.source === 'fallback' && (options.sitemap ?? true))
+    console.warn(siteUrlFallbackWarning())
+
   const cfg: Required<SSGConfig> = {
     pagesDir: options.pagesDir || 'pages',
     outputDir: options.outputDir || 'dist',
     baseUrl: options.baseUrl || '/',
-    domain: options.domain || 'http://localhost',
+    domain: siteUrl.url,
     revalidate: options.revalidate ?? false,
     sitemap: options.sitemap ?? true,
+    sitemapExclude: options.sitemapExclude || [],
+    robots: options.robots ?? true,
     rss: options.rss ?? false,
     concurrency: options.concurrency || 10,
     cache: options.cache ?? true,
@@ -1139,12 +1215,16 @@ else {
           await fs.promises.mkdir(path.dirname(outputPath), { recursive: true })
           await Bun.write(outputPath, html)
 
-          // Add to sitemap
-          sitemapEntries.push({
-            loc: url,
-            lastmod: new Date().toISOString().split('T')[0],
-            priority: url === '/' ? 1.0 : 0.8,
-          })
+          // Add to sitemap, unless the page or the config kept it out (#1866).
+          // Advertising /login, /account and every partial as a public URL was
+          // the default before this check existed.
+          if (!isExcludedFromSitemap(url, html, pageMeta, cfg.sitemapExclude)) {
+            sitemapEntries.push({
+              loc: url,
+              lastmod: new Date().toISOString().split('T')[0],
+              priority: url === '/' ? 1.0 : 0.8,
+            })
+          }
 
           const pageResult: PageResult = {
             route: url,
@@ -1262,6 +1342,31 @@ else {
       await Bun.write(sitemapPath, sitemap)
       result.sitemapPath = sitemapPath
       console.log(`Generated sitemap.xml with ${sitemapEntries.length} URLs`)
+    }
+
+    // robots.txt. stx had two robots generators and this build path called
+    // neither, so apps hand-authored the file and restated their exclusions in
+    // it — a list that then drifted from the sitemap's (#1866).
+    if (cfg.robots !== false) {
+      const robotsCfg: RobotsConfig = typeof cfg.robots === 'object' ? cfg.robots : {}
+      const disallow = [
+        // Anything kept out of the sitemap is kept out of the crawl, so the
+        // two files cannot disagree about what is public.
+        ...cfg.sitemapExclude.filter((p): p is string => typeof p === 'string'),
+        ...(robotsCfg.disallow || []),
+      ]
+      const robotsTxt = generateRobotsTxt({
+        rules: [{
+          userAgent: robotsCfg.userAgent || '*',
+          allow: robotsCfg.allow || ['/'],
+          ...(disallow.length > 0 ? { disallow } : {}),
+        }],
+        ...(robotsCfg.sitemap !== false && result.sitemapPath
+          ? { sitemap: new URL('/sitemap.xml', cfg.domain).href }
+          : {}),
+      })
+      await Bun.write(path.join(cfg.outputDir, 'robots.txt'), robotsTxt)
+      console.log('Generated robots.txt')
     }
 
     // Generate RSS feed

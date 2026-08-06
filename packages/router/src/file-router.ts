@@ -4,6 +4,7 @@ import path from 'node:path'
 import { generateRouteManifest, generateRouteTypes } from './codegen'
 import { filePathToPattern, patternToRegex } from './matcher'
 import { resolveLayoutChain } from './nested-layouts'
+import { NON_PAGE_DIRS } from './page-routes'
 
 function scanDirectory(dir: string, extensions: string[]): string[] {
   const files: string[] = []
@@ -19,6 +20,12 @@ function scanDirectory(dir: string, extensions: string[]): string[] {
 
     if (entry.isDirectory()) {
       if (entry.name.startsWith('.')) {
+        continue
+      }
+      // Building blocks, not pages. Skipped at scan time so they are absent
+      // from the route table itself — otherwise they get served, statically
+      // built to HTML, and listed in sitemap.xml as public URLs (#1866).
+      if (NON_PAGE_DIRS.includes(entry.name)) {
         continue
       }
       files.push(...scanDirectory(fullPath, extensions))
