@@ -1111,6 +1111,20 @@ else if (immediate) {
     };
   }
 
+  // Exported from src/runtime.ts, whose whole stated purpose is client-facing
+  // APIs that hide window internals — but never published on window.stx, so a
+  // client script importing them destructured undefined and threw on use. The
+  // capability was always here behind useRoute().params; only the documented
+  // names were unreachable (stacksjs/stx#1843).
+  function useRouteParams() {
+    return _routeParams();
+  }
+
+  function useRouteParam(name, fallback) {
+    var value = _routeParams()[name];
+    return value === undefined ? fallback : value;
+  }
+
   function useSearchParams() {
     var params = state(Object.fromEntries(new URLSearchParams(window.location.search)));
     var syncFromUrl = function() {
@@ -5625,6 +5639,8 @@ catch (e) {} }
     goBack,
     goForward,
     useRoute,
+    useRouteParams,
+    useRouteParam,
     setRouteParams,
     useSearchParams,
     useQuery,
