@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.154...v0.2.155)
+
+## 🚀 Features
+
+- **serve**: let a page set its own status, and stop 404ing on a trailing slash ([73b0ba1](https://github.com/stacksjs/stx/commit/73b0ba1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.155 ([2e98471](https://github.com/stacksjs/stx/commit/2e98471)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.153...v0.2.154)
 
 ## 🚀 Features
