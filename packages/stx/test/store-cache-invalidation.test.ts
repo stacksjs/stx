@@ -18,7 +18,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { clearStoreCache, getStoreScript } from '../src/store-loader'
-import { readSigned, sourceSignature, writeSigned } from '../src/source-signature'
+import { readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from '../src/source-signature'
 
 let dir = ''
 
@@ -118,7 +118,7 @@ describe('sourceSignature', () => {
 
 describe('signed cache entries', () => {
   it('returns a hit only for the signature it was written with', () => {
-    const cache = new Map()
+    const cache = new Map<string, SignedCacheEntry<string>>()
     writeSigned(cache, 'k', 'sig-1', 'value')
 
     expect(readSigned(cache, 'k', 'sig-1')).toBe('value')
@@ -128,7 +128,7 @@ describe('signed cache entries', () => {
   it('distinguishes a cached empty value from a miss', () => {
     // The loaders memoise `''` to mean "nothing to load", which must not read
     // back as "not cached".
-    const cache = new Map()
+    const cache = new Map<string, SignedCacheEntry<string>>()
     writeSigned(cache, 'k', 'sig', '')
 
     expect(readSigned(cache, 'k', 'sig')).toBe('')

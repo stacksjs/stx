@@ -109,6 +109,19 @@ export interface PageMeta {
   description?: string
   /** Static HTTP response status for this page. */
   status?: number
+  /**
+   * Layout for this page, by name (`'app'` → `<layoutsDir>/app.stx`), or
+   * `false` for none — the same as `@nolayout`.
+   *
+   * Precedence: `@extends`/`@layout` in the template wins, then this, then an
+   * auto-discovered `_layout.stx`, then `defaultLayout`.
+   *
+   * Do NOT hand-write `<meta name="stx-layout" content="…">` instead. That tag
+   * is stx *output*: the router reads it to decide between a fragment swap and
+   * a full-document swap, and a page asserting a group it does not belong to
+   * mis-routes rather than mis-styles. This field is the authoring surface; the
+   * meta tag is derived from the layout that actually resolved (#1879).
+   */
   layout?: string | false
   middleware?: string | string[]
   transition?: string | { name: string; mode?: string }

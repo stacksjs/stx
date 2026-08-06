@@ -9,6 +9,7 @@
  */
 
 import type { StxOptions } from './types'
+import fs from 'node:fs'
 import path from 'node:path'
 
 // Directive processors
@@ -22,6 +23,7 @@ import { injectHeatmap } from './heatmap'
 import { processAnimationDirectives } from './animation'
 import { generateRuntimeScript, processEventDirectives } from './events'
 import { extractBridgeData, processClientScript } from './client-script'
+import { extractPageMetaFromSource, pageMetaLayout } from './page-meta'
 import { processReactiveDirectives } from './reactive'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
@@ -792,9 +794,20 @@ async function processDirectivesInternal(
   const sections: Record<string, string> = { ...(context.__sections || {}) }
   let layoutPath = ''
 
-  // Handle @nolayout directive — strip it and skip auto-layout
-  const hasNoLayout = /@nolayout\b/.test(output)
-  if (hasNoLayout) {
+  // What the page declared via definePageMeta({ layout }). Read from the
+  // ORIGINAL template rather than `output`, so it does not depend on what
+  // earlier directive passes have done to the script block.
+  //
+  // This field was public, typed, and documented in definePageMeta's own
+  // example, and nothing read it — a page declaring `layout: 'app'` rendered
+  // unlayouted (#1879). Precedence is explicit: @extends/@layout wins, then
+  // page meta, then an auto-discovered _layout.stx, then defaultLayout.
+  const declaredLayout = pageMetaLayout(extractPageMetaFromSource(template))
+
+  // Handle @nolayout directive — strip it and skip auto-layout.
+  // `layout: false` in page meta says the same thing.
+  const hasNoLayout = /@nolayout\b/.test(output) || declaredLayout === false
+  if (/@nolayout\b/.test(output)) {
     output = output.replace(/@nolayout\b\s*/g, '')
   }
 
@@ -804,6 +817,15 @@ async function processDirectivesInternal(
     layoutPath = layoutMatch[1]
     // Remove all @layout/@extends directives from the template
     output = output.replace(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/g, '')
+  }
+  else if (typeof declaredLayout === 'string') {
+    layoutPath = declaredLayout
+    // A page that says `layout: 'app'` in meta writes a plain body, not
+    // @section blocks — the same shape the auto-layout path handles below. Wrap
+    // it as the 'content' section, or the layout renders with nothing in it.
+    if (!/@section\s*\(/.test(output)) {
+      output = `@section('content')\n${output.trim()}\n@endsection`
+    }
   }
 
   // Auto-layout: if no explicit layout and no @nolayout, auto-detect layout
@@ -1033,8 +1055,40 @@ async function processDirectivesInternal(
       }
 
       if (!layoutFullPath) {
+        // Name the layouts that DO exist. A typo and a missing file produce the
+        // identical no-layout render, and at 'warning' severity with no list to
+        // compare against, the message was easy to scroll past — which is how a
+        // page ends up asserting a layout group with no layout behind it
+        // (#1879).
+        let available: string[] = []
+        try {
+          const dir = resolvedOptions.layoutsDir
+          if (dir) {
+            const abs = path.isAbsolute(dir) ? dir : path.resolve(process.cwd(), dir)
+            available = fs.readdirSync(abs)
+              .filter(f => f.endsWith('.stx'))
+              .map(f => f.replace(/\.stx$/, ''))
+              .sort()
+          }
+        }
+        catch {
+          // Unreadable layoutsDir — the message is still worth emitting.
+        }
+
         const warning = `Layout not found: ${layoutPath} (referenced from ${filePath})`
-        errorLogger.log(new Error(warning), { layoutPath, filePath }, 'warning')
+          + (available.length > 0
+            ? `. Available layouts: ${available.join(', ')}`
+            : resolvedOptions.layoutsDir
+              ? `. No .stx layouts found in ${resolvedOptions.layoutsDir}`
+              : '')
+        // errorLogger buffers in memory and only writes to a file when file
+        // logging is on, so this message was never actually visible — the only
+        // console output was a generic "Template not found" from the resolver,
+        // which does not say a LAYOUT failed to resolve or what the options
+        // were. An unlayouted page is the identical render for a typo and for
+        // a missing file, so it has to be said out loud.
+        errorLogger.log(new Error(warning), { layoutPath, filePath, available }, 'error')
+        console.error(`[stx] ${warning}`)
 
         if (resolvedOptions.debug) {
           throw new StxRuntimeError(warning, filePath)
