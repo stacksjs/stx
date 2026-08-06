@@ -13,7 +13,7 @@ import path from 'node:path'
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
-import { transformStoreImports } from './store-imports'
+import { stripModuleImports, transformStoreImports } from './store-imports'
 
 const _cachedStoreScripts = new Map<string, string>()
 
@@ -153,7 +153,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
       // Strip import statements BEFORE transpiling — defineStore/state/derived
       // are runtime globals, not real modules. If we leave them, the transpiler
       // converts them to require() calls that fail in the browser.
-      code = code.replace(/^import\s+.*from\s+['"][^'"]+['"]\s*;?\s*$/gm, '')
+      code = stripModuleImports(code)
       // Strip export statements (keep the content)
       code = code.replace(/^export\s+(default\s+)?/gm, '')
 

@@ -26,6 +26,7 @@
 import path from 'node:path'
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
+import { stripModuleImports } from './store-imports'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
 
@@ -171,7 +172,7 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
       // `defineStore` are runtime globals, not real modules, and leaving the
       // imports in makes the transpiler emit require() calls that fail in the
       // browser. Same rationale as store-loader.
-      code = code.replace(/^import\s+.*from\s+['"][^'"]+['"]\s*;?\s*$/gm, '')
+      code = stripModuleImports(code)
       // Strip the export keyword, keeping the declaration itself.
       code = code.replace(/^export\s+(default\s+)?/gm, '')
 

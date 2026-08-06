@@ -49,3 +49,33 @@ export function transformStoreImports(code: string): string {
 
   return code
 }
+
+/**
+ * Remove `import` statements from a store or composable module body.
+ *
+ * These files are concatenated into one browser IIFE, so their imports have to
+ * go: `state`, `derived` and `defineStore` are runtime globals rather than real
+ * modules, and leaving the statements in makes the transpiler emit `require()`
+ * calls that fail in the browser.
+ *
+ * The previous pattern was line-anchored (`^import\s+.*from …$`), so a
+ * multi-line specifier list survived it — and survived Bun's transpiler too,
+ * because `import` is legal at a module's top level. It only failed once the
+ * body had been wrapped in the shared IIFE, where an import is a SyntaxError
+ * that takes EVERY store in the bundle with it, reported as a misleading
+ * "Store not found" (stacksjs/stx#1859).
+ *
+ * `[^'"]` between `import` and `from` is what keeps a multi-line match from
+ * running past its own statement into the next one's specifier: the clause
+ * never contains a quote, and the module specifier always does.
+ *
+ * Shared by both loaders because they carried byte-identical copies, which is
+ * how one of them would have been fixed and the other left behind.
+ */
+export function stripModuleImports(code: string): string {
+  return code
+    // `import … from '…'`, however many lines the clause spans.
+    .replace(/^import\s+[^'"]*?from\s*['"][^'"]+['"]\s*;?[ \t]*$/gm, '')
+    // Side-effect only: `import './setup'`.
+    .replace(/^import\s+['"][^'"]+['"]\s*;?[ \t]*$/gm, '')
+}
