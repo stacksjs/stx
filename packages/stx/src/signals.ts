@@ -743,7 +743,16 @@ finally {
       activeEffect = runEffect;
       effectStack.push(runEffect);
       try {
-        cleanup = fn();
+        // Only a FUNCTION is a cleanup. An effect body is an expression as
+        // often as it is a block, and an expression has a value: an effect
+        // written as an arrow assigning to textContent returns the assigned
+        // string. Storing that and calling it on the next run threw
+        // "cleanup is not a function" from the line above — outside this try,
+        // so it escaped runEffect entirely and propagated out of whatever
+        // .set() triggered the notification, taking unrelated subscribers with
+        // it. Only ever on the second run, which is why it read as correct.
+        var __result = fn();
+        cleanup = typeof __result === 'function' ? __result : undefined;
       }
       catch (e) {
         // Auto-dispose effects that fail — prevents zombie subscriptions

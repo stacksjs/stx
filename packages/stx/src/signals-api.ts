@@ -401,7 +401,14 @@ export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}):
     effectStack.push(runEffect)
 
     try {
-      cleanup = fn()
+      // Only a FUNCTION is a cleanup. An effect body is an expression as often
+      // as it is a block, and an expression has a value: `effect(() =>
+      // el.textContent = name())` returns the assigned string. Storing that and
+      // calling it on the next run threw "cleanup is not a function", so the
+      // most ordinary effect in any framework crashed on its second run — and
+      // only on the second, which is why it read as correct.
+      const result = fn()
+      cleanup = typeof result === 'function' ? result : undefined
     }
 finally {
       effectStack.pop()
