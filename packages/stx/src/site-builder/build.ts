@@ -14,6 +14,7 @@ import { dirname, join, relative } from 'node:path'
 import process from 'node:process'
 import stxPlugin from 'bun-plugin-stx'
 import { CONVENTIONAL_ASSET_OUTPUT, resolveConventionalAssetRoot } from '../asset-roots'
+import { externalizeSharedAssets } from '../build-externalize'
 import { injectCrosswindCSS } from '../dev-server/crosswind'
 import { injectSeo } from './seo'
 import { generateSitemap, type SitemapEntry } from './sitemap'
@@ -179,6 +180,18 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
         // (no-op: targetFile is under /<code>/, original file stays for default-locale pass)
       }
     }
+  }
+
+  // Lift the runtime, router and generated stylesheet out of every page into
+  // content-hashed assets, so they are downloaded and cached once instead of
+  // re-shipped inline per page (#1865, #1878). Runs before the asset copies so
+  // it only ever walks pages this build rendered, never a user's static HTML.
+  const externalized = externalizeSharedAssets(outDir)
+  if (externalized.assets > 0) {
+    console.log(
+      `[stx] externalized ${externalized.assets} asset(s) from ${externalized.pages} page(s) `
+      + `(${(externalized.bytesInlined / 1024).toFixed(1)}KB removed from HTML)`,
+    )
   }
 
   // Public assets — copied last so they overwrite any same-named files

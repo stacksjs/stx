@@ -48,6 +48,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { CONVENTIONAL_ASSET_OUTPUT, CONVENTIONAL_ASSET_ROOT, resolveConventionalAssetRoot } from './asset-roots'
+import { externalizeSharedAssets } from './build-externalize'
 import { createRouter, type Route } from './router'
 import { processDirectives, injectRouterScript } from './process'
 import { extractIslandChunks, injectIslandChunkPrefetch } from './island-chunking'
@@ -1281,6 +1282,19 @@ else {
       await Bun.write(rssPath, rssFeed)
       result.rssPath = rssPath
       console.log(`Generated rss.xml with ${items.length} items`)
+    }
+
+    // Lift the runtime and the generated stylesheet out of every page into
+    // content-hashed assets. Inlining them meant ~118KB of byte-identical
+    // runtime per page, cacheable by nobody (#1865, #1878). Runs before the
+    // asset copies so it only ever walks pages this build rendered, never a
+    // user's own static HTML.
+    const externalized = externalizeSharedAssets(cfg.outputDir)
+    if (externalized.assets > 0) {
+      console.log(
+        `Externalized ${externalized.assets} asset(s) from ${externalized.pages} page(s) `
+        + `(${(externalized.bytesInlined / 1024).toFixed(1)}KB removed from HTML)`,
+      )
     }
 
     // Copy public directory
