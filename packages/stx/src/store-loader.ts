@@ -13,9 +13,10 @@ import path from 'node:path'
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
+import { readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from './source-signature'
 import { stripModuleImports, transformStoreImports } from './store-imports'
 
-const _cachedStoreScripts = new Map<string, string>()
+const _cachedStoreScripts = new Map<string, SignedCacheEntry<string>>()
 
 /**
  * Discover store files from storesDir and bundle them into a single
@@ -80,10 +81,11 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
     )
   }
 
-  const cached = _cachedStoreScripts.get(resolvedDir)
-  if (cached !== undefined) return cached || null
-
-  // Discover store .ts files
+  // Discover store .ts files. The scan happens BEFORE the cache lookup so the
+  // memo can be keyed on the sources: it used to be permanent, and since
+  // nothing outside tests ever called `clearStoreCache()`, a dev server held
+  // the first result — usually `null`, from before any store existed — for the
+  // life of the process (#1877).
   const glob = new Bun.Glob('*.ts')
   const storeFiles: string[] = []
 
@@ -98,12 +100,18 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   }
   catch {
     // storesDir doesn't exist — no stores to load
-    _cachedStoreScripts.set(resolvedDir, '')
+    writeSigned(_cachedStoreScripts, resolvedDir, '', '')
     return null
   }
 
+  // Includes the empty case, so creating the FIRST store file invalidates the
+  // `null` that was memoised before it existed.
+  const signature = sourceSignature(storeFiles)
+  const cached = readSigned(_cachedStoreScripts, resolvedDir, signature)
+  if (cached !== undefined) return cached || null
+
   if (storeFiles.length === 0) {
-    _cachedStoreScripts.set(resolvedDir, '')
+    writeSigned(_cachedStoreScripts, resolvedDir, signature, '')
     return null
   }
 
@@ -170,7 +178,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   }
 
   if (chunks.length === 0) {
-    _cachedStoreScripts.set(resolvedDir, '')
+    writeSigned(_cachedStoreScripts, resolvedDir, signature, '')
     return null
   }
 
@@ -197,7 +205,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
     .join('\n')
 
   const code = `;(function(){\nvar __stx = window.stx || {};\n${runtimeBindings}\n${joinedChunks}\n})();`
-  _cachedStoreScripts.set(resolvedDir, code)
+  writeSigned(_cachedStoreScripts, resolvedDir, signature, code)
   return code
 }
 

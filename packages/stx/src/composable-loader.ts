@@ -26,11 +26,12 @@
 import path from 'node:path'
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
+import { readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from './source-signature'
 import { stripModuleImports } from './store-imports'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
 
-const _cachedComposableScripts = new Map<string, string>()
+const _cachedComposableScripts = new Map<string, SignedCacheEntry<string>>()
 
 /**
  * Cache of resolved directories, including misses (stored as `null`).
@@ -69,7 +70,13 @@ async function resolveComposablesDir(composablesDir?: string): Promise<string | 
   if (cachedDir !== undefined) return cachedDir
 
   const resolved = await probeDefaultDirs()
-  _cachedDirs.set(cacheKey, resolved)
+  // Only a positive result is memoised. Caching the `null` meant that once a
+  // process had looked before any composable existed, creating the first one
+  // could never be seen without a restart — the same shape as the store memo
+  // this fixes (#1877). Re-probing while none exists costs a glob over two
+  // candidate directories.
+  if (resolved !== null)
+    _cachedDirs.set(cacheKey, resolved)
   return resolved
 }
 
@@ -112,9 +119,10 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
   const resolvedDir = await resolveComposablesDir(composablesDir)
   if (!resolvedDir) return null
 
-  const cached = _cachedComposableScripts.get(resolvedDir)
-  if (cached !== undefined) return cached || null
-
+  // Scan BEFORE the cache lookup so the memo can be keyed on the sources. It
+  // used to be permanent, and nothing outside tests called
+  // `clearComposableCache()`, so a dev server served the first build for the
+  // life of the process (#1877).
   const composableFiles: string[] = []
   try {
     const glob = new Bun.Glob('**/*.ts')
@@ -125,12 +133,16 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
   }
   catch {
     // composablesDir doesn't exist — nothing to load.
-    _cachedComposableScripts.set(resolvedDir, '')
+    writeSigned(_cachedComposableScripts, resolvedDir, '', '')
     return null
   }
 
+  const signature = sourceSignature(composableFiles)
+  const cached = readSigned(_cachedComposableScripts, resolvedDir, signature)
+  if (cached !== undefined) return cached || null
+
   if (composableFiles.length === 0) {
-    _cachedComposableScripts.set(resolvedDir, '')
+    writeSigned(_cachedComposableScripts, resolvedDir, signature, '')
     return null
   }
 
@@ -188,7 +200,7 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
   }
 
   if (chunks.length === 0 || exportedNames.size === 0) {
-    _cachedComposableScripts.set(resolvedDir, '')
+    writeSigned(_cachedComposableScripts, resolvedDir, signature, '')
     return null
   }
 
@@ -240,7 +252,7 @@ ${assignments}
   }
 })();`
 
-  _cachedComposableScripts.set(resolvedDir, code)
+  writeSigned(_cachedComposableScripts, resolvedDir, signature, code)
   return code
 }
 

@@ -1078,6 +1078,12 @@ export async function serve(options: ServeOptions): Promise<void> {
           // failure class) could outlive an edit. Optional-chained: a missing
           // module/method is a no-op (stacksjs/stx#1745 item C).
           resolvedStxModule?.clearDevCaches?.()
+          // The store and composable bundles are memoised separately from the
+          // template caches, and nothing outside tests ever invalidated them —
+          // so every store edit needed a server restart (#1877). Optional-chained
+          // for the same reason as above: an older stx module is a no-op.
+          resolvedStxModule?.clearStoreCache?.()
+          resolvedStxModule?.clearComposableCache?.()
         }
         // For CSS-only changes, prefer a stylesheet hot-swap over a full
         // reload — the script side just re-fingerprints `<link>` hrefs.
@@ -1105,12 +1111,26 @@ export async function serve(options: ServeOptions): Promise<void> {
   // watch `resources/` — `componentsDir`/`layoutsDir`/`partialsDir`
   // already cover the .stx subdirs under it, and overlapping recursive
   // watchers fire duplicate events for every nested edit.
+  //
+  // `storesDir` and `composablesDir` were absent from this list, so a store or
+  // composable edit fired no event at all — combined with a memo nothing
+  // invalidated, that made a server restart the only way to see the change
+  // (#1877). Both are resolved under `root`, the way their loaders resolve
+  // them, and the conventional `functions/` alias for composables is watched
+  // too since the loader probes for it.
+  const storesDir = nodePath.resolve(stxConfig.root || '.', stxConfig.storesDir || 'stores')
+  const composableDirs = stxConfig.composablesDir
+    ? [nodePath.resolve(stxConfig.root || '.', stxConfig.composablesDir)]
+    : ['composables', 'functions'].map(d => nodePath.resolve(stxConfig.root || '.', d))
+
   for (const dir of [
     componentsDir,
     layoutsDir,
     partialsDir,
     publicDir,
     'resources/assets',
+    storesDir,
+    ...composableDirs,
     ...(options.watchDirs ?? []),
   ]) {
     if (!dir) continue

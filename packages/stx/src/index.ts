@@ -205,6 +205,10 @@ export { extractClassNames, generateCrosswindCSS, getCrosswindServeAsset, inject
 
 // One crosswind merge shared by every render path (#1867)
 export { deepMergeThemes, mergeCrosswindConfig, type MergedCrosswindConfig } from './crosswind-config'
+
+// Dev-mode invalidation for the store/composable bundles (#1877)
+export { clearStoreCache } from './store-loader'
+export { clearComposableCache } from './composable-loader'
 export { runDoctor, formatDoctorReport, findPantryPackage } from './doctor'
 export type { DoctorCheck, DoctorReport, DoctorOptions, CheckStatus } from './doctor'
 export {
