@@ -8,6 +8,7 @@
  */
 
 import type { StxOptions } from './types'
+import { getOwnedRouteMatchers } from './owned-routes'
 
 /**
  * Inject an @stacksjs/browser initialization input into a template that will
@@ -266,19 +267,36 @@ export async function injectRouterScript(template: string, options?: StxOptions)
   // Inject router config from stx.config.ts (replaces manual window.STX_ROUTER_OPTIONS scripts)
   const routerConfig = options?.router
   let configScript = ''
-  if (routerConfig) {
+  {
     const configObj: Record<string, any> = {}
-    if (routerConfig.container) configObj.container = routerConfig.container
-    if (routerConfig.interceptAllLinks !== undefined) configObj.interceptAllLinks = routerConfig.interceptAllLinks
-    if (routerConfig.progress !== undefined) configObj.progress = routerConfig.progress
-    if (routerConfig.viewTransitions !== undefined) configObj.viewTransitions = routerConfig.viewTransitions
-    if (routerConfig.viewTransitionDuration !== undefined) configObj.viewTransitionDuration = routerConfig.viewTransitionDuration
-    if (routerConfig.viewTransitionEasing !== undefined) configObj.viewTransitionEasing = routerConfig.viewTransitionEasing
-    if (routerConfig.scrollToTop !== undefined) configObj.scrollToTop = routerConfig.scrollToTop
-    if (routerConfig.prefetch !== undefined) configObj.prefetch = routerConfig.prefetch
-    if (routerConfig.cache !== undefined) configObj.cache = routerConfig.cache
-    if (routerConfig.progressColor !== undefined) configObj.progressColor = routerConfig.progressColor
-    if (routerConfig.progressHeight !== undefined) configObj.progressHeight = routerConfig.progressHeight
+    if (routerConfig) {
+      if (routerConfig.container) configObj.container = routerConfig.container
+      if (routerConfig.interceptAllLinks !== undefined) configObj.interceptAllLinks = routerConfig.interceptAllLinks
+      if (routerConfig.progress !== undefined) configObj.progress = routerConfig.progress
+      if (routerConfig.viewTransitions !== undefined) configObj.viewTransitions = routerConfig.viewTransitions
+      if (routerConfig.viewTransitionDuration !== undefined) configObj.viewTransitionDuration = routerConfig.viewTransitionDuration
+      if (routerConfig.viewTransitionEasing !== undefined) configObj.viewTransitionEasing = routerConfig.viewTransitionEasing
+      if (routerConfig.scrollToTop !== undefined) configObj.scrollToTop = routerConfig.scrollToTop
+      if (routerConfig.prefetch !== undefined) configObj.prefetch = routerConfig.prefetch
+      if (routerConfig.cache !== undefined) configObj.cache = routerConfig.cache
+      if (routerConfig.progressColor !== undefined) configObj.progressColor = routerConfig.progressColor
+      if (routerConfig.progressHeight !== undefined) configObj.progressHeight = routerConfig.progressHeight
+    }
+
+    // The paths the router can actually render, so interception stops claiming
+    // endpoints it cannot swap and hitting them twice (#1864). Omitted entirely
+    // when discovery found nothing: the client treats absence as "unknown" and
+    // keeps its old behaviour, where an empty list would read as "owns nothing"
+    // and kill SPA navigation site-wide.
+    try {
+      const owned = await getOwnedRouteMatchers((options as any)?.pagesDir)
+      if (owned.length > 0)
+        configObj.ownedRoutes = owned
+    }
+    catch {
+      // Undiscoverable — leave the key off.
+    }
+
     if (Object.keys(configObj).length > 0) {
       configScript = `<script>window.__stxRouterConfig=${JSON.stringify(configObj)};</script>\n`
     }

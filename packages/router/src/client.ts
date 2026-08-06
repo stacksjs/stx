@@ -1300,6 +1300,33 @@ else {
     return false;
   }
 
+  // Paths the router can actually render, compiled from the server's own route
+  // table and shipped as regex sources (#1864). Absent when discovery found
+  // nothing, which means UNKNOWN, not "owns nothing" — treating it as the
+  // latter would disable SPA navigation for a whole site.
+  var ownedRoutes=null;
+  (function(){
+    var raw=o.ownedRoutes;
+    if(!raw||!raw.length)return;
+    var compiled=[];
+    for(var i=0;i<raw.length;i++){
+      try{compiled.push(new RegExp(raw[i]))}
+      catch(e){}
+    }
+    if(compiled.length)ownedRoutes=compiled;
+  })();
+
+  // Does the router own this path? Only meaningful when the route table made it
+  // to the client; otherwise every path is treated as owned, preserving the old
+  // behaviour.
+  function routerOwns(pathname){
+    if(!ownedRoutes)return true;
+    for(var i=0;i<ownedRoutes.length;i++){
+      if(ownedRoutes[i].test(pathname))return true;
+    }
+    return false;
+  }
+
   // Eligibility for auto-claiming an arbitrary same-origin anchor under
   // interceptAllLinks. Only reached for anchors the author did not mark.
   function shouldIntercept(link){
@@ -1308,6 +1335,16 @@ else {
     if(href.startsWith('?'))return true;
     if(href===location.pathname)return false;
     if(!getContainer())return false;
+    // An endpoint the router cannot render must go to the browser. Claiming it
+    // meant a failed fragment fetch, a fallback navigation, and the endpoint
+    // hit TWICE — on OAuth redirects, that mints state twice.
+    var path=href;
+    var q=path.indexOf('?');if(q!==-1)path=path.slice(0,q);
+    var h=path.indexOf('#');if(h!==-1)path=path.slice(0,h);
+    if(path.charAt(0)==='/'&&!routerOwns(path)){
+      log('[router] not a known route, leaving to the browser:',href);
+      return false;
+    }
     return true;
   }
 
