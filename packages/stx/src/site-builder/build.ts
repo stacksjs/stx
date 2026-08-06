@@ -13,6 +13,7 @@ import {
 import { dirname, join, relative } from 'node:path'
 import process from 'node:process'
 import stxPlugin from 'bun-plugin-stx'
+import { CONVENTIONAL_ASSET_OUTPUT, resolveConventionalAssetRoot } from '../asset-roots'
 import { injectCrosswindCSS } from '../dev-server/crosswind'
 import { injectSeo } from './seo'
 import { generateSitemap, type SitemapEntry } from './sitemap'
@@ -183,6 +184,12 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   // Public assets — copied last so they overwrite any same-named files
   if (existsSync(publicDir))
     cpSync(publicDir, outDir, { recursive: true })
+
+  // /assets/* also resolves from resources/assets/* on the serve path, so a
+  // build that copies only publicDir 404s URLs that worked in dev (#1876).
+  const conventionalAssets = resolveConventionalAssetRoot()
+  if (conventionalAssets)
+    cpSync(conventionalAssets, join(outDir, CONVENTIONAL_ASSET_OUTPUT), { recursive: true })
 
   // 404.html
   const fourOhFourSrc = join(outDir, '404.html')

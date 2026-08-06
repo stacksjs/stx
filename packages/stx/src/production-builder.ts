@@ -15,6 +15,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { CONVENTIONAL_ASSET_OUTPUT, CONVENTIONAL_ASSET_ROOT, resolveConventionalAssetRoot } from './asset-roots'
 import { createRouter, type Route } from './router'
 import { buildRuntimeAsset, buildRouterAsset, type BuiltAsset } from './build-assets'
 import { compileTemplate, type CompiledTemplate } from './template-compiler'
@@ -323,6 +324,19 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
     if (copied > 0) {
       console.log(`[stx build] Copied ${copied} public asset${copied === 1 ? '' : 's'} (${(bytes / 1024).toFixed(1)}KB) from ${publicDir}/`)
     }
+  }
+
+  // The serve path resolves /assets/* from resources/assets/* as well as from
+  // publicDir. Copying only publicDir left those URLs 404ing in built output
+  // while they worked in dev, with nothing reporting it (#1876).
+  const conventionalAssetSrc = resolveConventionalAssetRoot(root)
+  if (conventionalAssetSrc) {
+    const { copied, bytes } = copyPublicAssets(
+      conventionalAssetSrc,
+      path.join(outputDir, 'public', CONVENTIONAL_ASSET_OUTPUT),
+    )
+    if (copied > 0)
+      console.log(`[stx build] Copied ${copied} asset${copied === 1 ? '' : 's'} (${(bytes / 1024).toFixed(1)}KB) from ${CONVENTIONAL_ASSET_ROOT}/`)
   }
 
   // ── 6. Generate manifest ──

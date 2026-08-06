@@ -47,6 +47,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { CONVENTIONAL_ASSET_OUTPUT, CONVENTIONAL_ASSET_ROOT, resolveConventionalAssetRoot } from './asset-roots'
 import { createRouter, type Route } from './router'
 import { processDirectives, injectRouterScript } from './process'
 import { extractIslandChunks, injectIslandChunkPrefetch } from './island-chunking'
@@ -1286,6 +1287,15 @@ else {
     if (cfg.publicDir && fs.existsSync(cfg.publicDir)) {
       await copyDirectory(cfg.publicDir, cfg.outputDir)
       console.log(`Copied public assets from ${cfg.publicDir}`)
+    }
+
+    // The serve path also resolves /assets/* from resources/assets/*, so a
+    // build that copies only publicDir leaves those URLs 404ing in output that
+    // worked in dev (#1876).
+    const conventionalAssets = resolveConventionalAssetRoot()
+    if (conventionalAssets) {
+      await copyDirectory(conventionalAssets, path.join(cfg.outputDir, CONVENTIONAL_ASSET_OUTPUT))
+      console.log(`Copied assets from ${CONVENTIONAL_ASSET_ROOT}`)
     }
 
   }
