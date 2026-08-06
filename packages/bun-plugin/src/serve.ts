@@ -148,6 +148,54 @@ export interface ServeRequestContext {
   [key: string]: unknown
 }
 
+/**
+ * The cookie name a double-submit CSRF check reads.
+ *
+ * Spelled here rather than imported, because stx does not depend on whatever
+ * framework is doing the checking - it only has to agree on the name, and this
+ * is the name every double-submit implementation in this ecosystem uses.
+ */
+export const CSRF_COOKIE = 'X-CSRF-Token'
+
+/**
+ * A token to mint for this request, or null to leave it alone.
+ *
+ * Safe methods only, and only when the request carries none already: anything
+ * else is somebody's live session, and rotating their token mid-flight would
+ * reject the very form they are about to submit.
+ */
+export function csrfTokenToMint(req: Request, cookies: Record<string, string>): string | null {
+  const method = (req.method || 'GET').toUpperCase()
+  if (method !== 'GET' && method !== 'HEAD')
+    return null
+
+  if (cookies[CSRF_COOKIE] || cookies['csrf-token'])
+    return null
+
+  // Only for a document request. A stylesheet or an image has no forms in it,
+  // and minting on every asset would hand out a new token per request while
+  // the page that matters embedded an older one.
+  const accept = req.headers.get('accept') || ''
+  if (accept && !accept.includes('text/html') && !accept.includes('*/*'))
+    return null
+
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+
+  return [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
+/** The `Set-Cookie` value for a minted token. Readable by script, as double-submit requires. */
+export function csrfCookieHeader(token: string, secure: boolean): string {
+  return [
+    `${CSRF_COOKIE}=${token}`,
+    'Path=/',
+    'SameSite=Lax',
+    'Max-Age=7200',
+    secure ? 'Secure' : null,
+  ].filter(Boolean).join('; ')
+}
+
 export function buildDynamicRouteRegexes(fileRouteBase: string): RegExp[] {
   // Catch-all first: `[...path]` has to become a group that spans separators,
   // and the ordinary rule below would otherwise turn it into `([^/]+)` - which
@@ -2428,6 +2476,10 @@ export async function serve(options: ServeOptions): Promise<void> {
           // its Response (translation pass) at a single exit point. When
           // i18n is disabled, the IIFE body is the original handler 1:1
           // and `applyI18nToResponse` returns the response untouched.
+          // Declared outside the IIFE so the response step below can attach the
+          // same token the render embedded.
+          let mintedCsrfToken: string | null = null
+
           const _i18nResp: Response = await (async (): Promise<Response> => {
             activeServeLocale = i18nLocale
             activeServeSearch = url.search
@@ -2435,6 +2487,25 @@ export async function serve(options: ServeOptions): Promise<void> {
             activeServeCookieHeader = req.headers.get('cookie') || ''
             activeServeCookies = parseCookies(req)
             activeServeIp = server.requestIP(req)?.address || (req.headers.get('x-forwarded-for') || '').split(',')[0]!.trim()
+
+            // A CSRF token the page can embed, minted before the render.
+            //
+            // The usual pattern seeds this cookie on the way *out*, which
+            // works for a single-page app: it reads the cookie and echoes the
+            // header on its next request. It is too late for a server-rendered
+            // page with forms in it. The page is what has to embed the token,
+            // and on a visitor's very first request it renders before any
+            // cookie exists - so its forms carry nothing and their first
+            // submit is rejected. That is the submit most likely to belong to
+            // somebody trying the application for the first time.
+            //
+            // Minted here, put into the cookies the render reads, and attached
+            // to the response below - the same value in both places, because
+            // two independent tokens fail exactly like having none and are far
+            // harder to see.
+            mintedCsrfToken = csrfTokenToMint(req, activeServeCookies)
+            if (mintedCsrfToken)
+              activeServeCookies[CSRF_COOKIE] = mintedCsrfToken
             // Immutable-per-request snapshot threaded down to the render.
             // The singletons above can be reset by a concurrent request's
             // `finally` while this render is suspended at an await; this
@@ -3185,7 +3256,26 @@ export async function serve(options: ServeOptions): Promise<void> {
           })() // ─── end IIFE — single exit for translation post-process
           // Awaited, not passed through: `onResponse` is handed a Response,
           // never a pending Promise of one.
-          const _finalResp = await applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
+          let _finalResp = await applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
+
+          // The token the render embedded, sent to the browser. Appended so it
+          // coexists with any cookie the page set itself; failing to attach it
+          // is not worth failing the response over, since the page still
+          // rendered and the next request mints another.
+          if (mintedCsrfToken) {
+            try {
+              _finalResp.headers.append('Set-Cookie', csrfCookieHeader(mintedCsrfToken, req.url.startsWith('https://')))
+            }
+            catch {
+              const headers = new Headers(_finalResp.headers)
+              headers.append('Set-Cookie', csrfCookieHeader(mintedCsrfToken, req.url.startsWith('https://')))
+              _finalResp = new Response(_finalResp.body, {
+                status: _finalResp.status,
+                statusText: _finalResp.statusText,
+                headers,
+              })
+            }
+          }
 
           // Post-response hook — the mirror of `onRequest`, and the only
           // place a caller can touch a response the server itself produced.

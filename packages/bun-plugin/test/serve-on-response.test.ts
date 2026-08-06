@@ -98,7 +98,11 @@ describe('serve onResponse', () => {
   it('leaves the response alone when the hook returns nothing', async () => {
     const res = await fetch(`${BASE}/untouched`)
 
-    expect(res.headers.get('set-cookie')).toBeNull()
+    // Asserted against the hook's own value rather than "no cookie at all":
+    // serve now mints a CSRF token for document requests, so a page response
+    // carries a `Set-Cookie` whether or not a hook touched it. What this test
+    // is about is the hook, and the hook's marker is `abc123`.
+    expect(res.headers.get('set-cookie') ?? '').not.toContain('abc123')
   })
 
   it('runs for responses the server produced on its own, including 404s', async () => {
