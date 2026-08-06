@@ -578,6 +578,32 @@ catch {
       useSeoMeta({ title: config.title, description: config.description })
     }
   }
+  /**
+   * Declare exactly what crosses into `<script client>`.
+   *
+   * Without this the only bridge is name scraping: a server binding is
+   * published if its name happens to appear as a free identifier in the client
+   * source. So a page cannot state what it expects, client code defends with
+   * `typeof x === 'number' ? x : 0`, and a server const that exists only to be
+   * scraped reads as dead to every linter (#1868).
+   *
+   * Declaring makes the set explicit and deterministic: a name is either
+   * declared or absent, never "present because you happened to mention it".
+   * Values are captured here rather than names alone, so the payload is what
+   * was declared rather than whatever the context held later.
+   *
+   *   defineClientPayload({ liveNow, range })
+   */
+  function defineClientPayload(payload: unknown): void {
+    if (!payload || typeof payload !== 'object')
+      return
+    const declared = (context.__stxClientPayload as Record<string, unknown> | undefined) ?? {}
+    // Merged, not replaced: a layout and the page it wraps each get to declare
+    // their own crossings, and the page runs after the layout.
+    Object.assign(declared, payload as Record<string, unknown>)
+    context.__stxClientPayload = declared
+  }
+
   // useRoute() mirrors what the browser's useRoute() reads from
   // window.stx._rp — the serve path passes real params/search via context
   // (stacksjs/stacks#1967), so `useRoute().params.id` agrees on both sides.
@@ -782,6 +808,7 @@ catch {
     // eslint-disable-next-line no-new-func
     const scriptFn = new Function(
       'module', 'exports', 'require', 'props', '$props', 'defineProps', 'withDefaults',
+      'defineClientPayload',
       'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
       'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',
       'ref', 'reactive', 'computed', 'watch', 'onMounted', 'onUnmounted', 'nextTick',
@@ -801,6 +828,7 @@ catch {
     )
     const result = await scriptFn(
       module, exports, requireFn, propsObj, $props, defineProps, withDefaults,
+      defineClientPayload,
       state, derived, effect, batch, onMount, onDestroy,
       definePageMeta, useRoute, useRouter, useHead, useSeoMeta,
       ref, reactive, computed, watch, onMounted, onUnmounted, nextTick,

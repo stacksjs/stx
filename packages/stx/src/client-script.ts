@@ -908,6 +908,27 @@ function generateAutoImportGuard(stxImports: string[], browserImports: string[])
  * result as {@link ClientScriptOptions.serverData}.
  */
 export function extractBridgeData(context: Record<string, unknown>): Record<string, unknown> {
+  // An explicit `defineClientPayload({ … })` in a server block wins outright.
+  // The declared set is published in full and nothing else crosses, so a name
+  // is either declared or absent — never "present because the client source
+  // happened to mention it" (#1868). That determinism is the point: it is what
+  // lets a client block drop its `typeof x === 'number' ? x : 0` guard.
+  const declared = context.__stxClientPayload
+  if (declared && typeof declared === 'object') {
+    const picked: Record<string, unknown> = {}
+    for (const key in declared as Record<string, unknown>) {
+      const value = (declared as Record<string, unknown>)[key]
+      if (typeof value === 'function')
+        continue
+      picked[key] = value
+    }
+    // Reserved marker so the emitter knows not to also require a textual
+    // reference. It is `__`-prefixed, so the emitter's existing opt-out skips
+    // it and it never reaches the page.
+    picked.__stxDeclaredPayload = true
+    return picked
+  }
+
   const out: Record<string, unknown> = {}
   for (const key in context) {
     if (key.startsWith('__') || key.startsWith('$'))
@@ -1042,6 +1063,7 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
   // into the response body whether or not any client code could use it
   // (stacksjs/stx#1831).
   const searchable = stripCommentsAndLiterals(code)
+  const declaredPayload = serverData.__stxDeclaredPayload === true
   const lines: string[] = []
   for (const [name, value] of Object.entries(serverData)) {
     if (!/^[A-Za-z_$][\w$]*$/.test(name))
@@ -1055,7 +1077,12 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
     // Only bridge identifiers the client actually references as a NAME.
     // A word boundary alone also matched a property, so reading an unrelated
     // `session.token()` published the server's `token` binding beside it.
-    if (!referencesIdentifier(searchable, name))
+    //
+    // Skipped when the page DECLARED its payload: the declaration is the
+    // contract, so a declared name is published whether or not the client
+    // mentions it. Requiring both would reintroduce exactly the uncertainty
+    // the declaration exists to remove (#1868).
+    if (!declaredPayload && !referencesIdentifier(searchable, name))
       continue
     // …and does not itself declare (never clobber a client-owned name).
     if (declaresClientIdentifier(code, name))
