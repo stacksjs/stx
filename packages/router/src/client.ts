@@ -38,7 +38,7 @@ export function getRouterScript(): string {
   const source = `
 ;(function(){
   'use strict';
-  var ROUTER_REV=3;
+  var ROUTER_REV=4;
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
@@ -1208,13 +1208,26 @@ else {
   }
 
   // ── Link interception ──
-  function shouldIntercept(link){
-    if(!link)return false;
+  // Links the router must never touch, however it found them. This is the
+  // opt-out set, and it is deliberately separate from shouldIntercept's
+  // eligibility rules below: [data-stx-link] is an author saying "this is a
+  // router link", which answers eligibility but must NOT override an explicit
+  // opt-out or a non-navigational scheme.
+  function isRouterExcluded(link){
+    if(!link)return true;
     var href=link.getAttribute('href');
-    if(!href)return false;
-    if(href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:')||href.startsWith('javascript:'))return false;
-    if(link.target==='_blank')return false;
-    if(link.hasAttribute('data-stx-no-router')||link.hasAttribute('data-no-router')||link.hasAttribute('download'))return false;
+    if(!href)return true;
+    if(href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:')||href.startsWith('javascript:'))return true;
+    if(link.target==='_blank')return true;
+    if(link.hasAttribute('data-stx-no-router')||link.hasAttribute('data-no-router')||link.hasAttribute('download'))return true;
+    return false;
+  }
+
+  // Eligibility for auto-claiming an arbitrary same-origin anchor under
+  // interceptAllLinks. Only reached for anchors the author did not mark.
+  function shouldIntercept(link){
+    if(isRouterExcluded(link))return false;
+    var href=link.getAttribute('href');
     if(href.startsWith('?'))return true;
     if(href===location.pathname)return false;
     if(!getContainer())return false;
@@ -1230,6 +1243,10 @@ else {
     if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0)return;
     if(!e.target||!e.target.closest)return;
     var link=e.target.closest('[data-stx-link]');
+    // A marked link still has to clear the opt-out set. It used to skip it
+    // entirely, so data-no-router on a [data-stx-link] anchor was silently
+    // ignored and an OAuth redirect got claimed by the router.
+    if(link&&isRouterExcluded(link)){log('[router] excluded:',link.getAttribute('href'));return}
     if(!link&&o.interceptAllLinks){
       var anchor=e.target.closest('a[href]');
       if(anchor&&shouldIntercept(anchor))link=anchor;
@@ -1237,8 +1254,6 @@ else {
     if(!link){return}
     var href=link.getAttribute('href');
     log('[router] click intercepted:',href,'container:',!!getContainer(),'defaultPrevented:',e.defaultPrevented);
-    if(!href||href.startsWith('http')||href.startsWith('#')||href.startsWith('mailto:')||href.startsWith('tel:')){log('[router] skipped:',href);return}
-    if(link.target==='_blank'||link.hasAttribute('download'))return;
     e.preventDefault();
     e.stopPropagation();
     log('[router] navigating to:',href);
@@ -1255,7 +1270,10 @@ else {
     document.addEventListener('mouseover',function(e){
       if(!e.target||!e.target.closest)return;
       var link=e.target.closest('[data-stx-link]');
-      if(!link)return;
+      // Same opt-out set as the click path. Without it, hovering a link the
+      // router is not allowed to claim still fired a real GET at it — a
+      // logout or OAuth URL was requested on hover alone.
+      if(isRouterExcluded(link))return;
       var href=withCurrentLocale(link.getAttribute('href'));
       var key=cacheKey(href);
       if(cache[key]||prefetching[key])return;
