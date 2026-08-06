@@ -973,7 +973,16 @@ finally {
     const error = state(null);
     if (options.suspense) registerSuspense(loading, error);
 
+    // A superseded or unmounted request must not resolve into a torn-down
+    // scope. Each run gets its own AbortController; a newer run (refetch or a
+    // reactive URL change) aborts the one before it, and onDestroy aborts the
+    // last in-flight one. State writes are guarded on signal.aborted (#1871).
+    let __stxAbort = null;
+
     const fetchData = async () => {
+      if (__stxAbort) __stxAbort.abort();
+      __stxAbort = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const __signal = __stxAbort ? __stxAbort.signal : undefined;
       loading.set(true);
       error.set(null);
 
@@ -989,7 +998,8 @@ finally {
           headers: {
             'Content-Type': 'application/json',
             ...(options.headers || {})
-          }
+          },
+          signal: __signal
         };
 
         if (options.body) {
@@ -999,16 +1009,21 @@ finally {
         }
 
         const response = await __stxFetch('useFetch', url, fetchOptions);
+        if (__signal && __signal.aborted) return;
 
         if (!response.ok) throw await __stxHttpError(response);
 
         const result = await response.json();
+        if (__signal && __signal.aborted) return;
 
         // Apply transform if provided
         const transformed = options.transform ? options.transform(result) : result;
         data.set(transformed);
       }
 catch (e) {
+        // A superseded/unmounted request rejects with AbortError — expected,
+        // not a failure to surface. The run that superseded it owns the state.
+        if (e && e.name === 'AbortError') return;
         console.error('[STX] useFetch error:', e);
         // Store Error objects (not just messages) so consumers can use
         // .message, .stack, instanceof Error. Matches the composable's
@@ -1017,7 +1032,8 @@ catch (e) {
         if (options.onError) options.onError(e);
       }
 finally {
-        loading.set(false);
+        // If a newer run (or onDestroy) aborted this one, that run owns loading.
+        if (!__signal || !__signal.aborted) loading.set(false);
       }
     };
 
@@ -1042,6 +1058,10 @@ finally {
 else if (immediate) {
       onMount(fetchData);
     }
+
+    // Abort an in-flight request when the owning scope is destroyed, so its
+    // resolution can't write into a torn-down component (#1871).
+    if (typeof onDestroy === 'function') onDestroy(function() { if (__stxAbort) __stxAbort.abort(); });
 
     return {
       data,
@@ -1260,6 +1280,11 @@ else if (immediate) {
     var isStale = state(false);
     if (options.suspense) registerSuspense(loading, error);
 
+    // Per-run AbortController: a newer run aborts the previous in-flight one and
+    // onDestroy aborts the last, so a resolved request can't write into a
+    // torn-down scope (#1871).
+    var __stxAbort = null;
+
     var fetchData = async function() {
       var resolvedUrl = typeof url === 'function' ? url() : url;
       if (!resolvedUrl) { loading.set(false); return; }
@@ -1281,13 +1306,18 @@ else if (immediate) {
         isStale.set(true);
       }
 
+      if (__stxAbort) __stxAbort.abort();
+      __stxAbort = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var __signal = __stxAbort ? __stxAbort.signal : undefined;
       loading.set(true);
       error.set(null);
       try {
-        var fetchOpts = { method: 'GET', headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } };
+        var fetchOpts = { method: 'GET', headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, signal: __signal };
         var response = await __stxFetch('useQuery', resolvedUrl, fetchOpts);
+        if (__signal && __signal.aborted) return;
         if (!response.ok) throw await __stxHttpError(response);
         var result = await response.json();
+        if (__signal && __signal.aborted) return;
         var transformed = options.transform ? options.transform(result) : result;
         data.set(transformed);
         isStale.set(false);
@@ -1297,11 +1327,14 @@ else if (immediate) {
         setTimeout(function() { delete _queryCache[key]; }, cacheTime);
       }
 catch (e) {
+        // A superseded/unmounted request rejects with AbortError — expected;
+        // the run that superseded it owns the state (#1871).
+        if (e && e.name === 'AbortError') return;
         error.set(e.message || 'Query failed');
         if (options.onError) options.onError(e);
       }
 finally {
-        loading.set(false);
+        if (!__signal || !__signal.aborted) loading.set(false);
       }
     };
 
@@ -1326,6 +1359,9 @@ finally {
       var intervalId = setInterval(fetchData, options.refetchInterval);
       onDestroy(function() { clearInterval(intervalId); });
     }
+
+    // Abort an in-flight request when the owning scope is destroyed (#1871).
+    onDestroy(function() { if (__stxAbort) __stxAbort.abort(); });
 
     return {
       data: data,
