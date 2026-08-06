@@ -164,6 +164,10 @@ export * from './suspense'
 export * from './teleport'
 export * from './transitions'
 export * from './type-checker'
+// Type-checking the TypeScript inside .stx script blocks, and the CLI behind
+// `stx typecheck` (#1852). Distinct from ./type-checker, which is a bespoke
+// checker for template EXPRESSIONS.
+export * from './typecheck'
 export * from './web-components'
 export * from './virtual-scrolling'
 export * from './partial-hydration'

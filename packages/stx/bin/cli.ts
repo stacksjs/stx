@@ -1783,6 +1783,57 @@ catch (error) {
     })
 
   cli
+    .command('typecheck [patterns...]', 'Type-check the TypeScript inside .stx script blocks')
+    .option('--no-client', 'Skip <script client> blocks')
+    .option('--no-server', 'Skip <script server> blocks')
+    .option('--lib <path>', 'Extra ambient declaration file (repeatable)')
+    .example('stx typecheck')
+    .example('stx typecheck "resources/views/**/*.stx"')
+    .action(async (patterns: string[] | undefined, options: { client?: boolean, server?: boolean, lib?: string | string[] }) => {
+      const { formatTypecheckDiagnostics, typecheckStxFiles } = await import('../src/typecheck')
+      const { Glob } = await import('bun')
+
+      // A single positional arrives as a bare string, not a one-element array,
+      // and `for…of` over a string iterates its CHARACTERS — so an unnormalised
+      // value silently globbed for "g", "o", "o", "d" and matched nothing.
+      const normalized = Array.isArray(patterns) ? patterns : (patterns ? [patterns] : [])
+      const globs = normalized.length ? normalized : ['**/*.stx']
+      const files: string[] = []
+      for (const pattern of globs) {
+        for await (const file of new Glob(pattern).scan({ cwd: process.cwd(), absolute: true })) {
+          if (!file.includes('/node_modules/') && !file.includes('/dist/'))
+            files.push(file)
+        }
+      }
+
+      if (files.length === 0) {
+        console.log(`\n  No .stx files matched ${globs.join(', ')}\n`)
+        return
+      }
+
+      const extraLibs = options.lib ? (Array.isArray(options.lib) ? options.lib : [options.lib]) : []
+      const result = await typecheckStxFiles(files, {
+        client: options.client !== false,
+        server: options.server !== false,
+        extraLibs,
+      })
+
+      const errors = result.diagnostics.filter(d => d.category === 'error')
+      if (result.diagnostics.length > 0)
+        console.error(`\n${formatTypecheckDiagnostics(result.diagnostics)}\n`)
+
+      console.log(
+        `  Checked ${result.blockCount} script block(s) in ${result.checkedFiles.length} file(s) — `
+        + `${errors.length} error(s), ${result.diagnostics.length - errors.length} warning(s)\n`,
+      )
+
+      // Non-zero on error, so this is usable as a CI gate — which is the entire
+      // point of the command. See #1852.
+      if (errors.length > 0)
+        process.exit(1)
+    })
+
+  cli
     .command('doctor', 'Diagnose the stx framework-runtime resolution + staleness chain')
     .option('--json', 'Output the report as JSON')
     .example('stx doctor')
