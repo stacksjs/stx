@@ -693,9 +693,25 @@ export function resolveServeOpenUrl(port: number, openPath = '/'): string {
   }
 }
 
+/**
+ * Did rendering fail?
+ *
+ * processDirectives swallows a template error and returns an HTML comment as
+ * the entire document. That was then served with the page's own status — 200 —
+ * so a broken page looked healthy to every uptime check, CDN and browser cache
+ * that saw it, and the only evidence was a comment in a blank page
+ * (stacksjs/stx#1854).
+ *
+ * Both other stx servers already get this right: production-server.ts looks up
+ * a /500 route and dev-server/serve-app.ts calls renderErrorPage(500).
+ */
+export function isRenderFailure(html: string): boolean {
+  return html.includes('<!-- Template Processing failed:')
+    || html.includes('<!-- stx rendering error -->')
+}
+
 export function isRenderableCacheCandidate(html: string): boolean {
-  return !html.includes('<!-- Template Processing failed:')
-    && !html.includes('<!-- stx rendering error -->')
+  return !isRenderFailure(html)
 }
 
 /**
@@ -3030,8 +3046,11 @@ export async function serve(options: ServeOptions): Promise<void> {
                   // resolves to dist here, which lags src.
                   const shipsRuntime = content.includes('data-stx-runtime')
 
+                  // Same rule on the SPA path. A 200 here is worse than on a
+                  // full load: the router swaps the failure into the live page
+                  // and the user keeps navigating around a broken shell (#1854).
                   return new Response(fragment, {
-                    status: responseStatus,
+                    status: isRenderFailure(content) ? 500 : responseStatus,
                     headers: {
                       'Content-Type': 'text/html; charset=utf-8',
                       'X-STX-Fragment': 'true',
@@ -3062,8 +3081,16 @@ export async function serve(options: ServeOptions): Promise<void> {
                     return runtimeCount === 1 ? match : '' // keep first, drop duplicates
                   },
                 )
+                // A render failure is a 500, whatever status the page asked
+                // for. Serving it as 200 is what made this invisible: the
+                // response looked healthy to uptime checks and caches while
+                // the body was an HTML comment (#1854).
+                const pageRenderFailed = isRenderFailure(cleaned)
+                if (pageRenderFailed)
+                  console.error(`[stx] render failed for ${new URL(req.url).pathname} — serving 500`)
+
                 return new Response(injectHmrClient(cleaned), {
-                  status: responseStatus,
+                  status: pageRenderFailed ? 500 : responseStatus,
                   headers: {
                     'Content-Type': 'text/html; charset=utf-8',
                     'Cache-Control': 'no-store',
