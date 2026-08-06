@@ -3938,6 +3938,27 @@ catch (e) {
       const newGroups = [];
       const usedKeys = new Set();
 
+      // Minimal-move reconciliation.
+      //
+      // Every reused row used to be round-tripped through a DocumentFragment,
+      // and appendChild into a fragment DETACHES the node from the document
+      // first. Removing a focused node blurs it and resets activeElement, so a
+      // list could not contain a field the user was typing in: any write to the
+      // backing array kicked them out of it, losing caret, selection and undo
+      // history. It happened for every row unconditionally, including rows that
+      // had not moved, and unkeyed loops took the same path because getItemKey
+      // falls back to the index (#1882).
+      //
+      // The cursor walks the existing rendering in order. A node already at the
+      // cursor is left ENTIRELY alone — an unchanged list now performs zero DOM
+      // operations — and a node that genuinely has to move is moved with
+      // insertBefore, which relocates it without a detach/reattach cycle.
+      let cursor = null;
+      for (let ci = 0; ci < currentGroups.length && !cursor; ci++) {
+        const seed = liveGroupNodes(currentGroups[ci] || []);
+        if (seed.length) cursor = seed[0];
+      }
+
       for (let i = 0; i < list.length; i++) {
         const key = newKeys[i];
         const existing = oldKeyMap.get(key);
@@ -3950,9 +3971,20 @@ catch (e) {
           // must not resurrect that hidden node.
           const group = existing.shift();
           const liveNodes = liveGroupNodes(group);
-          const fragment = document.createDocumentFragment();
-          liveNodes.forEach(groupNode => fragment.appendChild(groupNode));
-          parent.insertBefore(fragment, placeholder);
+          for (let li = 0; li < liveNodes.length; li++) {
+            const groupNode = liveNodes[li];
+            if (groupNode === cursor) {
+              // Already exactly where it belongs. Touching it here is what
+              // used to blur it, so the correct action is to do nothing.
+              cursor = cursor.nextSibling;
+            }
+            else {
+              // Moves without detaching. The cursor does not advance: this node
+              // is now behind it, and the cursor still marks the next position
+              // to fill.
+              parent.insertBefore(groupNode, cursor || placeholder);
+            }
+          }
           newElements.push(...group);
           newGroups.push(group);
           usedKeys.add(key);
@@ -3968,7 +4000,10 @@ catch (e) {
           // New item — create DOM elements with a fresh item signal
           const elements = createItemElements(list[i], i, key);
           elements.forEach(el => {
-            parent.insertBefore(el, placeholder);
+            // Before the cursor, not before the placeholder: a new row inserted
+            // in the MIDDLE of the list must land at its own position, without
+            // forcing every row after it to be moved to get back in order.
+            parent.insertBefore(el, cursor || placeholder);
             if (tgReady && el.isConnected) tgEnter(el, tgName);
           });
           hydrateComponentScopes(elements, elements.find(function(node) {
