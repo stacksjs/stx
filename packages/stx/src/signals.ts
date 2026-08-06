@@ -1406,6 +1406,13 @@ else if (immediate) {
   // ==========================================================================
 
   var _queryCache = {};
+  // Requests currently in flight, keyed exactly like _queryCache. _queryCache
+  // is written only after the body parses, so the whole in-flight window was a
+  // cache miss and N components mounting together issued N identical requests
+  // (#1869). Refcounted: a caller that loses interest must not cancel a
+  // response another caller is still waiting on.
+  var _queryInflight = {};
+  var __stxQueryInstance = 0;
 
   // Suspense registry (#1742). A query created with { suspense: true } pushes
   // { el, loading, error } here at creation time (which runs during partial-scope
@@ -1439,6 +1446,15 @@ else if (immediate) {
     // onDestroy aborts the last, so a resolved request can't write into a
     // torn-down scope (#1871).
     var __stxAbort = null;
+    // Identity, so dedup can tell "another component wants this key" from
+    // "this component asked again". They must behave differently: joining is
+    // right for the first, and wrong for the second — refetch() after a
+    // mutation has to hit the network, not adopt the pre-mutation request that
+    // happens to still be open (#1869).
+    var __instanceId = ++__stxQueryInstance;
+    // The shared entry this instance is currently attached to, so superseding
+    // can release its claim without cancelling a request someone else joined.
+    var __joined = null;
 
     var fetchData = async function() {
       var resolvedUrl = typeof url === 'function' ? url() : url;
@@ -1461,17 +1477,68 @@ else if (immediate) {
         isStale.set(true);
       }
 
-      if (__stxAbort) __stxAbort.abort();
+      // Join a request ANOTHER instance already has open for this key. Not one
+      // of our own: this instance calling refetch() means "I want fresh data",
+      // and adopting its own pre-mutation request would silently return stale
+      // data — so an own-instance run still supersedes, exactly as #1871 says.
+      var shared = _queryInflight[key];
+      if (shared && shared.owner !== __instanceId) {
+        shared.refs++;
+        __joined = shared;
+        loading.set(true);
+        error.set(null);
+        try {
+          var joinedResult = await shared.promise;
+          var joinedTransformed = options.transform ? options.transform(joinedResult) : joinedResult;
+          data.set(joinedTransformed);
+          isStale.set(false);
+          if (options.onSuccess) options.onSuccess(joinedTransformed);
+        }
+        catch (e) {
+          if (e && e.name === 'AbortError') return;
+          error.set(e.message || 'Query failed');
+          if (options.onError) options.onError(e);
+        }
+        finally {
+          shared.refs--;
+          if (__joined === shared) __joined = null;
+          loading.set(false);
+        }
+        return;
+      }
+
+      // Superseding this instance's own run. Abort ONLY if nobody joined it —
+      // cancelling a request another component is waiting on would leave it
+      // loading forever, which would turn #1871's fix into a worse bug.
+      if (__stxAbort) {
+        if (__joined && __joined.refs > 1) __joined.refs--;
+        else __stxAbort.abort();
+      }
+      __joined = null;
       __stxAbort = (typeof AbortController !== 'undefined') ? new AbortController() : null;
       var __signal = __stxAbort ? __stxAbort.signal : undefined;
       loading.set(true);
       error.set(null);
       try {
         var fetchOpts = { method: 'GET', headers: { 'Content-Type': 'application/json', ...__stxHeaders(options.headers) }, signal: __signal };
-        var response = await __stxFetch('useQuery', resolvedUrl, fetchOpts);
-        if (__signal && __signal.aborted) return;
-        if (!response.ok) throw await __stxHttpError(response);
-        var result = await response.json();
+        // Published BEFORE it is awaited, so a caller starting in the same tick
+        // finds it. The network part only — transform, cache write and
+        // onSuccess stay per-caller, since each may transform differently.
+        var netPromise = (async function() {
+          var response = await __stxFetch('useQuery', resolvedUrl, fetchOpts);
+          if (!response.ok) throw await __stxHttpError(response);
+          return await response.json();
+        })();
+        var entry = { owner: __instanceId, refs: 1, controller: __stxAbort, promise: netPromise };
+        _queryInflight[key] = entry;
+        __joined = entry;
+        // Cleared on settle, both ways. A settled entry left behind would turn
+        // dedup into a permanent cache and no request for this key would ever
+        // be issued again.
+        var releaseEntry = function() { if (_queryInflight[key] === entry) delete _queryInflight[key]; };
+        netPromise.then(releaseEntry, releaseEntry);
+
+        var result = await netPromise;
         if (__signal && __signal.aborted) return;
         var transformed = options.transform ? options.transform(result) : result;
         data.set(transformed);
