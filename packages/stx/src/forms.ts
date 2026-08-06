@@ -162,6 +162,25 @@ function idAttr(attrs: string, fallbackId: string): string {
   return ` id="${escapeAttr(fallbackId)}"`
 }
 
+/**
+ * Wire the WAI-ARIA error relationship a screen reader needs when a field is
+ * invalid: mark the control `aria-invalid` and point `aria-describedby` at its
+ * `@error` block. processErrorDirective emits that block with
+ * `id="<fieldId>-error"` exactly when the field has an error, so the target
+ * resolves precisely when the attribute is present — no dangling reference when
+ * the field is valid. An explicit author value always wins (#1861).
+ */
+function errorAria(name: string, hasError: boolean, attrs: string): string {
+  if (!hasError)
+    return ''
+  let out = ''
+  if (!/\baria-invalid\s*=/i.test(attrs))
+    out += ' aria-invalid="true"'
+  if (!/\baria-describedby\s*=/i.test(attrs))
+    out += ` aria-describedby="${escapeAttr(`${fieldId(name)}-error`)}"`
+  return out
+}
+
 // =============================================================================
 // CSRF Token Generation
 // =============================================================================
@@ -321,7 +340,7 @@ export function processFormInputDirectives(
       let attrsWithoutClassAndType = attrs.replace(/class=['"][^'"]+['"]/i, '')
       attrsWithoutClassAndType = attrsWithoutClassAndType.replace(/type=['"][^'"]+['"]/i, '')
 
-      return `<input type="${escapeAttr(type)}" name="${escapeAttr(name)}"${idAttr(attrs, fieldId(name))} value="${escapeAttr(oldValue)}" class="${className}"${attrsWithoutClassAndType ? ` ${attrsWithoutClassAndType}` : ''}>`
+      return `<input type="${escapeAttr(type)}" name="${escapeAttr(name)}"${idAttr(attrs, fieldId(name))} value="${escapeAttr(oldValue)}" class="${className}"${errorAria(name, hasError, attrs)}${attrsWithoutClassAndType ? ` ${attrsWithoutClassAndType}` : ''}>`
     },
   )
 
@@ -340,7 +359,7 @@ export function processFormInputDirectives(
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
 
-      return `<textarea name="${escapeAttr(name)}"${idAttr(attrs, fieldId(name))} class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${escapeAttr(oldValue)}</textarea>`
+      return `<textarea name="${escapeAttr(name)}"${idAttr(attrs, fieldId(name))} class="${className}"${errorAria(name, hasError, attrs)}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${escapeAttr(oldValue)}</textarea>`
     },
   )
 
@@ -378,7 +397,7 @@ export function processFormInputDirectives(
         )
       }
 
-      return `<select name="${escapeAttr(name)}"${idAttr(attrs, fieldId(name))} class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${processedContent}</select>`
+      return `<select name="${escapeAttr(name)}"${idAttr(attrs, fieldId(name))} class="${className}"${errorAria(name, hasError, attrs)}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${processedContent}</select>`
     },
   )
 
@@ -532,7 +551,7 @@ export function processErrorDirective(
       // Check if errors object exists and has the specified field
       if (hasFieldError(field, context)) {
         // Replace any expressions in the content with actual values
-        return content.replace(/\{\{([^}]+)\}\}/g, (_: string, expr: string) => {
+        const rendered = content.replace(/\{\{([^}]+)\}\}/g, (_: string, expr: string) => {
           try {
             // Simple expression evaluation for error messages
             if (expr.trim() === '$message' || expr.trim() === 'message') {
@@ -560,6 +579,9 @@ export function processErrorDirective(
             return expr
           }
         })
+        // Wrap so a control's aria-describedby has a stable target to point at;
+        // role="alert" announces the message when it appears (#1861).
+        return `<div id="${escapeAttr(`${fieldId(field)}-error`)}" role="alert">${rendered}</div>`
       }
 
       // No error for this field, return empty
