@@ -55,6 +55,66 @@ const DEFAULT_MAX_WHILE_ITERATIONS = 1000
 const DEFAULT_USE_ALT_LOOP_VARIABLE = false
 
 /**
+ * Resolve `@include('x', { … })` data maps against the current loop iteration.
+ *
+ * Includes are resolved long after loops expand, against the PAGE context — so
+ * a data map naming the loop variable evaluated to nothing and the partial
+ * rendered empty, silently (stacksjs/stx#1844). Freezing the map to a literal
+ * here is the same trick steps 6 and 7 already use for `:prop` and `@component`
+ * props, for the same reason.
+ *
+ * A map that does not reference anything in the iteration is left untouched, so
+ * an include outside a loop, or one passing only page-level values, keeps its
+ * original expression and its original behaviour.
+ */
+function preEvaluateIncludeData(content: string, ctx: Record<string, any>): string {
+  const pattern = /@(include|partial)\s*\(\s*(['"])([^'"]+)\2\s*,\s*/g
+  let result = ''
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  // eslint-disable-next-line no-cond-assign
+  while ((match = pattern.exec(content)) !== null) {
+    const argsStart = match.index + match[0].length
+    // findMatchingDelimiter counts depth from startPos, so it has to begin ON
+    // the open paren — anywhere after it and depth never reaches 1.
+    const openParen = match.index + match[0].indexOf('(')
+    const close = findMatchingDelimiter(content, '(', ')', openParen)
+    if (close === -1)
+      continue
+
+    const varsString = content.slice(argsStart, close).trim()
+    if (!varsString)
+      continue
+
+    // Only rewrite when the map actually reads something the iteration owns;
+    // otherwise leave the author's expression exactly as written.
+    const touchesLoopVar = Object.keys(ctx).some(name =>
+      new RegExp(`(?:^|[^\\w$.])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w$])`).test(varsString),
+    )
+    if (!touchesLoopVar)
+      continue
+
+    let frozen: string
+    try {
+      const evaluated = safeEvaluateObject(varsString, ctx)
+      if (!evaluated || typeof evaluated !== 'object')
+        continue
+      frozen = JSON.stringify(evaluated)
+    }
+    catch {
+      continue
+    }
+
+    result += content.slice(lastIndex, argsStart) + frozen
+    lastIndex = close
+    pattern.lastIndex = close
+  }
+
+  return lastIndex === 0 ? content : result + content.slice(lastIndex)
+}
+
+/**
  * Pre-evaluate @component props during loop iteration so that loop variables
  * are resolved before the component directive is processed later.
  *
@@ -964,6 +1024,14 @@ export function processLoops(template: string, context: Record<string, any>, fil
           // This resolves loop variable references in component props before the loop
           // context is lost, so processComponentDirectives can later use literal values
           processedContent = preEvaluateComponentProps(processedContent, itemContext)
+
+          // Step 8: Pre-evaluate @include data maps with the loop context, for
+          // the same reason as steps 6 and 7 — includes are resolved at
+          // process.ts:1433, long after this loop expanded at :1325, and their
+          // `{ item: item }` is evaluated against the PAGE context where the
+          // loop variable no longer exists. The partial rendered empty, with
+          // no warning (stacksjs/stx#1844).
+          processedContent = preEvaluateIncludeData(processedContent, itemContext)
 
           loopResult += processedContent
         }
