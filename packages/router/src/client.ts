@@ -38,11 +38,11 @@ export function getRouterScript(): string {
   const source = `
 ;(function(){
   'use strict';
-  var ROUTER_REV=4;
+  var ROUTER_REV=5;
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
-  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50};
+  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
   var debug=!!o.debug;
@@ -631,6 +631,60 @@ else {
   // pendingContainerAttrs — see the note above writeHistory about the cost of
   // adding an argument to swap() and its three call sites (#1807).
   var pendingLayoutDecl=null;
+  // ── Focus and route announcement ──
+  // A fragment swap replaces content without a document load, so the browser
+  // does none of what it normally does for a navigation. Focus stays on a link
+  // that no longer exists, which the browser resets to <body> — a keyboard user
+  // is silently returned to the top of the tab order — and a screen reader says
+  // nothing at all, so there is no signal the page changed. Neither is fixable
+  // from app code, because only the router knows a navigation happened (#1862).
+  function routeAnnouncer(){
+    var el=document.getElementById('stx-route-announcer');
+    if(el)return el;
+    el=document.createElement('div');
+    el.id='stx-route-announcer';
+    el.setAttribute('aria-live','polite');
+    el.setAttribute('role','status');
+    el.setAttribute('aria-atomic','true');
+    // Visually hidden but still ANNOUNCED. display:none and visibility:hidden
+    // are both skipped by screen readers, which would make this a silent no-op
+    // that looks correct in the DOM.
+    el.style.cssText='position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function announceRoute(){
+    if(o.announceRoute===false)return;
+    var c=getContainer();
+    var h=c&&c.querySelector?c.querySelector('h1'):null;
+    // The heading names the destination better than the title, which often
+    // carries a site-name suffix. Falls back to the title, then gives up
+    // rather than announcing an empty string.
+    var label=(h&&(h.textContent||'').trim())||document.title||'';
+    if(!label)return;
+    var el=routeAnnouncer();
+    // Cleared first: several screen readers ignore a live-region update whose
+    // text is identical to what is already there, so navigating between two
+    // pages with the same heading would announce only the first.
+    el.textContent='';
+    el.textContent=label;
+  }
+
+  function focusAfterNavigation(hash){
+    if(o.routeFocus===false)return;
+    var target=null;
+    if(hash){try{target=document.querySelector(hash)}catch(e){target=null}}
+    if(!target)target=getContainer();
+    if(!target||!target.focus)return;
+    // The container is not naturally focusable. tabindex="-1" makes it
+    // programmatically focusable without inserting it into the tab order.
+    if(!target.hasAttribute('tabindex'))target.setAttribute('tabindex','-1');
+    // preventScroll because scroll position is already decided just above —
+    // focusing would otherwise fight scrollToTop and the hash scrollIntoView.
+    try{target.focus({preventScroll:true})}catch(e){try{target.focus()}catch(e2){}}
+  }
+
   function swap(html,url,pushState,hash){
     var fragMark=/^<!--stx-fragment(?: rt=([01]))?-->/.exec(html);
     var isFragment=!!fragMark;
@@ -753,6 +807,12 @@ else {
         if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
         else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
         window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
+        // Before page scripts run, so a page that focuses its own control on
+        // mount still wins — its script executes after this.
+        focusAfterNavigation(hash);
+        // Deferred a tick because the title is applied by the caller after this
+        // swap resolves, and the announcement should read the new one.
+        setTimeout(announceRoute,0);
         // Execute page scripts FIRST — they define setup functions and set _latestSetup
         log('[router] frag scripts:', fragScripts.length);
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
