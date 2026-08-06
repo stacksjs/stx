@@ -6167,18 +6167,72 @@ catch (e) {} }
       if (persistCfg) {
         var pOpts = persistCfg === true ? {} : persistCfg;
         var storageKey = pOpts.key || ('stx-store-' + id);
-        var storageType = pOpts.storage === 'sessionStorage' ? sessionStorage : localStorage;
         var pick = pOpts.pick || null;
+
+        // Three additions, all of which apps previously had to hand-roll outside
+        // the store entirely (#1872):
+        //
+        //   keys        map a field to its OWN storage key, and optionally its own
+        //               backend, instead of folding everything into one JSON blob
+        //   serialize   / deserialize — the codec was hardcoded to JSON, so a
+        //               persisted string came back quoted. A signed-out token
+        //               stored as '""' is two characters and TRUTHY, which is a
+        //               real class of auth bug, and a legacy raw value could not
+        //               be read at all
+        //   cookie      a backend the SERVER can read. Server-rendered,
+        //               owner-scoped pages authenticate from a cookie and cannot
+        //               see localStorage, so this previously meant a second
+        //               persisted signal plus a hand-written mirroring effect
+        var fieldMap = pOpts.keys || null;
+        var defaultSerialize = pOpts.serialize || function(value) { return JSON.stringify(value); };
+        var defaultDeserialize = pOpts.deserialize || function(raw) { return JSON.parse(raw); };
+
+        // 'local' and 'localStorage' both accepted; the old code only recognised
+        // 'sessionStorage', so 'session' silently fell through to localStorage.
+        // Resolved through window when the bare global is absent, so persist also
+        // works where the runtime is evaluated outside a page's global scope
+        // (component test harnesses, embedded runtimes).
+        function _backendFor(kind) {
+          if (kind === 'cookie') return 'cookie';
+          var scope = typeof window !== 'undefined' ? window : null;
+          if (kind === 'session' || kind === 'sessionStorage')
+            return typeof sessionStorage !== 'undefined' ? sessionStorage : (scope && scope.sessionStorage);
+          return typeof localStorage !== 'undefined' ? localStorage : (scope && scope.localStorage);
+        }
+        var storageType = _backendFor(pOpts.storage);
+
+        // Resolved config for a field that has its own key, or null if it belongs
+        // in the shared blob.
+        function _mappedConfig(field) {
+          if (!fieldMap || !Object.prototype.hasOwnProperty.call(fieldMap, field)) return null;
+          var cfg = fieldMap[field];
+          if (typeof cfg === 'string') cfg = { key: cfg };
+          cfg = cfg || {};
+          return {
+            key: cfg.key || field,
+            backend: _backendFor(cfg.storage === undefined ? pOpts.storage : cfg.storage),
+            cookieOpts: cfg,
+            serialize: cfg.serialize || defaultSerialize,
+            deserialize: cfg.deserialize || defaultDeserialize
+          };
+        }
+
+        // A mapped field owns its key, so it must NOT also be written into the
+        // blob — otherwise it round-trips through two places that can disagree.
+        function _inBlob(field) {
+          if (pick && pick.indexOf(field) === -1) return false;
+          return !_mappedConfig(field);
+        }
 
         // Read persisted state (overrides hydration)
         try {
-          var saved = storageType.getItem(storageKey);
+          var saved = storageType === 'cookie' ? null : storageType.getItem(storageKey);
           if (saved) {
-            var parsed = JSON.parse(saved);
+            var parsed = defaultDeserialize(saved);
             console.log('[stx:store] restoring persisted state:', id, 'key:', storageKey, Object.keys(parsed));
             batch(function() {
               for (var pk in parsed) {
-                if (result[pk] && result[pk]._isSignal && (!pick || pick.indexOf(pk) !== -1)) {
+                if (result[pk] && result[pk]._isSignal && _inBlob(pk)) {
                   result[pk].set(parsed[pk]);
                 }
               }
@@ -6188,21 +6242,73 @@ catch (e) {} }
           }
         } catch(e) { console.warn('[stx:store] persistence read error:', id, e); }
 
+        // Per-field persistence: own key, own backend, own codec.
+        //
+        // The disposer swap is the same trick the blob effect below uses — these
+        // effects must outlive the component that happened to instantiate the
+        // store, or persistence would stop the first time that component
+        // unmounted.
+        var prevFieldDisposers = activeDisposers;
+        activeDisposers = null;
+        if (fieldMap) {
+          for (var fk in fieldMap) {
+            if (!Object.prototype.hasOwnProperty.call(fieldMap, fk)) continue;
+            if (!result[fk] || !result[fk]._isSignal) {
+              console.warn('[stx:store] persist.keys names a field that is not a signal:', id, fk);
+              continue;
+            }
+            (function(field, cfg, signal) {
+              if (cfg.backend === 'cookie') {
+                // useCookie owns path / max-age / SameSite / Secure, so cookie
+                // attributes do not have to be reimplemented here. It is a
+                // string-valued signal, hence serialize on the way out.
+                var cookieSignal = useCookie(cfg.key, cfg.cookieOpts);
+                var initialCookie = cookieSignal();
+                if (initialCookie !== '' && initialCookie != null) {
+                  try { signal.set(cfg.deserialize(initialCookie)); }
+                  catch(e) { console.warn('[stx:store] persist read error:', id, field, e); }
+                }
+                effect(function() {
+                  var next = signal();
+                  try { cookieSignal.set(next == null ? '' : String(cfg.serialize(next))); }
+                  catch(e) { console.warn('[stx:store] persist write error:', id, field, e); }
+                });
+                return;
+              }
+              try {
+                var rawValue = cfg.backend.getItem(cfg.key);
+                if (rawValue !== null) signal.set(cfg.deserialize(rawValue));
+              } catch(e) { console.warn('[stx:store] persist read error:', id, field, e); }
+              effect(function() {
+                var value = signal();
+                try { cfg.backend.setItem(cfg.key, String(cfg.serialize(value))); }
+                catch(e) { console.warn('[stx:store] persist write error:', id, field, e); }
+              });
+            })(fk, _mappedConfig(fk), result[fk]);
+          }
+        }
+        activeDisposers = prevFieldDisposers;
+
         // Write on change (debounced)
         var writeTimer = null;
         var prevPersistDisposers = activeDisposers;
         activeDisposers = null;
         effect(function() {
           var snapshot = {};
+          var wrote = false;
           for (var wk in result) {
-            if (result[wk] && result[wk]._isSignal && (!pick || pick.indexOf(wk) !== -1)) {
+            if (result[wk] && result[wk]._isSignal && _inBlob(wk)) {
               snapshot[wk] = result[wk]();
+              wrote = true;
             }
           }
+          // With every field mapped to its own key there is no blob left, and
+          // writing an empty object would clobber whatever else owns that key.
+          if (!wrote || storageType === 'cookie') return;
           if (writeTimer) clearTimeout(writeTimer);
           writeTimer = setTimeout(function() {
             console.log('[stx:store] persisting:', id, 'key:', storageKey, Object.keys(snapshot));
-            try { storageType.setItem(storageKey, JSON.stringify(snapshot)); } catch(e) { console.warn('[stx:store] persist write error:', id, e); }
+            try { storageType.setItem(storageKey, String(defaultSerialize(snapshot))); } catch(e) { console.warn('[stx:store] persist write error:', id, e); }
           }, 100);
         });
         activeDisposers = prevPersistDisposers;
