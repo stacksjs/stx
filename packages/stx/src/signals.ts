@@ -5555,7 +5555,22 @@ catch (e) {} }
     var confirmText = opts.confirmText || 'OK';
     var cancelText = opts.cancelText || 'Cancel';
     var id = 'stx-dialog-' + (++_dialogId);
-    var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Resolve dark from what the APP decided, not only from the OS. stx's own
+    // color-mode boot writes a class (default 'dark') and/or an attribute
+    // (e.g. data-theme) onto <html>, so an app pinned to light on a dark OS used
+    // to get a dark dialog over a light page. An explicit opts.dark wins over
+    // both, and the media query stays as the last resort. See #1875.
+    var _root = document.documentElement;
+    var _attrTheme = _root.getAttribute('data-theme') || _root.getAttribute('data-color-mode');
+    var isDark = opts.dark != null
+      ? !!opts.dark
+      : _root.classList.contains('dark')
+        ? true
+        : _attrTheme === 'dark'
+          ? true
+          : _attrTheme === 'light'
+            ? false
+            : !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
     var bg = isDark ? '#1f2937' : '#ffffff';
     var textColor = isDark ? '#f3f4f6' : '#1f2937';
     var subColor = isDark ? '#9ca3af' : '#6b7280';
@@ -5578,23 +5593,45 @@ catch (e) {} }
 
       if (title) {
         var titleEl = document.createElement('h3');
+        titleEl.id = id + '-title';
         titleEl.style.cssText = 'margin:0 0 0.5rem;font-size:1.125rem;font-weight:600';
         titleEl.textContent = title;
         panel.appendChild(titleEl);
+        // role=alertdialog was announced with no accessible name at all.
+        backdrop.setAttribute('aria-labelledby', titleEl.id);
       }
 
       var msgEl = document.createElement('p');
+      msgEl.id = id + '-message';
       msgEl.style.cssText = 'margin:0 0 1.25rem;font-size:0.875rem;line-height:1.5;color:' + subColor;
       msgEl.textContent = message;
       panel.appendChild(msgEl);
+      backdrop.setAttribute('aria-describedby', msgEl.id);
+      if (!title)
+        backdrop.setAttribute('aria-label', message);
 
       var btnRow = document.createElement('div');
       btnRow.style.cssText = 'display:flex;gap:0.75rem;justify-content:center';
 
+      // Captured before the dialog steals focus, so it can be handed back on
+      // close. Without this a keyboard or screen-reader user is dropped at the
+      // top of the document every time a dialog closes.
+      var previouslyFocused = document.activeElement;
+      var closed = false;
+
       function cleanup(result) {
+        // Guarded: the escape handler used to be able to fire after a button had
+        // already closed the dialog, because the listener outlived it.
+        if (closed) return;
+        closed = true;
+        document.removeEventListener('keydown', keyHandler, true);
         backdrop.style.opacity = '0';
         panel.style.transform = 'scale(0.95)';
         setTimeout(function() { backdrop.remove(); }, 200);
+        if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+          try { previouslyFocused.focus(); }
+          catch (_e) { /* element may be gone; not worth failing the dialog over */ }
+        }
         resolve(result);
       }
 
@@ -5626,11 +5663,45 @@ catch (e) {} }
       backdrop.style.opacity = '1';
       panel.style.transform = 'scale(1)';
 
-      // Escape key
-      var escHandler = function(e) {
-        if (e.key === 'Escape') { cleanup(isConfirm ? false : undefined); document.removeEventListener('keydown', escHandler); }
+      // Escape, plus a real focus trap.
+      //
+      // The old handler removed itself ONLY inside the Escape branch, so every
+      // dialog dismissed with a button left a permanent keydown listener on
+      // document holding this whole closure — backdrop, panel and resolve — alive.
+      // Removal now lives in cleanup(), which every exit path goes through.
+      //
+      // aria-modal="true" was already being claimed on the backdrop while Tab
+      // walked straight out into the page behind it. Capture phase so the trap
+      // wins over anything the page has bound.
+      var keyHandler = function(e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          cleanup(isConfirm ? false : undefined);
+          return;
+        }
+        if (e.key !== 'Tab') return;
+        var focusable = panel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focusable.length) return;
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        // Focus may sit outside the panel entirely (the page had it when the
+        // dialog opened), in which case Tab must pull it back in rather than
+        // continue through the document.
+        if (!panel.contains(document.activeElement)) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+          return;
+        }
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+        else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       };
-      document.addEventListener('keydown', escHandler);
+      document.addEventListener('keydown', keyHandler, true);
 
       // Focus the primary button
       okBtn.focus();
