@@ -553,6 +553,23 @@ else {
       var wantsFragment=shouldUseFragmentResponse();
       return fetch(url,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
         if(!r.ok)throw new Error(r.status);
+        // A route guard answered with a redirect and fetch followed it
+        // transparently, so r.ok is the DESTINATION's 200 and this markup
+        // belongs to r.url — not to the path that was requested. Without
+        // retargeting, an auth guard's /login body is swapped in while the
+        // address bar, the history entry and the cache key all still read
+        // /dashboard: the user sees a login form at a URL that claims to be
+        // the page they asked for, and reloading bounces them again (#1849).
+        if(r.redirected&&r.url){
+          var rd=new URL(r.url,location.href);
+          // A guard that sends you off-origin (a hosted IdP) cannot be
+          // resolved by swapping a fragment — hand it to the browser.
+          if(rd.origin!==location.origin){location.href=r.url;return null}
+          log('[router] guard redirected:',url,'->',rd.pathname);
+          url=rd.pathname+rd.search+rd.hash;
+          targetPath=cacheKey(url);
+          targetHash=rd.hash;
+        }
         // Before anything is parsed or swapped: a fragment from a different
         // build must not be handed to this page's runtime (#1772).
         var incomingBuild=r.headers.get('X-STX-Build')||'';
@@ -1280,6 +1297,13 @@ else {
       prefetching[key]=true;
       var wantsFragment=shouldUseFragmentResponse();
       fetch(href,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
+        // Never cache a body that came from somewhere else. A guarded route
+        // prefetched while logged out answers with /login's markup, and
+        // storing it under the guarded key poisons the cache: the later real
+        // navigation is a cache hit, so it swaps the login page in without
+        // ever hitting the network, where the redirect check above would
+        // have caught it (#1849).
+        if(r.redirected)return null;
         var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
         var pLayout=r.headers.get('X-STX-Layout')||'';
         var pGroup=r.headers.get('X-STX-Layout-Group')||'';
@@ -1287,7 +1311,7 @@ else {
         var pRuntime=r.headers.get('X-STX-Runtime')||'';
         return r.text().then(function(html){return{html:isFrag?fragmentMarker(pRuntime)+html:html,layout:pLayout,layoutGroup:pGroup,title:pTitle}});
       }).then(function(result){
-        if(o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title);
+        if(result&&o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title);
       }).catch(function(){}).finally(function(){delete prefetching[key]});
     },true);
   }
