@@ -208,8 +208,46 @@ export function useFetch<T = unknown>(
       status.set(response.status)
       statusText.set(response.statusText)
 
-      if (!response.ok)
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      // Read the body before throwing, and carry it on the error. Throwing a
+      // synthesized 'HTTP nnn' first made the server's own message unreachable
+      // from every stx data primitive (stacksjs/stx#1848). Kept in step with
+      // __stxHttpError in the generated runtime — same shape, same fields, per
+      // CLAUDE.md item 40.
+      if (!response.ok) {
+        let body: unknown = null
+        try {
+          const text = await response.text()
+          if (text) {
+            try { body = JSON.parse(text) }
+            catch { body = text }
+          }
+        }
+        catch { body = null }
+
+        let detail = ''
+        if (body && typeof body === 'object')
+          detail = String((body as Record<string, unknown>).message ?? (body as Record<string, unknown>).error ?? '')
+        else if (typeof body === 'string')
+          detail = body.slice(0, 200)
+
+        let message = `HTTP ${response.status}`
+        if (response.statusText)
+          message += `: ${response.statusText}`
+        if (detail)
+          message += ` - ${detail}`
+
+        const httpError = new Error(message) as Error & {
+          status?: number
+          statusText?: string
+          data?: unknown
+          response?: Response
+        }
+        httpError.status = response.status
+        httpError.statusText = response.statusText
+        httpError.data = body
+        httpError.response = response
+        throw httpError
+      }
 
       let payload = await parseResponse(response) as unknown
       if (transform)

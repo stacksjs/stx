@@ -158,6 +158,38 @@ console.log('[stx] entering IIFE');
     } catch (e) { return '[unserializable]'; }
   }
   // Wraps fetch with timing + a timeline record (the data layer's queries).
+  // Turn a non-ok Response into an Error, reading the body FIRST.
+  //
+  // Every data primitive threw a synthesized 'HTTP nnn: statusText' before
+  // touching the body, so whatever the server actually said — a validation
+  // map, a rate-limit reason, an auth message — was unreachable from any stx
+  // primitive, with no escape hatch (stacksjs/stx#1848). That is the single
+  // most cited reason an app keeps writing raw fetch() calls.
+  //
+  // The body is attached rather than only interpolated: err.data is what a
+  // caller needs to render field errors, and err.status is what it needs to
+  // tell 401 from 500 without parsing the message.
+  async function __stxHttpError(response) {
+    var body = null;
+    var text = '';
+    try { text = await response.text(); } catch (e) { text = ''; }
+    if (text) {
+      try { body = JSON.parse(text); } catch (e) { body = text; }
+    }
+    var detail = '';
+    if (body && typeof body === 'object') detail = body.message || body.error || '';
+    else if (typeof body === 'string') detail = body.slice(0, 200);
+    var message = 'HTTP ' + response.status;
+    if (response.statusText) message += ': ' + response.statusText;
+    if (detail) message += ' - ' + detail;
+    var err = new Error(message);
+    err.status = response.status;
+    err.statusText = response.statusText;
+    err.data = body;
+    err.response = response;
+    return err;
+  }
+
   async function __stxFetch(source, url, opts) {
     var t0 = __stxDevtoolsNow();
     var method = (opts && opts.method) || 'GET';
@@ -968,9 +1000,7 @@ finally {
 
         const response = await __stxFetch('useFetch', url, fetchOptions);
 
-        if (!response.ok) {
-          throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
-        }
+        if (!response.ok) throw await __stxHttpError(response);
 
         const result = await response.json();
 
@@ -1256,7 +1286,7 @@ else if (immediate) {
       try {
         var fetchOpts = { method: 'GET', headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } };
         var response = await __stxFetch('useQuery', resolvedUrl, fetchOpts);
-        if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+        if (!response.ok) throw await __stxHttpError(response);
         var result = await response.json();
         var transformed = options.transform ? options.transform(result) : result;
         data.set(transformed);
@@ -1336,7 +1366,7 @@ finally {
           body: typeof body === 'string' ? body : JSON.stringify(body)
         };
         var response = await __stxFetch('useMutation', resolvedUrl, fetchOpts);
-        if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+        if (!response.ok) throw await __stxHttpError(response);
         var result = await response.json();
         var transformed = options.transform ? options.transform(result) : result;
         data.set(transformed);
