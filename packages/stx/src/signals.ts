@@ -439,6 +439,40 @@ else {
     });
   }
 
+  // A proxy for the WRITE side of x-model, kept separate from the read proxy
+  // on purpose.
+  //
+  // The read proxy returns a plain object as-is, which is right for reading —
+  // ordinary data should stay ordinary. But it means an assignment lands on the
+  // raw object, so a signal held there gets REPLACED by the typed value rather
+  // than set (#1883). Descending through a write proxy instead keeps set-trap
+  // semantics all the way down, so the signal at the end of any path is set.
+  function createModelWriteProxy(target) {
+    return new Proxy(target, {
+      get(t, prop) {
+        var val = t[prop];
+        if (val && typeof val === 'function' && (val._isSignal || val._isDerived)) {
+          // Descend INTO the signal's value: x-model="form.email" over
+          // state({email}) must reach the object, not stamp a property onto
+          // the signal function itself.
+          var inner = val();
+          return (inner && typeof inner === 'object') ? createModelWriteProxy(inner) : inner;
+        }
+        if (val && typeof val === 'object') return createModelWriteProxy(val);
+        return val;
+      },
+      set(t, prop, value) {
+        var cur = t[prop];
+        if (cur && typeof cur === 'function' && cur._isSignal && typeof cur.set === 'function') {
+          cur.set(value);
+          return true;
+        }
+        t[prop] = value;
+        return true;
+      },
+    });
+  }
+
   // ==========================================================================
   // Pipe Syntax Support (Feature #2)
   // ==========================================================================
@@ -2932,8 +2966,22 @@ catch (e) {
           capturedScope[expr].set(val);
         }
 else {
-          const fn = new Function(...Object.keys(capturedScope), 'v', expr + ' = v');
-          fn(...Object.values(capturedScope), val);
+          // Write through the SAME auto-unwrap proxy the read path uses.
+          //
+          // This used to destructure the scope into plain parameters, so an
+          // lvalue like store.title assigned onto the raw object and REPLACED
+          // the signal with a raw string. Everything else bound to that signal
+          // stopped updating, its .set was gone so the next write threw
+          // TypeError, and nothing warned — the field the user typed into was
+          // the only thing on the page that still looked right (#1883).
+          //
+          // The proxy's set trap already did the correct thing (call .set on a
+          // signal-valued property) and was simply never reached from here.
+          // Routing through it also drops the old requirement that every scope
+          // key be a valid identifier, since nothing is destructured now.
+          var writeScope = createModelWriteProxy(capturedScope);
+          var writeFn = new Function('__scope__', '__v__', 'with(__scope__) { ' + expr + ' = __v__ }');
+          writeFn(writeScope, val);
         }
       }
 catch (e) {

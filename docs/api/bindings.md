@@ -122,7 +122,15 @@ The bound signal is updated via `signal.set()` whenever the user types or change
 | `<textarea>` | `.value` | `input` event |
 | `<select>` | `.value` | `change` event |
 
-> **Warning:** The expression must be a signal name, not an arbitrary expression. `x-model="user.name"` does not work — use a dedicated signal instead.
+A path is allowed, and resolves to the signal at the end of it — `x-model="store.title"`
+and `x-model="settings.theme"` both call `.set()` on the signal held there, so every
+other binding and effect reading it updates too.
+
+> **Warning:** the value at the end of the path has to BE a signal for anything to
+> re-render. `x-model="draft.title"` over a plain object stores what you type, but
+> nothing is watching a plain property, so the rest of the page will not update.
+> This used to be worse than a no-op — the write replaced the signal with the raw
+> value, silently breaking every other consumer of it (stacksjs/stx#1883).
 
 ## x-show
 
