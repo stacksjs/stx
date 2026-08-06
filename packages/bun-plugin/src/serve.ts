@@ -19,7 +19,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, extractPageResponseStatus, getBuildId, mergeCrosswindConfig, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, getBuildId, mergeCrosswindConfig, stateDir, stateDirName } from '@stacksjs/stx'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 
 // Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
@@ -1084,6 +1084,10 @@ export async function serve(options: ServeOptions): Promise<void> {
           // for the same reason as above: an older stx module is a no-op.
           resolvedStxModule?.clearStoreCache?.()
           resolvedStxModule?.clearComposableCache?.()
+          // The layout union is only useful if it tracks the directory, so
+          // regenerate when a layout is added or renamed (#1879).
+          if (layoutsDir && f.endsWith('.stx') && nodePath.resolve(f).startsWith(nodePath.resolve(layoutsDir)))
+            void writeLayoutTypes()
         }
         // For CSS-only changes, prefer a stylesheet hot-swap over a full
         // reload — the script side just re-fingerprints `<link>` hrefs.
@@ -1118,6 +1122,20 @@ export async function serve(options: ServeOptions): Promise<void> {
   // (#1877). Both are resolved under `root`, the way their loaders resolve
   // them, and the conventional `functions/` alias for composables is watched
   // too since the loader probes for it.
+  // Type the layout names, so `definePageMeta({ layout })` rejects one with no
+  // layout behind it (#1879). Regenerated on every start and whenever a layout
+  // is added or removed — the union is only useful if it tracks the directory.
+  const writeLayoutTypes = async (): Promise<void> => {
+    try {
+      // `resolvedStxModule` is populated asynchronously, so reading it here
+      // would usually find null — await the module instead.
+      const stxMod = (options.stxModule ? options.stxModule : await defaultStxModule) as any
+      stxMod?.generateLayoutTypes?.(layoutsDir, stxMod?.stateDir?.(process.cwd()))
+    }
+    catch { /* best-effort — a declaration file is a convenience */ }
+  }
+  await writeLayoutTypes()
+
   const storesDir = nodePath.resolve(stxConfig.root || '.', stxConfig.storesDir || 'stores')
   const composableDirs = stxConfig.composablesDir
     ? [nodePath.resolve(stxConfig.root || '.', stxConfig.composablesDir)]
@@ -2978,8 +2996,29 @@ export async function serve(options: ServeOptions): Promise<void> {
 
                   // Also extract styles that are siblings of <main> (from @push/@stack)
                   // These appear in the body but outside <main>, so they'd be lost in fragment extraction
-                  const mainOpenMatch = fragment.match(/<main\b[^>]*>/i)
-                  const mainCloseIdx = fragment.lastIndexOf('</main>')
+                  // The container is resolved with the SAME selector the client
+                  // uses, instead of being hardcoded to <main>. Configuring
+                  // `router: { container: '[data-stx-content]' }` used to produce
+                  // a <main>-shaped fragment that the client then injected
+                  // somewhere else, duplicating the page chrome. See #1853.
+                  const containerSelector = (stxConfig as any)?.router?.container || 'main'
+                  const containerRegion = findContainerRegion(fragment, containerSelector)
+                  if (!containerRegion) {
+                    // Previously this fell through silently and the WHOLE body
+                    // shipped as the "fragment", which the client could not swap
+                    // — so every link on the page did a full document load, at
+                    // HTTP 200, with nothing said. The rule was structural and
+                    // unenforced, so apps encoded it as prose in their layouts.
+                    console.warn(
+                      `[stx] No SPA swap container matching "${containerSelector}" in ${new URL(req.url).pathname}. `
+                      + `SPA navigation is disabled for links on this page; the full document will load instead. `
+                      + `Add a matching element, or point router.container at one this page has.`,
+                    )
+                  }
+                  const mainOpenMatch = containerRegion
+                    ? { 0: containerRegion.openTag, index: containerRegion.openIndex } as unknown as RegExpMatchArray
+                    : null
+                  const mainCloseIdx = containerRegion ? containerRegion.end : -1
                   if (mainOpenMatch && mainCloseIdx !== -1) {
                     // Look for styles between body start and <main> (e.g. from @stack('styles'))
                     const bodyMatch = content.match(/<body\b[^>]*>/i)
@@ -3001,8 +3040,10 @@ export async function serve(options: ServeOptions): Promise<void> {
                     // be injected into the persistent, attribute-less container and
                     // lose its layout entirely on SPA navigation. The router applies
                     // these to the container during the swap.
+                    // Strip the resolved tag name, not a hardcoded `main` — the
+                    // container can be any element now.
                     containerAttrs = mainOpenMatch[0]
-                      .replace(/^<main\b/i, '')
+                      .replace(new RegExp(`^<${containerRegion!.tagName}\\b`, 'i'), '')
                       .replace(/\/?>$/, '')
                       .trim()
 
