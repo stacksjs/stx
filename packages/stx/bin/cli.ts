@@ -65,6 +65,7 @@ import { performanceMonitor } from '../src/performance-utils'
 import { formatMarkdownContent, formatStxContent } from '../src/formatter'
 import { analyzeProject } from '../src/analyzer'
 import { buildComponentLibrary } from '../src/component-library'
+import { clearBundleFailures, getBundleFailures } from '../src/client-script-bundler'
 import { generateStaticSite } from '../src/ssg'
 import { formatDoctorReport, runDoctor } from '../src/doctor'
 
@@ -1069,6 +1070,11 @@ else {
         // Auto-detect SSG vs SSR from <script server> presence and dispatch
         const { buildApp } = await import('../src/build')
 
+        // The registry is module-level, so a long-lived process (watch mode, a
+        // test run) would otherwise carry a previous build's failures into this
+        // one and fail a build that is now clean.
+        clearBundleFailures()
+
         const result = await buildApp({
           root: input ? path.dirname(input) : undefined,
           debug: options.verbose,
@@ -1132,6 +1138,21 @@ else {
               console.log(`    ${relativePath} (${sizeKb} KB)${page.cached ? ' [cached]' : ''}`)
             }
             console.log('')
+          }
+
+          // A client-script bundle failure is not a render failure, so it never
+          // reached ssg.failedCount: the bundler warns, falls back to shipping
+          // the ORIGINAL unbundled source so the page still renders, and returns
+          // a string like nothing happened. The build then exited 0 and CI
+          // published a page whose imports never resolve and whose bindings
+          // silently do nothing. See #1884.
+          const bundleFailures = getBundleFailures()
+          if (bundleFailures.length > 0) {
+            console.error(`\n  ${bundleFailures.length} client script(s) failed to bundle:\n`)
+            for (const failure of bundleFailures)
+              console.error(`    ${path.relative(process.cwd(), failure.filePath)}\n      ${failure.message}\n`)
+            console.error(`  The unbundled source would have been shipped. Refusing to report success.\n`)
+            process.exit(1)
           }
 
           if (result.ssg.failedCount > 0) {

@@ -35,6 +35,42 @@ function logBundlerDiagnostic(...message: unknown[]): void {
     console.log('[stx:bundler]', ...message)
 }
 
+/**
+ * Client-script bundle failures recorded during the current process.
+ *
+ * When a `<script client>` block fails to bundle, the bundler falls back to
+ * shipping the ORIGINAL, unbundled source so the page still renders. That is a
+ * reasonable dev-server behaviour and a terrible build behaviour: imports never
+ * resolve, bindings silently do nothing, and `stx build` still exited 0, so CI
+ * published a broken page as a success.
+ *
+ * Nothing was counting these. `ssg.failedCount` only ever saw render-time throws,
+ * never a bundle failure, because the fallback swallowed it and returned a
+ * string. The registry gives the build a way to ask, without the bundler having
+ * to know whether it is running under a dev server or a build. See #1884.
+ */
+export interface BundleFailure {
+  filePath: string
+  message: string
+}
+
+const _bundleFailures: BundleFailure[] = []
+
+/** Record a bundle failure. Called from the bundler's fallback path. */
+export function recordBundleFailure(filePath: string, message: string): void {
+  _bundleFailures.push({ filePath: filePath || '<inline>', message })
+}
+
+/** Every bundle failure since the last reset. */
+export function getBundleFailures(): BundleFailure[] {
+  return _bundleFailures.slice()
+}
+
+/** Drop recorded failures — call at the start of a build, and in tests. */
+export function clearBundleFailures(): void {
+  _bundleFailures.length = 0
+}
+
 // Known imports that are NOT user imports — handled by other transforms.
 //
 // `@stacksjs/browser` is deliberately NOT here. It used to be, on the grounds
@@ -616,7 +652,13 @@ ${publicAssignments}`.trim()
     // generated file instead of their view. A BuildMessage also fails
     // `instanceof Error`, so the usual message-or-String idiom reduced it to a
     // bare "Unexpected ===" with no location at all.
-    console.warn(`[stx:bundler] error: ${formatBuildFailure(error, filePath || undefined)}`)
+    const failure = formatBuildFailure(error, filePath || undefined)
+    console.warn(`[stx:bundler] error: ${failure}`)
+    // Recorded so a BUILD can fail on this. The fallback below keeps a dev
+    // server usable, but it used to be the only outcome: `stx build` shipped the
+    // unbundled source and exited 0, so the first sign of trouble was a page
+    // whose bindings quietly did nothing. See #1884.
+    recordBundleFailure(filePath || '', failure)
     // Fall back to original code
     return code
   }
