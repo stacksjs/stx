@@ -44,6 +44,20 @@ export {
   runComposers,
   type ViewComposerCallback,
 } from './view-composers'
+// defineForm and the `v` validator builder shipped unreachable: the module's
+// docblock says `import { defineForm, v } from 'stx'` (forms-validation.ts:9),
+// and that import threw. process.ts reached the module lazily for directive
+// processing only, so the form primitive itself had no way in. See #1856.
+export {
+  defineForm,
+  v,
+  Validator,
+  type ValidatorFn,
+  type AsyncValidatorFn,
+  type ValidatorRule,
+  type FieldState,
+  type FormState,
+} from './forms-validation'
 export { formatSize, getTotalSize } from './deploy'
 export { type ImageRenderResult, type ImageVariant, type ProcessedImage, clearImageCache, getFallbackVariant, getMimeType, groupVariantsByFormat, optimizeImage, processImage } from './image-optimization'
 export { type AnalysisResult } from './analyzer'

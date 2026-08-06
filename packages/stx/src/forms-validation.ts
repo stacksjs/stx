@@ -16,6 +16,8 @@
  * ```
  */
 
+import { state } from './signals-api'
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -522,6 +524,57 @@ export const v = new Validator()
 // =============================================================================
 
 /**
+ * A record whose properties are each backed by their own signal.
+ *
+ * Reads go through the signal, so touching `record.field` inside an effect (or a
+ * template binding, which compiles to one) subscribes to that field alone --
+ * changing `email` does not invalidate a binding that only read `password`.
+ * Writes go through `.set`, so ordinary assignment (`record.field = x`) notifies
+ * subscribers without the caller knowing a signal is involved.
+ *
+ * `ownKeys` / `getOwnPropertyDescriptor` are implemented so that Object.keys,
+ * spread and JSON.stringify still see a plain-looking object; without them a
+ * snapshot of the form would come back empty.
+ */
+function signalRecord<K extends string | number | symbol>(
+  fields: K[],
+  init: (field: K) => unknown,
+): Record<K, any> {
+  const signals: Record<string | symbol, ReturnType<typeof state>> = {}
+  for (const field of fields)
+    signals[field as string | symbol] = state(init(field))
+
+  return new Proxy({} as Record<K, any>, {
+    get: (_target, prop) => signals[prop]?.(),
+    set: (_target, prop, value) => {
+      if (signals[prop])
+        signals[prop].set(value)
+      else
+        signals[prop] = state(value)
+      return true
+    },
+    has: (_target, prop) => prop in signals,
+    deleteProperty: (_target, prop) => {
+      delete signals[prop]
+      return true
+    },
+    ownKeys: () => Reflect.ownKeys(signals),
+    getOwnPropertyDescriptor: (_target, prop) =>
+      prop in signals
+        ? { enumerable: true, configurable: true, writable: true, value: signals[prop]() }
+        : undefined,
+  })
+}
+
+/** Plain, non-reactive copy of a signal-backed record. */
+function snapshot<K extends string | number | symbol>(record: Record<K, any>, fields: K[]): Record<K, any> {
+  const out = {} as Record<K, any>
+  for (const field of fields)
+    out[field] = record[field]
+  return out
+}
+
+/**
  * Define a form with validation schema.
  *
  * @example
@@ -552,22 +605,28 @@ export function defineForm<T extends Record<string, Validator>>(
 ): FormState<T> {
   const fields = Object.keys(schema) as (keyof T)[]
 
-  // Initialize state
-  const values = {} as { [K in keyof T]: unknown }
-  const errors = {} as { [K in keyof T]: string[] }
-  const touched = {} as { [K in keyof T]: boolean }
-  const dirty = {} as { [K in keyof T]: boolean }
-  const validating = {} as { [K in keyof T]: boolean }
+  // Initialize state.
+  //
+  // Every container is backed by one signal per field, behind a proxy that reads
+  // through the signal on get and writes through it on set. That keeps the
+  // documented ergonomics -- `form.values.email`, `form.errors.email` -- while
+  // making them actually reactive, which is what the "Create reactive form state"
+  // comment below has always claimed and never delivered: these were plain
+  // objects, so a template that rendered form.errors.email showed the value once
+  // and never updated. See #1856.
+  //
+  // The signal comes from signals-api, NOT from reactivity.ts's reactive(). Those
+  // are two separate tracking systems -- reactive() subscribes its own private
+  // currentEffect (reactivity.ts:119), while the client runtime ships effect()
+  // from signals-api (signals.ts:11). Wrapping these in reactive() would look
+  // correct and still never notify a template.
+  const values = signalRecord(fields, f => initialValues?.[f] ?? schema[f].getDefaultValue())
+  const errors = signalRecord(fields, () => [] as string[])
+  const touched = signalRecord(fields, () => false)
+  const dirty = signalRecord(fields, () => false)
+  const validating = signalRecord(fields, () => false)
 
-  for (const field of fields) {
-    values[field] = initialValues?.[field] ?? schema[field].getDefaultValue()
-    errors[field] = []
-    touched[field] = false
-    dirty[field] = false
-    validating[field] = false
-  }
-
-  let isValidating = false
+  const isValidatingSignal = state(false)
 
   // Validate a single field
   async function validateField(field: keyof T): Promise<boolean> {
@@ -580,9 +639,9 @@ export function defineForm<T extends Record<string, Validator>>(
 
   // Validate all fields
   async function validate(): Promise<boolean> {
-    isValidating = true
+    isValidatingSignal.set(true)
     const results = await Promise.all(fields.map(validateField))
-    isValidating = false
+    isValidatingSignal.set(false)
     return results.every(Boolean)
   }
 
@@ -646,7 +705,7 @@ export function defineForm<T extends Record<string, Validator>>(
 
       const valid = await validate()
       if (valid) {
-        await onSubmit(values)
+        await onSubmit(snapshot(values, fields))
       }
     }
   }
@@ -661,7 +720,7 @@ export function defineForm<T extends Record<string, Validator>>(
       return fields.every(f => errors[f].length === 0)
     },
     get isValidating() {
-      return isValidating || fields.some(f => validating[f])
+      return isValidatingSignal() || fields.some(f => validating[f])
     },
     get isDirty() {
       return fields.some(f => dirty[f])
