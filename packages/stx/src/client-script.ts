@@ -777,8 +777,19 @@ function transformAutoImports(code: string): AutoImportResult {
   // Detect usage of auto-importable symbols that weren't explicitly imported
   for (const symbol of STX_AUTO_IMPORTS) {
     if (existingImports.has(symbol) || locallyDeclared.has(symbol)) continue
-    // Check if symbol is used in code (as identifier boundary)
-    const symbolRegex = new RegExp(`\\b${symbol}\\s*\\(`, 'g')
+    // Check if symbol is used in code (as identifier boundary).
+    //
+    // The `(?:<[^>]*>)?` segment lets a TypeScript-typed call count as a call.
+    // This ran before transpilation, so `useQuery<Foo>('/api/x')` still carried
+    // its type argument here and `name\s*\(` did not match — the name was left
+    // out of the `window.stx` destructure while the body still called it, and
+    // the page threw ReferenceError with no build error (stacksjs/stx#1880).
+    //
+    // Only bit a script that touches none of SIGNAL_API_RE's names, since one
+    // of those triggers a blanket destructure that happens to rescue the rest.
+    // runtime-globals.ts:162 and signal-processing.ts:1165 already spell it
+    // this way; this was the third copy and the one that drifted.
+    const symbolRegex = new RegExp(`\\b${symbol}\\s*(?:<[^>]*>)?\\s*\\(`, 'g')
     if (symbolRegex.test(transformedCode)) {
       usedStxImports.add(symbol)
     }
