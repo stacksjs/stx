@@ -3,6 +3,11 @@ export const action = $props.action || ''
 export const method = $props.method || 'POST'
 export const validationSchema = $props.validationSchema || {}
 export const className = $props.className || ''
+// These three were declared in FormProps and read by nothing, so passing them
+// did exactly nothing. See #1874.
+export const initialValues = $props.initialValues || {}
+export const validateOnChange = $props.validateOnChange === true
+export const validateOnBlur = $props.validateOnBlur === true
 
 export const formClasses = `space-y-6 ${className}`.trim()
 export const errorClasses = `mt-1 text-sm text-red-600 dark:text-red-400`.trim()
@@ -11,10 +16,16 @@ export const errorClasses = `mt-1 text-sm text-red-600 dark:text-red-400`.trim()
 <script client>
 const emit = defineEmits()
 const validationSchema = {{ validationSchema }}
+const initialValues = {{ initialValues }}
+const validateOnChange = {{ validateOnChange }}
+const validateOnBlur = {{ validateOnBlur }}
 
 const errors = state({})
 const isSubmitting = state(false)
 const submitCount = state(0)
+// Seeded from initialValues so the prop has an effect before the first submit,
+// and so resetForm() has something to restore to.
+const values = state({ ...initialValues })
 
 function validateField(name, value, allValues) {
   const schema = validationSchema[name]
@@ -31,7 +42,41 @@ function validateField(name, value, allValues) {
   if (schema.pattern && !new RegExp(schema.pattern).test(value)) {
     return schema.patternMessage || `${name} is invalid`
   }
+  // FieldSchema.validate has always been part of the published type and was
+  // never called, so a custom rule silently passed. It runs last, after the
+  // built-in rules, so it only sees values those already accepted.
+  if (typeof schema.validate === 'function') {
+    const custom = schema.validate(value, allValues || {})
+    if (custom) return custom
+  }
   return null
+}
+
+// Single field, used by the change/blur paths so one bad field does not wipe the
+// errors of the others the way a full validateForm() would.
+function validateOne(name, value) {
+  if (!validationSchema[name]) return
+  const err = validateField(name, value, values())
+  const next = { ...errors() }
+  if (err) next[name] = err
+  else delete next[name]
+  errors.set(next)
+}
+
+// Delegated on the <form> rather than bound per input: the children arrive
+// through <slot />, so the component never sees them individually. `input` and
+// `focusout` both bubble (`blur` does not, which is why focusout is used).
+function onFieldInput(event) {
+  const name = event.target?.name
+  if (!name) return
+  values.set({ ...values(), [name]: event.target.value })
+  if (validateOnChange) validateOne(name, event.target.value)
+}
+
+function onFieldBlur(event) {
+  const name = event.target?.name
+  if (!name) return
+  if (validateOnBlur) validateOne(name, event.target.value)
 }
 
 function validateForm(values) {
@@ -52,18 +97,24 @@ async function onSubmit(event) {
   event.preventDefault()
   submitCount.set(submitCount() + 1)
 
+  // initialValues supplies anything the form does not post (an untouched field
+  // with no input, a value held outside the DOM); FormData still wins where both
+  // have the key, so what the user actually typed is never overridden.
   const formData = new FormData(event.target)
-  const values = {}
-  for (const [k, v] of formData.entries()) values[k] = v
+  const submitted = { ...initialValues }
+  for (const [k, v] of formData.entries()) submitted[k] = v
+  values.set(submitted)
 
-  if (!validateForm(values)) {
+  if (!validateForm(submitted)) {
     emit('error', errors())
     return
   }
 
   isSubmitting.set(true)
   try {
-    emit('submit', values)
+    // Second argument is FormHelpers, which the published type has always
+    // promised and which nothing used to pass.
+    emit('submit', submitted, helpers)
   }
   finally {
     isSubmitting.set(false)
@@ -74,14 +125,29 @@ function setErrors(next) {
   errors.set({ ...errors(), ...next })
 }
 
+function setValues(next) {
+  values.set({ ...values(), ...next })
+}
+
 function reset(form) {
   errors.set({})
   isSubmitting.set(false)
   submitCount.set(0)
+  values.set({ ...initialValues })
   if (form?.reset) form.reset()
 }
 
-defineExpose({ errors, isSubmitting, submitCount, setErrors, reset, validateForm })
+// FormHelpers named setValues/resetForm; the component exposed setErrors/reset
+// and no setValues at all, so the documented shape could not be destructured.
+// Both spellings are exposed: resetForm/setValues to satisfy the type, reset to
+// keep the existing call sites working.
+function resetForm(form) {
+  reset(form)
+}
+
+const helpers = { setErrors, setValues, resetForm }
+
+defineExpose({ errors, values, isSubmitting, submitCount, setErrors, setValues, reset, resetForm, validateForm, validateField })
 </script>
 
 <form
@@ -89,6 +155,8 @@ defineExpose({ errors, isSubmitting, submitCount, setErrors, reset, validateForm
   @if(action)action="{{ action }}"@endif
   method="{{ method }}"
   @submit="onSubmit($event)"
+  @input="onFieldInput($event)"
+  @focusout="onFieldBlur($event)"
   novalidate
 >
   <slot />
