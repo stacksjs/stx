@@ -19,7 +19,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, extractPageResponseStatus, getBuildId, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, extractPageResponseStatus, getBuildId, mergeCrosswindConfig, stateDir, stateDirName } from '@stacksjs/stx'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 
 // Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
@@ -1713,9 +1713,19 @@ export async function serve(options: ServeOptions): Promise<void> {
       }
       const userConfig = await crosswindUserConfigPromise
 
-      if (userConfig.safelist) {
-        for (const cls of userConfig.safelist) classes.add(cls)
-      }
+      // Same merge the dev-server path uses (#1867). This used to read only
+      // `safelist`, `shortcuts` and `theme` — dropping `darkMode`,
+      // `preflights`, `cssVariables`, `rules`, `blocklist` and `variants` — and
+      // to shallow-spread `theme`, so a user's `colors` replaced the whole
+      // stock palette here while the same key was ignored outright on the other
+      // path. One config file, two meanings, decided by which binary rendered.
+      const merged = mergeCrosswindConfig(cw.config as Record<string, any>, userConfig)
+      const generatorConfig = merged.config
+      const { includePreflight, minify } = merged
+
+      // The merged safelist, so a base-config safelist is honoured here too —
+      // the dev-server path always generated those and this one never did.
+      for (const cls of merged.safelist) classes.add(cls)
 
       // Cache key — sorted class names plus the safelist (already folded in
       // above). Same set → same CSS, so we can short-circuit the entire
@@ -1724,15 +1734,6 @@ export async function serve(options: ServeOptions): Promise<void> {
       const cached = crosswindCssCache.get(cacheKey)
       if (cached !== undefined)
         return cached
-
-      // Merge user shortcuts into the generator config
-      const generatorConfig: Record<string, any> = { ...cw.config, preflight: true, minify: false }
-      if (userConfig.shortcuts) {
-        generatorConfig.shortcuts = { ...(generatorConfig.shortcuts || {}), ...userConfig.shortcuts }
-      }
-      if (userConfig.theme) {
-        generatorConfig.theme = { ...(generatorConfig.theme || {}), ...userConfig.theme }
-      }
 
       const generator = new cw.CSSGenerator(generatorConfig)
       for (const className of classes) {
@@ -1749,7 +1750,9 @@ export async function serve(options: ServeOptions): Promise<void> {
         const parts = (classStr as string).split(/\s+/).filter(Boolean)
         for (const p of parts) generator.generate(p)
       }
-      const baseCss = generator.toCSS(true, false)
+      // Honour the user's preflight/minify keys instead of pinning literals,
+      // matching the dev-server path (#1822, #1867).
+      const baseCss = generator.toCSS(includePreflight, minify)
 
       // Now extract the declarations for each shortcut and build grouped rules
       for (const [name, classStr] of Object.entries(shortcuts)) {

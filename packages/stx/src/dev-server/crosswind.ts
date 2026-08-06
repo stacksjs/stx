@@ -6,6 +6,7 @@
 
 import path from 'node:path'
 import { hasLocalConfig } from 'bunfig'
+import { mergeCrosswindConfig } from '../crosswind-config'
 import { stateDir } from '../state-dir'
 import { colors } from './terminal-colors'
 
@@ -649,55 +650,16 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
     const baseConfig = hw.defaultConfig || hw.config
     const userConfig = cachedConfig || {}
 
-    // Merge user theme.extend into base theme, preserving extend for CSSGenerator
-    const baseTheme = baseConfig.theme || {}
-    const userTheme = userConfig.theme || {}
-    const userExtend = (userTheme as any).extend || {}
-
-    // Build theme with extend preserved — CSSGenerator's constructor deep-merges extend
-    const theme: Record<string, any> = { ...baseTheme }
-    if (Object.keys(userExtend).length > 0) {
-      theme.extend = userExtend
-    }
-
-    // Merge safelist
-    const safelist = [
-      ...(baseConfig.safelist || []),
-      ...(userConfig.safelist || []),
-    ]
-
-    // Merge preflights rather than replacing them (#1822). theme and safelist
-    // right above both merge, and a user preflight is additive by nature —
-    // silently dropping the built-in one because a project added a font-face
-    // rule loses the entire base layer.
-    const preflights = [
-      ...((baseConfig as any).preflights || []),
-      ...((userConfig as any).preflights || []),
-    ]
-
-    // Create config — CSSGenerator constructor handles theme.extend merging.
-    //
-    // `content` and `output` are stx-owned: classes are collected by scanning
-    // the rendered page, not by globbing, and the CSS is returned rather than
-    // written. They are pinned AFTER the user spread on purpose.
-    //
-    // `preflight` and `minify` used to be pinned here too, which made two
-    // documented, type-checked config keys silently do nothing — and they were
-    // ignored twice over, since toCSS() is called with literal arguments below
-    // and the underlying package spells the flag `includePreflight` anyway.
-    // Honouring them is the honest option of the three (#1822).
-    const includePreflight = (userConfig as any).preflight !== false
-    const minify = (userConfig as any).minify === true
-
-    const crosswindConfig: CrosswindConfig = {
-      ...baseConfig,
-      ...userConfig,
-      content: [],
-      output: '',
-      theme,
-      safelist,
-      ...(preflights.length > 0 && { preflights }),
-    }
+    // One merge, shared with bun-plugin's serve path (#1867). This used to read
+    // only `theme.extend` and pin the result after the user spread, so a
+    // project writing `theme: { colors: { … } }` without `extend` lost its
+    // whole theme silently — while serve.ts, merging the same key a different
+    // way, let it clobber the stock palette instead. `content`/`output` are
+    // still stx-owned and still pinned last (#1822); `preflight`/`minify` are
+    // still honoured rather than ignored twice over.
+    const merged = mergeCrosswindConfig(baseConfig as Record<string, any>, userConfig as Record<string, any>)
+    const { safelist, includePreflight, minify } = merged
+    const crosswindConfig = merged.config as CrosswindConfig
 
     // Generate CSS using Crosswind's CSSGenerator
     const generator = new hw.CSSGenerator(crosswindConfig)
