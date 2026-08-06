@@ -208,7 +208,7 @@ export { extractClassNames, generateCrosswindCSS, getCrosswindServeAsset, inject
 export { deepMergeThemes, mergeCrosswindConfig, type MergedCrosswindConfig } from './crosswind-config'
 
 // Dev-mode invalidation for the store/composable bundles (#1877)
-export { clearStoreCache } from './store-loader'
+export { clearStoreCache, getStoreScript } from './store-loader'
 export { clearComposableCache } from './composable-loader'
 
 // Generated union of layouts on disk (#1879)

@@ -6138,8 +6138,11 @@ catch (e) {} }
 
     defineStore: function(id, setupOrOptions, storeOptions) {
       console.log('[stx:store] defineStore called:', id, 'type:', typeof setupOrOptions === 'function' ? 'setup' : 'options', 'persist:', !!(storeOptions && storeOptions.persist));
-      // Return existing store if already defined
-      if (window.stx._stores.has(id)) {
+      // Return existing store if already defined.
+      //
+      // During a store HMR pass the definition is deliberately re-run, so the
+      // cached instance must NOT short-circuit it (#1877 ask 4).
+      if (window.stx._stores.has(id) && !window.stx.__hmrStoreReplacing) {
         console.log('[stx:store] returning existing store:', id);
         return window.stx._stores.get(id);
       }
@@ -6432,6 +6435,26 @@ catch (e) {} }
       // keep working); only template expression evaluation auto-unwraps.
       result._isStxStore = true;
 
+      // Carry state across a hot replacement.
+      //
+      // The NEW store object is kept rather than patching the old one: a
+      // setup-style store's actions close over the signals created in that
+      // same run, so keeping the old signals would leave the new actions
+      // writing to signals nothing is watching — an edit that appears to do
+      // nothing, which is worse than the reload this replaces. Seeding the new
+      // signals with the old values keeps state and behaviour consistent, and
+      // the caller re-renders afterwards so components rebind to this object.
+      var seed = window.stx.__hmrStoreSeed && window.stx.__hmrStoreSeed[id];
+      if (seed) {
+        for (var seedKey in seed) {
+          var target = result[seedKey];
+          if (target && target._isSignal && typeof target.set === 'function' && !target._isDerived) {
+            try { target.set(seed[seedKey]); }
+            catch (e) { /* shape changed across the edit — keep the new default */ }
+          }
+        }
+      }
+
       // Register globally
       window.stx._stores.set(id, result);
       window.__STX_STORES__ = window.__STX_STORES__ || {};
@@ -6439,6 +6462,55 @@ catch (e) {} }
 
       console.log('[stx:store] registered:', id, 'total stores:', window.stx._stores.size);
       return result;
+    },
+
+    // Replace the store definitions in place, keeping their state — the
+    // acceptHMRUpdate contract (#1877 ask 4). Called by the dev server's HMR
+    // client when a file under storesDir changes, instead of reloading the
+    // document and throwing away everything the SPA exists to preserve.
+    __hmrReplaceStores: function(code) {
+      var seed = {};
+      window.stx._stores.forEach(function(store, id) {
+        var values = {};
+        for (var key in store) {
+          var value = store[key];
+          // Derived values recompute from state, so seeding them would fight
+          // their own recomputation.
+          if (value && value._isSignal && !value._isDerived) {
+            try { values[key] = value.peek ? value.peek() : value(); }
+            catch (e) { /* unreadable — let the new default stand */ }
+          }
+        }
+        seed[id] = values;
+      });
+
+      window.stx.__hmrStoreSeed = seed;
+      window.stx.__hmrStoreReplacing = true;
+      var ok = true;
+      try {
+        // Indirect eval, so the bundle evaluates at global scope the way it
+        // does when inlined into the page.
+        (0, eval)(code);
+      }
+      catch (e) {
+        ok = false;
+        console.error('[stx:hmr] store bundle failed to evaluate:', e);
+      }
+      finally {
+        window.stx.__hmrStoreReplacing = false;
+        window.stx.__hmrStoreSeed = null;
+      }
+
+      if (!ok) return false;
+
+      // Components captured the PREVIOUS store object from useStore(), so
+      // re-render the route to rebind them. Still not a document reload: the
+      // swap keeps every non-store signal on the page alive.
+      if (window.stxRouter && typeof window.stxRouter.refresh === 'function') {
+        try { window.stxRouter.refresh(); }
+        catch (e) { /* a refresh that cannot run is not worth a reload here */ }
+      }
+      return true;
     },
 
     registerStoresClient: function(stores) {

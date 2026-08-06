@@ -997,7 +997,16 @@ export async function serve(options: ServeOptions): Promise<void> {
   // every request re-runs the template pipeline anyway. Belt-and-suspenders
   // with the htmlCache signature check: even if a dependency slipped past
   // the dep-tracker, the cache also gets cleared on every watch event.
-  type HmrEvent = { type: 'reload', file?: string } | { type: 'css', file?: string }
+  type HmrEvent
+    = | { type: 'reload', file?: string }
+      | { type: 'css', file?: string }
+      // Re-render the current route and swap the SPA container, keeping every
+      // client signal on the page alive. A page-template edit does not need the
+      // document thrown away (#1877 ask 5).
+      | { type: 'fragment', file?: string }
+      // Re-execute the store bundle and redefine stores in place, keeping their
+      // state — the Pinia acceptHMRUpdate contract (#1877 ask 4).
+      | { type: 'store', file?: string }
   const hmrClients = new Set<ReadableStreamDefaultController<Uint8Array>>()
   const hmrEncoder = new TextEncoder()
   function broadcastHmr(event: HmrEvent): void {
@@ -1014,7 +1023,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   // browser re-fetches without dropping JS state. EventSource auto-reconnects
   // for transient failures; the `onerror` guard also reloads if the server
   // restarted entirely (readyState transitions to CLOSED).
-  const HMR_CLIENT_SCRIPT = `<script data-stx-hmr>(()=>{if(window.__stxHmr)return;window.__stxHmr=1;function bust(){var ls=document.querySelectorAll('link[rel="stylesheet"]');for(var i=0;i<ls.length;i++){var l=ls[i];var u=new URL(l.href,location.href);u.searchParams.set('v',Date.now().toString(36));l.href=u.toString()}}var es=new EventSource('/_stx/hmr');es.onmessage=function(e){try{var m=JSON.parse(e.data);if(m.type==='reload')location.reload();else if(m.type==='css')bust()}catch(_){}};es.onerror=function(){if(es.readyState===2){setTimeout(function(){location.reload()},400)}}})()</script>`
+  const HMR_CLIENT_SCRIPT = `<script data-stx-hmr>(()=>{if(window.__stxHmr)return;window.__stxHmr=1;function bust(){var ls=document.querySelectorAll('link[rel="stylesheet"]');for(var i=0;i<ls.length;i++){var l=ls[i];var u=new URL(l.href,location.href);u.searchParams.set('v',Date.now().toString(36));l.href=u.toString()}}var es=new EventSource('/_stx/hmr');function swapFragment(){var r=window.stxRouter;if(r&&typeof r.refresh==='function'){try{return r.refresh().then(function(ok){if(!ok)location.reload()},function(){location.reload()})}catch(_){location.reload()}}else{location.reload()}}function reloadStores(){var s=window.stx;if(!s||typeof s.__hmrReplaceStores!=='function'){location.reload();return}fetch('/_stx/stores.js',{cache:'no-store'}).then(function(r){return r.ok?r.text():null}).then(function(code){if(code===null){location.reload();return}s.__hmrReplaceStores(code)}).catch(function(){location.reload()})}es.onmessage=function(e){try{var m=JSON.parse(e.data);if(m.type==='reload')location.reload();else if(m.type==='css')bust();else if(m.type==='fragment')swapFragment();else if(m.type==='store')reloadStores()}catch(_){}};es.onerror=function(){if(es.readyState===2){setTimeout(function(){location.reload()},400)}}})()</script>`
   // Append the HMR client just before </body>. Uses `lastIndexOf` per
   // CLAUDE.md item 24 — the first `</body>` in the document can live inside
   // a `<script>` string (e.g. the router/runtime bundle) and `replace` would
@@ -1089,9 +1098,33 @@ export async function serve(options: ServeOptions): Promise<void> {
           if (layoutsDir && f.endsWith('.stx') && nodePath.resolve(f).startsWith(nodePath.resolve(layoutsDir)))
             void writeLayoutTypes()
         }
-        // For CSS-only changes, prefer a stylesheet hot-swap over a full
-        // reload — the script side just re-fingerprints `<link>` hrefs.
-        broadcastHmr(isCss && !isStxLike ? { type: 'css', file: f } : { type: 'reload', file: f })
+        // Pick the narrowest update that can carry the change.
+        //
+        // CSS re-fingerprints <link> hrefs. A store edit re-executes just the
+        // store bundle (#1877 ask 4). A page/component template re-renders the
+        // route and swaps the SPA container, which keeps every client signal on
+        // the page alive — a one-character edit used to reload the document and
+        // reset date-range, filter and drill-down state (#1877 ask 5).
+        //
+        // Layout edits still reload: the swap replaces the container's contents,
+        // so chrome rendered OUTSIDE it would keep the old markup and the page
+        // would look updated while being half-stale.
+        // `filename` from fs.watch is relative to the WATCHED directory, not to
+        // cwd — resolving it against cwd silently classified every store edit
+        // as a generic reload.
+        const resolved = nodePath.resolve(dir, f)
+        const isStore = resolved.startsWith(nodePath.resolve(storesDir))
+          || composableDirs.some(d => resolved.startsWith(nodePath.resolve(d)))
+        const isLayout = !!layoutsDir && resolved.startsWith(nodePath.resolve(layoutsDir))
+
+        if (isCss && !isStxLike)
+          broadcastHmr({ type: 'css', file: f })
+        else if (isStore)
+          broadcastHmr({ type: 'store', file: f })
+        else if (isStxLike && !isLayout)
+          broadcastHmr({ type: 'fragment', file: f })
+        else
+          broadcastHmr({ type: 'reload', file: f })
       })
       watcher.on('error', () => { /* ignore — best-effort */ })
       watchersStarted.add(dir)
@@ -2703,6 +2736,25 @@ export async function serve(options: ServeOptions): Promise<void> {
                 if (req.method === 'HEAD')
                   return new Response(null, { headers })
                 return new Response(content, { headers })
+              }
+
+              // The store bundle on its own, for store HMR (#1877 ask 4). It is
+              // normally inlined into the page; the HMR client needs it as a
+              // standalone fetch so an edit can be applied without a reload.
+              // No-store: the whole point is that it changed.
+              if (path === '/_stx/stores.js') {
+                const stx = await stxModule
+                const code = typeof (stx as any).getStoreScript === 'function'
+                  ? await (stx as any).getStoreScript()
+                  : null
+                return new Response(code ?? '', {
+                  status: code === null ? 404 : 200,
+                  headers: {
+                    'Content-Type': 'application/javascript; charset=utf-8',
+                    'Cache-Control': 'no-store',
+                    ...corsHeaders,
+                  },
+                })
               }
 
               const crosswindAsset = path.match(/^\/_stx\/crosswind\.([a-f0-9]{16})\.css$/)
