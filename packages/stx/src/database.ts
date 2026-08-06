@@ -19,7 +19,7 @@
  *
  * ### Configuration
  * ```typescript
- * import { configureDatabase } from 'stx'
+ * import { configureDatabase } from 'stx/database'
  *
  * configureDatabase({
  *   default: 'sqlite',

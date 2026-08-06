@@ -114,6 +114,15 @@ export * from './deploy'
 export * from './dev-server'
 export * from './document-shell'
 export * from './fragment-container'
+// DevTools entry points. Exported selectively rather than with a wildcard:
+// devtools.ts also exports registerStore, which would collide with
+// state-management's function of the same name. Their own docblock says
+// `import { enableDevTools } from 'stx'`, and that import threw — so devtools
+// could not be turned on from the package entry at all. See #1873.
+export { disableDevTools, enableDevTools } from './devtools'
+// composables.ts:161 documents `import { onUpdate } from 'stx'`; it was
+// reachable only through the stx/composables subpath.
+export { onUpdate } from './composables'
 export * from './directive-api'
 export * from './docs'
 export * from './edge-runtime'
