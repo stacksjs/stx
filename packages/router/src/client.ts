@@ -38,7 +38,7 @@ export function getRouterScript(): string {
   const source = `
 ;(function(){
   'use strict';
-  var ROUTER_REV=6;
+  var ROUTER_REV=7;
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
@@ -1605,6 +1605,27 @@ else {
         var wantsFragment=shouldUseFragmentResponse();
         fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';var pTitle=r.headers.get('X-STX-Title')||'';var pRuntime=r.headers.get('X-STX-Runtime')||'';return r.text().then(function(html){return{html:isFrag?fragmentMarker(pRuntime)+html:html,layout:pLayout,layoutGroup:pGroup,title:pTitle}})}).then(function(result){setCache(key,result.html,result.layout,result.layoutGroup,result.title)}).catch(function(){});
       }
+    },
+    // Re-run the CURRENT route against the server and swap the result.
+    //
+    // There was no way to do this. invalidate() on a query only re-runs client
+    // fetches, so anything the server rendered — a list the mutation just
+    // changed, a count in the layout — could only be refreshed with a full
+    // document load, which discards every signal on the page. That is the
+    // exact thing the SPA exists to avoid, so apps reached for
+    // location.reload() and lost their state (#1850, #1858).
+    //
+    // force:true both evicts the cache entry and defeats navigate's
+    // same-URL early return, so this is exposing behaviour the router already
+    // had rather than adding a second code path. 'replace' because a refresh
+    // is not a new place — it must not add a history entry you can go Back to.
+    refresh:function(){
+      return navigate(location.pathname+location.search+location.hash,'replace',true);
+    },
+    // Expire ONE entry, so a mutation can invalidate just the page it affected
+    // and let the next visit re-fetch, instead of throwing the whole cache away.
+    invalidate:function(url){
+      evictCache(cacheKey(url||(location.pathname+location.search)));
     },
     clearCache:function(){for(var k in cache)delete cache[k];for(var lk in layoutCache)delete layoutCache[lk];for(var gk in layoutGroupCache)delete layoutGroupCache[gk];cacheOrder.length=0},
     cache:cache,
