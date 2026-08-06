@@ -1244,6 +1244,33 @@ else if (immediate) {
     else window.location.href = url;
   }
 
+  // Re-run the CURRENT route against the server and swap the result, keeping
+  // every client signal on the page alive.
+  //
+  // The router grew refresh()/invalidate() for this, but they lived only on
+  // window.stxRouter — nothing in the authoring surface reached them, so a
+  // <script client> block still had no way to say "the mutation changed what
+  // the server rendered". Apps kept calling location.reload() and threw away
+  // the state the SPA exists to preserve. See #1850.
+  //
+  // Degrades to a real reload when the router is absent (a page that never
+  // booted it, or a mid-boot call), mirroring how navigate() falls through to
+  // window.location.
+  function refresh() {
+    if (window.stxRouter && typeof window.stxRouter.refresh === 'function')
+      return window.stxRouter.refresh();
+    window.location.reload();
+    return Promise.resolve(false);
+  }
+
+  // Expire a cached route so the NEXT visit re-fetches it, without navigating
+  // now. Pairs with refresh(): refresh the page you are on, invalidate the ones
+  // your mutation also changed.
+  function invalidateRoute(url) {
+    if (window.stxRouter && typeof window.stxRouter.invalidate === 'function')
+      window.stxRouter.invalidate(url);
+  }
+
   function goBack() { window.history.back(); }
   function goForward() { window.history.forward(); }
 
@@ -5941,6 +5968,8 @@ catch (e) {} }
     useFetch,
     useRef,
     navigate,
+    refresh,
+    invalidateRoute,
     goBack,
     goForward,
     useRoute,
