@@ -187,7 +187,8 @@ describe('@form / @endform', () => {
 describe('@input', () => {
   it('basic: generates text input with name', () => {
     const result = processFormInputDirectives(`@input('username')`, {})
-    expect(result).toContain('<input type="text" name="username" value="" class="form-control">')
+    // The id is emitted so `@label('username')`'s for= resolves (#1861).
+    expect(result).toContain('<input type="text" name="username" id="username" value="" class="form-control">')
   })
 
   it('with value: sets the value attribute', () => {
@@ -290,7 +291,7 @@ describe('@input', () => {
 describe('@textarea', () => {
   it('basic textarea with content', () => {
     const result = processFormInputDirectives(`@textarea('bio')Default bio@endtextarea`, {})
-    expect(result).toContain('<textarea name="bio" class="form-control">Default bio</textarea>')
+    expect(result).toContain('<textarea name="bio" id="bio" class="form-control">Default bio</textarea>')
   })
 
   it('with attributes: rows', () => {
@@ -345,7 +346,7 @@ describe('@select', () => {
   it('basic with options', () => {
     const template = `@select('country')<option value="us">US</option><option value="uk">UK</option>@endselect`
     const result = processFormInputDirectives(template, {})
-    expect(result).toContain('<select name="country" class="form-control">')
+    expect(result).toContain('<select name="country" id="country" class="form-control">')
     expect(result).toContain('<option value="us">US</option>')
     expect(result).toContain('<option value="uk">UK</option>')
     expect(result).toContain('</select>')
@@ -891,9 +892,11 @@ describe('edge cases', () => {
   })
 
   it('empty attribute objects produce no extra attributes', () => {
-    // When attributes string is empty, parseAttributes returns ''
+    // When attributes string is empty, parseAttributes returns ''. The id is
+    // derived from the field name rather than being an author attribute, so
+    // it is present here too (#1861).
     const result = processFormInputDirectives(`@input('field')`, {})
-    expect(result).toContain('<input type="text" name="field" value="" class="form-control">')
+    expect(result).toContain('<input type="text" name="field" id="field" value="" class="form-control">')
   })
 
   it('multiple forms in one template', () => {
@@ -992,10 +995,14 @@ describe('edge cases', () => {
     expect(result).toContain('value="&lt;script&gt;"')
   })
 
-  it('label for attribute escapes special HTML chars', () => {
-    // Name regex only supports [^'"]+ so we test escapeAttr with < and &
+  it('label for attribute normalises characters an id cannot carry', () => {
+    // Was: asserted `for="a&amp;b"`. Since #1861 the `for=` is put through the
+    // same normalisation as the control's generated id, so the two still pair
+    // up for field names that are not legal bare ids — `user[email]` labels
+    // `user-email`. That leaves nothing for escapeAttr to escape here, because
+    // every character outside [\w.:-] has already been collapsed to a dash.
     const result = processFormInputDirectives(`@label('a&b')Text@endlabel`, {})
-    expect(result).toContain('for="a&amp;b"')
+    expect(result).toContain('for="a-b"')
   })
 
   it('file input name escapes special HTML chars', () => {

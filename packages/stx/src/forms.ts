@@ -131,6 +131,37 @@ function buildClassString(
   return hasError ? `${baseClass} ${errorClass}` : baseClass
 }
 
+/**
+ * Turn a field name into an element id `@label`'s `for=` can actually reach.
+ *
+ * `@label('email')` has always emitted `for="email"`, but no control directive
+ * emitted an `id` at all, so every `for=` pointed at nothing and stx's own
+ * accessibility checker flagged the markup stx itself generated (#1861).
+ *
+ * Array notation is stripped (`tags[]` -> `tags`) and anything outside the set
+ * an id may safely carry into a CSS or querySelector lookup is collapsed to a
+ * dash, so `user[address][city]` becomes `user-address-city` rather than an id
+ * that breaks `#user[address]` selectors.
+ */
+function fieldId(name: string): string {
+  return String(name)
+    .replace(/\[\]$/, '')
+    .replace(/[^\w.:-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/**
+ * Emit ` id="…"`, unless the author already supplied one in the attribute bag.
+ *
+ * An explicit `id` always wins: the generated id is a default for the common
+ * case, not a policy. Returns an empty string when the author has spoken.
+ */
+function idAttr(attrs: string, fallbackId: string): string {
+  if (/\bid\s*=/i.test(attrs))
+    return ''
+  return ` id="${escapeAttr(fallbackId)}"`
+}
+
 // =============================================================================
 // CSRF Token Generation
 // =============================================================================
@@ -290,7 +321,7 @@ export function processFormInputDirectives(
       let attrsWithoutClassAndType = attrs.replace(/class=['"][^'"]+['"]/i, '')
       attrsWithoutClassAndType = attrsWithoutClassAndType.replace(/type=['"][^'"]+['"]/i, '')
 
-      return `<input type="${escapeAttr(type)}" name="${escapeAttr(name)}" value="${escapeAttr(oldValue)}" class="${className}"${attrsWithoutClassAndType ? ` ${attrsWithoutClassAndType}` : ''}>`
+      return `<input type="${escapeAttr(type)}" name="${escapeAttr(name)}"${idAttr(attrs, fieldId(name))} value="${escapeAttr(oldValue)}" class="${className}"${attrsWithoutClassAndType ? ` ${attrsWithoutClassAndType}` : ''}>`
     },
   )
 
@@ -309,7 +340,7 @@ export function processFormInputDirectives(
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
 
-      return `<textarea name="${escapeAttr(name)}" class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${escapeAttr(oldValue)}</textarea>`
+      return `<textarea name="${escapeAttr(name)}"${idAttr(attrs, fieldId(name))} class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${escapeAttr(oldValue)}</textarea>`
     },
   )
 
@@ -347,14 +378,21 @@ export function processFormInputDirectives(
         )
       }
 
-      return `<select name="${escapeAttr(name)}" class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${processedContent}</select>`
+      return `<select name="${escapeAttr(name)}"${idAttr(attrs, fieldId(name))} class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${processedContent}</select>`
     },
   )
 
   // Process @checkbox directive
   result = result.replace(
     /@checkbox\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?(?:,\s*\{([^}]+)\})?\)/g,
-    (_match, name, value = '1', attributes = '') => {
+    (_match, name, rawValue, attributes = '') => {
+      // A checkbox group shares one name, so its ids must be distinguished by
+      // value. A lone `@checkbox('terms')` has no value of its own and keeps
+      // the bare field id, which is what `@label('terms')` points at.
+      const value = rawValue === undefined ? '1' : rawValue
+      const controlId = rawValue === undefined
+        ? fieldId(name)
+        : `${fieldId(name)}-${fieldId(value)}`
       const attrs = parseAttributes(attributes)
       const oldValues = getOldValue(name, context)
 
@@ -372,7 +410,7 @@ export function processFormInputDirectives(
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
 
-      return `<input type="checkbox" name="${escapeAttr(name)}" value="${escapeAttr(value)}" class="${className}"${isChecked ? ' checked' : ''}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>`
+      return `<input type="checkbox" name="${escapeAttr(name)}"${idAttr(attrs, controlId)} value="${escapeAttr(value)}" class="${className}"${isChecked ? ' checked' : ''}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>`
     },
   )
 
@@ -393,7 +431,7 @@ export function processFormInputDirectives(
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
 
-      return `<input type="radio" name="${escapeAttr(name)}" value="${escapeAttr(value)}" class="${className}"${isChecked ? ' checked' : ''}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>`
+      return `<input type="radio" name="${escapeAttr(name)}"${idAttr(attrs, `${fieldId(name)}-${fieldId(value)}`)} value="${escapeAttr(value)}" class="${className}"${isChecked ? ' checked' : ''}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>`
     },
   )
 
@@ -424,7 +462,7 @@ export function processFormInputDirectives(
 
       // Build the file input element
       const parts = [
-        `<input type="file" name="${escapeAttr(name)}"`,
+        `<input type="file" name="${escapeAttr(name)}"${idAttr(attrs, fieldId(name))}`,
         `class="${className}"`,
       ]
 
@@ -457,7 +495,11 @@ export function processFormInputDirectives(
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
 
-      return `<label for="${escapeAttr(forAttr)}" class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${content}</label>`
+      // Normalised the same way the control's id is, so a field name that is
+      // not a legal bare id — `user[email]`, `tags[]` — still pairs up. A label
+      // written against an explicit id the author set on the control passes
+      // through unchanged, since it will already be in normal form.
+      return `<label for="${escapeAttr(fieldId(forAttr))}" class="${className}"${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>${content}</label>`
     },
   )
 
