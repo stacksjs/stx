@@ -10,15 +10,16 @@
  *
  * ## Why this augments the real package, not a synthetic specifier
  *
- * The route-type generator emits `declare module "stx/routes" { interface
- * RouteMap … }`, and nothing in the source tree declares or imports
- * `stx/routes` — so that map is a dangling declaration that cannot make
- * anything a type error. That is the same "typed and never read" shape #1879
- * is about, one level up, and repeating it here would produce a file that looks
- * like a fix and checks nothing.
- *
- * So the augmentation targets `@stacksjs/stx`, where `KnownLayouts` is really
+ * The augmentation targets `@stacksjs/stx`, where `KnownLayouts` is really
  * declared and really referenced by `PageMeta['layout']`.
+ *
+ * That mattered because the route-type generator used to emit
+ * `declare module "stx/routes"` — a specifier nothing in the source tree
+ * declares or imports, which TypeScript reads as an ambient module declaration
+ * rather than an augmentation. It parsed, shipped, and constrained nothing: the
+ * same "typed and never read" shape #1879 is about, one level up. Routes now
+ * use this same target (#1887); the reasoning below is what kept this file from
+ * repeating it.
  *
  * @module layout-types
  */

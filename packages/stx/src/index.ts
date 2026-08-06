@@ -213,6 +213,20 @@ export { clearComposableCache } from './composable-loader'
 
 // Generated union of layouts on disk (#1879)
 export { discoverLayoutNames, generateLayoutTypes, LAYOUT_TYPES_FILE, renderLayoutTypes } from './layout-types'
+
+// Typed route paths (#1887). Without this export the generated augmentation is
+// dangling again, for exactly the reason `stx/routes` was.
+export {
+  $path,
+  type CheckHref,
+  type KnownRoutes,
+  type RouteHref,
+  type RouteParams,
+  type RoutePath,
+  type RoutePattern,
+  type RoutePatternUsedAsHref,
+  type UnknownRoute,
+} from './route-types'
 export { runDoctor, formatDoctorReport, findPantryPackage } from './doctor'
 export type { DoctorCheck, DoctorReport, DoctorOptions, CheckStatus } from './doctor'
 export {

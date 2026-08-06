@@ -124,7 +124,10 @@ interface StxNavigateOptions {
  * shape that actually shipped — but keeping it out of the type means nothing
  * that type-checks today changes meaning (#1807).
  */
-declare function navigate(_url: string, _options?: StxNavigateOptions): void
+declare function navigate<T extends string>(
+  _url: T & import('@stacksjs/stx').CheckHref<T>,
+  _options?: StxNavigateOptions,
+): void
 declare function goBack(): void
 declare function goForward(): void
 

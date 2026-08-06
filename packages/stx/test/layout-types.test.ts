@@ -6,13 +6,13 @@
  * correct name pointing at a missing file. Nuxt types `layout` as a union of
  * the files on disk for this reason.
  *
- * The trap this file guards against: the existing route-type generator emits
- * `declare module "stx/routes" { interface RouteMap … }`, and nothing in the
- * source tree declares or imports `stx/routes` — so that map cannot make
- * anything a type error. It is the same "typed and never read" shape #1879 is
- * about, one level up. A unit test over the emitted STRING would pass just as
- * happily for that dangling version, so the decisive test here runs real `tsc`
- * over a real project and asserts the error actually fires.
+ * The trap this file guards against: the route-type generator used to emit
+ * `declare module "stx/routes" { interface RouteMap … }` into a specifier
+ * nothing declares or imports, so that map could not make anything a type
+ * error — the same "typed and never read" shape #1879 is about, one level up
+ * (fixed in #1887). A unit test over the emitted STRING would pass just as
+ * happily for such a dangling version, so the decisive test here runs real
+ * `tsc` over a real project and asserts the error actually fires.
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
@@ -66,7 +66,7 @@ describe('discovering layouts', () => {
 
 describe('the emitted declaration', () => {
   it('augments the real package, not a synthetic specifier', () => {
-    // `declare module "stx/routes"` is why the route map constrains nothing.
+    // A synthetic specifier is why the old route map constrained nothing.
     const text = renderLayoutTypes(['app'])
 
     expect(text).toContain(`declare module '@stacksjs/stx'`)
