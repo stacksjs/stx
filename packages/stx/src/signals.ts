@@ -26,17 +26,25 @@ export * from './signals-api'
  * @returns Minified JavaScript runtime code
  */
 export function generateSignalsRuntime(): string {
-  // Use Bun.Transpiler for minification, then fix ASI edge cases.
-  // Bun.Transpiler strips newlines but doesn't always insert semicolons at
-  // statement boundaries like `}var` or `}let`. While Bun's parser handles
-  // these, browsers in strict mode may reject them.
+  // Strip `console.log(...)` calls before minification. They're useful in dev
+  // (and the dev build keeps them via generateSignalsRuntimeDev), but in prod
+  // they're noise — every nav fires ~15 log lines and they show up in
+  // consumer DevTools. `console.warn` / `console.error` are preserved so
+  // real problems still surface. See stacksjs/stx#1668 bug 8.
+  //
+  // Stripping happens OUTSIDE the try on purpose. It used to sit inside, with a
+  // catch that returned generateSignalsRuntimeDev() — the raw, *unstripped*
+  // source. So any failure in Bun.Transpiler silently shipped all ~40 log sites
+  // to production, and the only symptom was a console full of `[stx] signal.set:`
+  // in a consumer's DevTools with nothing to explain it. Minification is the
+  // optional part; removing the logs is not. See #1873.
+  const stripped = stripConsoleLog(generateSignalsRuntimeDev())
+
+  // Use Bun.Transpiler for minification, then fix ASI edge cases. Bun.Transpiler
+  // strips newlines but doesn't always insert semicolons at statement boundaries
+  // like `}var` or `}let`. While Bun's parser handles these, browsers in strict
+  // mode may reject them.
   try {
-    // Strip `console.log(...)` calls before minification. They're useful in dev
-    // (and the dev build keeps them via generateSignalsRuntimeDev), but in prod
-    // they're noise — every nav fires ~15 log lines and they show up in
-    // consumer DevTools. `console.warn` / `console.error` are preserved so
-    // real problems still surface. See stacksjs/stx#1668 bug 8.
-    const stripped = stripConsoleLog(generateSignalsRuntimeDev())
     const transpiler = new Bun.Transpiler({ loader: 'js', minifyWhitespace: true })
     let minified = transpiler.transformSync(stripped)
     // Insert semicolons at `}keyword` boundaries where ASI would have applied
@@ -45,8 +53,8 @@ export function generateSignalsRuntime(): string {
     return minified
   }
   catch {
-    // Fallback: return dev runtime unminified (larger but correct)
-    return generateSignalsRuntimeDev()
+    // Fallback: unminified but still stripped — larger, correct, and quiet.
+    return stripped
   }
 }
 
