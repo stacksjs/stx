@@ -1,6 +1,21 @@
 /**
- * defineForm — reactive form state reachable from a <script client> block
- * (stacksjs/stx#1846).
+ * useForm — reactive form state reachable from a <script client> block
+ * (stacksjs/stx#1846, renamed in #1843).
+ *
+ * Named `defineForm` until it turned out to be the odd one out. In this
+ * codebase `define*` DECLARES — defineProps, defineEmits, defineExpose,
+ * definePageMeta, defineSlots, defineStore — while `use*` returns live reactive
+ * state: useFetch, useCookie, useMutation, useDark. This returns signal-backed
+ * state and a handleSubmit, so it was a `use*` wearing a `define*` name, and the
+ * file being called use-form.ts while exporting defineForm meant grepping for
+ * either one found the wrong half.
+ *
+ * It also collided with an independently written `useForm` in
+ * @stacksjs/composables, which is the same primitive built twice because neither
+ * side could find the other's — the adoption problem in #1843, applied to the
+ * framework itself.
+ *
+ * `defineForm` remains as a deprecated alias below.
  *
  * Lifted out of forms-validation.ts so the framework-composables demand-bundler
  * (src/framework-composables.ts) can ship it to the browser. That bundler scans
@@ -72,11 +87,11 @@ function snapshot<K extends string | number | symbol>(record: Record<K, any>, fi
 }
 
 /**
- * Define a form with validation schema.
+ * Reactive form state from a validation schema.
  *
  * @example
  * ```typescript
- * const form = defineForm({
+ * const form = useForm({
  *   email: v.required().email(),
  *   password: v.required().min(8),
  *   age: v.number().between(18, 100)
@@ -96,7 +111,7 @@ function snapshot<K extends string | number | symbol>(record: Record<K, any>, fi
  * })
  * ```
  */
-export function defineForm<T extends Record<string, Validator>>(
+export function useForm<T extends Record<string, Validator>>(
   schema: T,
   initialValues?: Partial<{ [K in keyof T]: unknown }>
 ): FormState<T> {
@@ -234,3 +249,14 @@ export function defineForm<T extends Record<string, Validator>>(
 
   return form
 }
+
+/**
+ * @deprecated Use {@link useForm}. Renamed in stacksjs/stx#1843 so the name
+ * matches what it does: `define*` declares in this codebase, `use*` returns
+ * live reactive state, and this returns the latter.
+ *
+ * A plain alias, not a wrapper — same reference, so `defineForm === useForm`
+ * and anything comparing or spying on the function keeps working. Kept for a
+ * minor; existing apps do not have to move in the same release they upgrade in.
+ */
+export const defineForm = useForm

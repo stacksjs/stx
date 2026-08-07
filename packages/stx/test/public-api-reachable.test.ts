@@ -7,7 +7,7 @@
  *   composer / composerPattern  the view-composer registry could never be filled,
  *                               so runComposers ran against an empty map on every
  *                               render (#1860)
- *   defineForm / v              the form primitive had no way in (#1856)
+ *   useForm / v                 the form primitive had no way in (#1856)
  *   refresh / invalidateRoute   the router had them; the authoring surface did
  *                               not (#1850)
  *   enableDevTools              you could not turn devtools on from the package
@@ -90,7 +90,7 @@ describe('documented imports resolve (public API reachability)', () => {
 
   it('does not regress the four that shipped unreachable', () => {
     // Named explicitly so the reason these exist is not lost to a refactor.
-    for (const name of ['composer', 'composerPattern', 'defineForm', 'v', 'enableDevTools', 'onUpdate'])
+    for (const name of ['composer', 'composerPattern', 'useForm', 'defineForm', 'v', 'enableDevTools', 'onUpdate'])
       expect(entry).toHaveProperty(name)
   })
 

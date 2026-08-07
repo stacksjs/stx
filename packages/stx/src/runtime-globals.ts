@@ -159,7 +159,8 @@ export const NON_CLIENT_PRIMITIVES: Readonly<Record<string, { category: NonClien
 
   // Demand-bundled reactive form primitive: lives in a composable, inlined on
   // demand exactly like useAsyncData (#1846).
-  defineForm: { category: 'browser-composable', reason: 'reactive form primitive; lives in src/composables/use-form.ts and is inlined on demand when a <script client> references it (#1846).' },
+  useForm: { category: 'browser-composable', reason: 'reactive form primitive; lives in src/composables/use-form.ts and is inlined on demand when a <script client> references it (#1846).' },
+  defineForm: { category: 'browser-composable', reason: 'deprecated alias of useForm, kept for a minor (#1843). Same delivery path — inlined on demand from src/composables/use-form.ts.' },
 
   // isomorphic-import: pure validators that WOULD run in a browser, but are not
   // part of the auto-delivered client surface by decision — see the delivery-

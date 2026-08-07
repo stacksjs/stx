@@ -43,7 +43,7 @@ export const SERVER_ONLY_COMPOSABLES: readonly string[] = [
   'useBreakpoint', 'useBroadcastChannel', 'useChannel', 'useChildListObserver', 'useClipboard',
   'useColorHistory', 'useConditionalWakeLock', 'useCookies', 'useCopySelection',
   'useDeviceMotion', 'useDeviceOrientation', 'useElementSize', 'useElementTextSelection',
-  'useElementVisibility', 'useEventSource', 'useEyeDropper', 'useFavicon', 'useFullscreen',
+  'useElementVisibility', 'useEventSource', 'useEyeDropper', 'useFavicon', 'useForm', 'useFullscreen',
   'useGeolocation', 'useGeolocationWatch', 'useHotkey', 'useIdle', 'useIdleState',
   'useInfiniteScroll', 'useIntersectionObserver', 'useIntersectionObserverMultiple',
   'useIsDesktop', 'useIsMobile', 'useIsTablet', 'useKeyPressed', 'useKeySequence',

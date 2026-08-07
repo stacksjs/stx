@@ -107,3 +107,45 @@ describe('defineForm: reachable and reactive (#1856)', () => {
     expect(form.isDirty).toBe(false)
   })
 })
+
+/**
+ * The rename (#1843).
+ *
+ * `defineForm` was the odd one out: in this codebase `define*` DECLARES
+ * (defineProps, defineEmits, defineExpose, definePageMeta, defineSlots,
+ * defineStore) and `use*` returns live reactive state (useFetch, useCookie,
+ * useMutation). This returns signal-backed state and a handleSubmit, so it is a
+ * `use*`. The file was already called use-form.ts, which meant grepping for
+ * either spelling found the wrong half — and an independently written `useForm`
+ * in @stacksjs/composables was the same primitive built twice.
+ */
+describe('useForm is the name, defineForm the alias (#1843)', () => {
+  it('exports useForm from the package entry', async () => {
+    const { useForm } = await import('../../src/index')
+    expect(typeof useForm).toBe('function')
+  })
+
+  it('defineForm is the SAME function, not a copy', async () => {
+    // A wrapper would break identity checks and double any future logging.
+    const { defineForm, useForm } = await import('../../src/index')
+    expect(defineForm).toBe(useForm)
+  })
+
+  it('the alias still produces working reactive state', async () => {
+    // The deprecation must not be a soft removal — apps have a minor to move.
+    const { defineForm, effect, v } = await import('../../src/index')
+    const form = defineForm({ email: v.required() })
+
+    const seen: unknown[] = []
+    effect(() => { seen.push(form.values.email) })
+    form.setFieldValue('email', 'a@b.co')
+
+    expect(seen[seen.length - 1]).toBe('a@b.co')
+  })
+
+  it('both spellings reach the client the same way', async () => {
+    const { NON_CLIENT_PRIMITIVES } = await import('../../src/runtime-globals')
+    expect(NON_CLIENT_PRIMITIVES.useForm?.category).toBe('browser-composable')
+    expect(NON_CLIENT_PRIMITIVES.defineForm?.category).toBe('browser-composable')
+  })
+})

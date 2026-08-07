@@ -123,7 +123,7 @@ describe('authoring surface (#1846)', () => {
  * The export side of the same contract (#1846). The block above guards
  * window.stx -> (list | excluded); runtime-globals.test.ts guards
  * list -> window.stx. Neither catches a primitive EXPORTED from the package
- * that reaches the client by no path at all — the shape of defineForm /
+ * that reaches the client by no path at all — the shape of useForm /
  * validateFields, which two independent apps hand-rolled after a bare
  * ReferenceError.
  *
@@ -174,7 +174,7 @@ describe('authoring surface — export side (#1846)', () => {
   })
 
   it('the primitives #1846 named are each accounted for, never a silent ReferenceError', () => {
-    const named = ['defineForm', 'validateFields', 'redirect', 'useAsyncData', 'Teleport', 'StxModalBuiltin', 'StxToastBuiltin']
+    const named = ['useForm', 'defineForm', 'validateFields', 'redirect', 'useAsyncData', 'Teleport', 'StxModalBuiltin', 'StxToastBuiltin']
     const unaccounted = named.filter(name =>
       !isReachable(name) && !(name in NON_CLIENT_PRIMITIVES))
     expect(unaccounted).toEqual([])

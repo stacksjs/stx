@@ -4842,9 +4842,9 @@ Simple, chainable form validation API.
 ### Basic Usage
 
 ```typescript
-import { defineForm, v } from 'stx'
+import { useForm, v } from 'stx'
 
-const form = defineForm({
+const form = useForm({
   email: v.required().email(),
   password: v.required().min(8).hasUppercase().hasNumber(),
   age: v.number().between(18, 100)
@@ -4930,7 +4930,7 @@ v.when(
 ### Form Submission
 
 ```typescript
-const form = defineForm({
+const form = useForm({
   email: v.required().email(),
   password: v.required().min(8)
 })
@@ -4971,9 +4971,9 @@ const onSubmit = form.handleSubmit(async (values) => {
 
 ```html
 <script server>
-import { defineForm, v } from 'stx'
+import { useForm, v } from 'stx'
 
-const signupForm = defineForm({
+const signupForm = useForm({
   username: v.required().min(3).max(20).alphanumeric(),
   email: v.required().email(),
   password: v.required()

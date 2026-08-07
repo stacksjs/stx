@@ -6,9 +6,9 @@
  *
  * @example
  * ```typescript
- * import { defineForm, v } from 'stx'
+ * import { useForm, v } from 'stx'
  *
- * const form = defineForm({
+ * const form = useForm({
  *   email: v.required().email(),
  *   password: v.required().min(8),
  *   age: v.number().between(18, 100)
@@ -522,11 +522,12 @@ export const v = new Validator()
 // Form Definition
 // =============================================================================
 
-// defineForm and its signal-backed record now live in composables/use-form.ts,
+// useForm (formerly defineForm, renamed in #1843) and its signal-backed record
+// now live in composables/use-form.ts,
 // so the framework-composables demand-bundler can ship them to a <script client>
 // block (#1846). Re-exported here because this module is the documented import
-// path (`import { defineForm } from 'stx'` resolves through index.ts -> here).
-export { defineForm } from './composables/use-form'
+// path (`import { useForm } from 'stx'` resolves through index.ts -> here).
+export { defineForm, useForm } from './composables/use-form'
 
 // =============================================================================
 // Directive Processing

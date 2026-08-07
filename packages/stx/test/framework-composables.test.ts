@@ -143,29 +143,44 @@ const n = state(0)
 })
 
 /**
- * defineForm is the reactive form primitive an app kept hand-rolling because it
- * was exported from the package but reachable from no client path (#1846). It is
- * not a `use*` name, but it rides the very same demand-bundle: it now lives in
- * composables/use-form.ts and is listed in SERVER_ONLY_COMPOSABLES, so a page
- * that calls it gets it inlined. Its one runtime dependency, `state`, is a bare
- * global the signals runtime publishes, so the stripped import resolves.
+ * useForm is the reactive form primitive an app kept hand-rolling because it was
+ * exported from the package but reachable from no client path (#1846). It rides
+ * the demand-bundle: it lives in composables/use-form.ts and is listed in
+ * SERVER_ONLY_COMPOSABLES, so a page that calls it gets it inlined. Its one
+ * runtime dependency, `state`, is a bare global the signals runtime publishes,
+ * so the stripped import resolves.
+ *
+ * It was called `defineForm` until #1843 — `define*` declares in this codebase
+ * and `use*` returns reactive state — so the old spelling is kept as an alias
+ * and has to keep reaching the client on the same path.
  */
-describe('defineForm reaches the client (#1846)', () => {
+describe('useForm reaches the client (#1846, renamed #1843)', () => {
   it('is offered for a page that calls it', () => {
+    expect(referencedFrameworkComposables('const f = useForm({ email: v.required() })'))
+      .toEqual(['useForm'])
+  })
+
+  it('the deprecated defineForm spelling is still offered', () => {
+    // An app that has not renamed yet must keep getting the bundle.
     expect(referencedFrameworkComposables('const f = defineForm({ email: v.required() })'))
       .toEqual(['defineForm'])
   })
 
+  it('the alias is the same function, not a second implementation', async () => {
+    const { defineForm, useForm } = await import('../src/composables/use-form')
+    expect(defineForm).toBe(useForm)
+  })
+
   it('bundles the implementation and its signal-backed helper', async () => {
-    const script = await getFrameworkComposableScript('defineForm({})')
-    expect(script).toContain('function defineForm')
+    const script = await getFrameworkComposableScript('useForm({})')
+    expect(script).toContain('function useForm')
     // The module is taken whole, so the private helper it leans on comes too —
     // emitting only the export would ship a body with a missing reference.
     expect(script).toContain('signalRecord')
   })
 
   it('leaves no import behind, so the stripped `state` resolves to the global', async () => {
-    const script = await getFrameworkComposableScript('defineForm({})')
+    const script = await getFrameworkComposableScript('useForm({})')
     const body = script!.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '')
     expect(body).not.toMatch(/^\s*import\s/m)
     // eslint-disable-next-line no-new-func
@@ -174,7 +189,7 @@ describe('defineForm reaches the client (#1846)', () => {
 
   it('ships through the render pipeline on a page that calls it', async () => {
     const template = `<script client>
-const form = defineForm({ email: v.required() })
+const form = useForm({ email: v.required() })
 </script>
 <main><p>{{ form.errors.email }}</p></main>`
 
@@ -186,6 +201,6 @@ const form = defineForm({ email: v.required() })
     } as never, new Set<string>())
 
     expect(out).toContain('data-stx-framework-composables')
-    expect(out).toContain('function defineForm')
+    expect(out).toContain('function useForm')
   })
 })

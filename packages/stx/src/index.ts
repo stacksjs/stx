@@ -44,12 +44,16 @@ export {
   runComposers,
   type ViewComposerCallback,
 } from './view-composers'
-// defineForm and the `v` validator builder shipped unreachable: the module's
-// docblock says `import { defineForm, v } from 'stx'` (forms-validation.ts:9),
+// useForm and the `v` validator builder shipped unreachable: the module's
+// docblock says `import { useForm, v } from 'stx'` (forms-validation.ts:9),
 // and that import threw. process.ts reached the module lazily for directive
 // processing only, so the form primitive itself had no way in. See #1856.
+//
+// `defineForm` is the deprecated pre-#1843 spelling, exported alongside so an
+// app does not have to rename in the same release it upgrades in.
 export {
   defineForm,
+  useForm,
   v,
   Validator,
   type ValidatorFn,
