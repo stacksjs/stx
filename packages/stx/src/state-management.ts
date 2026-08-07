@@ -780,50 +780,14 @@ export function createStoreDirective(storeName: string): {
   }
 }
 
-// =============================================================================
-// Server State
-// =============================================================================
-
-/**
- * Serialize all stores for SSR hydration.
- */
-export function serializeStores(): string {
-  const state: Record<string, unknown> = {}
-
-  for (const [name, store] of globalState.stores.entries()) {
-    state[name] = store.get()
-  }
-
-  return JSON.stringify(state)
-}
-
-/**
- * Hydrate stores from serialized state.
- */
-export function hydrateStores(serialized: string): void {
-  try {
-    const state = JSON.parse(serialized) as Record<string, unknown>
-
-    for (const [name, value] of Object.entries(state)) {
-      const store = getStore(name)
-      if (store) {
-        store.set(value)
-      }
-    }
-  }
-  catch (error) {
-    console.error('[stx-store] Hydration failed:', error)
-  }
-}
-
-/**
- * Generate hydration script for SSR.
- */
-export function generateHydrationScript(): string {
-  const serialized = serializeStores()
-  return `<script>window.__STX_STORE_STATE__=${serialized};
-if(window.__STX_HYDRATE_STORES__){window.__STX_HYDRATE_STORES__()}</script>`
-}
+// Server-side store hydration (serializeStores / hydrateStores /
+// generateHydrationScript) lived here but was dead: nothing in the render path
+// ever called them, so `window.__STX_STORE_STATE__` was never written and the
+// runtime's read of it (signals.ts) never fired. Removed rather than wired,
+// because wiring means shipping serialized store state in every page's HTML on
+// every request — a payload cost stacksjs/stx#1868 is arguing against. The
+// client-side reader is kept as the dormant hook a future typed payload
+// (that issue's Ask 2) can write into deliberately.
 
 // =============================================================================
 // DevTools
