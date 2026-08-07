@@ -270,6 +270,33 @@ export const INTERPOLATION_PLACEHOLDER = '__stx_interpolated'
 /** Name of the generated helper that reads an iterable's element type. */
 export const ELEMENT_HELPER = '__StxElement'
 
+/** Name of the generated helper that models a template's signal auto-unwrap. */
+export const UNWRAP_HELPER = '__StxTemplateValue'
+
+/**
+ * How a signal reads inside a template.
+ *
+ * Templates auto-unwrap, so the same name has two types depending on where it
+ * appears: `:if="flag"` reads the VALUE, `@click="flag.set(true)"` reads the
+ * SIGNAL. A single declaration cannot be both, and picking one produces false
+ * positives in whichever context loses.
+ *
+ * So a signal is typed as the intersection of the two. `flag` satisfies
+ * `boolean` operations AND carries `.set`, which means neither form is reported.
+ * The cost is a false NEGATIVE — `:if="flag.set"` type-checks though it is
+ * meaningless — and that is the right way round for a CI gate: this check earns
+ * its place by catching renamed fields (`{{ user.nmae }}`), and a gate people
+ * mute because it invents errors catches nothing at all.
+ *
+ * Keyed on the `_isSignal` / `_isDerived` brands that `stx.d.ts` declares and
+ * that `test/reactivity/dual-impl-parity.test.ts` pins, so a plain function or
+ * a plain value is left exactly as it is.
+ */
+const UNWRAP_HELPER_DECL
+  = `type ${UNWRAP_HELPER}<T> = T extends { readonly _isSignal: true } | { readonly _isDerived: true }`
+    + ` ? (T extends () => infer V ? T & V : T)`
+    + ` : T`
+
 export function substituteInterpolations(value: string): string {
   return value
     .replace(/\{\{[\s\S]*?\}\}/g, INTERPOLATION_PLACEHOLDER)
@@ -586,8 +613,15 @@ export function expressionStatement(
 export interface BuildVirtualOptions {
   /** Append `{{ }}` and directive expressions. Default true. */
   templateExpressions?: boolean
-  /** Append ambient declarations for runtime globals. Default true. */
+  /** Append ambient declarations at all. Default true. */
   globals?: boolean
+  /**
+   * Declare the stx runtime globals as `any`. Default true.
+   *
+   * Pass `false` when the program already includes the package's `stx.d.ts`,
+   * which types them properly — these would shadow it.
+   */
+  runtimeGlobals?: boolean
 }
 
 /**
@@ -626,8 +660,15 @@ export function buildVirtualTypeScript(
 
   if (options.globals !== false) {
     append('')
-    for (const decl of runtimeGlobalDeclarations().split('\n'))
-      append(decl)
+    // Skipped when the caller supplies the package's real `stx.d.ts`. These are
+    // `any`, so emitting them alongside it would SHADOW the typed declarations
+    // — the buffer is a module, so a local `declare var state: any` wins over
+    // the ambient `state<T>(initial: T): StxSignal<T>` and every client-side
+    // expression goes back to being unchecked (#1889).
+    if (options.runtimeGlobals !== false) {
+      for (const decl of runtimeGlobalDeclarations().split('\n'))
+        append(decl)
+    }
     for (const decl of serverContextDeclarations().split('\n'))
       append(decl)
     for (const name of STX_TEMPLATE_GLOBALS)
@@ -653,16 +694,45 @@ export function buildVirtualTypeScript(
   }
 
   if (options.templateExpressions !== false) {
-    for (const expression of extractTemplateExpressions(source)) {
-      const statement = expressionStatement(expression)
-      if (statement) {
-        append(statement.text, {
+    const statements = extractTemplateExpressions(source)
+      .map(expression => ({ expression, statement: expressionStatement(expression) }))
+      .filter((entry): entry is { expression: TemplateExpression, statement: { text: string, prefixLength: number } } =>
+        entry.statement !== null)
+
+    if (statements.length > 0) {
+      // Re-type the script blocks' own bindings for the template's reading of
+      // them, by shadowing each as a parameter of a wrapper function. A
+      // parameter is the only way to give a name a second type without
+      // redeclaring it, which would collide with the author's own code.
+      //
+      // The type aliases are hoisted to the top level on purpose: writing
+      // `(count: __StxTemplateValue<typeof count>)` inline makes the annotation
+      // reference the parameter it is annotating, which TypeScript reads as a
+      // circular initialiser.
+      const declared = [...new Set(blocks.flatMap(block => collectBlockDeclarations(block.code)))]
+      const shadowed = declared.filter(name => /^[A-Z_$][\w$]*$/i.test(name))
+
+      let indent = 0
+      if (shadowed.length > 0) {
+        append(UNWRAP_HELPER_DECL)
+        for (const name of shadowed)
+          append(`type __StxT_${name} = ${UNWRAP_HELPER}<typeof ${name}>`)
+        append(`;((${shadowed.map(name => `${name}: __StxT_${name}`).join(', ')}) => {`)
+        indent = 1
+      }
+
+      for (const { expression, statement } of statements) {
+        const pad = '  '.repeat(indent)
+        append(pad + statement.text, {
           line: expression.line,
           column: expression.column,
           expression,
-          prefixLength: statement.prefixLength,
+          prefixLength: statement.prefixLength + pad.length,
         })
       }
+
+      if (indent > 0)
+        append('});')
     }
   }
 

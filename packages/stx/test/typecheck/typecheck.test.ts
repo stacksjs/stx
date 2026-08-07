@@ -14,6 +14,7 @@ import {
   extractScriptBlocks,
   formatTypecheckDiagnostics,
   sourcePathFor,
+  findRuntimeTypeDeclarations,
   typecheckStxFiles,
   virtualPathFor,
 } from '../../src/typecheck'
@@ -258,6 +259,61 @@ describe('template expressions (#1852 ask 4)', () => {
 
     expect(result.diagnostics.filter(d => d.category === 'error')).toEqual([])
   }, 120_000)
+
+  it('catches a renamed field on a CLIENT signal', async () => {
+    // The #1889 case. The runtime globals used to be declared `any`, so
+    // `const user = state({…})` gave `user: any` and every expression reading it
+    // was unchecked. They now come from the package's own stx.d.ts.
+    const { result } = await check([
+      '<script client>', //                              1
+      'const user = state({ name: \'a\', email: \'b\' })', // 2
+      '</script>', //                                    3
+      '<p>{{ user.nmae }}</p>', //                       4 — error
+    ].join('\n'))
+
+    const errors = result.diagnostics.filter(d => d.category === 'error')
+    expect(errors).toHaveLength(1)
+    expect(errors[0].blockKind).toBe('template')
+    expect(errors[0].line).toBe(4)
+    expect(errors[0].message).toContain('nmae')
+  }, 120_000)
+
+  it('reads a signal as its value AND as a signal, because templates do both', async () => {
+    // `:if="flag"` reads the value; `@click="flag.set(true)"` reads the signal.
+    // One declaration cannot be both, so a signal is typed as the intersection —
+    // otherwise whichever form loses becomes a false positive on working code.
+    const { result } = await check([
+      '<script client>',
+      'const count = state(0)',
+      'const open = state(false)',
+      '</script>',
+      '<p>{{ count + 1 }}</p>', //            value: arithmetic
+      '<p>{{ count.toFixed(2) }}</p>', //     value: number method
+      '<div :if="open">x</div>', //           value: truthiness
+      '<button @click="open.set(!open())">t</button>', // signal: .set and call
+    ].join('\n'))
+
+    expect(result.diagnostics.filter(d => d.category === 'error')).toEqual([])
+  }, 120_000)
+
+  it('checks the argument type of a signal write', async () => {
+    const { result } = await check([
+      '<script client>',
+      'const count = state(0)',
+      '</script>',
+      '<button @click="count.set(\'nope\')">t</button>',
+    ].join('\n'))
+
+    const errors = result.diagnostics.filter(d => d.category === 'error')
+    expect(errors).toHaveLength(1)
+    expect(errors[0].message).toMatch(/not assignable/)
+  }, 120_000)
+
+  it('finds the shipped declarations', () => {
+    // If this returns null the checker silently falls back to `any` globals and
+    // every test above would pass for the wrong reason.
+    expect(findRuntimeTypeDeclarations()).toMatch(/stx\.d\.ts$/)
+  })
 
   it('does not report a block error twice', async () => {
     // The template buffer inlines the script bodies, so it sees the block's

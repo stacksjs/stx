@@ -31,6 +31,8 @@
  */
 
 import type { ScriptBlock, ScriptKind, VirtualFile } from './stx-virtual-ts'
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { stateDir } from './state-dir'
 import {
@@ -115,6 +117,25 @@ export function sourcePathFor(virtualPath: string): string {
 }
 
 /**
+ * Locate the package's own `stx.d.ts`, which types the runtime globals.
+ *
+ * Checked rather than assumed: this module runs from `src/` in the repo and
+ * from `dist/` when installed, and both sit one level under the package root.
+ * Returns `null` when it is genuinely absent so the caller can fall back rather
+ * than hand tsc a path to nothing.
+ */
+export function findRuntimeTypeDeclarations(): string | null {
+  for (const candidate of [
+    path.resolve(import.meta.dir, '..', 'stx.d.ts'),
+    path.resolve(import.meta.dir, '..', '..', 'stx.d.ts'),
+  ]) {
+    if (existsSync(candidate))
+      return candidate
+  }
+  return null
+}
+
+/**
  * One diagnostic line as `tsc --pretty false` prints it:
  *
  *   path/to/file.ts(12,5): error TS2322: Type 'string' is not assignable …
@@ -155,6 +176,10 @@ export async function typecheckStxFiles(
   let blockCount = 0
   let expressionCount = 0
 
+  // Resolved before the buffers are built: when the real declarations are
+  // available, the buffers must NOT also emit `any` versions of the same names.
+  const runtimeTypes = findRuntimeTypeDeclarations()
+
   for (const file of files) {
     const source = await Bun.file(file).text()
     const blocks = extractScriptBlocks(source).filter((b) => {
@@ -168,7 +193,9 @@ export async function typecheckStxFiles(
     // The template buffer inlines the script bodies, so an expression sees the
     // real types the blocks declare — which is what catches `{{ row.total_vists }}`
     // against a typed row rather than merely an undeclared name.
-    const templateBuffer = checkTemplates ? buildVirtualTypeScript(source) : null
+    const templateBuffer = checkTemplates
+      ? buildVirtualTypeScript(source, { runtimeGlobals: !runtimeTypes })
+      : null
     const expressions = templateBuffer
       ? [...templateBuffer.lineMap.values()].filter(m => m.expression).length
       : 0
@@ -201,31 +228,36 @@ export async function typecheckStxFiles(
   if (virtualFiles.size === 0)
     return { diagnostics: [], checkedFiles, blockCount: 0, expressionCount: 0 }
 
-  // stx.d.ts carries the runtime globals with real types, so `state()` and
-  // friends resolve properly instead of needing a wall of suppressions. This is
-  // the difference from the editor plugin, which instead SUPPRESSES every
-  // "Cannot find name" mentioning a known global, and so also hides real typos.
   const ambient: string[] = [...(options.extraLibs ?? [])]
 
-  // Runtime globals are declared here rather than by pulling in the package's
-  // own stx.d.ts.
+  // The runtime globals come from the package's own `stx.d.ts`, which types
+  // them properly — `state<T>(initial: T): StxSignal<T>` rather than `any`.
   //
-  // stx.d.ts types them richly, but including it drags in the package's built
-  // declarations, and `dist/composables.d.ts` is currently syntactically invalid
-  // — `navigate: (path: string)) => unknown;`. tsc aborts on a SYNTAX error in a
-  // lib file (skipLibCheck only suppresses semantic ones), so the checker
-  // reported nothing at all about the user's code. Generating the surface from
-  // STX_RUNTIME_GLOBALS keeps this tool working regardless of the state of the
-  // build output; an app that wants precise global types can pass its own
-  // declaration file through `extraLibs`.
+  // That file was avoided at first on the belief that including it drags in the
+  // built declarations, and `dist/composables.d.ts` has been syntactically
+  // invalid before now (`navigate: (path: string)) => unknown;`); tsc aborts on
+  // a SYNTAX error in a lib file, since skipLibCheck only suppresses semantic
+  // ones, and the checker then reported nothing at all about the user's code.
+  // That belief was wrong: `stx.d.ts` has no imports and no triple-slash
+  // references — it is a self-contained ambient declaration file, so nothing
+  // about `dist/` is reachable from it. It is also shipped (`files` in
+  // package.json), so this resolves for an installed package too.
+  //
+  // With `any` globals, every client-side template expression was unchecked:
+  // `const n = state(0)` gave `n: any`, so `{{ n.nosuch }}` passed. See #1889.
+  if (runtimeTypes)
+    ambient.push(runtimeTypes)
+
   const globalsDts = `${stateDir()}/typecheck/__stx_globals.d.ts`
   const globalDecls = [
-    '// Generated. The stx runtime injects these into every script block.',
-    'declare const window: any',
-    ...STX_RUNTIME_GLOBALS.map(name => `declare const ${name}: any`),
-    '',
-    '// Injected into <script server> blocks by serve.ts.',
+    '// Generated — the context serve.ts injects into <script server> blocks.',
     serverContextDeclarations(),
+    ...(runtimeTypes
+      ? []
+      // Fallback only: if stx.d.ts cannot be found (an unusual install layout),
+      // untyped globals still beat unresolved ones, because the alternative is
+      // a wall of "Cannot find name" on working code.
+      : ['declare const window: any', ...STX_RUNTIME_GLOBALS.map(name => `declare const ${name}: any`)]),
   ].join('\n')
 
   const workDir = `${stateDir()}/typecheck`
