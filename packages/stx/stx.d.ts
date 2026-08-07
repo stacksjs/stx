@@ -233,16 +233,33 @@ interface StxFetchResponseContext extends StxFetchRequestContext {
 }
 
 /**
+ * Context handed to an error interceptor. `response` is the non-ok Response, or
+ * null when the fetch itself threw (a network failure); `error` is set only in
+ * the latter case.
+ */
+interface StxFetchErrorContext extends StxFetchRequestContext {
+  response: Response | null
+  error: Error | null
+}
+
+/**
  * Install request/response interceptors for every stx data primitive.
  *
  * All three funnel through one internal fetch, so a single pair of hooks
  * carries an auth header or observes a 401 across `useFetch`, `useQuery` and
  * `useMutation`. Calling this again REPLACES the hooks rather than adding to
  * them, so a re-evaluated module cannot install the same interceptor twice.
+ *
+ * `onResponseError` fires for a non-ok response and for a thrown fetch. Return
+ * a Response to replace the failed one — the shape a 401 -> refresh -> retry
+ * takes: refresh the token, re-issue the request with a plain `fetch()` (not
+ * this data layer, so it does not re-enter the hook), and return that Response.
+ * Return nothing to let the original error stand.
  */
 declare function configureFetch(_config: {
   onRequest?: (_ctx: StxFetchRequestContext) => void | Promise<void>
   onResponse?: (_ctx: StxFetchResponseContext) => void | Promise<void>
+  onResponseError?: (_ctx: StxFetchErrorContext) => void | Response | Promise<void | Response>
 }): void
 
 declare function useOptimistic<T = any, A = any>(

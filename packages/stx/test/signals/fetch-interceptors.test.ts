@@ -230,3 +230,108 @@ describe('a headers function is resolved (#1855)', () => {
     expect(headerOf(seen[0], 'X-Trace')).toBe('m')
   })
 })
+
+/**
+ * onResponseError is where a 401 -> refresh -> retry lives, once, instead of at
+ * every call site (#1855). It fires for a non-ok response and for a thrown
+ * fetch; returning a Response replaces the failed one, which is what lets the
+ * refreshed request stand in for the one that 401'd. Observing a status is
+ * onResponse's job — this hook is specifically the recovery point.
+ */
+describe('onResponseError recovers a failed request (#1855)', () => {
+  it('fires on a non-ok response, with the Response in hand', async () => {
+    nextStatus = 401
+    const statuses: number[] = []
+    g.window.stx.configureFetch({
+      onResponseError: (ctx: any) => { statuses.push(ctx.response.status) },
+    })
+
+    g.window.stx.useFetch('/api/a', { immediate: false }).refetch()
+    await settle()
+
+    expect(statuses).toEqual([401])
+  })
+
+  it('does not fire on a successful response', async () => {
+    const calls: number[] = []
+    g.window.stx.configureFetch({ onResponseError: () => { calls.push(1) } })
+
+    g.window.stx.useFetch('/api/a', { immediate: false }).refetch()
+    await settle()
+
+    expect(calls).toEqual([])
+  })
+
+  it('a returned Response replaces the failed one — the 401 -> refresh -> retry shape', async () => {
+    nextStatus = 401
+    const f = g.window.stx.useFetch('/api/protected', { immediate: false })
+    g.window.stx.configureFetch({
+      onResponseError: async (ctx: any) => {
+        // A real hook refreshes the token here, then re-issues with a plain
+        // fetch() so it does not re-enter this hook and loop. The retried
+        // Response stands in for the 401.
+        if (ctx.response && ctx.response.status === 401) {
+          return new Response(JSON.stringify({ user: 'me' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+      },
+    })
+
+    f.refetch()
+    await settle()
+
+    expect(f.data()).toEqual({ user: 'me' })
+    expect(f.error()).toBe(null)
+  })
+
+  it('returning nothing lets the original error stand, body and all', async () => {
+    nextStatus = 500
+    const f = g.window.stx.useFetch('/api/a', { immediate: false })
+    g.window.stx.configureFetch({ onResponseError: () => {} })
+
+    f.refetch()
+    await settle()
+
+    expect(f.error()).not.toBe(null)
+    // #1848: the status survives to the consumer, not just a string message.
+    expect(f.error().status).toBe(500)
+  })
+
+  it('also recovers a network failure, where there is no Response at all', async () => {
+    g.window.stx.configureFetch({
+      onResponseError: (ctx: any) => {
+        // response is null on a thrown fetch; error carries the throw.
+        if (ctx.response === null && ctx.error) {
+          return new Response(JSON.stringify({ recovered: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+      },
+    })
+    globalThis.fetch = (async () => { throw new Error('network down') }) as never
+
+    const f = g.window.stx.useFetch('/api/a', { immediate: false })
+    f.refetch()
+    await settle()
+
+    expect(f.data()).toEqual({ recovered: true })
+    expect(f.error()).toBe(null)
+  })
+
+  it('reaches useQuery and useMutation through the same choke point', async () => {
+    nextStatus = 401
+    const hit: string[] = []
+    g.window.stx.configureFetch({ onResponseError: (ctx: any) => { hit.push(ctx.source) } })
+
+    g.window.stx.useQuery('/api/q', { immediate: false }).refetch()
+    await settle()
+    await g.window.stx.useMutation('/api/m').mutate({}).catch(() => {})
+    await settle()
+
+    expect(hit).toContain('useQuery')
+    expect(hit).toContain('useMutation')
+  })
+})

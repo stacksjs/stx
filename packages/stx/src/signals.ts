@@ -209,7 +209,7 @@ console.log('[stx] entering IIFE');
   // Hooks mutate the context they are handed and their return value is
   // ignored — the ofetch shape most people will already know. Throwing from a
   // hook fails the request, which is what a token-refresh flow wants.
-  var __stxFetchHooks = { onRequest: null, onResponse: null };
+  var __stxFetchHooks = { onRequest: null, onResponse: null, onResponseError: null };
 
   function configureFetch(cfg) {
     cfg = cfg || {};
@@ -218,6 +218,13 @@ console.log('[stx] entering IIFE');
     // twice, sending two Authorization headers or counting a 401 twice.
     __stxFetchHooks.onRequest = typeof cfg.onRequest === 'function' ? cfg.onRequest : null;
     __stxFetchHooks.onResponse = typeof cfg.onResponse === 'function' ? cfg.onResponse : null;
+    // Fires for a non-ok response and for a thrown fetch (network error). If it
+    // returns a Response, that Response replaces the original — this is how a
+    // 401 -> refresh -> retry is expressed once instead of per call site. The
+    // retry itself belongs to the hook: it should refresh the token and re-issue
+    // the request with a plain fetch() (not this data layer) so it does not
+    // re-enter the hook and loop. Returning nothing lets the error stand.
+    __stxFetchHooks.onResponseError = typeof cfg.onResponseError === 'function' ? cfg.onResponseError : null;
   }
 
   // headers may be a function, so it can be evaluated per request rather than
@@ -243,15 +250,34 @@ console.log('[stx] entering IIFE');
       opts = reqCtx.options || opts;
     }
     var method = (opts && opts.method) || 'GET';
+    // A hook may hand back a Response to use in place of the original. Anything
+    // else (a truthy non-Response, undefined) leaves the outcome unchanged.
+    function __stxIsResponse(v) { return !!v && typeof v.ok === 'boolean'; }
     try {
       var r = await fetch(url, opts);
       __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: r.status, ok: r.ok, ms: __stxDevtoolsNow() - t0 });
       if (__stxFetchHooks.onResponse) {
         await __stxFetchHooks.onResponse({ source: source, url: String(url), options: opts, response: r });
       }
+      if (!r.ok && __stxFetchHooks.onResponseError) {
+        var recovered = await __stxFetchHooks.onResponseError({ source: source, url: String(url), options: opts, response: r, error: null });
+        if (__stxIsResponse(recovered)) {
+          __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: recovered.status, ok: recovered.ok, retried: true, ms: __stxDevtoolsNow() - t0 });
+          return recovered;
+        }
+      }
       return r;
     } catch (e) {
       __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: 0, ok: false, error: String((e && e.message) || e), ms: __stxDevtoolsNow() - t0 });
+      // A network-level failure (no Response) also reaches the hook, so a retry
+      // can cover a dropped connection, not only an auth status.
+      if (__stxFetchHooks.onResponseError) {
+        var recoveredErr = await __stxFetchHooks.onResponseError({ source: source, url: String(url), options: opts, response: null, error: e });
+        if (__stxIsResponse(recoveredErr)) {
+          __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: recoveredErr.status, ok: recoveredErr.ok, retried: true, ms: __stxDevtoolsNow() - t0 });
+          return recoveredErr;
+        }
+      }
       throw e;
     }
   }
