@@ -1031,45 +1031,41 @@ function addAllReactiveIds(template: string): string {
  * Finalize template - add scope markers and remove attributes (third pass)
  */
 function finalizeTemplate(template: string, scopes: ReactiveScope[]): string {
-  let output = template
+  // Walked in order and matched positionally, not by looking each scope's
+  // state expression back up in the text.
+  //
+  // Matching on the expression looked equivalent and was not: two elements
+  // with the *same* `x-data` - `x-data="{ open: false }"` twice on a page, which
+  // is what two of the same widget looks like - both matched the first scope's
+  // regex, so both were tagged with the first scope's id. They then shared one
+  // set of signals: opening one dropdown opened the other, and `querySelector`
+  // meant only the first was ever initialised.
+  //
+  // `findReactiveScopes` produced these in document order using the same
+  // pattern, so the nth match here is the nth scope.
+  let index = 0
 
-  // Add data-stx-scope to x-data elements so the signals runtime processes them.
-  // Do NOT add data-stx-reactive-owner — we WANT the signals runtime to handle
-  // all directives (x-for, x-text, :bind, x-show, etc.) within these scopes.
-  // The reactive bridge runtime will parse x-data, run init(), and register
-  // scope vars into window.stx._scopes for the signals runtime to pick up.
-  for (const scope of scopes) {
-    // Check if the x-data element already has data-stx-scope (from a partial's <script client>).
-    // If so, reuse that scope ID instead of adding a duplicate attribute.
-    const existingCheck = new RegExp(`<[a-z][a-z0-9-]*\\s+[^>]*data-stx-scope="([^"]*)"[^>]*x-data\\s*=\\s*["']${escapeRegex(scope.stateExpr)}["']`, 'gi')
-    const existingMatch = existingCheck.exec(output)
-    if (existingMatch) {
-      // Element already has a scope — use that ID for the bridge initScope call
-      scope.id = existingMatch[1]
-      scope.selector = `[data-stx-scope="${scope.id}"]`
-      // Don't add data-stx-scope — it's already there
-    }
-    else {
-      // Also check reverse order (x-data before data-stx-scope)
-      const reverseCheck = new RegExp(`<[a-z][a-z0-9-]*\\s+[^>]*x-data\\s*=\\s*["']${escapeRegex(scope.stateExpr)}["'][^>]*data-stx-scope="([^"]*)"`, 'gi')
-      const reverseMatch = reverseCheck.exec(output)
-      if (reverseMatch) {
-        scope.id = reverseMatch[1]
+  let output = template.replace(
+    /<([a-z][a-z0-9-]*)(\s+[^>]*x-data\s*=\s*(?:"[^"]*"|'[^']*')[^>]*)>/gi,
+    (match, tagName, attributes) => {
+      const scope = scopes[index++]
+      if (!scope)
+        return match
+
+      // Already carries one, from a partial's `<script client>`. Adopt it
+      // rather than adding a second: the bridge has to address the element
+      // that exists, not the one it would have made.
+      const existing = /data-stx-scope="([^"]*)"/.exec(attributes)
+      if (existing) {
+        scope.id = existing[1]!
         scope.selector = `[data-stx-scope="${scope.id}"]`
+
+        return match
       }
-      else {
-        // No existing scope — add one
-        output = output.replace(
-          new RegExp(`(<[a-z][a-z0-9-]*\\s+)([^>]*)(x-data\\s*=\\s*"${escapeRegex(scope.stateExpr)}")([^>]*>)`, 'gi'),
-          `$1data-stx-scope="${scope.id}" $2$3$4`,
-        )
-        output = output.replace(
-          new RegExp(`(<[a-z][a-z0-9-]*\\s+)([^>]*)(x-data\\s*=\\s*'${escapeRegex(scope.stateExpr)}')([^>]*>)`, 'gi'),
-          `$1data-stx-scope="${scope.id}" $2$3$4`,
-        )
-      }
-    }
-  }
+
+      return `<${tagName} data-stx-scope="${scope.id}"${attributes}>`
+    },
+  )
 
   // Rename x-data → data-stx-xdata so the SPA handler can re-initialize scopes
   // after fragment swap (the bridge <script> only runs on full page load).
