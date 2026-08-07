@@ -1837,6 +1837,61 @@ catch (error) {
     })
 
   cli
+    .command('codemod [patterns...]', 'Find hand-rolled code that an stx primitive already covers')
+    .option('--fix', 'Write the safe rewrites (default is report-only)')
+    .option('--rule <rule>', 'Run one rule only: confirm | tooltip')
+    .example('stx codemod')
+    .example('stx codemod --fix "resources/views/**/*.stx"')
+    .action(async (patterns: string[] | undefined, options: { fix?: boolean, rule?: string }) => {
+      const { codemodSource, formatCodemodFindings } = await import('../src/codemod')
+      const { Glob } = await import('bun')
+
+      // A single positional arrives as a bare string, and `for…of` over a
+      // string iterates its CHARACTERS — the same trap `typecheck` documents.
+      const normalized = Array.isArray(patterns) ? patterns : (patterns ? [patterns] : [])
+      const globs = normalized.length ? normalized : ['**/*.stx', '**/*.ts']
+
+      const rules = options.rule
+        ? [options.rule as 'confirm' | 'tooltip']
+        : undefined
+
+      if (options.rule && options.rule !== 'confirm' && options.rule !== 'tooltip') {
+        console.error(`Unknown rule "${options.rule}". Expected: confirm | tooltip`)
+        process.exit(1)
+      }
+
+      const seen = new Set<string>()
+      const findings = []
+      let rewritten = 0
+
+      for (const pattern of globs) {
+        for await (const file of new Glob(pattern).scan({ cwd: process.cwd(), absolute: true })) {
+          if (file.includes('/node_modules/') || file.includes('/dist/') || seen.has(file))
+            continue
+          seen.add(file)
+
+          const source = await Bun.file(file).text()
+          const result = codemodSource(source, { file, rules })
+          findings.push(...result.findings)
+
+          if (options.fix && result.code !== source) {
+            await Bun.write(file, result.code)
+            rewritten++
+          }
+        }
+      }
+
+      console.error(formatCodemodFindings(findings, Boolean(options.fix)))
+
+      if (options.fix)
+        console.error(`\n${rewritten} file(s) written.`)
+
+      // Never non-zero: this is a migration aid, not a gate. A repo full of
+      // `confirm()` is not broken — it just has not adopted the primitive yet,
+      // and failing CI over that would make the tool something people disable.
+    })
+
+  cli
     .command('doctor', 'Diagnose the stx framework-runtime resolution + staleness chain')
     .option('--json', 'Output the report as JSON')
     .example('stx doctor')
