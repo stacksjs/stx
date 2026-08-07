@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.156...v0.2.157)
+
+## 🐛 Bug Fixes
+
+- **render**: setResponseStatus took the whole page down off the serve path ([51017cb](https://github.com/stacksjs/stx/commit/51017cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.157 ([7ec136f](https://github.com/stacksjs/stx/commit/7ec136f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.155...v0.2.156)
 
 ## 💥 Breaking Changes
