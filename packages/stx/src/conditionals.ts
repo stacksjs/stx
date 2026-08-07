@@ -202,7 +202,53 @@ export function processSwitchStatements(template: string, context: Record<string
  * - Nested @if blocks
  * - Multiple @elseif branches
  */
+/**
+ * Hide `<script>` elements from directive scanning, and put them back after.
+ *
+ * A template directive is just text, and so is the contents of a script tag -
+ * so a conditional block that contains JavaScript mentioning `@else` sees a
+ * directive that was never written. The scanner then matches the real `@if`
+ * against a token inside a string literal, and everything between them is
+ * swallowed. The page still answers 200; it is simply missing the middle.
+ *
+ * That is not hypothetical and it is not only about hand-written scripts. stx
+ * injects its own signals runtime, and the runtime has `'@else-if'` and
+ * `'@else'` in it - it has to, those are attributes it supports. A component
+ * carrying `x-data` inside an `@if` branch would therefore truncate the page it
+ * was used on, with no error anywhere.
+ *
+ * Masking the whole element rather than its body: the opening tag can carry
+ * attributes with braces and quotes of its own, and none of it is template.
+ */
+function maskScripts(template: string): { masked: string, scripts: string[] } {
+  const scripts: string[] = []
+
+  // `\0` because it cannot appear in a template, cannot be typed, and survives
+  // every string operation between here and the restore.
+  const masked = template.replace(/<script\b[\s\S]*?<\/script\s*>/gi, (match) => {
+    scripts.push(match)
+
+    return `\u0000stx-script-${scripts.length - 1}\u0000`
+  })
+
+  return { masked, scripts }
+}
+
+/** Put the scripts back. A placeholder whose branch was dropped simply never returns. */
+function restoreScripts(output: string, scripts: string[]): string {
+  if (scripts.length === 0)
+    return output
+
+  return output.replace(/\u0000stx-script-(\d+)\u0000/g, (match, index) => scripts[Number(index)] ?? match)
+}
+
 export function processConditionals(template: string, context: Record<string, any>, filePath: string): string {
+  const { masked, scripts } = maskScripts(template)
+
+  return restoreScripts(processConditionalsIn(masked, context, filePath), scripts)
+}
+
+function processConditionalsIn(template: string, context: Record<string, any>, filePath: string): string {
   let output = template
 
   // Process @switch statements first
