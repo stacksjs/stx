@@ -10,12 +10,30 @@
  * file being called use-form.ts while exporting defineForm meant grepping for
  * either one found the wrong half.
  *
- * It also collided with an independently written `useForm` in
- * @stacksjs/composables, which is the same primitive built twice because neither
- * side could find the other's — the adoption problem in #1843, applied to the
- * framework itself.
- *
  * `defineForm` remains as a deprecated alias below.
+ *
+ * ---
+ *
+ * THERE IS A SECOND `useForm`, in @stacksjs/composables
+ * (storage/framework/core/composables/src/useForm.ts). It is not this one, and
+ * the two are not interchangeable — they were written independently because
+ * neither side could find the other's, which is #1843's adoption problem
+ * happening to the framework itself.
+ *
+ *   this one                        @stacksjs/composables
+ *   useForm(schema, initialValues)  useForm({ initialValues, onSubmit })
+ *   form.values.email               form.values.value.email
+ *   form.getFieldState('email')     form.field('email')
+ *   v.required().email()            schema.string().email()  (ts-validation)
+ *   validate() -> Promise<string[]> validate() -> { valid, errors }
+ *   has: validating, validateField  has: isSubmitting, isValid, isDirty,
+ *                                        setErrors (422), clearErrors,
+ *                                        submitButtonProps, firstErrorField,
+ *                                        aria inputProps
+ *
+ * Before adding a feature here, check whether it exists there — and say so in
+ * the PR either way. Unifying them is a breaking change to one side's public
+ * API, not a re-export, so it needs a deliberate decision rather than drift.
  *
  * Lifted out of forms-validation.ts so the framework-composables demand-bundler
  * (src/framework-composables.ts) can ship it to the browser. That bundler scans
