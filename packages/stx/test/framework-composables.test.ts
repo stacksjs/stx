@@ -141,3 +141,51 @@ const n = state(0)
     expect(out).not.toContain('data-stx-framework-composables')
   })
 })
+
+/**
+ * defineForm is the reactive form primitive an app kept hand-rolling because it
+ * was exported from the package but reachable from no client path (#1846). It is
+ * not a `use*` name, but it rides the very same demand-bundle: it now lives in
+ * composables/use-form.ts and is listed in SERVER_ONLY_COMPOSABLES, so a page
+ * that calls it gets it inlined. Its one runtime dependency, `state`, is a bare
+ * global the signals runtime publishes, so the stripped import resolves.
+ */
+describe('defineForm reaches the client (#1846)', () => {
+  it('is offered for a page that calls it', () => {
+    expect(referencedFrameworkComposables('const f = defineForm({ email: v.required() })'))
+      .toEqual(['defineForm'])
+  })
+
+  it('bundles the implementation and its signal-backed helper', async () => {
+    const script = await getFrameworkComposableScript('defineForm({})')
+    expect(script).toContain('function defineForm')
+    // The module is taken whole, so the private helper it leans on comes too —
+    // emitting only the export would ship a body with a missing reference.
+    expect(script).toContain('signalRecord')
+  })
+
+  it('leaves no import behind, so the stripped `state` resolves to the global', async () => {
+    const script = await getFrameworkComposableScript('defineForm({})')
+    const body = script!.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '')
+    expect(body).not.toMatch(/^\s*import\s/m)
+    // eslint-disable-next-line no-new-func
+    expect(() => new Function(body)).not.toThrow()
+  })
+
+  it('ships through the render pipeline on a page that calls it', async () => {
+    const template = `<script client>
+const form = defineForm({ email: v.required() })
+</script>
+<main><p>{{ form.errors.email }}</p></main>`
+
+    const out = await processDirectives(template, {}, '/app/signup.stx', {
+      ...defaultConfig,
+      partialsDir: '/tmp',
+      componentsDir: '/tmp',
+      autoShell: true,
+    } as never, new Set<string>())
+
+    expect(out).toContain('data-stx-framework-composables')
+    expect(out).toContain('function defineForm')
+  })
+})

@@ -27,7 +27,7 @@
  */
 export const SERVER_ONLY_COMPOSABLES: readonly string[] = [
   'broadcast', 'calculateDistance', 'canNotify', 'clearCookies', 'clearFetchCache',
-  'clearStorage', 'copyToClipboard', 'createShareableFile', 'getBatteryLevel', 'getCookie',
+  'clearStorage', 'copyToClipboard', 'createShareableFile', 'defineForm', 'getBatteryLevel', 'getCookie',
   'getCurrentPosition', 'getStorageKeys', 'getStorageSize', 'getVoices', 'hasBattery',
   'hasCameraPermission', 'hasGeolocationPermission', 'hasMicrophonePermission',
   'hasNotificationPermission', 'hasResizeObserver', 'hexToHsl', 'hexToRgb',

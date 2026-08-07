@@ -154,8 +154,8 @@ export const NON_CLIENT_PRIMITIVES: Readonly<Record<string, { category: NonClien
   // client-gap: intended for <script client> but wired into neither client path.
   // These reactive form primitives live in forms(-validation).ts, which the
   // client bundle does not include; porting them is the remaining half of #1846.
-  defineForm: { category: 'client-gap', reason: 'reactive form primitive intended for <script client>; not yet wired into a client path (#1846 follow-up).' },
-  validateFields: { category: 'client-gap', reason: 'form validation helper intended for <script client>; not yet wired into a client path (#1846 follow-up).' },
+  defineForm: { category: 'browser-composable', reason: 'reactive form primitive; lives in src/composables/use-form.ts and is inlined on demand when a <script client> references it (#1846).' },
+  validateFields: { category: 'client-gap', reason: 'form validation helper intended for <script client>; its validateField dep pulls the server-side rule engine, so it is not demand-bundleable as-is — an app imports it directly for now (#1846 follow-up).' },
   validateField: { category: 'client-gap', reason: 'singular form validation helper; same client-gap as validateFields (#1846 follow-up).' },
 }
 
