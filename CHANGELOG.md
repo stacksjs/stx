@@ -1,5 +1,116 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.155...v0.2.156)
+
+## 💥 Breaking Changes
+
+- fix(router)!: route guards fail closed, and remove the mode:'client' that can never run (#1891) ([a79aac7](https://github.com/stacksjs/stx/commit/a79aac7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1891](https://github.com/stacksjs/stx/issues/1891), [#1891](https://github.com/stacksjs/stx/issues/1891))
+
+## 🚀 Features
+
+- **codemod**: cover the rest of the adoption table, and document the migration ([a83305b](https://github.com/stacksjs/stx/commit/a83305b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **typecheck**: give the runtime globals real types, and model the template unwrap ([d426fb1](https://github.com/stacksjs/stx/commit/d426fb1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **cli**: stx codemod — find hand-rolled code a primitive already covers ([9fb6dce](https://github.com/stacksjs/stx/commit/9fb6dce)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: a page can handle its own form POST ([f5f03e3](https://github.com/stacksjs/stx/commit/f5f03e3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **dev**: show a client-script bundle failure instead of warning past it ([8a224be](https://github.com/stacksjs/stx/commit/8a224be)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **forms**: make defineForm reachable from a <script client> block (#1846) ([c9597e5](https://github.com/stacksjs/stx/commit/c9597e5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1846](https://github.com/stacksjs/stx/issues/1846), [#1846](https://github.com/stacksjs/stx/issues/1846))
+- **typecheck**: check {{ }} and directive expressions, and share the extractor with the editor ([cb4e91c](https://github.com/stacksjs/stx/commit/cb4e91c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: render the app's /500 page on a render failure, not a blank comment (#1854) ([07dc343](https://github.com/stacksjs/stx/commit/07dc343)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1854](https://github.com/stacksjs/stx/issues/1854), [#1854](https://github.com/stacksjs/stx/issues/1854))
+- **data**: onResponseError hook so 401->refresh->retry lives once (#1855) ([0997c4a](https://github.com/stacksjs/stx/commit/0997c4a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1855](https://github.com/stacksjs/stx/issues/1855), [#1855](https://github.com/stacksjs/stx/issues/1855))
+- **ssr**: let a page declare what crosses into the client ([1ee1b9a](https://github.com/stacksjs/stx/commit/1ee1b9a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **cli**: stx typecheck — type-check the TypeScript inside .stx files ([dbce42b](https://github.com/stacksjs/stx/commit/dbce42b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **data**: concurrent useQuery calls for one key share a request ([02225c6](https://github.com/stacksjs/stx/commit/02225c6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **dev**: HMR sends the narrowest update that can carry the change ([5e00590](https://github.com/stacksjs/stx/commit/5e00590)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **types**: a wrong layout name is a type error ([61c0a00](https://github.com/stacksjs/stx/commit/61c0a00)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: expose refresh() and invalidateRoute() to the authoring surface ([207c5b3](https://github.com/stacksjs/stx/commit/207c5b3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: re-run the current route's server data ([cda75d5](https://github.com/stacksjs/stx/commit/cda75d5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: carry form submissions through the SPA ([2819b9d](https://github.com/stacksjs/stx/commit/2819b9d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **store**: per-field keys, a custom codec, and a cookie backend for persist ([4fbe3ac](https://github.com/stacksjs/stx/commit/4fbe3ac)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: move focus and announce the route on SPA navigation ([0767f89](https://github.com/stacksjs/stx/commit/0767f89)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **data**: one place to hook the data layer ([f4a545b](https://github.com/stacksjs/stx/commit/f4a545b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **data**: pause polling in a hidden tab, gate it with enabled, and stop-on-error ([1212178](https://github.com/stacksjs/stx/commit/1212178)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **sidebar**: four defects in the swipeable spaces, and tests to hold them ([a7f20de](https://github.com/stacksjs/stx/commit/a7f20de)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **reactive**: two of the same widget get a scope each ([3fe5b41](https://github.com/stacksjs/stx/commit/3fe5b41)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **conditionals**: a directive inside a script is not a directive ([3aa3671](https://github.com/stacksjs/stx/commit/3aa3671)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **middleware**: state which side a guard runs on, and read page meta from source ([998e026](https://github.com/stacksjs/stx/commit/998e026)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **variable-extractor**: stop dropping server-block functions with destructured params ([62cbd9a](https://github.com/stacksjs/stx/commit/62cbd9a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **composables**: drop defineForm from SERVER_ONLY_COMPOSABLES, which the runtime now provides ([a37ee01](https://github.com/stacksjs/stx/commit/a37ee01)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **reactive**: an interpolation inside a string literal is not quoted twice ([47a7482](https://github.com/stacksjs/stx/commit/47a7482)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **render**: declare __stxServeContext even when nothing is serving ([c3a662c](https://github.com/stacksjs/stx/commit/c3a662c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: only intercept links the router can actually render ([be29fef](https://github.com/stacksjs/stx/commit/be29fef)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **build**: fail the build when an emitted .d.ts does not parse, and repair what we can ([e6e8601](https://github.com/stacksjs/stx/commit/e6e8601)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: reactive() is a real proxy, not an alias for state() ([21c2131](https://github.com/stacksjs/stx/commit/21c2131)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **runtime**: auto-import the route-param composables, and pin the rule ([4ac3fa8](https://github.com/stacksjs/stx/commit/4ac3fa8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **types**: route paths are actually checked — the declaration was dangling ([08e6417](https://github.com/stacksjs/stx/commit/08e6417)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: resolve the SPA swap container with the configured selector ([a65f4ac](https://github.com/stacksjs/stx/commit/a65f4ac)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **types**: declare refresh and invalidateRoute, and re-sort the list ([ebcf90d](https://github.com/stacksjs/stx/commit/ebcf90d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: x-for leaves a row that has not moved alone ([8189325](https://github.com/stacksjs/stx/commit/8189325)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- definePageMeta({ layout }) actually selects a layout ([1ad461a](https://github.com/stacksjs/stx/commit/1ad461a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: a tag pattern cannot claim a prefix of a longer tag ([9ad02ab](https://github.com/stacksjs/stx/commit/9ad02ab)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: x-model writes through a signal, never over it ([860a686](https://github.com/stacksjs/stx/commit/860a686)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **dev**: store and composable edits reach the browser without a restart ([4e98218](https://github.com/stacksjs/stx/commit/4e98218)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **config**: one resolution pass, so the two loaders stop disagreeing ([ae486b4](https://github.com/stacksjs/stx/commit/ae486b4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **build**: fail the build when a client script does not bundle ([c33162a](https://github.com/stacksjs/stx/commit/c33162a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **crosswind**: one merge for the config, so it means the same thing everywhere ([1514556](https://github.com/stacksjs/stx/commit/1514556)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **ssg**: components aren't public URLs, and the sitemap knows the site's domain ([04ca349](https://github.com/stacksjs/stx/commit/04ca349)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: only a function is an effect cleanup ([fd5fdb6](https://github.com/stacksjs/stx/commit/fd5fdb6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **forms**: expose field errors to assistive tech (aria-invalid + describedby) ([c7c5e6e](https://github.com/stacksjs/stx/commit/c7c5e6e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: keep the production runtime log-free when minification fails ([0bdffb0](https://github.com/stacksjs/stx/commit/0bdffb0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: stop stxConfirm/stxAlert leaking a listener, and make it trap focus and follow the app theme ([146e1ed](https://github.com/stacksjs/stx/commit/146e1ed)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **build**: copy resources/assets, so /assets/* resolves in built output too ([08874ce](https://github.com/stacksjs/stx/commit/08874ce)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **devtools**: register stores with the registry the panel actually reads ([adb25f7](https://github.com/stacksjs/stx/commit/adb25f7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **lifecycle**: keep the cleanup a mount callback returns ([6929576](https://github.com/stacksjs/stx/commit/6929576)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **forms**: emit an id, so @label's for= reaches the control ([1ecf9b9](https://github.com/stacksjs/stx/commit/1ecf9b9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: implement the Form props that were only ever declared ([d4d9684](https://github.com/stacksjs/stx/commit/d4d9684)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **forms**: make defineForm reactive, and export it so an app can reach it ([87ef15d](https://github.com/stacksjs/stx/commit/87ef15d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: honour a guard's redirect instead of swapping it in place ([fe50af9](https://github.com/stacksjs/stx/commit/fe50af9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **cli**: derive the command gate from what is registered ([730d4f8](https://github.com/stacksjs/stx/commit/730d4f8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **view-composers**: export composer() and composerPattern(), so the registry can be filled ([6644e0f](https://github.com/stacksjs/stx/commit/6644e0f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: the opt-out set applies to marked links too ([a760f9b](https://github.com/stacksjs/stx/commit/a760f9b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **data**: abort in-flight useFetch/useQuery on refetch, URL change and unmount ([8ebdc82](https://github.com/stacksjs/stx/commit/8ebdc82)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **loops**: give @include data maps the loop variable, like :prop already gets ([16db857](https://github.com/stacksjs/stx/commit/16db857)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **data**: read the response body before throwing, and carry it on the error ([765b168](https://github.com/stacksjs/stx/commit/765b168)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: a render failure is a 500, not a 200 ([5b19550](https://github.com/stacksjs/stx/commit/5b19550)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **store-loader**: strip a multi-line import, instead of killing every store ([0dab8ed](https://github.com/stacksjs/stx/commit/0dab8ed)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **client-script**: a TypeScript generic no longer hides a call from auto-import ([d095f9f](https://github.com/stacksjs/stx/commit/d095f9f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **runtime**: publish useRouteParams and useRouteParam on window.stx ([5daaba1](https://github.com/stacksjs/stx/commit/5daaba1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **loops**: @foreach(item in items) loops, instead of silently doing nothing ([1c053f2](https://github.com/stacksjs/stx/commit/1c053f2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **build**: ship the runtime, router and CSS as cached assets, not inline per page ([18ce3c8](https://github.com/stacksjs/stx/commit/18ce3c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ♻️ Code Refactoring
+
+- **forms**: defineForm is useForm, because that is what it does ([d4ab3c7](https://github.com/stacksjs/stx/commit/d4ab3c7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **state**: remove the dead SSR store-hydration path (#1868) ([dc0b593](https://github.com/stacksjs/stx/commit/dc0b593)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1868](https://github.com/stacksjs/stx/issues/1868), [#1868](https://github.com/stacksjs/stx/issues/1868))
+
+## 📚 Documentation
+
+- **forms**: point at the other useForm, so nobody writes a third ([48ae669](https://github.com/stacksjs/stx/commit/48ae669)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **runtime-globals**: validateFields is isomorphic-import, not a client-gap (#1846) ([9330d5d](https://github.com/stacksjs/stx/commit/9330d5d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1846](https://github.com/stacksjs/stx/issues/1846), [#1846](https://github.com/stacksjs/stx/issues/1846))
+
+## 🧪 Tests
+
+- **runtime-globals**: guard the authoring surface from the export side (#1846) ([731894f](https://github.com/stacksjs/stx/commit/731894f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1846](https://github.com/stacksjs/stx/issues/1846), [#1846](https://github.com/stacksjs/stx/issues/1846))
+- hold us to the imports our own docblocks promise ([b0294ff](https://github.com/stacksjs/stx/commit/b0294ff)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 📦 Build System
+
+- **deps**: pin bun to 1.3.14 exactly ([d4e0e1a](https://github.com/stacksjs/stx/commit/d4e0e1a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.156 ([6954c44](https://github.com/stacksjs/stx/commit/6954c44)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.154...v0.2.155)
 
 ## 🚀 Features
