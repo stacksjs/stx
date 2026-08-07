@@ -4,7 +4,6 @@
 
 import type { ColorModeBootConfig } from '../color-mode-boot'
 import type { CustomDirective, Middleware } from './directive-types'
-import type { MiddlewareMode } from '../route-middleware'
 import type { ComponentConfig, DocGeneratorConfig, WebComponentConfig } from './component-types'
 import type { PwaConfig } from './pwa-types'
 import type { CspConfig } from './csp-types'
@@ -283,8 +282,8 @@ export interface RouteMiddlewareConfig {
   dir: string
   /** Global middleware to run on every route */
   global?: string[]
-  /** Default middleware mode (default: 'universal') */
-  defaultMode: MiddlewareMode
+  // `defaultMode` was removed with the 'client' mode it existed to select
+  // (stacksjs/stx#1891) — it was declared here and read by nothing.
 }
 
 /**

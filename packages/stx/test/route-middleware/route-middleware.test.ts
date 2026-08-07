@@ -32,10 +32,42 @@ describe('Route Middleware', () => {
 
     test('creates middleware with specified mode', () => {
       const serverMiddleware = defineMiddleware(async () => {}, { mode: 'server' })
-      const clientMiddleware = defineMiddleware(async () => {}, { mode: 'client' })
+      // 'client' mode was removed (stacksjs/stx#1891) — a browser-side guard
+      // could never run, so the only modes are 'server' and the 'universal'
+      // default.
+      const universalMiddleware = defineMiddleware(async () => {})
 
       expect(serverMiddleware.mode).toBe('server')
-      expect(clientMiddleware.mode).toBe('client')
+      expect(universalMiddleware.mode).toBe('universal')
+    })
+  })
+
+  describe('an unresolved middleware name fails closed (#1891)', () => {
+    test('aborts the chain with 500 instead of passing', async () => {
+      clearMiddleware()
+      const to = createRouteLocation('/protected', {}, {})
+      const ctx = createMiddlewareContext(to, null, undefined, { isServer: true })
+
+      // A typo'd guard name — middleware: ['ath'] — used to `continue`, so the
+      // chain passed and the page rendered to everyone. It must break instead.
+      const result = await runMiddleware('ath', ctx)
+
+      expect(result.passed).toBe(false)
+      expect(result.abort?.error?.statusCode).toBe(500)
+    })
+
+    test('one bad name in a chain fails the whole chain, even after a guard passed', async () => {
+      clearMiddleware()
+      let ran = false
+      registerMiddleware('real', defineMiddleware(() => { ran = true }))
+      const to = createRouteLocation('/protected', {}, {})
+      const ctx = createMiddlewareContext(to, null, undefined, { isServer: true })
+
+      const result = await runMiddleware(['real', 'typo'], ctx)
+
+      expect(ran).toBe(true)
+      expect(result.passed).toBe(false)
+      expect(result.abort?.error?.statusCode).toBe(500)
     })
   })
 
@@ -310,13 +342,15 @@ describe('Route Middleware', () => {
       expect(result.abort?.error.message).toBe('Something went wrong')
     })
 
-    test('warns and continues for missing middleware', async () => {
+    test('fails closed for missing middleware (#1891)', async () => {
       const to = createRouteLocation('/dashboard', {}, {})
-      const context = createMiddlewareContext(to, null)
+      const context = createMiddlewareContext(to, null, undefined, { isServer: true })
       const result = await runMiddleware('nonexistent', context)
 
-      // Should pass because missing middleware is skipped with warning
-      expect(result.passed).toBe(true)
+      // Was fail-OPEN (passed: true) — an unresolved guard let the request
+      // through. Now it aborts with 500 so a typo'd guard breaks loudly.
+      expect(result.passed).toBe(false)
+      expect(result.abort?.error?.statusCode).toBe(500)
     })
   })
 

@@ -122,10 +122,13 @@ describe('runMiddleware', () => {
     expect(result.state).toEqual({ a: 1, b: 2 })
   })
 
-  test('skips unknown middleware with warning', async () => {
+  test('fails closed on unknown middleware (#1891)', async () => {
     const to = createRouteLocation('/', {}, {})
-    const ctx = createMiddlewareContext(to, null)
+    const ctx = createMiddlewareContext(to, null, undefined, { isServer: true })
     const result = await runMiddleware('nonexistent', ctx)
-    expect(result.passed).toBe(true)
+    // An unresolved guard name aborts with 500 rather than passing, so a typo
+    // cannot silently remove a route's protection.
+    expect(result.passed).toBe(false)
+    expect(result.abort?.error?.statusCode).toBe(500)
   })
 })

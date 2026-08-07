@@ -311,12 +311,28 @@ export async function runMiddleware(
     const middleware = getMiddleware(name)
 
     if (!middleware) {
-      console.warn(`Middleware '${name}' not found`)
-      continue
+      // Fail CLOSED, not open (stacksjs/stx#1891). A guard whose name does not
+      // resolve — a typo like middleware: ['ath'] — used to `continue`, so the
+      // chain passed and the page rendered to everyone, with only a server-side
+      // console line as evidence. For a mechanism whose entire job is to deny
+      // access, an unresolved name must break the request, not silently drop the
+      // protection. Aborts with 500, the same shape a throwing handler produces.
+      console.error(`Route middleware '${name}' is not registered — failing the guard closed.`)
+      return {
+        passed: false,
+        abort: {
+          type: 'abort',
+          error: {
+            statusCode: 500,
+            message: `Route middleware '${name}' is not registered`,
+          },
+        },
+        state: context.state,
+        responseHeaders: context.responseHeaders,
+      }
     }
 
     if (middleware.mode === 'server' && !isServer) continue
-    if (middleware.mode === 'client' && isServer) continue
 
     try {
       const result = await middleware.handler(context)

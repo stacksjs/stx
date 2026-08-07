@@ -81,17 +81,9 @@ describe('mode filtering, with the side stated', () => {
     expect(ran).toBe(true)
   })
 
-  it('skips client-mode middleware on the server', async () => {
-    // The mirror of the above: this one RAN under the old sniff.
-    let ran = false
-    clearMiddleware()
-    registerMiddleware('ui', defineMiddleware(() => { ran = true }, { mode: 'client' }))
-
-    const ctx = createMiddlewareContext(routeTo('/x'), null, undefined, { isServer: true })
-    await runMiddleware('ui', ctx)
-
-    expect(ran).toBe(false)
-  })
+  // The mirror case — "skips client-mode middleware on the server" — was
+  // removed with client mode itself (stacksjs/stx#1891): a browser-side guard
+  // could never run, so the mode no longer exists to be filtered.
 
   it('runs universal middleware either way', async () => {
     const sides: boolean[] = []

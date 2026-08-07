@@ -93,7 +93,13 @@ export interface MiddlewareContext {
   responseHeaders: Headers
 }
 
-export type MiddlewareMode = 'universal' | 'server' | 'client'
+// 'client' was removed (stacksjs/stx#1891): the SPA router is a stringified
+// runtime with no access to this registry, and every runMiddleware caller is a
+// server process, so a client-mode guard could never run. Keeping the mode was
+// an API that looked like a browser-side security boundary while doing nothing —
+// worse than not having it. If browser-side UX guards are wanted, they belong in
+// a separately named, non-enforcement API.
+export type MiddlewareMode = 'universal' | 'server'
 
 export type RouteMiddlewareHandler = (
   context: MiddlewareContext,

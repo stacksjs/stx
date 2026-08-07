@@ -5,11 +5,13 @@ import { defineMiddleware } from 'stx'
  * Looks for the persisted `drivly-session` key; redirects to /login
  * with a `next` param so we can return the user after sign-in.
  *
- * This is a client-side check — server middleware runs at build time
- * with no request context. For real auth you'd pair this with a
- * server-side session cookie check.
+ * Runs as a universal middleware. The `localStorage` check below is a
+ * demonstration only: for real enforcement, key this off a server-side
+ * session cookie via `ctx.cookies` (which is populated on the server),
+ * because a guard that can only see `localStorage` is not a security
+ * boundary. See stacksjs/stx#1891.
  */
-export default defineMiddleware('auth', (ctx) => {
+export default defineMiddleware((ctx) => {
   // Skip server-side (build-time) — stx executes middleware on each request
   // in dev-server mode, and at build time in SSG mode.
   if (typeof localStorage === 'undefined') return
