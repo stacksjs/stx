@@ -64,6 +64,7 @@ function onAction(event) {
   data-space
   data-space-id="{{ id }}"
   data-space-active="{{ active ? 'true' : 'false' }}"
+  @if(!active)inert@endif
   class="flex min-w-0 flex-1 flex-col"
   role="tabpanel"
   aria-label="{{ label || id }}"

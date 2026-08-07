@@ -51,6 +51,19 @@ export const config = JSON.stringify({
 </script>
 
 <script client>
+import {
+  clampIndex,
+  nativeVelocityToPanels,
+  panelStep,
+  pointerAxis,
+  settleTarget,
+  SETTLE_EASE,
+  SETTLE_MS,
+  wheelClaims,
+  WHEEL_IDLE_MS,
+  withResistance,
+} from './swipe'
+
 const emit = defineEmits()
 const componentRoot = window.__STX_CURRENT_ELEMENT__
 
@@ -72,39 +85,9 @@ let tints = []
 // 220px pane and a 320px pane need the same flick to advance.
 // ---------------------------------------------------------------------------
 
-const SETTLE_MS = 420
-const SETTLE_EASE = 'cubic-bezier(0.22, 0.61, 0.36, 1)'
-// Distance past the first/last space is compressed towards this asymptote, the
-// same thing UIScrollView does at the end of a list: the track keeps answering
-// the finger, but tells you there is nothing further.
-const RUBBER_LIMIT = 0.28
-// Commit thresholds. Either drag a third of the way, or flick — 1.5 panels per
-// second — in the direction you were already going.
-const COMMIT_DISTANCE = 0.3
-const COMMIT_VELOCITY = 0.0015
-
-function panelStep() {
-  return 100 / Math.max(1, ids.length)
-}
-
 function paint(offset, animate) {
   track.style.transition = animate ? `transform ${SETTLE_MS}ms ${SETTLE_EASE}` : 'none'
-  track.style.transform = `translate3d(${-offset * panelStep()}%, 0, 0)`
-}
-
-function rubber(distance) {
-  return (1 - 1 / (distance / RUBBER_LIMIT + 1)) * RUBBER_LIMIT
-}
-
-function withResistance(offset) {
-  const last = ids.length - 1
-  if (offset < 0) return -rubber(-offset)
-  if (offset > last) return last + rubber(offset - last)
-  return offset
-}
-
-function clampIndex(value) {
-  return Math.max(0, Math.min(ids.length - 1, value))
+  track.style.transform = `translate3d(${-offset * panelStep(ids.length)}%, 0, 0)`
 }
 
 function animates() {
@@ -174,7 +157,7 @@ function restored() {
 /** Move to a space. Always repaints — a rejected swipe still animates home. */
 function goTo(next, options) {
   const opts = options || {}
-  const target = clampIndex(next)
+  const target = clampIndex(next, ids.length)
   const changed = target !== index()
 
   paint(target, opts.animate !== false && animates())
@@ -192,8 +175,9 @@ function goTo(next, options) {
 // Gestures
 //
 // All three input paths (wheel, pointer, native) funnel into the same two
-// helpers: they track live with `paint(withResistance(offset), false)` while
-// moving, then hand the final offset and velocity to `settle`.
+// helpers: they track live with `paint(withResistance(…), false)` while moving,
+// then hand the final offset and velocity to `settle`. The thresholds and the
+// resistance curve live in `./swipe` so they can be tested directly.
 // ---------------------------------------------------------------------------
 
 let gestureStart = 0
@@ -204,12 +188,7 @@ function beginGesture() {
 }
 
 function settle(offset, velocity, source) {
-  const moved = offset - gestureStart
-  const direction = Math.sign(moved) || Math.sign(velocity)
-  const dragged = Math.abs(moved) > COMMIT_DISTANCE
-  const flicked = Math.abs(velocity) > COMMIT_VELOCITY && Math.sign(velocity) === direction
-  const commit = direction !== 0 && (dragged || flicked)
-  goTo(commit ? gestureStart + direction : gestureStart, { source })
+  goTo(settleTarget(offset, gestureStart, velocity, ids.length), { source })
 }
 
 // --- Trackpad ---------------------------------------------------------------
@@ -222,13 +201,18 @@ let wheelOffset = null
 let wheelIdle = null
 let wheelVelocity = 0
 let wheelLastAt = 0
+// Set the first time the host delivers a real gesture phase. From then on the
+// wheel stream is the same physical events arriving a second time, so running
+// the heuristic as well would drive the track twice and settle it twice.
+let nativeGesturesConfirmed = false
 
 function onWheel(event) {
+  if (nativeGesturesConfirmed) return
   if (ids.length < 2) return
   if (event.ctrlKey) return // pinch-zoom, not a swipe
 
   if (wheelOffset === null) {
-    if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
+    if (!wheelClaims(event.deltaX, event.deltaY)) return
     beginGesture()
     wheelOffset = gestureStart
     wheelLastAt = event.timeStamp
@@ -240,10 +224,10 @@ function onWheel(event) {
   wheelLastAt = event.timeStamp
   wheelVelocity = delta / elapsed
   wheelOffset += delta
-  paint(withResistance(wheelOffset), false)
+  paint(withResistance(wheelOffset, ids.length), false)
 
   clearTimeout(wheelIdle)
-  wheelIdle = setTimeout(endWheel, 90)
+  wheelIdle = setTimeout(endWheel, WHEEL_IDLE_MS)
 }
 
 function endWheel() {
@@ -253,10 +237,17 @@ function endWheel() {
   settle(offset, wheelVelocity, 'swipe')
 }
 
-/** Drop an in-flight wheel gesture without settling it. */
+/**
+ * Drop an in-flight wheel gesture without settling it, returning wherever it
+ * had dragged the track to. The caller adopts that offset so the handover to
+ * the native stream is invisible — resetting to the logical index instead
+ * would snap the track backwards at the exact moment the gesture gets better.
+ */
 function cancelWheelGesture() {
   clearTimeout(wheelIdle)
+  const carried = wheelOffset
   wheelOffset = null
+  return carried
 }
 
 // --- Touch and pen ----------------------------------------------------------
@@ -290,10 +281,9 @@ function onPointerMove(event) {
     // Axis lock. The first 8px of travel decides swipe or scroll, and the
     // decision stands for the rest of the gesture — re-deciding mid-drag is
     // what makes web carousels feel slippery.
-    const dx = event.clientX - pointerStartX
-    const dy = event.clientY - pointerStartY
-    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
-    if (Math.abs(dx) <= Math.abs(dy)) { pointerId = null; return }
+    const axis = pointerAxis(event.clientX - pointerStartX, event.clientY - pointerStartY)
+    if (axis === 'undecided') return
+    if (axis === 'vertical') { pointerId = null; return }
     beginGesture()
     pointerOffset = gestureStart
     viewport.setPointerCapture(event.pointerId)
@@ -305,7 +295,7 @@ function onPointerMove(event) {
   pointerLastAt = event.timeStamp
   pointerVelocity = delta / elapsed
   pointerOffset += delta
-  paint(withResistance(pointerOffset), false)
+  paint(withResistance(pointerOffset, ids.length), false)
 }
 
 function onPointerUp(event) {
@@ -347,8 +337,22 @@ function onShortcut(event) {
   if (!event.metaKey || !event.altKey) return
   const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
   if (step === 0) return
+  // Window-level, so a page with two spaces sidebars would otherwise advance
+  // both at once. Whichever one contains the focus owns the shortcut; with
+  // focus outside every sidebar the sole sidebar still answers, because that
+  // is the common case and requiring a click first would be surprising.
+  if (!ownsShortcut()) return
   event.preventDefault()
   goTo(index() + step, { source: 'keyboard' })
+}
+
+function ownsShortcut() {
+  const focused = document.activeElement
+  const owner = focused && focused !== document.body
+    ? focused.closest('[data-stx-sidebar-spaces]')
+    : null
+  if (owner) return owner === root
+  return document.querySelectorAll('[data-stx-sidebar-spaces]').length === 1
 }
 
 // ---------------------------------------------------------------------------
@@ -381,11 +385,15 @@ function bindCraftGestures() {
       // Take over from the wheel path. The bridge exposes `onSwipe`
       // unconditionally but a host that does not implement gestures never
       // emits, so the wheel listener stays bound and this is the only moment
-      // we know the native stream is real. Cancelling any in-flight wheel
-      // gesture here stops the two paths settling the same swipe twice.
-      cancelWheelGesture()
+      // we know the native stream is real. From here the heuristic is not just
+      // redundant but harmful — the same physical scroll arrives on both paths
+      // — so it is retired for good, not merely cancelled.
+      nativeGesturesConfirmed = true
+      const carried = cancelWheelGesture()
       beginGesture()
-      offset = gestureStart
+      // Adopt whatever the wheel path had already dragged to, so the handover
+      // does not snap the track back to the logical index.
+      offset = carried === null ? gestureStart : carried
       return
     }
     if (offset === null) return
@@ -395,12 +403,12 @@ function bindCraftGestures() {
       offset = null
       // Craft reports velocity in points per second; the thresholds here are
       // panels per millisecond.
-      settle(settled, (swipe.velocityX || 0) / (viewport.clientWidth || 1) / 1000, 'swipe')
+      settle(settled, nativeVelocityToPanels(swipe.velocityX || 0, viewport.clientWidth), 'swipe')
       return
     }
 
     offset += (swipe.deltaX || 0) / (viewport.clientWidth || 1)
-    paint(withResistance(offset), false)
+    paint(withResistance(offset, ids.length), false)
   })
 
   if (typeof off === 'function') craftTeardown.push(off)
@@ -444,7 +452,7 @@ onMount(() => {
   tints = spaces.map(space => space.tint)
   if (ids.length === 0) return
 
-  const startIndex = clampIndex(config.index || 0)
+  const startIndex = clampIndex(config.index || 0, ids.length)
   const saved = restored()
   const initial = saved === -1 ? startIndex : saved
   index.set(initial)
@@ -523,6 +531,57 @@ defineExpose({
 </div>
 
 <style scoped>
+/* ---------------------------------------------------------------------------
+ * Standalone tinting.
+ *
+ * `applyTint` writes the palette onto `root.closest('[data-stx-sidebar]')` and
+ * falls back to this component's own root — the documented way to use
+ * `<SidebarSpaces>` without a `<Sidebar>` around it. But the rules that
+ * *consume* those variables live in Sidebar.stx, so the fallback target used to
+ * publish a palette nothing read: standalone spaces rendered with no gradient
+ * and no crossfade at all.
+ *
+ * These mirror Sidebar.stx's spaces block for the standalone case only. The
+ * `:not([data-stx-sidebar] *)` guard keeps them out of the nested case, where
+ * the pane is the thing that should be painted, not this inner column.
+ * ------------------------------------------------------------------------- */
+@property --stx-space-from { syntax: "<color>"; inherits: true; initial-value: #f2f0ec; }
+@property --stx-space-to { syntax: "<color>"; inherits: true; initial-value: #e6e3dd; }
+@property --stx-space-ink { syntax: "<color>"; inherits: true; initial-value: #2c2a28; }
+@property --stx-space-accent { syntax: "<color>"; inherits: true; initial-value: #5b5b63; }
+
+[data-stx-sidebar-spaces]:not([data-stx-sidebar] *) {
+  --stx-space-from: var(--stx-space-light-from, #f2f0ec);
+  --stx-space-to: var(--stx-space-light-to, #e6e3dd);
+  --stx-space-ink: var(--stx-space-light-ink, #2c2a28);
+  --stx-space-accent: var(--stx-space-light-accent, #5b5b63);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0) 32%),
+    linear-gradient(180deg, var(--stx-space-from) 0%, var(--stx-space-to) 100%);
+  color: var(--stx-space-ink);
+  transition:
+    --stx-space-from 420ms ease,
+    --stx-space-to 420ms ease,
+    --stx-space-ink 420ms ease,
+    --stx-space-accent 420ms ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-stx-sidebar-spaces]:not([data-stx-sidebar] *) {
+    --stx-space-from: var(--stx-space-dark-from, #17171b);
+    --stx-space-to: var(--stx-space-dark-to, #0e0e11);
+    --stx-space-ink: var(--stx-space-dark-ink, #ededf0);
+    --stx-space-accent: var(--stx-space-dark-accent, #b9b9c2);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 30%),
+      linear-gradient(180deg, var(--stx-space-from) 0%, var(--stx-space-to) 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-stx-sidebar-spaces]:not([data-stx-sidebar] *) { transition: none; }
+}
+
 .stx-space-viewport {
   /* Vertical scrolling stays with the browser; horizontal belongs to us. */
   touch-action: pan-y;
