@@ -28,7 +28,8 @@ import {
   clearMiddleware,
   getMiddlewareNames,
 } from '../route-middleware'
-import { getPageMeta, resetHead } from '../head'
+import { resetHead } from '../head'
+import { extractPageMetaFromSource } from '../page-meta'
 import { clearComponentCache } from '../utils'
 import { extractPageResponseStatus } from '../page-response'
 import {
@@ -677,8 +678,19 @@ catch {
         }
         if (builtPage) {
           const responseStatus = builtPage.status ?? 200
-          // Get page metadata (middleware, etc.)
-          const pageMeta = getPageMeta()
+          // Page metadata, read from the page's SOURCE.
+          //
+          // This used to call getPageMeta(), which reads head.ts's
+          // `currentPageMeta` — and nothing populates it. The `definePageMeta`
+          // a <script server> block actually calls is a shim
+          // (variable-extractor.ts:602) that forwards title/description to
+          // useSeoMeta and returns; it never touches head.ts. So this was
+          // always `{}`, and every `definePageMeta({ middleware })` and
+          // `({ validate })` was dead in the dev server while working in SSG,
+          // which extracts from source. Same extractor as SSG now. See #1849.
+          const pageMeta = (routeMatch.route.filePath
+            ? extractPageMetaFromSource(await Bun.file(routeMatch.route.filePath).text().catch(() => ''))
+            : null) ?? {}
 
           // Run route param validation if defined
           if (pageMeta.validate) {
@@ -710,7 +722,11 @@ catch {
               url.search
             )
 
-            const middlewareContext = createMiddlewareContext(toRoute, null, request)
+            // Stated, not sniffed: this is a request handler, so it is the
+            // server by construction. `typeof window` lies in any process that
+            // has polyfilled a DOM, which would silently skip every
+            // `mode: 'server'` guard. See #1849.
+            const middlewareContext = createMiddlewareContext(toRoute, null, request, { isServer: true })
             const middlewareResult = await runMiddleware(pageMeta.middleware, middlewareContext)
 
             // Handle redirect

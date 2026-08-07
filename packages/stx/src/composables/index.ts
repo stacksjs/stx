@@ -444,3 +444,11 @@ export {
   type ColorModeRef,
   type DarkRef,
 } from './use-color-mode'
+
+// `defineForm` was reachable from a `<script client>` block (#1846) and listed
+// in SERVER_ONLY_COMPOSABLES, but never re-exported here. That list is checked
+// against this barrel — "exactly the composable exports the runtime does not
+// provide" — so an entry with no export behind it failed the guard, while
+// `framework-composables.ts` needs the entry to know to bundle it. One missing
+// re-export, two contradictory test suites. See #1849.
+export { defineForm } from './use-form'

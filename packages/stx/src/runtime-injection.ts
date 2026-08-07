@@ -9,6 +9,7 @@
 
 import type { StxOptions } from './types'
 import { getOwnedRouteMatchers } from './owned-routes'
+import { toScriptJson } from './script-json'
 
 /**
  * Inject an @stacksjs/browser initialization input into a template that will
@@ -298,7 +299,19 @@ export async function injectRouterScript(template: string, options?: StxOptions)
     }
 
     if (Object.keys(configObj).length > 0) {
-      configScript = `<script>window.__stxRouterConfig=${JSON.stringify(configObj)};</script>\n`
+      // Escaped, not just stringified. This was the one `<script>` injection
+      // site in the codebase with no escaping at all — the other five
+      // (spa-shell, appearance-bootstrap, color-mode-boot, misc-directives,
+      // bun-plugin/serve) all have it.
+      //
+      // Reachable via the `router` config block, whose string values are copied
+      // in verbatim: a `container` selector containing `</script>` ends the
+      // element and the rest lands in the document as markup. The `ownedRoutes`
+      // table added here in #1864 turns out NOT to be a vector — the regex
+      // compiler escapes `/` as `\/`, so a route path emits `<\/script>` — but
+      // that is an accident of regex serialisation, not a guarantee worth
+      // relying on. See #1849.
+      configScript = `<script>window.__stxRouterConfig=${toScriptJson(configObj)};</script>\n`
     }
   }
 

@@ -260,12 +260,28 @@ export function createRouteLocation(
   }
 }
 
+/**
+ * Build the context a middleware chain runs against.
+ *
+ * `options.isServer` exists because sniffing `typeof window` is wrong whenever a
+ * DOM has been polyfilled into a server process, and this repo does exactly that
+ * — `bunfig.toml` preloads happy-dom for every test, and
+ * `story/visual-testing.ts` imports very-happy-dom at runtime. In those
+ * processes `window` is defined, so the sniff says "client" on the server and
+ * {@link runMiddleware}'s mode filters inverted: `mode: 'server'` middleware was
+ * SKIPPED and `mode: 'client'` middleware RAN. Every middleware test in the repo
+ * was therefore asserting the mirror image of production. See #1849.
+ *
+ * A caller that knows which side it is on should say so. The sniff remains the
+ * default so existing callers are unaffected.
+ */
 export function createMiddlewareContext(
   to: RouteLocation,
   from: RouteLocation | null,
   request?: Request,
+  options?: { isServer?: boolean },
 ): MiddlewareContext {
-  const isServer = typeof window === 'undefined'
+  const isServer = options?.isServer ?? typeof window === 'undefined'
   const isClient = !isServer
   const responseHeaders = new Headers()
 

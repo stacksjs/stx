@@ -54,6 +54,7 @@ import { processDirectives, injectRouterScript } from './process'
 import { extractIslandChunks, injectIslandChunkPrefetch } from './island-chunking'
 import { loadStxConfig } from './config'
 import { generateLayoutTypes } from './layout-types'
+import { extractPageMetaFromSource } from './page-meta'
 import { resolveSiteUrl, siteUrlFallbackWarning } from './site-url'
 import { generateRobotsTxt } from './seo'
 import { stateDir } from './state-dir'
@@ -1097,7 +1098,10 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
 
           if (allMiddleware.length > 0) {
             const toRoute = createRouteLocation(url, params, pageMeta || {})
-            const ctx = createMiddlewareContext(toRoute, null)
+            // Stated, not sniffed — a static build is the server by
+            // construction, and `story/visual-testing.ts` can put a real
+            // `window` in this process. See #1849.
+            const ctx = createMiddlewareContext(toRoute, null, undefined, { isServer: true })
             const middlewareResult = await runMiddleware(allMiddleware, ctx)
 
             if (middlewareResult.redirect) {
@@ -1664,20 +1668,15 @@ export function createMarkdownLoader(): ContentLoader {
 // =============================================================================
 
 /**
- * Extract definePageMeta({ middleware, validate, ... }) from page content.
- * Uses regex + safe eval — middleware names must be static strings.
+ * Extract `definePageMeta({ middleware, validate, … })` from page content.
+ *
+ * Delegates to `page-meta.ts`, which exists because these regexes had already
+ * accumulated in four places recognising slightly different subsets (#1879).
+ * This copy was a fifth, and it differed: no `\b` before `definePageMeta`, so
+ * it also matched `myDefinePageMeta(` and read the wrong object.
  */
 function extractPageMeta(content: string): Record<string, any> | null {
-  const match = content.match(/definePageMeta\s*\(\s*(\{[\s\S]*?\})\s*\)/m)
-  if (!match) return null
-  try {
-    // Only extract simple object literal — no dynamic expressions
-    const fn = new Function(`return ${match[1]}`)
-    return fn()
-  }
-  catch {
-    return null
-  }
+  return extractPageMetaFromSource(content)
 }
 
 /**
