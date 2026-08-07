@@ -158,8 +158,24 @@ export interface ServeRequestContext {
   locale: string | null
   /** Dynamic route params (`[id].stx` → `{ id }`) — set by the dynamic-route renderer. */
   params: Record<string, string>
+  /** Uppercased HTTP method (`GET`, `POST`, …). */
+  method: string
+  /**
+   * The live Request, for a page action to read its own form body.
+   *
+   * Deliberately the Request and not a pre-parsed body: reading the body
+   * consumes it, and most requests never reach a page action at all. The parse
+   * happens in `runPageAction`, only once an `action` is known to exist.
+   */
+  request?: Request
   /** Static HTTP response status declared by the matched page. */
   responseStatus?: number
+  /**
+   * Set by a page action that returned a redirect. The serve turns this into a
+   * 303 See Other, which is what a POST must answer with so the browser follows
+   * up with a GET and a reload does not resubmit.
+   */
+  actionRedirect?: string
   /** Extra keys merged from a non-Response `onRequest` return (app-owned). */
   [key: string]: unknown
 }
@@ -2010,17 +2026,124 @@ function __stxOverlay(errs){
   }
 
   // Lazy template processing function
+  /**
+   * Parse a form submission body into a plain object.
+   *
+   * Handles both encodings a browser form can send: `multipart/form-data` and
+   * `application/x-www-form-urlencoded`. A repeated field name collapses to an
+   * array, so `<input name="tag">` twice reads as `['a', 'b']` rather than
+   * silently keeping only the last one — checkbox groups are the common case.
+   *
+   * File parts are skipped: the value would be a `File`, and a page action that
+   * wants uploads should read `request.formData()` itself rather than have this
+   * hand it something that cannot round-trip into a re-rendered form field.
+   */
+  async function parseFormBody(request: Request): Promise<Record<string, string | string[]>> {
+    const type = request.headers.get('content-type') || ''
+    const form: Record<string, string | string[]> = {}
+
+    const put = (key: string, value: string) => {
+      const existing = form[key]
+      if (existing === undefined)
+        form[key] = value
+      else if (Array.isArray(existing))
+        existing.push(value)
+      else
+        form[key] = [existing, value]
+    }
+
+    if (type.includes('multipart/form-data')) {
+      const data = await request.formData()
+      for (const [key, value] of data.entries()) {
+        if (typeof value === 'string')
+          put(key, value)
+      }
+      return form
+    }
+
+    if (type.includes('application/x-www-form-urlencoded')) {
+      for (const [key, value] of new URLSearchParams(await request.text()).entries())
+        put(key, value)
+      return form
+    }
+
+    return form
+  }
+
+  /**
+   * Run a page's own `action` for a non-GET request (stacksjs/stx#1847).
+   *
+   * A page that exports `action` from its `<script server>` block receives its
+   * own form POST. Whatever the action returns is merged into the render
+   * context, so `errors` and `values` repopulate the very same template that
+   * rendered the form — one handler for both the no-JS submit and the enhanced
+   * one, which is the half of the Laravel/Remix/SvelteKit contract stx was
+   * missing.
+   *
+   * Nothing happens on GET, and nothing happens for a page without an `action`,
+   * so this is inert for every page that does not opt in.
+   *
+   * The action is picked up off the render context rather than parsed out of the
+   * source: `extractVariables` has already run the server block by this point, so
+   * a declared `action` is simply there. That also means it can close over
+   * anything else the block defined, which a regex-extracted function could not.
+   */
+  async function runPageAction(context: Record<string, any>, reqCtx?: ServeRequestContext): Promise<void> {
+    if (!reqCtx || reqCtx.method === 'GET' || reqCtx.method === 'HEAD')
+      return
+    if (typeof context.action !== 'function' || !reqCtx.request)
+      return
+
+    let form: Record<string, string | string[]> = {}
+    try {
+      form = await parseFormBody(reqCtx.request)
+    }
+    catch {
+      // A malformed or already-consumed body is not worth failing the render
+      // over — the action still runs and sees an empty form, which its own
+      // validation will reject the same way an empty submit would.
+    }
+
+    const result = await context.action({
+      request: reqCtx.request,
+      form,
+      params: reqCtx.params ?? {},
+      query: context.query ?? {},
+      cookies: reqCtx.cookies ?? {},
+    })
+
+    if (result && typeof result === 'object') {
+      // `return { redirect: '/somewhere' }` — a plain key rather than an
+      // injected `redirect()` global, so an action is a pure function that
+      // unit-tests without any of the serve around it.
+      const to = (result as Record<string, unknown>).redirect
+      if (typeof to === 'string' && to) {
+        reqCtx.actionRedirect = to
+        return
+      }
+      // Merged, not replaced: the action's keys win over the block's so a
+      // re-render shows the submitted values, but everything else the page
+      // computed for its GET render is still there.
+      Object.assign(context, result)
+    }
+  }
+
   async function processTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
     const content = await Bun.file(filePath).text()
     if (reqCtx)
       reqCtx.responseStatus = extractPageResponseStatus(content) ?? 200
     const skipCacheHint = /(?:^|[^\w$])__stx_skip_cache\s*=\s*true/.test(content)
+    // A form POST must never be answered from cache. The key is path-based, so
+    // a cached GET of the same URL would come back with the pre-submit HTML —
+    // no errors, no repopulated values — which reads exactly like the action
+    // never ran (#1847).
+    const isMutating = !!reqCtx && reqCtx.method !== 'GET' && reqCtx.method !== 'HEAD'
 
     // Cache fast path — if every dependency mtime matches the previous
     // render, return the cached HTML. The stat fan-out is ~1ms total for a
     // typical 5-dep page; a fresh render is ~50ms, so even on miss we only
     // pay the stat cost once. Query-driven pages opt out entirely.
-    if (ENABLE_HTML_CACHE && !skipCacheHint) {
+    if (ENABLE_HTML_CACHE && !skipCacheHint && !isMutating) {
       const cacheKey = htmlCacheKey(filePath, reqCtx)
       const cachedEntry = htmlCache.get(cacheKey)
       if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
@@ -2050,6 +2173,9 @@ function __stxOverlay(errs){
     for (const scriptBody of serverScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
+    // After the block has run, so `action` is defined and can close over it;
+    // before directives, so whatever it returns is in scope for the template.
+    await runPageAction(context, reqCtx)
     context.__stx_head_preset = true
 
     // Merge custom options with default config and stx.config.ts settings.
@@ -2149,6 +2275,11 @@ function __stxOverlay(errs){
       ENABLE_HTML_CACHE
         && !context.__stx_skip_cache
         && !skipCacheHint
+        // Never store a mutating render. The key is path-based, so caching the
+        // POST result would hand the next plain GET of the same URL somebody
+        // else's validation errors and submitted values — worse than the stale
+        // read the guard above prevents.
+        && !isMutating
         && isRenderableCacheCandidate(output)
     ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
@@ -2799,6 +2930,8 @@ function __stxOverlay(errs){
               ip: activeServeIp,
               locale: activeServeLocale,
               params: {},
+              method: (req.method || 'GET').toUpperCase(),
+              request: req,
             }
             try {
 
@@ -3137,6 +3270,18 @@ function __stxOverlay(errs){
 
               // Try to serve the requested page (lazy load on demand)
               const content = await getRoute(path, reqCtx)
+
+              // A page action asked for a redirect (#1847). 303 rather than 302:
+              // it is the status that tells the browser to follow up with a GET,
+              // so the POST is not repeated on reload or Back — the whole point
+              // of the POST/redirect/GET shape a form action exists to support.
+              if (reqCtx.actionRedirect) {
+                return new Response(null, {
+                  status: 303,
+                  headers: { ...corsHeaders, Location: reqCtx.actionRedirect },
+                })
+              }
+
               if (content) {
                 const responseStatus = reqCtx.responseStatus ?? 200
                 // SPA navigation: return only <main> content as fragment
