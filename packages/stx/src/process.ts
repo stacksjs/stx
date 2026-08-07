@@ -14,6 +14,7 @@ import path from 'node:path'
 
 // Directive processors
 import { injectCrosswindCSS } from './dev-server/crosswind'
+import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
 import { matchHtmlComment, matchStyleElement, maskAtElementPosition, stashScriptElements } from './html-masking'
 import { processA11yDirectives } from './a11y'
 import { generateLifecycleRuntime } from './composables'
@@ -523,9 +524,16 @@ export async function processDirectives(
         // Ensure data-stx attribute is on <body> for __stx_setup functions.
         // processScriptSetup may have placed it on a non-body element (e.g. <aside>)
         // because <body> didn't exist before auto-shell wrapping.
+        //
+        // Located through findBodyOpenTag rather than a bare regex: the first
+        // `<body` in the document can sit inside a style block, a script or a
+        // comment. Stamping data-stx there leaves the real body without it, so
+        // the runtime never invokes the setup and every binding on the page is
+        // silently inert.
         const setupMatch = result.match(/function (__stx_setup_\d+_\d+)\(/)
-        if (setupMatch && result.includes('<body') && !result.match(/<body[^>]*data-stx=/)) {
-          result = result.replace(/<body([^>]*)>/, `<body$1 data-stx="${setupMatch[1]}">`)
+        const bodyTag = setupMatch ? findBodyOpenTag(result) : null
+        if (setupMatch && bodyTag && !/\bdata-stx=/.test(bodyTag.tag)) {
+          result = replaceBodyOpenTag(result, (_tag, attrs) => `<body${attrs} data-stx="${setupMatch[1]}">`)
           // Remove data-stx from the wrong element (if it was placed elsewhere)
           const wrongAttrRegex = new RegExp(`(<(?!body)[a-zA-Z][^>]*) data-stx="${setupMatch[1]}"`, 'i')
           result = result.replace(wrongAttrRegex, '$1')

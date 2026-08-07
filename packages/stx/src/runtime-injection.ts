@@ -10,6 +10,7 @@
 import type { StxOptions } from './types'
 import { getOwnedRouteMatchers } from './owned-routes'
 import { toScriptJson } from './script-json'
+import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
 
 /**
  * Inject an @stacksjs/browser initialization input into a template that will
@@ -102,8 +103,12 @@ import '@stacksjs/browser'
     return template.replace('</head>', `${browserScript}\n</head>`)
   }
 
-  if (template.includes('<body')) {
-    return template.replace(/<body([^>]*)>/, `<body$1>\n${browserScript}`)
+  // Same reason as the setup wiring in process.ts: the first `<body` in the
+  // document can be prose inside a style block or a comment, and injecting the
+  // runtime there puts the script inside CSS, where it never executes.
+  const bodyTag = findBodyOpenTag(template)
+  if (bodyTag) {
+    return replaceBodyOpenTag(template, tag => `${tag}\n${browserScript}`)
   }
 
   return browserScript + '\n' + template
