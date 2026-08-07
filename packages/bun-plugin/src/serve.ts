@@ -715,6 +715,16 @@ export function isRenderableCacheCandidate(html: string): boolean {
 }
 
 /**
+ * A rendered /500 page is usable as an error body only if it exists and did not
+ * ITSELF fail to render — otherwise serving it swaps one blank failure comment
+ * for another. Returns the page to serve, or null to fall through to the next
+ * candidate / the marker body (#1854).
+ */
+export function usableErrorPage(rendered: string | null): string | null {
+  return rendered && !isRenderFailure(rendered) ? rendered : null
+}
+
+/**
  * Middleware handler — a Laravel-style gate that either passes through
  * (returns `void`/`null`/`undefined`) or terminates the pipeline by
  * returning a `Response`.
@@ -3216,8 +3226,37 @@ export async function serve(options: ServeOptions): Promise<void> {
                 // response looked healthy to uptime checks and caches while
                 // the body was an HTML comment (#1854).
                 const pageRenderFailed = isRenderFailure(cleaned)
-                if (pageRenderFailed)
+                if (pageRenderFailed) {
                   console.error(`[stx] render failed for ${new URL(req.url).pathname} — serving 500`)
+
+                  // The body was still the blank failure comment. Mirror
+                  // production-server.ts (#1722) and the /404 lookup below: if
+                  // the app ships a /500 page, render THAT as the body so a
+                  // visitor gets a real error page, not an empty one. Rendered
+                  // once — getRoute produces a string, it does not re-enter this
+                  // HTTP handler — and if the /500 page ITSELF fails to render,
+                  // fall through to the marker body rather than loop.
+                  for (const custom500 of ['/500', '/errors/500']) {
+                    try {
+                      const errorPage = usableErrorPage(await getRoute(custom500, reqCtx))
+                      if (errorPage) {
+                        const isProd = isProductionServe()
+                        return new Response(isProd ? errorPage : injectHmrClient(errorPage), {
+                          status: 500,
+                          headers: {
+                            'Content-Type': 'text/html; charset=utf-8',
+                            'Cache-Control': 'no-store',
+                            ...corsHeaders,
+                          },
+                        })
+                      }
+                    }
+                    catch {
+                      // Custom 500 render failed — try the next location, then
+                      // fall through to the marker body below.
+                    }
+                  }
+                }
 
                 return new Response(injectHmrClient(cleaned), {
                   status: pageRenderFailed ? 500 : responseStatus,
