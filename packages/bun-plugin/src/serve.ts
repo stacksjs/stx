@@ -20,7 +20,23 @@ import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
 import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, getBuildId, mergeCrosswindConfig, stateDir, stateDirName } from '@stacksjs/stx'
+import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
+import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
+
+/**
+ * A bundle failure on its way to the dev-server overlay (#1884 ask 2).
+ *
+ * Carries the position separately from the message so the overlay can draw the
+ * code frame the issue asks for, rather than re-parsing a rendered string.
+ */
+interface BuildErrorPayload {
+  file?: string
+  line?: number
+  column?: number
+  message: string
+  frame: Array<{ number: number, text: string, isError: boolean }>
+}
 
 // Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
 // load instead of inside every request handler. The promise is cached, so the
@@ -1017,6 +1033,12 @@ export async function serve(options: ServeOptions): Promise<void> {
       // Re-execute the store bundle and redefine stores in place, keeping their
       // state — the Pinia acceptHMRUpdate contract (#1877 ask 4).
       | { type: 'store', file?: string }
+      // A client script would not bundle. The page still rendered — the bundler
+      // ships the unbundled source so the dev server stays usable — but its
+      // bindings quietly do nothing, which used to be visible only as a
+      // console.warn scrolling past. An empty `errors` clears the overlay,
+      // which is how a fixed build takes it down (#1884 ask 2).
+      | { type: 'build-error', errors: BuildErrorPayload[] }
   const hmrClients = new Set<ReadableStreamDefaultController<Uint8Array>>()
   const hmrEncoder = new TextEncoder()
   function broadcastHmr(event: HmrEvent): void {
@@ -1033,19 +1055,126 @@ export async function serve(options: ServeOptions): Promise<void> {
   // browser re-fetches without dropping JS state. EventSource auto-reconnects
   // for transient failures; the `onerror` guard also reloads if the server
   // restarted entirely (readyState transitions to CLOSED).
-  const HMR_CLIENT_SCRIPT = `<script data-stx-hmr>(()=>{if(window.__stxHmr)return;window.__stxHmr=1;function bust(){var ls=document.querySelectorAll('link[rel="stylesheet"]');for(var i=0;i<ls.length;i++){var l=ls[i];var u=new URL(l.href,location.href);u.searchParams.set('v',Date.now().toString(36));l.href=u.toString()}}var es=new EventSource('/_stx/hmr');function swapFragment(){var r=window.stxRouter;if(r&&typeof r.refresh==='function'){try{return r.refresh().then(function(ok){if(!ok)location.reload()},function(){location.reload()})}catch(_){location.reload()}}else{location.reload()}}function reloadStores(){var s=window.stx;if(!s||typeof s.__hmrReplaceStores!=='function'){location.reload();return}fetch('/_stx/stores.js',{cache:'no-store'}).then(function(r){return r.ok?r.text():null}).then(function(code){if(code===null){location.reload();return}s.__hmrReplaceStores(code)}).catch(function(){location.reload()})}es.onmessage=function(e){try{var m=JSON.parse(e.data);if(m.type==='reload')location.reload();else if(m.type==='css')bust();else if(m.type==='fragment')swapFragment();else if(m.type==='store')reloadStores()}catch(_){}};es.onerror=function(){if(es.readyState===2){setTimeout(function(){location.reload()},400)}}})()</script>`
+  // The build-error overlay (#1884 ask 2). Kept out of the one-liner below
+  // because it is the only part anyone will need to read.
+  //
+  // This is a TEMPLATE LITERAL: no backticks anywhere, including in comments,
+  // and `${` would interpolate at generation time. Same discipline as the
+  // signals runtime (CLAUDE.md item 41).
+  const HMR_OVERLAY_JS = `
+function __stxEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function __stxOverlay(errs){
+  var id='__stx_build_error';
+  var el=document.getElementById(id);
+  if(!errs||!errs.length){if(el&&el.parentNode)el.parentNode.removeChild(el);return}
+  if(!el){el=document.createElement('div');el.id=id;document.body.appendChild(el)}
+  el.setAttribute('style','position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483647;background:rgba(12,12,14,.98);color:#e8e8ea;font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;padding:40px 32px;overflow:auto');
+  var w=0,i,j;
+  for(i=0;i<errs.length;i++){var fr=errs[i].frame||[];for(j=0;j<fr.length;j++){var ln=String(fr[j].number).length;if(ln>w)w=ln}}
+  var h='<div style="max-width:1040px;margin:0 auto">';
+  h+='<div style="color:#ff6b6b;font-size:15px;font-weight:600;margin-bottom:6px">Client script failed to bundle</div>';
+  h+='<div style="color:#8b8b95;margin-bottom:28px">The page rendered, but this script shipped unbundled &mdash; its imports did not resolve, so its bindings do nothing.</div>';
+  for(i=0;i<errs.length;i++){
+    var e=errs[i];
+    var where=__stxEsc(e.file||'')+(e.line?':'+e.line+(e.column?':'+e.column:''):'');
+    h+='<div style="margin-bottom:30px">';
+    h+='<div style="color:#ff6b6b;margin-bottom:10px">&#10006; <span style="color:#f2f2f4">'+where+'</span>&nbsp;&nbsp;'+__stxEsc(e.message)+'</div>';
+    var frame=e.frame||[];
+    if(frame.length){
+      h+='<pre style="margin:0;padding:14px 16px;background:#18181c;border-radius:6px;overflow-x:auto">';
+      for(j=0;j<frame.length;j++){
+        var f=frame[j];
+        var n=String(f.number);while(n.length<w)n=' '+n;
+        var style=f.isError?'color:#ffd7d7;background:#3b1e1e;display:block':'color:#8b8b95;display:block';
+        h+='<span style="'+style+'">'+(f.isError?'&gt; ':'&nbsp;&nbsp;')+n+' | '+__stxEsc(f.text)+'</span>';
+      }
+      h+='</pre>';
+    }
+    h+='</div>';
+  }
+  h+='<div style="color:#6b6b75">This clears itself when the bundle succeeds.</div></div>';
+  el.innerHTML=h;
+}
+`
+
+  const HMR_CLIENT_SCRIPT = `<script data-stx-hmr>(()=>{if(window.__stxHmr)return;window.__stxHmr=1;${HMR_OVERLAY_JS}function bust(){var ls=document.querySelectorAll('link[rel="stylesheet"]');for(var i=0;i<ls.length;i++){var l=ls[i];var u=new URL(l.href,location.href);u.searchParams.set('v',Date.now().toString(36));l.href=u.toString()}}var es=new EventSource('/_stx/hmr');function swapFragment(){var r=window.stxRouter;if(r&&typeof r.refresh==='function'){try{return r.refresh().then(function(ok){if(!ok)location.reload()},function(){location.reload()})}catch(_){location.reload()}}else{location.reload()}}function reloadStores(){var s=window.stx;if(!s||typeof s.__hmrReplaceStores!=='function'){location.reload();return}fetch('/_stx/stores.js',{cache:'no-store'}).then(function(r){return r.ok?r.text():null}).then(function(code){if(code===null){location.reload();return}s.__hmrReplaceStores(code)}).catch(function(){location.reload()})}es.onmessage=function(e){try{var m=JSON.parse(e.data);if(m.type==='reload')location.reload();else if(m.type==='css')bust();else if(m.type==='fragment')swapFragment();else if(m.type==='store')reloadStores();else if(m.type==='build-error')__stxOverlay(m.errors)}catch(_){}};es.onerror=function(){if(es.readyState===2){setTimeout(function(){location.reload()},400)}}})()</script>`
   // Append the HMR client just before </body>. Uses `lastIndexOf` per
   // CLAUDE.md item 24 — the first `</body>` in the document can live inside
   // a `<script>` string (e.g. the router/runtime bundle) and `replace` would
   // inject into the middle of that script.
   function injectHmrClient(html: string): string {
     if (!html) return html
+    // Whatever the render just recorded is what the overlay should show. Fired
+    // and forgotten: the response must not wait on reading source files.
+    void refreshBuildErrors()
     const closeBody = html.lastIndexOf('</body>')
     if (closeBody === -1) {
       // No `</body>` (fragment / non-document response). Append.
       return html + HMR_CLIENT_SCRIPT
     }
     return html.slice(0, closeBody) + HMR_CLIENT_SCRIPT + html.slice(closeBody)
+  }
+
+  /**
+   * What the overlay is currently showing.
+   *
+   * Held so a browser that connects AFTER the failing render still sees it — on
+   * a full page load the response is sent before the new EventSource exists, so
+   * broadcasting alone would reach only the previous page's connection.
+   */
+  let currentBuildErrors: BuildErrorPayload[] = []
+
+  /**
+   * Drain the bundler's failure registry and push the result to every client.
+   *
+   * The registry is replaced rather than merged, so a render that bundles
+   * cleanly takes the overlay down. That means loading a different page also
+   * clears it — self-correcting, since returning to the broken page records the
+   * failure again (the dev server does not cache processed templates).
+   */
+  async function refreshBuildErrors(): Promise<void> {
+    const failures = getBundleFailures()
+    clearBundleFailures()
+
+    const errors: BuildErrorPayload[] = []
+    for (const failure of failures) {
+      const details = failure.details?.length
+        ? failure.details
+        : [{ file: failure.filePath, message: failure.message }]
+
+      for (const detail of details) {
+        let frame: BuildErrorPayload['frame'] = []
+        // Bun's line counts lines in the bundler's temp entry, not in the .stx
+        // file — see locateFailureLine. Corroborate it against the real source
+        // or report no line at all; a confident wrong line is worse than none.
+        let line: number | undefined
+        if (detail.file) {
+          try {
+            const source = await Bun.file(detail.file).text()
+            line = locateFailureLine(source, detail.lineText)
+            if (line)
+              frame = buildCodeFrame(source, line)
+          }
+          catch {
+            // Unreadable or generated path — the message alone still helps.
+          }
+        }
+        errors.push({
+          file: detail.file,
+          line,
+          // The column is only meaningful next to a line we trust.
+          column: line ? detail.column : undefined,
+          message: detail.message,
+          frame,
+        })
+      }
+    }
+
+    // Only talk when something changed, so a quiet dev server stays quiet.
+    if (JSON.stringify(errors) === JSON.stringify(currentBuildErrors))
+      return
+    currentBuildErrors = errors
+    broadcastHmr({ type: 'build-error', errors })
   }
 
   // Watch pattern directories so adding/removing a view file (e.g. a brand
@@ -2695,6 +2824,16 @@ export async function serve(options: ServeOptions): Promise<void> {
                     // Initial line — proves the connection is live to the browser
                     // and gives the readyState a definite "open" before any change.
                     c.enqueue(hmrEncoder.encode('data: {"type":"connected"}\n\n'))
+                    // Replay the current build errors. On a full page load the
+                    // response is sent before this EventSource exists, so a
+                    // broadcast alone reaches only the PREVIOUS page's
+                    // connection — the overlay would never appear on the very
+                    // load that failed, which is the one that matters.
+                    if (currentBuildErrors.length > 0) {
+                      c.enqueue(hmrEncoder.encode(
+                        `data: ${JSON.stringify({ type: 'build-error', errors: currentBuildErrors })}\n\n`,
+                      ))
+                    }
                     // Keepalive ping. Without traffic, the stream idles and gets
                     // killed by Bun.serve's `idleTimeout` (default 10s) or a reverse
                     // proxy's read timeout — the browser then sees

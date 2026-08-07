@@ -704,6 +704,19 @@ export interface StxConfig {
   css?: string | { config?: string, content?: string[], preflight?: boolean, minify?: boolean, [key: string]: unknown }
   /** Enable debug mode for detailed error messages */
   debug: boolean
+  /**
+   * Turn degraded-but-working behaviour into a hard failure.
+   *
+   * `bundlerFallback` decides what happens when a `<script client>` block will
+   * not bundle. The default `'warn'` ships the ORIGINAL, unbundled source so the
+   * page still renders, which is right for a dev server and is why the overlay
+   * exists; `'error'` refuses instead, for anyone who would rather nothing
+   * rendered than a page whose bindings quietly do nothing. `stx build` fails on
+   * a bundle error either way. See #1884.
+   */
+  strict?: {
+    bundlerFallback?: 'warn' | 'error'
+  }
   /** Directory to store cached templates, defaults to `cache` inside `stateDir` */
   cachePath: string
   /** Custom directives registered by the user */

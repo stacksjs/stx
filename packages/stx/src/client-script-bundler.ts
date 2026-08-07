@@ -12,9 +12,11 @@
 import path from 'node:path'
 import fs from 'node:fs' // kept for mkdir/rmSync (no Bun equivalent for dir ops)
 import type { BunPlugin } from 'bun'
+import type { BuildFailureDetail } from './build-message'
 import { getPublicEnvDefine } from './public-env'
 import { stateDir } from './state-dir'
-import { formatBuildFailure } from './build-message'
+import { describeBuildFailure, formatBuildFailure } from './build-message'
+import { config } from './config'
 
 const BUNDLE_CACHE_VERSION = 5
 const BUNDLE_CACHE_METADATA_VERSION = 1
@@ -52,13 +54,22 @@ function logBundlerDiagnostic(...message: unknown[]): void {
 export interface BundleFailure {
   filePath: string
   message: string
+  /**
+   * The same failure with its position intact, for a dev-server overlay to
+   * draw a code frame from. Absent only when the thrower gave no position.
+   */
+  details?: BuildFailureDetail[]
 }
 
 const _bundleFailures: BundleFailure[] = []
 
 /** Record a bundle failure. Called from the bundler's fallback path. */
-export function recordBundleFailure(filePath: string, message: string): void {
-  _bundleFailures.push({ filePath: filePath || '<inline>', message })
+export function recordBundleFailure(
+  filePath: string,
+  message: string,
+  details?: BuildFailureDetail[],
+): void {
+  _bundleFailures.push({ filePath: filePath || '<inline>', message, details })
 }
 
 /** Every bundle failure since the last reset. */
@@ -69,6 +80,40 @@ export function getBundleFailures(): BundleFailure[] {
 /** Drop recorded failures — call at the start of a build, and in tests. */
 export function clearBundleFailures(): void {
   _bundleFailures.length = 0
+}
+
+/** What to do when a client script will not bundle. */
+export type BundlerFallbackMode = 'warn' | 'error'
+
+let _fallbackOverride: BundlerFallbackMode | undefined
+
+/**
+ * Override the configured fallback mode, for tests and embedders.
+ *
+ * Pass `undefined` to go back to reading `strict.bundlerFallback` from config.
+ */
+export function setBundlerFallbackMode(mode: BundlerFallbackMode | undefined): void {
+  _fallbackOverride = mode
+}
+
+/**
+ * The effective fallback mode.
+ *
+ * Read lazily rather than captured at import time: config is loaded after this
+ * module is first imported, so a value read at import time is always the
+ * default.
+ */
+export function resolveBundlerFallback(): BundlerFallbackMode {
+  if (_fallbackOverride)
+    return _fallbackOverride
+  try {
+    return (config as { strict?: { bundlerFallback?: BundlerFallbackMode } })
+      .strict?.bundlerFallback ?? 'warn'
+  }
+  catch {
+    // Config not loaded yet, or unreadable. The fallback is the safe default.
+    return 'warn'
+  }
 }
 
 // Known imports that are NOT user imports — handled by other transforms.
@@ -652,13 +697,22 @@ ${publicAssignments}`.trim()
     // generated file instead of their view. A BuildMessage also fails
     // `instanceof Error`, so the usual message-or-String idiom reduced it to a
     // bare "Unexpected ===" with no location at all.
+    const details = describeBuildFailure(error, filePath || undefined)
     const failure = formatBuildFailure(error, filePath || undefined)
     console.warn(`[stx:bundler] error: ${failure}`)
     // Recorded so a BUILD can fail on this. The fallback below keeps a dev
     // server usable, but it used to be the only outcome: `stx build` shipped the
     // unbundled source and exited 0, so the first sign of trouble was a page
     // whose bindings quietly did nothing. See #1884.
-    recordBundleFailure(filePath || '', failure)
+    recordBundleFailure(filePath || '', failure, details)
+
+    // Opt out of the fallback entirely. The default stays 'warn' because
+    // shipping the unbundled source is what keeps a dev server usable while you
+    // fix the import; 'error' is for anyone who would rather nothing rendered
+    // than something that renders with its bindings quietly doing nothing.
+    if (resolveBundlerFallback() === 'error')
+      throw error
+
     // Fall back to original code
     return code
   }
