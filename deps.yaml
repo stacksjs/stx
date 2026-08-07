@@ -1,2 +1,5 @@
 dependencies:
-  bun.sh: ^1.3.14
+  # Pinned exactly, not `^1.3.14`: a caret resolves through pantry's `v1`
+  # symlink, so 1.4.0 would be picked up silently on the next install — and
+  # 1.4.x writes `lockfileVersion: 2`, which 1.3.x cannot read.
+  bun.sh: 1.3.14
