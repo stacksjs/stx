@@ -57,14 +57,24 @@ describe('buildVirtualSource line preservation (#1852)', () => {
   it('pads so the block body lands on its original line', () => {
     // This is what makes a diagnostic's line number directly usable: no offset
     // table, and nothing to get wrong when a file has several blocks.
-    const virtual = buildVirtualSource({ kind: 'client', code: 'const a = 1', startLine: 7 })
+    const virtual = buildVirtualSource({ kind: 'client', code: 'const a = 1', startLine: 7, attrs: 'client' })
     const lines = virtual.split('\n')
-    expect(lines.length).toBe(7)
     expect(lines[6]).toBe('const a = 1')
   })
 
   it('does not pad a block that starts on line 1', () => {
-    expect(buildVirtualSource({ kind: 'server', code: 'x', startLine: 1 })).toBe('x')
+    expect(buildVirtualSource({ kind: 'server', code: 'x', startLine: 1, attrs: 'server' }).split('\n')[0]).toBe('x')
+  })
+
+  it('closes with export {} so the buffer is a module', () => {
+    // Not cosmetic. A block with no imports is otherwise a global script, and
+    // every top-level declaration collides with lib.dom — `const name` and
+    // `const status` in a <script server> block both reported "Cannot redeclare
+    // block-scoped variable". Appended, so the lines above keep their numbers.
+    const virtual = buildVirtualSource({ kind: 'server', code: 'const name = 1', startLine: 2, attrs: 'server' })
+
+    expect(virtual.split('\n')[1]).toBe('const name = 1')
+    expect(virtual).toContain('export {}')
   })
 })
 
@@ -140,5 +150,127 @@ describe('typecheckStxFiles end to end (#1852)', () => {
     finally {
       await Bun.$`rm -rf ${dir}`.quiet().nothrow()
     }
+  }, 120_000)
+})
+
+/**
+ * Ask 4: the markup is checked too.
+ *
+ * The issue's reported cost is an app whose dashboard carries ~500 lines of
+ * query and shaping code with no coverage, where "a renamed column or a changed
+ * row shape" is caught by nothing. That is this: the loop variable is typed from
+ * the iterable it was drawn from, so the template fails to compile.
+ */
+describe('template expressions (#1852 ask 4)', () => {
+  async function check(body: string, options?: Parameters<typeof typecheckStxFiles>[1]) {
+    const dir = `${import.meta.dir}/__fixture-tpl-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const file = `${dir}/page.stx`
+    await Bun.write(file, body)
+    try {
+      const result = await typecheckStxFiles([file], options)
+      return { result, file }
+    }
+    finally {
+      await Bun.$`rm -rf ${dir}`.quiet().nothrow()
+    }
+  }
+
+  it('catches a renamed field on a row inside @foreach', async () => {
+    const { result } = await check([
+      '<script server>', //                         1
+      'interface Row { total_visits: number }', //   2
+      'const rows: Row[] = []', //                   3
+      '</script>', //                                4
+      '@foreach(rows as row)', //                    5
+      '  <td>{{ row.total_vists }}</td>', //         6 — error
+      '@endforeach', //                              7
+    ].join('\n'))
+
+    const errors = result.diagnostics.filter(d => d.category === 'error')
+    expect(errors).toHaveLength(1)
+    expect(errors[0].blockKind).toBe('template')
+    expect(errors[0].line).toBe(6)
+    // Points at `total_vists`, not at the start of the interpolation:
+    // two spaces, `<td>`, `{{`, a space, then `row.` — column 14.
+    expect(errors[0].column).toBe(14)
+    expect(errors[0].message).toContain('total_visits')
+  }, 120_000)
+
+  it('catches a typo in an interpolation', async () => {
+    const { result } = await check([
+      '<script server>',
+      'const title = \'x\'',
+      '</script>',
+      '<h1>{{ titel }}</h1>',
+    ].join('\n'))
+
+    const errors = result.diagnostics.filter(d => d.category === 'error')
+    expect(errors).toHaveLength(1)
+    expect(errors[0].line).toBe(4)
+    expect(errors[0].expression).toBe('titel')
+  }, 120_000)
+
+  it('accepts the shapes real templates use', async () => {
+    // Measured against the repo's own corpus: 2072 expressions produced one
+    // diagnostic, and that one was a genuine bug. These are the forms that had
+    // to stop being reported to get there.
+    const { result } = await check([
+      '<script client>',
+      'const open = state(false)',
+      'const rows = state([])',
+      'function go() {}',
+      '</script>',
+      '{{-- a template comment --}}',
+      '@{{ escaped }}',
+      '<div :if="open" :show="!open" @click="go()">{{ $env.MODE }}</div>',
+      '<button @click="open = !open">toggle</button>',
+      '<li :for="(row, i) in rows" :key="row.id">{{ row.name | upper }}</li>',
+      '<img :show="rows()[{{ i }}]">',
+    ].join('\n'))
+
+    expect(result.diagnostics.filter(d => d.category === 'error')).toEqual([])
+    expect(result.expressionCount).toBeGreaterThan(0)
+  }, 120_000)
+
+  it('can be turned off', async () => {
+    const { result } = await check(
+      '<script server>\nconst title = 1\n</script>\n<h1>{{ titel }}</h1>',
+      { templates: false },
+    )
+
+    expect(result.expressionCount).toBe(0)
+    expect(result.diagnostics.filter(d => d.category === 'error')).toEqual([])
+  }, 120_000)
+
+  it('does not collide with a DOM global', async () => {
+    // `name`, `status`, `open`, `length`, `close` are all declared by lib.dom.
+    // A buffer that is not a module puts a block's declarations in the global
+    // scope, so ordinary names for page data reported "Cannot redeclare
+    // block-scoped variable" — a false positive in the CI gate itself.
+    const { result } = await check([
+      '<script server>',
+      'const name = \'a\'',
+      'const status = 1',
+      'const length = 2',
+      '</script>',
+      '<p>{{ name }}</p>',
+    ].join('\n'))
+
+    expect(result.diagnostics.filter(d => d.category === 'error')).toEqual([])
+  }, 120_000)
+
+  it('does not report a block error twice', async () => {
+    // The template buffer inlines the script bodies, so it sees the block's
+    // errors as well — those belong to the per-block file, not to this one.
+    const { result } = await check([
+      '<script server>',
+      'const bad: number = \'nope\'',
+      '</script>',
+      '<h1>{{ bad }}</h1>',
+    ].join('\n'))
+
+    const errors = result.diagnostics.filter(d => d.category === 'error')
+    expect(errors).toHaveLength(1)
+    expect(errors[0].blockKind).toBe('server')
   }, 120_000)
 })

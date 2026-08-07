@@ -1,61 +1,85 @@
 import type * as ts from 'typescript/lib/tsserverlibrary'
+import type { VirtualFile } from '../../stx/src/stx-virtual-ts'
+// Imported by relative path on purpose. The plugin is bundled (see build.ts),
+// so this module is inlined; declaring `@stacksjs/stx` as a dependency would
+// pull the whole framework into the published extension to reuse one extractor.
+import {
+  buildVirtualTypeScript,
+  crossScopeCollisions,
+  extractScriptBlocks,
+  lineStarts,
+  offsetToPosition,
+  positionToOffset,
+  resolvePosition,
+} from '../../stx/src/stx-virtual-ts'
 
 /**
- * Extract TypeScript code from stx template content.
+ * Type-check `.stx` files in the editor using the same extractor as
+ * `stx typecheck` (stacksjs/stx#1852 ask 5).
  *
- * Handles three sources of TS code in .stx files:
- * 1. <script> / <script lang="ts"> tags (primary TS source)
- * 2. @ts ... @endts blocks (inline TypeScript declarations)
- * 3. {{ expression }} template expressions (wrapped as const declarations)
+ * The previous implementation built its virtual file by appending every
+ * `<script>` body into one buffer and dropping the markup. That was wrong three
+ * ways at once:
  *
- * Server-side scripts (<script server>) are included since they still contain
- * valid TypeScript that benefits from type checking.
+ *  1. **Every diagnostic landed on the wrong line.** Removing the HTML shifts
+ *     every subsequent line up, so a squiggle pointed at unrelated code — and
+ *     the further down the file, the further off it was.
+ *  2. **Blocks collided.** A `<script server>` and a `<script client>` that both
+ *     declare `items` are separate scopes at runtime, but sharing one buffer
+ *     made that a redeclaration error.
+ *  3. **Real typos were suppressed.** `getSemanticDiagnostics` dropped every
+ *     TS2304 whose message mentioned one of a hardcoded list of runtime globals
+ *     (`state`, `derived`, `onMount`, …), which also silently dropped
+ *     `Cannot find name 'stcate'`.
+ *
+ * All three are now handled by construction: the buffer keeps every line at the
+ * index it already occupies, the runtime globals are *declared* rather than
+ * having their diagnostics filtered, and the only suppression left is for the
+ * one signal that is genuinely false — a name declared on both sides of the
+ * server/client boundary, computed per file rather than hardcoded.
+ *
+ * ## The remaining known gap
+ *
+ * tsserver maps one file to one snapshot, so blocks cannot be given separate
+ * modules the way `stx typecheck` does. A client block can therefore still
+ * *see* a server binding it could not reach at runtime. That is a missing
+ * error rather than an invented one, and closing it needs a real language
+ * server (what Volar is to Vue), which is a larger change than this.
  */
-function extractTypeScriptFromStx(content: string): string {
-  let tsContent = ''
 
-  // 1. Extract <script> tag content (handles lang="ts", server, client attributes)
-  // Skip <script> tags with an external src attribute (CDN scripts etc.)
-  const scriptTagRegex = /<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
-  let scriptMatch
-  while ((scriptMatch = scriptTagRegex.exec(content)) !== null) {
-    const scriptBody = scriptMatch[1]
-    if (scriptBody.trim()) {
-      tsContent += `${scriptBody}\n`
-    }
-  }
+/** Diagnostics that report the same name being declared twice. */
+const REDECLARATION_CODES = new Set([2300, 2451, 2403])
 
-  // 2. Extract @ts blocks
-  const tsBlockRegex = /@ts\b([\s\S]*?)@endts/g
-  let match
-  while ((match = tsBlockRegex.exec(content)) !== null) {
-    tsContent += `${match[1]}\n`
-  }
-
-  // 3. Extract {{ }} expressions as type-checked variable declarations
-  const exprRegex = /\{\{([\s\S]*?)\}\}/g
-  let exprCounter = 0
-  while ((match = exprRegex.exec(content)) !== null) {
-    const expr = match[1].trim()
-    // Skip filter expressions (contain |) and empty expressions
-    if (expr && !expr.includes('|')) {
-      tsContent += `const __stx_expr${exprCounter} = ${expr};\n`
-      exprCounter++
-    }
-  }
-
-  return tsContent || '// No TypeScript content found in .stx file'
+interface StxDocument {
+  version: string
+  source: string
+  virtual: VirtualFile
+  sourceStarts: number[]
+  virtualStarts: number[]
+  /** Names declared by both a server and a client block, in this file. */
+  collisions: Set<string>
 }
 
-/**
- * Create a ScriptSnapshot from stx content
- */
-function createStxSnapshot(
-  tsLib: typeof import('typescript/lib/tsserverlibrary'),
-  content: string,
-): ts.IScriptSnapshot {
-  const tsContent = extractTypeScriptFromStx(content)
-  return tsLib.ScriptSnapshot.fromString(tsContent)
+function isStx(fileName: string): boolean {
+  return fileName.endsWith('.stx')
+}
+
+function isHandled(fileName: string): boolean {
+  return isStx(fileName) || fileName.endsWith('.md')
+}
+
+function buildDocument(fileName: string, source: string, version: string): StxDocument {
+  // Markdown is not a template: its `{{ }}` are usually documentation OF stx
+  // syntax, so checking them would invent errors in every doc page.
+  const virtual = buildVirtualTypeScript(source, { templateExpressions: isStx(fileName) })
+  return {
+    version,
+    source,
+    virtual,
+    sourceStarts: lineStarts(source),
+    virtualStarts: lineStarts(virtual.text),
+    collisions: new Set(crossScopeCollisions(extractScriptBlocks(source))),
+  }
 }
 
 function init(modules: { typescript: typeof ts }): ts.server.PluginModule {
@@ -75,108 +99,157 @@ function init(modules: { typescript: typeof ts }): ts.server.PluginModule {
       const originalGetScriptSnapshot = languageServiceHost.getScriptSnapshot?.bind(languageServiceHost)
       const originalGetScriptVersion = languageServiceHost.getScriptVersion?.bind(languageServiceHost)
 
-      // Track stx file versions for cache invalidation
-      const stxVersions = new Map<string, string>()
+      const documents = new Map<string, StxDocument>()
 
-      // Override getScriptSnapshot to transform stx/md files into TypeScript
+      /** The parsed form of a `.stx` file, rebuilt when its version changes. */
+      const documentFor = (fileName: string): StxDocument | undefined => {
+        if (!isHandled(fileName) || !originalGetScriptSnapshot)
+          return undefined
+
+        const version = originalGetScriptVersion?.(fileName) || '0'
+        const cached = documents.get(fileName)
+        if (cached && cached.version === version)
+          return cached
+
+        const snapshot = originalGetScriptSnapshot(fileName)
+        if (!snapshot)
+          return undefined
+
+        try {
+          const document = buildDocument(fileName, snapshot.getText(0, snapshot.getLength()), version)
+          documents.set(fileName, document)
+          return document
+        }
+        catch (error) {
+          // A malformed file must not take the language service down with it.
+          log(`failed to build virtual document for ${fileName}: ${String(error)}`)
+          return undefined
+        }
+      }
+
+      /** An offset in the virtual buffer → an offset in the `.stx` file. */
+      const toSource = (document: StxDocument, offset: number): number | undefined => {
+        const position = offsetToPosition(document.virtualStarts, offset)
+        const resolved = resolvePosition(document.virtual, position.line, position.column)
+        if (!resolved)
+          return undefined
+        return positionToOffset(document.sourceStarts, resolved.line, resolved.column)
+      }
+
+      /**
+       * An offset in the `.stx` file → an offset in the virtual buffer.
+       *
+       * Lines are aligned, so this is exact for anything inside a script block.
+       * A position in the markup lands on a blank virtual line, which yields no
+       * completions rather than wrong ones.
+       */
+      const toVirtual = (document: StxDocument, offset: number): number => {
+        const position = offsetToPosition(document.sourceStarts, offset)
+        return positionToOffset(document.virtualStarts, position.line, position.column)
+      }
+
       if (originalGetScriptSnapshot) {
         languageServiceHost.getScriptSnapshot = (fileName: string): ts.IScriptSnapshot | undefined => {
-          if (fileName.endsWith('.stx') || fileName.endsWith('.md')) {
-            const snapshot = originalGetScriptSnapshot(fileName)
-            if (snapshot) {
-              const content = snapshot.getText(0, snapshot.getLength())
-              const version = originalGetScriptVersion?.(fileName) || '0'
-              stxVersions.set(fileName, version)
-              return createStxSnapshot(tsLib, content)
-            }
-          }
+          const document = documentFor(fileName)
+          if (document)
+            return tsLib.ScriptSnapshot.fromString(document.virtual.text)
           return originalGetScriptSnapshot(fileName)
         }
       }
 
-      // Proxy hover to enhance variable type display in stx files
-      const originalGetQuickInfo = languageService.getQuickInfoAtPosition.bind(languageService)
-      languageService.getQuickInfoAtPosition = (fileName: string, position: number): ts.QuickInfo | undefined => {
-        const quickInfo = originalGetQuickInfo(fileName, position)
+      /** Move a diagnostic onto the position the author actually wrote. */
+      const remapDiagnostics = (fileName: string, diagnostics: ts.Diagnostic[]): ts.Diagnostic[] => {
+        const document = documentFor(fileName)
+        if (!document)
+          return diagnostics
 
-        if (quickInfo && (fileName.endsWith('.stx') || fileName.endsWith('.md'))) {
-          if (quickInfo.displayParts) {
-            const displayText = quickInfo.displayParts.map(part => part.text).join('')
+        const remapped: ts.Diagnostic[] = []
+        for (const diagnostic of diagnostics) {
+          const text = typeof diagnostic.messageText === 'string'
+            ? diagnostic.messageText
+            : diagnostic.messageText.messageText
 
-            // Replace generic "var"/"const" with more specific type information
-            if (displayText.includes('var ') || displayText.includes('const ')) {
-              const typeInfo = quickInfo.displayParts.find(part =>
-                part.kind === 'typeParameterName'
-                || part.kind === 'className'
-                || part.kind === 'interfaceName',
-              )
-
-              if (typeInfo && quickInfo.documentation) {
-                quickInfo.documentation = [
-                  { text: `Type: ${typeInfo.text}\n\n`, kind: 'text' },
-                  ...quickInfo.documentation,
-                ]
-              }
-            }
+          // The one suppression left, and it is computed rather than hardcoded:
+          // a name declared in both a server and a client block shares a scope
+          // here but not at runtime, so the redeclaration is an artefact of
+          // there being a single buffer per file.
+          if (REDECLARATION_CODES.has(diagnostic.code)) {
+            const named = text.match(/'([^']+)'/)?.[1]
+            if (named && document.collisions.has(named))
+              continue
           }
-        }
 
-        return quickInfo
+          if (diagnostic.start === undefined) {
+            remapped.push(diagnostic)
+            continue
+          }
+
+          const start = toSource(document, diagnostic.start)
+          // Undefined means the diagnostic is on an ambient declaration this
+          // module appended — it corresponds to nothing the author wrote.
+          if (start === undefined)
+            continue
+
+          const end = toSource(document, diagnostic.start + (diagnostic.length ?? 0))
+          remapped.push({
+            ...diagnostic,
+            start,
+            length: end !== undefined && end > start ? end - start : (diagnostic.length ?? 0),
+          })
+        }
+        return remapped
       }
 
-      // Proxy completions to filter irrelevant suggestions in stx context
+      const originalGetSemanticDiagnostics = languageService.getSemanticDiagnostics.bind(languageService)
+      languageService.getSemanticDiagnostics = (fileName: string): ts.Diagnostic[] =>
+        remapDiagnostics(fileName, originalGetSemanticDiagnostics(fileName))
+
+      const originalGetSyntacticDiagnostics = languageService.getSyntacticDiagnostics.bind(languageService)
+      languageService.getSyntacticDiagnostics = (fileName: string): ts.DiagnosticWithLocation[] =>
+        remapDiagnostics(fileName, originalGetSyntacticDiagnostics(fileName)) as ts.DiagnosticWithLocation[]
+
+      const originalGetSuggestionDiagnostics = languageService.getSuggestionDiagnostics.bind(languageService)
+      languageService.getSuggestionDiagnostics = (fileName: string): ts.DiagnosticWithLocation[] =>
+        remapDiagnostics(fileName, originalGetSuggestionDiagnostics(fileName)) as ts.DiagnosticWithLocation[]
+
+      // Hover. The incoming position is in the .stx file and has to be moved
+      // into the buffer; the outgoing span has to be moved back.
+      const originalGetQuickInfo = languageService.getQuickInfoAtPosition.bind(languageService)
+      languageService.getQuickInfoAtPosition = (fileName: string, position: number): ts.QuickInfo | undefined => {
+        const document = documentFor(fileName)
+        if (!document)
+          return originalGetQuickInfo(fileName, position)
+
+        const quickInfo = originalGetQuickInfo(fileName, toVirtual(document, position))
+        if (!quickInfo)
+          return quickInfo
+
+        const start = toSource(document, quickInfo.textSpan.start)
+        if (start === undefined)
+          return quickInfo
+        return { ...quickInfo, textSpan: { ...quickInfo.textSpan, start } }
+      }
+
       const originalGetCompletions = languageService.getCompletionsAtPosition.bind(languageService)
       languageService.getCompletionsAtPosition = (
         fileName: string,
         position: number,
         options: ts.GetCompletionsAtPositionOptions | undefined,
       ): ts.CompletionInfo | undefined => {
-        const completions = originalGetCompletions(fileName, position, options)
+        const document = documentFor(fileName)
+        const completions = originalGetCompletions(
+          fileName,
+          document ? toVirtual(document, position) : position,
+          options,
+        )
 
-        if (completions && (fileName.endsWith('.stx') || fileName.endsWith('.md'))) {
-          completions.entries = completions.entries.filter((entry) => {
-            // Keep user-defined symbols and common types
-            if (entry.kind === tsLib.ScriptElementKind.variableElement
-              || entry.kind === tsLib.ScriptElementKind.functionElement
-              || entry.kind === tsLib.ScriptElementKind.constElement
-              || entry.kind === tsLib.ScriptElementKind.letElement
-              || entry.kind === tsLib.ScriptElementKind.classElement
-              || entry.kind === tsLib.ScriptElementKind.interfaceElement
-              || entry.kind === tsLib.ScriptElementKind.typeElement
-              || entry.kind === tsLib.ScriptElementKind.enumElement) {
-              return true
-            }
-            // Filter out internal/dunder symbols
-            return !entry.name.startsWith('__')
-          })
+        if (completions && document) {
+          // Hide this module's own scaffolding (`__StxElement`,
+          // `__stx_interpolated`) without hiding the user's symbols.
+          completions.entries = completions.entries.filter(entry => !entry.name.startsWith('__stx') && !entry.name.startsWith('__Stx'))
         }
 
         return completions
-      }
-
-      // Proxy diagnostics to filter out false positives in stx files
-      const originalGetSemanticDiagnostics = languageService.getSemanticDiagnostics.bind(languageService)
-      languageService.getSemanticDiagnostics = (fileName: string): ts.Diagnostic[] => {
-        const diagnostics = originalGetSemanticDiagnostics(fileName)
-
-        if (fileName.endsWith('.stx') || fileName.endsWith('.md')) {
-          return diagnostics.filter((diag) => {
-            // Filter out "cannot find name" for common stx globals and template variables
-            if (diag.code === 2304) { // Cannot find name
-              const msgText = typeof diag.messageText === 'string'
-                ? diag.messageText
-                : diag.messageText.messageText
-              // Skip errors for common stx runtime symbols
-              const stxGlobals = ['props', '$props', 'defineProps', 'withDefaults', 'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy', '$loop', 'loop']
-              if (stxGlobals.some(g => msgText.includes(`'${g}'`))) {
-                return false
-              }
-            }
-            return true
-          })
-        }
-
-        return diagnostics
       }
 
       log('Language service proxy created')
@@ -184,10 +257,7 @@ function init(modules: { typescript: typeof ts }): ts.server.PluginModule {
     },
 
     getExternalFiles(project: ts.server.Project): string[] {
-      return project.getFileNames().filter(file =>
-        file.endsWith('.stx')
-        || file.endsWith('.md'),
-      )
+      return project.getFileNames().filter(isHandled)
     },
   }
 }

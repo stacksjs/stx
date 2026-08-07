@@ -1786,10 +1786,11 @@ catch (error) {
     .command('typecheck [patterns...]', 'Type-check the TypeScript inside .stx script blocks')
     .option('--no-client', 'Skip <script client> blocks')
     .option('--no-server', 'Skip <script server> blocks')
+    .option('--no-templates', 'Skip {{ }} and directive expressions in the markup')
     .option('--lib <path>', 'Extra ambient declaration file (repeatable)')
     .example('stx typecheck')
     .example('stx typecheck "resources/views/**/*.stx"')
-    .action(async (patterns: string[] | undefined, options: { client?: boolean, server?: boolean, lib?: string | string[] }) => {
+    .action(async (patterns: string[] | undefined, options: { client?: boolean, server?: boolean, templates?: boolean, lib?: string | string[] }) => {
       const { formatTypecheckDiagnostics, typecheckStxFiles } = await import('../src/typecheck')
       const { Glob } = await import('bun')
 
@@ -1815,6 +1816,7 @@ catch (error) {
       const result = await typecheckStxFiles(files, {
         client: options.client !== false,
         server: options.server !== false,
+        templates: options.templates !== false,
         extraLibs,
       })
 
@@ -1823,7 +1825,8 @@ catch (error) {
         console.error(`\n${formatTypecheckDiagnostics(result.diagnostics)}\n`)
 
       console.log(
-        `  Checked ${result.blockCount} script block(s) in ${result.checkedFiles.length} file(s) — `
+        `  Checked ${result.blockCount} script block(s) and ${result.expressionCount} template `
+        + `expression(s) in ${result.checkedFiles.length} file(s) — `
         + `${errors.length} error(s), ${result.diagnostics.length - errors.length} warning(s)\n`,
       )
 

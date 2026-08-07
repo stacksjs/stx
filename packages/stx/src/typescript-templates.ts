@@ -596,6 +596,17 @@ export function inferTypeFromValue(value: unknown): TSType {
 /**
  * Type-check an expression against the type context.
  *
+ * Superseded for `.stx` files by `stx typecheck`, which hands template
+ * expressions to the real compiler (`stx-virtual-ts.ts` builds the buffer,
+ * `typecheck.ts` runs it). #1852 asked for this function to be exported and
+ * given a real checker; it got the real checker instead, and deliberately did
+ * NOT get exported — two template checkers that disagree is the failure mode
+ * this repo keeps hitting.
+ *
+ * This walk only understands a bare identifier and a dotted member chain, and
+ * returns `any` for everything else. Reach for it only where a full compiler
+ * pass is not available.
+ *
  * @returns The inferred type of the expression, or an error
  */
 export function typeCheckExpression(
