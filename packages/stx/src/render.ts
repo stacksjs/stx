@@ -213,6 +213,20 @@ ${html}
  * @param renderOptions - Additional rendering options
  * @returns The rendered HTML string
  */
+/**
+ * Write a page's request back onto the context object the caller passed in.
+ *
+ * The internal context is a fresh object built from the caller's, so writing to
+ * it records nothing anybody can read. A caller that wants the status a page
+ * asked for passes a context and finds it there; one that does not passes
+ * nothing and this is a no-op, which is the correct answer for a render with
+ * no host to answer with.
+ */
+function recordOn(target: Record<string, any> | undefined, key: string, value: unknown): void {
+  if (target && typeof target === 'object')
+    target[key] = value
+}
+
 export async function renderTemplate(
   filePath: string,
   renderOptions: RenderOptions = {},
@@ -348,6 +362,54 @@ export async function renderTemplateString(
      * via renderOptions.context, so a real request is unaffected.
      */
     __stxServeContext: undefined,
+
+    /*
+     * The server context, as harmless defaults for every path that is not `serve`.
+     *
+     * The type checker declares these names (`STX_SERVER_CONTEXT` in
+     * `stx-virtual-ts.ts`) and `serve.ts` provides real implementations, so a
+     * page written against them checks clean and works in development. Every
+     * other path - a router that mounts views itself, a static build, a test -
+     * provided none of them, and calling one threw a ReferenceError *inside the
+     * server script's IIFE*, which takes every other binding in that file down
+     * with it.
+     *
+     * The page then renders its empty-state branch and reads as a correct
+     * answer. That is the worst failure available here: an application whose
+     * not-found page calls `setResponseStatus(404)` renders "not found" for
+     * exactly the reason it intended, while every other branch of the same file
+     * is silently blank - and nothing anywhere reports it.
+     *
+     * **Only the functions are defaulted, deliberately.** `setResponseStatus`,
+     * `setResponseHeader` and `definePageMeta` do nothing useful without a host
+     * and a no-op is an honest answer to that. `params`, `query` and `cookies`
+     * are *data* the host must supply, and defaulting them to `{}` would turn a
+     * loud failure into a wrong one: a page filtering on `query.state` would
+     * quietly render the unfiltered list, which is indistinguishable from
+     * working. A host that renders views itself has to provide those, and the
+     * ReferenceError is what tells it so.
+     *
+     * `setResponseStatus` and `setResponseHeader` record what the page asked
+     * for on the context, so a host rendering directly can read it back and
+     * answer with it rather than discarding the intent.
+     */
+    setResponseStatus: (status: number) => {
+      // Out of range is ignored rather than thrown. A status is not worth
+      // failing a page over, and the range check is what stops a typo becoming
+      // a 500 from the host that reads it back.
+      if (Number.isInteger(status) && status >= 100 && status <= 599)
+        recordOn(renderOptions.context, '__stxResponseStatus', status)
+    },
+    setResponseHeader: (name: string, value: string) => {
+      if (!name)
+        return
+
+      const headers = (renderOptions.context as any)?.__stxResponseHeaders || {}
+      headers[String(name)] = String(value)
+      recordOn(renderOptions.context, '__stxResponseHeaders', headers)
+    },
+    definePageMeta: () => {},
+
     ...(renderOptions.context || {}),
   }
 
