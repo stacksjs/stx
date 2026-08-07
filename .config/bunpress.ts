@@ -82,6 +82,7 @@ export default {
           collapsed: true,
           items: [
             { text: 'Best Practices', link: '/guide/best-practices' },
+            { text: 'Adopting stx Primitives', link: '/guide/adopting-primitives' },
             { text: 'Migration from Blade', link: '/guide/migration-from-blade' },
             { text: 'Internationalization', link: '/guide/i18n' },
           ],

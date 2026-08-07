@@ -6,7 +6,7 @@
  * rather than guessing.
  */
 import { describe, expect, it } from 'bun:test'
-import { codemodSource } from '../src/codemod'
+import { codemodSource, formatCodemodFindings } from '../src/codemod'
 
 const run = (src: string, rules?: Array<'confirm' | 'tooltip'>) =>
   codemodSource(src, { file: 'a.stx', rules })
@@ -135,5 +135,105 @@ describe('the async check does not over-reach (#1843)', () => {
   it('refuses when a statement boundary separates async from the call', () => {
     const src = `async function a() {}\nfunction b() { confirm('x') }`
     expect(run(src, ['confirm']).code).toBe(src)
+  })
+})
+
+/**
+ * The report-only rules (#1843 ask 2).
+ *
+ * The two rewrite rules above cover two rows of an eleven-row table. The rest
+ * of that table cannot be rewritten safely — `location.pathname.match(…)`
+ * becomes `useRouteParam('id')` only if you know the route's parameter name,
+ * and a hand `fetch` becomes `useFetch` only by restructuring the component —
+ * so these report and never edit.
+ *
+ * Reporting is most of the value regardless: #1843's finding is that these
+ * primitives are delivered and used ZERO times, so the gap is knowing they
+ * exist, not typing the replacement.
+ *
+ * Every "does not fire" case below came from running the detectors over the
+ * example corpus and finding a real false positive. A detector that fires on
+ * ordinary code gets the whole tool muted, which costs the same as not
+ * shipping it.
+ */
+describe('report-only detectors (#1843 ask 2)', () => {
+  function findings(src: string, rule: any) {
+    return codemodSource(src, { rules: [rule], file: 'a.stx' }).findings
+  }
+
+  it('never edits, whatever it finds', () => {
+    const src = `const p = location.pathname.match(/x/)\nnavigator.clipboard.writeText('a')`
+    expect(codemodSource(src).code).toBe(src)
+  })
+
+  it('flags hand-parsed route params', () => {
+    const found = findings(`const id = location.pathname.match(/\\/judges\\/(\\d+)/)`, 'route-params')
+    expect(found).toHaveLength(1)
+    expect(found[0].reason).toContain('useRouteParam')
+  })
+
+  it('flags URLSearchParams filter state', () => {
+    expect(findings(`const q = new URLSearchParams(location.search)`, 'search-params')).toHaveLength(1)
+  })
+
+  it('flags a full-page redirect', () => {
+    expect(findings(`window.location.assign('/dashboard')`, 'navigate')).toHaveLength(1)
+    expect(findings(`location.href = '/dashboard'`, 'navigate')).toHaveLength(1)
+  })
+
+  it('does NOT flag a mailto or an external URL', () => {
+    // navigate() cannot handle these, so `location.href` is the correct code.
+    expect(findings(`location.href = 'mailto:a@b.c'`, 'navigate')).toEqual([])
+    expect(findings(`location.href = 'https://example.com'`, 'navigate')).toEqual([])
+    expect(findings(`location.href = \`tel:\${n}\``, 'navigate')).toEqual([])
+  })
+
+  it('flags a hand-rolled AbortController', () => {
+    expect(findings(`const c = new AbortController()`, 'fetch')).toHaveLength(1)
+  })
+
+  it('flags an interval that polls the network', () => {
+    expect(findings(`setInterval(() => { fetch('/api/notifications') }, 30000)`, 'polling')).toHaveLength(1)
+  })
+
+  it('does NOT flag an interval that is just a timer', () => {
+    // A file-wide "does it fetch anywhere" check reported `setInterval(updateClock,
+    // 1000)` in a large file. The check is local to the interval now.
+    expect(findings(`setInterval(updateClock, 1000)`, 'polling')).toEqual([])
+    expect(findings(`fetch('/a')\nsetInterval(updateClock, 1000)`, 'polling')).toEqual([])
+  })
+
+  it('flags a hand-held debounce timer, but only with a setTimeout to match', () => {
+    expect(findings(`let t\nt = setTimeout(go, 300)\nclearTimeout(t)`, 'debounce')).toHaveLength(1)
+    expect(findings(`clearTimeout(someHandleFromElsewhere)`, 'debounce')).toEqual([])
+  })
+
+  it('flags a document-level click listener', () => {
+    expect(findings(`document.addEventListener('click', close)`, 'click-outside')).toHaveLength(1)
+  })
+
+  it('flags focus by query', () => {
+    expect(findings(`document.getElementById('name').focus()`, 'focus')).toHaveLength(1)
+  })
+
+  it('flags clipboard and share', () => {
+    expect(findings(`navigator.clipboard.writeText(x)`, 'clipboard')).toHaveLength(1)
+    expect(findings(`navigator.share({ url })`, 'clipboard')).toHaveLength(1)
+  })
+
+  it('flags the void-touch watcher hack', () => {
+    const src = `effect(() => { void a(); void b(); recompute() })`
+    expect(findings(src, 'watch')).toHaveLength(1)
+  })
+
+  it('reports adoption suggestions separately from declined rewrites', () => {
+    // A rewrite that was declined needs a decision; a report-only hit is a
+    // suggestion. Rolling them together made every finding look like a chore.
+    const out = formatCodemodFindings(codemodSource(
+      `function f() { if (confirm('x')) go() }\nnavigator.clipboard.writeText(y)`,
+    ).findings, false)
+
+    expect(out).toContain('Needs a human')
+    expect(out).toContain('An stx primitive already covers this')
   })
 })

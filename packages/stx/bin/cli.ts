@@ -1839,8 +1839,13 @@ catch (error) {
   cli
     .command('codemod [patterns...]', 'Find hand-rolled code that an stx primitive already covers')
     .option('--fix', 'Write the safe rewrites (default is report-only)')
-    .option('--rule <rule>', 'Run one rule only: confirm | tooltip')
+    .option(
+      '--rule <rule>',
+      'Run one rule only: confirm | tooltip (rewritable) · route-params | search-params | navigate | '
+      + 'fetch | polling | debounce | click-outside | focus | clipboard | watch (report-only)',
+    )
     .example('stx codemod')
+    .example('stx codemod --rule route-params')
     .example('stx codemod --fix "resources/views/**/*.stx"')
     .action(async (patterns: string[] | undefined, options: { fix?: boolean, rule?: string }) => {
       const { codemodSource, formatCodemodFindings } = await import('../src/codemod')
