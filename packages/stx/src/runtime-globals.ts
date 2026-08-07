@@ -129,6 +129,11 @@ export const COMPILE_TIME_ONLY_GLOBALS: readonly string[] = [
  * `client-gap` is deliberately distinct from `server-only`: it marks a primitive
  * that SHOULD be callable from a client script but is not yet wired into either
  * client path — a tracked gap, not a boundary.
+ *
+ * `isomorphic-import` is distinct again: the primitive is pure and WOULD run in a
+ * browser, but the project has decided it is not part of the auto-delivered
+ * client surface — an app imports it explicitly. Not a gap to close; a boundary
+ * drawn on purpose.
  */
 export type NonClientCategory =
   | 'server-only'
@@ -136,6 +141,7 @@ export type NonClientCategory =
   | 'compile-time-directive'
   | 'browser-composable'
   | 'client-gap'
+  | 'isomorphic-import'
 
 export const NON_CLIENT_PRIMITIVES: Readonly<Record<string, { category: NonClientCategory, reason: string }>> = {
   // Server-only: returns/needs a Response or build context. The client
@@ -151,12 +157,17 @@ export const NON_CLIENT_PRIMITIVES: Readonly<Record<string, { category: NonClien
   StxModalBuiltin: { category: 'builtin-component', reason: 'builtin component used as a template tag; drive open/close from the modal store.' },
   StxToastBuiltin: { category: 'builtin-component', reason: 'builtin component used as a template tag; push toasts via the toast store.' },
 
-  // client-gap: intended for <script client> but wired into neither client path.
-  // These reactive form primitives live in forms(-validation).ts, which the
-  // client bundle does not include; porting them is the remaining half of #1846.
+  // Demand-bundled reactive form primitive: lives in a composable, inlined on
+  // demand exactly like useAsyncData (#1846).
   defineForm: { category: 'browser-composable', reason: 'reactive form primitive; lives in src/composables/use-form.ts and is inlined on demand when a <script client> references it (#1846).' },
-  validateFields: { category: 'client-gap', reason: 'form validation helper intended for <script client>; its validateField dep pulls the server-side rule engine, so it is not demand-bundleable as-is — an app imports it directly for now (#1846 follow-up).' },
-  validateField: { category: 'client-gap', reason: 'singular form validation helper; same client-gap as validateFields (#1846 follow-up).' },
+
+  // isomorphic-import: pure validators that WOULD run in a browser, but are not
+  // part of the auto-delivered client surface by decision — see the delivery-
+  // surface exclusion in signals/client-api-delivery.test.ts, which groups these
+  // with query/redirect/defaultFormClasses. An app that wants them client-side
+  // imports them explicitly so the app bundler inlines them (#1846).
+  validateFields: { category: 'isomorphic-import', reason: 'pure validation helper; import it directly, not auto-delivered to <script client> (per client-api-delivery.test.ts).' },
+  validateField: { category: 'isomorphic-import', reason: 'singular pure validation helper; same explicit-import boundary as validateFields.' },
 }
 
 /**
