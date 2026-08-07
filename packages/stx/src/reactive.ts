@@ -675,18 +675,26 @@ window.__stx_reactive = (function() {
  * as the literal `disabledItems: {{ ids }}` and crashes the reactivity
  * engine with a syntax error on the `{`.
  *
- * Substitution rules mirror script-body interpolation:
- *   - `{{ expr }}` emits `JSON.stringify(value)` so the result is always a
- *     valid JS literal (string→quoted, array/object→JSON literal,
- *     number→bare).
- *   - `{!! expr !!}` emits raw `String(value)` for callers that want to
- *     splice a pre-formatted JS expression.
- *   - Unresolved expressions are left as-is so client-side signal handling
- *     can pick them up later if applicable.
+ * Substitution rules mirror script-body interpolation, with one addition that
+ * the regex form could not express: **where the placeholder sits matters.**
+ *
+ *   - `{{ expr }}` **outside** a string literal emits `JSON.stringify(value)`,
+ *     so the result is a valid JS literal (string→quoted, array/object→JSON
+ *     literal, number→bare). `disabledItems: {{ ids }}` needs this.
+ *   - `{{ expr }}` **inside** a string literal emits the raw value, escaped for
+ *     the quote it is sitting in. `url: '{{ cloneUrl }}'` needs this, and used
+ *     to get `'"http://…"'` — quoted twice, so every consumer of that scope
+ *     property saw a string with literal quote characters in it. Nothing
+ *     throws: the page renders, the binding updates, and the value is silently
+ *     wrong. It surfaces as a copy button that copies `"https://…"`.
+ *   - `{!! expr !!}` emits raw `String(value)` for callers that want to splice
+ *     a pre-formatted JS expression.
+ *   - Unresolved expressions are left as-is so client-side signal handling can
+ *     pick them up later if applicable.
  */
 function substituteExpressionsInExpr(expr: string, context: Record<string, any>): string {
   // {!! expr !!} — raw splice
-  let out = expr.replace(/\{!!([\s\S]*?)!!\}/g, (match, inner) => {
+  const source = expr.replace(/\{!!([\s\S]*?)!!\}/g, (match, inner) => {
     try {
       const value = evaluateExpression(inner, context, true)
       if (value === undefined) return match
@@ -697,37 +705,96 @@ function substituteExpressionsInExpr(expr: string, context: Record<string, any>)
     }
   })
 
-  // {{ expr }} — JSON-safe splice (so the result is a valid JS expression)
-  out = out.replace(/\{\{([\s\S]*?)\}\}/g, (match, inner) => {
-    try {
-      const value = evaluateExpression(inner, context, true)
-      if (value === undefined) return match
-      // A string that is itself a JSON object/array literal (the server
-      // passed JSON.stringify output, e.g. `meta: {{ metaJson }}`) must
-      // splice as the literal it encodes — JSON.stringify-ing it again
-      // would double-encode and leave the scope property a plain string.
-      // This also keeps the runtime scope consistent with how the same
-      // `{{ }}` renders as raw text inside the element's attribute.
-      if (typeof value === 'string') {
-        const trimmed = value.trim()
-        if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
-          try {
-            JSON.parse(trimmed)
-            return trimmed
-          }
-          catch {
-            // Not valid JSON after all — fall through to the quoted splice.
-          }
-        }
+  // {{ expr }} — spliced according to where it sits, which needs a scan rather
+  // than a regex: only a pass that tracks string literals can tell the two
+  // cases apart, and it has to respect escapes so that a quote inside a string
+  // does not read as the end of it.
+  let out = ''
+  let index = 0
+  let quote: string | null = null
+
+  while (index < source.length) {
+    const character = source[index]!
+
+    if (quote && character === '\\') {
+      out += character + (source[index + 1] ?? '')
+      index += 2
+      continue
+    }
+
+    if (character === '{' && source[index + 1] === '{') {
+      const end = source.indexOf('}}', index + 2)
+
+      if (end !== -1) {
+        const match = source.slice(index, end + 2)
+        out += splice(source.slice(index + 2, end), match, quote)
+        index = end + 2
+        continue
       }
-      return JSON.stringify(value)
+    }
+
+    if (quote) {
+      if (character === quote)
+        quote = null
+    }
+    else if (character === '\'' || character === '"' || character === '`') {
+      quote = character
+    }
+
+    out += character
+    index++
+  }
+
+  return out
+
+  function splice(inner: string, match: string, insideQuote: string | null): string {
+    let value: unknown
+
+    try {
+      value = evaluateExpression(inner, context, true)
     }
     catch {
       return match
     }
-  })
 
-  return out
+    if (value === undefined)
+      return match
+
+    // Inside a string literal the quotes are already written down, so the value
+    // goes in raw - escaped for the quote it is sitting in, and for a template
+    // literal also for the interpolation it would otherwise open.
+    if (insideQuote) {
+      const text = String(value)
+        .replace(/\\/g, '\\\\')
+        .replace(new RegExp(insideQuote === '`' ? '`' : insideQuote, 'g'), `\\${insideQuote}`)
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+
+      return insideQuote === '`' ? text.replace(/\$\{/g, '\\${') : text
+    }
+
+    // A string that is itself a JSON object/array literal (the server passed
+    // JSON.stringify output, e.g. `meta: {{ metaJson }}`) must splice as the
+    // literal it encodes — JSON.stringify-ing it again would double-encode and
+    // leave the scope property a plain string. This also keeps the runtime
+    // scope consistent with how the same `{{ }}` renders as raw text inside the
+    // element's attribute.
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          JSON.parse(trimmed)
+          return trimmed
+        }
+        catch {
+          // Not valid JSON after all — fall through to the quoted splice.
+        }
+      }
+    }
+
+    return JSON.stringify(value)
+  }
 }
 
 /**
