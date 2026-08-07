@@ -139,8 +139,31 @@ export function injectThemeBootstrap(html: string, site: SiteConfig): string {
 
   // 3) FOUC guard as the first thing in <head> (after the meta tags so
   // the JS update has the unmediated <meta name="theme-color"> to find)
+  //
+  // The guard carries `window.__STX_COLOR_MODE__` with it. `useColorMode`
+  // (and `useDark`, which wraps it) read that object for their storage key
+  // and initial mode, falling back to their own defaults — 'stx-color-mode'
+  // and 'auto' — when nothing sets it. Nothing did.
+  //
+  // So a site that configured `site.theme` and then called `useDark()`
+  // anywhere had two owners of the same `dark` class reading two different
+  // storage keys: the guard applied the configured theme pre-paint, and
+  // useColorMode's applyDOM removed the class again on the OS preference.
+  // The configured theme lost every load, including for visitors who had
+  // explicitly chosen one, and the app looked like it had no theme at all.
+  //
+  // A single `useDark()` at module scope in an auto-imported file was enough
+  // to trigger it, with no call site anywhere in the app's own templates.
+  //
+  // Seeding the boot object from the same config makes the two agree: one
+  // key, one default, whichever runs last reaches the same answer.
   if (!colorModeOwnsTheme && !html.includes('__stxThemeGuard') && /<head\b[^>]*>/i.test(html)) {
-    const guard = `<script data-stx-theme-guard="1">${FOUC_SCRIPT(defaultTheme, storageKey, lightColor, darkColor)};window.__stxThemeGuard=1;</script>`
+    const colorModeBoot = `window.__STX_COLOR_MODE__=window.__STX_COLOR_MODE__||${JSON.stringify({
+      storageKey,
+      initialMode: defaultTheme,
+      darkClass: 'dark',
+    })};`
+    const guard = `<script data-stx-theme-guard="1">${colorModeBoot}${FOUC_SCRIPT(defaultTheme, storageKey, lightColor, darkColor)};window.__stxThemeGuard=1;</script>`
     html = html.replace(/<head\b([^>]*)>/i, `<head$1>\n  ${guard}`)
   }
 
