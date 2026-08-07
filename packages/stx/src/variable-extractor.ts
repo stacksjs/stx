@@ -1863,8 +1863,40 @@ function isValueComplete(value: string): boolean {
 /**
  * Check if a function needs multi-line reading
  */
+/**
+ * Index of the brace that opens a function's BODY, or -1 if it is not on this text.
+ *
+ * Not `indexOf('{')`: that finds the destructuring pattern's brace in
+ * `async function g({ form }) {`, and since that one closes on the same line,
+ * both callers below concluded the function was already complete. The damage:
+ *
+ *   async function g({ form }) {
+ *   module.exports.g = g;      <- spliced in here; never runs, g not assigned
+ *   return 1;
+ *   }
+ *
+ * The export never happened and the declaration vanished from the render context
+ * with no error at all. Every server-block function with a destructured
+ * parameter was affected — `{ form }`, `{ request, params }`, the shape most
+ * handlers are written in. See stacksjs/stx#1890.
+ *
+ * Returns -1 when the parameter list itself is unterminated, since there is no
+ * body brace to find yet — both callers treat that as "keep reading".
+ */
+function findFunctionBodyBrace(functionLine: string): number {
+  const parenPos = functionLine.indexOf('(')
+  if (parenPos === -1)
+    return functionLine.indexOf('{')
+
+  const paramsEnd = findMatchingDelimiter(functionLine, '(', ')', parenPos)
+  if (paramsEnd === -1)
+    return -1
+
+  return functionLine.indexOf('{', paramsEnd)
+}
+
 function needsMultilineFunctionReading(functionLine: string): boolean {
-  const bracePos = functionLine.indexOf('{')
+  const bracePos = findFunctionBodyBrace(functionLine)
   if (bracePos === -1) {
     return true
   }
@@ -1915,7 +1947,11 @@ function readMultilineFunction(lines: string[], startIndex: number, initialFunct
   let i = startIndex + 1
 
   while (i < lines.length) {
-    const bracePos = functionCode.indexOf('{')
+    // Body brace, not the first brace — a destructured parameter's `{ form }`
+    // closes on the signature line, so `indexOf('{')` made this break on the
+    // very first iteration and return the signature with no body at all
+    // (stacksjs/stx#1890).
+    const bracePos = findFunctionBodyBrace(functionCode)
     if (bracePos !== -1) {
       const closePos = findMatchingDelimiter(functionCode, '{', '}', bracePos)
       if (closePos !== -1) {
