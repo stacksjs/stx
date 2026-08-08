@@ -18,6 +18,12 @@
  * runtime is byte-identical everywhere and becomes a single asset, while
  * per-page CSS dedupes only where pages genuinely share a stylesheet.
  *
+ * The rewrite itself is `externalizeHtml`, which touches no filesystem. SSR has
+ * the same problem in a worse form — a static build inlines the runtime once
+ * per page, a server inlines it once per *request* — and it cannot use a
+ * post-pass over a directory because there are no files. Sharing the pure
+ * function means the two paths cannot drift into rewriting HTML differently.
+ *
  * @module build-externalize
  */
 
@@ -57,6 +63,97 @@ function listHtmlFiles(dir: string): string[] {
   return found
 }
 
+/** A blob lifted out of the HTML, ready to be written or served. */
+export interface ExternalizedAsset {
+  /** Content-addressed filename, e.g. `runtime.1a2b3c4d.js`. */
+  filename: string
+  contents: string
+  /** MIME type, so a server can respond without re-deriving it from the name. */
+  contentType: string
+}
+
+export interface ExternalizeHtmlResult {
+  html: string
+  /** Distinct assets this page referenced. Deduped within the page. */
+  assets: ExternalizedAsset[]
+  /** Bytes removed from the HTML, before any compression. */
+  bytesInlined: number
+}
+
+interface BlobKind {
+  /** Matches the whole tag, capturing attributes then body. */
+  pattern: RegExp
+  prefix: string
+  extension: string
+  contentType: string
+  replace: (href: string) => string
+}
+
+const BLOB_KINDS: BlobKind[] = [
+  {
+    // Matching the opening tag by attribute and taking everything to the first
+    // closing tag is safe because script bodies are emitted with their own
+    // closing tag escaped (script-emit.ts asserts it).
+    pattern: /<script\b([^>]*\bdata-stx-runtime\b[^>]*)>([\s\S]*?)<\/script>/gi,
+    prefix: 'runtime',
+    extension: 'js',
+    contentType: 'text/javascript; charset=utf-8',
+    replace: href => `<script data-stx-runtime src="${href}"></script>`,
+  },
+  {
+    // The router ships on EVERY page — including pages with no client script at
+    // all, where it is the only large blob present.
+    pattern: /<script\b([^>]*\bdata-stx-router\b[^>]*)>([\s\S]*?)<\/script>/gi,
+    prefix: 'router',
+    extension: 'js',
+    contentType: 'text/javascript; charset=utf-8',
+    replace: href => `<script data-stx-router src="${href}"></script>`,
+  },
+  {
+    pattern: /<style\b([^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*)>([\s\S]*?)<\/style>/gi,
+    prefix: 'crosswind',
+    extension: 'css',
+    contentType: 'text/css; charset=utf-8',
+    replace: href => `<link data-crosswind="generated" rel="stylesheet" href="${href}">`,
+  },
+]
+
+/**
+ * Lift the shared blobs out of one HTML document.
+ *
+ * Pure: returns the rewritten HTML and the assets it extracted, and writes
+ * nothing. Callers decide whether those assets become files on disk or entries
+ * in a server's cache.
+ *
+ * Safe to run twice — a tag that is already a `src`/`href` reference has no
+ * inline body to match, so a second pass extracts nothing and returns the input
+ * unchanged.
+ */
+export function externalizeHtml(html: string, basePath: string = `/${EXTERNALIZED_ASSET_DIR}`): ExternalizeHtmlResult {
+  const assets: ExternalizedAsset[] = []
+  const seen = new Set<string>()
+  let bytesInlined = 0
+  let out = html
+
+  for (const kind of BLOB_KINDS) {
+    out = out.replace(kind.pattern, (whole, attrs: string, body: string) => {
+      // An already-external tag, or an empty one that is not worth a request.
+      if (/\b(?:src|href)\s*=/.test(attrs) || !body.trim())
+        return whole
+
+      const filename = `${kind.prefix}.${contentHash(body)}.${kind.extension}`
+      if (!seen.has(filename)) {
+        seen.add(filename)
+        assets.push({ filename, contents: body, contentType: kind.contentType })
+      }
+      bytesInlined += body.length
+      return kind.replace(`${basePath}/${filename}`)
+    })
+  }
+
+  return { html: out, assets, bytesInlined }
+}
+
 /**
  * Rewrite every HTML file under `outDir`, moving the signals runtime and the
  * generated stylesheet into `_stx/` and linking to them.
@@ -69,65 +166,27 @@ export function externalizeSharedAssets(outDir: string): ExternalizeResult {
   const assetDir = path.join(outDir, EXTERNALIZED_ASSET_DIR)
   const written = new Set<string>()
 
-  const writeAsset = (filename: string, contents: string): void => {
-    if (written.has(filename))
-      return
-    written.add(filename)
-    fs.mkdirSync(assetDir, { recursive: true })
-    fs.writeFileSync(path.join(assetDir, filename), contents)
-    result.assets++
-  }
-
   for (const file of listHtmlFiles(outDir)) {
     const original = fs.readFileSync(file, 'utf8')
-    let html = original
+    const { html, assets, bytesInlined } = externalizeHtml(original)
 
-    // The runtime. Matching the opening tag by attribute and taking everything
-    // to the first closing tag is safe because script bodies are emitted with
-    // their own closing tag escaped (script-emit.ts asserts it).
-    html = html.replace(
-      /<script\b([^>]*\bdata-stx-runtime\b[^>]*)>([\s\S]*?)<\/script>/gi,
-      (whole, attrs: string, body: string) => {
-        if (/\bsrc\s*=/.test(attrs) || !body.trim())
-          return whole
-        const filename = `runtime.${contentHash(body)}.js`
-        writeAsset(filename, body)
-        result.bytesInlined += body.length
-        return `<script data-stx-runtime src="/${EXTERNALIZED_ASSET_DIR}/${filename}"></script>`
-      },
-    )
+    if (html === original)
+      continue
 
-    // The router, which ships on EVERY page — including pages with no client
-    // script at all, where it is the only large blob present.
-    html = html.replace(
-      /<script\b([^>]*\bdata-stx-router\b[^>]*)>([\s\S]*?)<\/script>/gi,
-      (whole, attrs: string, body: string) => {
-        if (/\bsrc\s*=/.test(attrs) || !body.trim())
-          return whole
-        const filename = `router.${contentHash(body)}.js`
-        writeAsset(filename, body)
-        result.bytesInlined += body.length
-        return `<script data-stx-router src="/${EXTERNALIZED_ASSET_DIR}/${filename}"></script>`
-      },
-    )
-
-    // The generated stylesheet.
-    html = html.replace(
-      /<style\b([^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*)>([\s\S]*?)<\/style>/gi,
-      (whole, _attrs: string, css: string) => {
-        if (!css.trim())
-          return whole
-        const filename = `crosswind.${contentHash(css)}.css`
-        writeAsset(filename, css)
-        result.bytesInlined += css.length
-        return `<link data-crosswind="generated" rel="stylesheet" href="/${EXTERNALIZED_ASSET_DIR}/${filename}">`
-      },
-    )
-
-    if (html !== original) {
-      fs.writeFileSync(file, html)
-      result.pages++
+    for (const asset of assets) {
+      // Content-addressed, so the same blob on a second page is the same file
+      // and writing it again would be pure work.
+      if (written.has(asset.filename))
+        continue
+      written.add(asset.filename)
+      fs.mkdirSync(assetDir, { recursive: true })
+      fs.writeFileSync(path.join(assetDir, asset.filename), asset.contents)
+      result.assets++
     }
+
+    fs.writeFileSync(file, html)
+    result.bytesInlined += bytesInlined
+    result.pages++
   }
 
   return result
