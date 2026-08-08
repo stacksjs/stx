@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.160...v0.2.161)
+
+## 🐛 Bug Fixes
+
+- **stx**: interpolate expressions in a script tag's attributes ([bb30bd5](https://github.com/stacksjs/stx/commit/bb30bd5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.161 ([9353177](https://github.com/stacksjs/stx/commit/9353177)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.159...v0.2.160)
 
 ## 🐛 Bug Fixes
