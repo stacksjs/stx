@@ -2,6 +2,52 @@ import path from 'node:path'
 import process from 'node:process'
 
 /**
+ * The runtime bindings the engine hands a `<script server>` block as function
+ * parameters, in the order the parameters are declared.
+ *
+ * This drives the `new Function` parameter list rather than sitting beside it,
+ * because the two must not drift: the value list below it is positional, so a
+ * name added in one place and not the other silently rebinds every argument
+ * after it.
+ *
+ * It is also the set a `from 'stx'` import must not redeclare. A server script
+ * writing the documented `import { defineProps } from 'stx'` was rewritten to
+ * `const { defineProps } = await import('stx')`, and that `const` shadows the
+ * parameter of the same name. The package's own `defineProps` reads
+ * `globalThis.__STX_CURRENT_PROPS__`, which nothing on the server path ever
+ * sets — so props came back `{}` and every component rendered empty.
+ *
+ * It went unnoticed because `stx` does not resolve inside this repo (the
+ * published package is `@stacksjs/stx`; the root `stx` is private), so the
+ * generated `await import('stx')` rejected and the shadowing binding was never
+ * created. The failure needed a real install to appear.
+ */
+export const STX_ENGINE_BINDING_NAMES = [
+  'module', 'exports', 'require', 'props', '$props', 'defineProps', 'withDefaults',
+  'defineClientPayload',
+  'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
+  'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',
+  'ref', 'reactive', 'computed', 'watch', 'onMounted', 'onUnmounted', 'nextTick',
+  'defineEmits', 'defineExpose', 'defineSlots', 'provide', 'inject', 'useColorMode', 'useDark',
+  'useMediaQuery', 'useScrollLock', 'usePreferredDark', 'usePreferredLight', 'usePreferredReducedMotion', 'usePreferredContrast',
+  'window', 'document', 'console', 'confirm', 'alert', 'fetch',
+  'params',
+] as const
+
+const ENGINE_BINDINGS = new Set<string>(STX_ENGINE_BINDING_NAMES)
+
+/**
+ * Specifiers that mean "the stx runtime" — the module whose exports the engine
+ * already injects.
+ *
+ * `@stacksjs/browser` is deliberately absent. Some of its composables are
+ * injected too, but it is a real package a script may legitimately import for
+ * exports the engine does not provide, and client-script.ts documents why it
+ * is not treated as interchangeable with the runtime.
+ */
+const STX_RUNTIME_SPECIFIERS = new Set(['stx', '@stacksjs/stx'])
+
+/**
  * Variable Extraction
  *
  * Extracts and processes variables from <script server> tags in stx templates.
@@ -882,15 +928,9 @@ catch {
 
     // eslint-disable-next-line no-new-func
     const scriptFn = new Function(
-      'module', 'exports', 'require', 'props', '$props', 'defineProps', 'withDefaults',
-      'defineClientPayload',
-      'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
-      'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',
-      'ref', 'reactive', 'computed', 'watch', 'onMounted', 'onUnmounted', 'nextTick',
-      'defineEmits', 'defineExpose', 'defineSlots', 'provide', 'inject', 'useColorMode', 'useDark',
-      'useMediaQuery', 'useScrollLock', 'usePreferredDark', 'usePreferredLight', 'usePreferredReducedMotion', 'usePreferredContrast',
-      'window', 'document', 'console', 'confirm', 'alert', 'fetch',
-      'params',
+      // Positionally paired with the argument list below — see
+      // STX_ENGINE_BINDING_NAMES.
+      ...STX_ENGINE_BINDING_NAMES,
       ...propArgNames,
       ...scriptContextKeys,
       // Wrap in async IIFE to support top-level await
@@ -1195,6 +1235,19 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
         const specifiers: string[] = []
         const exported: string[] = []
 
+        /*
+         * An import of the stx runtime must not redeclare what the engine
+         * already passes in as a parameter — `const { defineProps } = await
+         * import('stx')` shadows the injected binding with the package's own,
+         * which reads a global the server path never sets, so props arrive
+         * empty. See STX_ENGINE_BINDING_NAMES.
+         *
+         * Only engine-provided names are taken out of the import. Anything else
+         * (`defineStore`, `useForm`, …) is a genuine export the engine does not
+         * inject, so it stays in the import and keeps resolving as before.
+         */
+        const isStxRuntime = STX_RUNTIME_SPECIFIERS.has(source)
+
         for (const raw of names.split(',')) {
           const specifier = raw.trim()
           if (!specifier)
@@ -1203,16 +1256,33 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
           const aliased = specifier.split(/\s+as\s+/)
           if (aliased.length === 2) {
             const [imported, local] = [aliased[0]!.trim(), aliased[1]!.trim()]
+            if (isStxRuntime && ENGINE_BINDINGS.has(imported)) {
+              // `import { defineProps as dp }` — the alias does not collide, so
+              // bind it to the injected parameter instead of importing it.
+              convertedLines.push(`const ${local} = ${imported};`)
+              exported.push(local)
+              continue
+            }
             specifiers.push(`${imported}: ${local}`)
             exported.push(local)
           }
           else {
+            if (isStxRuntime && ENGINE_BINDINGS.has(specifier)) {
+              // Already in scope as a parameter — emit no binding at all.
+              exported.push(specifier)
+              continue
+            }
             specifiers.push(specifier)
             exported.push(specifier)
           }
         }
 
-        convertedLines.push(`const { ${specifiers.join(', ')} } = await import('${resolved}')`)
+        // With every name engine-provided there is nothing left to import, and
+        // emitting the import anyway would reintroduce the failure in reverse:
+        // `stx` does not resolve everywhere, and a rejected import takes the
+        // whole script down.
+        if (specifiers.length > 0)
+          convertedLines.push(`const { ${specifiers.join(', ')} } = await import('${resolved}')`)
         for (const local of exported)
           convertedLines.push(`module.exports.${local} = ${local};`)
       }
