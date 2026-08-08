@@ -527,6 +527,7 @@ export const STX_SERVER_CONTEXT = [
   'ip',
   'setResponseStatus',
   'setResponseHeader',
+  'notFound',
   'request',
   'url',
   'definePageMeta',

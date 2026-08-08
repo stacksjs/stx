@@ -400,6 +400,23 @@ export async function renderTemplateString(
       if (Number.isInteger(status) && status >= 100 && status <= 599)
         recordOn(renderOptions.context, '__stxResponseStatus', status)
     },
+    /**
+     * Answer 404 for this render.
+     *
+     * `setResponseStatus(404)` already does this, but the status a dynamic
+     * page most often needs to set is the one for "the record in the URL does
+     * not exist", and spelling it out as a number every time is how pages end
+     * up not doing it at all: a lookup that misses falls back to some other
+     * record and the page answers 200 for a URL that names nothing, so typos
+     * and retired records get indexed as real pages.
+     *
+     * Takes an optional status so the neighbouring cases read the same way:
+     * `notFound(410)` for a record deliberately removed rather than missing.
+     */
+    notFound: (status: number = 404) => {
+      const code = Number.isInteger(status) && status >= 400 && status <= 599 ? status : 404
+      recordOn(renderOptions.context, '__stxResponseStatus', code)
+    },
     setResponseHeader: (name: string, value: string) => {
       if (!name)
         return
