@@ -614,6 +614,69 @@ export function interpolateScriptExpressions(
 }
 
 /**
+ * Interpolate expressions in a `<script>` tag's ATTRIBUTES.
+ *
+ * Attributes are HTML, not JavaScript, so they get HTML rules rather than the
+ * JSON-stringifying rules {@link interpolateScriptExpressions} applies to a
+ * body: `data-id="{{ id }}"` must become `data-id="7"`, never `data-id=""7""`.
+ *
+ * This is the only channel a module island has for server data. A module
+ * script is emitted verbatim — no IIFE, no server-data bridge — so
+ * `<script type="module" data-session="{{ id }}">` was the documented way to
+ * pass a value in, and it shipped the literal text `{{ id }}` to the browser.
+ * The failure is silent: the markup looks right, and only the code reading
+ * `dataset.session` sees a mustache.
+ *
+ * Unresolvable expressions are left untouched, matching the "preserve for the
+ * client" semantics used everywhere else.
+ */
+export function interpolateScriptAttributes(
+  attrs: string,
+  context: Record<string, any>,
+): string {
+  if (!attrs.includes('{'))
+    return attrs
+
+  let output = attrs
+
+  // {!! raw !!} — spliced verbatim, for a value already escaped by the caller.
+  output = output.replace(/\{!!([\s\S]*?)!!\}/g, (match, expr) => {
+    try {
+      const value = evaluateExpression(expr, context)
+      if (value === undefined) return match
+      return value === null ? '' : String(value)
+    }
+    catch {
+      return match
+    }
+  })
+
+  // {{ expr }} — HTML-escaped, including both quote characters, because the
+  // value lands inside an attribute whose delimiter we do not control.
+  output = output.replace(/\{\{([\s\S]*?)\}\}/g, (match, expr) => {
+    const trimmed = expr.trim()
+    // Build-time placeholders (__TITLE__) are resolved by a later pass.
+    if (/^__[A-Z_]+__$/.test(trimmed)) return match
+    try {
+      const value = evaluateExpression(expr, context)
+      if (value === undefined) return match
+      if (value === null) return ''
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+    }
+    catch {
+      return match
+    }
+  })
+
+  return output
+}
+
+/**
  * Options for {@link interpolateScriptsInTemplate}.
  */
 export interface InterpolateScriptsOptions {
@@ -631,8 +694,9 @@ export interface InterpolateScriptsOptions {
  * skipping any script that opts out via `data-raw`, `type="application/json"`,
  * or a `src=` attribute (external scripts don't have inline content to template).
  *
- * Each matched script has its body passed through {@link interpolateScriptExpressions}.
- * Attributes and tag structure are never modified.
+ * Each matched script has its body passed through {@link interpolateScriptExpressions}
+ * and its attributes through {@link interpolateScriptAttributes}. Tag structure
+ * is otherwise untouched.
  */
 export function interpolateScriptsInTemplate(
   template: string,
@@ -649,16 +713,25 @@ export function interpolateScriptsInTemplate(
 
     const attrs = match[1]
     const body = match[2]
-    // Skip external scripts (no inline body) and opt-outs
-    if (/\bsrc\s*=/.test(attrs)) return full
+
+    // `data-raw` opts the whole tag out; a server script's body is executed
+    // rather than emitted, so templating either would be wrong.
     if (/\bdata-raw\b/.test(attrs)) return full
-    // Don't touch `type="application/json"` — its "body" is data not code
-    if (/\btype\s*=\s*["']application\/json["']/.test(attrs)) return full
-    // Optionally skip server scripts (their body is executed as JS server-side,
-    // so `{{ expr }}` in them would be syntax errors).
     if (options.skipServer && /\bserver\b/.test(attrs)) return full
-    const interpolated = interpolateScriptExpressions(body, context)
-    return opening[0] + interpolated + full.slice(closingStart)
+
+    // Attributes are interpolated even when the body is not. `src="{{ url }}"`
+    // and `data-session="{{ id }}"` are the point of the attribute channel, and
+    // an external or JSON script has attributes worth templating even though
+    // its body is not code we own.
+    const nextAttrs = interpolateScriptAttributes(attrs, context)
+    const openTag = `<script${nextAttrs}>`
+
+    // Skip the BODY of external scripts (there is none) and of JSON blocks
+    // (their "body" is data, not code).
+    if (/\bsrc\s*=/.test(attrs) || /\btype\s*=\s*["']application\/json["']/.test(attrs))
+      return openTag + body + full.slice(closingStart)
+
+    return openTag + interpolateScriptExpressions(body, context) + full.slice(closingStart)
   })
 
   return restoreStashedScripts(output, interpolatedScripts)
