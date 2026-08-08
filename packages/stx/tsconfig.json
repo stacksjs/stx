@@ -1,4 +1,21 @@
 {
+  // `paths` REPLACES the inherited map — it does not merge with the one in
+  // ../../tsconfig.json. This file used to declare a single (and misaimed)
+  // entry, which silently dropped every workspace mapping for everything under
+  // packages/stx. `stx-router` then resolved through node_modules to
+  // packages/router/dist — a gitignored build artifact — so `bun test` graded
+  // src changes against whatever dist happened to be lying around, and 18
+  // tests failed against source that was already correct.
+  //
+  // Anything added to the root map must be repeated here to take effect in
+  // this package.
+  //
+  // Bare `stx` and `stx/*` are deliberately absent. Nothing in this package
+  // imports them — every occurrence is a docblock or a generated-code string —
+  // because `stx` is the specifier *user templates* write, and the engine
+  // rewrites it at compile time (signal-processing.ts) rather than resolving
+  // it. Mapping it here makes it resolvable inside the component pipeline and
+  // regresses `@foreach` object props to empty.
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "lib": [
@@ -6,7 +23,17 @@
       "dom"
     ],
     "paths": {
-      "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"]
+      "@stacksjs/stx": ["./src/index.ts"],
+      "@stacksjs/stx/*": ["./src/*"],
+      "@stacksjs/desktop": ["../desktop/src/index.ts"],
+      "@stacksjs/sanitizer": ["../sanitizer/src/index.ts"],
+      "@stacksjs/iconify-core": ["../iconify-core/src/index.ts"],
+      "@stacksjs/iconify-generator": ["../iconify-generator/src/index.ts"],
+      "stx-router": ["../router/src/index.ts"],
+      "stx-router/*": ["../router/src/*"],
+      "@stx/deploy": ["../deploy/src/index.ts"],
+      "bun-plugin-stx": ["../bun-plugin/src/index.ts"],
+      "bun-plugin-stx/client": ["../bun-plugin/src/client.ts"]
     },
     "outDir": "dist"
   },
