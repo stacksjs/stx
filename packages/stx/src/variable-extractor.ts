@@ -638,12 +638,33 @@ catch {
     const serveCtx = context.__stxServeContext as { path?: string, search?: string } | undefined
     const search = (context.__stxServeSearch as string | undefined) ?? serveCtx?.search ?? ''
     const path = serveCtx?.path ?? ''
+
+    /*
+     * The query comes from whichever of the two the host actually supplied.
+     *
+     * `__stxServeSearch` and `__stxServeContext.search` are the raw string, and
+     * only the dev server sets them. A file-based view mounted by bun-router's
+     * `serve()` gets neither — but it does get `query` as an already-parsed
+     * object, the same way it gets `params`, which the line above was already
+     * reading directly. Parsing an empty string and returning `{}` meant every
+     * page reading `useRoute().query` saw nothing on the boot a production
+     * server and the e2e suite both use, with no error: a `?token=…` page
+     * silently rendered its no-token branch.
+     */
+    const parsed = Object.fromEntries(new URLSearchParams(search))
+    const supplied = context.query as Record<string, string> | undefined
+    const query = Object.keys(parsed).length > 0 ? parsed : (supplied ?? {})
+
+    // Rebuilt from the query when the raw string is the half that is missing,
+    // so `fullPath` is not silently the path alone.
+    const suffix = search || (Object.keys(query).length > 0 ? `?${new URLSearchParams(query).toString()}` : '')
+
     return {
       params: (context.params as Record<string, string> | undefined) ?? {},
-      query: Object.fromEntries(new URLSearchParams(search)),
+      query,
       path,
       name: '',
-      fullPath: path + search,
+      fullPath: path + suffix,
       hash: '',
       matched: [],
     }

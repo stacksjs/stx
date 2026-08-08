@@ -128,3 +128,78 @@ const title = 'override'
     }
   })
 })
+
+/**
+ * `useRoute().query` on a host that supplies the query already parsed.
+ *
+ * Two hosts render stx and they hand it the query string in different shapes.
+ * The dev server sets `__stxServeSearch` (or `__stxServeContext.search`) as the
+ * raw `?a=b`; bun-router's file-based `serve()` sets neither, and instead puts
+ * an already-parsed `query` object on the context - the same way it supplies
+ * `params`, which `useRoute()` was already reading directly.
+ *
+ * Reading only the string meant `useRoute().query` was `{}` on the second host,
+ * with nothing to suggest it: a page keyed on `?token=…` rendered its no-token
+ * branch, which is a real branch that looks entirely correct. On the boot a
+ * production server and an e2e suite both use.
+ */
+describe('useRoute().query', () => {
+  it('reads the raw search string when the host supplies one', async () => {
+    const { html } = await render(
+      `<script server>
+const q = useRoute().query
+</script>
+<p>{{ q.token }}</p>`,
+      { __stxServeSearch: '?token=from-the-string' },
+    )
+
+    expect(html).toContain('from-the-string')
+  })
+
+  it('and the parsed object when the host supplies that instead', async () => {
+    const { html } = await render(
+      `<script server>
+const q = useRoute().query
+</script>
+<p>{{ q.token }}</p>`,
+      { query: { token: 'from-the-object' } },
+    )
+
+    expect(html).toContain('from-the-object')
+  })
+
+  it('prefers the string, which is the more specific of the two', async () => {
+    const { html } = await render(
+      `<script server>
+const q = useRoute().query
+</script>
+<p>{{ q.token }}</p>`,
+      { __stxServeSearch: '?token=from-the-string', query: { token: 'from-the-object' } },
+    )
+
+    expect(html).toContain('from-the-string')
+  })
+
+  it('is an empty object when there is no query at all', async () => {
+    const { html } = await render(`<script server>
+const empty = Object.keys(useRoute().query).length === 0
+</script>
+<p>{{ empty }}</p>`)
+
+    expect(html).toContain('true')
+  })
+
+  it('puts the query back on fullPath when only the parsed object was given', async () => {
+    // Otherwise `fullPath` is silently the path alone, which reads as a page
+    // that was reached without one.
+    const { html } = await render(
+      `<script server>
+const full = useRoute().fullPath
+</script>
+<p>{{ full }}</p>`,
+      { __stxServeContext: { path: '/forgot-password' }, query: { token: 'abc' } },
+    )
+
+    expect(html).toContain('/forgot-password?token=abc')
+  })
+})
