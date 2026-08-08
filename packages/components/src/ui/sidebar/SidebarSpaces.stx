@@ -514,6 +514,7 @@ defineExpose({
           :action="space.action"
           :clear="space.clear"
           :active="space.id === activeId"
+          :deferred="space.deferred === true"
           :theme="theme"
         />
       @endforeach

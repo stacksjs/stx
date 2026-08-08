@@ -94,6 +94,20 @@ export interface SidebarSpaceData {
   tint?: string | SidebarSpaceTint
   /** Favorites grid pinned above the rows. */
   pinned?: SidebarPinnedItemData[]
+  /**
+   * Render this space's shell without its rows.
+   *
+   * Every space is server-rendered even though the Arc design shows one at a
+   * time, so the cost is linear in the number of spaces: fourteen projects
+   * means paying for fourteen panels on every page load to display one. A
+   * deferred space keeps its panel — the track geometry, the tab role and the
+   * swipe all depend on it existing — and its title, which is what identifies
+   * it mid-swipe, but drops the rows.
+   *
+   * The panel carries `data-space-deferred`, and `spaceChange` fires as usual,
+   * so a host can fill it in or navigate when the user arrives.
+   */
+  deferred?: boolean
   /** Row groups, identical in shape to a plain `<Sidebar>`'s sections. */
   sections?: SidebarSectionData[]
   /** Primary action row at the foot of the list. */
@@ -122,6 +136,8 @@ export interface NormalizedSidebarSpace {
   tint: SidebarSpaceTint
   /** `style` attribute value that publishes this space's palette. */
   style: string
+  /** See {@link SidebarSpaceData.deferred}. */
+  deferred: boolean
 }
 
 /**
@@ -228,6 +244,7 @@ export function normalizeSpace(space: SidebarSpaceData): NormalizedSidebarSpace 
     clear: normalizeAction(space.clear, space.id, 'clear', 'i-f7-arrow-down'),
     tint,
     style: spaceTintVars(tint),
+    deferred: space.deferred === true,
   }
 }
 

@@ -16,6 +16,19 @@ export const clear = $props.clear || null
 export const theme = $props.theme || 'arc'
 export const active = $props.active ?? false
 
+// Render the shell without its contents.
+//
+// Every space's rows are rendered on the server even though the Arc design
+// shows one at a time, and that cost is linear in the number of spaces: a host
+// with fourteen projects pays for fourteen panels on every page load to display
+// one. `deferred` keeps the panel — the track's geometry, the tab role and the
+// swipe all depend on it existing — and drops what is inside it.
+//
+// The space still announces itself as a tabpanel, so the switcher and keyboard
+// navigation are unchanged; `data-space-deferred` tells the controller this one
+// has nothing yet, and `spaceChange` is where a host fills it or navigates.
+export const deferred = $props.deferred ?? false
+
 const themeStyle = resolveSidebarTheme(theme)
 export const scrollAreaClasses = themeStyle.scrollArea
 
@@ -64,6 +77,7 @@ function onAction(event) {
   data-space
   data-space-id="{{ id }}"
   data-space-active="{{ active ? 'true' : 'false' }}"
+  @if(deferred)data-space-deferred@endif
   @if(!active)inert@endif
   class="flex min-w-0 flex-1 flex-col"
   role="tabpanel"
@@ -71,7 +85,9 @@ function onAction(event) {
   @click="onAction($event)"
 >
   <div class="{{ scrollAreaClasses }} stx-sidebar-scroll">
-    <SidebarPinned :items="pinned" />
+    @if(!deferred)
+      <SidebarPinned :items="pinned" />
+    @endif
 
     @if(label)
       <div class="{{ titleClasses }}">
@@ -82,6 +98,12 @@ function onAction(event) {
       </div>
     @endif
 
+    <!--
+      Rows, and the actions that belong with them, are what a deferred panel
+      drops. The title above stays: it is a single line, and it is what tells
+      you which space you are swiping into.
+    -->
+    @if(!deferred)
     @foreach(sections as section)
       <SidebarSection
         :id="section.id"
@@ -122,6 +144,7 @@ function onAction(event) {
         <span class="{{ action.icon }} h-[14px] w-[14px] shrink-0" aria-hidden="true"></span>
         <span class="truncate">{{ action.label }}</span>
       </button>
+    @endif
     @endif
   </div>
 </section>
