@@ -802,6 +802,33 @@ catch {
       !propsKeys.has(key) && key !== 'props' && isIdentifier(key))
     const filteredContextValues = filteredContextKeys.map(key => context[key])
 
+    /*
+     * `__stxServeContext` is declared here, not only in `render.ts`.
+     *
+     * The scope of a server script is built from the keys of whatever context
+     * its caller assembled, so a key the caller did not set is not declared at
+     * all - and an *undeclared* identifier is a ReferenceError, which optional
+     * chaining does not save: `__stxServeContext?.cookies` throws before the
+     * chain is reached. It throws inside the script's IIFE, so it takes every
+     * other binding in that file down with it and the component or page renders
+     * its empty branch, which reads as a correct answer.
+     *
+     * `render.ts` defaults it for a page render, and that was believed to be
+     * enough. It is not: a component's server script is extracted with a
+     * context the component renderer built, which has never carried the key -
+     * so every `<CsrfField />` and every badge fell back to static extraction
+     * on the boot a production server and the e2e suite both use, while a page
+     * naming the same binding worked.
+     *
+     * Declared at this seam because it is the one every server script passes
+     * through, whoever built the context. Only when the caller has not set it,
+     * so a real request is untouched.
+     */
+    if (!filteredContextKeys.includes('__stxServeContext')) {
+      filteredContextKeys.push('__stxServeContext')
+      filteredContextValues.push(undefined)
+    }
+
     // Expose each prop as a bare identifier (e.g. `car`, `rating`) in the
     // outer scope of the script IIFE — so components can reference props
     // directly without `const { car } = $props()` boilerplate. Skipped for
