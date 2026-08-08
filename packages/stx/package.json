@@ -115,16 +115,16 @@
     "typecheck": "bun tsc -p tsconfig.src.json --noEmit"
   },
   "dependencies": {
-    "@cwcss/crosswind": "^0.2.14",
-    "@stacksjs/clapp": "^0.2.0",
+    "@cwcss/crosswind": "^0.2.16",
+    "@stacksjs/clapp": "^0.2.12",
     "@stacksjs/desktop": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
     "@stacksjs/ts-i18n": "^0.1.11",
     "bun-plugin-stx": "workspace:*",
     "bunfig": "^0.15.17",
     "stx-router": "workspace:*",
-    "ts-broadcasting": "^0.0.9",
-    "ts-images": "^0.1.9",
-    "ts-syntax-highlighter": "^0.2.1"
+    "ts-broadcasting": "^0.0.10",
+    "ts-images": "^0.2.8",
+    "ts-syntax-highlighter": "^0.2.13"
   }
 }
