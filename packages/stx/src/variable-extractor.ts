@@ -1089,6 +1089,37 @@ export function isCompleteImport(statement: string): boolean {
   return quote === null && braces === 0 && closedSpecifier
 }
 
+/**
+ * A declaration with no initializer: `var row;`, `let i`, `var a, b;`.
+ *
+ * Bun's transpiler lifts these to the top level out of a `for`/`try`/`if`
+ * block, and they have to be emitted as-is because `parseVariableDeclaration`
+ * expects a `= value` and throws without one.
+ *
+ * The test used to be "declares something and has no `=` on this line", which
+ * is also true of the FIRST line of a destructuring pattern written across
+ * several lines:
+ *
+ *     const {
+ *       stores,
+ *       westla,
+ *     } = await loadSiteModel()
+ *
+ * `const {` was therefore emitted raw and the loop moved on one line, so the
+ * pattern never reached the destructuring path and none of its names were
+ * exported. The script still ran and the remaining lines still emitted, so the
+ * page rendered and anything computed from those names was correct - but the
+ * template printed `{{ stores }}` as literal text and every `@foreach` over
+ * one of them rendered nothing, with no error anywhere. Writing the same
+ * declaration on one line worked, which made it look like a data problem.
+ *
+ * So match the shape rather than the absence of a character: one or more bare
+ * identifiers and nothing else. A `{` or `[` after the keyword is a pattern,
+ * and belongs to `parseVariableDeclaration`, however many lines it spans.
+ */
+const UNINITIALIZED_DECLARATION
+  = /^(?:export\s+)?(?:const|let|var)\s+[A-Za-z_$][\w$]*(?:\s*,\s*[A-Za-z_$][\w$]*)*\s*;?$/
+
 export function convertToCommonJS(scriptContent: string, filePath?: string): string {
   const templateDir = filePath ? path.dirname(filePath) : process.cwd()
   const projectRoot = process.cwd()
@@ -1297,11 +1328,7 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
       continue
     }
 
-    if (
-      (line.startsWith('const ') || line.startsWith('let ') || line.startsWith('var ')
-        || line.startsWith('export const ') || line.startsWith('export let ') || line.startsWith('export var '))
-      && !line.includes('=')
-    ) {
+    if (UNINITIALIZED_DECLARATION.test(line)) {
       // Declaration without an initializer, e.g. a hoisted `var row;` / `var i;`
       // that Bun's transpiler lifts to the top level out of a `for`/`try`/`if`
       // block. parseVariableDeclaration expects `name = value` and would throw
@@ -1582,17 +1609,26 @@ function extractDestructuredNames(pattern: string): string[] {
 
     // Track nesting depth
     if (char === '{' || char === '[') {
-      depth++
-      if (depth === 1) {
-        const nested = extractDestructuringPattern(inner, i)
-        if (nested) {
-          const nestedNames = extractDestructuredNames(nested.pattern)
-          names.push(...nestedNames)
-          i = nested.endPos
-          currentName = ''
-          continue
-        }
+      /*
+       * A nested pattern is read whole and its names collected, so depth is
+       * unchanged either side of it.
+       *
+       * This used to `depth++` first and then `continue` out of the branch
+       * without ever putting it back, so depth stayed at 1 for the rest of the
+       * scan and the `depth > 0` skip below swallowed every remaining name:
+       * `{ user: { name }, total }` yielded `name` and lost `total`. Silent,
+       * and only for patterns that nest — the template simply rendered nothing
+       * for the names that came after.
+       */
+      const nested = depth === 0 ? extractDestructuringPattern(inner, i) : null
+      if (nested) {
+        names.push(...extractDestructuredNames(nested.pattern))
+        i = nested.endPos
+        currentName = ''
+        continue
       }
+
+      depth++
     }
     else if (char === '}' || char === ']') {
       depth--
@@ -1747,6 +1783,45 @@ export function splitDeclaration(line: string): { type: string, name: string, va
   }
 }
 
+/**
+ * Bracket depth after reading `text`, starting from `depth`.
+ *
+ * Quotes are tracked so a brace inside a default value — `const { sep = '}' }`
+ * — does not close the pattern. Only the one bracket kind that opened the
+ * pattern is counted: a `[` inside an object pattern is a computed key and
+ * cannot end it.
+ */
+function countPatternDepth(text: string, openChar: string, closeChar: string, depth: number): number {
+  let quote: string | null = null
+  let escaped = false
+
+  for (const character of text) {
+    if (escaped) {
+      escaped = false
+      continue
+    }
+    if (character === '\\') {
+      escaped = true
+      continue
+    }
+    if (quote) {
+      if (character === quote)
+        quote = null
+      continue
+    }
+    if (character === '\'' || character === '"' || character === '`') {
+      quote = character
+      continue
+    }
+    if (character === openChar)
+      depth++
+    else if (character === closeChar)
+      depth--
+  }
+
+  return depth
+}
+
 function parseVariableDeclaration(lines: string[], startIndex: number): VariableDeclarationResult {
   const firstLine = lines[startIndex].trim()
 
@@ -1761,16 +1836,45 @@ function parseVariableDeclaration(lines: string[], startIndex: number): Variable
     if (destructuringPrefix) {
       let afterKeyword = firstLine.slice(destructuringPrefix[0].length)
 
-      // Join lines for multiline destructuring patterns (e.g., const {\n  a,\n  b\n} = ...)
+      /*
+       * Join the lines a destructuring pattern is spread across.
+       *
+       * Depth-counted rather than "stop at the first line containing the
+       * closing character", which ends a nested pattern one brace early:
+       *
+       *     const {
+       *       user: { name },   <- this line closes the INNER brace
+       *       total,
+       *     } = model()
+       *
+       * The old rule stopped there and handed `{ user: { name },` to the
+       * pattern parser, which cannot parse it. That used to be unreachable
+       * because the caller misclassified `const {` before it ever got here;
+       * with that fixed, an unbalanced join throws instead, and a throw takes
+       * the whole script into the fallback extractor rather than just this
+       * declaration.
+       */
       let joinedEndIndex = startIndex
-      if ((afterKeyword.startsWith('{') || afterKeyword.startsWith('[')) && !afterKeyword.includes(afterKeyword.startsWith('{') ? '}' : ']')) {
-        const closeChar = afterKeyword.startsWith('{') ? '}' : ']'
+      if (afterKeyword.startsWith('{') || afterKeyword.startsWith('[')) {
+        const openChar = afterKeyword[0]
+        const closeChar = openChar === '{' ? '}' : ']'
+        let depth = countPatternDepth(afterKeyword, openChar, closeChar, 0)
         let joined = afterKeyword
-        for (let j = startIndex + 1; j < lines.length; j++) {
-          joined += ' ' + lines[j].trim()
+
+        for (let j = startIndex + 1; j < lines.length && depth > 0; j++) {
+          joined += ` ${lines[j].trim()}`
           joinedEndIndex = j
-          if (lines[j].includes(closeChar)) break
+          depth = countPatternDepth(lines[j], openChar, closeChar, depth)
         }
+
+        // Unterminated: the pattern never closes before the end of the block.
+        // Leave the original single line alone so the caller throws with the
+        // real first line rather than a joined-up mangling of the whole script.
+        if (depth > 0) {
+          joined = afterKeyword
+          joinedEndIndex = startIndex
+        }
+
         afterKeyword = joined
       }
 
