@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.164...v0.2.165)
+
+## 🚀 Features
+
+- **render**: give pages notFound() ([a6b81f8](https://github.com/stacksjs/stx/commit/a6b81f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.165 ([a4c5e10](https://github.com/stacksjs/stx/commit/a4c5e10)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.163...v0.2.164)
 
 ## 🐛 Bug Fixes
