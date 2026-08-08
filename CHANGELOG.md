@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.163...v0.2.164)
+
+## 🐛 Bug Fixes
+
+- **extractor**: keep a destructuring pattern that spans several lines ([4c908ce](https://github.com/stacksjs/stx/commit/4c908ce)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.164 ([e8557bb](https://github.com/stacksjs/stx/commit/e8557bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.162...v0.2.163)
 
 ## 🐛 Bug Fixes
