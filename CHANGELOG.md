@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.165...v0.2.166)
+
+## 🚀 Features
+
+- **sidebar**: let a space render its shell without its rows ([f6ae67d](https://github.com/stacksjs/stx/commit/f6ae67d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.166 ([8722885](https://github.com/stacksjs/stx/commit/8722885)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.164...v0.2.165)
 
 ## 🚀 Features
