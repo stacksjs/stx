@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.158...v0.2.159)
+
+## 🐛 Bug Fixes
+
+- useRoute().query reads the parsed query, not only the raw string ([09bf3a5](https://github.com/stacksjs/stx/commit/09bf3a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.159 ([d0758db](https://github.com/stacksjs/stx/commit/d0758db)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.156...v0.2.157)
 
 ## 🐛 Bug Fixes
