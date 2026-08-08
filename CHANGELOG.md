@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.159...v0.2.160)
+
+## 🐛 Bug Fixes
+
+- **stx**: let SSR externalize the runtime, not just the static build ([0f817d9](https://github.com/stacksjs/stx/commit/0f817d9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.160 ([3f75d6a](https://github.com/stacksjs/stx/commit/3f75d6a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.158...v0.2.159)
 
 ## 🐛 Bug Fixes
