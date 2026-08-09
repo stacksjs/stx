@@ -27,6 +27,7 @@ import {
   setupKeyboardShortcuts,
 } from './index'
 import { serveMarkdownFile } from './serve-markdown'
+import { compressResponse } from '../compression'
 
 // Build and serve a specific stx file
 export async function serveStxFile(filePath: string, options: DevServerOptions = {}): Promise<boolean> {
@@ -200,300 +201,305 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   const server = serve({
     port: actualPort,
     async fetch(request) {
-      const url = new URL(request.url)
-
-      // Handle requests via custom router (e.g. @stacksjs/bun-router)
-      if (customRouter) {
-        try {
-          const routerResponse = await customRouter.handleRequest(request)
-          if (routerResponse.status !== 404) {
-            return routerResponse
-          }
-        }
-        catch { /* router error — fall through to STX pages */ }
-      }
-
-      // Handle custom API routes from stx.config.ts (fallback)
-      if (apiRoutes[url.pathname]) {
-        try {
-          return await apiRoutes[url.pathname](request)
-        }
-        catch (err: any) {
-          return new Response(JSON.stringify({ error: err.message }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
-          })
-        }
-      }
-
-      // Serve the main HTML for the root path
-      if (url.pathname === '/') {
-        // Inject Crosswind CSS for utility classes (async)
-        const processedContent = async () => {
-          let content = await injectCrosswindCSS(htmlContent || '')
-          // Inject HMR client script if hot reload is enabled
-          if (hotReload) {
-            content = injectHotReload(content, actualHmrPort)
-          }
-          // Inject native sidebar styles and flag when running in native mode
-          // CSS is injected to immediately hide web sidebar before any rendering
-          if (options.native) {
-            const nativeSidebarInjection = `<style>[data-stx-sidebar],.stx-sidebar{display:none!important}</style><script>window.__craftNativeSidebar=true;document.documentElement.classList.add('has-native-sidebar')</script>`
-            if (content.includes('<head>')) {
-              content = content.replace('<head>', `<head>${nativeSidebarInjection}`)
-            }
-            else if (content.includes('<html')) {
-              content = content.replace(/(<html[^>]*>)/, `$1<head>${nativeSidebarInjection}</head>`)
-            }
-            else {
-              content = `<head>${nativeSidebarInjection}</head>` + content
+      // Every response leaves through here, so compression is applied once at
+      // the boundary rather than at each of the two dozen places a Response is
+      // constructed below. See src/compression.ts.
+      return compressResponse(request, await (async () => {
+        const url = new URL(request.url)
+  
+        // Handle requests via custom router (e.g. @stacksjs/bun-router)
+        if (customRouter) {
+          try {
+            const routerResponse = await customRouter.handleRequest(request)
+            if (routerResponse.status !== 404) {
+              return routerResponse
             }
           }
-          // Flag titlebar-hidden mode so components (e.g. traffic lights) can
-          // defer to the real native window controls drawn by craft.
-          if (options.titlebarHidden) {
-            const tbInjection = `<style>html.stx-titlebar-hidden .stx-traffic-lights-dot{visibility:hidden}</style><script>document.documentElement.classList.add('stx-titlebar-hidden')</script>`
-            if (content.includes('<head>')) {
-              content = content.replace('<head>', `<head>${tbInjection}`)
-            }
-            else if (content.includes('<html')) {
-              content = content.replace(/(<html[^>]*>)/, `$1<head>${tbInjection}</head>`)
-            }
-            else {
-              content = `<head>${tbInjection}</head>${content}`
-            }
-          }
-          return content
+          catch { /* router error — fall through to STX pages */ }
         }
-
-        return processedContent().then(content => new Response(content, {
-          headers: {
-            'Content-Type': 'text/html',
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-          },
-        }))
-      }
-
-      // Check if it's a file in the output directory
-      const requestedPath = path.join(outputDir, url.pathname)
-      if (fs.existsSync(requestedPath) && fs.statSync(requestedPath).isFile()) {
-        const file = Bun.file(requestedPath)
-        // Determine content type based on extension
-        const ext = path.extname(requestedPath).toLowerCase()
-        let contentType = 'text/plain'
-
-        // Transpile TypeScript files on the fly
-        if (ext === '.ts' || ext === '.tsx') {
-          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
-          const code = await file.text()
-          const js = transpiler.transformSync(code)
-          return new Response(js, {
+  
+        // Handle custom API routes from stx.config.ts (fallback)
+        if (apiRoutes[url.pathname]) {
+          try {
+            return await apiRoutes[url.pathname](request)
+          }
+          catch (err: any) {
+            return new Response(JSON.stringify({ error: err.message }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          }
+        }
+  
+        // Serve the main HTML for the root path
+        if (url.pathname === '/') {
+          // Inject Crosswind CSS for utility classes (async)
+          const processedContent = async () => {
+            let content = await injectCrosswindCSS(htmlContent || '')
+            // Inject HMR client script if hot reload is enabled
+            if (hotReload) {
+              content = injectHotReload(content, actualHmrPort)
+            }
+            // Inject native sidebar styles and flag when running in native mode
+            // CSS is injected to immediately hide web sidebar before any rendering
+            if (options.native) {
+              const nativeSidebarInjection = `<style>[data-stx-sidebar],.stx-sidebar{display:none!important}</style><script>window.__craftNativeSidebar=true;document.documentElement.classList.add('has-native-sidebar')</script>`
+              if (content.includes('<head>')) {
+                content = content.replace('<head>', `<head>${nativeSidebarInjection}`)
+              }
+              else if (content.includes('<html')) {
+                content = content.replace(/(<html[^>]*>)/, `$1<head>${nativeSidebarInjection}</head>`)
+              }
+              else {
+                content = `<head>${nativeSidebarInjection}</head>` + content
+              }
+            }
+            // Flag titlebar-hidden mode so components (e.g. traffic lights) can
+            // defer to the real native window controls drawn by craft.
+            if (options.titlebarHidden) {
+              const tbInjection = `<style>html.stx-titlebar-hidden .stx-traffic-lights-dot{visibility:hidden}</style><script>document.documentElement.classList.add('stx-titlebar-hidden')</script>`
+              if (content.includes('<head>')) {
+                content = content.replace('<head>', `<head>${tbInjection}`)
+              }
+              else if (content.includes('<html')) {
+                content = content.replace(/(<html[^>]*>)/, `$1<head>${tbInjection}</head>`)
+              }
+              else {
+                content = `<head>${tbInjection}</head>${content}`
+              }
+            }
+            return content
+          }
+  
+          return processedContent().then(content => new Response(content, {
             headers: {
-              'Content-Type': 'application/javascript',
+              'Content-Type': 'text/html',
               'Cache-Control': 'no-store, no-cache, must-revalidate',
               'Pragma': 'no-cache',
               'Expires': '0',
             },
+          }))
+        }
+  
+        // Check if it's a file in the output directory
+        const requestedPath = path.join(outputDir, url.pathname)
+        if (fs.existsSync(requestedPath) && fs.statSync(requestedPath).isFile()) {
+          const file = Bun.file(requestedPath)
+          // Determine content type based on extension
+          const ext = path.extname(requestedPath).toLowerCase()
+          let contentType = 'text/plain'
+  
+          // Transpile TypeScript files on the fly
+          if (ext === '.ts' || ext === '.tsx') {
+            const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+            const code = await file.text()
+            const js = transpiler.transformSync(code)
+            return new Response(js, {
+              headers: {
+                'Content-Type': 'application/javascript',
+                'Cache-Control': 'no-store, no-cache, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
+            })
+          }
+  
+          switch (ext) {
+            case '.html':
+              contentType = 'text/html'
+              break
+            case '.css':
+              contentType = 'text/css'
+              break
+            case '.js':
+              contentType = 'text/javascript'
+              break
+            case '.json':
+              contentType = 'application/json'
+              break
+            case '.png':
+              contentType = 'image/png'
+              break
+            case '.jpg':
+            case '.jpeg':
+              contentType = 'image/jpeg'
+              break
+            case '.gif':
+              contentType = 'image/gif'
+              break
+            case '.woff':
+              contentType = 'font/woff'
+              break
+            case '.woff2':
+              contentType = 'font/woff2'
+              break
+            case '.ttf':
+              contentType = 'font/ttf'
+              break
+            case '.otf':
+              contentType = 'font/otf'
+              break
+            case '.eot':
+              contentType = 'application/vnd.ms-fontobject'
+              break
+          }
+  
+          return new Response(file, {
+            headers: { 'Content-Type': contentType },
           })
         }
-
-        switch (ext) {
-          case '.html':
-            contentType = 'text/html'
-            break
-          case '.css':
-            contentType = 'text/css'
-            break
-          case '.js':
-            contentType = 'text/javascript'
-            break
-          case '.json':
-            contentType = 'application/json'
-            break
-          case '.png':
-            contentType = 'image/png'
-            break
-          case '.jpg':
-          case '.jpeg':
-            contentType = 'image/jpeg'
-            break
-          case '.gif':
-            contentType = 'image/gif'
-            break
-          case '.woff':
-            contentType = 'font/woff'
-            break
-          case '.woff2':
-            contentType = 'font/woff2'
-            break
-          case '.ttf':
-            contentType = 'font/ttf'
-            break
-          case '.otf':
-            contentType = 'font/otf'
-            break
-          case '.eot':
-            contentType = 'application/vnd.ms-fontobject'
-            break
-        }
-
-        return new Response(file, {
-          headers: { 'Content-Type': contentType },
-        })
-      }
-
-      // Check if it's a static file in the source directory (for JS, CSS, etc.)
-      const sourceDir = path.dirname(absolutePath)
-      const sourcePath = path.join(sourceDir, url.pathname)
-      if (fs.existsSync(sourcePath) && fs.statSync(sourcePath).isFile()) {
-        const file = Bun.file(sourcePath)
-        // Determine content type based on extension
-        const ext = path.extname(sourcePath).toLowerCase()
-        let contentType = 'text/plain'
-
-        // Transpile TypeScript files on the fly
-        if (ext === '.ts' || ext === '.tsx') {
-          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
-          const code = await file.text()
-          const js = transpiler.transformSync(code)
-          return new Response(js, {
-            headers: {
-              'Content-Type': 'application/javascript',
-              'Cache-Control': 'no-store, no-cache, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0',
-            },
+  
+        // Check if it's a static file in the source directory (for JS, CSS, etc.)
+        const sourceDir = path.dirname(absolutePath)
+        const sourcePath = path.join(sourceDir, url.pathname)
+        if (fs.existsSync(sourcePath) && fs.statSync(sourcePath).isFile()) {
+          const file = Bun.file(sourcePath)
+          // Determine content type based on extension
+          const ext = path.extname(sourcePath).toLowerCase()
+          let contentType = 'text/plain'
+  
+          // Transpile TypeScript files on the fly
+          if (ext === '.ts' || ext === '.tsx') {
+            const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+            const code = await file.text()
+            const js = transpiler.transformSync(code)
+            return new Response(js, {
+              headers: {
+                'Content-Type': 'application/javascript',
+                'Cache-Control': 'no-store, no-cache, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
+            })
+          }
+  
+          switch (ext) {
+            case '.html':
+              contentType = 'text/html'
+              break
+            case '.css':
+              contentType = 'text/css'
+              break
+            case '.js':
+              contentType = 'text/javascript'
+              break
+            case '.json':
+              contentType = 'application/json'
+              break
+            case '.png':
+              contentType = 'image/png'
+              break
+            case '.jpg':
+            case '.jpeg':
+              contentType = 'image/jpeg'
+              break
+            case '.gif':
+              contentType = 'image/gif'
+              break
+            case '.svg':
+              contentType = 'image/svg+xml'
+              break
+            case '.ico':
+              contentType = 'image/x-icon'
+              break
+            case '.woff':
+              contentType = 'font/woff'
+              break
+            case '.woff2':
+              contentType = 'font/woff2'
+              break
+            case '.ttf':
+              contentType = 'font/ttf'
+              break
+            case '.otf':
+              contentType = 'font/otf'
+              break
+            case '.eot':
+              contentType = 'application/vnd.ms-fontobject'
+              break
+          }
+  
+          return new Response(file, {
+            headers: { 'Content-Type': contentType },
           })
         }
-
-        switch (ext) {
-          case '.html':
-            contentType = 'text/html'
-            break
-          case '.css':
-            contentType = 'text/css'
-            break
-          case '.js':
-            contentType = 'text/javascript'
-            break
-          case '.json':
-            contentType = 'application/json'
-            break
-          case '.png':
-            contentType = 'image/png'
-            break
-          case '.jpg':
-          case '.jpeg':
-            contentType = 'image/jpeg'
-            break
-          case '.gif':
-            contentType = 'image/gif'
-            break
-          case '.svg':
-            contentType = 'image/svg+xml'
-            break
-          case '.ico':
-            contentType = 'image/x-icon'
-            break
-          case '.woff':
-            contentType = 'font/woff'
-            break
-          case '.woff2':
-            contentType = 'font/woff2'
-            break
-          case '.ttf':
-            contentType = 'font/ttf'
-            break
-          case '.otf':
-            contentType = 'font/otf'
-            break
-          case '.eot':
-            contentType = 'application/vnd.ms-fontobject'
-            break
-        }
-
-        return new Response(file, {
-          headers: { 'Content-Type': contentType },
-        })
-      }
-
-      // Check if it's a file in the public directory
-      const publicPath = path.join(process.cwd(), 'public', url.pathname)
-      if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
-        const file = Bun.file(publicPath)
-        const ext = path.extname(publicPath).toLowerCase()
-        let contentType = 'application/octet-stream'
-
-        // Transpile TypeScript files on the fly
-        if (ext === '.ts' || ext === '.tsx') {
-          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
-          const code = await file.text()
-          const js = transpiler.transformSync(code)
-          return new Response(js, {
-            headers: {
-              'Content-Type': 'application/javascript',
-              'Cache-Control': 'no-store, no-cache, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0',
-            },
+  
+        // Check if it's a file in the public directory
+        const publicPath = path.join(process.cwd(), 'public', url.pathname)
+        if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
+          const file = Bun.file(publicPath)
+          const ext = path.extname(publicPath).toLowerCase()
+          let contentType = 'application/octet-stream'
+  
+          // Transpile TypeScript files on the fly
+          if (ext === '.ts' || ext === '.tsx') {
+            const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+            const code = await file.text()
+            const js = transpiler.transformSync(code)
+            return new Response(js, {
+              headers: {
+                'Content-Type': 'application/javascript',
+                'Cache-Control': 'no-store, no-cache, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
+            })
+          }
+  
+          switch (ext) {
+            case '.html':
+              contentType = 'text/html'
+              break
+            case '.css':
+              contentType = 'text/css'
+              break
+            case '.js':
+              contentType = 'text/javascript'
+              break
+            case '.json':
+              contentType = 'application/json'
+              break
+            case '.png':
+              contentType = 'image/png'
+              break
+            case '.jpg':
+            case '.jpeg':
+              contentType = 'image/jpeg'
+              break
+            case '.gif':
+              contentType = 'image/gif'
+              break
+            case '.svg':
+              contentType = 'image/svg+xml'
+              break
+            case '.ico':
+              contentType = 'image/x-icon'
+              break
+            case '.woff':
+              contentType = 'font/woff'
+              break
+            case '.woff2':
+              contentType = 'font/woff2'
+              break
+            case '.ttf':
+              contentType = 'font/ttf'
+              break
+            case '.otf':
+              contentType = 'font/otf'
+              break
+            case '.eot':
+              contentType = 'application/vnd.ms-fontobject'
+              break
+          }
+  
+          return new Response(file, {
+            headers: { 'Content-Type': contentType },
           })
         }
-
-        switch (ext) {
-          case '.html':
-            contentType = 'text/html'
-            break
-          case '.css':
-            contentType = 'text/css'
-            break
-          case '.js':
-            contentType = 'text/javascript'
-            break
-          case '.json':
-            contentType = 'application/json'
-            break
-          case '.png':
-            contentType = 'image/png'
-            break
-          case '.jpg':
-          case '.jpeg':
-            contentType = 'image/jpeg'
-            break
-          case '.gif':
-            contentType = 'image/gif'
-            break
-          case '.svg':
-            contentType = 'image/svg+xml'
-            break
-          case '.ico':
-            contentType = 'image/x-icon'
-            break
-          case '.woff':
-            contentType = 'font/woff'
-            break
-          case '.woff2':
-            contentType = 'font/woff2'
-            break
-          case '.ttf':
-            contentType = 'font/ttf'
-            break
-          case '.otf':
-            contentType = 'font/otf'
-            break
-          case '.eot':
-            contentType = 'application/vnd.ms-fontobject'
-            break
-        }
-
-        return new Response(file, {
-          headers: { 'Content-Type': contentType },
-        })
-      }
-
-      // Fallback 404 response
-      return new Response('Not Found', { status: 404 })
+  
+        // Fallback 404 response
+        return new Response('Not Found', { status: 404 })
+      })())
     },
     error(error) {
       return new Response(`<pre>${error}\n${error.stack}</pre>`, {

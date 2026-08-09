@@ -18,6 +18,7 @@ import type { CompiledTemplate } from './template-compiler'
 import { extractLayoutMetadata, type LayoutMetadata } from './app-shell'
 import { pageShipsSignalsRuntime } from './runtime-injection'
 import { patternToRegex } from 'stx-router'
+import { compressResponse } from './compression'
 
 /**
  * Production server configuration.
@@ -144,195 +145,200 @@ export async function startProductionServer(options: ProductionServerOptions = {
   const server = serve({
     port,
     async fetch(request) {
-      const url = new URL(request.url)
-      const pathname = url.pathname
-
-      // ── Custom API routes ──
-      if (options.onRequest) {
-        const response = await options.onRequest(request)
-        if (response) return response
-      }
-      if (options.apiRoutes?.[pathname]) {
-        return options.apiRoutes[pathname](request)
-      }
-
-      // ── Static assets from public/ ──
-      // Mounted at the URL root: .output/public/images/hero.jpg → /images/hero.jpg
-      // Includes path traversal protection, URI decoding, directory skipping,
-      // and fingerprinted-asset cache hints. Matches the dev server handler
-      // in bun-plugin/src/serve.ts.
-      if ((request.method === 'GET' || request.method === 'HEAD') && pathname !== '/') {
-        const publicRoot = path.resolve(outputDir, 'public')
-
-        // Decode URI components and reject embedded NULs
-        let safePathname: string
-        try {
-          safePathname = decodeURIComponent(pathname)
+      // Every response leaves through here, so compression is applied once at
+      // the boundary rather than at each of the two dozen places a Response is
+      // constructed below. See src/compression.ts.
+      return compressResponse(request, await (async () => {
+        const url = new URL(request.url)
+        const pathname = url.pathname
+  
+        // ── Custom API routes ──
+        if (options.onRequest) {
+          const response = await options.onRequest(request)
+          if (response) return response
         }
-        catch {
-          safePathname = pathname
+        if (options.apiRoutes?.[pathname]) {
+          return options.apiRoutes[pathname](request)
         }
-
-        if (!safePathname.includes('\0')) {
-          // Resolve and verify the result stays inside publicRoot. path.resolve
-          // normalizes .. segments before the prefix check, which is the
-          // standard defense against directory traversal.
-          const resolvedPath = path.resolve(publicRoot, `.${safePathname}`)
-          const isInsidePublicRoot = resolvedPath === publicRoot
-            || resolvedPath.startsWith(`${publicRoot}${path.sep}`)
-
-          if (isInsidePublicRoot) {
-            try {
-              if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
-                const ext = path.extname(resolvedPath).toLowerCase()
-                const contentType = MIME_TYPES[ext] || 'application/octet-stream'
-
-                // Fingerprinted assets get immutable cache headers
-                const isFingerprinted = pathname.startsWith('/__stx/') || /\.[0-9a-f]{8}\./.test(pathname)
-
-                return new Response(Bun.file(resolvedPath), {
-                  headers: {
-                    'Content-Type': contentType,
-                    'Cache-Control': isFingerprinted
-                      ? 'public, max-age=31536000, immutable'
-                      : 'public, max-age=3600',
-                  },
-                })
+  
+        // ── Static assets from public/ ──
+        // Mounted at the URL root: .output/public/images/hero.jpg → /images/hero.jpg
+        // Includes path traversal protection, URI decoding, directory skipping,
+        // and fingerprinted-asset cache hints. Matches the dev server handler
+        // in bun-plugin/src/serve.ts.
+        if ((request.method === 'GET' || request.method === 'HEAD') && pathname !== '/') {
+          const publicRoot = path.resolve(outputDir, 'public')
+  
+          // Decode URI components and reject embedded NULs
+          let safePathname: string
+          try {
+            safePathname = decodeURIComponent(pathname)
+          }
+          catch {
+            safePathname = pathname
+          }
+  
+          if (!safePathname.includes('\0')) {
+            // Resolve and verify the result stays inside publicRoot. path.resolve
+            // normalizes .. segments before the prefix check, which is the
+            // standard defense against directory traversal.
+            const resolvedPath = path.resolve(publicRoot, `.${safePathname}`)
+            const isInsidePublicRoot = resolvedPath === publicRoot
+              || resolvedPath.startsWith(`${publicRoot}${path.sep}`)
+  
+            if (isInsidePublicRoot) {
+              try {
+                if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
+                  const ext = path.extname(resolvedPath).toLowerCase()
+                  const contentType = MIME_TYPES[ext] || 'application/octet-stream'
+  
+                  // Fingerprinted assets get immutable cache headers
+                  const isFingerprinted = pathname.startsWith('/__stx/') || /\.[0-9a-f]{8}\./.test(pathname)
+  
+                  return new Response(Bun.file(resolvedPath), {
+                    headers: {
+                      'Content-Type': contentType,
+                      'Cache-Control': isFingerprinted
+                        ? 'public, max-age=31536000, immutable'
+                        : 'public, max-age=3600',
+                    },
+                  })
+                }
+              }
+              catch {
+                // File read failed — fall through
               }
             }
-            catch {
-              // File read failed — fall through
+          }
+        }
+  
+        // ── Route matching ──
+        const isSpaNav = request.headers.get('X-STX-Router') === 'true'
+        let matchedRoute: ManifestRoute | null = null
+        let params: Record<string, string> = {}
+  
+        // Try exact match first
+        matchedRoute = exactRoutes.get(pathname) || null
+  
+        // Try param routes
+        if (!matchedRoute) {
+          for (const { regex, route, paramNames } of paramRoutes) {
+            const match = pathname.match(regex)
+            if (match) {
+              matchedRoute = route
+              paramNames.forEach((name, i) => {
+                params[name] = match[i + 1]
+              })
+              break
             }
           }
         }
-      }
-
-      // ── Route matching ──
-      const isSpaNav = request.headers.get('X-STX-Router') === 'true'
-      let matchedRoute: ManifestRoute | null = null
-      let params: Record<string, string> = {}
-
-      // Try exact match first
-      matchedRoute = exactRoutes.get(pathname) || null
-
-      // Try param routes
-      if (!matchedRoute) {
-        for (const { regex, route, paramNames } of paramRoutes) {
-          const match = pathname.match(regex)
-          if (match) {
-            matchedRoute = route
-            paramNames.forEach((name, i) => {
-              params[name] = match[i + 1]
+  
+        if (!matchedRoute) {
+          // Try 404 error page first, then return plain 404. Note:
+          // compiledTemplates is keyed by `route.pattern` (see the loader
+          // at line ~105), so the lookup must use `errorPage.pattern`, NOT
+          // `errorPage.compiledPath` — that was a pre-existing bug noticed
+          // while wiring in the parallel /500 lookup for stacksjs/stx#1722.
+          // It silently broke the entire 404.stx feature in production.
+          const errorPage = exactRoutes.get('/404') || null
+          if (errorPage) {
+            const compiled = compiledTemplates.get(errorPage.pattern)
+            if (compiled) {
+              return new Response(compiled.html, {
+                status: 404,
+                headers: { 'Content-Type': 'text/html' },
+              })
+            }
+          }
+          return new Response('Not Found', { status: 404 })
+        }
+  
+        // ── SPA fragment response ──
+        if (isSpaNav) {
+          const fragment = fragmentCache.get(matchedRoute.pattern)
+          if (fragment) {
+            const layoutMetadata = layoutMetadataCache.get(matchedRoute.pattern)
+            return new Response(fragment, {
+              headers: {
+                'Content-Type': 'text/html',
+                'X-STX-Fragment': 'true',
+                // Lets a runtime-less page hand this navigation to a full load
+                // rather than swapping in a fragment it can never hydrate (#1827).
+                // Only sent when known: an unrecognised route leaves the router on
+                // its own markup sniff rather than asserting a wrong answer.
+                ...(runtimeCache.has(matchedRoute.pattern)
+                  ? { 'X-STX-Runtime': runtimeCache.get(matchedRoute.pattern) ? 'true' : 'false' }
+                  : {}),
+                ...(layoutMetadata
+                  ? {
+                      'X-STX-Layout': layoutMetadata.layout,
+                      'X-STX-Layout-Group': layoutMetadata.group,
+                    }
+                  : {}),
+                'Cache-Control': 'no-cache',
+              },
             })
-            break
           }
         }
-      }
-
-      if (!matchedRoute) {
-        // Try 404 error page first, then return plain 404. Note:
-        // compiledTemplates is keyed by `route.pattern` (see the loader
-        // at line ~105), so the lookup must use `errorPage.pattern`, NOT
-        // `errorPage.compiledPath` — that was a pre-existing bug noticed
-        // while wiring in the parallel /500 lookup for stacksjs/stx#1722.
-        // It silently broke the entire 404.stx feature in production.
-        const errorPage = exactRoutes.get('/404') || null
-        if (errorPage) {
-          const compiled = compiledTemplates.get(errorPage.pattern)
-          if (compiled) {
-            return new Response(compiled.html, {
-              status: 404,
-              headers: { 'Content-Type': 'text/html' },
-            })
+  
+        // ── Full page response ──
+        const compiled = compiledTemplates.get(matchedRoute.pattern)
+        if (!compiled) {
+          // Try the user's 500 error page first (mirrors the /404 lookup at
+          // line ~229). Before stacksjs/stx#1722 this always returned a
+          // bare "Internal Server Error" text response, so apps that ship
+          // a branded `pages/500.stx` got an unbranded error in production.
+          const errorPage = exactRoutes.get('/500') || null
+          if (errorPage) {
+            // Key by pattern (see the 404 path above and the loader at line ~105).
+            const compiledError = compiledTemplates.get(errorPage.pattern)
+            if (compiledError) {
+              return new Response(compiledError.html, {
+                status: 500,
+                headers: { 'Content-Type': 'text/html' },
+              })
+            }
           }
+          return new Response('Internal Server Error', { status: 500 })
         }
-        return new Response('Not Found', { status: 404 })
-      }
-
-      // ── SPA fragment response ──
-      if (isSpaNav) {
-        const fragment = fragmentCache.get(matchedRoute.pattern)
-        if (fragment) {
-          const layoutMetadata = layoutMetadataCache.get(matchedRoute.pattern)
-          return new Response(fragment, {
+  
+        // Static page — serve pre-rendered HTML directly (zero processing)
+        if (!compiled.hasServerScripts && Object.keys(compiled.placeholders).length === 0) {
+          return new Response(compiled.html, {
             headers: {
               'Content-Type': 'text/html',
-              'X-STX-Fragment': 'true',
-              // Lets a runtime-less page hand this navigation to a full load
-              // rather than swapping in a fragment it can never hydrate (#1827).
-              // Only sent when known: an unrecognised route leaves the router on
-              // its own markup sniff rather than asserting a wrong answer.
-              ...(runtimeCache.has(matchedRoute.pattern)
-                ? { 'X-STX-Runtime': runtimeCache.get(matchedRoute.pattern) ? 'true' : 'false' }
-                : {}),
-              ...(layoutMetadata
-                ? {
-                    'X-STX-Layout': layoutMetadata.layout,
-                    'X-STX-Layout-Group': layoutMetadata.group,
-                  }
-                : {}),
+              'Cache-Control': 'public, max-age=60',
+            },
+          })
+        }
+  
+        // Dynamic page — hydrate with request context
+        try {
+          const { html, boundaries } = await hydrateTemplateStream(compiled, { params, request })
+          // Streaming SSR (#1746): a page that exported streamBoundaries streams
+          // its shell first, then each boundary as its server-side data resolves.
+          if (boundaries && boundaries.length > 0) {
+            const { renderStreamingPage, streamToResponse } = await import('./streaming')
+            return streamToResponse(renderStreamingPage(html, boundaries, { timeoutMs: 30000 }), {
+              headers: { 'Cache-Control': 'no-cache' },
+            })
+          }
+          return new Response(html, {
+            headers: {
+              'Content-Type': 'text/html',
               'Cache-Control': 'no-cache',
             },
           })
         }
-      }
-
-      // ── Full page response ──
-      const compiled = compiledTemplates.get(matchedRoute.pattern)
-      if (!compiled) {
-        // Try the user's 500 error page first (mirrors the /404 lookup at
-        // line ~229). Before stacksjs/stx#1722 this always returned a
-        // bare "Internal Server Error" text response, so apps that ship
-        // a branded `pages/500.stx` got an unbranded error in production.
-        const errorPage = exactRoutes.get('/500') || null
-        if (errorPage) {
-          // Key by pattern (see the 404 path above and the loader at line ~105).
-          const compiledError = compiledTemplates.get(errorPage.pattern)
-          if (compiledError) {
-            return new Response(compiledError.html, {
-              status: 500,
-              headers: { 'Content-Type': 'text/html' },
-            })
-          }
-        }
-        return new Response('Internal Server Error', { status: 500 })
-      }
-
-      // Static page — serve pre-rendered HTML directly (zero processing)
-      if (!compiled.hasServerScripts && Object.keys(compiled.placeholders).length === 0) {
-        return new Response(compiled.html, {
-          headers: {
-            'Content-Type': 'text/html',
-            'Cache-Control': 'public, max-age=60',
-          },
-        })
-      }
-
-      // Dynamic page — hydrate with request context
-      try {
-        const { html, boundaries } = await hydrateTemplateStream(compiled, { params, request })
-        // Streaming SSR (#1746): a page that exported streamBoundaries streams
-        // its shell first, then each boundary as its server-side data resolves.
-        if (boundaries && boundaries.length > 0) {
-          const { renderStreamingPage, streamToResponse } = await import('./streaming')
-          return streamToResponse(renderStreamingPage(html, boundaries, { timeoutMs: 30000 }), {
-            headers: { 'Cache-Control': 'no-cache' },
+        catch (error) {
+          console.error(`[stx] Hydration error for ${pathname}:`, error)
+          // Fallback to pre-rendered HTML
+          return new Response(compiled.html, {
+            headers: { 'Content-Type': 'text/html' },
           })
         }
-        return new Response(html, {
-          headers: {
-            'Content-Type': 'text/html',
-            'Cache-Control': 'no-cache',
-          },
-        })
-      }
-      catch (error) {
-        console.error(`[stx] Hydration error for ${pathname}:`, error)
-        // Fallback to pre-rendered HTML
-        return new Response(compiled.html, {
-          headers: { 'Content-Type': 'text/html' },
-        })
-      }
+      })())
     },
   })
 
