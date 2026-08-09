@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.166...v0.2.167)
+
+## 🚀 Features
+
+- **sidebar**: dots instead of an icon rail, and one motion per space change ([b4c8249](https://github.com/stacksjs/stx/commit/b4c8249)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.167 ([216ee14](https://github.com/stacksjs/stx/commit/216ee14)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.165...v0.2.166)
 
 ## 🚀 Features
