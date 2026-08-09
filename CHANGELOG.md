@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.169...v0.2.170)
+
+## 🐛 Bug Fixes
+
+- compress from the dev server too, and never buffer a stream ([25ed1a5](https://github.com/stacksjs/stx/commit/25ed1a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.170 ([3969daa](https://github.com/stacksjs/stx/commit/3969daa)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.168...v0.2.169)
 
 ## 🚀 Features
