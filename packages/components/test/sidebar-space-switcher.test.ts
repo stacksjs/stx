@@ -92,3 +92,28 @@ describe('a space change is one motion', () => {
     expect(source).toContain('prefers-reduced-motion')
   })
 })
+
+describe('the active dot stays visible', () => {
+  it('scrolls the row to reveal it', () => {
+    // Measured on a sidebar with 22 spaces: the active one was the 20th and
+    // none of the twelve you could see was lit, so the indicator indicated
+    // nothing.
+    expect(spaces).toContain('revealCurrentDot')
+    expect(spaces).toContain("inline: 'center'")
+  })
+
+  it('never scrolls the page vertically to do it', () => {
+    // A 6px dot must not drag the whole view around.
+    expect(spaces).toContain("block: 'nearest'")
+  })
+
+  it('does nothing when the row already fits', () => {
+    expect(spaces).toContain('row.scrollWidth <= row.clientWidth')
+  })
+
+  it('honours reduced motion through the existing helper', () => {
+    // `animates()` already exists; a second reduced-motion check would be one
+    // more thing to keep in step.
+    expect(spaces).toContain("behavior: animates() ? 'smooth' : 'auto'")
+  })
+})

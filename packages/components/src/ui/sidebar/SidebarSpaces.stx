@@ -134,6 +134,32 @@ function applyTint(position) {
   style.setProperty('--stx-space-dark-accent', tint.dark.accent)
 }
 
+/**
+ * Keep the active dot on screen.
+ *
+ * The dot row scrolls once there are more spaces than fit, and without this the
+ * active dot can sit outside the visible range — an indicator that indicates
+ * nothing. Measured on a sidebar with 22 spaces: the active one was the 20th,
+ * and none of the twelve you could see was lit.
+ *
+ * `block: 'nearest'` because this must never scroll the page vertically to
+ * bring a 6px dot into view.
+ */
+function revealCurrentDot(tab) {
+  const row = tab.closest('[data-space-switcher] .stx-space-dots')
+  if (!row || row.scrollWidth <= row.clientWidth) return
+
+  const rowBox = row.getBoundingClientRect()
+  const dotBox = tab.getBoundingClientRect()
+  if (dotBox.left >= rowBox.left && dotBox.right <= rowBox.right) return
+
+  tab.scrollIntoView({
+    inline: 'center',
+    block: 'nearest',
+    behavior: animates() ? 'smooth' : 'auto',
+  })
+}
+
 function markCurrent(position) {
   const id = ids[position]
 
@@ -142,6 +168,7 @@ function markCurrent(position) {
     tab.setAttribute('data-space-current', String(current))
     tab.setAttribute('aria-selected', String(current))
     tab.tabIndex = current ? 0 : -1
+    if (current) revealCurrentDot(tab)
   })
 
   root.querySelectorAll('[data-space]').forEach((panel) => {
