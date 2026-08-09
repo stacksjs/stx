@@ -23,6 +23,7 @@ import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, getBui
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
+import { compressResponse } from '@stacksjs/stx'
 
 /**
  * A bundle failure on its way to the dev-server overlay (#1884 ask 2).
@@ -2816,992 +2817,997 @@ function __stxOverlay(errs){
         // no good reason to enforce request timeouts.
         idleTimeout: 0,
         async fetch(req, server) {
-          const url = new URL(req.url)
-          let path = url.pathname
+          // Compression at the boundary, so it covers all thirty-nine exits from
+          // this handler rather than the one that happens to converge. Hot reload
+          // streams over text/event-stream, which compressResponse never buffers.
+          return compressResponse(req, await (async () => {
+            const url = new URL(req.url)
+            let path = url.pathname
 
-          // Dev proxy — forward matching paths to a backend before any routing.
-          // Configured (Vite-style) in stx.config.ts:
-          //   server: { proxy: { '/api': 'http://localhost:8000' } }
-          // or per-rule: { '/api': { target, changeOrigin?, rewrite? } }.
-          // Keys are matched by path prefix; the full path+query is forwarded
-          // (or `rewrite(path)` when given). Lets an stx app talk to a separate
-          // API server in dev without CORS — the parity gap vs Nuxt's
-          // `vite.server.proxy` / `nitro.devProxy`.
-          const proxyRules = (stxConfig as any).server?.proxy as
-          | Record<string, string | { target: string, changeOrigin?: boolean, rewrite?: (p: string) => string }>
-          | undefined
-          if (proxyRules) {
-            for (const [prefix, rule] of Object.entries(proxyRules)) {
-              if (path !== prefix && !path.startsWith(prefix))
-                continue
-              const ruleCfg = typeof rule === 'string' ? { target: rule } : rule
-              const outPath = ruleCfg.rewrite ? ruleCfg.rewrite(path) : path
-              const target = new URL(ruleCfg.target)
-              const outUrl = new URL(outPath + url.search, target)
-              const headers = new Headers(req.headers)
-              if (ruleCfg.changeOrigin !== false)
-                headers.set('host', target.host)
-              try {
-                return await fetch(outUrl, {
-                  method: req.method,
-                  headers,
-                  body: req.body,
-                  redirect: 'manual',
-                  ...(req.body ? { duplex: 'half' } : {}),
-                } as RequestInit)
-              }
-              catch (err) {
-                return new Response(`[stx dev proxy] ${prefix} → ${ruleCfg.target} failed: ${err instanceof Error ? err.message : String(err)}`, { status: 502 })
-              }
-            }
-          }
-
-          // i18n: detect + strip locale prefix BEFORE any other routing
-          // decision so downstream sees the unprefixed path. Records the
-          // resolved locale so the post-render translation pass below uses
-          // the right table. /api/** and other non-page routes pass through
-          // because the prefix wouldn't match them.
-          let i18nLocale: string | null = null
-          if (i18nConfig && !url.pathname.startsWith('/api/')) {
-            const stripped = localeFromPath(url.pathname)
-            i18nLocale = stripped.locale
-            if (stripped.path !== url.pathname) {
-              // Rewrite the Request so downstream routing (route table,
-              // discoverFiles, page resolution) sees the unprefixed path.
-              const rewritten = new URL(req.url)
-              rewritten.pathname = stripped.path
-              const headers = new Headers(req.headers)
-              headers.set('x-stx-locale', stripped.locale)
-              req = new Request(rewritten, { headers, method: req.method, body: req.body, redirect: req.redirect, duplex: 'half' } as RequestInit)
-              path = stripped.path
-            }
-            else if (i18nLocale) {
-              const headers = new Headers(req.headers)
-              headers.set('x-stx-locale', i18nLocale)
-              req = new Request(req, { headers })
-            }
-          }
-
-          // Wrap the rest of the handler in an IIFE so we can post-process
-          // its Response (translation pass) at a single exit point. When
-          // i18n is disabled, the IIFE body is the original handler 1:1
-          // and `applyI18nToResponse` returns the response untouched.
-          // Declared outside the IIFE so the response step below can attach the
-          // same token the render embedded.
-          let mintedCsrfToken: string | null = null
-
-          const _i18nResp: Response = await (async (): Promise<Response> => {
-            activeServeLocale = i18nLocale
-            activeServeSearch = url.search
-            activeServeHost = req.headers.get('host') || ''
-            activeServeCookieHeader = req.headers.get('cookie') || ''
-            activeServeCookies = parseCookies(req)
-            activeServeIp = server.requestIP(req)?.address || (req.headers.get('x-forwarded-for') || '').split(',')[0]!.trim()
-
-            // A CSRF token the page can embed, minted before the render.
-            //
-            // The usual pattern seeds this cookie on the way *out*, which
-            // works for a single-page app: it reads the cookie and echoes the
-            // header on its next request. It is too late for a server-rendered
-            // page with forms in it. The page is what has to embed the token,
-            // and on a visitor's very first request it renders before any
-            // cookie exists - so its forms carry nothing and their first
-            // submit is rejected. That is the submit most likely to belong to
-            // somebody trying the application for the first time.
-            //
-            // Minted here, put into the cookies the render reads, and attached
-            // to the response below - the same value in both places, because
-            // two independent tokens fail exactly like having none and are far
-            // harder to see.
-            mintedCsrfToken = csrfTokenToMint(req, activeServeCookies)
-            if (mintedCsrfToken)
-              activeServeCookies[CSRF_COOKIE] = mintedCsrfToken
-            // Immutable-per-request snapshot threaded down to the render.
-            // The singletons above can be reset by a concurrent request's
-            // `finally` while this render is suspended at an await; this
-            // object cannot (stacksjs/stacks#1967).
-            const reqCtx: ServeRequestContext = {
-              url: req.url,
-              path,
-              search: activeServeSearch,
-              host: activeServeHost,
-              cookieHeader: activeServeCookieHeader,
-              cookies: activeServeCookies,
-              ip: activeServeIp,
-              locale: activeServeLocale,
-              params: {},
-              method: (req.method || 'GET').toUpperCase(),
-              request: req,
-            }
-            try {
-
-              // Handle CORS preflight
-              if (req.method === 'OPTIONS') {
-                return new Response(null, { headers: corsHeaders })
-              }
-
-              // ── HMR event stream ────────────────────────────────────────────
-              // The injected HMR client (see `HMR_CLIENT_SCRIPT` below) opens an
-              // EventSource against this URL on every page load. We keep the
-              // controller around and the file watcher pushes `data: …` lines into
-              // every connected stream when a source file changes. The browser
-              // either does `location.reload()` or swaps `<link rel=stylesheet>`
-              // hrefs in place — see the client below for which.
-              if (path === '/_stx/hmr') {
-                let controller: ReadableStreamDefaultController<Uint8Array> | undefined
-                let keepalive: ReturnType<typeof setInterval> | undefined
-                const stream = new ReadableStream<Uint8Array>({
-                  start(c) {
-                    controller = c
-                    hmrClients.add(c)
-                    // Initial line — proves the connection is live to the browser
-                    // and gives the readyState a definite "open" before any change.
-                    c.enqueue(hmrEncoder.encode('data: {"type":"connected"}\n\n'))
-                    // Replay the current build errors. On a full page load the
-                    // response is sent before this EventSource exists, so a
-                    // broadcast alone reaches only the PREVIOUS page's
-                    // connection — the overlay would never appear on the very
-                    // load that failed, which is the one that matters.
-                    if (currentBuildErrors.length > 0) {
-                      c.enqueue(hmrEncoder.encode(
-                        `data: ${JSON.stringify({ type: 'build-error', errors: currentBuildErrors })}\n\n`,
-                      ))
-                    }
-                    // Keepalive ping. Without traffic, the stream idles and gets
-                    // killed by Bun.serve's `idleTimeout` (default 10s) or a reverse
-                    // proxy's read timeout — the browser then sees
-                    // `ERR_INCOMPLETE_CHUNKED_ENCODING` and falls into a reconnect
-                    // loop that mostly hides the HMR being broken. The ping MUST fire
-                    // faster than the shortest such timeout: 15s was longer than Bun's
-                    // 10s default, so the connection died before the first ping ever
-                    // arrived. 5s comfortably beats Bun's 10s and typical proxy (rpx,
-                    // nginx) read timeouts. The leading `:` is SSE comment syntax
-                    // (ignored by the EventSource API) and costs nothing.
-                    keepalive = setInterval(() => {
-                      try { c.enqueue(hmrEncoder.encode(': keepalive\n\n')) }
-                      catch { /* stream closed — cancel handler clears the timer */ }
-                    }, 5_000)
-                  },
-                  cancel() {
-                    if (keepalive) clearInterval(keepalive)
-                    if (controller) hmrClients.delete(controller)
-                  },
-                })
-                return new Response(stream, {
-                  headers: {
-                    'Content-Type': 'text/event-stream',
-                    'Cache-Control': 'no-cache, no-transform',
-                    'Connection': 'keep-alive',
-                    'X-Accel-Buffering': 'no', // proxies (rpx, nginx) — don't buffer
-                  },
-                })
-              }
-
-              // Shared STX client assets. Serve mode references these from
-              // every rendered document instead of inlining the same runtime
-              // and router payload on every page. ETag revalidation keeps
-              // package changes correct across dev-server restarts.
-              if (path === '/_stx/runtime.js' || path === '/_stx/router.js') {
-                const stx = await stxModule
-                const content = path === '/_stx/runtime.js'
-                  ? await stx.getCachedSignalsRuntime(stxConfig.debug === true)
-                  : await stx.getCachedRouterScript()
-                const etag = `"${Bun.hash(content).toString(16)}"`
-                const headers = {
-                  'Content-Type': 'application/javascript; charset=utf-8',
-                  'Cache-Control': 'public, max-age=0, must-revalidate',
-                  'ETag': etag,
-                  ...corsHeaders,
-                }
-                if (req.headers.get('if-none-match') === etag)
-                  return new Response(null, { status: 304, headers })
-                if (req.method === 'HEAD')
-                  return new Response(null, { headers })
-                return new Response(content, { headers })
-              }
-
-              // The store bundle on its own, for store HMR (#1877 ask 4). It is
-              // normally inlined into the page; the HMR client needs it as a
-              // standalone fetch so an edit can be applied without a reload.
-              // No-store: the whole point is that it changed.
-              if (path === '/_stx/stores.js') {
-                const stx = await stxModule
-                const code = typeof (stx as any).getStoreScript === 'function'
-                  ? await (stx as any).getStoreScript()
-                  : null
-                return new Response(code ?? '', {
-                  status: code === null ? 404 : 200,
-                  headers: {
-                    'Content-Type': 'application/javascript; charset=utf-8',
-                    'Cache-Control': 'no-store',
-                    ...corsHeaders,
-                  },
-                })
-              }
-
-              const crosswindAsset = path.match(/^\/_stx\/crosswind\.([a-f0-9]{16})\.css$/)
-              if (crosswindAsset) {
-                const stx = await stxModule
-                const content = stx.getCrosswindServeAsset(crosswindAsset[1]!)
-                if (content === undefined)
-                  return new Response('Crosswind asset not found', { status: 404 })
-                const headers = {
-                  'Content-Type': 'text/css; charset=utf-8',
-                  'Cache-Control': 'public, max-age=31536000, immutable',
-                  ...corsHeaders,
-                }
-                if (req.method === 'HEAD')
-                  return new Response(null, { headers })
-                return new Response(content, { headers })
-              }
-
-              // Custom onRequest handler — short-circuits if a Response is
-              // returned. A plain-object return is merged into the request
-              // context instead, giving the hook a race-free way to hand
-              // state (auth cookies, locale, a user object, ...) to
-              // `<script server>` blocks — see the onRequest option docs.
-              if (options.onRequest) {
-                const hookResult = await options.onRequest(req)
-                if (hookResult instanceof Response)
-                  return hookResult
-                if (hookResult && typeof hookResult === 'object')
-                  Object.assign(reqCtx, hookResult)
-              }
-
-              // ── Page middleware pipeline ────────────────────────────────────
-              //
-              // Resolves the named middleware for this route (global +
-              // page-declared + extra `auth.protectedPaths`), expands any
-              // middleware groups, then runs the handlers in order. The first
-              // one that returns a `Response` short-circuits the chain — the
-              // same shape Laravel's `handle($request, $next)` produces.
-              const route = resolveRouteMiddleware(path)
-              const extraNames = extraProtectedPrefixes.some(p => path === p || path.startsWith(p.endsWith('/') ? p : `${p}/`))
-                ? ['auth']
-                : []
-              const requested = [...globalMiddlewareNames, ...route.names, ...extraNames]
-              if (requested.length > 0) {
-                const expanded = expandMiddlewareNames(requested)
-                const cookies = parseCookies(req)
-                const ctx: MiddlewareContext = {
-                  path,
-                  url,
-                  params: route.params,
-                  cookies,
-                  redirect: (to, status = 302) => {
-                    const sep = to.includes('?') ? '&' : '?'
-                    const next = encodeURIComponent(path + (url.search || ''))
-                    return new Response(null, {
-                      status,
-                      headers: { Location: `${to}${sep}next=${next}` },
-                    })
-                  },
-                }
-                for (const entry of expanded) {
-                  // Laravel-style `auth:admin,owner` → handler('auth') called
-                  // with args = ['admin', 'owner'].
-                  const colon = entry.indexOf(':')
-                  const name = colon === -1 ? entry : entry.slice(0, colon)
-                  const args = colon === -1 ? [] : entry.slice(colon + 1).split(',')
-                  const handler = middlewareRegistry[name]
-                  if (!handler) {
-                    console.warn(`[stx serve] unknown middleware "${name}" on ${path}`)
-                    continue
-                  }
-                  const result = await handler(req, ctx, ...args)
-                  if (result instanceof Response) return result
-                }
-              }
-              // Silence the `redirectWithNext` helper unused-warning — kept
-              // around as part of the public-ish surface for callers that
-              // want the same shape from a custom onRequest hook.
-              void redirectWithNext
-
-              // Custom route handlers — matched by exact path
-              if (options.routes) {
-                const routeHandler = options.routes[path]
-                if (routeHandler) {
-                  return routeHandler(req)
-                }
-              }
-
-              // Serve async components — renders a component and returns HTML fragment
-              if (path.startsWith('/_stx/component/')) {
-                const componentName = decodeURIComponent(path.slice('/_stx/component/'.length))
-                if (componentName) {
-                  try {
-                    const { processDirectives, defaultConfig } = await stxModule
-                    const componentTemplate = `<${componentName} />`
-                    const componentOpts = {
-                      ...defaultConfig,
-                      ...(componentsDir && { componentsDir }),
-                      ...(layoutsDir && { layoutsDir }),
-                      ...(partialsDir && { partialsDir }),
-                      autoShell: false,
-                    }
-                    const html = await processDirectives(componentTemplate, {}, `${componentsDir}/${componentName}.stx`, componentOpts, new Set())
-                    return new Response(html, {
-                      headers: { 'Content-Type': 'text/html; charset=utf-8', ...corsHeaders },
-                    })
-                  }
-                  catch (e: any) {
-                    return new Response(`<div class="stx-async-error">${e.message}</div>`, {
-                      status: 500,
-                      headers: { 'Content-Type': 'text/html; charset=utf-8', ...corsHeaders },
-                    })
-                  }
-                }
-              }
-
-              // Handle API routes for data operations
-              if (path.startsWith('/api/data/') && req.method === 'POST') {
+            // Dev proxy — forward matching paths to a backend before any routing.
+            // Configured (Vite-style) in stx.config.ts:
+            //   server: { proxy: { '/api': 'http://localhost:8000' } }
+            // or per-rule: { '/api': { target, changeOrigin?, rewrite? } }.
+            // Keys are matched by path prefix; the full path+query is forwarded
+            // (or `rewrite(path)` when given). Lets an stx app talk to a separate
+            // API server in dev without CORS — the parity gap vs Nuxt's
+            // `vite.server.proxy` / `nitro.devProxy`.
+            const proxyRules = (stxConfig as any).server?.proxy as
+            | Record<string, string | { target: string, changeOrigin?: boolean, rewrite?: (p: string) => string }>
+            | undefined
+            if (proxyRules) {
+              for (const [prefix, rule] of Object.entries(proxyRules)) {
+                if (path !== prefix && !path.startsWith(prefix))
+                  continue
+                const ruleCfg = typeof rule === 'string' ? { target: rule } : rule
+                const outPath = ruleCfg.rewrite ? ruleCfg.rewrite(path) : path
+                const target = new URL(ruleCfg.target)
+                const outUrl = new URL(outPath + url.search, target)
+                const headers = new Headers(req.headers)
+                if (ruleCfg.changeOrigin !== false)
+                  headers.set('host', target.host)
                 try {
-                  const tableName = path.replace('/api/data/', '').split('/')[0]
-                  if (!tableName) {
-                    return new Response(JSON.stringify({ error: 'Table name required' }), {
-                      status: 400,
-                      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-                    })
-                  }
-
-                  // Validate table name to prevent SQL injection (allow only alphanumeric and underscores)
-                  if (!/^[a-zA-Z_]\w*$/.test(tableName)) {
-                    return new Response(JSON.stringify({ error: 'Invalid table name' }), {
-                      status: 400,
-                      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-                    })
-                  }
-
-                  const body = await req.json()
-
-                  // Import bun:sqlite for database operations
-                  const { Database } = await import('bun:sqlite')
-                  const dbPath = nodePath.resolve(process.cwd(), 'database/stacks.sqlite')
-                  const db = new Database(dbPath)
-
-                  try {
-                    // Get column info to validate fields (table name validated above)
-                    const tableInfo = db.query(`PRAGMA table_info("${tableName}")`).all() as Array<{ name: string, type: string, notnull: number, dflt_value: any }>
-                    const validColumns = tableInfo.map((c: any) => c.name).filter((n: string) => n !== 'id' && n !== 'created_at' && n !== 'updated_at')
-
-                    // Build INSERT query with only valid columns that have values
-                    const columns: string[] = []
-                    const placeholders: string[] = []
-                    const values: any[] = []
-
-                    for (const col of validColumns) {
-                      if (body[col] !== undefined && body[col] !== '') {
-                        columns.push(col)
-                        placeholders.push('?')
-                        values.push(body[col])
-                      }
-                    }
-
-                    // Add timestamps
-                    const now = new Date().toISOString()
-                    if (tableInfo.some((c: any) => c.name === 'created_at')) {
-                      columns.push('created_at')
-                      placeholders.push('?')
-                      values.push(now)
-                    }
-                    if (tableInfo.some((c: any) => c.name === 'updated_at')) {
-                      columns.push('updated_at')
-                      placeholders.push('?')
-                      values.push(now)
-                    }
-
-                    if (columns.length === 0) {
-                      return new Response(JSON.stringify({ error: 'No valid fields provided' }), {
-                        status: 400,
-                        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-                      })
-                    }
-
-                    const query = `INSERT INTO "${tableName}" (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`
-                    const stmt = db.prepare(query)
-                    const result = stmt.run(...values)
-
-                    return new Response(JSON.stringify({
-                      success: true,
-                      id: result.lastInsertRowid,
-                      message: 'Record created successfully',
-                    }), {
-                      status: 201,
-                      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-                    })
-                  }
-                  catch (error: any) {
-                    console.error('API Error:', error)
-                    return new Response(JSON.stringify({
-                      error: error.message || 'Failed to create record',
-                    }), {
-                      status: 500,
-                      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-                    })
-                  }
-                  finally {
-                    db.close()
-                  }
+                  return await fetch(outUrl, {
+                    method: req.method,
+                    headers,
+                    body: req.body,
+                    redirect: 'manual',
+                    ...(req.body ? { duplex: 'half' } : {}),
+                  } as RequestInit)
                 }
-                catch { /* outer try — errors handled by inner catch */ }
-              }
-
-              // Normalize path
-              if (path === '/index')
-                path = '/'
-
-              // Redirect root to /home if no index exists (dashboard pattern)
-              if (path === '/') {
-                const indexContent = await getRoute('/', reqCtx)
-                if (!indexContent) {
-                  // Try /home as default landing page
-                  const homeContent = await getRoute('/home', reqCtx)
-                  if (homeContent) {
-                    return new Response(null, {
-                      status: 302,
-                      headers: {
-                        'Location': '/home',
-                        ...corsHeaders,
-                      },
-                    })
-                  }
+                catch (err) {
+                  return new Response(`[stx dev proxy] ${prefix} → ${ruleCfg.target} failed: ${err instanceof Error ? err.message : String(err)}`, { status: 502 })
                 }
               }
+            }
 
-              // Try to serve the requested page (lazy load on demand)
-              const content = await getRoute(path, reqCtx)
-
-              // A page action asked for a redirect (#1847). 303 rather than 302:
-              // it is the status that tells the browser to follow up with a GET,
-              // so the POST is not repeated on reload or Back — the whole point
-              // of the POST/redirect/GET shape a form action exists to support.
-              if (reqCtx.actionRedirect) {
-                return new Response(null, {
-                  status: 303,
-                  headers: { ...corsHeaders, Location: reqCtx.actionRedirect },
-                })
+            // i18n: detect + strip locale prefix BEFORE any other routing
+            // decision so downstream sees the unprefixed path. Records the
+            // resolved locale so the post-render translation pass below uses
+            // the right table. /api/** and other non-page routes pass through
+            // because the prefix wouldn't match them.
+            let i18nLocale: string | null = null
+            if (i18nConfig && !url.pathname.startsWith('/api/')) {
+              const stripped = localeFromPath(url.pathname)
+              i18nLocale = stripped.locale
+              if (stripped.path !== url.pathname) {
+                // Rewrite the Request so downstream routing (route table,
+                // discoverFiles, page resolution) sees the unprefixed path.
+                const rewritten = new URL(req.url)
+                rewritten.pathname = stripped.path
+                const headers = new Headers(req.headers)
+                headers.set('x-stx-locale', stripped.locale)
+                req = new Request(rewritten, { headers, method: req.method, body: req.body, redirect: req.redirect, duplex: 'half' } as RequestInit)
+                path = stripped.path
               }
+              else if (i18nLocale) {
+                const headers = new Headers(req.headers)
+                headers.set('x-stx-locale', i18nLocale)
+                req = new Request(req, { headers })
+              }
+            }
 
-              if (content) {
-                const responseStatus = reqCtx.responseStatus ?? 200
-                // SPA navigation: return only <main> content as fragment
-                const isSpaNav = req.headers.get('X-STX-Router') === 'true'
-                if (isSpaNav) {
-                  // Detect layout from rendered content — extract @extends layout name
-                  // If layout differs from the referrer's layout, return full HTML (not fragment)
-                  // so the router does a full document swap instead of just swapping <main>
-                  const layoutMatch = content.match(/<!-- stx-layout: ([^ ]+) -->/)
-                  const pageLayout = layoutMatch ? layoutMatch[1] : 'default'
-                  // Locale switches must report `i18n:<code>` so the router does a full-body
-                  // swap (nav/footer translations live outside <main>). `applyI18nToResponse`
-                  // injects the same meta after render; headers here must match.
-                  const groupMetaMatch = content.match(/<meta\b[^>]*name=["']stx-layout-group["'][^>]*content=["']([^"']+)["'][^>]*>/i)
-                  const pageLayoutGroup = (i18nConfig && i18nLocale)
-                    ? `i18n:${i18nLocale}`
-                    : (groupMetaMatch?.[1] || deriveLayoutGroup(pageLayout))
+            // Wrap the rest of the handler in an IIFE so we can post-process
+            // its Response (translation pass) at a single exit point. When
+            // i18n is disabled, the IIFE body is the original handler 1:1
+            // and `applyI18nToResponse` returns the response untouched.
+            // Declared outside the IIFE so the response step below can attach the
+            // same token the render embedded.
+            let mintedCsrfToken: string | null = null
 
-                  let fragment = content
-                  let containerAttrs = ''
-                  let mainContentStart = -1
-                  let mainContentEnd = -1
+            const _i18nResp: Response = await (async (): Promise<Response> => {
+              activeServeLocale = i18nLocale
+              activeServeSearch = url.search
+              activeServeHost = req.headers.get('host') || ''
+              activeServeCookieHeader = req.headers.get('cookie') || ''
+              activeServeCookies = parseCookies(req)
+              activeServeIp = server.requestIP(req)?.address || (req.headers.get('x-forwarded-for') || '').split(',')[0]!.trim()
 
-                  // Extract styles from <head> AND body (Crosswind CSS, page styles, @push('styles'))
-                  // The router's doFragSwap injects these into <head> during SPA swap
-                  const headStyles: string[] = []
-                  const headMatch = content.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)
-                  if (headMatch) {
-                    const headContent = headMatch[1]
-                    let styleMatch: RegExpExecArray | null
-                    const styleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
-                    while ((styleMatch = styleRe.exec(headContent)) !== null) {
-                      if (styleMatch[0].includes('data-crosswind')) {
-                        // Include Crosswind utility CSS WITHOUT the Preflight reset.
-                        // The initial page load already has Preflight — fragments only need
-                        // new utility classes for the navigated page.
-                        const cssContent = styleMatch[0].replace(/<style[^>]*>/, '').replace(/<\/style>/, '')
-                        // Strip everything before the first utility rule (after Preflight + CSS variables)
-                        const hiddenRule = cssContent.indexOf('[hidden]')
-                        if (hiddenRule !== -1) {
-                          const afterPreflight = cssContent.indexOf('}', hiddenRule) + 1
-                          const utilities = cssContent.slice(afterPreflight).trim()
-                          if (utilities) {
-                            headStyles.push(`<style data-crosswind="fragment">${utilities}</style>`)
-                          }
-                        }
-                        continue
+              // A CSRF token the page can embed, minted before the render.
+              //
+              // The usual pattern seeds this cookie on the way *out*, which
+              // works for a single-page app: it reads the cookie and echoes the
+              // header on its next request. It is too late for a server-rendered
+              // page with forms in it. The page is what has to embed the token,
+              // and on a visitor's very first request it renders before any
+              // cookie exists - so its forms carry nothing and their first
+              // submit is rejected. That is the submit most likely to belong to
+              // somebody trying the application for the first time.
+              //
+              // Minted here, put into the cookies the render reads, and attached
+              // to the response below - the same value in both places, because
+              // two independent tokens fail exactly like having none and are far
+              // harder to see.
+              mintedCsrfToken = csrfTokenToMint(req, activeServeCookies)
+              if (mintedCsrfToken)
+                activeServeCookies[CSRF_COOKIE] = mintedCsrfToken
+              // Immutable-per-request snapshot threaded down to the render.
+              // The singletons above can be reset by a concurrent request's
+              // `finally` while this render is suspended at an await; this
+              // object cannot (stacksjs/stacks#1967).
+              const reqCtx: ServeRequestContext = {
+                url: req.url,
+                path,
+                search: activeServeSearch,
+                host: activeServeHost,
+                cookieHeader: activeServeCookieHeader,
+                cookies: activeServeCookies,
+                ip: activeServeIp,
+                locale: activeServeLocale,
+                params: {},
+                method: (req.method || 'GET').toUpperCase(),
+                request: req,
+              }
+              try {
+
+                // Handle CORS preflight
+                if (req.method === 'OPTIONS') {
+                  return new Response(null, { headers: corsHeaders })
+                }
+
+                // ── HMR event stream ────────────────────────────────────────────
+                // The injected HMR client (see `HMR_CLIENT_SCRIPT` below) opens an
+                // EventSource against this URL on every page load. We keep the
+                // controller around and the file watcher pushes `data: …` lines into
+                // every connected stream when a source file changes. The browser
+                // either does `location.reload()` or swaps `<link rel=stylesheet>`
+                // hrefs in place — see the client below for which.
+                if (path === '/_stx/hmr') {
+                  let controller: ReadableStreamDefaultController<Uint8Array> | undefined
+                  let keepalive: ReturnType<typeof setInterval> | undefined
+                  const stream = new ReadableStream<Uint8Array>({
+                    start(c) {
+                      controller = c
+                      hmrClients.add(c)
+                      // Initial line — proves the connection is live to the browser
+                      // and gives the readyState a definite "open" before any change.
+                      c.enqueue(hmrEncoder.encode('data: {"type":"connected"}\n\n'))
+                      // Replay the current build errors. On a full page load the
+                      // response is sent before this EventSource exists, so a
+                      // broadcast alone reaches only the PREVIOUS page's
+                      // connection — the overlay would never appear on the very
+                      // load that failed, which is the one that matters.
+                      if (currentBuildErrors.length > 0) {
+                        c.enqueue(hmrEncoder.encode(
+                          `data: ${JSON.stringify({ type: 'build-error', errors: currentBuildErrors })}\n\n`,
+                        ))
                       }
-                      headStyles.push(styleMatch[0])
-                    }
-
-                    const crosswindLinkRe = /<link\b[^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*>/gi
-                    let crosswindLinkMatch: RegExpExecArray | null
-                    while ((crosswindLinkMatch = crosswindLinkRe.exec(headContent)) !== null) {
-                      headStyles.push(crosswindLinkMatch[0])
-                    }
-                  }
-
-                  // Also extract styles that are siblings of <main> (from @push/@stack)
-                  // These appear in the body but outside <main>, so they'd be lost in fragment extraction
-                  // The container is resolved with the SAME selector the client
-                  // uses, instead of being hardcoded to <main>. Configuring
-                  // `router: { container: '[data-stx-content]' }` used to produce
-                  // a <main>-shaped fragment that the client then injected
-                  // somewhere else, duplicating the page chrome. See #1853.
-                  const containerSelector = (stxConfig as any)?.router?.container || 'main'
-                  const containerRegion = findContainerRegion(fragment, containerSelector)
-                  if (!containerRegion) {
-                    // Previously this fell through silently and the WHOLE body
-                    // shipped as the "fragment", which the client could not swap
-                    // — so every link on the page did a full document load, at
-                    // HTTP 200, with nothing said. The rule was structural and
-                    // unenforced, so apps encoded it as prose in their layouts.
-                    console.warn(
-                      `[stx] No SPA swap container matching "${containerSelector}" in ${new URL(req.url).pathname}. `
-                      + `SPA navigation is disabled for links on this page; the full document will load instead. `
-                      + `Add a matching element, or point router.container at one this page has.`,
-                    )
-                  }
-                  const mainOpenMatch = containerRegion
-                    ? { 0: containerRegion.openTag, index: containerRegion.openIndex } as unknown as RegExpMatchArray
-                    : null
-                  const mainCloseIdx = containerRegion ? containerRegion.end : -1
-                  if (mainOpenMatch && mainCloseIdx !== -1) {
-                    // Look for styles between body start and <main> (e.g. from @stack('styles'))
-                    const bodyMatch = content.match(/<body\b[^>]*>/i)
-                    if (bodyMatch) {
-                      const bodyStart = bodyMatch.index! + bodyMatch[0].length
-                      const mainIdx = mainOpenMatch.index!
-                      const beforeMain = content.slice(bodyStart, mainIdx)
-                      let bodyStyleMatch: RegExpExecArray | null
-                      const bodyStyleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
-                      while ((bodyStyleMatch = bodyStyleRe.exec(beforeMain)) !== null) {
-                        headStyles.push(bodyStyleMatch[0])
-                      }
-                    }
-
-                    // Capture the destination <main>'s own attributes. The fragment
-                    // carries only the container's INNER content, so a page whose
-                    // layout lives on <main> itself (e.g. `<main class="flex
-                    // min-h-[100dvh] items-center justify-center">`) would otherwise
-                    // be injected into the persistent, attribute-less container and
-                    // lose its layout entirely on SPA navigation. The router applies
-                    // these to the container during the swap.
-                    // Strip the resolved tag name, not a hardcoded `main` — the
-                    // container can be any element now.
-                    containerAttrs = mainOpenMatch[0]
-                      .replace(new RegExp(`^<${containerRegion!.tagName}\\b`, 'i'), '')
-                      .replace(/\/?>$/, '')
-                      .trim()
-
-                    // Extract only the <main> inner content (not sidebar, header, or layout)
-                    const mainStart = mainOpenMatch.index! + mainOpenMatch[0].length
-                    mainContentStart = mainStart
-                    mainContentEnd = mainCloseIdx
-                    fragment = fragment.slice(mainStart, mainCloseIdx).trim()
-                  }
-                  // Extract ALL page-specific scripts from the full page response.
-                  // These may be in <head> or before </body> — outside <main>.
-                  // Includes: setup functions (__stx_setup_), partial scope IIFEs,
-                  // the dynamic route params, and the reactive bridge (initScope calls).
-                  // Excludes: signals runtime IIFE, x-element runtime, router script.
-                  const pageSetupScripts: string[] = []
-                  const pageSetupScriptOffsets = new Set<number>()
-                  const appendOutsideMainScript = (match: RegExpExecArray): void => {
-                    const offset = match.index
-                    const insideMain = mainContentStart !== -1
-                      && offset >= mainContentStart
-                      && offset < mainContentEnd
-                    if (insideMain || pageSetupScriptOffsets.has(offset))
-                      return
-                    pageSetupScriptOffsets.add(offset)
-                    pageSetupScripts.push(match[0])
-                  }
-                  const routeParamsRe = /<script\b[^>]*data-stx-route-params[^>]*>[\s\S]*?<\/script>/gi
-                  let setupMatch: RegExpExecArray | null
-                  while ((setupMatch = routeParamsRe.exec(content)) !== null) {
-                    appendOutsideMainScript(setupMatch)
-                  }
-                  const allScriptRe = /<script\b[^>]*data-stx-scoped[^>]*>[\s\S]*?<\/script>/gi
-                  while ((setupMatch = allScriptRe.exec(content)) !== null) {
-                    const scriptContent = setupMatch[0]
-                    // Skip the signals runtime (huge IIFE starting with early_mounts shim)
-                    if (scriptContent.includes('__stx_early_mounts')) continue
-                    // Skip the reactive bridge runtime definition (window.__stx_reactive)
-                    if (scriptContent.includes('data-stx-reactive') && scriptContent.includes('window.__stx_reactive')) continue
-                    appendOutsideMainScript(setupMatch)
-                  }
-                  // Also include reactive bridge initScope calls (they're in a separate script tag)
-                  // eslint-disable-next-line no-super-linear-backtracking, regexp/no-super-linear-backtracking
-                  const bridgeInitRe = /<script\b[^>]*data-stx-reactive[^>]*>(?![\s\S]*window\.__stx_reactive)[\s\S]*?<\/script>/gi
-                  while ((setupMatch = bridgeInitRe.exec(content)) !== null) {
-                    appendOutsideMainScript(setupMatch)
-                  }
-
-                  // Strip the signals runtime IIFE — keep only page-specific scripts
-                  fragment = fragment.replace(
-                    /<script data-stx-scoped>\s*;?\(function\(\)\s*\{[\s\S]*?<\/script>/g,
-                    '',
-                  )
-
-                  // Clear stale _latestSetup from previous page, then append new page scripts
-                  const clearStale = '<script data-stx-page>if(window.stx)window.stx._latestSetup=null;</script>'
-                  const componentFactoryScripts = pageSetupScripts.filter(script => script.includes('data-stx-component-factories'))
-                  const trailingPageScripts = pageSetupScripts.filter(script => !script.includes('data-stx-component-factories'))
-                  // Component instance calls can live inside <main>, while their
-                  // request-scoped factory prelude is normally emitted in the
-                  // document head. Keep the prelude ahead of fragment content so
-                  // calls never run before the shared factory is registered.
-                  fragment = `${headStyles.join('\n')}\n${componentFactoryScripts.join('\n')}\n${fragment}\n${clearStale}\n${trailingPageScripts.join('\n')}`
-
-                  // Carry the page <title> (from the full page, before it was
-                  // reduced to the <main> fragment) so the SPA router can keep
-                  // document.title in sync on swap. URI-encoded for header safety.
-                  const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
-                  const pageTitle = titleMatch ? titleMatch[1].trim() : ''
-
-                  // Whether the destination needs the signals runtime — read off
-                  // the FULL page, since the runtime script lives in <head> and
-                  // the fragment above is only the container's inner content.
-                  // The router cannot work this out from the fragment: a page
-                  // with reactive syntax but no setup function carries no marker
-                  // at all inside <main> (stacksjs/stx#1827). Mirrors
-                  // pageShipsSignalsRuntime in stx's runtime-injection.ts —
-                  // inlined rather than imported because '@stacksjs/stx'
-                  // resolves to dist here, which lags src.
-                  const shipsRuntime = content.includes('data-stx-runtime')
-
-                  // Same rule on the SPA path. A 200 here is worse than on a
-                  // full load: the router swaps the failure into the live page
-                  // and the user keeps navigating around a broken shell (#1854).
-                  return new Response(fragment, {
-                    status: isRenderFailure(content) ? 500 : responseStatus,
+                      // Keepalive ping. Without traffic, the stream idles and gets
+                      // killed by Bun.serve's `idleTimeout` (default 10s) or a reverse
+                      // proxy's read timeout — the browser then sees
+                      // `ERR_INCOMPLETE_CHUNKED_ENCODING` and falls into a reconnect
+                      // loop that mostly hides the HMR being broken. The ping MUST fire
+                      // faster than the shortest such timeout: 15s was longer than Bun's
+                      // 10s default, so the connection died before the first ping ever
+                      // arrived. 5s comfortably beats Bun's 10s and typical proxy (rpx,
+                      // nginx) read timeouts. The leading `:` is SSE comment syntax
+                      // (ignored by the EventSource API) and costs nothing.
+                      keepalive = setInterval(() => {
+                        try { c.enqueue(hmrEncoder.encode(': keepalive\n\n')) }
+                        catch { /* stream closed — cancel handler clears the timer */ }
+                      }, 5_000)
+                    },
+                    cancel() {
+                      if (keepalive) clearInterval(keepalive)
+                      if (controller) hmrClients.delete(controller)
+                    },
+                  })
+                  return new Response(stream, {
                     headers: {
-                      'Content-Type': 'text/html; charset=utf-8',
-                      'X-STX-Fragment': 'true',
-                      'X-STX-Layout': pageLayout,
-                      'X-STX-Layout-Group': pageLayoutGroup,
-                      'X-STX-Runtime': shipsRuntime ? 'true' : 'false',
-                      ...(pageTitle && { 'X-STX-Title': encodeURIComponent(pageTitle) }),
-                      // Which build rendered this fragment. A watch-mode
-                      // restart changes it, letting the router notice that the
-                      // runtime already loaded in the page predates it (#1772).
-                      [BUILD_ID_HEADER]: getBuildId(),
-                      ...(containerAttrs && { 'X-STX-Container-Attrs': encodeURIComponent(containerAttrs) }),
+                      'Content-Type': 'text/event-stream',
+                      'Cache-Control': 'no-cache, no-transform',
+                      'Connection': 'keep-alive',
+                      'X-Accel-Buffering': 'no', // proxies (rpx, nginx) — don't buffer
+                    },
+                  })
+                }
+
+                // Shared STX client assets. Serve mode references these from
+                // every rendered document instead of inlining the same runtime
+                // and router payload on every page. ETag revalidation keeps
+                // package changes correct across dev-server restarts.
+                if (path === '/_stx/runtime.js' || path === '/_stx/router.js') {
+                  const stx = await stxModule
+                  const content = path === '/_stx/runtime.js'
+                    ? await stx.getCachedSignalsRuntime(stxConfig.debug === true)
+                    : await stx.getCachedRouterScript()
+                  const etag = `"${Bun.hash(content).toString(16)}"`
+                  const headers = {
+                    'Content-Type': 'application/javascript; charset=utf-8',
+                    'Cache-Control': 'public, max-age=0, must-revalidate',
+                    'ETag': etag,
+                    ...corsHeaders,
+                  }
+                  if (req.headers.get('if-none-match') === etag)
+                    return new Response(null, { status: 304, headers })
+                  if (req.method === 'HEAD')
+                    return new Response(null, { headers })
+                  return new Response(content, { headers })
+                }
+
+                // The store bundle on its own, for store HMR (#1877 ask 4). It is
+                // normally inlined into the page; the HMR client needs it as a
+                // standalone fetch so an edit can be applied without a reload.
+                // No-store: the whole point is that it changed.
+                if (path === '/_stx/stores.js') {
+                  const stx = await stxModule
+                  const code = typeof (stx as any).getStoreScript === 'function'
+                    ? await (stx as any).getStoreScript()
+                    : null
+                  return new Response(code ?? '', {
+                    status: code === null ? 404 : 200,
+                    headers: {
+                      'Content-Type': 'application/javascript; charset=utf-8',
                       'Cache-Control': 'no-store',
                       ...corsHeaders,
                     },
                   })
                 }
-                // Strip duplicate signals runtime IIFEs from @extends pages.
-                // The layout and page each generate a runtime — only the first is needed.
-                // Match the IIFE by its unique start: (function(){'use strict';var cloakStyle
-                // The code uses </scr'+'ipt> internally, so the first literal </script> is the real end.
-                let cleaned = content
-                let runtimeCount = 0
-                cleaned = content.replace(
-                  /<script data-stx-scoped>\(function\(\)\{'use strict';var cloakStyle[\s\S]*?<\/script>/g,
-                  (match) => {
-                    runtimeCount++
-                    return runtimeCount === 1 ? match : '' // keep first, drop duplicates
-                  },
-                )
-                // A render failure is a 500, whatever status the page asked
-                // for. Serving it as 200 is what made this invisible: the
-                // response looked healthy to uptime checks and caches while
-                // the body was an HTML comment (#1854).
-                const pageRenderFailed = isRenderFailure(cleaned)
-                if (pageRenderFailed) {
-                  console.error(`[stx] render failed for ${new URL(req.url).pathname} — serving 500`)
 
-                  // The body was still the blank failure comment. Mirror
-                  // production-server.ts (#1722) and the /404 lookup below: if
-                  // the app ships a /500 page, render THAT as the body so a
-                  // visitor gets a real error page, not an empty one. Rendered
-                  // once — getRoute produces a string, it does not re-enter this
-                  // HTTP handler — and if the /500 page ITSELF fails to render,
-                  // fall through to the marker body rather than loop.
-                  for (const custom500 of ['/500', '/errors/500']) {
-                    try {
-                      const errorPage = usableErrorPage(await getRoute(custom500, reqCtx))
-                      if (errorPage) {
-                        const isProd = isProductionServe()
-                        return new Response(isProd ? errorPage : injectHmrClient(errorPage), {
-                          status: 500,
-                          headers: {
-                            'Content-Type': 'text/html; charset=utf-8',
-                            'Cache-Control': 'no-store',
-                            ...corsHeaders,
-                          },
-                        })
-                      }
+                const crosswindAsset = path.match(/^\/_stx\/crosswind\.([a-f0-9]{16})\.css$/)
+                if (crosswindAsset) {
+                  const stx = await stxModule
+                  const content = stx.getCrosswindServeAsset(crosswindAsset[1]!)
+                  if (content === undefined)
+                    return new Response('Crosswind asset not found', { status: 404 })
+                  const headers = {
+                    'Content-Type': 'text/css; charset=utf-8',
+                    'Cache-Control': 'public, max-age=31536000, immutable',
+                    ...corsHeaders,
+                  }
+                  if (req.method === 'HEAD')
+                    return new Response(null, { headers })
+                  return new Response(content, { headers })
+                }
+
+                // Custom onRequest handler — short-circuits if a Response is
+                // returned. A plain-object return is merged into the request
+                // context instead, giving the hook a race-free way to hand
+                // state (auth cookies, locale, a user object, ...) to
+                // `<script server>` blocks — see the onRequest option docs.
+                if (options.onRequest) {
+                  const hookResult = await options.onRequest(req)
+                  if (hookResult instanceof Response)
+                    return hookResult
+                  if (hookResult && typeof hookResult === 'object')
+                    Object.assign(reqCtx, hookResult)
+                }
+
+                // ── Page middleware pipeline ────────────────────────────────────
+                //
+                // Resolves the named middleware for this route (global +
+                // page-declared + extra `auth.protectedPaths`), expands any
+                // middleware groups, then runs the handlers in order. The first
+                // one that returns a `Response` short-circuits the chain — the
+                // same shape Laravel's `handle($request, $next)` produces.
+                const route = resolveRouteMiddleware(path)
+                const extraNames = extraProtectedPrefixes.some(p => path === p || path.startsWith(p.endsWith('/') ? p : `${p}/`))
+                  ? ['auth']
+                  : []
+                const requested = [...globalMiddlewareNames, ...route.names, ...extraNames]
+                if (requested.length > 0) {
+                  const expanded = expandMiddlewareNames(requested)
+                  const cookies = parseCookies(req)
+                  const ctx: MiddlewareContext = {
+                    path,
+                    url,
+                    params: route.params,
+                    cookies,
+                    redirect: (to, status = 302) => {
+                      const sep = to.includes('?') ? '&' : '?'
+                      const next = encodeURIComponent(path + (url.search || ''))
+                      return new Response(null, {
+                        status,
+                        headers: { Location: `${to}${sep}next=${next}` },
+                      })
+                    },
+                  }
+                  for (const entry of expanded) {
+                    // Laravel-style `auth:admin,owner` → handler('auth') called
+                    // with args = ['admin', 'owner'].
+                    const colon = entry.indexOf(':')
+                    const name = colon === -1 ? entry : entry.slice(0, colon)
+                    const args = colon === -1 ? [] : entry.slice(colon + 1).split(',')
+                    const handler = middlewareRegistry[name]
+                    if (!handler) {
+                      console.warn(`[stx serve] unknown middleware "${name}" on ${path}`)
+                      continue
                     }
-                    catch {
-                      // Custom 500 render failed — try the next location, then
-                      // fall through to the marker body below.
+                    const result = await handler(req, ctx, ...args)
+                    if (result instanceof Response) return result
+                  }
+                }
+                // Silence the `redirectWithNext` helper unused-warning — kept
+                // around as part of the public-ish surface for callers that
+                // want the same shape from a custom onRequest hook.
+                void redirectWithNext
+
+                // Custom route handlers — matched by exact path
+                if (options.routes) {
+                  const routeHandler = options.routes[path]
+                  if (routeHandler) {
+                    return routeHandler(req)
+                  }
+                }
+
+                // Serve async components — renders a component and returns HTML fragment
+                if (path.startsWith('/_stx/component/')) {
+                  const componentName = decodeURIComponent(path.slice('/_stx/component/'.length))
+                  if (componentName) {
+                    try {
+                      const { processDirectives, defaultConfig } = await stxModule
+                      const componentTemplate = `<${componentName} />`
+                      const componentOpts = {
+                        ...defaultConfig,
+                        ...(componentsDir && { componentsDir }),
+                        ...(layoutsDir && { layoutsDir }),
+                        ...(partialsDir && { partialsDir }),
+                        autoShell: false,
+                      }
+                      const html = await processDirectives(componentTemplate, {}, `${componentsDir}/${componentName}.stx`, componentOpts, new Set())
+                      return new Response(html, {
+                        headers: { 'Content-Type': 'text/html; charset=utf-8', ...corsHeaders },
+                      })
+                    }
+                    catch (e: any) {
+                      return new Response(`<div class="stx-async-error">${e.message}</div>`, {
+                        status: 500,
+                        headers: { 'Content-Type': 'text/html; charset=utf-8', ...corsHeaders },
+                      })
                     }
                   }
                 }
 
-                return new Response(injectHmrClient(cleaned), {
-                  status: pageRenderFailed ? 500 : responseStatus,
-                  headers: {
-                    'Content-Type': 'text/html; charset=utf-8',
-                    'Cache-Control': 'no-store',
-                    ...corsHeaders,
-                  },
-                })
-              }
+                // Handle API routes for data operations
+                if (path.startsWith('/api/data/') && req.method === 'POST') {
+                  try {
+                    const tableName = path.replace('/api/data/', '').split('/')[0]
+                    if (!tableName) {
+                      return new Response(JSON.stringify({ error: 'Table name required' }), {
+                        status: 400,
+                        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+                      })
+                    }
 
-              // Try without extension
-              const contentWithExt = await getRoute(`${path}.html`, reqCtx)
-              if (contentWithExt) {
-                return new Response(injectHmrClient(contentWithExt), {
-                  status: reqCtx.responseStatus ?? 200,
-                  headers: {
-                    'Content-Type': 'text/html; charset=utf-8',
-                    'Cache-Control': 'no-store',
-                    ...corsHeaders,
-                  },
-                })
-              }
+                    // Validate table name to prevent SQL injection (allow only alphanumeric and underscores)
+                    if (!/^[a-zA-Z_]\w*$/.test(tableName)) {
+                      return new Response(JSON.stringify({ error: 'Invalid table name' }), {
+                        status: 400,
+                        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+                      })
+                    }
 
-              // Try to serve build artifacts (chunk files, CSS, etc.) from the
-              // state directory
-              if (path.startsWith('/chunk-') || path.endsWith('.js') || path.endsWith('.css')) {
-                try {
-                  const buildFile = Bun.file(stateDir(process.cwd(), path))
-                  if (await buildFile.exists()) {
-                    const ext = path.split('.').pop()?.toLowerCase()
-                    const contentType = ext === 'css' ? 'text/css' : ext === 'js' ? 'application/javascript' : 'text/plain'
+                    const body = await req.json()
 
-                    return new Response(buildFile, {
+                    // Import bun:sqlite for database operations
+                    const { Database } = await import('bun:sqlite')
+                    const dbPath = nodePath.resolve(process.cwd(), 'database/stacks.sqlite')
+                    const db = new Database(dbPath)
+
+                    try {
+                      // Get column info to validate fields (table name validated above)
+                      const tableInfo = db.query(`PRAGMA table_info("${tableName}")`).all() as Array<{ name: string, type: string, notnull: number, dflt_value: any }>
+                      const validColumns = tableInfo.map((c: any) => c.name).filter((n: string) => n !== 'id' && n !== 'created_at' && n !== 'updated_at')
+
+                      // Build INSERT query with only valid columns that have values
+                      const columns: string[] = []
+                      const placeholders: string[] = []
+                      const values: any[] = []
+
+                      for (const col of validColumns) {
+                        if (body[col] !== undefined && body[col] !== '') {
+                          columns.push(col)
+                          placeholders.push('?')
+                          values.push(body[col])
+                        }
+                      }
+
+                      // Add timestamps
+                      const now = new Date().toISOString()
+                      if (tableInfo.some((c: any) => c.name === 'created_at')) {
+                        columns.push('created_at')
+                        placeholders.push('?')
+                        values.push(now)
+                      }
+                      if (tableInfo.some((c: any) => c.name === 'updated_at')) {
+                        columns.push('updated_at')
+                        placeholders.push('?')
+                        values.push(now)
+                      }
+
+                      if (columns.length === 0) {
+                        return new Response(JSON.stringify({ error: 'No valid fields provided' }), {
+                          status: 400,
+                          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+                        })
+                      }
+
+                      const query = `INSERT INTO "${tableName}" (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`
+                      const stmt = db.prepare(query)
+                      const result = stmt.run(...values)
+
+                      return new Response(JSON.stringify({
+                        success: true,
+                        id: result.lastInsertRowid,
+                        message: 'Record created successfully',
+                      }), {
+                        status: 201,
+                        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+                      })
+                    }
+                    catch (error: any) {
+                      console.error('API Error:', error)
+                      return new Response(JSON.stringify({
+                        error: error.message || 'Failed to create record',
+                      }), {
+                        status: 500,
+                        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+                      })
+                    }
+                    finally {
+                      db.close()
+                    }
+                  }
+                  catch { /* outer try — errors handled by inner catch */ }
+                }
+
+                // Normalize path
+                if (path === '/index')
+                  path = '/'
+
+                // Redirect root to /home if no index exists (dashboard pattern)
+                if (path === '/') {
+                  const indexContent = await getRoute('/', reqCtx)
+                  if (!indexContent) {
+                    // Try /home as default landing page
+                    const homeContent = await getRoute('/home', reqCtx)
+                    if (homeContent) {
+                      return new Response(null, {
+                        status: 302,
+                        headers: {
+                          'Location': '/home',
+                          ...corsHeaders,
+                        },
+                      })
+                    }
+                  }
+                }
+
+                // Try to serve the requested page (lazy load on demand)
+                const content = await getRoute(path, reqCtx)
+
+                // A page action asked for a redirect (#1847). 303 rather than 302:
+                // it is the status that tells the browser to follow up with a GET,
+                // so the POST is not repeated on reload or Back — the whole point
+                // of the POST/redirect/GET shape a form action exists to support.
+                if (reqCtx.actionRedirect) {
+                  return new Response(null, {
+                    status: 303,
+                    headers: { ...corsHeaders, Location: reqCtx.actionRedirect },
+                  })
+                }
+
+                if (content) {
+                  const responseStatus = reqCtx.responseStatus ?? 200
+                  // SPA navigation: return only <main> content as fragment
+                  const isSpaNav = req.headers.get('X-STX-Router') === 'true'
+                  if (isSpaNav) {
+                    // Detect layout from rendered content — extract @extends layout name
+                    // If layout differs from the referrer's layout, return full HTML (not fragment)
+                    // so the router does a full document swap instead of just swapping <main>
+                    const layoutMatch = content.match(/<!-- stx-layout: ([^ ]+) -->/)
+                    const pageLayout = layoutMatch ? layoutMatch[1] : 'default'
+                    // Locale switches must report `i18n:<code>` so the router does a full-body
+                    // swap (nav/footer translations live outside <main>). `applyI18nToResponse`
+                    // injects the same meta after render; headers here must match.
+                    const groupMetaMatch = content.match(/<meta\b[^>]*name=["']stx-layout-group["'][^>]*content=["']([^"']+)["'][^>]*>/i)
+                    const pageLayoutGroup = (i18nConfig && i18nLocale)
+                      ? `i18n:${i18nLocale}`
+                      : (groupMetaMatch?.[1] || deriveLayoutGroup(pageLayout))
+
+                    let fragment = content
+                    let containerAttrs = ''
+                    let mainContentStart = -1
+                    let mainContentEnd = -1
+
+                    // Extract styles from <head> AND body (Crosswind CSS, page styles, @push('styles'))
+                    // The router's doFragSwap injects these into <head> during SPA swap
+                    const headStyles: string[] = []
+                    const headMatch = content.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)
+                    if (headMatch) {
+                      const headContent = headMatch[1]
+                      let styleMatch: RegExpExecArray | null
+                      const styleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
+                      while ((styleMatch = styleRe.exec(headContent)) !== null) {
+                        if (styleMatch[0].includes('data-crosswind')) {
+                          // Include Crosswind utility CSS WITHOUT the Preflight reset.
+                          // The initial page load already has Preflight — fragments only need
+                          // new utility classes for the navigated page.
+                          const cssContent = styleMatch[0].replace(/<style[^>]*>/, '').replace(/<\/style>/, '')
+                          // Strip everything before the first utility rule (after Preflight + CSS variables)
+                          const hiddenRule = cssContent.indexOf('[hidden]')
+                          if (hiddenRule !== -1) {
+                            const afterPreflight = cssContent.indexOf('}', hiddenRule) + 1
+                            const utilities = cssContent.slice(afterPreflight).trim()
+                            if (utilities) {
+                              headStyles.push(`<style data-crosswind="fragment">${utilities}</style>`)
+                            }
+                          }
+                          continue
+                        }
+                        headStyles.push(styleMatch[0])
+                      }
+
+                      const crosswindLinkRe = /<link\b[^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*>/gi
+                      let crosswindLinkMatch: RegExpExecArray | null
+                      while ((crosswindLinkMatch = crosswindLinkRe.exec(headContent)) !== null) {
+                        headStyles.push(crosswindLinkMatch[0])
+                      }
+                    }
+
+                    // Also extract styles that are siblings of <main> (from @push/@stack)
+                    // These appear in the body but outside <main>, so they'd be lost in fragment extraction
+                    // The container is resolved with the SAME selector the client
+                    // uses, instead of being hardcoded to <main>. Configuring
+                    // `router: { container: '[data-stx-content]' }` used to produce
+                    // a <main>-shaped fragment that the client then injected
+                    // somewhere else, duplicating the page chrome. See #1853.
+                    const containerSelector = (stxConfig as any)?.router?.container || 'main'
+                    const containerRegion = findContainerRegion(fragment, containerSelector)
+                    if (!containerRegion) {
+                      // Previously this fell through silently and the WHOLE body
+                      // shipped as the "fragment", which the client could not swap
+                      // — so every link on the page did a full document load, at
+                      // HTTP 200, with nothing said. The rule was structural and
+                      // unenforced, so apps encoded it as prose in their layouts.
+                      console.warn(
+                        `[stx] No SPA swap container matching "${containerSelector}" in ${new URL(req.url).pathname}. `
+                        + `SPA navigation is disabled for links on this page; the full document will load instead. `
+                        + `Add a matching element, or point router.container at one this page has.`,
+                      )
+                    }
+                    const mainOpenMatch = containerRegion
+                      ? { 0: containerRegion.openTag, index: containerRegion.openIndex } as unknown as RegExpMatchArray
+                      : null
+                    const mainCloseIdx = containerRegion ? containerRegion.end : -1
+                    if (mainOpenMatch && mainCloseIdx !== -1) {
+                      // Look for styles between body start and <main> (e.g. from @stack('styles'))
+                      const bodyMatch = content.match(/<body\b[^>]*>/i)
+                      if (bodyMatch) {
+                        const bodyStart = bodyMatch.index! + bodyMatch[0].length
+                        const mainIdx = mainOpenMatch.index!
+                        const beforeMain = content.slice(bodyStart, mainIdx)
+                        let bodyStyleMatch: RegExpExecArray | null
+                        const bodyStyleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
+                        while ((bodyStyleMatch = bodyStyleRe.exec(beforeMain)) !== null) {
+                          headStyles.push(bodyStyleMatch[0])
+                        }
+                      }
+
+                      // Capture the destination <main>'s own attributes. The fragment
+                      // carries only the container's INNER content, so a page whose
+                      // layout lives on <main> itself (e.g. `<main class="flex
+                      // min-h-[100dvh] items-center justify-center">`) would otherwise
+                      // be injected into the persistent, attribute-less container and
+                      // lose its layout entirely on SPA navigation. The router applies
+                      // these to the container during the swap.
+                      // Strip the resolved tag name, not a hardcoded `main` — the
+                      // container can be any element now.
+                      containerAttrs = mainOpenMatch[0]
+                        .replace(new RegExp(`^<${containerRegion!.tagName}\\b`, 'i'), '')
+                        .replace(/\/?>$/, '')
+                        .trim()
+
+                      // Extract only the <main> inner content (not sidebar, header, or layout)
+                      const mainStart = mainOpenMatch.index! + mainOpenMatch[0].length
+                      mainContentStart = mainStart
+                      mainContentEnd = mainCloseIdx
+                      fragment = fragment.slice(mainStart, mainCloseIdx).trim()
+                    }
+                    // Extract ALL page-specific scripts from the full page response.
+                    // These may be in <head> or before </body> — outside <main>.
+                    // Includes: setup functions (__stx_setup_), partial scope IIFEs,
+                    // the dynamic route params, and the reactive bridge (initScope calls).
+                    // Excludes: signals runtime IIFE, x-element runtime, router script.
+                    const pageSetupScripts: string[] = []
+                    const pageSetupScriptOffsets = new Set<number>()
+                    const appendOutsideMainScript = (match: RegExpExecArray): void => {
+                      const offset = match.index
+                      const insideMain = mainContentStart !== -1
+                        && offset >= mainContentStart
+                        && offset < mainContentEnd
+                      if (insideMain || pageSetupScriptOffsets.has(offset))
+                        return
+                      pageSetupScriptOffsets.add(offset)
+                      pageSetupScripts.push(match[0])
+                    }
+                    const routeParamsRe = /<script\b[^>]*data-stx-route-params[^>]*>[\s\S]*?<\/script>/gi
+                    let setupMatch: RegExpExecArray | null
+                    while ((setupMatch = routeParamsRe.exec(content)) !== null) {
+                      appendOutsideMainScript(setupMatch)
+                    }
+                    const allScriptRe = /<script\b[^>]*data-stx-scoped[^>]*>[\s\S]*?<\/script>/gi
+                    while ((setupMatch = allScriptRe.exec(content)) !== null) {
+                      const scriptContent = setupMatch[0]
+                      // Skip the signals runtime (huge IIFE starting with early_mounts shim)
+                      if (scriptContent.includes('__stx_early_mounts')) continue
+                      // Skip the reactive bridge runtime definition (window.__stx_reactive)
+                      if (scriptContent.includes('data-stx-reactive') && scriptContent.includes('window.__stx_reactive')) continue
+                      appendOutsideMainScript(setupMatch)
+                    }
+                    // Also include reactive bridge initScope calls (they're in a separate script tag)
+                    // eslint-disable-next-line no-super-linear-backtracking, regexp/no-super-linear-backtracking
+                    const bridgeInitRe = /<script\b[^>]*data-stx-reactive[^>]*>(?![\s\S]*window\.__stx_reactive)[\s\S]*?<\/script>/gi
+                    while ((setupMatch = bridgeInitRe.exec(content)) !== null) {
+                      appendOutsideMainScript(setupMatch)
+                    }
+
+                    // Strip the signals runtime IIFE — keep only page-specific scripts
+                    fragment = fragment.replace(
+                      /<script data-stx-scoped>\s*;?\(function\(\)\s*\{[\s\S]*?<\/script>/g,
+                      '',
+                    )
+
+                    // Clear stale _latestSetup from previous page, then append new page scripts
+                    const clearStale = '<script data-stx-page>if(window.stx)window.stx._latestSetup=null;</script>'
+                    const componentFactoryScripts = pageSetupScripts.filter(script => script.includes('data-stx-component-factories'))
+                    const trailingPageScripts = pageSetupScripts.filter(script => !script.includes('data-stx-component-factories'))
+                    // Component instance calls can live inside <main>, while their
+                    // request-scoped factory prelude is normally emitted in the
+                    // document head. Keep the prelude ahead of fragment content so
+                    // calls never run before the shared factory is registered.
+                    fragment = `${headStyles.join('\n')}\n${componentFactoryScripts.join('\n')}\n${fragment}\n${clearStale}\n${trailingPageScripts.join('\n')}`
+
+                    // Carry the page <title> (from the full page, before it was
+                    // reduced to the <main> fragment) so the SPA router can keep
+                    // document.title in sync on swap. URI-encoded for header safety.
+                    const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+                    const pageTitle = titleMatch ? titleMatch[1].trim() : ''
+
+                    // Whether the destination needs the signals runtime — read off
+                    // the FULL page, since the runtime script lives in <head> and
+                    // the fragment above is only the container's inner content.
+                    // The router cannot work this out from the fragment: a page
+                    // with reactive syntax but no setup function carries no marker
+                    // at all inside <main> (stacksjs/stx#1827). Mirrors
+                    // pageShipsSignalsRuntime in stx's runtime-injection.ts —
+                    // inlined rather than imported because '@stacksjs/stx'
+                    // resolves to dist here, which lags src.
+                    const shipsRuntime = content.includes('data-stx-runtime')
+
+                    // Same rule on the SPA path. A 200 here is worse than on a
+                    // full load: the router swaps the failure into the live page
+                    // and the user keeps navigating around a broken shell (#1854).
+                    return new Response(fragment, {
+                      status: isRenderFailure(content) ? 500 : responseStatus,
                       headers: {
-                        'Content-Type': contentType,
-                        'Cache-Control': 'no-store', // Build artifacts change during dev
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'X-STX-Fragment': 'true',
+                        'X-STX-Layout': pageLayout,
+                        'X-STX-Layout-Group': pageLayoutGroup,
+                        'X-STX-Runtime': shipsRuntime ? 'true' : 'false',
+                        ...(pageTitle && { 'X-STX-Title': encodeURIComponent(pageTitle) }),
+                        // Which build rendered this fragment. A watch-mode
+                        // restart changes it, letting the router notice that the
+                        // runtime already loaded in the page predates it (#1772).
+                        [BUILD_ID_HEADER]: getBuildId(),
+                        ...(containerAttrs && { 'X-STX-Container-Attrs': encodeURIComponent(containerAttrs) }),
+                        'Cache-Control': 'no-store',
+                        ...corsHeaders,
                       },
                     })
                   }
-                }
-                catch {
-                  // Continue to other handlers
-                }
-              }
+                  // Strip duplicate signals runtime IIFEs from @extends pages.
+                  // The layout and page each generate a runtime — only the first is needed.
+                  // Match the IIFE by its unique start: (function(){'use strict';var cloakStyle
+                  // The code uses </scr'+'ipt> internally, so the first literal </script> is the real end.
+                  let cleaned = content
+                  let runtimeCount = 0
+                  cleaned = content.replace(
+                    /<script data-stx-scoped>\(function\(\)\{'use strict';var cloakStyle[\s\S]*?<\/script>/g,
+                    (match) => {
+                      runtimeCount++
+                      return runtimeCount === 1 ? match : '' // keep first, drop duplicates
+                    },
+                  )
+                  // A render failure is a 500, whatever status the page asked
+                  // for. Serving it as 200 is what made this invisible: the
+                  // response looked healthy to uptime checks and caches while
+                  // the body was an HTML comment (#1854).
+                  const pageRenderFailed = isRenderFailure(cleaned)
+                  if (pageRenderFailed) {
+                    console.error(`[stx] render failed for ${new URL(req.url).pathname} — serving 500`)
 
-              // Smart asset serving - Laravel-style path resolution
-              // Supports both /assets/* and /resources/assets/* paths
-              if (path.startsWith('/assets/') || path.startsWith('/resources/assets/')) {
-                // Ensure assets are copied on first request
-                await ensureAssets()
-                let assetPathname: string
-                try {
-                  assetPathname = decodeURIComponent(path)
-                }
-                catch {
-                  return new Response('Invalid asset path', { status: 400 })
+                    // The body was still the blank failure comment. Mirror
+                    // production-server.ts (#1722) and the /404 lookup below: if
+                    // the app ships a /500 page, render THAT as the body so a
+                    // visitor gets a real error page, not an empty one. Rendered
+                    // once — getRoute produces a string, it does not re-enter this
+                    // HTTP handler — and if the /500 page ITSELF fails to render,
+                    // fall through to the marker body rather than loop.
+                    for (const custom500 of ['/500', '/errors/500']) {
+                      try {
+                        const errorPage = usableErrorPage(await getRoute(custom500, reqCtx))
+                        if (errorPage) {
+                          const isProd = isProductionServe()
+                          return new Response(isProd ? errorPage : injectHmrClient(errorPage), {
+                            status: 500,
+                            headers: {
+                              'Content-Type': 'text/html; charset=utf-8',
+                              'Cache-Control': 'no-store',
+                              ...corsHeaders,
+                            },
+                          })
+                        }
+                      }
+                      catch {
+                        // Custom 500 render failed — try the next location, then
+                        // fall through to the marker body below.
+                      }
+                    }
+                  }
+
+                  return new Response(injectHmrClient(cleaned), {
+                    status: pageRenderFailed ? 500 : responseStatus,
+                    headers: {
+                      'Content-Type': 'text/html; charset=utf-8',
+                      'Cache-Control': 'no-store',
+                      ...corsHeaders,
+                    },
+                  })
                 }
 
-                if (!isSafeAssetPath(assetPathname))
-                  return new Response('Invalid asset path', { status: 400 })
+                // Try without extension
+                const contentWithExt = await getRoute(`${path}.html`, reqCtx)
+                if (contentWithExt) {
+                  return new Response(injectHmrClient(contentWithExt), {
+                    status: reqCtx.responseStatus ?? 200,
+                    headers: {
+                      'Content-Type': 'text/html; charset=utf-8',
+                      'Cache-Control': 'no-store',
+                      ...corsHeaders,
+                    },
+                  })
+                }
 
-                for (const assetPath of assetRequestPaths(assetPathname)) {
+                // Try to serve build artifacts (chunk files, CSS, etc.) from the
+                // state directory
+                if (path.startsWith('/chunk-') || path.endsWith('.js') || path.endsWith('.css')) {
                   try {
-                    const filePath = nodePath.resolve(process.cwd(), `.${assetPath}`)
-                    const file = Bun.file(filePath)
+                    const buildFile = Bun.file(stateDir(process.cwd(), path))
+                    if (await buildFile.exists()) {
+                      const ext = path.split('.').pop()?.toLowerCase()
+                      const contentType = ext === 'css' ? 'text/css' : ext === 'js' ? 'application/javascript' : 'text/plain'
 
-                    if (await file.exists()) {
-                      // Determine content type based on file extension
-                      const ext = getAssetExtension(assetPath)
-
-                      if (isBundledAssetExtension(ext))
-                        return bundleBrowserAsset(filePath)
-
-                      return new Response(file, {
+                      return new Response(buildFile, {
                         headers: {
-                          'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
-                          // Dev mode: `no-cache` not `max-age=31536000`. The previous year-long
-                          // cache header forced users to hard-reload (Cmd+Shift+R) after every
-                          // edit to a stylesheet / asset under `resources/assets/` — the server
-                          // re-read the source file on each request, but the browser served the
-                          // stale copy from disk cache without revalidating. The build path (in
-                          // `build-views.ts` / SSG) is what stamps long-lived cache headers on
-                          // production output; the dev server should never set them.
-                          'Cache-Control': 'no-store',
+                          'Content-Type': contentType,
+                          'Cache-Control': 'no-store', // Build artifacts change during dev
                         },
                       })
                     }
                   }
                   catch {
-                    // Continue to next path
-                    continue
+                    // Continue to other handlers
                   }
                 }
-              }
 
-              // Static files from publicDir (Nuxt/Vite/Next/Astro convention).
-              // Anything under publicDir is served at the corresponding URL path:
-              //   public/images/hero.jpg → GET /images/hero.jpg
-              //   public/robots.txt      → GET /robots.txt
-              //   public/favicon.ico     → GET /favicon.ico
-              //
-              // This runs after API routes and the /assets/* legacy handler but
-              // BEFORE the page router and 404 fallback, so a public file can never
-              // shadow a stx page (e.g. public/about.html doesn't override pages/about.stx
-              // because the page handler runs first elsewhere — this fires only when
-              // no page matched).
-              if ((req.method === 'GET' || req.method === 'HEAD') && path !== '/') {
+                // Smart asset serving - Laravel-style path resolution
+                // Supports both /assets/* and /resources/assets/* paths
+                if (path.startsWith('/assets/') || path.startsWith('/resources/assets/')) {
+                  // Ensure assets are copied on first request
+                  await ensureAssets()
+                  let assetPathname: string
+                  try {
+                    assetPathname = decodeURIComponent(path)
+                  }
+                  catch {
+                    return new Response('Invalid asset path', { status: 400 })
+                  }
 
-                const publicRoot = nodePath.resolve(process.cwd(), publicDir)
-                // Decode URI components (e.g. %20 → space) and reject embedded NULs
-                let safePathname: string
-                try {
-                  safePathname = decodeURIComponent(path)
-                }
-                catch {
-                  safePathname = path
-                }
-                if (!safePathname.includes('\0')) {
-                  // Resolve and verify the result is still inside publicRoot.
-                  // path.resolve normalizes .. segments before the prefix check, which
-                  // is the standard defense against directory traversal.
-                  const resolvedPath = nodePath.resolve(publicRoot, `.${safePathname}`)
-                  const isInsidePublicRoot = resolvedPath === publicRoot
-                    || resolvedPath.startsWith(`${publicRoot}${nodePath.sep}`)
+                  if (!isSafeAssetPath(assetPathname))
+                    return new Response('Invalid asset path', { status: 400 })
 
-                  if (isInsidePublicRoot) {
+                  for (const assetPath of assetRequestPaths(assetPathname)) {
                     try {
-                      const file = Bun.file(resolvedPath)
+                      const filePath = nodePath.resolve(process.cwd(), `.${assetPath}`)
+                      const file = Bun.file(filePath)
+
                       if (await file.exists()) {
-                        // Skip directories (Bun.file().exists() returns true for dirs in some versions)
-                        const stat = await file.stat().catch(() => null)
-                        if (stat && !stat.isDirectory()) {
-                          const ext = resolvedPath.split('.').pop()?.toLowerCase()
-                          return new Response(file, {
-                            headers: {
-                              'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
-                              'Cache-Control': staticCacheControl(resolvedPath),
-                            },
-                          })
-                        }
+                        // Determine content type based on file extension
+                        const ext = getAssetExtension(assetPath)
+
+                        if (isBundledAssetExtension(ext))
+                          return bundleBrowserAsset(filePath)
+
+                        return new Response(file, {
+                          headers: {
+                            'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
+                            // Dev mode: `no-cache` not `max-age=31536000`. The previous year-long
+                            // cache header forced users to hard-reload (Cmd+Shift+R) after every
+                            // edit to a stylesheet / asset under `resources/assets/` — the server
+                            // re-read the source file on each request, but the browser served the
+                            // stale copy from disk cache without revalidating. The build path (in
+                            // `build-views.ts` / SSG) is what stamps long-lived cache headers on
+                            // production output; the dev server should never set them.
+                            'Cache-Control': 'no-store',
+                          },
+                        })
                       }
                     }
                     catch {
-                      // File read failed — fall through to 404
+                      // Continue to next path
+                      continue
                     }
                   }
                 }
-              }
 
-              // /favicon.ico fallback — only fires if publicDir didn't have it.
-              // Returns 204 instead of 404 so browsers stop nagging the dev server
-              // when no favicon is configured.
-              if (path === '/favicon.ico') {
-                return new Response(null, { status: 204 })
-              }
+                // Static files from publicDir (Nuxt/Vite/Next/Astro convention).
+                // Anything under publicDir is served at the corresponding URL path:
+                //   public/images/hero.jpg → GET /images/hero.jpg
+                //   public/robots.txt      → GET /robots.txt
+                //   public/favicon.ico     → GET /favicon.ico
+                //
+                // This runs after API routes and the /assets/* legacy handler but
+                // BEFORE the page router and 404 fallback, so a public file can never
+                // shadow a stx page (e.g. public/about.html doesn't override pages/about.stx
+                // because the page handler runs first elsewhere — this fires only when
+                // no page matched).
+                if ((req.method === 'GET' || req.method === 'HEAD') && path !== '/') {
 
-              // 404 handling.
-              const isProd = isProductionServe()
-
-              // (1) Custom-app override: if the app ships a 404 page at a
-              // conventional location, render THAT (works in both dev and
-              // prod). Reuses the same getRoute() resolution machinery the
-              // normal page pipeline uses, so `.stx` / `.md` / `.html` and
-              // index-file conventions all just work.
-              for (const custom404 of ['/404', '/errors/404']) {
-                try {
-                  const customContent = await getRoute(custom404, reqCtx)
-                  if (customContent) {
-                    return new Response(
-                      isProd ? customContent : injectHmrClient(customContent),
-                      {
-                        status: 404,
-                        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-                      },
-                    )
+                  const publicRoot = nodePath.resolve(process.cwd(), publicDir)
+                  // Decode URI components (e.g. %20 → space) and reject embedded NULs
+                  let safePathname: string
+                  try {
+                    safePathname = decodeURIComponent(path)
                   }
-                }
-                catch {
-                  // Custom 404 render failed — fall through to the built-in page.
-                }
-              }
+                  catch {
+                    safePathname = path
+                  }
+                  if (!safePathname.includes('\0')) {
+                    // Resolve and verify the result is still inside publicRoot.
+                    // path.resolve normalizes .. segments before the prefix check, which
+                    // is the standard defense against directory traversal.
+                    const resolvedPath = nodePath.resolve(publicRoot, `.${safePathname}`)
+                    const isInsidePublicRoot = resolvedPath === publicRoot
+                      || resolvedPath.startsWith(`${publicRoot}${nodePath.sep}`)
 
-              // (2) Built-in fallback. In production we do NOT enumerate the
-              // route list (information disclosure) and do NOT inject HMR.
-              let availableRoutes: string[] | undefined
-              if (!isProd) {
-                const files = await discoverFiles()
-                availableRoutes = []
-                for (const filePath of files) {
-                  // Normalize and create route from file path
-                  let normalizedPath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
-
-                  // For absolute paths, extract relative portion from patterns
-                  for (const pattern of patterns) {
-                    const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
-                    if (normalizedPath.startsWith(`${normalizedPattern}/`)) {
-                      normalizedPath = normalizedPath.slice(normalizedPattern.length + 1)
-                      break
+                    if (isInsidePublicRoot) {
+                      try {
+                        const file = Bun.file(resolvedPath)
+                        if (await file.exists()) {
+                          // Skip directories (Bun.file().exists() returns true for dirs in some versions)
+                          const stat = await file.stat().catch(() => null)
+                          if (stat && !stat.isDirectory()) {
+                            const ext = resolvedPath.split('.').pop()?.toLowerCase()
+                            return new Response(file, {
+                              headers: {
+                                'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
+                                'Cache-Control': staticCacheControl(resolvedPath),
+                              },
+                            })
+                          }
+                        }
+                      }
+                      catch {
+                        // File read failed — fall through to 404
+                      }
                     }
                   }
-
-                  // Strip extension and 'pages/' prefix for cleaner route display
-                  let route = normalizedPath.replace(/\.(stx|md|html)$/, '')
-                  if (route.startsWith('pages/')) {
-                    route = route.slice(6) // Remove 'pages/' prefix
-                  }
-
-                  availableRoutes.push(route)
                 }
+
+                // /favicon.ico fallback — only fires if publicDir didn't have it.
+                // Returns 204 instead of 404 so browsers stop nagging the dev server
+                // when no favicon is configured.
+                if (path === '/favicon.ico') {
+                  return new Response(null, { status: 204 })
+                }
+
+                // 404 handling.
+                const isProd = isProductionServe()
+
+                // (1) Custom-app override: if the app ships a 404 page at a
+                // conventional location, render THAT (works in both dev and
+                // prod). Reuses the same getRoute() resolution machinery the
+                // normal page pipeline uses, so `.stx` / `.md` / `.html` and
+                // index-file conventions all just work.
+                for (const custom404 of ['/404', '/errors/404']) {
+                  try {
+                    const customContent = await getRoute(custom404, reqCtx)
+                    if (customContent) {
+                      return new Response(
+                        isProd ? customContent : injectHmrClient(customContent),
+                        {
+                          status: 404,
+                          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+                        },
+                      )
+                    }
+                  }
+                  catch {
+                    // Custom 404 render failed — fall through to the built-in page.
+                  }
+                }
+
+                // (2) Built-in fallback. In production we do NOT enumerate the
+                // route list (information disclosure) and do NOT inject HMR.
+                let availableRoutes: string[] | undefined
+                if (!isProd) {
+                  const files = await discoverFiles()
+                  availableRoutes = []
+                  for (const filePath of files) {
+                    // Normalize and create route from file path
+                    let normalizedPath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
+
+                    // For absolute paths, extract relative portion from patterns
+                    for (const pattern of patterns) {
+                      const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
+                      if (normalizedPath.startsWith(`${normalizedPattern}/`)) {
+                        normalizedPath = normalizedPath.slice(normalizedPattern.length + 1)
+                        break
+                      }
+                    }
+
+                    // Strip extension and 'pages/' prefix for cleaner route display
+                    let route = normalizedPath.replace(/\.(stx|md|html)$/, '')
+                    if (route.startsWith('pages/')) {
+                      route = route.slice(6) // Remove 'pages/' prefix
+                    }
+
+                    availableRoutes.push(route)
+                  }
+                }
+
+                const notFoundHtml = render404Page({ path, routes: availableRoutes, isProduction: isProd })
+
+                return new Response(isProd ? notFoundHtml : injectHmrClient(notFoundHtml), {
+                  status: 404,
+                  headers: { 'Content-Type': 'text/html; charset=utf-8' },
+                })
+
               }
+              finally {
+                activeServeLocale = null
+                activeServeSearch = ''
+                activeServeHost = ''
+                activeServeCookieHeader = ''
+                activeServeCookies = {}
+                activeServeIp = ''
+              }
+            })() // ─── end IIFE — single exit for translation post-process
+            // Awaited, not passed through: `onResponse` is handed a Response,
+            // never a pending Promise of one.
+            let _finalResp = await applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
 
-              const notFoundHtml = render404Page({ path, routes: availableRoutes, isProduction: isProd })
-
-              return new Response(isProd ? notFoundHtml : injectHmrClient(notFoundHtml), {
-                status: 404,
-                headers: { 'Content-Type': 'text/html; charset=utf-8' },
-              })
-
+            // The token the render embedded, sent to the browser. Appended so it
+            // coexists with any cookie the page set itself; failing to attach it
+            // is not worth failing the response over, since the page still
+            // rendered and the next request mints another.
+            if (mintedCsrfToken) {
+              try {
+                _finalResp.headers.append('Set-Cookie', csrfCookieHeader(mintedCsrfToken, req.url.startsWith('https://')))
+              }
+              catch {
+                const headers = new Headers(_finalResp.headers)
+                headers.append('Set-Cookie', csrfCookieHeader(mintedCsrfToken, req.url.startsWith('https://')))
+                _finalResp = new Response(_finalResp.body, {
+                  status: _finalResp.status,
+                  statusText: _finalResp.statusText,
+                  headers,
+                })
+              }
             }
-            finally {
-              activeServeLocale = null
-              activeServeSearch = ''
-              activeServeHost = ''
-              activeServeCookieHeader = ''
-              activeServeCookies = {}
-              activeServeIp = ''
-            }
-          })() // ─── end IIFE — single exit for translation post-process
-          // Awaited, not passed through: `onResponse` is handed a Response,
-          // never a pending Promise of one.
-          let _finalResp = await applyI18nToResponse(_i18nResp, i18nLocale ?? (i18nConfig?.defaultLocale ?? 'en'), path)
 
-          // The token the render embedded, sent to the browser. Appended so it
-          // coexists with any cookie the page set itself; failing to attach it
-          // is not worth failing the response over, since the page still
-          // rendered and the next request mints another.
-          if (mintedCsrfToken) {
-            try {
-              _finalResp.headers.append('Set-Cookie', csrfCookieHeader(mintedCsrfToken, req.url.startsWith('https://')))
+            // Post-response hook — the mirror of `onRequest`, and the only
+            // place a caller can touch a response the server itself produced.
+            // See the `onResponse` option docs for why that matters.
+            if (options.onResponse) {
+              const hooked = await options.onResponse(req, _finalResp)
+              if (hooked instanceof Response)
+                return hooked
             }
-            catch {
-              const headers = new Headers(_finalResp.headers)
-              headers.append('Set-Cookie', csrfCookieHeader(mintedCsrfToken, req.url.startsWith('https://')))
-              _finalResp = new Response(_finalResp.body, {
-                status: _finalResp.status,
-                statusText: _finalResp.statusText,
-                headers,
-              })
-            }
-          }
-
-          // Post-response hook — the mirror of `onRequest`, and the only
-          // place a caller can touch a response the server itself produced.
-          // See the `onResponse` option docs for why that matters.
-          if (options.onResponse) {
-            const hooked = await options.onResponse(req, _finalResp)
-            if (hooked instanceof Response)
-              return hooked
-          }
-          return _finalResp
+            return _finalResp
+          })())
         },
       })
       break

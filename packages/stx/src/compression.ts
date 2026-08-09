@@ -37,6 +37,20 @@ const COMPRESSIBLE = [
 ]
 
 /**
+ * Text types that must never be buffered.
+ *
+ * Compressing means reading the whole body first, and these do not have a
+ * whole body: an event stream stays open for the life of the page, so awaiting
+ * it waits forever and the request never completes. Hot reload is delivered
+ * over exactly this content type, so getting it wrong hangs every dev server
+ * on its first page load.
+ */
+const NEVER_BUFFER = [
+  'text/event-stream',
+  'multipart/x-mixed-replace',
+]
+
+/**
  * Below this, compression is not worth it.
  *
  * A single TCP segment is about 1.4 KB, so anything under it arrives in one
@@ -59,6 +73,9 @@ export function isCompressible(contentType: string | null): boolean {
     return false
 
   const type = contentType.toLowerCase()
+
+  if (NEVER_BUFFER.some(prefix => type.startsWith(prefix)))
+    return false
 
   return COMPRESSIBLE.some(prefix => type.startsWith(prefix))
 }

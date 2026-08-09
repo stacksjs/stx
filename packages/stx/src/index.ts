@@ -118,6 +118,7 @@ export * from './custom-directives'
 // database moved to stx/database
 export * from './defer'
 export * from './deploy'
+export * from './compression'
 export * from './dev-server'
 export * from './document-shell'
 export * from './fragment-container'

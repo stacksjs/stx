@@ -138,3 +138,28 @@ describe('compressResponse', () => {
     expect(Number(out.headers.get('Content-Length'))).toBe(actual)
   })
 })
+
+describe('streaming responses', () => {
+  test('never touches an event stream', async () => {
+    /*
+     * `text/event-stream` matches the `text/` prefix, and compressing means
+     * buffering the whole body — which an event stream does not have. Awaiting
+     * one waits for the life of the page. Hot reload is delivered over this
+     * content type, so the mistake hangs every dev server on first load.
+     */
+    const stream = new Response(
+      new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode('data: hi\n\n')) } }),
+      { headers: { 'Content-Type': 'text/event-stream' } },
+    )
+
+    const out = await compressResponse(asking('br'), stream)
+
+    expect(out.headers.get('Content-Encoding')).toBeNull()
+    expect(out).toBe(stream)
+  })
+
+  test('isCompressible says no to it directly', () => {
+    expect(isCompressible('text/event-stream')).toBe(false)
+    expect(isCompressible('multipart/x-mixed-replace; boundary=x')).toBe(false)
+  })
+})

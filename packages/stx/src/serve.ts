@@ -14,6 +14,7 @@ import { findSfcTemplateBlock } from './sfc-template'
 import { readMarkdownFile } from './assets'
 import { processDirectives } from './process'
 import { extractVariables } from './utils'
+import { compressResponse } from './compression'
 
 export interface ServeOptions {
   /** Server port */
@@ -347,7 +348,9 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
   // Start server
   const server = bunServe({
     port,
-    fetch: handleRequest,
+    // Compression at the boundary, so it covers every route, the 404 and the
+    // error page alike. See src/compression.ts.
+    fetch: async (request: Request) => compressResponse(request, await handleRequest(request)),
   })
 
   // Setup file watching
