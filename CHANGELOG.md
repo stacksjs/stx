@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.167...v0.2.168)
+
+## 🐛 Bug Fixes
+
+- **sidebar**: keep the active dot on screen ([f1cc1a6](https://github.com/stacksjs/stx/commit/f1cc1a6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.168 ([9c37c88](https://github.com/stacksjs/stx/commit/9c37c88)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.166...v0.2.167)
 
 ## 🚀 Features
