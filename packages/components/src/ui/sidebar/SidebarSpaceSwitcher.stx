@@ -1,8 +1,14 @@
 <script server>
-// The rail along the bottom of an Arc sidebar: one small icon per space, plus
-// an optional trailing "+". It is the discoverable counterpart to the swipe —
-// the gesture is what you use once you know the spaces exist, the rail is how
-// you find out.
+// The indicator along the bottom of an Arc-style sidebar: one dot per space,
+// plus an optional trailing "+".
+//
+// Dots rather than one icon per space, which is what Dia does and what this
+// used to get wrong. An icon rail costs ~28px of width each, so it fits about
+// eight spaces in a 280px sidebar and then overflows — and with every space
+// showing the same default folder glyph, thirteen of them read as a broken
+// progress bar rather than as a switcher. A dot is 6px, says only "which of
+// how many", and leaves the identifying work to the space title and the tint,
+// which is where it belongs.
 //
 // The buttons are markup only. `<SidebarSpaces>` owns the single click handler
 // and flips `data-space-current`, so the rail never holds its own copy of
@@ -10,89 +16,174 @@
 export const spaces = ($props.spaces || []).map(space => ({
   id: space.id,
   label: space.label || space.id,
-  icon: space.icon || 'i-f7-circle',
 }))
 
 export const active = $props.active || (spaces[0] && spaces[0].id) || ''
 export const showAdd = $props.showAdd ?? false
 export const addLabel = $props.addLabel || 'New space'
+
+// A single space has nothing to indicate. Dia hides the row entirely rather
+// than showing one lonely dot, and so does this — unless "+" needs a home.
+export const showDots = spaces.length > 1
 </script>
 
 <div
   data-space-switcher
-  class="flex h-[38px] shrink-0 items-center gap-[1px] px-[8px] pb-[6px]"
+  class="stx-space-rail"
   role="tablist"
   aria-label="Spaces"
   aria-orientation="horizontal"
 >
-  @foreach(spaces as space)
-    <button
-      type="button"
-      data-space-target="{{ space.id }}"
-      data-space-current="{{ space.id === active ? 'true' : 'false' }}"
-      class="stx-space-tab"
-      role="tab"
-      aria-selected="{{ space.id === active ? 'true' : 'false' }}"
-      aria-label="{{ space.label }}"
-      title="{{ space.label }}"
-      tabindex="{{ space.id === active ? '0' : '-1' }}"
-    >
-      <span class="{{ space.icon }} h-[15px] w-[15px]" aria-hidden="true"></span>
-    </button>
-  @endforeach
+  <!--
+    A spacer of the same width as the trailing button, so the dots are centred
+    on the sidebar rather than on the space left over beside "+".
+  -->
+  <span class="stx-space-rail-gutter" aria-hidden="true"></span>
 
-  <span class="flex-1"></span>
+  <div class="stx-space-dots">
+    @if(showDots)
+      @foreach(spaces as space)
+        <button
+          type="button"
+          data-space-target="{{ space.id }}"
+          data-space-current="{{ space.id === active ? 'true' : 'false' }}"
+          class="stx-space-dot"
+          role="tab"
+          aria-selected="{{ space.id === active ? 'true' : 'false' }}"
+          aria-label="{{ space.label }}"
+          title="{{ space.label }}"
+          tabindex="{{ space.id === active ? '0' : '-1' }}"
+        >
+          <!--
+            The dot is a child rather than the button itself: the button stays a
+            comfortable target while the mark stays small.
+          -->
+          <span class="stx-space-dot-mark" aria-hidden="true"></span>
+        </button>
+      @endforeach
+    @endif
+  </div>
 
-  @if(showAdd)
-    <button
-      type="button"
-      data-space-add
-      class="stx-space-tab"
-      aria-label="{{ addLabel }}"
-      title="{{ addLabel }}"
-    >
-      <span class="i-f7-plus h-[14px] w-[14px]" aria-hidden="true"></span>
-    </button>
-  @endif
+  <span class="stx-space-rail-gutter">
+    @if(showAdd)
+      <button
+        type="button"
+        data-space-add
+        class="stx-space-add"
+        aria-label="{{ addLabel }}"
+        title="{{ addLabel }}"
+      >
+        <span class="i-f7-plus h-[11px] w-[11px]" aria-hidden="true"></span>
+      </button>
+    @endif
+  </span>
 </div>
 
 <style scoped>
-/* Rail buttons are painted here rather than with utility classes because the
-   current one has to pick up `--stx-space-accent`, which changes as you swipe.
-   A class swap would have to be re-applied on every transition; an attribute
-   rule keyed on `data-space-current` just follows along. */
-.stx-space-tab {
+.stx-space-rail {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 8px 6px;
+}
+
+.stx-space-rail-gutter {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 26px;
-  border-radius: 7px;
-  color: currentColor;
-  opacity: 0.4;
+  width: 22px;
+  flex-shrink: 0;
+}
+
+.stx-space-dots {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  /* Many spaces scroll rather than squeeze: dots that shrink to fit stop
+     reading as dots, and a sidebar cannot get wider. The bar is hidden because
+     the dots are the affordance. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.stx-space-dots::-webkit-scrollbar { display: none; }
+
+.stx-space-dot {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 18px;
+  flex-shrink: 0;
   background: transparent;
-  transition: opacity 150ms ease, background-color 150ms ease, color 300ms ease;
+  border: 0;
+  padding: 0;
   cursor: default;
 }
-.stx-space-tab:hover {
-  opacity: 0.75;
+
+.stx-space-dot-mark {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.25;
+  /* One duration and one curve for everything that moves when the space
+     changes — see `--stx-space-settle` in SidebarSpaces. Independent timings
+     are what made a swipe read as several things happening at once. */
+  transition:
+    opacity var(--stx-space-settle, 420ms) var(--stx-space-ease, ease),
+    background-color var(--stx-space-settle, 420ms) var(--stx-space-ease, ease),
+    transform var(--stx-space-settle, 420ms) var(--stx-space-ease, ease);
+}
+
+/* Hover is not part of a space change, so it stays quick. */
+.stx-space-dot:hover .stx-space-dot-mark {
+  opacity: 0.5;
+  transition-duration: 120ms;
+}
+
+.stx-space-dot[data-space-current="true"] .stx-space-dot-mark {
+  opacity: 1;
+  background: var(--stx-space-accent, currentColor);
+  /* Barely larger. Enough to find at a glance, not enough to jump. */
+  transform: scale(1.15);
+}
+
+.stx-space-dot:focus-visible {
+  outline: 2px solid var(--stx-space-accent, currentColor);
+  outline-offset: 2px;
+  border-radius: 9999px;
+}
+
+.stx-space-add {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  color: currentColor;
+  opacity: 0.35;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: default;
+  transition: opacity 120ms ease, background-color 120ms ease;
+}
+.stx-space-add:hover {
+  opacity: 0.8;
   background: rgba(255, 255, 255, 0.4);
 }
-.stx-space-tab[data-space-current="true"] {
-  opacity: 1;
-  color: var(--stx-space-accent, currentColor);
-  background: rgba(255, 255, 255, 0.55);
-}
-.stx-space-tab:focus-visible {
+.stx-space-add:focus-visible {
   outline: 2px solid var(--stx-space-accent, currentColor);
   outline-offset: 1px;
 }
 
 @media (prefers-color-scheme: dark) {
-  .stx-space-tab:hover {
-    background: rgba(255, 255, 255, 0.08);
-  }
-  .stx-space-tab[data-space-current="true"] {
-    background: rgba(255, 255, 255, 0.12);
-  }
+  .stx-space-add:hover { background: rgba(255, 255, 255, 0.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stx-space-dot-mark { transition: none; }
 }
 </style>

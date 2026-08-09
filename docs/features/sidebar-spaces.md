@@ -53,9 +53,9 @@ collapse and persistence.
 |---|---|
 | Two-finger horizontal trackpad swipe | Tracks the gesture live, settles on release |
 | Touch or pen drag | Same, with an 8px axis lock |
-| Click a rail icon | Jumps, with the crossfade |
+| Click a dot | Jumps, with the crossfade |
 | <kbd>⌘</kbd><kbd>⌥</kbd><kbd>←</kbd> / <kbd>→</kbd> | Previous / next space |
-| <kbd>←</kbd> / <kbd>→</kbd> while a rail button has focus | Previous / next space |
+| <kbd>←</kbd> / <kbd>→</kbd> while a dot has focus | Previous / next space |
 
 A mouse drag deliberately does **nothing**. In a sidebar, press-and-move is far
 more likely to be a text selection or a sloppy click than a swipe.
@@ -121,7 +121,7 @@ animate. Anything inside a space can read them:
 |---|---|
 | `--stx-space-from` / `--stx-space-to` | Panel gradient stops |
 | `--stx-space-ink` | Text color the space inherits |
-| `--stx-space-accent` | Space title icon, active rail icon, focus rings |
+| `--stx-space-accent` | Space title icon, active dot, focus rings |
 
 ## Events
 
@@ -132,6 +132,7 @@ though they originate several components deeper:
 |---|---|
 | `spaceChange` | `{ id, index, source }` — `source` is `swipe`, `switcher`, `keyboard`, `native`, `restore` or `api` |
 | `spaceAdd` | — (the rail's `+`, shown by `showSpaceAdd`) |
+| `--stx-space-settle` / `--stx-space-ease` | Published at mount from `SETTLE_MS` / `SETTLE_EASE`. Everything a space change moves reads these, so the track, the palette, the dots and the space's buttons stay one motion. |
 | `spaceAction` | `{ spaceId, actionId, role }` — `role` is `action` or `clear` |
 | `pinnedClick` | `{ id, href, event }` |
 
@@ -147,7 +148,7 @@ On `<Sidebar>`:
 |---|---|---|
 | `spaces` | `[]` | The scenes. Passing any switches the sidebar into spaces mode. |
 | `space` | first | Id of the space to open on. |
-| `showSpaceSwitcher` | `true` | The bottom rail. |
+| `showSpaceSwitcher` | `true` | The bottom dots. Hidden automatically for a single space, which has nothing to indicate. |
 | `showSpaceAdd` | `false` | Trailing `+` in the rail. |
 | `spaceAddLabel` | `'New space'` | |
 | `spacePersistKey` | — | `localStorage` key remembering the last space. |
@@ -157,7 +158,7 @@ On a space:
 | Field | |
 |---|---|
 | `id` | Required. |
-| `label` / `icon` | Title above the rows, and the rail icon. |
+| `label` / `icon` | Title above the rows. The bottom indicator is dots, so the icon is not repeated there. |
 | `tint` | Seed color or a full palette. |
 | `pinned` | Favorites grid: `[{ id, label, icon \| image, iconColor, href }]`. |
 | `sections` | Row groups — identical in shape to a plain `<Sidebar>`'s. |

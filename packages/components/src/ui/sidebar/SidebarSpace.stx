@@ -45,7 +45,7 @@ export const actionClasses = [
   'flex w-full items-center gap-[8px]',
   'h-[30px] rounded-[8px] px-[6px]',
   'text-[13px] leading-[16px]',
-  'opacity-55 transition-[background-color,opacity] duration-150 ease-out',
+  'opacity-55 stx-space-timed',
   'hover:bg-white/45 hover:opacity-100 dark:hover:bg-white/8',
   'cursor-default',
 ].join(' ')
@@ -53,7 +53,7 @@ export const actionClasses = [
 export const clearClasses = [
   'flex items-center gap-[4px] rounded-[6px] px-[5px] py-[2px]',
   'text-[11px] leading-[14px]',
-  'opacity-45 transition-opacity duration-150',
+  'opacity-45 stx-space-timed',
   'hover:opacity-90',
   'cursor-default',
 ].join(' ')
@@ -150,6 +150,17 @@ function onAction(event) {
 </section>
 
 <style scoped>
+/* Anything that changes with the space shares one duration and one curve, so a
+   swipe is a single motion. See `--stx-space-settle` in SidebarSpaces. */
+.stx-space-timed {
+  transition:
+    background-color var(--stx-space-settle, 420ms) var(--stx-space-ease, ease),
+    opacity var(--stx-space-settle, 420ms) var(--stx-space-ease, ease),
+    color var(--stx-space-settle, 420ms) var(--stx-space-ease, ease);
+}
+/* Hover is a separate intent and stays quick. */
+.stx-space-timed:hover { transition-duration: 120ms; }
+
 /* The title icon rides the space accent. Published as a custom property by
    SidebarSpaces so it crossfades along with the panel instead of cutting. */
 .stx-space-title-icon {

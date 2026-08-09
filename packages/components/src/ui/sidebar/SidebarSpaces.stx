@@ -106,6 +106,20 @@ function tintTarget() {
   return root.closest('[data-stx-sidebar]') || root
 }
 
+/**
+ * Publish the settle timing so CSS and the track animation cannot drift.
+ *
+ * `SETTLE_MS` drives the track's transform from JS; everything else that moves
+ * during a space change reads these properties. Written once at mount rather
+ * than duplicated as literals in four stylesheets, which is how they came to
+ * disagree — 420ms on one curve, 420ms on another, 300ms, and 150ms.
+ */
+function publishTiming() {
+  const style = tintTarget().style
+  style.setProperty('--stx-space-settle', `${SETTLE_MS}ms`)
+  style.setProperty('--stx-space-ease', SETTLE_EASE)
+}
+
 function applyTint(position) {
   const tint = tints[position]
   if (!tint) return
@@ -452,6 +466,10 @@ onMount(() => {
   tints = spaces.map(space => space.tint)
   if (ids.length === 0) return
 
+  // Before the first paint, so nothing animates on the default timing once and
+  // the shared one afterwards.
+  publishTiming()
+
   const startIndex = clampIndex(config.index || 0, ids.length)
   const saved = restored()
   const initial = saved === -1 ? startIndex : saved
@@ -560,11 +578,19 @@ defineExpose({
     linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0) 32%),
     linear-gradient(180deg, var(--stx-space-from) 0%, var(--stx-space-to) 100%);
   color: var(--stx-space-ink);
+  /* One duration and one curve for everything a space change moves.
+     This used to be four timings and three easings across the track, the
+     palette, the switcher and the space's own buttons — 420ms on one curve,
+     420ms on another, 300ms, 150ms — so a swipe read as several things
+     happening near each other rather than as one motion. Published as custom
+     properties so the pieces cannot drift apart again. */
+  --stx-space-settle: 420ms;
+  --stx-space-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   transition:
-    --stx-space-from 420ms ease,
-    --stx-space-to 420ms ease,
-    --stx-space-ink 420ms ease,
-    --stx-space-accent 420ms ease;
+    --stx-space-from var(--stx-space-settle) var(--stx-space-ease),
+    --stx-space-to var(--stx-space-settle) var(--stx-space-ease),
+    --stx-space-ink var(--stx-space-settle) var(--stx-space-ease),
+    --stx-space-accent var(--stx-space-settle) var(--stx-space-ease);
 }
 
 @media (prefers-color-scheme: dark) {

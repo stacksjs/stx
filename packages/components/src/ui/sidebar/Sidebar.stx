@@ -639,10 +639,12 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
   /* Width is listed here because this rule outranks the pane's
      `transition-[width]` utility class and would otherwise drop it. */
   transition:
-    --stx-space-from 420ms ease,
-    --stx-space-to 420ms ease,
-    --stx-space-ink 420ms ease,
-    --stx-space-accent 420ms ease,
+    --stx-space-from var(--stx-space-settle, 420ms) var(--stx-space-ease, ease),
+    --stx-space-to var(--stx-space-settle, 420ms) var(--stx-space-ease, ease),
+    --stx-space-ink var(--stx-space-settle, 420ms) var(--stx-space-ease, ease),
+    --stx-space-accent var(--stx-space-settle, 420ms) var(--stx-space-ease, ease),
+    /* Collapsing the pane is a different intent from changing space, so it
+       keeps its own timing. */
     width 300ms ease-out;
 }
 
