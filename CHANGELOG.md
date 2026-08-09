@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.168...v0.2.169)
+
+## 🚀 Features
+
+- compress text responses ([fc9f4d8](https://github.com/stacksjs/stx/commit/fc9f4d8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.169 ([a6f8e9a](https://github.com/stacksjs/stx/commit/a6f8e9a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.167...v0.2.168)
 
 ## 🐛 Bug Fixes
