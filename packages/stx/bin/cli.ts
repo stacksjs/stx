@@ -1792,7 +1792,13 @@ catch (error) {
     .example('stx typecheck "resources/views/**/*.stx"')
     .action(async (patterns: string[] | undefined, options: { client?: boolean, server?: boolean, templates?: boolean, lib?: string | string[] }) => {
       const { formatTypecheckDiagnostics, typecheckStxFiles } = await import('../src/typecheck')
-      const { Glob } = await import('bun')
+      // `Bun.Glob`, not `await import('bun')`. The bundler rewrites a dynamic
+      // import of the bun builtin to `await Promise.resolve(globalThis.Bun)`,
+      // and when it lands second in a comma-separated declaration list the
+      // space between `await` and `Promise` is dropped — fusing them into the
+      // identifier `awaitPromise`, which is not defined. Both CLIs died on the
+      // first line of their action in every published build (#1896).
+      const Glob = globalThis.Bun.Glob
 
       // A single positional arrives as a bare string, not a one-element array,
       // and `for…of` over a string iterates its CHARACTERS — so an unnormalised
@@ -1849,7 +1855,13 @@ catch (error) {
     .example('stx codemod --fix "resources/views/**/*.stx"')
     .action(async (patterns: string[] | undefined, options: { fix?: boolean, rule?: string }) => {
       const { codemodSource, formatCodemodFindings } = await import('../src/codemod')
-      const { Glob } = await import('bun')
+      // `Bun.Glob`, not `await import('bun')`. The bundler rewrites a dynamic
+      // import of the bun builtin to `await Promise.resolve(globalThis.Bun)`,
+      // and when it lands second in a comma-separated declaration list the
+      // space between `await` and `Promise` is dropped — fusing them into the
+      // identifier `awaitPromise`, which is not defined. Both CLIs died on the
+      // first line of their action in every published build (#1896).
+      const Glob = globalThis.Bun.Glob
 
       // A single positional arrives as a bare string, and `for…of` over a
       // string iterates its CHARACTERS — the same trap `typecheck` documents.
