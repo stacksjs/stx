@@ -36,10 +36,30 @@ describe('confirm() is not a safe blind rewrite (#1843)', () => {
     expect(code).toContain('await stxConfirm(')
   })
 
-  it('leaves window.confirm and other property access alone', () => {
-    // `window.confirm(...)` is an explicit choice of the native dialog.
-    const src = `async function f() { window.confirm('x'); this.confirm('y') }`
+  it('leaves a call on any receiver that is not the global alone', () => {
+    /*
+     * `this.confirm(...)` and `dialog.confirm(...)` are somebody else's method.
+     *
+     * `window.confirm(...)` used to be skipped too, on the reasoning that
+     * naming the global is "an explicit choice of the native dialog". That was
+     * wrong, and #1914 measured the cost: several style guides REQUIRE the
+     * explicit global, so it is the form a linted codebase contains. One app's
+     * rule found 1 of 3 sites and the 2 it missed were the destructive ones.
+     */
+    const src = `async function f() { this.confirm('y'); dialog.confirm('z') }`
     expect(run(src, ['confirm']).code).toBe(src)
+  })
+
+  it('rewrites the window-qualified form, which is the linted spelling', () => {
+    const { code, findings } = run(`async function del() { if (window.confirm('Delete?')) drop() }`, ['confirm'])
+
+    expect(code).toContain('await stxConfirm(')
+    expect(code).not.toContain('window.confirm')
+    expect(findings[0].applied).toBeTrue()
+  })
+
+  it('reports a window-qualified alert too', () => {
+    expect(run(`window.alert('Saved')`, ['alert'] as any).findings).toHaveLength(1)
   })
 
   it('does not touch an already-migrated call', () => {
@@ -353,9 +373,11 @@ describe('alert is detected (#1903)', () => {
     expect(findings[0].reason).toContain('blocking')
   })
 
-  it('leaves window.alert and a locally-declared alert alone', () => {
-    expect(run(`window.alert('x')`, ['alert'] as any).findings).toEqual([])
+  it('leaves a locally-declared alert alone', () => {
+    // `window.alert(...)` IS reported now — see #1914. A file that declares its
+    // own `alert` still is not calling the browser's.
     expect(run(`function alert(m) {}\nalert('x')`, ['alert'] as any).findings).toEqual([])
+    expect(run(`dialog.alert('x')`, ['alert'] as any).findings).toEqual([])
   })
 
   it('runs by default, beside confirm', () => {

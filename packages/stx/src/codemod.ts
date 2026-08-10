@@ -140,7 +140,10 @@ const REPORT_RULES: ReportRule[] = [
      * to prove than the async check `confirm` uses and worth much less. So this
      * reports, and says why.
      */
-    pattern: /(?<![.#\w$])alert\s*\(/g,
+    // `window.alert(...)` counts for the same reason `window.confirm(...)` does
+    // (#1914): it is the spelling a linted codebase uses. Any other receiver is
+    // somebody else's method and is still excluded.
+    pattern: /(?<![.#\w$])(?:(?:window|globalThis)\s*\.\s*)?alert\s*\(/g,
     primitive: 'stxAlert(message)',
     why: 'themed, focus-trapped and non-blocking — but `await` it if the code after it '
       + 'depended on the native dialog blocking until dismissal',
@@ -299,7 +302,19 @@ function applyConfirmRule(source: string, file: string, findings: CodemodFinding
   if (declaresOwnConfirm(source))
     return source
 
-  const pattern = /(^|[^\w$.])confirm\s*\(/g
+  /*
+   * `window.confirm(...)` counts (stacksjs/stx#1914).
+   *
+   * This used to skip it, on the reasoning that naming the global is "an
+   * explicit choice of the native dialog". That reasoning was wrong: several
+   * style guides REQUIRE the explicit global, so it is the form a linted
+   * codebase is most likely to contain. In one real app the rule found 1 of 3
+   * sites, and the 2 it missed were the destructive ones.
+   *
+   * Still excludes any OTHER receiver: `this.confirm(...)` and
+   * `dialog.confirm(...)` are somebody else's method, not the browser's.
+   */
+  const pattern = /(^|[^\w$.])(?:(?:window|globalThis)\s*\.\s*)?confirm\s*\(/g
   // Matched against the code view so a `confirm(...)` NAMED in a comment or a
   // string is not a call (#1905). Positions are preserved, so every slice below
   // Matched against the code view so a `confirm(...)` NAMED in a comment or a
@@ -336,8 +351,10 @@ function applyConfirmRule(source: string, file: string, findings: CodemodFinding
     })
 
     if (safe) {
+      // The match may be `window.confirm(`, so the replaced span is whatever
+      // was matched after the leading boundary character, not a fixed width.
       out += source.slice(last, callAt) + 'await stxConfirm('
-      last = callAt + 'confirm('.length
+      last = callAt + (match[0].length - match[1].length)
     }
   }
 
