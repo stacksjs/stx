@@ -1,9 +1,9 @@
 {
   "name": "@stacksjs/stx-devtools-extension",
   "type": "module",
-  "version": "0.2.170",
+  "version": "0.2.171",
   "private": true,
-  "description": "Browser-extension bridge + panel for Stacks DevTools \u2014 consumes the in-page window.__stxDevtools introspection protocol.",
+  "description": "Browser-extension bridge + panel for Stacks DevTools — consumes the in-page window.__stxDevtools introspection protocol.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
   "homepage": "https://github.com/stacksjs/stx#readme",

@@ -1,5 +1,48 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.170...v0.2.171)
+
+## 🚀 Features
+
+- **ssg**: say when a page action is being statically built (#1847) ([05731bb](https://github.com/stacksjs/stx/commit/05731bb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1847](https://github.com/stacksjs/stx/issues/1847), [#1847](https://github.com/stacksjs/stx/issues/1847))
+- **typecheck**: warn on the values still crossing implicitly (#1868 ask 4) ([303ba7e](https://github.com/stacksjs/stx/commit/303ba7e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1868](https://github.com/stacksjs/stx/issues/1868), [#1868](https://github.com/stacksjs/stx/issues/1868))
+- **typecheck**: type what crosses into a client block, and stop reporting the bridge as an error (#1868 ask 2) ([efc13f4](https://github.com/stacksjs/stx/commit/efc13f4)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1868](https://github.com/stacksjs/stx/issues/1868), [#1868](https://github.com/stacksjs/stx/issues/1868))
+- **serve**: a page action runs in production, not only under buddy dev (#1847) ([41fd467](https://github.com/stacksjs/stx/commit/41fd467)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1847](https://github.com/stacksjs/stx/issues/1847), [#1847](https://github.com/stacksjs/stx/issues/1847))
+
+## 🐛 Bug Fixes
+
+- **typecheck**: stop reporting TS2774 on a template's auto-unwrapped signal ([17aeadf](https://github.com/stacksjs/stx/commit/17aeadf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **state**: an action survives whichever devtools global loaded last, and format three files ([00229b3](https://github.com/stacksjs/stx/commit/00229b3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **typecheck**: skip every phase of x-transition, not just the bare name ([cc57c14](https://github.com/stacksjs/stx/commit/cc57c14)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **types**: clear the eleven standing tsc errors, and write up the sweep ([8fa6852](https://github.com/stacksjs/stx/commit/8fa6852)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **runtime**: keep the runtime tag below the doctype, not above it (#1899) ([880d016](https://github.com/stacksjs/stx/commit/880d016)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1899](https://github.com/stacksjs/stx/issues/1899), [#1899](https://github.com/stacksjs/stx/issues/1899))
+- **build**: a compiled page no longer freezes request-dependent values (#1895) ([925964a](https://github.com/stacksjs/stx/commit/925964a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1895](https://github.com/stacksjs/stx/issues/1895), [#1895](https://github.com/stacksjs/stx/issues/1895))
+- **codemod**: a file that declares its own confirm() is not calling the browser's (#1898) ([2bda950](https://github.com/stacksjs/stx/commit/2bda950)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1898](https://github.com/stacksjs/stx/issues/1898), [#1898](https://github.com/stacksjs/stx/issues/1898))
+- **router**: emails/ is a building block, not a section of the site (#1897) ([8360b8f](https://github.com/stacksjs/stx/commit/8360b8f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1897](https://github.com/stacksjs/stx/issues/1897), [#1897](https://github.com/stacksjs/stx/issues/1897))
+- **cli**: typecheck and codemod died on their first line in every published build (#1896) ([7b7406c](https://github.com/stacksjs/stx/commit/7b7406c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1896](https://github.com/stacksjs/stx/issues/1896), [#1896](https://github.com/stacksjs/stx/issues/1896))
+- **reactivity**: one dependency tracker, so the two module-side systems observe each other (#1885) ([ef1fbba](https://github.com/stacksjs/stx/commit/ef1fbba)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1885](https://github.com/stacksjs/stx/issues/1885), [#1885](https://github.com/stacksjs/stx/issues/1885))
+- **find-body-tag**: a close tag may carry whitespace, and the scan copied the document ([5e72428](https://github.com/stacksjs/stx/commit/5e72428)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **compression**: compress off the main thread, and honour a q=0 refusal ([e6cbf97](https://github.com/stacksjs/stx/commit/e6cbf97)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 📚 Documentation
+
+- **reactivity**: name the canonical primitive set at both call sites (#1885 asks 3 and 4) ([b7195c7](https://github.com/stacksjs/stx/commit/b7195c7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1885](https://github.com/stacksjs/stx/issues/1885), [#1885](https://github.com/stacksjs/stx/issues/1885))
+
+## 🧪 Tests
+
+- **components**: pin that a server value in a client script is a JS literal (#1894) ([cd33fbe](https://github.com/stacksjs/stx/commit/cd33fbe)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1894](https://github.com/stacksjs/stx/issues/1894), [#1894](https://github.com/stacksjs/stx/issues/1894))
+- **variable-extractor**: pin __stxServeContext, which shipped unheld ([060d53b](https://github.com/stacksjs/stx/commit/060d53b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.171 ([710e8ff](https://github.com/stacksjs/stx/commit/710e8ff)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove HANDOFF.md from the repo ([39912eb](https://github.com/stacksjs/stx/commit/39912eb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **devtools-extension**: everything for a store submission except the account (#1754) ([5890a2c](https://github.com/stacksjs/stx/commit/5890a2c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1754](https://github.com/stacksjs/stx/issues/1754), [#1754](https://github.com/stacksjs/stx/issues/1754))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.169...v0.2.170)
 
 ## 🐛 Bug Fixes
