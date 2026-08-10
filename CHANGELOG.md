@@ -1,5 +1,37 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.171...v0.2.172)
+
+## 🚀 Features
+
+- **codemod**: skip files git ignores (#1909) ([d13b344](https://github.com/stacksjs/stx/commit/d13b344)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1909](https://github.com/stacksjs/stx/issues/1909), [#1909](https://github.com/stacksjs/stx/issues/1909))
+
+## 🐛 Bug Fixes
+
+- **serve**: let public assets bypass catch-all pages ([c3b9c43](https://github.com/stacksjs/stx/commit/c3b9c43)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: create the destination root before copying assets into it ([0090da4](https://github.com/stacksjs/stx/commit/0090da4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **toast**: follow the app's theme, and carry a title and a semantic id (#1912, #1913) ([f4c8a51](https://github.com/stacksjs/stx/commit/f4c8a51)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1912](https://github.com/stacksjs/stx/issues/1912), [#1913](https://github.com/stacksjs/stx/issues/1913), [#1912](https://github.com/stacksjs/stx/issues/1912), [#1913](https://github.com/stacksjs/stx/issues/1913))
+- **codemod**: client advice only inside client blocks, and only for real query reads (#1909) ([544698e](https://github.com/stacksjs/stx/commit/544698e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1909](https://github.com/stacksjs/stx/issues/1909), [#1909](https://github.com/stacksjs/stx/issues/1909))
+- **typecheck**: the bridge warning names only what actually crosses (#1908) ([dff7e81](https://github.com/stacksjs/stx/commit/dff7e81)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1908](https://github.com/stacksjs/stx/issues/1908), [#1908](https://github.com/stacksjs/stx/issues/1908))
+- **strict**: a prohibited API named in a comment is not a use of it (#1911) ([2d21b19](https://github.com/stacksjs/stx/commit/2d21b19)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1911](https://github.com/stacksjs/stx/issues/1911), [#1911](https://github.com/stacksjs/stx/issues/1911))
+- **codemod**: window-qualified confirm and alert are the linted spelling (#1914) ([2e56a20](https://github.com/stacksjs/stx/commit/2e56a20)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1914](https://github.com/stacksjs/stx/issues/1914), [#1914](https://github.com/stacksjs/stx/issues/1914))
+- **variable-extractor**: a default import binds the default export, not the namespace (#1910) ([1e0b92b](https://github.com/stacksjs/stx/commit/1e0b92b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1910](https://github.com/stacksjs/stx/issues/1910), [#1910](https://github.com/stacksjs/stx/issues/1910))
+- **typecheck**: --lib no longer silences the checker, and x-tooltip is text (#1906, #1907) ([1911fbc](https://github.com/stacksjs/stx/commit/1911fbc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1906](https://github.com/stacksjs/stx/issues/1906), [#1907](https://github.com/stacksjs/stx/issues/1907), [#1906](https://github.com/stacksjs/stx/issues/1906), [#1907](https://github.com/stacksjs/stx/issues/1907))
+- **codemod**: match code, not prose, and stay out of server blocks (#1905) ([630c2aa](https://github.com/stacksjs/stx/commit/630c2aa)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1905](https://github.com/stacksjs/stx/issues/1905), [#1905](https://github.com/stacksjs/stx/issues/1905))
+- **codemod**: leave a component's title prop alone, and detect alert() (#1902, #1903) ([1ea9808](https://github.com/stacksjs/stx/commit/1ea9808)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1902](https://github.com/stacksjs/stx/issues/1902), [#1903](https://github.com/stacksjs/stx/issues/1903), [#1902](https://github.com/stacksjs/stx/issues/1902), [#1903](https://github.com/stacksjs/stx/issues/1903))
+- **render**: a script tag inside a server-block string no longer eats the page (#1904) ([8a01763](https://github.com/stacksjs/stx/commit/8a01763)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1904](https://github.com/stacksjs/stx/issues/1904), [#1904](https://github.com/stacksjs/stx/issues/1904))
+- **typecheck**: a script tag named in a comment does not open a block (#1901) ([e439a07](https://github.com/stacksjs/stx/commit/e439a07)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1901](https://github.com/stacksjs/stx/issues/1901), [#1901](https://github.com/stacksjs/stx/issues/1901))
+- **typecheck**: resolve an app's own path aliases ([56fc17b](https://github.com/stacksjs/stx/commit/56fc17b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.172 ([266bf56](https://github.com/stacksjs/stx/commit/266bf56)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.170...v0.2.171)
 
 ## 🚀 Features
