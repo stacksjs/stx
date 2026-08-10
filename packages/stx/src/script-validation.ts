@@ -5,6 +5,7 @@
  * enforcing the use of STX composables and Vue-style alternatives instead
  * of raw browser APIs.
  */
+import { stripCommentsAndLiterals } from './strip-literals'
 import type { StrictModeConfig } from './types'
 
 /**
@@ -181,6 +182,24 @@ export function validateClientScript(
   const allowPatterns = strictConfig.allowPatterns ?? []
   const errors: string[] = []
 
+  /*
+   * Scanned with comments and string literals blanked (stacksjs/stx#1911).
+   *
+   * A prohibited API NAMED in a comment is not a use of it. Measured on a real
+   * app with strict mode on: 11 violations reported, 9 of them pointing at a
+   * comment. And every one of those comments documented that the file uses the
+   * stx primitive INSTEAD — they exist because someone did the migration and
+   * explained it. So the rule fired hardest on the code that had already
+   * complied, and `failOnViolation` could not be turned on at all.
+   *
+   * Positions are preserved, so the line numbers and the quoted line below
+   * still come from the real source. `{{-- … --}}` is blanked too: an stx
+   * template comment is equally prose, and was equally matched.
+   */
+  const scannable = stripCommentsAndLiterals(
+    content.replace(/\{\{--[\s\S]*?--\}\}/g, match => match.replace(/[^\n]/g, ' ')),
+  )
+
   for (const { pattern, message, suggestion } of PROHIBITED_DOM_PATTERNS) {
     // Skip patterns that are explicitly allowed.
     //
@@ -202,11 +221,17 @@ export function validateClientScript(
 
     // Reset regex lastIndex for global patterns
     pattern.lastIndex = 0
-    const matches = content.match(pattern)
+    const matches = scannable.match(pattern)
 
     if (matches && matches.length > 0) {
-      // Find line numbers for better error messages
-      const lines = content.split('\n')
+      // Line numbers come from the blanked copy, which is line-for-line with
+      // the source.
+      const lines = scannable.split('\n')
+      // The QUOTE comes from the source. Taking it from the blanked copy prints
+      // `document.querySelector(      )` with the string literal replaced by
+      // spaces, which defeats the point of quoting it: #1836 added this so the
+      // line is findable by search rather than by counting. Its test caught it.
+      const sourceLines = content.split('\n')
       const lineNumbers: number[] = []
 
       lines.forEach((line, index) => {
@@ -228,7 +253,7 @@ export function validateClientScript(
 
       const quoted = lineNumbers
         .slice(0, 3)
-        .map(n => `        ${n} | ${(lines[n - 1] ?? '').trim().slice(0, 100)}`)
+        .map(n => `        ${n} | ${(sourceLines[n - 1] ?? '').trim().slice(0, 100)}`)
         .join('\n')
       const snippet = quoted ? `\n${quoted}` : ''
 
