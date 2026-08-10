@@ -140,29 +140,34 @@ function parseTemplate(content: string): {
     const removeRanges: { start: number, end: number }[] = []
     while ((sMatch = serverScriptOpenRe.exec(templateContent)) !== null) {
       const tagEnd = sMatch.index + sMatch[0].length
-      // Find matching </script> accounting for nesting (script tags can't truly nest,
-      // but we need to skip </script> inside strings)
-      let sDepth = 1
-      let sPos = tagEnd
-      while (sPos < templateContent.length && sDepth > 0) {
-        const nextOpen = templateContent.indexOf('<script', sPos)
-        const nextClose = templateContent.indexOf('</script>', sPos)
-        if (nextClose === -1) break
-        if (nextOpen !== -1 && nextOpen < nextClose) {
-          // Check if this is inside a string literal by looking for surrounding quotes
-          // For simplicity, just track script nesting depth
-          sDepth++
-          sPos = nextOpen + '<script'.length
-        }
-        else {
-          sDepth--
-          if (sDepth === 0) {
-            removeRanges.push({ start: sMatch.index, end: nextClose + '</script>'.length })
-            break
-          }
-          sPos = nextClose + '</script>'.length
-        }
-      }
+
+      /*
+       * A script element ends at its FIRST `</script>`. It does not nest.
+       *
+       * This used to depth-count `<script` occurrences, so a complete opening
+       * tag inside a string literal — `const alpha = "VAL <script>x"` — counted
+       * as a nested element and demanded a second closing tag. The range then
+       * ran past the server block and swallowed the page's whole
+       * `<script client>`: no setup function, no server-to-client bridge, and a
+       * 200 response with an entirely inert page (stacksjs/stx#1904).
+       *
+       * Nesting is not a thing an HTML parser does here either. Once it is in
+       * script-data state only an end tag leaves it, which is exactly why the
+       * emitters in this codebase escape `<` as `\u003c` when they write a
+       * value into a script body — a literal `</script>` in a string really
+       * would close the element in a browser.
+       */
+      const closeAt = templateContent.indexOf('</script>', tagEnd)
+      if (closeAt === -1)
+        continue
+
+      removeRanges.push({ start: sMatch.index, end: closeAt + '</script>'.length })
+
+      // Resume scanning AFTER this element. Everything between its tags is
+      // script data, so an opening tag in there is text — and the scan would
+      // otherwise match the `<script>` inside `"VAL <script>x"` and push a
+      // second, overlapping range that runs into the block below.
+      serverScriptOpenRe.lastIndex = closeAt + '</script>'.length
     }
     // Remove ranges in reverse order to preserve indices
     for (let ri = removeRanges.length - 1; ri >= 0; ri--) {
