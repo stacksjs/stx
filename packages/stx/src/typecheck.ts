@@ -39,7 +39,9 @@ import {
   buildVirtualTypeScript,
   extractScriptBlocks,
   resolvePosition,
+  clientPayloadDeclarations,
   serverContextDeclarations,
+  substituteInterpolationsInPlace,
 } from './stx-virtual-ts'
 
 export type { ScriptBlock, ScriptKind } from './stx-virtual-ts'
@@ -101,9 +103,30 @@ export interface TypecheckResult {
  * variable", and those are ordinary names for server-rendered page data. It is
  * appended rather than prepended so the line numbers above it are untouched.
  */
-export function buildVirtualSource(block: ScriptBlock): string {
+export function buildVirtualSource(block: ScriptBlock, serverCode = ''): string {
   const leadingNewlines = block.startLine > 1 ? '\n'.repeat(block.startLine - 1) : ''
-  return `${leadingNewlines + block.code}\nexport {}\n`
+
+  // A block may take a server value through an interpolation. As TypeScript
+  // that is a syntax error, and a parse failure suppresses every real
+  // diagnostic in the same file — so the checker was blind wherever this is
+  // used, which is 48 of the framework's own 95 components.
+  const code = substituteInterpolationsInPlace(block.code)
+
+  /*
+   * A client block is checked in its own buffer, so a value reaching it through
+   * the server-to-client bridge was simply "Cannot find name" — which made
+   * `stx typecheck` report an error on every page that used the bridge at all.
+   * A checker that invents errors gets muted, and a muted gate catches nothing.
+   *
+   * Appended rather than prepended: every declaration it emits hoists, so the
+   * block's own lines keep their numbers and a diagnostic still points where
+   * the author wrote the code (#1868 ask 2).
+   */
+  const payload = block.kind === 'client' || block.kind === 'plain'
+    ? clientPayloadDeclarations(serverCode)
+    : ''
+
+  return `${leadingNewlines + code}\n${payload}\nexport {}\n`
 }
 
 /** Virtual path for a block, stable and traceable back to its origin. */
@@ -190,6 +213,17 @@ export async function typecheckStxFiles(
       return false // `plain` blocks are not part of the authored TS surface
     })
 
+    /*
+     * The server blocks' source, for the client blocks' payload projection.
+     * Taken from ALL server blocks rather than the first: a layout and the page
+     * it wraps may each declare their own crossings, and `defineClientPayload`
+     * merges rather than replaces.
+     */
+    const serverCode = extractScriptBlocks(source)
+      .filter(block => block.kind === 'server')
+      .map(block => block.code)
+      .join('\n')
+
     // The template buffer inlines the script bodies, so an expression sees the
     // real types the blocks declare — which is what catches `{{ row.total_vists }}`
     // against a typed row rather than merely an undeclared name.
@@ -209,7 +243,7 @@ export async function typecheckStxFiles(
 
     blocks.forEach((block, i) => {
       virtualFiles.set(virtualPathFor(file, block.kind, i), {
-        source: buildVirtualSource(block),
+        source: buildVirtualSource(block, serverCode),
         origin: file,
         kind: block.kind,
       })

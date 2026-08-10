@@ -7,7 +7,7 @@
   </div>
   <div class="terminal-output" id="output">
     <div class="message system">
-      <div class="message-content" id="welcomeMessage">{{ welcomeMessage || 'Welcome to Buddy - your voice-controlled AI code assistant.
+      <div class="message-content" id="welcomeMessage">{{ welcomeMessage || `Welcome to Buddy - your voice-controlled AI code assistant.
 
 Instructions:
 1. Select your preferred AI driver above
@@ -19,7 +19,7 @@ Example commands:
 - "Update the README to include installation instructions"
 - "Fix the bug in the login function"
 - "Add a new endpoint for user profiles"
-- "Refactor the database module to use async/await"' }}</div>
+- "Refactor the database module to use async/await"` }}</div>
     </div>
   </div>
 </div>

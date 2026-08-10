@@ -303,6 +303,35 @@ export function substituteInterpolations(value: string): string {
     .replace(/\{!![\s\S]*?!!\}/g, INTERPOLATION_PLACEHOLDER)
 }
 
+/**
+ * The same substitution, but the result occupies the same space as the source.
+ *
+ * A `<script client>` block may take a server value through an interpolation —
+ * `const duration = {{ duration }}` — and 48 of the framework's own 95
+ * components do exactly that. As TypeScript that is a syntax error, so
+ * `stx typecheck` reported 369 of them across the component library: a parse
+ * failure, which suppresses every real diagnostic in the same file. The gate
+ * was not strict there, it was blind.
+ *
+ * Position-preserving because these are script blocks, not attribute values.
+ * A diagnostic on the line after an interpolation has to keep pointing at the
+ * code the author wrote, so the replacement is padded to the original width and
+ * carries the original newline count. For a single-line interpolation — all but
+ * a handful — every column after it is preserved exactly.
+ *
+ * `0` rather than a named placeholder because it fits in `{{a}}`, the shortest
+ * interpolation anyone writes; a longer identifier could not be padded DOWN to
+ * fit and would shift the line.
+ */
+export function substituteInterpolationsInPlace(code: string): string {
+  return code.replace(/\{\{[\s\S]*?\}\}|\{!![\s\S]*?!!\}/g, (match) => {
+    const newlines = match.split('\n').length - 1
+    const width = match.length - newlines
+
+    return `0${' '.repeat(Math.max(0, width - 1))}${'\n'.repeat(newlines)}`
+  })
+}
+
 /** Attributes that carry markup or a plain string, never an expression. */
 const NON_EXPRESSION_ATTRS = new Set([
   'x-cloak',
@@ -531,11 +560,179 @@ export const STX_SERVER_CONTEXT = [
   'request',
   'url',
   'definePageMeta',
+  // Declaring exactly what crosses into a client block (#1868). Absent from
+  // this list it was "Cannot find name", so the checker rejected the one API
+  // the typed bridge is built on.
+  'defineClientPayload',
+  'defineStore',
 ] as const
 
 export function serverContextDeclarations(): string {
   return STX_SERVER_CONTEXT.map(name => `declare var ${name}: any`).join('\n')
 }
+
+/**
+ * The names a `defineClientPayload({ … })` call publishes, or `null` when the
+ * page does not declare one.
+ *
+ * Only the keys matter. The runtime captures values, and `extractBridgeData`
+ * publishes the declared set in full and nothing else, so the key set IS the
+ * contract between the two blocks (#1868).
+ *
+ * `null` and `[]` mean different things: `null` is a page that never declared,
+ * and still gets the old name-scraping bridge; `[]` is a page that declared an
+ * empty payload and therefore publishes nothing.
+ */
+export function extractClientPayloadNames(serverCode: string): string[] | null {
+  const call = /\bdefineClientPayload\s*\(\s*\{([\s\S]*?)\}\s*\)/g
+  let match: RegExpExecArray | null
+  let found = false
+  const names = new Set<string>()
+
+  // eslint-disable-next-line no-cond-assign
+  while ((match = call.exec(maskNonTemplateRegions(serverCode, { keepScripts: true }))) !== null) {
+    found = true
+    for (const entry of splitPayloadEntries(match[1])) {
+      // `{ liveNow }` and `{ liveNow: computeIt() }` both publish `liveNow`.
+      const name = entry.split(':')[0].trim()
+      if (/^[A-Za-z_$][\w$]*$/.test(name))
+        names.add(name)
+    }
+  }
+
+  return found ? [...names] : null
+}
+
+/**
+ * Split an object literal's body on the commas that separate its entries.
+ *
+ * A plain `split(',')` breaks on the comma inside `{ a: f(x, y) }`, which would
+ * silently publish a name of `y)` and drop nothing — the kind of failure that
+ * shows up as a missing binding at runtime rather than an error here.
+ */
+function splitPayloadEntries(body: string): string[] {
+  const entries: string[] = []
+  let depth = 0
+  let current = ''
+
+  for (const char of body) {
+    if (char === ',' && depth === 0) {
+      entries.push(current)
+      current = ''
+      continue
+    }
+    if (char === '(' || char === '[' || char === '{')
+      depth++
+    else if (char === ')' || char === ']' || char === '}')
+      depth--
+    current += char
+  }
+
+  entries.push(current)
+
+  return entries.filter(entry => entry.trim().length > 0)
+}
+
+/** Top-level `import` statements, and everything else, separated. */
+export function splitTopLevelImports(code: string): { imports: string, body: string } {
+  const importLine = /^[ \t]*import\b[\s\S]*?(?:from\s*['"][^'"]*['"]|['"][^'"]*['"])[ \t]*;?[ \t]*$/gm
+  const imports: string[] = []
+
+  const body = code.replace(importLine, (statement) => {
+    imports.push(statement.trim())
+    // Replaced by blank lines of the same count, so every remaining line keeps
+    // its number — a diagnostic that points at the wrong line is worse than no
+    // diagnostic.
+    return statement.split('\n').map(() => '').join('\n')
+  })
+
+  return { imports: imports.join('\n'), body }
+}
+
+/**
+ * Declarations that give a client block the server values it is actually given.
+ *
+ * A `<script client>` block is checked in its own buffer, so a name reaching it
+ * through the server-to-client bridge was simply "Cannot find name" — which
+ * means `stx typecheck` reported an error for every page that used the bridge
+ * at all. A checker that invents errors gets muted, and a muted gate catches
+ * nothing.
+ *
+ * The types are inferred rather than guessed. The server block is re-emitted
+ * inside a wrapper function that returns exactly the declared payload, and each
+ * published name is then declared as a lookup into that function's return type,
+ * so `const liveNow = await countLive()` reaches the client block as whatever
+ * `countLive` returns — not `any`, and not a hand-written annotation that can
+ * drift from the code above it (#1868 ask 2).
+ *
+ * Everything is emitted with `var`, `function` and `type`, all of which hoist,
+ * so this appends to the buffer and no line number moves.
+ *
+ * A page that declares nothing still gets its server bindings, as `any`. That
+ * is exactly what the scraping bridge does — publish any server name the client
+ * source mentions — and declaring `any` is the honest description of a value
+ * whose delivery depends on textual reference. Omitting them instead would make
+ * `stx typecheck` report "Cannot find name" on every page that uses the bridge
+ * at all, and a checker that invents errors gets muted.
+ *
+ * So the incentive runs the right way: declare a payload and the names are
+ * checked against the server block, or do not and they are `any`.
+ */
+export function clientPayloadDeclarations(serverCode: string): string {
+  const published = extractClientPayloadNames(serverCode)
+
+  if (!published) {
+    const scraped = collectBlockDeclarations(serverCode)
+    if (scraped.length === 0)
+      return ''
+
+    return [
+      '',
+      `// ${SCRAPED_COMMENT}`,
+      ...scraped.map(name => `declare var ${name}: any`),
+    ].join('\n')
+  }
+
+  if (published.length === 0)
+    return ''
+
+  const { imports, body } = splitTopLevelImports(serverCode)
+
+  // `export` is illegal inside a function body, and a server block routinely
+  // exports. The keyword carries no meaning for the inferred type.
+  const scopeBody = body.replace(/^[ \t]*export[ \t]+(?=(?:const|let|var|function|async|class)\b)/gm, '')
+
+  const parts = [
+    '',
+    `// ${PAYLOAD_COMMENT}`,
+  ]
+
+  if (imports)
+    parts.push(imports)
+
+  parts.push(
+    // `async`, so a server block using top-level await is still valid inside
+    // it; `Awaited<…>` below unwraps the promise that costs.
+    `async function ${PAYLOAD_SCOPE}() {`,
+    scopeBody,
+    `  return { ${published.join(', ')} }`,
+    '}',
+    `type ${PAYLOAD_TYPE} = Awaited<ReturnType<typeof ${PAYLOAD_SCOPE}>>`,
+    // Each published name resolves to the wrapper's own binding, which shadows
+    // the `declare var` below it — so this is a projection, not a cycle.
+    ...published.map(name => `declare var ${name}: ${PAYLOAD_TYPE}[${JSON.stringify(name)}]`),
+  )
+
+  return parts.join('\n')
+}
+
+/** Marker comment so a generated preamble is recognisable in a dumped buffer. */
+export const PAYLOAD_COMMENT = 'stx: types for the declared client payload (#1868)'
+/** The same, for a page still relying on the name-scraping bridge. */
+export const SCRAPED_COMMENT = 'stx: untyped bridge names — declare a defineClientPayload to check these (#1868)'
+const PAYLOAD_SCOPE = '__stxServerScope'
+const PAYLOAD_TYPE = '__StxClientPayload'
+const PAYLOAD_NAMESPACE = '__StxServerBlock'
 
 /**
  * Names the template engine puts in scope for every page.

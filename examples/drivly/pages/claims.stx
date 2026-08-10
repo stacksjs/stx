@@ -39,7 +39,7 @@ const covers = [
   { title: 'Collision damage',   body: 'Repair up to the car\'s cash value, backed by Drivly\'s protection plan. Your deductible depends on the plan you selected at booking.' },
   { title: 'Liability',          body: 'Up to $750,000 per incident for bodily injury and property damage to third parties. Included on every single trip.' },
   { title: 'Theft',              body: 'Covered when reasonable care was taken (keys in possession, car parked legally). Police report required within 24 hours.' },
-  { title: 'Roadside assistance','body: Lockouts, flat tires, jump starts, fuel delivery, and towing up to 50 miles — $0 cost, any trip, 24/7.' },
+  { title: 'Roadside assistance', body: 'Lockouts, flat tires, jump starts, fuel delivery, and towing up to 50 miles — $0 cost, any trip, 24/7.' },
 ]
 
 const notCovers = [
