@@ -1247,7 +1247,24 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
       if (defaultImportMatch) {
         const [, name, source] = defaultImportMatch
         const resolved = resolveSource(source)
-        convertedLines.push(`const ${name} = await import('${resolved}')`)
+
+        /*
+         * `.default`, not the namespace.
+         *
+         * `import x from 'y'` binds the module's DEFAULT export;
+         * `await import('y')` gives the namespace object, whose `.default` holds
+         * it. Binding the namespace meant every property read off `x` was
+         * `undefined` — `services.github.clientId` on a config module returned
+         * nothing, with no throw and no warning, so a config-gated feature
+         * quietly turned itself off (stacksjs/stx#1910).
+         *
+         * No `?? namespace` fallback for the CommonJS case, which is what I
+         * reached for first: measured, Bun synthesises `.default` for a CJS
+         * module too, set to its `module.exports`. So the fallback was
+         * unreachable, and a branch that cannot run is a claim about the
+         * runtime that nothing checks.
+         */
+        convertedLines.push(`const ${name} = (await import('${resolved}')).default`)
         convertedLines.push(`module.exports.${name} = ${name};`)
       }
       else if (namedImportMatch) {
