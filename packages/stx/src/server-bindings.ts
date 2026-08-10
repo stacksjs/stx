@@ -28,6 +28,66 @@ const BOOLEAN_ATTRS = new Set([
   'playsinline', 'reversed', 'selected',
 ])
 
+const VOID_TAGS = new Set([
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link',
+  'meta', 'param', 'source', 'track', 'wbr',
+])
+
+/**
+ * Find reactive loop regions whose bindings belong to the browser scope.
+ *
+ * Server scripts may leave placeholder objects for iteration variables in the
+ * render context. Evaluating a descendant binding against that placeholder can
+ * look successful while producing a permanently wrong value, such as
+ * `:href="pathFor(row.id)"` becoming `href="/rows/undefined"`. The loop runtime
+ * owns the iteration scope, so bindings on the loop element and its descendants
+ * must remain intact until each row is cloned in the browser.
+ */
+function reactiveLoopRanges(template: string): Array<[number, number]> {
+  const ranges: Array<[number, number]> = []
+  const openingTag = /<([a-zA-Z][a-zA-Z0-9-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)\s*\/?>/g
+  let match: RegExpExecArray | null
+
+  // eslint-disable-next-line no-cond-assign
+  while ((match = openingTag.exec(template)) !== null) {
+    const attributes = match[2] || ''
+    if (!/(?:^|\s)(?::for|x-for|v-for|@for)\s*=/.test(attributes))
+      continue
+
+    const start = match.index
+    const openingEnd = start + match[0].length
+    const tagName = match[1].toLowerCase()
+    if (match[0].endsWith('/>') || VOID_TAGS.has(tagName)) {
+      ranges.push([start, openingEnd])
+      continue
+    }
+
+    const escapedTag = tagName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const sameTag = new RegExp(`<\\/?${escapedTag}\\b(?:[^>"']|"[^"]*"|'[^']*')*>`, 'gi')
+    sameTag.lastIndex = openingEnd
+    let depth = 1
+    let closingEnd = openingEnd
+    let nested: RegExpExecArray | null
+
+    // eslint-disable-next-line no-cond-assign
+    while ((nested = sameTag.exec(template)) !== null) {
+      if (nested[0].startsWith('</')) {
+        depth--
+        if (depth === 0) {
+          closingEnd = nested.index + nested[0].length
+          break
+        }
+      }
+      else if (!nested[0].endsWith('/>')) {
+        depth++
+      }
+    }
+    ranges.push([start, closingEnd])
+  }
+
+  return ranges
+}
+
 /**
  * Resolve a :class binding value to a class string.
  * Supports object syntax, array syntax, and string expressions.
@@ -72,6 +132,7 @@ export function processServerBindings(
   while ((match = scriptStyleRegex.exec(template)) !== null) {
     protectedRanges.push([match.index, match.index + match[0].length])
   }
+  protectedRanges.push(...reactiveLoopRanges(template))
 
   function isProtected(pos: number): boolean {
     return protectedRanges.some(([start, end]) => pos >= start && pos < end)
@@ -79,7 +140,7 @@ export function processServerBindings(
 
   // Process :attr="expr" bindings on HTML elements
   // Match opening tags with colon-prefixed attributes
-  const tagRegex = /<([a-zA-Z][a-zA-Z0-9-]*)((?:\s+(?:[^>"']|"[^"]*"|'[^']*'))*)\s*\/?>/g
+  const tagRegex = /<([a-zA-Z][a-zA-Z0-9-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)\s*\/?>/g
   const replacements: Array<{ start: number, end: number, replacement: string }> = []
 
   // eslint-disable-next-line no-cond-assign
