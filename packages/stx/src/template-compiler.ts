@@ -15,6 +15,7 @@ import { extractVariables } from './variable-extractor'
 import { createPlaceholder, resetPlaceholders, getPlaceholderRegistry, type PlaceholderMap } from './placeholder'
 import { stripDocumentWrapper } from './app-shell'
 import { createHash } from 'node:crypto'
+import { collectBlockDeclarations } from './stx-virtual-ts'
 
 /**
  * A pre-compiled template ready for serve-time hydration.
@@ -126,11 +127,26 @@ export async function compileTemplate(
     }
   }
 
-  // Create a recording context — server scripts are NOT executed at build time
-  // (they may depend on request data like session, DB queries, etc.)
+  // Server scripts DO execute during compilation — the pipeline needs their
+  // values to build the page's structure. Expressions that read what they
+  // declare are emitted as placeholders and re-resolved per request; see below.
+  /*
+   * The names the server block declares, so an expression reading one becomes a
+   * placeholder rather than a baked value (stacksjs/stx#1895).
+   *
+   * The server block still RUNS during compilation — loops and conditionals
+   * need real values to produce the page's structure, and that is why the
+   * comment below used to claim otherwise. What changes is that a `{{ }}`
+   * reading one of these names is resolved per request by
+   * `hydrateTemplateStream`, which re-runs the same block, instead of being
+   * frozen at whatever the build happened to compute.
+   */
+  const serverDeclared = new Set(serverScriptContent.flatMap(code => collectBlockDeclarations(code)))
+
   const { context } = createRecordingContext({
     __filename: absolutePath,
     __dirname: path.dirname(absolutePath),
+    __stx_serverDeclared: serverDeclared,
   })
 
   // Track dependencies

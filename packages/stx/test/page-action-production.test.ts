@@ -200,17 +200,19 @@ describe('runPageAction merges rather than replaces', () => {
   })
 })
 
-describe('the limitation this feature inherits (stacksjs/stx#1895)', () => {
-  it('cannot repopulate a value the server block initialised', async () => {
+describe('the shape everyone writes, which used to be the broken one', () => {
+  it('repopulates a value the server block initialised', async () => {
     /*
-     * Documented, not endorsed. `const errors = ''` is how anyone would write a
-     * clean GET render, and `compileTemplate` runs the server block at build
-     * time and bakes both expressions to the empty string — so no placeholder
-     * survives for the action to fill. The action still runs and still
-     * redirects; only the re-render is lost.
+     * `const errors = ''` is how anyone writes a clean GET render, and it used
+     * to be the shape that silently did not work: `compileTemplate` executed
+     * the server block at build time and froze both expressions to the empty
+     * string, so no placeholder survived for the action to fill. The action
+     * ran, returned its message, and the template had nowhere to put it.
      *
-     * This asserts the CURRENT behaviour so that fixing #1895 fails here and
-     * whoever fixes it finds this test and the explanation with it.
+     * Fixed in stacksjs/stx#1895 — an expression reading a server-declared name
+     * is a placeholder, resolved per request, instead of a baked build-time
+     * value. This test asserted the broken behaviour with the issue number on
+     * it, and flipped when the issue was fixed, which is what it was for.
      */
     const compiled = await compile(`<script server>
 export async function action({ form }) {
@@ -224,7 +226,7 @@ const values = ''
   <p>{{ errors }}</p>
 </form>`)
 
-    expect(Object.keys(compiled.placeholders)).toHaveLength(0)
+    expect(Object.keys(compiled.placeholders).length).toBeGreaterThan(0)
 
     const { html } = await hydrateTemplateStream(compiled, {
       request: submit('email=nope'),
@@ -232,6 +234,24 @@ const values = ''
       params: {},
     })
 
-    expect(html).not.toContain('Enter a valid email address.')
+    expect(html).toContain('Enter a valid email address.')
+    expect(html).toContain('value="nope"')
+  })
+
+  it('still renders the initialised value on a plain GET', async () => {
+    // The other half: with no action run, the server block's own value is what
+    // the placeholder resolves to, so the GET render is unchanged.
+    const compiled = await compile(`<script server>
+const heading = 'Sign up'
+</script>
+<h1>{{ heading }}</h1>`)
+
+    const { html } = await hydrateTemplateStream(compiled, {
+      request: new Request('https://example.test/signup'),
+      method: 'GET',
+      params: {},
+    })
+
+    expect(html).toContain('Sign up')
   })
 })

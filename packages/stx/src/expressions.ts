@@ -31,6 +31,7 @@
  * i18n: translate, pluralize, date
  */
 
+import { stripCommentsAndLiterals } from './strip-literals'
 import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
 import { createDetailedErrorMessage } from './utils'
 import { createPlaceholder } from './placeholder'
@@ -572,6 +573,32 @@ function expressionUsesOnlyContextVars(expr: string, context: Record<string, any
  * Only the content strictly between `<script>` and `</script>` is touched —
  * attributes and surrounding HTML are left alone.
  */
+/**
+ * Whether `expr` reads a binding the page's `<script server>` block declares.
+ *
+ * The compiler passes the declared names in on the context. Absent — every
+ * caller except the production build — this is false and nothing changes.
+ *
+ * Comments and string literals are blanked first, so a name mentioned inside
+ * `{{ 'the range of it' }}` is not a reference to `range`.
+ */
+function expressionReadsServerBinding(expr: string, context: Record<string, any>): boolean {
+  const declared = context.__stx_serverDeclared as Set<string> | undefined
+  if (!declared || declared.size === 0)
+    return false
+
+  const searchable = stripCommentsAndLiterals(expr)
+
+  for (const name of declared) {
+    // A free identifier, not a property access: `car.range` does not read the
+    // server's `range`.
+    if (new RegExp(`(?<![.#\\w$])${name}(?![\\w$])`).test(searchable))
+      return true
+  }
+
+  return false
+}
+
 export function interpolateScriptExpressions(
   scriptBody: string,
   context: Record<string, any>,
@@ -931,9 +958,28 @@ export function processExpressions(template: string, context: Record<string, any
         return match // Preserve {{ expr }} for runtime evaluation
       }
 
-      // In compile mode: undefined expressions become placeholders for serve-time hydration.
-      // These are server-script variables not available at build time (e.g. user.name, session data).
-      if (value === undefined && context.__stx_buildMode === 'compile' && !hasSignals) {
+      /*
+       * In compile mode, an expression that will be recomputed per request
+       * becomes a placeholder rather than a baked value.
+       *
+       * The `value === undefined` half was the original rule, and it made the
+       * decision on whether a value HAPPENED to be computable at build time
+       * rather than on whether it is request-dependent. A page reading
+       * `__stxServeContext` was safe by accident — undefined during the build —
+       * while a page computing anything itself was frozen: `new Date()` baked
+       * the moment the build ran, and two builds of an unchanged page thirty
+       * milliseconds apart produced different HTML that every visitor then saw
+       * forever (stacksjs/stx#1895).
+       *
+       * So a name the server block declares is a placeholder too. The server
+       * block re-runs on every request in `hydrateTemplateStream`, which is
+       * where the placeholder is resolved, so the value is the request's rather
+       * than the build's. Structure — loops, conditionals — still evaluates at
+       * build time against the real values, which is why the server block is
+       * executed here at all.
+       */
+      if (context.__stx_buildMode === 'compile' && !hasSignals
+        && (value === undefined || expressionReadsServerBinding(trimmedExpr, context))) {
         return createPlaceholder('expr', trimmedExpr)
       }
 
