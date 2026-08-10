@@ -375,6 +375,30 @@ export async function typecheckStxFiles(
       // expression diagnostics are new; everything else would be a duplicate.
       if (!at?.expression)
         continue
+
+      // TS2774 "this condition will always return true since this function is
+      // always defined — did you mean to call it instead?" is wrong about a
+      // template, and only about a template.
+      //
+      // `UNWRAP_HELPER` types a signal as the INTERSECTION of the signal and
+      // its value, so that `:if="flag"` and `@click="flag.set(true)"` both
+      // type-check off one declaration. The intersection stays callable, and
+      // TS2774 fires on precisely that: a callable in a boolean position. So
+      // the diagnostic lands on `x-class="ready ? '' : 'hidden'"` — the exact
+      // form the unwrap exists to bless.
+      //
+      // The runtime disagrees with it. `createExpressionAutoUnwrapProxy`
+      // decides PER IDENTIFIER, from the expression text: a name the
+      // expression calls stays a callable signal, a name it only reads is
+      // handed over unwrapped. So in `a && !b()`, `b` stays callable and `a`
+      // reads as its value — the condition does not always return true.
+      //
+      // Left in place for script blocks, where it is a true positive: a
+      // `<script client>` body gets the raw signal and `if (flag)` there really
+      // is always truthy. Only the template buffer suppresses it.
+      if (Number(code) === 2774)
+        continue
+
       line = at.line
       column = at.column
       expression = at.expression.code.trim()

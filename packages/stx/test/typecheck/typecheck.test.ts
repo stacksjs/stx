@@ -197,6 +197,25 @@ describe('template expressions (#1852 ask 4)', () => {
     expect(errors[0].message).toContain('total_visits')
   }, 120_000)
 
+  it('does not report a bare signal in a template condition (TS2774)', async () => {
+    // The runtime unwraps per identifier, from the expression text: a name the
+    // expression calls stays callable, a name it only reads is handed over as
+    // its value. So this condition does NOT always return true, and the app it
+    // was found in writes 17 of them.
+    const { result } = await check([
+      '<script client>', //                                    1
+      'const ready = state<boolean>(false)', //                 2
+      'const hasName = state<boolean>(true)', //                3
+      'const hasLink = state<boolean>(false)', //               4
+      '</script>', //                                           5
+      '<div x-class="ready ? \'\' : \'hidden\'"></div>', // 6
+      '<div x-class="hasName && !hasLink()"></div>', //         7 — mixed
+    ].join('\n'))
+
+    const noisy = result.diagnostics.filter(d => d.code === 2774)
+    expect(noisy).toEqual([])
+  }, 120_000)
+
   it('catches a typo in an interpolation', async () => {
     const { result } = await check([
       '<script server>',
