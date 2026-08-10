@@ -25,12 +25,29 @@
  * rule; scanning should skip regions that cannot contain markup.
  */
 
-/** Regions whose contents are text, not markup. */
-const SKIP_REGIONS: Array<{ open: RegExp, close: string }> = [
-  { open: /<!--/, close: '-->' },
-  { open: /<script\b/i, close: '</script>' },
-  { open: /<style\b/i, close: '</style>' },
+/**
+ * Regions whose contents are text, not markup.
+ *
+ * Both ends are patterns because the closing tag is not a fixed string:
+ * `</script >` is a legal end tag, and matching it with `indexOf('</script>')`
+ * reports the script as unterminated — which this module reads as "no real
+ * body tag exists" and skips the injection entirely. `conditionals.ts` masks
+ * scripts with `<\/script\s*>` for the same reason; two parsers written in the
+ * same week disagreeing about where a script ends is its own bug.
+ *
+ * These carry the `g` flag so scanning can move a `lastIndex` instead of
+ * re-slicing the document. Every use assigns `lastIndex` first, and the
+ * function is synchronous with no callbacks, so the shared state cannot be
+ * observed between calls.
+ */
+const SKIP_REGIONS: Array<{ open: RegExp, close: RegExp }> = [
+  { open: /<!--/g, close: /-->/g },
+  { open: /<script\b/gi, close: /<\/script\s*>/gi },
+  { open: /<style\b/gi, close: /<\/style\s*>/gi },
 ]
+
+/** The candidate body tag. Same `g`-flag contract as {@link SKIP_REGIONS}. */
+const BODY_OPEN = /<body\b([^>]*)>/gi
 
 export interface BodyTagMatch {
   /** Index of the `<` that opens the tag. */
@@ -50,32 +67,58 @@ export interface BodyTagMatch {
 export function findBodyOpenTag(html: string): BodyTagMatch | null {
   let cursor = 0
 
-  while (cursor < html.length) {
-    const rest = html.slice(cursor)
+  /*
+   * Scanning moves `lastIndex` rather than slicing.
+   *
+   * The previous shape did `html.slice(cursor)` per iteration and
+   * `html.toLowerCase()` per skipped region — two full copies of the document
+   * for every script and style tag it walked past. On the 1.19 MB page the
+   * compression work was measured against, that is megabytes of copying to
+   * find one tag, and it grows with the square of the document.
+   */
+  /*
+   * A match found from an earlier cursor is still the next one, as long as it
+   * has not been passed. Without this cache every iteration rescans the whole
+   * remaining document for `<body` and for each region opener, so a document
+   * with many scripts is quadratic in scans even after the copying is gone —
+   * 281 KB took 61 ms. A `null` is a permanent answer: no match from a smaller
+   * cursor means no match from a larger one.
+   */
+  let bodyMatch: RegExpExecArray | null | undefined
+  const opens: Array<RegExpExecArray | null | undefined> = SKIP_REGIONS.map(() => undefined)
 
+  while (cursor < html.length) {
     // Where does the next real body tag start, and where does the next
     // skippable region start? Whichever comes first wins.
-    const bodyMatch = /<body\b([^>]*)>/i.exec(rest)
+    if (bodyMatch === undefined || (bodyMatch !== null && bodyMatch.index < cursor)) {
+      BODY_OPEN.lastIndex = cursor
+      bodyMatch = BODY_OPEN.exec(html)
+    }
     if (!bodyMatch)
       return null
 
-    const bodyAt = cursor + bodyMatch.index
+    const bodyAt = bodyMatch.index
 
     let nearestSkipAt = -1
-    let nearestClose = ''
-    for (const region of SKIP_REGIONS) {
-      const found = region.open.exec(rest)
+    let nearestClose: RegExp | null = null
+    for (let i = 0; i < SKIP_REGIONS.length; i++) {
+      const region = SKIP_REGIONS[i]
+      let found = opens[i]
+      if (found === undefined || (found !== null && found.index < cursor)) {
+        region.open.lastIndex = cursor
+        found = region.open.exec(html)
+        opens[i] = found
+      }
       if (!found)
         continue
-      const at = cursor + found.index
-      if (at < bodyAt && (nearestSkipAt === -1 || at < nearestSkipAt)) {
-        nearestSkipAt = at
+      if (found.index < bodyAt && (nearestSkipAt === -1 || found.index < nearestSkipAt)) {
+        nearestSkipAt = found.index
         nearestClose = region.close
       }
     }
 
     // No skippable region before it: this is the tag.
-    if (nearestSkipAt === -1) {
+    if (nearestSkipAt === -1 || !nearestClose) {
       return {
         index: bodyAt,
         tag: bodyMatch[0],
@@ -86,11 +129,12 @@ export function findBodyOpenTag(html: string): BodyTagMatch | null {
     // Jump past the region. An unterminated one (a stray `<!--`, a `<style>`
     // with no close) means everything after it is text as far as the browser
     // is concerned, so there is no real body tag to find.
-    const closeAt = html.toLowerCase().indexOf(nearestClose, nearestSkipAt)
-    if (closeAt === -1)
+    nearestClose.lastIndex = nearestSkipAt
+    const closed = nearestClose.exec(html)
+    if (!closed)
       return null
 
-    cursor = closeAt + nearestClose.length
+    cursor = closed.index + closed[0].length
   }
 
   return null
