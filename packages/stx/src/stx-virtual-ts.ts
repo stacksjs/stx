@@ -381,8 +381,24 @@ export function extractTemplateExpressions(source: string): TemplateExpression[]
   while ((m = DIRECTIVE_ATTR_RE.exec(masked)) !== null) {
     const name = m[1]
     const value = m[3] ?? ''
-    // Strip event/directive modifiers: `@keydown.enter` is still `@keydown`.
-    const base = name.replace(/\..*$/, '')
+    // Strip event/directive modifiers: `@keydown.enter` is still `@keydown`,
+    // and `x-transition:enter` is still `x-transition`.
+    //
+    // The colon half matters as much as the dot half. `NON_EXPRESSION_ATTRS`
+    // lists the bare `x-transition`, but the attribute is only ever written
+    // with a phase — `x-transition:enter`, `:leave-end` and four more — so the
+    // exclusion never fired and every phase was parsed as TypeScript. Their
+    // values are CSS class lists (`reactive.ts` reads them with a regex, and
+    // `runtime-globals.ts` registers the directive), so `ease-out duration-300`
+    // was reported as `TS1005 ')' expected`.
+    //
+    // Half of them were passing for a worse reason than failing: `opacity-0`
+    // is a syntactically valid subtraction, so it type-checked as arithmetic on
+    // two undeclared names. The selective-looking failure is the tell.
+    //
+    // The colon is only a separator when something precedes it — `:key` and
+    // `:if` are sigils, and must not collapse to the empty string.
+    const base = name.replace(/\..*$/, '').replace(/^([^:].*?):.*$/, '$1')
     if (NON_EXPRESSION_ATTRS.has(base) || NON_EXPRESSION_ATTRS.has(name))
       continue
     if (!value.trim())

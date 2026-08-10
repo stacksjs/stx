@@ -80,6 +80,39 @@ describe('what counts as an expression', () => {
     expect(found.map(e => e.code)).toEqual(['rows'])
   })
 
+  it('skips every phase of x-transition, not just the bare name', () => {
+    // The values are CSS class lists, so none of these is TypeScript. The
+    // exclusion list held the bare `x-transition`, but the attribute is only
+    // ever written with a phase, so it never matched and each one was parsed
+    // as an expression: `ease-out duration-300` reported TS1005.
+    const found = extractTemplateExpressions(
+      `<div
+         x-transition:enter="ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+       ></div>`,
+    )
+
+    expect(found).toEqual([])
+  })
+
+  it('does not let the colon rule swallow a sigil directive', () => {
+    // `:key` and `:if` lead with the colon — it is the sigil, not a separator,
+    // so stripping from the first colon would collapse them to ''.
+    expect(extractTemplateExpressions('<li :if="ready"></li>').map(e => e.code)).toEqual(['ready'])
+    expect(extractTemplateExpressions('<li :key="id"></li>')).toEqual([])
+  })
+
+  it('still checks a colon directive whose value IS an expression', () => {
+    // `x-on:` and `x-bind:` are not in the exclusion list, so narrowing to the
+    // base must not start skipping them.
+    expect(extractTemplateExpressions('<b x-on:click="save()"></b>').map(e => e.code)).toEqual(['save()'])
+    expect(extractTemplateExpressions('<b x-bind:title="label"></b>').map(e => e.code)).toEqual(['label'])
+  })
+
   it('substitutes a server interpolation spliced into a client expression', () => {
     // `:show="photos()[{{ idx }}]"` is real stx — the server fills it in before
     // the client parses the attribute. Left alone it is a syntax error.
