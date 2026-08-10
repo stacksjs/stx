@@ -644,6 +644,18 @@ catch (error) {
 }
 
 /**
+ * Whether a page declares an `action` — the export that receives its own POST.
+ *
+ * Exported so the rule is testable without running a build. A page action
+ * cannot run in a static build: `action` receives a POST, and a static build
+ * produces files, so there is no server left to receive one (stacksjs/stx#1847).
+ */
+export function declaresPageAction(source: string): boolean {
+  return /(?:^|[^\w$.])(?:export\s+)?(?:async\s+)?function\s+action\s*\(/.test(source)
+    || /(?:^|[^\w$.])(?:export\s+)?(?:const|let|var)\s+action\s*=/.test(source)
+}
+
+/**
  * Render a single page
  */
 async function renderPage(
@@ -687,6 +699,28 @@ async function renderPage(
     debug: false,
     cache: false,
     autoShell: true,
+  }
+
+  /*
+   * A page action cannot run in a static build, and saying so is the whole
+   * point (stacksjs/stx#1847).
+   *
+   * `action` receives the page's own POST, and a static build produces files —
+   * there is no server left to receive one. So the form renders, submits, and
+   * gets whatever the host does with a POST to a `.html` file, which is a 405
+   * or a silent no-op depending on the host. Nothing about the page looks
+   * wrong, which is why this warns rather than leaving it to be discovered in
+   * production.
+   *
+   * Not an error: a page may reasonably be statically built for its GET render
+   * and have its action served by something else. Stating it is enough.
+   */
+  if (declaresPageAction(content)) {
+    console.warn(
+      `Warning: ${route.pattern} exports a page action, which cannot run in a static build. `
+      + `Its form will submit to a file. Serve this route with the production server, `
+      + `or point the form's action at a route handler.`,
+    )
   }
 
   let html = await processDirectives(
