@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'bun:test'
-import { buildDynamicRouteRegexes, isStaticAssetPath, routeSpecificity } from '../src/serve'
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { buildDynamicRouteRegexes, isStaticAssetPath, publicFileExists, routeSpecificity } from '../src/serve'
 
 /**
  * The plugin's dev server compiles file routes itself. Catch-alls were turned
@@ -108,10 +110,11 @@ describe('isStaticAssetPath — catch-all never shadows a static asset (#1841)',
       expect(isStaticAssetPath(p)).toBe(false)
   })
 
-  // Mirrors getRoute: catch-all candidates are dropped for asset requests, so
-  // the resolver returns null (→ publicDir serves the file, then the real 404).
-  const resolveAsset = (target: string, files: string[]): string | null => {
-    const asset = isStaticAssetPath(target)
+  // Mirrors getRoute: catch-all candidates are dropped when publicDir really
+  // holds the file, so the resolver returns null and publicDir serves it.
+  // `exists` stands in for the disk.
+  const resolveAsset = (target: string, files: string[], exists: string[] = []): string | null => {
+    const asset = exists.includes(target)
     const candidates = files
       .filter(f => f.includes('[') && !(asset && /\[\.\.\./.test(f)))
       .sort((a, b) => routeSpecificity(b) - routeSpecificity(a))
@@ -124,9 +127,10 @@ describe('isStaticAssetPath — catch-all never shadows a static asset (#1841)',
     return null
   }
 
-  it('an image path does NOT resolve to the catch-all (falls through to publicDir)', () => {
+  it('an image that publicDir has does NOT resolve to the catch-all', () => {
     const files = ['[...all].stx', 'foo/[id].stx']
-    expect(resolveAsset('images/background-auth.jpg', files)).toBeNull()
+    const target = 'images/background-auth.jpg'
+    expect(resolveAsset(target, files, [target])).toBeNull()
   })
 
   it('a real page miss still resolves to the catch-all', () => {
@@ -137,5 +141,61 @@ describe('isStaticAssetPath — catch-all never shadows a static asset (#1841)',
   it('a specific route may still match an extensioned path', () => {
     const files = ['[...all].stx', 'download/[file].stx']
     expect(resolveAsset('download/report.pdf', files)).toBe('download/[file].stx')
+  })
+
+  /*
+   * The regression the disk check exists for. An app whose catch-all serves
+   * paths that carry extensions - a code browser rendering
+   * `/owner/repo/tree/main/src/index.ts` - had every such page refused,
+   * because the extension test called it an asset and dropped the only route
+   * that could answer. Nothing is at that path in publicDir, so nothing
+   * should be dropped.
+   */
+  it('an extensioned path publicDir does not have still resolves to the catch-all', () => {
+    const files = ['[...all].stx', 'foo/[id].stx']
+    expect(resolveAsset('owner/repo/tree/main/src/index.ts', files)).toBe('[...all].stx')
+  })
+})
+
+/**
+ * The disk check itself. It answers for files that are really there, and
+ * refuses to answer for anything outside the root however the path is spelled.
+ */
+describe('publicFileExists', () => {
+  const root = 'test/fixtures/public-exists'
+
+  beforeAll(() => {
+    mkdirSync(join(root, 'images'), { recursive: true })
+    writeFileSync(join(root, 'images', 'logo.jpg'), 'not really a jpeg')
+  })
+
+  afterAll(() => {
+    rmSync(root, { recursive: true, force: true })
+  })
+
+  it('finds a file that is there', () => {
+    expect(publicFileExists('/images/logo.jpg', root)).toBe(true)
+  })
+
+  it('does not find one that is not', () => {
+    expect(publicFileExists('/images/missing.jpg', root)).toBe(false)
+    expect(publicFileExists('/owner/repo/tree/main/src/index.ts', root)).toBe(false)
+  })
+
+  it('is false for a directory, which is not a file to serve', () => {
+    expect(publicFileExists('/images', root)).toBe(false)
+  })
+
+  it('refuses to walk out of the root', () => {
+    expect(publicFileExists('/../../package.json', root)).toBe(false)
+    expect(publicFileExists('/images/../../../package.json', root)).toBe(false)
+  })
+
+  it('reads an escaped path the same way the server will', () => {
+    expect(publicFileExists('/images/%6Cogo.jpg', root)).toBe(true)
+  })
+
+  it('declines a path carrying a NUL', () => {
+    expect(publicFileExists('/images/logo.jpg%00.txt', root)).toBe(false)
   })
 })

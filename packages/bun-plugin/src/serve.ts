@@ -14,7 +14,7 @@
  */
 
 import { serve as bunServe, Glob } from 'bun'
-import { watch as fsWatch } from 'node:fs'
+import { existsSync, watch as fsWatch, statSync } from 'node:fs'
 import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
@@ -295,6 +295,50 @@ export function routeSpecificity(fileRouteBase: string): number {
  */
 export function isStaticAssetPath(requestPath: string): boolean {
   return /\.[a-z0-9]+$/i.test(requestPath) && !/\.(?:stx|md|html)$/i.test(requestPath)
+}
+
+/**
+ * Does a file actually exist under `publicDir` for this request path?
+ *
+ * The extension test above is a guess about intent, and it is the wrong
+ * question to ask before dropping a catch-all: an app whose catch-all
+ * legitimately serves paths that carry extensions - a file browser, a docs
+ * site addressing `guide.md`, anything rendering a repository - has every
+ * such page refused, because the guess says "asset" and the only route that
+ * could answer is the one being dropped.
+ *
+ * Asking the disk instead keeps what stacksjs/stx#1841 was protecting (a real
+ * `public/images/logo.jpg` still wins over `[...all].stx`) and costs one stat
+ * on a path that was going to be looked up moments later anyway.
+ *
+ * Traversal is normalized before the prefix check, the same way the publicDir
+ * handler does it, so `..` cannot walk out of the root and report on a file
+ * that is none of the caller's business.
+ */
+export function publicFileExists(requestPath: string, publicDir: string): boolean {
+  let decoded: string
+  try {
+    decoded = decodeURIComponent(requestPath)
+  }
+  catch {
+    decoded = requestPath
+  }
+
+  if (decoded.includes('\0'))
+    return false
+
+  const publicRoot = nodePath.resolve(process.cwd(), publicDir)
+  const resolved = nodePath.resolve(publicRoot, `.${decoded}`)
+  const inside = resolved === publicRoot || resolved.startsWith(`${publicRoot}${nodePath.sep}`)
+  if (!inside)
+    return false
+
+  try {
+    return existsSync(resolved) && !statSync(resolved).isDirectory()
+  }
+  catch {
+    return false
+  }
 }
 
 /**
@@ -2379,7 +2423,11 @@ function __stxOverlay(errs){
     // the path carries a non-page file extension, drop catch-all candidates so
     // the request falls through to publicDir (and then the real 404 page).
     // Specific routes may still match (rare, but legitimate). stacksjs/stx#1841.
-    const isAssetRequest = isStaticAssetPath(normalizedPath)
+    // A catch-all is dropped when publicDir really holds this file, rather
+    // than whenever the path merely looks like an asset: the extension is a
+    // guess about intent, and it refuses every legitimate catch-all page
+    // whose path carries a dot (see publicFileExists).
+    const isAssetRequest = publicFileExists(`/${normalizedPath}`, publicDir)
     const dynamicFiles = files
       .filter((f) => {
       const nf = f.replace(/^\.\//, '').replace(/\\/g, '/')
