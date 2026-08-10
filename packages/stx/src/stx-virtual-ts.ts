@@ -378,6 +378,19 @@ const NON_EXPRESSION_ATTRS = new Set([
   'v-slot',
   'x-hydrate',
   ':key',
+  /*
+   * The tooltip attributes carry literal text, not an expression: the runtime
+   * reads them with `getAttribute` and assigns straight to `textContent`
+   * (signals.ts, the tooltip block) — it never evaluates them.
+   *
+   * Their absence made two shipped tools contradict each other.
+   * `stx codemod --fix` ADDS `x-tooltip="Schedule a post on this day"`, and
+   * `stx typecheck` then parsed that sentence as TypeScript: one app went from
+   * 0 errors to 34 by running one stx tool over it and then the other
+   * (stacksjs/stx#1907).
+   */
+  'x-tooltip',
+  'x-tooltip-position',
 ])
 
 /**

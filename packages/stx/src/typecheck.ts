@@ -82,6 +82,19 @@ export interface TypecheckOptions {
 
 export interface TypecheckResult {
   diagnostics: TypecheckDiagnostic[]
+  /**
+   * Set when the checker itself failed rather than the code being clean.
+   *
+   * `tsc` exiting non-zero while producing nothing this parser recognises means
+   * it aborted — a syntax error in an ambient file does that, and
+   * `skipLibCheck` does not help because it suppresses SEMANTIC diagnostics
+   * only. Reported as zero errors, that is indistinguishable from success, and
+   * the flag people reach for when the checker cannot see their types is
+   * `--lib` — which is exactly how you would introduce such a file. One app's
+   * 220 errors became 0 that way and read as "wired up correctly, codebase is
+   * clean" (stacksjs/stx#1906).
+   */
+  failure?: string
   /** Files that contained at least one checkable block. */
   checkedFiles: string[]
   /** Number of script blocks checked. */
@@ -417,7 +430,19 @@ export async function typecheckStxFiles(
   if (virtualFiles.size === 0)
     return { diagnostics: [], checkedFiles, blockCount: 0, expressionCount: 0 }
 
-  const ambient: string[] = [...(options.extraLibs ?? [])]
+  /*
+   * Resolved against the caller's cwd, not left relative (#1906).
+   *
+   * The generated tsconfig lives in a temp directory, and tsc resolves a
+   * relative entry in `files` against the tsconfig — so `--lib types/session.d.ts`,
+   * the most natural way to write it, looked for
+   * `.stx/typecheck/types/session.d.ts` and found nothing. tsc then aborted
+   * with TS6053 and reported no diagnostics at all, which read as a clean run:
+   * one app's 220 errors became 0 and looked like a correctly wired gate.
+   *
+   * An absolute path the caller passed is left exactly as it is.
+   */
+  const ambient: string[] = (options.extraLibs ?? []).map(lib => path.resolve(lib))
 
   // The runtime globals come from the package's own `stx.d.ts`, which types
   // them properly — `state<T>(initial: T): StxSignal<T>` rather than `any`.
@@ -507,10 +532,20 @@ export async function typecheckStxFiles(
   const output = new TextDecoder().decode(proc.stdout) + new TextDecoder().decode(proc.stderr)
 
   const diagnostics: TypecheckDiagnostic[] = []
+  const exitCode = proc.exitCode ?? 0
+  // Diagnostic lines tsc PRINTED, before any are filtered for belonging to a
+  // file we generated, and whether any landed in a file WE added to the
+  // program. Both distinctions matter below.
+  let printedDiagnostics = 0
+  const ambientBasenames = new Set(ambient.map(lib => lib.split('/').pop()!))
+  let ambientDiagnostics = 0
   for (const rawLine of output.split("\n")) {
     const m = rawLine.match(TSC_LINE_RE)
     if (!m)
       continue
+    printedDiagnostics++
+    if (ambientBasenames.has(m[1].split('/').pop()!))
+      ambientDiagnostics++
     const [, filePart, lineStr, colStr, category, code, message] = m
     const entry = writtenToOrigin.get(filePart.split('/').pop()!)
     if (!entry)
@@ -613,7 +648,35 @@ export async function typecheckStxFiles(
   })
 
   unique.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column)
-  return { diagnostics: unique, checkedFiles, blockCount, expressionCount }
+  /*
+   * tsc failed but said nothing this parser recognises: it aborted rather than
+   * finding the code clean. Reporting zero errors here is the one outcome that
+   * cannot be told apart from success (#1906).
+   *
+   * Two shapes, because one condition could not tell them apart:
+   *
+   * - tsc printed NOTHING positioned and exited non-zero. A missing `--lib`
+   *   file does this (TS6053 carries no position), and it is the case that
+   *   started the report.
+   * - tsc printed diagnostics IN A FILE WE ADDED, and nothing of the user's
+   *   survived. That is a broken lib taking the run down with it.
+   *
+   * Deliberately not "no diagnostics survived filtering": tsc can legitimately
+   * report errors in files this checker does not own, all of which are
+   * discarded, and calling that "did not run" would make the checker cry wolf
+   * on a genuinely clean page.
+   */
+  const brokenLib = ambientDiagnostics > 0 && unique.length === 0
+  const abortedSilently = exitCode !== 0 && printedDiagnostics === 0
+  const failure = brokenLib || abortedSilently
+    ? `${brokenLib
+      ? 'a file passed with --lib has errors of its own, so nothing in your code was checked'
+      : `tsc exited ${exitCode} without reporting any diagnostic, so nothing was checked`}. `
+      + `A syntax error in an ambient declaration file does this — skipLibCheck suppresses `
+      + `SEMANTIC diagnostics only. tsc said:\n${output.trim().split('\n').slice(0, 12).join('\n') || '(no output)'}`
+    : undefined
+
+  return { diagnostics: unique, checkedFiles, blockCount, expressionCount, failure }
 }
 
 /** Render diagnostics the way a CLI should: file:line:col, then the message. */

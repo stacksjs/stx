@@ -321,3 +321,35 @@ const label = \`range=\${range}\`
     expect(diagnostics[0].message).toContain('1 value reaches')
   })
 })
+
+/**
+ * `x-tooltip` carries text, not an expression (stacksjs/stx#1907).
+ *
+ * `stx codemod --fix` ADDS `x-tooltip="Schedule a post on this day"`, and
+ * `stx typecheck` parsed that sentence as TypeScript — so running one shipped
+ * stx tool over an app made the other one fail, 0 errors to 34 in one file.
+ *
+ * The runtime reads these with `getAttribute` and assigns straight to
+ * `textContent`; it never evaluates them.
+ */
+describe('attributes that are text, not expressions (#1907)', () => {
+  it('does not parse a tooltip as TypeScript', async () => {
+    expect(await check(`<a x-tooltip="Schedule a post on this day" title="Schedule a post on this day">day</a>`))
+      .toEqual([])
+  })
+
+  it('does not parse a tooltip position either', async () => {
+    expect(await check(`<a x-tooltip="Save now" x-tooltip-position="bottom left">x</a>`)).toEqual([])
+  })
+
+  it('still checks the expressions beside it', async () => {
+    // The exemption must be per attribute, not per element — an `:href` on the
+    // same tag is still an expression and still has to be checked.
+    const diagnostics = await check(`<script server>
+const cell = { day: 1 }
+</script>
+<a x-tooltip="Schedule a post" :href="cell.nosuchfield.deep">day</a>`)
+
+    expect(diagnostics.length).toBeGreaterThan(0)
+  })
+})

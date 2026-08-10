@@ -1826,6 +1826,19 @@ catch (error) {
         extraLibs,
       })
 
+      /*
+       * The checker failed rather than the code being clean (#1906).
+       *
+       * Printed before the counts and exits 2, so it cannot be mistaken for a
+       * pass: the counts are still accurate about what was SUBMITTED, which is
+       * precisely why "0 errors" beside them read as success when tsc had in
+       * fact aborted.
+       */
+      if (result.failure) {
+        console.error(`\n  Type-check did not run.\n\n  ${result.failure.split('\n').join('\n  ')}\n`)
+        process.exit(2)
+      }
+
       const errors = result.diagnostics.filter(d => d.category === 'error')
       if (result.diagnostics.length > 0)
         console.error(`\n${formatTypecheckDiagnostics(result.diagnostics)}\n`)
