@@ -25,6 +25,7 @@
 
 export type CodemodRule
   = | 'confirm'
+    | 'alert'
     | 'tooltip'
     | 'route-params'
     | 'search-params'
@@ -112,6 +113,39 @@ const REPORT_RULES: ReportRule[] = [
     pattern: /\blocation\s*\.\s*pathname\s*\.\s*(?:match|split)\s*\(/g,
     primitive: 'useRoute() / useRouteParams() / useRouteParam(name)',
     why: 'parsing the URL by hand re-implements the router and does not update on SPA navigation',
+  },
+  {
+    rule: 'alert',
+    /*
+     * `stxAlert` sits directly beside `stxConfirm` in the runtime — same
+     * signature, same `_createDialog` call, both on `window` — but only
+     * `confirm` had a rule, so the native call it replaces was invisible. One
+     * app had 30 `alert()` calls in a single file, none reported, while the
+     * same run correctly flagged all 3 of its `confirm()` sites
+     * (stacksjs/stx#1903).
+     *
+     * Report-only, and for a DIFFERENT reason than `confirm`. `confirm` is
+     * dangerous because the return value flips: `if (stxConfirm(m))` is always
+     * true. `alert` has no return value to get wrong — the difference is that
+     * native `alert()` BLOCKS and `stxAlert()` does not, so anything after it
+     * in the same block used to run after dismissal and would now run
+     * immediately:
+     *
+     *     alert('About to reload')
+     *     location.reload()
+     *
+     * Safe to rewrite only when nothing follows in the block, which is harder
+     * to prove than the async check `confirm` uses and worth much less. So this
+     * reports, and says why.
+     */
+    pattern: /(?<![.#\w$])alert\s*\(/g,
+    primitive: 'stxAlert(message)',
+    why: 'themed, focus-trapped and non-blocking — but `await` it if the code after it '
+      + 'depended on the native dialog blocking until dismissal',
+    // `window.alert(...)` is an explicit choice of the native dialog, and a
+    // file with its own `alert` is not calling the global one (#1898's lesson).
+    reject: source => /\b(?:async\s+)?function\s+alert\s*\(/.test(source)
+      || /\b(?:const|let|var)\s+alert\s*=/.test(source),
   },
   {
     rule: 'search-params',
@@ -323,6 +357,37 @@ function applyTooltipRule(source: string, file: string, findings: CodemodFinding
     const [whole, openTag, quote, value] = match
     const line = lineOf(source, match.index)
     const snippet = snippetAt(source, match.index)
+
+    /*
+     * A capitalised tag is a component, and its `title` is a PROP, not an HTML
+     * attribute (stacksjs/stx#1902).
+     *
+     * The rule's justification for keeping `title` — that it carries the
+     * accessible description a screen reader announces — is about the HTML
+     * attribute. On `<ValueCard title="MIT licensed">` the prop is rendered
+     * into an `<h3>`: there is no native tooltip and no accessible description
+     * to preserve, so the rewrite migrates nothing and invents a second thing.
+     * It also produces `x-tooltip` ON a component, which is the construct
+     * #1830 was filed about, and duplicates the card's own heading as hover
+     * text.
+     *
+     * Reported rather than skipped, because a component MAY be forwarding the
+     * prop to a real element and a human can tell. Same "needs a human" bucket
+     * the `confirm` rule uses.
+     */
+    const tagName = openTag.match(/^<([A-Za-z][\w-]*)/)?.[1] ?? ''
+    if (/^[A-Z]/.test(tagName)) {
+      findings.push({
+        file,
+        line,
+        rule: 'tooltip',
+        applied: false,
+        snippet,
+        reason: `\`title\` on <${tagName}> is a component prop, not an HTML attribute — `
+          + 'adding x-tooltip here would put a tooltip on a component and may duplicate text it already renders.',
+      })
+      continue
+    }
 
     // Already has one, or the value is dynamic in a way we should not guess at.
     if (/\bx-tooltip[=\s]/.test(openTag) || value.trim() === '') {

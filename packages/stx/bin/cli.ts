@@ -1847,7 +1847,7 @@ catch (error) {
     .option('--fix', 'Write the safe rewrites (default is report-only)')
     .option(
       '--rule <rule>',
-      'Run one rule only: confirm | tooltip (rewritable) · route-params | search-params | navigate | '
+      'Run one rule only: confirm | tooltip (rewritable) · alert | route-params | search-params | navigate | '
       + 'fetch | polling | debounce | click-outside | focus | clipboard | watch (report-only)',
     )
     .example('stx codemod')

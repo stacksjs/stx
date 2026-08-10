@@ -276,3 +276,91 @@ function confirm() { emit('confirm') }
     expect(run(src, ['confirm']).findings).toHaveLength(1)
   })
 })
+
+/**
+ * `title` on a component is a prop, not an attribute (stacksjs/stx#1902).
+ *
+ * The rule keeps `title` because it carries the accessible description a screen
+ * reader announces — which is true of the HTML ATTRIBUTE. On
+ * `<ValueCard title="MIT licensed">` the prop is rendered into an `<h3>`: there
+ * is no native tooltip and no accessible description to preserve, so the
+ * rewrite migrated nothing and invented a second thing. It also produced
+ * `x-tooltip` ON a component (the #1830 construct) and duplicated the card's
+ * own heading as hover text.
+ *
+ * In one app 3 of 14 findings were component props and the other 11 were
+ * genuine elements where the rule is right — so this is one missing guard, not
+ * a reason to drop the rule.
+ */
+describe('tooltip does not rewrite a component prop (#1902)', () => {
+  it('reports but does not rewrite a capitalised tag', () => {
+    const src = `<ValueCard icon="source-code" title="MIT licensed" />`
+    const { code, findings } = run(src, ['tooltip'])
+
+    expect(code).toBe(src)
+    expect(findings[0].applied).toBeFalse()
+    expect(findings[0].reason).toContain('component prop')
+  })
+
+  it('still rewrites a real element', () => {
+    // The 11 of 14 the rule gets right have to keep working.
+    const { code, findings } = run(`<button title="Save now">S</button>`, ['tooltip'])
+
+    expect(code).toContain('x-tooltip="Save now"')
+    expect(code).toContain('title="Save now"')
+    expect(findings[0].applied).toBeTrue()
+  })
+
+  it('treats a hyphenated custom element as an element', () => {
+    // `<my-widget>` is a real DOM element with a real title attribute.
+    const { code } = run(`<my-widget title="T">x</my-widget>`, ['tooltip'])
+
+    expect(code).toContain('x-tooltip="T"')
+  })
+})
+
+/**
+ * The `alert` rule (stacksjs/stx#1903).
+ *
+ * `stxAlert` sits directly beside `stxConfirm` in the runtime — same signature,
+ * same `_createDialog` call — but only `confirm` had a rule, so the native call
+ * it replaces was invisible. One app had 30 `alert()` calls in a single file,
+ * none reported, while the same run flagged all 3 of its `confirm()` sites.
+ *
+ * Report-only, and for a DIFFERENT reason than `confirm`. `confirm` is
+ * dangerous because the return value flips. `alert` has no return value to get
+ * wrong; the difference is that native `alert()` BLOCKS and `stxAlert()` does
+ * not, so anything after it in the block used to run after dismissal.
+ */
+describe('alert is detected (#1903)', () => {
+  it('reports a bare alert', () => {
+    const { findings } = run(`alert('Please enter both email and password')`, ['alert'] as any)
+
+    expect(findings).toHaveLength(1)
+    expect(findings[0].reason).toContain('stxAlert')
+  })
+
+  it('never edits', () => {
+    const src = `alert('Saved')`
+
+    expect(run(src, ['alert'] as any).code).toBe(src)
+  })
+
+  it('says why the rewrite is a judgement call', () => {
+    // The caveat is the blocking semantics, not the return value.
+    const { findings } = run(`alert('About to reload')`, ['alert'] as any)
+
+    expect(findings[0].reason).toContain('blocking')
+  })
+
+  it('leaves window.alert and a locally-declared alert alone', () => {
+    expect(run(`window.alert('x')`, ['alert'] as any).findings).toEqual([])
+    expect(run(`function alert(m) {}\nalert('x')`, ['alert'] as any).findings).toEqual([])
+  })
+
+  it('runs by default, beside confirm', () => {
+    const { findings } = run(`alert('a')\nfunction f(){ confirm('b') }`)
+
+    expect(new Set(findings.map(f => f.rule))).toEqual(new Set(['alert', 'confirm']))
+  })
+})

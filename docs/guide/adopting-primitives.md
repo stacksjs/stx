@@ -62,6 +62,16 @@ by hand:
   blindly, every "Delete this?" becomes an unconditional yes. The codemod only
   rewrites where it can prove it is inside an `async` function, and reports the
   rest.
+- **`alert()` blocks; `stxAlert()` does not.** Native `alert` suspends the page
+  until dismissed, so anything after it in the same block ran afterwards. The
+  replacement returns a Promise, so that code now runs immediately — `await` it
+  when the ordering mattered. This is why `alert` reports rather than rewrites,
+  and note the caveat is different from `confirm`'s: there is no return value to
+  get wrong.
+- **`title` on a component is a prop, not an attribute.** `<ValueCard title=…>`
+  usually renders that text itself, so adding `x-tooltip` duplicates visible
+  text and puts a tooltip on a component. Capitalised tags are reported, not
+  rewritten.
 - **`title` is announced by screen readers; `x-tooltip` is not.** It sets no
   `role` and no `aria-*`. Replacing one with the other is an accessibility
   regression dressed up as an upgrade, so the codemod *adds* `x-tooltip` and
@@ -82,6 +92,7 @@ see — a route's parameter name, or how a component is structured.
 | `setTimeout` / `clearTimeout` debounce | `useDebounce(fn, ms)` · `useThrottle(fn, ms)` |
 | `document.addEventListener('click', …)` to close a menu | `useClickOutside(ref, fn)` |
 | `getElementById(…).focus()` | `useFocus(ref)` with `x-ref` |
+| `alert(msg)` | `stxAlert(msg)` |
 | `navigator.clipboard` · `navigator.share` | `useClipboard()` · `useShare()` |
 | `effect(() => { void a(); void b() })` | `watch(source, cb)` · `watchMultiple([…], cb)` |
 | hand-built toast / confirm portal | `toast()` · `modal()` · `<Teleport>` |
