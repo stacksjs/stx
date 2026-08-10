@@ -20,8 +20,20 @@
  * @module page-routes
  */
 
-/** Directories under a page root whose contents are never public routes. */
-export const NON_PAGE_DIRS: readonly string[] = ['components', 'layouts', 'partials']
+/**
+ * Directories under a page root whose contents are never public routes.
+ *
+ * `emails` is here for the same reason as the other three and was missed
+ * (stacksjs/stx#1897): a stacks app ships `resources/views/emails/` as a
+ * first-class convention, so `GET /emails/welcome` answered with an email
+ * template, `navigate('/emails/welcome')` type-checked, and an SSG build wrote
+ * it out as HTML and advertised it in sitemap.xml. An email body is rendered
+ * and sent, never browsed to.
+ *
+ * `errors` is deliberately NOT here: `errors/404.stx` and `errors/500.stx` are
+ * pages, served by the framework on those statuses.
+ */
+export const NON_PAGE_DIRS: readonly string[] = ['components', 'layouts', 'partials', 'emails']
 
 /**
  * True when a path relative to a page root sits inside a non-page directory,

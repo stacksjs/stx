@@ -89,3 +89,43 @@ describe('the predicates', () => {
     expect(isNonPageRoutePattern('/components')).toBe(false)
   })
 })
+
+/**
+ * `emails/` is a building block, not a section of the site (stacksjs/stx#1897).
+ *
+ * A stacks app ships `resources/views/emails/` as a first-class convention,
+ * alongside the things that genuinely are pages. It matched none of the three
+ * names in `NON_PAGE_DIRS`, so it flowed through every stage as if it were a
+ * section of the site: `GET /emails/welcome` answered with an email template,
+ * `navigate('/emails/welcome')` type-checked against the generated route map,
+ * and an SSG build wrote it out as HTML and advertised it in sitemap.xml.
+ *
+ * The same failure as #1866, which this module was written to prevent, reached
+ * through a directory the list did not name.
+ */
+describe('emails are not pages (#1897)', () => {
+  it('skips a template under emails/', () => {
+    expect(isNonPageRoutePath('emails/welcome.stx')).toBe(true)
+    expect(isNonPageRoutePath('emails/order/shipped.stx')).toBe(true)
+  })
+
+  it('skips it at depth, the way the other building blocks are skipped', () => {
+    expect(isNonPageRoutePath('admin/emails/invite.stx')).toBe(true)
+  })
+
+  it('excludes the pattern from the generated route table', () => {
+    expect(isNonPageRoutePattern('/emails/welcome')).toBe(true)
+  })
+
+  it('leaves a page merely NAMED emails alone', () => {
+    // `emails.stx` is a legitimate page — a preferences screen, say. Only the
+    // directory is a building block.
+    expect(isNonPageRoutePath('emails.stx')).toBe(false)
+  })
+
+  it('does not touch errors/, which really are pages', () => {
+    // `errors/404.stx` and `errors/500.stx` are served by the framework on
+    // those statuses, so excluding them would break the feature.
+    expect(isNonPageRoutePath('errors/404.stx')).toBe(false)
+  })
+})
