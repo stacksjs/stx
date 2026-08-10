@@ -1894,9 +1894,37 @@ catch (error) {
       const findings = []
       let rewritten = 0
 
+      /*
+       * Files git ignores are not the app's to change (stacksjs/stx#1909).
+       *
+       * In one real repo, `storage/framework/defaults/` is vendored scaffold and
+       * accounted for 102 of 114 reported sites — so the headline number was
+       * dominated by files nobody can edit, and the report's own total meant
+       * nothing. Asking git is better than a hardcoded list: it already knows
+       * what this project treats as vendored.
+       *
+       * Best effort. If git is absent or this is not a repo, `ignored` is empty
+       * and every file is scanned, which is the behaviour before this.
+       */
+      const ignored = new Set<string>()
+      try {
+        const proc = Bun.spawnSync(['git', 'ls-files', '--others', '--ignored', '--exclude-standard', '-z'], {
+          cwd: process.cwd(),
+          stdout: 'pipe',
+          stderr: 'pipe',
+        })
+        for (const rel of new TextDecoder().decode(proc.stdout).split('\0')) {
+          if (rel)
+            ignored.add(path.resolve(process.cwd(), rel))
+        }
+      }
+      catch {
+        // Not a git repo, or no git. Scan everything.
+      }
+
       for (const pattern of globs) {
         for await (const file of new Glob(pattern).scan({ cwd: process.cwd(), absolute: true })) {
-          if (file.includes('/node_modules/') || file.includes('/dist/') || seen.has(file))
+          if (file.includes('/node_modules/') || file.includes('/dist/') || seen.has(file) || ignored.has(file))
             continue
           seen.add(file)
 
