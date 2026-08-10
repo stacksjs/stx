@@ -226,12 +226,43 @@ function isInsideAsyncFunction(source: string, index: number): boolean {
 }
 
 /**
+ * Whether this file declares a `confirm` of its own.
+ *
+ * Covers the shapes a component actually uses: a function declaration, a
+ * `const`/`let` bound to a function or arrow, a method in an object literal,
+ * and a destructured import. A `defineEmits` event NAMED confirm does not
+ * count — `emit('confirm')` is a string, not a binding.
+ */
+function declaresOwnConfirm(source: string): boolean {
+  return /\b(?:async\s+)?function\s+confirm\s*\(/.test(source)
+    || /\b(?:const|let|var)\s+confirm\s*=/.test(source)
+    || /\bimport\s*\{[^}]*\bconfirm\b[^}]*\}/.test(source)
+}
+
+/**
  * `confirm(...)` → `await stxConfirm(...)`, only where provably safe.
  *
  * Matches a call in statement or expression position but NOT a property access
  * (`window.confirm`, `this.confirm`) and not a declaration of the same name.
  */
 function applyConfirmRule(source: string, file: string, findings: CodemodFinding[]): string {
+  /*
+   * A file that declares its own `confirm` is not calling the browser's
+   * (stacksjs/stx#1898). `ConfirmDialog.stx` — the component whose entire
+   * purpose is to BE the replacement — declares `function confirm()` and calls
+   * it from its own template, and got reported twice for doing so.
+   *
+   * Bailing on the whole file rather than resolving scopes: the shadowing
+   * declaration and the calls are routinely in different blocks of the same
+   * `.stx` file (a `<script client>` function, a `@click` in the markup), so
+   * anything narrower has to model scope across the block boundary to get the
+   * common case right. The cost is a missed rewrite in a file that both
+   * declares a `confirm` and separately calls the global one, which is not a
+   * thing anyone writes.
+   */
+  if (declaresOwnConfirm(source))
+    return source
+
   const pattern = /(^|[^\w$.])confirm\s*\(/g
   let out = ''
   let last = 0

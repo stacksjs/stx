@@ -237,3 +237,42 @@ describe('report-only detectors (#1843 ask 2)', () => {
     expect(out).toContain('An stx primitive already covers this')
   })
 })
+
+/**
+ * A file that declares its own `confirm` is not calling the browser's
+ * (stacksjs/stx#1898).
+ *
+ * `ConfirmDialog.stx` — the component whose entire purpose is to BE the
+ * replacement — declares `function confirm()` and calls it from its own
+ * template, and got reported twice for doing so. `--fix` declined both, so
+ * nothing was corrupted; but a tool that tells you to replace a thing with
+ * itself is a tool people stop reading.
+ */
+describe('confirm() that is not the browser\'s (#1898)', () => {
+  it('says nothing about a component that declares its own', () => {
+    const src = `<script client>
+function confirm() { emit('confirm') }
+</script>
+<button @click="confirm()">Yes</button>`
+
+    expect(run(src, ['confirm']).findings).toEqual([])
+  })
+
+  it('covers the other shapes a declaration takes', () => {
+    expect(run(`const confirm = () => emit('confirm')\nconfirm()`, ['confirm']).findings).toEqual([])
+    expect(run(`import { confirm } from './ui'\nconfirm()`, ['confirm']).findings).toEqual([])
+  })
+
+  it('still reports the global in a file that does not declare one', () => {
+    // The rule has to keep working, or the guard has just disabled it.
+    expect(run(`function del() { if (confirm('Delete?')) drop() }`, ['confirm']).findings).toHaveLength(1)
+  })
+
+  it('does not treat an emitted event named confirm as a declaration', () => {
+    // `emit('confirm')` is a string, not a binding — a page can emit a
+    // `confirm` event and still call the browser's dialog elsewhere.
+    const src = `function ask() { emit('confirm'); if (confirm('sure?')) go() }`
+
+    expect(run(src, ['confirm']).findings).toHaveLength(1)
+  })
+})
