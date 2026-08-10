@@ -104,6 +104,34 @@ export interface VirtualFile {
 const SCRIPT_RE = /<script(\s[^>]*)?>([\s\S]*?)<\/script>/gi
 
 /**
+ * A copy of `source` with comment CONTENTS blanked, positions preserved.
+ *
+ * A comment that mentions a script tag in prose was opening a real block, and
+ * everything from there to the next `</script>` — the rest of the sentence, the
+ * `-->`, and the actual script below it — was handed to TypeScript as code. One
+ * real file produced 106 errors, every one pointing at an English sentence
+ * (stacksjs/stx#1901).
+ *
+ * Documenting the framework in a comment above the thing being documented is
+ * the most ordinary thing an author can do, and `<script client>` is exactly
+ * what they would name. The checker has to read markup as markup before it can
+ * claim to check the code inside it.
+ *
+ * Every blanked character becomes a space and every newline stays a newline, so
+ * an offset into the result is an offset into the source and the bodies are
+ * still sliced from the original text.
+ */
+function blankCommentContents(source: string): string {
+  const blank = (match: string): string =>
+    match.replace(/[^\n]/g, ' ')
+
+  return source
+    // HTML comments, and the stx template comment, which is equally prose.
+    .replace(/<!--[\s\S]*?-->/g, blank)
+    .replace(/\{\{--[\s\S]*?--\}\}/g, blank)
+}
+
+/**
  * Pull the script blocks out of a `.stx` source, with the line each body starts on.
  *
  * `<script server>` and `<script client>` are recognised by attribute. A bare
@@ -113,12 +141,21 @@ const SCRIPT_RE = /<script(\s[^>]*)?>([\s\S]*?)<\/script>/gi
  */
 export function extractScriptBlocks(source: string): ScriptBlock[] {
   const blocks: ScriptBlock[] = []
+  // Scanned over a copy whose comment contents are blanked, so a script tag
+  // NAMED in prose cannot open a block. Positions are preserved, so every
+  // offset below still indexes the real source, and the bodies are sliced from
+  // it rather than from the blanked copy (#1901).
+  const scannable = blankCommentContents(source)
   SCRIPT_RE.lastIndex = 0
   let match: RegExpExecArray | null
 
-  while ((match = SCRIPT_RE.exec(source)) !== null) {
+  while ((match = SCRIPT_RE.exec(scannable)) !== null) {
     const attrs = (match[1] || '').trim()
-    const body = match[2] ?? ''
+    const openLength = (match[0].match(/^<script(?:\s[^>]*)?>/i)?.[0] ?? '<script>').length
+    const closeLength = (match[0].match(/<\/script\s*>$/i)?.[0] ?? '</script>').length
+    const bodyStart = match.index + openLength
+    const bodyEnd = match.index + match[0].length - closeLength
+    const body = source.slice(bodyStart, bodyEnd)
 
     // `src` scripts have no inline body to check.
     if (/\bsrc\s*=/.test(attrs))
@@ -136,8 +173,7 @@ export function extractScriptBlocks(source: string): ScriptBlock[] {
 
     // The body begins right after the opening tag, so count the newlines up to
     // that point; +1 converts to a 1-based line number.
-    const openTag = match[0].match(/^<script[^>]*>/i)?.[0] ?? '<script>'
-    const startLine = lineAt(source, match.index + openTag.length)
+    const startLine = lineAt(source, bodyStart)
 
     blocks.push({ kind, code: body, startLine, attrs })
   }
