@@ -115,8 +115,20 @@ export interface ReactiveScope {
 // Current Instance Tracking
 // =============================================================================
 
+import { enqueueEffect, getActiveSubscriber, isBatching, restoreActiveSubscriber, setActiveSubscriber } from './reactive-tracking'
+
 let currentInstance: ComponentInstance | null = null
-let currentEffect: (() => void) | null = null
+
+/*
+ * Dependency tracking lives in `reactive-tracking.ts`, not here.
+ *
+ * This module used to own `currentEffect` while `signals-api.ts` owned
+ * `activeEffect` — two variables of the same shape, in two modules, both
+ * exported from the same package entry. That, and nothing else, is what made
+ * `ref()` with `effect()` and `reactive()` with `effect()` silently inert: a
+ * read recorded itself against whichever variable happened to be set, and an
+ * effect from the other module was never in it (stacksjs/stx#1885).
+ */
 
 /**
  * Structural equality for deep-watch comparison.
@@ -242,8 +254,9 @@ export function ref<T>(initialValue: T): Ref<T> {
   const refObj: Ref<T> = {
     get value() {
       // Track dependency if we're in an effect (computed / watchEffect)
-      if (currentEffect) {
-        effectSubscribers.add(currentEffect)
+      const subscriber = getActiveSubscriber()
+      if (subscriber) {
+        effectSubscribers.add(subscriber)
       }
       return value
     },
@@ -255,9 +268,19 @@ export function ref<T>(initialValue: T): Ref<T> {
         for (const callback of subscribers) {
           callback(newValue, oldValue)
         }
-        // Notify effect subscribers (computed invalidation, watchEffect re-run)
+        /*
+         * Effect subscribers go through the shared batch queue, so a `batch()`
+         * spanning a ref and a state runs its effects once rather than twice.
+         * Before this, `batch()` only knew about signals-api values and a ref
+         * written inside one notified immediately — which is the same "two
+         * systems, one entry point" seam as the tracking variable, just on the
+         * write side (stacksjs/stx#1885).
+         */
         for (const effect of effectSubscribers) {
-          effect()
+          if (isBatching())
+            enqueueEffect(effect)
+          else
+            effect()
         }
       }
     },
@@ -299,10 +322,15 @@ export function reactive<T extends object>(target: T): T {
 
   const notify = (key: string | symbol) => {
     const subs = subscribers.get(key)
-    if (subs) {
-      for (const callback of [...subs]) {
+    if (!subs)
+      return
+
+    // Batched for the same reason a ref's subscribers are; see the note there.
+    for (const callback of [...subs]) {
+      if (isBatching())
+        enqueueEffect(callback)
+      else
         callback()
-      }
     }
   }
 
@@ -321,8 +349,9 @@ export function reactive<T extends object>(target: T): T {
       const value = Reflect.get(obj, prop, receiver)
 
       // Track dependency
-      if (currentEffect) {
-        subscribe(prop, currentEffect)
+      const subscriber = getActiveSubscriber()
+      if (subscriber) {
+        subscribe(prop, subscriber)
       }
 
       // Recursively make nested plain objects reactive
@@ -389,10 +418,9 @@ export function computed<T>(getter: () => T): Ref<T> {
       const oldValue = cachedValue
       // Re-run getter in effect context to re-track dependencies
       // (handles conditional branches that change which deps are used)
-      const prevEffect = currentEffect
-      currentEffect = markDirty
+      const prevEffect = setActiveSubscriber(markDirty)
       cachedValue = getter()
-      currentEffect = prevEffect
+      restoreActiveSubscriber(prevEffect)
       dirty = false
 
       if (!Object.is(cachedValue, oldValue)) {
@@ -408,17 +436,17 @@ export function computed<T>(getter: () => T): Ref<T> {
   }
 
   // Initial computation
-  const prevEffect = currentEffect
-  currentEffect = markDirty
+  const prevEffect = setActiveSubscriber(markDirty)
   cachedValue = getter()
   dirty = false
-  currentEffect = prevEffect
+  restoreActiveSubscriber(prevEffect)
 
   return {
     get value() {
       // Track dependency for chained computeds and watchEffect
-      if (currentEffect) {
-        effectSubscribers.add(currentEffect)
+      const subscriber = getActiveSubscriber()
+      if (subscriber) {
+        effectSubscribers.add(subscriber)
       }
       update()
       return cachedValue
@@ -540,7 +568,7 @@ export function watch<T>(
   }
 
   // Re-evaluation with signal tracking. When the source is a function, we
-  // run it under `currentEffect` so any reactive reads inside subscribe to
+  // run it under the active subscriber so any reactive reads inside subscribe to
   // `onChange`. This replaces the previous `setInterval(check, 16)` polling
   // — see stacksjs/stx#1713. Function-source watch now fires only when an
   // actually-tracked signal changes, not on a fixed cadence.
@@ -556,13 +584,12 @@ export function watch<T>(
 
   const getValueTracking = (): T => {
     if (typeof source === 'function') {
-      const prevEffect = currentEffect
-      currentEffect = onChange
+      const prevEffect = setActiveSubscriber(onChange)
       try {
         return source()
       }
       finally {
-        currentEffect = prevEffect
+        restoreActiveSubscriber(prevEffect)
       }
     }
     return source.value
@@ -674,10 +701,9 @@ export function watchEffect(effect: () => void | (() => void)): () => void {
     }
 
     // Set current effect for dependency tracking
-    const prevEffect = currentEffect
-    currentEffect = run
+    const prevEffect = setActiveSubscriber(run)
     cleanup = effect()
-    currentEffect = prevEffect
+    restoreActiveSubscriber(prevEffect)
   }
 
   run()

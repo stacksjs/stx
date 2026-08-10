@@ -118,15 +118,26 @@ export type LifecycleCallback = () => void | CleanupFn | Promise<void>
 // Internal State
 // =============================================================================
 
-/** Currently running effect for dependency tracking */
-let activeEffect: (() => void) | null = null
+import {
+  enqueueEffect,
+  getActiveSubscriber,
+  isBatching,
+  restoreActiveSubscriber,
+  runBatched,
+  setActiveSubscriber,
+  withoutTracking,
+} from './reactive-tracking'
 
-/** Effect stack for nested effects */
-const effectStack: (() => void)[] = []
-
-/** Batching state */
-let isBatching = false
-const pendingEffects = new Set<() => void>()
+/*
+ * Dependency tracking and batching live in `reactive-tracking.ts`, not here.
+ *
+ * They used to be module-local, and `reactivity.ts` had its own set under
+ * different names. Two variables of the same shape in two modules is what made
+ * `ref()` with `effect()` and `state()` with `watchEffect()` silently inert: a
+ * read recorded itself against whichever module's variable happened to be set
+ * (stacksjs/stx#1885). One owner, so a read is tracked by whatever is
+ * listening regardless of which module minted the value.
+ */
 
 /** Lifecycle hooks for current component */
 const mountCallbacks: LifecycleCallback[] = []
@@ -192,8 +203,9 @@ export function state<T>(initialValue: T): Signal<T> {
   // The signal function (getter)
   const signal = (() => {
     // Track this signal as a dependency of the current effect
-    if (activeEffect) {
-      effects.add(activeEffect)
+    const subscriber = getActiveSubscriber()
+    if (subscriber) {
+      effects.add(subscriber)
     }
     return value
   }) as Signal<T>
@@ -208,8 +220,8 @@ export function state<T>(initialValue: T): Signal<T> {
       subscribers.forEach(cb => cb(value, prev))
 
       // Trigger effects
-      if (isBatching) {
-        effects.forEach(effect => pendingEffects.add(effect))
+      if (isBatching()) {
+        effects.forEach(effect => enqueueEffect(effect))
       }
 else {
         effects.forEach(effect => effect())
@@ -290,8 +302,8 @@ export function derived<T>(compute: () => T): DerivedSignal<T> {
     if (!isDirty) {
       isDirty = true
       // Propagate to dependent effects
-      if (isBatching) {
-        effects.forEach(effect => pendingEffects.add(effect))
+      if (isBatching()) {
+        effects.forEach(effect => enqueueEffect(effect))
       }
 else {
         effects.forEach(effect => effect())
@@ -301,22 +313,20 @@ else {
 
   const signal = (() => {
     // Track this derived signal as a dependency
-    if (activeEffect) {
-      effects.add(activeEffect)
+    const subscriber = getActiveSubscriber()
+    if (subscriber) {
+      effects.add(subscriber)
     }
 
     // Recompute if dirty
     if (isDirty) {
-      const prevEffect = activeEffect
-      activeEffect = markDirty
-      effectStack.push(markDirty)
+      const prevEffect = setActiveSubscriber(markDirty)
 
       try {
         cachedValue = compute()
       }
 finally {
-        effectStack.pop()
-        activeEffect = prevEffect
+        restoreActiveSubscriber(prevEffect)
       }
 
       isDirty = false
@@ -396,9 +406,7 @@ export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}):
       cleanup = undefined
     }
 
-    const prevEffect = activeEffect
-    activeEffect = runEffect
-    effectStack.push(runEffect)
+    const prevEffect = setActiveSubscriber(runEffect)
 
     try {
       // Only a FUNCTION is a cleanup. An effect body is an expression as often
@@ -411,8 +419,7 @@ export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}):
       cleanup = typeof result === 'function' ? result : undefined
     }
 finally {
-      effectStack.pop()
-      activeEffect = prevEffect
+      restoreActiveSubscriber(prevEffect)
     }
   }
 
@@ -450,21 +457,7 @@ finally {
  * ```
  */
 export function batch(fn: () => void): void {
-  if (isBatching) {
-    fn()
-    return
-  }
-
-  isBatching = true
-  try {
-    fn()
-  }
-finally {
-    isBatching = false
-    // Run all pending effects
-    pendingEffects.forEach(effect => effect())
-    pendingEffects.clear()
-  }
+  runBatched(fn)
 }
 
 // =============================================================================
@@ -651,14 +644,7 @@ export function untrack<T>(value: T | Signal<T> | DerivedSignal<T>): T {
  * ```
  */
 export function peek<T>(fn: () => T): T {
-  const prevEffect = activeEffect
-  activeEffect = null
-  try {
-    return fn()
-  }
-finally {
-    activeEffect = prevEffect
-  }
+  return withoutTracking(fn)
 }
 
 /**
