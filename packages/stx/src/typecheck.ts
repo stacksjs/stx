@@ -31,7 +31,7 @@
  */
 
 import type { ScriptBlock, ScriptKind, VirtualFile } from './stx-virtual-ts'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { stateDir } from './state-dir'
@@ -179,6 +179,149 @@ const TSC_LINE_RE = /^(.*?)\((\d+),(\d+)\):\s+(error|warning)\s+TS(\d+):\s+(.*)$
  * has it, and making the package depend on a compiler to serve a page would be
  * the wrong trade.
  */
+/**
+ * The app's own path aliases, so an aliased import resolves.
+ *
+ * The generated tsconfig lives in a temp directory and declared nothing about
+ * module resolution beyond `bundler`, so every alias an app defines —
+ * `~/resources/types`, `@/components/Foo`, `Models/User` — was `TS2307 Cannot
+ * find module`. A 77-file app reported 29 of them, none of which was a real
+ * missing module. A checker that cannot resolve an app's own imports reports
+ * noise in exactly the files that do the most work.
+ *
+ * Three details this has to get right:
+ *
+ *  - **`baseUrl` must come out absolute.** `paths` entries are relative to it,
+ *    and the config they end up in is not in the project. With no `baseUrl`
+ *    declared, TypeScript resolves `paths` against the tsconfig's own
+ *    directory, so that is the default here.
+ *  - **tsconfig is JSONC.** Comments and trailing commas are legal and common
+ *    (the app that surfaced this opens with a four-line comment), so
+ *    `JSON.parse` on the raw text throws.
+ *  - **`extends` chains.** The nearest config wins; a base only supplies what
+ *    the child left unset.
+ *
+ * Failure is silent and non-fatal: an unreadable or absent tsconfig just means
+ * no aliases, which is what the checker did before.
+ */
+function readProjectPathAliases(startDir: string): { paths?: Record<string, string[]> } {
+  let dir = path.resolve(startDir)
+  let configPath: string | undefined
+  for (;;) {
+    const candidate = path.join(dir, 'tsconfig.json')
+    if (existsSync(candidate)) {
+      configPath = candidate
+      break
+    }
+    const parent = path.dirname(dir)
+    if (parent === dir)
+      break
+    dir = parent
+  }
+  if (!configPath)
+    return {}
+
+  // Character scan, not regex. A glob is indistinguishable from a comment to a
+  // regex: `"app/Models/**/*.ts"` contains a literal `/**/`, which a block-comment
+  // pattern happily eats, and the result parses as garbage or — worse — as valid
+  // JSON with a silently wrong value. Only a scanner that knows whether it is
+  // inside a string can tell the two apart.
+  const stripJsonc = (text: string): string => {
+    let out = ''
+    let inString = false
+    let escaped = false
+
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i]
+
+      if (inString) {
+        out += c
+        if (escaped) escaped = false
+        else if (c === '\\') escaped = true
+        else if (c === '"') inString = false
+        continue
+      }
+
+      if (c === '"') {
+        inString = true
+        out += c
+        continue
+      }
+      if (c === '/' && text[i + 1] === '/') {
+        while (i < text.length && text[i] !== '\n') i++
+        out += '\n'
+        continue
+      }
+      if (c === '/' && text[i + 1] === '*') {
+        i += 2
+        while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) i++
+        i++
+        continue
+      }
+      out += c
+    }
+
+    // Trailing commas are legal in tsconfig and not in JSON. Safe as a regex
+    // now: every string has already survived the scan above intact.
+    return out.replace(/,(\s*[}\]])/g, '$1')
+  }
+
+  const seen = new Set<string>()
+  let current: string | undefined = configPath
+  let paths: Record<string, string[]> | undefined
+  let baseUrl: string | undefined
+  let owner = configPath
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    let parsed: any
+    try {
+      parsed = JSON.parse(stripJsonc(readFileSync(current, 'utf8')))
+    }
+    catch {
+      break
+    }
+
+    const co = parsed?.compilerOptions ?? {}
+    if (!paths && co.paths && typeof co.paths === 'object') {
+      paths = co.paths
+      owner = current
+    }
+    if (!baseUrl && typeof co.baseUrl === 'string') {
+      baseUrl = path.resolve(path.dirname(current), co.baseUrl)
+    }
+
+    if (paths && baseUrl)
+      break
+
+    current = typeof parsed?.extends === 'string'
+      ? path.resolve(path.dirname(current), parsed.extends.endsWith('.json') ? parsed.extends : `${parsed.extends}.json`)
+      : undefined
+  }
+
+  if (!paths)
+    return {}
+
+  // Absolute targets, and NO `baseUrl`.
+  //
+  // `paths` values resolve against `baseUrl`, and failing that against the
+  // tsconfig's own directory — which for the generated config is a temp dir,
+  // so relative targets would point at nothing. Emitting the app's `baseUrl`
+  // instead looks like the obvious fix and is worse: it makes EVERY bare
+  // specifier resolve against the app root first, which shadows real package
+  // resolution. Rewriting just the alias targets to absolute leaves everything
+  // else exactly as it was.
+  const base = baseUrl ?? path.dirname(owner)
+  const absolute: Record<string, string[]> = {}
+  for (const [pattern, targets] of Object.entries(paths)) {
+    if (!Array.isArray(targets))
+      continue
+    absolute[pattern] = targets.map(t => (typeof t === 'string' && !path.isAbsolute(t) ? path.resolve(base, t) : t))
+  }
+
+  return { paths: absolute }
+}
+
 export async function typecheckStxFiles(
   files: string[],
   options: TypecheckOptions = {},
@@ -341,6 +484,15 @@ export async function typecheckStxFiles(
       resolveJsonModule: true,
       lib: ["ESNext", "DOM", "DOM.Iterable"],
       types: [],
+      // The app's own aliases, ahead of the explicit override so a caller can
+      // still replace them.
+      //
+      // Anchored on a FILE BEING CHECKED, not on `process.cwd()`. The checker
+      // is routinely run from somewhere other than the project it is pointed
+      // at — and resolving from the cwd picks up whatever tsconfig happens to
+      // sit there and forces it on files that have nothing to do with it,
+      // which broke this package's own fixtures the moment it was tried.
+      ...readProjectPathAliases(files.length > 0 ? path.dirname(path.resolve(files[0])) : process.cwd()),
       ...(options.compilerOptions ?? {}),
     },
     files: [...writtenToOrigin.keys()].map(name => `${workDir}/${name}`).concat(globalsDts, ...ambient),

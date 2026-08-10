@@ -349,3 +349,43 @@ describe('template expressions (#1852 ask 4)', () => {
     expect(errors[0].blockKind).toBe('server')
   }, 120_000)
 })
+
+describe('project path aliases (TS2307)', () => {
+  it('resolves an import through the app tsconfig paths, comments and globs included', async () => {
+    const dir = `${import.meta.dir}/__fixture-alias-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    // The glob matters: `/**/` inside a JSON string is a valid empty block
+    // comment, so a regex-based JSONC stripper silently corrupts this file.
+    await Bun.write(`${dir}/tsconfig.json`, [
+      '{',
+      '  // an app tsconfig is JSONC, and usually opens with one of these',
+      '  "compilerOptions": {',
+      '    "paths": {',
+      '      "~/*": ["./*"]',
+      '    }',
+      '  },',
+      '  "include": ["app/Models/**/*.ts"]',
+      '}',
+    ].join('\n'))
+    await Bun.write(`${dir}/resources/types.ts`, 'export interface Judge { name: string }\n')
+    await Bun.write(`${dir}/page.stx`, [
+      '<script client>',
+      "import type { Judge } from '~/resources/types'",
+      'const j: Judge = { name: "x" }',
+      'const n: string = j.name',
+      '</script>',
+      '<p>{{ n }}</p>',
+    ].join('\n'))
+
+    const cwd = process.cwd()
+    try {
+      process.chdir(dir)
+      const result = await typecheckStxFiles([`${dir}/page.stx`])
+      const unresolved = result.diagnostics.filter(d => d.code === 2307)
+      expect(unresolved).toEqual([])
+    }
+    finally {
+      process.chdir(cwd)
+      await Bun.$`rm -rf ${dir}`.quiet().nothrow()
+    }
+  }, 120_000)
+})
