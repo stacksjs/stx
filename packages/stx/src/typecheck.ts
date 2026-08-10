@@ -40,6 +40,7 @@ import {
   extractScriptBlocks,
   resolvePosition,
   clientPayloadDeclarations,
+  scrapedBridgeNames,
   serverContextDeclarations,
   substituteInterpolationsInPlace,
 } from './stx-virtual-ts'
@@ -195,6 +196,8 @@ export async function typecheckStxFiles(
   }
 
   const virtualFiles = new Map<string, VirtualEntry>()
+  /** Per file: the bridge names still crossing implicitly, and where to say so. */
+  const scrapedByFile = new Map<string, { names: string[], line: number }>()
   const checkedFiles: string[] = []
   let blockCount = 0
   let expressionCount = 0
@@ -223,6 +226,15 @@ export async function typecheckStxFiles(
       .filter(block => block.kind === 'server')
       .map(block => block.code)
       .join('\n')
+
+    // Recorded here, where both halves of the file are in hand, and reported
+    // after tsc has run so the warning sits alongside the real diagnostics.
+    if (checkClient && serverCode) {
+      const clientBlocks = blocks.filter(block => block.kind === 'client')
+      const names = [...new Set(clientBlocks.flatMap(block => scrapedBridgeNames(serverCode, block.code)))]
+      if (names.length > 0)
+        scrapedByFile.set(file, { names, line: clientBlocks[0].startLine })
+    }
 
     // The template buffer inlines the script bodies, so an expression sees the
     // real types the blocks declare — which is what catches `{{ row.total_vists }}`
@@ -380,6 +392,36 @@ export async function typecheckStxFiles(
       blockKind: entry.kind,
       expression,
     })
+  }
+
+  /*
+   * Names still crossing on the implicit bridge (#1868 ask 4).
+   *
+   * A warning, not an error. These pages work — the value does arrive — but it
+   * arrives because its name happened to appear in the client source, and it
+   * arrives untyped. Now that `defineClientPayload` gives them somewhere to go,
+   * saying so is a nudge rather than the noise it would have been before.
+   *
+   * Reported once per file at the client block that reaches for them, rather
+   * than once per name, so a page with a dozen crossings gets one line.
+   */
+  if (checkClient) {
+    for (const [file, scraped] of scrapedByFile) {
+      if (scraped.names.length === 0)
+        continue
+
+      diagnostics.push({
+        file,
+        line: scraped.line,
+        column: 1,
+        code: 0,
+        message: `${scraped.names.length === 1 ? '1 value reaches' : `${scraped.names.length} values reach`} `
+          + `this block on the implicit bridge and ${scraped.names.length === 1 ? 'is' : 'are'} untyped: ${scraped.names.join(', ')}. `
+          + `Declare them with defineClientPayload({ ${scraped.names.join(', ')} }) in the server block to have them checked.`,
+        category: 'warning',
+        blockKind: 'client',
+      })
+    }
   }
 
   // Deduplicate: an expression that appears twice in a file produces the same

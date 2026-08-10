@@ -43,6 +43,7 @@
  * @module stx-virtual-ts
  */
 
+import { stripCommentsAndLiterals } from './strip-literals'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 
 export type ScriptKind = 'server' | 'client' | 'plain'
@@ -724,6 +725,37 @@ export function clientPayloadDeclarations(serverCode: string): string {
   )
 
   return parts.join('\n')
+}
+
+/**
+ * Server bindings a client block reaches for without a declared payload.
+ *
+ * The scraping bridge publishes a server binding when its name appears as a
+ * free identifier in the client source, so these DO arrive at runtime — they
+ * are just untyped, and their delivery depends on a textual coincidence rather
+ * than on anything the page states. Reporting them is #1868 ask 4, and it is
+ * only worth doing now that ask 2 gives them somewhere to go: warning people
+ * off the implicit path before the typed replacement existed would have been
+ * noise.
+ *
+ * A warning, not an error. These pages work; the fix is mechanical and the
+ * reward is types rather than correctness, so a gate that fails CI over it
+ * would be punishing an app for predating the feature.
+ *
+ * Empty once the page declares a payload, and empty when the client block does
+ * not actually mention any server name.
+ */
+export function scrapedBridgeNames(serverCode: string, clientCode: string): string[] {
+  if (extractClientPayloadNames(serverCode) !== null)
+    return []
+
+  const searchable = stripCommentsAndLiterals(clientCode)
+
+  return collectBlockDeclarations(serverCode).filter((name) => {
+    // The bridge's own rule: a free identifier, not a property access.
+    const free = new RegExp(`(?<![.#\\w$])${name}(?![\\w$])`)
+    return free.test(searchable)
+  })
 }
 
 /** Marker comment so a generated preamble is recognisable in a dumped buffer. */

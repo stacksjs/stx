@@ -38,7 +38,22 @@ async function check(source: string) {
   await Bun.write(file, source)
   try {
     const result = await typecheckStxFiles([file])
-    return (result.diagnostics ?? []).map(d => ({ line: d.line, message: d.message }))
+    return (result.diagnostics ?? [])
+      .filter(d => d.category === 'error')
+      .map(d => ({ line: d.line, message: d.message }))
+  }
+  finally {
+    await Bun.file(file).delete().catch(() => {})
+  }
+}
+
+/** Every diagnostic, warnings included. */
+async function checkAll(source: string) {
+  const file = `${import.meta.dir}/.tmp-payload-all-${crypto.randomUUID()}.stx`
+  await Bun.write(file, source)
+  try {
+    const result = await typecheckStxFiles([file])
+    return (result.diagnostics ?? []).map(d => ({ category: d.category, line: d.line, message: d.message }))
   }
   finally {
     await Bun.file(file).delete().catch(() => {})
@@ -236,5 +251,73 @@ describe('hoisting the server block into the projection', () => {
 
   it('emits nothing at all for a server block with no bindings', () => {
     expect(clientPayloadDeclarations('')).toBe('')
+  })
+})
+
+/**
+ * Warning on the implicit bridge (#1868 ask 4).
+ *
+ * Deliberately a warning. These pages work — the value does arrive — but it
+ * arrives because its name happened to appear in the client source, and it
+ * arrives untyped. Failing CI over that punishes an app for predating the
+ * feature; the reward for declaring is types, not correctness.
+ *
+ * It is only worth saying now that ask 2 gives the names somewhere to go.
+ * Warning people off the implicit path before the typed replacement existed
+ * would have been noise, which is why the issue ordered it second.
+ */
+describe('the implicit bridge is reported, not failed', () => {
+  it('names what is still crossing, as a warning', async () => {
+    const diagnostics = await checkAll(`<script server>
+const range = '7d'
+const siteId = 42
+</script>
+<script client>
+const label = \`\${range}/\${siteId}\`
+</script>`)
+
+    expect(diagnostics).toHaveLength(1)
+    expect(diagnostics[0].category).toBe('warning')
+    expect(diagnostics[0].message).toContain('range, siteId')
+    expect(diagnostics[0].message).toContain('defineClientPayload')
+  })
+
+  it('says nothing once the page declares them', async () => {
+    expect(await checkAll(`<script server>
+const range = '7d'
+defineClientPayload({ range })
+</script>
+<script client>
+const label = range
+</script>`)).toEqual([])
+  })
+
+  it('applies the bridge\'s own rule about comments and strings', async () => {
+    /*
+     * The runtime decides what to publish from `stripCommentsAndLiterals`, so
+     * this has to use the same function — a second copy that disagreed would
+     * make the warning and the runtime describe different sets. An earlier
+     * version here blanked template literals whole, and under-reported every
+     * `${name}` reference as a result.
+     */
+    expect(await checkAll(`<script server>
+const range = '7d'
+</script>
+<script client>
+// range is only mentioned here
+const note = 'and range here'
+</script>`)).toEqual([])
+  })
+
+  it('sees a name used inside a template literal, as the runtime does', async () => {
+    const diagnostics = await checkAll(`<script server>
+const range = '7d'
+</script>
+<script client>
+const label = \`range=\${range}\`
+</script>`)
+
+    expect(diagnostics).toHaveLength(1)
+    expect(diagnostics[0].message).toContain('1 value reaches')
   })
 })

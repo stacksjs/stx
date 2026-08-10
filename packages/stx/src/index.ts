@@ -186,6 +186,7 @@ export * from './loading-indicator'
 export * from './reactive-bindings'
 export * from './client-helpers'
 export * from './client-script'
+export * from './strip-literals'
 export * from './component-hmr'
 export * from './hydration'
 // ssg moved to stx/ssg

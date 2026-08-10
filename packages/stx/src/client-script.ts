@@ -38,6 +38,12 @@ import fs from 'node:fs'
 import type { ParsedEvent, EventModifiers } from './events'
 import { asInvocableStatement } from './events'
 import { transformStoreImports } from './store-imports'
+import { findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
+// Re-exported from its old home. It moved to `strip-literals.ts` so the
+// editor-facing extractor could share it without pulling the bundler in behind
+// it, and the runtime bridge and `stx typecheck` MUST agree on what counts as a
+// reference (#1868 ask 4). Anything importing it from here keeps working.
+export { findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { importOnce } from './lazy-module'
 import { STX_RUNTIME_GLOBALS, usesReactiveRuntime } from './runtime-globals'
@@ -442,178 +448,6 @@ const JS_BUILTINS = new Set([
   'Modal', 'Intl',
 ])
 
-/** Index just past the string literal whose opening quote is at `start`. */
-function skipQuoted(code: string, start: number): number {
-  const quote = code[start]
-  let i = start + 1
-  while (i < code.length) {
-    if (code[i] === '\\') {
-      i += 2
-      continue
-    }
-    if (code[i] === quote)
-      return i + 1
-    i++
-  }
-  return code.length
-}
-
-/** Index just past the template literal whose backtick is at `start`. */
-function skipTemplate(code: string, start: number): number {
-  let i = start + 1
-  while (i < code.length) {
-    if (code[i] === '\\') {
-      i += 2
-      continue
-    }
-    if (code[i] === '`')
-      return i + 1
-    if (code[i] === '$' && code[i + 1] === '{') {
-      i = findInterpolationEnd(code, i + 2)
-      if (i < code.length)
-        i++
-      continue
-    }
-    i++
-  }
-  return code.length
-}
-
-/**
- * Index of the `}` closing an interpolation whose body starts at `start`.
- *
- * Literals and comments are skipped whole, so a brace inside them cannot be
- * mistaken for structure — `` `${ x ? "}" : y }` `` closes at the right place.
- */
-function findInterpolationEnd(code: string, start: number): number {
-  let depth = 1
-  let i = start
-  while (i < code.length) {
-    const ch = code[i]
-    if (ch === '\\') {
-      i += 2
-      continue
-    }
-    if (ch === '"' || ch === '\'') {
-      i = skipQuoted(code, i)
-      continue
-    }
-    if (ch === '`') {
-      i = skipTemplate(code, i)
-      continue
-    }
-    if (ch === '/' && code[i + 1] === '/') {
-      while (i < code.length && code[i] !== '\n') i++
-      continue
-    }
-    if (ch === '/' && code[i + 1] === '*') {
-      i += 2
-      while (i < code.length && code.slice(i, i + 2) !== '*/') i++
-      i += 2
-      continue
-    }
-    if (ch === '{') {
-      depth++
-      i++
-      continue
-    }
-    if (ch === '}') {
-      depth--
-      if (depth === 0)
-        return i
-      i++
-      continue
-    }
-    i++
-  }
-  return code.length
-}
-
-/**
- * Blank out comments and string literals, preserving length and line structure
- * so offsets still line up, so that identifier detection only ever sees code.
- *
- * Template-literal INTERPOLATIONS are kept, because `${...}` is code, not text.
- * Blanking them hid every identifier that appears only inside one — a helper
- * called as `${formatDate(d)}` looked unused to the auto-import scanner, and a
- * server value read as `` `/api/users/${userId}` `` looked unreferenced to the
- * data bridge, which would have withheld it and left the client throwing on an
- * undefined name.
- */
-export function stripCommentsAndLiterals(code: string): string {
-  let out = ''
-  let i = 0
-
-  while (i < code.length) {
-    const two = code.slice(i, i + 2)
-
-    if (two === '//') {
-      while (i < code.length && code[i] !== '\n') out += ' ', i++
-      continue
-    }
-
-    if (two === '/*') {
-      while (i < code.length && code.slice(i, i + 2) !== '*/')
-        out += code[i] === '\n' ? '\n' : ' ', i++
-      out += '  '
-      i += 2
-      continue
-    }
-
-    const ch = code[i]
-    if (ch === '"' || ch === '\'') {
-      const quote = ch
-      out += ' '
-      i++
-      while (i < code.length && code[i] !== quote) {
-        if (code[i] === '\\') {
-          out += '  '
-          i += 2
-          continue
-        }
-        out += code[i] === '\n' ? '\n' : ' '
-        i++
-      }
-      out += ' '
-      i++
-      continue
-    }
-
-    if (ch === '`') {
-      out += ' '
-      i++
-      while (i < code.length && code[i] !== '`') {
-        if (code[i] === '\\') {
-          out += '  '
-          i += 2
-          continue
-        }
-        // `${` … `}` is code. Recurse so a nested literal or comment inside the
-        // interpolation is blanked by the same rules.
-        if (code[i] === '$' && code[i + 1] === '{') {
-          const bodyStart = i + 2
-          const bodyEnd = findInterpolationEnd(code, bodyStart)
-          out += '  '
-          out += stripCommentsAndLiterals(code.slice(bodyStart, bodyEnd))
-          if (bodyEnd < code.length)
-            out += ' '
-          i = bodyEnd + 1
-          continue
-        }
-        out += code[i] === '\n' ? '\n' : ' '
-        i++
-      }
-      out += ' '
-      i++
-      continue
-    }
-
-    out += ch
-    i++
-  }
-
-  return out
-}
 
 function detectModelUsage(code: string): string[] {
   const models: Set<string> = new Set()
