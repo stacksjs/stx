@@ -23,6 +23,8 @@
  *     tooltip rule ADDS `x-tooltip` and keeps `title`.
  */
 
+import { stripCommentsAndLiterals } from './strip-literals'
+
 export type CodemodRule
   = | 'confirm'
     | 'alert'
@@ -298,12 +300,18 @@ function applyConfirmRule(source: string, file: string, findings: CodemodFinding
     return source
 
   const pattern = /(^|[^\w$.])confirm\s*\(/g
+  // Matched against the code view so a `confirm(...)` NAMED in a comment or a
+  // string is not a call (#1905). Positions are preserved, so every slice below
+  // Matched against the code view so a `confirm(...)` NAMED in a comment or a
+  // string is not a call (#1905). Positions are preserved, so every slice below
+  // still comes from the real source.
+  const searchable = searchableSource(source)
   let out = ''
   let last = 0
   let match: RegExpExecArray | null
 
   // eslint-disable-next-line no-cond-assign
-  while ((match = pattern.exec(source)) !== null) {
+  while ((match = pattern.exec(searchable)) !== null) {
     const callAt = match.index + match[1].length
     const line = lineOf(source, callAt)
     const snippet = snippetAt(source, callAt)
@@ -348,12 +356,16 @@ function applyTooltipRule(source: string, file: string, findings: CodemodFinding
   // Attribute only — never the `<title>` element, which is a different thing
   // entirely (and inside `<svg>` it IS the accessible name).
   const pattern = /(<[a-z][\w-]*\b[^>]*?)\stitle=(["'])(.*?)\2/gis
+  // Matched against a copy with HTML comments blanked, so a `title=` inside a
+  // commented-out block is not rewritten (#1905). Attribute values survive —
+  // this view blanks comments only, which is why it is not the code view.
+  const searchable = markupSearchable(source)
   let out = ''
   let last = 0
   let match: RegExpExecArray | null
 
   // eslint-disable-next-line no-cond-assign
-  while ((match = pattern.exec(source)) !== null) {
+  while ((match = pattern.exec(searchable)) !== null) {
     const [whole, openTag, quote, value] = match
     const line = lineOf(source, match.index)
     const snippet = snippetAt(source, match.index)
@@ -412,6 +424,74 @@ function applyTooltipRule(source: string, file: string, findings: CodemodFinding
   return out + source.slice(last)
 }
 
+
+
+/**
+ * The same idea for a rule that reads MARKUP rather than JavaScript.
+ *
+ * Only HTML comments are blanked. `stripCommentsAndLiterals` cannot be used
+ * here: it is JavaScript-aware, so it would blank `title="Top sources"` — the
+ * attribute VALUE the tooltip rule has to read and copy.
+ */
+function markupSearchable(source: string): string {
+  return source
+    .replace(/<!--[\s\S]*?-->/g, match => match.replace(/[^\n]/g, ' '))
+    .replace(/\{\{--[\s\S]*?--\}\}/g, match => match.replace(/[^\n]/g, ' '))
+}
+
+
+/**
+ * Blank JavaScript comments, keeping string literals.
+ *
+ * For the rules whose pattern names a string and so cannot match without one.
+ */
+function blankJsComments(source: string): string {
+  const blank = (match: string): string => match.replace(/[^\n]/g, ' ')
+
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    .replace(/\/\/[^\n]*/g, blank)
+}
+
+/**
+ * The text a code rule should actually match against.
+ *
+ * Three things are blanked, all positions-preserving so a match index still
+ * points at the real source and `reject`/`requires` still read the original
+ * (stacksjs/stx#1905):
+ *
+ * 1. **Comments and string literals.** Three of six report hits in one app were
+ *    prose — and every one described code that had ALREADY been migrated, since
+ *    the comments existed to explain the migration. So the rule fired hardest
+ *    on exactly the code that already complied, which is close to the worst
+ *    possible signal.
+ *
+ * 2. **`<script server>` blocks.** Every primitive these rules suggest is a
+ *    client-side one, so `new URLSearchParams()` in a server block is correct
+ *    code being told to adopt a reactive composable it cannot use.
+ *
+ * 3. Nothing else — markup stays, because the tooltip rule reads it.
+ *
+ * A rule whose pattern names a string — `addEventListener('click', …)` — keeps
+ * its literals, or it could never match. That is decided from the pattern's own
+ * source rather than a hand-kept list of exceptions, because a list of rules
+ * that must agree with another list of rules is how this codebase has been
+ * bitten repeatedly.
+ *
+ * `stripCommentsAndLiterals` is the same function the server-to-client bridge
+ * and `stx typecheck` use to decide what counts as a reference. One rule, one
+ * implementation.
+ */
+function searchableSource(source: string, keepStrings = false): string {
+  const markupOnly = markupSearchable(source)
+  const blanked = keepStrings ? blankJsComments(markupOnly) : stripCommentsAndLiterals(markupOnly)
+
+  // Server blocks, blanked whole. Matched with a space-tolerant end tag for the
+  // same reason as everywhere else in this codebase.
+  return blanked.replace(/<script\b[^>]*\bserver\b[^>]*>[\s\S]*?<\/script\s*>/gi, match =>
+    match.replace(/[^\n]/g, ' '))
+}
+
 /**
  * Report the patterns that cannot be rewritten safely.
  *
@@ -419,6 +499,11 @@ function applyTooltipRule(source: string, file: string, findings: CodemodFinding
  * true regardless of what the rewrite rules did.
  */
 function applyReportRules(source: string, file: string, rules: CodemodRule[], findings: CodemodFinding[]): void {
+  // Two views, picked per rule: a pattern that names a string needs its
+  // literals, everything else is safer without them.
+  const codeView = searchableSource(source)
+  const stringView = searchableSource(source, true)
+
   for (const entry of REPORT_RULES) {
     if (!rules.includes(entry.rule))
       continue
@@ -428,7 +513,12 @@ function applyReportRules(source: string, file: string, rules: CodemodRule[], fi
     entry.pattern.lastIndex = 0
     let match: RegExpExecArray | null
     // eslint-disable-next-line no-cond-assign
-    while ((match = entry.pattern.exec(source)) !== null) {
+    const searchable = /['"]/.test(entry.pattern.source) ? stringView : codeView
+    entry.pattern.lastIndex = 0
+    while ((match = entry.pattern.exec(searchable)) !== null) {
+      // `reject` reads the ORIGINAL text: it inspects what surrounds a match,
+      // and `location.href = 'mailto:…'` is decided by the string literal the
+      // searchable view has blanked away.
       if (entry.reject?.(source, match.index))
         continue
       findings.push({
@@ -459,7 +549,20 @@ export function codemodSource(source: string, options: CodemodOptions = {}): Cod
     code = applyTooltipRule(code, file, findings)
 
   findings.sort((a, b) => a.line - b.line)
-  return { code, findings }
+
+  // One line, one finding per rule. A rule whose pattern is an alternation can
+  // match the same construct twice, and two reports of one site read as two
+  // problems (#1905).
+  const seen = new Set<string>()
+  const unique = findings.filter((finding) => {
+    const key = `${finding.rule}:${finding.line}`
+    if (seen.has(key))
+      return false
+    seen.add(key)
+    return true
+  })
+
+  return { code, findings: unique }
 }
 
 /** Rules that can rewrite; everything else is reported only. */

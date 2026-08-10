@@ -364,3 +364,80 @@ describe('alert is detected (#1903)', () => {
     expect(new Set(findings.map(f => f.rule))).toEqual(new Set(['alert', 'confirm']))
   })
 })
+
+/**
+ * False positives that made `--fix` unsafe (stacksjs/stx#1905).
+ *
+ * Run over a real 39-file app, the tool reported 30 sites of which **1 was
+ * genuine**. At a ~3% true-positive rate the output gets muted on first read,
+ * which is the failure this tool is supposed to avoid.
+ *
+ * The worst of it was that three of six report hits were prose — and every one
+ * described code that had ALREADY been migrated, because the comments existed
+ * to explain the migration. So the rule fired hardest on exactly the code that
+ * already complied.
+ */
+describe('a rule matches code, not prose (#1905)', () => {
+  it('ignores a call named in a line comment', () => {
+    const src = `// the old \`shareBusy() || !confirm(...)\` relied on this\nconst a = 1`
+
+    expect(run(src, ['confirm']).findings).toEqual([])
+  })
+
+  it('ignores a primitive named in a comment', () => {
+    const src = `// Was an inline onchange="location.href = ..." on the <select>\nconst a = 1`
+
+    expect(run(src, ['navigate'] as any).findings).toEqual([])
+  })
+
+  it('ignores one named inside a string', () => {
+    expect(run(`const help = 'call confirm() first'`, ['confirm']).findings).toEqual([])
+  })
+
+  it('ignores a title inside an HTML comment', () => {
+    const src = `<!-- <a title="commented out">x</a> -->`
+
+    expect(run(src, ['tooltip']).code).toBe(src)
+    expect(run(src, ['tooltip']).findings).toEqual([])
+  })
+
+  it('still reads a real attribute value, which the code view would have blanked', () => {
+    // The markup view blanks comments only. Using the JavaScript-aware stripper
+    // here would blank `title="Save now"` — the value the rule has to copy.
+    expect(run(`<a title="Save now">x</a>`, ['tooltip']).code).toContain('x-tooltip="Save now"')
+  })
+})
+
+describe('a client-only rule stays out of a server block (#1905)', () => {
+  it('does not report new URLSearchParams() in <script server>', () => {
+    // Every primitive these rules suggest is client-side, so this is correct
+    // code being told to adopt a reactive composable it cannot use.
+    const src = `<script server>\nconst q = new URLSearchParams()\n</script>`
+
+    expect(run(src, ['search-params'] as any).findings).toEqual([])
+  })
+
+  it('still reports it in a client block', () => {
+    const src = `<script client>\nconst q = new URLSearchParams()\n</script>`
+
+    expect(run(src, ['search-params'] as any).findings).toHaveLength(1)
+  })
+})
+
+describe('rejects still see the real source (#1905)', () => {
+  it('keeps skipping a mailto destination', () => {
+    // The mailto check reads the string literal that the code view blanks, so
+    // it has to run against the original text or this regresses to a false
+    // positive on correct code.
+    expect(run(`location.href = 'mailto:a@b.c'`, ['navigate'] as any).findings).toEqual([])
+    expect(run(`location.href = '/dashboard'`, ['navigate'] as any).findings).toHaveLength(1)
+  })
+})
+
+describe('one line, one finding per rule (#1905)', () => {
+  it('does not report the same site twice', () => {
+    const { findings } = run(`location.assign('/a'); location.href = '/b'`, ['navigate'] as any)
+
+    expect(findings).toHaveLength(1)
+  })
+})
