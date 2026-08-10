@@ -797,6 +797,42 @@ export function clientPayloadDeclarations(serverCode: string): string {
   return parts.join('\n')
 }
 
+
+/**
+ * Declarations at the TOP LEVEL of a block, ignoring anything nested.
+ *
+ * `collectBlockDeclarations` matches `^\s*const …` with leading whitespace
+ * allowed, so it also returns bindings local to a function. For most callers
+ * that is harmless. For the bridge warning it is not: a `const state` inside a
+ * helper never crosses to the client, and naming it told the author to declare
+ * a payload entry that would do nothing (stacksjs/stx#1908).
+ *
+ * Nested braces are blanked first, so only depth-zero declarations survive to
+ * be matched by the shared patterns.
+ */
+export function collectTopLevelDeclarations(code: string): string[] {
+  const source = stripCommentsAndLiterals(code)
+  const chars = source.split('')
+  let depth = 0
+
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i]
+    if (c === '{' || c === '(' || c === '[') {
+      depth++
+      continue
+    }
+    if (c === '}' || c === ')' || c === ']') {
+      depth = Math.max(0, depth - 1)
+      continue
+    }
+    // Keep newlines so the shared patterns still see line starts.
+    if (depth > 0 && c !== '\n')
+      chars[i] = ' '
+  }
+
+  return collectBlockDeclarations(chars.join(''))
+}
+
 /**
  * Server bindings a client block reaches for without a declared payload.
  *
@@ -820,8 +856,19 @@ export function scrapedBridgeNames(serverCode: string, clientCode: string): stri
     return []
 
   const searchable = stripCommentsAndLiterals(clientCode)
+  // The runtime destructures these from `window.stx` into every client block,
+  // so the client already has them and the bridge never publishes one. Naming
+  // `state` as a value that "reaches this block" was both wrong and actively
+  // bad advice: `defineClientPayload({ state })` would shadow the runtime's
+  // own (#1908).
+  const provided = new Set<string>(STX_RUNTIME_GLOBALS)
 
-  return collectBlockDeclarations(serverCode).filter((name) => {
+  return collectTopLevelDeclarations(serverCode).filter((name) => {
+    if (provided.has(name))
+      return false
+    // A name the client block declares for itself is not carried in either.
+    if (collectBlockDeclarations(clientCode).includes(name))
+      return false
     // The bridge's own rule: a free identifier, not a property access.
     const free = new RegExp(`(?<![.#\\w$])${name}(?![\\w$])`)
     return free.test(searchable)

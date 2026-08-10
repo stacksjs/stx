@@ -353,3 +353,77 @@ const cell = { day: 1 }
     expect(diagnostics.length).toBeGreaterThan(0)
   })
 })
+
+/**
+ * The implicit-bridge warning names only what actually crosses (#1908).
+ *
+ * It reported a FUNCTION-LOCAL server binding as reaching the client, and the
+ * remedy it suggested was a silent no-op. Worse, the name it picked in the
+ * report was `state`: a runtime global the client already destructures from
+ * `window.stx`, so `defineClientPayload({ state })` would have shadowed the
+ * runtime's own.
+ */
+describe('the bridge warning names only real crossings (#1908)', () => {
+  it('ignores a function-local binding that is not a runtime global', async () => {
+    /*
+     * The discriminating case. The reported repro used a local named `state`,
+     * which the runtime-globals filter excludes on its own — so a test built
+     * from it passes whether or not top-level scoping works. This one uses a
+     * name nothing else filters.
+     */
+    const diagnostics = await checkAll(`<script server>
+function buildUrl() {
+  const draftLevel = 'all'
+  return draftLevel
+}
+const link = buildUrl()
+</script>
+<script client>
+const label = draftLevel
+</script>`)
+
+    expect(diagnostics.filter(d => d.category === 'warning')).toEqual([])
+  })
+
+  it('ignores a binding local to a server-block function', async () => {
+    const diagnostics = await checkAll(`<script server>
+function buildUrl() {
+  const state = { level: 'all', page: 1 }
+  return state.level + state.page
+}
+const link = buildUrl()
+</script>
+<script client>
+const n = state(0)
+function bump() { n.set(n() + 1) }
+</script>
+<div :text="n()">0</div><a href="{{ link }}">go</a>`)
+
+    expect(diagnostics.filter(d => d.category === 'warning')).toEqual([])
+  })
+
+  it('ignores a name the client runtime already provides', async () => {
+    // `state`, `effect` and friends are destructured from `window.stx` into
+    // every client block. They never cross the bridge.
+    const diagnostics = await checkAll(`<script server>
+const state = 'server side'
+</script>
+<script client>
+const n = state(0)
+</script>`)
+
+    expect(diagnostics.filter(d => d.category === 'warning')).toEqual([])
+  })
+
+  it('still names a genuine crossing', async () => {
+    const warnings = (await checkAll(`<script server>
+const range = '7d'
+</script>
+<script client>
+const label = range
+</script>`)).filter(d => d.category === 'warning')
+
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0].message).toContain('range')
+  })
+})
