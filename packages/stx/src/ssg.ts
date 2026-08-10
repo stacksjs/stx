@@ -1505,6 +1505,20 @@ Build complete!
  * Copy directory recursively
  */
 async function copyDirectory(src: string, dest: string): Promise<void> {
+  // The destination root, before anything is written into it. Below, a
+  // directory is only created when one is MET — so a source whose root holds a
+  // plain file (`resources/assets/README.md` beside `fonts/` and `styles/`)
+  // reached `copyFile` with no parent and threw:
+  //
+  //   ENOENT: no such file or directory, copyfile
+  //     '…/resources/assets/README.md' -> 'dist/assets/README.md'
+  //
+  // Whether it threw came down to `readdir` order: meet a subdirectory first
+  // and its recursive mkdir created the parent as a side effect, so the build
+  // survived; meet a file first and the build died. A real app's build had been
+  // failing here for three weeks on filesystem iteration order.
+  await fs.promises.mkdir(dest, { recursive: true })
+
   const entries = await fs.promises.readdir(src, { withFileTypes: true })
 
   for (const entry of entries) {

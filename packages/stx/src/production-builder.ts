@@ -95,6 +95,20 @@ function copyPublicAssets(srcDir: string, destDir: string): { copied: number, by
     return { copied, bytes }
   }
 
+  // The destination root, before anything is written into it. `walk` only ever
+  // creates a directory when it MEETS one, so a source whose root holds a plain
+  // file — `resources/assets/README.md` alongside `fonts/` and `styles/` — hit
+  // `copyFileSync` with no parent directory and threw:
+  //
+  //   ENOENT: no such file or directory, copyfile
+  //     '…/resources/assets/README.md' -> 'dist/assets/README.md'
+  //
+  // Whether it threw depended on `readdirSync` order: a subdirectory first
+  // created the parent as a side effect of its own recursive mkdir and the run
+  // survived, a file first killed the build. That is a real app's build failing
+  // on filesystem iteration order.
+  fs.mkdirSync(destDir, { recursive: true })
+
   function walk(currentSrc: string, currentDest: string): void {
     const entries = fs.readdirSync(currentSrc, { withFileTypes: true })
     for (const entry of entries) {
