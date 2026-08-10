@@ -183,6 +183,60 @@ export function outputNeedsSignalsRuntime(html: string): boolean {
 }
 
 /**
+ * Place the runtime tag so it precedes anything that reaches for it, without
+ * landing ahead of the doctype.
+ *
+ * The rule used to be "insert before the first `<script` in the entire
+ * document", and the reason is real: a layout script can appear before `<head>`,
+ * and the runtime has to come first or that script throws. What it never asked
+ * was whether that offset is ahead of `<!DOCTYPE html>`.
+ *
+ * On a page using a full-document layout whose `<head>` contains no script of
+ * its own, it is. The runtime — and the store block that anchors to it — then
+ * get prepended above the doctype, and a start tag before the doctype puts the
+ * document in QUIRKS MODE. Measured on a real app: `document.compatMode` was
+ * `BackCompat` on the one page in that shape and `CSS1Compat` on every other
+ * page of the same site. It serves 200, screenshots correctly and logs no
+ * console error, so nothing short of `compatMode` catches it — the page just
+ * quietly uses a different box model than the rest of the site.
+ * See stacksjs/stx#1899.
+ *
+ * So the first-script rule still wins whenever it lands after the doctype,
+ * which covers both the layout-script case it was written for and fragments,
+ * which have no doctype at all. Only when it would jump the doctype do we fall
+ * through to the head, which is both valid and still ahead of every script in
+ * the document.
+ */
+function placeRuntimeTag(template: string, runtimeScript: string): string {
+  const firstScript = template.indexOf('<script')
+  const doctype = template.search(/<!doctype\b/i)
+
+  if (firstScript !== -1 && (doctype === -1 || firstScript > doctype))
+    return template.slice(0, firstScript) + runtimeScript + '\n' + template.slice(firstScript)
+
+  // Immediately after `<head>` rather than before `</head>`: the head can hold
+  // scripts of its own, and the runtime has to precede them.
+  const headOpen = /<head\b[^>]*>/i.exec(template)
+  if (headOpen) {
+    const at = headOpen.index + headOpen[0].length
+    return `${template.slice(0, at)}\n${runtimeScript}${template.slice(at)}`
+  }
+
+  if (template.includes('</head>')) {
+    const idx = template.indexOf('</head>')
+    return template.slice(0, idx) + runtimeScript + '\n' + template.slice(idx)
+  }
+
+  // Same reason as injectBrowserRuntime above: the first `<body` in the source
+  // can be prose in a comment or a style block, so find the real tag.
+  const bodyTag = findBodyOpenTag(template)
+  if (bodyTag)
+    return replaceBodyOpenTag(template, tag => `${tag}\n${runtimeScript}`)
+
+  return `${runtimeScript}\n${template}`
+}
+
+/**
  * Inject STX signals runtime into the template.
  * The runtime provides client-side reactivity.
  */
@@ -198,60 +252,22 @@ export async function injectSignalsRuntime(template: string, options: StxOptions
   // rendered document. The Bun serve adapter owns this endpoint and returns
   // the same cached runtime with ETag revalidation.
   if (options.buildMode === 'serve') {
-    const runtimeScript = `<script data-stx-runtime src="/_stx/runtime.js"></script>`
-    const firstScriptInDoc = template.indexOf('<script')
-    if (firstScriptInDoc !== -1) {
-      return template.slice(0, firstScriptInDoc) + runtimeScript + '\n' + template.slice(firstScriptInDoc)
-    }
-    if (template.includes('</head>')) {
-      const idx = template.indexOf('</head>')
-      return template.slice(0, idx) + runtimeScript + '\n' + template.slice(idx)
-    }
-    return runtimeScript + '\n' + template
+    return placeRuntimeTag(template, `<script data-stx-runtime src="/_stx/runtime.js"></script>`)
   }
 
   // Build mode: emit a placeholder reference instead of inlining the full runtime.
   // The production builder will replace this with a fingerprinted <script src> tag.
   if (options.buildMode === 'compile') {
-    const runtimeScript = `<script data-stx-runtime src="/__stx/runtime.__STX_HASH__.js"></script>`
-    const firstScriptInDoc = template.indexOf('<script')
-    if (firstScriptInDoc !== -1) {
-      return template.slice(0, firstScriptInDoc) + runtimeScript + '\n' + template.slice(firstScriptInDoc)
-    }
-    if (template.includes('</head>')) {
-      const idx = template.indexOf('</head>')
-      return template.slice(0, idx) + runtimeScript + '\n' + template.slice(idx)
-    }
-    return runtimeScript + '\n' + template
+    return placeRuntimeTag(template, `<script data-stx-runtime src="/__stx/runtime.__STX_HASH__.js"></script>`)
   }
 
   // Use cached runtime (identical for every page, never changes during dev session)
   const { getCachedSignalsRuntime } = await import('./caching')
   const runtime = await getCachedSignalsRuntime(options.debug)
-  const runtimeScript = `<script data-stx-scoped data-stx-runtime>${runtime}</script>`
-
-  // Inject before the first <script in the ENTIRE document, not just <head>.
-  // Layout scripts (e.g. <script client>) may appear before <head>.
-  // Use string concatenation to avoid $ replacement pattern issues in String.replace()
-  const firstScriptInDoc = template.indexOf('<script')
-  if (firstScriptInDoc !== -1) {
-    return template.slice(0, firstScriptInDoc) + runtimeScript + '\n' + template.slice(firstScriptInDoc)
-  }
-
-  // Fallback: no scripts in document — use string concat to avoid $ replacement patterns
-  if (template.includes('</head>')) {
-    const idx = template.indexOf('</head>')
-    return template.slice(0, idx) + runtimeScript + '\n' + template.slice(idx)
-  }
-
-  if (template.includes('<body')) {
-    const idx = template.indexOf('<body')
-    const closeIdx = template.indexOf('>', idx)
-    return template.slice(0, closeIdx + 1) + '\n' + runtimeScript + template.slice(closeIdx + 1)
-  }
-
-  // Prepend to output
-  return runtimeScript + '\n' + template
+  // String concatenation throughout placeRuntimeTag, not String.replace(), so a
+  // `$&` or `$1` inside the inlined runtime cannot be read as a replacement
+  // pattern.
+  return placeRuntimeTag(template, `<script data-stx-scoped data-stx-runtime>${runtime}</script>`)
 }
 
 /**
