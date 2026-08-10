@@ -575,9 +575,26 @@ export function createAction<T, P extends unknown[], R>(
     const newState = await handler(currentState, ...params)
     store.set(newState)
 
-    // DevTools integration
-    if (typeof window !== 'undefined' && (window as any).__STX_DEVTOOLS__) {
-      (window as any).__STX_DEVTOOLS__.onAction(store.name || 'unnamed', name, params)
+    /*
+     * DevTools integration, optional-chained through to the method.
+     *
+     * Two modules install `window.__STX_DEVTOOLS__` with incompatible shapes —
+     * `enableDevTools()` renders the panel and has no `onAction`;
+     * `initDevTools()` has the recorder methods and no panel — and whichever
+     * loads last wins. Testing only that the GLOBAL exists therefore called a
+     * method that is absent half the time, and this sits inside an async
+     * action: the TypeError rejected the promise, so `await increment()` threw
+     * and the store never took the write. Any app that calls `enableDevTools()`
+     * and then dispatches a store action hit it.
+     *
+     * The store-write path below already learned this in #1873 and guards the
+     * same way; this call was missed. It surfaced as six tests failing on CI
+     * and passing locally, because it depends on which module loaded last —
+     * which depends on test file order, which differs by platform.
+     */
+    if (typeof window !== 'undefined') {
+      const hook = (window as any).__STX_DEVTOOLS__
+      hook?.onAction?.(store.name || 'unnamed', name, params)
     }
   // eslint-disable-next-line pickier/no-unused-vars
   }) as (...params: P) => R extends Promise<unknown> ? Promise<void> : void

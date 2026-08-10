@@ -1,6 +1,6 @@
-import { Glob } from 'bun'
 import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
+import { Glob } from 'bun'
 import { dts } from 'bun-plugin-dtsx'
 
 function collectEntrypoints(dir: string): string[] {

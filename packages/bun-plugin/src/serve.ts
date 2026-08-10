@@ -1055,21 +1055,21 @@ export async function serve(options: ServeOptions): Promise<void> {
   // with the htmlCache signature check: even if a dependency slipped past
   // the dep-tracker, the cache also gets cleared on every watch event.
   type HmrEvent
-    = | { type: 'reload', file?: string }
-      | { type: 'css', file?: string }
-      // Re-render the current route and swap the SPA container, keeping every
-      // client signal on the page alive. A page-template edit does not need the
-      // document thrown away (#1877 ask 5).
-      | { type: 'fragment', file?: string }
-      // Re-execute the store bundle and redefine stores in place, keeping their
-      // state — the Pinia acceptHMRUpdate contract (#1877 ask 4).
-      | { type: 'store', file?: string }
-      // A client script would not bundle. The page still rendered — the bundler
-      // ships the unbundled source so the dev server stays usable — but its
-      // bindings quietly do nothing, which used to be visible only as a
-      // console.warn scrolling past. An empty `errors` clears the overlay,
-      // which is how a fixed build takes it down (#1884 ask 2).
-      | { type: 'build-error', errors: BuildErrorPayload[] }
+   = | { type: 'reload', file?: string }
+  | { type: 'css', file?: string }
+  // Re-render the current route and swap the SPA container, keeping every
+  // client signal on the page alive. A page-template edit does not need the
+  // document thrown away (#1877 ask 5).
+  | { type: 'fragment', file?: string }
+  // Re-execute the store bundle and redefine stores in place, keeping their
+  // state — the Pinia acceptHMRUpdate contract (#1877 ask 4).
+  | { type: 'store', file?: string }
+  // A client script would not bundle. The page still rendered — the bundler
+  // ships the unbundled source so the dev server stays usable — but its
+  // bindings quietly do nothing, which used to be visible only as a
+  // console.warn scrolling past. An empty `errors` clears the overlay,
+  // which is how a fixed build takes it down (#1884 ask 2).
+  | { type: 'build-error', errors: BuildErrorPayload[] }
   const hmrClients = new Set<ReadableStreamDefaultController<Uint8Array>>()
   const hmrEncoder = new TextEncoder()
   function broadcastHmr(event: HmrEvent): void {
@@ -2224,10 +2224,10 @@ function __stxOverlay(errs){
       ENABLE_HTML_CACHE
         && !context.__stx_skip_cache
         && !skipCacheHint
-        // Never store a mutating render. The key is path-based, so caching the
-        // POST result would hand the next plain GET of the same URL somebody
-        // else's validation errors and submitted values — worse than the stale
-        // read the guard above prevents.
+      // Never store a mutating render. The key is path-based, so caching the
+      // POST result would hand the next plain GET of the same URL somebody
+      // else's validation errors and submitted values — worse than the stale
+      // read the guard above prevents.
         && !isMutating
         && isRenderableCacheCandidate(output)
     ) {
@@ -2382,13 +2382,13 @@ function __stxOverlay(errs){
     const isAssetRequest = isStaticAssetPath(normalizedPath)
     const dynamicFiles = files
       .filter((f) => {
-        const nf = f.replace(/^\.\//, '').replace(/\\/g, '/')
-        if (!nf.includes('['))
-          return false
-        if (isAssetRequest && /\[\.\.\./.test(nf))
-          return false
-        return true
-      })
+      const nf = f.replace(/^\.\//, '').replace(/\\/g, '/')
+      if (!nf.includes('['))
+        return false
+      if (isAssetRequest && /\[\.\.\./.test(nf))
+        return false
+      return true
+    })
       .sort((a, b) => routeSpecificity(b) - routeSpecificity(a))
     for (const filePath of dynamicFiles) {
       const normalizedFilePath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
