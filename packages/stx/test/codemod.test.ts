@@ -440,7 +440,9 @@ describe('a client-only rule stays out of a server block (#1905)', () => {
   })
 
   it('still reports it in a client block', () => {
-    const src = `<script client>\nconst q = new URLSearchParams()\n</script>`
+    // Reads the current query, not an empty constructor: #1909 narrowed the
+    // rule to actual query READS, and this test predates that.
+    const src = `<script client>\nconst q = new URLSearchParams(location.search)\n</script>`
 
     expect(run(src, ['search-params'] as any).findings).toHaveLength(1)
   })
@@ -461,5 +463,55 @@ describe('one line, one finding per rule (#1905)', () => {
     const { findings } = run(`location.assign('/a'); location.href = '/b'`, ['navigate'] as any)
 
     expect(findings).toHaveLength(1)
+  })
+})
+
+/**
+ * Only a `<script client>` block gets client-side advice (stacksjs/stx#1909).
+ *
+ * A `<script server>` block is the obvious case. A plain `<script>` is the
+ * sharper one: it runs BEFORE the stx runtime loads, which is usually the
+ * entire reason it was written that way, so `navigate()` does not exist at that
+ * moment and the suggestion is impossible to apply rather than merely unhelpful.
+ */
+describe('client-side rules stay in client blocks (#1909)', () => {
+  it('ignores a plain <script>, which runs before the runtime', () => {
+    const src = `<script>\n(function () { window.location.replace('/login') })()\n</script>`
+
+    expect(run(src, ['navigate'] as any).findings).toEqual([])
+  })
+
+  it('ignores a <script server> block', () => {
+    const src = `<script server>\nconst q = new URLSearchParams(globalThis.__stxServeSearch || '')\n</script>`
+
+    expect(run(src, ['search-params'] as any).findings).toEqual([])
+  })
+
+  it('still reports inside a client block', () => {
+    const src = `<script client>\nwindow.location.replace('/login')\n</script>`
+
+    expect(run(src, ['navigate'] as any).findings).toHaveLength(1)
+  })
+})
+
+describe('search-params fires on reading a query, not building one (#1909)', () => {
+  it('ignores an empty constructor used to build a link', () => {
+    // `new URLSearchParams()` then `p.set(…)` builds a query string. There is
+    // no search-param state being adopted.
+    const src = `<script client>\nconst p = new URLSearchParams()\np.set('a', 'b')\n</script>`
+
+    expect(run(src, ['search-params'] as any).findings).toEqual([])
+  })
+
+  it('reports one that reads the current query', () => {
+    const src = `<script client>\nconst q = new URLSearchParams(location.search)\n</script>`
+
+    expect(run(src, ['search-params'] as any).findings).toHaveLength(1)
+  })
+
+  it('reports one built from a url', () => {
+    const src = `<script client>\nconst q = new URLSearchParams(new URL(href).search)\n</script>`
+
+    expect(run(src, ['search-params'] as any).findings).toHaveLength(1)
   })
 })

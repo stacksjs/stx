@@ -157,6 +157,18 @@ const REPORT_RULES: ReportRule[] = [
     pattern: /new\s+URLSearchParams\s*\(/g,
     primitive: 'useSearchParams()',
     why: 'reactive, and writes back through the router instead of history.replaceState',
+    /*
+     * Only a constructor that READS the current query is adopting search-param
+     * state. `new URLSearchParams()` followed by `p.set(…)` is building a query
+     * string for a link, and there is nothing to adopt (stacksjs/stx#1909).
+     */
+    reject: (source, index) => {
+      const open = source.indexOf('(', index)
+      if (open === -1)
+        return true
+      const arg = source.slice(open + 1, source.indexOf(')', open) + 1)
+      return !/\b(?:location|search|href|url)\b/i.test(arg)
+    },
   },
   {
     rule: 'navigate',
@@ -503,10 +515,24 @@ function searchableSource(source: string, keepStrings = false): string {
   const markupOnly = markupSearchable(source)
   const blanked = keepStrings ? blankJsComments(markupOnly) : stripCommentsAndLiterals(markupOnly)
 
-  // Server blocks, blanked whole. Matched with a space-tolerant end tag for the
-  // same reason as everywhere else in this codebase.
-  return blanked.replace(/<script\b[^>]*\bserver\b[^>]*>[\s\S]*?<\/script\s*>/gi, match =>
-    match.replace(/[^\n]/g, ' '))
+  /*
+   * Every script element that is NOT `<script client>`, blanked whole.
+   *
+   * A `<script server>` block is the obvious one: the primitives these rules
+   * suggest are all client-side. But a plain `<script>` is just as wrong, and
+   * for a sharper reason (stacksjs/stx#1909) — it runs BEFORE the stx runtime
+   * loads, which is usually the entire point of writing one:
+   *
+   *     <script>  // pre-paint auth bounce, runs before the runtime exists
+   *     if (!hasToken()) window.location.replace('/login')
+   *     </script>
+   *
+   * `navigate()` does not exist at that moment, so the suggestion is not merely
+   * unhelpful, it is impossible to apply. Only a `<script client>` block is
+   * guaranteed the runtime.
+   */
+  return blanked.replace(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi, (match, attrs: string) =>
+    /\bclient\b/i.test(attrs) ? match : match.replace(/[^\n]/g, ' '))
 }
 
 /**
