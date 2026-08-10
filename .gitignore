@@ -62,3 +62,6 @@ pantry
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
 .claude/worktrees/
+
+# Built Chrome Web Store upload artifact (packages/devtools-extension)
+stacks-devtools-*.zip

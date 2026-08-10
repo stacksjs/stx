@@ -57,12 +57,30 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      # Built and attached to the release rather than uploaded to the store:
+      # submission needs a maintainer's Chrome Web Store account, and a token
+      # for it is not in this repo. This gets the artifact to a place where the
+      # upload is a download-and-drag rather than a local build, and it stamps
+      # the manifest version from package.json — it used to be hardcoded, and
+      # had drifted far enough that a second submission would have been rejected
+      # for a version that did not exceed the published one (stacksjs/stx#1754).
+      - name: Package the DevTools extension
+        run: bun run package
+        working-directory: packages/devtools-extension
+
       - name: Create GitHub Release
         uses: home-lang/pantry/packages/action@main
         with:
           install: false
           release: true
           release-changelog: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attach the extension to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: packages/devtools-extension/stacks-devtools-*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
