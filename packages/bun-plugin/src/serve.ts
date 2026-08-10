@@ -978,8 +978,22 @@ export async function serve(options: ServeOptions): Promise<void> {
   // Stays null until the module resolves at startup (well before the first
   // edit), and every use is optional-chained — so the worst case is a no-op,
   // never a regression (stacksjs/stx#1745 item C).
-  let resolvedStxModule: { clearDevCaches?: () => void } | null = null
-  void Promise.resolve(stxModule).then((m) => { resolvedStxModule = m as { clearDevCaches?: () => void } }).catch(() => {})
+  /**
+   * Narrow shape of the stx module, for the caches a file change invalidates.
+   *
+   * All three are optional-chained at the call site: an older stx resolves to a
+   * module without them and a dev server should degrade to "restart to see that
+   * change", not crash. The type listed only `clearDevCaches`, so the two added
+   * for #1877 were type errors at every call.
+   */
+  interface DevCacheModule {
+    clearDevCaches?: () => void
+    clearStoreCache?: () => void
+    clearComposableCache?: () => void
+  }
+
+  let resolvedStxModule: DevCacheModule | null = null
+  void Promise.resolve(stxModule).then((m) => { resolvedStxModule = m as DevCacheModule }).catch(() => {})
 
   const { patterns, port = 3456 } = options
 
@@ -1078,6 +1092,12 @@ export async function serve(options: ServeOptions): Promise<void> {
   // This is a TEMPLATE LITERAL: no backticks anywhere, including in comments,
   // and `${` would interpolate at generation time. Same discipline as the
   // signals runtime (CLAUDE.md item 41).
+  //
+  // That is also why the string concatenation below is NOT converted to
+  // template literals. `general/prefer-template` warns on two lines in here and
+  // both warnings have to stay: satisfying the rule means typing a backtick,
+  // which terminates this literal and breaks the build. Anyone running
+  // `pickier --fix` over this file should confirm those two lines are unchanged.
   const HMR_OVERLAY_JS = `
 function __stxEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function __stxOverlay(errs){
@@ -1573,6 +1593,10 @@ function __stxOverlay(errs){
     const full: ServeRequestContext = reqCtx ?? {
       url: '',
       path: '',
+      // No live request here — this fallback exists for readers outside the
+      // request continuation. GET is the honest answer: a page action must
+      // never run off a context that has no body to read.
+      method: 'GET',
       search,
       host,
       cookieHeader: activeServeCookieHeader,

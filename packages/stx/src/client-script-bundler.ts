@@ -107,8 +107,14 @@ export function resolveBundlerFallback(): BundlerFallbackMode {
   if (_fallbackOverride)
     return _fallbackOverride
   try {
-    return (config as { strict?: { bundlerFallback?: BundlerFallbackMode } })
-      .strict?.bundlerFallback ?? 'warn'
+    // `strict` is `boolean | StrictModeConfig`; only the object form carries a
+    // fallback mode. `strict: true` means "validate DOM usage", not "refuse an
+    // unbundled script", so it must not be read as one.
+    const strict = (config as { strict?: boolean | { bundlerFallback?: BundlerFallbackMode } }).strict
+
+    return typeof strict === 'object' && strict !== null
+      ? strict.bundlerFallback ?? 'warn'
+      : 'warn'
   }
   catch {
     // Config not loaded yet, or unreadable. The fallback is the safe default.

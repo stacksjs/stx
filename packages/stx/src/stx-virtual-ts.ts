@@ -589,9 +589,14 @@ export function extractClientPayloadNames(serverCode: string): string[] | null {
   let match: RegExpExecArray | null
   let found = false
   const names = new Set<string>()
+  // JS rules, not template rules: this is a server script's CODE, so comments
+  // and string literals are what has to be blanked — a `defineClientPayload`
+  // named inside a comment is not a declaration. The same function the runtime
+  // bridge uses, so both agree on what counts.
+  const searchable = stripCommentsAndLiterals(serverCode)
 
   // eslint-disable-next-line no-cond-assign
-  while ((match = call.exec(maskNonTemplateRegions(serverCode, { keepScripts: true }))) !== null) {
+  while ((match = call.exec(searchable)) !== null) {
     found = true
     for (const entry of splitPayloadEntries(match[1])) {
       // `{ liveNow }` and `{ liveNow: computeIt() }` both publish `liveNow`.

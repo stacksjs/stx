@@ -189,12 +189,14 @@ export async function compressResponse(
   if (!encoding)
     return response
 
-  let body: Buffer
+  // `Uint8Array<ArrayBuffer>`, not `Buffer`: the DOM lib's `BodyInit` does not
+  // accept a Node Buffer, and zlib is happy with either.
+  let body: Uint8Array<ArrayBuffer>
   try {
     // Read once, not `clone().arrayBuffer()`. Cloning tees the stream, so the
     // branch nobody reads is buffered too and a 1.25 MB page costs 2.5 MB of
     // resident memory to compress.
-    body = Buffer.from(await response.arrayBuffer())
+    body = new Uint8Array(await response.arrayBuffer())
   }
   catch {
     // Nothing was successfully read, so the original is still the best answer.

@@ -71,6 +71,12 @@ export { type AnalysisResult } from './analyzer'
 export { type AnalyzeOptions, type ChunkInfo } from './production-build'
 // generateReport moved to stx/visual-testing
 export { fileExists } from './utils'
+// `CompressionOptions` is declared twice — the response compressor's options
+// (`./compression`, what a server tunes) and the production build's
+// (`./production-build`). A wildcard collision exports NEITHER, so the
+// user-facing one is named explicitly here; the build's is reachable from the
+// `stx/production-build` subpath.
+export { type CompressionOptions } from './compression'
 export { type StreamingConfig } from './types'
 export { type Middleware } from './ssr'
 

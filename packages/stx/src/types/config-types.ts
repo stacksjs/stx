@@ -396,6 +396,16 @@ export interface StrictModeConfig {
   failOnViolation?: boolean
   /** Pattern strings to allow through validation (matched against message or regex source) */
   allowPatterns?: string[]
+  /**
+   * What to do when a `<script client>` block does not bundle.
+   *
+   * `'warn'` (default) ships the ORIGINAL, unbundled source so the page still
+   * renders — right for a dev server, and why the error overlay exists.
+   * `'error'` refuses instead, for anyone who would rather nothing rendered
+   * than a page whose bindings quietly do nothing. `stx build` fails on a
+   * bundle error either way. See #1884.
+   */
+  bundlerFallback?: 'warn' | 'error'
 }
 
 /**
@@ -713,9 +723,6 @@ export interface StxConfig {
    * rendered than a page whose bindings quietly do nothing. `stx build` fails on
    * a bundle error either way. See #1884.
    */
-  strict?: {
-    bundlerFallback?: 'warn' | 'error'
-  }
   /** Directory to store cached templates, defaults to `cache` inside `stateDir` */
   cachePath: string
   /** Custom directives registered by the user */
