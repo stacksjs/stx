@@ -32,6 +32,31 @@ describe('negotiateEncoding', () => {
     expect(negotiateEncoding(null)).toBeNull()
     expect(negotiateEncoding('identity')).toBeNull()
   })
+
+  test('honours q=0 as the refusal it is', () => {
+    /*
+     * The bug this replaced: the check was `header.includes('br')`, and the one
+     * string in the header that means "do not send me brotli" contains `br`.
+     * Answering an explicit refusal with a brotli body is not a missed
+     * optimisation — it is a response the client cannot decode.
+     */
+    expect(negotiateEncoding('br;q=0, gzip')).toBe('gzip')
+    expect(negotiateEncoding('gzip;q=0, br')).toBe('br')
+    expect(negotiateEncoding('br;q=0, gzip;q=0')).toBeNull()
+    expect(negotiateEncoding('br; q=0.0, gzip')).toBe('gzip')
+  })
+
+  test('reads the wildcard, in both directions', () => {
+    expect(negotiateEncoding('*')).toBe('br')
+    // The shape a client uses to say "only what I named": identity, nothing else.
+    expect(negotiateEncoding('identity;q=1, *;q=0')).toBeNull()
+    // An explicit coding outranks the wildcard that would have excluded it.
+    expect(negotiateEncoding('gzip, *;q=0')).toBe('gzip')
+  })
+
+  test('is not fooled by a coding that merely contains a known name', () => {
+    expect(negotiateEncoding('identity, deflate')).toBeNull()
+  })
 })
 
 describe('isCompressible', () => {
@@ -136,6 +161,105 @@ describe('compressResponse', () => {
     const actual = (await out.arrayBuffer()).byteLength
 
     expect(Number(out.headers.get('Content-Length'))).toBe(actual)
+  })
+})
+
+describe('the body survives every exit (#compression)', () => {
+  /*
+   * Reading the body without cloning it is what makes compression affordable —
+   * a tee buffers the branch nobody reads, so a 1.25 MB page costs 2.5 MB to
+   * compress. The cost of that choice is that the original Response is spent,
+   * and returning a spent Response yields an EMPTY one. Every path below is an
+   * exit taken after the read.
+   */
+  test('a payload under the threshold still arrives intact', async () => {
+    const small = '<p>short</p>'
+    const out = await compressResponse(asking('br'), html(small))
+
+    expect(out.headers.get('Content-Encoding')).toBeNull()
+    expect(await out.text()).toBe(small)
+  })
+
+  test('an incompressible payload still arrives intact', async () => {
+    // Random bytes: brotli cannot beat the original, so the larger of the two
+    // is discarded — and the body has to come back whole, not empty.
+    let seed = 7
+    const noise = new Uint8Array(4096).map(() => {
+      seed = (seed * 1664525 + 1013904223) >>> 0
+      return (seed >>> 16) & 0xFF
+    })
+
+    const out = await compressResponse(
+      asking('br'),
+      new Response(noise, { headers: { 'Content-Type': 'text/html' } }),
+    )
+
+    expect(out.headers.get('Content-Encoding')).toBeNull()
+    expect(new Uint8Array(await out.arrayBuffer())).toEqual(noise)
+  })
+
+  test('preserves status and headers on the uncompressed path too', async () => {
+    const missing = new Response('<p>gone</p>', {
+      status: 404,
+      headers: { 'Content-Type': 'text/html', 'X-Custom': 'kept' },
+    })
+    const out = await compressResponse(asking('br'), missing)
+
+    expect(out.status).toBe(404)
+    expect(out.headers.get('X-Custom')).toBe('kept')
+    expect(await out.text()).toBe('<p>gone</p>')
+  })
+})
+
+describe('Vary is a cache key, and it is stated once', () => {
+  test('is set even when the answer was not compressed', async () => {
+    /*
+     * The same URL IS compressed for the next client, so the representation
+     * varies by Accept-Encoding whether or not this reply was squeezed. A cache
+     * that stored the small variant without this would key it for everybody.
+     */
+    const out = await compressResponse(asking('br'), html('<p>short</p>'))
+
+    expect(out.headers.get('Vary')).toBe('Accept-Encoding')
+  })
+
+  test('does not repeat a field the response already declared', async () => {
+    const varying = new Response(BIG, {
+      headers: { 'Content-Type': 'text/html', 'Vary': 'Accept-Encoding' },
+    })
+    const out = await compressResponse(asking('br'), varying)
+
+    expect(out.headers.get('Vary')).toBe('Accept-Encoding')
+  })
+
+  test('keeps the fields that were already there', async () => {
+    const varying = new Response(BIG, {
+      headers: { 'Content-Type': 'text/html', 'Vary': 'Accept-Language' },
+    })
+    const out = await compressResponse(asking('br'), varying)
+
+    expect(out.headers.get('Vary')).toBe('Accept-Language, Accept-Encoding')
+  })
+})
+
+describe('compression never blocks the loop it serves from', () => {
+  test('uses no synchronous zlib call in the response path', async () => {
+    /*
+     * Pinned by inspection because the difference is invisible to a functional
+     * assertion: `brotliCompressSync` and `brotliCompress` return the same
+     * bytes at the same wall-clock for ONE request. The difference only shows
+     * under concurrency, where Bun's single JS thread makes every queued
+     * request wait out the compress in front of it. Measured on 1.19 MB of
+     * page HTML: 13.3 ms of blocked loop against 0.9 ms, and eight concurrent
+     * pages at 110 ms against 36 ms.
+     *
+     * A timing assertion for this is the kind that goes flaky on a loaded
+     * machine and gets muted, so this names the rule instead.
+     */
+    const source = await Bun.file(new URL('../src/compression.ts', import.meta.url)).text()
+    const syncCalls = source.match(/zlib\.\w+Sync\b/g) ?? []
+
+    expect(syncCalls).toEqual([])
   })
 })
 
