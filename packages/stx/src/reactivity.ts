@@ -1,4 +1,30 @@
 /* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
+
+/**
+ * ## Which of the two sets to reach for (stacksjs/stx#1885 asks 3 and 4)
+ *
+ * stx exports two families of reactive primitives from one entry, and they
+ * are now backed by one dependency tracker (`reactive-tracking.ts`), so every
+ * combination works — `ref()` with `effect()`, `state()` with `watchEffect()`,
+ * and the rest. Four of the six used to be silently inert.
+ *
+ * **`state` / `derived` / `effect` is the canonical set.** It is what the
+ * client runtime exposes on `window.stx`, what a `<script client>` block gets
+ * as bare identifiers, and what the framework's own composables and stores are
+ * written against — so it is the only set that reads the same in a module, in
+ * a component, and in a template.
+ *
+ * The Vue-shaped names here — `ref`, `reactive`, `computed`, `watch`,
+ * `watchEffect` — stay exported and stay supported. They are kept rather than
+ * removed because the correctness argument for removing them is gone: they no
+ * longer trap anyone in a dead pairing, so taking them away would break code
+ * for familiarity's sake alone. Prefer them only when porting Vue code that
+ * already reads that way.
+ *
+ * The one thing to know: `ref()` returns a `.value` object and `state()`
+ * returns a callable signal. They are not interchangeable at the call site
+ * even though both are reactive.
+ */
 /**
  * Vue-Style Reactivity Module
  *

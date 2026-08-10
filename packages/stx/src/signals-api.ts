@@ -44,6 +44,25 @@
  * @module signals-api
  */
 
+/**
+ * ## The canonical set (stacksjs/stx#1885 asks 3 and 4)
+ *
+ * `state` / `derived` / `effect`, exported here, are the primitives to reach
+ * for. They are what the client runtime puts on `window.stx`, what a
+ * `<script client>` block sees as bare identifiers, and what stx's own
+ * composables and stores are written against — the only set that reads the
+ * same in a module, in a component, and in a template.
+ *
+ * `reactivity.ts` exports a Vue-shaped family beside them — `ref`, `reactive`,
+ * `computed`, `watch`, `watchEffect` — from the same package entry. Both are
+ * backed by one dependency tracker now (`reactive-tracking.ts`), so mixing
+ * them works; four of the six pairings used to be silently inert. They are
+ * kept for code ported from Vue, not recommended for new code.
+ *
+ * Note `ref()` returns a `.value` object while `state()` returns a callable
+ * signal, so the two are not interchangeable at the call site.
+ */
+
 // =============================================================================
 // Types
 // =============================================================================
