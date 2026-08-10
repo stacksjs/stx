@@ -31,6 +31,10 @@ beforeAll(async () => {
     path.join(dir, 'views', '[...all].stx'),
     '<script server>definePageMeta({ status: 404 })</script><main data-not-found>Missing</main>',
   )
+  await Bun.write(
+    path.join(dir, 'public', 'images', 'favicon.svg'),
+    '<svg data-public-favicon></svg>',
+  )
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
 serve({
@@ -67,6 +71,15 @@ afterAll(async () => {
 })
 
 describe('serve shared STX assets', () => {
+  it('serves public assets before a catch-all page', async () => {
+    const response = await fetch(`${BASE}/images/favicon.svg`)
+    const body = await response.text()
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('image/svg+xml')
+    expect(body).toBe('<svg data-public-favicon></svg>')
+  })
+
   it('resolves project components alongside an explicit framework component directory', async () => {
     const html = await (await fetch(BASE)).text()
 

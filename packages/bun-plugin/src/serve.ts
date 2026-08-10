@@ -3505,17 +3505,23 @@ function __stxOverlay(errs){
                   })
                 }
 
-                // Try without extension
-                const contentWithExt = await getRoute(`${path}.html`, reqCtx)
-                if (contentWithExt) {
-                  return new Response(injectHmrClient(contentWithExt), {
-                    status: reqCtx.responseStatus ?? 200,
-                    headers: {
-                      'Content-Type': 'text/html; charset=utf-8',
-                      'Cache-Control': 'no-store',
-                      ...corsHeaders,
-                    },
-                  })
+                // Try an implicit HTML extension only for page-like paths.
+                // Appending `.html` to a public asset request turns
+                // `/images/favicon.svg` into `/images/favicon.svg.html`, which
+                // is page-like again and lets a catch-all route shadow the
+                // public file before the publicDir handler can serve it.
+                if (!isStaticAssetPath(path)) {
+                  const contentWithExt = await getRoute(`${path}.html`, reqCtx)
+                  if (contentWithExt) {
+                    return new Response(injectHmrClient(contentWithExt), {
+                      status: reqCtx.responseStatus ?? 200,
+                      headers: {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'Cache-Control': 'no-store',
+                        ...corsHeaders,
+                      },
+                    })
+                  }
                 }
 
                 // Try to serve build artifacts (chunk files, CSS, etc.) from the
