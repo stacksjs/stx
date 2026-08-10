@@ -23,7 +23,7 @@ import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, getBui
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
-import { compressResponse } from '@stacksjs/stx'
+import { compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
 
 /**
  * A bundle failure on its way to the dev-server overlay (#1884 ask 2).
@@ -2028,105 +2028,29 @@ function __stxOverlay(errs){
 
   // Lazy template processing function
   /**
-   * Parse a form submission body into a plain object.
-   *
-   * Handles both encodings a browser form can send: `multipart/form-data` and
-   * `application/x-www-form-urlencoded`. A repeated field name collapses to an
-   * array, so `<input name="tag">` twice reads as `['a', 'b']` rather than
-   * silently keeping only the last one — checkbox groups are the common case.
-   *
-   * File parts are skipped: the value would be a `File`, and a page action that
-   * wants uploads should read `request.formData()` itself rather than have this
-   * hand it something that cannot round-trip into a re-rendered form field.
-   */
-  async function parseFormBody(request: Request): Promise<Record<string, string | string[]>> {
-    const type = request.headers.get('content-type') || ''
-    const form: Record<string, string | string[]> = {}
-
-    const put = (key: string, value: string) => {
-      const existing = form[key]
-      if (existing === undefined)
-        form[key] = value
-      else if (Array.isArray(existing))
-        existing.push(value)
-      else
-        form[key] = [existing, value]
-    }
-
-    if (type.includes('multipart/form-data')) {
-      const data = await request.formData()
-      for (const [key, value] of data.entries()) {
-        if (typeof value === 'string')
-          put(key, value)
-      }
-      return form
-    }
-
-    if (type.includes('application/x-www-form-urlencoded')) {
-      for (const [key, value] of new URLSearchParams(await request.text()).entries())
-        put(key, value)
-      return form
-    }
-
-    return form
-  }
-
-  /**
    * Run a page's own `action` for a non-GET request (stacksjs/stx#1847).
    *
-   * A page that exports `action` from its `<script server>` block receives its
-   * own form POST. Whatever the action returns is merged into the render
-   * context, so `errors` and `values` repopulate the very same template that
-   * rendered the form — one handler for both the no-JS submit and the enhanced
-   * one, which is the half of the Laravel/Remix/SvelteKit contract stx was
-   * missing.
-   *
-   * Nothing happens on GET, and nothing happens for a page without an `action`,
-   * so this is inert for every page that does not opt in.
-   *
-   * The action is picked up off the render context rather than parsed out of the
-   * source: `extractVariables` has already run the server block by this point, so
-   * a declared `action` is simply there. That also means it can close over
-   * anything else the block defined, which a regex-extracted function could not.
+   * The body of this lives in `@stacksjs/stx`'s `page-action` module, because
+   * it shipped here only — so a form worked under `buddy dev` and silently did
+   * nothing in production, where the request fell through to an ordinary render
+   * and answered 200 with the pre-submit markup. This repo has been bitten
+   * repeatedly by two hand-maintained copies of one rule drifting apart; this
+   * wrapper exists only to move the redirect onto the request context the dev
+   * server already threads through.
    */
   async function runPageAction(context: Record<string, any>, reqCtx?: ServeRequestContext): Promise<void> {
-    if (!reqCtx || reqCtx.method === 'GET' || reqCtx.method === 'HEAD')
-      return
-    if (typeof context.action !== 'function' || !reqCtx.request)
+    if (!reqCtx)
       return
 
-    let form: Record<string, string | string[]> = {}
-    try {
-      form = await parseFormBody(reqCtx.request)
-    }
-    catch {
-      // A malformed or already-consumed body is not worth failing the render
-      // over — the action still runs and sees an empty form, which its own
-      // validation will reject the same way an empty submit would.
-    }
-
-    const result = await context.action({
+    const result = await sharedRunPageAction(context, {
       request: reqCtx.request,
-      form,
+      method: reqCtx.method,
       params: reqCtx.params ?? {},
-      query: context.query ?? {},
       cookies: reqCtx.cookies ?? {},
     })
 
-    if (result && typeof result === 'object') {
-      // `return { redirect: '/somewhere' }` — a plain key rather than an
-      // injected `redirect()` global, so an action is a pure function that
-      // unit-tests without any of the serve around it.
-      const to = (result as Record<string, unknown>).redirect
-      if (typeof to === 'string' && to) {
-        reqCtx.actionRedirect = to
-        return
-      }
-      // Merged, not replaced: the action's keys win over the block's so a
-      // re-render shows the submitted values, but everything else the page
-      // computed for its GET render is still there.
-      Object.assign(context, result)
-    }
+    if (result.redirect)
+      reqCtx.actionRedirect = result.redirect
   }
 
   async function processTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {

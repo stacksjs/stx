@@ -12,6 +12,7 @@ import type { CompiledTemplate } from './template-compiler'
 import { extractVariables } from './variable-extractor'
 import { evaluateExpression, escapeHtml } from './expressions'
 import { replacePlaceholders, hasPlaceholders } from './placeholder'
+import { runPageAction } from './page-action'
 
 /**
  * Hydrate a pre-compiled template with request-time data.
@@ -43,8 +44,14 @@ export async function hydrateTemplate(
 export async function hydrateTemplateStream(
   compiled: CompiledTemplate,
   requestContext: Record<string, any> = {},
-): Promise<{ html: string, boundaries?: { id: string, render: () => Promise<string> }[] }> {
-  const { html, context } = await runHydration(compiled, requestContext)
+): Promise<{ html: string, boundaries?: { id: string, render: () => Promise<string> }[], redirect?: string }> {
+  const { html, context, redirect } = await runHydration(compiled, requestContext)
+
+  // A redirecting action has nothing to render, and streaming a shell for a
+  // page the caller is about to replace with a 303 would be wasted work.
+  if (redirect)
+    return { html, redirect }
+
   const { extractStreamBoundaries } = await import('./streaming')
   // Low-level: streamBoundaries export → functions returning HTML.
   let boundaries = extractStreamBoundaries(context)
@@ -75,7 +82,7 @@ export async function hydrateTemplateStream(
 async function runHydration(
   compiled: CompiledTemplate,
   requestContext: Record<string, any>,
-): Promise<{ html: string, context: Record<string, any> }> {
+): Promise<{ html: string, context: Record<string, any>, redirect?: string }> {
   // Build the hydration context from request data
   const context: Record<string, any> = {
     __filename: compiled.sourceFile,
@@ -98,6 +105,29 @@ async function runHydration(
       console.warn(`[stx] Server script error in ${compiled.sourceFile}:`, error)
     }
   }
+
+  /*
+   * A page handling its own form submission (stacksjs/stx#1847).
+   *
+   * Runs after the server block and before any placeholder is resolved, so the
+   * values the action returns — `errors`, the submitted `values` — are the ones
+   * the template renders. Doing it the other way round re-renders the page as
+   * it looked before the submit, which answers 200 and reads exactly like the
+   * action having run and found nothing wrong.
+   *
+   * This is the production half of the feature. It shipped in the dev server
+   * only, so a form worked under `buddy dev` and silently did nothing once
+   * deployed.
+   */
+  const action = await runPageAction(context, {
+    request: requestContext.request as Request | undefined,
+    method: requestContext.method as string | undefined,
+    params: (requestContext.params ?? {}) as Record<string, string>,
+    cookies: (requestContext.cookies ?? {}) as Record<string, string>,
+  })
+
+  if (action.redirect)
+    return { html: compiled.html, context, redirect: action.redirect }
 
   // If no placeholders, server scripts only needed to populate context
   // for side effects (e.g., setting headers). Return HTML as-is.

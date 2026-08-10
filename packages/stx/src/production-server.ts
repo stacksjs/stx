@@ -19,6 +19,7 @@ import { extractLayoutMetadata, type LayoutMetadata } from './app-shell'
 import { pageShipsSignalsRuntime } from './runtime-injection'
 import { patternToRegex } from 'stx-router'
 import { compressResponse } from './compression'
+import { actionRedirectResponse, isActionableMethod } from './page-action'
 
 /**
  * Production server configuration.
@@ -283,6 +284,8 @@ export async function startProductionServer(options: ProductionServerOptions = {
         }
   
         // ── Full page response ──
+        // A submission is never answered from a pre-rendered representation.
+        const isMutating = isActionableMethod(request.method)
         const compiled = compiledTemplates.get(matchedRoute.pattern)
         if (!compiled) {
           // Try the user's 500 error page first (mirrors the /404 lookup at
@@ -303,8 +306,12 @@ export async function startProductionServer(options: ProductionServerOptions = {
           return new Response('Internal Server Error', { status: 500 })
         }
   
-        // Static page — serve pre-rendered HTML directly (zero processing)
-        if (!compiled.hasServerScripts && Object.keys(compiled.placeholders).length === 0) {
+        // Static page — serve pre-rendered HTML directly (zero processing).
+        // A submission never takes this path: a `Cache-Control: max-age=60`
+        // copy of the pre-submit markup is exactly what "the action silently
+        // did nothing" looks like, and a page with an action has a server
+        // script anyway, so this only guards a page that has neither (#1847).
+        if (!isMutating && !compiled.hasServerScripts && Object.keys(compiled.placeholders).length === 0) {
           return new Response(compiled.html, {
             headers: {
               'Content-Type': 'text/html',
@@ -315,7 +322,17 @@ export async function startProductionServer(options: ProductionServerOptions = {
   
         // Dynamic page — hydrate with request context
         try {
-          const { html, boundaries } = await hydrateTemplateStream(compiled, { params, request })
+          const { html, boundaries, redirect } = await hydrateTemplateStream(compiled, {
+            params,
+            request,
+            method: request.method,
+          })
+
+          // A page action asked for a redirect (#1847). 303 rather than 302:
+          // it is the status that makes a browser follow up with a GET, so a
+          // reload or a Back does not resubmit the form.
+          if (redirect)
+            return actionRedirectResponse(redirect)
           // Streaming SSR (#1746): a page that exported streamBoundaries streams
           // its shell first, then each boundary as its server-side data resolves.
           if (boundaries && boundaries.length > 0) {
