@@ -359,6 +359,105 @@ describe('template for DOM binding', () => {
     expect(child.hasAttribute('data-stx-deferred-parent-bindings')).toBeFalse()
   })
 
+  it('forwards nested component events with each loop item payload', async () => {
+    const rows = window.stx.state([])
+    const selected = window.stx.state(null)
+    const canUpdate = window.stx.state(true)
+    window.__stx_setup_loop_component_events = () => ({
+      canUpdate,
+      rows,
+      selected,
+      selectRow(row: { id: number }) {
+        selected.set(row)
+      },
+    })
+
+    window.__stxComponentFactories = window.__stxComponentFactories || {}
+    window.__stxComponentFactories.loopButton = (scopeId: string) => {
+      const scopes = window.stx._scopes = window.stx._scopes || {}
+      const scope = scopes[scopeId] = scopes[scopeId] || {}
+      const previousElement = window.__STX_CURRENT_ELEMENT__
+      window.__STX_CURRENT_ELEMENT__ = document.querySelector(`[data-stx-scope="${scopeId}"]`)
+      try {
+        const liveDisabled = window.stx.useReactiveProp('disabled', false)
+        const liveAriaLabel = window.stx.useReactiveProp('ariaLabel', '')
+        Object.assign(scope, {
+          liveDisabled,
+          liveAriaLabel,
+          __mountCallbacks: [],
+          __destroyCallbacks: [],
+        })
+      }
+      finally {
+        window.__STX_CURRENT_ELEMENT__ = previousElement
+      }
+    }
+    const setupScript = (scopeId: string) => `<script data-stx-scoped>window.__stxComponentFactories.loopButton("${scopeId}")<\/script>`
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_loop_component_events">
+        <template :for="row in rows()">
+          <div
+            data-stx-scope="compiled_row_actions"
+            data-stx-parent-bindings="record can-update"
+            data-stx-parent-events="edit"
+            :record="row"
+            :can-update="canUpdate()"
+            @edit="selectRow"
+          >
+            <template :if="canUpdate()">
+              <div
+                data-stx-scope="compiled_row_button"
+                data-stx-parent-events="click"
+                @click="emit('edit', record())"
+              ><button>Edit</button></div>
+              ${setupScript('compiled_row_button')}
+            </template>
+          </div>
+          <script data-stx-scoped>
+            (function() {
+              const scopes = window.stx._scopes = window.stx._scopes || {}
+              const scope = scopes.compiled_row_actions = scopes.compiled_row_actions || {}
+              const previousElement = window.__STX_CURRENT_ELEMENT__
+              window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="compiled_row_actions"]')
+              try {
+                const record = window.stx.useReactiveProp('record', {})
+                const canUpdate = window.stx.useReactiveProp('canUpdate', false)
+                const emit = window.stx.defineEmits()
+                Object.assign(scope, {
+                  record,
+                  canUpdate,
+                  emit,
+                  __mountCallbacks: [],
+                  __destroyCallbacks: []
+                })
+              }
+              finally {
+                window.__STX_CURRENT_ELEMENT__ = previousElement
+              }
+            })()
+          <\/script>
+        </template>
+      </main>
+    `
+    const eventLoopTemplate = document.querySelector('template')
+    eventLoopTemplate.content.querySelector('[data-stx-parent-events="edit"]')?.setAttribute('@edit', 'selectRow')
+    eventLoopTemplate.content.querySelector('[data-stx-parent-events="click"]')?.setAttribute('@click', "emit('edit', record())")
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+    rows.set([{ id: 11 }, { id: 22 }])
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    const buttons = Array.from(document.querySelectorAll('button')) as HTMLButtonElement[]
+    expect(buttons).toHaveLength(2)
+    const revealedRow = buttons[1]!.closest('[data-stx-parent-events="edit"]') as HTMLElement & { __stx_shown_at: number }
+    revealedRow.__stx_shown_at = performance.now()
+    expect(performance.now() - revealedRow.__stx_shown_at).toBeLessThan(50)
+    buttons[1]!.dispatchEvent(new window.Event('click', { bubbles: true }))
+    expect(selected()).toEqual({ id: 22 })
+  })
+
   it('binds object props when a signal component is its own loop root', async () => {
     const originalWarn = console.warn
     const warnings: string[] = []

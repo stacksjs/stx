@@ -2828,12 +2828,16 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
             ? event.detail
             : event;
 
-          // Skip clicks on elements that just became visible in this frame.
-          // Prevents modal backdrop from catching the click that opened the modal.
+          // Skip an opener click that reaches UI which just became visible in
+          // this frame. A click whose target is inside the revealed subtree is
+          // a real interaction and must not be discarded, especially for
+          // async lists whose controls are usable as soon as they render.
           if (eventName === 'click') {
             var ancestor = el;
             while (ancestor) {
-              if (ancestor.__stx_shown_at && (performance.now() - ancestor.__stx_shown_at) < 50) return;
+              if (ancestor.__stx_shown_at
+                && (performance.now() - ancestor.__stx_shown_at) < 50
+                && !(ancestor.contains && ancestor.contains(event.target))) return;
               ancestor = ancestor.parentElement;
             }
           }
