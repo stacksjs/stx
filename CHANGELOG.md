@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.175...v0.2.176)
+
+## 🐛 Bug Fixes
+
+- **bindings**: a directive is not an attribute — stop resolving :if/:show/:text ([b5499a2](https://github.com/stacksjs/stx/commit/b5499a2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **client-script**: publish a declaration that has no initializer ([6e0a23c](https://github.com/stacksjs/stx/commit/6e0a23c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **a11y**: take a file or a glob, never pass an empty scan, skip layout tables ([c5965f1](https://github.com/stacksjs/stx/commit/c5965f1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **tooltip**: ship the x-tooltip runtime, which was exported and never called ([bf5ee4e](https://github.com/stacksjs/stx/commit/bf5ee4e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **ssg**: fail the build on a failed @include, and let a caller set partialsDir ([4b594c1](https://github.com/stacksjs/stx/commit/4b594c1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **props**: accept an interface, and make `from 'stx'` resolve for the checker ([15c2ae1](https://github.com/stacksjs/stx/commit/15c2ae1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **typecheck**: check a bare <script>, and stop one syntax error muting the run ([f85e31a](https://github.com/stacksjs/stx/commit/f85e31a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: preserve conditional slot signals ([6e29f85](https://github.com/stacksjs/stx/commit/6e29f85)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **runtime**: preserve newly rendered interactions ([10cbbac](https://github.com/stacksjs/stx/commit/10cbbac)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.176 ([c7a1aae](https://github.com/stacksjs/stx/commit/c7a1aae)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: pickier 0.1.56, and drop the suppression it makes unnecessary ([0714580](https://github.com/stacksjs/stx/commit/0714580)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.174...v0.2.175)
 
 ## 🐛 Bug Fixes
