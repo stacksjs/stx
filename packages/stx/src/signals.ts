@@ -2204,11 +2204,18 @@ catch (e) {
     if (!el || !el.getAttribute || value === undefined) return;
     var scopeId = el.getAttribute('data-stx-scope');
     var scopeVars = scopeId && window.stx._scopes && window.stx._scopes[scopeId];
-    if (!scopeVars) return;
     var camelName = name.replace(/-([a-z0-9])/g, function(_, character) {
       return character.toUpperCase();
     });
-    var propSignal = scopeVars[name] || scopeVars[camelName];
+    // useReactiveProp signals are often intentionally aliased inside the
+    // child, for example liveClosable = useReactiveProp('closable', true).
+    // The public prop name therefore cannot be inferred from the variable
+    // name exported by the component scope. Keep an element-owned registry as
+    // the canonical bridge, with the scope lookup retained for older output.
+    var propSignals = el.__stx_reactive_prop_signals;
+    var propSignal = propSignals && (propSignals[name] || propSignals[camelName]);
+    if (!propSignal && scopeVars)
+      propSignal = scopeVars[name] || scopeVars[camelName];
     if (!propSignal || !propSignal._isSignal || typeof propSignal.set !== 'function') return;
     var directValues = el.__stx_direct_prop_values || (el.__stx_direct_prop_values = {});
     var directValue = {
@@ -5537,6 +5544,11 @@ catch (e) {} }
     }
     var s = state(initial);
     if (!root) return s;
+    var propSignals = root.__stx_reactive_prop_signals
+      || (root.__stx_reactive_prop_signals = {});
+    propSignals[name] = s;
+    propSignals[kebabName] = s;
+    propSignals[lowerName] = s;
     var observer = new MutationObserver(function() {
       var attribute = readAttribute();
       var hasAttr = attribute.has;
@@ -5559,7 +5571,12 @@ catch (e) {} }
       if (next !== s()) s.set(next);
     });
     observer.observe(root, { attributes: true, attributeFilter: attributeNames });
-    onDestroy(function() { observer.disconnect(); });
+    onDestroy(function() {
+      observer.disconnect();
+      attributeNames.forEach(function(attributeName) {
+        if (propSignals[attributeName] === s) delete propSignals[attributeName];
+      });
+    });
     return s;
   }
 

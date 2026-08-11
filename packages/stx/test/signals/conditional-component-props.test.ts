@@ -116,6 +116,51 @@ describe('conditional component props', () => {
     expect(component.getAttribute('options')).toBe(JSON.stringify(options()))
   })
 
+  it('synchronizes a reactive boolean prop when the child aliases its signal', async () => {
+    const editing = window.stx.state(false)
+    window.__stx_setup_aliased_boolean_prop = () => ({ editing })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_aliased_boolean_prop">
+        <div
+          data-stx-scope="aliased_boolean_modal"
+          data-stx-parent-bindings="closable"
+          :closable="!editing"
+        ></div>
+      </main>
+    `
+    const component = document.querySelector('[data-stx-scope="aliased_boolean_modal"]')
+    shimAttributes(document.body)
+
+    const previousElement = window.__STX_CURRENT_ELEMENT__
+    window.__STX_CURRENT_ELEMENT__ = component
+    const liveClosable = window.stx.useReactiveProp('closable', true)
+    window.__STX_CURRENT_ELEMENT__ = previousElement
+    window.stx._scopes.aliased_boolean_modal = {
+      liveClosable,
+      __mountCallbacks: [],
+      __destroyCallbacks: [],
+    }
+
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    expect(component.hasAttribute('closable')).toBe(true)
+    expect(liveClosable()).toBe(true)
+
+    editing.set(true)
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    expect(component.hasAttribute('closable')).toBe(false)
+    expect(liveClosable()).toBe(false)
+
+    editing.set(false)
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    expect(component.hasAttribute('closable')).toBe(true)
+    expect(liveClosable()).toBe(true)
+  })
+
   it('falls native events through signal component wrappers without duplicating emitted events', async () => {
     const nativeClicks = window.stx.state(0)
     const submitted = window.stx.state(0)
