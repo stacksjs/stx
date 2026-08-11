@@ -52,7 +52,7 @@ describe('Component scoping', () => {
       const runtime = generateSignalsRuntimeDev()
 
       expect(runtime).toContain('var ownerScope = currentLifecycleScope() || componentScope')
-      expect(runtime).toContain('return ownerScope.$refs ? ownerScope.$refs[name] : null')
+      expect(runtime).toContain('return (ownerScope.$refs && ownerScope.$refs[name]) || null')
     })
   })
 

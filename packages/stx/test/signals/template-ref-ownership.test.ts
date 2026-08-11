@@ -43,4 +43,26 @@ describe('template ref ownership', () => {
     expect(secondRef.current).toBe(secondElement)
     expect(secondRef.value).toBe(secondElement)
   })
+
+  it('resolves a ref revealed by :if before nextTick completes', async () => {
+    const root = document.createElement('section')
+    root.setAttribute('data-stx-scope', 'conditional')
+    root.innerHTML = '<div :if="show()"><button data-stx-ref="control">Ready</button></div>'
+    document.body.append(root)
+
+    const show = window.stx.state(false)
+    const scope = { $refs: {} as Record<string, HTMLElement>, show }
+    window.stx._scopes = { conditional: scope }
+    window.__STX_CURRENT_ELEMENT__ = root
+    const control = window.stx.useRef('control')
+
+    window.__stxDomReadyHandler()
+    expect(control.current).toBeNull()
+
+    show.set(true)
+    await window.stx.nextTick()
+
+    expect(control.current).toBe(root.querySelector('button'))
+    expect(control.current?.textContent).toBe('Ready')
+  })
 })

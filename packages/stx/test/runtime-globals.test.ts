@@ -186,6 +186,7 @@ nextTick(() => ready.set(true))
       .find(block => block.includes('__stx_setup_'))
     expect(pageScript).toBeDefined()
     expect(destructuredNames(pageScript!).has('nextTick')).toBe(true)
+    expect(generateSignalsRuntimeDev()).toContain('structural directives finish their deferred subtree hydration')
   })
 
   it('carries inject now that the runtime implements it', () => {

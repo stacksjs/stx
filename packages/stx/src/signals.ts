@@ -1242,7 +1242,7 @@ else if (immediate) {
     var ownerScope = currentLifecycleScope() || componentScope;
     return {
       get current() {
-        return ownerScope.$refs ? ownerScope.$refs[name] : null;
+        return (ownerScope.$refs && ownerScope.$refs[name]) || null;
       },
       get value() {
         return this.current;
@@ -4426,33 +4426,30 @@ catch (e2) {
     }
 
     // Helper to evaluate with captured scope (auto-unwraps signals).
-    // Mirrors bindStyle/bindShow/evalAttrExpr: first try the auto-unwrap
-    // proxy (so a bare-reference comparison like count > 5 reads the signal
-    // as a primitive), then retry with the raw scope so call-syntax
-    // expressions like count() === 0 or !recording() still work. The proxy
-    // unwraps signals to their values, which turns count() into 0() ->
-    // TypeError; pre-fix (stacksjs/stx#1733) the single catch swallowed
-    // that TypeError and returned '' (falsy), silently hiding the element
-    // for EVERY comparison/boolean expression. bindIf was the only
-    // directive missing this retry.
+    // A with-scope resolves only identifiers the expression actually references,
+    // so the conditional subscribes narrowly instead of reading every signal
+    // in a component scope. That broad subscription made an unrelated ref
+    // update re-enter structural removal while the real condition was already
+    // removing the same subtree. First try the auto-unwrap proxy (so a bare
+    // comparison like count > 5 reads the signal value), then retry with the
+    // raw scope so call syntax like count() === 0 still works (#1733).
     const evalExpr = (expression) => {
       // Skip placeholder expressions like __TITLE__ (build-time placeholders)
       if (/^__[A-Z_]+__$/.test(expression.trim())) {
         return expression;
       }
       try {
-        // Use captured componentScope (with @for vars) merged with element scope
         const scope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
         const unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);
-        const fn = new Function(...Object.keys(scope), 'return ' + expression);
-        return fn(...Object.values(unwrapScope));
+        const fn = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
+        return fn(unwrapScope);
       }
 catch (e1) {
         try {
           // Retry without the unwrap proxy so call-syntax (signal()) works.
           const scope2 = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
-          const fn2 = new Function(...Object.keys(scope2), 'return ' + expression);
-          return fn2(...Object.values(scope2));
+          const fn2 = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
+          return fn2(scope2);
         }
 catch (e2) {
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expression, e2);
@@ -4509,11 +4506,6 @@ catch (e2) {
         value = directSignal();
         console.log('[stx] bindIf effect (direct):', expr, '→', value, 'isInserted:', isInserted);
       } else {
-        // Complex expression: read all signals first for tracking, then evaluate
-        for (var sk in fullScope) {
-          var sv = fullScope[sk];
-          if (sv && typeof sv === 'function' && (sv._isSignal || sv._isDerived)) sv();
-        }
         value = evalExpr(expr);
       }
 
@@ -4951,12 +4943,19 @@ else if (timer === null) {
     };
   }
 
-  // Queue work after the current synchronous signal/effect flush. This mirrors
-  // the Composition API nextTick contract and gives template refs a chance to
-  // resolve after a structural directive inserts their elements.
+  // Queue work after the current synchronous signal/effect flush and after
+  // structural directives finish their deferred subtree hydration. The
+  // microtask schedules this timer only after every subscriber has run, so a
+  // :if/:for timer created later in the same signal flush runs first and its
+  // template refs are available to the callback.
   function nextTick(fn) {
     return Promise.resolve().then(function() {
-      if (fn) fn();
+      return new Promise(function(resolve) {
+        setTimeout(function() {
+          if (fn) fn();
+          resolve();
+        }, 0);
+      });
     });
   }
 
