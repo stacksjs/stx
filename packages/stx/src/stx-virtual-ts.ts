@@ -823,23 +823,139 @@ export function splitTopLevelImports(code: string): { imports: string, body: str
  * So the incentive runs the right way: declare a payload and the names are
  * checked against the server block, or do not and they are `any`.
  */
-export function clientPayloadDeclarations(serverCode: string): string {
+/**
+ * Top-level `interface X {…}` / `type X = …` statements, with their source text.
+ *
+ * The payload projection wraps the whole server body in a scope function so the
+ * checker can infer each published value's type from real code. That works for
+ * VALUES and traps TYPES: an `interface AutofixState` declared in
+ * `<script server>` lives inside that function, so a `<script client>` block in
+ * the same file naming it got `Cannot find name 'AutofixState'` — an error about
+ * code that is correct and runs (stacksjs/stx#1924).
+ *
+ * Scanned at depth zero so an interface declared inside a helper is not lifted
+ * out of the scope it belongs to. The brace matcher walks the real source rather
+ * than a blanked copy, because the declaration's BODY is what has to be carried
+ * across, not just its name.
+ */
+export function extractTypeDeclarations(code: string): Array<{ name: string, text: string }> {
+  const searchable = stripCommentsAndLiterals(code)
+
+  // Nesting depth at every offset, so a declaration inside a function body can
+  // be told from one at the top level. Computed once rather than per match.
+  const depthAt = new Array<number>(searchable.length)
+  let depth = 0
+  for (let i = 0; i < searchable.length; i++) {
+    const c = searchable[i]
+    if (c === '}' || c === ')' || c === ']')
+      depth = Math.max(0, depth - 1)
+    depthAt[i] = depth
+    if (c === '{' || c === '(' || c === '[')
+      depth++
+  }
+
+  const found: Array<{ name: string, text: string }> = []
+  // `export` is allowed and carries no meaning here; the keyword is dropped.
+  const start = /^[ \t]*(?:export[ \t]+)?(interface|type)[ \t]+([A-Za-z_$][\w$]*)/gm
+  let match: RegExpExecArray | null
+
+  // eslint-disable-next-line no-cond-assign
+  while ((match = start.exec(searchable)) !== null) {
+    // Inside a function or an object literal: lifting it out would change what
+    // the name refers to.
+    if (depthAt[match.index] !== 0)
+      continue
+
+    const kind = match[1]
+    const name = match[2]
+    let end: number
+
+    if (kind === 'interface') {
+      // Body runs to the brace that closes the one opening it.
+      const open = searchable.indexOf('{', match.index)
+      if (open === -1)
+        continue
+      let depth = 0
+      end = -1
+      for (let i = open; i < searchable.length; i++) {
+        if (searchable[i] === '{')
+          depth++
+        else if (searchable[i] === '}' && --depth === 0) {
+          end = i + 1
+          break
+        }
+      }
+      if (end === -1)
+        continue
+    }
+    else {
+      // A type alias ends at the first top-level `;` or newline that is not
+      // inside a brace, bracket or paren — a union may span many lines.
+      let depth = 0
+      end = searchable.length
+      for (let i = searchable.indexOf('=', match.index) + 1; i < searchable.length; i++) {
+        const c = searchable[i]
+        if (c === '{' || c === '[' || c === '(' || c === '<')
+          depth++
+        else if (c === '}' || c === ']' || c === ')' || c === '>')
+          depth--
+        else if (depth <= 0 && (c === ';' || (c === '\n' && !/[=|&,<([{]\s*$/.test(searchable.slice(Math.max(0, i - 40), i))))) {
+          end = c === ';' ? i + 1 : i
+          break
+        }
+      }
+    }
+
+    found.push({ name, text: code.slice(match.index, end).replace(/^[ \t]*export[ \t]+/, '') })
+    start.lastIndex = end
+  }
+
+  return found
+}
+
+/** Type names a block declares for itself, which must not be redeclared over it. */
+function declaredTypeNames(code: string): Set<string> {
+  return new Set(extractTypeDeclarations(code).map(entry => entry.name))
+}
+
+export function clientPayloadDeclarations(serverCode: string, clientCode = ''): string {
   const published = extractClientPayloadNames(serverCode)
+
+  /*
+   * Types the server block declares, carried across for the client block to name.
+   *
+   * A type is not data — it does not cross the bridge at runtime and needs no
+   * payload entry — but the two blocks live in one file and authors write them
+   * as one unit: the interface goes in the server block beside the value it
+   * describes, and the client block annotates with it. That was
+   * `Cannot find name`, an error about correct, working code (#1924).
+   *
+   * Skipped when the client block declares the same name itself, so a local
+   * definition wins rather than colliding with the one lifted over it.
+   */
+  const ownTypes = declaredTypeNames(clientCode)
+  const serverTypes = extractTypeDeclarations(serverCode)
+    .filter(entry => !ownTypes.has(entry.name))
+    .map(entry => entry.text)
 
   if (!published) {
     const scraped = collectBlockDeclarations(serverCode)
-    if (scraped.length === 0)
+    if (scraped.length === 0 && serverTypes.length === 0)
       return ''
 
     return [
       '',
       `// ${SCRAPED_COMMENT}`,
+      ...serverTypes,
       ...scraped.map(name => `declare var ${name}: any`),
     ].join('\n')
   }
 
-  if (published.length === 0)
-    return ''
+  if (published.length === 0) {
+    return serverTypes.length > 0
+      ? ['', `// ${PAYLOAD_COMMENT}`, ...serverTypes].join('\n')
+      : ''
+  }
 
   const { imports, body } = splitTopLevelImports(serverCode)
 
@@ -854,6 +970,10 @@ export function clientPayloadDeclarations(serverCode: string): string {
 
   if (imports)
     parts.push(imports)
+
+  // Ahead of the scope function, which redeclares them in its own scope — the
+  // inner one shadows and both are legal.
+  parts.push(...serverTypes)
 
   parts.push(
     // `async`, so a server block using top-level await is still valid inside

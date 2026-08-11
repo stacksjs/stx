@@ -271,17 +271,45 @@ declare function useOptimistic<T = any, A = any>(
 // DOM utilities
 // ============================================================================
 
+/**
+ * Options the runtime reads, including the target it binds to.
+ *
+ * The target travels HERE rather than in a leading parameter, because that is
+ * what the implementation does: `var target = (options && options.target) || window`.
+ */
+interface StxEventListenerOptions {
+  /** Element, selector, or document/window. Defaults to `window`. */
+  target?: Window | Document | HTMLElement | string | null
+  capture?: boolean
+  passive?: boolean
+  once?: boolean
+}
+
+/*
+ * Event first, then handler, then options (stacksjs/stx#1923).
+ *
+ * This was declared target-first while the runtime has always been
+ * event-first, so the two disagreed in the worst possible direction: `_target`
+ * accepted `string`, so the CORRECT call got as far as reading 'keydown' as a
+ * selector before failing on the handler, and an author who trusted the type
+ * and added a target wrote `useEventListener(window, 'keydown', fn)` — which
+ * binds an event named "window" with the string 'keydown' as its handler, and
+ * silently attaches nothing.
+ *
+ * `browser-composables.ts` had it right all along; the package shipped two
+ * declarations of one name with different arities and the registry got the
+ * wrong one. Same shape as the `reactive` split: one name, two conventions, and
+ * no way for the call site to tell which it has.
+ */
 declare function useEventListener<K extends keyof WindowEventMap>(
-  _target: Window | Document | HTMLElement | string | null,
   _event: K,
   _handler: (event: WindowEventMap[K]) => void,
-  _options?: boolean | AddEventListenerOptions,
+  _options?: StxEventListenerOptions,
 ): StxCleanup
 declare function useEventListener(
-  _target: Window | Document | HTMLElement | string | null,
   _event: string,
   _handler: (event: Event) => void,
-  _options?: boolean | AddEventListenerOptions,
+  _options?: StxEventListenerOptions,
 ): StxCleanup
 declare function useScrollLock(
   _target?: HTMLElement | null | { current?: HTMLElement | null, value?: HTMLElement | null } | (() => HTMLElement | null | undefined),

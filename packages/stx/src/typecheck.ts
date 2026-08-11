@@ -141,7 +141,7 @@ export function buildVirtualSource(block: ScriptBlock, serverCode = ''): string 
    * the author wrote the code (#1868 ask 2).
    */
   const payload = block.kind === 'client' || block.kind === 'plain'
-    ? clientPayloadDeclarations(serverCode)
+    ? clientPayloadDeclarations(serverCode, block.code)
     : ''
 
   return `${leadingNewlines + code}\n${payload}\nexport {}\n`
