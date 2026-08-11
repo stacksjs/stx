@@ -1421,8 +1421,33 @@ export function extractExports(setupContent: string): string {
   const checkDeclaration = (): void => {
     if (depth !== 0) return
 
-    // Check for const/let/var declarations
-    const declMatch = code.slice(i).match(/^(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/)
+    /*
+     * A declaration, with or without an initializer (stacksjs/stx#1919).
+     *
+     * This required `=` immediately after the name, so a binding that is
+     * declared and assigned later never reached the scope object this function
+     * builds — and a template reading it evaluated to nothing. Silently: no
+     * console error, no diagnostic, the element just renders empty.
+     *
+     * The form that costs the most is the typed one, because adding types is
+     * what produces it. `let rows = null` became `let rows!: () => Row[]` with
+     * the assignment and the template untouched, and the rendered row count
+     * went from 2 to 0.
+     *
+     * So the terminator is anything a declaration can legally be followed by,
+     * rather than `=` alone:
+     *
+     *   let x = 1     initializer
+     *   let x!: T     definite assignment, assigned later
+     *   let x: T      annotation, assigned later
+     *   let x;        bare
+     *   let x, y      first declarator (multi-declarator is a pre-existing gap)
+     *
+     * Matching the terminator rather than trying to consume the type is what
+     * makes `let x!: () => string[]` work: an annotation can contain `=`, so
+     * any attempt to scan past it stops on the arrow.
+     */
+    const declMatch = code.slice(i).match(/^(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*(?:[!:;,\n]|=(?!=)|$)/)
     if (declMatch) {
       const varName = declMatch[2]
       if (!seen.has(varName)) {
