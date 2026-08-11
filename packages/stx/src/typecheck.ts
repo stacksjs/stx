@@ -42,6 +42,7 @@ import {
   clientPayloadDeclarations,
   scrapedBridgeNames,
   serverContextDeclarations,
+  blankScriptDirectives,
   substituteInterpolationsInPlace,
 } from './stx-virtual-ts'
 
@@ -70,7 +71,7 @@ export interface TypecheckDiagnostic {
 export interface TypecheckOptions {
   /** Extra ambient declaration files to include (e.g. an app's own types). */
   extraLibs?: string[]
-  /** Check `<script client>` blocks. Default true. */
+  /** Check `<script client>` and bare `<script>` blocks. Default true. */
   client?: boolean
   /** Check `<script server>` blocks. Default true. */
   server?: boolean
@@ -124,7 +125,10 @@ export function buildVirtualSource(block: ScriptBlock, serverCode = ''): string 
   // that is a syntax error, and a parse failure suppresses every real
   // diagnostic in the same file — so the checker was blind wherever this is
   // used, which is 48 of the framework's own 95 components.
-  const code = substituteInterpolationsInPlace(block.code)
+  // Interpolations first: the directive matcher requires the directive to be
+  // alone on its line, and a multi-line `{{ }}` in its argument is collapsed to
+  // one line by the substitution above.
+  const code = blankScriptDirectives(substituteInterpolationsInPlace(block.code))
 
   /*
    * A client block is checked in its own buffer, so a value reaching it through
@@ -178,6 +182,24 @@ export function findRuntimeTypeDeclarations(): string | null {
  *   path/to/file.ts(12,5): error TS2322: Type 'string' is not assignable …
  */
 const TSC_LINE_RE = /^(.*?)\((\d+),(\d+)\):\s+(error|warning)\s+TS(\d+):\s+(.*)$/
+
+/**
+ * Whether a diagnostic code is one TypeScript raises while PARSING.
+ *
+ * TypeScript numbers its messages by phase: 1xxx is the syntactic and grammar
+ * range ("';' expected", "Declaration or statement expected"), and everything
+ * the type checker itself produces starts at 2000. The distinction matters
+ * because tsc skips semantic checking for the entire program when any file has
+ * a syntax error, so these are the codes that decide which buffers have to sit
+ * out the second pass.
+ *
+ * Bounded below as well as above. This checker raises diagnostics of its own
+ * under code 0 — the implicit-bridge warning — and a bare `code < 2000` would
+ * count one of those as a parse failure.
+ */
+function isSyntactic(code: number): boolean {
+  return code >= 1000 && code < 2000
+}
 
 /**
  * Type-check `.stx` files.
@@ -353,7 +375,7 @@ export async function typecheckStxFiles(
 
   const virtualFiles = new Map<string, VirtualEntry>()
   /** Per file: the bridge names still crossing implicitly, and where to say so. */
-  const scrapedByFile = new Map<string, { names: string[], line: number }>()
+  const scrapedByFile = new Map<string, { names: string[], line: number, kind: ScriptKind }>()
   const checkedFiles: string[] = []
   let blockCount = 0
   let expressionCount = 0
@@ -367,9 +389,14 @@ export async function typecheckStxFiles(
     const blocks = extractScriptBlocks(source).filter((b) => {
       if (b.kind === 'server')
         return checkServer
-      if (b.kind === 'client')
-        return checkClient
-      return false // `plain` blocks are not part of the authored TS surface
+      // A bare `<script>` is a client block — the `client` attribute is an
+      // explicit alias, not a different thing — so it is checked under the same
+      // switch. It used to be dropped here as "not part of the authored TS
+      // surface", which is the one script form nobody writes an attribute for
+      // and therefore the most common one in the wild: the framework's own
+      // defaults shipped 18 blocks that could not parse and typecheck reported
+      // the 2 that happened to say `client` (stacksjs/stx#1920).
+      return checkClient
     })
 
     /*
@@ -386,10 +413,10 @@ export async function typecheckStxFiles(
     // Recorded here, where both halves of the file are in hand, and reported
     // after tsc has run so the warning sits alongside the real diagnostics.
     if (checkClient && serverCode) {
-      const clientBlocks = blocks.filter(block => block.kind === 'client')
+      const clientBlocks = blocks.filter(block => block.kind !== 'server')
       const names = [...new Set(clientBlocks.flatMap(block => scrapedBridgeNames(serverCode, block.code)))]
       if (names.length > 0)
-        scrapedByFile.set(file, { names, line: clientBlocks[0].startLine })
+        scrapedByFile.set(file, { names, line: clientBlocks[0].startLine, kind: clientBlocks[0].kind })
     }
 
     // The template buffer inlines the script bodies, so an expression sees the
@@ -496,8 +523,7 @@ export async function typecheckStxFiles(
     writtenToOrigin.set(safe, meta)
   }
 
-  const tsconfig = {
-    compilerOptions: {
+  const compilerOptions = {
       target: "ESNext",
       module: "ESNext",
       moduleResolution: "bundler",
@@ -519,27 +545,42 @@ export async function typecheckStxFiles(
       // which broke this package's own fixtures the moment it was tried.
       ...readProjectPathAliases(files.length > 0 ? path.dirname(path.resolve(files[0])) : process.cwd()),
       ...(options.compilerOptions ?? {}),
-    },
-    files: [...writtenToOrigin.keys()].map(name => `${workDir}/${name}`).concat(globalsDts, ...ambient),
   }
-  const tsconfigPath = `${workDir}/tsconfig.json`
-  await Bun.write(tsconfigPath, JSON.stringify(tsconfig, null, 2))
 
-  const proc = Bun.spawnSync(["bun", "x", "tsc", "-p", tsconfigPath, "--pretty", "false"], {
-    stdout: "pipe",
-    stderr: "pipe",
-  })
-  const output = new TextDecoder().decode(proc.stdout) + new TextDecoder().decode(proc.stderr)
+  /** Run tsc over a chosen subset of the generated buffers. */
+  const runTsc = async (names: string[], pass: number): Promise<{ output: string, exitCode: number }> => {
+    const tsconfigPath = `${workDir}/tsconfig${pass === 1 ? '' : `.${pass}`}.json`
+    await Bun.write(tsconfigPath, JSON.stringify({
+      compilerOptions,
+      files: names.map(name => `${workDir}/${name}`).concat(globalsDts, ...ambient),
+    }, null, 2))
+
+    const proc = Bun.spawnSync(["bun", "x", "tsc", "-p", tsconfigPath, "--pretty", "false"], {
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+    return {
+      output: new TextDecoder().decode(proc.stdout) + new TextDecoder().decode(proc.stderr),
+      exitCode: proc.exitCode ?? 0,
+    }
+  }
+
+  const first = await runTsc([...writtenToOrigin.keys()], 1)
+  const output = first.output
 
   const diagnostics: TypecheckDiagnostic[] = []
-  const exitCode = proc.exitCode ?? 0
+  const exitCode = first.exitCode
   // Diagnostic lines tsc PRINTED, before any are filtered for belonging to a
   // file we generated, and whether any landed in a file WE added to the
   // program. Both distinctions matter below.
   let printedDiagnostics = 0
   const ambientBasenames = new Set(ambient.map(lib => lib.split('/').pop()!))
   let ambientDiagnostics = 0
-  for (const rawLine of output.split("\n")) {
+  /** Buffers that failed to PARSE — the ones that mute the rest of the run. */
+  const unparseable = new Set<string>()
+
+  const parseTscOutput = (text: string): void => {
+  for (const rawLine of text.split("\n")) {
     const m = rawLine.match(TSC_LINE_RE)
     if (!m)
       continue
@@ -547,9 +588,12 @@ export async function typecheckStxFiles(
     if (ambientBasenames.has(m[1].split('/').pop()!))
       ambientDiagnostics++
     const [, filePart, lineStr, colStr, category, code, message] = m
-    const entry = writtenToOrigin.get(filePart.split('/').pop()!)
+    const written = filePart.split('/').pop()!
+    const entry = writtenToOrigin.get(written)
     if (!entry)
       continue
+    if (isSyntactic(Number(code)))
+      unparseable.add(written)
 
     let line = Number(lineStr)
     let column = Number(colStr)
@@ -604,6 +648,37 @@ export async function typecheckStxFiles(
       expression,
     })
   }
+  }
+
+  parseTscOutput(output)
+  // Snapshotted before any second pass: the checks below ask whether THIS run
+  // aborted, and a retry's output would answer a different question.
+  const firstPassPrinted = printedDiagnostics
+  const firstPassAmbient = ambientDiagnostics
+
+  /*
+   * A second pass, without the buffers that could not be parsed.
+   *
+   * tsc collects SEMANTIC diagnostics only when the program has no SYNTACTIC
+   * ones — not per file, program-wide (`emitFilesAndReportErrors`). So a single
+   * unparseable block anywhere in the run silently disables type checking for
+   * every other file in it: a corpus reporting 500 real type errors reported 52
+   * syntax errors and nothing else once one broken block joined the program.
+   *
+   * That is the same shape as #1906 — a number that reads as a total while most
+   * of the work never happened — and checking bare `<script>` blocks (#1920)
+   * walked straight into it, because an unparseable bare block is exactly what
+   * that issue is about. Fixing the blind spot would have created a new one.
+   *
+   * So the broken buffers are dropped and the rest are checked again. The user
+   * gets both halves at once instead of discovering the second half only after
+   * fixing the first. Costs a second tsc run, and only on a run that is already
+   * failing.
+   */
+  if (unparseable.size > 0 && unparseable.size < writtenToOrigin.size) {
+    const survivors = [...writtenToOrigin.keys()].filter(name => !unparseable.has(name))
+    parseTscOutput((await runTsc(survivors, 2)).output)
+  }
 
   /*
    * Names still crossing on the implicit bridge (#1868 ask 4).
@@ -630,7 +705,7 @@ export async function typecheckStxFiles(
           + `this block on the implicit bridge and ${scraped.names.length === 1 ? 'is' : 'are'} untyped: ${scraped.names.join(', ')}. `
           + `Declare them with defineClientPayload({ ${scraped.names.join(', ')} }) in the server block to have them checked.`,
         category: 'warning',
-        blockKind: 'client',
+        blockKind: scraped.kind,
       })
     }
   }
@@ -666,8 +741,8 @@ export async function typecheckStxFiles(
    * discarded, and calling that "did not run" would make the checker cry wolf
    * on a genuinely clean page.
    */
-  const brokenLib = ambientDiagnostics > 0 && unique.length === 0
-  const abortedSilently = exitCode !== 0 && printedDiagnostics === 0
+  const brokenLib = firstPassAmbient > 0 && unique.length === 0
+  const abortedSilently = exitCode !== 0 && firstPassPrinted === 0
   const failure = brokenLib || abortedSilently
     ? `${brokenLib
       ? 'a file passed with --lib has errors of its own, so nothing in your code was checked'
@@ -683,9 +758,12 @@ export async function typecheckStxFiles(
 export function formatTypecheckDiagnostics(diagnostics: TypecheckDiagnostic[]): string {
   return diagnostics
     .map((d) => {
+      // `plain` is this checker's internal name for a block whose tag carries no
+      // attribute. Printing it back as `<script plain>` would name a tag the
+      // author cannot write and did not write; the tag they wrote is `<script>`.
       const where = d.blockKind === 'template'
         ? `[template: ${d.expression ?? ''}]`
-        : `[<script ${d.blockKind}>]`
+        : `[${d.blockKind === 'plain' ? '<script>' : `<script ${d.blockKind}>`}]`
       return `${d.file}:${d.line}:${d.column}  ${d.category} TS${d.code}  ${d.message}  ${where}`
     })
     .join('\n')

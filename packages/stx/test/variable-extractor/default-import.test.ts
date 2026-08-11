@@ -8,10 +8,17 @@
  * along, which is why this survived.
  */
 
-import { describe, expect, it } from 'bun:test'
+import { afterAll, describe, expect, it } from 'bun:test'
 import { renderTemplate } from '../../src/render'
 
 const dir = `${import.meta.dir}/.tmp-default-import`
+
+// The modules the fixtures import outlive each render, so they are cleared once
+// at the end rather than per case. Without this the directory survives the run
+// and turns up as untracked files in the repository.
+afterAll(async () => {
+  await Bun.$`rm -rf ${dir}`.quiet().catch(() => {})
+})
 
 async function renderWith(script: string): Promise<string> {
   await Bun.write(`${dir}/mod.ts`, `export default { github: { clientId: 'GH_ID' } }\n`)

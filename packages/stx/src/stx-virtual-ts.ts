@@ -135,9 +135,9 @@ function blankCommentContents(source: string): string {
  * Pull the script blocks out of a `.stx` source, with the line each body starts on.
  *
  * `<script server>` and `<script client>` are recognised by attribute. A bare
- * `<script>` is reported as `plain`: it ships to the browser verbatim without
- * the auto-import preamble, so it is a different checking context and callers
- * may want to skip it.
+ * `<script>` is reported as `plain` so a caller can tell which tag the author
+ * actually wrote — NOT so it can be skipped. It is a client block; `client` is
+ * an explicit alias for the default, not a separate kind (stacksjs/stx#1920).
  */
 export function extractScriptBlocks(source: string): ScriptBlock[] {
   const blocks: ScriptBlock[] = []
@@ -367,6 +367,80 @@ export function substituteInterpolationsInPlace(code: string): string {
 
     return `0${' '.repeat(Math.max(0, width - 1))}${'\n'.repeat(newlines)}`
   })
+}
+
+/**
+ * Control-flow directives that can legitimately open a line inside a script.
+ *
+ * Deliberately not the whole directive registry — only the forms that generate
+ * code around JavaScript, which are the ones that turn up in a script body.
+ * Naming them beats matching any line-leading `@identifier`, which would also
+ * blank a decorator.
+ */
+const SCRIPT_BODY_DIRECTIVES = [
+  'foreach',
+  'endforeach',
+  'forelse',
+  'endforelse',
+  'for',
+  'endfor',
+  'while',
+  'endwhile',
+  'empty',
+  'if',
+  'elseif',
+  'else',
+  'endif',
+  'unless',
+  'endunless',
+  'isset',
+  'endisset',
+  'switch',
+  'case',
+  'default',
+  'endswitch',
+  'auth',
+  'endauth',
+  'guest',
+  'endguest',
+  'env',
+  'endenv',
+  'once',
+  'endonce',
+  'break',
+  'continue',
+]
+
+const SCRIPT_BODY_DIRECTIVE_RE = new RegExp(
+  String.raw`^[ \t]*@(?:${SCRIPT_BODY_DIRECTIVES.join('|')})\b[ \t]*(\([^\n)]*\))?[ \t]*$`,
+  'gm',
+)
+
+/**
+ * Blank stx directives that a script body writes to generate JavaScript.
+ *
+ * A template can loop inside a script — building a lookup table from server
+ * data is the obvious use — and the directive is expanded away long before the
+ * browser sees it:
+ *
+ *   const data = {
+ *     &#64;foreach(features as f)
+ *       '{{ f.id }}': { title: '{{ f.title }}' },
+ *     &#64;endforeach
+ *   }
+ *
+ * To TypeScript the directive line is a syntax error, and one of those mutes
+ * semantic checking for the WHOLE program, not just the file. So checking bare
+ * `<script>` blocks (#1920) made a valid page report 37 invented syntax errors
+ * — and a checker that invents errors gets muted, which is the failure mode
+ * this file exists to avoid.
+ *
+ * Blanked rather than removed so every line number after it still points at the
+ * line the author wrote. Only a directive ALONE on its line is matched: that is
+ * how they are written, and it cannot swallow code sharing the line.
+ */
+export function blankScriptDirectives(code: string): string {
+  return code.replace(SCRIPT_BODY_DIRECTIVE_RE, match => match.replace(/[^\n]/g, ' '))
 }
 
 /** Attributes that carry markup or a plain string, never an expression. */

@@ -1784,7 +1784,7 @@ catch (error) {
 
   cli
     .command('typecheck [patterns...]', 'Type-check the TypeScript inside .stx script blocks')
-    .option('--no-client', 'Skip <script client> blocks')
+    .option('--no-client', 'Skip <script client> and bare <script> blocks')
     .option('--no-server', 'Skip <script server> blocks')
     .option('--no-templates', 'Skip {{ }} and directive expressions in the markup')
     .option('--lib <path>', 'Extra ambient declaration file (repeatable)')
