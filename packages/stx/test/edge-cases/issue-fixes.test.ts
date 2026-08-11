@@ -1052,6 +1052,42 @@ const overview = state({ recent: ['Alpha'] })
     }
   })
 
+  it('preserves reactive props forwarded through nested components', async () => {
+    const componentsDir = path.join(TMP, 'nested-component-props')
+    fs.mkdirSync(componentsDir, { recursive: true })
+
+    try {
+      fs.writeFileSync(
+        path.join(componentsDir, 'BaseDialog.stx'),
+        `<script client>
+const liveTitle = useReactiveProp('title', '')
+</script>
+<dialog><h2>{{ liveTitle() }}</h2></dialog>`,
+      )
+      fs.writeFileSync(
+        path.join(componentsDir, 'ConfirmDialog.stx'),
+        `<script client>
+const title = useReactiveProp('title', 'Confirm')
+</script>
+<BaseDialog :title="title()" />`,
+      )
+
+      const output = await processDirectives(
+        '<ConfirmDialog title="Delete this item?" />',
+        {},
+        path.join(TMP, 'nested-component-props-view.stx'),
+        { componentsDir } as StxOptions,
+        new Set<string>(),
+      )
+
+      expect(output).toContain('data-stx-parent-bindings="title"')
+      expect(output).toContain(':title="title()"')
+    }
+    finally {
+      fs.rmSync(componentsDir, { recursive: true, force: true })
+    }
+  })
+
   it('keeps valueless dynamic props as same-name shorthand bindings', async () => {
     const componentsDir = path.join(TMP, 'component-shorthand-props')
     fs.mkdirSync(componentsDir, { recursive: true })

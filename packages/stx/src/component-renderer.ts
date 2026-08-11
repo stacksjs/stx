@@ -28,6 +28,7 @@ import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
 import { BOOLEAN_ATTRIBUTE_SENTINEL } from './prop-sentinels'
 import { COMPONENT_PASSTHROUGH_X_ATTRS } from './runtime-globals'
+import { stripCommentsAndLiterals } from './strip-literals'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -104,6 +105,29 @@ function parseComponentProps(
     serverDynamic: {},
     clientReactive: {},
     events: {},
+  }
+  const clientSignalNames = new Set<string>(
+    Array.isArray(context.__stx_client_signal_names)
+      ? context.__stx_client_signal_names
+      : [],
+  )
+
+  const referencesClientSignal = (expression: string): boolean => {
+    if (clientSignalNames.size === 0)
+      return false
+
+    const code = stripCommentsAndLiterals(expression)
+    const leadingIdentifier = code.match(/^\s*[!+~(-]*\s*([a-zA-Z_$][\w$]*)/)?.[1]
+    if (leadingIdentifier && clientSignalNames.has(leadingIdentifier))
+      return true
+
+    for (const signalName of clientSignalNames) {
+      const escapedName = signalName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      if (new RegExp(`(?:^|[^\\w$.])${escapedName}\\s*\\(`).test(code))
+        return true
+    }
+
+    return false
   }
 
   // Alpine-style element directives that must remain passthrough so the
@@ -189,6 +213,16 @@ function parseComponentProps(
       // context evaluates to false instead of throwing, which used to erase the
       // directive and render every component branch.
       if (propName === 'if' || propName === 'for' || propName === 'show') {
+        resolved.clientReactive[propName] = expression
+        continue
+      }
+
+      // A client signal may deliberately shadow a static server prop with the
+      // same name, then forward itself into a nested component. Evaluating the
+      // expression against the server context sees the static value instead,
+      // so `:title="title()"` becomes undefined and silently disappears. The
+      // component script's recorded signal names are authoritative here.
+      if (referencesClientSignal(expression)) {
         resolved.clientReactive[propName] = expression
         continue
       }
