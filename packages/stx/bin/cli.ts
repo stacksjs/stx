@@ -55,7 +55,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { CLI } from '@stacksjs/clapp'
 import { version } from '../package.json'
-import { scanA11yIssues } from '../src/a11y'
+import { scanA11yTargets } from '../src/a11y'
 import { serveApp, serveMultipleStxFiles, serveStxFile } from '../src/dev-server'
 import { docsCommand } from '../src/docs'
 import { initFile } from '../src/init'
@@ -798,13 +798,15 @@ else {
     })
 
   cli
-    .command('a11y [directory]', 'Scan STX files for accessibility issues')
+    .command('a11y [target]', 'Scan .stx files for accessibility issues (directory, file, or glob)')
     .option('--no-recursive', 'Disable recursive scanning of directories')
     .option('--ignore <paths>', 'Comma-separated paths to ignore', { default: '' })
     .option('--json', 'Output results as JSON')
     .option('--output <file>', 'Write results to a file instead of stdout')
     .option('--fix', 'Automatically fix common accessibility issues')
     .example('stx a11y ./templates')
+    .example('stx a11y "resources/**/*.stx"')
+    .example('stx a11y resources/emails/welcome.stx')
     .example('stx a11y --json --output a11y-report.json')
     .action(async (directory = '.', options) => {
       try {
@@ -815,11 +817,30 @@ else {
           ? options.ignore.split(',').map((p: string) => p.trim())
           : []
 
-        // Scan for issues
-        const results = await scanA11yIssues(directory, {
+        // Scan for issues. Takes a directory, a file, or a glob — whichever was
+        // typed. It used to join the argument into a scan pattern, so only a
+        // directory worked and the other two shapes matched nothing and were
+        // reported as a clean pass (#1918).
+        const { results, scannedFiles } = await scanA11yTargets(directory, {
           recursive: options.recursive !== false,
           ignorePaths,
         })
+
+        /*
+         * A scan that read nothing has verified nothing.
+         *
+         * `results` only ever contains files WITH violations, so an empty map
+         * meant both "everything is clean" and "nothing matched" — and the
+         * success banner was printed for both. That is what let
+         * `stx a11y 'resources/**' + '/*.stx'` sit green in CI for the life of a
+         * project, indistinguishable from a project with no problems. Non-zero,
+         * because a CI step that scanned nothing should not be the one step
+         * that never fails.
+         */
+        if (scannedFiles.length === 0) {
+          console.log(`\n  No .stx files matched ${directory}\n`)
+          process.exit(1)
+        }
 
         // Count total issues
         const totalFiles = Object.keys(results).length
@@ -843,7 +864,9 @@ else {
         else {
           // User-friendly console output
           if (totalFiles === 0) {
-            console.log('✓ No accessibility issues found!')
+            // Says how many files were read, so a clean pass is distinguishable
+            // from a scan that never happened (#1918).
+            console.log(`\u2713 No accessibility issues found in ${scannedFiles.length} file(s)!`)
           }
           else {
             console.log(`Found ${totalIssues} accessibility issues in ${totalFiles} files:\n`)
@@ -1792,26 +1815,17 @@ catch (error) {
     .example('stx typecheck "resources/views/**/*.stx"')
     .action(async (patterns: string[] | undefined, options: { client?: boolean, server?: boolean, templates?: boolean, lib?: string | string[] }) => {
       const { formatTypecheckDiagnostics, typecheckStxFiles } = await import('../src/typecheck')
-      // `Bun.Glob`, not `await import('bun')`. The bundler rewrites a dynamic
-      // import of the bun builtin to `await Promise.resolve(globalThis.Bun)`,
-      // and when it lands second in a comma-separated declaration list the
-      // space between `await` and `Promise` is dropped — fusing them into the
-      // identifier `awaitPromise`, which is not defined. Both CLIs died on the
-      // first line of their action in every published build (#1896).
-      const Glob = globalThis.Bun.Glob
+      const { resolveStxTargets } = await import('../src/resolve-stx-targets')
 
       // A single positional arrives as a bare string, not a one-element array,
       // and `for…of` over a string iterates its CHARACTERS — so an unnormalised
       // value silently globbed for "g", "o", "o", "d" and matched nothing.
       const normalized = Array.isArray(patterns) ? patterns : (patterns ? [patterns] : [])
       const globs = normalized.length ? normalized : ['**/*.stx']
-      const files: string[] = []
-      for (const pattern of globs) {
-        for await (const file of new Glob(pattern).scan({ cwd: process.cwd(), absolute: true })) {
-          if (!file.includes('/node_modules/') && !file.includes('/dist/'))
-            files.push(file)
-        }
-      }
+      // A directory now works here too. `typecheck` took a glob and `a11y` took
+      // a directory, and each was silent about the shape it did not accept —
+      // one resolver so neither can be (#1918).
+      const files = await resolveStxTargets(globs)
 
       if (files.length === 0) {
         console.log(`\n  No .stx files matched ${globs.join(', ')}\n`)

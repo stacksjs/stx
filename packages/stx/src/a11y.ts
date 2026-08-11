@@ -21,6 +21,7 @@
  */
 import type { CustomDirective, StxOptions } from './types'
 import path from 'node:path'
+import { resolveStxTargets } from './resolve-stx-targets'
 
 // =============================================================================
 // Types
@@ -42,6 +43,43 @@ export interface A11yViolation {
   help: string
   /** URL to more information */
   helpUrl?: string
+}
+
+/**
+ * Has this element declared itself decorative rather than semantic?
+ *
+ * `role="presentation"` and its synonym `role="none"` remove an element's
+ * implicit semantics from the accessibility tree. On a table that is exactly the
+ * declaration that it carries layout, not data — so demanding a `<th>` or a
+ * `<caption>` asks the author to reintroduce the semantics the role exists to
+ * remove (stacksjs/stx#1916).
+ *
+ * This is not a corner case. Every HTML email is nested layout tables: mail
+ * clients strip `<style>` and have no reliable box model, so `role="presentation"`
+ * is the standard, correct pattern there. One email template accounted for every
+ * remaining finding in an otherwise-clean app, and none of them was fixable —
+ * the correct markup was what triggered them. An advisory checker with a
+ * permanent finding nobody can close is one people learn to ignore, which costs
+ * more than the rule is worth.
+ *
+ * The rule itself is right to exist: a DATA table with no headers is a real
+ * problem. It just has to take the author's word for which kind it is.
+ */
+export function isPresentationalRole(role: string | null | undefined): boolean {
+  if (!role)
+    return false
+  // The attribute takes a space-separated list of fallbacks, and the first
+  // recognised token wins — so `role="presentation table"` is presentational.
+  return role.trim().split(/\s+/)[0]?.toLowerCase() === 'presentation'
+    || role.trim().split(/\s+/)[0]?.toLowerCase() === 'none'
+}
+
+/** Read one attribute out of a raw tag's attribute text. */
+export function attributeValue(attrs: string, name: string): string | null {
+  const match = new RegExp(`\\b${name}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i').exec(attrs)
+  if (!match)
+    return null
+  return match[2] ?? match[3] ?? match[4] ?? null
 }
 
 // =============================================================================
@@ -201,7 +239,15 @@ function protectStxComponentTags(source: string): {
  * @param _filePath - File path for error reporting
  * @returns Array of accessibility violations found
  */
-function checkA11yWithRegex(html: string, _filePath: string): A11yViolation[] {
+/**
+ * Regex-based checking, used when no DOM is available — which is the CLI.
+ *
+ * Exported so tests can exercise it directly. It and the DOM path implement the
+ * same rules twice, and the way two implementations of one rule go wrong is by
+ * disagreeing; pinning only whichever one the test environment happens to pick
+ * leaves the other free to drift (#1916).
+ */
+export function checkA11yWithRegex(html: string, _filePath: string): A11yViolation[] {
   const violations: A11yViolation[] = []
 
   // Check 1: Images without alt text
@@ -340,11 +386,11 @@ function checkA11yWithRegex(html: string, _filePath: string): A11yViolation[] {
   }
 
   // Check 7: Tables without headers
-  const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/gi
+  const tableRegex = /<table([^>]*)>([\s\S]*?)<\/table>/gi
   match = tableRegex.exec(html)
   while (match !== null) {
-    const tableContent = match[1]
-    if (!/<th\b/i.test(tableContent)) {
+    const tableContent = match[2]
+    if (!isPresentationalRole(attributeValue(match[1], 'role')) && !/<th\b/i.test(tableContent)) {
       violations.push({
         type: 'table-missing-headers',
         element: '<table>',
@@ -585,6 +631,13 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
 
     // Check 8: Tables without proper structure
     container.querySelectorAll('table').forEach((table: Element) => {
+      // A table that has declared itself presentational is layout, and neither
+      // headers nor a caption apply to it. Checked through the same predicate
+      // the regex path uses: these are two implementations of one rule, and the
+      // way they go wrong is by disagreeing (#1916).
+      if (isPresentationalRole(table.getAttribute('role')))
+        return
+
       const hasCaption = table.querySelector('caption')
       const hasHeaders = table.querySelector('th')
 
@@ -707,34 +760,42 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
 // Directory Scanner
 // =============================================================================
 
+/** What a scan actually read, alongside what it found. */
+export interface A11yScanResult {
+  /** Files that had at least one violation, mapped to their violations. */
+  results: Record<string, A11yViolation[]>
+  /**
+   * Every file the scan READ.
+   *
+   * Reported separately because "no violations" and "no files" are different
+   * answers that used to be the same one: `results` only ever contains files
+   * WITH violations, so an empty map means both "everything is clean" and
+   * "nothing was scanned", and the success banner was printed for both
+   * (stacksjs/stx#1918).
+   */
+  scannedFiles: string[]
+}
+
 /**
- * Scan a directory of stx files for accessibility issues.
- * Returns a map of file paths to their violations.
+ * Scan a directory, a file, or a glob for accessibility issues.
+ *
+ * The argument used to be joined into a scan pattern, so only a directory
+ * worked: a file path became `<file>/**` + `/*.stx` and a glob became a doubled
+ * pattern, both matching nothing and both reported as a clean pass. See
+ * `resolve-stx-targets.ts` for what that cost.
  */
-export async function scanA11yIssues(
-  directory: string,
+export async function scanA11yTargets(
+  target: string | readonly string[],
   options: { recursive?: boolean, ignorePaths?: string[] } = {},
-): Promise<Record<string, A11yViolation[]>> {
+): Promise<A11yScanResult> {
   const results: Record<string, A11yViolation[]> = {}
   const { recursive = true, ignorePaths = [] } = options
 
-  // Use Bun.Glob for file scanning
-  const pattern = path.join(directory, recursive ? '**/*.stx' : '*.stx')
-
-  // Get all stx files
-  const glob = new Bun.Glob(pattern)
-  const files = []
-
-  // Manually filter out ignored paths
-  for await (const file of glob.scan()) {
-    const shouldIgnore = ignorePaths.some(ignorePath =>
-      file.includes(path.normalize(ignorePath)),
-    )
-
-    if (!shouldIgnore) {
-      files.push(file)
-    }
-  }
+  // A single positional arrives as a bare string, and `for…of` over a string
+  // iterates its CHARACTERS — the trap `typecheck` documents (#1896).
+  const targets = Array.isArray(target) ? target : [target as string]
+  const files = await resolveStxTargets(targets, { recursive, ignorePaths })
+  const scannedFiles: string[] = []
 
   for (const file of files) {
     try {
@@ -746,6 +807,7 @@ export async function scanA11yIssues(
       }
 
       const violations = await checkA11y(content, file)
+      scannedFiles.push(file)
 
       // Only include files with violations
       if (violations.length > 0) {
@@ -757,7 +819,21 @@ export async function scanA11yIssues(
     }
   }
 
-  return results
+  return { results, scannedFiles }
+}
+
+/**
+ * Back-compatible wrapper: violations only.
+ *
+ * Kept so existing callers keep working, but it cannot say whether the scan read
+ * anything — which is the distinction #1918 turned on. Prefer
+ * {@link scanA11yTargets}.
+ */
+export async function scanA11yIssues(
+  directory: string,
+  options: { recursive?: boolean, ignorePaths?: string[] } = {},
+): Promise<Record<string, A11yViolation[]>> {
+  return (await scanA11yTargets(directory, options)).results
 }
 
 // =============================================================================
