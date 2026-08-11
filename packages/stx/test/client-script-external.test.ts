@@ -97,11 +97,12 @@ const load = debounce(() => {}, 250)
 const activeElement = useActiveElement()
 const visibility = useDocumentVisibility()
 const controls = useIntervalFn(load, 15000)
+const timeout = useTimeoutFn(load, 5000, { immediate: false })
 `)
 
-    expect(output.imports).toEqual(['debounce', 'useActiveElement', 'useDocumentVisibility', 'useIntervalFn'])
+    expect(output.imports).toEqual(['debounce', 'useActiveElement', 'useDocumentVisibility', 'useIntervalFn', 'useTimeoutFn'])
     expect(output.models).toEqual([])
-    expect(output.code).toContain(`import { debounce, useActiveElement, useDocumentVisibility, useIntervalFn } from '@stacksjs/browser'`)
+    expect(output.code).toContain(`import { debounce, useActiveElement, useDocumentVisibility, useIntervalFn, useTimeoutFn } from '@stacksjs/browser'`)
   })
 
   it('does not shadow locally declared browser helper names', () => {
