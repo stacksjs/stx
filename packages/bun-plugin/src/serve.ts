@@ -2423,17 +2423,25 @@ function __stxOverlay(errs){
     // the path carries a non-page file extension, drop catch-all candidates so
     // the request falls through to publicDir (and then the real 404 page).
     // Specific routes may still match (rare, but legitimate). stacksjs/stx#1841.
-    // A catch-all is dropped when publicDir really holds this file, rather
-    // than whenever the path merely looks like an asset: the extension is a
-    // guess about intent, and it refuses every legitimate catch-all page
-    // whose path carries a dot (see publicFileExists).
+    // A dynamic route is dropped when publicDir really holds this file,
+    // rather than whenever the path merely looks like an asset: the extension
+    // is a guess about intent, and it refuses every legitimate page whose
+    // path carries a dot (see publicFileExists).
+    //
+    // **Every** dynamic route, not only catch-alls. Restricting it to `[...x]`
+    // assumed a shallow route tree, and an app whose routes start at the root
+    // does not have one: a forge serving `[owner]/[repository]` claims every
+    // two-segment path and `[owner]` claims every one-segment path, so
+    // `/js/mermaid.js` and `/favicon.ico` both rendered a page and the whole
+    // publicDir was unreachable. A real file at exactly this path is a
+    // stronger signal than any route pattern.
     const isAssetRequest = publicFileExists(`/${normalizedPath}`, publicDir)
     const dynamicFiles = files
       .filter((f) => {
       const nf = f.replace(/^\.\//, '').replace(/\\/g, '/')
       if (!nf.includes('['))
         return false
-      if (isAssetRequest && /\[\.\.\./.test(nf))
+      if (isAssetRequest)
         return false
       return true
     })

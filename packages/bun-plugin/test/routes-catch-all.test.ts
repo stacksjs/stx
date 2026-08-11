@@ -110,13 +110,13 @@ describe('isStaticAssetPath — catch-all never shadows a static asset (#1841)',
       expect(isStaticAssetPath(p)).toBe(false)
   })
 
-  // Mirrors getRoute: catch-all candidates are dropped when publicDir really
+  // Mirrors getRoute: every dynamic candidate is dropped when publicDir really
   // holds the file, so the resolver returns null and publicDir serves it.
   // `exists` stands in for the disk.
   const resolveAsset = (target: string, files: string[], exists: string[] = []): string | null => {
     const asset = exists.includes(target)
     const candidates = files
-      .filter(f => f.includes('[') && !(asset && /\[\.\.\./.test(f)))
+      .filter(f => f.includes('[') && !asset)
       .sort((a, b) => routeSpecificity(b) - routeSpecificity(a))
     for (const file of candidates) {
       for (const regex of buildDynamicRouteRegexes(file.replace(/\.(stx|md|html)$/, ''))) {
@@ -138,18 +138,34 @@ describe('isStaticAssetPath — catch-all never shadows a static asset (#1841)',
     expect(resolveAsset('some/missing/page', files)).toBe('[...all].stx')
   })
 
-  it('a specific route may still match an extensioned path', () => {
+  it('a specific route may still match an extensioned path publicDir lacks', () => {
     const files = ['[...all].stx', 'download/[file].stx']
     expect(resolveAsset('download/report.pdf', files)).toBe('download/[file].stx')
   })
 
   /*
-   * The regression the disk check exists for. An app whose catch-all serves
-   * paths that carry extensions - a code browser rendering
-   * `/owner/repo/tree/main/src/index.ts` - had every such page refused,
-   * because the extension test called it an asset and dropped the only route
-   * that could answer. Nothing is at that path in publicDir, so nothing
-   * should be dropped.
+   * A forge's routes start at the root: `[owner]` claims every one-segment
+   * path and `[owner]/[repository]` every two-segment one. Restricting the
+   * drop to catch-alls assumed a shallow tree, so `/favicon.ico` and
+   * `/js/mermaid.js` rendered pages and the whole publicDir was unreachable.
+   */
+  it('a plain dynamic route does not shadow a real public file either', () => {
+    const files = ['[owner]/[repository].stx', '[owner].stx']
+    expect(resolveAsset('js/mermaid.js', files, ['js/mermaid.js'])).toBeNull()
+    expect(resolveAsset('favicon.ico', files, ['favicon.ico'])).toBeNull()
+  })
+
+  it('but a dynamic route still answers when publicDir has nothing there', () => {
+    const files = ['[owner]/[repository].stx', '[owner].stx']
+    expect(resolveAsset('stacks/stacks', files)).toBe('[owner]/[repository].stx')
+  })
+
+  /*
+   * The other half of the disk check. An app whose catch-all serves paths that
+   * carry extensions - a code browser rendering
+   * `/owner/repo/tree/main/src/index.ts` - had every such page refused, because
+   * the extension test called it an asset. Nothing is at that path in
+   * publicDir, so nothing should be dropped.
    */
   it('an extensioned path publicDir does not have still resolves to the catch-all', () => {
     const files = ['[...all].stx', 'foo/[id].stx']
