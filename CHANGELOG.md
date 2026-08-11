@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.174...v0.2.175)
+
+## 🐛 Bug Fixes
+
+- **serve**: a real public file beats any dynamic route, not just a catch-all ([ef96ffe](https://github.com/stacksjs/stx/commit/ef96ffe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: preserve nested reactive props ([43a9693](https://github.com/stacksjs/stx/commit/43a9693)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **runtime**: stabilize conditional component lifecycle ([64adc31](https://github.com/stacksjs/stx/commit/64adc31)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **auto-imports**: inject active element composable ([27998f8](https://github.com/stacksjs/stx/commit/27998f8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 📚 Documentation
+
+- **changelog**: v0.2.174 also carries the $refs owner-scope fix ([3778675](https://github.com/stacksjs/stx/commit/3778675)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.175 ([cf51b08](https://github.com/stacksjs/stx/commit/cf51b08)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.173...v0.2.174)
 
 ## 🐛 Bug Fixes
