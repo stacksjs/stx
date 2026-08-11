@@ -906,6 +906,10 @@ export async function renderComponentWithSlot(
       '__originalFilePath',
       '__importedComponents',
       COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY,
+      // Slot content belongs to the caller. Carry its signal-name knowledge
+      // through nested component renders so a static prop with the same name
+      // cannot make `{{ signalName() }}` look server-evaluable and erase it.
+      '__stx_client_signal_names',
     ])
     const filteredParentContext: Record<string, unknown> = {}
     for (const [key, val] of Object.entries(parentContext)) {
@@ -1132,8 +1136,11 @@ export async function renderComponentWithSlot(
       /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useReactiveProp|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
     )
     const clientSignalNames = componentClientSignalNames(clientScripts)
-    if (clientSignalNames.length > 0)
-      componentContext.__stx_client_signal_names = clientSignalNames
+    const inheritedClientSignalNames = Array.isArray(componentContext.__stx_client_signal_names)
+      ? componentContext.__stx_client_signal_names as string[]
+      : []
+    if (clientSignalNames.length > 0 || inheritedClientSignalNames.length > 0)
+      componentContext.__stx_client_signal_names = [...new Set([...inheritedClientSignalNames, ...clientSignalNames])]
 
     // First, process any nested components in this component
     const componentOptions = {

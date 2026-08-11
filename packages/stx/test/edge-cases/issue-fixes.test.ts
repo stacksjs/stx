@@ -1088,6 +1088,43 @@ const title = useReactiveProp('title', 'Confirm')
     }
   })
 
+  it('preserves reactive slot text in conditional nested components', async () => {
+    const componentsDir = path.join(TMP, 'conditional-component-slot-text')
+    fs.mkdirSync(componentsDir, { recursive: true })
+
+    try {
+      fs.writeFileSync(
+        path.join(componentsDir, 'ActionButton.stx'),
+        '<button><slot /></button>',
+      )
+      fs.writeFileSync(
+        path.join(componentsDir, 'Confirmation.stx'),
+        `<script client>
+const variant = useReactiveProp('variant', 'danger')
+const confirmLabel = useReactiveProp('confirmLabel', 'Delete')
+</script>
+<div>
+  <ActionButton>Cancel</ActionButton>
+  <ActionButton :if="variant() !== 'warning'">{{ confirmLabel() }}</ActionButton>
+</div>`,
+      )
+
+      const output = await processDirectives(
+        '<Confirmation confirmLabel="Revoke" />',
+        {},
+        path.join(TMP, 'conditional-component-slot-view.stx'),
+        { componentsDir } as StxOptions,
+        new Set<string>(),
+      )
+
+      expect(output).toContain('<button>Cancel</button>')
+      expect(output).toContain('{{ confirmLabel() }}')
+    }
+    finally {
+      fs.rmSync(componentsDir, { recursive: true, force: true })
+    }
+  })
+
   it('keeps valueless dynamic props as same-name shorthand bindings', async () => {
     const componentsDir = path.join(TMP, 'component-shorthand-props')
     fs.mkdirSync(componentsDir, { recursive: true })
