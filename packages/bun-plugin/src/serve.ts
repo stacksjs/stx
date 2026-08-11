@@ -2596,11 +2596,6 @@ function __stxOverlay(errs){
         .replace(/</g, '\\u003C')
         .replace(/\u2028/g, '\\u2028')
         .replace(/\u2029/g, '\\u2029')
-      // False positive: the linter reads the IIFE inside this template literal
-      // as real code and reports its identifiers — `function`, `var`, `p`,
-      // `window`, `if`, `setRouteParams` — as unused function parameters. It is
-      // string content; nothing on this line is a parameter.
-      // eslint-disable-next-line pickier/no-unused-vars
       const paramsScript = `<script data-stx-route-params>(function(){var p=${serializedParams};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
       if (output.includes('</head>')) {
         output = output.replace('</head>', `${paramsScript}\n</head>`)

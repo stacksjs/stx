@@ -19,7 +19,7 @@
  */
 import { hasBridge } from './_bridge'
 
-export type IAPProductType = 
+export type IAPProductType =
 | 'consumable'
 | 'non-consumable'
 | 'auto-subscription'

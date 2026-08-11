@@ -14,7 +14,7 @@ import { hasBridge } from './_bridge'
 /** Status values match the macOS TCC convention. */
 export type PermissionStatus = 'granted' | 'denied' | 'restricted' | 'undetermined' | 'not-supported'
 
-export type PermissionName = 
+export type PermissionName =
 | 'camera'
 | 'microphone'
 | 'screen_recording'

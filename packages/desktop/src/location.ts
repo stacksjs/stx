@@ -13,7 +13,7 @@
  */
 import { hasBridge, onCraftEvent } from './_bridge'
 
-export type LocationAuthStatus = 
+export type LocationAuthStatus =
 | 'undetermined'
 | 'restricted-or-denied'
 | 'authorizedAlways'

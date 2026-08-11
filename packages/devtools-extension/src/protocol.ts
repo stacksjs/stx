@@ -31,7 +31,7 @@ export interface StxDevtoolsApi {
   mutations: () => unknown
 }
 
-export type DevtoolsRequestType = 
+export type DevtoolsRequestType =
 | 'version' | 'tree' | 'scope' | 'stores' | 'store'
 | 'enable' | 'disable' | 'tracking' | 'stats' | 'resetStats'
 | 'graph' | 'ifTrace' | 'queries' | 'mutations'

@@ -143,7 +143,7 @@ export interface SystemTrayOptions {
 /**
  * System tray menu item
  */
-export type SystemTrayMenuItem = 
+export type SystemTrayMenuItem =
 | {
   /** Menu item label */
   label: string

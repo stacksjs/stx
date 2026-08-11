@@ -28,7 +28,7 @@ export type AriaLive = 'off' | 'polite' | 'assertive'
 /**
  * ARIA role types
  */
-export type AriaRole = 
+export type AriaRole =
 | 'alert'
 | 'alertdialog'
 | 'application'

@@ -13,7 +13,7 @@
  */
 import { hasBridge, onCraftEvent } from './_bridge'
 
-export type ConnectionType = 
+export type ConnectionType =
 | 'wifi'
 | 'ethernet'
 | 'cellular'
