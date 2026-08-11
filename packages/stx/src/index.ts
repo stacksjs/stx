@@ -194,6 +194,7 @@ export * from './client-helpers'
 export * from './client-script'
 export * from './strip-literals'
 export * from './resolve-stx-targets'
+export * from './cli-flags'
 export * from './component-hmr'
 export * from './hydration'
 // ssg moved to stx/ssg

@@ -55,6 +55,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { CLI } from '@stacksjs/clapp'
 import { version } from '../package.json'
+import { collectRepeatedFlag } from '../src/cli-flags'
 import { scanA11yTargets } from '../src/a11y'
 import { serveApp, serveMultipleStxFiles, serveStxFile } from '../src/dev-server'
 import { docsCommand } from '../src/docs'
@@ -1832,7 +1833,22 @@ catch (error) {
         return
       }
 
-      const extraLibs = options.lib ? (Array.isArray(options.lib) ? options.lib : [options.lib]) : []
+      /*
+       * Read from argv, because the parser keeps only the last `--lib`.
+       *
+       * `--lib` is documented as repeatable and the `Array.isArray` branch that
+       * used to be here could never run — the parser collapses repeats to a
+       * string, for `<path>`, `<path...>` and `[path...]` alike. A project
+       * splitting its ambient declarations across two files silently got
+       * whichever it listed last (#1925, #1926).
+       *
+       * Falls back to the parsed value so a programmatic caller that never
+       * touched argv still works.
+       */
+      const repeated = collectRepeatedFlag(process.argv, '--lib')
+      const extraLibs = repeated.length > 0
+        ? repeated
+        : (options.lib ? (Array.isArray(options.lib) ? options.lib : [options.lib]) : [])
       const result = await typecheckStxFiles(files, {
         client: options.client !== false,
         server: options.server !== false,
