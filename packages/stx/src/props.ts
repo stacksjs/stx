@@ -58,6 +58,37 @@ export interface PropOptions<T = unknown> {
   description?: string
 }
 
+/**
+ * The constraint every props, emits and expose generic is bounded by.
+ *
+ * `object` rather than `Record<string, unknown>`, and the difference is not
+ * cosmetic: **a TypeScript `interface` does not satisfy an index signature.**
+ * Only a type alias gets an implicit one, so
+ *
+ *     interface CardProps { title: string }
+ *     defineProps<CardProps>()   // TS2344, TS2345
+ *     type CardProps = { title: string }
+ *     defineProps<CardProps>()   // fine
+ *
+ * differ on the keyword alone. `interface` is the form the framework scaffolds
+ * — `storage/framework/defaults/` declares props with it 44 times and with a
+ * type alias zero times — so the constraint rejected the entire scaffolded
+ * corpus (stacksjs/stx#1917).
+ *
+ * Two things hid it. Every example in the docstrings passes an inline object
+ * literal, which HAS an implicit index signature and so always passed; the
+ * error appears only once the type is named, which is the moment it is reused
+ * or exported. And apps import from `stx`, which is not a package anyone can
+ * install — the module resolved to `any`, the constraint was never enforced,
+ * and the component type-checked. Correcting the specifier in one app turned 18
+ * "Cannot find module" errors into 36 constraint errors.
+ *
+ * Named rather than written out seven times so the reason lives in one place
+ * and the sites cannot drift apart. `object` still rejects `string`, `number`
+ * and `undefined`, which is everything this constraint has to do.
+ */
+export type PropsShape = object
+
 /** Props definition object */
 export type PropsDefinition<T> = {
   [K in keyof T]?: PropOptions<T[K]> | PropType<T[K]>
@@ -194,9 +225,22 @@ function validateProp<T>(
 /**
  * Define component props with type safety and validation.
  *
+ * Takes an inline object type or a named `interface`/`type` — the named form is
+ * shown first because it is the one the framework scaffolds, and because every
+ * example here used to be inline. An inline literal has an implicit index
+ * signature and a named `interface` does not, so an inline-only docstring
+ * demonstrated the one spelling that could not fail (stacksjs/stx#1917).
+ *
  * @example
  * ```typescript
- * // Simple usage with types only
+ * // A named type, inline or imported — interface and type alias both work
+ * interface CardProps {
+ *   title: string
+ *   count: number
+ * }
+ * const props = defineProps<CardProps>()
+ *
+ * // Or inline
  * const props = defineProps<{
  *   title: string
  *   count: number
@@ -217,7 +261,7 @@ function validateProp<T>(
  * })
  * ```
  */
-export function defineProps<T extends Record<string, unknown>>(
+export function defineProps<T extends PropsShape>(
   definitions?: PropsDefinition<T>,
 ): T {
   // This is a compile-time function that gets transformed
@@ -228,8 +272,13 @@ export function defineProps<T extends Record<string, unknown>>(
     return props
   }
 
-  // Apply defaults and validate
-  const result: Record<string, unknown> = { ...props }
+  // Apply defaults and validate.
+  //
+  // Cast rather than annotated: `T extends object` covers an interface, which
+  // has no index signature to assign FROM either. Spreading one produces a
+  // string-keyed object at runtime whatever its declared shape, so the cast
+  // states a fact about the spread rather than papering over the constraint.
+  const result = { ...props } as Record<string, unknown>
 
   for (const [key, def] of Object.entries(definitions)) {
     const options: PropOptions<unknown> = typeof def === 'function' || Array.isArray(def)
@@ -251,7 +300,7 @@ export function defineProps<T extends Record<string, unknown>>(
  * Define props with runtime validation.
  * Use this when you need validation errors at runtime.
  */
-export function definePropsWithValidation<T extends Record<string, unknown>>(
+export function definePropsWithValidation<T extends PropsShape>(
   definitions: PropsDefinition<T>,
   options: {
     componentName?: string
@@ -338,11 +387,12 @@ export function definePropsWithValidation<T extends Record<string, unknown>>(
  * })
  * ```
  */
-export function withDefaults<T extends Record<string, unknown>>(
+export function withDefaults<T extends PropsShape>(
   props: T,
   defaults: Partial<{ [K in keyof T]: T[K] | (() => T[K]) }>,
 ): T {
-  const result: Record<string, unknown> = { ...props }
+  // See defineProps: an interface has no index signature to spread FROM.
+  const result = { ...props } as Record<string, unknown>
 
   for (const [key, defaultValue] of Object.entries(defaults)) {
     if (result[key] === undefined) {
@@ -424,7 +474,7 @@ export function arrayOf<T>(
 /**
  * Create a prop for object with specific shape.
  */
-export function shape<T extends Record<string, unknown>>(
+export function shape<T extends PropsShape>(
   _shape: PropsDefinition<T>,
   options: Omit<PropOptions<T>, 'type'> = {},
 ): PropOptions<T> {
@@ -498,7 +548,7 @@ export function processComponentProps(
 export type EventHandler<T = unknown> = (payload: T) => void
 
 /** Emit function type */
-export type EmitFn<E extends Record<string, unknown>> = <K extends keyof E>(
+export type EmitFn<E extends PropsShape> = <K extends keyof E>(
   event: K,
   payload: E[K],
 ) => void
@@ -520,7 +570,7 @@ export type EmitFn<E extends Record<string, unknown>> = <K extends keyof E>(
  * emit('close', undefined)
  * ```
  */
-export function defineEmits<E extends Record<string, unknown>>(): EmitFn<E> {
+export function defineEmits<E extends PropsShape>(): EmitFn<E> {
   const element = (globalThis as Record<string, unknown>).__STX_CURRENT_ELEMENT__ as HTMLElement | undefined
 
   return (<K extends keyof E>(event: K, payload: E[K]) => {
@@ -555,7 +605,7 @@ else {
  * })
  * ```
  */
-export function defineExpose<T extends Record<string, unknown>>(exposed: T): void {
+export function defineExpose<T extends PropsShape>(exposed: T): void {
   const element = (globalThis as Record<string, unknown>).__STX_CURRENT_ELEMENT__ as HTMLElement | undefined
 
   if (element) {

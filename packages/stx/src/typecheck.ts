@@ -147,6 +147,50 @@ export function buildVirtualSource(block: ScriptBlock, serverCode = ''): string 
   return `${leadingNewlines + code}\n${payload}\nexport {}\n`
 }
 
+/**
+ * Make `from 'stx'` resolve, because the framework accepts it.
+ *
+ * Inside a `.stx` script block, `stx` is a VIRTUAL specifier: `client-script.ts`
+ * treats `'stx'` and `'@stacksjs/stx'` alike and strips the import, handing the
+ * names to the block as runtime globals. It is also the house spelling — 164
+ * uses across `docs/` and `src/` against 126 of the scoped name — so it is what
+ * an author copies out of the documentation.
+ *
+ * The checker did not know that, and reported `Cannot find module 'stx'` on the
+ * documented form. That is not merely a false error; it MASKED a real one. An
+ * unresolved module is `any`, so every signature behind it stopped being
+ * enforced: correcting the specifier in one app turned 18 "Cannot find module"
+ * errors into 36 genuine constraint errors that had been invisible the whole
+ * time (stacksjs/stx#1917).
+ *
+ * Aliased to the real package rather than re-declaring its exports, so there is
+ * no second list of the public API to drift. Emitted only when the package
+ * actually resolves — a `declare module` pointing at nothing would put an error
+ * in an ambient file, and a syntax-level failure there takes the whole run down
+ * with it (#1906).
+ *
+ * Scoped to this checker on purpose. The specifier is virtual only where the
+ * import is stripped, which is inside a `.stx` block; a `.ts` composable has a
+ * real import and must keep using the real package name.
+ */
+function virtualStxModuleDeclaration(files: string[]): string {
+  const anchor = files.length > 0 ? path.dirname(path.resolve(files[0])) : process.cwd()
+
+  try {
+    Bun.resolveSync('@stacksjs/stx', anchor)
+  }
+  catch {
+    return ''
+  }
+
+  return [
+    '// Generated — `stx` is the virtual specifier client-script.ts strips.',
+    'declare module \'stx\' {',
+    '  export * from \'@stacksjs/stx\'',
+    '}',
+  ].join('\n')
+}
+
 /** Virtual path for a block, stable and traceable back to its origin. */
 export function virtualPathFor(filePath: string, kind: DiagnosticOrigin, index: number): string {
   return `${filePath}.__stx_${kind}${index}.ts`
@@ -499,7 +543,8 @@ export async function typecheckStxFiles(
       // untyped globals still beat unresolved ones, because the alternative is
       // a wall of "Cannot find name" on working code.
       : ['declare const window: any', ...STX_RUNTIME_GLOBALS.map(name => `declare const ${name}: any`)]),
-  ].join('\n')
+    virtualStxModuleDeclaration(files),
+  ].filter(Boolean).join('\n')
 
   const workDir = `${stateDir()}/typecheck`
   await Bun.$`rm -rf ${workDir}`.quiet().nothrow()
