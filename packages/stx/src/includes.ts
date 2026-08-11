@@ -841,15 +841,36 @@ catch (error: unknown) {
   const currentFilePath = path.resolve(filePath)
   includeStack.add(currentFilePath)
 
+  /**
+   * Render an include failure in place, and tell anyone who asked to be told.
+   *
+   * Rendering the error where the markup should have been is the right thing in
+   * dev — you see it the moment you look at the page. In a BUILD it produces a
+   * file nobody would knowingly deploy: one app shipped pre-rendered pages whose
+   * header, footer, hero and CTA were all replaced by an ENOENT banner, ANSI
+   * escape codes included, while the build printed `Success: 37, Failed: 0` and
+   * exited 0. Fifteen failed includes on the home page alone, invisible for
+   * three weeks, because nothing except reading the emitted HTML could see them
+   * (stacksjs/stx#1921).
+   *
+   * So the output is unchanged and a callback carries the fact out. Every
+   * failure path goes through here rather than calling
+   * `createDetailedErrorMessage` directly, so a new one cannot be added that
+   * reports nothing — which is how this stayed silent in the first place.
+   */
+  function includeFailure(includePath: string, message: string, templateStr: string, offsetPos: number): string {
+    options.onIncludeError?.({ includePath, templatePath: filePath, message, partialsDir })
+    return createDetailedErrorMessage('Include', message, filePath, templateStr, offsetPos)
+  }
+
   // Define a helper function to process a single include
   async function processIncludeHelper(includePath: string, localVars: Record<string, any> = {}, templateStr: string, offsetPos: number): Promise<string> {
     // Get resolved path first to check for circular includes
     const includeFilePath = resolvePath(includePath, partialsDir, filePath)
     if (!includeFilePath) {
-      return createDetailedErrorMessage(
-        'Include',
+      return includeFailure(
+        includePath,
         `Could not resolve path for include: ${includePath}`,
-        filePath,
         templateStr,
         offsetPos,
       )
@@ -860,10 +881,9 @@ catch (error: unknown) {
     if (includeStack.has(resolvedIncludePath)) {
       // Build the include chain for a helpful error message
       const chain = [...includeStack, resolvedIncludePath].map(p => path.basename(p)).join(' -> ')
-      return createDetailedErrorMessage(
-        'Include',
+      return includeFailure(
+        includePath,
         `Circular include detected: ${chain}`,
-        filePath,
         templateStr,
         offsetPos,
       )
@@ -884,10 +904,9 @@ catch (error: unknown) {
         }
         catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-          return createDetailedErrorMessage(
-            'Include',
+          return includeFailure(
+            includePath,
             `Error loading include file ${includePath}: ${errorMessage}`,
-            filePath,
             templateStr,
             offsetPos,
           )
@@ -1192,10 +1211,9 @@ catch (e) {
     }
     catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      return createDetailedErrorMessage(
-        'Include',
+      return includeFailure(
+        includePath,
         `Error processing include ${includePath}: ${errorMessage}`,
-        filePath,
         templateStr,
         offsetPos,
       )

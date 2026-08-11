@@ -75,6 +75,29 @@ import {
 export interface SSGConfig {
   /** Directory containing pages (default: 'pages') */
   pagesDir?: string
+  /**
+   * Directory `@include` resolves against. Defaults to the config's
+   * `partialsDir`.
+   *
+   * `pagesDir`, `publicDir` and `outputDir` were all overridable here and these
+   * two were not, so a caller could point the build at one directory layout and
+   * silently get another for its partials (stacksjs/stx#1921).
+   */
+  partialsDir?: string
+  /** Directory components resolve against. Defaults to the config's `componentsDir`. */
+  componentsDir?: string
+  /**
+   * Fail the build when an `@include` cannot be resolved (default: true).
+   *
+   * A failed include renders the error into the page and, before this, left the
+   * build reporting `Failed: 0` with exit 0 — so the only way to find it was to
+   * read the emitted HTML, which is exactly what nobody does when the build says
+   * success. An unresolvable include is not a recoverable condition in a build:
+   * it produces a file you would never knowingly deploy.
+   *
+   * Set `false` for the old behaviour.
+   */
+  failOnIncludeError?: boolean
   /** Output directory for generated files (default: 'dist') */
   outputDir?: string
   /** Base URL for the site (default: '/') */
@@ -664,7 +687,7 @@ async function renderPage(
   props: Record<string, unknown> = {},
   options: SSGConfig,
   stxConfig: Record<string, unknown>
-): Promise<{ html: string, dependencies: string[] }> {
+): Promise<{ html: string, dependencies: string[], includeFailures: string[] }> {
   const content = await Bun.file(route.filePath).text()
 
   // 1. Load data from companion .data.ts file
@@ -694,11 +717,29 @@ async function renderPage(
   // bodyClass (e.g. `bg-black text-white`) never has a <body> to attach to
   // and pages render with default browser styles.
   const dependencies = new Set<string>()
+  /*
+   * Include failures, collected rather than swallowed (stacksjs/stx#1921).
+   *
+   * `processIncludes` renders the failure where the markup should have been and
+   * carries on, which is right in dev and wrong in a build: it writes a file
+   * with an ANSI error banner in it and nothing else in the pipeline can see it.
+   * The caller decides what to do; this only makes it knowable.
+   */
+  const includeFailures: string[] = []
   const stxOptions = {
     ...stxConfig,
+    // Explicit overrides beat the loaded config, matching every other key here.
+    ...(options.partialsDir ? { partialsDir: options.partialsDir } : {}),
+    ...(options.componentsDir ? { componentsDir: options.componentsDir } : {}),
     debug: false,
     cache: false,
     autoShell: true,
+    onIncludeError: (failure: { includePath: string, templatePath: string, message: string, partialsDir: string }) => {
+      includeFailures.push(
+        `${path.relative(process.cwd(), failure.templatePath)}: ${failure.message}\n`
+        + `    resolved against partialsDir: ${failure.partialsDir}`,
+      )
+    },
   }
 
   /*
@@ -762,10 +803,10 @@ async function renderPage(
 
   // Minify if enabled
   if (options.minify !== false) {
-    return { html: minifyHtml(html), dependencies: Array.from(dependencies) }
+    return { html: minifyHtml(html), dependencies: Array.from(dependencies), includeFailures }
   }
 
-  return { html, dependencies: Array.from(dependencies) }
+  return { html, dependencies: Array.from(dependencies), includeFailures }
 }
 
 /**
@@ -1006,6 +1047,11 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     publicDir: options.publicDir || 'public',
     trailingSlash: options.trailingSlash ?? false,
     cleanOutput: options.cleanOutput ?? true,
+    // Fall back to the loaded config, so these behave like every other
+    // directory key rather than being the two a caller cannot set.
+    partialsDir: options.partialsDir || (stxConfig as any)?.partialsDir || '',
+    componentsDir: options.componentsDir || (stxConfig as any)?.componentsDir || '',
+    failOnIncludeError: options.failOnIncludeError ?? true,
     // Strict opt-in: only an explicit `true` enables chunking, so NODE_ENV
     // never auto-flips it and every existing pipeline stays byte-identical.
     chunkIslands: options.chunkIslands === true,
@@ -1206,6 +1252,27 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
           if (!html) {
             const rendered = await renderPage(route, params, props, cfg, stxConfig as unknown as Record<string, unknown>)
             html = rendered.html
+
+            /*
+             * An include that could not be resolved is a build failure.
+             *
+             * The rendered page still contains the error banner, but it is not
+             * written and not cached: caching it would carry the broken HTML
+             * into later builds, and the missing file is not in `dependencies`
+             * (it does not exist), so creating it would never invalidate the
+             * entry. Thrown rather than counted by hand so it lands in the same
+             * failure path as every other per-page error — one place that
+             * increments `failedCount`, records the route, fires `onError` and
+             * makes the run exit non-zero (stacksjs/stx#1921).
+             */
+            if (cfg.failOnIncludeError && rendered.includeFailures.length > 0) {
+              throw new Error(
+                `${rendered.includeFailures.length} include(s) failed to resolve, so this page would have `
+                + `shipped with an error banner where the markup should be:\n  `
+                + `${rendered.includeFailures.join('\n  ')}\n`
+                + `Set ssg.failOnIncludeError to false to build anyway.`,
+              )
+            }
 
             if (cfg.cache) {
               buildCache.set(url, route.filePath, rendered.dependencies, html)

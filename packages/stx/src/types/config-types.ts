@@ -657,6 +657,30 @@ export interface StxConfig {
   enabled: boolean
   /** Path to partials directory, defaults to 'partials' in the same directory as the template */
   partialsDir: string
+  /**
+   * Called when an `@include` fails, instead of the failure being silent.
+   *
+   * A failed include renders the error where the markup should have been. In dev
+   * that is the right call — you see it as soon as you look. In a build it
+   * produces a file nobody would knowingly deploy, and nothing else can see it:
+   * one app shipped pre-rendered pages whose header, footer, hero and CTA were
+   * all replaced by an ENOENT banner while the build printed `Failed: 0` and
+   * exited 0 (stacksjs/stx#1921).
+   *
+   * The rendered output is unchanged — this only carries the fact out, so a
+   * caller that builds files can decide to fail. `partialsDir` is included
+   * because "it looked in the wrong place" is the usual cause and the resolved
+   * path is what makes it a ten-second fix.
+   */
+  onIncludeError?: (failure: {
+    /** The path as written in the directive, e.g. `Bench/ConfirmHost`. */
+    includePath: string
+    /** The template the directive appeared in. */
+    templatePath: string
+    message: string
+    /** The directory the include was resolved against. */
+    partialsDir: string
+  }) => void
   /** Path to components directory, defaults to 'components' in the same directory as the template */
   componentsDir: string
   /** @internal Configured component root retained while nested components resolve locally. */
