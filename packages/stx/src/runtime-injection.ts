@@ -11,6 +11,9 @@ import type { StxOptions } from './types'
 import { getOwnedRouteMatchers } from './owned-routes'
 import { toScriptJson } from './script-json'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
+// Static: `builtins/tooltip` exports one pure function and imports nothing, so
+// there is no cycle and no cost to pulling it in here.
+import { getTooltipRuntime } from './builtins/tooltip'
 
 /**
  * Inject an @stacksjs/browser initialization input into a template that will
@@ -268,6 +271,65 @@ export async function injectSignalsRuntime(template: string, options: StxOptions
   // `$&` or `$1` inside the inlined runtime cannot be read as a replacement
   // pattern.
   return placeRuntimeTag(template, `<script data-stx-scoped data-stx-runtime>${runtime}</script>`)
+}
+
+/**
+ * Whether the finished page has an element carrying `x-tooltip`.
+ *
+ * Asked of the OUTPUT rather than the source, for the reason
+ * `outputNeedsSignalsRuntime` is: both the attribute and every rewrite that
+ * could have produced it have happened by then, so no processing order can hide
+ * the answer.
+ *
+ * Anchored on `<` … so the name has to sit inside a tag: documentation prose
+ * that merely names the attribute does not pull a runtime onto the page. The
+ * attribute value is allowed to contain `>` — a tooltip reading `a > b` is
+ * ordinary — so the scan walks to the quote rather than to the first `>`.
+ */
+export function outputNeedsTooltipRuntime(html: string): boolean {
+  return /<[a-z][^>]*?\sx-tooltip\s*=/i.test(html)
+}
+
+/**
+ * Ship the `x-tooltip` runtime on any page that uses the attribute.
+ *
+ * `getTooltipRuntime()` was written, exported from `builtins/index.ts`, and
+ * called by nothing — two definitions and zero call sites, in stx and in
+ * `bun-plugin-stx`. `registerBuiltins()` registers ten builtins and tooltip is
+ * not one of them, so the attribute reached the DOM and nothing ever acted on
+ * it. Hovering showed the native `title` tooltip, which would have shown anyway
+ * (stacksjs/stx#1922).
+ *
+ * The dead export was not merely unused: the codemod's largest and only
+ * auto-fixable rule rewrites `title=` into `x-tooltip=`, so every consuming
+ * codebase was being pointed at an attribute that had never worked. It read as
+ * an adoption problem — `codemod.d.ts` records `x-tooltip` as "delivered and
+ * used zero times" — when the cause was that there was nothing to adopt.
+ *
+ * Not a registered builtin, because it is not a component: it is one delegated
+ * listener pair on `document`, so it costs nothing when no element matches and
+ * covers elements added later without per-element wiring. Injected only when the
+ * attribute is present, and before the CSP pass so a nonce still reaches it.
+ */
+export function injectTooltipRuntime(html: string): string {
+  if (html.includes('data-stx-tooltip-runtime') || !outputNeedsTooltipRuntime(html))
+    return html
+
+  const tag = `<script data-stx-scoped data-stx-tooltip-runtime>${getTooltipRuntime()}</script>`
+
+  /*
+   * `lastIndexOf`, never `.replace('</body>', …)`.
+   *
+   * The FIRST `</body>` in a document is routinely inside a script's string
+   * content — the router runtime and the x-element runtime both contain one —
+   * and replacing that occurrence injects this script into the middle of
+   * another one, breaking the page. See CLAUDE.md item 24.
+   */
+  const bodyIdx = html.lastIndexOf('</body>')
+  if (bodyIdx === -1)
+    return `${html}\n${tag}`
+
+  return `${html.slice(0, bodyIdx)}${tag}\n${html.slice(bodyIdx)}`
 }
 
 /**

@@ -74,7 +74,7 @@ import { importOnce } from './lazy-module'
 
 // Re-export public API from extracted modules (preserves backwards compatibility)
 export { injectRouterScript } from './runtime-injection'
-import { injectSignalsRuntime, outputNeedsSignalsRuntime, pageShipsSignalsRuntime } from './runtime-injection'
+import { injectSignalsRuntime, injectTooltipRuntime, outputNeedsSignalsRuntime, pageShipsSignalsRuntime } from './runtime-injection'
 export { processJsonDirective, processOnceDirective } from './misc-directives'
 export { validateClientScript } from './script-validation'
 
@@ -1917,6 +1917,11 @@ else {
   // hide the answer from a question asked last.
   if (!pageShipsSignalsRuntime(output) && outputNeedsSignalsRuntime(output))
     output = await injectSignalsRuntime(output, opts)
+
+  // Same question, asked of the same finished output: `x-tooltip` had a complete
+  // runtime that nothing ever called, so the attribute shipped and no tooltip
+  // appeared (#1922). Before the nonce pass below, so CSP still covers it.
+  output = injectTooltipRuntime(output)
 
   // Nonces must be applied last. Compiler-owned runtime, scoped, analytics,
   // and appearance scripts may be introduced after @csp was processed.
