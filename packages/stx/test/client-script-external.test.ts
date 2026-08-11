@@ -94,13 +94,14 @@ const result = retry(() => 'ready')
   it('auto-imports browser utilities and Stacks-only composables as bundle inputs', () => {
     const output = injectBrowserCoreAutoImports(`
 const load = debounce(() => {}, 250)
+const activeElement = useActiveElement()
 const visibility = useDocumentVisibility()
 const controls = useIntervalFn(load, 15000)
 `)
 
-    expect(output.imports).toEqual(['debounce', 'useDocumentVisibility', 'useIntervalFn'])
+    expect(output.imports).toEqual(['debounce', 'useActiveElement', 'useDocumentVisibility', 'useIntervalFn'])
     expect(output.models).toEqual([])
-    expect(output.code).toContain(`import { debounce, useDocumentVisibility, useIntervalFn } from '@stacksjs/browser'`)
+    expect(output.code).toContain(`import { debounce, useActiveElement, useDocumentVisibility, useIntervalFn } from '@stacksjs/browser'`)
   })
 
   it('does not shadow locally declared browser helper names', () => {
@@ -120,7 +121,7 @@ const load = debounce(() => {})
     const output = injectBrowserRuntime(`
 <html>
   <head></head>
-  <body><script client>const load = debounce(() => {}, 250)</script></body>
+  <body><script client>const activeElement = useActiveElement()</script></body>
 </html>
 `)
 

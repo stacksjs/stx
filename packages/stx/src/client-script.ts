@@ -349,7 +349,7 @@ const BROWSER_CORE_IMPORTS = [
   'debounce', 'throttle', 'retry', 'sleep', 'wait', 'delay', 'waitUntil', 'waitWhile',
   'lazy', 'clamp', 'rand', 'readableSize',
   // Stacks composables that are not part of the STX-native runtime
-  'useDocumentVisibility', 'useIntervalFn',
+  'useActiveElement', 'useDocumentVisibility', 'useIntervalFn',
 ]
 
 export interface BrowserCoreAutoImportResult {

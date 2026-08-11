@@ -56,7 +56,7 @@ export function injectBrowserRuntime(template: string): string {
     'browserQuery', 'BrowserQueryBuilder', 'configureBrowser', 'createBrowserModel',
     'debounce', 'throttle', 'retry', 'sleep', 'wait', 'delay', 'waitUntil', 'waitWhile',
     'lazy', 'clamp', 'rand', 'readableSize',
-    'useDocumentVisibility', 'useIntervalFn',
+    'useActiveElement', 'useDocumentVisibility', 'useIntervalFn',
   ]
 
   // Check for core browser utilities in CLIENT code only
