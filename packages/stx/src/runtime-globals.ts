@@ -306,6 +306,36 @@ export function templateNeedsRuntime(template: string): boolean {
 }
 
 /**
+ * Colon attributes that are DIRECTIVES, not attribute bindings.
+ *
+ * `:href` and `:disabled` name a real HTML attribute and can be resolved to one.
+ * `:if`, `:for` and `:text` do not — they are instructions to the conditional
+ * processor, the loop runtime and the text binder, and the element carries no
+ * attribute of that name at any point.
+ *
+ * The distinction had never been written down, so `processServerBindings`
+ * evaluated every `:name="expr"` alike. It went unnoticed because its tag regex
+ * required each attribute chunk to start with whitespace and be a single
+ * character, so it never matched a real tag with a real attribute — the pass was
+ * effectively dead. Fixing that regex (0.2.173) switched it on for everything at
+ * once, and `<p :if="error">` started rendering as `<p if="Bad creds">`: the
+ * attribute leaked into the markup AND the conditional stopped applying, so a
+ * falsy condition no longer removed the element. Same for `:show`, `:text`,
+ * `:html`, `:model` and `:key`.
+ *
+ * `:class` and `:style` are deliberately absent: they DO resolve to real
+ * attributes, and `processServerBindings` has specific handling for them.
+ */
+export const RUNTIME_OWNED_COLON_ATTRS: readonly string[] = [
+  'if', 'else-if', 'elseif', 'else', 'for', 'show', 'key', 'text', 'html', 'model', 'ref',
+]
+
+/** Is this colon attribute a directive rather than something to resolve? */
+export function isRuntimeOwnedColonAttr(name: string): boolean {
+  return RUNTIME_OWNED_COLON_ATTRS.includes(name.toLowerCase())
+}
+
+/**
  * `x-` attributes the signals runtime consumes itself.
  *
  * The runtime treats any unrecognised `x-foo` as a generic attribute binding

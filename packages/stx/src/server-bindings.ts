@@ -20,6 +20,8 @@
  * @module server-bindings
  */
 
+import { isRuntimeOwnedColonAttr } from './runtime-globals'
+
 /** Boolean HTML attributes that should render as attribute-present/absent */
 const BOOLEAN_ATTRS = new Set([
   'disabled', 'checked', 'readonly', 'required', 'autofocus', 'autoplay',
@@ -161,6 +163,21 @@ export function processServerBindings(
     while ((attrMatch = bindingRegex.exec(attrs)) !== null) {
       const attrName = attrMatch[1]
       const expression = attrMatch[2]
+
+      /*
+       * A directive is not an attribute (stacksjs/stx#1921-adjacent regression).
+       *
+       * `:href` names a real HTML attribute and resolves to one. `:if` does not
+       * — it instructs the conditional processor, and the element never carries
+       * an `if` attribute at any point. Resolving it wrote the CONDITION'S VALUE
+       * into the markup and left the conditional unapplied, so `:if="empty"`
+       * rendered `<p if="">` with the element still there.
+       *
+       * This pass could not match a real tag until its tag regex was fixed in
+       * 0.2.173, which is why it surfaced then rather than when it was written.
+       */
+      if (isRuntimeOwnedColonAttr(attrName))
+        continue
 
       // Skip bindings that look like they're for client-side (signal calls, $store, etc.)
       if (expression.includes('()') && !expression.includes('.get(')
