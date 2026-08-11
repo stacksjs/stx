@@ -1234,9 +1234,15 @@ else if (immediate) {
   // ==========================================================================
 
   function useRef(name) {
+    // A ref belongs to the component scope that created it. Capturing that
+    // owner now is essential: componentScope is a mutable compatibility
+    // fallback and changes while the rest of the page hydrates. Reading it
+    // from the getter made an early component resolve refs from whichever
+    // component happened to hydrate last.
+    var ownerScope = currentLifecycleScope() || componentScope;
     return {
       get current() {
-        return componentScope.$refs ? componentScope.$refs[name] : null;
+        return ownerScope.$refs ? ownerScope.$refs[name] : null;
       },
       get value() {
         return this.current;

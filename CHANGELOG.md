@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.173...v0.2.174)
+
+## 🐛 Bug Fixes
+
+- **serve**: ask the disk, not the extension, before dropping a catch-all ([7397fdd](https://github.com/stacksjs/stx/commit/7397fdd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.174 ([9d17c2f](https://github.com/stacksjs/stx/commit/9d17c2f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.172...v0.2.173)
 
 ## 🐛 Bug Fixes

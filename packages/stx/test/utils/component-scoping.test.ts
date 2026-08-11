@@ -47,6 +47,13 @@ describe('Component scoping', () => {
       // Should traverse parent elements
       expect(runtime).toContain('current.parentElement')
     })
+
+    it('should capture template ref ownership when useRef is created', () => {
+      const runtime = generateSignalsRuntimeDev()
+
+      expect(runtime).toContain('var ownerScope = currentLifecycleScope() || componentScope')
+      expect(runtime).toContain('return ownerScope.$refs ? ownerScope.$refs[name] : null')
+    })
   })
 
   describe('Variable extraction behavior (via extractExports in process.ts)', () => {

@@ -1242,6 +1242,7 @@ export async function renderComponentWithSlot(
   ${buildRuntimeGlobalsDestructure('const', [...COMPONENT_SCOPE_LOCAL_GLOBALS, ...componentLocalNames], content)}
   const __scope = window.stx._scopes = window.stx._scopes || {};
   const __scopeVars = __scope[__scopeId] = __scope[__scopeId] || {};
+  __scopeVars.$refs = __scopeVars.$refs || {};
   const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;
   window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="' + __scopeId + '"]');
 

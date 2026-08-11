@@ -135,6 +135,7 @@ describe('stx#1785: runtime globals come from one source', () => {
     const body = script!.replace(/<\/?script[^>]*>/gi, '')
     // eslint-disable-next-line no-new-func
     expect(() => new Function(body)).not.toThrow()
+    expect(script).toContain('__scopeVars.$refs = __scopeVars.$refs || {}')
     expect(destructuredNames(script!).has('goBack')).toBe(false)
     expect(script).toContain('return "component-local"')
   })
