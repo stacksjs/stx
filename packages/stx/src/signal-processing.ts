@@ -252,6 +252,57 @@ function extractClientSignalNames(template: string): Set<string> {
   return names
 }
 
+interface ClientLoopScope {
+  start: number
+  end: number
+  vars: Set<string>
+}
+
+/**
+ * Locate attribute-form client loops and the aliases they bind.
+ *
+ * A loop alias exists only inside its owning element. Keeping exact element
+ * ranges prevents an alias such as `field` from making a later, unrelated
+ * server conditional look reactive. Nested loops naturally contribute both
+ * their own aliases and the aliases of their parents.
+ */
+function collectClientLoopScopes(template: string): ClientLoopScope[] {
+  if (!/[:@]for\s*=/.test(template) && !/\bx-for\s*=/.test(template))
+    return []
+
+  const openingTag = new RegExp(`<([a-zA-Z][\\w-]*)\\b(${TAG_ATTR_RUN})>`, 'iy')
+  const loopAttr = /(?:^|\s)(?::for|@for|x-for)\s*=\s*(?:"([^"]*)"|'([^']*)')/i
+  const starts = scanAtElementPosition(template, (html, index) => {
+    openingTag.lastIndex = index
+    const match = openingTag.exec(html)
+    if (!match || match.index !== index || !loopAttr.test(match[2]))
+      return -1
+    return openingTag.lastIndex
+  })
+
+  const scopes: ClientLoopScope[] = []
+  for (const start of starts) {
+    openingTag.lastIndex = 0
+    const match = openingTag.exec(start.token)
+    if (!match)
+      continue
+
+    const attrMatch = match[2].match(loopAttr)
+    const parsed = parseLoopExpression(attrMatch?.[1] ?? attrMatch?.[2] ?? '')
+    const vars = [parsed.itemVar, parsed.indexVar].filter(Boolean) as string[]
+    if (vars.length === 0)
+      continue
+
+    const tag = match[1]
+    const isVoid = /\/\s*>$/.test(start.token) || VOID_ELEMENT_TAGS.has(tag.toLowerCase())
+    const end = isVoid ? start.end : findElementEnd(template, start.start, tag, start.end)
+    if (end !== -1)
+      scopes.push({ start: start.start, end, vars: new Set(vars) })
+  }
+
+  return scopes
+}
+
 // Identifiers that are JS globals / keywords — never client signals or server vars.
 const JS_NON_VARS = new Set([
   'true', 'false', 'null', 'undefined', 'NaN', 'Infinity', 'typeof', 'instanceof',
@@ -289,6 +340,7 @@ function conditionIsClientReactive(
   condition: string | undefined,
   signalNames: Set<string>,
   context: Record<string, any> | undefined,
+  clientLoopVars?: Set<string>,
 ): boolean {
   if (!condition)
     return false
@@ -308,7 +360,7 @@ function conditionIsClientReactive(
       continue // property access — belongs to the root before the dot
     if (JS_NON_VARS.has(id))
       continue
-    if (signalNames.has(id))
+    if (signalNames.has(id) || clientLoopVars?.has(id))
       refsSignal = true
     else if (context && id in context)
       refsServerVar = true
@@ -434,6 +486,17 @@ export function convertSignalDirectivesToAttributes(template: string, context?: 
   // <main> inside the container and aborting the view transition. See #1784.
   function convert(input: string): string {
     let output = input
+    const clientLoopScopes = collectClientLoopScopes(input)
+    const loopVarsAt = (position: number): Set<string> => {
+      const vars = new Set<string>()
+      for (const scope of clientLoopScopes) {
+        if (position > scope.start && position < scope.end) {
+          for (const name of scope.vars)
+            vars.add(name)
+        }
+      }
+      return vars
+    }
 
     // Pattern to match @if(expr)...@endif blocks (handles nested parens in expr)
     // We use a simpler approach: find @if( and then parse balanced parens
@@ -494,8 +557,9 @@ export function convertSignalDirectivesToAttributes(template: string, context?: 
         const parsed = findIfBlocks(output.substring(startIdx, endIdx))
         if (parsed.length === 0) continue // Defensive: shouldn't happen, leave for server
         const valueBranches = parsed[0].branches.filter(b => b.type !== 'else')
+        const clientLoopVars = loopVarsAt(startIdx)
         const isReactiveChain = valueBranches.length > 0
-          && valueBranches.every(b => conditionIsClientReactive(b.condition, signalNames, context))
+          && valueBranches.every(b => conditionIsClientReactive(b.condition, signalNames, context, clientLoopVars))
         if (!isReactiveChain) continue // Server/loop-data chain — leave for processConditionals
         const parts = parsed[0].branches.map((branch) => {
           // Recurse so a nested reactive @if inside this branch is converted in
@@ -515,7 +579,7 @@ export function convertSignalDirectivesToAttributes(template: string, context?: 
         // Single boolean condition. Convert only when it's client-reactive; a server-data
         // @if (e.g. a loop-variable check) stays textual for processConditionals so it
         // isn't evaluated against the client scope, where its variables don't exist.
-        if (!conditionIsClientReactive(condition, signalNames, context)) continue
+        if (!conditionIsClientReactive(condition, signalNames, context, loopVarsAt(startIdx))) continue
         // Recurse into the body for nested reactive @if blocks (see above).
         replacement = branchToAttrElement(convert(content), '@if', condition)
       }

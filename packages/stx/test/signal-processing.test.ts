@@ -438,6 +438,65 @@ describe('convertSignalDirectivesToAttributes — @if/@else chains', () => {
     expect(output).not.toMatch(/<span[^>]*\s@if\s*=/)
   })
 
+  it('promotes conditionals over attribute-loop aliases to the client runtime', () => {
+    const input = `
+      <script client>
+        const fields = state([])
+      </script>
+      <template :for="field in fields()">
+        @if(field.editable)
+          <input :value="field.value">
+        @elseif(field.kind === 'secret')
+          <span>Hidden</span>
+        @else
+          <span>{{ field.value }}</span>
+        @endif
+      </template>
+    `
+    const output = convertSignalDirectivesToAttributes(input, {})
+
+    expect(output).toContain('<template @if="field.editable"><input :value="field.value"></template>')
+    expect(output).toMatch(/<span\s@else-if="field\.kind === 'secret'">Hidden<\/span>/)
+    expect(output).toMatch(/<span\s@else>\{\{ field\.value \}\}<\/span>/)
+    expect(output).not.toContain('@if(field.editable)')
+    expect(output).not.toContain('@endif')
+  })
+
+  it('keeps attribute-loop aliases scoped to their owning element', () => {
+    const input = `
+      <script client>
+        const fields = state([])
+      </script>
+      <template :for="field in fields()">
+        @if(field.editable)<span>Editable</span>@endif
+      </template>
+      @if(field.editable)<span>Server value</span>@endif
+    `
+    const output = convertSignalDirectivesToAttributes(input, {})
+
+    expect(output).toMatch(/<span\s@if="field\.editable">Editable<\/span>/)
+    expect(output).toContain('@if(field.editable)<span>Server value</span>@endif')
+  })
+
+  it('inherits outer and inner aliases in nested attribute loops', () => {
+    const input = `
+      <script client>
+        const groups = state([])
+      </script>
+      <template :for="group in groups()">
+        <template :for="(field, index) in group.fields">
+          @if(group.enabled && field.editable && index >= 0)
+            <span>{{ field.value }}</span>
+          @endif
+        </template>
+      </template>
+    `
+    const output = convertSignalDirectivesToAttributes(input, {})
+
+    expect(output).toMatch(/<span\s@if="group\.enabled && field\.editable && index >= 0">/)
+    expect(output).not.toContain('@endif')
+  })
+
   // #1784 — a nested reactive @if inside the @else branch of an outer reactive
   // chain used to be matched TWICE (once inside the outer block, once on its
   // own by the top-level scan). Applying the two overlapping rewrites

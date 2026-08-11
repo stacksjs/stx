@@ -1155,3 +1155,34 @@ const visible = useReactiveProp('visible', false)
     }
   })
 })
+
+describe('attribute-loop conditionals stay client-owned', () => {
+  it('preserves every runtime branch through the complete render pipeline', async () => {
+    const output = await processDirectives(
+      `<script client>
+const fields = state([])
+</script>
+<main>
+  <template :for="field in fields()">
+    @if(field.editable)
+      <input :value="field.value">
+    @else
+      <span>{{ field.value }}</span>
+    @endif
+  </template>
+</main>`,
+      {},
+      path.join(TMP, 'attribute-loop-conditional.stx'),
+      {} as StxOptions,
+      new Set<string>(),
+    )
+
+    expect(output).toContain('<template :for="field in fields()">')
+    expect(output).toContain('@if="field.editable"')
+    expect(output).toContain('<input :value="field.value">')
+    expect(output).toMatch(/<span[^>]*\s@else(?:\s|>)/)
+    expect(output).toContain('{{ field.value }}')
+    expect(output).not.toContain('@if(field.editable)')
+    expect(output).not.toContain('@endif')
+  })
+})
