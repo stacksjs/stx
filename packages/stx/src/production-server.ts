@@ -322,7 +322,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
   
         // Dynamic page — hydrate with request context
         try {
-          const { html, boundaries, redirect } = await hydrateTemplateStream(compiled, {
+          const { html, boundaries, redirect, cookies } = await hydrateTemplateStream(compiled, {
             params,
             request,
             method: request.method,
@@ -332,7 +332,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
           // it is the status that makes a browser follow up with a GET, so a
           // reload or a Back does not resubmit the form.
           if (redirect)
-            return actionRedirectResponse(redirect)
+            return actionRedirectResponse(redirect, cookies)
           // Streaming SSR (#1746): a page that exported streamBoundaries streams
           // its shell first, then each boundary as its server-side data resolves.
           if (boundaries && boundaries.length > 0) {
@@ -341,12 +341,24 @@ export async function startProductionServer(options: ProductionServerOptions = {
               headers: { 'Cache-Control': 'no-cache' },
             })
           }
-          return new Response(html, {
-            headers: {
-              'Content-Type': 'text/html',
-              'Cache-Control': 'no-cache',
-            },
+          /*
+           * An action can set a cookie on a RE-RENDER too, not only on a
+           * redirect (stacksjs/stx#1927).
+           *
+           * A sign-in that fails validation redraws the form, and the response
+           * that redraws it is the one that has to carry a rotated CSRF token or
+           * a cleared session. Attaching cookies only to the redirect would make
+           * this work on the success path and silently not on the failure path,
+           * which is the harder half to notice.
+           */
+          const headers = new Headers({
+            'Content-Type': 'text/html',
+            'Cache-Control': 'no-cache',
           })
+          for (const cookie of cookies ?? [])
+            headers.append('Set-Cookie', cookie)
+
+          return new Response(html, { headers })
         }
         catch (error) {
           console.error(`[stx] Hydration error for ${pathname}:`, error)

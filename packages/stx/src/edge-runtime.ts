@@ -1,3 +1,5 @@
+import { serializeSetCookie, type SetCookieOptions } from './cookie-serialize'
+
 /**
  * Edge Runtime Module
  *
@@ -1061,34 +1063,9 @@ export function parseCookies(request: Request): Record<string, string> {
 export function createCookie(
   name: string,
   value: string,
-  options?: {
-    maxAge?: number
-    expires?: Date
-    path?: string
-    domain?: string
-    secure?: boolean
-    httpOnly?: boolean
-    sameSite?: 'Strict' | 'Lax' | 'None'
-  },
+  options?: SetCookieOptions,
 ): string {
-  let cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`
-
-  if (options?.maxAge !== undefined)
-    cookie += `; Max-Age=${options.maxAge}`
-  if (options?.expires)
-    cookie += `; Expires=${options.expires.toUTCString()}`
-  if (options?.path)
-    cookie += `; Path=${options.path}`
-  if (options?.domain)
-    cookie += `; Domain=${options.domain}`
-  if (options?.secure)
-    cookie += '; Secure'
-  if (options?.httpOnly)
-    cookie += '; HttpOnly'
-  if (options?.sameSite)
-    cookie += `; SameSite=${options.sameSite}`
-
-  return cookie
+  return serializeSetCookie(name, value, options)
 }
 
 /**

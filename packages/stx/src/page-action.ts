@@ -18,6 +18,8 @@
  * copies of one rule drifting apart. One module, both servers.
  */
 
+import { serializeSetCookie, type SetCookieOptions } from './cookie-serialize'
+
 /**
  * Everything an action is given about the request.
  *
@@ -37,10 +39,26 @@ export interface PageActionContext {
   cookies: Record<string, string>
 }
 
+/**
+ * A cookie an action wants set on the response.
+ *
+ * A bare string is the whole cookie for the common case; the object form adds
+ * the attributes a session cookie needs.
+ */
+export type PageActionCookie = string | (SetCookieOptions & { value: string })
+
 /** What running an action produced. */
 export interface PageActionResult {
   /** Set when the action asked for a redirect; the caller answers 303. */
   redirect?: string
+  /**
+   * `Set-Cookie` header values the caller must append to its response.
+   *
+   * Already serialized, so every caller appends the same strings rather than
+   * each re-deriving the attributes — a session cookie that is `HttpOnly` on
+   * one code path and not on another is a security bug, not an inconsistency.
+   */
+  cookies?: string[]
   /** True when an action existed and ran. */
   ran: boolean
 }
@@ -155,19 +173,81 @@ export async function runPageAction(
   } satisfies PageActionContext)
 
   if (result && typeof result === 'object') {
+    const returned = result as Record<string, unknown>
+
+    /*
+     * Cookies the action wants on the response (stacksjs/stx#1927).
+     *
+     * The read side already hands `cookies` in, so handing them back is the
+     * other half of a symmetry that was missing — and without it the canonical
+     * form could not work at all. Sign-in is DEFINED by establishing a session:
+     * POST credentials, verify, set the session cookie, 303 away. Three of those
+     * four steps were expressible. The result was that every app kept a separate
+     * JSON endpoint for sign-in purely because it could set a cookie, which is
+     * exactly the two-handlers-per-form split page actions exist to remove.
+     *
+     * Serialized here rather than at each call site so `HttpOnly` and `SameSite`
+     * cannot differ between the redirect path and the re-render path.
+     */
+    const cookies = serializeActionCookies(returned.cookies)
+
     // `return { redirect: '/somewhere' }` — a plain key rather than an injected
     // `redirect()` global, so an action stays a pure function.
-    const to = (result as Record<string, unknown>).redirect
+    const to = returned.redirect
     if (typeof to === 'string' && to)
-      return { redirect: to, ran: true }
+      return { redirect: to, ran: true, ...(cookies.length > 0 ? { cookies } : {}) }
 
     // Merged, not replaced: the action's keys win over the block's so a
     // re-render shows the submitted values, but everything else the page
     // computed for its GET render is still there.
-    Object.assign(context, result)
+    //
+    // `cookies` and `redirect` are the action's protocol with the caller, not
+    // page data — merging them would overwrite the request cookies the template
+    // reads under the same name.
+    const { cookies: _cookies, redirect: _redirect, ...data } = returned
+    Object.assign(context, data)
+
+    if (cookies.length > 0)
+      return { ran: true, cookies }
   }
 
   return { ran: true }
+}
+
+/**
+ * Turn what an action returned under `cookies` into `Set-Cookie` values.
+ *
+ * Accepts the shape the read side uses — a record keyed by name — with either a
+ * bare string or an options object per entry. Anything unrecognised is dropped
+ * rather than guessed at, because a malformed cookie that silently half-works is
+ * worse than one that is absent.
+ */
+function serializeActionCookies(value: unknown): string[] {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    return []
+
+  const headers: string[] = []
+
+  for (const [name, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (!name)
+      continue
+
+    if (typeof entry === 'string') {
+      headers.push(serializeSetCookie(name, entry))
+      continue
+    }
+
+    if (entry && typeof entry === 'object') {
+      const options = entry as SetCookieOptions & { value?: unknown }
+      // `value` is required: an entry without one cannot express a cookie, and
+      // writing an empty one would DELETE the cookie the author meant to set.
+      if (typeof options.value !== 'string')
+        continue
+      headers.push(serializeSetCookie(name, options.value, options))
+    }
+  }
+
+  return headers
 }
 
 /**
@@ -176,13 +256,19 @@ export async function runPageAction(
  * 303 rather than 302 deliberately: it is the status that makes a browser
  * follow up with a GET, so a reload or a Back does not resubmit the form.
  */
-export function actionRedirectResponse(to: string): Response {
-  return new Response(null, {
-    status: 303,
-    headers: {
-      'Location': to,
-      // A redirect that answers a submission is never a cacheable page.
-      'Cache-Control': 'no-store',
-    },
+export function actionRedirectResponse(to: string, cookies: readonly string[] = []): Response {
+  const headers = new Headers({
+    'Location': to,
+    // A redirect that answers a submission is never a cacheable page.
+    'Cache-Control': 'no-store',
   })
+
+  // `append`, not `set`: a response may legitimately carry several `Set-Cookie`
+  // headers — a session cookie plus a CSRF rotation is the ordinary case — and
+  // `set` would keep only the last one. Built from a `Headers` rather than an
+  // object literal for the same reason: an object cannot hold a repeated key.
+  for (const cookie of cookies)
+    headers.append('Set-Cookie', cookie)
+
+  return new Response(null, { status: 303, headers })
 }

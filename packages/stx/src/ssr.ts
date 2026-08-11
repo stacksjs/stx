@@ -38,6 +38,7 @@ import { errorLogger } from './error-handling'
 import { processDirectives } from './process'
 import { extractVariables } from './utils'
 import { patternToRegex } from 'stx-router'
+import { serializeSetCookie } from './cookie-serialize'
 
 // =============================================================================
 // Types
@@ -282,31 +283,7 @@ function parseCookies(cookieHeader: string | null): Record<string, string> {
 }
 
 function serializeCookie(name: string, value: string, options: CookieOptions = {}): string {
-  let cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`
-
-  if (options.maxAge !== undefined) {
-    cookie += `; Max-Age=${options.maxAge}`
-  }
-  if (options.expires) {
-    cookie += `; Expires=${options.expires.toUTCString()}`
-  }
-  if (options.path) {
-    cookie += `; Path=${options.path}`
-  }
-  if (options.domain) {
-    cookie += `; Domain=${options.domain}`
-  }
-  if (options.secure) {
-    cookie += '; Secure'
-  }
-  if (options.httpOnly) {
-    cookie += '; HttpOnly'
-  }
-  if (options.sameSite) {
-    cookie += `; SameSite=${options.sameSite}`
-  }
-
-  return cookie
+  return serializeSetCookie(name, value, options)
 }
 
 // =============================================================================

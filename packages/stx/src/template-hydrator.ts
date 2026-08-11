@@ -44,13 +44,13 @@ export async function hydrateTemplate(
 export async function hydrateTemplateStream(
   compiled: CompiledTemplate,
   requestContext: Record<string, any> = {},
-): Promise<{ html: string, boundaries?: { id: string, render: () => Promise<string> }[], redirect?: string }> {
-  const { html, context, redirect } = await runHydration(compiled, requestContext)
+): Promise<{ html: string, boundaries?: { id: string, render: () => Promise<string> }[], redirect?: string, cookies?: string[] }> {
+  const { html, context, redirect, cookies } = await runHydration(compiled, requestContext)
 
   // A redirecting action has nothing to render, and streaming a shell for a
   // page the caller is about to replace with a 303 would be wasted work.
   if (redirect)
-    return { html, redirect }
+    return { html, redirect, cookies }
 
   const { extractStreamBoundaries } = await import('./streaming')
   // Low-level: streamBoundaries export → functions returning HTML.
@@ -75,14 +75,14 @@ export async function hydrateTemplateStream(
     boundaries = [...(boundaries || []).filter(b => !tplIds.has(b.id)), ...tplBoundaries]
   }
 
-  return { html, boundaries: boundaries && boundaries.length > 0 ? boundaries : undefined }
+  return { html, boundaries: boundaries && boundaries.length > 0 ? boundaries : undefined, cookies }
 }
 
 /** Build the request-time context (running server scripts) and fill placeholders. */
 async function runHydration(
   compiled: CompiledTemplate,
   requestContext: Record<string, any>,
-): Promise<{ html: string, context: Record<string, any>, redirect?: string }> {
+): Promise<{ html: string, context: Record<string, any>, redirect?: string, cookies?: string[] }> {
   // Build the hydration context from request data
   const context: Record<string, any> = {
     __filename: compiled.sourceFile,
@@ -127,12 +127,12 @@ async function runHydration(
   })
 
   if (action.redirect)
-    return { html: compiled.html, context, redirect: action.redirect }
+    return { html: compiled.html, context, redirect: action.redirect, cookies: action.cookies }
 
   // If no placeholders, server scripts only needed to populate context
   // for side effects (e.g., setting headers). Return HTML as-is.
   if (!hasPlaceholders(compiled.html)) {
-    return { html: compiled.html, context }
+    return { html: compiled.html, context, cookies: action.cookies }
   }
 
   // Resolve expression placeholders
@@ -155,7 +155,7 @@ async function runHydration(
     }
   }
 
-  return { html: replacePlaceholders(compiled.html, values), context }
+  return { html: replacePlaceholders(compiled.html, values), context, cookies: action.cookies }
 }
 
 /**

@@ -23,7 +23,7 @@ import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, getBui
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
-import { compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
+import { actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
 
 /**
  * A bundle failure on its way to the dev-server overlay (#1884 ask 2).
@@ -177,6 +177,14 @@ export interface ServeRequestContext {
    * up with a GET and a reload does not resubmit.
    */
   actionRedirect?: string
+  /**
+   * `Set-Cookie` values a page action asked for (stacksjs/stx#1927).
+   *
+   * Attached to whichever response the request produces — the 303 on the
+   * redirect path AND the re-rendered page on the validation-failure path, so
+   * a session cookie is not set on success only.
+   */
+  actionCookies?: string[]
   /** Extra keys merged from a non-Response `onRequest` return (app-owned). */
   [key: string]: unknown
 }
@@ -2119,6 +2127,8 @@ function __stxOverlay(errs){
 
     if (result.redirect)
       reqCtx.actionRedirect = result.redirect
+    if (result.cookies && result.cookies.length > 0)
+      reqCtx.actionCookies = result.cookies
   }
 
   async function processTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
@@ -3285,10 +3295,14 @@ function __stxOverlay(errs){
                 // so the POST is not repeated on reload or Back — the whole point
                 // of the POST/redirect/GET shape a form action exists to support.
                 if (reqCtx.actionRedirect) {
-                  return new Response(null, {
-                    status: 303,
-                    headers: { ...corsHeaders, Location: reqCtx.actionRedirect },
-                  })
+                  // Built by the shared helper rather than a second literal:
+                  // this copy had already drifted, missing the
+                  // `Cache-Control: no-store` the production one sets, so a
+                  // redirect answering a submission was cacheable in dev only.
+                  const redirectResponse = actionRedirectResponse(reqCtx.actionRedirect, reqCtx.actionCookies)
+                  for (const [key, value] of Object.entries(corsHeaders))
+                    redirectResponse.headers.set(key, value)
+                  return redirectResponse
                 }
 
                 if (content) {
@@ -3551,13 +3565,20 @@ function __stxOverlay(errs){
                     }
                   }
 
+                  const pageHeaders = new Headers({
+                    'Content-Type': 'text/html; charset=utf-8',
+                    'Cache-Control': 'no-store',
+                    ...corsHeaders,
+                  })
+                  // A validation failure redraws the form, and that response is
+                  // the one that has to carry a rotated CSRF token or a cleared
+                  // session (#1927). `append`, since several are legitimate.
+                  for (const cookie of reqCtx.actionCookies ?? [])
+                    pageHeaders.append('Set-Cookie', cookie)
+
                   return new Response(injectHmrClient(cleaned), {
                     status: pageRenderFailed ? 500 : responseStatus,
-                    headers: {
-                      'Content-Type': 'text/html; charset=utf-8',
-                      'Cache-Control': 'no-store',
-                      ...corsHeaders,
-                    },
+                    headers: pageHeaders,
                   })
                 }
 
