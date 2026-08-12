@@ -183,8 +183,10 @@ describe('if/else chain runtime wiring (#1734)', () => {
     expect(runtime).toContain('return fn2(scope);')
   })
 
-  it('skips detached chain members in processElement (parent snapshot guard)', () => {
-    expect(runtime).toContain('if (el.__stx_chain_member && !el.isConnected) return;')
+  it('skips inactive chain members without mistaking nested detached branches for inactive', () => {
+    expect(runtime).toContain('if (el.__stx_chain_member && !el.__stx_chain_active) return;')
+    expect(runtime).toContain('b.el.__stx_chain_active = false;')
+    expect(runtime).toContain('pick.el.__stx_chain_active = true;')
   })
 
   it('warns + strips an orphan else with no preceding if', () => {

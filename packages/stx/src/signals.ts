@@ -2543,13 +2543,12 @@ else if (part) {
     }
 
     // x-else / x-else-if are owned by their preceding x-if chain (#1734).
-    // A detached chain member reached via the parent's snapshot child-
-    // iteration must be skipped — bindIfChain manages its lifecycle and
-    // only the active branch is (re)connected. Connected chain members
-    // (the active branch) fall through; their if/else attr was already
-    // removed by bindIfChain, and double-bind guards make any redundant
-    // pass idempotent.
-    if (el.__stx_chain_member && !el.isConnected) return;
+    // An inactive chain member reached via the parent's snapshot child-
+    // iteration must be skipped. Connectivity cannot identify inactivity:
+    // an active inner branch is also disconnected while an outer conditional
+    // temporarily detaches its parent. bindIfChain owns explicit branch state
+    // so nested structural effects can still hydrate active detached subtrees.
+    if (el.__stx_chain_member && !el.__stx_chain_active) return;
 
     // An else/else-if with no preceding if is an orphan. Match Vue: warn,
     // strip the attribute, and render it as a plain element (fall through).
@@ -4241,6 +4240,7 @@ catch (e) {
       preserveConditionalComponentScopes(b.el, capturedComponentScope);
       b.el.__stx_if_bound = true;
       b.el.__stx_chain_member = true;
+      b.el.__stx_chain_active = false;
       b.capturedElementScope = findElementScope(b.el);
       b.placeholder = document.createComment('stx-if-chain');
       parent.insertBefore(b.placeholder, b.el);
@@ -4340,12 +4340,14 @@ catch (e2) {
       // components under reactive conditionals (#1737). Permanent disposal is
       // still handled by bindFor (item removal) and cleanupContainer (SPA nav).
       if (currentIdx !== -1) {
+        chain[currentIdx].el.__stx_chain_active = false;
         chain[currentIdx].nodes.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
       }
 
       // Insert + process the newly-picked branch.
       if (pickedIdx !== -1) {
         var pick = chain[pickedIdx];
+        pick.el.__stx_chain_active = true;
         // Insert this branch's node(s) before the placeholder's next sibling.
         // The anchor is captured once so the nodes stack in source order.
         var anchor = pick.placeholder.nextSibling;
@@ -7944,8 +7946,10 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     if (el.nodeType !== Node.ELEMENT_NODE) return;
     // Skip scoped elements - they were already processed
     if (el.hasAttribute && el.hasAttribute('data-stx-scope')) return;
-    // Detached chain members are owned by bindIfChain — skip (#1734).
-    if (el.__stx_chain_member && !el.isConnected) return;
+    // Inactive chain members are owned by bindIfChain. Use explicit branch
+    // state because an active nested branch can live under a detached outer
+    // conditional while its reactive effects continue to run.
+    if (el.__stx_chain_member && !el.__stx_chain_active) return;
     // Process this element's directives without recursing into children
     // (we'll handle children manually to skip scoped ones)
     const hasFor = el.hasAttribute && (el.hasAttribute('@for') || el.hasAttribute(':for') || el.hasAttribute('x-for'));

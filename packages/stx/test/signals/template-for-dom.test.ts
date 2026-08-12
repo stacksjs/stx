@@ -77,6 +77,87 @@ describe('template for DOM binding', () => {
     expect(selectedMethod()).toBe(1)
   })
 
+  it('hydrates nested bindings in an element branch selected inside a loop', async () => {
+    const rows = [
+      { key: 'docMode', editable: true, type: 'boolean' },
+      { key: 'name', editable: false, type: 'string', value: 'Stacks' },
+    ]
+    const fields = window.stx.state([])
+    const loading = window.stx.state(false)
+    const drafts = window.stx.reactive({ docMode: false })
+    window.__stx_setup_loop_branch_bindings = () => ({})
+    window.stx._scopes.compiled_loop_branch_bindings = {
+      __destroyCallbacks: [],
+      __mountCallbacks: [],
+      drafts,
+      fields,
+      loading,
+    }
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_loop_branch_bindings">
+        <div data-stx-scope="compiled_loop_branch_bindings">
+          <div :if="loading()">Loading</div>
+          <template :else>
+            <form>
+              <template :for="field in fields()">
+                <section>
+                  <label data-test-if="field.type === 'boolean' && field.editable">
+                    <input :id="'config-' + field.key" type="checkbox" x-model="drafts[field.key]">
+                    <span>{{ drafts[field.key] ? 'Enabled' : 'Disabled' }}</span>
+                  </label>
+                  <template data-test-else-if="field.editable && field.type === 'number'">
+                    <input :id="'config-' + field.key" type="number">
+                  </template>
+                  <template data-test-else-if="field.editable">
+                    <input :id="'config-' + field.key" type="text">
+                  </template>
+                  <template data-test-else>
+                    <div>{{ field.value }}</div>
+                    <p>Read only</p>
+                  </template>
+                </section>
+              </template>
+            </form>
+          </template>
+        </div>
+      </main>
+    `
+    const loopContent = document.querySelector('template').content
+    const ifBranch = loopContent.querySelector('[data-test-if]')
+    const elseIfBranches = loopContent.querySelectorAll('[data-test-else-if]')
+    const elseBranch = loopContent.querySelector('[data-test-else]')
+    ifBranch.setAttribute('@if', ifBranch.getAttribute('data-test-if'))
+    elseIfBranches.forEach((branch: HTMLElement) => {
+      branch.setAttribute('@else-if', branch.getAttribute('data-test-else-if'))
+      branch.removeAttribute('data-test-else-if')
+    })
+    elseBranch.setAttribute('@else', '')
+    ifBranch.removeAttribute('data-test-if')
+    elseBranch.removeAttribute('data-test-else')
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+    loading.set(true)
+    await new Promise(resolve => setTimeout(resolve, 20))
+    fields.set(rows)
+    await new Promise(resolve => setTimeout(resolve, 20))
+    loading.set(false)
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const checkbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement
+    expect(checkbox.id).toBe('config-docMode')
+    expect(checkbox.hasAttribute(':id')).toBe(false)
+    expect(checkbox.hasAttribute('x-model')).toBe(false)
+    expect(checkbox.parentElement?.textContent?.trim()).toBe('Disabled')
+    expect(document.querySelector('form')?.textContent).toContain('Stacks')
+
+    checkbox.checked = true
+    checkbox.dispatchEvent(new window.Event('change'))
+    expect(drafts.docMode).toBe(true)
+    expect(checkbox.parentElement?.textContent?.trim()).toBe('Enabled')
+  })
+
   it('keeps static siblings before nested template loop rows after outer updates', async () => {
     const groups = window.stx.state([
       { type: 'First', items: [{ id: 1, title: 'One' }] },
