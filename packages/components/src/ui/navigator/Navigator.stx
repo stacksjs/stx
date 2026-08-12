@@ -79,8 +79,7 @@ defineExpose({ activeKey })
         :class="getItemClasses({{ JSON.stringify(item) }})"
         @click="onClickItem({{ JSON.stringify(item) }}, $event)"
         :aria-current="isActive({{ JSON.stringify(item) }}) ? 'page' : null"
-        aria-disabled="{{ item.disabled ? 'true' : 'false' }}"
-        tabindex="{{ item.disabled ? '-1' : '0' }}"
+        @if(item.disabled)aria-disabled="true" tabindex="-1"@endif
       >
         @if(item.icon)
           <span class="flex-shrink-0">{!! item.icon !!}</span>

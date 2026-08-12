@@ -113,10 +113,11 @@ describe('navigation components route through the router', () => {
     // a list of plain links with no visible regression in a source-text check.
     expect(first).toContain('@click=')
     expect(first).toContain(':class=')
-    // Disabled state is server-rendered, with explicit enabled-state values
-    // rather than a conditional group inside the tag.
-    expect(first).toContain('aria-disabled="false"')
-    expect(first).toContain('tabindex="0"')
+    // Disabled state is server-rendered, and BOTH attributes of the conditional
+    // group follow the condition. A leaked `tabindex="-1"` on the enabled item
+    // would take the whole nav out of tab order (#1931).
+    expect(first).not.toContain('aria-disabled')
+    expect(first).not.toContain('tabindex')
     expect(second).toContain('aria-disabled="true"')
     expect(second).toContain('tabindex="-1"')
   })

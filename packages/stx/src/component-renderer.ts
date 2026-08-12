@@ -21,6 +21,7 @@
 import type { StxOptions } from './types'
 import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
+import { processConditionals } from './conditionals'
 import { registerBuiltins } from './builtins'
 import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, restoreStashedScripts, stashScriptElements } from './component-processing'
 import { maskAtElementPosition, matchHtmlComment } from './html-masking'
@@ -335,6 +336,71 @@ function parseComponentProps(
   }
 
   return resolved
+}
+
+/**
+ * Openers of an inline conditional group, and the token that closes each.
+ *
+ * A pair rather than a list, because the guard below needs both ends: a `@if(`
+ * with no `@endif` is not a group, it is a mention.
+ */
+const TAG_CONDITIONAL_PAIRS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/@if\s*\(/, '@endif'],
+  [/@unless\s*\(/, '@endunless'],
+]
+
+/**
+ * Resolve an inline `@if(…)…@endif` group inside a component tag's attributes.
+ *
+ * On a plain element this needs no help: directives run after component
+ * processing, so the group is still intact in the raw markup when
+ * `processConditionals` reaches it. A component tag is consumed first, and
+ * attribute parsing splits the group — `@if(active)data-active="true"` parses as
+ * one `@`-prefixed attribute whose name happens to carry the condition, while
+ * `aria-current="page"` parses as an ordinary static attribute. The first was
+ * re-emitted onto the root element still spelled `@if(…)…` and handled later;
+ * the second was separated from the group and forwarded unconditionally
+ * (stacksjs/stx#1931).
+ *
+ * That failure is silent and it fails OPEN, which is the wrong direction:
+ * `aria-current="page"` on every row tells a screen reader that every page is
+ * the current one, and a leaked `tabindex="-1"` takes a whole nav out of tab
+ * order. Conditional attributes are precisely what these groups hold.
+ *
+ * Resolved with the same `processConditionals` a plain element goes through, so
+ * `@else` / `@elseif` behave identically and the two cannot drift.
+ *
+ * The well-formed check is a FAST PATH, not the safety property: it keeps the
+ * conditional processor off the attribute string of every component tag in a
+ * codebase, when almost none of them carry a group. Correctness for an
+ * attribute value that merely mentions the text — `@click="say('@if(x)')"` —
+ * comes from `processConditionals` itself, which needs a closing token before it
+ * will touch anything; that is also exactly how the same string behaves on a
+ * plain element, which is the point.
+ *
+ * Evaluation failure returns the attributes untouched: a broken condition should
+ * cost the condition, not the whole tag.
+ */
+function resolveTagConditionals(
+  attributesStr: string,
+  context: Record<string, any>,
+  filePath: string,
+): string {
+  if (!attributesStr.includes('@'))
+    return attributesStr
+
+  const wellFormed = TAG_CONDITIONAL_PAIRS.some(
+    ([open, close]) => open.test(attributesStr) && attributesStr.includes(close),
+  )
+  if (!wellFormed)
+    return attributesStr
+
+  try {
+    return processConditionals(attributesStr, context, filePath)
+  }
+  catch {
+    return attributesStr
+  }
 }
 
 /**
@@ -975,8 +1041,10 @@ async function processCustomElementTags(
         ? pascalToKebab(tag.tagName)
         : tag.tagName
 
-      // Parse ALL attributes (including @ and : prefixed ones)
-      const rawProps = parseAllAttributes(tag.attributes)
+      // Parse ALL attributes (including @ and : prefixed ones). Inline
+      // conditional groups are resolved first — attribute parsing would split
+      // one apart and leak everything after its first attribute (#1931).
+      const rawProps = parseAllAttributes(resolveTagConditionals(tag.attributes, context, filePath))
 
       // Categorize into ResolvedProps
       const resolvedProps = parseComponentProps(rawProps, context, options)
