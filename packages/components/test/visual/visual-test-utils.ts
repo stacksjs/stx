@@ -6,12 +6,11 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { SEMANTIC_TOKENS } from '../../../stx/src/theme-tokens'
 
 /**
  * Snapshot directory location
  */
-import { SEMANTIC_TOKENS } from '../../../stx/src/theme-tokens'
-
 export const SNAPSHOTS_DIR: string = join(__dirname, '__snapshots__')
 
 /**
@@ -305,7 +304,7 @@ export async function testDarkModeSupport(
   const darkClasses = classes.filter(c => c.startsWith('dark:'))
   const roles = Object.keys(SEMANTIC_TOKENS)
   const tokenClasses = classes.filter(c => roles.some(role =>
-    new RegExp(`(?:^|:)(?:bg|text|border|ring|divide|placeholder|stroke|fill|outline)-${role}$`).test(c)))
+  new RegExp(`(?:^|:)(?:bg|text|border|ring|divide|placeholder|stroke|fill|outline)-${role}$`).test(c)))
 
   return {
     hasDarkModeClasses: darkClasses.length > 0 || tokenClasses.length > 0,
