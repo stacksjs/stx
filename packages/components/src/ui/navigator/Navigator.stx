@@ -74,12 +74,13 @@ defineExpose({ activeKey })
 <nav class="{{ containerClasses }} {{ gapClasses }}" role="navigation" aria-label="Main navigation">
   @foreach(item in items)
     @if(item.href)
-      <a
-        href="{{ item.href }}"
+      <StxLink
+        to="{{ item.href }}"
         :class="getItemClasses({{ JSON.stringify(item) }})"
         @click="onClickItem({{ JSON.stringify(item) }}, $event)"
         :aria-current="isActive({{ JSON.stringify(item) }}) ? 'page' : null"
-        @if(item.disabled)aria-disabled="true" tabindex="-1"@endif
+        aria-disabled="{{ item.disabled ? 'true' : 'false' }}"
+        tabindex="{{ item.disabled ? '-1' : '0' }}"
       >
         @if(item.icon)
           <span class="flex-shrink-0">{!! item.icon !!}</span>
@@ -90,7 +91,7 @@ defineExpose({ activeKey })
             {{ item.badge }}
           </span>
         @endif
-      </a>
+      </StxLink>
     @else
       <button
         type="button"

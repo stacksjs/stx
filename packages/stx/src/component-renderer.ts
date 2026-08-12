@@ -103,6 +103,7 @@ function parseComponentProps(
     static: {},
     staticNames: {},
     serverDynamic: {},
+    serverDynamicNames: {},
     clientReactive: {},
     events: {},
   }
@@ -255,6 +256,10 @@ function parseComponentProps(
         }
 
         resolved.serverDynamic[propName] = evaluated
+        // Same round-trip as setStatic: a builtin forwarding this onto real
+        // markup has to spell it the way the author wrote it.
+        if (propName !== attrName.slice(1) && resolved.serverDynamicNames)
+          resolved.serverDynamicNames[propName] = attrName.slice(1)
       }
       catch {
         // Evaluation failed — preserve for client

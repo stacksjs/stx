@@ -3,6 +3,30 @@ export const value = $props.value
 export const className = $props.className || ''
 export const as = $props.as || 'div'
 
+/*
+ * Prop-array mode, alongside the slot API (stacksjs/stx#1930).
+ *
+ * `<RadioGroup :options="[{ label: 'A', value: 'a' }]" />` used to emit a
+ * hydration shell and nothing else: the labels reached the page only inside
+ * `data-stx-props`, so the choices were invisible without JavaScript and to a
+ * crawler. Every comparable component here — Tabs, Accordion, Select, Navigator,
+ * Breadcrumb — server-renders its content from a prop array, so this was the
+ * odd one out rather than a deliberate choice.
+ *
+ * The options are rendered here rather than delegated to <RadioGroupOption>
+ * because a loop variable cannot cross a component boundary as a `:` binding.
+ * Interpolating it would stringify the value — `1` and `"1"` would stop being
+ * distinguishable — and the group compares values by identity. Emitting the
+ * option markup directly keeps `data-option-value` exact JSON, which is what
+ * `syncOptionStates` already reads.
+ */
+export const options = Array.isArray($props.options) ? $props.options : []
+export const hasPropOptions = options.length > 0
+
+const optionBaseClasses = 'relative flex cursor-pointer rounded-lg px-5 py-4 shadow-md focus:outline-none transition-all bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-60 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-300 dark:focus-visible:ring-offset-blue-700'
+export const optionClasses = optionBaseClasses
+export const optionDisabledClasses = `${optionBaseClasses} opacity-50 cursor-not-allowed`
+
 const baseClasses = 'w-full'
 export const groupClasses = `${baseClasses} ${className}`.trim()
 export const radioGroupInstanceId = `stx-rg-${Math.random().toString(36).slice(2, 11)}`
@@ -40,9 +64,40 @@ function onSelect(event) {
   selectValue(event.detail)
 }
 
+// Options rendered from the `options` prop have no <RadioGroupOption> behind
+// them to dispatch stx:radio-select, so the group claims them by delegation.
+// One listener on the root rather than a handler per option, which also means
+// options added later are picked up with no re-binding.
+function optionValueOf(el) {
+  try { return JSON.parse(el.dataset.optionValue ?? 'null') }
+  catch { return el.dataset.optionValue }
+}
+
+function onDelegatedActivate(event) {
+  const option = event.target.closest?.('[data-stx-radio-option]')
+  if (!option || !rootEl || !rootEl.contains(option)) return
+  if (option.getAttribute('aria-disabled') === 'true') return
+  // A <RadioGroupOption> dispatches its own event; claiming its click too would
+  // select twice and emit two change events.
+  if (option.dataset.stxRadioDelegated !== 'true') return
+  if (event.type === 'keydown' && event.key !== ' ' && event.key !== 'Enter') return
+  event.preventDefault()
+  selectValue(optionValueOf(option))
+}
+
 onMount(() => {
   rootEl = document.querySelector(`[data-radio-group-id="${radioGroupInstanceId}"]`)
+  if (rootEl) {
+    rootEl.addEventListener('click', onDelegatedActivate)
+    rootEl.addEventListener('keydown', onDelegatedActivate)
+  }
   syncOptionStates()
+})
+
+onDestroy(() => {
+  if (!rootEl) return
+  rootEl.removeEventListener('click', onDelegatedActivate)
+  rootEl.removeEventListener('keydown', onDelegatedActivate)
 })
 
 defineExpose({ selected, selectValue })
@@ -56,5 +111,28 @@ defineExpose({ selected, selectValue })
   role="radiogroup"
   @stx:radio-select="onSelect($event)"
 >
-  <slot />
+  @if(hasPropOptions)
+    @foreach(option in options)
+      <div
+        data-stx-radio-option
+        data-stx-radio-delegated="true"
+        data-option-value="{{ JSON.stringify(option.value === undefined ? null : option.value) }}"
+        role="radio"
+        aria-checked="{{ option.value === value ? 'true' : 'false' }}"
+        data-checked="{{ option.value === value ? 'true' : 'false' }}"
+        aria-disabled="{{ option.disabled ? 'true' : 'false' }}"
+        tabindex="{{ option.disabled ? '-1' : '0' }}"
+        class="{{ option.disabled ? optionDisabledClasses : optionClasses }}"
+      >
+        <span class="flex flex-col">
+          <span class="text-sm font-medium">{{ option.label }}</span>
+          @if(option.description)
+            <span class="text-sm opacity-70">{{ option.description }}</span>
+          @endif
+        </span>
+      </div>
+    @endforeach
+  @else
+    <slot />
+  @endif
 </component>

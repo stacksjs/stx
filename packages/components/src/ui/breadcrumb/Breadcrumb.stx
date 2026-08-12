@@ -47,8 +47,8 @@ export const collapsedClasses = `text-gray-400 dark:text-gray-600 cursor-default
             </span>
           @else
             <!-- Link item -->
-            <a
-              href="{{ item.href }}"
+            <StxLink
+              to="{{ item.href }}"
               class="{{ itemClasses }}"
             >
               @if(item.icon)
@@ -59,7 +59,7 @@ export const collapsedClasses = `text-gray-400 dark:text-gray-600 cursor-default
               @else
                 {{ item.label }}
               @endif
-            </a>
+            </StxLink>
           @endif
         @endif
 

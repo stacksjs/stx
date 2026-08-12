@@ -9,7 +9,7 @@
  */
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
-import { forwardStaticAttrs } from './attrs'
+import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
 
 /**
  * Escape a string for safe use inside an HTML attribute value.
@@ -96,6 +96,9 @@ export const StxLinkBuiltin: BuiltinComponentDef = {
     // Forward any extra static attributes that are not consumed props
     const consumedStatic = new Set(['to', 'class', 'className', 'activeClass', 'exactActiveClass', 'prefetch'])
     attrs.push(...forwardStaticAttrs(props, consumedStatic))
+    // …and the server-evaluated `:prop` bindings, which were resolved and then
+    // dropped, so `<StxLink to="/x" :title="pageTitle">` emitted no title (#1930).
+    attrs.push(...forwardResolvedAttrs(props, consumedStatic))
 
     return `<a ${attrs.join(' ')}>${slotContent}</a>`
   },

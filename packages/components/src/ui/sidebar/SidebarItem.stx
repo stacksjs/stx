@@ -53,7 +53,7 @@ export const isLink = Boolean(href) && !disabled
   @if(indentStyle)style="{{ indentStyle }}"@endif
 >
   @if(isLink)
-    <a href="{{ href }}" data-sidebar-item data-label="{{ label }}" class="{{ rowClasses }}" @if(active)data-active="true" aria-current="page"@endif>
+    <StxLink to="{{ href }}" data-sidebar-item data-label="{{ label }}" class="{{ rowClasses }}" :data-active="active ? 'true' : null" :aria-current="active ? 'page' : null">
       <span class="{{ disclosureClasses }}" @if(expandable)data-sidebar-disclosure role="button" aria-label="Toggle {{ label }}"@endif>
         @if(expandable)
           <span data-sidebar-chevron class="{{ chevronClasses }}" aria-hidden="true"></span>
@@ -68,7 +68,7 @@ export const isLink = Boolean(href) && !disabled
       @if(count !== '' && count !== null && count !== undefined)
         <span data-sidebar-count class="{{ countClasses }}">{{ count }}</span>
       @endif
-    </a>
+    </StxLink>
   @else
     <button type="button" data-sidebar-item data-label="{{ label }}" class="{{ rowClasses }}" @if(active)data-active="true" aria-current="page"@endif @if(disabled)data-disabled disabled aria-disabled="true"@endif>
       <span class="{{ disclosureClasses }}" @if(expandable)data-sidebar-disclosure role="button" aria-label="Toggle {{ label }}"@endif>

@@ -51,8 +51,8 @@ function onPinnedClick(event) {
   >
     @foreach(items as item)
       @if(item.href)
-        <a
-          href="{{ item.href }}"
+        <StxLink
+          to="{{ item.href }}"
           data-space-pinned-item
           data-pinned-id="{{ item.id }}"
           class="{{ tileClasses }}"
@@ -65,7 +65,7 @@ function onPinnedClick(event) {
           @else
             <span class="{{ item.icon }} h-[20px] w-[20px]" @if(item.iconStyle)style="{{ item.iconStyle }}"@endif aria-hidden="true"></span>
           @endif
-        </a>
+        </StxLink>
       @else
         <button
           type="button"

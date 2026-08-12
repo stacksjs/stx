@@ -96,13 +96,13 @@ function onRecoveryCode(event) {
             <p class="text-xs text-gray-700 dark:text-gray-300 font-semibold">
               Having Problems?
             </p>
-            <a
-              href="#"
+            <button
+              type="button"
               @click="onRecoveryCode($event)"
               class="text-xs text-blue-500 hover:underline"
             >
               Use recovery code instead
-            </a>
+            </button>
           </div>
         @endif
       </div>

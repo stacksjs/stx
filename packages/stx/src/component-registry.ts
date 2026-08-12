@@ -53,6 +53,15 @@ export interface ResolvedProps {
   staticNames: Record<string, string>
   /** Server-side dynamic bindings — e.g. :count="items.length" (evaluated at compile time) */
   serverDynamic: Record<string, unknown>
+  /**
+   * Original attribute spelling for any `serverDynamic` key that was camelized.
+   *
+   * Same reason as {@link ResolvedProps.staticNames}: a builtin forwarding an
+   * unconsumed binding onto real markup must spell it the way the author wrote
+   * it, or `:some-attr="x"` goes out as `someAttr` and the browser sees an
+   * attribute it does not know.
+   */
+  serverDynamicNames?: Record<string, string>
   /** Client-side reactive bindings — expression string preserved for signals */
   clientReactive: Record<string, string>
   /** Event handler bindings — e.g. @click="handler()" */

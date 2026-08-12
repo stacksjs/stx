@@ -42,7 +42,7 @@
  */
 
 import type { BuiltinComponentDef, RenderContext, ResolvedProps } from '../component-registry'
-import { forwardStaticAttrs } from './attrs'
+import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
 
 const DEFAULT_FALLBACK = '/images/safe-image-default.svg'
 
@@ -102,6 +102,7 @@ export const SafeImageBuiltin: BuiltinComponentDef = {
       'src', 'alt', 'fallback', 'class', 'className', 'fallbackClassName',
     ])
     imgAttrs.push(...forwardStaticAttrs(props, consumed))
+    imgAttrs.push(...forwardResolvedAttrs(props, consumed))
 
     const imgTag = `<img ${imgAttrs.join(' ')} />`
 

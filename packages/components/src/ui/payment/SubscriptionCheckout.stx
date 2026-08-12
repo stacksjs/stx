@@ -221,9 +221,15 @@ onMount(() => initializeStripe())
                   <div class="flex">
                     <div class="min-w-0 flex-1">
                       <h4 class="text-sm">
-                        <a href="#" class="text-gray-700 dark:text-gray-300 font-medium hover:text-gray-800 dark:hover:text-gray-200">
-                          {{ product.name }}
-                        </a>
+                        @if(product.href)
+                          <StxLink to="{{ product.href }}" class="text-gray-700 dark:text-gray-300 font-medium hover:text-gray-800 dark:hover:text-gray-200">
+                            {{ product.name }}
+                          </StxLink>
+                        @else
+                          <span class="text-gray-700 dark:text-gray-300 font-medium">
+                            {{ product.name }}
+                          </span>
+                        @endif
                       </h4>
                     </div>
 

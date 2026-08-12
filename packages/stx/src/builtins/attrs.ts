@@ -65,3 +65,50 @@ export function forwardStaticAttrs(props: ResolvedProps, consumed: Set<string>):
 
   return attrs
 }
+
+/**
+ * Render the server-evaluated `:prop` bindings a builtin did not consume.
+ *
+ * Only `static` was ever forwarded, so `<StxLink to="/x" :title="pageTitle">`
+ * emitted an `<a>` with no title and no warning — the binding was resolved,
+ * stored, and thrown away (stacksjs/stx#1930). Client-reactive `:prop` and
+ * `@event` bindings already reach the element by another route (the component
+ * renderer re-applies them to the root), which is what made the gap specific to
+ * the server-evaluated ones and easy to miss.
+ *
+ * `null`, `undefined` and `false` DROP the attribute rather than rendering the
+ * word — that is what makes `:aria-current="active ? 'page' : null"` express
+ * "this attribute is conditional", which is the whole reason to reach for a
+ * binding instead of a literal. `true` renders bare, as HTML booleans do.
+ *
+ * @param props - The component's resolved props.
+ * @param consumed - Prop names the builtin has already rendered itself.
+ */
+export function forwardResolvedAttrs(props: ResolvedProps, consumed: Set<string>): string[] {
+  const attrs: string[] = []
+
+  for (const [key, value] of Object.entries(props.serverDynamic ?? {})) {
+    if (consumed.has(key))
+      continue
+
+    if (value === null || value === undefined || value === false)
+      continue
+
+    const name = props.serverDynamicNames?.[key] ?? key
+
+    if (value === true) {
+      attrs.push(escapeAttr(name))
+      continue
+    }
+
+    // Objects would stringify to "[object Object]", which is never a useful
+    // attribute value — a builtin that wants structured data reads the prop
+    // itself and marks it consumed.
+    if (typeof value === 'object')
+      continue
+
+    attrs.push(`${escapeAttr(name)}="${escapeAttr(stripControlChars(String(value)))}"`)
+  }
+
+  return attrs
+}
