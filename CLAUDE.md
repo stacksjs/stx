@@ -494,6 +494,7 @@ stx doctor [--json]
 
 ## Additional Documentation
 
+- **[Theming](docs/features/theming.md)** — how an app redirects `@stacksjs/components`' colours: crosswind palette override (build time), `stxThemePreset` CSS variables + role tokens (runtime), and what is not migrated yet
 - **[Lazy Hydration](docs/features/lazy-hydration.md)** — `stx-hydrate` attribute documentation with trigger types and usage examples
 - **[Sidebar Spaces](docs/features/sidebar-spaces.md)** — Arc-style swipeable sidebar scenes: `<Sidebar :spaces>`, per-space color, gestures, and the Craft wrapping
 - **[Deployment](docs/features/deployment.md)** — Deployment guide for static sites and SSR apps

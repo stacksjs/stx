@@ -6,6 +6,8 @@ export { default as Hero } from './components/Hero.stx'
 export { default as Installation } from './components/Installation.stx'
 // Export composables
 export * from './composables'
+// Theme seam — see src/theme for how an app redirects the components' colours.
+export * from './theme'
 // Export UI components
 export * from './ui/accordion'
 export * from './ui/audio'
