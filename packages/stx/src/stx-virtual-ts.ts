@@ -43,6 +43,7 @@
  * @module stx-virtual-ts
  */
 
+import path from 'node:path'
 import { stripCommentsAndLiterals } from './strip-literals'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 
@@ -1151,9 +1152,62 @@ export function expressionStatement(
   return { text: `${prefix}${code}));`, prefixLength: prefix.length }
 }
 
+/**
+ * The three places a module specifier can appear: `from '…'` (which covers both
+ * `import … from` and `export … from`), a side-effect `import '…'`, and a
+ * dynamic `import('…')` — the last of which is also the `import('./x').Foo`
+ * type syntax.
+ */
+const RELATIVE_SPECIFIER_RE = /(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(['"])(\.{1,2}\/[^'"\n]*)\2/g
+
+/**
+ * Rewrite relative module specifiers to absolute paths against the real file.
+ *
+ * A block's virtual buffer is written into the state directory, and TypeScript
+ * resolves a relative specifier against the file that CONTAINS it — so
+ * `../target`, written in `pages/deep/rel.stx`, was looked for next to
+ * `.stx/typecheck/` and reported as a missing module (stacksjs/stx#1928).
+ *
+ * A `paths` alias to the same file resolved fine, because those go through the
+ * absolute `baseUrl` the checker emits. That asymmetry is the whole bug: a
+ * relative import is the first thing anyone writes and what every editor's
+ * auto-import produces, so an app hitting it either rewrites correct imports
+ * into aliases to appease the checker, or mutes the checker.
+ *
+ * Rewriting each specifier is preferred over pointing the program at the source
+ * directory — `rootDirs`, the built-in answer for a virtual layout, MERGES its
+ * entries into one namespace, so `./util` from one checked page could silently
+ * resolve to a different page's `util` when both directories are roots. Each
+ * buffer knows exactly one origin, so resolving per file cannot cross-talk.
+ *
+ * Textual rather than parsed, and deliberately: `Bun.Transpiler.scanImports`
+ * erases `import type`, which is the form a type-checker cares about most. The
+ * cost is that the literal text `from './x'` inside a string or comment is
+ * rewritten too — inert, since this buffer is never executed, and it cannot
+ * change a line count, so every diagnostic still lands on the author's line.
+ */
+export function absolutizeRelativeSpecifiers(code: string, originDir: string): string {
+  if (!originDir)
+    return code
+
+  return code.replace(RELATIVE_SPECIFIER_RE, (_whole, prefix: string, quote: string, specifier: string) => {
+    // Forward slashes even on Windows: a backslash inside the quoted specifier
+    // would be read as a string escape.
+    const absolute = path.resolve(originDir, specifier).replace(/\\/g, '/')
+    return `${prefix}${quote}${absolute}${quote}`
+  })
+}
+
 export interface BuildVirtualOptions {
   /** Append `{{ }}` and directive expressions. Default true. */
   templateExpressions?: boolean
+  /**
+   * Directory the `.stx` file really lives in.
+   *
+   * Relative imports in its script blocks are resolved against it, since the
+   * buffer this builds is written somewhere else entirely (#1928).
+   */
+  originDir?: string
   /** Append ambient declarations at all. Default true. */
   globals?: boolean
   /**
@@ -1185,7 +1239,8 @@ export function buildVirtualTypeScript(
   const lineMap = new Map<number, MappedLine>()
 
   for (const block of blocks) {
-    const bodyLines = block.code.split('\n')
+    // Line-count preserving, so every body line still lands on its own line (#1928).
+    const bodyLines = absolutizeRelativeSpecifiers(block.code, options.originDir ?? '').split('\n')
     bodyLines.forEach((text, i) => {
       const index = block.startLine - 1 + i
       if (index < lines.length)

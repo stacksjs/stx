@@ -36,6 +36,7 @@ import path from 'node:path'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { stateDir } from './state-dir'
 import {
+  absolutizeRelativeSpecifiers,
   buildVirtualTypeScript,
   extractScriptBlocks,
   resolvePosition,
@@ -117,8 +118,13 @@ export interface TypecheckResult {
  * in a `<script server>` block both reported "Cannot redeclare block-scoped
  * variable", and those are ordinary names for server-rendered page data. It is
  * appended rather than prepended so the line numbers above it are untouched.
+ *
+ * `originDir` is the directory the `.stx` file really lives in. The buffer is
+ * written into the state directory, and tsc resolves a relative specifier
+ * against the file containing it — so without this, `../target` was looked for
+ * next to `.stx/typecheck/` (#1928).
  */
-export function buildVirtualSource(block: ScriptBlock, serverCode = ''): string {
+export function buildVirtualSource(block: ScriptBlock, serverCode = '', originDir = ''): string {
   const leadingNewlines = block.startLine > 1 ? '\n'.repeat(block.startLine - 1) : ''
 
   // A block may take a server value through an interpolation. As TypeScript
@@ -144,7 +150,10 @@ export function buildVirtualSource(block: ScriptBlock, serverCode = ''): string 
     ? clientPayloadDeclarations(serverCode, block.code)
     : ''
 
-  return `${leadingNewlines + code}\n${payload}\nexport {}\n`
+  // Applied to the whole buffer rather than to `code` alone: a hoisted server
+  // type can carry an `import('./x').Foo`, and the rewrite adds no lines, so
+  // the padding above still puts every diagnostic on the author's line.
+  return absolutizeRelativeSpecifiers(`${leadingNewlines + code}\n${payload}\nexport {}\n`, originDir)
 }
 
 /**
@@ -466,8 +475,12 @@ export async function typecheckStxFiles(
     // The template buffer inlines the script bodies, so an expression sees the
     // real types the blocks declare — which is what catches `{{ row.total_vists }}`
     // against a typed row rather than merely an undeclared name.
+    // Where the file really is, so its relative imports resolve against it
+    // rather than against the temp directory its buffers are written to (#1928).
+    const originDir = path.dirname(path.resolve(file))
+
     const templateBuffer = checkTemplates
-      ? buildVirtualTypeScript(source, { runtimeGlobals: !runtimeTypes })
+      ? buildVirtualTypeScript(source, { runtimeGlobals: !runtimeTypes, originDir })
       : null
     const expressions = templateBuffer
       ? [...templateBuffer.lineMap.values()].filter(m => m.expression).length
@@ -482,7 +495,7 @@ export async function typecheckStxFiles(
 
     blocks.forEach((block, i) => {
       virtualFiles.set(virtualPathFor(file, block.kind, i), {
-        source: buildVirtualSource(block, serverCode),
+        source: buildVirtualSource(block, serverCode, originDir),
         origin: file,
         kind: block.kind,
       })
