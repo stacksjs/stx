@@ -7598,7 +7598,11 @@ catch (e) {
     var walker = document.createTreeWalker(root, showText, null);
     var node;
     while ((node = walker.nextNode())) {
-      var text = node.nodeValue || '';
+      // Browsers expose Text.nodeValue as a string, while lightweight DOM and
+      // native embedding shims can preserve an assigned number. Diagnostics
+      // must normalize the boundary instead of aborting the entire audit on a
+      // missing String#indexOf method.
+      var text = node.nodeValue == null ? '' : String(node.nodeValue);
       if (text.indexOf('{{') === -1 || text.indexOf('}}') === -1) continue;
       if (auditSkipped(node)) continue;
       found.push(text.trim().slice(0, 80));

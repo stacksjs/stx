@@ -256,6 +256,30 @@ describe('hydration audit — expressions that never evaluated', () => {
 })
 
 describe('hydration audit — safety', () => {
+  it('normalizes non-string text values without skipping the audit', () => {
+    const realWalker = g.document.createTreeWalker
+    const realWarn = console.warn
+    const warnings: string[] = []
+    let visited = false
+    g.document.createTreeWalker = () => ({
+      nextNode: () => {
+        if (visited)
+          return null
+        visited = true
+        return { isConnected: true, nodeValue: 42, parentNode: null }
+      },
+    })
+    console.warn = (...args: unknown[]) => { warnings.push(args.map(String).join(' ')) }
+    try {
+      hydrate('<main><p>42</p></main>')
+      expect(warnings.filter(warning => warning.includes('hydration audit skipped'))).toHaveLength(0)
+    }
+    finally {
+      console.warn = realWarn
+      g.document.createTreeWalker = realWalker
+    }
+  })
+
   it('never throws out of the hydration path', () => {
     // A diagnostic that can break hydration is worse than no diagnostic.
     const realWalker = g.document.createTreeWalker
