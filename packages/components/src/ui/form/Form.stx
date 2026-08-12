@@ -10,7 +10,7 @@ export const validateOnChange = $props.validateOnChange === true
 export const validateOnBlur = $props.validateOnBlur === true
 
 export const formClasses = `space-y-6 ${className}`.trim()
-export const errorClasses = `mt-1 text-sm text-red-600 dark:text-red-400`.trim()
+export const errorClasses = `mt-1 text-sm text-danger`.trim()
 </script>
 
 <script client>

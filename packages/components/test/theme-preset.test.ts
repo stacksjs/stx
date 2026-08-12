@@ -30,7 +30,7 @@ import { join } from 'node:path'
 import { defaultConfig } from '../../stx/src/config'
 import { resetCrosswindCache } from '../../stx/src/dev-server/crosswind'
 import { processDirectives } from '../../stx/src/process'
-import { SEMANTIC_TOKENS, stxThemePreset, THEMED_FAMILIES, themeVariableNames } from '../src/theme'
+import { stxThemePreset, THEMED_FAMILIES, themeVariableNames } from '../src/theme'
 
 const UI = join(import.meta.dir, '..', 'src', 'ui')
 
@@ -93,13 +93,18 @@ function ruleFor(css: string, selector: string): string {
 
 const BREADCRUMB = `<Breadcrumb :items="[{label:'Home',href:'/'},{label:'Here',href:'/here'}]" />`
 
+// A literal shade pair, not a component. Most components now use role tokens,
+// and anchoring this on one of them made the test measure whichever component
+// had not been migrated yet — a moving target for a property that is about the
+// palette, not about any particular component.
+const SHADES = '<div class="text-gray-600 dark:text-gray-400">x</div>'
+
 describe('the build-time seam that already existed', () => {
-  it('re-themes a component when the app redefines a shade', async () => {
-    // Breadcrumb's link is `text-gray-600`, written into the component. This is
-    // the answer to "an app whose colours live in a theme.extend.colors map".
+  it('re-themes a shade when the app redefines it', async () => {
+    // The answer to "an app whose colours live in a theme.extend.colors map".
     const css = await renderWithConfig(
       `export default { theme: { colors: { gray: { 600: '#ff00ff' } } } }`,
-      BREADCRUMB,
+      SHADES,
     )
 
     expect(ruleFor(css, '.text-gray-600')).toContain('#ff00ff')
@@ -110,11 +115,22 @@ describe('the build-time seam that already existed', () => {
     // deep-merges, so naming one shade cannot silently un-style everything else.
     const css = await renderWithConfig(
       `export default { theme: { colors: { gray: { 600: '#ff00ff' } } } }`,
-      BREADCRUMB,
+      SHADES,
     )
 
     expect(ruleFor(css, '.dark .dark\\:text-gray-400')).not.toContain('#ff00ff')
     expect(ruleFor(css, '.dark .dark\\:text-gray-400')).toMatch(/color:\s*\S+/)
+  })
+
+  it('re-themes a migrated component through its role token', async () => {
+    // The route that replaced it for components: set the variable, and every
+    // component using that role follows — at runtime, with no rebuild.
+    const css = await renderWithConfig(
+      `export default { theme: { colors: { 'fg-muted': '#ff00ff' } } }`,
+      BREADCRUMB,
+    )
+
+    expect(ruleFor(css, '.text-fg-muted')).toContain('#ff00ff')
   })
 })
 
@@ -128,15 +144,6 @@ describe('stxThemePreset', () => {
     expect(palette.gray['50']).toContain('#f9fafb')
   })
 
-  it('gives the role tokens a two-step fallback', () => {
-    const palette = stxThemePreset(DEFAULTS) as Record<string, string>
-
-    // Role → shade variable → stock value. An app that moves only the palette
-    // still moves the roles with it.
-    expect(palette.surface).toBe('var(--stx-surface, var(--stx-color-gray-50, #f9fafb))')
-    expect(palette.accent).toBe('var(--stx-accent, var(--stx-color-indigo-600, #4f46e5))')
-  })
-
   it('covers every family it claims to', () => {
     const palette = stxThemePreset(DEFAULTS)
 
@@ -144,16 +151,12 @@ describe('stxThemePreset', () => {
       if (DEFAULTS[family as keyof typeof DEFAULTS])
         expect(palette[family]).toBeDefined()
     }
-    for (const token of Object.keys(SEMANTIC_TOKENS))
-      expect(palette[token]).toBeDefined()
   })
 
   it('skips a family the palette does not define rather than emitting a dangling var', () => {
     const palette = stxThemePreset({ gray: { 600: '#4b5563' } })
 
     expect(palette.indigo).toBeUndefined()
-    // The role token still exists — it just has nothing stock to fall back to.
-    expect(palette.accent).toBe('var(--stx-accent, var(--stx-color-indigo-600))')
   })
 
   it('lists its variables from the same source as the palette', () => {
@@ -162,7 +165,6 @@ describe('stxThemePreset', () => {
     const names = themeVariableNames(DEFAULTS)
 
     expect(names).toContain('--stx-color-gray-600')
-    expect(names).toContain('--stx-surface')
     expect(names).not.toContain('--stx-color-white-600')
   })
 })
@@ -175,7 +177,7 @@ export default { theme: { colors: stxThemePreset(cw.defaultConfig?.theme?.colors
 `
 
   it('emits a variable with the stock value behind it, so nothing changes by default', async () => {
-    const css = await renderWithConfig(CONFIG, BREADCRUMB)
+    const css = await renderWithConfig(CONFIG, SHADES)
     const rule = ruleFor(css, '.text-gray-600')
 
     expect(rule).toContain('var(--stx-color-gray-600')
@@ -193,7 +195,9 @@ export default { theme: { colors: stxThemePreset(cw.defaultConfig?.theme?.colors
     expect(ruleFor(css, '.bg-gray-600\\/50')).toContain('color-mix(')
   })
 
-  it('makes the role tokens usable as ordinary utilities', async () => {
+  it('leaves the role tokens to the base theme, which already provides them', async () => {
+    // Two lists of role names would drift the moment either moved. The preset
+    // covers the PALETTE; the roles come from stx's base theme with no opt-in.
     const css = await renderWithConfig(CONFIG, '<div class="bg-surface text-fg-muted border-line">x</div>')
 
     expect(ruleFor(css, '.bg-surface')).toContain('var(--stx-surface')

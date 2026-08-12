@@ -35,23 +35,23 @@ function getItemClasses(item) {
   let cls = sizeClasses[size] || sizeClasses.md
   if (variant === 'default') {
     cls += isActiveItem
-      ? ' text-gray-900 dark:text-gray-100 font-medium'
-      : ' text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+      ? 'text-fg font-medium'
+      : 'text-fg-muted hover:text-fg'
   }
   else if (variant === 'pills') {
     cls += isActiveItem
       ? ' bg-blue-600 text-white font-medium rounded-full'
-      : ' text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full'
+      : 'text-fg-strong hover:bg-surface-raised rounded-full'
   }
   else if (variant === 'underline') {
     cls += isActiveItem
-      ? ' text-blue-600 dark:text-blue-400 font-medium border-b-2 border-blue-600 dark:border-blue-400'
-      : ' text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent'
+      ? 'text-info font-medium border-b-2 border-info'
+      : 'text-fg-muted hover:text-fg border-b-2 border-transparent'
   }
   else if (variant === 'sidebar') {
     cls += isActiveItem
-      ? ' bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium border-l-4 border-blue-600 dark:border-blue-400'
-      : ' text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-l-4 border-transparent'
+      ? 'bg-blue-50 dark:bg-blue-900/20 text-info font-medium border-l-4 border-info'
+      : 'text-fg-strong hover:bg-surface-raised border-l-4 border-transparent'
   }
   cls += ' transition-all duration-200 cursor-pointer flex items-center gap-2'
   if (item.disabled) cls += ' opacity-50 cursor-not-allowed pointer-events-none'
@@ -86,7 +86,7 @@ defineExpose({ activeKey })
         @endif
         <span>{{ item.label }}</span>
         @if(item.badge)
-          <span class="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+          <span class="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-surface-sunken text-fg-strong">
             {{ item.badge }}
           </span>
         @endif
@@ -103,7 +103,7 @@ defineExpose({ activeKey })
         @endif
         <span>{{ item.label }}</span>
         @if(item.badge)
-          <span class="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+          <span class="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-surface-sunken text-fg-strong">
             {{ item.badge }}
           </span>
         @endif

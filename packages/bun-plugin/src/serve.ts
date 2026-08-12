@@ -2038,7 +2038,7 @@ function __stxOverlay(errs){
       // path. One config file, two meanings, decided by which binary rendered.
       const merged = mergeCrosswindConfig(cw.config as Record<string, any>, userConfig)
       const generatorConfig = merged.config
-      const { includePreflight, minify } = merged
+      const { includePreflight, minify, tokenCSS } = merged
 
       // The merged safelist, so a base-config safelist is honoured here too —
       // the dev-server path always generated those and this one never did.
@@ -2092,7 +2092,9 @@ function __stxOverlay(errs){
         if (darkDecls.length) shortcutCSS += `@media (prefers-color-scheme: dark) { .dark .${name} { ${darkDecls.join(' ')} } }\n`
       }
 
-      const finalCss = baseCss + shortcutCSS
+      // Role-token values first, so the utilities below resolve against them and
+      // an app's own stylesheet — which comes after — can still override (#1930).
+      const finalCss = tokenCSS + baseCss + shortcutCSS
       crosswindCssCache.set(cacheKey, finalCss)
       return finalCss
     }

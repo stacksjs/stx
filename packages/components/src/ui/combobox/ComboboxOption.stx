@@ -4,7 +4,7 @@ export const disabled = $props.disabled || false
 export const className = $props.className || ''
 export const as = $props.as || 'li'
 
-const baseClasses = 'relative cursor-pointer select-none py-2 pl-10 pr-4 text-neutral-900 dark:text-neutral-100 hover:bg-blue-100 dark:hover:bg-blue-900'
+const baseClasses = 'relative cursor-pointer select-none py-2 pl-10 pr-4 text-fg hover:bg-blue-100 dark:hover:bg-blue-900'
 const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : ''
 export const optionClasses = `${baseClasses} ${disabledClasses} ${className}`.trim()
 export const valueJson = JSON.stringify(value === undefined ? null : value)
@@ -32,7 +32,7 @@ function onClick(event) {
   @if(disabled)aria-disabled="true"@endif
   @click="onClick($event)"
 >
-  <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-blue-400" data-stx-combobox-check>
+  <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-info" data-stx-combobox-check>
     <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
       <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
     </svg>

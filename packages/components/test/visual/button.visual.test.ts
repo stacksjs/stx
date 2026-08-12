@@ -33,17 +33,17 @@ describe('Button Visual Regression', () => {
 
     it('should have dark mode classes for all variants', async () => {
       const result = await testDarkModeSupport(BUTTON_PATH, 'button')
-      // Button should have dark mode classes for primary, secondary, outline, ghost, danger variants
-      const expectedDarkClasses = [
-        'dark:bg-blue-600', // primary
-        'dark:hover:bg-blue-700', // primary hover
-        'dark:bg-neutral-700', // secondary
-        'dark:bg-red-600', // danger
-      ]
-
-      for (const expected of expectedDarkClasses) {
+      // Solid fills keep an explicit `dark:` value: a button's fill barely moves
+      // between modes (600 -> 500) while a role token's dark value LIGHTENS for
+      // legible text, so folding them together made every primary button paler
+      // in dark mode (stacksjs/stx#1930).
+      for (const expected of ['dark:bg-blue-600', 'dark:bg-red-600'])
         expect(result.darkClasses).toContain(expected)
-      }
+
+      // The neutral surfaces moved onto role tokens, which carry their dark
+      // value through `--stx-*` rather than a variant.
+      for (const expected of ['bg-surface-sunken', 'hover:bg-surface-raised'])
+        expect(result.tokenClasses).toContain(expected)
     })
   })
 

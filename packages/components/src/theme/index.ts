@@ -24,11 +24,16 @@
  *
  * A **runtime** seam, and **semantic** names.
  *
- * `stxThemePreset()` returns a `theme.colors` fragment in which every neutral
+ * `stxThemePreset()` returns a `theme.colors` fragment in which every themed
  * shade resolves through a CSS custom property with today's value as the
- * fallback, plus role-named tokens (`surface`, `fg-muted`, `line`, `accent`, …)
- * on top. Spread it into your crosswind config and nothing changes visually;
+ * fallback. Spread it into your crosswind config and nothing changes visually;
  * set a variable and every component follows, without a rebuild:
+ *
+ * ROLE tokens are not here. `packages/stx/src/theme-tokens.ts` puts those in the
+ * base theme, so they resolve in every app with no opt-in — a component saying
+ * `text-fg-muted` cannot depend on a config change. A second list of role names
+ * living here would disagree with that one, which is the failure this module
+ * exists to avoid rather than to introduce.
  *
  * ```ts
  * // crosswind.config.ts
@@ -37,9 +42,8 @@
  * ```
  *
  * ```css
- * :root      { --stx-color-gray-600: #52525b; --stx-surface: #fbfbfd; }
- * .dark      { --stx-color-gray-600: #a1a1aa; --stx-surface: #18181b; }
- * [data-tenant="acme"] { --stx-accent: #e11d48; }
+ * :root { --stx-color-gray-600: #52525b; }
+ * .dark { --stx-color-gray-600: #a1a1aa; }
  * ```
  *
  * The fallbacks are read from crosswind's own default palette rather than
@@ -74,35 +78,6 @@ export const THEMED_FAMILIES = ['gray', 'neutral', 'slate', 'zinc', 'red', 'gree
 /** Prefix for the per-shade variables, e.g. `--stx-color-gray-600`. */
 export const SHADE_VAR_PREFIX = '--stx-color'
 
-/**
- * Role-named tokens, and the shade each one falls back to.
- *
- * These are the seam an app should prefer: `--stx-surface` says what the colour
- * is FOR, where `--stx-color-gray-50` only says what it is. The fallback chain
- * means an app that sets neither still gets today's appearance, one that sets
- * only the palette gets a consistent shift, and one that sets the role token
- * gets exactly what it asked for.
- *
- * Light-mode values only. Dark mode is the app's to declare (`.dark { … }`),
- * because the components' own `dark:` variants already cover the default look
- * and a second opinion baked in here would fight them.
- */
-export const SEMANTIC_TOKENS: Record<string, { family: string, shade: string }> = {
-  'surface': { family: 'gray', shade: '50' },
-  'surface-raised': { family: 'gray', shade: '100' },
-  'surface-sunken': { family: 'gray', shade: '200' },
-  'fg': { family: 'gray', shade: '900' },
-  'fg-muted': { family: 'gray', shade: '600' },
-  'fg-subtle': { family: 'gray', shade: '400' },
-  'line': { family: 'gray', shade: '200' },
-  'line-strong': { family: 'gray', shade: '300' },
-  'accent': { family: 'indigo', shade: '600' },
-  'accent-hover': { family: 'indigo', shade: '500' },
-  'danger': { family: 'red', shade: '600' },
-  'success': { family: 'green', shade: '600' },
-  'warning': { family: 'yellow', shade: '500' },
-}
-
 /** `var(--name, fallback)`, or `var(--name)` when there is nothing to fall back to. */
 function cssVar(name: string, fallback?: string): string {
   return fallback === undefined ? `var(${name})` : `var(${name}, ${fallback})`
@@ -130,14 +105,6 @@ export function stxThemePreset(defaults: Palette = {}): Palette {
     palette[family] = themed
   }
 
-  for (const [token, { family, shade }] of Object.entries(SEMANTIC_TOKENS)) {
-    const shades = defaults[family]
-    const base = shades && typeof shades !== 'string' ? shades[shade] : undefined
-    // Two levels: the role token, falling back to the shade variable, falling
-    // back to the stock value. Setting the palette alone still moves the roles.
-    palette[token] = cssVar(`--stx-${token}`, cssVar(`${SHADE_VAR_PREFIX}-${family}-${shade}`, base))
-  }
-
   return palette
 }
 
@@ -158,9 +125,6 @@ export function themeVariableNames(defaults: Palette = {}): string[] {
     for (const shade of Object.keys(shades))
       names.push(`${SHADE_VAR_PREFIX}-${family}-${shade}`)
   }
-
-  for (const token of Object.keys(SEMANTIC_TOKENS))
-    names.push(`--stx-${token}`)
 
   return names
 }

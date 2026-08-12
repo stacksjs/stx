@@ -28,6 +28,8 @@
  * @module crosswind-config
  */
 
+import { semanticColors, semanticTokenCSS } from './theme-tokens'
+
 type Dict = Record<string, any>
 
 function isPlainObject(value: unknown): value is Dict {
@@ -61,6 +63,19 @@ export interface MergedCrosswindConfig {
   includePreflight: boolean
   /** Honours the user's `minify` key (default false). */
   minify: boolean
+  /**
+   * The `:root` / `.dark` declarations backing the role tokens (#1930).
+   *
+   * Returned rather than folded into `preflights` because a project can set
+   * `preflight: false`, and the tokens are not preflight — they are the values
+   * the generated utilities resolve against. Callers prepend this to the CSS
+   * they emit.
+   *
+   * Missing it degrades rather than breaks: every token carries its light value
+   * as the `var()` fallback, so light mode stays correct and dark mode reverts
+   * to the light colour.
+   */
+  tokenCSS: string
 }
 
 /**
@@ -78,6 +93,21 @@ export function mergeCrosswindConfig(base: Dict = {}, user: Dict = {}): MergedCr
   // resolved theme. Everything else merges here.
   const { extend: userExtend, ...userThemeKeys } = userTheme
   const { extend: baseExtend, ...baseThemeKeys } = baseTheme
+
+  /*
+   * Role tokens go in as BASE colours (#1930).
+   *
+   * Base, so the user's `theme.colors` still merges over them and an app can
+   * redefine `accent` outright. And base rather than an opt-in preset, because a
+   * component that says `text-fg-muted` has to resolve in every app — shipping
+   * the vocabulary separately from the components that use it would mean
+   * adopting the library silently required a config change.
+   *
+   * Purely additive: these are new names, so no existing utility changes and no
+   * opacity modifier on an existing palette colour becomes `color-mix()`.
+   */
+  const basePalette = (baseThemeKeys.colors || {}) as Dict
+  baseThemeKeys.colors = { ...basePalette, ...semanticColors(basePalette) }
 
   const theme: Dict = deepMergeThemes(baseThemeKeys, userThemeKeys)
   const extend = deepMergeThemes(baseExtend || {}, userExtend || {})
@@ -118,5 +148,6 @@ export function mergeCrosswindConfig(base: Dict = {}, user: Dict = {}): MergedCr
     shortcuts,
     includePreflight: user.preflight !== false,
     minify: user.minify === true,
+    tokenCSS: semanticTokenCSS(basePalette),
   }
 }

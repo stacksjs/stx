@@ -658,7 +658,7 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
     // still stx-owned and still pinned last (#1822); `preflight`/`minify` are
     // still honoured rather than ignored twice over.
     const merged = mergeCrosswindConfig(baseConfig as Record<string, any>, userConfig as Record<string, any>)
-    const { safelist, includePreflight, minify } = merged
+    const { safelist, includePreflight, minify, tokenCSS } = merged
     const crosswindConfig = merged.config as CrosswindConfig
 
     // Generate CSS using Crosswind's CSSGenerator
@@ -723,6 +723,10 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
       if (decls.length) css += `\n.${name} { ${decls.join(' ')} }`
       if (darkDecls.length) css += `\n@media (prefers-color-scheme: dark) { .dark .${name} { ${darkDecls.join(' ')} } }`
     }
+
+    // Role-token values first, so the utilities below resolve against them and
+    // an app's own stylesheet — which comes after — can still override (#1930).
+    css = tokenCSS + css
 
     setLruCache(cacheKey, css)
     // Best-effort persistence so the next request after a server

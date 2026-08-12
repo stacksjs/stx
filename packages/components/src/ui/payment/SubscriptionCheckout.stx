@@ -115,12 +115,12 @@ onMount(() => initializeStripe())
       <div>
         <!-- Contact Information -->
         <div>
-          <h2 class="text-lg text-gray-900 dark:text-gray-100 font-medium">
+          <h2 class="text-lg text-fg font-medium">
             Contact information
           </h2>
 
           <div class="mt-4">
-            <label for="email-address" class="block text-sm text-gray-700 dark:text-gray-300 font-medium">
+            <label for="email-address" class="block text-sm text-fg-strong font-medium">
               Email address
             </label>
             <div class="mt-1">
@@ -130,21 +130,21 @@ onMount(() => initializeStripe())
                 name="email-address"
                 autocomplete="email"
                 required
-                class="block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 shadow-sm bg-white dark:bg-blue-gray-700 text-gray-900 dark:text-gray-100 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                class="block w-full border border-line-strong rounded-md p-2 shadow-sm bg-white dark:bg-blue-gray-700 text-fg focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm focus:ring-indigo-500 dark:focus:ring-indigo-400"
               />
             </div>
           </div>
         </div>
 
         <!-- Billing Information -->
-        <div class="mt-10 border-t border-gray-200 dark:border-gray-700 pt-10">
-          <h2 class="text-lg text-gray-900 dark:text-gray-100 font-medium">
+        <div class="mt-10 border-t border-line pt-10">
+          <h2 class="text-lg text-fg font-medium">
             Billing information
           </h2>
 
           <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
             <div class="sm:col-span-2">
-              <label for="card-name" class="block text-sm text-gray-700 dark:text-gray-300 font-medium">
+              <label for="card-name" class="block text-sm text-fg-strong font-medium">
                 Name on card
               </label>
               <div class="mt-1">
@@ -154,21 +154,21 @@ onMount(() => initializeStripe())
                   name="card-name"
                   autocomplete="cc-name"
                   required
-                  class="block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 shadow-sm bg-white dark:bg-blue-gray-700 text-gray-900 dark:text-gray-100 focus:border-indigo-500 sm:text-sm focus:ring-indigo-500"
+                  class="block w-full border border-line-strong rounded-md p-2 shadow-sm bg-white dark:bg-blue-gray-700 text-fg focus:border-indigo-500 sm:text-sm focus:ring-indigo-500"
                 />
               </div>
             </div>
 
             <!-- Stripe Element Mount Point -->
             <div class="sm:col-span-2">
-              <div id="payment-element" class="mt-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-blue-gray-700 p-3"></div>
+              <div id="payment-element" class="mt-2 border border-line-strong rounded-md bg-white dark:bg-blue-gray-700 p-3"></div>
             </div>
           </div>
         </div>
 
         <!-- Payment Type -->
-        <div class="mt-10 border-t border-gray-200 dark:border-gray-700 pt-10">
-          <h2 class="text-lg text-gray-900 dark:text-gray-100 font-medium">
+        <div class="mt-10 border-t border-line pt-10">
+          <h2 class="text-lg text-fg font-medium">
             Payment
           </h2>
 
@@ -181,9 +181,9 @@ onMount(() => initializeStripe())
                   name="payment-type"
                   type="radio"
                   checked
-                  class="h-4 w-4 border-gray-300 dark:border-gray-600 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                  class="h-4 w-4 border-line-strong text-accent focus:ring-indigo-500 dark:focus:ring-indigo-400"
                 />
-                <label for="credit-card" class="ml-3 block text-sm text-gray-700 dark:text-gray-300 font-medium">
+                <label for="credit-card" class="ml-3 block text-sm text-fg-strong font-medium">
                   Credit card
                 </label>
               </div>
@@ -194,22 +194,22 @@ onMount(() => initializeStripe())
 
       <!-- Right Column - Order Summary -->
       <div class="mt-10 lg:mt-0">
-        <h2 class="text-lg text-gray-900 dark:text-gray-100 font-medium">
+        <h2 class="text-lg text-fg font-medium">
           Order summary
         </h2>
 
-        <div class="mt-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-blue-gray-800 shadow-sm">
+        <div class="mt-4 border border-line rounded-lg bg-white dark:bg-blue-gray-800 shadow-sm">
           <h3 class="sr-only">Items in your cart</h3>
 
           <!-- Product List -->
-          <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+          <ul role="list" class="divide-y divide-line">
             @foreach(product in products)
               <li class="flex px-4 py-6 sm:px-6">
                 <div class="flex-shrink-0">
                   @if(product.images)
                     <img src="{{ product.images }}" alt="{{ product.name }}" class="w-20 rounded-md" />
                   @else
-                    <div class="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center">
+                    <div class="w-20 h-20 bg-surface-sunken rounded-md flex items-center justify-center">
                       <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
@@ -222,11 +222,11 @@ onMount(() => initializeStripe())
                     <div class="min-w-0 flex-1">
                       <h4 class="text-sm">
                         @if(product.href)
-                          <StxLink to="{{ product.href }}" class="text-gray-700 dark:text-gray-300 font-medium hover:text-gray-800 dark:hover:text-gray-200">
+                          <StxLink to="{{ product.href }}" class="text-fg-strong font-medium hover:text-gray-800 dark:hover:text-gray-200">
                             {{ product.name }}
                           </StxLink>
                         @else
-                          <span class="text-gray-700 dark:text-gray-300 font-medium">
+                          <span class="text-fg-strong font-medium">
                             {{ product.name }}
                           </span>
                         @endif
@@ -237,7 +237,7 @@ onMount(() => initializeStripe())
                       <div class="ml-4 flow-root flex-shrink-0">
                         <button
                           type="button"
-                          class="flex items-center justify-center bg-white dark:bg-blue-gray-700 p-2.5 text-gray-400 dark:text-gray-500 -m-2.5 hover:text-gray-500 dark:hover:text-gray-400"
+                          class="flex items-center justify-center bg-white dark:bg-blue-gray-700 p-2.5 text-fg-subtle -m-2.5 hover:text-fg-soft"
                           @click="onRemoveProduct('{{ product.id }}')"
                           title="Remove"
                         >
@@ -251,7 +251,7 @@ onMount(() => initializeStripe())
                   </div>
 
                   <div class="flex flex-1 items-end justify-between pt-2">
-                    <p class="mt-1 text-sm text-gray-900 dark:text-gray-100 font-medium">
+                    <p class="mt-1 text-sm text-fg font-medium">
                       ${{ (product.price / 100).toFixed(2) }}
                     </p>
 
@@ -260,7 +260,7 @@ onMount(() => initializeStripe())
                       <select
                         id="quantity-{{ product.id }}"
                         name="quantity"
-                        class="border border-gray-300 dark:border-gray-600 rounded-md text-left text-base text-gray-700 dark:text-gray-300 font-medium shadow-sm bg-white dark:bg-blue-gray-700 focus:border-indigo-500 sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        class="border border-line-strong rounded-md text-left text-base text-fg-strong font-medium shadow-sm bg-white dark:bg-blue-gray-700 focus:border-indigo-500 sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       >
                         <option value="1" {{ (product.quantity || 1) === 1 ? 'selected' : '' }}>1</option>
                         <option value="2" {{ (product.quantity || 1) === 2 ? 'selected' : '' }}>2</option>
@@ -279,18 +279,18 @@ onMount(() => initializeStripe())
           </ul>
 
           <!-- Summary Totals -->
-          <dl class="border-t border-gray-200 dark:border-gray-700 px-4 py-6 space-y-6 sm:px-6">
+          <dl class="border-t border-line px-4 py-6 space-y-6 sm:px-6">
             <div class="flex items-center justify-between">
-              <dt class="text-sm text-gray-600 dark:text-gray-400">Subtotal</dt>
-              <dd class="text-sm text-gray-900 dark:text-gray-100 font-medium">
+              <dt class="text-sm text-fg-muted">Subtotal</dt>
+              <dd class="text-sm text-fg font-medium">
                 ${{ (subtotal / 100).toFixed(2) }}
               </dd>
             </div>
 
             @if(shipping > 0)
               <div class="flex items-center justify-between">
-                <dt class="text-sm text-gray-600 dark:text-gray-400">Shipping</dt>
-                <dd class="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                <dt class="text-sm text-fg-muted">Shipping</dt>
+                <dd class="text-sm text-fg font-medium">
                   ${{ (shipping / 100).toFixed(2) }}
                 </dd>
               </div>
@@ -298,26 +298,26 @@ onMount(() => initializeStripe())
 
             @if(taxes > 0)
               <div class="flex items-center justify-between">
-                <dt class="text-sm text-gray-600 dark:text-gray-400">Taxes</dt>
-                <dd class="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                <dt class="text-sm text-fg-muted">Taxes</dt>
+                <dd class="text-sm text-fg font-medium">
                   ${{ (taxes / 100).toFixed(2) }}
                 </dd>
               </div>
             @endif
 
-            <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-6">
-              <dt class="text-base text-gray-900 dark:text-gray-100 font-medium">Total</dt>
-              <dd class="text-base text-gray-900 dark:text-gray-100 font-medium">
+            <div class="flex items-center justify-between border-t border-line pt-6">
+              <dt class="text-base text-fg font-medium">Total</dt>
+              <dd class="text-base text-fg font-medium">
                 ${{ (total / 100).toFixed(2) }}
               </dd>
             </div>
           </dl>
 
           <!-- Submit Button -->
-          <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-6 sm:px-6">
+          <div class="border-t border-line px-4 py-6 sm:px-6">
             <button
               type="submit"
-              class="w-full border border-transparent rounded-md bg-indigo-600 dark:bg-indigo-500 px-4 py-3 text-base text-white font-medium shadow-sm hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900"
+              class="w-full border border-transparent rounded-md bg-accent-solid px-4 py-3 text-base text-white font-medium shadow-sm hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900"
             >
               Confirm order
             </button>

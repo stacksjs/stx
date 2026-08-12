@@ -5,8 +5,65 @@ The bundled components name palette shades directly — `bg-gray-100`,
 That is fine until your app has its own palette, at which point `<Button>` looks
 like it belongs to a different product.
 
-There are three ways to redirect those colours, in increasing order of how much
-you have to opt into.
+Most of them now name a **role** instead — `text-fg-muted`, `bg-surface`,
+`border-line` — and those roles are CSS custom properties you can move at
+runtime. What follows is every way to redirect the library's colours, in
+increasing order of how much you have to opt into.
+
+## 0. Set a role variable — runtime, nothing to configure
+
+The components use role tokens, and every role is a CSS variable the framework
+declares for you. Overriding one re-themes every component that uses it, with no
+config file and no rebuild:
+
+```css
+:root {
+  --stx-accent: #e11d48;
+  --stx-surface: #fbfbfd;
+  --stx-line: #e4e4e7;
+}
+
+.dark {
+  --stx-surface: #18181b;
+  --stx-line: #3f3f46;
+}
+
+[data-tenant="acme"] {
+  --stx-accent: #0ea5e9;
+}
+```
+
+### The roles
+
+| Token | Utility examples | Light | Dark |
+|---|---|---|---|
+| `fg` | `text-fg` | gray-900 | gray-100 |
+| `fg-strong` | `text-fg-strong` | gray-700 | gray-300 |
+| `fg-muted` | `text-fg-muted` | gray-600 | gray-400 |
+| `fg-soft` | `text-fg-soft` | gray-500 | gray-400 |
+| `fg-subtle` | `text-fg-subtle`, `placeholder-fg-subtle` | gray-400 | gray-500 |
+| `surface` | `bg-surface` | gray-50 | gray-800 |
+| `surface-raised` | `bg-surface-raised` | gray-100 | gray-700 |
+| `surface-sunken` | `bg-surface-sunken` | gray-200 | gray-700 |
+| `line` | `border-line`, `divide-line` | gray-200 | gray-700 |
+| `line-strong` | `border-line-strong`, `ring-line-strong` | gray-300 | gray-600 |
+| `accent` | `text-accent`, `ring-accent` | indigo-600 | indigo-400 |
+| `info` | `text-info`, `stroke-info` | blue-600 | blue-400 |
+| `danger` | `text-danger` | red-600 | red-400 |
+| `success` | `text-success` | green-600 | green-400 |
+| `warning` | `text-warning` | yellow-500 | yellow-400 |
+| `accent-solid` … `success-solid` | `bg-accent-solid` | same as above | 500 |
+
+The `-solid` variants exist because a solid fill and coloured text need
+different dark values. Text has to *lighten* on a dark background to stay
+legible (600 → 400); a button background barely moves (600 → 500) or it stops
+reading as the same button.
+
+The tokens are in stx's base theme, so they resolve in every app with no opt-in
+— a component saying `text-fg-muted` cannot depend on your config. Each is
+`var(--stx-<role>, <light value>)`, so if the variable block ever fails to reach
+a page, light mode is still correct and dark mode degrades to the light colour
+rather than to nothing.
 
 ## 1. Redefine a shade — build time, works today, no opt-in
 
@@ -73,34 +130,13 @@ variable. Now you can move any of them at runtime:
 }
 ```
 
-### Role tokens
-
-The preset also adds names for what a colour is *for*, not just what it is.
-These work as ordinary utilities — `bg-surface`, `text-fg-muted`,
-`border-line`, `ring-accent`:
-
-| Token | Variable | Falls back to |
-|---|---|---|
-| `surface` | `--stx-surface` | `gray-50` |
-| `surface-raised` | `--stx-surface-raised` | `gray-100` |
-| `surface-sunken` | `--stx-surface-sunken` | `gray-200` |
-| `fg` | `--stx-fg` | `gray-900` |
-| `fg-muted` | `--stx-fg-muted` | `gray-600` |
-| `fg-subtle` | `--stx-fg-subtle` | `gray-400` |
-| `line` | `--stx-line` | `gray-200` |
-| `line-strong` | `--stx-line-strong` | `gray-300` |
-| `accent` | `--stx-accent` | `indigo-600` |
-| `accent-hover` | `--stx-accent-hover` | `indigo-500` |
-| `danger` | `--stx-danger` | `red-600` |
-| `success` | `--stx-success` | `green-600` |
-| `warning` | `--stx-warning` | `yellow-500` |
-
-Each role falls back through the shade variable to the stock value, so an app
-that moves only the palette still moves the roles with it.
-
 `themeVariableNames(defaultConfig.theme.colors)` returns every variable the
 preset reads, generated from the same source as the palette so the list cannot
 drift from what is actually emitted.
+
+The preset covers the **palette**. The **roles** in section 0 come from stx's
+base theme and need no opt-in — a second list of role names here would disagree
+with that one the moment either moved.
 
 ### The trade
 
@@ -122,18 +158,28 @@ Every component takes a `className` prop, appended after its own classes:
 
 Good for one-offs. Not a theme.
 
-## Current limitation
+## What is not migrated
 
-The components themselves still name palette shades (`text-gray-600`), not role
-tokens (`text-fg-muted`). Both routes above work regardless — options 1 and 2
-redirect the palette those classes resolve through. But an app cannot yet say
-"every border in the library comes from `--stx-line`" and have it apply, because
-the components do not distinguish a gray that is a border from a gray that is
-muted text.
+Roughly 270 of the library's ~890 palette-shade uses still name a shade
+directly. Three cases were deliberately left alone, because migrating them would
+have changed appearance rather than preserved it:
 
-Migrating them is a per-occurrence judgement across 903 uses in 62 files, so it
-is being done deliberately rather than by search-and-replace. Components written
-from here on should use the role tokens.
+- **A shade with no `dark:` twin.** Turning it into a token would *add*
+  dark-mode behaviour it never had.
+- **A pair whose dark twin is a different hue** — `text-neutral-900
+  dark:text-blue-400`. That is a deliberate colour, not a shade of one role.
+- **Hover states on solid fills.** A primary button darkens on hover in both
+  modes, while the role token's dark value lightens. Folding them together made
+  hovering a dark-mode button turn it paler than its resting state.
 
-See `packages/components/src/theme` and
+Where a component's pairing was already the dominant one, the migration is
+appearance-preserving. 43 occurrences used a one-step-off pairing (say
+`text-gray-900 dark:text-gray-200` where the library's dominant pairing is
+`dark:text-gray-100`) and were normalized onto the role — a small, deliberate
+consistency change.
+
+Options 1 and 2 still cover everything, migrated or not, since they redirect the
+palette those remaining classes resolve through.
+
+See `packages/stx/src/theme-tokens.ts`, `packages/components/src/theme` and
 `packages/components/test/theme-preset.test.ts`.

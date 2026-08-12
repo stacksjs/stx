@@ -88,7 +88,7 @@ defineExpose({
           <div class="relative flex h-full flex-col overflow-y-auto bg-white dark:bg-blue-gray-800 py-6 shadow-xl">
             @if(title)
               <div class="px-4 sm:px-6">
-                <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h2 class="text-base font-semibold text-fg">
                   {{ title }}
                 </h2>
               </div>

@@ -2,7 +2,7 @@
 export const className = $props.className || ''
 export const as = $props.as || 'span'
 
-const baseClasses = 'inline text-sm text-neutral-500 dark:text-neutral-400'
+const baseClasses = 'inline text-sm text-fg-soft'
 const descriptionClasses = `${baseClasses} ${className}`.trim()
 </script>
 

@@ -22,17 +22,17 @@ const iconSizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
 const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-blue-gray-700 dark:text-gray-100'
 const stateClasses = error
   ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
-  : 'ring-gray-300 dark:ring-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-indigo-600 dark:focus:ring-indigo-400'
+  : 'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'
 const disabledClasses = disabled
-  ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
+  ? 'opacity-50 cursor-not-allowed bg-surface'
   : readonly
-    ? 'bg-gray-50 dark:bg-gray-800 cursor-default'
+    ? 'bg-surface cursor-default'
     : 'bg-white dark:bg-blue-gray-700'
 const paddingClasses = leftIcon ? 'pl-10' : rightIcon || clearable ? 'pr-10' : ''
 
 export const inputClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses} ${paddingClasses} ${inputClassName}`.trim()
-export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}`.trim()
-export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`.trim()
+export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-danger' : 'text-fg'}`.trim()
+export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
 export const iconClasses = iconSizeClasses[size]
 export const inputId = `input-${label}`
 </script>
@@ -74,7 +74,7 @@ defineExpose({ value: inputValue, clear: onClear })
   <div class="relative">
     @if(leftIcon)
       <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-        <span class="{{ iconClasses }} text-gray-400 dark:text-gray-500">{!! leftIcon !!}</span>
+        <span class="{{ iconClasses }} text-fg-subtle">{!! leftIcon !!}</span>
       </div>
     @endif
 
@@ -98,7 +98,7 @@ defineExpose({ value: inputValue, clear: onClear })
         <button
           type="button"
           @click="onClear()"
-          class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+          class="text-fg-subtle hover:text-fg-muted focus:outline-none"
           aria-label="Clear input"
         >
           <svg class="{{ iconClasses }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -109,7 +109,7 @@ defineExpose({ value: inputValue, clear: onClear })
     @endif
     @if(rightIcon && !clearable)
       <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-        <span class="{{ iconClasses }} text-gray-400 dark:text-gray-500">{!! rightIcon !!}</span>
+        <span class="{{ iconClasses }} text-fg-subtle">{!! rightIcon !!}</span>
       </div>
     @endif
   </div>
@@ -125,7 +125,7 @@ defineExpose({ value: inputValue, clear: onClear })
       @endif
 
       @if(showCount && maxLength)
-        <p class="text-sm text-gray-500 dark:text-gray-400" x-text="charCount()"></p>
+        <p class="text-sm text-fg-soft" x-text="charCount()"></p>
       @endif
     </div>
   @endif

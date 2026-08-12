@@ -24,7 +24,7 @@ export const isOneTime = mode === 'one-time'
 
 @if(isOneTime)
   <div class="p-8 text-center">
-    <p class="text-gray-600 dark:text-gray-400">
+    <p class="text-fg-muted">
       One-time payment mode is not yet implemented.
     </p>
   </div>

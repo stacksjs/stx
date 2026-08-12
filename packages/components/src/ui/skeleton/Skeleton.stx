@@ -33,7 +33,7 @@ if (height) {
   styleString += `height: ${typeof height === 'number' ? height + 'px' : height};`
 }
 
-export const skeletonClasses = `bg-gray-200 dark:bg-gray-700 ${baseClasses} ${animationClasses} ${className}`.trim()
+export const skeletonClasses = `bg-surface-sunken ${baseClasses} ${animationClasses} ${className}`.trim()
 export const containerClasses = count > 1 ? 'space-y-3' : ''
 </script>
 

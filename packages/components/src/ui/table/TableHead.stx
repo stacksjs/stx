@@ -1,7 +1,7 @@
 <script server>
 export const className = $props.className || ''
 
-const baseClasses = 'bg-neutral-50 dark:bg-neutral-800'
+const baseClasses = 'bg-surface'
 const headClasses = `${baseClasses} ${className}`.trim()
 </script>
 

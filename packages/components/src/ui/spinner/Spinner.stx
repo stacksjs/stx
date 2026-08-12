@@ -16,19 +16,19 @@ const sizeClasses = {
 
 // Color classes
 const colorClasses = {
-  primary: 'text-blue-600 dark:text-blue-500',
+  primary: 'text-info',
   secondary: 'text-purple-600 dark:text-purple-500',
-  success: 'text-green-600 dark:text-green-500',
+  success: 'text-success',
   warning: 'text-yellow-600 dark:text-yellow-500',
-  danger: 'text-red-600 dark:text-red-500',
+  danger: 'text-danger',
   info: 'text-cyan-600 dark:text-cyan-500',
   white: 'text-white',
-  gray: 'text-gray-600 dark:text-gray-400',
+  gray: 'text-fg-muted',
 }
 
 export const containerClasses = `inline-flex flex-col items-center gap-2 ${className}`.trim()
 export const spinnerClasses = `${sizeClasses[size]} ${colorClasses[color]} animate-spin`.trim()
-export const labelClasses = `text-sm font-medium text-gray-700 dark:text-gray-300`.trim()
+export const labelClasses = `text-sm font-medium text-fg-strong`.trim()
 
 // Dots size classes
 const dotsSizeClasses = {
@@ -40,11 +40,11 @@ const dotsSizeClasses = {
 }
 
 const dotsColorClasses = {
-  primary: 'bg-blue-600 dark:bg-blue-500',
+  primary: 'bg-info-solid',
   secondary: 'bg-purple-600 dark:bg-purple-500',
-  success: 'bg-green-600 dark:bg-green-500',
+  success: 'bg-success-solid',
   warning: 'bg-yellow-600 dark:bg-yellow-500',
-  danger: 'bg-red-600 dark:bg-red-500',
+  danger: 'bg-danger-solid',
   info: 'bg-cyan-600 dark:bg-cyan-500',
   white: 'bg-white',
   gray: 'bg-gray-600 dark:bg-gray-400',

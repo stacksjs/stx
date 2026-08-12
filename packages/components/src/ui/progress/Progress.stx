@@ -11,11 +11,11 @@ export const className = $props.className || ''
 const linearSizeClasses = { sm: 'h-1', md: 'h-2', lg: 'h-3' }
 const circularSizeClasses = { sm: 'w-12 h-12', md: 'w-16 h-16', lg: 'w-24 h-24' }
 const colorClasses = {
-  primary: 'bg-blue-600 dark:bg-blue-500',
+  primary: 'bg-info-solid',
   secondary: 'bg-purple-600 dark:bg-purple-500',
-  success: 'bg-green-600 dark:bg-green-500',
+  success: 'bg-success-solid',
   warning: 'bg-yellow-600 dark:bg-yellow-500',
-  danger: 'bg-red-600 dark:bg-red-500',
+  danger: 'bg-danger-solid',
   info: 'bg-cyan-600 dark:bg-cyan-500',
 }
 
@@ -28,16 +28,16 @@ export const containerClasses = variant === 'linear'
   ? `w-full ${className}`.trim()
   : `inline-flex items-center justify-center ${className}`.trim()
 
-export const linearTrackClasses = `w-full ${linearSizeClasses[size]} bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden`.trim()
+export const linearTrackClasses = `w-full ${linearSizeClasses[size]} bg-surface-sunken rounded-full overflow-hidden`.trim()
 export const linearBarClasses = `h-full ${colorClasses[color]} transition-all duration-300 ease-in-out ${indeterminate ? 'animate-progress-indeterminate' : ''}`.trim()
 export const circularSizeClass = circularSizeClasses[size]
-export const labelClasses = `text-sm font-medium text-gray-700 dark:text-gray-300 mb-2`.trim()
+export const labelClasses = `text-sm font-medium text-fg-strong mb-2`.trim()
 export const circularTrackColor = 'stroke-gray-200 dark:stroke-gray-700'
-export const circularBarColor = color === 'primary' ? 'stroke-blue-600 dark:stroke-blue-500'
+export const circularBarColor = color === 'primary' ? 'stroke-info'
   : color === 'secondary' ? 'stroke-purple-600 dark:stroke-purple-500'
-  : color === 'success' ? 'stroke-green-600 dark:stroke-green-500'
+  : color === 'success' ? 'stroke-success'
   : color === 'warning' ? 'stroke-yellow-600 dark:stroke-yellow-500'
-  : color === 'danger' ? 'stroke-red-600 dark:stroke-red-500'
+  : color === 'danger' ? 'stroke-danger'
   : 'stroke-cyan-600 dark:stroke-cyan-500'
 </script>
 
@@ -112,7 +112,7 @@ defineExpose({ value, setValue: (v) => value.set(v) })
 
       @if(showLabel)
         <div class="absolute inset-0 flex items-center justify-center">
-          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300" x-text="percentLabel()"></span>
+          <span class="text-sm font-semibold text-fg-strong" x-text="percentLabel()"></span>
         </div>
       @endif
     </div>

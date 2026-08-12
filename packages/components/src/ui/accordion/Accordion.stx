@@ -11,10 +11,10 @@ export const allowMultiple = $props.allowMultiple || false
 export const defaultOpen = $props.defaultOpen || []
 export const className = $props.className || ''
 
-export const accordionClasses = `divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg ${className}`.trim()
-export const headerClasses = `w-full flex items-center justify-between px-4 py-3 text-left font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900`.trim()
-export const iconClasses = `w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200`.trim()
-export const contentClasses = `px-4 py-3 text-gray-700 dark:text-gray-300`.trim()
+export const accordionClasses = `divide-y divide-line border border-line rounded-lg ${className}`.trim()
+export const headerClasses = `w-full flex items-center justify-between px-4 py-3 text-left font-medium text-fg hover:bg-surface transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900`.trim()
+export const iconClasses = `w-5 h-5 text-fg-soft transition-transform duration-200`.trim()
+export const contentClasses = `px-4 py-3 text-fg-strong`.trim()
 export const hasPropItems = Array.isArray(items) && items.length > 0
 </script>
 

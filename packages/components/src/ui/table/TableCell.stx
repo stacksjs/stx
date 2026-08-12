@@ -1,7 +1,7 @@
 <script server>
 export const className = $props.className || ''
 
-const baseClasses = 'px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'
+const baseClasses = 'px-6 py-4 whitespace-nowrap text-sm text-fg'
 const cellClasses = `${baseClasses} ${className}`.trim()
 </script>
 

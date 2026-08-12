@@ -14,14 +14,14 @@ const sizeClasses = { sm: 'px-3 py-1.5 text-sm h-8', md: 'px-4 py-2 text-base h-
 const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-blue-gray-700 dark:text-gray-100'
 const stateClasses = error
   ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
-  : 'ring-gray-300 dark:ring-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-indigo-600 dark:focus:ring-indigo-400'
+  : 'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'
 const disabledClasses = disabled
-  ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
+  ? 'opacity-50 cursor-not-allowed bg-surface'
   : 'bg-white dark:bg-blue-gray-700 cursor-pointer hover:ring-gray-400 dark:hover:ring-gray-500'
 
 export const selectClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses} ${className}`.trim()
-export const labelClasses = `block text-sm font-medium leading-6 ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}`.trim()
-export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`.trim()
+export const labelClasses = `block text-sm font-medium leading-6 ${error ? 'text-danger' : 'text-fg'}`.trim()
+export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
 export const selectId = `select-${value}`
 </script>
 

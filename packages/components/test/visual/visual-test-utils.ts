@@ -10,6 +10,8 @@ import { dirname, join } from 'node:path'
 /**
  * Snapshot directory location
  */
+import { SEMANTIC_TOKENS } from '../../../stx/src/theme-tokens'
+
 export const SNAPSHOTS_DIR: string = join(__dirname, '__snapshots__')
 
 /**
@@ -284,19 +286,31 @@ export async function testComponentTemplate(
 }
 
 /**
- * Test that dark mode classes are present
+ * Test that a component handles dark mode.
+ *
+ * There are two ways to do that now, and counting only the first would report a
+ * fully migrated component as having no dark mode at all — which is false, and
+ * exactly the kind of test that fails for the wrong reason (stacksjs/stx#1930):
+ *
+ *  - a `dark:` variant, which carries its own value; or
+ *  - a role token like `text-fg-muted`, whose value comes from `--stx-fg-muted`
+ *    and which the framework redeclares under `.dark`.
  */
 export async function testDarkModeSupport(
   componentPath: string,
   _componentName: string,
-): Promise<{ hasDarkModeClasses: boolean, darkClasses: string[] }> {
+): Promise<{ hasDarkModeClasses: boolean, darkClasses: string[], tokenClasses: string[] }> {
   const template = await readComponentTemplate(componentPath)
   const classes = extractClasses(template)
   const darkClasses = classes.filter(c => c.startsWith('dark:'))
+  const roles = Object.keys(SEMANTIC_TOKENS)
+  const tokenClasses = classes.filter(c => roles.some(role =>
+    new RegExp(`(?:^|:)(?:bg|text|border|ring|divide|placeholder|stroke|fill|outline)-${role}$`).test(c)))
 
   return {
-    hasDarkModeClasses: darkClasses.length > 0,
+    hasDarkModeClasses: darkClasses.length > 0 || tokenClasses.length > 0,
     darkClasses,
+    tokenClasses,
   }
 }
 

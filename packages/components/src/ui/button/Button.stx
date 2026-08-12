@@ -11,9 +11,9 @@ export const className = $props.className || ''
 
 const variantClasses = {
   primary: 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg dark:bg-blue-600 dark:hover:bg-blue-700',
-  secondary: 'bg-neutral-200 hover:bg-neutral-300 text-neutral-900 dark:bg-neutral-700 dark:hover:bg-neutral-600 dark:text-white',
+  secondary: 'bg-surface-sunken hover:bg-neutral-300 text-neutral-900 dark:hover:bg-neutral-600 dark:text-white',
   outline: 'border-2 border-blue-500 text-blue-500 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-950',
-  ghost: 'hover:bg-neutral-100 text-neutral-700 dark:hover:bg-neutral-800 dark:text-neutral-300',
+  ghost: 'hover:bg-surface-raised text-fg-strong',
   danger: 'bg-red-500 hover:bg-red-600 text-white shadow-md hover:shadow-lg dark:bg-red-600 dark:hover:bg-red-700',
 }
 

@@ -2,7 +2,7 @@
 export const className = $props.className || ''
 export const value = $props.value
 
-const baseClasses = 'flex cursor-pointer select-none items-center px-4 py-2 text-neutral-900 dark:text-neutral-100 hover:bg-blue-600 hover:text-white'
+const baseClasses = 'flex cursor-pointer select-none items-center px-4 py-2 text-fg hover:bg-blue-600 hover:text-white'
 export const itemClasses = `${baseClasses} ${className}`.trim()
 </script>
 
