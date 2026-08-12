@@ -30,19 +30,35 @@ export interface UseQueryOptions<T = unknown> {
   onError?: (error: Error) => void
 }
 
+/** How one run of a request should behave. */
+export interface QueryRefetchOptions {
+  /**
+   * Refresh without touching `loading` or clearing the current error.
+   *
+   * A poll refreshes data already on screen, so driving the first-load state
+   * from it puts a spinner over a populated view every tick (#1929). Bind
+   * `isFetching` for a subtle in-flight indicator instead.
+   */
+  background?: boolean
+}
+
 export interface UseQueryResult<T = unknown> {
   /** Reactive data signal */
   data: { (): T | null, set: (v: T | null) => void }
-  /** Reactive loading signal */
+  /** True while a first-load request is in flight. A background one leaves it alone. */
   loading: { (): boolean, set: (v: boolean) => void }
+  /** True while ANY request is in flight, background ones included. */
+  isFetching: { (): boolean, set: (v: boolean) => void }
   /** Reactive error signal */
   error: { (): string | null, set: (v: string | null) => void }
   /** Whether the data is stale and being revalidated */
   isStale: { (): boolean, set: (v: boolean) => void }
   /** Manually trigger a refetch */
-  refetch: () => Promise<void>
+  // eslint-disable-next-line pickier/no-unused-vars
+  refetch: (options?: QueryRefetchOptions) => Promise<void>
   /** Invalidate cache and refetch */
-  invalidate: () => Promise<void>
+  // eslint-disable-next-line pickier/no-unused-vars
+  invalidate: (options?: QueryRefetchOptions) => Promise<void>
 }
 
 export interface UseMutationOptions<T = unknown> {

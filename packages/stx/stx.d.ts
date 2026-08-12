@@ -199,11 +199,42 @@ declare function useSearchParams(): {
 // Data fetching
 // ============================================================================
 
-interface StxQueryResult<T> {
+/** How one run of a request should behave. */
+interface StxRefetchOptions {
+  /**
+   * Refresh without touching `loading` or clearing the current error.
+   *
+   * A poll refreshes data that is already on screen, so driving the first-load
+   * state from it puts a spinner over a populated view on every tick — the
+   * reason a polling view could not use these primitives at all (#1929). Bind
+   * `isFetching` for a subtle in-flight indicator instead.
+   */
+  background?: boolean
+}
+
+interface StxFetchResult<T> {
   data: StxSignal<T | null>
+  /** True while a first-load request is in flight. A background one leaves it alone. */
   loading: StxSignal<boolean>
+  /** True while ANY request is in flight, background ones included. */
+  isFetching: StxSignal<boolean>
   error: StxSignal<Error | null>
-  refetch: () => Promise<void>
+  refetch: (_options?: StxRefetchOptions) => Promise<void>
+}
+
+/*
+ * `useQuery` returns more than `useFetch` does, and declaring one shape for
+ * both hid it: `isStale` and `invalidate` existed at runtime and were invisible
+ * to the type, so reading either was an error on a value that was really there
+ * (#1929). Extending rather than widening the shared interface, because the
+ * inverse mistake is worse — declaring `invalidate` on `useFetch` would
+ * type-check a call to something that is undefined at runtime.
+ */
+interface StxQueryResult<T> extends StxFetchResult<T> {
+  /** True when cached data is on screen while a revalidation runs. */
+  isStale: StxSignal<boolean>
+  /** Drop this key from the cache and refetch. */
+  invalidate: (_options?: StxRefetchOptions) => Promise<void>
 }
 
 interface StxMutationResult<T> {
@@ -213,7 +244,7 @@ interface StxMutationResult<T> {
   mutate: (body?: unknown) => Promise<T>
 }
 
-declare function useFetch<T = any>(_url: string, _options?: any): StxQueryResult<T>
+declare function useFetch<T = any>(_url: string, _options?: any): StxFetchResult<T>
 declare function useQuery<T = any>(_url: string, _options?: any): StxQueryResult<T>
 declare function useMutation<T = any>(_url: string, _options?: any): StxMutationResult<T>
 

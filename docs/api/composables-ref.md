@@ -434,14 +434,39 @@ const { data: posts } = useFetch('/api/posts', {
 | Property | Type | Description |
 |----------|------|-------------|
 | `data` | `Signal<T \| null>` | Response data |
-| `loading` | `Signal<boolean>` | Loading state |
+| `loading` | `Signal<boolean>` | First-load state. A background refetch leaves it alone |
+| `isFetching` | `Signal<boolean>` | True while **any** request is open, background ones included |
 | `error` | `Signal<string \| null>` | Error message |
-| `refetch` | `() => Promise<void>` | Re-fetch data |
+| `refetch` | `(options?: { background?: boolean }) => Promise<void>` | Re-fetch data |
 | `isLoading` | `boolean` (getter) | Convenience: `loading()` |
 | `hasError` | `boolean` (getter) | Convenience: `!!error()` |
 | `isEmpty` | `boolean` (getter) | Convenience: `!loading() && !data()` |
 
 When `url` is a function, it is watched with `effect()` — changing the signal it reads triggers a refetch.
+
+#### Background refresh
+
+`refetch({ background: true })` updates `data` **without** touching `loading` and
+without clearing the current error, so a poll cannot flash a spinner over a
+populated view or blank a message that is still true. The error clears when the
+background request actually succeeds.
+
+Bind `isFetching` when you want a subtle "refreshing…" indicator during a poll:
+
+```html
+<script>
+const { data, loading, isFetching, refetch } = useFetch('/api/rows')
+
+onMount(() => {
+  const id = setInterval(() => refetch({ background: true }), 60_000)
+  onDestroy(() => clearInterval(id))
+})
+</script>
+
+<Spinner :if="loading" />
+<span :if="isFetching" class="text-xs opacity-60">refreshing…</span>
+<ul :for="row in data()" :key="row.id"><li x-text="row.name"></li></ul>
+```
 
 ### useQuery
 
@@ -485,11 +510,16 @@ const { data, loading, isStale, refetch, invalidate } = useQuery('/api/users', {
 | Property | Type | Description |
 |----------|------|-------------|
 | `data` | `Signal<T \| null>` | Response data |
-| `loading` | `Signal<boolean>` | Loading state |
+| `loading` | `Signal<boolean>` | First-load state. A background refetch leaves it alone |
+| `isFetching` | `Signal<boolean>` | True while **any** request is open, background ones included |
 | `error` | `Signal<string \| null>` | Error message |
 | `isStale` | `Signal<boolean>` | Whether current data is stale |
-| `refetch` | `() => Promise<void>` | Force re-fetch |
-| `invalidate` | `() => Promise<void>` | Clear cache and re-fetch |
+| `refetch` | `(options?: { background?: boolean }) => Promise<void>` | Force re-fetch |
+| `invalidate` | `(options?: { background?: boolean }) => Promise<void>` | Clear cache and re-fetch |
+
+`refetchInterval` and `refetchOnFocus` are **background** refreshes: they update
+`data` without touching `loading`, so a poll does not put a spinner over a view
+that already has data. Bind `isFetching` for a subtle in-flight indicator.
 
 ### useMutation
 

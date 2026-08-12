@@ -257,7 +257,10 @@ describe('Feature #6: Declarative data fetching (useFetch)', () => {
 
   it('should have fetchData async function', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain('const fetchData = async () =>')
+    // Matched as a shape rather than as an exact literal: it took a parameter
+    // when refetch gained `{ background: true }` (#1929), and pinning the empty
+    // argument list made a legitimate signature change look like a regression.
+    expect(runtime).toMatch(/const fetchData = async \([^)]*\) =>/)
   })
 
   it('should support transform option', () => {

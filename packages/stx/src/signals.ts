@@ -1124,6 +1124,10 @@ finally {
     // case where a template is most likely driving a spinner off it (#1818).
     const immediate = options.immediate !== false;
     const loading = state(immediate);
+    // Any request in flight, background ones included. loading answers "is
+    // there nothing to show yet"; isFetching answers "is a request open" — and
+    // a background refresh is the case where those two stop agreeing (#1929).
+    const isFetching = state(immediate);
     const error = state(null);
     if (options.suspense) registerSuspense(loading, error);
 
@@ -1133,17 +1137,24 @@ finally {
     // last in-flight one. State writes are guarded on signal.aborted (#1871).
     let __stxAbort = null;
 
-    const fetchData = async () => {
+    // runOptions: { background: true } refreshes data WITHOUT touching loading
+    // or clearing the current error, so a poll cannot flash a spinner or blank
+    // an error message that is still true. Everything already on screen stays
+    // there until the new response actually lands (#1929).
+    const fetchData = async (runOptions) => {
+      const background = !!(runOptions && runOptions.background);
       if (__stxAbort) __stxAbort.abort();
       __stxAbort = (typeof AbortController !== 'undefined') ? new AbortController() : null;
       const __signal = __stxAbort ? __stxAbort.signal : undefined;
-      loading.set(true);
-      error.set(null);
+      if (!background) loading.set(true);
+      isFetching.set(true);
+      if (!background) error.set(null);
 
       try {
         const url = typeof urlOrFn === 'function' ? urlOrFn() : urlOrFn;
         if (!url) {
-          loading.set(false);
+          if (!background) loading.set(false);
+          isFetching.set(false);
           return;
         }
 
@@ -1173,6 +1184,10 @@ finally {
         // Apply transform if provided
         const transformed = options.transform ? options.transform(result) : result;
         data.set(transformed);
+        // A background run did not clear the error up front, so a recovery has
+        // to clear it here — otherwise the first failed poll would leave the
+        // message on screen for the life of the page.
+        if (background) error.set(null);
       }
 catch (e) {
         // A superseded/unmounted request rejects with AbortError — expected,
@@ -1187,7 +1202,10 @@ catch (e) {
       }
 finally {
         // If a newer run (or onDestroy) aborted this one, that run owns loading.
-        if (!__signal || !__signal.aborted) loading.set(false);
+        if (!__signal || !__signal.aborted) {
+          if (!background) loading.set(false);
+          isFetching.set(false);
+        }
       }
     };
 
@@ -1220,6 +1238,7 @@ else if (immediate) {
     return {
       data,
       loading,
+      isFetching,
       error,
       refetch: fetchData,
       // Convenience getters
@@ -1470,6 +1489,10 @@ else if (immediate) {
     var cacheKey = options.cacheKey || (typeof url === 'function' ? null : url);
     var data = state(options.initialData || null);
     var loading = state(true);
+    // See useFetch: loading means "nothing to show yet", isFetching means "a
+    // request is open" — including a background refresh, which is the case that
+    // makes the distinction necessary (#1929).
+    var isFetching = state(true);
     var error = state(null);
     var isStale = state(false);
     if (options.suspense) registerSuspense(loading, error);
@@ -1488,16 +1511,21 @@ else if (immediate) {
     // can release its claim without cancelling a request someone else joined.
     var __joined = null;
 
-    var fetchData = async function() {
+    // runOptions: { background: true } refreshes without touching loading or
+    // clearing the current error. A poll must not flash a spinner over data
+    // that is already on screen (#1929).
+    var fetchData = async function(runOptions) {
+      var background = !!(runOptions && runOptions.background);
       var resolvedUrl = typeof url === 'function' ? url() : url;
-      if (!resolvedUrl) { loading.set(false); return; }
+      if (!resolvedUrl) { if (!background) loading.set(false); isFetching.set(false); return; }
       var key = cacheKey || resolvedUrl;
 
       // Check cache
       var cached = _queryCache[key];
       if (cached && (Date.now() - cached.timestamp < staleTime)) {
         data.set(cached.data);
-        loading.set(false);
+        if (!background) loading.set(false);
+        isFetching.set(false);
         isStale.set(false);
         if (options.onSuccess) options.onSuccess(cached.data);
         return;
@@ -1517,12 +1545,14 @@ else if (immediate) {
       if (shared && shared.owner !== __instanceId) {
         shared.refs++;
         __joined = shared;
-        loading.set(true);
-        error.set(null);
+        if (!background) loading.set(true);
+        isFetching.set(true);
+        if (!background) error.set(null);
         try {
           var joinedResult = await shared.promise;
           var joinedTransformed = options.transform ? options.transform(joinedResult) : joinedResult;
           data.set(joinedTransformed);
+          if (background) error.set(null);
           isStale.set(false);
           if (options.onSuccess) options.onSuccess(joinedTransformed);
         }
@@ -1534,7 +1564,8 @@ else if (immediate) {
         finally {
           shared.refs--;
           if (__joined === shared) __joined = null;
-          loading.set(false);
+          if (!background) loading.set(false);
+          isFetching.set(false);
         }
         return;
       }
@@ -1549,8 +1580,9 @@ else if (immediate) {
       __joined = null;
       __stxAbort = (typeof AbortController !== 'undefined') ? new AbortController() : null;
       var __signal = __stxAbort ? __stxAbort.signal : undefined;
-      loading.set(true);
-      error.set(null);
+      if (!background) loading.set(true);
+      isFetching.set(true);
+      if (!background) error.set(null);
       try {
         var fetchOpts = { method: 'GET', headers: { 'Content-Type': 'application/json', ...__stxHeaders(options.headers) }, signal: __signal };
         // Published BEFORE it is awaited, so a caller starting in the same tick
@@ -1574,6 +1606,7 @@ else if (immediate) {
         if (__signal && __signal.aborted) return;
         var transformed = options.transform ? options.transform(result) : result;
         data.set(transformed);
+        if (background) error.set(null);
         isStale.set(false);
         _queryCache[key] = { data: transformed, timestamp: Date.now() };
         if (options.onSuccess) options.onSuccess(transformed);
@@ -1588,7 +1621,10 @@ catch (e) {
         if (options.onError) options.onError(e);
       }
 finally {
-        if (!__signal || !__signal.aborted) loading.set(false);
+        if (!__signal || !__signal.aborted) {
+          if (!background) loading.set(false);
+          isFetching.set(false);
+        }
       }
     };
 
@@ -1596,13 +1632,20 @@ finally {
       onMount(fetchData);
     }
 
+    // A refetch nobody asked for does not set loading. Both of these refresh
+    // data that is ALREADY on screen, so driving the first-load state from them
+    // put a spinner over a populated view once a minute, forever — the reason a
+    // polling view could not use this composable at all (#1929). Bind
+    // isFetching for a subtle in-flight indicator.
+    var backgroundRun = { background: true };
+
     // refetchOnFocus — removed on destroy, like refetchInterval right below.
     // It used to add a listener and never remove it, so every instance leaked
     // one for the life of the page and each SPA navigation added more; every
     // stale listener still fired, refetching for components long gone (#1818).
     if (options.refetchOnFocus) {
       var onVisibility = function() {
-        if (!document.hidden) fetchData();
+        if (!document.hidden) fetchData(backgroundRun);
       };
       document.addEventListener('visibilitychange', onVisibility);
       onDestroy(function() { document.removeEventListener('visibilitychange', onVisibility); });
@@ -1616,7 +1659,7 @@ finally {
         if (typeof document !== 'undefined' && document.hidden) return;
         var en = options.enabled;
         if (typeof en === 'function' ? !en() : en === false) return;
-        var p = fetchData();
+        var p = fetchData(backgroundRun);
         if (options.stopOnError && p && typeof p.then === 'function') {
           p.then(function() { if (error()) clearInterval(intervalId); });
         }
@@ -1630,13 +1673,14 @@ finally {
     return {
       data: data,
       loading: loading,
+      isFetching: isFetching,
       error: error,
       isStale: isStale,
       refetch: fetchData,
-      invalidate: function() {
+      invalidate: function(runOptions) {
         var key = cacheKey || (typeof url === 'function' ? url() : url);
         delete _queryCache[key];
-        return fetchData();
+        return fetchData(runOptions);
       }
     };
   }

@@ -68,12 +68,26 @@ export interface FetchOptions<T = unknown> extends Omit<RequestInit, 'body'> {
   initialData?: T | null
 }
 
+/** How one run of the request should behave. */
+export interface RefetchOptions {
+  /**
+   * Refresh without touching `loading` or clearing the current error.
+   *
+   * A poll refreshes data that is already on screen, so driving the first-load
+   * state from it puts a spinner over a populated view on every tick. Bind
+   * `isFetching` for a subtle in-flight indicator instead (stacksjs/stx#1929).
+   */
+  background?: boolean
+}
+
 /** Signal-shaped fetch result. Matches the runtime's `useFetch` return. */
 export interface FetchRef<T> {
   /** Current data, or `initialData`/null while loading. */
   data: Signal<T | null>
-  /** True while a request is in flight. */
+  /** True while a first-load request is in flight. A background one leaves it alone. */
   loading: Signal<boolean>
+  /** True while ANY request is in flight, background ones included. */
+  isFetching: Signal<boolean>
   /** The most recent error, or null. */
   error: Signal<Error | null>
   /** HTTP status code of the most recent response, or null. */
@@ -81,7 +95,7 @@ export interface FetchRef<T> {
   /** HTTP status text of the most recent response, or null. */
   statusText: Signal<string | null>
   /** Trigger a new request. */
-  refetch: () => Promise<void>
+  refetch: (_options?: RefetchOptions) => Promise<void>
   /** Same as refetch — kept for runtime-parity callers. */
   execute: () => Promise<void>
   /** Abort the in-flight request. */
@@ -135,6 +149,7 @@ export function useFetch<T = unknown>(
 
   const data = state<T | null>(initialData)
   const loading = state(false)
+  const isFetching = state(false)
   const error = state<Error | null>(null)
   const status = state<number | null>(null)
   const statusText = state<string | null>(null)
@@ -164,11 +179,16 @@ export function useFetch<T = unknown>(
       fetchCache.set(getCacheKey(), { data: value, timestamp: Date.now() })
   }
 
-  const doFetch = async (attempt = 0): Promise<void> => {
+  // `background` refreshes without touching `loading` or clearing the current
+  // error, so a poll cannot flash a spinner over data already on screen or
+  // blank a message that is still true (#1929). It is threaded through the
+  // retry recursion: a retried background run is still a background run.
+  const doFetch = async (attempt = 0, background = false): Promise<void> => {
     const cached = getFromCache()
     if (cached !== null) {
       data.set(cached)
       loading.set(false)
+      isFetching.set(false)
       error.set(null)
       return
     }
@@ -178,8 +198,11 @@ export function useFetch<T = unknown>(
       abortController.abort()
     abortController = new AbortController()
 
-    loading.set(true)
-    error.set(null)
+    if (!background)
+      loading.set(true)
+    isFetching.set(true)
+    if (!background)
+      error.set(null)
 
     const timeoutId = setTimeout(() => abortController?.abort(), timeout)
 
@@ -255,7 +278,14 @@ export function useFetch<T = unknown>(
 
       setCache(payload as T)
       data.set(payload as T)
-      loading.set(false)
+      // A background run did not clear the error up front, so a recovery has to
+      // clear it here — otherwise one failed poll leaves the message on screen
+      // for the life of the page.
+      if (background)
+        error.set(null)
+      if (!background)
+        loading.set(false)
+      isFetching.set(false)
     }
     catch (err) {
       clearTimeout(timeoutId)
@@ -265,20 +295,26 @@ export function useFetch<T = unknown>(
 
       if (attempt < retry) {
         await new Promise(resolve => setTimeout(resolve, retryDelay))
-        return doFetch(attempt + 1)
+        return doFetch(attempt + 1, background)
       }
 
       error.set(err instanceof Error ? err : new Error(String(err)))
-      loading.set(false)
+      if (!background)
+        loading.set(false)
+      isFetching.set(false)
     }
   }
 
+  // A refetch nobody asked for does not set `loading`. Both of these refresh
+  // data that is already on screen; driving the first-load state from them put
+  // a spinner over a populated view on every tick, which is why a polling view
+  // could not use this composable at all (#1929).
   const setupRefetchOnFocus = () => {
     if (!refetchOnFocus || typeof window === 'undefined')
       return
     focusHandler = () => {
       if (document.visibilityState === 'visible')
-        void doFetch()
+        void doFetch(0, true)
     }
     document.addEventListener('visibilitychange', focusHandler)
   }
@@ -286,7 +322,7 @@ export function useFetch<T = unknown>(
   const setupRefetchInterval = () => {
     if (!refetchInterval || typeof window === 'undefined')
       return
-    intervalId = setInterval(() => void doFetch(), refetchInterval)
+    intervalId = setInterval(() => void doFetch(0, true), refetchInterval)
   }
 
   if (immediate) {
@@ -298,10 +334,11 @@ export function useFetch<T = unknown>(
   return {
     data,
     loading,
+    isFetching,
     error,
     status,
     statusText,
-    refetch: () => doFetch(),
+    refetch: (refetchOptions?: RefetchOptions) => doFetch(0, !!refetchOptions?.background),
     execute: async () => {
       await doFetch()
       setupRefetchOnFocus()
@@ -345,6 +382,7 @@ export function useAsyncData<T>(
 
   const data = state<T | null>(initialData)
   const loading = state(false)
+  const isFetching = state(false)
   const error = state<Error | null>(null)
   // status / statusText are not meaningful for arbitrary async fetchers,
   // but exposed for shape parity with useFetch.
@@ -367,17 +405,21 @@ export function useAsyncData<T>(
       fetchCache.set(getCacheKey(), { data: value, timestamp: Date.now() })
   }
 
-  const doFetch = async (): Promise<void> => {
+  const doFetch = async (background = false): Promise<void> => {
     const cached = getFromCache()
     if (cached !== null) {
       data.set(cached)
       loading.set(false)
+      isFetching.set(false)
       error.set(null)
       return
     }
 
-    loading.set(true)
-    error.set(null)
+    if (!background)
+      loading.set(true)
+    isFetching.set(true)
+    if (!background)
+      error.set(null)
 
     try {
       // `payload` is typed as Awaited<T> from the await; transform takes T
@@ -389,11 +431,17 @@ export function useAsyncData<T>(
 
       setCache(payload)
       data.set(payload)
-      loading.set(false)
+      if (background)
+        error.set(null)
+      if (!background)
+        loading.set(false)
+      isFetching.set(false)
     }
     catch (err) {
       error.set(err instanceof Error ? err : new Error(String(err)))
-      loading.set(false)
+      if (!background)
+        loading.set(false)
+      isFetching.set(false)
     }
   }
 
@@ -403,11 +451,12 @@ export function useAsyncData<T>(
   return {
     data,
     loading,
+    isFetching,
     error,
     status,
     statusText,
-    refetch: doFetch,
-    execute: doFetch,
+    refetch: (refetchOptions?: RefetchOptions) => doFetch(!!refetchOptions?.background),
+    execute: () => doFetch(),
     abort: () => {},
   }
 }
