@@ -1,5 +1,39 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.176...v0.2.177)
+
+## 🚀 Features
+
+- **theme**: role-named colours in the base theme, and migrate the components onto them ([5b58cb0](https://github.com/stacksjs/stx/commit/5b58cb0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: CSS-variable theme preset, and pin the palette seam that already worked ([4b93bf6](https://github.com/stacksjs/stx/commit/4b93bf6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: background refetch for useFetch/useQuery, and the query surface it declares ([d544c75](https://github.com/stacksjs/stx/commit/d544c75)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **page-action**: an action can set cookies, so it can sign someone in ([ff1b76f](https://github.com/stacksjs/stx/commit/ff1b76f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **reactive**: x-init survives into the markup, so an island actually starts ([846dae4](https://github.com/stacksjs/stx/commit/846dae4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: resolve an inline @if group on a component tag before parsing its attributes ([c207a34](https://github.com/stacksjs/stx/commit/c207a34)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: route internal links through StxLink, and server-render RadioGroup's options ([aa43fa7](https://github.com/stacksjs/stx/commit/aa43fa7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **typecheck**: resolve relative imports against the .stx file, not the temp dir ([d3527dd](https://github.com/stacksjs/stx/commit/d3527dd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: normalize hydration audit text ([940db20](https://github.com/stacksjs/stx/commit/940db20)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **signals**: hydrate nested conditional branches ([eb44b1d](https://github.com/stacksjs/stx/commit/eb44b1d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **signals**: preserve client loop conditionals ([49e7f74](https://github.com/stacksjs/stx/commit/49e7f74)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: sync aliased reactive props ([d4a91ff](https://github.com/stacksjs/stx/commit/d4a91ff)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **auto-imports**: inject timeout composable ([1736fea](https://github.com/stacksjs/stx/commit/1736fea)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **typecheck**: --lib accumulates, instead of the last one replacing the rest ([65c070c](https://github.com/stacksjs/stx/commit/65c070c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **types**: useEventListener signature, and carry server types into client blocks ([968a541](https://github.com/stacksjs/stx/commit/968a541)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.177 ([a70d9d2](https://github.com/stacksjs/stx/commit/a70d9d2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **format**: fix indentation in visual-test-utils ([84e6051](https://github.com/stacksjs/stx/commit/84e6051)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.175...v0.2.176)
 
 ## 🐛 Bug Fixes
