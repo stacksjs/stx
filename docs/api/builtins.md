@@ -437,7 +437,41 @@ The signals runtime registers `toast` on `window` so any `<script client>` block
 </script>
 ```
 
-Each call returns the new toast's id (a number). Defaults: `duration: 3000ms`, slide-in/out animation matched to the container's `position`, dark mode via `prefers-color-scheme`, `role="alert"`, close button.
+Each call returns the new toast's id (a number).
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `duration` | `number` | `3000` | Auto-dismiss delay in ms. `0` keeps it until dismissed |
+| `title` | `string` | — | Heading above the message, in bold |
+| `id` | `string \| number` | — | Semantic key — see below |
+| `dark` | `boolean` | *follows the document* | Force the dark or light palette |
+
+Left alone, `dark` follows the `dark` class, then `data-theme` / `data-color-mode`, then the OS setting.
+
+### Replace by id
+
+A second toast with the same `id` replaces the first **in place** rather than
+stacking, and `toast.dismiss(id)` ends it. That is what lets a long-running
+action own one toast without threading the numeric handle between the call that
+starts it and the call that finishes it:
+
+```html
+<script client>
+  async function publish() {
+    toast.info('Publishing…', { id: 'publish', duration: 0 })
+    await savePost()
+    toast.success('Published.', { id: 'publish', title: 'Done' })
+  }
+</script>
+```
+
+`toast.dismiss()` takes either kind of id — the semantic key or the numeric
+handle — so a caller does not have to know which it is holding.
+
+Other defaults: slide-in/out animation matched to the container's `position`,
+`role="alert"`, close button.
 
 **Aliases:** `<stx-toast>`
 

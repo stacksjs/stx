@@ -586,9 +586,36 @@ declare function $watch<T>(
 // Toast notifications
 // ============================================================================
 
+/*
+ * Every option `addToast` reads (#1932).
+ *
+ * `title`, `id` and `dark` shipped in the runtime for #1913 and none of them
+ * reached here, so the feature built to unblock a migration could not be called
+ * from a typechecked file — `stx typecheck` rejected the exact snippet that
+ * issue was closed with.
+ *
+ * `test/signals/toast-declaration-drift.test.ts` now reads the option names out
+ * of the runtime and fails if this list falls behind again. Adding an option
+ * here without the runtime reading it fails too: a documented option that does
+ * nothing is the quieter half of the same problem.
+ */
 interface StxToastOptions {
   /** Auto-dismiss duration in ms. 0 = persistent. Default: 3000 */
   duration?: number
+  /** Heading rendered above the message, in bold. */
+  title?: string
+  /**
+   * Semantic key. A second toast with the same id REPLACES the first in place
+   * rather than stacking, and `dismiss(id)` ends it — so a persistent
+   * "Publishing…" toast and the call that clears it need not thread the numeric
+   * handle between them.
+   */
+  id?: string | number
+  /**
+   * Force the dark or light palette. Omitted, it follows the document — the
+   * `dark` class, then `data-theme` / `data-color-mode`, then the OS setting.
+   */
+  dark?: boolean
 }
 
 interface StxToast {
@@ -600,8 +627,15 @@ interface StxToast {
   info: (message: string, options?: StxToastOptions) => number
   /** Show a warning toast (yellow) */
   warning: (message: string, options?: StxToastOptions) => number
-  /** Dismiss a toast by id, or all toasts if no id is given */
-  dismiss: (id?: number) => void
+  /**
+   * Dismiss a toast, or all of them if nothing is given.
+   *
+   * Takes the semantic `id` the toast was created with, or the numeric handle
+   * these methods return. The runtime branches on which it got, so a caller does
+   * not have to know which kind it is holding — this used to accept `number`
+   * only, which made replace-by-id unreachable from a typechecked call site.
+   */
+  dismiss: (id?: string | number) => void
 }
 
 declare const toast: StxToast

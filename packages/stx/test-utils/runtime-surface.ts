@@ -62,3 +62,53 @@ export function runtimeWindowStxSurface(src: string): Set<string> {
   const body = src.slice(open + 1, end)
   return new Set([...body.matchAll(/^\s*([A-Za-z_$][\w$]*)\s*[:,]/gm)].map(m => m[1]))
 }
+
+/** The declaration that opens the toast factory. */
+const ADD_TOAST_ANCHOR = 'function addToast(type, message, options) {'
+
+/**
+ * Every option key `addToast` reads from its options argument.
+ *
+ * The point is a list nobody maintains by hand. `stx.d.ts` describes the runtime
+ * by hand and has now fallen behind it three times — `useEventListener` (#1923),
+ * `StxQueryResult` (#1929), and the toast options (#1932), where the runtime
+ * read four and the declaration listed one. A guard that reads the runtime
+ * cannot fall behind it.
+ *
+ * Same discipline as {@link runtimeSurfaceStart}: THROWS when the function
+ * cannot be found, because an extractor that returns an empty set on a miss
+ * turns a drift guard into a test that passes by checking nothing.
+ */
+export function runtimeToastOptionReads(src: string): Set<string> {
+  const start = src.indexOf(ADD_TOAST_ANCHOR)
+  if (start === -1) {
+    throw new Error(
+      'could not locate addToast in the runtime. '
+      + `Expected to find: ${ADD_TOAST_ANCHOR}\n`
+      + 'If it was deliberately reshaped, update ADD_TOAST_ANCHOR in '
+      + 'test-utils/runtime-surface.ts — do not let this return an empty set.',
+    )
+  }
+
+  const open = src.indexOf('{', start + ADD_TOAST_ANCHOR.length - 1)
+  let depth = 0
+  let end = open
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '{') {
+      depth++
+    }
+    else if (src[i] === '}') {
+      depth--
+      if (depth === 0) {
+        end = i
+        break
+      }
+    }
+  }
+  if (end === open)
+    throw new Error('unbalanced braces while extracting the addToast body')
+
+  // `opts` is the local the body reads the caller's options through.
+  const body = src.slice(open, end)
+  return new Set([...body.matchAll(/\bopts\.([A-Za-z_$][\w$]*)/g)].map(m => m[1]))
+}
