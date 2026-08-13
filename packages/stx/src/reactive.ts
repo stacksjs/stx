@@ -1067,13 +1067,30 @@ function finalizeTemplate(template: string, scopes: ReactiveScope[]): string {
     },
   )
 
-  // Rename x-data → data-stx-xdata so the SPA handler can re-initialize scopes
-  // after fragment swap (the bridge <script> only runs on full page load).
-  // Remove x-init since it's consumed by the bridge runtime.
+  /*
+   * Renamed, both of them, rather than one renamed and one deleted.
+   *
+   * `x-data` became `data-stx-xdata` so the SPA handler can re-initialize a
+   * scope after a fragment swap - the bridge `<script>` only runs on a full
+   * page load. `x-init` was *removed* on the reasoning that the bridge carries
+   * it, which is true only where the bridge runs.
+   *
+   * It does not run for a component rendered as an island, and it does not run
+   * again after an SPA navigation. In both cases the element arrived with its
+   * state expression and no init expression at all, so the hydrator called
+   * `initScope(el, xdata, [], {}, null)` - a scope with its data and none of
+   * its setup. Nothing errored. The component simply sat there: every binding
+   * rendered its initial value, and whatever `x-init` was supposed to start -
+   * a poll, a subscription, a fetch - never started.
+   *
+   * That is the worst shape a bug can take here, because the page looks
+   * finished. A live region shows its empty state forever, which is exactly
+   * what it would show if nothing had happened yet.
+   */
   output = output.replace(/\s*x-data\s*=\s*"([^"]*)"/g, ' data-stx-xdata="$1"')
   output = output.replace(/\s*x-data\s*=\s*'([^']*)'/g, " data-stx-xdata='$1'")
-  output = output.replace(/\s*x-init\s*=\s*"[^"]*"/g, '')
-  output = output.replace(/\s*x-init\s*=\s*'[^']*'/g, '')
+  output = output.replace(/\s*x-init\s*=\s*"([^"]*)"/g, ' data-stx-xinit="$1"')
+  output = output.replace(/\s*x-init\s*=\s*'([^']*)'/g, " data-stx-xinit='$1'")
 
   return output
 }

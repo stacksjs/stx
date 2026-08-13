@@ -7278,6 +7278,49 @@ else {
     });
     var pageScopeSnapshot = { ...componentScope };
 
+    /*
+     * Any x-data scope the reactive bridge did not reach, initialized here.
+     *
+     * The bridge script addresses each scope by a selector it generated, and
+     * that numbering restarts per render - so a page carrying three component
+     * islands emits three scripts all looking for the same scope id, and two of
+     * the three scopes are never initialized at all. The symptom is the
+     * quietest one available: the markup is there, every binding shows its
+     * initial value, and whatever x-init was meant to start never starts.
+     *
+     * Registered scopes are skipped, so the bridge stays authoritative where it
+     * did run and this only picks up what it missed. The init expression is
+     * read from data-stx-xinit, which the server preserves for exactly this.
+     *
+     * No backticks in this comment, deliberately: it lives inside the runtime
+     * source that is embedded as a template literal, and one would end the
+     * literal and take the whole file's syntax with it.
+     */
+    if (window.__stx_reactive && window.__stx_reactive.initScope) {
+      document.querySelectorAll('[data-stx-xdata]').forEach(function(el) {
+        var scopeId = el.getAttribute('data-stx-scope');
+        if (scopeId && window.stx._scopes && window.stx._scopes[scopeId]) return;
+        if (el.__stx_scope_initialized) return;
+
+        var xdata = el.getAttribute('data-stx-xdata');
+        if (!xdata) return;
+
+        if (!scopeId) {
+          scopeId = '__stx_scope_island_' + (++window.stx._scopeCounter);
+          el.setAttribute('data-stx-scope', scopeId);
+        }
+
+        el.__stx_scope_initialized = true;
+
+        try {
+          window.__stx_reactive.initScope(el, xdata, [], {}, el.getAttribute('data-stx-xinit') || null);
+        }
+        catch (e) {
+          console.error('[stx] island scope init error:', e);
+        }
+      });
+    }
+
     // Process mount queue (from stx.mount() calls during loading) only after
     // caller setup is available for Vue-style projected slot ownership.
     mountQueue.forEach(function(fn) { fn(); });
@@ -7902,8 +7945,14 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
           scopeId = '__stx_scope_spa_' + (++window.stx._scopeCounter);
           el.setAttribute('data-stx-scope', scopeId);
         }
+        // The init expression, which used to be dropped here. A scope
+        // re-initialized with its data and none of its setup renders every
+        // binding at its initial value and starts nothing - a live region
+        // showing its empty state forever, which is indistinguishable from one
+        // where nothing has happened yet.
+        var xinit = el.getAttribute('data-stx-xinit');
         console.log('[stx:load] initializing x-data scope:', scopeId, xdata.substring(0, 40));
-        window.__stx_reactive.initScope(el, xdata, [], {}, null);
+        window.__stx_reactive.initScope(el, xdata, [], {}, xinit || null);
       });
     }
 
