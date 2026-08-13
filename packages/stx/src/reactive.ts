@@ -939,8 +939,20 @@ export function processReactiveDirectives(
   context: Record<string, unknown>,
   _filePath: string,
 ): string {
-  // Reset counters
-  scopeCounter = 0
+  /*
+   * The counter is *not* reset here, and that is the point.
+   *
+   * A page and each of its component islands are separate calls, and resetting
+   * per call meant every one of them started at `__stx_scope_0`. Two islands on
+   * one page then carried the same id: the bridge addresses a scope with
+   * `querySelector`, so the second script found the first element, and the
+   * second component's bindings resolved against the first component's signals
+   * - reporting "summary is not defined" for a scope that was right there.
+   *
+   * Ids only have to be unique within one document, and a counter that only
+   * goes up gives that for free across every call that composes one. It grows
+   * for the life of the process, which costs nothing: it is a number.
+   */
 
   // Check if template has any reactive directives
   if (!hasReactiveDirectives(template)) {

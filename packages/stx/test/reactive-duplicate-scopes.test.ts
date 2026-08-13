@@ -99,3 +99,37 @@ describe('two elements with the same x-data', () => {
     expect(output.split('__stx_reactive.initScope(scopeEl').length - 1).toBe(3)
   })
 })
+
+describe('two components rendered into one page', () => {
+  /*
+   * A page and each of its islands are separate calls into this module, and the
+   * scope counter used to reset on every one - so each started again at
+   * `__stx_scope_0`. Both elements then carried the same id, the bridge
+   * addresses a scope with `querySelector`, and the second component's bindings
+   * resolved against the first component's signals.
+   *
+   * The symptom in an application was a console line saying `summary is not
+   * defined` about a scope whose element was on the page with `summary` in its
+   * `x-data` - because the id pointed at the other component's element.
+   */
+  it('do not both claim the first scope id', () => {
+    const first = processReactiveDirectives(`<div x-data="{ tail: '' }">a</div>`, {}, 'a.stx')
+    const second = processReactiveDirectives(`<div x-data="{ summary: '' }">b</div>`, {}, 'b.stx')
+
+    const ids = [...scopeIds(first), ...scopeIds(second)]
+
+    expect(ids).toHaveLength(2)
+    expect(new Set(ids).size).toBe(2)
+  })
+
+  it('and a third call keeps going up rather than reusing either', () => {
+    const seen = new Set<string>()
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      for (const id of scopeIds(processReactiveDirectives(`<div x-data="{ n: 1 }">x</div>`, {}, 'x.stx')))
+        seen.add(id)
+    }
+
+    expect(seen.size).toBe(3)
+  })
+})
