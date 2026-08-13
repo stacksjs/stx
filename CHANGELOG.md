@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.178...v0.2.179)
+
+## ⚡ Performance Improvements
+
+- **serve**: cache production runtimes between views ([c0f93f6](https://github.com/stacksjs/stx/commit/c0f93f6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.179 ([65506bb](https://github.com/stacksjs/stx/commit/65506bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.177...v0.2.178)
 
 ## 🐛 Bug Fixes
