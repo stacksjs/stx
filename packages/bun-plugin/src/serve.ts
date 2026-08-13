@@ -3035,7 +3035,9 @@ function __stxOverlay(errs){
                   const etag = `"${Bun.hash(content).toString(16)}"`
                   const headers = {
                     'Content-Type': 'application/javascript; charset=utf-8',
-                    'Cache-Control': 'public, max-age=0, must-revalidate',
+                    'Cache-Control': production
+                      ? 'public, max-age=3600, stale-while-revalidate=86400'
+                      : 'public, max-age=0, must-revalidate',
                     'ETag': etag,
                     ...corsHeaders,
                   }

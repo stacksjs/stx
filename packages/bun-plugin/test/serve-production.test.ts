@@ -70,4 +70,14 @@ describe('production serve', () => {
     expect(html).toContain('src="/_stx/router.js"')
     expect(html).not.toContain('window.stx.state')
   })
+
+  it('lets browsers reuse shared runtimes between page views', async () => {
+    const runtime = await fetch(`${BASE}/_stx/runtime.js`)
+    const router = await fetch(`${BASE}/_stx/router.js`)
+
+    expect(runtime.headers.get('cache-control')).toBe('public, max-age=3600, stale-while-revalidate=86400')
+    expect(router.headers.get('cache-control')).toBe('public, max-age=3600, stale-while-revalidate=86400')
+    expect(runtime.headers.get('etag')).toBeTruthy()
+    expect(router.headers.get('etag')).toBeTruthy()
+  })
 })
