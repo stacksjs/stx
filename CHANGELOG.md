@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.177...v0.2.178)
+
+## 🐛 Bug Fixes
+
+- **reactive**: two islands on one page no longer claim the same scope id ([73ad657](https://github.com/stacksjs/stx/commit/73ad657)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **serve**: keep production free of HMR ([26fb022](https://github.com/stacksjs/stx/commit/26fb022)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.178 ([85520d5](https://github.com/stacksjs/stx/commit/85520d5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.176...v0.2.177)
 
 ## 🚀 Features
