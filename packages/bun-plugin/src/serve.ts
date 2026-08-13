@@ -961,6 +961,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     checkEnv: false,
     verbose: false,
   }) as Record<string, any>
+  const production = isProductionServe()
 
   // Resolve `root` and the template directories through stx's own single
   // resolution pass (#1851). bunfig hands back the RAW object, and this path
@@ -1192,7 +1193,7 @@ function __stxOverlay(errs){
   // a `<script>` string (e.g. the router/runtime bundle) and `replace` would
   // inject into the middle of that script.
   function injectHmrClient(html: string): string {
-    if (!html) return html
+    if (!html || production) return html
     // Whatever the render just recorded is what the overlay should show. Fired
     // and forgotten: the response must not wait on reading source files.
     void refreshBuildErrors()
@@ -1275,6 +1276,7 @@ function __stxOverlay(errs){
   // browser session refreshes without the user lifting a finger.
   const watchersStarted = new Set<string>()
   const startWatcher = (dir: string) => {
+    if (production) return
     if (watchersStarted.has(dir)) return
     try {
       const watcher = fsWatch(dir, { recursive: true }, (_event, filename) => {
@@ -2831,7 +2833,7 @@ function __stxOverlay(errs){
         // `ERR_INCOMPLETE_CHUNKED_ENCODING`. Other long-lived dev requests
         // (debug websockets, slow downloads) benefit too. A dev server has
         // no good reason to enforce request timeouts.
-        idleTimeout: 0,
+        idleTimeout: production ? 30 : 0,
         async fetch(req, server) {
           // Compression at the boundary, so it covers all thirty-nine exits from
           // this handler rather than the one that happens to converge. Hot reload
@@ -2969,6 +2971,9 @@ function __stxOverlay(errs){
                 // either does `location.reload()` or swaps `<link rel=stylesheet>`
                 // hrefs in place — see the client below for which.
                 if (path === '/_stx/hmr') {
+                  if (production)
+                    return new Response('Not Found', { status: 404, headers: { 'Cache-Control': 'no-store' } })
+
                   let controller: ReadableStreamDefaultController<Uint8Array> | undefined
                   let keepalive: ReturnType<typeof setInterval> | undefined
                   const stream = new ReadableStream<Uint8Array>({
