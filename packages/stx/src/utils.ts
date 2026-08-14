@@ -119,6 +119,47 @@ export function shouldTranspileTypeScript(attrs: string): boolean {
 }
 
 /**
+ * Transpilers, reused rather than built per call.
+ *
+ * A `Bun.Transpiler` owns a native arena that the JS heap does not account for.
+ * Building one per script block therefore turns every render into an off-heap
+ * allocation which shows up in RSS and is invisible to `heapStats()` — the JS
+ * heap sits flat while the process grows. A production page carrying twenty
+ * components was constructing about a hundred of them per request.
+ *
+ * Reuse is safe: `transformSync` keeps no state between calls, so the only
+ * thing separating two transpilers is the options they were built with.
+ */
+const transpilerPool = new Map<string, Bun.Transpiler>()
+
+export function getSharedTranspiler(options: ConstructorParameters<typeof Bun.Transpiler>[0]): Bun.Transpiler {
+  let key: string
+  try {
+    key = JSON.stringify(options)
+  }
+  catch {
+    // Unserialisable options are rare and not worth pooling on — hand back a
+    // one-off rather than risk collapsing two genuinely different configs.
+    return new Bun.Transpiler(options)
+  }
+
+  const pooled = transpilerPool.get(key)
+  if (pooled)
+    return pooled
+
+  // `define` is env-derived and stable in practice, so this map settles at a
+  // handful of entries. The cap is a backstop: a caller that varies its options
+  // per call must not be able to grow the pool without bound — that would
+  // reintroduce the very leak this exists to close.
+  if (transpilerPool.size >= 16)
+    transpilerPool.clear()
+
+  const transpiler = new Bun.Transpiler(options)
+  transpilerPool.set(key, transpiler)
+  return transpiler
+}
+
+/**
  * Transpile TypeScript code to JavaScript using Bun (sync version)
  */
 export function transpileTypeScript(code: string): string {
@@ -155,7 +196,7 @@ export function transpileTypeScript(code: string): string {
     })
 
     // Use Bun's transpiler directly for inline code
-    const transpiler = new Bun.Transpiler({
+    const transpiler = getSharedTranspiler({
       loader: 'ts',
       target: 'browser',
       define: getPublicEnvDefine(),
