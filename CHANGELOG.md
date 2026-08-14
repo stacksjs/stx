@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.180...v0.2.181)
+
+## 🐛 Bug Fixes
+
+- **components**: preserve caller scripts through slots ([cc0604b](https://github.com/stacksjs/stx/commit/cc0604b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **transpile**: pool the remaining transpilers, closing the render leak ([362e6f6](https://github.com/stacksjs/stx/commit/362e6f6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.181 ([dedfa72](https://github.com/stacksjs/stx/commit/dedfa72)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.179...v0.2.180)
 
 ## 🐛 Bug Fixes
