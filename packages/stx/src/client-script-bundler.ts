@@ -576,7 +576,12 @@ async function buildBundle(
 
     if (!result.success) {
       const errors = result.logs.filter(l => l.level === 'error').map(l => l.message).join(', ')
-      console.warn('[stx:bundler] build failed:', errors)
+      const failure = errors || `Unable to bundle ${path.basename(filePath)}`
+      const details = describeBuildFailure(result.logs, filePath || undefined)
+      console.warn('[stx:bundler] build failed:', failure)
+      recordBundleFailure(filePath || '', failure, details)
+      if (resolveBundlerFallback() === 'error')
+        throw new Error(failure)
       // Fall back to original code — let existing pipeline handle it
       return code
     }

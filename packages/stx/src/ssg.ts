@@ -59,6 +59,7 @@ import { resolveSiteUrl, siteUrlFallbackWarning } from './site-url'
 import { generateRobotsTxt } from './seo'
 import { stateDir } from './state-dir'
 import { injectCrosswindCSS } from './dev-server/crosswind'
+import { clearBundleFailures, getBundleFailures } from './client-script-bundler'
 import {
   loadMiddlewareFromDirectory,
   runMiddleware,
@@ -1016,6 +1017,7 @@ ${itemsXml.join('\n')}
  */
 export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGResult> {
   const startTime = Date.now()
+  clearBundleFailures()
 
   // Load user's stx.config.ts for proper layoutsDir, componentsDir, etc.
   const stxConfig = await loadStxConfig()
@@ -1364,6 +1366,14 @@ catch (error) {
           console.error(`Error generating ${url}:`, error)
         }
       }))
+    }
+
+    const bundleFailures = getBundleFailures()
+    if (bundleFailures.length > 0) {
+      const summary = bundleFailures
+        .map(failure => `${failure.filePath}: ${failure.message}`)
+        .join('\n')
+      throw new Error(`Client script bundling failed:\n${summary}`)
     }
 
     // Save build cache
