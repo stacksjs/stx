@@ -30,6 +30,7 @@ import { readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from 
 import { stripModuleImports } from './store-imports'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { transformStoreImports } from './store-imports'
+import { getSharedTranspiler } from './utils'
 
 const _cachedComposableScripts = new Map<string, SignedCacheEntry<string>>()
 
@@ -149,7 +150,7 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
   // Stable order so the emitted bundle doesn't churn between builds.
   composableFiles.sort()
 
-  const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
+  const transpiler = getSharedTranspiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
   const chunks: string[] = []
   const exportedNames = new Set<string>()
   const declaredNames = new Set<string>()

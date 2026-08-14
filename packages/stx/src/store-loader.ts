@@ -15,6 +15,7 @@ import { getPublicEnvDefine } from './public-env'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from './source-signature'
 import { stripModuleImports, transformStoreImports } from './store-imports'
+import { getSharedTranspiler } from './utils'
 
 const _cachedStoreScripts = new Map<string, SignedCacheEntry<string>>()
 
@@ -143,7 +144,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   // client script, so those are excluded from the preamble below.
   const declaredNames = new Set<string>()
 
-  const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
+  const transpiler = getSharedTranspiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
 
   for (const file of sortedFiles) {
     try {

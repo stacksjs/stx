@@ -34,6 +34,7 @@
 import path from 'node:path'
 import { getPublicEnvDefine } from './public-env'
 import { SERVER_ONLY_COMPOSABLES } from './unresolved-identifiers'
+import { getSharedTranspiler } from './utils'
 
 /** Cache keyed by the set of names actually requested. */
 const _cache = new Map<string, string>()
@@ -158,7 +159,7 @@ export async function getFrameworkComposableScript(source: string, composablesDi
   if (cached !== undefined)
     return cached || null
 
-  const transpiler = new Bun.Transpiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
+  const transpiler = getSharedTranspiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
 
   // Find the files that declare the requested names, and take each file whole:
   // a composable routinely leans on helpers its own module defines, so emitting
