@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.179...v0.2.180)
+
+## 🐛 Bug Fixes
+
+- **build**: fail on client bundle errors ([3e17a0d](https://github.com/stacksjs/stx/commit/3e17a0d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **types**: declare every toast option the runtime reads, and guard the list ([c586c9b](https://github.com/stacksjs/stx/commit/c586c9b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **transpile**: reuse a transpiler rather than build one per script block ([dad6983](https://github.com/stacksjs/stx/commit/dad6983)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.180 ([c21717c](https://github.com/stacksjs/stx/commit/c21717c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.178...v0.2.179)
 
 ## ⚡ Performance Improvements
