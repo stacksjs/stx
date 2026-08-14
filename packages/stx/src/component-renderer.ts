@@ -1110,7 +1110,12 @@ async function processCustomElementTags(
       const processedContent = await renderComponentWithSlot(
         componentPath,
         mergedProps,
-        tag.content,
+        // Scripts are stashed while component tags are scanned so tag-like
+        // JavaScript cannot be mistaken for markup. Restore sentinels in the
+        // caller-owned slot before rendering the component; otherwise the
+        // slot pipeline never sees the script and cannot hoist it back into
+        // the caller's page scope.
+        restoreStashedScripts(tag.content, stashed.scripts),
         componentsDir,
         context,
         filePath,

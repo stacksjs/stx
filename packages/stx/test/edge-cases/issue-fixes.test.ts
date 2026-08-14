@@ -312,6 +312,59 @@ export const ready = state(true)`,
   })
 })
 
+describe('caller scripts survive a reactive component slot', () => {
+  const layouts = path.join(TMP, 'slot-layouts')
+  const components = path.join(TMP, 'slot-components')
+
+  beforeAll(() => {
+    fs.mkdirSync(layouts, { recursive: true })
+    fs.mkdirSync(components, { recursive: true })
+    fs.writeFileSync(
+      path.join(components, 'Shell.stx'),
+      `<script>
+interface ShellProps { tabBar?: boolean }
+const { tabBar = false } = defineProps<ShellProps>()
+</script>
+<script client>const shellClass = useReactiveProp<string>('class', 'shell')</script>
+<div :class="shellClass()">
+  <main><slot /></main>
+  @if(tabBar)<footer><slot name="tab-bar" /></footer>@endif
+</div>`,
+    )
+    fs.writeFileSync(
+      path.join(layouts, 'default.stx'),
+      `<script client>const layoutReady = state(true)</script>
+<Shell tabBar>
+  @slot('content')
+  <template #tab-bar><span>Tab bar</span></template>
+</Shell>`,
+    )
+  })
+
+  it('hoists the page script back into the page scope', async () => {
+    const out = await processDirectives(
+      `@extends('default')
+@section('content')
+<script client>
+const pageHeading = state('Trails')
+function refreshTrails() { pageHeading.set('Fresh trails') }
+</script>
+<h1>{{ pageHeading() }}</h1>
+<button @click="refreshTrails()">Refresh</button>
+@endsection`,
+      {},
+      path.join(TMP, 'trails.stx'),
+      { componentsDir: components, layoutsDir: layouts, root: TMP } as StxOptions,
+      new Set<string>(),
+    )
+
+    expect(out).toContain('pageHeading = state')
+    expect(out).toContain('refreshTrails')
+    expect(out).toContain('{{ pageHeading() }}')
+    expect(out).toContain('Tab bar')
+  })
+})
+
 describe('#1695 — bare function ref in event handler shorthand', () => {
   const runtime = generateSignalsRuntimeDev()
 

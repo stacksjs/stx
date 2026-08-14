@@ -27,6 +27,7 @@ import { getPublicEnvDefine } from './public-env'
 import { processScopedStyles } from './style-scoping'
 import { findSfcTemplateBlock } from './sfc-template'
 import { importOnce } from './lazy-module'
+import { stashScriptElements } from './html-masking'
 
 // Re-export from extracted modules for backward compatibility
 export {
@@ -958,10 +959,34 @@ export async function renderComponentWithSlot(
         filteredParentContext[key] = val
       }
     }
+    // A script authored by the caller belongs to the caller's reactive scope,
+    // not to the component receiving its slot. Leaving it in `slotContent`
+    // sends it through the component's nested `skipSignalsRuntime` pass, where
+    // it can be stripped or registered against the component scope. The page
+    // then renders bindings such as `{{ search }}` without the state that owns
+    // them. Hoist executable caller scripts out of the slot and append them to
+    // the expanded component so the parent page's final script pass compiles
+    // them with the parent file path and scope.
+    const stashedCallerScripts = stashScriptElements(slotContent)
+    const callerClientScripts: string[] = []
+    const componentSlotContent = stashedCallerScripts.output.replace(
+      /\x00STX_SCRIPT_(\d+)\x00/g,
+      (_match, index: string) => {
+        const script = stashedCallerScripts.scripts[Number(index)] || ''
+        const attrs = script.match(/^<script\b([^>]*)>/i)?.[1] || ''
+        const type = attrs.match(/\btype\s*=\s*["']([^"']+)["']/i)?.[1]?.toLowerCase()
+        const executable = !type || ['module', 'text/javascript', 'application/javascript'].includes(type)
+        if (!/\bserver\b/i.test(attrs) && executable) {
+          callerClientScripts.push(script)
+          return ''
+        }
+        return script
+      },
+    )
     // Parse slot content once — `$slots` lets component templates branch on
     // what the caller provided (e.g. `@if($slots.header)`), mirroring Vue.
     const { extractSlotContent } = await importOnce('stx/slots', () => import('./slots'))
-    const parsedSlotContent = extractSlotContent(slotContent)
+    const parsedSlotContent = extractSlotContent(componentSlotContent)
     const $slots: Record<string, string> = {}
     if (parsedSlotContent.defaultSlot?.trim())
       $slots.default = parsedSlotContent.defaultSlot
@@ -972,7 +997,7 @@ export async function renderComponentWithSlot(
       ...filteredParentContext,
       ...props,
       props, // Allow `props.foo` syntax in addition to just `foo`
-      slot: slotContent,
+      slot: componentSlotContent,
       $slots,
       __processedComponents: branchComponents,
       // Clear __sections so {{ slot }} in the component template is resolved as an
@@ -1391,7 +1416,9 @@ else {
       })
     }
 
-    return output
+    return callerClientScripts.length > 0
+      ? `${output}\n${callerClientScripts.join('\n')}`
+      : output
   }
   catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
