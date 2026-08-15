@@ -57,7 +57,7 @@ import { processDynamicComponents } from './dynamic-components'
 import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
 import { injectColorModeBootScript, normalizeCriticalHeadOrder } from './color-mode-boot'
 import { injectBuildId } from './build-id'
-import { applyHtmlAttrs, ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags, mergeHtmlAttrs, startsDocument } from './document-shell'
+import { applyHtmlAttrs, ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags, mergeHtmlAttrs, metaDedupKey, startsDocument } from './document-shell'
 
 // Extracted modules
 import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, preEvalLiteralReactiveIfs, processSignals } from './signal-processing'
@@ -472,10 +472,26 @@ export async function processDirectives(
         // is a plain JS string and must be escaped by the shell (#1792 item 4).
         const titleIsHtml = !runtimeHead.title && (!!pageHeadTitle || !!sectionTitle)
 
+        // A page tag REPLACES the config tag with the same key rather than
+        // joining it. Appending emitted two <meta name="description">, the
+        // site-wide one first, and a crawler reading the first one means every
+        // page advertises the site default while the page's own description
+        // sits below it looking correct. Title already works this way; this
+        // makes the rest of the head agree with it.
+        const runtimeMeta = (runtimeHead.meta || []) as Record<string, string>[]
+        const overriddenMetaKeys = new Set(
+          runtimeMeta.map(m => metaDedupKey(m)).filter(Boolean),
+        )
+
         const headConfig = {
           ...baseHeadConfig,
           ...(pageTitle && { title: pageTitle }),
-          meta: [...(baseHeadConfig.meta || []), ...(runtimeHead.meta || [])],
+          meta: [
+            ...((baseHeadConfig.meta || []) as Record<string, string>[]).filter(
+              m => !overriddenMetaKeys.has(metaDedupKey(m)),
+            ),
+            ...runtimeMeta,
+          ],
           link: [...(baseHeadConfig.link || []), ...(runtimeHead.link || [])],
           script: [...(baseHeadConfig.script || []), ...(runtimeHead.script || [])],
           headRaw: [baseHeadConfig.headRaw, pageHeadRaw].filter(Boolean).join('\n'),

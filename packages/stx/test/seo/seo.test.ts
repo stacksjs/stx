@@ -1246,18 +1246,25 @@ describe('registerSeoDirectives', () => {
     }
   })
 
-  it('meta directive handler should generate meta tag with params', () => {
+  // These two used to assert that the handler returns markup. It did, and the
+  // markup landed wherever the directive sat, which is the body, where no
+  // crawler reads it. The tag now goes onto the render's head instead; see
+  // test/seo/meta-directive-head.test.ts.
+  it('meta directive handler should stage the meta tag on the head', () => {
     const directives = registerSeoDirectives()
     const meta = directives.find(d => d.name === 'meta')!
-    const result = meta.handler('', ['description', 'Test desc'], {}, 'test.stx')
-    expect(result).toBe('<meta name="description" content="Test desc">')
+    const context: Record<string, any> = {}
+    const result = meta.handler('', ['description', 'Test desc'], context, 'test.stx')
+    expect(result).toBe('')
+    expect(context.__stx_runtime_head.meta).toEqual([{ name: 'description', content: 'Test desc' }])
   })
 
   it('meta directive handler should strip quotes from params', () => {
     const directives = registerSeoDirectives()
     const meta = directives.find(d => d.name === 'meta')!
-    const result = meta.handler('', ['"description"', "'Test desc'"], {}, 'test.stx')
-    expect(result).toBe('<meta name="description" content="Test desc">')
+    const context: Record<string, any> = {}
+    meta.handler('', ['"description"', "'Test desc'"], context, 'test.stx')
+    expect(context.__stx_runtime_head.meta).toEqual([{ name: 'description', content: 'Test desc' }])
   })
 
   it('meta directive handler should return error when no params', () => {

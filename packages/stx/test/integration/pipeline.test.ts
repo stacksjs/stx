@@ -295,24 +295,34 @@ describe('Pipeline: Forms + Conditionals', () => {
 // SEO Integration
 // ---------------------------------------------------------------------------
 describe('Pipeline: SEO Integration', () => {
+  // @meta stages onto the render's head rather than returning markup, so the
+  // document shell can put the tag in <head>. Emitting it here would leave it
+  // in the body, where no crawler reads it. These assert the staging; the
+  // placement in a shelled document is covered by test/seo/meta-directive-head.
   it('should process @meta directive with literal values', async () => {
+    const context: Record<string, any> = {}
     const result = await processTemplate(
       `@meta('description', 'A great website')`,
-      {},
+      context,
     )
-    expect(result).toContain('<meta')
-    expect(result).toContain('description')
-    expect(result).toContain('A great website')
+    expect(result.trim()).toBe('')
+    expect(context.__stx_runtime_head.meta).toEqual([
+      { name: 'description', content: 'A great website' },
+    ])
   })
 
   it('should process @meta directive for OpenGraph property', async () => {
+    const context: Record<string, any> = {}
     const result = await processTemplate(
       `@meta('og:title', 'My Page Title')`,
-      {},
+      context,
     )
-    expect(result).toContain('<meta')
-    expect(result).toContain('og:title')
-    expect(result).toContain('My Page Title')
+    expect(result.trim()).toBe('')
+    // Open Graph is RDFa: the attribute is `property`, and a scraper
+    // implementing the spec ignores `name="og:title"`.
+    expect(context.__stx_runtime_head.meta).toEqual([
+      { property: 'og:title', content: 'My Page Title' },
+    ])
   })
 })
 

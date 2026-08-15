@@ -55,7 +55,9 @@
  * ```
  */
 import type { CustomDirective, SeoConfig, StxOptions } from './types'
+import type { HeadConfig } from './head'
 import { ErrorCodes, inlineError } from './error-handling'
+import { mergeHeadConfigs } from './head'
 import { safeEvaluateObject } from './safe-evaluator'
 
 // =============================================================================
@@ -548,19 +550,79 @@ function escapeHtml(str: string): string {
 // =============================================================================
 
 /**
- * SEO meta directive for basic meta tag generation
+ * Namespaces whose tags are addressed by `property`, not `name`.
+ *
+ * Open Graph and its relatives are RDFa vocabularies, so the attribute is
+ * `property`; a `<meta name="og:title">` is ignored by every scraper that
+ * implements the spec. Twitter cards are the exception people expect to be a
+ * property and are not: the card spec says `name`.
+ */
+const PROPERTY_NAMESPACES = ['og:', 'article:', 'book:', 'profile:', 'fb:', 'music:', 'video:']
+
+/** Strip one matching pair of surrounding quotes, leaving inner ones alone. */
+function unquoteParam(raw: string): { value: string, quoted: boolean } {
+  const text = raw.trim()
+  const first = text[0]
+
+  if ((first === '\'' || first === '"' || first === '`') && text.length > 1 && text.at(-1) === first)
+    return { value: text.slice(1, -1), quoted: true }
+
+  return { value: text, quoted: false }
+}
+
+/**
+ * SEO meta directive.
+ *
+ * Stages the tag on the render's head rather than returning markup. A `<meta>`
+ * emitted where the directive happens to sit lands in the `<body>`, where no
+ * crawler reads it: the tag is present in the HTML, the page looks correct, and
+ * the description silently never applies. Staging it lets the document shell
+ * put it in `<head>`, which is the only place it means anything.
+ *
+ * This directive shadows `processMetaDirective` in head.ts, since custom
+ * directives run first. It therefore has to do that function's job, which is
+ * why it resolves unquoted arguments from the context and separates `property`
+ * from `name` here rather than leaving it to a later pass that will never see
+ * the directive.
  */
 export const metaDirective: CustomDirective = {
   name: 'meta',
-  handler: (_content, params, _context, _filePath) => {
+  handler: (_content, params, context, _filePath) => {
     if (params.length < 1) {
       return inlineError('Meta', 'meta directive requires at least the meta name', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
     }
 
-    const name = params[0].replace(/['"]/g, '')
-    const metaContent = params.length > 1 ? params[1].replace(/['"]/g, '') : ''
+    const name = unquoteParam(params[0]).value
+    let metaContent: string
 
-    return `<meta name="${escapeHtml(name)}" content="${escapeHtml(metaContent)}">`
+    if (params.length > 1) {
+      // An unquoted argument is a context expression: `@meta('og:image', ogImage)`
+      // must send the URL, not the word "ogImage".
+      const arg = unquoteParam(params[1])
+      metaContent = arg.quoted ? arg.value : String(context?.[arg.value] ?? arg.value)
+    }
+    else {
+      // The one-argument form reads the value out of the context, either by the
+      // segment after the colon or from an `openGraph` object.
+      const segment = name.includes(':') ? name.slice(name.indexOf(':') + 1) : name
+      const openGraph = context?.openGraph as Record<string, unknown> | undefined
+      metaContent = String(context?.[segment] ?? openGraph?.[segment] ?? '')
+    }
+
+    if (!metaContent)
+      return ''
+
+    const usesProperty = PROPERTY_NAMESPACES.some(prefix => name.startsWith(prefix))
+    const tag = usesProperty ? { property: name, content: metaContent } : { name, content: metaContent }
+
+    if (context) {
+      context.__stx_runtime_head = mergeHeadConfigs(
+        (context.__stx_runtime_head as HeadConfig) ?? {},
+        { meta: [tag] },
+      )
+    }
+
+    return ''
   },
   hasEndTag: false,
 }
