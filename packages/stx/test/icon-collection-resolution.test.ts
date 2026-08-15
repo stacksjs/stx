@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { afterEach, describe, expect, it } from 'bun:test'
-import { resolveCollectionPath } from '../src/builtins/icon'
+import { preloadIconCollection, resolveCollectionPath } from '../src/builtins/icon'
 
 const originalCwd = process.cwd()
 const roots: string[] = []
@@ -91,5 +91,54 @@ describe('icon collection resolution', () => {
     process.chdir(root)
 
     expect(resolveCollectionPath('hugeicons')).toBe(projectCopy)
+  })
+})
+
+/**
+ * A preload is a guess; a render is proof.
+ *
+ * The dev server preloads a default collection before it knows what any
+ * template contains. When that collection is not installed, the earlier
+ * behaviour was to warn that its icons "render as nothing" — on every boot of
+ * every app that uses a different collection, about icons that do not exist on
+ * any page. A warning that is usually wrong stops being read, and this one has
+ * to still be believed on the day a template really does ask for a missing set.
+ */
+describe('preloadIconCollection', () => {
+  it('says nothing about a collection that is merely absent', async () => {
+    const root = makeRoot()
+    process.chdir(root)
+
+    const warnings: string[] = []
+    const original = console.warn
+    console.warn = (...args: unknown[]) => { warnings.push(args.join(' ')) }
+
+    try {
+      await preloadIconCollection('definitely-not-a-collection')
+    }
+    finally {
+      console.warn = original
+    }
+
+    expect(warnings).toEqual([])
+  })
+
+  it('still warns when the caller knows the collection is required', async () => {
+    const root = makeRoot()
+    process.chdir(root)
+
+    const warnings: string[] = []
+    const original = console.warn
+    console.warn = (...args: unknown[]) => { warnings.push(args.join(' ')) }
+
+    try {
+      await preloadIconCollection('also-not-a-collection', { speculative: false })
+    }
+    finally {
+      console.warn = original
+    }
+
+    expect(warnings.length).toBe(1)
+    expect(warnings[0]).toContain('also-not-a-collection')
   })
 })

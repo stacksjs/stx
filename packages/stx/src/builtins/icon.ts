@@ -111,13 +111,21 @@ function loadCollectionSync(prefix: string): IconCollection | null {
 /**
  * Async loader — kept for `preloadIconCollection()` and tests, since
  * batch preloads benefit from non-blocking IO.
+ *
+ * `speculative` suppresses the missing-collection warning. A preload is a
+ * guess that a collection MIGHT be used; a render is proof that it IS. Warning
+ * on the guess tells an app that uses hugeicons, on every dev boot, that lucide
+ * "renders as nothing" — about icons it does not have and never asked for.
+ * A warning that is usually wrong is one people learn to scroll past, and this
+ * one has to still be believed on the day it is right.
  */
-async function loadCollection(prefix: string): Promise<IconCollection | null> {
+async function loadCollection(prefix: string, speculative = false): Promise<IconCollection | null> {
   if (collectionCache.has(prefix)) return collectionCache.get(prefix)!
 
   const jsonPath = resolveCollectionPath(prefix)
   if (!jsonPath) {
-    warnMissingCollection(prefix)
+    if (!speculative)
+      warnMissingCollection(prefix)
     return null
   }
 
@@ -205,7 +213,16 @@ export const IconBuiltin: BuiltinComponentDef = {
 /**
  * Pre-load icon collections so they're available synchronously during render.
  * Call this before template processing starts.
+ *
+ * Silent when the collection is not installed. Callers preload on the chance a
+ * template wants it, so an absent collection here is a normal outcome and not
+ * a problem to report; the render path still says so if a template actually
+ * asks for one that is missing. Pass `speculative: false` when the caller knows
+ * the collection is required.
  */
-export async function preloadIconCollection(prefix: string = 'lucide'): Promise<void> {
-  await loadCollection(prefix)
+export async function preloadIconCollection(
+  prefix: string = 'lucide',
+  options: { speculative?: boolean } = {},
+): Promise<void> {
+  await loadCollection(prefix, options.speculative ?? true)
 }
