@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.182...v0.2.183)
+
+## 🐛 Bug Fixes
+
+- **icon**: do not warn about a collection nobody asked for ([18dec85](https://github.com/stacksjs/stx/commit/18dec85)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.183 ([611e43f](https://github.com/stacksjs/stx/commit/611e43f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.181...v0.2.182)
 
 ## 🐛 Bug Fixes
