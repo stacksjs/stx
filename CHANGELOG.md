@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.181...v0.2.182)
+
+## 🐛 Bug Fixes
+
+- **seo**: @meta reaches <head>, and a page tag replaces the config tag ([aaa9feb](https://github.com/stacksjs/stx/commit/aaa9feb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.182 ([58155f2](https://github.com/stacksjs/stx/commit/58155f2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.180...v0.2.181)
 
 ## 🐛 Bug Fixes
