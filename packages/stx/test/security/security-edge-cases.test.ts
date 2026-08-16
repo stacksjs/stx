@@ -753,7 +753,7 @@ describe('XSS in Template Expressions', () => {
      * would otherwise read them as an expression, which is the injection this
      * test was written to describe and did not yet prevent.
      */
-    expect(result).toContain('&#123;&#123;')
+    expect(result).toContain('&#123;&#8288;&#123;')
     expect(result).toContain('}}')
     // Should not have executed any code
     expect(result).not.toContain('[object')

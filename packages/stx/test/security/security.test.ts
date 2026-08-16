@@ -269,7 +269,7 @@ describe('stx Security Tests', () => {
        * first had emitted. `escapeHtmlValue` closes that, and a reader still
        * sees `{{ secretValue }}` because the browser decodes the references.
        */
-      expect(result).toContain('&#123;&#123; secretValue }}')
+      expect(result).toContain('&#123;&#8288;&#123; secretValue }}')
       expect(result).not.toContain('SECRET DATA')
     })
   })

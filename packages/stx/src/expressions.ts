@@ -478,8 +478,30 @@ export function escapeHtmlValue(unsafe: string): string {
   return escapeHtml(unsafe)
     // A run, not a single brace: `{{{ x }}}` with only its first brace encoded
     // still leaves `{{ x }}` behind for the next pass to evaluate.
-    .replace(/\{{2,}/g, match => '&#123;'.repeat(match.length))
-    .replace(/\{(?=!)/g, '&#123;')
+    .replace(/\{{2,}/g, match => joinBraces(match.length))
+    .replace(/\{(?=!)/g, `&#123;${WORD_JOINER}`)
+}
+
+/**
+ * A zero-width, non-breaking character, written as a reference.
+ *
+ * The character references alone stop the *server* reading a value as a
+ * template, and they are not enough: the browser decodes them, so the DOM text
+ * says `{{ 6*7 }}` again and the client runtime - which binds by scanning text
+ * for mustaches - evaluates it in the visitor's browser. Server-side injection
+ * becomes cross-site scripting, from the same stored value.
+ *
+ * A word joiner between the braces breaks the pattern for both sides while
+ * changing nothing a reader sees: it has no width, no line-breaking behaviour,
+ * and copies as an invisible character. The alternative is teaching the runtime
+ * to bind only what the compiler recorded, which is the better shape and a much
+ * larger change than a security fix should carry.
+ */
+const WORD_JOINER = '&#8288;'
+
+/** `{{` as `{` + joiner + `{`, so neither pass can read the run as syntax. */
+function joinBraces(length: number): string {
+  return Array.from({ length }, () => '&#123;').join(WORD_JOINER)
 }
 
 /**

@@ -26,9 +26,10 @@ describe('a value carrying template syntax', () => {
     const twice = processExpressions(once, { description: 'probe {{ 6*7 }} here' }, 'probe.stx')
 
     expect(twice).not.toContain('42')
-    // The reader still sees the braces: they are character references, which
-    // the browser decodes back to `{`.
-    expect(twice).toContain('&#123;&#123;')
+    // The reader still sees the braces: character references, joined by a
+    // zero-width word joiner so the client runtime cannot read the decoded text
+    // as a mustache either.
+    expect(twice).toContain('&#123;&#8288;&#123;')
   })
 
   it('cannot read the page scope on the second pass', () => {
@@ -66,15 +67,33 @@ describe('escaping a value', () => {
     // The closing braces are left alone deliberately: without an opening `{{`
     // they are inert, and every brace this does not touch is output that stays
     // byte for byte what it was.
-    expect(escapeHtmlValue('<b>{{ x }}</b>')).toBe('&lt;b&gt;&#123;&#123; x }}&lt;/b&gt;')
+    expect(escapeHtmlValue('<b>{{ x }}</b>')).toBe('&lt;b&gt;&#123;&#8288;&#123; x }}&lt;/b&gt;')
   })
 
   it('encodes the whole run, so a triple brace cannot leave a double behind', () => {
-    expect(escapeHtmlValue('{{{ x }}}')).toBe('&#123;&#123;&#123; x }}}')
+    expect(escapeHtmlValue('{{{ x }}}')).toBe('&#123;&#8288;&#123;&#8288;&#123; x }}}')
   })
 
   it('and the raw form too', () => {
-    expect(escapeHtmlValue('{!! x !!}')).toBe('&#123;!! x !!}')
+    expect(escapeHtmlValue('{!! x !!}')).toBe('&#123;&#8288;!! x !!}')
+  })
+
+  /*
+   * The half the references alone did not cover.
+   *
+   * A browser decodes `&#123;&#123;` back to `{{`, and the client runtime binds
+   * by scanning text for mustaches - so the value was evaluated again in the
+   * visitor's browser, turning a stored description into cross-site scripting.
+   * The joiner is zero-width and non-breaking: the reader sees `{{ x }}` and
+   * no scanner does.
+   */
+  it('separates the braces in the DOM the browser will build', () => {
+    const decoded = escapeHtmlValue('{{ x }}')
+      .replace(/&#123;/g, '{')
+      .replace(/&#8288;/g, '\u2060')
+
+    expect(decoded).not.toMatch(/\{\{/)
+    expect(decoded.replace(/\u2060/g, '')).toBe('{{ x }}')
   })
 
   it('leaves ordinary text alone', () => {

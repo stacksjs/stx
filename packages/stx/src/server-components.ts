@@ -691,9 +691,11 @@ function escapeHtml(str: string): string {
  * be readable as a template by the pass that runs over this output next.
  */
 function escapeHtmlValue(str: string): string {
+  // The joiner is what keeps the *client* runtime from re-reading the value
+  // once the browser has decoded the references. See `expressions.ts`.
   return escapeHtml(str)
-    .replace(/\{{2,}/g, match => '&#123;'.repeat(match.length))
-    .replace(/\{(?=!)/g, '&#123;')
+    .replace(/\{{2,}/g, match => Array.from({ length: match.length }, () => '&#123;').join('&#8288;'))
+    .replace(/\{(?=!)/g, '&#123;&#8288;')
 }
 
 // =============================================================================
