@@ -10,7 +10,7 @@
 
 import type { CompiledTemplate } from './template-compiler'
 import { extractVariables } from './variable-extractor'
-import { evaluateExpression, escapeHtml } from './expressions'
+import { evaluateExpression, escapeHtmlValue } from './expressions'
 import { replacePlaceholders, hasPlaceholders } from './placeholder'
 import { runPageAction } from './page-action'
 
@@ -146,7 +146,7 @@ async function runHydration(
           values.set(token, value !== undefined && value !== null ? String(value) : '')
         }
         else {
-          values.set(token, value !== undefined && value !== null ? escapeHtml(String(value)) : '')
+          values.set(token, value !== undefined && value !== null ? escapeHtmlValue(String(value)) : '')
         }
       }
       catch {
@@ -199,7 +199,7 @@ export async function hydrateFragment(
           values.set(token, value !== undefined && value !== null ? String(value) : '')
         }
         else {
-          values.set(token, value !== undefined && value !== null ? escapeHtml(String(value)) : '')
+          values.set(token, value !== undefined && value !== null ? escapeHtmlValue(String(value)) : '')
         }
       }
       catch {

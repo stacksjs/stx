@@ -747,8 +747,13 @@ describe('XSS in Template Expressions', () => {
     const result = await processTemplate(template, {
       userContent: '{{constructor.constructor("return this")()}}',
     })
-    // The inner {{ }} should be rendered as literal text, not evaluated
-    expect(result).toContain('{{')
+    /*
+     * Rendered as literal text, not evaluated. The opening braces arrive as
+     * character references now: a later expression pass over the same output
+     * would otherwise read them as an expression, which is the injection this
+     * test was written to describe and did not yet prevent.
+     */
+    expect(result).toContain('&#123;&#123;')
     expect(result).toContain('}}')
     // Should not have executed any code
     expect(result).not.toContain('[object')

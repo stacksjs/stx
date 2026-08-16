@@ -258,8 +258,18 @@ describe('stx Security Tests', () => {
         secretValue: 'SECRET DATA',
       })
 
-      // The expression should be treated as a string, not evaluated
-      expect(result).toContain('{{ secretValue }}')
+      /*
+       * Treated as a string, not evaluated - and the braces now arrive as
+       * character references, which is what makes that true rather than
+       * incidental.
+       *
+       * They used to survive as literal `{{ }}` only because this call site
+       * runs a single expression pass. A real page runs several - a loop body,
+       * then the composed page - and the second one evaluated whatever the
+       * first had emitted. `escapeHtmlValue` closes that, and a reader still
+       * sees `{{ secretValue }}` because the browser decodes the references.
+       */
+      expect(result).toContain('&#123;&#123; secretValue }}')
       expect(result).not.toContain('SECRET DATA')
     })
   })

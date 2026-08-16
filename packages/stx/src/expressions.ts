@@ -128,7 +128,10 @@ export const defaultFilters: Record<string, FilterFunction> = {
   escape: (value: any, _context: Record<string, any>) => {
     if (value === undefined || value === null)
       return ''
-    return escapeHtml(String(value))
+    // The value form: `| escape` is asked for by somebody who wants the string
+    // rendered rather than interpreted, and that has to include the template's
+    // own syntax.
+    return escapeHtmlValue(String(value))
   },
 
   // Translation filter - uses context parameter instead of global state
@@ -441,6 +444,42 @@ export function escapeHtml(unsafe: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
+}
+
+/**
+ * Escape a *value* for HTML output: the markup characters, and the template's
+ * own syntax with them.
+ *
+ * **A value is data, never a template.** The pipeline runs more than one
+ * expression pass over composed output - a loop body is processed per
+ * iteration and the finished page again, a section is spliced into its layout,
+ * an include into its parent - so whatever one pass emits, the next one reads.
+ * Without neutralising the opening braces here, a value of `{{ secret }}` is
+ * evaluated against the page's own scope on the second pass, and every field a
+ * person can type into becomes server-side template injection: a repository
+ * description, an issue title, a branch name.
+ *
+ * Reproduced in a real application before this existed: a description of
+ * `probe {{ 6*7 }} here` rendered as `probe 42 here`, and one of
+ * `{{ ownerHandle }}` printed the view's own local variable.
+ *
+ * **Only a brace that opens template syntax is encoded** - a run of `{`, or a
+ * `{` before `!`. A lone brace is left exactly as it was, so a JSON value, a
+ * CSS snippet, or prose about `{` renders byte for byte as it always did; this
+ * is a security fix and it should not rewrite everybody's output as the price.
+ *
+ * Character references rather than sentinel tokens, so there is nothing to
+ * restore afterwards and no code path that can leak a placeholder into a page.
+ * The DOM is unaffected: a reader sees `{{ secret }}`, an attribute parses back
+ * to `{`, and `JSON.parse` of a data attribute still works, because the browser
+ * decodes references before anything reads them.
+ */
+export function escapeHtmlValue(unsafe: string): string {
+  return escapeHtml(unsafe)
+    // A run, not a single brace: `{{{ x }}}` with only its first brace encoded
+    // still leaves `{{ x }}` behind for the next pass to evaluate.
+    .replace(/\{{2,}/g, match => '&#123;'.repeat(match.length))
+    .replace(/\{(?=!)/g, '&#123;')
 }
 
 /**
@@ -983,8 +1022,12 @@ export function processExpressions(template: string, context: Record<string, any
         return createPlaceholder('expr', trimmedExpr)
       }
 
-      // Escape HTML for security
-      return value !== undefined && value !== null ? escapeHtml(String(value)) : ''
+      /*
+       * Escaped as a *value*, which neutralises `{{` as well as `<`: a later
+       * expression pass over this same output would otherwise evaluate what
+       * was just substituted. See `escapeHtmlValue`.
+       */
+      return value !== undefined && value !== null ? escapeHtmlValue(String(value)) : ''
     }
     catch (error: unknown) {
       if (firstVarIsClientSignal)

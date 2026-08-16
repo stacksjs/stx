@@ -618,8 +618,9 @@ async function processServerTemplate(
       return ''
     }
 
-    // Escape HTML by default
-    return escapeHtml(String(value))
+    // Escaped as a value, so the substituted text cannot be read as a template
+    // by the next expression pass over this output. See `escapeHtmlValue`.
+    return escapeHtmlValue(String(value))
   })
 
   return result
@@ -639,7 +640,7 @@ function processServerTemplateSync(
     const value = getNestedValue(context, expr.trim())
     if (value === undefined || value === null)
       return ''
-    return escapeHtml(String(value))
+    return escapeHtmlValue(String(value))
   })
 
   return result
@@ -680,6 +681,19 @@ function escapeHtml(str: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
+}
+
+/**
+ * Escape a value, template syntax included.
+ *
+ * Local rather than imported from `expressions.ts` to keep this module's own
+ * escaping in one place, and identical in effect: a substituted value must not
+ * be readable as a template by the pass that runs over this output next.
+ */
+function escapeHtmlValue(str: string): string {
+  return escapeHtml(str)
+    .replace(/\{{2,}/g, match => '&#123;'.repeat(match.length))
+    .replace(/\{(?=!)/g, '&#123;')
 }
 
 // =============================================================================
