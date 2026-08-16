@@ -1,5 +1,16 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.183...v0.2.184)
+
+## 🔧 Chores
+
+- release v0.2.184 ([74ac223](https://github.com/stacksjs/stx/commit/74ac223)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: move ts-images off the 0.1 line, and refresh the rest ([5931ac6](https://github.com/stacksjs/stx/commit/5931ac6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.182...v0.2.183)
 
 ## 🐛 Bug Fixes
