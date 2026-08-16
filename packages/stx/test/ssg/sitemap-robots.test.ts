@@ -135,6 +135,15 @@ describe('the generated files', () => {
     expect(read('sitemap.xml')).not.toContain('/login')
   })
 
+  it('reads route exclusions from stx.config when the CLI supplies no policy options', async () => {
+    await Bun.write(path.join(dir, 'stx.config.ts'), `export default { site: { url: 'https://example.org' }, build: { sitemapExclude: ['/login'] } }\n`)
+    await build()
+
+    expect(read('sitemap.xml')).toContain('https://example.org/')
+    expect(read('sitemap.xml')).not.toContain('/login')
+    expect(read('robots.txt')).toContain('Disallow: /login')
+  })
+
   it('never lists a component as a public URL', async () => {
     await build()
 

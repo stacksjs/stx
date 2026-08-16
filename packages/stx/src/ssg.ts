@@ -1020,35 +1020,40 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
   clearBundleFailures()
 
   // Load user's stx.config.ts for proper layoutsDir, componentsDir, etc.
-  const stxConfig = await loadStxConfig()
+  const stxConfig = await loadStxConfig(process.cwd())
+  const buildConfig = stxConfig.build || {}
 
   // The sitemap used to hardcode http://localhost and read no config at all,
   // so apps that declared a URL still published localhost URLs to crawlers
   // with nothing warning about it (#1866).
-  const siteUrl = await resolveSiteUrl({ explicit: options.domain, stxConfig })
-  if (siteUrl.source === 'fallback' && (options.sitemap ?? true))
+  const siteUrl = await resolveSiteUrl({ explicit: options.domain || buildConfig.domain, stxConfig })
+  if (siteUrl.source === 'fallback' && (options.sitemap ?? buildConfig.sitemap ?? true))
     console.warn(siteUrlFallbackWarning())
 
   const cfg: Required<SSGConfig> = {
-    pagesDir: options.pagesDir || 'pages',
-    outputDir: options.outputDir || 'dist',
-    baseUrl: options.baseUrl || '/',
+    pagesDir: options.pagesDir || buildConfig.pagesDir || 'pages',
+    outputDir: options.outputDir || buildConfig.outputDir || 'dist',
+    baseUrl: options.baseUrl || buildConfig.baseUrl || '/',
     domain: siteUrl.url,
-    revalidate: options.revalidate ?? false,
-    sitemap: options.sitemap ?? true,
-    sitemapExclude: options.sitemapExclude || [],
-    robots: options.robots ?? true,
-    rss: options.rss ?? false,
-    concurrency: options.concurrency || 10,
-    cache: options.cache ?? true,
-    cacheDir: options.cacheDir || stateDir(process.cwd(), 'ssg-cache'),
+    revalidate: options.revalidate ?? buildConfig.revalidate ?? false,
+    sitemap: options.sitemap ?? buildConfig.sitemap ?? true,
+    // CLI callers commonly provide only pagesDir/outputDir and leave policy in
+    // stx.config.ts. The site URL already followed that path, but exclusions
+    // were silently dropped, which advertised authenticated routes in the
+    // generated sitemap. Explicit call options retain precedence.
+    sitemapExclude: options.sitemapExclude || buildConfig.sitemapExclude || [],
+    robots: options.robots ?? buildConfig.robots ?? true,
+    rss: options.rss ?? buildConfig.rss ?? false,
+    concurrency: options.concurrency || buildConfig.concurrency || 10,
+    cache: options.cache ?? buildConfig.cache ?? true,
+    cacheDir: options.cacheDir || buildConfig.cacheDir || stateDir(process.cwd(), 'ssg-cache'),
     contentLoaders: options.contentLoaders || [],
     hooks: options.hooks || {},
-    minify: options.minify ?? (process.env.NODE_ENV === 'production'),
-    generate404: options.generate404 ?? true,
-    publicDir: options.publicDir || 'public',
-    trailingSlash: options.trailingSlash ?? false,
-    cleanOutput: options.cleanOutput ?? true,
+    minify: options.minify ?? buildConfig.minify ?? (process.env.NODE_ENV === 'production'),
+    generate404: options.generate404 ?? buildConfig.generate404 ?? true,
+    publicDir: options.publicDir || buildConfig.publicDir || 'public',
+    trailingSlash: options.trailingSlash ?? buildConfig.trailingSlash ?? false,
+    cleanOutput: options.cleanOutput ?? buildConfig.cleanOutput ?? true,
     // Fall back to the loaded config, so these behave like every other
     // directory key rather than being the two a caller cannot set.
     partialsDir: options.partialsDir || (stxConfig as any)?.partialsDir || '',

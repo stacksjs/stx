@@ -930,6 +930,10 @@ export interface BuildConfig {
   domain?: string
   /** Generate sitemap.xml (default: true) */
   sitemap: boolean
+  /** Routes to omit from sitemap.xml and disallow in robots.txt. */
+  sitemapExclude?: (string | RegExp)[]
+  /** Generate robots.txt and optionally configure its rules. */
+  robots?: boolean | import('../ssg').RobotsConfig
   /** Generate RSS feed */
   rss?: boolean | import('../ssg').RSSConfig
   /** Minify HTML output (default: true) */
