@@ -368,15 +368,12 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   // The interface that typed the props has no runtime form either.
   code = code.replace(/(?:export\s+)?interface\s+[A-Za-z_$][\w$]*\s*\{[\s\S]*?\n\}/g, '')
 
-  let body: string
-  try {
-    body = new Bun.Transpiler({ loader: 'ts' }).transformSync(code)
-  }
-  catch (error) {
-    throw new Error(`${file}: failed to transpile component script (${(error as Error).message})`)
-  }
-
-  return { imports, body: body.trim(), propNames, defaults }
+  // Returned as TypeScript, deliberately unbuilt. Transpiling the script on its
+  // own hands the compiler a set of declarations nothing reads, and it removes
+  // them as dead: the template that uses them has not been attached yet. The
+  // two are built together further down, where `const doubled = total * 2` is
+  // visibly used by the line that prints it and survives.
+  return { imports, body: code.trim(), propNames, defaults }
 }
 
 function compileEventDirectives(template: string): { template: string, eventTypes: string[] } {
@@ -825,16 +822,43 @@ function componentModule(component: CompiledComponent): string {
   // A component with no control flow and no script keeps the string template it
   // had before, so a purely presentational element gains nothing it does not
   // use and nothing that already worked changes shape.
-  const renderMethod = component.render.trim() === '' && scope.body === '' && destructured === ''
-    ? ''
-    : `
+  let renderMethod = ''
+
+  if (component.render.trim() !== '' || scope.body !== '' || destructured !== '') {
+    const inner = [
+      destructured ? `const { ${destructured} } = this._props();` : '',
+      scope.body,
+      `let out = '';`,
+      component.render,
+      'return out;',
+    ].filter(Boolean).join('\n')
+
+    // Wrapped in an exported function before it is transpiled, for two
+    // reasons that both bite silently. A bare statement list is treated as a
+    // module body, so `this` is rewritten to `exports` and the element's own
+    // props accessor stops resolving; and nothing in that body is reachable
+    // from an export, so the compiler removes the derived values as dead code
+    // and the render prints undefined for every one of them. Inside an
+    // exported function, `this` is left alone and every declaration is kept.
+    let compiled: string
+    try {
+      const wrapped = new Bun.Transpiler({ loader: 'ts' })
+        .transformSync(`export function __render(__helpers) {\n${inner}\n}`)
+      const opening = wrapped.indexOf('{')
+      const closing = wrapped.lastIndexOf('}')
+      compiled = wrapped.slice(opening + 1, closing).trim()
+    }
+    catch (error) {
+      throw new Error(`${component.sourcePath}: failed to compile render (${(error as Error).message})`)
+    }
+
+    renderMethod = `
   render(__helpers) {
     const { escape: __escape, raw: __raw, values: __values, entries: __entries } = __helpers;
-${destructured ? `    const { ${destructured} } = this._props();\n` : ''}${scope.body ? `${indent(scope.body)}\n` : ''}    let out = '';
-${indent(component.render)}
-    return out;
+${indent(compiled.trim())}
   }
 `
+  }
 
   return `import { StxElement, defineComponent } from './runtime.js';
 ${scope.imports.length ? `${scope.imports.join('\n')}\n` : ''}

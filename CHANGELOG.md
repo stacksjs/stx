@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.185...v0.2.186)
+
+## 🐛 Bug Fixes
+
+- **security**: the client runtime read the value back too ([ab16709](https://github.com/stacksjs/stx/commit/ab16709)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.186 ([230a824](https://github.com/stacksjs/stx/commit/230a824)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.184...v0.2.185)
 
 ## 🐛 Bug Fixes
