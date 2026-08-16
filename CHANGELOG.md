@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.186...v0.2.187)
+
+## 🐛 Bug Fixes
+
+- **ssg**: honor build policy from config ([b952e80](https://github.com/stacksjs/stx/commit/b952e80)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.187 ([e2b93cf](https://github.com/stacksjs/stx/commit/e2b93cf)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.185...v0.2.186)
 
 ## 🐛 Bug Fixes
