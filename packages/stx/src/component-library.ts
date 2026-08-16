@@ -37,6 +37,10 @@ interface CompiledComponent {
   bindings: Array<{ id: number, name: string, expression: string }>
   slots: Array<{ name: string, description?: string }>
   cssProperties: Array<{ name: string, description?: string }>
+  /** The component's script, compiled: hoisted imports and the derived scope. */
+  scope: { imports: string[], body: string, propNames: string[], defaults: Record<string, string> }
+  /** The template's control flow, compiled into a render function body. */
+  render: string
 }
 
 const RESERVED_METHODS = new Set([
@@ -176,6 +180,205 @@ function extractStyles(source: string): string {
     .join('\n\n')
 }
 
+/**
+ * Compile the template's control flow into a render function.
+ *
+ * The build compiles; the runtime executes. Everything a component needs to
+ * decide is decided here, in Node, and what ships is a plain JavaScript
+ * function that concatenates a string. Nothing is interpreted in the browser.
+ *
+ * That is not only about speed. Evaluating a template at runtime means either
+ * `new Function` or an interpreter, and the first is refused outright by any
+ * page with a Content Security Policy worth having, which is exactly the sort
+ * of page a component library is dropped into. Compiling ahead of time means a
+ * component works under `script-src 'self'` with no exception carved for it.
+ *
+ * Handles `@if` / `@elseif` / `@else` / `@endif` and `@foreach (xs as x)`,
+ * nested to any depth, plus `{{ }}` and `{!! !!}` interpolation. Anything it
+ * does not recognise is left as literal text rather than guessed at, so an
+ * unsupported directive is visible in the output instead of silently dropped.
+ */
+/**
+ * What kind of thing a prop holds, read from the default it was given.
+ *
+ * A default is the only evidence available: the TypeScript interface that
+ * declared the prop is gone by now, and guessing from the name would be worse
+ * than guessing from the value. With no default at all the answer is `object`,
+ * because an undeclared prop is far more often a payload than a string, and an
+ * object property round-trips a string unchanged while the reverse loses the
+ * structure.
+ */
+function inferPropertyType(fallback: string | undefined): 'string' | 'number' | 'boolean' | 'object' {
+  if (fallback === undefined) return 'object'
+  if (fallback === 'true' || fallback === 'false') return 'boolean'
+  if (/^-?\d+(?:\.\d+)?$/.test(fallback)) return 'number'
+  if (/^['"`]/.test(fallback)) return 'string'
+  return 'object'
+}
+
+/** The default as a value rather than as the source text that produced it. */
+function literalValue(fallback: string): unknown {
+  if (fallback === 'true') return true
+  if (fallback === 'false') return false
+  if (/^-?\d+(?:\.\d+)?$/.test(fallback)) return Number(fallback)
+  if (/^['"`]/.test(fallback)) return fallback.slice(1, -1)
+  try { return JSON.parse(fallback) }
+  catch { return undefined }
+}
+
+function compileTemplateToRender(template: string): string {
+  const parts: string[] = []
+  let cursor = 0
+
+  // The comment form is stripped rather than emitted: it is a note to whoever
+  // reads the component, not to whoever loads the page.
+  const source = template.replace(/\{\{--[\s\S]*?--\}\}/g, '')
+
+  const directive = /@(if|elseif|else|endif|foreach|endforeach)\s*(?:\(([\s\S]*?)\))?/g
+  let match: RegExpExecArray | null
+
+  const text = (raw: string): void => {
+    if (raw === '') return
+    // Interpolation splits the literal, so the pieces around it are emitted as
+    // string constants and the expressions as real JavaScript.
+    let index = 0
+    const interpolation = /\{!!\s*([\s\S]*?)\s*!!\}|\{\{\s*([\s\S]*?)\s*\}\}/g
+    let hit: RegExpExecArray | null
+    while ((hit = interpolation.exec(raw))) {
+      if (hit.index > index) parts.push(`out += ${JSON.stringify(raw.slice(index, hit.index))};`)
+      // `{!! !!}` is the author saying "this is markup". `{{ }}` is the author
+      // saying "this is a value", and a value is escaped, always.
+      parts.push(hit[1] !== undefined
+        ? `out += __raw(${hit[1]});`
+        : `out += __escape(${hit[2]});`)
+      index = hit.index + hit[0].length
+    }
+    if (index < raw.length) parts.push(`out += ${JSON.stringify(raw.slice(index))};`)
+  }
+
+  while ((match = directive.exec(source))) {
+    text(source.slice(cursor, match.index))
+    cursor = match.index + match[0].length
+
+    switch (match[1]) {
+      case 'if':
+        parts.push(`if (${match[2]}) {`)
+        break
+      case 'elseif':
+        parts.push(`} else if (${match[2]}) {`)
+        break
+      case 'else':
+        parts.push('} else {')
+        break
+      case 'endif':
+      case 'endforeach':
+        parts.push('}')
+        break
+      case 'foreach': {
+        // `xs as x` and `xs as key => value`, which is the form the templates
+        // use. Written as a for-of over entries so an object iterates as
+        // happily as an array; a loop that only works on arrays is a trap the
+        // author finds at runtime.
+        const pair = /^([\s\S]+?)\s+as\s+(?:([A-Za-z_$][\w$]*)\s*=>\s*)?([A-Za-z_$][\w$]*)$/.exec((match[2] || '').trim())
+        if (!pair) {
+          parts.push(`out += ${JSON.stringify(match[0])};`)
+          break
+        }
+        const [, iterable, key, value] = pair
+        parts.push(key
+          ? `for (const [${key}, ${value}] of __entries(${iterable})) {`
+          : `for (const ${value} of __values(${iterable})) {`)
+        break
+      }
+    }
+  }
+
+  text(source.slice(cursor))
+
+  return parts.join('\n    ')
+}
+
+/**
+ * Carry the component's computed values into the element.
+ *
+ * A component's script is where its thinking lives: the formatted total, the
+ * colour that says whether a number moved the right way, the geometry of a
+ * path. Dropping it and keeping only the markup, which is what this build did
+ * before, leaves a component that can display a value but cannot derive one,
+ * and every real component derives something.
+ *
+ * Top-level `const` and `let` declarations become the scope the template reads.
+ * Imports are hoisted to the generated module so a component can share helpers
+ * with the rest of a codebase rather than restating them, which is the whole
+ * reason to write the component in stx and not in the consuming language.
+ *
+ * `defineProps` / `withDefaults` are recognised and removed: they declare the
+ * element's public surface, which is already expressed as properties, and
+ * leaving the call in would reference an import that does not exist at runtime.
+ */
+function compileScriptScope(source: string, file: string, outputDir: string): {
+  imports: string[]
+  body: string
+  propNames: string[]
+  defaults: Record<string, string>
+} {
+  const scripts = [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+  const block = scripts.find(script => !/\bcomponent\b|\bstx:component\b|\bclient\b/i.test(script[1]))
+
+  if (!block) return { imports: [], body: '', propNames: [], defaults: {} }
+
+  let code = block[2]
+  const imports: string[] = []
+  const propNames: string[] = []
+  const defaults: Record<string, string> = {}
+
+  // Hoist imports, minus stx's own compile-time helpers, which have no runtime
+  // meaning once the props they declare have become element properties.
+  code = code.replace(/^\s*import\s+[\s\S]*?from\s*['"][^'"]+['"];?\s*$/gm, (statement) => {
+    if (/from\s*['"]stx['"]/.test(statement)) return ''
+
+    // A relative specifier was written against the component's own directory,
+    // and the generated module lives in the output one. Left alone it resolves
+    // to nothing and the bundle fails with a path the author never typed, so
+    // it is rewritten to mean the same file from where it now sits.
+    imports.push(statement.trim().replace(/(from\s*['"])(\.[^'"]*)(['"])/, (_all, open, specifier, close) => {
+      const target = path.resolve(path.dirname(file), specifier)
+      const rewritten = path.relative(outputDir, target)
+      return `${open}${rewritten.startsWith('.') ? rewritten : `./${rewritten}`}${close}`
+    }))
+    return ''
+  })
+
+  // The props declaration, in either form, tells us the public surface and the
+  // defaults. It is then removed rather than compiled.
+  const destructure = /const\s*\{([^}]*)\}\s*=\s*(?:withDefaults\s*\(\s*)?defineProps\s*<[^>]*>\s*\(\s*\)\s*(?:,\s*(\{[\s\S]*?\})\s*,?\s*\))?[\s\S]*?$/m
+  const propMatch = destructure.exec(code)
+
+  if (propMatch) {
+    for (const name of propMatch[1].split(',')) {
+      const clean = name.split(':')[0].trim()
+      if (clean) propNames.push(clean)
+    }
+    for (const pair of (propMatch[2] || '').matchAll(/([A-Za-z_$][\w$]*)\s*:\s*([^,}]+)/g)) {
+      defaults[pair[1]] = pair[2].trim()
+    }
+    code = code.replace(propMatch[0], '')
+  }
+
+  // The interface that typed the props has no runtime form either.
+  code = code.replace(/(?:export\s+)?interface\s+[A-Za-z_$][\w$]*\s*\{[\s\S]*?\n\}/g, '')
+
+  let body: string
+  try {
+    body = new Bun.Transpiler({ loader: 'ts' }).transformSync(code)
+  }
+  catch (error) {
+    throw new Error(`${file}: failed to transpile component script (${(error as Error).message})`)
+  }
+
+  return { imports, body: body.trim(), propNames, defaults }
+}
+
 function compileEventDirectives(template: string): { template: string, eventTypes: string[] } {
   const eventTypes = new Set<string>()
   const compiled = template.replace(
@@ -234,7 +437,7 @@ function normalizeProperty(name: string, property: ComponentLibraryProperty): Co
 async function compileComponent(
   inputDir: string,
   entry: ComponentLibraryComponent,
-  defaults: Pick<ComponentLibraryConfig, 'prefix' | 'shadowDOM' | 'progressive'>,
+  defaults: Pick<ComponentLibraryConfig, 'prefix' | 'shadowDOM' | 'progressive' | 'outputDir'>,
 ): Promise<CompiledComponent> {
   const sourcePath = path.isAbsolute(entry.file) ? entry.file : path.resolve(inputDir, entry.file)
   const source = await readFile(sourcePath, 'utf8')
@@ -253,6 +456,24 @@ async function compileComponent(
   )
   const eventCompilation = compileEventDirectives(extractTemplate(source))
   const bindingCompilation = compileDynamicBindings(eventCompilation.template)
+  const scope = compileScriptScope(source, sourcePath, path.resolve(defaults.outputDir))
+  const render = compileTemplateToRender(bindingCompilation.template)
+
+  // A prop declared with defineProps is part of the element's public surface,
+  // so it becomes a real property here. Without this the component compiles
+  // perfectly and then reads undefined for everything, because assigning to an
+  // undeclared name stores a value the element never looks at: a failure that
+  // looks like the compiler is broken when it is the declaration that is
+  // missing. Anything named explicitly in the component's own metadata wins,
+  // since that is the author being deliberate.
+  for (const propertyName of scope.propNames) {
+    if (properties[propertyName]) continue
+    const fallback = scope.defaults[propertyName]
+    properties[propertyName] = normalizeProperty(propertyName, {
+      type: inferPropertyType(fallback),
+      ...(fallback === undefined ? {} : { default: literalValue(fallback) }),
+    })
+  }
   const metadataMethods = metadata.methods || {}
   const configuredMethods = entry.methods || {}
   const extractedMethods = extractClientMethods(source, sourcePath)
@@ -274,6 +495,8 @@ async function compileComponent(
     bindings: bindingCompilation.bindings,
     slots: extractSlots(bindingCompilation.template),
     cssProperties: extractCssProperties(extractStyles(source)),
+    scope,
+    render,
   }
 }
 
@@ -393,6 +616,17 @@ export class StxElement extends HTMLElementBase {
     }
   }
 
+  /**
+   * The props a compiled render reads.
+   *
+   * Its own method rather than _values directly, so a component that sets a
+   * property before upgrade still sees it, and so the generated code has one
+   * name to depend on rather than a private field's shape.
+   */
+  _props() {
+    return this._values;
+  }
+
   requestUpdate() {
     if (!this._connected || this._initializing || this._updatePending) return this.updateComplete;
     this._updatePending = true;
@@ -456,9 +690,15 @@ export class StxElement extends HTMLElementBase {
     const active = root.activeElement || (root.contains?.(globalThis.document?.activeElement) ? globalThis.document.activeElement : null);
     const focusKey = active && (active.getAttribute?.('data-key') || active.id || active.getAttribute?.('name'));
     const selection = active && 'selectionStart' in active ? [active.selectionStart, active.selectionEnd] : null;
-    let html = definition.template
-      .replace(new RegExp(${rawInterpolation}, 'g'), (_match, expression) => String(valueAt(this, expression) ?? ''))
-      .replace(new RegExp(${escapedInterpolation}, 'g'), (_match, expression) => escapeHTML(valueAt(this, expression)));
+    // A compiled component renders itself: the control flow and the derived
+    // values were turned into JavaScript at build time, so there is nothing to
+    // interpret here and nothing that needs an eval the page's CSP forbids.
+    // The string template remains for components that carry no logic.
+    let html = typeof this.render === 'function'
+      ? this.render(RENDER_HELPERS)
+      : definition.template
+        .replace(new RegExp(${rawInterpolation}, 'g'), (_match, expression) => String(valueAt(this, expression) ?? ''))
+        .replace(new RegExp(${escapedInterpolation}, 'g'), (_match, expression) => escapeHTML(valueAt(this, expression)));
     if (definition.shadowMode && definition.styles) html = '<style>' + definition.styles + '</style>' + html;
     root.innerHTML = html;
     this._applyBindings();
@@ -490,6 +730,25 @@ export class StxElement extends HTMLElementBase {
     }
   }
 }
+
+/**
+ * What a compiled render is handed.
+ *
+ * Passed in rather than closed over so the generated code names no globals, and
+ * a component module stays readable on its own: __escape is visibly a
+ * parameter, not something the bundler happened to leave in scope.
+ */
+const RENDER_HELPERS = {
+  escape: escapeHTML,
+  // The raw form is the author declaring the value is markup. Null becomes an
+  // empty string rather than the word "null", which is the only sensible
+  // reading of a missing fragment.
+  raw: (value) => String(value ?? ''),
+  // A loop over something absent runs zero times. Throwing here would fail a
+  // whole page over one empty list, which is never what the author meant.
+  values: (value) => value == null ? [] : (value[Symbol.iterator] ? value : Object.values(value)),
+  entries: (value) => value == null ? [] : (Array.isArray(value) ? value.entries() : Object.entries(value)),
+};
 
 export function defineComponent(Component, definition) {
   const properties = definition.properties || {};
@@ -550,11 +809,38 @@ function componentModule(component: CompiledComponent): string {
     return `  ${name}($event) {\n${body}\n  }`
   }).join('\n\n')
 
-  return `import { StxElement, defineComponent } from './runtime.js';
+  const scope = component.scope
 
+  // Every declared property, not only the ones defineProps named. A component
+  // may declare its surface in script metadata instead, and those templates
+  // reference the prop by bare name exactly the same way; destructuring only
+  // the defineProps set leaves the others as free identifiers and the render
+  // throws a ReferenceError for a prop that is declared and working.
+  const destructured = [...new Set([...Object.keys(component.properties), ...scope.propNames])]
+    .map(name => scope.defaults[name] === undefined ? name : `${name} = ${scope.defaults[name]}`)
+    .join(', ')
+  const indent = (code: string): string =>
+    code.split('\n').map(line => line.trim() === '' ? line : `    ${line}`).join('\n')
+
+  // A component with no control flow and no script keeps the string template it
+  // had before, so a purely presentational element gains nothing it does not
+  // use and nothing that already worked changes shape.
+  const renderMethod = component.render.trim() === '' && scope.body === '' && destructured === ''
+    ? ''
+    : `
+  render(__helpers) {
+    const { escape: __escape, raw: __raw, values: __values, entries: __entries } = __helpers;
+${destructured ? `    const { ${destructured} } = this._props();\n` : ''}${scope.body ? `${indent(scope.body)}\n` : ''}    let out = '';
+${indent(component.render)}
+    return out;
+  }
+`
+
+  return `import { StxElement, defineComponent } from './runtime.js';
+${scope.imports.length ? `${scope.imports.join('\n')}\n` : ''}
 /** ${component.description || `${component.name} web component generated from ${component.file}.`} */
 export class ${component.name} extends StxElement {
-${methodCode}
+${methodCode}${renderMethod}
 }
 
 defineComponent(${component.name}, ${definition});

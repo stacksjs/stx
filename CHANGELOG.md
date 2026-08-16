@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.184...v0.2.185)
+
+## 🐛 Bug Fixes
+
+- **security**: a value is data, never a template ([4639ac5](https://github.com/stacksjs/stx/commit/4639ac5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.185 ([4f36489](https://github.com/stacksjs/stx/commit/4f36489)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.183...v0.2.184)
 
 ## 🔧 Chores
