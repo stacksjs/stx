@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.187...v0.2.188)
+
+## 🚀 Features
+
+- **web-components**: compile the component, not just its markup ([21c2bab](https://github.com/stacksjs/stx/commit/21c2bab)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **ssg**: honor build policy from config ([b952e80](https://github.com/stacksjs/stx/commit/b952e80)) _(by Chris <chris@stacksjs.com>)_
+
+## 🧹 Chores
+
+- release v0.2.188 ([11fadb1](https://github.com/stacksjs/stx/commit/11fadb1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.187 ([256fa9d](https://github.com/stacksjs/stx/commit/256fa9d)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.186...v0.2.187)
 
 ## 🐛 Bug Fixes
