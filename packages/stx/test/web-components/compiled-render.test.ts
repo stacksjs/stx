@@ -18,6 +18,11 @@ import { buildComponentLibrary } from '../../src/component-library'
  * instead of surfacing as a blank element three layers away.
  */
 
+/** The render method alone, without the string template the module still carries. */
+function renderOf(source: string): string {
+  return source.slice(source.indexOf('render(__helpers)'), source.indexOf('defineComponent('))
+}
+
 async function build(component: string, extra?: { file: string, contents: string }): Promise<string> {
   const dir = await mkdtemp(path.join(tmpdir(), 'stx-compiled-'))
   const input = path.join(dir, 'src')
@@ -48,9 +53,8 @@ const many = count > 10
     expect(source).toContain('} else {')
     // The string template survives as the fallback for logic-free components,
     // so the directives are gone from the render, not from the whole module.
-    const render = source.slice(source.indexOf('render(__helpers)'), source.indexOf('defineComponent('))
-    expect(render).not.toContain('@if')
-    expect(render).not.toContain('@endif')
+    expect(renderOf(source)).not.toContain('@if')
+    expect(renderOf(source)).not.toContain('@endif')
   })
 
   it('carries the script\'s derived values into the render', async () => {
@@ -84,8 +88,7 @@ const { rows } = defineProps<Props>()
     // __values rather than a bare for-of: a loop over something absent runs
     // zero times instead of failing the whole page over one empty list.
     expect(source).toContain('for (const row of __values(rows))')
-    const render = source.slice(source.indexOf('render(__helpers)'), source.indexOf('defineComponent('))
-    expect(render).not.toContain('@foreach')
+    expect(renderOf(source)).not.toContain('@foreach')
   })
 
   it('reads the key => value form of a loop', async () => {
@@ -126,9 +129,9 @@ const { unit, invert, scale } = withDefaults(defineProps<Props>(), { unit: 'numb
 <template><b>{{ unit }}</b></template>
 `)
 
-    expect(source).toContain("unit = 'number'")
-    expect(source).toContain('invert = false')
-    expect(source).toContain('scale = 2')
+    expect(renderOf(source)).toMatch(/unit = ["']number["']/)
+    expect(renderOf(source)).toContain('invert = false')
+    expect(renderOf(source)).toContain('scale = 2')
   })
 
   it('hoists a helper import and points it at the built module', async () => {
@@ -161,16 +164,20 @@ const { value } = defineProps<Props>()
 <template><b>{{ value }}</b>{{-- a note to the reader of the component --}}</template>
 `)
 
-    expect(source).not.toContain('a note to the reader')
+    // Gone from what runs. The string template the module still carries is a
+    // separate fallback and is not what the browser executes.
+    expect(renderOf(source)).not.toContain('a note to the reader')
   })
 
-  it('leaves a logic-free component on the string template', async () => {
+  it('compiles a component that carries no logic at all', async () => {
     const source = await build(`
 <template><p>static</p></template>
 `)
 
-    // Nothing to compile means nothing gained, and a component that already
-    // worked should not change shape.
-    expect(source).not.toContain('render(__helpers)')
+    // Every component compiles, including this one. An earlier draft kept the
+    // string template for components with nothing to decide, which meant two
+    // render paths and a rule about which applied; one path that always holds
+    // is worth more than the handful of bytes the special case saved.
+    expect(renderOf(source)).toContain('out += "<p>static</p>"')
   })
 })

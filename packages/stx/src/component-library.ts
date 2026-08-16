@@ -351,7 +351,13 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
 
   // The props declaration, in either form, tells us the public surface and the
   // defaults. It is then removed rather than compiled.
-  const destructure = /const\s*\{([^}]*)\}\s*=\s*(?:withDefaults\s*\(\s*)?defineProps\s*<[^>]*>\s*\(\s*\)\s*(?:,\s*(\{[\s\S]*?\})\s*,?\s*\))?[\s\S]*?$/m
+  // No trailing wildcard. An earlier form ended `[\s\S]*?$` under /m, which
+  // looks harmless and is not: with no withDefaults wrapper to close the match,
+  // it ran on and ate the first declaration after the props line, so the very
+  // values the component derives were removed before anything could read them.
+  // The bug appeared only in the plainer of the two forms, which is exactly the
+  // one a small component uses.
+  const destructure = /const\s*\{([^}]*)\}\s*=\s*(?:withDefaults\s*\(\s*)?defineProps\s*<[^>]*>\s*\(\s*\)\s*(?:,\s*(\{[\s\S]*?\})\s*,?\s*\))?/
   const propMatch = destructure.exec(code)
 
   if (propMatch) {
