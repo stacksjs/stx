@@ -1469,6 +1469,34 @@ function assertInsideRoot(resolvedAbsolute: string, root: string): string | null
 }
 
 /**
+ * Look for one layout inside one layouts directory, with and without `.stx`.
+ *
+ * `@extends('layouts/default')` against a directory that already ends in
+ * `layouts` would otherwise resolve to `.../layouts/layouts/default`, so a
+ * redundant `layouts/` prefix on the reference is stripped first.
+ */
+async function findLayoutIn(
+  layoutsDir: string,
+  templatePath: string,
+  dependencies?: Set<string>,
+  debug?: boolean,
+): Promise<string | null> {
+  const stripped = templatePath.startsWith('layouts/') ? templatePath.slice(8) : templatePath
+  const base = path.join(layoutsDir, stripped)
+
+  for (const candidate of base.endsWith('.stx') ? [base] : [base, `${base}.stx`]) {
+    if (await fileExists(candidate)) {
+      if (debug)
+        console.log(`Found layout in ${layoutsDir}: ${candidate}`)
+      dependencies?.add(candidate)
+      return candidate
+    }
+  }
+
+  return null
+}
+
+/**
  * Resolve a template path based on the current file path
  */
 export async function resolveTemplatePath(
@@ -1568,9 +1596,32 @@ async function resolveTemplatePathInner(
     }
   }
 
-  // Handle special case for layouts — walk up directory tree to find layouts/
-  // This allows pages/requests/[id].stx to find pages/layouts/default.stx
-  let layoutsDir = ''
+  // A layout can come from two places: the directory the project configured as
+  // `layoutsDir`, or the convention walk that looks for a directory literally
+  // named `layouts` somewhere above the page. Configuration is checked FIRST.
+  //
+  // The walk used to run first, which meant any stray `layouts/` directory in a
+  // page's ancestry silently shadowed the configured one. Nothing reports it —
+  // both resolve to a real file and the page simply renders inside the wrong
+  // layout, so the only symptom is markup that came from a template the author
+  // never referenced. A monorepo with a `layouts/` at the root, or an app whose
+  // pages sit under a directory that happens to contain one, hits this without
+  // doing anything unusual.
+  //
+  // The walk still runs when the configured directory does not hold the layout,
+  // which is what lets `pages/requests/[id].stx` find `pages/layouts/default.stx`
+  // with no configuration at all.
+  const layoutSearchDirs: string[] = []
+
+  if (options.layoutsDir) {
+    layoutSearchDirs.push(
+      path.isAbsolute(options.layoutsDir)
+        ? options.layoutsDir
+        : path.resolve(process.cwd(), options.layoutsDir),
+    )
+  }
+
+  // Walk up the page's directory tree looking for a `layouts/` directory.
   let searchDir = path.resolve(dirPath)
   const rootDir = process.cwd()
   for (let i = 0; i < 10; i++) {
@@ -1578,81 +1629,18 @@ async function resolveTemplatePathInner(
     let candidateExists = false
     try { candidateExists = fs.statSync(candidate, { throwIfNoEntry: false })?.isDirectory() ?? false } catch {}
     if (candidateExists) {
-      layoutsDir = candidate
+      layoutSearchDirs.push(candidate)
       break
     }
     const parent = path.dirname(searchDir)
     if (parent === searchDir || parent.length < rootDir.length) break
     searchDir = parent
   }
-  if (layoutsDir) {
-    // Strip layouts/ prefix if present — @extends('layouts/default') + layoutsDir='pages/layouts'
-    // should resolve to pages/layouts/default, not pages/layouts/layouts/default
-    const layoutTemplatePath = templatePath.startsWith('layouts/') ? templatePath.slice(8) : templatePath
-    const fromCurrentLayouts = path.join(layoutsDir, layoutTemplatePath)
-    if (await fileExists(fromCurrentLayouts)) {
-      if (options.debug) {
-        console.log(`Found in current layouts dir: ${fromCurrentLayouts}`)
-      }
-      // Track dependency
-      if (dependencies) {
-        dependencies.add(fromCurrentLayouts)
-      }
-      return fromCurrentLayouts
-    }
 
-    // With extension
-    if (!layoutTemplatePath.endsWith('.stx')) {
-      const fromCurrentLayoutsWithExt = `${fromCurrentLayouts}.stx`
-      if (await fileExists(fromCurrentLayoutsWithExt)) {
-        if (options.debug) {
-          console.log(`Found in current layouts dir with extension: ${fromCurrentLayoutsWithExt}`)
-        }
-        // Track dependency
-        if (dependencies) {
-          dependencies.add(fromCurrentLayoutsWithExt)
-        }
-        return fromCurrentLayoutsWithExt
-      }
-    }
-  }
-
-  // Check options.layoutsDir if specified (for projects like voide that set layoutsDir)
-  if (options.layoutsDir) {
-    // Resolve relative layoutsDir paths relative to cwd or the file's parent directory
-    const resolvedLayoutsDir = path.isAbsolute(options.layoutsDir)
-      ? options.layoutsDir
-      : path.resolve(process.cwd(), options.layoutsDir)
-
-    // Strip 'layouts/' prefix if present — same logic as the directory-walk
-    // layoutsDir resolution above. Without this, @extends('layouts/soon')
-    // with layoutsDir='resources/layouts' would resolve to
-    // 'resources/layouts/layouts/soon' (doubled prefix).
-    const strippedPath = templatePath.startsWith('layouts/') ? templatePath.slice(8) : templatePath
-    const fromLayoutsDir = path.join(resolvedLayoutsDir, strippedPath)
-    if (await fileExists(fromLayoutsDir)) {
-      if (options.debug) {
-        console.log(`Found in options.layoutsDir: ${fromLayoutsDir}`)
-      }
-      if (dependencies) {
-        dependencies.add(fromLayoutsDir)
-      }
-      return fromLayoutsDir
-    }
-
-    // With extension
-    if (!templatePath.endsWith('.stx')) {
-      const fromLayoutsDirWithExt = `${fromLayoutsDir}.stx`
-      if (await fileExists(fromLayoutsDirWithExt)) {
-        if (options.debug) {
-          console.log(`Found in options.layoutsDir with extension: ${fromLayoutsDirWithExt}`)
-        }
-        if (dependencies) {
-          dependencies.add(fromLayoutsDirWithExt)
-        }
-        return fromLayoutsDirWithExt
-      }
-    }
+  for (const dir of layoutSearchDirs) {
+    const found = await findLayoutIn(dir, templatePath, dependencies, options.debug)
+    if (found)
+      return found
   }
 
   // 4. Special case for layouts directory if specified in options or path looks like 'layouts/*'
@@ -1688,9 +1676,9 @@ async function resolveTemplatePathInner(
 
   // 5. Try from layouts directory under partialsDir if specified
   if (options.partialsDir) {
-    layoutsDir = path.join(options.partialsDir, 'layouts')
-    if (await fileExists(layoutsDir)) {
-      const fromPartialsLayouts = path.join(layoutsDir, templatePath)
+    const partialsLayoutsDir = path.join(options.partialsDir, 'layouts')
+    if (await fileExists(partialsLayoutsDir)) {
+      const fromPartialsLayouts = path.join(partialsLayoutsDir, templatePath)
       if (await fileExists(fromPartialsLayouts)) {
         if (options.debug) {
           console.log(`Found in partials layouts dir: ${fromPartialsLayouts}`)
