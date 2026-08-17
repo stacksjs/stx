@@ -154,6 +154,19 @@ export interface SSGConfig {
   /** Clean output directory before build */
   cleanOutput?: boolean
   /**
+   * Extra input folded into every page's cache key.
+   *
+   * A page's key is its own file plus the dependencies collected while
+   * rendering it, which covers templates, components and layouts and nothing
+   * else. Anything build-wide — the Crosswind config, an env var the pages read
+   * — is invisible to it, and a build that reports every route `Cached` and
+   * exits 0 gives no signal that it used the old value (#1940).
+   *
+   * Defaults to a digest of the resolved Crosswind config. Set it to add your
+   * own build inputs; set it to a constant to opt out of that default.
+   */
+  cacheSalt?: string
+  /**
    * Per-island chunking (#1746): lift each `client="<trigger>"` island's inline
    * setup script into a content-hashed chunk under `_stx/islands/` that the
    * runtime fetches only on the hydration trigger. Default `false` (opt-in) —
@@ -337,9 +350,23 @@ class BuildCache {
   private cacheDir: string
   private cache: Map<string, BuildCacheEntry> = new Map()
   private loaded = false
+  /**
+   * Build-wide inputs that are not any one page's file or dependency.
+   *
+   * The dependency list is collected while rendering a page, so it holds the
+   * templates, components and layouts that page reached — and nothing else. The
+   * Crosswind config is not in it, yet it decides the stylesheet every page
+   * ships. Editing a preflight or the safelist therefore produced a build that
+   * reported `Cached: 24`, exited 0, and emitted the old CSS: the one edit that
+   * applies to every page was the one the key ignored.
+   *
+   * Folded into every page's hash, so a change here misses every route at once.
+   */
+  private salt: string
 
-  constructor(cacheDir: string) {
+  constructor(cacheDir: string, salt = '') {
     this.cacheDir = cacheDir
+    this.salt = salt
   }
 
   async load(): Promise<void> {
@@ -372,7 +399,7 @@ catch {
 
   getHash(filePath: string, dependencies: string[]): string {
     const stats = fs.statSync(filePath)
-    let hashInput = `${filePath}:${stats.mtimeMs}`
+    let hashInput = `${this.salt}|${filePath}:${stats.mtimeMs}`
 
     for (const dep of dependencies) {
       if (fs.existsSync(dep)) {
@@ -1060,6 +1087,9 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     publicDir: options.publicDir || buildConfig.publicDir || 'public',
     trailingSlash: options.trailingSlash ?? buildConfig.trailingSlash ?? false,
     cleanOutput: options.cleanOutput ?? buildConfig.cleanOutput ?? true,
+    // Empty means "derive it" — the Crosswind digest is computed below, once
+    // the build starts, rather than here where every other key is a plain read.
+    cacheSalt: options.cacheSalt ?? '',
     // Fall back to the loaded config, so these behave like every other
     // directory key rather than being the two a caller cannot set.
     partialsDir: options.partialsDir || (stxConfig as any)?.partialsDir || '',
@@ -1100,8 +1130,27 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     }
     await fs.promises.mkdir(cfg.outputDir, { recursive: true })
 
-    // Initialize caches
-    const buildCache = new BuildCache(cfg.cacheDir)
+    // Initialize caches.
+    //
+    // The salt is the resolved Crosswind config. It decides the stylesheet every
+    // page ships, and it appears in no page's dependency list, so before this a
+    // preflight or safelist edit produced a build that reported every route
+    // `Cached`, exited 0, and emitted the previous CSS. Nothing surfaced it: the
+    // rule was correct, the build was green, and the style simply was not there
+    // (#1940).
+    let cacheSalt = cfg.cacheSalt
+    if (!cacheSalt) {
+      const { resolveUserCrosswindConfig, fingerprintConfig } = await import('./dev-server/crosswind')
+      try {
+        cacheSalt = fingerprintConfig(await resolveUserCrosswindConfig(process.cwd()))
+      }
+      catch {
+        // A config that cannot be resolved is the same position as having no
+        // config, which is the common case — not a reason to fail the build.
+      }
+    }
+
+    const buildCache = new BuildCache(cfg.cacheDir, cacheSalt)
     if (cfg.cache) {
       await buildCache.load()
     }

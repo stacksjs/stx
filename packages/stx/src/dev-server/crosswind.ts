@@ -399,6 +399,92 @@ export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig 
 }
 
 /**
+ * Resolve the project's crosswind config the way CSS generation does.
+ *
+ * Priority: the `css` field of `stx.config.ts` (a path, or an inline object
+ * that may itself name a path), then auto-discovery of `crosswind.config.ts`.
+ *
+ * Extracted so the SSG's cache key can be built from the same resolution the
+ * stylesheet is. Two copies of this precedence would drift, and a cache key
+ * computed from a *different* config than the CSS is worse than no key at all —
+ * it would report freshness it has not checked.
+ */
+export async function resolveUserCrosswindConfig(resolveRoot: string): Promise<CrosswindConfig | null> {
+  let stxCssConfig: CrosswindConfig | null = null
+  try {
+    const { loadStxConfig } = await import('../config')
+    const stxConfig = await loadStxConfig(resolveRoot)
+    if (stxConfig.css) {
+      if (typeof stxConfig.css === 'string') {
+        // Path to crosswind config file
+        const configPath = path.isAbsolute(stxConfig.css) ? stxConfig.css : path.resolve(resolveRoot, stxConfig.css)
+        if (await Bun.file(configPath).exists()) {
+          const mod = await import(configPath)
+          stxCssConfig = mod.default || mod
+          console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from stx.config.ts → ${stxConfig.css}`)
+        }
+      }
+      else {
+        // Inline CSS config object. Spread the whole object first so
+        // fields like `theme`, `fonts`, `safelist`, and `shortcuts` survive
+        // — previously only content/preflight/minify were carried through,
+        // which silently dropped web fonts and theme overrides.
+        stxCssConfig = {
+          ...stxConfig.css,
+          content: stxConfig.css.content || [],
+          preflight: stxConfig.css.preflight ?? true,
+          minify: stxConfig.css.minify ?? false,
+        } as CrosswindConfig
+        if (stxConfig.css.config) {
+          const configPath = path.isAbsolute(stxConfig.css.config) ? stxConfig.css.config : path.resolve(resolveRoot, stxConfig.css.config)
+          if (await Bun.file(configPath).exists()) {
+            const mod = await import(configPath)
+            const extConfig = mod.default || mod
+            stxCssConfig = { ...extConfig, ...stxCssConfig }
+          }
+        }
+        console.log(`${colors.green}[Crosswind]${colors.reset} Using inline CSS config from stx.config.ts`)
+      }
+    }
+  }
+  catch {}
+
+  return stxCssConfig || await loadCrosswindConfig(resolveRoot)
+}
+
+/**
+ * A short, stable digest of a resolved crosswind config.
+ *
+ * Hashes the resolved OBJECT rather than a file, so it covers a config
+ * assembled from several files, an inline `css` block in `stx.config.ts`, and a
+ * preflight imported from somewhere else — all cases a path mtime would miss.
+ *
+ * Functions are hashed by source text. `JSON.stringify` drops them entirely,
+ * which would make an edit to a function-valued plugin or preflight invisible —
+ * the exact silent-staleness this digest exists to prevent. Cycles are replaced
+ * rather than thrown on, because throwing here degrades to 'unhashable', and a
+ * constant digest is a cache key that never changes.
+ */
+export function fingerprintConfig(config: unknown): string {
+  try {
+    const seen = new WeakSet<object>()
+    return shortHash(JSON.stringify(config ?? {}, (_key, value) => {
+      if (typeof value === 'function')
+        return `[fn]${String(value)}`
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value))
+          return '[circular]'
+        seen.add(value)
+      }
+      return value
+    }) ?? '')
+  }
+  catch {
+    return 'unhashable'
+  }
+}
+
+/**
  * Build Crosswind CSS using the build() API
  * This scans content files and generates CSS for all used classes
  */
@@ -593,58 +679,8 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
     // Load the project's crosswind config
     // Priority: 1) stx.config.ts css field, 2) crosswind.config.ts auto-discovery
     if (!cachedConfig) {
-      // Check if stx.config.ts specifies a CSS config path
-      let stxCssConfig: CrosswindConfig | null = null
-      try {
-        const { loadStxConfig } = await import('../config')
-        const stxConfig = await loadStxConfig(resolveRoot)
-        if (stxConfig.css) {
-          if (typeof stxConfig.css === 'string') {
-            // Path to crosswind config file
-            const configPath = path.isAbsolute(stxConfig.css) ? stxConfig.css : path.resolve(resolveRoot, stxConfig.css)
-            if (await Bun.file(configPath).exists()) {
-              const mod = await import(configPath)
-              stxCssConfig = mod.default || mod
-              console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from stx.config.ts → ${stxConfig.css}`)
-            }
-          }
-          else {
-            // Inline CSS config object. Spread the whole object first so
-            // fields like `theme`, `fonts`, `safelist`, and `shortcuts` survive
-            // — previously only content/preflight/minify were carried through,
-            // which silently dropped web fonts and theme overrides.
-            stxCssConfig = {
-              ...stxConfig.css,
-              content: stxConfig.css.content || [],
-              preflight: stxConfig.css.preflight ?? true,
-              minify: stxConfig.css.minify ?? false,
-            } as CrosswindConfig
-            if (stxConfig.css.config) {
-              const configPath = path.isAbsolute(stxConfig.css.config) ? stxConfig.css.config : path.resolve(resolveRoot, stxConfig.css.config)
-              if (await Bun.file(configPath).exists()) {
-                const mod = await import(configPath)
-                const extConfig = mod.default || mod
-                stxCssConfig = { ...extConfig, ...stxCssConfig }
-              }
-            }
-            console.log(`${colors.green}[Crosswind]${colors.reset} Using inline CSS config from stx.config.ts`)
-          }
-        }
-      }
-      catch {}
-
-      cachedConfig = stxCssConfig || await loadCrosswindConfig(resolveRoot)
-      // Compute a fingerprint of the loaded config so cache keys
-      // invalidate when the user edits crosswind.config.ts. JSON-stringify
-      // is good enough — circular refs would have already broken the
-      // config loader, and the fingerprint just needs to change when any
-      // theme / safelist / shortcut edit changes.
-      try {
-        configFingerprint = shortHash(JSON.stringify(cachedConfig ?? {}))
-      }
-      catch {
-        configFingerprint = 'unhashable'
-      }
+      cachedConfig = await resolveUserCrosswindConfig(resolveRoot)
+      configFingerprint = fingerprintConfig(cachedConfig)
     }
 
     const baseConfig = hw.defaultConfig || hw.config
