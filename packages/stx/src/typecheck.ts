@@ -33,6 +33,8 @@
 import type { ScriptBlock, ScriptKind, VirtualFile } from './stx-virtual-ts'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import type { ComposableModule } from './composable-loader'
+import { listComposableModules } from './composable-loader'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { stateDir } from './state-dir'
 import {
@@ -198,6 +200,71 @@ function virtualStxModuleDeclaration(files: string[]): string {
     '  export * from \'@stacksjs/stx\'',
     '}',
   ].join('\n')
+}
+
+/**
+ * Names the composable loader refuses to publish as bare globals.
+ *
+ * At runtime it skips any name already on `window`, warns, and tells the author
+ * to import it instead. The checker cannot evaluate `in window`, so it mirrors
+ * the decision with the properties a composable is plausibly named after. The
+ * cost of a miss is small and one-directional: an unlisted collision produces a
+ * redeclaration error in the generated ambient file rather than silence.
+ *
+ * Declaring these anyway would be worse than not declaring them — it would
+ * typecheck a bare call that the runtime has refused to bind.
+ */
+const WINDOW_OWNED_NAMES = new Set([
+  'name', 'status', 'length', 'location', 'history', 'origin', 'closed', 'close',
+  'open', 'focus', 'blur', 'print', 'scroll', 'scrollTo', 'scrollBy', 'stop',
+  'top', 'parent', 'self', 'frames', 'event', 'external', 'menubar', 'toolbar',
+])
+
+/**
+ * Ambient declarations for an app's own `composablesDir` exports.
+ *
+ * The runtime publishes every one of them as a bare global, so a page calls
+ * `useSessionToken()` with no import. The checker only knew the framework's
+ * globals from `stx.d.ts`, so an app's own composable was a hard error — TS2552,
+ * "Cannot find name", usually with a suggestion pointing at an unrelated
+ * built-in — on code that works in dev and in the static build (#1934).
+ *
+ * Each name is bound to its real module through `typeof import(...)`, not to
+ * `any`. Declaring `any` would silence the error while checking nothing, which
+ * is the same shape as the bug: the checker reporting a verdict on a surface it
+ * cannot see. With the real type, a wrong argument or a misspelled property on
+ * the result is caught too.
+ *
+ * `@composables` is declared as a module in the same pass, so the explicit
+ * import form typechecks as well — that is the documented escape hatch for a
+ * name the runtime will not bind, and it would be odd for the escape hatch to
+ * be the thing that fails.
+ */
+function composableGlobalDeclarations(modules: ComposableModule[]): string {
+  if (modules.length === 0)
+    return ''
+
+  const lines = ['// Generated — the composables the runtime publishes as bare globals.']
+  const taken = new Set<string>(STX_RUNTIME_GLOBALS)
+  const reExports: string[] = []
+
+  for (const { file, names } of modules) {
+    const specifier = JSON.stringify(file.replace(/\\/g, '/').replace(/\.ts$/, ''))
+    reExports.push(`  export * from ${specifier}`)
+
+    for (const name of names) {
+      // A duplicate across two composable files is the author's problem at
+      // runtime too (last one wins); declaring it twice would only add a
+      // confusing redeclaration error on top.
+      if (taken.has(name) || WINDOW_OWNED_NAMES.has(name))
+        continue
+      taken.add(name)
+      lines.push(`declare const ${name}: typeof import(${specifier})[${JSON.stringify(name)}]`)
+    }
+  }
+
+  lines.push('declare module \'@composables\' {', ...reExports, '}')
+  return lines.join('\n')
 }
 
 /** Virtual path for a block, stable and traceable back to its origin. */
@@ -557,6 +624,7 @@ export async function typecheckStxFiles(
       // a wall of "Cannot find name" on working code.
       : ['declare const window: any', ...STX_RUNTIME_GLOBALS.map(name => `declare const ${name}: any`)]),
     virtualStxModuleDeclaration(files),
+    composableGlobalDeclarations(await listComposableModules()),
   ].filter(Boolean).join('\n')
 
   const workDir = `${stateDir()}/typecheck`
