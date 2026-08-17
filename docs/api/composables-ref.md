@@ -947,15 +947,25 @@ useCookie(name: string, options?: UseCookieOptions): Signal<string>
 
 Reactive string-valued cookie binding. The signal reads the cookie at construction and writes back on every `.set(value)`. Setting `.set('')` deletes the cookie (`Max-Age=0`).
 
+**Declaring a cookie never writes one.** Construction is a pure read, so a view
+that only needs the value can say `useCookie('auth-token')` with no options and
+cannot disturb the attributes another declaration set. Before this, constructing
+re-serialised the cookie from whatever options the *reader* passed — so a
+read-only declaration with no `maxAge` silently turned a 30-day cookie into a
+session cookie that died at browser close.
+
+The corollary: a `defaultValue` does not reach `document.cookie` until something
+writes. If you want it persisted, write it: `const c = useCookie(n, { … }); if (!c()) c.set(fallback)`.
+
 Options:
 
 | Option | Type | Default | Notes |
 |---|---|---|---|
-| `defaultValue` | `string` | `''` | Returned when the cookie isn't present |
+| `defaultValue` | `string` | `''` | Returned when the cookie isn't present. Not written until a `.set()` |
 | `path` | `string` | `'/'` | Cookie path attribute |
 | `domain` | `string` | (none) | Cookie domain attribute |
 | `maxAge` | `number` | (none) | Seconds; sets `Max-Age=N` |
-| `expires` | `Date` | (none) | Sets `Expires=...` (used when `maxAge` not provided) |
+| `expires` | `Date \| number \| string` | (none) | Sets `Expires=...` (used when `maxAge` not provided). A number is seconds from now; a string is anything `Date` can parse |
 | `sameSite` | `'Strict' \| 'Lax' \| 'None'` | `'Lax'` | SameSite attribute |
 | `secure` | `boolean` | auto on HTTPS | Sets the `Secure` flag |
 | `encode` / `decode` | `(string) => string` | `encodeURIComponent`/`decodeURIComponent` | Custom serialization |

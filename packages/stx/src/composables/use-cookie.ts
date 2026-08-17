@@ -161,9 +161,14 @@ export function removeCookie(name: string, options: Pick<CookieOptions, 'path' |
 /**
  * Create a reactive Signal bound to a cookie. Mirrors `useLocalStorage`'s
  * shape: read with `c()`, write with `c.set(v)`. Setting to `''` deletes the
- * cookie. The signal is one-way (writes propagate to document.cookie via an
- * `effect`); cookies don't fire a 'storage' event, so cross-tab updates
- * aren't auto-reflected.
+ * cookie. The signal is one-way (writes propagate to document.cookie on `set`);
+ * cookies don't fire a 'storage' event, so cross-tab updates aren't
+ * auto-reflected.
+ *
+ * Construction is a pure read: declaring a cookie writes nothing, so a caller
+ * that only wants the value cannot disturb the attributes its owner set. A
+ * `defaultValue` therefore does not reach `document.cookie` until something
+ * writes (#1933).
  *
  * @example
  * ```ts

@@ -48,6 +48,48 @@ function getImpls(): Record<string, UseCookieFn> {
   }
 }
 
+/**
+ * Run `fn` with `document.cookie` assignments recorded.
+ *
+ * Reading the jar back cannot see this bug: happy-dom drops `Max-Age` and
+ * `expires`, so a cookie rewritten with no lifetime looks identical to the
+ * persistent one it replaced. The assignment string carries the attributes, so
+ * that is what gets asserted.
+ *
+ * Shadows the accessor with an own property that delegates to the real one, and
+ * removes it again in `finally` — so a throw inside `fn` cannot leave the
+ * document instrumented for the rest of the file.
+ */
+function recordCookieWrites<T>(fn: () => T): { writes: string[], result: T } {
+  let owner: object | null = document
+  let descriptor: PropertyDescriptor | undefined
+  while (owner && !descriptor) {
+    descriptor = Object.getOwnPropertyDescriptor(owner, 'cookie')
+    owner = Object.getPrototypeOf(owner)
+  }
+  if (!descriptor?.get || !descriptor?.set)
+    throw new Error('document.cookie is not an accessor here — this helper cannot observe writes, and silently returning [] would make every assertion below pass against nothing')
+
+  const writes: string[] = []
+  const real = descriptor
+  Object.defineProperty(document, 'cookie', {
+    configurable: true,
+    get: () => real.get!.call(document),
+    set: (value: string) => {
+      writes.push(value)
+      real.set!.call(document, value)
+    },
+  })
+
+  try {
+    return { writes, result: fn() }
+  }
+  finally {
+    // eslint-disable-next-line ts/no-explicit-any
+    delete (document as any).cookie
+  }
+}
+
 function wipeAllCookies(): void {
   const all = document.cookie.split(';').map(c => c.trim()).filter(Boolean)
   for (const pair of all) {
@@ -149,6 +191,75 @@ for (const name of ['composable', 'runtime'] as const) {
       // the value persisted. A regression that dropped attribute building
       // entirely would still let this through, so this is sanity, not strict.
       expect(document.cookie).toContain('ttl=v')
+    })
+
+    // ── construction must not write (#1933) ──
+    //
+    // happy-dom does not surface Max-Age through `document.cookie`, so the
+    // downgrade the issue describes cannot be observed by reading the jar back.
+    // The write itself can: these assert on what is ASSIGNED to
+    // `document.cookie`, which is the thing that carries the attributes and the
+    // thing a second declaration was clobbering.
+    describe('declaring a cookie', () => {
+      it('writes nothing — reading is not a write', () => {
+        document.cookie = 'auth=tok; path=/'
+
+        const { writes, result } = recordCookieWrites(() => useCookie('auth'))
+
+        expect(writes).toEqual([])
+        // Still seeded from the jar, so the read path is intact. Without this a
+        // useCookie that did nothing at all would pass the assertion above.
+        expect(result()).toBe('tok')
+      })
+
+      it('does not rewrite a cookie another declaration owns', () => {
+        // The exact shape from the report: the owner sets a 30-day policy, a
+        // second view declares the same cookie only to read it.
+        useCookie('auth-token', { maxAge: 60 * 60 * 24 * 30 }).set('tok')
+
+        const { writes } = recordCookieWrites(() => useCookie('auth-token'))
+
+        // Any write here restates the attributes from the READER's options,
+        // which carry no lifetime — that is the session-cookie downgrade.
+        expect(writes).toEqual([])
+      })
+
+      it('still writes on set(), including from a second declaration', () => {
+        // The other half: making construction inert must not make writes inert.
+        useCookie('shared', { maxAge: 120 }).set('first')
+
+        const { writes } = recordCookieWrites(() => {
+          const reader = useCookie('shared')
+          reader.set('second')
+          return reader
+        })
+
+        expect(writes.length).toBe(1)
+        expect(writes[0]).toContain('shared=second')
+      })
+    })
+
+    // ── expires parity (#1933) ──
+    it('accepts expires as a Date, as seconds, and as a parsable string', () => {
+      // The runtime accepted only a Date and called .toUTCString() on whatever
+      // it got, so a number or string produced no expires attribute at all —
+      // silently a session cookie, on one impl only.
+      const cases: Array<[string, Date | number | string]> = [
+        ['exp-date', new Date(Date.now() + 86_400_000)],
+        ['exp-secs', 86_400],
+        ['exp-str', new Date(Date.now() + 86_400_000).toISOString()],
+      ]
+
+      for (const [cookieName, expires] of cases) {
+        const { writes } = recordCookieWrites(() => {
+          const c = useCookie(cookieName, { expires })
+          c.set('v')
+          return c
+        })
+
+        expect(writes.length).toBe(1)
+        expect(writes[0]).toContain('expires=')
+      }
     })
   })
 }

@@ -5472,16 +5472,34 @@ catch (e) {} }
       if (opts.domain) parts.push('domain=' + opts.domain);
       if (value === '') parts.push('max-age=0');
       else if (typeof opts.maxAge === 'number') parts.push('max-age=' + opts.maxAge);
-      else if (opts.expires) parts.push('expires=' + opts.expires.toUTCString());
+      else if (opts.expires !== undefined) {
+        // Date, seconds-from-now, or anything Date can parse — matching the
+        // composable. Accepting only a Date here meant the same option silently
+        // produced a session cookie on the runtime path.
+        var expiresDate = opts.expires instanceof Date
+          ? opts.expires
+          : (typeof opts.expires === 'number' ? new Date(Date.now() + opts.expires * 1000) : new Date(opts.expires));
+        parts.push('expires=' + expiresDate.toUTCString());
+      }
       parts.push('SameSite=' + (opts.sameSite || 'Lax'));
       var secure = opts.secure;
       if (secure === undefined) secure = typeof location !== 'undefined' && location.protocol === 'https:';
       if (secure) parts.push('Secure');
       return parts.join('; ');
     }
-    effect(function() {
+    // subscribe, not effect: an effect runs once at creation, so merely
+    // DECLARING a cookie rewrote it from these options. A second declaration
+    // that only wanted to read - no options, because it is not the owner of the
+    // policy - therefore reserialised it with no max-age, which is the
+    // definition of a session cookie. A 30-day login died at browser close
+    // because the user opened a settings page (#1933).
+    //
+    // subscribe fires on set() only, so construction is a pure read: read()
+    // above already seeds the signal. This matches the composable, which has
+    // always used subscribe.
+    s.subscribe(function(value) {
       if (typeof document === 'undefined') return;
-      document.cookie = serialise(s());
+      document.cookie = serialise(value);
     });
     return s;
   }

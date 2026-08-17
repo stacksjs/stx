@@ -3016,7 +3016,7 @@ Runtime confirmation: the boot log prints `[stx:store] registered: <id> total st
 
 ### 6.5 MUST — read and write cookies with `useCookie()`, never `document.cookie`
 
-**WHY.** `useCookie` (`dist/signals.js:3568-3616`) returns a **signal**: it escapes the cookie name before matching (`:3574`), serialises `path` defaulting to `/` (`:3584`), `max-age` (`:3585-3586`), `SameSite` defaulting to `Lax` (`:3588`), and derives `Secure` from `location.protocol === 'https:'` (`:3589-3591`) — the exact string bughq retypes at 17 sites. Writes happen inside an `effect` (`:3594-3597`), so a cookie change propagates to every binding; `set('')` emits `max-age=0` (`:3585`) and deletes. `document.cookie` is also on stx's own prohibited list (`dist/script-validation.js:38-39`).
+**WHY.** `useCookie` (`dist/signals.js:3568-3616`) returns a **signal**: it escapes the cookie name before matching (`:3574`), serialises `path` defaulting to `/` (`:3584`), `max-age` (`:3585-3586`), `SameSite` defaulting to `Lax` (`:3588`), and derives `Secure` from `location.protocol === 'https:'` (`:3589-3591`) — the exact string bughq retypes at 17 sites. Writes happen on `set()`, so a cookie change propagates to every binding; `set('')` emits `max-age=0` (`:3585`) and deletes. Declaring a cookie writes nothing — construction is a pure read, so a second declaration that omits `maxAge` cannot downgrade a persistent cookie to a session one (#1933). `document.cookie` is also on stx's own prohibited list (`dist/script-validation.js:38-39`).
 
 **WRONG** — 22 sites. `resources/views/dashboard.stx:568-569`:
 

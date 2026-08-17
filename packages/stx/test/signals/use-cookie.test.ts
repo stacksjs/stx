@@ -65,39 +65,52 @@ function extractFunction(src: string, name: string): string {
 interface CookieSignal {
   (): string
   set: (v: string) => void
+  subscribe: (cb: (v: string) => void) => () => void
 }
 
 function buildUseCookie(): (name: string, opts?: Record<string, unknown>) => CookieSignal {
   const runtime = generateSignalsRuntimeDev()
   const src = extractFunction(runtime, 'useCookie')
 
+  /**
+   * A signal faithful on the one axis this file depends on: `subscribe`
+   * registers a callback and `set` notifies it, and NEITHER fires at creation.
+   *
+   * That distinction is the whole of #1933 — the real signal has always behaved
+   * this way, and a stub that ran subscribers eagerly would report the fixed
+   * implementation as still broken (or, worse, the broken one as fixed).
+   */
   function state(initial: string): CookieSignal {
     let value = initial
-    const subs: Array<() => void> = []
+    const subs: Array<(v: string) => void> = []
     const read = (() => value) as CookieSignal
     read.set = (v: string) => {
       value = v
-      subs.forEach(s => s())
+      subs.forEach(s => s(value))
     }
-    // Attach subscriber registration so the local effect() stub can wire up.
-    ;(read as unknown as { __subs: Array<() => void> }).__subs = subs
+    read.subscribe = (cb: (v: string) => void) => {
+      subs.push(cb)
+      return () => {
+        const i = subs.indexOf(cb)
+        if (i !== -1) subs.splice(i, 1)
+      }
+    }
+    ;(read as unknown as { __subs: Array<(v: string) => void> }).__subs = subs
     return read
   }
   function effect(fn: () => void): void {
-    // Tracked-effect emulation: run once, then re-run on any tracked signal change.
-    // We hijack the current read by snapshotting the most recently created signal.
+    // Retained for the tracked-effect shape, though useCookie no longer uses it.
+    // Runs once, then on every set of the most recently created signal.
     fn()
-    // Subsequent .set() calls trigger the effect via the subs array we attach
-    // below at runtime through a Proxy on the global state factory.
     lastState && lastState.__subs.push(fn)
   }
   function onDestroy(_fn: () => void): void {}
 
-  let lastState: { __subs: Array<() => void> } | null = null
+  let lastState: { __subs: Array<(v: string) => void> } | null = null
   // Wrap state so we can capture the most-recently-created signal for effect to subscribe to.
   function trackedState(initial: string): CookieSignal {
     const s = state(initial)
-    lastState = s as unknown as { __subs: Array<() => void> }
+    lastState = s as unknown as { __subs: Array<(v: string) => void> }
     return s
   }
 
