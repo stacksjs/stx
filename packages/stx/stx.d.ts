@@ -355,15 +355,46 @@ declare function useFocus(_target: HTMLElement | StxRef<HTMLElement | null> | st
 declare function useDebounce<T extends (..._args: any[]) => any>(_fn: T, _delay: number): T
 declare function useDebouncedValue<T>(_value: StxSignal<T>, _delay: number): StxSignal<T>
 declare function useThrottle<T extends (..._args: any[]) => any>(_fn: T, _delay: number): T
-declare function useInterval(_fn: () => void, _ms: number, _options?: { immediate?: boolean }): {
-  start: () => void
-  stop: () => void
-  isActive: StxSignal<boolean>
+interface StxIntervalOptions {
+  /** Tick once on start/resume instead of waiting out the first interval. */
+  immediate?: boolean
+  /** Gate ticks. `false`, or a function returning false, skips them entirely. */
+  enabled?: boolean | (() => boolean)
+  /** Skip ticks while `document.hidden`. */
+  whileVisible?: boolean
 }
-declare function useTimeout(_fn: () => void, _ms: number): {
+
+interface StxIntervalControls {
+  /**
+   * Ticks elapsed. A plain number — read it, do not call it. It is not a
+   * signal and an `effect` cannot track it; use `subscribe` to react.
+   */
+  readonly counter: number
+  pause: () => void
+  resume: () => void
+  reset: () => void
+  /** Runs on each tick with the new count. Returns an unsubscribe. */
+  subscribe: (_fn: (_count: number) => void) => () => void
+}
+
+/**
+ * Interval with controls. Both call forms work:
+ * `useInterval(1000)` for the counter, `useInterval(fn, 1000)` to run something.
+ *
+ * There is deliberately no `start`/`stop`/`isActive` here. A declaration of that
+ * shape shipped for some time and nothing implemented it, so calls against it
+ * typechecked clean and threw `poll.start is not a function` on mount (#1941).
+ * `resume`/`pause` are the real names.
+ */
+declare function useInterval(_interval?: number, _options?: StxIntervalOptions): StxIntervalControls
+declare function useInterval(_fn: (_count: number) => void, _ms?: number, _options?: StxIntervalOptions): StxIntervalControls
+declare function useInterval(_fn: (_count: number) => void, _options?: StxIntervalOptions): StxIntervalControls
+declare function useTimeout(_fn: () => void, _ms?: number): {
+  /** Plain boolean, not a signal. Use `subscribe` to react to it. */
+  readonly isPending: boolean
   start: () => void
   stop: () => void
-  isPending: StxSignal<boolean>
+  subscribe: (_fn: (_pending: boolean) => void) => () => void
 }
 declare function nextTick(_fn?: () => void): Promise<void>
 

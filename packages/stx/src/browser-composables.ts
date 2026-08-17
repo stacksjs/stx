@@ -558,58 +558,143 @@ export function useThrottle<T extends (...args: any[]) => any>(
   return throttledFn
 }
 
+export interface IntervalOptions {
+  /** Tick once on start/resume instead of waiting out the first interval. */
+  immediate?: boolean
+  /** Gate ticks. `false`, or a function returning false, skips them entirely. */
+  enabled?: boolean | (() => boolean)
+  /** Skip ticks while `document.hidden`. */
+  whileVisible?: boolean
+}
+
+export interface IntervalControls {
+  /** Ticks elapsed. A plain number; use `subscribe` to react to it. */
+  readonly counter: number
+  pause: () => void
+  resume: () => void
+  reset: () => void
+  /** Runs on each tick with the new count. Returns an unsubscribe. */
+  subscribe: (fn: (count: number) => void) => () => void
+}
+
 /**
- * Reactive interval.
+ * Interval with controls, in both call forms.
+ *
+ * This is the module-import twin of the client runtime's `useInterval`, and the
+ * two must agree — a caller cannot tell which one their bundle resolved. It had
+ * drifted on three axes at once: no callback form (so `useInterval(fn, 1000)`
+ * passed the function as the delay, which coerces to `NaN`, which the platform
+ * clamps to 0 — a runaway timer incrementing a counter nobody could read); no
+ * `subscribe`; and `counter` wrapped in a `{ value }` object the runtime does
+ * not use. `immediate` was accepted, documented, and used as an initial "is
+ * paused" flag rather than "tick right away" (#1941).
  *
  * @example
  * ```typescript
  * const { counter, pause, resume, reset } = useInterval(1000)
+ * const poll = useInterval(() => refresh(), 60_000)
  * ```
  */
 export function useInterval(
-  interval: number,
-  options: { immediate?: boolean } = {}
-): {
-  counter: { readonly value: number }
-  pause: () => void
-  resume: () => void
-  reset: () => void
-} {
+  interval?: number | ((count: number) => void),
+  options?: number | IntervalOptions,
+  thirdOptions?: IntervalOptions,
+): IntervalControls {
+  // Mirrors the runtime's argument shuffle exactly: callback first, with the
+  // delay either following it or omitted in favour of an options object.
+  let callback: ((count: number) => void) | null = null
+  let delay: number
+  let opts: IntervalOptions
+
+  if (typeof interval === 'function') {
+    callback = interval
+    if (typeof options === 'number') {
+      delay = options
+      opts = thirdOptions || {}
+    }
+    else {
+      delay = 1000
+      opts = (options && typeof options === 'object') ? options : {}
+    }
+  }
+  else {
+    delay = interval || 1000
+    opts = (typeof options === 'object' && options) ? options : {}
+  }
+
   let count = 0
-  let isActive = options.immediate !== false
-  let intervalId: ReturnType<typeof setInterval> | null = null
+  let id: ReturnType<typeof setInterval> | null = null
+  let running = false
+  let listeners: Array<(count: number) => void> = []
 
-  const start = () => {
-    if (intervalId) return
-    intervalId = setInterval(() => {
-      if (isActive) count++
-    }, interval)
+  const shouldTick = (): boolean => {
+    if (opts.whileVisible && typeof document !== 'undefined' && document.hidden)
+      return false
+    const enabled = opts.enabled
+    if (typeof enabled === 'function')
+      return !!enabled()
+    return enabled !== false
   }
 
-  const pause = () => {
-    isActive = false
+  const tick = (): void => {
+    if (!shouldTick())
+      return
+    count++
+    listeners.forEach(fn => fn(count))
   }
 
-  const resume = () => {
-    isActive = true
+  const resume = (): void => {
+    if (running)
+      return
+    running = true
+    id = setInterval(tick, delay)
+    if (opts.immediate)
+      tick()
   }
 
-  const reset = () => {
+  const pause = (): void => {
+    if (!running)
+      return
+    running = false
+    if (id !== null) {
+      clearInterval(id)
+      id = null
+    }
+  }
+
+  const reset = (): void => {
+    pause()
     count = 0
+    listeners.forEach(fn => fn(count))
+    resume()
   }
 
+  if (callback)
+    listeners.push(callback)
+
+  // Only auto-start in a browser. The runtime twin is client-only so it can
+  // resume unconditionally; this module is importable from Node, where starting
+  // a timer nobody can stop keeps the process alive. `resume()` is still
+  // callable by hand there.
   if (typeof window !== 'undefined') {
-    start()
+    resume()
     onDestroy(() => {
-      if (intervalId) clearInterval(intervalId)
+      pause()
+      listeners = []
     })
   }
 
   return {
-    counter: { get value() { return count } },
+    get counter() { return count },
     pause,
     resume,
-    reset
+    reset,
+    subscribe(fn: (count: number) => void) {
+      listeners.push(fn)
+      return () => {
+        listeners = listeners.filter(f => f !== fn)
+      }
+    },
   }
 }
 

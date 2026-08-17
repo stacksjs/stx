@@ -769,10 +769,15 @@ useEventListener('scroll', throttledScroll, { passive: true })
 ### useInterval
 
 ```typescript
-useInterval(interval?: number, options?: { immediate?: boolean }): IntervalHandle
+useInterval(interval?: number, options?: IntervalOptions): IntervalHandle
+useInterval(fn: (count: number) => void, ms?: number, options?: IntervalOptions): IntervalHandle
+useInterval(fn: (count: number) => void, options?: IntervalOptions): IntervalHandle
 ```
 
 Starts a repeating interval. Default: 1000ms. Auto-cleans up on destroy.
+
+Both call forms work: pass a delay for a bare counter, or a callback to run
+something on each tick.
 
 ```html
 <script>
@@ -780,8 +785,27 @@ const timer = useInterval(1000)
 timer.subscribe((count) => {
   console.log('Tick:', count)
 })
+
+// Callback form
+const poll = useInterval(() => refresh(), 60_000)
+poll.pause()
 </script>
 ```
+
+There is no `start()` / `stop()` / `isActive` — `resume()` and `pause()` are the
+names. A declaration of that shape shipped for a while with nothing behind it,
+so calls against it typechecked clean and threw on mount.
+
+`counter` is a plain number, not a signal, so an `effect` cannot track it. Use
+`subscribe` to react to a tick.
+
+**IntervalOptions:**
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `immediate` | `boolean` | `false` | Tick once on start/resume instead of waiting out the first interval |
+| `enabled` | `boolean \| (() => boolean)` | `true` | Gate ticks; re-evaluated on every tick when it's a function |
+| `whileVisible` | `boolean` | `false` | Skip ticks while `document.hidden` |
 
 **IntervalHandle:**
 

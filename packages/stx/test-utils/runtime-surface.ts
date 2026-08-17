@@ -112,3 +112,96 @@ export function runtimeToastOptionReads(src: string): Set<string> {
   const body = src.slice(open, end)
   return new Set([...body.matchAll(/\bopts\.([A-Za-z_$][\w$]*)/g)].map(m => m[1]))
 }
+
+/**
+ * The property names on the object a runtime function returns.
+ *
+ * Finds `function <name>(`, brace-matches its body, takes the LAST top-level
+ * `return {` in it, and reads the keys of that literal — covering the
+ * `get counter() { … }` accessor form the timers use as well as plain
+ * `pause: pause` pairs.
+ *
+ * Intended for drift guards that compare a hand-written declaration against
+ * what the implementation actually hands back (#1941).
+ *
+ * @throws if the function, or a returned object literal inside it, cannot be
+ * found. Returning an empty set would let a guard report success for a surface
+ * it never read.
+ */
+export function runtimeReturnedKeys(src: string, name: string): Set<string> {
+  const anchor = `function ${name}(`
+  const start = src.indexOf(anchor)
+  if (start === -1) {
+    throw new Error(
+      `could not locate ${name} in the runtime. `
+      + `Expected to find: ${anchor}\n`
+      + 'If it was renamed, update the caller — do not let this return an empty set.',
+    )
+  }
+
+  // Brace-match the function body so a `return {` in a LATER function cannot
+  // answer for this one.
+  const bodyOpen = src.indexOf('{', start + anchor.length - 1)
+  let depth = 0
+  let bodyEnd = -1
+  for (let i = bodyOpen; i < src.length; i++) {
+    if (src[i] === '{') {
+      depth++
+    }
+    else if (src[i] === '}') {
+      depth--
+      if (depth === 0) {
+        bodyEnd = i
+        break
+      }
+    }
+  }
+  if (bodyEnd === -1)
+    throw new Error(`unbalanced braces while extracting the ${name} body`)
+
+  const body = src.slice(bodyOpen, bodyEnd)
+  const returnIdx = body.lastIndexOf('return {')
+  if (returnIdx === -1)
+    throw new Error(`${name} does not return an object literal — nothing to compare a declaration against`)
+
+  const open = returnIdx + 'return '.length
+  depth = 0
+  let end = -1
+  for (let i = open; i < body.length; i++) {
+    if (body[i] === '{') {
+      depth++
+    }
+    else if (body[i] === '}') {
+      depth--
+      if (depth === 0) {
+        end = i
+        break
+      }
+    }
+  }
+  if (end === -1)
+    throw new Error(`unbalanced braces while extracting the object ${name} returns`)
+
+  // Depth 1 only, so keys of nested literals are not mistaken for this one's.
+  const literal = body.slice(open + 1, end)
+  const keys = new Set<string>()
+  let nesting = 0
+  for (const line of literal.split('\n')) {
+    const trimmed = line.trim()
+    if (nesting === 0) {
+      const m = trimmed.match(/^(?:get\s+|set\s+)?([A-Za-z_$][\w$]*)\s*[:(]/)
+      if (m)
+        keys.add(m[1])
+    }
+    for (const ch of trimmed) {
+      if (ch === '{' || ch === '(' || ch === '[') nesting++
+      else if (ch === '}' || ch === ')' || ch === ']') nesting--
+    }
+    if (nesting < 0) nesting = 0
+  }
+
+  if (keys.size === 0)
+    throw new Error(`extracted no keys from what ${name} returns — the literal shape changed`)
+
+  return keys
+}
