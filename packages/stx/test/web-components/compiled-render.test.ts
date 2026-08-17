@@ -169,6 +169,40 @@ const { value } = defineProps<Props>()
     expect(renderOf(source)).not.toContain('a note to the reader')
   })
 
+  it('types a prop from its declaration, not from whether it has a default', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'stx-typed-'))
+    const input = path.join(dir, 'src')
+    const output = path.join(dir, 'dist')
+    await Bun.write(path.join(input, 'Widget.stx'), `
+<script>
+import { defineProps } from 'stx'
+interface Props {
+  /** No default, and still a string. */
+  title?: string
+  result: any
+  scale?: number
+  invert?: boolean
+  unit?: 'number' | 'currency'
+}
+const { title, result, scale, invert, unit } = defineProps<Props>()
+</script>
+<template><b>{{ title }}</b></template>
+`)
+    await buildComponentLibrary({ inputDir: input, outputDir: output })
+    const source = await readFile(path.join(output, 'stx-widget.js'), 'utf8')
+
+    // The bug this pins: inferring from the default typed `title` as an object,
+    // so the attribute "Revenue" was JSON-parsed, failed, and rendered as
+    // [object Object] on the page. The interface said string all along.
+    expect(source).toContain('"title": {\n      "type": "string"')
+    expect(source).toContain('"scale": {\n      "type": "number"')
+    expect(source).toContain('"invert": {\n      "type": "boolean"')
+    // A string union is still a string as far as an attribute is concerned.
+    expect(source).toContain('"unit": {\n      "type": "string"')
+    // And a payload stays an object, so it still parses as JSON.
+    expect(source).toContain('"result": {\n      "type": "object"')
+  })
+
   it('compiles a component that carries no logic at all', async () => {
     const source = await build(`
 <template><p>static</p></template>

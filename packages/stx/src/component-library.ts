@@ -208,6 +208,27 @@ function extractStyles(source: string): string {
  * object property round-trips a string unchanged while the reverse loses the
  * structure.
  */
+/**
+ * The property type a component declared, or null when it declared nothing.
+ *
+ * Preferred over inference because it is a statement rather than a guess. A
+ * union or anything exotic falls through to `object`, which round-trips a JSON
+ * payload and is the safe answer for a type this does not understand.
+ */
+function typeFromDeclaration(declaration: string | undefined): 'string' | 'number' | 'boolean' | 'object' | null {
+  if (!declaration) return null
+
+  const type = declaration.replace(/\s*\|\s*(?:undefined|null)\b/g, '').trim()
+
+  if (/^string$/.test(type)) return 'string'
+  if (/^number$/.test(type)) return 'number'
+  if (/^boolean$/.test(type)) return 'boolean'
+  // A string union is still a string as far as an attribute is concerned.
+  if (/^(?:'[^']*'|"[^"]*")(?:\s*\|\s*(?:'[^']*'|"[^"]*"))*$/.test(type)) return 'string'
+
+  return 'object'
+}
+
 function inferPropertyType(fallback: string | undefined): 'string' | 'number' | 'boolean' | 'object' {
   if (fallback === undefined) return 'object'
   if (fallback === 'true' || fallback === 'false') return 'boolean'
@@ -321,6 +342,7 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   body: string
   propNames: string[]
   defaults: Record<string, string>
+  declared: Record<string, string>
 } {
   const scripts = [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
   const block = scripts.find(script => !/\bcomponent\b|\bstx:component\b|\bclient\b/i.test(script[1]))
@@ -331,6 +353,8 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   const imports: string[] = []
   const propNames: string[] = []
   const defaults: Record<string, string> = {}
+  /** Prop name to the TypeScript type the component declared for it. */
+  const declared: Record<string, string> = {}
 
   // Hoist imports, minus stx's own compile-time helpers, which have no runtime
   // meaning once the props they declare have become element properties.
@@ -371,7 +395,22 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
     code = code.replace(propMatch[0], '')
   }
 
-  // The interface that typed the props has no runtime form either.
+  /*
+   * Read the declared types before the interface is stripped.
+   *
+   * This is the only place a prop's type is actually stated. Inferring it from
+   * a default guesses, and guesses wrongly for the common case: a `title?:
+   * string` has no default, so it was typed as an object, and the attribute
+   * "Revenue" was then JSON-parsed, failed, and rendered as [object Object] on
+   * the page. The interface says `string`; there is no reason to guess.
+   */
+  for (const block of code.matchAll(/(?:export\s+)?interface\s+[A-Za-z_$][\w$]*\s*\{([\s\S]*?)\n\}/g)) {
+    for (const member of block[1].matchAll(/^\s*(?:\/\*\*[\s\S]*?\*\/\s*)?([A-Za-z_$][\w$]*)\??\s*:\s*([^\n;]+)/gm)) {
+      declared[member[1]] = member[2].trim()
+    }
+  }
+
+  // The interface that typed the props has no runtime form.
   code = code.replace(/(?:export\s+)?interface\s+[A-Za-z_$][\w$]*\s*\{[\s\S]*?\n\}/g, '')
 
   // Returned as TypeScript, deliberately unbuilt. Transpiling the script on its
@@ -379,7 +418,7 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   // them as dead: the template that uses them has not been attached yet. The
   // two are built together further down, where `const doubled = total * 2` is
   // visibly used by the line that prints it and survives.
-  return { imports, body: code.trim(), propNames, defaults }
+  return { imports, body: code.trim(), propNames, defaults, declared }
 }
 
 function compileEventDirectives(template: string): { template: string, eventTypes: string[] } {
@@ -473,7 +512,7 @@ async function compileComponent(
     if (properties[propertyName]) continue
     const fallback = scope.defaults[propertyName]
     properties[propertyName] = normalizeProperty(propertyName, {
-      type: inferPropertyType(fallback),
+      type: typeFromDeclaration(scope.declared[propertyName]) ?? inferPropertyType(fallback),
       ...(fallback === undefined ? {} : { default: literalValue(fallback) }),
     })
   }
