@@ -172,6 +172,14 @@ export interface ServeRequestContext {
   /** Static HTTP response status declared by the matched page. */
   responseStatus?: number
   /**
+   * Headers the page set while rendering, via `setResponseHeader`.
+   *
+   * Beside `responseStatus` rather than folded into it, because they are set
+   * by the same kind of decision and have to travel together: a page that
+   * answers 301 has said nothing useful until a `Location` goes with it.
+   */
+  responseHeaders?: Record<string, string>
+  /**
    * Set by a page action that returned a redirect. The serve turns this into a
    * 303 See Other, which is what a POST must answer with so the browser follows
    * up with a GET and a reload does not resubmit.
@@ -1085,6 +1093,15 @@ export async function serve(options: ServeOptions): Promise<void> {
      * rendered twice - the kind of bug that only appears under load.
      */
     status: number
+    /**
+     * And the headers it settled on, for exactly the same reason.
+     *
+     * The status was cached without them, which is the half-fix that hurts
+     * most under load: a redirect rendered once would be replayed with its 301
+     * and no `Location`, so the first visitor was sent somewhere and every
+     * visitor after them got a broken response.
+     */
+    headers?: Record<string, string>
   }
   const htmlCache = new Map<string, HtmlCacheEntry>()
   // Opt-in because generic server scripts may read external state that no
@@ -1679,6 +1696,31 @@ function __stxOverlay(errs){
       if (Number.isInteger(status) && status >= 100 && status <= 599)
         full.responseStatus = status
     }
+
+    /*
+     * The headers, decided the same way and for the same reason.
+     *
+     * `setResponseStatus` shipped without this, and the pair is not optional:
+     * a page that works out mid-render that a handle has moved can say 301 and
+     * cannot say where to, so the response it produces is a redirect with no
+     * destination - which is worse than the 404 it replaced. The name was
+     * already declared in `STX_SERVER_CONTEXT` and already implemented by
+     * every other host that renders stx, so a page calling it was not reaching
+     * for something exotic; it threw a ReferenceError, took the rest of its
+     * own server script down with it, and rendered its empty branch.
+     *
+     * Last call wins, like the status. A name that is not a string is ignored
+     * rather than thrown, because a header is not worth failing a rendered
+     * page over - the same trade the status makes one line up.
+     */
+    context.setResponseHeader = (name: string, value: string): void => {
+      const header = String(name ?? '').trim()
+
+      if (!header)
+        return
+
+      full.responseHeaders = { ...full.responseHeaders, [header]: String(value) }
+    }
   }
 
   /** Render cache must vary by locale/host/cookies — same `.stx` file can serve different `t()`/host/cookie-gated output. */
@@ -2154,8 +2196,12 @@ function __stxOverlay(errs){
       const cacheKey = htmlCacheKey(filePath, reqCtx)
       const cachedEntry = htmlCache.get(cacheKey)
       if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
-        if (reqCtx)
+        // Braced: two statements now, and a brace-less `if` would have run the
+        // second unconditionally against a context that may not exist.
+        if (reqCtx) {
           reqCtx.responseStatus = cachedEntry.status
+          reqCtx.responseHeaders = cachedEntry.headers
+        }
         return cachedEntry.html
       }
     }
@@ -2290,7 +2336,7 @@ function __stxOverlay(errs){
         && isRenderableCacheCandidate(output)
     ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
-      htmlCache.set(htmlCacheKey(filePath, reqCtx), { html: output, signature, status: reqCtx?.responseStatus ?? 200 })
+      htmlCache.set(htmlCacheKey(filePath, reqCtx), { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
     }
 
     return output
@@ -3579,6 +3625,12 @@ function __stxOverlay(errs){
                     'Cache-Control': 'no-store',
                     ...corsHeaders,
                   })
+                  // What the page asked for, last so it can correct the
+                  // defaults above: a page answering 301 needs its own
+                  // `Cache-Control`, and the whole point of the call is that
+                  // the page knows something this scope does not.
+                  for (const [name, value] of Object.entries(reqCtx.responseHeaders ?? {}))
+                    pageHeaders.set(name, value)
                   // A validation failure redraws the form, and that response is
                   // the one that has to carry a rotated CSRF token or a cleared
                   // session (#1927). `append`, since several are legitimate.
