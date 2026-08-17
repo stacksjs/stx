@@ -1,5 +1,8 @@
 /**
- * The SSG's inline defaults agree with `defaultConfig.build` (stacksjs/stx#1940).
+ * The SSG's inline defaults agree with `defaultConfig.build`.
+ *
+ * Found while fixing an island-size assertion that went red after `b952e80c65`,
+ * not from a filed report — there is no issue number to cite.
  *
  * `generateStaticSite` resolves each setting as
  * `options.x ?? buildConfig.x ?? <literal>`. `buildConfig` comes from

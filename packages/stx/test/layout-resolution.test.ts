@@ -1,5 +1,8 @@
 /**
- * A configured `layoutsDir` wins over the convention walk (stacksjs/stx#1940).
+ * A configured `layoutsDir` wins over the convention walk.
+ *
+ * Found while fixing the failing edge-case test that `cc0604b4e8` shipped, not
+ * from a filed report — there is no issue number to cite.
  *
  * Layouts resolve from two places: the directory a project configures, and a
  * walk up the page's ancestry looking for a directory literally named
