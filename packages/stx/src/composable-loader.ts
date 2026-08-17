@@ -106,6 +106,57 @@ async function probeDefaultDirs(): Promise<string | null> {
   return null
 }
 
+/** One composable file and the names it exports. */
+export interface ComposableModule {
+  /** Absolute path to the `.ts` file. */
+  file: string
+  /** Exported binding names, excluding `default`. */
+  names: string[]
+}
+
+/**
+ * Every composable file in the resolved directory, with its exported names.
+ *
+ * Shared by the two consumers that need the names without the bundle: the
+ * typechecker, which has to declare them or an app's own composables read as
+ * undefined (#1934), and the per-page pruning that decides which of them a page
+ * actually references (#1936).
+ *
+ * Returns an empty array when there is no composables directory, which is the
+ * common case and not an error.
+ */
+export async function listComposableModules(composablesDir?: string): Promise<ComposableModule[]> {
+  const resolvedDir = await resolveComposablesDir(composablesDir)
+  if (!resolvedDir) return []
+
+  const files: string[] = []
+  try {
+    const glob = new Bun.Glob('**/*.ts')
+    for await (const file of glob.scan({ cwd: resolvedDir, absolute: true })) {
+      if (!isSkippedFile(file)) files.push(file)
+    }
+  }
+  catch {
+    return []
+  }
+  files.sort()
+
+  const transpiler = getSharedTranspiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
+  const modules: ComposableModule[] = []
+  for (const file of files) {
+    try {
+      const code = await Bun.file(file).text()
+      const names = transpiler.scan(code).exports.filter(name => name !== 'default')
+      if (names.length > 0)
+        modules.push({ file, names })
+    }
+    catch {
+      // Unparseable file — it will be reported by the bundling path.
+    }
+  }
+  return modules
+}
+
 /**
  * Discover composable files and bundle them into a single script that
  * populates `window.__composables`.
@@ -116,7 +167,76 @@ async function probeDefaultDirs(): Promise<string | null> {
  *
  * Returns `null` when there is nothing to load, so callers can skip injection.
  */
-export async function getComposableScript(composablesDir?: string): Promise<string | null> {
+/** Word-boundary test for one identifier, with regex metacharacters escaped. */
+function mentions(text: string, name: string): boolean {
+  return new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(text)
+}
+
+/**
+ * The subset of composable files a page can actually reach.
+ *
+ * Every module used to be injected into every page whole, so the cost of adding
+ * a composable was paid by every route including ones that cannot reach it —
+ * measured at +3.2KB gzipped on pages referencing none of them, and not just
+ * the names: the bodies, so a blog index shipped the publish endpoint and the
+ * chart drawing code (#1936).
+ *
+ * Selection is by mention, then transitively through the composables' own
+ * source, because one composable may call another. `pageSource` is the rendered
+ * page at injection time, which already contains the stores bundle — so a
+ * composable reached only from a store is kept.
+ *
+ * Over-inclusion is safe and under-inclusion is not, so the test is deliberately
+ * loose: a composable named after a common word may be kept by a coincidental
+ * mention. The only thing it cannot see is a name assembled at runtime, and such
+ * a name could never have resolved as a bare global either.
+ */
+function selectReachable(
+  modules: ComposableModule[],
+  codeByFile: Map<string, string>,
+  pageSource: string,
+): Set<string> {
+  const fileForName = new Map<string, string>()
+  for (const { file, names } of modules) {
+    for (const name of names) {
+      if (!fileForName.has(name))
+        fileForName.set(name, file)
+    }
+  }
+
+  const filesMentionedIn = (text: string): string[] => {
+    const found: string[] = []
+    for (const [name, file] of fileForName) {
+      if (mentions(text, name))
+        found.push(file)
+    }
+    return found
+  }
+
+  const selected = new Set<string>()
+  let frontier = filesMentionedIn(pageSource)
+  while (frontier.length > 0) {
+    const next: string[] = []
+    for (const file of frontier) {
+      if (selected.has(file))
+        continue
+      selected.add(file)
+      for (const dependency of filesMentionedIn(codeByFile.get(file) ?? '')) {
+        if (!selected.has(dependency))
+          next.push(dependency)
+      }
+    }
+    frontier = next
+  }
+  return selected
+}
+
+/**
+ * @param pageSource - the rendered page, used to drop composables it cannot
+ * reach. Omit to emit every composable, which is what a caller with no page in
+ * hand needs.
+ */
+export async function getComposableScript(composablesDir?: string, pageSource?: string): Promise<string | null> {
   const resolvedDir = await resolveComposablesDir(composablesDir)
   if (!resolvedDir) return null
 
@@ -139,8 +259,6 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
   }
 
   const signature = sourceSignature(composableFiles)
-  const cached = readSigned(_cachedComposableScripts, resolvedDir, signature)
-  if (cached !== undefined) return cached || null
 
   if (composableFiles.length === 0) {
     writeSigned(_cachedComposableScripts, resolvedDir, signature, '')
@@ -151,13 +269,46 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
   composableFiles.sort()
 
   const transpiler = getSharedTranspiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
+
+  // Sources are read before the cache lookup because the selection is part of
+  // the key: two pages reaching different subsets must not share an entry.
+  const codeByFile = new Map<string, string>()
+  const modules: ComposableModule[] = []
+  for (const file of composableFiles) {
+    try {
+      const code = await Bun.file(file).text()
+      codeByFile.set(file, code)
+      const names = transpiler.scan(code).exports.filter(name => name !== 'default')
+      if (names.length > 0)
+        modules.push({ file, names })
+    }
+    catch {
+      // Unparseable — the transpile below reports it with the file name.
+      codeByFile.set(file, '')
+    }
+  }
+
+  const selected = pageSource === undefined
+    ? new Set(composableFiles)
+    : selectReachable(modules, codeByFile, pageSource)
+
+  // A page that reaches none of them gets no script at all, which is the whole
+  // point: the previous behaviour shipped every body to every route.
+  if (selected.size === 0)
+    return null
+
+  const includedFiles = composableFiles.filter(file => selected.has(file))
+  const cacheKey = `${resolvedDir}\u0000${includedFiles.join('\u0000')}`
+  const cached = readSigned(_cachedComposableScripts, cacheKey, signature)
+  if (cached !== undefined) return cached || null
+
   const chunks: string[] = []
   const exportedNames = new Set<string>()
   const declaredNames = new Set<string>()
 
-  for (const file of composableFiles) {
+  for (const file of includedFiles) {
     try {
-      let code = await Bun.file(file).text()
+      let code = codeByFile.get(file) ?? await Bun.file(file).text()
       const composableName = path.basename(file, '.ts')
 
       for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Z_a-z$][\w$]*)/g)) {
@@ -201,7 +352,7 @@ export async function getComposableScript(composablesDir?: string): Promise<stri
   }
 
   if (chunks.length === 0 || exportedNames.size === 0) {
-    writeSigned(_cachedComposableScripts, resolvedDir, signature, '')
+    writeSigned(_cachedComposableScripts, cacheKey, signature, '')
     return null
   }
 
@@ -253,7 +404,7 @@ ${assignments}
   }
 })();`
 
-  writeSigned(_cachedComposableScripts, resolvedDir, signature, code)
+  writeSigned(_cachedComposableScripts, cacheKey, signature, code)
   return code
 }
 

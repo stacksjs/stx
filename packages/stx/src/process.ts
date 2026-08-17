@@ -638,7 +638,10 @@ export async function processDirectives(
         try {
           const { getComposableScript } = await importOnce('stx/composable-loader', () => import('./composable-loader'))
           const resolvedComposablesDir = (options as any).composablesDir as string | undefined
-          const composableCode = await getComposableScript(resolvedComposablesDir)
+          // `result` is passed so the bundle can be pruned to what this page
+          // can actually reach. It already carries the stores tag at this
+          // point, so a composable used only from a store is still kept (#1936).
+          const composableCode = await getComposableScript(resolvedComposablesDir, result)
           if (composableCode) {
             const composableTag = `<script data-stx-composables>${composableCode}</script>`
             // Anchor to the stores tag when present, else the signals runtime.
