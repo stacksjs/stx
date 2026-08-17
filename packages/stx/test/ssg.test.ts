@@ -592,8 +592,13 @@ No frontmatter here.
     })
 
     it('minifies island chunks when minify is on (smaller lazy payload)', async () => {
+      // Both baselines are explicit. Leaving `minify` off the first call made
+      // this a test of whatever the ambient default happened to be, and when
+      // that default moved to `true` the two builds became byte-identical and
+      // the comparison failed without anything about chunk minification having
+      // changed.
       await setupIslandFixture()
-      const big = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true } as any)
+      const big = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true, minify: false } as any)
       const bigBytes = big.islandChunks!.totalBytes
 
       await setupIslandFixture()

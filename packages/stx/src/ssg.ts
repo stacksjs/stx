@@ -143,7 +143,7 @@ export interface SSGConfig {
   contentLoaders?: ContentLoader[]
   /** Pre-render hooks */
   hooks?: SSGHooks
-  /** Minify HTML output (default: true in production) */
+  /** Minify HTML output (default: true) */
   minify?: boolean
   /** Generate 404 page */
   generate404?: boolean
@@ -1049,7 +1049,13 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     cacheDir: options.cacheDir || buildConfig.cacheDir || stateDir(process.cwd(), 'ssg-cache'),
     contentLoaders: options.contentLoaders || [],
     hooks: options.hooks || {},
-    minify: options.minify ?? buildConfig.minify ?? (process.env.NODE_ENV === 'production'),
+    // `true`, matching `BuildConfig.minify` and the config reference. This used
+    // to read `NODE_ENV === 'production'`, which stopped being reachable the
+    // moment the line above started layering `buildConfig` in: `loadStxConfig`
+    // merges `defaultConfig`, so `buildConfig.minify` is always set and the
+    // third operand never ran. Two defaults for one setting that disagreed, one
+    // of them dead — the fallback now says what the documented default says.
+    minify: options.minify ?? buildConfig.minify ?? true,
     generate404: options.generate404 ?? buildConfig.generate404 ?? true,
     publicDir: options.publicDir || buildConfig.publicDir || 'public',
     trailingSlash: options.trailingSlash ?? buildConfig.trailingSlash ?? false,
