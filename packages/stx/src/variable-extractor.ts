@@ -38,6 +38,26 @@ export const STX_ENGINE_BINDING_NAMES = [
 const ENGINE_BINDINGS = new Set<string>(STX_ENGINE_BINDING_NAMES)
 
 /**
+ * Engine bindings a context value must never be allowed to shadow.
+ *
+ * Context keys are appended to the script's parameter list AFTER the engine
+ * bindings, so a context value of the same name wins. For most of the engine
+ * set that is tolerable and occasionally wanted — `state` is a plausible name
+ * for a US state, and a page that puts one in context should keep it.
+ *
+ * These three are different: they are bound per component, so an inherited one
+ * is not merely a different value but the WRONG component's. A child whose
+ * `defineProps` came from its parent reads the parent's props and finds none of
+ * its own, so it renders every default and looks like it was passed nothing
+ * (#1937). `props` was already excluded on exactly this reasoning; the other
+ * two are the same binding under different names and were simply missed.
+ *
+ * Deliberately not the whole of `ENGINE_BINDINGS` — that would silently claim
+ * every one of those names away from application code.
+ */
+const CONTEXT_RESERVED_BINDINGS = new Set(['props', '$props', 'defineProps'])
+
+/**
  * Specifiers that mean "the stx runtime" — the module whose exports the engine
  * already injects.
  *
@@ -846,7 +866,7 @@ catch {
     // screened this way; context was not.
     const isIdentifier = (key: string) => /^[a-z_$][\w$]*$/i.test(key)
     const filteredContextKeys = Object.keys(context).filter(key =>
-      !propsKeys.has(key) && key !== 'props' && isIdentifier(key))
+      !propsKeys.has(key) && !CONTEXT_RESERVED_BINDINGS.has(key) && isIdentifier(key))
     const filteredContextValues = filteredContextKeys.map(key => context[key])
 
     /*
@@ -1294,6 +1314,15 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
          * Only engine-provided names are taken out of the import. Anything else
          * (`defineStore`, `useForm`, …) is a genuine export the engine does not
          * inject, so it stays in the import and keeps resolving as before.
+         *
+         * They are also not re-exported. `module.exports.defineProps` puts the
+         * engine's per-component binding into the component's CONTEXT, and a
+         * child component inherits its parent's context — so the child's script
+         * received a `defineProps` parameter bound to the PARENT's props, which
+         * shadows its own (context keys are appended after the engine
+         * parameters, and the later parameter wins). Every prop the child was
+         * passed came back undefined and it rendered its defaults, static
+         * attributes included, with nothing logged (#1937).
          */
         const isStxRuntime = STX_RUNTIME_SPECIFIERS.has(source)
 
@@ -1307,9 +1336,9 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
             const [imported, local] = [aliased[0]!.trim(), aliased[1]!.trim()]
             if (isStxRuntime && ENGINE_BINDINGS.has(imported)) {
               // `import { defineProps as dp }` — the alias does not collide, so
-              // bind it to the injected parameter instead of importing it.
+              // bind it to the injected parameter instead of importing it. Not
+              // exported: an alias leaks exactly what the original would.
               convertedLines.push(`const ${local} = ${imported};`)
-              exported.push(local)
               continue
             }
             specifiers.push(`${imported}: ${local}`)
@@ -1317,8 +1346,8 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
           }
           else {
             if (isStxRuntime && ENGINE_BINDINGS.has(specifier)) {
-              // Already in scope as a parameter — emit no binding at all.
-              exported.push(specifier)
+              // Already in scope as a parameter — emit no binding at all, and
+              // publish nothing.
               continue
             }
             specifiers.push(specifier)
