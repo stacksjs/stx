@@ -12,14 +12,37 @@ export const dataSource = $props.dataSource || 'auto'
 export const endpoint = $props.endpoint || ''
 export const colorScheme = $props.colorScheme || 'default'
 
+// Sequential ramps: lightness moves in one direction from end to end.
+//
+// The old default was a blue-cyan-green-yellow-red rainbow, which is the one
+// ramp a sequential scale should not use. It invents boundaries — the
+// transitions through cyan and yellow are perceptually much sharper than the
+// ones on either side, so a reader sees bands and infers categories in
+// continuous data. And it is not monotonic in lightness: yellow is far lighter
+// than both ends, so the ramp goes light in the middle, and printed in
+// greyscale or read with a colour vision deficiency the high and low ends
+// become indistinguishable while the middle stands out.
+//
+// `rainbow` is kept, because removing a named scheme breaks anyone who asked
+// for it by name. It is no longer what you get by default.
 const colorSchemes = {
-  default: ['#0000ff', '#00ffff', '#00ff00', '#ffff00', '#ff0000'],
+  default: ['#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c'],
   fire: ['#000000', '#ff0000', '#ffff00', '#ffffff'],
   cool: ['#000033', '#0066ff', '#00ccff', '#ffffff'],
   grayscale: ['#000000', '#444444', '#888888', '#cccccc', '#ffffff'],
+  // Two hues meeting at a neutral, for data with a meaningful midpoint. Not a
+  // hue at the middle — that is the rainbow's mistake in miniature.
+  diverging: ['#2166ac', '#92c5de', '#f7f7f7', '#f4a582', '#b2182b'],
+  rainbow: ['#0000ff', '#00ffff', '#00ff00', '#ffff00', '#ff0000'],
 }
 
 export const colors = colorSchemes[colorScheme] || colorSchemes.default
+
+// Each stop is addressable as a CSS custom property with the scheme's own value
+// as the fallback, so an app can supply its own hue without changing behaviour
+// for anyone who does not. The heatmap was the one component that could not
+// follow an app's tokens, because the ramp was hardcoded.
+export const stopVars = colors.map((color, i) => `var(--stx-heatmap-stop-${i + 1}, ${color})`)
 </script>
 
 <div
@@ -42,7 +65,7 @@ export const colors = colorSchemes[colorScheme] || colorSchemes.default
   @if(showLegend)
   <div class="stx-heatmap__legend">
     <span class="stx-heatmap__legend-label">Low</span>
-    <div class="stx-heatmap__legend-gradient" style="background: linear-gradient(to right, {{ colors.join(', ') }})"></div>
+    <div class="stx-heatmap__legend-gradient" style="background: linear-gradient(to right, {{ stopVars.join(', ') }})"></div>
     <span class="stx-heatmap__legend-label">High</span>
   </div>
   @endif
@@ -170,6 +193,18 @@ export const colors = colorSchemes[colorScheme] || colorSchemes.default
     endpoint: container.dataset.heatmapEndpoint || ''
   };
 
+  // Resolve each stop through its custom property, falling back to the
+  // scheme's own colour. The legend is plain CSS and picks these up for free;
+  // the canvas is painted from JS and would otherwise keep the built-in ramp,
+  // leaving an app's themed legend describing a plot it does not match.
+  function themedColors() {
+    const styles = getComputedStyle(container);
+    return config.colors.map(function(color, i) {
+      const override = styles.getPropertyValue('--stx-heatmap-stop-' + (i + 1)).trim();
+      return override || color;
+    });
+  }
+
   // Resize canvas to match container
   function resizeCanvas() {
     const rect = container.getBoundingClientRect();
@@ -222,7 +257,7 @@ export const colors = colorSchemes[colorScheme] || colorSchemes.default
     // Colorize
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const pixels = imageData.data;
-    const gradientColors = createGradient(config.colors);
+    const gradientColors = createGradient(themedColors());
 
     for (let i = 0; i < pixels.length; i += 4) {
       const alpha = pixels[i + 3];

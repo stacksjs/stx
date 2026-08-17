@@ -148,6 +148,37 @@ different, and `color-mix()` needs a 2023-or-later browser.
 That is why this is opt-in rather than the framework default: it is a real
 change to the generated CSS, and it is your call to make.
 
+## 2b. `<Heatmap>`'s colour ramp
+
+The heatmap paints a canvas rather than emitting utility classes, so it follows
+none of the above. Its ramp is five CSS custom properties, each falling back to
+the chosen scheme's own colour — set them and both the legend and the plot
+follow:
+
+```css
+:root {
+  --stx-heatmap-stop-1: #f7f7fd;
+  --stx-heatmap-stop-2: #d6d5f0;
+  --stx-heatmap-stop-3: #a29fdd;
+  --stx-heatmap-stop-4: #6b66c4;
+  --stx-heatmap-stop-5: #2e2a7a;
+}
+```
+
+Built-in schemes, via `colorScheme`: `default` (sequential blue),
+`fire`, `cool`, `grayscale`, `diverging`, and `rainbow`.
+
+`default` used to be the rainbow. A rainbow is the one ramp a sequential scale
+should not use — the transitions through cyan and yellow are perceptually much
+sharper than the ones around them, so readers see bands in continuous data, and
+it is not monotonic in lightness, so it collapses in greyscale and under common
+colour vision deficiencies. `rainbow` is still there for anyone who asked for it
+by name.
+
+Reach for `diverging` only when the data has a meaningful midpoint. Its middle
+is a neutral grey, not a hue — a hue in the middle is the rainbow's mistake in
+miniature.
+
 ## 3. Override the component's classes
 
 Every component takes a `className` prop, appended after its own classes:
