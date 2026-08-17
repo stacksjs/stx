@@ -347,7 +347,7 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   const scripts = [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
   const block = scripts.find(script => !/\bcomponent\b|\bstx:component\b|\bclient\b/i.test(script[1]))
 
-  if (!block) return { imports: [], body: '', propNames: [], defaults: {} }
+  if (!block) return { imports: [], body: '', propNames: [], defaults: {}, declared: {} }
 
   let code = block[2]
   const imports: string[] = []
