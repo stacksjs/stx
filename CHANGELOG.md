@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.189...v0.2.190)
+
+## 🐛 Bug Fixes
+
+- **serve**: put setResponseHeader in scope, so a page can finish a redirect ([a56b39d](https://github.com/stacksjs/stx/commit/a56b39d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.190 ([0eef191](https://github.com/stacksjs/stx/commit/0eef191)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.188...v0.2.189)
 
 ## 🐛 Bug Fixes
