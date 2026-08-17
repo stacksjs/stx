@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.188...v0.2.189)
+
+## 🐛 Bug Fixes
+
+- **web-components**: type a prop from its declaration, not its default ([4315ccb](https://github.com/stacksjs/stx/commit/4315ccb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: props reach a component nested inside a component ([31b8d28](https://github.com/stacksjs/stx/commit/31b8d28)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **ssg**: state one default for minify, and guard the rest against drift ([dee88e9](https://github.com/stacksjs/stx/commit/dee88e9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **layouts**: a configured layoutsDir wins over a stray layouts/ directory ([c42a8bf](https://github.com/stacksjs/stx/commit/c42a8bf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.189 ([037eb47](https://github.com/stacksjs/stx/commit/037eb47)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.187...v0.2.188)
 
 ## 🚀 Features
