@@ -3176,7 +3176,7 @@ function __stxOverlay(errs){
                         ...defaultConfig,
                         ...(componentsDir && { componentsDir }),
                         ...(layoutsDir && { layoutsDir }),
-      ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
+                        ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
                         ...(partialsDir && { partialsDir }),
                         autoShell: false,
                       }
