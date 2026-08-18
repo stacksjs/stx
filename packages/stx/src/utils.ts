@@ -952,6 +952,29 @@ export async function renderComponentWithSlot(
       // through nested component renders so a static prop with the same name
       // cannot make `{{ signalName() }}` look server-evaluable and erase it.
       '__stx_client_signal_names',
+      /*
+       * The request, which a component is part of serving.
+       *
+       * Dropping this was the default rather than a decision - every `__` key
+       * is filtered here to stop internals leaking downward, and this one is
+       * not an internal, it is the request. A component that asked which path
+       * it was rendering for got `undefined`, and so did `useRoute()`, which
+       * reads the same key: `path`, `search`, `params` and `method` were all
+       * empty inside a component while the page around it had them.
+       *
+       * The failure is quiet in the way this codebase keeps finding: reading
+       * `__stxServeContext.path` yields '' rather than throwing, so a
+       * component that builds a URL from it builds a wrong one and nothing
+       * reports anything. A repository browser deciding where a moved handle
+       * should redirect to sent every deep link to the repository root,
+       * because the only path it could see was the one it reconstructed from
+       * its own props.
+       *
+       * Safe to carry: it is the same request for the whole render, so a
+       * component cannot see a different one from its parent, and it is read
+       * rather than written.
+       */
+      '__stxServeContext',
     ])
     const filteredParentContext: Record<string, unknown> = {}
     for (const [key, val] of Object.entries(parentContext)) {
