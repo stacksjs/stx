@@ -1520,7 +1520,7 @@ export async function resolveTemplatePath(
   const safeUnderCwd = assertInsideRoot(result, process.cwd())
   if (safeUnderCwd) return safeUnderCwd
 
-  const trustedDirs = [options.root, options.layoutsDir, options.componentsDir, options.partialsDir, options.pagesDir]
+  const trustedDirs = [options.root, options.layoutsDir, options.fallbackLayoutsDir, options.componentsDir, options.partialsDir, options.pagesDir]
     .filter((d): d is string => typeof d === 'string' && d.length > 0)
   for (const dir of trustedDirs) {
     const resolvedDir = path.isAbsolute(dir) ? dir : path.resolve(process.cwd(), dir)
@@ -1641,6 +1641,36 @@ async function resolveTemplatePathInner(
     const found = await findLayoutIn(dir, templatePath, dependencies, options.debug)
     if (found)
       return found
+  }
+
+  // The app's layouts directory did not have it, so try the one the framework
+  // ships. This is the override model the caller is expressing: `layoutsDir`
+  // is the app and wins, `fallbackLayoutsDir` is the default set behind it.
+  //
+  // Checked AFTER `options.layoutsDir` on purpose - an app that defines a
+  // layout of the same name must win, which is the whole point of shipping
+  // defaults. Missing this step is not a 404 but a 200 with an empty body,
+  // because a page whose layout does not resolve renders its sections into
+  // nothing.
+  if (options.fallbackLayoutsDir) {
+    const resolvedFallback = path.isAbsolute(options.fallbackLayoutsDir)
+      ? options.fallbackLayoutsDir
+      : path.resolve(process.cwd(), options.fallbackLayoutsDir)
+
+    const strippedPath = templatePath.startsWith('layouts/') ? templatePath.slice(8) : templatePath
+    const candidates = [path.join(resolvedFallback, strippedPath)]
+    if (!templatePath.endsWith('.stx'))
+      candidates.push(`${candidates[0]}.stx`)
+
+    for (const candidate of candidates) {
+      if (await fileExists(candidate)) {
+        if (options.debug)
+          console.log(`Found in options.fallbackLayoutsDir: ${candidate}`)
+        if (dependencies)
+          dependencies.add(candidate)
+        return candidate
+      }
+    }
   }
 
   // 4. Special case for layouts directory if specified in options or path looks like 'layouts/*'

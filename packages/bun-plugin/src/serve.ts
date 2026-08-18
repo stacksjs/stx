@@ -545,6 +545,15 @@ export interface ServeOptions {
   openPath?: string
   componentsDir?: string
   layoutsDir?: string
+  /**
+   * Layouts to fall back to when `layoutsDir` does not have the one a page
+   * asks for, so a framework can ship defaults an app overrides by name.
+   *
+   * Stacks has been passing this since the views server was written; until
+   * stx honoured it, it did nothing, and every page extending a framework
+   * layout served a 200 with an empty body.
+   */
+  fallbackLayoutsDir?: string
   partialsDir?: string
   /**
    * Additional source directories that can affect rendered HTML.
@@ -1023,6 +1032,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   // Options passed directly take precedence, then bunfig config, then defaults
   const componentsDir = options.componentsDir ?? stxConfig.componentsDir ?? defaultStxConfig.componentsDir
   const layoutsDir = options.layoutsDir ?? stxConfig.layoutsDir ?? defaultStxConfig.layoutsDir
+  const fallbackLayoutsDir = options.fallbackLayoutsDir ?? stxConfig.fallbackLayoutsDir
   const partialsDir = options.partialsDir ?? stxConfig.partialsDir ?? defaultStxConfig.partialsDir
   const publicDir = options.publicDir ?? stxConfig.publicDir ?? 'public'
 
@@ -2249,6 +2259,7 @@ function __stxOverlay(errs){
       root: process.cwd(),
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
+      ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
       ...(partialsDir && { partialsDir }),
       autoShell: true,
       buildMode: 'serve' as const,
@@ -2622,6 +2633,7 @@ function __stxOverlay(errs){
       root: process.cwd(),
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
+      ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
       ...(partialsDir && { partialsDir }),
       autoShell: true,
       buildMode: 'serve' as const,
@@ -3210,6 +3222,7 @@ function __stxOverlay(errs){
                         ...defaultConfig,
                         ...(componentsDir && { componentsDir }),
                         ...(layoutsDir && { layoutsDir }),
+                        ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
                         ...(partialsDir && { partialsDir }),
                         autoShell: false,
                       }

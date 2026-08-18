@@ -1087,20 +1087,30 @@ async function processDirectivesInternal(
         // compare against, the message was easy to scroll past — which is how a
         // page ends up asserting a layout group with no layout behind it
         // (#1879).
-        let available: string[] = []
-        try {
-          const dir = resolvedOptions.layoutsDir
-          if (dir) {
+        //
+        // Both directories are listed, not just `layoutsDir`. Reporting only
+        // the app's own layouts made a resolvable-but-unconfigured fallback
+        // look like the layout did not exist anywhere, which sent the search
+        // in the wrong direction entirely.
+        const layoutsIn = (dir: string | undefined): string[] => {
+          if (!dir)
+            return []
+          try {
             const abs = path.isAbsolute(dir) ? dir : path.resolve(process.cwd(), dir)
-            available = fs.readdirSync(abs)
+            return fs.readdirSync(abs)
               .filter(f => f.endsWith('.stx'))
               .map(f => f.replace(/\.stx$/, ''))
-              .sort()
+          }
+          catch {
+            // Unreadable directory — the message is still worth emitting.
+            return []
           }
         }
-        catch {
-          // Unreadable layoutsDir — the message is still worth emitting.
-        }
+
+        const available = [
+          ...layoutsIn(resolvedOptions.layoutsDir),
+          ...layoutsIn(resolvedOptions.fallbackLayoutsDir),
+        ].filter((name, index, all) => all.indexOf(name) === index).sort()
 
         const warning = `Layout not found: ${layoutPath} (referenced from ${filePath})`
           + (available.length > 0
