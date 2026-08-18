@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.191...v0.2.192)
+
+## 🚀 Features
+
+- **layouts**: honour a fallback layouts directory (#1942) ([88aa7be](https://github.com/stacksjs/stx/commit/88aa7be)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1942](https://github.com/stacksjs/stx/issues/1942), [#1942](https://github.com/stacksjs/stx/issues/1942))
+
+## 🐛 Bug Fixes
+
+- **components**: hand a component the request it is helping to serve ([48d4c60](https://github.com/stacksjs/stx/commit/48d4c60)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.192 ([fd1a182](https://github.com/stacksjs/stx/commit/fd1a182)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.191 ([88931f2](https://github.com/stacksjs/stx/commit/88931f2)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.190...v0.2.191)
 
 ## ✨ Features
