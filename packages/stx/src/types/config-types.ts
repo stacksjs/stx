@@ -688,6 +688,17 @@ export interface StxConfig {
   /** Path to layouts directory, defaults to 'layouts' in the project root */
   layoutsDir?: string
   /**
+   * Where to look for a layout `layoutsDir` does not have.
+   *
+   * For a framework that ships default layouts and lets an app override them
+   * by name: the app's own directory is `layoutsDir` and wins, and anything it
+   * does not define falls back here. Without it, an app that overrides one
+   * layout has to vendor every other layout it uses, and a page extending a
+   * framework layout renders with NO layout at all - a 200 with an empty body,
+   * which is far harder to diagnose than a 404.
+   */
+  fallbackLayoutsDir?: string
+  /**
    * Path to the stores directory, resolved against `root`.
    *
    * Every `.ts` file in it (except `index.ts`, `types.ts` and `.d.ts`) is
