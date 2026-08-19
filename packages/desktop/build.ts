@@ -7,7 +7,7 @@ await Bun.build({
   outdir: './dist',
   target: 'bun',
   format: 'esm',
-  sourcemap: 'external',
+  sourcemap: 'none',
   minify: false,
   // Keep craft-native external. This package is a thin wrapper that re-exports
   // it (windows, tray, packaging); bundling would freeze whatever craft-native
