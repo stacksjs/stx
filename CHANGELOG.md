@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.193...v0.2.194)
+
+## 🐛 Bug Fixes
+
+- **serve**: give a web app manifest its own content type ([8da9fa4](https://github.com/stacksjs/stx/commit/8da9fa4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: clear three advisories, including the copies the bump leaves behind ([3121410](https://github.com/stacksjs/stx/commit/3121410)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **build**: externalize every inline blob a site repeats, not just three by name ([20df443](https://github.com/stacksjs/stx/commit/20df443)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.194 ([b7d7f5c](https://github.com/stacksjs/stx/commit/b7d7f5c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.193 ([3ef202d](https://github.com/stacksjs/stx/commit/3ef202d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.192...v0.2.193)
 
 ## 🐛 Bug Fixes
