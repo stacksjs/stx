@@ -876,6 +876,16 @@ const staticContentTypes: Record<string, string> = {
   js: 'application/javascript',
   mjs: 'application/javascript',
   json: 'application/json',
+  /*
+   * The web app manifest, which is JSON under its own type.
+   *
+   * `.webmanifest` is the extension the spec names and the one every icon
+   * generator writes, and without an entry here it was served as
+   * `application/octet-stream` - which Chrome complains about in the console
+   * and Firefox refuses outright, so an installable page quietly stops being
+   * one.
+   */
+  webmanifest: 'application/manifest+json',
   // Markup / docs
   html: 'text/html; charset=utf-8',
   txt: 'text/plain',
