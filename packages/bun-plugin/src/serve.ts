@@ -948,7 +948,7 @@ export async function bundleBrowserAsset(entrypoint: string): Promise<Response> 
   const result = await Bun.build({
     entrypoints: [entrypoint],
     format: 'esm',
-    minify: false,
+    minify: true,
     packages: 'bundle',
     sourcemap: 'inline',
     target: 'browser',

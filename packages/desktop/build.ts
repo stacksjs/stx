@@ -9,7 +9,7 @@ await Bun.build({
   target: 'bun',
   format: 'esm',
   sourcemap: 'none',
-  minify: false,
+  minify: true,
   // Keep craft-native external. This package is a thin wrapper that re-exports
   // it (windows, tray, packaging); bundling would freeze whatever craft-native
   // version was present at build time, so a consumer's newer craft-native

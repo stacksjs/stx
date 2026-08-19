@@ -169,7 +169,7 @@ export function getDefaultConfig(vscodeModule: typeof vscode): CrosswindConfig {
       ? [`${workspaceFolder}/**/*.{html,js,ts,jsx,tsx,stx,vue,svelte}`]
       : ['**/*.{html,js,ts,jsx,tsx,stx,vue,svelte}'],
     output: '',
-    minify: false,
+    minify: true,
     watch: false,
     theme: {
       colors: {},

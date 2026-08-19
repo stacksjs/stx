@@ -11,7 +11,7 @@ const config: Partial<CrosswindConfig> = {
     path.resolve(__dirname, '../../examples/**/*.{html,js,ts,jsx,tsx}'),
   ],
   output: path.resolve(__dirname, './examples/dist/styles.css'),
-  minify: false,
+  minify: true,
   watch: false,
   safelist: [],
   blocklist: [],

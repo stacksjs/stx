@@ -53,7 +53,7 @@ export default defineConfig({
     env: {
       development: {
         sourcemap: true,
-        minify: false
+        minify: true
       },
       production: {
         sourcemap: false,

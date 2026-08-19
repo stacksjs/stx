@@ -5418,7 +5418,7 @@ Two halves of the same discipline: the browser gets utility classes generated fr
 |---|---|---|
 | Config discovery | `bunfig` searches `<cwd>`, `<cwd>/config`, `<cwd>/.config` for `crosswind.*` — this is why `config/crosswind.ts` is found | `node_modules/bunfig/dist/discovery.js:32-40`, `node_modules/@stacksjs/stx/dist/dev-server/crosswind.js:145-147` |
 | Class extraction | Regex over the **rendered HTML**: `class="…"` plus **string literals only** inside `:class="…"` / `x-class="…"` | `dev-server/crosswind.js:218-238` |
-| Config merge | `{...baseConfig, ...userConfig, content: [], output: '', preflight: true, minify: false, theme, safelist}` — your `content`/`output`/`preflight`/`minify` are **discarded** | `dev-server/crosswind.js:305-313` |
+| Config merge | `{...baseConfig, ...userConfig, content: [], output: '', preflight: true, minify: true, theme, safelist}` — your `content`/`output`/`preflight`/`minify` are **discarded** | `dev-server/crosswind.js:305-313` |
 | Theme merge | Only `theme.extend` is carried across; top-level `theme.*` keys are dropped | `dev-server/crosswind.js:296-300` |
 | Generation | `new CSSGenerator(cfg)`, `generate()` per safelist entry then per extracted class, `toCSS(true, false)` | `dev-server/crosswind.js:313-318` |
 | Injection | One `<style data-crosswind="generated">` before `</head>` | `dev-server/crosswind.js:371-393`, called from `process.js:258-259` (top-level render only, gated on `context.__stx_inject_css !== false`) |
@@ -5542,7 +5542,7 @@ export default {
   content: [ './resources/views/**/*.{stx,html}', ... ],   // discarded at crosswind.js:307
   theme: { extend: { colors: {...}, fontFamily: {...} } },
   preflight: true,                                          // not a key. no-op.
-  minify: false,                                            // discarded at crosswind.js:310
+  minify: true,                                            // discarded at crosswind.js:310
 }
 ```
 

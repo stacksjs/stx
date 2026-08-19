@@ -14,7 +14,7 @@ try {
       '@cwcss/crosswind',
       'prettier',
     ],
-    minify: false,
+    minify: true,
     sourcemap: 'external',
   })
 
@@ -30,7 +30,7 @@ try {
     target: 'node',
     format: 'cjs',
     external: ['typescript', 'typescript/lib/tsserverlibrary'],
-    minify: false,
+    minify: true,
     sourcemap: 'external',
   })
 
@@ -50,7 +50,7 @@ try {
       '@cwcss/crosswind'
     ],
     naming: '[dir]/[name].mjs',
-    minify: false,
+    minify: true,
     sourcemap: 'external',
   })
 

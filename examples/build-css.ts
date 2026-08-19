@@ -45,7 +45,7 @@ const result = await buildAndWrite({
   ...defaultConfig,
   content: ['./components/**/*.stx', './voide-refactored.stx'],
   output: './dist/voide.css',
-  minify: false,
+  minify: true,
   preflights: [tailwindPreflight, darkFormReset],
   safelist: [
     'border-solid',

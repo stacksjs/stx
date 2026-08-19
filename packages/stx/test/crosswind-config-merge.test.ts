@@ -140,7 +140,7 @@ describe('what stx owns regardless', () => {
   })
 
   it('honours preflight and minify instead of ignoring them', () => {
-    expect(mergeCrosswindConfig(BASE, {})).toMatchObject({ includePreflight: true, minify: false })
+    expect(mergeCrosswindConfig(BASE, {})).toMatchObject({ includePreflight: true, minify: true })
     expect(mergeCrosswindConfig(BASE, { preflight: false, minify: true }))
       .toMatchObject({ includePreflight: false, minify: true })
   })

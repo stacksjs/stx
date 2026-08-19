@@ -67,7 +67,7 @@ describe('component library compiler', () => {
       inputDir: input,
       outputDir: output,
       prefix: 'acme',
-      minify: false,
+      minify: true,
     })
 
     expect(result.components).toHaveLength(1)

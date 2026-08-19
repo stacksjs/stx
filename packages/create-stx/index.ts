@@ -461,7 +461,7 @@ const result = await build({
   target: 'browser',
   format: 'iife',
   naming: 'stores.js',
-  minify: false,
+  minify: true,
   define: { 'process.env.NODE_ENV': '"production"' }
 })
 

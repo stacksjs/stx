@@ -30,7 +30,7 @@ async function buildTemplates() {
       plugins: [
         stxPlugin(),
       ],
-      minify: false,
+      minify: true,
       target: 'browser',
       define: {
         'process.env.NODE_ENV': '"development"',

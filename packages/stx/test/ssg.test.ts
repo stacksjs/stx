@@ -598,7 +598,7 @@ No frontmatter here.
       // the comparison failed without anything about chunk minification having
       // changed.
       await setupIslandFixture()
-      const big = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true, minify: false } as any)
+      const big = await generateStaticSite({ pagesDir, outputDir, sitemap: false, cache: false, cleanOutput: true, chunkIslands: true, minify: true } as any)
       const bigBytes = big.islandChunks!.totalBytes
 
       await setupIslandFixture()

@@ -335,7 +335,7 @@ if (isDistFresh()) {
     target: 'bun',
     format: 'esm',
     plugins: [dts()],
-    minify: false,
+    minify: true,
     sourcemap: 'external',
     splitting: true,
   })

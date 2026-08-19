@@ -13,7 +13,7 @@ await Bun.build({
   target: 'bun',
   format: 'esm',
   plugins: [dts()],
-  minify: false,
+  minify: true,
   sourcemap: 'external',
 })
 

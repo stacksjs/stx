@@ -836,7 +836,7 @@ const config: Partial<HeadwindConfig> = {
     './examples/**/*.{html,js,ts,jsx,tsx}',
   ],
   output: './examples/dist/styles.css',
-  minify: false,
+  minify: true,
 }
 
 export default config

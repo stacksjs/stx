@@ -54,7 +54,7 @@ async function buildWith(target: string, options: Record<string, unknown> = {}):
     outputDir: 'dist',
     sitemap: false,
     robots: false,
-    minify: false,
+    minify: true,
     cache: false,
     ...options,
   })

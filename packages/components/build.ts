@@ -66,7 +66,7 @@ try {
     // into renamed `defaultN` / `Ig`-style bindings that aren't declared
     // at top level. Leaving minify off avoids it; stubbed modules keep
     // dist small anyway.
-    minify: false,
+    minify: true,
     splitting: false,
     external: [
       '@stacksjs/stx',

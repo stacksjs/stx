@@ -7,7 +7,7 @@ await Bun.build({
   format: 'esm',
   splitting: true,
   sourcemap: 'none',
-  minify: false,
+  minify: true,
   plugins: [plugin()],
 })
 

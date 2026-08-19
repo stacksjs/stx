@@ -109,7 +109,7 @@ export async function processInlineAssets(
           const result = await Bun.build({
             entrypoints: [resolvedPath],
             target: 'browser',
-            minify: false,
+            minify: true,
             define: getPublicEnvDefine(),
           })
           if (result.outputs.length > 0) {

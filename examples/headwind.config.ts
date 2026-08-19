@@ -8,7 +8,7 @@ export default {
     './components/**/*.stx',
   ],
   output: './dist/voide.css',
-  minify: false,
+  minify: true,
   preflight: true,
   safelist: [
     'border-solid',
