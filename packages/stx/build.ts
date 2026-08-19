@@ -255,15 +255,63 @@ for (const output of declarationBuild.outputs) {
     rmSync(output.path, { force: true })
 }
 
-// Build CLI separately
+// Build the CLI and the optional module entries together, sharing chunks.
+//
+// Built one at a time with splitting off, each entry inlined every module it
+// reached. `ssg.ts` is 69KB of source and became a 1.12MB bundle; `pwa.ts` is
+// 8KB and became 1.15MB; `craft` another 1.23MB; the CLI 2.19MB. They are
+// four views of largely the same graph — the renderer, the directive
+// processor, the config loader — so the package shipped four copies of it,
+// on top of the per-module ESM output that already contains all of it once.
+//
+// One build lets Bun put the shared modules in chunks that every entry
+// imports. The entry filenames and the export map do not change; only the
+// duplication does.
+//
+// `bundle-analyzer` keeps its own build: its entry is `src/bundle-analyzer/
+// index.ts`, and with `[dir]/[name]` naming that emits `dist/index.js`, which
+// is the package's own main entry. Renaming it out of the way is not worth
+// putting the root export at risk.
+const sharedEntries = [
+  { entry: './bin/cli.ts', emitted: 'cli.js', final: 'cli.js' },
+  { entry: './src/craft-entry.ts', emitted: 'craft-entry.js', final: 'craft.js' },
+  { entry: './src/database.ts', emitted: 'database.js', final: 'database.js' },
+  { entry: './src/ssg.ts', emitted: 'ssg.js', final: 'ssg.js' },
+  { entry: './src/pwa.ts', emitted: 'pwa.js', final: 'pwa.js' },
+  { entry: './src/visual-testing.ts', emitted: 'visual-testing.js', final: 'visual-testing.js' },
+]
+
 assertBuild(await Bun.build({
-  entrypoints: ['./bin/cli.ts'],
-  splitting: false,
+  entrypoints: sharedEntries.map(mod => mod.entry),
+  splitting: true,
   outdir: './dist',
+  naming: '[name].js',
+  plugins: [dts()],
   target: 'bun',
   minify: true,
   packages: 'external',
-}), 'stx cli build')
+}), 'stx entry build')
+
+// `craft-entry.ts` is published as `./craft`; every other entry already lands
+// on its published name. Copied rather than renamed, because the wildcard
+// export makes `@stacksjs/stx/craft-entry` a public subpath too, and it is the
+// one the per-module output would otherwise have supplied.
+for (const mod of sharedEntries) {
+  if (mod.emitted === mod.final)
+    continue
+  copyFileSync(resolve('./dist', mod.emitted), resolve('./dist', mod.final))
+}
+
+assertBuild(await Bun.build({
+  entrypoints: ['./src/bundle-analyzer/index.ts'],
+  splitting: false,
+  outdir: './dist',
+  naming: 'bundle-analyzer.js',
+  plugins: [dts()],
+  target: 'bun',
+  minify: true,
+  packages: 'external',
+}), 'stx bundle-analyzer build')
 
 // Add shebang to CLI
 const cliPath = './dist/cli.js'
@@ -271,29 +319,6 @@ const cliContent = await Bun.file(cliPath).text()
 if (!cliContent.startsWith('#!/')) {
   await Bun.write(cliPath, `#!/usr/bin/env bun\n${cliContent}`)
 }
-
-// Build optional modules as separate entry points
-const optionalModules = [
-  { entry: './src/craft-entry.ts', name: 'craft' },
-  { entry: './src/database.ts', name: 'database' },
-  { entry: './src/ssg.ts', name: 'ssg' },
-  { entry: './src/pwa.ts', name: 'pwa' },
-  { entry: './src/visual-testing.ts', name: 'visual-testing' },
-  { entry: './src/bundle-analyzer/index.ts', name: 'bundle-analyzer' },
-]
-
-await Promise.all(optionalModules.map(async (mod) => {
-  assertBuild(await Bun.build({
-    entrypoints: [mod.entry],
-    splitting: false,
-    outdir: './dist',
-    naming: `${mod.name}.js`,
-    plugins: [dts()],
-    target: 'bun',
-    minify: true,
-    packages: 'external',
-  }), `stx optional build for ${mod.name}`)
-}))
 
 // dtsx can truncate declarations for a few standalone public modules when
 // bundling the full source graph in one call. Re-emit those public declaration
