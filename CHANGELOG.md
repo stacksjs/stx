@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.197...v0.2.198)
+
+## ⚡ Performance Improvements
+
+- **build**: split desktop's entries, drop sanitizer's sourcemap ([df72723](https://github.com/stacksjs/stx/commit/df72723)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.198 ([1e68126](https://github.com/stacksjs/stx/commit/1e68126)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.196...v0.2.197)
 
 ## ⚡ Performance Improvements
