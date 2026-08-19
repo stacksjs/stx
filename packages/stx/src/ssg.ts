@@ -49,6 +49,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { CONVENTIONAL_ASSET_OUTPUT, CONVENTIONAL_ASSET_ROOT, resolveConventionalAssetRoot } from './asset-roots'
 import { externalizeSharedAssets } from './build-externalize'
+import { externalizeRepeatedAssets } from './build-externalize-repeated'
 import { createRouter, type Route } from './router'
 import { processDirectives, injectRouterScript } from './process'
 import { extractIslandChunks, injectIslandChunkPrefetch } from './island-chunking'
@@ -1580,6 +1581,16 @@ else {
       console.log(
         `Externalized ${externalized.assets} asset(s) from ${externalized.pages} page(s) `
         + `(${(externalized.bytesInlined / 1024).toFixed(1)}KB removed from HTML)`,
+      )
+    }
+
+    // And every other blob the pages share. Scoped component scripts and page
+    // styles are inlined per page; identical copies across pages are one file.
+    const repeated = externalizeRepeatedAssets(cfg.outputDir)
+    if (repeated.assets > 0) {
+      console.log(
+        `Externalized ${repeated.assets} repeated asset(s) from ${repeated.pages} page(s) `
+        + `(${(repeated.bytesInlined / 1024).toFixed(1)}KB removed from HTML)`,
       )
     }
 

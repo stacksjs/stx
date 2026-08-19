@@ -15,6 +15,7 @@ import process from 'node:process'
 import stxPlugin from 'bun-plugin-stx'
 import { CONVENTIONAL_ASSET_OUTPUT, resolveConventionalAssetRoot } from '../asset-roots'
 import { externalizeSharedAssets } from '../build-externalize'
+import { externalizeRepeatedAssets } from '../build-externalize-repeated'
 import { injectCrosswindCSS } from '../dev-server/crosswind'
 import { injectSeo } from './seo'
 import { generateSitemap, type SitemapEntry } from './sitemap'
@@ -191,6 +192,18 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
     console.log(
       `[stx] externalized ${externalized.assets} asset(s) from ${externalized.pages} page(s) `
       + `(${(externalized.bytesInlined / 1024).toFixed(1)}KB removed from HTML)`,
+    )
+  }
+
+  // Everything else that repeats: scoped component scripts and page styles are
+  // emitted inline per page, and on a site of any size they dwarf the three
+  // named blobs above. Anything byte-identical on two or more pages is shared
+  // by construction, so it belongs in one cached file (#1865, #1878).
+  const repeated = externalizeRepeatedAssets(outDir)
+  if (repeated.assets > 0) {
+    console.log(
+      `[stx] externalized ${repeated.assets} repeated asset(s) from ${repeated.pages} page(s) `
+      + `(${(repeated.bytesInlined / 1024).toFixed(1)}KB removed from HTML)`,
     )
   }
 
