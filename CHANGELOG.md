@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.196...v0.2.197)
+
+## ⚡ Performance Improvements
+
+- **build**: stop shipping sourcemaps ([c44525c](https://github.com/stacksjs/stx/commit/c44525c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.197 ([078f8cf](https://github.com/stacksjs/stx/commit/078f8cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.195...v0.2.196)
 
 ## ⚡ Performance Improvements
