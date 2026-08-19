@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.194...v0.2.195)
+
+## 🐛 Bug Fixes
+
+- **server-script**: resolve a relative require against the template ([0ea0f14](https://github.com/stacksjs/stx/commit/0ea0f14)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.195 ([4a6569e](https://github.com/stacksjs/stx/commit/4a6569e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.193...v0.2.194)
 
 ## 🐛 Bug Fixes
