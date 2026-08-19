@@ -490,11 +490,26 @@ export async function extractVariables(
 
   const serverRequires = [...(jsContent.matchAll(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g) || [])]
     .map(m => m[1])
-    .filter(id => !id.startsWith('node:') && !id.startsWith('.')
+    .filter(id => !id.startsWith('node:')
       && !['fs', 'path', 'os', 'child_process', 'crypto', 'http', 'https', 'url', 'util', 'stream', 'events', 'buffer', 'net', 'querystring', 'zlib', 'tls'].includes(id))
+
+  // A relative specifier means "next to this template", which is the one thing
+  // the bundled runtime's own `require` cannot know: it resolves against stx's
+  // module, so `require('../lib/analyze.ts')` in a page looked for a file
+  // inside stx and quietly handed back an object with every export undefined.
+  // Nothing threw, so the page rendered with every value blank — a whole UI of
+  // empty stat cards and no error anywhere (pantry's inspector shipped like
+  // that). Resolve them against the template instead, and record the failures
+  // so `requireFn` can throw a specifier the author can act on.
+  const unresolvable = new Map<string, string>()
 
   for (const id of serverRequires) {
     try {
+      if (id.startsWith('.')) {
+        preloaded[id] = await import(path.resolve(path.dirname(filePath), id))
+        continue
+      }
+
       const pkgDir = path.resolve(projectRoot, 'node_modules', id)
       const pkgJsonPath = path.join(pkgDir, 'package.json')
       const pkgJson = JSON.parse(require('fs').readFileSync(pkgJsonPath, 'utf8'))
@@ -508,11 +523,23 @@ export async function extractVariables(
       }
       preloaded[id] = await import(path.resolve(pkgDir, entry))
     }
-    catch { /* not in project node_modules — CLI require will handle it */ }
+    catch (error) {
+      // Bare specifiers fall through to the runtime's own require, which can
+      // still find them (builtins, packages hoisted above the project). A
+      // relative one has nowhere else to look, so remember why it failed.
+      if (id.startsWith('.'))
+        unresolvable.set(id, error instanceof Error ? error.message : String(error))
+    }
   }
 
   const requireFn = (id: string) => {
     if (preloaded[id]) return preloaded[id]
+    const reason = unresolvable.get(id)
+    if (reason !== undefined) {
+      throw new Error(
+        `Cannot require '${id}' from ${filePath}: ${reason}`,
+      )
+    }
     return require(id)
   }
 
