@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.192...v0.2.193)
+
+## 🐛 Bug Fixes
+
+- **serve**: give a web app manifest its own content type ([b5d6604](https://github.com/stacksjs/stx/commit/b5d6604)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.193 ([cfa935e](https://github.com/stacksjs/stx/commit/cfa935e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.191...v0.2.192)
 
 ## 🚀 Features
