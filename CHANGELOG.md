@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.195...v0.2.196)
+
+## ⚡ Performance Improvements
+
+- **build**: build the entries together, so they share a graph ([a5365c6](https://github.com/stacksjs/stx/commit/a5365c6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.196 ([ab87192](https://github.com/stacksjs/stx/commit/ab87192)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.194...v0.2.195)
 
 ## 🐛 Bug Fixes
