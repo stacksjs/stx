@@ -535,6 +535,63 @@ export function render404Page(opts: {
 </html>`
 }
 
+/**
+ * A cache that forgets its coldest entry rather than growing forever.
+ *
+ * A plain `Map` iterates in insertion order, so deleting and re-inserting a key
+ * on every read moves it to the end - which makes the first key the least
+ * recently used one, and the whole of an LRU three lines long.
+ *
+ * Exported because the behaviour is worth testing without standing a server
+ * up, the same reason `isRenderableCacheCandidate` is.
+ */
+export function boundedCache<T>(limit: number): {
+  read: (key: string) => T | undefined
+  remember: (key: string, value: T) => T
+  clear: () => void
+  readonly size: number
+} {
+  const entries = new Map<string, T>()
+  // A limit below one would evict what was just written, so every read misses
+  // and the cache costs memory and time to hold nothing.
+  const ceiling = Math.max(1, Math.floor(limit))
+
+  return {
+    read(key) {
+      const hit = entries.get(key)
+
+      if (hit === undefined)
+        return undefined
+
+      entries.delete(key)
+      entries.set(key, hit)
+
+      return hit
+    },
+    remember(key, value) {
+      entries.delete(key)
+      entries.set(key, value)
+
+      while (entries.size > ceiling) {
+        const coldest = entries.keys().next().value
+
+        if (coldest === undefined)
+          break
+
+        entries.delete(coldest)
+      }
+
+      return value
+    },
+    clear() {
+      entries.clear()
+    },
+    get size() {
+      return entries.size
+    },
+  }
+}
+
 export interface ServeOptions {
   patterns: string[]
   port?: number
@@ -582,6 +639,18 @@ export interface ServeOptions {
    * intended for source-derived shells whose live data loads on the client.
    */
   renderCacheVary?: 'request' | 'source'
+
+  /**
+   * How many class sets' worth of generated CSS to keep. Defaults to 512.
+   *
+   * The cache is keyed by the class set of the *rendered page*, so a site
+   * whose markup carries content-derived classes - a state pill, a label, a
+   * language - produces a new entry per distinct combination. Unbounded, that
+   * is a slow leak on any long-running server with real traffic; the limit
+   * turns it into a working set. Raise it on a site with a lot of genuinely
+   * different pages and a lot of memory.
+   */
+  crosswindCacheLimit?: number
   /**
    * Render every discovered static route in the background after startup.
    *
@@ -1130,10 +1199,22 @@ export async function serve(options: ServeOptions): Promise<void> {
   // fast path without weakening HMR.
   const ENABLE_HTML_CACHE = options.renderCache === true
   const RENDER_CACHE_VARY = options.renderCacheVary ?? 'request'
-  // Crosswind-generated CSS cache, keyed by sorted class-set. Lives here for
-  // the same reason as `htmlCache`: so the watcher can wipe it on a source
-  // edit and pick up a new utility's CSS the next render.
-  const crosswindCssCache = new Map<string, string>()
+  /*
+   * Crosswind-generated CSS, keyed by the page's sorted class set. Lives here
+   * for the same reason as `htmlCache`: so the watcher can wipe it on a source
+   * edit and pick up a new utility's CSS on the next render.
+   *
+   * **Bounded**, and that is not a precaution. The key is the *content's*
+   * class set, not the template's: a page carrying `search-state-open` and one
+   * carrying `search-state-closed` are two entries, as are two repository
+   * pages whose pills differ. A public site being walked by a crawler
+   * therefore produces effectively unlimited distinct keys, each holding a
+   * full stylesheet - and this map only ever grew. On one deployed instance
+   * the server climbed from 230MB to 2.1GB in about an hour of ordinary
+   * traffic, at which point the kernel's memory ceiling throttled it into
+   * answering nothing at all while still reporting itself healthy.
+   */
+  const crosswindCssCache = boundedCache<string>(options.crosswindCacheLimit ?? 512)
 
   // ── HMR: live-reload via Server-Sent Events. ────────────────────────
   //
@@ -2112,7 +2193,7 @@ function __stxOverlay(errs){
       // above). Same set → same CSS, so we can short-circuit the entire
       // generator pipeline below for repeat renders of the same template.
       const cacheKey = [...classes].sort().join(' ')
-      const cached = crosswindCssCache.get(cacheKey)
+      const cached = crosswindCssCache.read(cacheKey)
       if (cached !== undefined)
         return cached
 
@@ -2158,9 +2239,7 @@ function __stxOverlay(errs){
 
       // Role-token values first, so the utilities below resolve against them and
       // an app's own stylesheet — which comes after — can still override (#1930).
-      const finalCss = tokenCSS + baseCss + shortcutCSS
-      crosswindCssCache.set(cacheKey, finalCss)
-      return finalCss
+      return crosswindCssCache.remember(cacheKey, tokenCSS + baseCss + shortcutCSS)
     }
     catch (error) {
       console.warn('Failed to generate Crosswind CSS:', error)
