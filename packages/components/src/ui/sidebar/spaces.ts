@@ -173,14 +173,31 @@ function mix(color: string, percent: number, into: string): string {
  * Build a full light/dark palette from one seed color.
  *
  * The percentages are the tuning surface of the whole feature, so they are
- * worth stating plainly. In light appearance the panel stays *pale* — 34%
- * falling to 16% of the seed — because Arc's spaces are washes, not fills;
- * anything stronger and the white selection cards stop reading as raised. The
- * ink is the seed pulled almost to black (22% seed) so text keeps a hint of
+ * worth stating plainly, and they are measured rather than guessed. Sampling
+ * Dia's sidebar at @2x, clear of its tiles and rows, the panel reads:
+ *
+ *   near the top     #c9ddd5   — 43 from white, averaged over RGB
+ *   a third down     #cee0da   — 39
+ *   two thirds down  #e2f1ed   — 20
+ *   near the bottom  #e9f4f4   — 15
+ *
+ * For a mix into white the distance from white tracks the percentage almost
+ * one-to-one, so those readings are the percentages: 44% at the top falling to
+ * 15% at the bottom, a ratio of ~2.9 against Dia's measured 2.95.
+ *
+ * This is deliberately stronger than the 34%/16% it replaced, which produced a
+ * visibly paler panel than the thing it was imitating — 34 from white at the
+ * top where Dia is 43, and a ratio of 2.0 where Dia is 2.9, so it was both too
+ * faint and too flat. The old note claimed anything stronger would stop the
+ * white selection cards reading as raised; Dia disproves that at 43, and the
+ * cards still read here (see the contrast assertion in the tests).
+ *
+ * The ink is the seed pulled almost to black (22% seed) so text keeps a hint of
  * the space's hue without losing contrast. In dark appearance the relationship
  * inverts: the seed is mixed *into* near-black for the panel and *into* white
  * for the ink and accent, which keeps a dark space recognizably the same color
- * as its light counterpart rather than a different one.
+ * as its light counterpart rather than a different one. Dark is scaled by the
+ * same factor so the two appearances stay in step.
  *
  * `from` is the TOP of the panel and carries the most seed; the wash fades
  * downward. Both appearances agree on that, which is the point — they used to
@@ -188,22 +205,18 @@ function mix(color: string, percent: number, into: string): string {
  * dark ran 26% down to 14%, so the same space put its colour at opposite ends
  * of the panel depending on the system appearance, and a design checked in one
  * mode was wrong in the other.
- *
- * Sampled from Dia's sidebar at @2x for the direction and rough ratio: the
- * panel reads #caded6 near the top and #eaf4f4 near the bottom, i.e. about
- * three times as far from white at the top as at the bottom.
  */
 export function deriveSpaceTint(seed: string): SidebarSpaceTint {
   return {
     light: {
-      from: mix(seed, 34, '#ffffff'),
-      to: mix(seed, 16, '#ffffff'),
+      from: mix(seed, 44, '#ffffff'),
+      to: mix(seed, 15, '#ffffff'),
       ink: mix(seed, 22, '#17171b'),
       accent: mix(seed, 88, '#2a2a30'),
     },
     dark: {
-      from: mix(seed, 26, '#101014'),
-      to: mix(seed, 14, '#08080b'),
+      from: mix(seed, 34, '#101014'),
+      to: mix(seed, 12, '#08080b'),
       ink: mix(seed, 12, '#f4f4f7'),
       accent: mix(seed, 74, '#ffffff'),
     },

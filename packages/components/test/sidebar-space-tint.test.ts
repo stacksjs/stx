@@ -43,18 +43,43 @@ describe('deriveSpaceTint: the colour sits at the top', () => {
     expect(lightFadesDown).toBe(darkFadesDown)
   })
 
-  it('keeps the wash pale enough for a white card to read as raised', () => {
-    // Arc's spaces are washes, not fills. Past roughly 40% the selection card
-    // stops looking lifted off the panel.
-    const tint = deriveSpaceTint('#ff383c')
-    expect(seedPercent(tint.light.from)).toBeLessThanOrEqual(40)
+  it('matches the strength sampled from Dia', () => {
+    // Dia's panel sits ~43 from white at the top and ~15 at the bottom,
+    // averaged over RGB. A mix into white tracks its percentage almost
+    // one-to-one, so those readings ARE the percentages. The previous 34/16
+    // was visibly paler than the thing it imitated.
+    const tint = deriveSpaceTint('#34c759')
+    expect(seedPercent(tint.light.from)).toBeGreaterThanOrEqual(40)
+    expect(seedPercent(tint.light.from)).toBeLessThanOrEqual(48)
+    expect(seedPercent(tint.light.to)).toBeLessThanOrEqual(18)
   })
 
-  it('holds a top-to-bottom ratio in the region Dia uses', () => {
+  it('holds the top-to-bottom ratio Dia holds', () => {
+    // Dia measures 2.95. Getting the magnitude right without the ratio gives a
+    // panel that is strong but flat, which is what 34/16 (ratio 2.0) was.
     const tint = deriveSpaceTint('#34c759')
     const ratio = seedPercent(tint.light.from) / seedPercent(tint.light.to)
-    expect(ratio).toBeGreaterThan(1.5)
-    expect(ratio).toBeLessThan(4)
+    expect(ratio).toBeGreaterThan(2.5)
+    expect(ratio).toBeLessThan(3.4)
+  })
+
+  it('keeps both appearances in step when the strength moves', () => {
+    // Dark is scaled by the same factor as light rather than left behind, or
+    // strengthening one mode quietly makes the two disagree again — the exact
+    // failure the direction fix was about.
+    const tint = deriveSpaceTint('#0088ff')
+    const lightRatio = seedPercent(tint.light.from) / seedPercent(tint.light.to)
+    const darkRatio = seedPercent(tint.dark.from) / seedPercent(tint.dark.to)
+    expect(Math.abs(lightRatio - darkRatio)).toBeLessThan(0.5)
+  })
+
+  it('leaves a white selection card clearly lighter than the panel', () => {
+    // The constraint the old note used to justify staying pale. It is a real
+    // constraint — it is just satisfied at this strength, as Dia demonstrates.
+    // A card needs to sit well clear of the panel it floats on; at 44% of a
+    // seed mixed into white the panel is still far nearer white than not.
+    const tint = deriveSpaceTint('#ff383c')
+    expect(seedPercent(tint.light.from)).toBeLessThan(60)
   })
 })
 
