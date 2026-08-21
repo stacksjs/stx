@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.201...v0.2.202)
+
+## ✨ Features
+
+- **sidebar**: an arc header names its space beside the traffic lights ([7aaee5c](https://github.com/stacksjs/stx/commit/7aaee5c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **sidebar**: a space puts its colour at the top in both appearances ([970a0a4](https://github.com/stacksjs/stx/commit/970a0a4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.202 ([3a9cfaf](https://github.com/stacksjs/stx/commit/3a9cfaf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.200...v0.2.201)
 
 ## 🐛 Bug Fixes
