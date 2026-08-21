@@ -161,13 +161,14 @@ function onWindowControl(action) {
   @endif
 @elseif(isArc)
   <!--
-    The top padding is 4px when the platform owns the controls, not 12. The
-    header has to line its title up with buttons it does not draw: those sit
-    14pt below the window's top, and a 20pt-tall title centres there only if
-    the row starts at 4. At 12 it lands 8pt low, which reads as the name having
-    slipped off the row rather than sharing it.
+    No top padding when the platform owns the controls. The header has to line
+    its title up with buttons it does not draw, and the arithmetic is fixed by
+    the row rather than by the text: the chrome row is 28pt tall because its
+    action buttons are, so its contents centre 14pt down — which is exactly
+    where the platform puts the middle of its controls (they span 8..19pt).
+    Any padding above pushes the name below buttons it is meant to sit beside.
   -->
-  <div class="flex flex-col gap-[8px] px-[10px] pb-[8px] {{ reserveWindowControls ? 'pt-[4px]' : 'pt-[12px]' }}">
+  <div class="flex flex-col gap-[8px] px-[10px] pb-[8px] {{ reserveWindowControls ? 'pt-0' : 'pt-[12px]' }}">
     @if(showWindowControls || reserveWindowControls || showNavigation)
       <div class="flex items-center gap-[12px] px-[2px] [-webkit-app-region:drag]">
         @if(reserveWindowControls)

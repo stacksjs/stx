@@ -78,10 +78,10 @@ describe('the template honours the mode', () => {
   })
 
   it('aligns the reserved row with where the platform puts its buttons', () => {
-    // The platform's controls sit 14pt below the window's top. A 20pt-tall
-    // title centres there only if the row starts at 4 — at the header's usual
-    // 12 it lands 8pt low, which reads as the name having slipped off the row
-    // rather than sharing it.
-    expect(source).toContain("reserveWindowControls ? 'pt-[4px]' : 'pt-[12px]'")
+    // The chrome row is 28pt tall — its action buttons set that, not the text
+    // — so its contents centre 14pt down, which is exactly where the platform
+    // puts the middle of its controls (they span 8..19pt). Any padding above
+    // pushes the name below buttons it is meant to sit beside.
+    expect(source).toContain("reserveWindowControls ? 'pt-0' : 'pt-[12px]'")
   })
 })
