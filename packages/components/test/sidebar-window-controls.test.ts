@@ -78,6 +78,10 @@ describe('the template honours the mode', () => {
   })
 
   it('aligns the reserved row with where the platform puts its buttons', () => {
-    expect(source).toContain("reserveWindowControls ? 'pt-[8px]' : ''")
+    // The platform's controls sit 14pt below the window's top. A 20pt-tall
+    // title centres there only if the row starts at 4 — at the header's usual
+    // 12 it lands 8pt low, which reads as the name having slipped off the row
+    // rather than sharing it.
+    expect(source).toContain("reserveWindowControls ? 'pt-[4px]' : 'pt-[12px]'")
   })
 })

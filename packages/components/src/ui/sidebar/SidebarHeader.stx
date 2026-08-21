@@ -160,14 +160,16 @@ function onWindowControl(action) {
     </div>
   @endif
 @elseif(isArc)
-  <div class="flex flex-col gap-[8px] px-[10px] pb-[8px] pt-[12px]">
+  <!--
+    The top padding is 4px when the platform owns the controls, not 12. The
+    header has to line its title up with buttons it does not draw: those sit
+    14pt below the window's top, and a 20pt-tall title centres there only if
+    the row starts at 4. At 12 it lands 8pt low, which reads as the name having
+    slipped off the row rather than sharing it.
+  -->
+  <div class="flex flex-col gap-[8px] px-[10px] pb-[8px] {{ reserveWindowControls ? 'pt-[4px]' : 'pt-[12px]' }}">
     @if(showWindowControls || reserveWindowControls || showNavigation)
-      <!--
-        `pt-[8px]` on the reserving branch, not the drawing one: the platform's
-        controls sit 14pt below the window's top, and this row has to line up
-        with buttons it does not own.
-      -->
-      <div class="flex items-center gap-[12px] px-[2px] [-webkit-app-region:drag] {{ reserveWindowControls ? 'pt-[8px]' : '' }}">
+      <div class="flex items-center gap-[12px] px-[2px] [-webkit-app-region:drag]">
         @if(reserveWindowControls)
           <!--
             Empty on purpose. The window server has already drawn three live
