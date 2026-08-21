@@ -115,7 +115,25 @@ export interface SidebarActionData {
 
 export interface SidebarHeaderProps {
   theme?: SidebarThemeChoice
-  /** Render traffic lights (wired to Craft's window API when present). */
+  /**
+   * Who draws the window controls.
+   *
+   * - `draw` — HTML replicas, wired to Craft's window API when present. Right
+   *   for a web page imitating macOS.
+   * - `native` — the platform already drew them. Reserve the room and render
+   *   nothing into it.
+   * - `none` — no controls and no room.
+   *
+   * Inside a real window with the titlebar hidden the platform draws its own
+   * controls regardless, so `draw` there puts SIX circles in the corner: three
+   * live buttons from the window server and three that only look like them.
+   *
+   * The reserved width is `--stx-native-controls-width` (default 52px, the
+   * room after this header's own left padding), so an app whose platform
+   * places them differently can retune it.
+   */
+  windowControls?: 'draw' | 'native' | 'none'
+  /** @deprecated Use `windowControls`. `true` means `draw`, `false` means `none`. */
   showWindowControls?: boolean
   /** Floating Liquid Glass toolbar buttons on the right. */
   actions?: SidebarActionData[]

@@ -37,13 +37,35 @@ export const isArc = theme === 'arc'
 // default there. Arc's sidebar can go either way — a browser window puts the
 // lights and the back/forward controls in the sidebar, while an app that only
 // borrows the look wants a bare strip — so on this theme both are opt-in.
-export const showWindowControls = $props.showWindowControls ?? !isArc
+//
+// `windowControls` says WHO DRAWS THEM, which `showWindowControls` could not
+// express:
+//
+//   'draw'    HTML replicas. Right for a web page imitating macOS.
+//   'native'  the OS already drew them; reserve the room and keep out of it.
+//   'none'    no controls, no room.
+//
+// The distinction is not cosmetic. Inside a real window with the titlebar
+// hidden the platform still draws its own controls, so drawing replicas as
+// well puts SIX circles in the corner — three live ones from the window
+// server and three that only look like buttons.
+//
+// Measured from a Craft window at 2x: 12pt discs, 20pt apart, the first 10pt
+// from the window's left edge, the block ending 62pt in, centred 14pt below
+// the top. `--stx-native-controls-width` is the room to leave AFTER this
+// header's own left padding, so an app whose platform places them differently
+// can retune it without forking the component.
+const controlsProp = $props.windowControls || ''
+export const windowControls = controlsProp
+  || (($props.showWindowControls ?? !isArc) ? 'draw' : 'none')
+export const showWindowControls = windowControls === 'draw'
+export const reserveWindowControls = windowControls === 'native'
 export const showNavigation = $props.showNavigation ?? false
 
 // A titled Arc header with window controls puts the two on one row, the way
 // Arc and Dia do. A logo needs the wider second row to sit in, so its presence
 // keeps the old two-row shape.
-export const titleInChrome = isArc && showWindowControls && !!title && !logo
+export const titleInChrome = isArc && (showWindowControls || reserveWindowControls) && !!title && !logo
 
 // Back / forward / reload, as in Arc's URL strip. Flat and ghosted, not glass.
 export const navButtons = [
@@ -139,8 +161,21 @@ function onWindowControl(action) {
   @endif
 @elseif(isArc)
   <div class="flex flex-col gap-[8px] px-[10px] pb-[8px] pt-[12px]">
-    @if(showWindowControls || showNavigation)
-      <div class="flex items-center gap-[12px] px-[2px] [-webkit-app-region:drag]">
+    @if(showWindowControls || reserveWindowControls || showNavigation)
+      <!--
+        `pt-[8px]` on the reserving branch, not the drawing one: the platform's
+        controls sit 14pt below the window's top, and this row has to line up
+        with buttons it does not own.
+      -->
+      <div class="flex items-center gap-[12px] px-[2px] [-webkit-app-region:drag] {{ reserveWindowControls ? 'pt-[8px]' : '' }}">
+        @if(reserveWindowControls)
+          <!--
+            Empty on purpose. The window server has already drawn three live
+            buttons here; anything rendered into this space would sit under
+            them, and a replica beside them would make six.
+          -->
+          <span class="shrink-0" style="width: var(--stx-native-controls-width, 52px)" aria-hidden="true"></span>
+        @endif
         @if(showWindowControls)
           <div class="flex items-center gap-[7px] [-webkit-app-region:no-drag]">
             <button type="button" class="{{ trafficLightClasses }} bg-[#ff5f57]" aria-label="Close window" @click="onWindowControl('close')"></button>
