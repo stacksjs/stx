@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.198...v0.2.199)
+
+## 🐛 Bug Fixes
+
+- **serve**: the generated CSS cache forgets, instead of growing forever ([5209bc7](https://github.com/stacksjs/stx/commit/5209bc7)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.199 ([1d6fd88](https://github.com/stacksjs/stx/commit/1d6fd88)) _(by Chris <chris@stacksjs.com>)_
+- minify ([673d280](https://github.com/stacksjs/stx/commit/673d280)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.197...v0.2.198)
 
 ## ⚡ Performance Improvements
