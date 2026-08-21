@@ -29,6 +29,13 @@ export const active = $props.active ?? false
 // has nothing yet, and `spaceChange` is where a host fills it or navigates.
 export const deferred = $props.deferred ?? false
 
+// Whether to draw `label` as a title above the rows. An app that names the
+// space somewhere else — an Arc header with a title puts it beside the traffic
+// lights, the way Dia does — turns this off rather than saying it twice.
+// `label` is still needed: it is the panel's accessible name and the
+// switcher's tooltip.
+export const showTitle = $props.showTitle ?? true
+
 const themeStyle = resolveSidebarTheme(theme)
 export const scrollAreaClasses = themeStyle.scrollArea
 
@@ -89,7 +96,7 @@ function onAction(event) {
       <SidebarPinned :items="pinned" />
     @endif
 
-    @if(label)
+    @if(label && showTitle)
       <div class="{{ titleClasses }}">
         @if(icon)
           <span class="{{ icon }} h-[15px] w-[15px] shrink-0 stx-space-title-icon" aria-hidden="true"></span>

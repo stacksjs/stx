@@ -82,8 +82,24 @@ export interface SidebarSpaceActionData {
 /** One scene in a swipeable sidebar. */
 export interface SidebarSpaceData {
   id: string
-  /** Title shown above the rows, e.g. "Personal". */
+  /**
+   * The space's name, e.g. "Personal".
+   *
+   * Used for the panel's own title, the switcher rail's tooltip and the
+   * panel's accessible name, so it is worth setting even when the title
+   * itself is suppressed with {@link showTitle}.
+   */
   label?: string
+  /**
+   * Whether the panel draws `label` as a title above its rows. Defaults to
+   * true.
+   *
+   * Set it false when the app names the space somewhere else — an Arc header
+   * with a title puts the name beside the traffic lights, which is what Dia
+   * does, and drawing it again inside the panel says the same thing twice and
+   * costs a line of height to do it.
+   */
+  showTitle?: boolean
   /** Iconify utility class — used for both the title and the switcher rail. */
   icon?: string
   /**
@@ -136,6 +152,8 @@ export interface NormalizedSidebarSpace {
   tint: SidebarSpaceTint
   /** `style` attribute value that publishes this space's palette. */
   style: string
+  /** Whether the panel draws its own title. See `SidebarSpaceData.showTitle`. */
+  showTitle: boolean
   /** See {@link SidebarSpaceData.deferred}. */
   deferred: boolean
 }
@@ -256,6 +274,7 @@ export function normalizeSpace(space: SidebarSpaceData): NormalizedSidebarSpace 
     tint,
     style: spaceTintVars(tint),
     deferred: space.deferred === true,
+    showTitle: space.showTitle ?? true,
   }
 }
 

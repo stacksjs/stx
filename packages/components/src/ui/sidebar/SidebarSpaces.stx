@@ -560,6 +560,7 @@ defineExpose({
           :clear="space.clear"
           :active="space.id === activeId"
           :deferred="space.deferred === true"
+          :showTitle="space.showTitle !== false"
           :theme="theme"
         />
       @endforeach

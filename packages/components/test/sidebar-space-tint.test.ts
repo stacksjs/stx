@@ -12,7 +12,7 @@
  * the top (#caded6) as near the bottom (#eaf4f4).
  */
 import { describe, expect, it } from 'bun:test'
-import { deriveSpaceTint, resolveSpaceTint, spaceTintVars } from '../src/ui/sidebar/spaces'
+import { deriveSpaceTint, normalizeSpace, resolveSpaceTint, spaceTintVars } from '../src/ui/sidebar/spaces'
 
 /** The seed percentage out of a `color-mix(in oklab, SEED N%, INTO)` string. */
 function seedPercent(value: string): number {
@@ -82,5 +82,24 @@ describe('spaceTintVars', () => {
     const vars = spaceTintVars(deriveSpaceTint('blue'))
     for (const name of ['light-from', 'light-to', 'light-ink', 'light-accent', 'dark-from', 'dark-to', 'dark-ink', 'dark-accent'])
       expect(vars).toContain(`--stx-space-${name}:`)
+  })
+})
+
+describe('normalizeSpace: whether the panel draws its own title', () => {
+  it('draws it by default', () => {
+    expect(normalizeSpace({ id: 'a', label: 'Personal' }).showTitle).toBe(true)
+  })
+
+  it('can be turned off when the app names the space elsewhere', () => {
+    // An Arc header with a title puts the name beside the traffic lights, the
+    // way Dia does; drawing it again inside the panel says the same thing
+    // twice and spends a line of panel height doing it.
+    expect(normalizeSpace({ id: 'a', label: 'Personal', showTitle: false }).showTitle).toBe(false)
+  })
+
+  it('keeps the label even when the title is suppressed', () => {
+    // The label is still the panel's accessible name and the switcher rail's
+    // tooltip, so suppressing the title must not drop it.
+    expect(normalizeSpace({ id: 'a', label: 'Personal', showTitle: false }).label).toBe('Personal')
   })
 })
