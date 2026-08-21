@@ -40,6 +40,11 @@ export const isArc = theme === 'arc'
 export const showWindowControls = $props.showWindowControls ?? !isArc
 export const showNavigation = $props.showNavigation ?? false
 
+// A titled Arc header with window controls puts the two on one row, the way
+// Arc and Dia do. A logo needs the wider second row to sit in, so its presence
+// keeps the old two-row shape.
+export const titleInChrome = isArc && showWindowControls && !!title && !logo
+
 // Back / forward / reload, as in Arc's URL strip. Flat and ghosted, not glass.
 export const navButtons = [
   { id: 'back', icon: 'i-f7-arrow-left', label: 'Back' },
@@ -135,7 +140,7 @@ function onWindowControl(action) {
 @elseif(isArc)
   <div class="flex flex-col gap-[8px] px-[10px] pb-[8px] pt-[12px]">
     @if(showWindowControls || showNavigation)
-      <div class="flex items-center px-[2px] [-webkit-app-region:drag]">
+      <div class="flex items-center gap-[12px] px-[2px] [-webkit-app-region:drag]">
         @if(showWindowControls)
           <div class="flex items-center gap-[7px] [-webkit-app-region:no-drag]">
             <button type="button" class="{{ trafficLightClasses }} bg-[#ff5f57]" aria-label="Close window" @click="onWindowControl('close')"></button>
@@ -143,7 +148,18 @@ function onWindowControl(action) {
             <button type="button" class="{{ trafficLightClasses }} bg-[#28c840]" aria-label="Zoom window" @click="onWindowControl('zoom')"></button>
           </div>
         @endif
-        <span class="flex-1"></span>
+        <!--
+          The title belongs on THIS row when there are window controls to sit
+          beside, which is how Arc and Dia name the current space: lights, then
+          the name, on one line. Given its own row below it read as a heading
+          over the list rather than as a label on the window, and cost a line
+          of panel height to say so.
+        -->
+        @if(titleInChrome)
+          <span class="min-w-0 flex-1 truncate text-[13px] font-semibold">{{ title }}</span>
+        @else
+          <span class="flex-1"></span>
+        @endif
         @if(showNavigation)
           <div class="flex items-center gap-[2px] [-webkit-app-region:no-drag]">
             @foreach(navButtons as nav)
@@ -153,10 +169,19 @@ function onWindowControl(action) {
             @endforeach
           </div>
         @endif
+        @if(titleInChrome && actions.length > 0)
+          <div class="flex items-center gap-[2px] [-webkit-app-region:no-drag]">
+            @foreach(actions as action)
+              <button type="button" class="{{ arcActionClasses }}" aria-label="{{ action.label }}" data-sidebar-action="{{ action.id }}" @click="onAction($event)">
+                <span class="{{ action.icon }} h-[15px] w-[15px]" aria-hidden="true"></span>
+              </button>
+            @endforeach
+          </div>
+        @endif
       </div>
     @endif
 
-    @if(title || logo || actions.length > 0)
+    @if(!titleInChrome && (title || logo || actions.length > 0))
       <div class="flex items-center gap-[8px]">
         @if(logo)
           <img src="{{ logo }}" alt="{{ title }}" class="h-[20px] w-[20px] rounded-[6px] object-cover" />
