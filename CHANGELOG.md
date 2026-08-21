@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.199...v0.2.200)
+
+## 🐛 Bug Fixes
+
+- **serve**: the programmatic server reads the project's config ([09e529c](https://github.com/stacksjs/stx/commit/09e529c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.200 ([2d54904](https://github.com/stacksjs/stx/commit/2d54904)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.198...v0.2.199)
 
 ## 🐛 Bug Fixes
