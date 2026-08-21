@@ -26,7 +26,7 @@ import { registerBuiltins } from './builtins'
 import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, restoreStashedScripts, stashScriptElements } from './component-processing'
 import { maskAtElementPosition, matchHtmlComment } from './html-masking'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
-import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
+import { createSafeFunction, isExpressionSafe, safeEvaluateObject, freeIdentifiers } from './safe-evaluator'
 import { BOOLEAN_ATTRIBUTE_SENTINEL } from './prop-sentinels'
 import { COMPONENT_PASSTHROUGH_X_ATTRS } from './runtime-globals'
 import { stripCommentsAndLiterals } from './strip-literals'
@@ -622,6 +622,11 @@ function resolvePackageDir(spec: string, fromDir: string): string | null {
  *   resolves to a single `.stx` file.
  * - Named imports referencing non-`.stx` exports are left untouched in the script.
  */
+// Re-exported from its previous home. It moved to `safe-evaluator`, where the
+// loop processor can reach it too, and this keeps the path it shipped under
+// in 0.2.211 working.
+export { freeIdentifiers }
+
 export async function processESImports(
   template: string,
   context: Record<string, any>,
@@ -1152,37 +1157,6 @@ async function processCustomElementTags(
 
     return result
   }
-}
-
-/**
- * The variables an expression actually reads from its surrounding scope.
- *
- * Deliberately not every identifier in the string. A property name is not a
- * variable, and treating it as one is how `:label="section.label"` came to be
- * misclassified: the section had no `label`, the expression evaluated to
- * `undefined`, and the check for "does this reference something the server
- * does not have?" found `label` — a key, not a binding — reported it as
- * unresolved, and shipped the expression to the client as a reactive prop.
- *
- * On the client it could never resolve either: `section` is a server-side
- * `@foreach` variable that does not exist in the browser. So every page with a
- * component in a loop and one absent optional prop logged stx's own hydration
- * invariant, once per prop, forever.
- *
- * Three things are stripped before identifiers are read: string contents, so a
- * word inside a quote is not a variable; member access after `.` or `?.`, so a
- * property is not a variable; and object-literal keys, for the same reason.
- * What is left is the free variables, which is the question actually being
- * asked.
- */
-export function freeIdentifiers(expression: string): string[] {
-  const withoutStrings = expression.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g, ' ')
-  const withoutMembers = withoutStrings.replace(/\??\.\s*[a-zA-Z_$][\w$]*/g, ' ')
-  // `{ key: value }` and `{ key, other }` — a key sits after `{` or `,` and is
-  // followed by `:`. A ternary's `?:` cannot be confused for one: its colon is
-  // never preceded by an identifier that is itself preceded by a brace.
-  const withoutKeys = withoutMembers.replace(/([{,]\s*)[a-zA-Z_$][\w$]*(\s*:)/g, '$1$2')
-  return withoutKeys.match(/\b[a-zA-Z_$][\w$]*\b/g) || []
 }
 
 /**

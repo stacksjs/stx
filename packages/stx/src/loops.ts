@@ -48,7 +48,7 @@ import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
 import { processExpressions } from './expressions'
 import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
-import { createSafeFunction, isExpressionSafe, isForExpressionSafe, sanitizeExpression, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
+import { createSafeFunction, freeIdentifiers, isExpressionSafe, isForExpressionSafe, sanitizeExpression, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
@@ -266,6 +266,32 @@ function processPropBindings(content: string, context: Record<string, any>): str
       // lost JSON string escaping like \" — breaking any value containing a
       // double quote. The __stx_ prefix marks it as pre-evaluated.
       const serialized = JSON.stringify(value)
+
+      // `JSON.stringify` returns the VALUE `undefined` — not a string — for
+      // undefined, functions and symbols. `Buffer.from(undefined)` then threw,
+      // the catch below kept the original `:prop="expr"`, and that raw binding
+      // travelled all the way to the browser as a client-reactive prop
+      // referencing a loop variable which exists only on the server. stx's own
+      // hydration invariant caught it there and logged "expression(s) never
+      // evaluated" on every page load, once per absent prop, forever.
+      //
+      // Two different things produce `undefined` here and they must not be
+      // conflated. `item.label` on an item with no label EVALUATED, and the
+      // answer is "no value" — dropping the attribute is exactly right, since a
+      // prop that is not provided is what `$props.x ?? fallback` expects.
+      // `unknownVar.property` did NOT evaluate: the safe evaluator returns
+      // undefined for a name it has no binding for rather than throwing, and
+      // that binding has to survive for a later pass to resolve.
+      //
+      // Free identifiers tell them apart. Every name the expression reads from
+      // its scope is either in this iteration's context or it is not.
+      if (serialized === undefined) {
+        const unresolved = freeIdentifiers(expression).some(name => !(name in context))
+        if (!unresolved)
+          return ''
+        return match
+      }
+
       const encoded = Buffer.from(serialized, 'utf8').toString('base64')
 
       return `__stx_${propName}="${encoded}"`
