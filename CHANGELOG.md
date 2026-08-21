@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.200...v0.2.201)
+
+## 🐛 Bug Fixes
+
+- **desktop**: opening a window stops meaning waiting for it to close ([c38d0d7](https://github.com/stacksjs/stx/commit/c38d0d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.201 ([55488bf](https://github.com/stacksjs/stx/commit/55488bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.199...v0.2.200)
 
 ## 🐛 Bug Fixes
