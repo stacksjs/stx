@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.212...v0.2.213)
+
+## 🐛 Bug Fixes
+
+- **sidebar**: the wash is linear, and a fifth of its strength was wallpaper ([dac6d2d](https://github.com/stacksjs/stx/commit/dac6d2d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.213 ([f4e31f8](https://github.com/stacksjs/stx/commit/f4e31f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.211...v0.2.212)
 
 ## 🐛 Bug Fixes
