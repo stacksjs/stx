@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.210...v0.2.211)
+
+## 🐛 Bug Fixes
+
+- **components**: a property name is not a variable ([7b0fa27](https://github.com/stacksjs/stx/commit/7b0fa27)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.211 ([0df6724](https://github.com/stacksjs/stx/commit/0df6724)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.209...v0.2.210)
 
 ## 🐛 Bug Fixes
