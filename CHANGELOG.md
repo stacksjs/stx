@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.206...v0.2.207)
+
+## 🐛 Bug Fixes
+
+- **sidebar**: the space wash follows Dia's curve, not a straight line ([0ddad35](https://github.com/stacksjs/stx/commit/0ddad35)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.207 ([316f1ae](https://github.com/stacksjs/stx/commit/316f1ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.205...v0.2.206)
 
 ## 🐛 Bug Fixes
