@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.208...v0.2.209)
+
+## 🐛 Bug Fixes
+
+- **sidebar**: a section reports a real aria-expanded, not a template string ([31fa059](https://github.com/stacksjs/stx/commit/31fa059)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.209 ([4696f49](https://github.com/stacksjs/stx/commit/4696f49)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.207...v0.2.208)
 
 ## 🐛 Bug Fixes
