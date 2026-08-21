@@ -62,9 +62,9 @@ describe('prefixing is idempotent', () => {
     })
 
     expect(config.root).toBe('resources')
-    expect(config.partialsDir).toBe('resources/partials')
-    expect(config.componentsDir).toBe('resources/components')
-    expect(config.layoutsDir).toBe('resources/layouts')
+    expect(config.partialsDir).toBe(path.join(dir, 'resources/partials'))
+    expect(config.componentsDir).toBe(path.join(dir, 'resources/components'))
+    expect(config.layoutsDir).toBe(path.join(dir, 'resources/layouts'))
   })
 
   it('still prefixes a value that does not', () => {
@@ -73,7 +73,7 @@ describe('prefixing is idempotent', () => {
 
     const config = resolve({ componentsDir: 'components' })
 
-    expect(config.componentsDir).toBe(path.join('resources', 'components'))
+    expect(config.componentsDir).toBe(path.join(dir, 'resources', 'components'))
   })
 
   it('leaves absolute values alone', () => {
@@ -101,7 +101,65 @@ describe('prefixing is idempotent', () => {
 
     const config = resolve({ root: '.', componentsDir: 'resources/components' })
 
-    expect(config.componentsDir).toBe('resources/components')
+    expect(config.componentsDir).toBe(path.join(dir, 'resources/components'))
+  })
+})
+
+describe('a relative directory is anchored to the config, not to the cwd', () => {
+  // The whole point: this test file runs from the repo root, and every fixture
+  // lives in a fresh tmpdir. Before the anchor, `componentsDir: 'kit'` resolved
+  // under the repo root and every assertion below was off by a whole project.
+  it('resolves against the directory the config was loaded from', () => {
+    fs.mkdirSync(path.join(dir, 'kit'), { recursive: true })
+
+    const config = resolve({ componentsDir: 'kit' })
+
+    expect(config.componentsDir).toBe(path.join(dir, 'kit'))
+    expect(path.isAbsolute(config.componentsDir as string)).toBe(true)
+  })
+
+  it('does not depend on process.cwd()', () => {
+    // Same config object, two different config directories: the results have to
+    // differ by exactly the config directory, and neither may mention the cwd.
+    const other = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-single-res-b-'))
+    try {
+      const a = resolveStxDirectories({ componentsDir: 'kit' } as StxConfig, dir)
+      const b = resolveStxDirectories({ componentsDir: 'kit' } as StxConfig, other)
+
+      expect(a.componentsDir).toBe(path.join(dir, 'kit'))
+      expect(b.componentsDir).toBe(path.join(other, 'kit'))
+      expect(a.componentsDir).not.toBe(process.cwd())
+      expect(a.componentsDir).not.toBe(path.join(process.cwd(), 'kit'))
+    }
+    finally {
+      fs.rmSync(other, { recursive: true, force: true })
+    }
+  })
+
+  it('anchors all three directory keys, not just components', () => {
+    const config = resolve({ componentsDir: 'kit', layoutsDir: 'shells', partialsDir: 'bits' })
+
+    expect(config.componentsDir).toBe(path.join(dir, 'kit'))
+    expect(config.layoutsDir).toBe(path.join(dir, 'shells'))
+    expect(config.partialsDir).toBe(path.join(dir, 'bits'))
+  })
+
+  it('anchors the defaults too, so an empty config still points at its project', () => {
+    // A project with no directory keys at all is the common case, and it was
+    // just as broken: 'components' resolved under whatever cwd was current.
+    const config = resolve({ componentsDir: 'components' })
+
+    expect(config.componentsDir).toBe(path.join(dir, 'components'))
+  })
+
+  it('is still idempotent once absolute', () => {
+    const config = resolve({ componentsDir: 'kit' })
+    const once = config.componentsDir
+
+    resolveStxDirectories(config, dir)
+    resolveStxDirectories(config, dir)
+
+    expect(config.componentsDir).toBe(once as string)
   })
 })
 
@@ -117,7 +175,7 @@ describe('both loaders agree', () => {
 
     expect(viaLoaderA.partialsDir).toBe(viaLoaderB.partialsDir as string)
     expect(viaLoaderA.componentsDir).toBe(viaLoaderB.componentsDir as string)
-    expect(viaLoaderA.partialsDir).toBe('resources/partials')
+    expect(viaLoaderA.partialsDir).toBe(path.join(dir, 'resources/partials'))
   })
 })
 

@@ -2249,11 +2249,21 @@ export async function webComponentDirectiveHandler(
 
   // Try to find the component file
   const componentsDir = options.componentsDir || 'components'
-  const possiblePaths = [
-    path.join(path.dirname(filePath), componentsDir, `${tagName}.stx`),
-    path.join(process.cwd(), componentsDir, `${tagName}.stx`),
-    path.join(path.dirname(filePath), `${tagName}.stx`),
-  ]
+  // `componentsDir` arrives absolute from a loaded config (resolveStxDirectories
+  // anchors it to the config's own directory), and relative only when a caller
+  // hand-built the options. Joining an absolute value onto a base would splice
+  // the two into a path that exists nowhere, so an absolute value is used as-is
+  // and the two base-relative candidates collapse to one.
+  const possiblePaths = path.isAbsolute(componentsDir)
+    ? [
+        path.join(componentsDir, `${tagName}.stx`),
+        path.join(path.dirname(filePath), `${tagName}.stx`),
+      ]
+    : [
+        path.join(path.dirname(filePath), componentsDir, `${tagName}.stx`),
+        path.join(process.cwd(), componentsDir, `${tagName}.stx`),
+        path.join(path.dirname(filePath), `${tagName}.stx`),
+      ]
 
   let componentSource: string | null = null
   for (const componentPath of possiblePaths) {

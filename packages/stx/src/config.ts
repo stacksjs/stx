@@ -438,6 +438,24 @@ function resolveStxRoot(configRoot?: string, configPagesDir?: string, cwd?: stri
 /** Roots already announced, so `stx dev` does not repeat itself per reload. */
 const announcedRoots = new Set<string>()
 
+/** The directory keys resolved relative to `root` and to the config's own file. */
+const DIR_KEYS = ['partialsDir', 'componentsDir', 'layoutsDir'] as const
+
+type DirKey = (typeof DIR_KEYS)[number]
+
+/**
+ * The literal directory strings a config was written with, before
+ * `resolveStxDirectories` prefixed and absolutized them.
+ *
+ * Kept in a WeakMap rather than on the config object: this is a diagnostic,
+ * `warnMissingDirs` is its only reader, and a config that gets serialized or
+ * spread should not carry it. Naming the value the author actually typed is
+ * what turns "that path does not exist" into a pointer at the line to change —
+ * an absolute path alone does not say whether `root` prefixing or the config's
+ * own directory is what moved it.
+ */
+const rawDirValues = new WeakMap<StxConfig, Partial<Record<DirKey, string>>>()
+
 /**
  * True when `value` already sits under `root`, so prefixing it again would
  * double the path.
@@ -466,9 +484,21 @@ function alreadyUnderRoot(value: string, root: string): boolean {
  * anyone opting into anything (#1851).
  *
  * Prefixing is idempotent: a value that already starts with `root` is left
- * alone. Directory strings stay project-root-relative rather than becoming
- * absolute — see the note in the issue thread; that contract change is
- * separable from this correctness fix.
+ * alone.
+ *
+ * The three directory keys then become ABSOLUTE, resolved against `cwd` — the
+ * directory the config was loaded from. They used to stay relative, and every
+ * consumer that needed a real path reached for `path.resolve(process.cwd(), …)`
+ * to get one, so `componentsDir: 'kit'` meant the right directory only when the
+ * process happened to be launched from the config's own directory. Run the same
+ * project from anywhere else — `stx serve ./app` from a parent, a programmatic
+ * `serve({ configDir })`, a test runner — and every component tag failed the
+ * silent way `warnMissingDirs` describes below. Resolving here, once, is what
+ * makes a relative key mean the same directory from every cwd.
+ *
+ * Absolutizing is likewise idempotent, and safe for the consumers that combine
+ * these values with a base: they all either pass the value to `path.resolve`
+ * (absolute wins) or use it as the base of a `path.join` (unaffected).
  */
 export function resolveStxDirectories(loaded: StxConfig, cwd: string): StxConfig {
   const inferred = !loaded.root
@@ -489,9 +519,22 @@ export function resolveStxDirectories(loaded: StxConfig, cwd: string): StxConfig
     }
   }
 
+  // Record what the author typed before either transform runs, so the
+  // "does not exist" warning can still name the config line. First pass wins:
+  // a second call sees values this one already made absolute.
+  if (!rawDirValues.has(loaded)) {
+    const raw: Partial<Record<DirKey, string>> = {}
+    for (const key of DIR_KEYS) {
+      const value = loaded[key]
+      if (typeof value === 'string' && value)
+        raw[key] = value
+    }
+    rawDirValues.set(loaded, raw)
+  }
+
   if (loaded.root && loaded.root !== '.') {
     const rootPrefix = loaded.root
-    for (const key of ['partialsDir', 'componentsDir', 'layoutsDir'] as const) {
+    for (const key of DIR_KEYS) {
       const value = loaded[key]
       if (typeof value !== 'string' || !value)
         continue
@@ -499,6 +542,15 @@ export function resolveStxDirectories(loaded: StxConfig, cwd: string): StxConfig
         continue
       loaded[key] = path.join(rootPrefix, value)
     }
+  }
+
+  // Anchor to the config's own directory. `root` positions a key within the
+  // project; this is what says which project.
+  for (const key of DIR_KEYS) {
+    const value = loaded[key]
+    if (typeof value !== 'string' || !value || path.isAbsolute(value))
+      continue
+    loaded[key] = path.resolve(cwd, value)
   }
 
   return loaded
@@ -518,21 +570,52 @@ export function resolveStxDirectories(loaded: StxConfig, cwd: string): StxConfig
  * misdescribes the cause sends people to the wrong line.
  */
 function warnMissingDirs(loaded: StxConfig, cwd: string): void {
-  const keys: Array<keyof StxConfig> = ['componentsDir', 'layoutsDir', 'partialsDir']
-  for (const key of keys) {
+  const raw = rawDirValues.get(loaded)
+  for (const key of DIR_KEYS) {
     const value = loaded[key]
     if (typeof value !== 'string' || !value)
       continue
     const abs = path.isAbsolute(value) ? value : path.join(cwd, value)
     if (fs.existsSync(abs))
       continue
+    // `value` is absolute by now, so quoting it as "configured as" would echo
+    // the resolved path back at someone looking for the line they wrote.
+    const configured = raw?.[key] ?? value
     const root = loaded.root
     const underRoot = !!root && root !== '.'
     console.warn(
-      `[stx] ${String(key)} resolves to "${abs}", which does not exist. Configured as "${value}"`
+      `[stx] ${String(key)} resolves to "${abs}", which does not exist. Configured as "${configured}"`
       + (underRoot ? `, resolved under root "${root}".` : '.'),
     )
   }
+}
+
+/**
+ * Give this config its own copies of the containers `setup()` pushes into.
+ *
+ * bunfig merges shallowly, so an array the project never overrode is the SAME
+ * object as `defaultConfig`'s — and plugin registration below pushes
+ * directives, middleware and API routes straight into it. Every later
+ * `loadStxConfig` for a DIFFERENT project then starts with them already
+ * present: load an app that registers an `@auth` directive, and the next app
+ * in the same process has `@auth` too. The leak is order-dependent, which is
+ * why it surfaces as a test that passes only when another test ran first, and
+ * as a `stx build` that behaves differently from `stx build` in a fresh shell.
+ *
+ * Copying also protects a config module's own exported arrays: bunfig imports
+ * the module once, so without this a re-load would push a second copy of every
+ * plugin's directives onto the array the user wrote.
+ *
+ * Only rewritten when already present — `setup()` creates them on demand, and
+ * an absent key is meaningfully different from an empty one to some consumers.
+ */
+function detachMutableContainers(loaded: StxConfig): void {
+  if (loaded.customDirectives)
+    loaded.customDirectives = [...loaded.customDirectives]
+  if (loaded.middleware)
+    loaded.middleware = [...loaded.middleware]
+  if (loaded.apiRoutes)
+    loaded.apiRoutes = { ...loaded.apiRoutes }
 }
 
 /**
@@ -596,6 +679,8 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
     })
     const loaded = configResult.config
 
+    detachMutableContainers(loaded)
+
     applyStateDir(loaded)
 
     resolveStxDirectories(loaded, effectiveCwd)
@@ -629,8 +714,22 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
 
           const plugin = pluginModule.default || pluginModule
 
-          // Register with plugin manager
-          pluginManager.register(plugin, loaded)
+          // Register with the plugin manager, but only once per process.
+          //
+          // The manager is process-global and keyed by plugin NAME, while this
+          // function runs once per project directory — so a process that loads
+          // two apps depending on the same plugin used to hit "already
+          // registered" on the second. That threw from an un-awaited async
+          // call, so it escaped the catch below as an unhandled rejection AND
+          // skipped everything after it: the second app silently lost the
+          // plugin's components, pages and setup() contributions, purely
+          // because of load order.
+          //
+          // Registration is the process-wide half (lifecycle hooks, sorting)
+          // and is genuinely once. Everything below is the per-config half and
+          // has to run for every project that lists the plugin.
+          if (!pluginManager.has(plugin.name))
+            await pluginManager.register(plugin, loaded)
 
           // Collect resource directories (resolved relative to plugin package)
           if (plugin.components) {
