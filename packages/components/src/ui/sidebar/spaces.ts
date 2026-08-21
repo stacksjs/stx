@@ -155,20 +155,31 @@ function mix(color: string, percent: number, into: string): string {
  * Build a full light/dark palette from one seed color.
  *
  * The percentages are the tuning surface of the whole feature, so they are
- * worth stating plainly. In light appearance the panel stays *pale* — 16% and
- * 34% of the seed — because Arc's spaces are washes, not fills; anything
- * stronger and the white selection cards stop reading as raised. The ink is
- * the seed pulled almost to black (22% seed) so text keeps a hint of the
- * space's hue without losing contrast. In dark appearance the relationship
+ * worth stating plainly. In light appearance the panel stays *pale* — 34%
+ * falling to 16% of the seed — because Arc's spaces are washes, not fills;
+ * anything stronger and the white selection cards stop reading as raised. The
+ * ink is the seed pulled almost to black (22% seed) so text keeps a hint of
+ * the space's hue without losing contrast. In dark appearance the relationship
  * inverts: the seed is mixed *into* near-black for the panel and *into* white
  * for the ink and accent, which keeps a dark space recognizably the same color
  * as its light counterpart rather than a different one.
+ *
+ * `from` is the TOP of the panel and carries the most seed; the wash fades
+ * downward. Both appearances agree on that, which is the point — they used to
+ * disagree. The light palette ran 16% at the top to 34% at the bottom while
+ * dark ran 26% down to 14%, so the same space put its colour at opposite ends
+ * of the panel depending on the system appearance, and a design checked in one
+ * mode was wrong in the other.
+ *
+ * Sampled from Dia's sidebar at @2x for the direction and rough ratio: the
+ * panel reads #caded6 near the top and #eaf4f4 near the bottom, i.e. about
+ * three times as far from white at the top as at the bottom.
  */
 export function deriveSpaceTint(seed: string): SidebarSpaceTint {
   return {
     light: {
-      from: mix(seed, 16, '#ffffff'),
-      to: mix(seed, 34, '#ffffff'),
+      from: mix(seed, 34, '#ffffff'),
+      to: mix(seed, 16, '#ffffff'),
       ink: mix(seed, 22, '#17171b'),
       accent: mix(seed, 88, '#2a2a30'),
     },
