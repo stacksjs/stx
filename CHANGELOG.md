@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.207...v0.2.208)
+
+## 🐛 Bug Fixes
+
+- **sidebar**: a standalone space paints the same wash as a nested one ([55ff0de](https://github.com/stacksjs/stx/commit/55ff0de)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.208 ([3a4c559](https://github.com/stacksjs/stx/commit/3a4c559)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.206...v0.2.207)
 
 ## 🐛 Bug Fixes
