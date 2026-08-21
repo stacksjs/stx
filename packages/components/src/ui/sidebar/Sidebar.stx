@@ -638,14 +638,14 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
      lightest at the very top, darkest around a third of the way down, then
      lightening again — a bulge rather than a fade.
 
-     The stops are not evenly spaced, and that is the point. A two-stop
-     gradient fades linearly; Dia's panel reaches half strength 35% of the way
-     down and has flattened onto its final value by 85%. `35%` is a colour
-     interpolation hint, which exists to say where a transition's midpoint
-     falls, and the last stop sits at 85% so the bottom sixth holds steady.
-     See `spaceWash` in `spaces.ts` for the measurement these come from — and
-     keep the two in step, which `sidebar-space-tint.test.ts` enforces. */
-  background: linear-gradient(180deg, var(--stx-space-from) 0%, 35%, var(--stx-space-to) 85%);
+     Two stops, evenly interpolated. An eased version shipped briefly — a
+     colour hint at 35% with the final stop at 85% — fitted to a capture of Dia
+     whose bottom third was contaminated by another window behind its
+     translucent panel. Four clean captures agree the wash is linear: half
+     strength at 50.2% of the way down, mean deviation from a straight line
+     0.018. See `spaceWashGradient` in `spaces.ts`, which this must match and
+     which `sidebar-space-tint.test.ts` enforces. */
+  background: linear-gradient(180deg, var(--stx-space-from) 0%, var(--stx-space-to) 100%);
   color: var(--stx-space-ink);
   /* Width is listed here because this rule outranks the pane's
      `transition-[width]` utility class and would otherwise drop it. */
@@ -670,7 +670,7 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
        before the light palette was flipped to agree with it. The two
        appearances share the wash shape for the same reason they share its
        strength — a space that fades differently by appearance is two designs. */
-    background: linear-gradient(180deg, var(--stx-space-from) 0%, 35%, var(--stx-space-to) 85%);
+    background: linear-gradient(180deg, var(--stx-space-from) 0%, var(--stx-space-to) 100%);
   }
 }
 

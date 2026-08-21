@@ -14,7 +14,7 @@
 import { describe, expect, it } from 'bun:test'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { deriveSpaceTint, normalizeSpace, resolveSpaceTint, spaceTintVars, spaceWash, spaceWashGradient } from '../src/ui/sidebar/spaces'
+import { deriveSpaceTint, normalizeSpace, resolveSpaceTint, spaceTintVars, spaceWashGradient } from '../src/ui/sidebar/spaces'
 
 /** The seed percentage out of a `color-mix(in oklab, SEED N%, INTO)` string. */
 function seedPercent(value: string): number {
@@ -44,14 +44,19 @@ describe('deriveSpaceTint: the colour sits at the top', () => {
   })
 
   it('matches the strength sampled from Dia', () => {
-    // Dia's panel sits ~43 from white at the top and ~15 at the bottom,
-    // averaged over RGB. A mix into white tracks its percentage almost
-    // one-to-one, so those readings ARE the percentages. The previous 34/16
-    // was visibly paler than the thing it imitated.
+    // Dia's panel sits 35.1 from white at the top and 12.5 at the bottom,
+    // averaged over RGB across a band of clean columns. A mix into white
+    // tracks its percentage almost one-to-one, so those readings ARE the
+    // percentages.
+    //
+    // Five captures, four agreeing to the digit. The fifth had another window
+    // behind Dia's translucent panel and read 38.2/18.5 — measure once and you
+    // can measure the wallpaper. An earlier pass set 44/15 from that outlier.
     const tint = deriveSpaceTint('#34c759')
-    expect(seedPercent(tint.light.from)).toBeGreaterThanOrEqual(40)
-    expect(seedPercent(tint.light.from)).toBeLessThanOrEqual(48)
-    expect(seedPercent(tint.light.to)).toBeLessThanOrEqual(18)
+    expect(seedPercent(tint.light.from)).toBeGreaterThanOrEqual(33)
+    expect(seedPercent(tint.light.from)).toBeLessThanOrEqual(38)
+    expect(seedPercent(tint.light.to)).toBeGreaterThanOrEqual(11)
+    expect(seedPercent(tint.light.to)).toBeLessThanOrEqual(14)
   })
 
   it('holds the top-to-bottom ratio Dia holds', () => {
@@ -60,7 +65,7 @@ describe('deriveSpaceTint: the colour sits at the top', () => {
     const tint = deriveSpaceTint('#34c759')
     const ratio = seedPercent(tint.light.from) / seedPercent(tint.light.to)
     expect(ratio).toBeGreaterThan(2.5)
-    expect(ratio).toBeLessThan(3.4)
+    expect(ratio).toBeLessThan(3.2)
   })
 
   it('keeps both appearances in step when the strength moves', () => {
@@ -161,81 +166,38 @@ describe('the panel is painted as one fade, not a bulge', () => {
 })
 
 /**
- * The SHAPE of the wash down the panel, as opposed to its strength.
+ * The SHAPE of the wash down the panel.
  *
- * Sampled from Dia at @2x down a column with no rows, tiles or switcher on it
- * (x=748 of the reference capture, the full panel height), then normalised to
- * 1 at the top and 0 at the bottom. One reading is dropped: t=0.45 breaks
- * monotonicity by +0.14 where its neighbours are smooth, so it is a divider or
- * the switcher rather than the wash.
+ * Measured from Dia at 2x, averaged across a band of clean columns and
+ * avoiding the panel's own edges. Four captures agree that the wash is linear:
+ * half strength falls at 50.2% of the way down, and the mean deviation from a
+ * straight line is 0.018 in normalised units.
+ *
+ * A fifth capture — taken with another window behind Dia's translucent panel —
+ * put half strength at 36.6%, deviated from linear by 0.140 on average, and
+ * was NON-MONOTONIC near the bottom, which a gradient cannot be. An eased
+ * gradient was briefly shipped on the strength of that one reading.
  */
-const DIA_CURVE: Array<[number, number]> = [
-  [0.00, 1.000], [0.05, 0.887], [0.10, 0.790], [0.15, 0.774], [0.20, 0.694],
-  [0.25, 0.597], [0.30, 0.548], [0.35, 0.532], [0.40, 0.452], [0.50, 0.323],
-  [0.55, 0.274], [0.60, 0.258], [0.65, 0.161], [0.70, 0.129], [0.75, 0.097],
-  [0.80, 0.000], [0.85, 0.000], [0.90, 0.000], [1.00, 0.000],
-]
-
-/**
- * A CSS colour interpolation hint, evaluated the way the spec defines it: the
- * transition's progress is raised to a power chosen so the midpoint lands on
- * the hint. Returns remaining strength, 1 down to 0.
- */
-function washAt(t: number, hint = spaceWash.hint / 100, end = spaceWash.end / 100): number {
-  if (t >= end)
-    return 0
-  const exponent = Math.log(0.5) / Math.log(hint / end)
-  return 1 - (t / end) ** exponent
-}
-
-function rmsAgainstDia(fit: (t: number) => number): number {
-  const total = DIA_CURVE.reduce((sum, [t, n]) => sum + (fit(t) - n) ** 2, 0)
-  return Math.sqrt(total / DIA_CURVE.length)
-}
-
-describe('the wash follows Dia\'s curve, not a straight line', () => {
-  it('reaches half strength well before halfway down', () => {
-    // The single most visible departure: Dia is at half strength at 35%, where
-    // a two-stop gradient is still at 65%.
-    expect(washAt(spaceWash.hint / 100)).toBeCloseTo(0.5, 2)
-    expect(spaceWash.hint).toBeLessThan(45)
+describe('the wash is a straight line, and the tests know why', () => {
+  it('emits exactly two stops', () => {
+    const gradient = spaceWashGradient('A', 'B')
+    expect(gradient).toBe('linear-gradient(180deg, A 0%, B 100%)')
   })
 
-  it('has flattened onto its final value before the bottom', () => {
-    expect(washAt(spaceWash.end / 100)).toBe(0)
-    expect(washAt(0.95)).toBe(0)
-    expect(spaceWash.end).toBeLessThan(100)
+  it('carries no interpolation hint', () => {
+    // A bare percentage between two colours is a CSS colour hint, which moves
+    // the midpoint. Dia's midpoint is where a straight line puts it.
+    expect(spaceWashGradient('A', 'B')).not.toMatch(/,\s*\d+%\s*,/)
   })
 
-  it('fits Dia far better than a straight line does', () => {
-    const eased = rmsAgainstDia(t => washAt(t))
-    const linear = rmsAgainstDia(t => 1 - t)
-    expect(eased).toBeLessThan(0.05)
-    expect(eased).toBeLessThan(linear / 4)
-  })
-
-  it('never departs from Dia by more than a hair', () => {
-    const worst = Math.max(...DIA_CURVE.map(([t, n]) => Math.abs(washAt(t) - n)))
-    // 0.06 of a span that is ~21 8-bit steps wide is about one step.
-    expect(worst).toBeLessThan(0.06)
-  })
-
-  it('stays monotonic, so the panel still reads as one fade', () => {
-    let previous = Number.POSITIVE_INFINITY
-    for (let t = 0; t <= 1.0001; t += 0.02) {
-      const value = washAt(t)
-      expect(value).toBeLessThanOrEqual(previous + 1e-9)
-      previous = value
-    }
+  it('runs the fade to the final stop', () => {
+    // The eased version ended at 85%, holding the bottom sixth flat. Dia's
+    // fades to its last pixel.
+    expect(spaceWashGradient('A', 'B')).toContain('B 100%')
   })
 })
 
 describe('spaceWashGradient', () => {
-  it('places the hint and the flattening stop where the constants say', () => {
-    expect(spaceWashGradient('red', 'blue'))
-      .toBe(`linear-gradient(180deg, red 0%, ${spaceWash.hint}%, blue ${spaceWash.end}%)`)
-  })
-
   it('matches every copy of the CSS the components paint with', () => {
     // The helper exists so a consumer painting the same surface draws the same
     // curve. If a component's own CSS drifts from it, that promise is void.

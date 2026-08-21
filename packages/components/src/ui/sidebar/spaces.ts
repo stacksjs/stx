@@ -173,24 +173,25 @@ function mix(color: string, percent: number, into: string): string {
  * Build a full light/dark palette from one seed color.
  *
  * The percentages are the tuning surface of the whole feature, so they are
- * worth stating plainly, and they are measured rather than guessed. Sampling
- * Dia's sidebar at @2x, clear of its tiles and rows, the panel reads:
+ * worth stating plainly, and they are measured rather than guessed — with one
+ * caveat that took several captures to learn. Dia's sidebar is a translucent
+ * macOS material, so a screenshot reads the composite of its tint and whatever
+ * sits behind the window, not the tint itself. Sample it once and you can
+ * measure the wallpaper.
  *
- *   near the top     #c9ddd5   — 43 from white, averaged over RGB
- *   a third down     #cee0da   — 39
- *   two thirds down  #e2f1ed   — 20
- *   near the bottom  #e9f4f4   — 15
+ * Five captures settle it. Four agree to the digit — 35.1 from white at the
+ * top, 12.5 at the bottom, averaged over RGB across a band of clean columns —
+ * and one, taken with another window behind Dia, reads 38.2/18.5 and is
+ * non-monotonic near the bottom, which a gradient cannot be. The four are the
+ * measurement; the outlier is the wallpaper showing through.
  *
  * For a mix into white the distance from white tracks the percentage almost
- * one-to-one, so those readings are the percentages: 44% at the top falling to
- * 15% at the bottom, a ratio of ~2.9 against Dia's measured 2.95.
+ * one-to-one, so those readings are the percentages: 35% at the top falling to
+ * 12.5% at the bottom, a ratio of 2.8 against Dia's measured 2.81.
  *
- * This is deliberately stronger than the 34%/16% it replaced, which produced a
- * visibly paler panel than the thing it was imitating — 34 from white at the
- * top where Dia is 43, and a ratio of 2.0 where Dia is 2.9, so it was both too
- * faint and too flat. The old note claimed anything stronger would stop the
- * white selection cards reading as raised; Dia disproves that at 43, and the
- * cards still read here (see the contrast assertion in the tests).
+ * A previous pass set 44%/15% from the outlier capture, which made the panel
+ * about a fifth stronger than the thing it imitates. The ratio was right then
+ * and is right now; only the magnitude moved.
  *
  * The ink is the seed pulled almost to black (22% seed) so text keeps a hint of
  * the space's hue without losing contrast. In dark appearance the relationship
@@ -209,14 +210,14 @@ function mix(color: string, percent: number, into: string): string {
 export function deriveSpaceTint(seed: string): SidebarSpaceTint {
   return {
     light: {
-      from: mix(seed, 44, '#ffffff'),
-      to: mix(seed, 15, '#ffffff'),
+      from: mix(seed, 35, '#ffffff'),
+      to: mix(seed, 12.5, '#ffffff'),
       ink: mix(seed, 22, '#17171b'),
       accent: mix(seed, 88, '#2a2a30'),
     },
     dark: {
-      from: mix(seed, 34, '#101014'),
-      to: mix(seed, 12, '#08080b'),
+      from: mix(seed, 27, '#101014'),
+      to: mix(seed, 10, '#08080b'),
       ink: mix(seed, 12, '#f4f4f7'),
       accent: mix(seed, 74, '#ffffff'),
     },
@@ -224,39 +225,24 @@ export function deriveSpaceTint(seed: string): SidebarSpaceTint {
 }
 
 /**
- * The shape of the wash down the panel, as opposed to its strength.
- *
- * A plain two-stop gradient fades linearly, and Dia's does not. Sampling its
- * panel down a clean column (no rows, no tiles) and normalising the result to
- * 1 at the top and 0 at the bottom, the wash reaches half strength at 35% of
- * the way down — not 50% — and has flattened onto its final value by 85%,
- * holding it through the last sixth.
- *
- * Both facts are expressible as ordinary gradient syntax. `hint` is a CSS
- * colour interpolation hint, whose whole purpose is to say where the midpoint
- * of a transition falls; `end` is simply where the final stop sits, after
- * which the colour is constant.
- *
- * Fitted against 19 sampled points, this halves the mid-panel error nearly
- * seven times over: RMS 0.020 in normalised units against a straight line's
- * 0.137, worst case 0.046 — about one 8-bit step on the span being measured.
- */
-export const spaceWash = {
-  /** Where the wash reaches half strength, in percent down the panel. */
-  hint: 35,
-  /** Where it flattens onto its final value, in percent. */
-  end: 85,
-} as const
-
-/**
  * Build the panel gradient from two colour values.
  *
+ * Two stops and nothing else: the wash is linear. That is worth stating,
+ * because a previous pass shipped an eased version — a colour interpolation
+ * hint at 35% and a final stop at 85% — fitted to a capture of Dia whose
+ * bottom third was contaminated by another window behind its translucent
+ * panel. That capture put half strength at 37% of the way down and appeared to
+ * flatten near the bottom. Four uncontaminated captures agree instead that
+ * half strength falls at 50.2% and the fade runs all the way to the last
+ * pixel: mean deviation from a straight line is 0.018, and the one outlier's
+ * was 0.140.
+ *
  * Exported so anything painting the same surface — a window behind a floating
- * card, say — draws the identical curve rather than approximating it with a
+ * card, say — draws the identical wash rather than approximating it with a
  * second set of stops that drifts the first time either is tuned.
  */
 export function spaceWashGradient(from: string, to: string): string {
-  return `linear-gradient(180deg, ${from} 0%, ${spaceWash.hint}%, ${to} ${spaceWash.end}%)`
+  return `linear-gradient(180deg, ${from} 0%, ${to} 100%)`
 }
 
 /**
