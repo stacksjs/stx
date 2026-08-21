@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.215...v0.2.216)
+
+## 🐛 Bug Fixes
+
+- **sidebar**: centre the reserved header row on the platform's controls ([467ce9d](https://github.com/stacksjs/stx/commit/467ce9d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.216 ([ab217e1](https://github.com/stacksjs/stx/commit/ab217e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.214...v0.2.215)
 
 ## 🐛 Bug Fixes
