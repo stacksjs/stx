@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.213...v0.2.214)
+
+## ✨ Features
+
+- **sidebar**: a header can leave the window controls to the platform ([c2109aa](https://github.com/stacksjs/stx/commit/c2109aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.214 ([ac51cdd](https://github.com/stacksjs/stx/commit/ac51cdd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.212...v0.2.213)
 
 ## 🐛 Bug Fixes
