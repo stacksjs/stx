@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.202...v0.2.203)
+
+## ✨ Features
+
+- **sidebar**: a space can leave its title to the header ([7554b3b](https://github.com/stacksjs/stx/commit/7554b3b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.203 ([c5f1649](https://github.com/stacksjs/stx/commit/c5f1649)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.201...v0.2.202)
 
 ## ✨ Features
