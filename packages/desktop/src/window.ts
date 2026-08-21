@@ -138,7 +138,91 @@ const activeWindows = new Map<string, {
   app: any
   url: string
   options: WindowOptions
+  /** Host-side close subscribers — see `WindowInstance.onClosed`. */
+  closeListeners?: Set<() => void>
+  /** Set once the window has gone, so a late subscriber still fires. */
+  closed?: boolean
 }>()
+
+/**
+ * Announce that a window has gone away, exactly once.
+ *
+ * Called from both close paths — the user closing the window (the child
+ * process exits) and the app calling `close()` — so a host that shuts itself
+ * down on close behaves the same either way.
+ */
+function markWindowClosed(id: string): void {
+  const windowData = activeWindows.get(id)
+  if (!windowData || windowData.closed)
+    return
+
+  windowData.closed = true
+  for (const listener of windowData.closeListeners ?? []) {
+    try {
+      listener()
+    }
+    catch (e) {
+      // One bad subscriber must not stop the others, and must not throw out
+      // of a process-exit handler.
+      console.warn(`[stx/desktop] window ${id} close listener threw:`, e)
+    }
+  }
+  windowData.closeListeners?.clear()
+}
+
+/**
+ * How long a craft window gets to prove it started.
+ *
+ * `CraftApp.show()` returns ONE promise for two different events: it rejects
+ * if the process could not be started, and it resolves when the process
+ * exits. Nothing in its result distinguishes "the binary is missing" from
+ * "the user closed the window an hour later" — so the only thing that
+ * separates them is when it settles.
+ *
+ * A failure to launch settles almost immediately (an ENOENT arrives on the
+ * child's `error` event a tick or two after spawn). A window that actually
+ * opened cannot have been closed again within this window. 50ms is far below
+ * the threshold of noticing at app start and comfortably above the former.
+ */
+const LAUNCH_GRACE_MS = 50
+
+/**
+ * Start a craft-native app and wire its lifetime to the window entry.
+ *
+ * The promise is deliberately not awaited to completion. `show()` resolves
+ * when the child process EXITS, not when the window appears — so
+ * `await app.show()` did not mean "the window is open", it meant "the window
+ * has been closed again". Every caller that awaited it blocked for the entire
+ * life of the window: `createWindow` never returned a `WindowInstance` its
+ * caller could use, and `openDevWindow` logged "Native window opened" at the
+ * moment it stopped being open.
+ *
+ * Instead, only the launch is awaited (see `LAUNCH_GRACE_MS`), and the later
+ * settlement becomes the close signal `onClosed` needs.
+ *
+ * @throws whatever `show()` rejected with, when it failed to launch — callers
+ * catch this to fall back to spawning the binary directly.
+ */
+async function trackWindowLifetime(id: string, app: { show: () => Promise<unknown> }): Promise<void> {
+  const launch = app.show().then(
+    () => ({ failed: false as const }),
+    (error: unknown) => ({ failed: true as const, error }),
+  )
+
+  const early = await Promise.race([
+    launch,
+    new Promise<null>(resolve => setTimeout(() => resolve(null), LAUNCH_GRACE_MS)),
+  ])
+
+  // Settled within the grace period AND unhappy: it never started. Rethrow so
+  // the caller's existing fallback path runs.
+  if (early?.failed)
+    throw early.error
+
+  // Either still running, or it exited cleanly and instantly. Both mean the
+  // launch itself succeeded, so from here the settlement means "closed".
+  void launch.then(() => markWindowClosed(id))
+}
 
 /**
  * Get all active window IDs
@@ -194,9 +278,28 @@ function createWindowInstance(id: string, app: any): WindowInstance {
       const windowData = activeWindows.get(id)
       if (windowData?.app) {
         windowData.app.close()
+        // Announced BEFORE the entry is dropped, or there would be nothing
+        // left to read the subscriber list from.
+        markWindowClosed(id)
         activeWindows.delete(id)
         console.log(`[stx/desktop] Window ${id} closed`)
       }
+    },
+
+    onClosed: (callback: () => void) => {
+      const windowData = activeWindows.get(id)
+
+      // Already gone — either closed before this ran, or never registered.
+      // Fire on a microtask rather than synchronously so the caller always
+      // observes the same ordering regardless of when it subscribed.
+      if (!windowData || windowData.closed) {
+        queueMicrotask(callback)
+        return () => {}
+      }
+
+      windowData.closeListeners ??= new Set()
+      windowData.closeListeners.add(callback)
+      return () => windowData.closeListeners?.delete(callback)
     },
 
     focus: () => {
@@ -327,7 +430,7 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
     })
 
     activeWindows.set(id, { app, url, options })
-    await app.show()
+    await trackWindowLifetime(id, app)
 
     return createWindowInstance(id, app)
   }
@@ -345,6 +448,12 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
 
       const app = { close: () => child.kill() }
       activeWindows.set(id, { app, url, options })
+
+      // The child process ending is what "the user closed the window" looks
+      // like from out here. Without this the host never learns, and an app
+      // that started a server before opening its window keeps running with
+      // nothing on screen.
+      child.on('exit', () => markWindowClosed(id))
 
       return createWindowInstance(id, app)
     }
@@ -408,7 +517,7 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
 
     const id = `dev-window-${port}`
     activeWindows.set(id, { app, url, options })
-    await app.show()
+    await trackWindowLifetime(id, app)
     console.log(`✓ Native window opened at ${url}`)
     return true
   }
@@ -510,7 +619,7 @@ export async function createWindowWithHTML(html: string, options: WindowOptions 
     const id = `craft-window-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     activeWindows.set(id, { app, url: 'html-content', options })
 
-    await app.show()
+    await trackWindowLifetime(id, app)
 
     return createWindowInstance(id, app)
   }

@@ -262,6 +262,20 @@ export interface WindowInstance {
   loadURL: (url: string) => void
   /** Reload the window content */
   reload: () => void
+  /**
+   * Run a callback when the window has gone away, and return an unsubscribe.
+   *
+   * This is the *host* side of closing, and it is the only side that can see
+   * it. `windowEvents.onClose` runs inside the webview, on the far end of the
+   * bridge — by the time the window is gone there is nothing left to deliver
+   * an event to the process that spawned it. Without this hook an app that
+   * starts a server before opening its window has no way to learn that the
+   * window closed, so the process lingers with nothing on screen and no way
+   * to get it back.
+   *
+   * Fires once, whether the window was closed by the user or by `close()`.
+   */
+  onClosed: (callback: () => void) => () => void
 }
 
 /**
