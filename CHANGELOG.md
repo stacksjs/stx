@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.205...v0.2.206)
+
+## 🐛 Bug Fixes
+
+- **sidebar**: the space wash is as strong as the one it imitates ([92a1c74](https://github.com/stacksjs/stx/commit/92a1c74)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.206 ([5480ff8](https://github.com/stacksjs/stx/commit/5480ff8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.204...v0.2.205)
 
 ## 🐛 Bug Fixes
