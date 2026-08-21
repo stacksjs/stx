@@ -12,7 +12,7 @@
  * the top (#caded6) as near the bottom (#eaf4f4).
  */
 import { describe, expect, it } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { deriveSpaceTint, normalizeSpace, resolveSpaceTint, spaceTintVars, spaceWash, spaceWashGradient } from '../src/ui/sidebar/spaces'
 
@@ -236,19 +236,45 @@ describe('spaceWashGradient', () => {
       .toBe(`linear-gradient(180deg, red 0%, ${spaceWash.hint}%, blue ${spaceWash.end}%)`)
   })
 
-  it('matches the CSS the sidebar actually paints with', () => {
+  it('matches every copy of the CSS the components paint with', () => {
     // The helper exists so a consumer painting the same surface draws the same
-    // curve. If the component's own CSS drifts from it, that promise is void —
-    // which is exactly the drift this asserts against.
-    const source = readFileSync(join(import.meta.dir, '..', 'src', 'ui', 'sidebar', 'Sidebar.stx'), 'utf8')
+    // curve. If a component's own CSS drifts from it, that promise is void.
+    //
+    // Scanned across the whole directory rather than one file, because the
+    // rule genuinely exists twice: Sidebar.stx paints the pane, and
+    // SidebarSpaces.stx mirrors it for a space used standalone. Three
+    // corrections to the wash — direction, sheen, curve — landed only in the
+    // first, and the second kept painting an upside-down, bleached, linear
+    // version for months' worth of releases without a test noticing.
+    const dir = join(import.meta.dir, '..', 'src', 'ui', 'sidebar')
     const expected = spaceWashGradient('var(--stx-space-from)', 'var(--stx-space-to)')
 
-    const painted = [...source.matchAll(/background:\s*(linear-gradient\([^;]+)\);/g)]
-      .map(match => `${match[1]})`)
-      .filter(value => value.includes('--stx-space-from'))
+    const painted = readdirSync(dir)
+      .filter(name => name.endsWith('.stx'))
+      .flatMap((name) => {
+        const source = readFileSync(join(dir, name), 'utf8')
+        return [...source.matchAll(/background:\s*(linear-gradient\([^;]+)\);/g)]
+          .map(match => ({ file: name, value: `${match[1]})` }))
+          .filter(entry => entry.value.includes('--stx-space-from'))
+      })
 
-    expect(painted).toHaveLength(2)
-    for (const value of painted)
-      expect(value).toBe(expected)
+    // Two components, each with a light and a dark rule.
+    expect(painted).toHaveLength(4)
+    expect(new Set(painted.map(entry => entry.file)).size).toBe(2)
+
+    for (const entry of painted)
+      expect({ file: entry.file, value: entry.value }).toEqual({ file: entry.file, value: expected })
+  })
+
+  it('leaves no sheen layered over any of them', () => {
+    // The bleaching layer was removed from one file and left in the other.
+    const dir = join(import.meta.dir, '..', 'src', 'ui', 'sidebar')
+    for (const name of readdirSync(dir).filter(entry => entry.endsWith('.stx'))) {
+      const source = readFileSync(join(dir, name), 'utf8')
+      for (const match of source.matchAll(/background:\s*([^;]+);/g)) {
+        if (match[1].includes('--stx-space-from'))
+          expect({ file: name, hasSheen: match[1].includes('rgba(255, 255, 255') }).toEqual({ file: name, hasSheen: false })
+      }
+    }
   })
 })
