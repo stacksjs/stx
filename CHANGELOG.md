@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.209...v0.2.210)
+
+## 🐛 Bug Fixes
+
+- **sidebar**: arc metrics measured against Dia, at the right scale ([0520d93](https://github.com/stacksjs/stx/commit/0520d93)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.210 ([615eac7](https://github.com/stacksjs/stx/commit/615eac7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.208...v0.2.209)
 
 ## 🐛 Bug Fixes
