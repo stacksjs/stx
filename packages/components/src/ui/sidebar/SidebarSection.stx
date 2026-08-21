@@ -13,6 +13,22 @@ export const headerClasses = themeStyle.sectionHeader + (collapsible ? ' cursor-
 export const chevronClasses = themeStyle.sectionChevron
 export const groupClasses = themeStyle.sectionGroup
 
+// Precomputed rather than written as `{{ collapsed ? 'false' : 'true' }}` in
+// the attribute itself.
+//
+// That inline form is served VERBATIM when this component is rendered inside a
+// `<Sidebar>` — the marker reaches the browser unexpanded, so `data-expanded`
+// carries a template string the controller cannot read and `aria-expanded`
+// carries a value that is not `true` or `false`, which is an invalid ARIA
+// state rather than a cosmetic problem. Rendering `<SidebarSection>` directly
+// expands it correctly, and `{{ id }}` on the very same element expands in
+// both cases, so the fault is in how a nested component's attributes are
+// re-parsed, not in the expression.
+//
+// A bare identifier survives that path intact, and the component already
+// precomputes everything else it interpolates.
+export const expandedAttr = collapsed ? 'false' : 'true'
+
 // Components can't render themselves recursively, so the item tree is
 // flattened into ready-to-render rows here. Each row remembers its depth
 // and ancestor ids — the Sidebar controller uses those to collapse whole
@@ -45,11 +61,11 @@ export const rows = flatten(items)
 <section
   data-sidebar-section
   data-section-id="{{ id }}"
-  data-expanded="{{ collapsed ? 'false' : 'true' }}"
+  data-expanded="{{ expandedAttr }}"
 >
   @if(label)
     @if(collapsible)
-      <button type="button" data-sidebar-section-header class="{{ headerClasses }}" aria-expanded="{{ collapsed ? 'false' : 'true' }}">
+      <button type="button" data-sidebar-section-header class="{{ headerClasses }}" aria-expanded="{{ expandedAttr }}">
         <span class="truncate">{{ label }}</span>
         <span data-sidebar-section-chevron class="{{ chevronClasses }}" aria-hidden="true"></span>
       </button>
