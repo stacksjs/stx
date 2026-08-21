@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.203...v0.2.204)
+
+## 🐛 Bug Fixes
+
+- **config**: a relative directory key means the same directory from every cwd ([39fbcad](https://github.com/stacksjs/stx/commit/39fbcad)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1792](https://github.com/stacksjs/stx/issues/1792))
+
+## 🔧 Chores
+
+- release v0.2.204 ([e0a6fa1](https://github.com/stacksjs/stx/commit/e0a6fa1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.202...v0.2.203)
 
 ## ✨ Features
