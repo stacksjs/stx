@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.204...v0.2.205)
+
+## 🐛 Bug Fixes
+
+- **sidebar**: the space panel fades once instead of bulging ([27b2a90](https://github.com/stacksjs/stx/commit/27b2a90)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.205 ([eb86830](https://github.com/stacksjs/stx/commit/eb86830)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.203...v0.2.204)
 
 ## 🐛 Bug Fixes
