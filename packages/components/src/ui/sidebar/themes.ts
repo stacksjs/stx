@@ -276,7 +276,13 @@ const arc: SidebarTheme = {
       'dark:bg-[linear-gradient(180deg,var(--stx-sidebar-tint,rgba(255,255,255,0.05))_0%,rgba(255,255,255,0)_42%)]',
     ].join(' '),
   },
-  scrollArea: 'flex-1 overflow-y-auto overflow-x-hidden px-[8px] pb-[8px]',
+  // 16px, not 8. Measured against Dia at 2x: its panel is 229pt wide and its
+  // selected row 196pt, inset 16pt on each side. At 8px the rows run almost to
+  // the panel edge and read as bursting out of it, which was the largest
+  // remaining structural difference between this theme and the thing it is
+  // named after. `SidebarPinned` drops its own padding to compensate, so the
+  // favourites grid stays near full-bleed the way Dia's is.
+  scrollArea: 'flex-1 overflow-y-auto overflow-x-hidden px-[16px] pb-[8px]',
   // Text takes its color from the panel rather than declaring its own, and is
   // muted with opacity instead. On the plain warm panel `currentColor` is the
   // pane's own `#2c2a28`, so this renders identically to a hardcoded value —

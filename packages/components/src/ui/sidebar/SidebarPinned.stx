@@ -19,13 +19,25 @@ export const items = ($props.items || []).map(item => ({
 
 export const columns = $props.columns || 4
 
-// Tiles are translucent white so they pick up whichever space color sits
-// behind them, rather than fighting it with a fixed fill.
+// A tile separates itself from the panel by moving AWAY from it, which is not
+// the same as being lighter.
+//
+// Measured against Dia at 2x: on a pale panel its tiles sit about 9 units
+// DARKER than the surface behind them, and on a dark panel about 23 units
+// lighter. A white overlay does the right thing in dark appearance and the
+// wrong one in light, where it lifted the tile off a surface it is meant to be
+// recessed into. Each appearance now overlays the colour that increases the
+// separation, plus a hairline, which is what gives the well its edge.
+//
+// Height is 41px rather than 46: Dia's tiles measure 50pt wide by 41pt tall,
+// so they are slightly landscape, and 46 made them read as too square against
+// the row rhythm underneath.
 export const tileClasses = [
-  'grid h-[46px] place-items-center rounded-[10px]',
-  'bg-white/45 dark:bg-white/8',
+  'grid h-[41px] place-items-center rounded-[10px]',
+  'bg-black/[0.035] dark:bg-white/[0.09]',
+  'ring-1 ring-black/[0.05] dark:ring-white/[0.06]',
   'transition-[background-color,transform] duration-150 ease-out',
-  'hover:bg-white/72 dark:hover:bg-white/14',
+  'hover:bg-black/[0.07] dark:hover:bg-white/[0.15]',
   'active:scale-[0.96]',
 ].join(' ')
 </script>
@@ -43,7 +55,7 @@ function onPinnedClick(event) {
 @if(items.length > 0)
   <div
     data-space-pinned
-    class="grid gap-[6px] px-[8px] pb-[10px] pt-[2px]"
+    class="grid gap-[6px] pb-[10px] pt-[2px]"
     style="grid-template-columns: repeat({{ columns }}, minmax(0, 1fr))"
     role="list"
     aria-label="Pinned"
