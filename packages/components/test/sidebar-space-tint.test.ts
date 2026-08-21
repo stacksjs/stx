@@ -12,6 +12,8 @@
  * the top (#caded6) as near the bottom (#eaf4f4).
  */
 import { describe, expect, it } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { deriveSpaceTint, normalizeSpace, resolveSpaceTint, spaceTintVars } from '../src/ui/sidebar/spaces'
 
 /** The seed percentage out of a `color-mix(in oklab, SEED N%, INTO)` string. */
@@ -101,5 +103,34 @@ describe('normalizeSpace: whether the panel draws its own title', () => {
     // The label is still the panel's accessible name and the switcher rail's
     // tooltip, so suppressing the title must not drop it.
     expect(normalizeSpace({ id: 'a', label: 'Personal', showTitle: false }).label).toBe('Personal')
+  })
+})
+
+describe('the panel is painted as one fade, not a bulge', () => {
+  const source = readFileSync(join(import.meta.dir, '..', 'src', 'ui', 'sidebar', 'Sidebar.stx'), 'utf8')
+
+  /** The `background:` declarations inside the space-painting rules. */
+  function spaceBackgrounds(): string[] {
+    return [...source.matchAll(/background:\s*([^;]+);/g)]
+      .map(match => match[1])
+      .filter(value => value.includes('--stx-space-from'))
+  }
+
+  it('paints both appearances with the space colour', () => {
+    expect(spaceBackgrounds()).toHaveLength(2)
+  })
+
+  it('layers no white sheen over the end that carries the colour', () => {
+    // A highlight falling off over the top third made sense when the tint ran
+    // pale-at-top; with the colour anchored there it bleaches the space's own
+    // identity and turns a fade into a bulge — lightest at the crown, darkest
+    // a third down, lightening again below.
+    for (const background of spaceBackgrounds())
+      expect(background).not.toContain('rgba(255, 255, 255')
+  })
+
+  it('uses a single linear-gradient per appearance', () => {
+    for (const background of spaceBackgrounds())
+      expect(background.match(/linear-gradient/g)).toHaveLength(1)
   })
 })
