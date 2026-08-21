@@ -21,7 +21,17 @@ export interface ServeOptions {
   port?: number
   /** Root directory to serve from */
   root?: string
-  /** stx processing options */
+  /**
+   * Directory to load `stx.config.ts` from. Defaults to `process.cwd()`.
+   *
+   * Deliberately separate from `root`: `root` is the directory of templates
+   * being served, which is usually a subdirectory of the project (`docs/`,
+   * `src/views/`), while the config sits at the project root. `loadStxConfig`
+   * does not search parent directories — that is by design, so a stray config
+   * above a project cannot shadow it — so the two have to be named separately.
+   */
+  configDir?: string
+  /** stx processing options. Merged over the loaded config; these win. */
   stxOptions?: StxOptions
   /** Enable file watching and hot reload */
   watch?: boolean
@@ -71,6 +81,31 @@ export function htmlResponse(html: string, status = 200, headers: Record<string,
 }
 
 /**
+ * The stx options a server actually runs with: the project's own config, with
+ * any explicitly-passed `stxOptions` layered on top.
+ *
+ * Both entry points need this and neither had it. `serve()` ran on a bare
+ * `{}`, so `plugins` never loaded and every library tag failed to resolve
+ * against a search path naming only the built-in directories — the same
+ * project rendered differently depending on whether the dev server or
+ * `serve()` started it. `serveFile()` delegates to `serve()` but rendered its
+ * one route through the raw options, so it would have kept the old behaviour
+ * even after `serve()` was fixed.
+ *
+ * The config is read from `configDir` (default: the process's own directory)
+ * rather than from `root`, because `root` is normally a subdirectory of the
+ * project and `loadStxConfig` deliberately does not search parent directories.
+ */
+async function resolveStxOptions(options: ServeOptions): Promise<StxOptions> {
+  const { loadStxConfig } = await import('./config')
+  // A project without a config is an ordinary case, not a failure — fall back
+  // to the caller's options alone rather than refusing to start.
+  const projectConfig = await loadStxConfig(options.configDir ?? process.cwd())
+    .catch(() => ({} as StxOptions))
+  return { ...projectConfig, ...(options.stxOptions ?? {}) }
+}
+
+/**
  * Serve a directory of stx templates and markdown files
  * This is the main function for programmatic usage
  */
@@ -78,7 +113,6 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
   const {
     port = 3000,
     root = '.',
-    stxOptions = {},
     watch = true,
     onRequest,
     routes = {},
@@ -88,6 +122,16 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
   } = options
 
   const rootDir = path.resolve(root)
+
+  // The project's own stx.config.ts. Without this, `serve()` ran on an empty
+  // options object: `plugins` never loaded, so `_pluginComponentDirs` was
+  // unset and every library tag — `<Sidebar>`, `<Button>` — failed to resolve
+  // with a "searched paths" list that named only the two built-in directories.
+  // The dev server has always loaded it (see dev-server/serve-app.ts); the
+  // programmatic entry point silently did not, so the same project rendered
+  // differently depending on which one started it.
+  //
+  const stxOptions = await resolveStxOptions(options)
 
   // Cache for processed files
   const fileCache = new Map<string, { content: string, mtime: number }>()
@@ -398,6 +442,11 @@ export async function serveFile(
     throw new Error(`Unsupported file type: ${absolutePath}. Only .stx and .md files are supported.`)
   }
 
+  // Resolved here as well as inside `serve()`, because this route closure
+  // renders the file itself rather than going through the directory pipeline.
+  // `loadStxConfig` caches per directory, so this is a map lookup.
+  const stxOptions = await resolveStxOptions(options)
+
   // Serve the file by creating a route for it
   return await serve({
     ...options,
@@ -407,7 +456,7 @@ export async function serveFile(
         let content: string
 
         if (isMarkdown) {
-          const { content: md } = await readMarkdownFile(absolutePath, options.stxOptions)
+          const { content: md } = await readMarkdownFile(absolutePath, stxOptions)
           content = md
         }
         else {
@@ -430,7 +479,7 @@ export async function serveFile(
           }
 
           const dependencies = new Set<string>()
-          content = await processDirectives(templateContent, context, absolutePath, options.stxOptions || {}, dependencies)
+          content = await processDirectives(templateContent, context, absolutePath, stxOptions, dependencies)
         }
 
         return new Response(content, {
