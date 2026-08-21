@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.214...v0.2.215)
+
+## 🐛 Bug Fixes
+
+- **sidebar**: the reserved header row lines up with the native buttons ([ecc7607](https://github.com/stacksjs/stx/commit/ecc7607)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.215 ([1c19e24](https://github.com/stacksjs/stx/commit/1c19e24)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.213...v0.2.214)
 
 ## ✨ Features
