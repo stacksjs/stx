@@ -14,7 +14,7 @@
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { deriveSpaceTint, normalizeSpace, resolveSpaceTint, spaceTintVars } from '../src/ui/sidebar/spaces'
+import { deriveSpaceTint, normalizeSpace, resolveSpaceTint, spaceTintVars, spaceWash, spaceWashGradient } from '../src/ui/sidebar/spaces'
 
 /** The seed percentage out of a `color-mix(in oklab, SEED N%, INTO)` string. */
 function seedPercent(value: string): number {
@@ -157,5 +157,98 @@ describe('the panel is painted as one fade, not a bulge', () => {
   it('uses a single linear-gradient per appearance', () => {
     for (const background of spaceBackgrounds())
       expect(background.match(/linear-gradient/g)).toHaveLength(1)
+  })
+})
+
+/**
+ * The SHAPE of the wash down the panel, as opposed to its strength.
+ *
+ * Sampled from Dia at @2x down a column with no rows, tiles or switcher on it
+ * (x=748 of the reference capture, the full panel height), then normalised to
+ * 1 at the top and 0 at the bottom. One reading is dropped: t=0.45 breaks
+ * monotonicity by +0.14 where its neighbours are smooth, so it is a divider or
+ * the switcher rather than the wash.
+ */
+const DIA_CURVE: Array<[number, number]> = [
+  [0.00, 1.000], [0.05, 0.887], [0.10, 0.790], [0.15, 0.774], [0.20, 0.694],
+  [0.25, 0.597], [0.30, 0.548], [0.35, 0.532], [0.40, 0.452], [0.50, 0.323],
+  [0.55, 0.274], [0.60, 0.258], [0.65, 0.161], [0.70, 0.129], [0.75, 0.097],
+  [0.80, 0.000], [0.85, 0.000], [0.90, 0.000], [1.00, 0.000],
+]
+
+/**
+ * A CSS colour interpolation hint, evaluated the way the spec defines it: the
+ * transition's progress is raised to a power chosen so the midpoint lands on
+ * the hint. Returns remaining strength, 1 down to 0.
+ */
+function washAt(t: number, hint = spaceWash.hint / 100, end = spaceWash.end / 100): number {
+  if (t >= end)
+    return 0
+  const exponent = Math.log(0.5) / Math.log(hint / end)
+  return 1 - (t / end) ** exponent
+}
+
+function rmsAgainstDia(fit: (t: number) => number): number {
+  const total = DIA_CURVE.reduce((sum, [t, n]) => sum + (fit(t) - n) ** 2, 0)
+  return Math.sqrt(total / DIA_CURVE.length)
+}
+
+describe('the wash follows Dia\'s curve, not a straight line', () => {
+  it('reaches half strength well before halfway down', () => {
+    // The single most visible departure: Dia is at half strength at 35%, where
+    // a two-stop gradient is still at 65%.
+    expect(washAt(spaceWash.hint / 100)).toBeCloseTo(0.5, 2)
+    expect(spaceWash.hint).toBeLessThan(45)
+  })
+
+  it('has flattened onto its final value before the bottom', () => {
+    expect(washAt(spaceWash.end / 100)).toBe(0)
+    expect(washAt(0.95)).toBe(0)
+    expect(spaceWash.end).toBeLessThan(100)
+  })
+
+  it('fits Dia far better than a straight line does', () => {
+    const eased = rmsAgainstDia(t => washAt(t))
+    const linear = rmsAgainstDia(t => 1 - t)
+    expect(eased).toBeLessThan(0.05)
+    expect(eased).toBeLessThan(linear / 4)
+  })
+
+  it('never departs from Dia by more than a hair', () => {
+    const worst = Math.max(...DIA_CURVE.map(([t, n]) => Math.abs(washAt(t) - n)))
+    // 0.06 of a span that is ~21 8-bit steps wide is about one step.
+    expect(worst).toBeLessThan(0.06)
+  })
+
+  it('stays monotonic, so the panel still reads as one fade', () => {
+    let previous = Number.POSITIVE_INFINITY
+    for (let t = 0; t <= 1.0001; t += 0.02) {
+      const value = washAt(t)
+      expect(value).toBeLessThanOrEqual(previous + 1e-9)
+      previous = value
+    }
+  })
+})
+
+describe('spaceWashGradient', () => {
+  it('places the hint and the flattening stop where the constants say', () => {
+    expect(spaceWashGradient('red', 'blue'))
+      .toBe(`linear-gradient(180deg, red 0%, ${spaceWash.hint}%, blue ${spaceWash.end}%)`)
+  })
+
+  it('matches the CSS the sidebar actually paints with', () => {
+    // The helper exists so a consumer painting the same surface draws the same
+    // curve. If the component's own CSS drifts from it, that promise is void —
+    // which is exactly the drift this asserts against.
+    const source = readFileSync(join(import.meta.dir, '..', 'src', 'ui', 'sidebar', 'Sidebar.stx'), 'utf8')
+    const expected = spaceWashGradient('var(--stx-space-from)', 'var(--stx-space-to)')
+
+    const painted = [...source.matchAll(/background:\s*(linear-gradient\([^;]+)\);/g)]
+      .map(match => `${match[1]})`)
+      .filter(value => value.includes('--stx-space-from'))
+
+    expect(painted).toHaveLength(2)
+    for (const value of painted)
+      expect(value).toBe(expected)
   })
 })

@@ -638,10 +638,14 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
      lightest at the very top, darkest around a third of the way down, then
      lightening again — a bulge rather than a fade.
 
-     Sampling Dia confirms the plain form: its panel holds ~#cbdfd7 through the
-     top of the pane and eases to ~#e9f4f4 at the bottom, monotonically, with
-     no highlight at the crown. */
-  background: linear-gradient(180deg, var(--stx-space-from) 0%, var(--stx-space-to) 100%);
+     The stops are not evenly spaced, and that is the point. A two-stop
+     gradient fades linearly; Dia's panel reaches half strength 35% of the way
+     down and has flattened onto its final value by 85%. `35%` is a colour
+     interpolation hint, which exists to say where a transition's midpoint
+     falls, and the last stop sits at 85% so the bottom sixth holds steady.
+     See `spaceWash` in `spaces.ts` for the measurement these come from — and
+     keep the two in step, which `sidebar-space-tint.test.ts` enforces. */
+  background: linear-gradient(180deg, var(--stx-space-from) 0%, 35%, var(--stx-space-to) 85%);
   color: var(--stx-space-ink);
   /* Width is listed here because this rule outranks the pane's
      `transition-[width]` utility class and would otherwise drop it. */
@@ -661,10 +665,12 @@ defineExpose({ collapsed, toggle: toggleCollapse, syncRouteSelection })
     --stx-space-to: var(--stx-space-dark-to, #0e0e11);
     --stx-space-ink: var(--stx-space-dark-ink, #ededf0);
     --stx-space-accent: var(--stx-space-dark-accent, #b9b9c2);
-    /* Same reasoning as the light rule above: dark already carried its colour
-       at the top, so its sheen was fighting the tint even before the light
-       palette was flipped to agree with it. */
-    background: linear-gradient(180deg, var(--stx-space-from) 0%, var(--stx-space-to) 100%);
+    /* Same reasoning, and the same curve, as the light rule above: dark already
+       carried its colour at the top, so its sheen was fighting the tint even
+       before the light palette was flipped to agree with it. The two
+       appearances share the wash shape for the same reason they share its
+       strength — a space that fades differently by appearance is two designs. */
+    background: linear-gradient(180deg, var(--stx-space-from) 0%, 35%, var(--stx-space-to) 85%);
   }
 }
 
