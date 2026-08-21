@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.211...v0.2.212)
+
+## 🐛 Bug Fixes
+
+- **loops**: a prop that evaluates to undefined is absent, not unresolved ([772fa91](https://github.com/stacksjs/stx/commit/772fa91)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.212 ([0bc1088](https://github.com/stacksjs/stx/commit/0bc1088)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.210...v0.2.211)
 
 ## 🐛 Bug Fixes
