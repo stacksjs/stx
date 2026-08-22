@@ -103,7 +103,17 @@ declare function useReactiveProp<T = unknown>(
   _defaultValue?: T,
   _options?: { parse?: (_value: string) => T },
 ): StxSignal<T>
-declare function useRef<T = HTMLElement>(_name: string): { current: T | null }
+/**
+ * A template ref. Read it however the surrounding code reads things: `ref()`
+ * like every other stx accessor, or `ref.current` / `ref.value` for the
+ * Vue- and React-shaped call sites.
+ */
+interface StxTemplateRef<T> {
+  (): T | null
+  readonly current: T | null
+  readonly value: T | null
+}
+declare function useRef<T = HTMLElement>(_name: string): StxTemplateRef<T>
 
 // ============================================================================
 // Routing / navigation

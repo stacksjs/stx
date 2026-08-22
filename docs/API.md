@@ -1197,6 +1197,24 @@ onMount(() => {
 </script>
 ```
 
+A ref reads three ways, all the same value: call it like every other stx
+accessor, or read `.current` / `.value` if the surrounding code is shaped that
+way. All three answer `null` until the element is bound.
+
+```js
+const shell = useRef('shell')
+
+shell() // → HTMLElement | null
+shell.current // → the same
+shell.value // → the same
+
+// Safe inside an effect, which runs its body immediately:
+effect(() => {
+  if (shell())
+    console.log(shell().dataset.flag)
+})
+```
+
 ### Binding Refs
 
 Use `ref="name"`, `@ref="name"`, or `:ref="name"` to bind elements:
