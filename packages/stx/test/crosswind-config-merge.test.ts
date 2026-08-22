@@ -140,7 +140,11 @@ describe('what stx owns regardless', () => {
   })
 
   it('honours preflight and minify instead of ignoring them', () => {
-    expect(mergeCrosswindConfig(BASE, {})).toMatchObject({ includePreflight: true, minify: true })
+    // Defaults, and they differ: preflight is on unless turned off, minify is
+    // off unless turned on. Both spellings are `mergeCrosswindConfig`'s own
+    // (`user.preflight !== false`, `user.minify === true`), so this line is the
+    // documented contract, not a snapshot of whatever a build happens to pass.
+    expect(mergeCrosswindConfig(BASE, {})).toMatchObject({ includePreflight: true, minify: false })
     expect(mergeCrosswindConfig(BASE, { preflight: false, minify: true }))
       .toMatchObject({ includePreflight: false, minify: true })
   })

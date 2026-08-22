@@ -95,6 +95,22 @@ describe('formatBuildFailure', () => {
     expect(message instanceof Error).toBe(false)
     expect(formatBuildFailure(message, '/a.stx')).toContain('/a.stx:9')
   })
+
+  it('locates it just the same when it IS an Error', () => {
+    // Bun has shipped BuildMessage both ways, so the test above covers only
+    // half of what arrives in practice. Newer Bun throws something that passes
+    // `instanceof Error` and still carries `.position` — describeBuildFailure
+    // duck-types on that field rather than on the class, so both locate.
+    const asError = Object.assign(new Error('Unexpected ==='), {
+      name: 'BuildMessage',
+      position: { line: 9, column: 17, lineText: 'const y = a === === b' },
+    })
+
+    expect(asError instanceof Error).toBe(true)
+    const formatted = formatBuildFailure(asError, '/a.stx')
+    expect(formatted).toContain('/a.stx:9:17')
+    expect(formatted).toContain('const y = a === === b')
+  })
 })
 
 describe('against real Bun errors', () => {
@@ -110,13 +126,20 @@ describe('against real Bun errors', () => {
     }
 
     expect(thrown).toBeDefined()
-    // This is what made it unlocatable: the idiom used at every catch site
-    // takes the String() branch, because a BuildMessage is not an Error.
-    expect(thrown instanceof Error).toBe(false)
-    expect(String(thrown)).toBe('BuildMessage: Unexpected ===')
+    expect(String(thrown)).toContain('Unexpected ===')
 
+    // Deliberately NOT asserting `thrown instanceof Error`, or the exact
+    // `String(thrown)`, or the column. Those are Bun's, and Bun has changed
+    // them: this test pinned `instanceof Error === false`, which was true on
+    // 1.3.x and false on the newer Bun that CI installs (setup-bun with no
+    // version takes latest), so the suite was red on every commit for a
+    // behaviour stx does not own and does not depend on — describeBuildFailure
+    // duck-types on `.position`, precisely so either shape works.
+    //
+    // What IS stx's promise: the position survives into a message that names
+    // the file, the line, and the offending source.
     const formatted = formatBuildFailure(thrown, '/app/views/blog/category.stx')
-    expect(formatted).toContain('/app/views/blog/category.stx:1:17')
+    expect(formatted).toMatch(/\/app\/views\/blog\/category\.stx:1(?::\d+)?: /)
     expect(formatted).toContain('Unexpected ===')
     expect(formatted).toContain('const y = a === === b')
   })
