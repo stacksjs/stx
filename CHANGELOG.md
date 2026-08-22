@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.216...v0.2.217)
+
+## 🐛 Bug Fixes
+
+- **signals**: make a template ref callable ([5939d25](https://github.com/stacksjs/stx/commit/5939d25)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1710](https://github.com/stacksjs/stx/issues/1710))
+
+## 🔧 Chores
+
+- release v0.2.217 ([0c28b25](https://github.com/stacksjs/stx/commit/0c28b25)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.215...v0.2.216)
 
 ## 🐛 Bug Fixes
