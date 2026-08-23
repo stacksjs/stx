@@ -50,7 +50,7 @@ definePageMeta({
 
 - **Data fetching**: `fetch()`, database queries, file reads
 - **SEO**: `useSeoMeta()`, `definePageMeta()`
-- **The response status**: `setResponseStatus()`, when the page is the only thing that knows it
+- **The response status**: `setResponseStatus()`, `notFound()`, `setResponseHeader()`, when the page is the only thing that knows it
 - **Variable declarations**: All `const`, `let`, `var`, and `function` declarations are automatically available to `{{ }}` expressions
 - **Use secrets**: API keys, database credentials -- this code never reaches the browser
 - **Import server modules**: Bun APIs, Node.js builtins, server-only npm packages
@@ -81,10 +81,74 @@ if (!repository)
 Without it the page renders "no such repository" under a 200, which tells a
 crawler, a cache and an uptime check that the page is fine.
 
+`notFound()` is the same call under the name the case usually has, so the
+missing-record branch does not have to spell a number out every time:
+
+```html
+<script server>
+const repository = await findRepository(params.owner, params.repository)
+
+if (!repository)
+  notFound()
+</script>
+```
+
+It takes an optional status, so the neighbouring cases read the same way --
+`notFound(410)` for a record deliberately removed rather than missing. Anything
+below 400 is not what anyone means by "not found" and falls back to 404.
+
+`setResponseHeader(name, value)` is the other half, and the pair is not
+optional: a page that works out mid-render that a handle has moved can say 301
+and, without it, cannot say where to.
+
+```html
+<script server>
+const moved = await findRedirect(params.slug)
+
+if (moved) {
+  setResponseStatus(301)
+  setResponseHeader('Location', moved.target)
+}
+</script>
+```
+
 The last call wins, so a page can decide late. A status outside the HTTP range
 is ignored rather than thrown: it is not worth failing a page that has already
 rendered. The render cache carries the status with the HTML, so a cached page
 answers what the first render did.
+
+All three work on every path that renders a view -- `buddy dev` and the
+production serve, `stx`'s own `serve()`, `stx dev`, and a precompiled build,
+where the server block is re-run per request.
+
+### `@status` -- the same decision, in the template
+
+When the branch is already there in the markup, the status usually belongs
+beside it rather than re-derived from a flag at the top of the server block:
+
+```html
+<script server>
+const feature = featureBySlug(params.slug)
+</script>
+
+@if (!feature)
+  @status(404)
+  <h1>No feature by that name.</h1>
+@else
+  <h1>{{ feature.title }}</h1>
+@endif
+```
+
+`@status` is evaluated after the conditionals, so a `@status` in a branch that
+lost never fires. The argument can be a literal or any expression the template
+can evaluate -- `@status(feature ? 200 : 404)`.
+
+One limitation, and it is loud rather than silent: `stx build` precompiles
+templates with no request, so the branch a `@status` sits in was chosen by a
+build-time guess and baking that would hand every visitor the same answer. The
+directive is skipped there with a warning naming `notFound()`, which the
+production server re-runs per request. Use the `<script server>` spelling on
+pages you precompile.
 
 ### What You Cannot Do in `<script server>`
 

@@ -104,6 +104,42 @@ stx provides a powerful directive system for extending template functionality. T
 @markdown-file('docs/intro.md', {userName: 'Alice', role: 'Admin'})
 ```
 
+### Response Directives
+
+```stx
+<!-- The HTTP status this render should answer with -->
+@status(404)
+
+<!-- Any expression the template can evaluate -->
+@status(feature ? 200 : 404)
+```
+
+`@status` runs after the conditionals, so it belongs inside the branch that
+already knows the answer:
+
+```stx
+@if (!feature)
+  @status(404)
+  <h1>No feature by that name.</h1>
+@else
+  <h1>{{ feature.title }}</h1>
+@endif
+```
+
+A `@status` in the branch that lost never fires, so the page that found its
+record answers 200 without having to say so. Without this, a dynamic route that
+cannot resolve its parameter renders a not-found body under a 200 — which tells
+a crawler, a cache and an uptime check that the URL is a real page.
+
+An argument that is not an HTTP status (100–599) is ignored with a warning
+rather than failing a page that has already rendered. The last `@status` wins.
+
+`@status` is evaluated where the template is rendered, so it is skipped — with a
+warning — when `stx build` precompiles a page, which happens once with no
+request. On precompiled pages use `notFound()` or `setResponseStatus()` in
+`<script server>`; those are re-run per request. See
+[`<script server>`](/guide/script-types) for both spellings.
+
 ### Markdown Directives
 
 ```stx

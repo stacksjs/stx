@@ -19,7 +19,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, getBuildId, mergeCrosswindConfig, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, getBuildId, mergeCrosswindConfig, readResponseHeaders, readResponseStatus, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
@@ -1799,6 +1799,21 @@ function __stxOverlay(errs){
     }
 
     /*
+     * `notFound()` — the same decision, in the spelling a dynamic page reaches
+     * for. Bound here rather than left to the engine default so all three
+     * runtime calls share one sink: the default records on the render context,
+     * and a page that called `notFound()` and then changed its mind with
+     * `setResponseStatus(200)` would have written to two different places and
+     * got whichever the serve read last, not the one it asked for last.
+     *
+     * Client-error-and-up only, so `notFound(200)` — which nobody means —
+     * falls back to 404 rather than quietly asserting the page is fine.
+     */
+    context.notFound = (status: number = 404): void => {
+      full.responseStatus = Number.isInteger(status) && status >= 400 && status <= 599 ? status : 404
+    }
+
+    /*
      * The headers, decided the same way and for the same reason.
      *
      * `setResponseStatus` shipped without this, and the pair is not optional:
@@ -2276,6 +2291,33 @@ function __stxOverlay(errs){
       reqCtx.actionCookies = result.cookies
   }
 
+  /**
+   * Carry a finished render's status and headers onto the request context.
+   *
+   * `injectServeRequestContext` gives a page `setResponseStatus` and
+   * `setResponseHeader` that write straight to `reqCtx`, but they are not the
+   * only ways in: `notFound()` and the `@status(code)` directive record on the
+   * render context instead, because they are implemented once in
+   * `@stacksjs/stx` for every host rather than per-serve. This is where those
+   * two arrive.
+   *
+   * Runs before the render cache stores the entry, so a cached "not found"
+   * page answers 404 on its second request too — otherwise the status is
+   * correct until the page is popular enough to be cached.
+   */
+  function applyRecordedResponse(context: Record<string, any>, reqCtx?: ServeRequestContext): void {
+    if (!reqCtx)
+      return
+
+    const status = readResponseStatus(context)
+    if (status !== undefined)
+      reqCtx.responseStatus = status
+
+    const headers = readResponseHeaders(context)
+    if (headers)
+      reqCtx.responseHeaders = { ...reqCtx.responseHeaders, ...headers }
+  }
+
   async function processTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
     const content = await Bun.file(filePath).text()
     if (reqCtx)
@@ -2391,6 +2433,7 @@ function __stxOverlay(errs){
     let output = templateContent
     const dependencies = new Set<string>()
     output = await processDirectives(output, context, filePath, config, dependencies)
+    applyRecordedResponse(context, reqCtx)
 
     // Inject the SPA router (auto-initializes, guards against double-init)
     output = await injectRouterScript(output, getRouterInjectOptions())
@@ -2749,6 +2792,7 @@ function __stxOverlay(errs){
     let output = templateContent
     const dependencies = new Set<string>()
     output = await processDirectives(output, context, filePath, config, dependencies)
+    applyRecordedResponse(context, reqCtx)
 
     // Inject route params for client-side useRoute().params — the same
     // decoded paramsObj the server script saw, so both sides agree.

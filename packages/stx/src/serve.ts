@@ -15,6 +15,7 @@ import { readMarkdownFile } from './assets'
 import { processDirectives } from './process'
 import { extractVariables } from './utils'
 import { compressResponse } from './compression'
+import { readResponseHeaders, readResponseStatus } from './page-response'
 
 export interface ServeOptions {
   /** Server port */
@@ -134,19 +135,29 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
   const stxOptions = await resolveStxOptions(options)
 
   // Cache for processed files
-  const fileCache = new Map<string, { content: string, mtime: number }>()
+  /** A rendered page plus whatever it decided about its own response. */
+  interface RenderedPage { content: string, status?: number, headers?: Record<string, string> }
+
+  /**
+   * `status` / `headers` ride along with the HTML because a page decides them
+   * while it renders, and this cache returns without rendering. Caching the
+   * body alone would give a `@status(404)` page a 404 on its first request and
+   * a 200 on every one after — the kind of bug that only shows up under
+   * traffic.
+   */
+  const fileCache = new Map<string, { content: string, mtime: number, status?: number, headers?: Record<string, string> }>()
 
   /**
    * Process a stx file
    */
-  async function processStxFile(filePath: string): Promise<string> {
+  async function processStxFile(filePath: string): Promise<RenderedPage> {
     const stats = fs.statSync(filePath)
     const cacheKey = `${filePath}:${stats.mtimeMs}`
 
     // Check cache
     const cached = fileCache.get(cacheKey)
     if (cached) {
-      return cached.content
+      return { content: cached.content, status: cached.status, headers: cached.headers }
     }
 
     // Evict stale entries for this file path (different mtime)
@@ -238,10 +249,16 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       }
     }
 
-    // Cache result
-    fileCache.set(cacheKey, { content: output, mtime: stats.mtimeMs })
+    // What the page decided about its own response — `@status(code)`,
+    // `notFound()` or `setResponseStatus()`. Read back off the same context the
+    // server script and the directives recorded on; see page-response.ts.
+    const status = readResponseStatus(context)
+    const headers = readResponseHeaders(context)
 
-    return output
+    // Cache result
+    fileCache.set(cacheKey, { content: output, mtime: stats.mtimeMs, status, headers })
+
+    return { content: output, status, headers }
   }
 
   /**
@@ -329,10 +346,17 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       try {
         let content: string
         let contentType = 'text/html'
+        // Set only by an .stx page that asked for them. Left undefined
+        // elsewhere so a plain asset keeps answering 200.
+        let pageStatus: number | undefined
+        let pageHeaders: Record<string, string> | undefined
 
         // Determine file type and process accordingly
         if (filePath.endsWith('.stx')) {
-          content = await processStxFile(filePath)
+          const page = await processStxFile(filePath)
+          content = page.content
+          pageStatus = page.status
+          pageHeaders = page.headers
         }
         else if (filePath.endsWith('.md')) {
           content = await processMarkdownFile(filePath)
@@ -358,7 +382,8 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
         }
 
         return new Response(content, {
-          headers: { 'Content-Type': contentType },
+          status: pageStatus ?? 200,
+          headers: { 'Content-Type': contentType, ...pageHeaders },
         })
       }
       catch (error: unknown) {
@@ -454,6 +479,8 @@ export async function serveFile(
     routes: {
       '/': async () => {
         let content: string
+        let status = 200
+        let headers: Record<string, string> | undefined
 
         if (isMarkdown) {
           const { content: md } = await readMarkdownFile(absolutePath, stxOptions)
@@ -480,10 +507,17 @@ export async function serveFile(
 
           const dependencies = new Set<string>()
           content = await processDirectives(templateContent, context, absolutePath, stxOptions, dependencies)
+          // The page's own answer about its response — see page-response.ts.
+          // Read here as well as in the directory-serving path above, because
+          // a single-file serve renders through this branch and would
+          // otherwise be the one place a `@status(404)` still answered 200.
+          status = readResponseStatus(context) ?? 200
+          headers = readResponseHeaders(context)
         }
 
         return new Response(content, {
-          headers: { 'Content-Type': 'text/html' },
+          status,
+          headers: { 'Content-Type': 'text/html', ...headers },
         })
       },
       ...options.routes,

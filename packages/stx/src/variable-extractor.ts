@@ -28,6 +28,14 @@ export const STX_ENGINE_BINDING_NAMES = [
   'defineClientPayload',
   'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
   'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',
+  // Deciding the response. Engine bindings rather than per-host context keys
+  // because four hosts run server scripts and three of them had forgotten:
+  // `setResponseStatus(404)` threw a ReferenceError *inside the script's own
+  // IIFE*, taking every other binding in the file down with it, so the page
+  // rendered its empty branch and read as a correct answer. A host that wants
+  // the calls routed somewhere of its own still overrides them through the
+  // context, which is appended after these. See page-response.ts.
+  'setResponseStatus', 'setResponseHeader', 'notFound',
   'ref', 'reactive', 'computed', 'watch', 'onMounted', 'onUnmounted', 'nextTick',
   'defineEmits', 'defineExpose', 'defineSlots', 'provide', 'inject', 'useColorMode', 'useDark',
   'useMediaQuery', 'useScrollLock', 'usePreferredDark', 'usePreferredLight', 'usePreferredReducedMotion', 'usePreferredContrast',
@@ -103,6 +111,7 @@ import { findMatchingDelimiter } from './parser/tokenizer'
 import { mergeHeadConfigs, seoMetaToHeadConfig } from './head'
 import { getPublicEnvDefine } from './public-env'
 import { safeEvaluate } from './safe-evaluator'
+import { responseBindings } from './page-response'
 
 /**
  * Extract declared variable names from converted CommonJS script.
@@ -687,6 +696,13 @@ catch {
   // Mock onDestroy() - no-op on server
   const onDestroy = (_fn: () => void) => {}
 
+  /*
+   * setResponseStatus / setResponseHeader / notFound, recording on this
+   * script's own context so whichever host is rendering can read back what the
+   * page asked for. See page-response.ts for why all three live in one place.
+   */
+  const responseApi = responseBindings(context)
+
   // definePageMeta forwards title/description into the head, matching the real
   // implementation in head.ts. It used to be a no-op stub, so a documented API
   // — head.ts:340 shows `definePageMeta({ title: 'Dashboard' })` — silently did
@@ -994,6 +1010,7 @@ catch {
       defineClientPayload,
       state, derived, effect, batch, onMount, onDestroy,
       definePageMeta, useRoute, useRouter, useHead, useSeoMeta,
+      responseApi.setResponseStatus, responseApi.setResponseHeader, responseApi.notFound,
       ref, reactive, computed, watch, onMounted, onUnmounted, nextTick,
       defineEmits, defineExpose, defineSlots, provide, inject, useColorMode, useDark,
       useMediaQuery, useScrollLock, usePreferredDark, usePreferredLight, usePreferredReducedMotion, usePreferredContrast,

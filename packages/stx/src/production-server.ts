@@ -313,6 +313,11 @@ export async function startProductionServer(options: ProductionServerOptions = {
         // script anyway, so this only guards a page that has neither (#1847).
         if (!isMutating && !compiled.hasServerScripts && Object.keys(compiled.placeholders).length === 0) {
           return new Response(compiled.html, {
+            // A page with no server script cannot decide a status at request
+            // time, but it can still have declared one — `pages/410.stx` with
+            // `definePageMeta({ status: 410 })`. Serving that under a 200 is
+            // the same soft-error the dynamic path below fixes.
+            status: compiled.status ?? 200,
             headers: {
               'Content-Type': 'text/html',
               'Cache-Control': 'public, max-age=60',
@@ -322,7 +327,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
   
         // Dynamic page — hydrate with request context
         try {
-          const { html, boundaries, redirect, cookies } = await hydrateTemplateStream(compiled, {
+          const { html, boundaries, redirect, cookies, status, headers: pageHeaders } = await hydrateTemplateStream(compiled, {
             params,
             request,
             method: request.method,
@@ -338,7 +343,8 @@ export async function startProductionServer(options: ProductionServerOptions = {
           if (boundaries && boundaries.length > 0) {
             const { renderStreamingPage, streamToResponse } = await import('./streaming')
             return streamToResponse(renderStreamingPage(html, boundaries, { timeoutMs: 30000 }), {
-              headers: { 'Cache-Control': 'no-cache' },
+              status: status ?? compiled.status ?? 200,
+              headers: { 'Cache-Control': 'no-cache', ...pageHeaders },
             })
           }
           /*
@@ -357,8 +363,20 @@ export async function startProductionServer(options: ProductionServerOptions = {
           })
           for (const cookie of cookies ?? [])
             headers.append('Set-Cookie', cookie)
+          for (const [name, value] of Object.entries(pageHeaders ?? {}))
+            headers.set(name, value)
 
-          return new Response(html, { headers })
+          /*
+           * The status the page decided for itself (stacksjs/stx#1990).
+           *
+           * A page addressed by a dynamic segment cannot know whether the
+           * record exists until it has looked, and the server block that looks
+           * is re-run per request right here. Until this, whatever it decided
+           * was dropped on the floor: `/features/nonsense` rendered "no feature
+           * by that name" under a 200, which tells a crawler, a cache and an
+           * uptime check that the URL is a real page.
+           */
+          return new Response(html, { status: status ?? compiled.status ?? 200, headers })
         }
         catch (error) {
           console.error(`[stx] Hydration error for ${pathname}:`, error)

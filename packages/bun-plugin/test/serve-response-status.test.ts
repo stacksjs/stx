@@ -64,6 +64,52 @@ setResponseStatus(200)
 <main>found after all</main>
 `)
 
+  // `notFound()` — the same decision in the spelling a dynamic page reaches
+  // for, and the one that used to be declared for the type checker, implemented
+  // in render.ts, and read by no server at all.
+  await Bun.write(path.join(dir, 'views', 'record', '[id].stx'), `<script server>
+const found = id === 'known'
+if (!found)
+  notFound()
+const label = found ? 'here it is' : 'no such record'
+</script>
+<main>{{ label }}</main>
+`)
+
+  // notFound() then a change of mind. Both spellings have to share one sink,
+  // or the page gets whichever the serve read last rather than the one it asked
+  // for last.
+  await Bun.write(path.join(dir, 'views', 'undecided.stx'), `<script server>
+notFound()
+setResponseStatus(200)
+</script>
+<main>found after all</main>
+`)
+
+  // The template spelling: the status beside the markup that explains it,
+  // inside the branch that already knows.
+  await Bun.write(path.join(dir, 'views', 'feature', '[slug].stx'), `<script server>
+const feature = slug === 'queues' ? { title: 'Queues' } : null
+</script>
+<main>
+@if (!feature)
+  @status(404)
+  <h1>No feature by that name.</h1>
+@else
+  <h1>{{ feature.title }}</h1>
+@endif
+</main>
+`)
+
+  // A page that sets a header as well as a status. A 301 that cannot say where
+  // to is worse than the 404 it replaced.
+  await Bun.write(path.join(dir, 'views', 'moved.stx'), `<script server>
+setResponseStatus(301)
+setResponseHeader('Location', '/gone')
+</script>
+<main>moved</main>
+`)
+
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
 serve({
@@ -121,6 +167,31 @@ describe('setResponseStatus', () => {
     expect((await fetch(`${BASE}/reconsidered`)).status).toBe(200)
   })
 
+  it('answers 404 for notFound(), and 200 for the record that exists', async () => {
+    const missing = await fetch(`${BASE}/record/anything-else`)
+    const found = await fetch(`${BASE}/record/known`)
+
+    expect(missing.status).toBe(404)
+    // The failure this replaces was silent in exactly this spot: the call threw
+    // inside the script's own IIFE, `label` went with it, and the page rendered
+    // blank under a 200 — which reads like the feature working.
+    expect(await missing.text()).toContain('no such record')
+
+    expect(found.status).toBe(200)
+    expect(await found.text()).toContain('here it is')
+  })
+
+  it('lets notFound() be taken back, so the two spellings share one sink', async () => {
+    expect((await fetch(`${BASE}/undecided`)).status).toBe(200)
+  })
+
+  it('sends the headers the page asked for alongside the status', async () => {
+    const res = await fetch(`${BASE}/moved`, { redirect: 'manual' })
+
+    expect(res.status).toBe(301)
+    expect(res.headers.get('Location')).toBe('/gone')
+  })
+
   /**
    * A slash on the end names the same page. A link written with one, or a
    * browser that added one, used to 404 on a page that plainly exists.
@@ -146,5 +217,32 @@ describe('setResponseStatus', () => {
 
     for (let attempt = 0; attempt < 3; attempt++)
       expect((await fetch(`${BASE}/thing/known`)).status).toBe(200)
+  })
+})
+
+/**
+ * The template spelling. Same decision, expressed where the branch already
+ * knows the answer, so the status sits beside the markup that explains it
+ * rather than being re-derived from a flag at the top of the server block.
+ */
+describe('@status', () => {
+  it('answers 404 from the branch that rendered', async () => {
+    const res = await fetch(`${BASE}/feature/nonsense`)
+
+    expect(res.status).toBe(404)
+    expect(await res.text()).toContain('No feature by that name.')
+    expect(await (await fetch(`${BASE}/feature/nonsense`)).text()).not.toContain('@status')
+  })
+
+  it('does not fire from the branch that lost', async () => {
+    const res = await fetch(`${BASE}/feature/queues`)
+
+    expect(res.status).toBe(200)
+    expect(await res.text()).toContain('Queues')
+  })
+
+  it('holds the status across a cached render', async () => {
+    for (let attempt = 0; attempt < 3; attempt++)
+      expect((await fetch(`${BASE}/feature/still-nonsense`)).status).toBe(404)
   })
 })

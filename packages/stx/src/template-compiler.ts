@@ -16,6 +16,7 @@ import { createPlaceholder, resetPlaceholders, getPlaceholderRegistry, type Plac
 import { stripDocumentWrapper } from './app-shell'
 import { createHash } from 'node:crypto'
 import { collectBlockDeclarations } from './stx-virtual-ts'
+import { extractPageResponseStatus } from './page-response'
 
 /**
  * A pre-compiled template ready for serve-time hydration.
@@ -39,6 +40,16 @@ export interface CompiledTemplate {
   dependencies: string[]
   /** Content hash of the source file */
   contentHash: string
+  /**
+   * The status this page declared with `definePageMeta({ status })`.
+   *
+   * Static by nature — it is read out of the source, not decided per request —
+   * so it is the right answer for a page that is always an error page and the
+   * wrong one for a page that only sometimes is. A page in the second group
+   * calls `notFound()` from `<script server>`, which the hydrator re-runs per
+   * request and which wins over this.
+   */
+  status?: number
   /**
    * Streaming-SSR `@stream` inner templates captured at compile time (#1746):
    * boundary id → raw template, re-rendered per request with `$boundary` data.
@@ -181,6 +192,7 @@ export async function compileTemplate(
     serverScriptContent,
     dependencies: Array.from(dependencies),
     contentHash,
+    status: extractPageResponseStatus(content),
     // @stream inner templates captured during processDirectives (#1746) — so the
     // production server can re-render them per request with $boundary data.
     streamTemplates: context.__streamTemplates as Record<string, string> | undefined,

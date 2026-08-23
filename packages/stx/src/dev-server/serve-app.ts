@@ -31,7 +31,7 @@ import {
 import { resetHead } from '../head'
 import { extractPageMetaFromSource } from '../page-meta'
 import { clearComponentCache } from '../utils'
-import { extractPageResponseStatus } from '../page-response'
+import { extractPageResponseStatus, readResponseHeaders, readResponseStatus } from '../page-response'
 import {
   buildCrosswindCSS,
   colors,
@@ -48,6 +48,8 @@ interface BuiltPage {
   route: Route
   content: string
   status?: number
+  /** Headers the page set with `setResponseHeader` while it rendered. */
+  headers?: Record<string, string>
   /**
    * Streaming-SSR boundaries (#1746 Phase 3): present when the page's
    * `<script server>` exports `streamBoundaries` — a map of `data-suspense` id →
@@ -314,6 +316,20 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
    * that reads `params.id` sees the same fallback value at build time, so
    * every `/book/:id` URL would render the same data.
    */
+  /**
+   * What each static page decided about its response, last time it rendered.
+   *
+   * The template cache below returns HTML without re-rendering, and the status
+   * a page asks for at render time — `@status(code)`, `notFound()` — lives
+   * nowhere in that cached HTML. Without this a cached page answers correctly
+   * on the request that rendered it and 200 on every one after, which is the
+   * failure mode that only shows up once a page gets traffic.
+   *
+   * Static routes only, keyed by file: a dynamic route re-renders per request
+   * and never reads from here.
+   */
+  const decidedResponses = new Map<string, { status?: number, headers?: Record<string, string> }>()
+
   const buildPage = async (route: Route, requestParams?: Record<string, string>): Promise<BuiltPage | null> => {
     try {
       const { processDirectives, extractVariables, defaultConfig, loadStxConfig, injectRouterScript } = await import('../')
@@ -360,7 +376,13 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
               if (valid) {
                 let output = memEntry.output
                 if (shell) output = stripDocumentWrapper(output, { preserveHead: true })
-                return { route, content: output, status: await readPageResponseStatus(route.filePath) }
+                const decided = decidedResponses.get(route.filePath)
+                return {
+                  route,
+                  content: output,
+                  status: decided?.status ?? await readPageResponseStatus(route.filePath),
+                  headers: decided?.headers,
+                }
               }
             }
           }
@@ -371,7 +393,13 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         if (cached) {
           let output = cached
           if (shell) output = stripDocumentWrapper(output, { preserveHead: true })
-          return { route, content: output, status: await readPageResponseStatus(route.filePath) }
+          const decided = decidedResponses.get(route.filePath)
+          return {
+            route,
+            content: output,
+            status: decided?.status ?? await readPageResponseStatus(route.filePath),
+            headers: decided?.headers,
+          }
         }
       }
 
@@ -499,7 +527,28 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
       else
         boundaries = undefined
 
-      return { route, content: output, status: responseStatus, boundaries }
+      /*
+       * What the page decided while rendering beats what it declared.
+       *
+       * `extractPageResponseStatus` above reads `definePageMeta({ status })`
+       * out of the source before anything runs — right for a page that is
+       * always an error page, no use to one addressed by a dynamic segment,
+       * which cannot know whether the record exists until it has looked. The
+       * `@status(code)` directive and `notFound()` are how it says so
+       * afterwards, and both record on this context (see page-response.ts).
+       */
+      const decidedStatus = readResponseStatus(context)
+      const decidedHeaders = readResponseHeaders(context)
+      if (isStaticBuild)
+        decidedResponses.set(route.filePath, { status: decidedStatus, headers: decidedHeaders })
+
+      return {
+        route,
+        content: output,
+        status: decidedStatus ?? responseStatus,
+        headers: decidedHeaders,
+        boundaries,
+      }
     }
     catch (error) {
       console.error(`${colors.red}Error building ${colors.bright}${route.pattern}${colors.reset}:`, error)
@@ -678,6 +727,10 @@ catch {
         }
         if (builtPage) {
           const responseStatus = builtPage.status ?? 200
+          // Headers the page set with `setResponseHeader` — the other half of
+          // deciding a response. A page that answers 301 has said nothing
+          // useful until a `Location` goes with it.
+          const pageHeaders = builtPage.headers ?? {}
           // Page metadata, read from the page's SOURCE.
           //
           // This used to call getPageMeta(), which reads head.ts's
@@ -879,6 +932,7 @@ catch {
               'Cache-Control': 'no-store, no-cache, must-revalidate',
               'Pragma': 'no-cache',
               'Expires': '0',
+              ...pageHeaders,
             },
           })
         }

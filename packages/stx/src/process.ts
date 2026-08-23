@@ -25,6 +25,7 @@ import { processAnimationDirectives } from './animation'
 import { generateRuntimeScript, processEventDirectives } from './events'
 import { extractBridgeData, processClientScript } from './client-script'
 import { extractPageMetaFromSource, pageMetaLayout } from './page-meta'
+import { processStatusDirective } from './page-response'
 import { processReactiveDirectives } from './reactive'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
@@ -1548,6 +1549,14 @@ async function processOtherDirectives(
 
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
+
+  // @status(code) — the page's own HTTP status.
+  //
+  // After the conditionals, deliberately: a `@status` in a branch that lost is
+  // already gone by now and never fires, which is what lets the status sit
+  // beside the markup that justifies it rather than being re-derived from a
+  // flag at the top of the server block. See page-response.ts.
+  output = processStatusDirective(output, context, { filePath, buildMode: opts.buildMode })
 
   // Process isset/empty directives
   output = processIssetEmptyDirectives(output, context)

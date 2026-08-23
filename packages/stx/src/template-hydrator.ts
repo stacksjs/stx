@@ -13,6 +13,7 @@ import { extractVariables } from './variable-extractor'
 import { evaluateExpression, escapeHtmlValue } from './expressions'
 import { replacePlaceholders, hasPlaceholders } from './placeholder'
 import { runPageAction } from './page-action'
+import { readResponseHeaders, readResponseStatus } from './page-response'
 
 /**
  * Hydrate a pre-compiled template with request-time data.
@@ -44,13 +45,25 @@ export async function hydrateTemplate(
 export async function hydrateTemplateStream(
   compiled: CompiledTemplate,
   requestContext: Record<string, any> = {},
-): Promise<{ html: string, boundaries?: { id: string, render: () => Promise<string> }[], redirect?: string, cookies?: string[] }> {
+): Promise<{ html: string, boundaries?: { id: string, render: () => Promise<string> }[], redirect?: string, cookies?: string[], status?: number, headers?: Record<string, string> }> {
   const { html, context, redirect, cookies } = await runHydration(compiled, requestContext)
+
+  /*
+   * The status the page asked for, if it asked for one.
+   *
+   * The server block is re-run per request here, so `notFound()` and
+   * `setResponseStatus()` are answering about *this* request — which is the
+   * whole reason a precompiled dynamic page can say 404 at all. Passed back up
+   * for the production server to answer with; discarding it is the soft 404
+   * this feature exists to remove.
+   */
+  const status = readResponseStatus(context)
+  const headers = readResponseHeaders(context)
 
   // A redirecting action has nothing to render, and streaming a shell for a
   // page the caller is about to replace with a 303 would be wasted work.
   if (redirect)
-    return { html, redirect, cookies }
+    return { html, redirect, cookies, status, headers }
 
   const { extractStreamBoundaries } = await import('./streaming')
   // Low-level: streamBoundaries export → functions returning HTML.
@@ -75,7 +88,7 @@ export async function hydrateTemplateStream(
     boundaries = [...(boundaries || []).filter(b => !tplIds.has(b.id)), ...tplBoundaries]
   }
 
-  return { html, boundaries: boundaries && boundaries.length > 0 ? boundaries : undefined, cookies }
+  return { html, boundaries: boundaries && boundaries.length > 0 ? boundaries : undefined, cookies, status, headers }
 }
 
 /** Build the request-time context (running server scripts) and fill placeholders. */

@@ -33,6 +33,7 @@ import { extractBridgeData, processClientScript } from './client-script'
 import { findSfcTemplateBlock } from './sfc-template'
 import type { StxOptions } from './types'
 import { isMarkdownPath, renderMarkdownView } from './markdown-view'
+import { responseBindings, syncRecordedResponse } from './page-response'
 
 // ============================================================================
 // Types
@@ -218,20 +219,6 @@ ${html}
  * @param renderOptions - Additional rendering options
  * @returns The rendered HTML string
  */
-/**
- * Write a page's request back onto the context object the caller passed in.
- *
- * The internal context is a fresh object built from the caller's, so writing to
- * it records nothing anybody can read. A caller that wants the status a page
- * asked for passes a context and finds it there; one that does not passes
- * nothing and this is a no-op, which is the correct answer for a render with
- * no host to answer with.
- */
-function recordOn(target: Record<string, any> | undefined, key: string, value: unknown): void {
-  if (target && typeof target === 'object')
-    target[key] = value
-}
-
 export async function renderTemplate(
   filePath: string,
   renderOptions: RenderOptions = {},
@@ -398,38 +385,17 @@ export async function renderTemplateString(
      * for on the context, so a host rendering directly can read it back and
      * answer with it rather than discarding the intent.
      */
-    setResponseStatus: (status: number) => {
-      // Out of range is ignored rather than thrown. A status is not worth
-      // failing a page over, and the range check is what stops a typo becoming
-      // a 500 from the host that reads it back.
-      if (Number.isInteger(status) && status >= 100 && status <= 599)
-        recordOn(renderOptions.context, '__stxResponseStatus', status)
-    },
-    /**
-     * Answer 404 for this render.
+    /*
+     * The three response bindings, from the one implementation every host
+     * shares (`responseBindings` in page-response.ts). They record on
+     * `renderOptions.context` — the object the caller handed in — so a host
+     * rendering directly reads back what the page asked for with
+     * `readResponseStatus` / `readResponseHeaders` rather than discarding it.
      *
-     * `setResponseStatus(404)` already does this, but the status a dynamic
-     * page most often needs to set is the one for "the record in the URL does
-     * not exist", and spelling it out as a number every time is how pages end
-     * up not doing it at all: a lookup that misses falls back to some other
-     * record and the page answers 200 for a URL that names nothing, so typos
-     * and retired records get indexed as real pages.
-     *
-     * Takes an optional status so the neighbouring cases read the same way:
-     * `notFound(410)` for a record deliberately removed rather than missing.
+     * `renderOptions.context` may be undefined, in which case the recording is
+     * a no-op and calling one of these is still harmless — which is the point.
      */
-    notFound: (status: number = 404) => {
-      const code = Number.isInteger(status) && status >= 400 && status <= 599 ? status : 404
-      recordOn(renderOptions.context, '__stxResponseStatus', code)
-    },
-    setResponseHeader: (name: string, value: string) => {
-      if (!name)
-        return
-
-      const headers = (renderOptions.context as any)?.__stxResponseHeaders || {}
-      headers[String(name)] = String(value)
-      recordOn(renderOptions.context, '__stxResponseHeaders', headers)
-    },
+    ...responseBindings((renderOptions.context ?? {}) as Record<string, any>),
     definePageMeta: () => {},
 
     ...(renderOptions.context || {}),
@@ -449,6 +415,17 @@ export async function renderTemplateString(
   // Process directives
   let output = templateContent
   output = await processDirectives(output, context, filePath, options, dependencies)
+
+  /*
+   * Hand back what the page decided about its response.
+   *
+   * `context` is a fresh object built from the caller's, so a `@status(404)`
+   * or a `setResponseStatus(404)` records on an object nobody outside this
+   * function can read. Without this line the page's intent dies here, and the
+   * host answers 200 for a document that says "not found" — the exact soft-404
+   * the feature exists to remove.
+   */
+  syncRecordedResponse(context, renderOptions.context)
 
   if (renderOptions.templateOnly) {
     // Template-only mode: strip injected runtimes (signals, router, SEO tags).
