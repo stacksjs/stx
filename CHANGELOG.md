@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.217...v0.2.218)
+
+## ✨ Features
+
+- **components**: the phone primitives — tab bar, filter chips, list rows ([faf6fac](https://github.com/stacksjs/stx/commit/faf6fac)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- green the suite again, on three unrelated causes ([865ecea](https://github.com/stacksjs/stx/commit/865ecea)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.218 ([c5b6903](https://github.com/stacksjs/stx/commit/c5b6903)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.216...v0.2.217)
 
 ## 🐛 Bug Fixes
