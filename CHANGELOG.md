@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.221...v0.2.222)
+
+## 🐛 Bug Fixes
+
+- **router**: move aria-current to the page the swap actually landed on ([548c5db](https://github.com/stacksjs/stx/commit/548c5db)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.222 ([960188d](https://github.com/stacksjs/stx/commit/960188d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.220...v0.2.221)
 
 ## 🐛 Bug Fixes
