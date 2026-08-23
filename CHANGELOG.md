@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.220...v0.2.221)
+
+## 🐛 Bug Fixes
+
+- **serve**: stop a page with no layout looking like a layout change ([2a3c403](https://github.com/stacksjs/stx/commit/2a3c403)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.221 ([aeb065f](https://github.com/stacksjs/stx/commit/aeb065f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.219...v0.2.220)
 
 ## 🐛 Bug Fixes
