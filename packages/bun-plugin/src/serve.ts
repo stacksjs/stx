@@ -22,7 +22,7 @@ import { loadConfig } from 'bunfig'
 import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCrosswindConfig, readResponseHeaders, readResponseStatus, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
-import { deriveLayoutGroup } from 'stx-router/layout-metadata'
+import { extractLayoutMetadata } from 'stx-router/layout-metadata'
 import { actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
 
 /**
@@ -3511,18 +3511,31 @@ function __stxOverlay(errs){
                   // SPA navigation: return only <main> content as fragment
                   const isSpaNav = req.headers.get(SPA_NAV_HEADER) === 'true'
                   if (isSpaNav) {
-                    // Detect layout from rendered content — extract @extends layout name
-                    // If layout differs from the referrer's layout, return full HTML (not fragment)
-                    // so the router does a full document swap instead of just swapping <main>
-                    const layoutMatch = content.match(/<!-- stx-layout: ([^ ]+) -->/)
-                    const pageLayout = layoutMatch ? layoutMatch[1] : 'default'
+                    // Detect layout from rendered content — extract @extends layout name.
+                    // If layout differs from the referrer's layout, return full HTML (not
+                    // fragment) so the router does a full document swap instead of just
+                    // swapping <main>.
+                    //
+                    // Read through the SHARED helper rather than a local regex, because the
+                    // router client decides "did the layout change?" by comparing what these
+                    // headers say against what it reads off the live document, and the two
+                    // sides have to name the no-layout case identically. This used to report
+                    // `default` for a page with no layout while the client, finding no
+                    // `<meta name="stx-layout">` at all, called the same state `app` — so
+                    // every @nolayout page (one that writes its own <html>) looked like a
+                    // layout change on EVERY navigation. The router fetched the fragment,
+                    // concluded the group had changed, fetched the whole page again and
+                    // full-reloaded: SPA routing silently off, two requests per click, and
+                    // the discarded fragment fetch landing on the page's own url — which is
+                    // what a CDN in front of it then cached (stacksjs/stx#1958).
+                    const layoutMetadata = extractLayoutMetadata(content)
+                    const pageLayout = layoutMetadata.layout
                     // Locale switches must report `i18n:<code>` so the router does a full-body
                     // swap (nav/footer translations live outside <main>). `applyI18nToResponse`
                     // injects the same meta after render; headers here must match.
-                    const groupMetaMatch = content.match(/<meta\b[^>]*name=["']stx-layout-group["'][^>]*content=["']([^"']+)["'][^>]*>/i)
                     const pageLayoutGroup = (i18nConfig && i18nLocale)
                       ? `i18n:${i18nLocale}`
-                      : (groupMetaMatch?.[1] || deriveLayoutGroup(pageLayout))
+                      : layoutMetadata.group
 
                     let fragment = content
                     let containerAttrs = ''
