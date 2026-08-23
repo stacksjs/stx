@@ -1,0 +1,98 @@
+<script server>
+/**
+ * The row every mobile list is made of.
+ *
+ * Read off what a dense list actually has to carry: a leading mark, a line of
+ * context above the title, the title itself over two lines, a line of detail
+ * under it, a timestamp at the top right, and a count at the bottom right.
+ * Six slots, because a list that can only do three ends up with applications
+ * inventing a seventh layout per screen.
+ *
+ * Everything except `title` is optional and nothing reserves space when absent,
+ * so the same component renders a two-line notification and a five-line issue
+ * without either looking like a version of the other.
+ */
+export const title = $props.title || ''
+/** Small line above the title — a repository, an owner, a path. */
+export const eyebrow = $props.eyebrow || ''
+/** Small line below the title — an actor, a branch, a summary. */
+export const detail = $props.detail || ''
+/** Top right. A relative time, usually. */
+export const meta = $props.meta || ''
+/** Bottom right. A comment count, a diff stat, a status. */
+export const trailing = $props.trailing || ''
+/** Inline SVG for the leading column. */
+export const icon = $props.icon || ''
+/** Draws the unread dot in the leading column, under the icon. */
+export const unread = $props.unread || false
+export const href = $props.href || ''
+export const className = $props.className || ''
+
+export const interactive = href !== ''
+export const tag = interactive ? 'a' : 'div'
+
+export const rowClasses = `
+  flex w-full items-start gap-3 px-4 py-3 text-left
+  ${interactive ? 'transition-colors active:bg-surface-sunken' : ''}
+  ${className}
+`.replace(/\s+/g, ' ').trim()
+</script>
+
+<{{ tag }}
+  class="{{ rowClasses }}"
+  data-stx-list-row
+  @if (interactive)
+    href="{{ href }}"
+  @endif
+>
+  @if (icon || unread)
+    <span class="flex w-6 shrink-0 flex-col items-center gap-1.5 pt-0.5" aria-hidden="true">
+      {!! icon !!}
+
+      @if (unread)
+        {{--
+          A dot, not a bold title. Weight is already carrying the title's
+          hierarchy, and an unread list rendered entirely in bold has no
+          hierarchy left to spend.
+        --}}
+        <span class="h-2 w-2 rounded-full bg-accent"></span>
+      @endif
+    </span>
+  @endif
+
+  <span class="min-w-0 flex-1">
+    @if (eyebrow)
+      <span class="block truncate text-sm text-fg-muted">{{ eyebrow }}</span>
+    @endif
+
+    {{--
+      Two lines, then clipped. One line loses the end of nearly every issue
+      title; unbounded lets a single pasted stack trace push the rest of the
+      list off the screen.
+    --}}
+    <span class="block text-[15px] font-semibold leading-snug text-fg-strong [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden">
+      {{ title }}
+    </span>
+
+    @if (detail)
+      <span class="mt-0.5 block truncate text-sm text-fg-muted">{{ detail }}</span>
+    @endif
+  </span>
+
+  @if (meta || trailing)
+    {{--
+      The right column is a column: timestamp at the top, count at the bottom,
+      both right-aligned. Putting them on one line makes the row's height
+      depend on which of the two is present.
+    --}}
+    <span class="flex shrink-0 flex-col items-end gap-2 pt-0.5">
+      @if (meta)
+        <span class="text-sm text-fg-muted">{{ meta }}</span>
+      @endif
+
+      @if (trailing)
+        <span class="rounded-md bg-surface-sunken px-1.5 py-0.5 text-xs font-medium text-fg-muted">{{ trailing }}</span>
+      @endif
+    </span>
+  @endif
+</{{ tag }}>

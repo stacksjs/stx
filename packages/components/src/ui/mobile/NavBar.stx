@@ -1,0 +1,63 @@
+<script server>
+/**
+ * The top of a screen: a row of controls, then a large title under it.
+ *
+ * Two rows rather than one, because they answer different questions. The
+ * control row is where back and the screen's actions live and it stays the same
+ * height everywhere; the title is display-sized and belongs to the content, so
+ * it scrolls away while the controls do not.
+ *
+ * `title` may be empty — a screen pushed onto a stack usually wants its name in
+ * the small centre slot beside the back button instead, which is what
+ * `compactTitle` is.
+ */
+export const title = $props.title || ''
+export const compactTitle = $props.compactTitle || ''
+export const backHref = $props.backHref || ''
+/** Markup for the right-hand side: search, add, an avatar. */
+export const actions = $props.actions || ''
+export const className = $props.className || ''
+
+export const hasControls = backHref !== '' || compactTitle !== '' || actions !== ''
+
+/*
+ * The safe-area inset is padding on the header itself.
+ *
+ * Not a spacer element above it: on a notched device the status bar sits over
+ * the top of the page, and a header that starts below a fixed-height spacer is
+ * right on exactly one device.
+ */
+export const headerStyle = 'padding-top: max(env(safe-area-inset-top, 0px), 12px);'
+</script>
+
+<header class="px-4 {{ className }}" style="{{ headerStyle }}" data-stx-nav-bar>
+  @if (hasControls)
+    <div class="flex h-11 items-center gap-2">
+      @if (backHref)
+        <a
+          href="{{ backHref }}"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg"
+          aria-label="Back"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      @endif
+
+      @if (compactTitle)
+        <span class="truncate text-[17px] font-semibold text-fg-strong">{{ compactTitle }}</span>
+      @endif
+
+      @if (actions)
+        {{-- Pushed right by the spacer rather than by `justify-between`, which
+             would centre a lone action when there is no back button. --}}
+        <span class="ml-auto flex items-center gap-2">{!! actions !!}</span>
+      @endif
+    </div>
+  @endif
+
+  @if (title)
+    <h1 class="pb-3 pt-1 text-[34px] font-bold leading-tight tracking-tight text-fg-strong">{{ title }}</h1>
+  @endif
+</header>

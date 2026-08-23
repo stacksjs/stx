@@ -1,0 +1,41 @@
+<script server>
+/**
+ * The row of pills under a screen title.
+ *
+ * Two kinds of chip live in the same row and they are not the same control. A
+ * **toggle** is on or off — "Unread". A **menu** opens something and carries a
+ * chevron — "Repository". Rendering both as bare pills, which is the tempting
+ * shortcut, means a reader cannot tell which of them will change the list in
+ * place and which will cover the screen with a picker.
+ *
+ * `chips` is `{ label, href, active?, menu?, count? }`.
+ */
+export const chips = $props.chips || []
+export const className = $props.className || ''
+
+/*
+ * Scrolls horizontally, and says so by bleeding past the gutter.
+ *
+ * Filters overflow a phone's width the moment there are four of them with real
+ * words in. The negative margin plus matching padding lets the row run to both
+ * screen edges while its first chip still lines up with the title above it —
+ * a row that stops at the gutter looks complete when it is not.
+ */
+export const rowClasses = `
+  -mx-4 flex gap-2 overflow-x-auto px-4 pb-1
+  [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+  ${className}
+`.replace(/\s+/g, ' ').trim()
+</script>
+
+<div class="{{ rowClasses }}" data-stx-filter-chips role="group" aria-label="Filters">
+  @foreach (chips as chip)
+    <FilterChip
+      :label="chip.label"
+      :href="chip.href"
+      :active="chip.active"
+      :menu="chip.menu"
+      :count="chip.count"
+    />
+  @endforeach
+</div>

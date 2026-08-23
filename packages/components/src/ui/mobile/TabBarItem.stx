@@ -1,0 +1,55 @@
+<script server>
+/**
+ * One destination in the bottom bar.
+ *
+ * Icon over label, and the label always present. Icon-only bars test well with
+ * the people who designed them and badly with everyone else: a glyph is only
+ * unambiguous once you already know what the app calls that screen.
+ */
+export const label = $props.label || ''
+export const href = $props.href || '#'
+export const icon = $props.icon || ''
+export const active = $props.active || false
+/** A count, or any short string. Zero and empty are not rendered. */
+export const badge = $props.badge || ''
+
+export const hasBadge = badge !== '' && badge !== 0 && badge !== '0'
+
+/*
+ * The active state is a filled pill behind the item rather than a colour
+ * change alone. Colour alone is the one distinction that disappears for the
+ * ~8% of men with a red-green deficiency and for anyone in bright sunlight,
+ * which is most of the time a phone is used outdoors.
+ */
+export const itemClasses = `
+  relative flex min-w-[68px] flex-col items-center gap-0.5 rounded-full px-4 py-1.5
+  text-[11px] font-medium leading-tight transition-colors
+  ${active ? 'bg-surface-sunken text-accent' : 'text-fg-muted hover:text-fg'}
+`.replace(/\s+/g, ' ').trim()
+</script>
+
+<a
+  href="{{ href }}"
+  class="{{ itemClasses }}"
+  data-stx-tab-bar-item
+  @if (active)
+    aria-current="page"
+  @endif
+>
+  <span class="relative flex h-6 w-6 items-center justify-center" aria-hidden="true">
+    {!! icon !!}
+
+    @if (hasBadge)
+      {{--
+        The badge sits on the icon rather than after the label: it has to
+        survive the label being two words wide, and anchoring it to the glyph
+        keeps every tab's badge in the same place.
+      --}}
+      <span class="absolute -right-2 -top-1 min-w-[16px] rounded-full bg-danger px-1 text-[10px] font-semibold leading-4 text-white">
+        {{ badge }}
+      </span>
+    @endif
+  </span>
+
+  <span>{{ label }}</span>
+</a>

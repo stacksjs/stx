@@ -1,0 +1,50 @@
+<script server>
+/** One pill. See `FilterChips` for why a menu chip is not a toggle chip. */
+export const label = $props.label || ''
+export const href = $props.href || '#'
+export const active = $props.active || false
+/** Opens a picker rather than toggling in place — draws a chevron. */
+export const menu = $props.menu || false
+export const count = $props.count || ''
+
+export const hasCount = count !== '' && count !== 0 && count !== '0'
+
+/*
+ * `shrink-0`, because the row scrolls.
+ *
+ * Without it flexbox distributes the overflow by squeezing every chip, and a
+ * row of filters that cannot overflow instead renders as a row of ellipses.
+ */
+export const chipClasses = `
+  inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2
+  text-sm font-medium transition-colors
+  ${active
+    ? 'border-transparent bg-fg text-surface'
+    : 'border-line bg-surface-raised text-fg hover:bg-surface-sunken'}
+`.replace(/\s+/g, ' ').trim()
+</script>
+
+<a
+  href="{{ href }}"
+  class="{{ chipClasses }}"
+  data-stx-filter-chip
+  @if (active)
+    aria-current="true"
+  @endif
+>
+  <span>{{ label }}</span>
+
+  @if (hasCount)
+    <span class="rounded-full bg-surface-sunken px-1.5 text-xs font-semibold text-fg-muted">{{ count }}</span>
+  @endif
+
+  @if (menu)
+    {{--
+      The chevron is the whole difference between "this filters the list" and
+      "this opens a picker", so it is drawn rather than implied.
+    --}}
+    <svg class="h-4 w-4 opacity-60" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  @endif
+</a>

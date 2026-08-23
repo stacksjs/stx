@@ -1,0 +1,42 @@
+<script server>
+/**
+ * A titled group of rows on a rounded card — the "My Work" pattern.
+ *
+ * The title sits *outside* the card. That is the whole convention: the card is
+ * the group, the heading names it, and putting the heading inside makes the
+ * first row look like a header and every subsequent group look like a
+ * continuation of the one above it.
+ *
+ * Dividers are drawn by the card rather than by the rows, via
+ * `divide-y`, so a row does not have to know whether it is last — which is how
+ * a trailing hairline ends up under the final item of every list.
+ */
+export const title = $props.title || ''
+/** Right-aligned control beside the title — "See all", a menu glyph. */
+export const action = $props.action || ''
+export const actionHref = $props.actionHref || ''
+export const className = $props.className || ''
+
+export const cardClasses = `
+  overflow-hidden rounded-2xl border border-line bg-surface-raised
+  divide-y divide-line
+`.replace(/\s+/g, ' ').trim()
+</script>
+
+<section class="{{ className }}" data-stx-section-card>
+  @if (title || action)
+    <header class="flex items-baseline justify-between px-1 pb-2">
+      @if (title)
+        <h2 class="text-2xl font-bold tracking-tight text-fg-strong">{{ title }}</h2>
+      @endif
+
+      @if (action)
+        <a href="{{ actionHref }}" class="text-sm font-medium text-accent">{{ action }}</a>
+      @endif
+    </header>
+  @endif
+
+  <div class="{{ cardClasses }}">
+    <slot />
+  </div>
+</section>

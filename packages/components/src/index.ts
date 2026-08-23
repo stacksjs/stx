@@ -30,6 +30,8 @@ export * from './ui/form'
 export * from './ui/image'
 export * from './ui/input'
 export * from './ui/listbox'
+// The phone primitives: a bottom tab bar, filter pills, dense list rows.
+export * from './ui/mobile'
 export * from './ui/navigator'
 export * from './ui/notification'
 export * from './ui/pagination'

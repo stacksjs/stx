@@ -1,0 +1,53 @@
+<script server>
+/**
+ * The bottom tab bar — the one control a phone app is navigated by.
+ *
+ * Floating rather than flush: a rounded bar inset from the window edges with
+ * the content scrolling *under* it, which is what every current iOS app does
+ * and what the safe area at the bottom of a modern iPhone is shaped for. A bar
+ * pinned flush to the bottom either eats the home indicator or leaves a band of
+ * dead colour beneath itself.
+ *
+ * `items` is the whole bar. Each is `{ label, href, icon, active?, badge? }`,
+ * where `icon` is inline SVG or any markup — the bar does not own an icon set,
+ * because an application's icons are its own and a component that ships them
+ * makes every consumer look like the component.
+ */
+export const items = $props.items || []
+export const className = $props.className || ''
+
+/**
+ * `env(safe-area-inset-bottom)` with a floor, not instead of one.
+ *
+ * On a device with a home indicator the inset is real and the bar must clear
+ * it. On one without — an SE, a simulator in a small window, a desktop browser
+ * looking at the mobile layout — the inset is `0px` and a bar with no floor
+ * sits on the very edge of the screen. `max()` is the only spelling that gets
+ * both right.
+ */
+export const barStyle = 'bottom: max(env(safe-area-inset-bottom, 0px), 12px);'
+
+export const barClasses = `
+  fixed inset-x-0 z-40 mx-auto flex w-max max-w-[calc(100%-24px)] items-stretch gap-1
+  rounded-full border border-line bg-surface-raised/90 px-2 py-1.5
+  shadow-lg backdrop-blur-xl
+  ${className}
+`.replace(/\s+/g, ' ').trim()
+</script>
+
+{{--
+  A `nav` with a label, because this is the primary navigation of the
+  application and a screen reader landing on an unlabelled group of five links
+  has no way to know that.
+--}}
+<nav class="{{ barClasses }}" style="{{ barStyle }}" aria-label="Primary" data-stx-tab-bar>
+  @foreach (items as item)
+    <TabBarItem
+      :label="item.label"
+      :href="item.href"
+      :icon="item.icon"
+      :active="item.active"
+      :badge="item.badge"
+    />
+  @endforeach
+</nav>
