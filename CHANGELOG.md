@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.218...v0.2.219)
+
+## ✨ Features
+
+- **response**: let a view decide its own HTTP status ([465b869](https://github.com/stacksjs/stx/commit/465b869)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.219 ([1b35de7](https://github.com/stacksjs/stx/commit/1b35de7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.217...v0.2.218)
 
 ## ✨ Features
