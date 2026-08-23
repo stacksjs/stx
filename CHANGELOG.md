@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.219...v0.2.220)
+
+## 🐛 Bug Fixes
+
+- **serve**: say that a page and its SPA fragment are two answers to one url ([0f04509](https://github.com/stacksjs/stx/commit/0f04509)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.220 ([e711492](https://github.com/stacksjs/stx/commit/e711492)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.218...v0.2.219)
 
 ## ✨ Features
