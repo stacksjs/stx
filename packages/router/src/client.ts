@@ -1575,7 +1575,26 @@ else {
       var isActive=href!=='/'?cur.startsWith(href):cur==='/';
       if(isExact)eac.split(' ').forEach(function(cls){if(cls)link.classList.add(cls)});
       if(isActive)ac.split(' ').forEach(function(cls){if(cls)link.classList.add(cls)});
+      markCurrent(link,isExact);
     });
+  }
+
+  // aria-current="page" names the page the user is ON, so it has to move when
+  // the page does. The server stamps it on the link for the page it rendered;
+  // after that, only a full load would ever correct it, and a fragment swap is
+  // not a full load. Left alone, a screen reader announces the entry the user
+  // arrived through as current for the rest of the session, however far they
+  // navigate — silently wrong, and only to the people relying on it.
+  //
+  // Only ever touched on links that already carry the attribute or are the
+  // current one, so a page using aria-current for something else — a step in a
+  // wizard, a sort direction — is not rewritten out from under itself.
+  function markCurrent(link,isExact){
+    if(isExact){
+      if(link.getAttribute('aria-current')!=='page')link.setAttribute('aria-current','page');
+      return;
+    }
+    if(link.getAttribute('aria-current')==='page')link.removeAttribute('aria-current');
   }
 
   // ── Progress bar DOM + style ──

@@ -502,3 +502,71 @@ describe('router browser navigation behavior', () => {
     expect(window.stxRouter.cache['/products']).toBeUndefined()
   })
 })
+
+describe('aria-current across fragment swaps', () => {
+  /**
+   * A layout-less site: no `stx-layout` metas, and a nav the server stamped
+   * with the current page — the shape that made this visible on a real site.
+   */
+  function navDocument(): string {
+    return `
+      <html>
+        <head></head>
+        <body>
+          <nav>
+            <a data-stx-link href="/benefits" class="is-current" aria-current="page">Benefits</a>
+            <a data-stx-link href="/classes">Classes</a>
+          </nav>
+          <main>Benefits</main>
+        </body>
+      </html>
+    `
+  }
+
+  function fragment(html: string) {
+    return response(html, {
+      'X-STX-Fragment': 'true',
+      'X-STX-Layout': '',
+      'X-STX-Layout-Group': 'app',
+    })
+  }
+
+  it('moves aria-current to the page actually being shown', async () => {
+    const window = installRouter(navDocument(), async () => fragment('<section>Sixteen classes</section>'))
+
+    await window.stxRouter.navigate('/classes')
+    await waitForRouterSwap()
+
+    const links = window.document.querySelectorAll('nav a')
+    // The server marked /benefits. Only a full load would ever have corrected
+    // it, and a fragment swap is not a full load — so a screen reader went on
+    // announcing the entry the visitor arrived through as the current page.
+    expect(links[0]?.getAttribute('aria-current')).toBeNull()
+    expect(links[1]?.getAttribute('aria-current')).toBe('page')
+  })
+
+  it('leaves aria-current alone on links that are not the current page', async () => {
+    // `aria-current` also marks steps, dates and sort directions. Only the
+    // exact-current link and links already claiming `page` are touched.
+    const window = installRouter(`
+      <html>
+        <head></head>
+        <body>
+          <nav>
+            <a data-stx-link href="/benefits">Benefits</a>
+            <a data-stx-link href="/classes">Classes</a>
+            <a data-stx-link href="/step-2" aria-current="step">Step 2</a>
+          </nav>
+          <main>Benefits</main>
+        </body>
+      </html>
+    `, async () => fragment('<section>Sixteen classes</section>'))
+
+    await window.stxRouter.navigate('/classes')
+    await waitForRouterSwap()
+
+    const links = window.document.querySelectorAll('nav a')
+    expect(links[1]?.getAttribute('aria-current')).toBe('page')
+    expect(links[2]?.getAttribute('aria-current')).toBe('step')
+  })
+})
