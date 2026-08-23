@@ -170,6 +170,7 @@ export * from './scaffolding'
 export * from './script-classifier'
 export * from './seo'
 export * from './serve'
+export * from './spa-nav'
 // Where stx keeps its generated state (`.stx/` by default, configurable)
 export * from './state-dir'
 export * from './style-scoping'

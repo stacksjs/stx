@@ -20,6 +20,7 @@ import { pageShipsSignalsRuntime } from './runtime-injection'
 import { patternToRegex } from 'stx-router'
 import { compressResponse } from './compression'
 import { actionRedirectResponse, isActionableMethod } from './page-action'
+import { FRAGMENT_CACHE_CONTROL, isSpaNavRequest, spaNavVaryHeaders } from './spa-nav'
 
 /**
  * Production server configuration.
@@ -214,7 +215,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
         }
   
         // ── Route matching ──
-        const isSpaNav = request.headers.get('X-STX-Router') === 'true'
+        const isSpaNav = isSpaNavRequest(request)
         let matchedRoute: ManifestRoute | null = null
         let params: Record<string, string> = {}
   
@@ -277,7 +278,14 @@ export async function startProductionServer(options: ProductionServerOptions = {
                       'X-STX-Layout-Group': layoutMetadata.group,
                     }
                   : {}),
-                'Cache-Control': 'no-cache',
+                // Two bodies live at this url — the document below and this
+                // fragment — chosen by a request header, so the header is part
+                // of the cache key and has to be declared. Without it a shared
+                // cache stores whichever it saw first and serves that to
+                // everyone; a stored fragment leaves every visitor on a page
+                // with no doctype, stylesheet or nav (#1958).
+                ...spaNavVaryHeaders(),
+                'Cache-Control': FRAGMENT_CACHE_CONTROL,
               },
             })
           }
@@ -320,6 +328,12 @@ export async function startProductionServer(options: ProductionServerOptions = {
             status: compiled.status ?? 200,
             headers: {
               'Content-Type': 'text/html',
+              // The one response here a shared cache is invited to keep, and
+              // therefore the one that most needs to name the header the body
+              // depends on. `public, max-age=60` without it lets a proxy hand
+              // this document to the router, which swaps a whole <html> tree
+              // inside the container.
+              ...spaNavVaryHeaders(),
               'Cache-Control': 'public, max-age=60',
             },
           })
@@ -359,6 +373,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
            */
           const headers = new Headers({
             'Content-Type': 'text/html',
+            ...spaNavVaryHeaders(),
             'Cache-Control': 'no-cache',
           })
           for (const cookie of cookies ?? [])

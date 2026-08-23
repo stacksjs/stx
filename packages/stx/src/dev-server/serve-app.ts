@@ -17,6 +17,7 @@ import {
 import { partialsCache } from '../includes'
 import { pageShipsSignalsRuntime } from '../runtime-injection'
 import { BUILD_ID_HEADER, getBuildId } from '../build-id'
+import { FRAGMENT_CACHE_CONTROL, spaNavVaryHeaders } from '../spa-nav'
 import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { createRouter, matchRoute, formatRoutes, findErrorPage } from '../router'
@@ -860,7 +861,13 @@ catch {
                 // changes it, letting the router notice that the runtime
                 // already loaded in the page predates it (#1772).
                 [BUILD_ID_HEADER]: getBuildId(),
-                'Cache-Control': 'no-store, no-cache, must-revalidate',
+                // The document and this fragment share one url and are chosen
+                // by a request header, so the header belongs in the cache key.
+                // Undeclared, a shared cache serves whichever it stored first
+                // to everyone — a stored fragment means a headless page with no
+                // doctype, stylesheet or nav for every visitor (#1958).
+                ...spaNavVaryHeaders(),
+                'Cache-Control': FRAGMENT_CACHE_CONTROL,
               },
             })
           }
@@ -929,6 +936,8 @@ catch {
             status: responseStatus,
             headers: {
               'Content-Type': 'text/html',
+              // Same url, other representation — see the fragment branch above.
+              ...spaNavVaryHeaders(),
               'Cache-Control': 'no-store, no-cache, must-revalidate',
               'Pragma': 'no-cache',
               'Expires': '0',

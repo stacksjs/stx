@@ -9,6 +9,7 @@ import { readMarkdownFile } from '../assets'
 import { stxClientHelpers } from '../client-helpers'
 import { config } from '../config'
 import { partialsCache } from '../includes'
+import { FRAGMENT_CACHE_CONTROL, isSpaNavRequest, spaNavVaryHeaders } from '../spa-nav'
 import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { clearComponentCache } from '../utils'
@@ -671,7 +672,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
       // If still no match and there's a root route, serve that as fallback (SPA mode)
       if (url.pathname !== '/' && routes['/']) {
-        const isRouterRequest = request.headers.get('X-STX-Router') === 'true'
+        const isRouterRequest = isSpaNavRequest(request)
 
         return injectCrosswindCSS(routes['/'].content).then(content => {
           if (isRouterRequest) {
@@ -684,7 +685,10 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
                 headers: {
                   'Content-Type': 'text/html',
                   'X-STX-Partial': 'true',
-                  'Cache-Control': 'no-store, no-cache, must-revalidate',
+                  // One url, two bodies, chosen by a request header — see
+                  // spa-nav.ts for what an undeclared cache key costs here.
+                  ...spaNavVaryHeaders(),
+                  'Cache-Control': FRAGMENT_CACHE_CONTROL,
                   'Pragma': 'no-cache',
                   'Expires': '0',
                 },
@@ -695,6 +699,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
           return new Response(content, {
             headers: {
               'Content-Type': 'text/html',
+              ...spaNavVaryHeaders(),
               'Cache-Control': 'no-store, no-cache, must-revalidate',
               'Pragma': 'no-cache',
               'Expires': '0',

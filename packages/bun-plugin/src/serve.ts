@@ -19,7 +19,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, getBuildId, mergeCrosswindConfig, readResponseHeaders, readResponseStatus, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCrosswindConfig, readResponseHeaders, readResponseStatus, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
@@ -3509,7 +3509,7 @@ function __stxOverlay(errs){
                 if (content) {
                   const responseStatus = reqCtx.responseStatus ?? 200
                   // SPA navigation: return only <main> content as fragment
-                  const isSpaNav = req.headers.get('X-STX-Router') === 'true'
+                  const isSpaNav = req.headers.get(SPA_NAV_HEADER) === 'true'
                   if (isSpaNav) {
                     // Detect layout from rendered content — extract @extends layout name
                     // If layout differs from the referrer's layout, return full HTML (not fragment)
@@ -3711,7 +3711,14 @@ function __stxOverlay(errs){
                         // runtime already loaded in the page predates it (#1772).
                         [BUILD_ID_HEADER]: getBuildId(),
                         ...(containerAttrs && { 'X-STX-Container-Attrs': encodeURIComponent(containerAttrs) }),
-                        'Cache-Control': 'no-store',
+                        // This url answers two different bodies depending on the
+                        // request header above, so it has to say so. Without the
+                        // `Vary`, a shared cache stores whichever it saw first
+                        // and serves it to everyone: when that is the fragment,
+                        // every visitor gets a headless page with no doctype,
+                        // stylesheet or nav until the entry expires (#1958).
+                        ...spaNavVaryHeaders(),
+                        'Cache-Control': FRAGMENT_CACHE_CONTROL,
                         ...corsHeaders,
                       },
                     })
@@ -3768,6 +3775,12 @@ function __stxOverlay(errs){
 
                   const pageHeaders = new Headers({
                     'Content-Type': 'text/html; charset=utf-8',
+                    // The same url also answers a fragment (see the SPA branch
+                    // above), so the document half declares the cache key too.
+                    // Marking only the fragment leaves the mirror-image bug: a
+                    // cache holding the document hands it back to the router,
+                    // which swaps a whole <html> tree inside the container.
+                    ...spaNavVaryHeaders(),
                     'Cache-Control': 'no-store',
                     ...corsHeaders,
                   })

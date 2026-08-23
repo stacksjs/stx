@@ -15,6 +15,7 @@ import type { StxOptions } from './types'
 import path from 'node:path'
 import { classifyAllScripts } from './script-classifier'
 import { startsDocument } from './document-shell'
+import { isSpaNavRequest } from './spa-nav'
 export { extractLayoutMetadata } from 'stx-router/layout-metadata'
 export type { LayoutMetadata } from 'stx-router/layout-metadata'
 
@@ -340,7 +341,7 @@ export function stripDocumentWrapper(html: string, options: { preserveHead?: boo
  * Check if a request is an SPA navigation request (from the stx router).
  */
 export function isSpaNavigation(request: Request): boolean {
-  return request.headers.get('X-STX-Router') === 'true'
+  return isSpaNavRequest(request)
 }
 
 /**
