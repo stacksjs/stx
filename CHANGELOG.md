@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.225...v0.2.226)
+
+## 🐛 Bug Fixes
+
+- **serve**: derive placeholders after the port is bound, and in batches ([79460d2](https://github.com/stacksjs/stx/commit/79460d2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.226 ([cfd5440](https://github.com/stacksjs/stx/commit/cfd5440)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.224...v0.2.225)
 
 ## 🐛 Bug Fixes
