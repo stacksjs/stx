@@ -1115,6 +1115,23 @@ export async function serve(options: ServeOptions): Promise<void> {
   const partialsDir = options.partialsDir ?? stxConfig.partialsDir ?? defaultStxConfig.partialsDir
   const publicDir = options.publicDir ?? stxConfig.publicDir ?? 'public'
 
+  // Derive image placeholders once, before the first request. <StxImage> reads
+  // them synchronously — a builtin renders in a synchronous pass — so a server
+  // that skipped this would serve the flat-grey fallback forever while the same
+  // site built statically showed the real thing. Cached against mtime and size,
+  // so a restart pays milliseconds rather than seconds.
+  try {
+    const { warmImagePlaceholders } = await import('@stacksjs/stx')
+    const derived = await warmImagePlaceholders(nodePath.resolve(process.cwd(), publicDir), {
+      cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
+    })
+    if (derived > 0 && !production)
+      console.log(`[stx] derived ${derived} image placeholder(s)`)
+  }
+  catch {
+    // No codec or no public directory. <StxImage> falls back to a flat colour.
+  }
+
   // The stx module to use for processDirectives / extractVariables / etc.
   // When the caller passed an explicit override, prefer it — it's how a
   // framework with a vendored copy (pantry, etc.) makes sure we use *its*
