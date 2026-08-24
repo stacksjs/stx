@@ -248,7 +248,13 @@ export async function warmImagePlaceholders(
 
   const images = collectImages(publicDir, '').slice(0, limit)
 
-  await Promise.all(images.map(async ([urlPath, filePath]) => {
+  // In batches rather than all at once. Decoding is native work that does not
+  // yield, so a hundred of them in flight together pins the loop — long enough,
+  // on a server, that everything else still starting up simply stops. Eight
+  // keeps the machine busy without taking it over.
+  const CONCURRENCY = 8
+
+  const derive = async ([urlPath, filePath]: [string, string]) => {
     let stat: fs.Stats
     try {
       stat = fs.statSync(filePath)
@@ -279,7 +285,10 @@ export async function warmImagePlaceholders(
     catch {
       // Unreadable or an unsupported codec — no placeholder for this one.
     }
-  }))
+  }
+
+  for (let i = 0; i < images.length; i += CONCURRENCY)
+    await Promise.all(images.slice(i, i + CONCURRENCY).map(derive))
 
   if (cachePath && cacheDirty) writeCache(cachePath, cache)
 

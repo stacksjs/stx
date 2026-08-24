@@ -1130,19 +1130,16 @@ export async function serve(options: ServeOptions): Promise<void> {
   // So: start it now, bind without it, and make the first request wait. After
   // that the promise is already settled and costs nothing. A restart is
   // milliseconds anyway — the derive is cached against mtime and size.
-  const placeholdersReady = (async () => {
-    try {
-      const { warmImagePlaceholders } = await import('@stacksjs/stx')
-      const derived = await warmImagePlaceholders(nodePath.resolve(process.cwd(), publicDir), {
-        cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
-      })
-      if (derived > 0 && !production)
-        console.log(`[stx] derived ${derived} image placeholder(s)`)
-    }
-    catch {
-      // No codec or no public directory. <StxImage> falls back to a flat colour.
-    }
-  })()
+  //
+  // The work itself starts AFTER the port is bound, further down. Not awaiting
+  // it was not enough: decoding 114 images saturates the loop for long enough
+  // that everything still queued behind it in this function — Crosswind, route
+  // discovery, the bind itself — simply does not run. The deploy failed the
+  // same way twice on that.
+  let markPlaceholdersReady: () => void = () => {}
+  const placeholdersReady = new Promise<void>((resolve) => {
+    markPlaceholdersReady = resolve
+  })
 
   // The stx module to use for processDirectives / extractVariables / etc.
   // When the caller passed an explicit override, prefer it — it's how a
@@ -4136,6 +4133,27 @@ function __stxOverlay(errs){
   if (actualPort !== port && !options.quiet) {
     console.warn(`\x1b[33m[stx]\x1b[0m port ${port} in use — using \x1b[1m${actualPort}\x1b[0m instead`)
   }
+
+  // Now that the socket is listening, derive the image placeholders. Ordering
+  // is the whole point: the health check only asks whether something is bound,
+  // and the first request waits on `placeholdersReady` anyway — so this costs
+  // nothing a visitor sees, and no longer costs the deploy.
+  void (async () => {
+    try {
+      const { warmImagePlaceholders } = await import('@stacksjs/stx')
+      const derived = await warmImagePlaceholders(nodePath.resolve(process.cwd(), publicDir), {
+        cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
+      })
+      if (derived > 0 && !production)
+        console.log(`[stx] derived ${derived} image placeholder(s)`)
+    }
+    catch {
+      // No codec or no public directory. <StxImage> falls back to a flat colour.
+    }
+    finally {
+      markPlaceholdersReady()
+    }
+  })()
 
   if (ENABLE_HTML_CACHE && options.prewarmRenderCache) {
     const requestedConcurrency = typeof options.prewarmRenderCache === 'number'
