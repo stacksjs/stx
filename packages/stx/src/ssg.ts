@@ -1211,6 +1211,24 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     }
 
     result.totalPages = pagesToGenerate.length
+
+    // Derive image placeholders BEFORE any page renders. <StxImage> reads them
+    // with a synchronous lookup — a builtin renders inside a synchronous pass —
+    // so this is the only moment the work can happen. Cached against file
+    // mtime and size, which makes it a no-op on every build after the first.
+    try {
+      const { warmImagePlaceholders } = await import('./builtins/image-placeholder')
+      const { stateDir } = await import('./state-dir')
+      const warmed = await warmImagePlaceholders(cfg.publicDir, {
+        cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
+      })
+      if (warmed > 0) console.log(`Derived ${warmed} image placeholder(s)`)
+    }
+    catch {
+      // No codec, no public directory, nothing to derive from. <StxImage>
+      // falls back to a flat colour and the build carries on.
+    }
+
     console.log(`Generating ${result.totalPages} pages...`)
 
     // Sitemap entries

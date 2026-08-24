@@ -28,6 +28,7 @@
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
 import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
+import { getImagePlaceholder } from './image-placeholder'
 
 // Default responsive breakpoints (matching Tailwind defaults)
 const DEFAULT_BREAKPOINTS: Record<string, number> = {
@@ -249,22 +250,39 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     }
 
     // ── Placeholder ──────────────────────────────────────────────
-    // `blur`, `color`, and `thumbhash` all fall through to a synthetic CSS
-    // gradient at component-render time — the builtin doesn't have access
-    // to actual source pixel data here. For a real per-image thumbhash
-    // dataURL, run images through the @image directive (or build plugin)
-    // which calls `generatePlaceholder({ placeholder: 'thumbhash' })` on
-    // the actual source and stores the result; alternatively pass a
-    // pre-computed `placeholder="data:image/png;base64,…"` URL directly.
+    // `blur` and `thumbhash` are the image's own pixels, derived at build time
+    // and looked up here (see ./image-placeholder). Before that they were a
+    // grey rectangle — the SAME grey rectangle on every image, since nothing
+    // in this synchronous render had ever opened the file.
+    //
+    // `color` asks for one flat colour, so it gets the image's average rather
+    // than the mesh. All three fall back to `placeholderColor` when no warm has
+    // run, which keeps a build without the image codec working exactly as it
+    // did before.
     if (placeholder === 'blur' || placeholder === 'color' || placeholder === 'thumbhash') {
-      const placeholderUrl = generateBlurPlaceholder(
-        numWidth || 16,
-        numHeight || 9,
-        placeholderColor,
-      )
-      styles.push(`background-image:url(${placeholderUrl})`)
-      styles.push('background-size:cover')
-      styles.push('background-repeat:no-repeat')
+      const derived = getImagePlaceholder(src)
+
+      if (derived && placeholder === 'color') {
+        styles.push(`background-color:${derived.color}`)
+      }
+      else if (derived) {
+        // The average colour sits under the mesh so the slot is never blank,
+        // including for the moment an SVG background takes to rasterise.
+        styles.push(`background-color:${derived.color}`)
+        styles.push(`background-image:url(${derived.dataUrl})`)
+        styles.push('background-size:cover')
+        styles.push('background-repeat:no-repeat')
+      }
+      else {
+        const placeholderUrl = generateBlurPlaceholder(
+          numWidth || 16,
+          numHeight || 9,
+          placeholderColor,
+        )
+        styles.push(`background-image:url(${placeholderUrl})`)
+        styles.push('background-size:cover')
+        styles.push('background-repeat:no-repeat')
+      }
     }
     else if (placeholder && placeholder !== 'empty' && placeholder !== 'none') {
       // Custom placeholder URL — accept any dataURL the consumer pre-computed

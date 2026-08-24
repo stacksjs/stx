@@ -6,6 +6,8 @@ declare module 'ts-images' {
   }
 
   export interface PlaceholderResult {
+    /** Raw thumbhash bytes (21-25 of them), present on `generateThumbHash`. */
+    hash?: Uint8Array
     dataUrl: string
     dataURL: string
     width: number
@@ -35,6 +37,10 @@ declare module 'ts-images' {
   export function placeholder(input: Buffer | Uint8Array | string, options?: Record<string, unknown>): Promise<string>
   export function generatePlaceholder(input: string, options?: Record<string, unknown>): Promise<PlaceholderResult>
   export function generateThumbHash(input: string, options?: Record<string, unknown>): Promise<PlaceholderResult>
+  /** Decoded thumbhash pixels — `rgba` is `w * h * 4` bytes. */
+  export function thumbHashToRGBA(hash: Uint8Array): { w: number, h: number, rgba: Uint8Array }
+  export function thumbHashToDataURL(hash: Uint8Array): string
+  export function thumbHashToAverageRGBA(hash: Uint8Array): { r: number, g: number, b: number, a: number }
   export function decode(input: Buffer | Uint8Array | string, format?: string): Promise<Buffer>
   export function encode(input: Buffer | Uint8Array, format: string, options?: Record<string, unknown>): Promise<Buffer>
   export function sharpen(input: Buffer | Uint8Array, amount?: number | Record<string, unknown>): Promise<Buffer>

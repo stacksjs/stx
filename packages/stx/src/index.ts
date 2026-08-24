@@ -86,6 +86,16 @@ export { type Middleware } from './ssr'
 // it the IconBuiltin returns a "collection not loaded" placeholder on
 // the first render of every page after server start.
 export { preloadIconCollection } from './builtins'
+// Build-time image placeholders for <StxImage>. Exported so a build (or a
+// long-lived server) can warm them before anything renders.
+export {
+  clearImagePlaceholders,
+  getImagePlaceholder,
+  placeholdersWarmed,
+  setImagePlaceholder,
+  warmImagePlaceholders,
+  type ImagePlaceholder,
+} from './builtins/image-placeholder'
 
 // Core functionality - these are the primary modules
 export * from './reactivity'
