@@ -1115,22 +1115,34 @@ export async function serve(options: ServeOptions): Promise<void> {
   const partialsDir = options.partialsDir ?? stxConfig.partialsDir ?? defaultStxConfig.partialsDir
   const publicDir = options.publicDir ?? stxConfig.publicDir ?? 'public'
 
-  // Derive image placeholders once, before the first request. <StxImage> reads
-  // them synchronously — a builtin renders in a synchronous pass — so a server
-  // that skipped this would serve the flat-grey fallback forever while the same
-  // site built statically showed the real thing. Cached against mtime and size,
-  // so a restart pays milliseconds rather than seconds.
-  try {
-    const { warmImagePlaceholders } = await import('@stacksjs/stx')
-    const derived = await warmImagePlaceholders(nodePath.resolve(process.cwd(), publicDir), {
-      cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
-    })
-    if (derived > 0 && !production)
-      console.log(`[stx] derived ${derived} image placeholder(s)`)
-  }
-  catch {
-    // No codec or no public directory. <StxImage> falls back to a flat colour.
-  }
+  // Derive image placeholders for <StxImage>, which reads them synchronously
+  // because a builtin renders in a synchronous pass. Two things have to be true
+  // at once, and the obvious ordering gets one of them wrong each way:
+  //
+  //   - Nothing may be RENDERED before this finishes, or the page ships the
+  //     flat-grey fallback. On a CDN-fronted site that is worse than it sounds:
+  //     the grey copy is what gets cached, for as long as the document TTL.
+  //   - The port must BIND immediately. Awaiting a cold derive here cost
+  //     trifitla a failed deploy — 114 images took longer than the health
+  //     window, systemd reported the unit active, and ts-cloud correctly called
+  //     a service that never bound a failure.
+  //
+  // So: start it now, bind without it, and make the first request wait. After
+  // that the promise is already settled and costs nothing. A restart is
+  // milliseconds anyway — the derive is cached against mtime and size.
+  const placeholdersReady = (async () => {
+    try {
+      const { warmImagePlaceholders } = await import('@stacksjs/stx')
+      const derived = await warmImagePlaceholders(nodePath.resolve(process.cwd(), publicDir), {
+        cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
+      })
+      if (derived > 0 && !production)
+        console.log(`[stx] derived ${derived} image placeholder(s)`)
+    }
+    catch {
+      // No codec or no public directory. <StxImage> falls back to a flat colour.
+    }
+  })()
 
   // The stx module to use for processDirectives / extractVariables / etc.
   // When the caller passed an explicit override, prefer it — it's how a
@@ -3043,6 +3055,11 @@ function __stxOverlay(errs){
         // no good reason to enforce request timeouts.
         idleTimeout: production ? 30 : 0,
         async fetch(req, server) {
+          // See `placeholdersReady`: the port is already bound, and this is
+          // where the wait actually belongs — before anything renders, not
+          // before anything listens. Settled after the first request.
+          await placeholdersReady
+
           // Compression at the boundary, so it covers all thirty-nine exits from
           // this handler rather than the one that happens to converge. Hot reload
           // streams over text/event-stream, which compressResponse never buffers.

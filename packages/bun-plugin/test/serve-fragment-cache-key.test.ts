@@ -123,3 +123,25 @@ describe('the SPA fragment cache key', () => {
     expect(cacheControl).toContain('no-store')
   })
 })
+
+describe('startup does not hold the port hostage', () => {
+  /**
+   * Deriving image placeholders used to happen before `serve()` bound, and a
+   * cold run over 114 images outlasted ts-cloud's health window: systemd
+   * reported the unit active, nothing was listening, and the deploy failed on a
+   * server that came up fine a moment later.
+   *
+   * The port now binds first and the wait moved into the request handler, which
+   * is where it belongs — nothing may RENDER before the placeholders exist, but
+   * plenty may listen. This asserts the half that broke: the socket answers
+   * promptly after start.
+   */
+  it('answers a request without waiting on the image derive', async () => {
+    const started = Date.now()
+    const res = await fetch(`${BASE}/benefits`)
+    expect(res.status).toBe(200)
+    // The server in this file has been up since beforeAll, so this is really a
+    // regression guard on the handler never blocking indefinitely.
+    expect(Date.now() - started).toBeLessThan(20_000)
+  })
+})
