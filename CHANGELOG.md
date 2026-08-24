@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.222...v0.2.223)
+
+## ✨ Features
+
+- **image**: give StxImage a placeholder made of the image, not a grey box ([520f12f](https://github.com/stacksjs/stx/commit/520f12f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.223 ([898f7b4](https://github.com/stacksjs/stx/commit/898f7b4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.221...v0.2.222)
 
 ## 🐛 Bug Fixes
