@@ -21,14 +21,28 @@ bun add @stacksjs/components
 />
 ```
 
-### Lazy Loading (default)
+### Lazy loading (default)
+
+Native `loading="lazy"`, so it works with scripts disabled.
+
+```stx
+<Image src="/large-image.jpg" alt="Large image" />
+```
+
+### The one image above the fold
+
+```stx
+<Image src="/hero.jpg" alt="Hero" priority />
+```
+
+### Responsive
 
 ```stx
 <Image
-  src="/large-image.jpg"
-  alt="Large image"
-  lazy
-  placeholder="/thumbnail.jpg"
+  src="/photo-960.webp"
+  srcSet="/photo-320.webp 320w, /photo-640.webp 640w, /photo-960.webp 960w"
+  sizes="(min-width: 1024px) 45vw, 95vw"
+  alt="Photo"
 />
 ```
 
@@ -61,57 +75,71 @@ bun add @stacksjs/components
 />
 ```
 
-### With Callbacks
-
-```stx
-<script server>
-const handleLoad = () => {
-  console.log('Image loaded!')
-}
-
-const handleError = () => {
-  console.error('Failed to load image')
-}
-</script>
-
-<Image
-  src="/photo.jpg"
-  alt="Photo"
-  :onLoad="handleLoad"
-  :onError="handleError"
-/>
-```
-
 ## Props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `src` | `string` | - | Image source URL (required) |
 | `alt` | `string` | - | Alt text (required) |
-| `width` | `number \| string` | - | Image width |
-| `height` | `number \| string` | - | Image height |
-| `lazy` | `boolean` | `true` | Enable lazy loading |
-| `placeholder` | `string` | gray SVG | Placeholder image while loading |
-| `onLoad` | `function` | - | Callback when image loads |
-| `onError` | `function` | - | Callback when image fails |
-| `aspectRatio` | `number` | - | Aspect ratio (e.g., 16/9, 4/3) |
-| `objectFit` | `'contain' \| 'cover' \| 'fill' \| 'none' \| 'scale-down'` | `'cover'` | How image fits container |
-| `rounded` | `boolean \| 'full' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl'` | `false` | Border radius |
-| `className` | `string` | `''` | Additional CSS classes |
+| `srcSet` | `string` | - | Responsive candidates, e.g. `"a.jpg 320w, b.jpg 640w"` |
+| `sizes` | `string` | - | How wide the slot is. Pair it with a `w` srcset |
+| `width` | `number \| string` | - | Intrinsic width, to reserve space |
+| `height` | `number \| string` | - | Intrinsic height, to reserve space |
+| `lazy` | `boolean` | `true` | Native `loading="lazy"`. Ignored when `priority` |
+| `priority` | `boolean` | `false` | Above the fold: eager, `fetchpriority="high"` |
+| `decoding` | `'async' \| 'sync' \| 'auto'` | `'async'` | Decode hint |
+| `fetchpriority` | `'high' \| 'low' \| 'auto'` | `'auto'` | Priority hint |
+| `placeholder` | `string` | - | CSS painted *behind* the image while it loads |
+| `aspectRatio` | `number \| string` | - | Only when you want one — see below |
+| `objectFit` | `'contain' \| 'cover' \| 'fill' \| 'none' \| 'scale-down'` | `'cover'` | How the image fills its box |
+| `objectPosition` | `string` | `'center'` | Focal point of the crop |
+| `rounded` | `boolean \| 'full' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl'` | `false` | Corner radius |
+| `zoomOnHover` | `boolean` | `false` | Transition hook for a hover scale |
+| `className` | `string` | `''` | Extra classes on the `<picture>` |
+
+### Blur-up placeholders
+
+`placeholder` takes any CSS `background` value and paints it behind the image,
+so the real file simply covers it as it arrives. No script runs, which means
+it is there in the first paint and survives with JavaScript off.
+
+```stx
+<Image
+  src="/photo.jpg"
+  alt="…"
+  placeholder='url("data:image/bmp;base64,Qk02DAAA…")'
+/>
+```
+
+Generate the data URL at build time — `ts-images` will give you a SplatHash
+(16 bytes) or a thumbhash, and both decode to something you can inline. A flat
+dominant colour works too, and costs twenty bytes:
+
+```stx
+<Image src="/photo.jpg" alt="…" placeholder="#655449" />
+```
+
+Behind the image rather than on it, deliberately: a background set on an
+`<img>` shows through anything transparent in the file, and stays there after
+it loads.
+
+### On `aspectRatio`
+
+Left unset, the component does not impose one. `width` and `height` already
+reserve the right space, and an app that sets its own crop in CSS should win —
+deriving a ratio from the intrinsic dimensions silently overrides it and the
+images come out the wrong shape.
 
 ## Features
 
-- **Lazy loading** - Loads images only when visible (Intersection Observer)
-- **Placeholders** - Shows placeholder until image loads
-- **Aspect ratio** - Maintains aspect ratio to prevent layout shift
-- **Object fit** - Control how images fill their container
-- **Responsive** - Adapts to container size
-- **Error handling** - Shows fallback on load failure
-- **Dark mode** - Skeleton loader adapts to dark mode
-- **Smooth transitions** - Fade-in effect on load
-- **Performance** - Optimized with intersection observer
-- **Modern ES modules** - Clean export syntax
-- **Headwind styling** - Utility-first CSS classes
+- **Native lazy loading** — `loading="lazy"`, not an IntersectionObserver
+- **No JavaScript required** — renders and loads with scripts disabled
+- **Self-contained styling** — inline styles, no utility framework needed
+- **Placeholders** — any CSS background, painted behind the image
+- **Responsive** — `srcSet` and `sizes` passed straight through
+- **Priority hint** — one prop for the above-the-fold image
+- **Layout-transparent wrapper** — sizes to its parent or to its content
+- **WebP** — an optional `<source>` ahead of the fallback
 
 ## Object Fit Options
 
