@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.223...v0.2.224)
+
+## 🐛 Bug Fixes
+
+- **serve**: derive image placeholders on the server too, not only in a build ([677c62f](https://github.com/stacksjs/stx/commit/677c62f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.224 ([75ee50e](https://github.com/stacksjs/stx/commit/75ee50e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.222...v0.2.223)
 
 ## ✨ Features
