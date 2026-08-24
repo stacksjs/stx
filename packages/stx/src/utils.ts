@@ -990,7 +990,38 @@ export async function renderComponentWithSlot(
     // them. Hoist executable caller scripts out of the slot and append them to
     // the expanded component so the parent page's final script pass compiles
     // them with the parent file path and scope.
-    const stashedCallerScripts = stashScriptElements(slotContent)
+    // An `@include` written by the caller belongs to the CALLER's file, the
+    // same way the caller's `<script>` does.
+    //
+    // `processComponents` runs before `processIncludes` in the pipeline, so a
+    // layout that writes
+    //
+    //     <AppShell>
+    //       @include('../components/nav')
+    //     </AppShell>
+    //
+    // handed the raw directive to the component, which then resolved
+    // `../components/nav` against ITS OWN directory. Every such include failed
+    // with an ENOENT naming a path the author never wrote — and because
+    // include failures render in place, the page came back as a wall of error
+    // banners where the navigation, header, and footer should have been.
+    //
+    // Expanding here, against `parentFilePath`, resolves the path the author
+    // meant. Guarded on the directive actually being present so the common
+    // case — slot content with no includes — costs one substring check.
+    let callerSlotContent = slotContent
+    if (slotContent.includes('@include')) {
+      const { processIncludes } = await importOnce('stx/includes', () => import('./includes'))
+      callerSlotContent = await processIncludes(
+        slotContent,
+        parentContext,
+        parentFilePath,
+        options,
+        dependencies,
+      )
+    }
+
+    const stashedCallerScripts = stashScriptElements(callerSlotContent)
     const callerClientScripts: string[] = []
     const componentSlotContent = stashedCallerScripts.output.replace(
       /\x00STX_SCRIPT_(\d+)\x00/g,
