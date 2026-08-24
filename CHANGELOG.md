@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.224...v0.2.225)
+
+## 🐛 Bug Fixes
+
+- **serve**: bind the port first, wait for placeholders before rendering ([0520971](https://github.com/stacksjs/stx/commit/0520971)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.225 ([5426621](https://github.com/stacksjs/stx/commit/5426621)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.223...v0.2.224)
 
 ## 🐛 Bug Fixes
