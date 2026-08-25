@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.227...v0.2.228)
+
+## 🐛 Bug Fixes
+
+- **bun-plugin**: require the stx that resolves slot includes ([b8f80c9](https://github.com/stacksjs/stx/commit/b8f80c9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.228 ([3153c28](https://github.com/stacksjs/stx/commit/3153c28)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.226...v0.2.227)
 
 ## 🐛 Bug Fixes
