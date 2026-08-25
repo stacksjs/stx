@@ -79,3 +79,46 @@ describe('component resolution precedence', () => {
     }
   })
 })
+
+/**
+ * `fallbackComponentsDir` is the component-side counterpart of
+ * `fallbackLayoutsDir`. Without it a host had one bad choice: point
+ * `componentsDir` at the framework defaults and an app can never override a
+ * component, or point it at the app and every framework component stops
+ * resolving.
+ */
+describe('fallbackComponentsDir', () => {
+  it("lets the app override by name while the framework's own still resolve", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'stx-fallback-'))
+    try {
+      const app = path.join(root, 'resources/components')
+      const framework = path.join(root, 'framework/components')
+      await mkdir(app, { recursive: true })
+      await mkdir(framework, { recursive: true })
+
+      // Same name in both — the app must win.
+      await writeFile(path.join(app, 'AppShell.stx'), '<div>APP SHELL</div>')
+      await writeFile(path.join(framework, 'AppShell.stx'), '<div>FRAMEWORK SHELL</div>')
+      // Only the framework has this one — it must still resolve.
+      await writeFile(path.join(framework, 'Notification.stx'), '<div>FRAMEWORK NOTIFICATION</div>')
+
+      const page = path.join(root, 'page.stx')
+      await writeFile(page, '<AppShell /><Notification />')
+
+      const output = await processDirectives(
+        '<AppShell /><Notification />',
+        {},
+        page,
+        { root, componentsDir: app, fallbackComponentsDir: framework } as any,
+        new Set(),
+      )
+
+      expect(output).toContain('APP SHELL')
+      expect(output).not.toContain('FRAMEWORK SHELL')
+      expect(output).toContain('FRAMEWORK NOTIFICATION')
+    }
+    finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+})

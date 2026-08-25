@@ -699,6 +699,23 @@ export interface StxConfig {
    */
   fallbackLayoutsDir?: string
   /**
+   * Where to look for a component `componentsDir` does not have.
+   *
+   * The component-side counterpart of `fallbackLayoutsDir`, and it exists for
+   * the same reason. A framework ships default components and lets an app
+   * override them by name: the app's directory is `componentsDir` and wins,
+   * anything it does not define falls back here.
+   *
+   * Without it, a host had one bad choice to make. Point `componentsDir` at
+   * the framework defaults and an app could never override a component - its
+   * own file was never even looked for. Point it at the app and every
+   * framework component stops resolving. Stacks' production server took the
+   * first option, so an app that had written its own `NativeAppShell.stx`
+   * still rendered the framework's, and the only symptom was that file's
+   * relative includes failing with ENOENT paths the author had never written.
+   */
+  fallbackComponentsDir?: string
+  /**
    * Path to the stores directory, resolved against `root`.
    *
    * Every `.ts` file in it (except `index.ts`, `types.ts` and `.d.ts`) is

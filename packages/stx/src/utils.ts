@@ -598,6 +598,9 @@ export async function userComponentFileExists(
   if (Array.isArray(pluginDirs)) {
     for (const dir of pluginDirs) push(typeof dir === 'string' ? dir : null)
   }
+  // Framework defaults, searched last: the app overrides by name, and anything
+  // it does not define falls back here. Mirrors `fallbackLayoutsDir`.
+  push(options.fallbackComponentsDir)
 
   // Relative path components (./Foo, ../Foo) are always user-authored.
   if (baseName.startsWith('./') || baseName.startsWith('../')) {
@@ -829,6 +832,12 @@ export async function renderComponentWithSlot(
             searchDirs.push(dir)
         }
       }
+
+      // Framework defaults, searched last: the app overrides by name, and
+      // anything it does not define falls back here. Mirrors
+      // `fallbackLayoutsDir`.
+      if (options.fallbackComponentsDir && !searchDirs.includes(options.fallbackComponentsDir))
+        searchDirs.push(options.fallbackComponentsDir)
 
       const normalizedSearchDirs = [...new Set(searchDirs.map((dir) => {
         if (!dir)

@@ -611,6 +611,8 @@ export interface ServeOptions {
    * layout served a 200 with an empty body.
    */
   fallbackLayoutsDir?: string
+  /** Where to look for a component `componentsDir` does not have. */
+  fallbackComponentsDir?: string
   partialsDir?: string
   /**
    * Additional source directories that can affect rendered HTML.
@@ -1112,6 +1114,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   const componentsDir = options.componentsDir ?? stxConfig.componentsDir ?? defaultStxConfig.componentsDir
   const layoutsDir = options.layoutsDir ?? stxConfig.layoutsDir ?? defaultStxConfig.layoutsDir
   const fallbackLayoutsDir = options.fallbackLayoutsDir ?? stxConfig.fallbackLayoutsDir
+  const fallbackComponentsDir = options.fallbackComponentsDir ?? stxConfig.fallbackComponentsDir
   const partialsDir = options.partialsDir ?? stxConfig.partialsDir ?? defaultStxConfig.partialsDir
   const publicDir = options.publicDir ?? stxConfig.publicDir ?? 'public'
 
@@ -2097,7 +2100,7 @@ function __stxOverlay(errs){
   }
 
   // Crosswind CSS lazy loading
-  let crosswindModule: { CSSGenerator: any, config: any } | null = null
+  let crosswindModule: { CSSGenerator: unknown, config: unknown } | null = null
   let crosswindLoadAttempted = false
 
   // Crosswind user config cache. Process lifetime is the invalidation
@@ -2108,7 +2111,7 @@ function __stxOverlay(errs){
   // source change. Re-running the generator for a touched template picks
   // up newly added utility classes that weren't in the previous render.
 
-  async function loadCrosswind(): Promise<{ CSSGenerator: any, config: any } | null> {
+  async function loadCrosswind(): Promise<{ CSSGenerator: unknown, config: unknown } | null> {
     if (crosswindLoadAttempted)
       return crosswindModule
     crosswindLoadAttempted = true
@@ -2417,6 +2420,7 @@ function __stxOverlay(errs){
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
       ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
+      ...(fallbackComponentsDir && { fallbackComponentsDir }),
       ...(partialsDir && { partialsDir }),
       autoShell: true,
       buildMode: 'serve' as const,
@@ -2792,6 +2796,7 @@ function __stxOverlay(errs){
       ...(componentsDir && { componentsDir }),
       ...(layoutsDir && { layoutsDir }),
       ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
+      ...(fallbackComponentsDir && { fallbackComponentsDir }),
       ...(partialsDir && { partialsDir }),
       autoShell: true,
       buildMode: 'serve' as const,
@@ -3387,6 +3392,7 @@ function __stxOverlay(errs){
                         ...(componentsDir && { componentsDir }),
                         ...(layoutsDir && { layoutsDir }),
                         ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
+      ...(fallbackComponentsDir && { fallbackComponentsDir }),
                         ...(partialsDir && { partialsDir }),
                         autoShell: false,
                       }
@@ -3432,13 +3438,13 @@ function __stxOverlay(errs){
 
                     try {
                       // Get column info to validate fields (table name validated above)
-                      const tableInfo = db.query(`PRAGMA table_info("${tableName}")`).all() as Array<{ name: string, type: string, notnull: number, dflt_value: any }>
+                      const tableInfo = db.query(`PRAGMA table_info("${tableName}")`).all() as Array<{ name: string, type: string, notnull: number, dflt_value: unknown }>
                       const validColumns = tableInfo.map((c: any) => c.name).filter((n: string) => n !== 'id' && n !== 'created_at' && n !== 'updated_at')
 
                       // Build INSERT query with only valid columns that have values
                       const columns: string[] = []
                       const placeholders: string[] = []
-                      const values: any[] = []
+                      const values: unknown[] = []
 
                       for (const col of validColumns) {
                         if (body[col] !== undefined && body[col] !== '') {
@@ -3649,8 +3655,7 @@ function __stxOverlay(errs){
 
                       // Capture the destination <main>'s own attributes. The fragment
                       // carries only the container's INNER content, so a page whose
-                      // layout lives on <main> itself (e.g. `<main class="flex
-                      // min-h-[100dvh] items-center justify-center">`) would otherwise
+                      // layout lives on <main> itself (e.g. `<main class="flex items-center justify-center min-h-[100dvh] //">`) would otherwise
                       // be injected into the persistent, attribute-less container and
                       // lose its layout entirely on SPA navigation. The router applies
                       // these to the container during the swap.
