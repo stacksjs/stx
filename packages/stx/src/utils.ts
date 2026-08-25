@@ -579,17 +579,24 @@ export async function userComponentFileExists(
   push(options._rootComponentsDir)
   push(path.join(path.dirname(parentFilePath), 'components'))
   push(options.componentsDir)
-  const pluginDirs = (options as any)._pluginComponentDirs
-  if (Array.isArray(pluginDirs)) {
-    for (const dir of pluginDirs) push(typeof dir === 'string' ? dir : null)
-  }
   // Convention fallbacks — only within a configured project root, and never stx's
   // own `import.meta.dir/components` (where built-ins live).
+  //
+  // These come BEFORE plugin directories. A plugin supplies a DEFAULT; a file
+  // the project actually wrote is not a fallback to it. With the order
+  // reversed, a project that had its own `resources/components/AppShell.stx`
+  // still rendered the plugin's copy, and the only visible symptom was the
+  // plugin version's own relative includes failing against a directory the
+  // author had never heard of.
   if (configuredRoot) {
     push(path.resolve(configuredRoot, 'resources/views/components'))
     push(path.resolve(configuredRoot, 'resources/components'))
     push(path.resolve(configuredRoot, 'src/components'))
     push(path.resolve(configuredRoot, 'components'))
+  }
+  const pluginDirs = (options as any)._pluginComponentDirs
+  if (Array.isArray(pluginDirs)) {
+    for (const dir of pluginDirs) push(typeof dir === 'string' ? dir : null)
   }
 
   // Relative path components (./Foo, ../Foo) are always user-authored.
@@ -775,19 +782,6 @@ export async function renderComponentWithSlot(
         searchDirs.push(options.componentsDir)
       }
 
-      // Plugin-registered component directories (e.g. `@stacksjs/components`'s
-      // `src/ui/` exposed by a stx plugin shim). Populated by config.ts when
-      // each plugin is loaded; consume it here so `<Notification>` etc.
-      // resolve out of installed packages without forcing the project to
-      // copy or re-export them.
-      const pluginDirs = (options as any)._pluginComponentDirs
-      if (Array.isArray(pluginDirs)) {
-        for (const dir of pluginDirs) {
-          if (typeof dir === 'string' && !searchDirs.includes(dir))
-            searchDirs.push(dir)
-        }
-      }
-
       // Also search common project component directories as fallbacks. Root these
       // at the CONFIGURED project root (and the rendered file), never process.cwd()
       // — otherwise resolution depends on where the process was launched and can
@@ -813,6 +807,26 @@ export async function renderComponentWithSlot(
       for (const fallback of fallbackDirs) {
         if (!searchDirs.includes(fallback)) {
           searchDirs.push(fallback)
+        }
+      }
+
+      // Plugin-registered component directories (e.g. `@stacksjs/components`'s
+      // `src/ui/` exposed by a stx plugin shim). Populated by config.ts when
+      // each plugin is loaded; consume it here so `<Notification>` etc. resolve
+      // out of installed packages without forcing the project to copy or
+      // re-export them.
+      //
+      // Searched LAST, after every project location. A plugin supplies a
+      // default; a component the project actually wrote must win over it.
+      // While these were searched first, a project holding its own
+      // `resources/components/AppShell.stx` still rendered the plugin's copy,
+      // and the symptom was baffling: the plugin file's relative includes
+      // failed against a directory the author had never written.
+      const pluginDirs = (options as any)._pluginComponentDirs
+      if (Array.isArray(pluginDirs)) {
+        for (const dir of pluginDirs) {
+          if (typeof dir === 'string' && !searchDirs.includes(dir))
+            searchDirs.push(dir)
         }
       }
 
