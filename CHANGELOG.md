@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.229...v0.2.230)
+
+## ✨ Features
+
+- **components**: add fallbackComponentsDir ([d84349d](https://github.com/stacksjs/stx/commit/d84349d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.230 ([47c0a49](https://github.com/stacksjs/stx/commit/47c0a49)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.228...v0.2.229)
 
 ## 🐛 Bug Fixes
