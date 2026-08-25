@@ -83,19 +83,19 @@ function idleState(): ScreenSharingState {
 export const screenSharing: ScreenSharingAPI = {
   async getState() {
     if (!hasBridge('screenSharing')) return idleState()
-    return await window.craft!.screenSharing.getState()
+    return await window.craft!.screenSharing!.getState()
   },
 
   async watch(intervalMs = DEFAULT_WATCH_INTERVAL_MS) {
     const clamped = Math.min(MAX_WATCH_INTERVAL_MS, Math.max(MIN_WATCH_INTERVAL_MS, Math.round(intervalMs)))
     if (!hasBridge('screenSharing')) return clamped
-    const r = await window.craft!.screenSharing.watch(clamped)
+    const r = await window.craft!.screenSharing!.watch(clamped)
     return (r && r.intervalMs) || clamped
   },
 
   async stop() {
     if (!hasBridge('screenSharing')) return
-    await window.craft!.screenSharing.unwatch()
+    await window.craft!.screenSharing!.unwatch()
   },
 
   // Subscribing to the window event directly, rather than through the bridge

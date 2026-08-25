@@ -110,12 +110,12 @@ function unavailable(): FocusResult {
 export const focus: FocusAPI = {
   async getStatus() {
     if (!hasBridge('focus')) return { ...UNSUPPORTED }
-    return await window.craft!.focus.getStatus()
+    return await window.craft!.focus!.getStatus()
   },
 
   async requestAuthorization() {
     if (!hasBridge('focus')) return 'unsupported'
-    return await window.craft!.focus.requestAuthorization()
+    return await window.craft!.focus!.requestAuthorization()
   },
 
   async setEnabled(enabled, options = {}) {
@@ -127,24 +127,36 @@ export const focus: FocusAPI = {
         error: `focus.setEnabled: no ${enabled ? 'onShortcut' : 'offShortcut'} configured`,
       }
     }
-    return await window.craft!.focus.setEnabled(enabled, options)
+    return await window.craft!.focus!.setEnabled(enabled, options)
   },
 
   async runShortcut(name) {
     if (!hasBridge('focus')) return unavailable()
     if (!name) throw new Error('focus.runShortcut: name is required')
-    return await window.craft!.focus.runShortcut(name)
+    return await window.craft!.focus!.runShortcut(name)
   },
 
   async listShortcuts() {
     if (!hasBridge('focus')) return []
-    return await window.craft!.focus.listShortcuts()
+    return await window.craft!.focus!.listShortcuts()
   },
 
   async listShortcutsResult() {
     if (!hasBridge('focus')) return { canList: false, shortcuts: [] }
-    const r = await window.craft!.focus.listShortcutsResult()
-    return { canList: Boolean(r?.canList), shortcuts: (r?.shortcuts as string[]) || [] }
+    // craft-bridge.js ships `listShortcutsResult` (it maps onto the
+    // focus/listShortcuts request), but craft-native 0.0.76 does not declare
+    // it on CraftFocusAPI, so the call is a TS2551 without a cast.
+    //
+    // Cast rather than augment: `index.d.ts` re-exports a fixed list of type
+    // names and CraftFocusAPI is not on it, so `declare module 'craft-native'
+    // { interface CraftFocusAPI }` does not merge with anything — it silently
+    // declares a SECOND, empty interface and the call still fails. Both gaps
+    // are worth an upstream issue.
+    const focusApi = window.craft!.focus! as {
+      listShortcutsResult?: () => Promise<{ canList?: boolean, shortcuts?: string[] }>
+    }
+    const r = await focusApi.listShortcutsResult?.()
+    return { canList: Boolean(r?.canList), shortcuts: r?.shortcuts ?? [] }
   },
 }
 
