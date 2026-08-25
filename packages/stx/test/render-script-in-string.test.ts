@@ -44,7 +44,7 @@ describe('a script tag in a server string', () => {
     const html = await render(PAGE('"VAL <script>x"'))
 
     expect(html).toMatch(/const n = state\(0\)/)
-    expect(html).toMatch(/__stx_setup_\d+_\d+/)
+    expect(html).toMatch(/__stx_setup_\w+/)
   })
 
   it('is not special compared with any other tag in a string', async () => {

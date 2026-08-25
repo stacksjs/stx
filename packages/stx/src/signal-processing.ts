@@ -1253,7 +1253,26 @@ export async function processScriptSetup(template: string, filePath?: string, se
     return { output: template, setupCode: null }
   }
 
-  const setupFnName = `__stx_setup_${Date.now()}_${signalSetupCounter++}`
+  /*
+   * The setup function's name, derived rather than stamped (stacksjs/stx#1945).
+   *
+   * It was `${Date.now()}_${counter++}`, so it changed on every render — the
+   * second reason an unchanged page never produced identical bytes, and so
+   * could not be cached by anything downstream.
+   *
+   * Both inputs are what the function actually is: the file it belongs to, and
+   * the concatenated bodies of the scripts merged into it. Two different setups
+   * therefore get different names, and the same setup gets the same name every
+   * time.
+   *
+   * A collision needs one file to produce two setups whose script bodies are
+   * byte-identical, which would also make the two setups themselves identical —
+   * so sharing a name is not a scope merge the way a shared component scope id
+   * would be. That is why this one can be a pure hash while the component scope
+   * id above cannot.
+   */
+  const setupIdentity = `${filePath ?? ''} ${signalScripts.map(s => s.content).join(' ')}`
+  const setupFnName = `__stx_setup_${Bun.hash(setupIdentity).toString(36).slice(0, 10)}`
 
   // Bundle user imports and resolve store imports for each script, then
   // concatenate. Scripts are processed in document order, so later scripts

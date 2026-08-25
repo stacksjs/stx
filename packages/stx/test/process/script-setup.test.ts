@@ -392,17 +392,35 @@ describe('Script Processing Fixes', () => {
     })
   })
 
-  describe('Date.now collision prevention', () => {
-    it('should generate unique setup function names', async () => {
+  describe('setup function names', () => {
+    // The name is a hash of the file plus the script bodies since #1945, not
+    // `Date.now()` plus a counter. `\w+` rather than a shape, so this keeps
+    // testing the property when the derivation changes again.
+    const SETUP_NAME = /__stx_setup_\w+/
+
+    it('differ for different scripts', async () => {
       const template1 = `<div><script>const count = state(0);</script></div>`
       const template2 = `<div><script>const name = state('test');</script></div>`
-      const result1 = await processTemplate(template1)
-      const result2 = await processTemplate(template2)
-      const match1 = result1.match(/__stx_setup_\d+_\d+/)
-      const match2 = result2.match(/__stx_setup_\d+_\d+/)
-      if (match1 && match2) {
-        expect(match1[0]).not.toBe(match2[0])
-      }
+      const match1 = (await processTemplate(template1)).match(SETUP_NAME)
+      const match2 = (await processTemplate(template2)).match(SETUP_NAME)
+
+      // Asserted rather than guarded with `if (match1 && match2)`, which is how
+      // this read before: when the name shape changed the regex stopped
+      // matching and the test passed without comparing anything.
+      expect(match1).not.toBeNull()
+      expect(match2).not.toBeNull()
+      expect(match1![0]).not.toBe(match2![0])
+    })
+
+    it('are the same for the same script, so a render can be cached', async () => {
+      // The #1945 property. A name that changed per render is what made an
+      // unchanged page produce different bytes every time.
+      const template = `<div><script>const count = state(0);</script></div>`
+      const first = (await processTemplate(template)).match(SETUP_NAME)
+      const second = (await processTemplate(template)).match(SETUP_NAME)
+
+      expect(first).not.toBeNull()
+      expect(first![0]).toBe(second![0])
     })
   })
 

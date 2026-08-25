@@ -547,7 +547,12 @@ export async function processDirectives(
         // comment. Stamping data-stx there leaves the real body without it, so
         // the runtime never invokes the setup and every binding on the page is
         // silently inert.
-        const setupMatch = result.match(/function (__stx_setup_\d+_\d+)\(/)
+        // `\w+` rather than `\d+_\d+`: the name is a hash of the file and its
+        // script bodies since #1945, not a timestamp and counter. A shape-
+        // specific regex here would simply stop matching, and the failure is
+        // the quiet one described just above — no data-stx on <body>, so the
+        // runtime never invokes the setup and every binding is inert.
+        const setupMatch = result.match(/function (__stx_setup_\w+)\(/)
         const bodyTag = setupMatch ? findBodyOpenTag(result) : null
         if (setupMatch && bodyTag && !/\bdata-stx=/.test(bodyTag.tag)) {
           result = replaceBodyOpenTag(result, (_tag, attrs) => `<body${attrs} data-stx="${setupMatch[1]}">`)

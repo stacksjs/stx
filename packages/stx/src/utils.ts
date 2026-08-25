@@ -998,6 +998,16 @@ export async function renderComponentWithSlot(
        * rather than written.
        */
       '__stxServeContext',
+      /*
+       * The per-render scope-id sequence (stacksjs/stx#1945).
+       *
+       * A mutable object shared by reference down the whole component tree, so
+       * every component in ONE render draws from one counter and no two get the
+       * same id. Carried rather than rebuilt per subtree for exactly that
+       * reason: a fresh counter would restart at 1 and collide with its own
+       * siblings.
+       */
+      '__stx_scope_seq',
     ])
     const filteredParentContext: Record<string, unknown> = {}
     for (const [key, val] of Object.entries(parentContext)) {
@@ -1326,8 +1336,44 @@ export async function renderComponentWithSlot(
     if (preservedExpressions.size > 0)
       parentContext.__stx_preserved_client_expressions = [...preservedExpressions]
 
-    // Generate unique scope ID for this component instance
-    const scopeId = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}_${Math.random().toString(36).slice(2, 8)}`
+    /*
+     * A scope id that is unique within a document, distinct between documents,
+     * and identical between renders of the same one (stacksjs/stx#1945).
+     *
+     * It used to be `${++moduleCounter}_${Math.random()}`, so rendering one
+     * template twice produced different bytes. That is what made the render
+     * uncacheable: nothing downstream could tell two renders were the same
+     * answer, so an unchanged view paid the full pipeline every time — measured
+     * at ~5MB of native churn per render with the JS heap flat.
+     *
+     * Three requirements, and all three hold together only if the page's own
+     * identity is part of the id:
+     *
+     *   - identical across renders   -> no counter that survives a render, and
+     *                                   no randomness
+     *   - unique within one document -> a per-render sequence, not a content
+     *                                   hash: two instances of one component
+     *                                   with identical props are still two
+     *                                   instances, and one id would merge their
+     *                                   signals into a single scope
+     *   - distinct across documents  -> the page key. Without it every page
+     *                                   starts at 1, so page A and page B both
+     *                                   emit `stx_sidebar_1` and an SPA
+     *                                   navigation puts two unrelated scopes on
+     *                                   the same name
+     *
+     * The sequence is seeded lazily on the parent context — the page's own
+     * object, fresh per render — so siblings share it, and the preserve-list
+     * entry carries it into nested components by reference.
+     */
+    const scopeSeq = (parentContext.__stx_scope_seq ??= {
+      n: 0,
+      key: Bun.hash(String(parentContext.__filename ?? parentFilePath)).toString(36).slice(0, 6),
+    }) as { n: number, key: string }
+    // Key last, so the id keeps the `stx_<name>_<n>_<suffix>` shape the random
+    // one had. Nothing that matched the old ids has to change, and the name
+    // stays at the front where it is readable in a DOM inspector.
+    const scopeId = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeSeq.n}_${scopeSeq.key}`
 
     // Wrap component in a scope container if it has client scripts with signals
     // (hasSignalScripts already computed above for componentOptions)
