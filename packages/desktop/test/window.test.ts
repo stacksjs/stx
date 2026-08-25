@@ -1,5 +1,8 @@
 /* eslint-disable import/first */
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 // Mock craft-native before importing window module
 // Note: mock.module() MUST be called before importing the module being mocked
@@ -126,6 +129,49 @@ describe('Window Management', () => {
       setDesktopConfig({ craftBinaryPath: '/nope/craft' })
       await createWindow('http://localhost:3000')
       expect(spawned[0].command).toBe('craft')
+    })
+
+    it('does not treat the global bin directory as a packaged app bundle', async () => {
+      // `~/.bun/bin/bun` sits beside `~/.bun/bin/craft` as soon as craft is
+      // installed, so an unqualified "beside the running executable" step
+      // matched during ordinary development and took precedence over PATH and
+      // CRAFT_BIN. It only passed on CI because craft was absent there — the
+      // test was green exactly where it could not exercise the behaviour.
+      const binDir = join(tmpdir(), `stx-craft-bin-${Date.now()}`)
+      mkdirSync(binDir, { recursive: true })
+      writeFileSync(join(binDir, 'craft'), '')
+      const previous = process.execPath
+      Object.defineProperty(process, 'execPath', { value: join(binDir, 'bun'), configurable: true })
+
+      try {
+        await createWindow('http://localhost:3000')
+        expect(spawned[0].command).toBe('craft')
+      }
+      finally {
+        Object.defineProperty(process, 'execPath', { value: previous, configurable: true })
+        rmSync(binDir, { recursive: true, force: true })
+      }
+    })
+
+    it('still uses the copy bundled inside a packaged .app', async () => {
+      // The gate must not simply disable the step: a shipped app carries its own
+      // craft in Contents/MacOS and must resolve that rather than depending on
+      // the user having pantry installed.
+      const bundle = join(tmpdir(), `stx-craft-${Date.now()}.app`)
+      const macos = join(bundle, 'Contents', 'MacOS')
+      mkdirSync(macos, { recursive: true })
+      writeFileSync(join(macos, 'craft'), '')
+      const previous = process.execPath
+      Object.defineProperty(process, 'execPath', { value: join(macos, 'MyApp'), configurable: true })
+
+      try {
+        await createWindow('http://localhost:3000')
+        expect(spawned[0].command).toBe(join(macos, 'craft'))
+      }
+      finally {
+        Object.defineProperty(process, 'execPath', { value: previous, configurable: true })
+        rmSync(bundle, { recursive: true, force: true })
+      }
     })
   })
 

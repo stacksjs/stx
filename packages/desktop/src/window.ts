@@ -109,14 +109,25 @@ function prepareSidebarConfig(options: WindowOptions): SidebarConfig | undefined
  *   and an ENOENT from the spawn produces craft's pantry-aware guidance.
  */
 function getCraftBinaryPath(): string {
+  // A packaged app bundles craft into Contents/MacOS/ beside its own binary
+  // (see packageApp's macos.additionalExecutables), so a shipped app resolves
+  // its own copy rather than depending on the user having pantry.
+  //
+  // Gated on actually being inside an app bundle. Unqualified, "beside the
+  // running executable" matches the user's global bin directory during ordinary
+  // development — `~/.bun/bin/bun` sits next to `~/.bun/bin/craft` the moment
+  // craft is installed — so this step hijacked resolution from PATH and, worse,
+  // from `CRAFT_BIN`, which step 5 exists to honour.
+  const executableDir = dirname(process.execPath)
+  const bundledBeside = executableDir.includes('.app/Contents/MacOS')
+    ? join(executableDir, 'craft')
+    : undefined
+
   const overrides = [
     process.env.CRAFT_BINARY_PATH,
     currentConfig.craftBinaryPath,
     ...(currentConfig.additionalSearchPaths || []),
-    // A packaged app bundles craft into Contents/MacOS/ beside its own binary
-    // (see packageApp's macos.additionalExecutables), so a shipped app resolves
-    // its own copy rather than depending on the user having pantry.
-    join(dirname(process.execPath), 'craft'),
+    bundledBeside,
   ]
 
   for (const candidate of overrides) {
