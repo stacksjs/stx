@@ -351,7 +351,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
           // it is the status that makes a browser follow up with a GET, so a
           // reload or a Back does not resubmit the form.
           if (redirect)
-            return actionRedirectResponse(redirect, cookies)
+            return actionRedirectResponse(redirect, cookies, pageHeaders)
           // Streaming SSR (#1746): a page that exported streamBoundaries streams
           // its shell first, then each boundary as its server-side data resolves.
           if (boundaries && boundaries.length > 0) {

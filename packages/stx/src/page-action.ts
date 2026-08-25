@@ -256,7 +256,11 @@ function serializeActionCookies(value: unknown): string[] {
  * 303 rather than 302 deliberately: it is the status that makes a browser
  * follow up with a GET, so a reload or a Back does not resubmit the form.
  */
-export function actionRedirectResponse(to: string, cookies: readonly string[] = []): Response {
+export function actionRedirectResponse(
+  to: string,
+  cookies: readonly string[] = [],
+  pageHeaders?: Record<string, string>,
+): Response {
   const headers = new Headers({
     'Location': to,
     // A redirect that answers a submission is never a cacheable page.
@@ -269,6 +273,24 @@ export function actionRedirectResponse(to: string, cookies: readonly string[] = 
   // object literal for the same reason: an object cannot hold a repeated key.
   for (const cookie of cookies)
     headers.append('Set-Cookie', cookie)
+
+  /*
+   * Headers the page asked for with `setResponseHeader` (stacksjs/stx#1943).
+   *
+   * The HTML and streaming paths already carried these; this one did not, so a
+   * page that set a header and then redirected lost it — the narrowest possible
+   * version of the dev/production divergence the issue is about, and the one
+   * left after the rest was fixed.
+   *
+   * `Location` is excluded: the destination is this function's contract and
+   * `redirect(to)` is how a page sets it. Letting a stray header silently
+   * retarget the redirect is a worse failure than ignoring it. Everything else,
+   * `Cache-Control` included, is the author's call to override.
+   */
+  for (const [name, value] of Object.entries(pageHeaders ?? {})) {
+    if (name.toLowerCase() !== 'location')
+      headers.set(name, value)
+  }
 
   return new Response(null, { status: 303, headers })
 }

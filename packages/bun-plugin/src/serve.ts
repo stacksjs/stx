@@ -3560,7 +3560,12 @@ function __stxOverlay(errs){
                   // this copy had already drifted, missing the
                   // `Cache-Control: no-store` the production one sets, so a
                   // redirect answering a submission was cacheable in dev only.
-                  const redirectResponse = actionRedirectResponse(reqCtx.actionRedirect, reqCtx.actionCookies)
+                  // Page headers travel with the redirect too (#1943). This
+                  // path dropped them in dev as well as production, so unlike
+                  // the rest of that issue it was not a divergence — it was
+                  // missing on both sides, and fixing only production would
+                  // have created one.
+                  const redirectResponse = actionRedirectResponse(reqCtx.actionRedirect, reqCtx.actionCookies, reqCtx.responseHeaders)
                   for (const [key, value] of Object.entries(corsHeaders))
                     redirectResponse.headers.set(key, value)
                   return redirectResponse
