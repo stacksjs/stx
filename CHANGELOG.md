@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.228...v0.2.229)
+
+## 🐛 Bug Fixes
+
+- **components**: let a project's own component beat a plugin's ([eb0dbfc](https://github.com/stacksjs/stx/commit/eb0dbfc)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.229 ([5a7f997](https://github.com/stacksjs/stx/commit/5a7f997)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.227...v0.2.228)
 
 ## 🐛 Bug Fixes
