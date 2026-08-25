@@ -1,5 +1,33 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.230...v0.2.231)
+
+## 🐛 Bug Fixes
+
+- **response**: a redirecting action carries the headers the page set ([684d61a](https://github.com/stacksjs/stx/commit/684d61a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1943](https://github.com/stacksjs/stx/issues/1943), [#1943](https://github.com/stacksjs/stx/issues/1943))
+- **ssr**: ctx.setCookie reaches the response, and every cookie survives ([905f33f](https://github.com/stacksjs/stx/commit/905f33f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1944](https://github.com/stacksjs/stx/issues/1944), [#1944](https://github.com/stacksjs/stx/issues/1944))
+- **desktop**: typecheck focus and screenSharing against craft's real types ([3aed786](https://github.com/stacksjs/stx/commit/3aed786)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **cloak**: a reactive mustache hides its own element, not its ancestors ([9a9ae6a](https://github.com/stacksjs/stx/commit/9a9ae6a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1946](https://github.com/stacksjs/stx/issues/1946), [#1946](https://github.com/stacksjs/stx/issues/1946), [#1771](https://github.com/stacksjs/stx/issues/1771))
+- **serve**: type Crosswind from the engine, not from a stub that shadowed it ([e1b2705](https://github.com/stacksjs/stx/commit/e1b2705)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **render**: the same view twice renders the same bytes, so it can be cached ([cbe08f0](https://github.com/stacksjs/stx/commit/cbe08f0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+
+## ✅ Tests
+
+- **cli**: give the built-CLI typecheck case a budget it can meet ([c02e32d](https://github.com/stacksjs/stx/commit/c02e32d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **shadowed-types**: drop an allowlist entry the scan cannot produce ([b0ace62](https://github.com/stacksjs/stx/commit/b0ace62)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.231 ([426005f](https://github.com/stacksjs/stx/commit/426005f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **desktop**: sync craft-native to 0.0.76, and stop hijacking its resolution ([a7c047b](https://github.com/stacksjs/stx/commit/a7c047b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.229...v0.2.230)
 
 ## ✨ Features
