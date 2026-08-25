@@ -272,6 +272,56 @@ Hides an element until the signals runtime has processed it. Prevents flash of u
 </div>
 ```
 
+#### stx also adds `x-cloak` for you
+
+You rarely write it. stx stamps it automatically, and the rule decides whether
+your markup is visible before hydration, so it is worth knowing:
+
+| What you wrote | Cloaked? |
+|---|---|
+| `<button>{{ busy() ? 'Sending…' : 'Send' }}</button>` | **Yes** — reactive text cloaks the element holding it |
+| `<button :disabled="busy()">Send</button>` | No — attribute bindings never cloak |
+| `<div :if="ready()">…</div>` | **Yes** — conditionals and `:show` cloak |
+| `<div class="panel"><button>{{ label }}</button></div>` | Only the `<button>`, never the panel |
+
+**Reactive text cloaks. Attribute bindings do not.** A `{{ }}` that the server
+cannot resolve would otherwise paint as literal braces, so the element is hidden
+until the runtime fills it in.
+
+The catch is that `x-cloak` is `display: none`, so anything cloaked is *gone*
+until the bundle runs — and stays gone if the bundle never arrives. For a label
+that is the right trade. For a **control**, it means the button your user is
+meant to press does not exist on a slow connection, and the failure is invisible
+in review because it looks correct in a browser with fast JS.
+
+So prefer moving reactivity off the text and onto attributes:
+
+```html
+<!-- Cloaked: the only control on the panel is hidden until hydration -->
+<button @click="submit()">{{ busy() ? 'Sending…' : 'Send invitation' }}</button>
+
+<!-- Visible immediately, and the label still reacts -->
+<button @click="submit()" :disabled="busy()">
+  <span :text="busy() ? 'Sending…' : 'Send invitation'">Send invitation</span>
+</button>
+```
+
+### `x-no-cloak` -- Render It Anyway
+
+Opts an element out of automatic cloaking, on both the reactive-text and the
+conditional pass. The element renders as the server produced it and hydration
+corrects it afterwards.
+
+```html
+<button x-no-cloak @click="submit()">{{ busy() ? 'Sending…' : 'Send invitation' }}</button>
+```
+
+Use it when being visible matters more than being correct for the first frame —
+primary actions, and anything a user would be stuck without. The cost is real:
+until the runtime binds, an unresolved `{{ }}` shows as literal braces. If you
+can express the initial state as static text plus an attribute binding, as
+above, that is better than opting out.
+
 ### Complete Bindings Table
 
 | Binding | Purpose | Example |
@@ -283,7 +333,8 @@ Hides an element until the signals runtime has processed it. Prevents flash of u
 | `x-model` | Two-way form binding | `x-model="name"` |
 | `x-href` | Dynamic link URL | `x-href="url()"` |
 | `x-src` | Dynamic image source | `x-src="imgUrl()"` |
-| `x-cloak` | Hide until hydrated | `x-cloak` (no value) |
+| `x-cloak` | Hide until hydrated (usually stamped for you) | `x-cloak` (no value) |
+| `x-no-cloak` | Opt out of automatic cloaking | `x-no-cloak` (no value) |
 
 ## Events (`@` prefix)
 

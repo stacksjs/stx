@@ -219,10 +219,126 @@ export function processRefAttributes(template: string): string {
   return result
 }
 
+// Elements that never have a closing tag, so they never open a subtree while
+// we are measuring an element's own text.
+const VOID_TAGS = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+])
+
 /**
- * Add x-cloak to HTML elements that contain unresolved {{ }} expressions.
- * These expressions were preserved for client-side evaluation (signals, loop vars, etc.).
- * x-cloak hides them until the JS runtime processes and reveals them — prevents FOUC.
+ * The author's opt-out. `x-cloak` is `display:none`, so an element that stays
+ * cloaked because its bundle never ran is gone for good — `x-no-cloak` is how a
+ * page says "render this anyway, and let hydration correct it" (stacksjs/stx#1946).
+ */
+const NO_CLOAK_RE = /(?:^|\s)x-no-cloak(?:=|\s|\/|>|$)/
+
+/**
+ * Index of the `>` that closes the tag starting at `from`, ignoring any `>`
+ * inside a quoted attribute value. -1 when the tag never closes.
+ */
+function findTagEnd(html: string, from: number): number {
+  let inSingleQuote = false
+  let inDoubleQuote = false
+  for (let i = from; i < html.length; i++) {
+    const ch = html[i]
+    if (inSingleQuote) {
+      if (ch === '\'') inSingleQuote = false
+    }
+    else if (inDoubleQuote) {
+      if (ch === '"') inDoubleQuote = false
+    }
+    else if (ch === '\'') {
+      inSingleQuote = true
+    }
+    else if (ch === '"') {
+      inDoubleQuote = true
+    }
+    else if (ch === '>') {
+      return i
+    }
+  }
+  return -1
+}
+
+/**
+ * An element's OWN text: the character data directly inside it, with every
+ * descendant element's subtree removed.
+ *
+ * This is the whole of stacksjs/stx#1946's blank-panel half. The previous
+ * version read "everything up to the first `</`", which is not text content —
+ * it walks straight through child tags. So a container whose FIRST descendant
+ * subtree reached a mustache was itself cloaked, and `display:none` on a
+ * container takes the entire panel with it. Worse, it depended on sibling
+ * order: `<div><button>{{ x }}</button></div>` cloaked the div, while
+ * `<div><h2>t</h2><button>{{ x }}</button></div>` did not, because the h2's
+ * `</h2>` arrived first. A panel disappearing or not came down to what its
+ * first child happened to be.
+ *
+ * Text after a child element still counts — `<p><b>hi</b> {{ name }}</p>` is
+ * p's own text and does need the cloak.
+ */
+function ownText(html: string, contentStart: number): string {
+  let depth = 0
+  let text = ''
+  let i = contentStart
+
+  while (i < html.length) {
+    const ch = html[i]
+    if (ch !== '<') {
+      if (depth === 0) text += ch
+      i++
+      continue
+    }
+
+    if (html.startsWith('<!--', i)) {
+      const end = html.indexOf('-->', i)
+      i = end === -1 ? html.length : end + 3
+      continue
+    }
+
+    const tagEnd = findTagEnd(html, i)
+    if (tagEnd === -1) break
+
+    const tag = html.slice(i, tagEnd + 1)
+    const name = /^<\/?\s*([a-z][\w-]*)/i.exec(tag)?.[1]?.toLowerCase() ?? ''
+
+    if (tag[1] === '/') {
+      // Our own closing tag — anything past it belongs to an ancestor.
+      if (depth === 0) break
+      depth--
+    }
+    else if (!/\/\s*>$/.test(tag) && !VOID_TAGS.has(name)) {
+      depth++
+    }
+
+    i = tagEnd + 1
+  }
+
+  return text
+}
+
+/**
+ * Add x-cloak to HTML elements whose own text contains an unresolved {{ }}
+ * expression. Those were preserved for client-side evaluation (signals, loop
+ * vars, etc.), and x-cloak hides them until the runtime binds and reveals them,
+ * so the raw mustache never flashes.
+ *
+ * Only the element that actually holds the expression is stamped — see
+ * `ownText` for why that scoping is the fix rather than a refinement. An
+ * element carrying `x-no-cloak` is left visible regardless.
  */
 export function addCloakToUnresolvedExpressions(html: string): string {
   // Add x-cloak to elements whose text content contains {{ }} expressions.
@@ -268,13 +384,17 @@ export function addCloakToUnresolvedExpressions(html: string): string {
 
     const fullTag = html.slice(tagOpenStart, tagCloseIdx + 1)
 
-    // Skip if already has x-cloak
+    // Skip if already has x-cloak. `x-no-cloak` also matches `includes('x-cloak')`,
+    // so it short-circuits here too — but test it explicitly, because relying on
+    // one attribute name being a substring of the other is an accident waiting
+    // to be tidied away.
+    if (NO_CLOAK_RE.test(fullTag)) continue
     if (fullTag.includes('x-cloak')) continue
 
-    // Look at text content after this tag until the next "</" or "<" tag
-    const afterTag = html.slice(tagCloseIdx + 1)
-    const closingIdx = afterTag.indexOf('</')
-    const textContent = closingIdx >= 0 ? afterTag.slice(0, closingIdx) : afterTag.slice(0, 200)
+    // This element's own text only. A mustache in a DESCENDANT belongs to the
+    // descendant; cloaking the ancestor hides content that has nothing to do
+    // with the expression.
+    const textContent = ownText(html, tagCloseIdx + 1)
 
     if (/\{\{[\s\S]*?\}\}/.test(textContent)) {
       // Insert x-cloak before the closing >
@@ -367,7 +487,11 @@ export function addCloakToConditionalDirectives(html: string): string {
     // The attribute span is everything between the tag name and the ">".
     const attrSpan = html.slice(tagOpenStart + tagMatch[0].length, tagCloseIdx)
 
-    // Skip if already cloaked or no conditional directive present.
+    // Skip if opted out, already cloaked, or no conditional directive present.
+    // `x-no-cloak` is honoured here as well as on the mustache pass: an author
+    // saying "do not hide this" should not have to know which of the two passes
+    // would have stamped it.
+    if (NO_CLOAK_RE.test(attrSpan)) continue
     if (/(?:^|\s)x-cloak(?:=|\s|\/|>|$)/.test(attrSpan)) continue
     if (!CONDITIONAL_DIRECTIVE_RE.test(attrSpan)) continue
 
