@@ -31,9 +31,16 @@ const REPO = path.resolve(import.meta.dir, '../../..')
  * types, so each carries the same latent drift as the crosswind stub did — none
  * has been checked against its real declarations yet. The list exists to stop
  * NEW ones, and it should only ever shrink.
+ *
+ * `craft-native` was listed here at first and does not belong. Its
+ * `declare module` lives in `_bridge.ts`, which has top-level exports, so it is
+ * a module AUGMENTATION that merges with the published types rather than an
+ * ambient declaration that replaces them — deliberately so, per the comment
+ * there about hitting TS2717. That distinction is the whole difference between
+ * this bug and a normal widening, so the `observed` test below now fails on any
+ * entry the scan cannot actually find.
  */
 const KNOWN_SHADOWED = new Set([
-  'craft-native',
   '@stacksjs/ts-i18n',
   'ts-images',
 ])
@@ -110,6 +117,17 @@ describe('hand-written ambient module declarations', () => {
     const specifiers = ambientModuleDeclarations().map(d => d.specifier)
     expect(specifiers).not.toContain('@cwcss/crosswind')
     expect(shipsOwnTypes('@cwcss/crosswind')).toBe(true)
+  })
+
+  it('keeps the allowlist honest — every entry is one the scan actually finds', () => {
+    // An entry the glob can never produce is worse than no entry: it records
+    // debt that does not exist and quietly widens the rule for a name nothing
+    // checks. `craft-native` was exactly that — its declaration is in a .ts
+    // module, not a .d.ts, and it augments rather than replaces.
+    const seen = new Set(ambientModuleDeclarations().map(d => d.specifier))
+    const phantom = [...KNOWN_SHADOWED].filter(pkg => !seen.has(pkg))
+
+    expect(phantom).toEqual([])
   })
 
   it('keeps the allowlist honest — every entry still ships its own types', () => {
