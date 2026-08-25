@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.226...v0.2.227)
+
+## 🐛 Bug Fixes
+
+- **components**: resolve slot includes against the caller's file ([6ee161b](https://github.com/stacksjs/stx/commit/6ee161b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: make <Image> work without JavaScript or a utility framework ([bf066b6](https://github.com/stacksjs/stx/commit/bf066b6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.227 ([af70f01](https://github.com/stacksjs/stx/commit/af70f01)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.225...v0.2.226)
 
 ## 🐛 Bug Fixes
