@@ -74,7 +74,13 @@ describe.skipIf(!built)('the built CLI', () => {
 
     expect(output).not.toContain('is not defined')
     expect(output).not.toContain('ReferenceError')
-  })
+    // Spawns the CLI, which spawns `tsc` over a glob, so the wall time belongs
+    // to a compiler rather than to anything this asserts. It takes ~3.5s on an
+    // idle machine, which left no margin under bun's 5s default and duly timed
+    // out on a loaded runner — failing a build for a reason the test does not
+    // even check. The budget is generous on purpose: a slow answer here is not
+    // the defect, dying before reading a file is.
+  }, 60_000)
 
   it('still answers --help', async () => {
     const { output } = await run('--help')
