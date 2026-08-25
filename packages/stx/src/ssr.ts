@@ -286,6 +286,29 @@ function serializeCookie(name: string, value: string, options: CookieOptions = {
   return serializeSetCookie(name, value, options)
 }
 
+/**
+ * Copy the context's response headers onto an outgoing `Headers`.
+ *
+ * `Set-Cookie` is the only header that can legitimately appear more than once,
+ * and it needs `append` — the plain `forEach` + `set` this replaces kept just
+ * the LAST cookie, because `set` overwrites what the previous iteration wrote.
+ * That was harmless only for as long as stacksjs/stx#1944 meant a response
+ * never carried more than the session cookie; fixing that bug is what would
+ * have made this one reachable, so the two travel together.
+ *
+ * Everything else keeps `set`, so a context header still overrides a default
+ * (Content-Type) rather than being appended alongside it.
+ */
+function copyContextHeaders(from: Headers, into: Headers): void {
+  for (const cookie of from.getSetCookie())
+    into.append('Set-Cookie', cookie)
+
+  from.forEach((value, key) => {
+    if (key.toLowerCase() !== 'set-cookie')
+      into.set(key, value)
+  })
+}
+
 // =============================================================================
 // CSRF Token Management
 // =============================================================================
@@ -401,11 +424,8 @@ else {
   })
 
   // Copy response headers from context if available
-  if (options.ctx) {
-    options.ctx.responseHeaders.forEach((value, key) => {
-      headers.set(key, value)
-    })
-  }
+  if (options.ctx)
+    copyContextHeaders(options.ctx.responseHeaders, headers)
 
   return new Response(html, { headers })
 }
@@ -490,13 +510,12 @@ export function createApp(config: AppConfig = {}): StxServerApp {
     const url = new URL(request.url)
     const cookies = parseCookies(request.headers.get('Cookie'))
     const responseHeaders = new Headers()
-    const cookiesToSet: string[] = []
 
     // Get or create session
     let sessionId = cookies[sessionCookieName]
     if (!sessionId) {
       sessionId = generateSessionId()
-      cookiesToSet.push(serializeCookie(sessionCookieName, sessionId, {
+      responseHeaders.append('Set-Cookie', serializeCookie(sessionCookieName, sessionId, {
         httpOnly: true,
         secure: url.protocol === 'https:',
         sameSite: 'Lax',
@@ -548,7 +567,16 @@ export function createApp(config: AppConfig = {}): StxServerApp {
       },
 
       setCookie(name: string, value: string, options: CookieOptions = {}) {
-        cookiesToSet.push(serializeCookie(name, value, options))
+        // Straight onto the live Headers. The previous version pushed to an
+        // array that `createContext` drained into `responseHeaders` as its last
+        // statement — before returning, and therefore before any handler could
+        // call this (stacksjs/stx#1944). Anything a handler set landed in an
+        // array nothing read again.
+        //
+        // It looked like it worked because the session cookie is appended above,
+        // inside createContext, ahead of that drain. So responses did carry
+        // Set-Cookie and only the call an application makes was dead.
+        responseHeaders.append('Set-Cookie', serializeCookie(name, value, options))
       },
 
       flash(key: string, value: unknown) {
@@ -570,13 +598,6 @@ export function createApp(config: AppConfig = {}): StxServerApp {
       user() {
         return session.get('user')
       },
-    }
-
-    // Set cookies in response headers after context is created
-    if (cookiesToSet.length > 0) {
-      cookiesToSet.forEach(cookie => {
-        responseHeaders.append('Set-Cookie', cookie)
-      })
     }
 
     return ctx
@@ -639,9 +660,7 @@ export function createApp(config: AppConfig = {}): StxServerApp {
       const response = await next()
 
       // Add response headers (cookies, etc.)
-      ctx.responseHeaders.forEach((value, key) => {
-        response.headers.set(key, value)
-      })
+      copyContextHeaders(ctx.responseHeaders, response.headers)
 
       return response
     }
