@@ -13,6 +13,8 @@
  *   serve pages/home.stx pages/about.md pages/index.html
  */
 
+import type { CrosswindConfig } from '@cwcss/crosswind'
+import type { SQLQueryBindings } from 'bun:sqlite'
 import { serve as bunServe, Glob } from 'bun'
 import { existsSync, watch as fsWatch, statSync } from 'node:fs'
 import nodeFs from 'node:fs/promises'
@@ -38,6 +40,19 @@ interface BuildErrorPayload {
   message: string
   frame: Array<{ number: number, text: string, isError: boolean }>
 }
+
+/**
+ * The slice of Crosswind this server calls, taken from the package's own types
+ * rather than restated here.
+ *
+ * `CSSGenerator` has to be a constructor type, because it is `new`-ed below.
+ * Widening it to `unknown` satisfies the no-explicit-any rule and still fails to
+ * compile (`new (unknown)` is TS18046) — that is how d84349dd74 turned main red.
+ * Restating the shape by hand is the other trap: a stale hand-written copy is
+ * what made this hard to see in the first place (see the deleted
+ * `cwcss-crosswind.d.ts`). `typeof import` cannot drift from the real engine.
+ */
+type CrosswindEngine = Pick<typeof import('@cwcss/crosswind'), 'CSSGenerator' | 'config'>
 
 // Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
 // load instead of inside every request handler. The promise is cached, so the
@@ -2100,7 +2115,7 @@ function __stxOverlay(errs){
   }
 
   // Crosswind CSS lazy loading
-  let crosswindModule: { CSSGenerator: unknown, config: unknown } | null = null
+  let crosswindModule: CrosswindEngine | null = null
   let crosswindLoadAttempted = false
 
   // Crosswind user config cache. Process lifetime is the invalidation
@@ -2111,7 +2126,7 @@ function __stxOverlay(errs){
   // source change. Re-running the generator for a touched template picks
   // up newly added utility classes that weren't in the previous render.
 
-  async function loadCrosswind(): Promise<{ CSSGenerator: unknown, config: unknown } | null> {
+  async function loadCrosswind(): Promise<CrosswindEngine | null> {
     if (crosswindLoadAttempted)
       return crosswindModule
     crosswindLoadAttempted = true
@@ -2241,7 +2256,12 @@ function __stxOverlay(errs){
       if (cached !== undefined)
         return cached
 
-      const generator = new cw.CSSGenerator(generatorConfig)
+      // `mergeCrosswindConfig` returns a loose Dict, while the engine's
+      // constructor asks for a fully-populated CrosswindConfig. The engine fills
+      // its own defaults for anything absent, so the merged object is what it
+      // wants at runtime — the cast names that gap instead of hiding it behind
+      // an `any` on the module type, which is what the old stub did.
+      const generator = new cw.CSSGenerator(generatorConfig as CrosswindConfig)
       for (const className of classes) {
         generator.generate(className)
       }
@@ -3392,7 +3412,7 @@ function __stxOverlay(errs){
                         ...(componentsDir && { componentsDir }),
                         ...(layoutsDir && { layoutsDir }),
                         ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
-      ...(fallbackComponentsDir && { fallbackComponentsDir }),
+                        ...(fallbackComponentsDir && { fallbackComponentsDir }),
                         ...(partialsDir && { partialsDir }),
                         autoShell: false,
                       }
@@ -3444,7 +3464,10 @@ function __stxOverlay(errs){
                       // Build INSERT query with only valid columns that have values
                       const columns: string[] = []
                       const placeholders: string[] = []
-                      const values: unknown[] = []
+                      // Typed as what sqlite actually accepts. `unknown[]` does
+                      // not satisfy `run(...)`, and widening it there would only
+                      // move the same question to runtime.
+                      const values: SQLQueryBindings[] = []
 
                       for (const col of validColumns) {
                         if (body[col] !== undefined && body[col] !== '') {
@@ -3655,7 +3678,8 @@ function __stxOverlay(errs){
 
                       // Capture the destination <main>'s own attributes. The fragment
                       // carries only the container's INNER content, so a page whose
-                      // layout lives on <main> itself (e.g. `<main class="flex items-center justify-center min-h-[100dvh] //">`) would otherwise
+                      // layout lives on <main> itself (e.g. a <main> carrying
+                      // flex, min-h-[100dvh] and centring utilities) would otherwise
                       // be injected into the persistent, attribute-less container and
                       // lose its layout entirely on SPA navigation. The router applies
                       // these to the container during the swap.
