@@ -526,14 +526,22 @@ async function buildBundle(
   // already exported — re-exporting them causes `Multiple exports with the same
   // name` errors at bundle time.
   const declNames: string[] = []
-  const declRegex = /^(export\s+)?(?:const|let|var)\s+(?:\{([^}]+)\}|(\w+))/gm
-  const funcRegex = /^(export\s+)?(?:async\s+)?function\s+(\w+)/gm
+  // `[ \t]*` after the line anchor is load-bearing. A `<script client>` body
+  // is indented inside its template, and only some call paths dedent it before
+  // getting here — the signal-aware path transpiles first, the plain one does
+  // not. Anchoring hard at column 0 therefore found ZERO declarations for any
+  // view whose script never calls a reactive primitive directly (one that gets
+  // all of its state from a composable, say). Nothing was exported, Bun
+  // tree-shook the entry down to its side effects, and the page rendered with
+  // every expression referring to an undefined name.
+  const declRegex = /^[ \t]*(export\s+)?(?:const|let|var)\s+(?:\{([^}]+)\}|(\w+))/gm
+  const funcRegex = /^[ \t]*(export\s+)?(?:async\s+)?function\s+(\w+)/gm
   let dm: RegExpExecArray | null
   while ((dm = declRegex.exec(code)) !== null) {
     if (dm[1]) continue // already exported — don't duplicate
     if (dm[2]) {
-      // Destructured: const { a, b } = ...
-      dm[2].split(',').forEach(n => { const t = n.split(':')[0].trim(); if (t) declNames.push(t) })
+      // Destructured: const { a, b: renamed, c = 1, ...rest } = ...
+      dm[2].split(',').forEach((n) => { const t = destructuredLocalName(n); if (t) declNames.push(t) })
     }
     else if (dm[3]) declNames.push(dm[3])
   }
@@ -735,4 +743,30 @@ ${publicAssignments}`.trim()
     }
     catch {}
   }
+}
+
+/**
+ * The local binding a destructuring entry introduces.
+ *
+ * The name that must be exported is the one the surrounding code can actually
+ * refer to, which for a renamed entry is the half AFTER the colon:
+ * `{ board: recordBoard }` binds `recordBoard`, and exporting `board` names
+ * something that does not exist — Bun then drops the whole export list and the
+ * template sees none of the script's bindings.
+ *
+ * Defaults (`a = 1`) and rest elements (`...rest`) bind their own name too.
+ * A nested pattern (`{ a: { b } }`) binds nothing at this level, so it is
+ * skipped rather than guessed at.
+ */
+function destructuredLocalName(entry: string): string | null {
+  let name = entry.trim()
+  if (!name) return null
+  // Strip a default before looking at the rename: `{ a: b = 1 }` binds `b`.
+  const eq = name.indexOf('=')
+  if (eq !== -1) name = name.slice(0, eq).trim()
+  const colon = name.indexOf(':')
+  if (colon !== -1) name = name.slice(colon + 1).trim()
+  if (name.startsWith('...')) name = name.slice(3).trim()
+  // Anything left that is not a plain identifier is a nested pattern.
+  return /^[A-Za-z_$][\w$]*$/.test(name) ? name : null
 }
