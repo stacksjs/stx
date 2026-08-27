@@ -1,5 +1,16 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.235...v0.2.236)
+
+## 🔧 Chores
+
+- release v0.2.236 ([5147a60](https://github.com/stacksjs/stx/commit/5147a60)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: crosswind 0.2.19 ([51185e9](https://github.com/stacksjs/stx/commit/51185e9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.234...v0.2.235)
 
 ## 🐛 Bug Fixes
