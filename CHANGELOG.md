@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.231...v0.2.232)
+
+## 🐛 Bug Fixes
+
+- **i18n**: a static build tags each locale with its own layout group ([770f991](https://github.com/stacksjs/stx/commit/770f991)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **plugin**: a bundled build reads the project's stx config ([43cfcb1](https://github.com/stacksjs/stx/commit/43cfcb1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **includes**: strip the runtime import the bundler leaves in a partial ([cd5e367](https://github.com/stacksjs/stx/commit/cd5e367)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.232 ([7d67548](https://github.com/stacksjs/stx/commit/7d67548)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge fix/include-runtime-import-strip: strip the runtime import the bundler leaves in a partial ([3917c0f](https://github.com/stacksjs/stx/commit/3917c0f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.230...v0.2.231)
 
 ## 🐛 Bug Fixes
