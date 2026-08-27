@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.233...v0.2.234)
+
+## 🐛 Bug Fixes
+
+- **seo**: og:image resolves against the site origin ([c16b44d](https://github.com/stacksjs/stx/commit/c16b44d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.234 ([031f87a](https://github.com/stacksjs/stx/commit/031f87a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.232...v0.2.233)
 
 ## 🐛 Bug Fixes
