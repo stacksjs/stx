@@ -38,7 +38,7 @@
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, loadStxConfig, processClientScript, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -118,9 +118,33 @@ export function stxPlugin(userOptions?: StxOptions): BunPlugin {
   return {
     name: 'bun-plugin-stx',
     async setup(build) {
-      // Merge user options with defaults
+      // Merge user options over the project's stx config, over the defaults.
+      //
+      // The project config used to be skipped entirely here, so a bundled
+      // build behaved differently from the dev server for the same app: only
+      // `serve.ts` called `loadStxConfig`. An app that sets `root: 'resources'`
+      // (the Stacks layout, where components/layouts/partials live under
+      // `resources/`) rendered correctly under `stx dev` and shipped
+      // "[Error loading component]" text in place of every `<Nav />` and
+      // `<Footer />` from `buildStaticSite`. Worse, the failure compounded:
+      // with the components gone, nothing on the page carried reactive syntax,
+      // so the signals runtime was never injected — while the store bundle
+      // still was, and the deployed page died on `defineStore is not defined`.
+      //
+      // `loadStxConfig` caches per directory, so this is a map lookup after
+      // the first call. Its failure is non-fatal: a project with no stx config
+      // gets `defaultConfig` back, which is exactly the previous behavior.
+      let projectConfig: StxOptions = {}
+      try {
+        projectConfig = await loadStxConfig(process.cwd())
+      }
+      catch {
+        // No readable stx config — fall through to defaults, as before.
+      }
+
       const options: StxOptions = {
         ...defaultConfig,
+        ...projectConfig,
         ...userOptions,
       }
 
