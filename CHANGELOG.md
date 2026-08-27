@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.232...v0.2.233)
+
+## 🐛 Bug Fixes
+
+- **runtime**: run each onMount hook once ([fc9f7e9](https://github.com/stacksjs/stx/commit/fc9f7e9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.233 ([3bdf35c](https://github.com/stacksjs/stx/commit/3bdf35c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.231...v0.2.232)
 
 ## 🐛 Bug Fixes

@@ -1,6 +1,6 @@
 {
   "name": "create-stx",
-  "version": "0.2.232",
+  "version": "0.2.233",
   "description": "Create a new STX application",
   "type": "module",
   "bin": {
