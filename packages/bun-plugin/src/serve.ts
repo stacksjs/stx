@@ -2992,23 +2992,11 @@ function __stxOverlay(errs){
     }
 
     // Tag each rendered page with its locale via the SPA router's
-    // "layout group" meta. When the user clicks the lang picker and
-    // navigates from /about to /de/about, the router sees the group
-    // change ('en' → 'de') and triggers a full-body swap instead of
-    // the default container-only swap — so <nav> and <footer> (which
-    // hold `{t:key}` text the server already translated on the new
-    // request) get swapped in too. Without this, only `<main>` would
-    // update and the chrome would keep displaying the previous
-    // locale until a hard reload.
-    if (i18nConfig) {
-      const groupMeta = `<meta name="stx-layout-group" content="i18n:${locale}">`
-      if (/<meta name="stx-layout-group"[^>]*>/i.test(html))
-        html = html.replace(/<meta name="stx-layout-group"[^>]*>/i, groupMeta)
-      else if (/<\/head>/i.test(html))
-        html = html.replace(/<\/head>/i, `${groupMeta}\n</head>`)
-      else
-        html = `${groupMeta}\n${html}`
-    }
+    // "layout group" meta, so a language switch swaps <nav>/<footer>
+    // along with the container. Shared with the static build — see
+    // `stampLocaleLayoutGroup`.
+    if (i18nConfig && stx.stampLocaleLayoutGroup)
+      html = stx.stampLocaleLayoutGroup(html, locale)
 
     // Localize internal links — without this every <a href="/about">
     // in a /de page still points at /about (the English page), so

@@ -10,6 +10,7 @@ export {
   buildLangPickerScript,
   localizePath,
   resolveI18n,
+  stampLocaleLayoutGroup,
   stripLocalePrefix,
   translate,
 } from './i18n'

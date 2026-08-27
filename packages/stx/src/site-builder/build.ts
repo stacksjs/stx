@@ -29,6 +29,7 @@ import {
   buildLangPickerScript,
   localizePath,
   resolveI18n,
+  stampLocaleLayoutGroup,
 } from './i18n'
 import type { BuildOptions, SiteConfig } from './types'
 
@@ -158,6 +159,9 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
         // /de/ page would yank the visitor back to the English version
         // even though the link text was localized.
         html = localizeInternalLinks(html, locale, i18n.defaultLocale, knownPaths)
+        // Marks the page's locale for the SPA router, so a language switch
+        // swaps the chrome and not just the container. See the helper.
+        html = stampLocaleLayoutGroup(html, locale)
       }
 
       html = injectThemeBootstrap(html, options)

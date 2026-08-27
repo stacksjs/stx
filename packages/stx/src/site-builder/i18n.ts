@@ -262,6 +262,32 @@ export function buildAlternateLinks(
 }
 
 /**
+ * Tag a rendered page with its locale, via the SPA router's "layout group".
+ *
+ * The router's default swap replaces the container only, so `<nav>` and
+ * `<footer>` keep the markup of whatever page loaded first. That is fine for
+ * a same-locale hop and wrong for every cross-locale one: the chrome holds
+ * `{t:key}` text and locale-prefixed hrefs, both of which the server already
+ * resolved for the *destination* locale. A differing layout group is the
+ * router's signal to swap the whole body instead, which brings the chrome
+ * along — still a client-side navigation, no reload.
+ *
+ * Both renderers call this. They used to each carry their own copy of the
+ * markup, and only the dev server's copy actually existed: the static build
+ * shipped no group meta at all, so a built site translated `<main>` on a
+ * language switch and left the nav in the previous language until a hard
+ * reload — the one place the bug could not be seen while developing.
+ */
+export function stampLocaleLayoutGroup(html: string, locale: string): string {
+  const groupMeta = `<meta name="stx-layout-group" content="i18n:${escapeAttr(locale)}">`
+  if (/<meta name="stx-layout-group"[^>]*>/i.test(html))
+    return html.replace(/<meta name="stx-layout-group"[^>]*>/i, groupMeta)
+  if (/<\/head>/i.test(html))
+    return html.replace(/<\/head>/i, `${groupMeta}\n</head>`)
+  return `${groupMeta}\n${html}`
+}
+
+/**
  * Inline script that wires up the language picker.
  *
  * Per-page logic: each `<button data-lang="…">` inside the configured
@@ -279,14 +305,10 @@ export function buildLangPickerScript(
     current: currentLocale,
     pickerSelector: i18n.pickerSelector,
   })
-  // The router's container-only swap leaves <nav>/<footer> at the
-  // previous locale's text. For SPA hops between locales to swap
-  // those too, the destination's `<meta name="stx-layout-group">`
-  // must differ from the current one — that's the router's signal
-  // for "full body swap." We inject a per-locale group meta at build
-  // time (see post-process in bun-plugin-stx/serve.ts and the static
-  // build pipeline), and the router picks it up automatically. So
-  // here we can keep the click handler on the SPA path with no
+  // Cross-locale hops swap the whole body rather than just the
+  // container, so <nav>/<footer> pick up the destination locale's
+  // text. `stampLocaleLayoutGroup` above is what arranges that; the
+  // click handler here stays on the plain SPA path with no
   // special-casing.
   return `<script data-stx-lang-picker="1">window.__stxI18n=${data};(function(){function cfg(){return window.__stxI18n}function localeFromPath(p){var d=cfg();for(var i=0;i<d.locales.length;i++){var c=d.locales[i];if(p==='/'+c||p==='/'+c+'/')return c;if(p.indexOf('/'+c+'/')===0)return c}return d.defaultLocale}function localePathFor(loc,p){var d=cfg();var stripped=p;for(var i=0;i<d.locales.length;i++){var c=d.locales[i];if(p==='/'+c||p==='/'+c+'/'){stripped='/';break}if(p.indexOf('/'+c+'/')===0){stripped=p.slice(c.length+1);break}}if(loc===d.defaultLocale)return stripped;if(stripped==='/')return '/'+loc+'/';return '/'+loc+stripped}cfg().localizeHref=function(href){try{var u=new URL(href,location.origin);if(u.origin!==location.origin)return href;return localePathFor(localeFromPath(location.pathname),u.pathname)+(u.search||'')+(u.hash||'')}catch(_){return href}};function syncFromUrl(){var d=cfg();var loc=localeFromPath(location.pathname);d.current=loc;var picker=document.querySelector(d.pickerSelector);if(picker){var btns=picker.querySelectorAll('[data-lang]');for(var i=0;i<btns.length;i++){var b=btns[i];if(b.getAttribute('data-lang')===loc)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current')}}if(document.documentElement.lang!==loc)document.documentElement.lang=loc}function onLangClick(e){var d=cfg();var btn=e.target&&e.target.closest&&e.target.closest('[data-lang]');if(!btn)return;var picker=document.querySelector(d.pickerSelector);if(!picker||!picker.contains(btn))return;e.preventDefault();e.stopPropagation();var loc=btn.getAttribute('data-lang');if(!loc||loc===localeFromPath(location.pathname))return;var dest=localePathFor(loc,location.pathname);var r=window.__stxRouter;if(r&&r.navigate)r.navigate(dest,true,true);else location.assign(dest)}syncFromUrl();if(window.__stxLangPickerBound){document.removeEventListener('click',window.__stxLangPickerClick,true);window.removeEventListener('stx:navigate',window.__stxLangPickerSync);window.removeEventListener('popstate',window.__stxLangPickerSync)}window.__stxLangPickerClick=onLangClick;window.__stxLangPickerSync=syncFromUrl;window.__stxLangPickerBound=1;document.addEventListener('click',onLangClick,true);window.addEventListener('stx:navigate',syncFromUrl);window.addEventListener('popstate',syncFromUrl)})();</script>`
 }

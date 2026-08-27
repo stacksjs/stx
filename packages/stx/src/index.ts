@@ -292,6 +292,7 @@ export {
   injectThemeBootstrap,
   localizePath,
   resolveI18n,
+  stampLocaleLayoutGroup,
   stripLocalePrefix,
   translate,
   type BuildOptions,
