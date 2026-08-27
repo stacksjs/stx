@@ -92,4 +92,52 @@ describe('injectSeo', () => {
 
     expect(html).toContain('<title>Example Site</title>')
   })
+  /**
+   * `og:image` is the one og tag where "must be absolute" is enforced in
+   * practice: the scrapers fetch the value as written rather than resolving it
+   * against the document, so a root-relative path yields a card with no image.
+   * The page looks perfectly correct; only sharing the link reveals it.
+   */
+  describe('og:image is absolute', () => {
+    const imageOf = (html: string) =>
+      html.match(/property="og:image" content="([^"]+)"/)?.[1]
+
+    it('resolves a root-relative path against the site origin', () => {
+      const html = injectSeo('<html><head></head><body></body></html>', site, { image: '/images/og.jpg' }, '/')
+
+      expect(imageOf(html)).toBe('https://example.com/images/og.jpg')
+      expect(html).toContain('name="twitter:image" content="https://example.com/images/og.jpg"')
+    })
+
+    it('resolves a bare relative path too', () => {
+      const html = injectSeo('<html><head></head><body></body></html>', site, { image: 'images/og.jpg' }, '/')
+
+      expect(imageOf(html)).toBe('https://example.com/images/og.jpg')
+    })
+
+    it('leaves an absolute URL alone', () => {
+      const html = injectSeo('<html><head></head><body></body></html>', site, { image: 'https://cdn.example.net/og.jpg' }, '/')
+
+      expect(imageOf(html)).toBe('https://cdn.example.net/og.jpg')
+    })
+
+    it('leaves a protocol-relative URL alone', () => {
+      const html = injectSeo('<html><head></head><body></body></html>', site, { image: '//cdn.example.net/og.jpg' }, '/')
+
+      expect(imageOf(html)).toBe('//cdn.example.net/og.jpg')
+    })
+
+    it('leaves a data URI alone', () => {
+      const html = injectSeo('<html><head></head><body></body></html>', site, { image: 'data:image/png;base64,AAAA' }, '/')
+
+      expect(imageOf(html)).toBe('data:image/png;base64,AAAA')
+    })
+
+    it('applies to the site-level default image as well', () => {
+      const withDefault = { ...site, seo: { ...site.seo, image: '/images/default.jpg' } } as typeof site
+      const html = injectSeo('<html><head></head><body></body></html>', withDefault, {}, '/about')
+
+      expect(imageOf(html)).toBe('https://example.com/images/default.jpg')
+    })
+  })
 })

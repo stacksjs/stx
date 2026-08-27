@@ -1,6 +1,27 @@
 import type { PageMeta, SiteConfig } from './types'
 
 /**
+ * Resolve a share image against the site's origin.
+ *
+ * `og:image` has to be absolute. The scrapers are not browsers resolving a
+ * relative href against the document: Facebook, LinkedIn and Slack fetch the
+ * value as given, and a root-relative path is simply not a URL they can
+ * retrieve, so the card falls back to no image at all. This is the one og tag
+ * where the spec's "must be absolute" is enforced in practice, and it is easy
+ * to miss because the page looks correct and the failure only shows up when
+ * somebody shares the link.
+ *
+ * Only root-relative paths are rewritten. A value that already carries a
+ * scheme, a protocol-relative `//cdn/...`, or a `data:` payload is left
+ * exactly as the site wrote it.
+ */
+function absoluteImage(image: string | undefined, origin: string): string | undefined {
+  if (!image) return image
+  if (/^[a-z][a-z0-9+.-]*:/i.test(image) || image.startsWith('//')) return image
+  return `${origin}${image.startsWith('/') ? '' : '/'}${image}`
+}
+
+/**
  * Replace stx's auto-injected default SEO block (which says "stx Project")
  * with site-specific tags. Looks for the marker comment stx inserts and
  * swaps the wrapped meta tags. If the block isn't found, prepends the
@@ -10,8 +31,9 @@ export function injectSeo(html: string, site: SiteConfig, page: PageMeta = {}, p
   const seo = site.seo ?? {}
   const title = page.title ?? seo.title ?? site.name
   const description = page.description ?? seo.description ?? site.description ?? ''
-  const image = page.image ?? seo.image
-  const url = `${site.url.replace(/\/$/, '')}${pagePath}`
+  const origin = site.url.replace(/\/$/, '')
+  const url = `${origin}${pagePath}`
+  const image = absoluteImage(page.image ?? seo.image, origin)
   const siteName = seo.siteName ?? site.name
   const ogType = seo.type ?? 'website'
   const locale = seo.locale ?? 'en_US'
