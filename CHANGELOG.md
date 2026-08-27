@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.234...v0.2.235)
+
+## 🐛 Bug Fixes
+
+- **bundler**: publish every binding a client script declares ([b92a2af](https://github.com/stacksjs/stx/commit/b92a2af)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.235 ([6be8a30](https://github.com/stacksjs/stx/commit/6be8a30)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.233...v0.2.234)
 
 ## 🐛 Bug Fixes
