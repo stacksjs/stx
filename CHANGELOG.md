@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.236...v0.2.237)
+
+## 💚 Continuous Integration
+
+- **release**: make the two publish stages a strict partition ([6a3f4fb](https://github.com/stacksjs/stx/commit/6a3f4fb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.237 ([af090e6](https://github.com/stacksjs/stx/commit/af090e6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.235...v0.2.236)
 
 ## 🔧 Chores
