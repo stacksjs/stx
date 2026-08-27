@@ -965,9 +965,20 @@ finally {
   function runMountCallbacks(list, sink) {
     if (!list || !list.length) return;
     var target = sink || destroyCallbacks;
-    for (var i = 0; i < list.length; i++) {
+    // Drain before running. A mount callback fires once, and leaving the queue
+    // in place made that untrue: the DOM-ready handler reaches this with the
+    // same shared mountCallbacks array twice — once inside the per-root
+    // hydration loop, then again for the global pass — and only emptied it
+    // after the second call. So every onMount on a page with a data-stx root
+    // ran twice, and a page with N roots ran them N+1 times. Every request the
+    // hook made was duplicated with it.
+    // Taking the batch out first also keeps a callback that registers another
+    // onMount honest: the new one queues for the next flush instead of being
+    // swallowed by the clear or replayed by the next caller.
+    var batch = list.splice(0, list.length);
+    for (var i = 0; i < batch.length; i++) {
       try {
-        var cleanup = list[i]();
+        var cleanup = batch[i]();
         if (typeof cleanup === 'function') target.push(cleanup);
       }
       catch (e) { console.error('[stx] onMount error:', e); }
