@@ -1082,6 +1082,29 @@ catch (error: unknown) {
             if (options.debug)
               console.warn(`[stx] bundler skipped for ${includeFilePath}:`, err instanceof Error ? err.message : err)
           }
+
+          // …and drop the runtime import the bundler itself just introduced.
+          //
+          // `stx` stays EXTERNAL through the bundle, so inlining a module that
+          // imports from it hoists that module's `import { … } from 'stx'` to
+          // the top of the output. The user's own script need never have
+          // written one: importing a composable that does is enough, which is
+          // why the bundling step above — added for user-authored bare-spec
+          // imports — did not cover it.
+          //
+          // Both branches below wrap this content in a classic IIFE that
+          // already destructures the runtime from `window.stx`, and an
+          // `import` is a syntax error there. Left in place it threw
+          // `SyntaxError: Cannot use import statement outside a module`, and
+          // since the throw happens before the scope registers, the partial
+          // silently failed to hydrate on every page that included it —
+          // interpolations rendered empty and handlers were inert, with the
+          // only clue a hydration-invariant warning naming the scope.
+          //
+          // Shared with the component renderer and the merged page setup so
+          // the three wrapping paths cannot drift apart again.
+          const { stripStxRuntimeImports } = await import('./signal-processing')
+          scriptContent = stripStxRuntimeImports(scriptContent)
         }
 
         const isSignalScript = hasSignalApis(scriptContent)

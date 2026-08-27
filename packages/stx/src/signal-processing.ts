@@ -1299,10 +1299,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
     // Discarding the whole line left `state2` unbound, so the setup threw
     // "state2 is not defined" the moment it ran — which killed hydration for
     // the entire page, not just that composable.
-    scriptContent = scriptContent.replace(
-      /^\s*import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"](?:stx|@stacksjs\/stx|@stacksjs\/browser)['"]\s*;?\s*$/gm,
-      (_match, specifiers: string) => rewriteStxImportSpecifiers(specifiers),
-    )
+    scriptContent = stripStxRuntimeImports(scriptContent)
     const resolved = transformStoreImports(scriptContent)
     resolvedParts.push(`// ── merged signal script #${i + 1} ──\n${resolved}`)
   }
@@ -1806,4 +1803,35 @@ export function rewriteStxImportSpecifiers(specifiers: string): string {
   // one bundle, so use a repeatable function-scoped declaration. Every alias
   // here points back to the same canonical STX runtime binding.
   return `var ${aliases.join(', ')}; ${STX_IMPORT_STRIPPED}`
+}
+
+/**
+ * The `import { … } from 'stx'` lines the bundler leaves behind.
+ *
+ * `bundleClientScript` keeps the stx runtime EXTERNAL, so whenever it inlines
+ * a module that imports from it — typically a composable the user's script
+ * pulled in, not the user's script itself — it hoists that module's import to
+ * the top of the bundle. Every client-script wrapper in stx is a classic
+ * IIFE, where an `import` statement is a syntax error.
+ */
+const STX_RUNTIME_IMPORT_RE = /^\s*import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"](?:stx|@stacksjs\/stx|@stacksjs\/browser)['"]\s*;?\s*$/gm
+
+/**
+ * Strip the runtime imports a bundled client script carries, keeping aliases.
+ *
+ * Every wrapper that hosts bundled client code destructures the stx API from
+ * `window.stx` first, so a plain specifier needs no binding and the line can
+ * go. A renamed one (`state as state2`) must survive as a local alias or the
+ * inlined module's calls throw.
+ *
+ * Shared by all three wrapping paths — the merged page setup below, the
+ * component renderer in utils.ts, and the include/partial renderer in
+ * includes.ts. It lives in one place because it did not: includes.ts had no
+ * strip at all, so a partial whose `<script client>` imported a composable
+ * that imports from 'stx' emitted a bare `import` into a classic script and
+ * threw `SyntaxError: Cannot use import statement outside a module`, killing
+ * that scope's hydration on every page the partial appeared on.
+ */
+export function stripStxRuntimeImports(code: string): string {
+  return code.replace(STX_RUNTIME_IMPORT_RE, (_match, specifiers: string) => rewriteStxImportSpecifiers(specifiers))
 }
