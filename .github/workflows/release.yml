@@ -37,23 +37,34 @@ jobs:
           install: false
 
       # Stage 1: the framework itself ships first — @stacksjs/stx and
-      # bun-plugin-stx are what consumers wait on. @stacksjs/desktop is an
-      # OPTIONAL dependency of @stacksjs/stx (lazily imported for native
-      # windows) and its npm trusted-publishing is currently misconfigured, so
-      # it is skipped here — a desktop publish failure must never abort the
-      # release before stx-router / sanitizer publish in Stage 2.
+      # bun-plugin-stx are what consumers wait on. Named as explicit paths
+      # rather than by skip-listing everything else, so adding a package to
+      # packages/ cannot silently enlist it here as well as in Stage 2.
       - name: Publish stx + bun-plugin-stx
-        run: pantry publish --npm --access public --skip collections,components,config,create-stx,desktop,iconify-core,iconify-generator,markdown,router,sanitizer
+        run: pantry publish --npm --access public packages/stx packages/bun-plugin
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # Stage 2: everything else — stx-router, sanitizer, desktop, iconify-*,
-      # create-stx, markdown, etc. (stx/bun-plugin skip via cheap GET). Runs
-      # after Stage 1 so a hiccup in a peripheral package can never block the
-      # critical stx publish; with trusted publishing configured for every
-      # package these all succeed.
+      # create-stx, components. Runs after Stage 1 so a hiccup in a peripheral
+      # package can never block the critical stx publish. @stacksjs/desktop is
+      # an OPTIONAL dependency of @stacksjs/stx (lazily imported for native
+      # windows) and its npm trusted-publishing has been flaky, which is the
+      # other reason the split exists.
+      #
+      # The two stages are a strict PARTITION. Stage 2 used to re-attempt
+      # stx and bun-plugin-stx and rely on the already-published check to skip
+      # them, which is a race: npm's trusted publishing stages an upload
+      # before the version is readable, so the check saw "not published",
+      # tried again, and npm answered `409 Cannot publish over previously
+      # staged version`. That fails the job. Worse, it fails it AFTER a
+      # release is tagged and most packages are out — and when the loser is
+      # bun-plugin-stx, which @stacksjs/stx pins exactly, the published stx is
+      # uninstallable until someone re-runs the job. It cost two releases
+      # (v0.2.235, v0.2.236) before it was diagnosed, because the first one
+      # happened to survive it.
       - name: Publish remaining core packages
-        run: pantry publish --npm --access public --skip collections
+        run: pantry publish --npm --access public --skip collections,stx,bun-plugin
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
