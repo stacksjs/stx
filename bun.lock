@@ -5,7 +5,7 @@
     "": {
       "name": "stx",
       "dependencies": {
-        "@cwcss/crosswind": "^0.2.16",
+        "@cwcss/crosswind": "^0.2.19",
         "very-happy-dom": "^0.1.10",
       },
       "devDependencies": {
@@ -59,8 +59,8 @@
         "stx-serve": "./dist/serve.js",
       },
       "dependencies": {
-        "@stacksjs/stx": "^0.2.72",
-        "stx-router": "^0.2.72",
+        "@stacksjs/stx": "^0.2.227",
+        "stx-router": "^0.2.227",
       },
     },
     "packages/collections/iconify-academicons": {
@@ -1593,7 +1593,7 @@
       "name": "@stacksjs/components",
       "version": "0.2.235",
       "dependencies": {
-        "@cwcss/crosswind": "^0.2.14",
+        "@cwcss/crosswind": "^0.2.19",
         "@iconify-json/f7": "^1.2.2",
         "@stacksjs/stx": "workspace:*",
         "bun-plugin-stx": "workspace:*",
@@ -1667,7 +1667,7 @@
         "stx": "./dist/cli.js",
       },
       "dependencies": {
-        "@cwcss/crosswind": "^0.2.14",
+        "@cwcss/crosswind": "^0.2.19",
         "@stacksjs/clapp": "^0.2.0",
         "@stacksjs/desktop": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
@@ -1749,7 +1749,7 @@
 
     "@csstools/css-tokenizer": ["@csstools/css-tokenizer@4.0.0", "", {}, "sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA=="],
 
-    "@cwcss/crosswind": ["@cwcss/crosswind@0.2.16", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.17" }, "bin": { "crosswind": "./dist/cli.js" } }, "sha512-QgSTpcnt1seUQF2++taD5wk/H1lE3wSaybd+i9iP/syQTB2w/v2aM2U9SzYYe2ZcHA3Uxa1Sn/YvhcmHeFfuCA=="],
+    "@cwcss/crosswind": ["@cwcss/crosswind@0.2.19", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.17" }, "bin": { "crosswind": "./dist/cli.js" } }, "sha512-NswUZPNHbdkW4rxvmwjjIM7jyfQ/rr0X1J1uwjTUwixc3BXQs1Fk7pP5cC7MxkGGnmRTFs2O9J+U9tJ36ZJ7fQ=="],
 
     "@exodus/bytes": ["@exodus/bytes@1.15.1", "", { "peerDependencies": { "@noble/hashes": "^1.8.0 || ^2.0.0" }, "optionalPeers": ["@noble/hashes"] }, "sha512-S6mL0yNB/Abt9Ei4tq8gDhcczc4S3+vQ4ra7vxnAf+YHC02srtqxKKZghx2Dq6p0e66THKwR6r8N6P95wEty7Q=="],
 
@@ -2970,8 +2970,6 @@
     "@11ty/eleventy/js-yaml": ["js-yaml@4.2.0", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw=="],
 
     "@csstools/css-color-parser/@csstools/css-calc": ["@csstools/css-calc@3.3.0", "", { "peerDependencies": { "@csstools/css-parser-algorithms": "^4.0.0", "@csstools/css-tokenizer": "^4.0.0" } }, "sha512-c5ihYsPkdG6JCkU2zTMm4+k6r7RXuGxtWYhu5DHMIiF1FHzrfmHL5so11AoFpUv/tu61xfcmT4AmKoFfMPoqdQ=="],
-
-    "@cwcss/crosswind/@stacksjs/clapp": ["@stacksjs/clapp@0.2.10", "", {}, "sha512-l/2F0u5ihpae8R4kJ3Pdh6tV7aEpSxu6hCyafhw38Fl9+x2YKxZfUK+fF/G5AVwSzJar3dkKuMxbMcQ0PXKGRg=="],
 
     "@sindresorhus/slugify/escape-string-regexp": ["escape-string-regexp@5.0.0", "", {}, "sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw=="],
 

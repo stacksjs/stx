@@ -63,7 +63,7 @@
   },
   "dependencies": {
     "@iconify-json/f7": "^1.2.2",
-    "@cwcss/crosswind": "^0.2.14",
+    "@cwcss/crosswind": "^0.2.19",
     "@stacksjs/stx": "workspace:*",
     "bun-plugin-stx": "workspace:*",
     "ts-syntax-highlighter": "^0.2.1"
