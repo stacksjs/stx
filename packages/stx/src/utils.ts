@@ -1415,11 +1415,8 @@ export async function renderComponentWithSlot(
             minify: options.buildMode === 'compile',
           })
         }
-        const { rewriteStxImportSpecifiers } = await importOnce('stx/signal-processing', () => import('./signal-processing'))
-        bundledContent = bundledContent.replace(
-          /^\s*import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"](?:stx|@stacksjs\/stx|@stacksjs\/browser)['"]\s*;?\s*$/gm,
-          (_match, specifiers: string) => rewriteStxImportSpecifiers(specifiers),
-        )
+        const { stripStxRuntimeImports } = await importOnce('stx/signal-processing', () => import('./signal-processing'))
+        bundledContent = stripStxRuntimeImports(bundledContent)
         // Transform store imports before IIFE wrapping (import statements can't be inside functions)
         const content = transformStoreImports(bundledContent)
         const componentLocalNames = extractVariableNames(content)
