@@ -251,3 +251,54 @@ describe('stx#1804: auto-imports and runtime globals are one list', () => {
       expect(STX_RUNTIME_GLOBALS).toContain(name)
   })
 })
+
+describe('the authoring surface is reachable from the package root', () => {
+  /*
+   * "Which names are ambient in an stx template" is a question every consuming
+   * framework has to answer to type its own templates, and the answer is
+   * `STX_RUNTIME_GLOBALS` — already guarded above against the real `window.stx`.
+   *
+   * It was reachable only by deep path (`stx/dist/runtime-globals`), which is
+   * not a public entry point, so consumers transcribed it instead. Those copies
+   * drifted the way copies do: Stacks shipped a declaration naming 405 browser
+   * globals of which 291 did not exist, because the tool that wrote it ran once
+   * and never again, and `@ts-nocheck` at the top meant nothing checked it.
+   *
+   * Exporting the list is what lets a consumer derive from the guarded one. It
+   * only helps while it stays exported, hence this.
+   */
+  it('exports STX_RUNTIME_GLOBALS from the index', async () => {
+    const { STX_RUNTIME_GLOBALS: exported } = await import('../src/index') as {
+      STX_RUNTIME_GLOBALS?: readonly string[]
+    }
+
+    expect(exported).toBeDefined()
+    expect(exported).toEqual(STX_RUNTIME_GLOBALS)
+  })
+
+  it('exports the sets a consumer needs to interpret it', async () => {
+    const index = await import('../src/index') as Record<string, unknown>
+
+    // A consumer typing a template needs to know which of these names are
+    // compile-time macros (they resolve, but calling one is not a runtime
+    // subscription) and which a component wrapper declares for itself.
+    expect(index.COMPILE_TIME_ONLY_GLOBALS).toBeDefined()
+    expect(index.COMPONENT_SCOPE_LOCAL_GLOBALS).toBeDefined()
+
+    // And which public primitives are deliberately NOT reachable as a bare
+    // identifier, each with the reason — so a consumer can tell a boundary from
+    // a gap rather than guessing from a ReferenceError.
+    expect(index.NON_CLIENT_PRIMITIVES).toBeDefined()
+  })
+
+  it('every exported name is a plain string, so it can be written into a declaration', async () => {
+    const { STX_RUNTIME_GLOBALS: exported } = await import('../src/index') as {
+      STX_RUNTIME_GLOBALS: readonly string[]
+    }
+
+    // A consumer emits `const <name>: …` per entry. Anything that is not a bare
+    // identifier would produce a declaration file that does not parse.
+    const notIdentifiers = exported.filter(name => !/^[A-Z_$][\w$]*$/i.test(name))
+    expect(notIdentifiers).toEqual([])
+  })
+})

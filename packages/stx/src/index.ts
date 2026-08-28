@@ -204,6 +204,22 @@ export * from './loading-indicator'
 export * from './reactive-bindings'
 export * from './client-helpers'
 export * from './client-script'
+/*
+ * The authoring surface, as data.
+ *
+ * `STX_RUNTIME_GLOBALS` is what a client script gets as bare identifiers, and
+ * it is the answer to "which names are ambient in an stx template" - a question
+ * every consuming framework has to answer to type its own templates. It was
+ * reachable only by deep path, so consumers kept their own copies of the list
+ * and those copies drifted: Stacks shipped a declaration naming 405 browser
+ * globals of which 291 did not exist, because the tool that wrote it had been
+ * run once and never again.
+ *
+ * The list is already the single source of truth in here, guarded by
+ * `runtime-globals.test.ts` against the real `window.stx`. Exporting it means a
+ * consumer can derive from the same guarded list instead of transcribing it.
+ */
+export * from './runtime-globals'
 export * from './strip-literals'
 export * from './resolve-stx-targets'
 export * from './cookie-serialize'
