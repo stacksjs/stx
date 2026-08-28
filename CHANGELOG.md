@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.240...v0.2.241)
+
+## 🐛 Bug Fixes
+
+- **typecheck**: read a @foreach head to its balanced close ([514b578](https://github.com/stacksjs/stx/commit/514b578)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: reserve room for window buttons only where there are any ([f5918fb](https://github.com/stacksjs/stx/commit/f5918fb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: let the platform's own traffic lights win ([33acb33](https://github.com/stacksjs/stx/commit/33acb33)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- **desktop**: say who draws the window controls ([17745a1](https://github.com/stacksjs/stx/commit/17745a1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.241 ([15743ab](https://github.com/stacksjs/stx/commit/15743ab)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.239...v0.2.240)
 
 ## 🐛 Bug Fixes
