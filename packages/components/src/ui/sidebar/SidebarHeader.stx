@@ -59,9 +59,12 @@ export const isArc = theme === 'arc'
 //
 //   --craft-window-controls-replicas   the `display` a replica should take —
 //                                      `none` where it drew real buttons
-//   --craft-window-controls-width      the room they need, from the window's
-//                                      left edge (0 when they sit in a
-//                                      titlebar of their own)
+//   --craft-window-controls-width      the room they need inside the page: the
+//                                      far edge of the real buttons, measured
+//                                      on the window, and 0 whenever they are
+//                                      not over the page — a titlebar of their
+//                                      own, a native sidebar under them,
+//                                      fullscreen
 //
 // Both are read as fallbacks, so a browser — where neither is set — draws the
 // replicas and reserves nothing, and no JavaScript is involved either way.

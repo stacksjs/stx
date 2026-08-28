@@ -155,7 +155,11 @@ the two variables Craft publishes before the document is parsed:
 | Variable | In a Craft window | In a browser |
 | --- | --- | --- |
 | `--craft-window-controls-replicas` | `none` where real buttons exist | unset |
-| `--craft-window-controls-width` | room they need, from the window's left edge | unset |
+| `--craft-window-controls-width` | the far edge of the real buttons, measured on the window — and 0 whenever they are not over your page | unset |
+
+Craft measures the buttons rather than assuming them, and re-publishes on every
+resize, fullscreen transition and navigation, so a window with a titlebar of its
+own reports 0, and so does a fullscreen window whose titlebar has slid away.
 
 Your own chrome can read them the same way, with no JavaScript:
 
