@@ -14,9 +14,62 @@ function collectTypeScriptModules(directory: string): string[] {
   })
 }
 
+/** The newest mtime under a directory, or 0 when it does not exist. */
+function newestMtime(directory: string): number {
+  if (!existsSync(directory))
+    return 0
+
+  return readdirSync(directory).reduce((newest, name) => {
+    const fullPath = join(directory, name)
+    const stat = statSync(fullPath)
+    const mtime = stat.isDirectory() ? newestMtime(fullPath) : stat.mtimeMs
+
+    return Math.max(newest, mtime)
+  }, 0)
+}
+
+/**
+ * When the build last ran, judged by one file only the build writes.
+ *
+ * Not the newest mtime anywhere under `dist/`: other suites in this package
+ * write into it - the SSG build does - so "something in dist is newer than
+ * src" is true even when the build has not run in a week.
+ */
+/**
+ * How long the hook below may take.
+ *
+ * The build is ~10s, and a `beforeAll` gets 5s by default - so the rebuild
+ * branch could never finish. It went unnoticed because the branch only ran when
+ * `dist/` was absent, which is a clean checkout: exactly the case nobody runs
+ * this suite in, and exactly the case it exists for. Generous rather than
+ * tight, because a slow machine failing the build hook says nothing about the
+ * package's exports.
+ */
+const BUILD_TIMEOUT_MS = 300_000
+
+function lastBuiltAt(): number {
+  const marker = join(packageRoot, 'dist', 'index.js')
+
+  return existsSync(marker) ? statSync(marker).mtimeMs : 0
+}
+
 describe('package export surface', () => {
   beforeAll(() => {
-    if (existsSync(join(packageRoot, 'dist', 'expressions.js')))
+    /*
+     * Rebuild when the build output is OLDER than the sources, not merely when
+     * it is absent.
+     *
+     * `dist/` is gitignored, so every checkout starts without it and the
+     * absence check covered that. What it did not cover is the common case: a
+     * dist from last week and a source file added since. This suite then
+     * asserts "every public source module ships JS" against output that never
+     * saw the module, and fails naming a file the author did not touch - which
+     * is how a suite becomes something people learn to ignore.
+     *
+     * The other direction is worse and quieter: a dist built from newer source
+     * than the checkout lets a genuinely missing module pass.
+     */
+    if (existsSync(join(packageRoot, 'dist', 'expressions.js')) && lastBuiltAt() >= newestMtime(join(packageRoot, 'src')))
       return
 
     const result = Bun.spawnSync(['bun', '--bun', 'build.ts'], {
@@ -26,7 +79,7 @@ describe('package export surface', () => {
     })
 
     expect(result.exitCode, result.stderr.toString()).toBe(0)
-  })
+  }, BUILD_TIMEOUT_MS)
 
   it('ships JavaScript for representative public subpath exports', async () => {
     const subpaths = [
