@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.239...v0.2.240)
+
+## 🐛 Bug Fixes
+
+- **typecheck**: declare the names stx auto-imports from @stacksjs/browser ([f4cea31](https://github.com/stacksjs/stx/commit/f4cea31)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.240 ([fc84127](https://github.com/stacksjs/stx/commit/fc84127)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.238...v0.2.239)
 
 ## 🐛 Bug Fixes
