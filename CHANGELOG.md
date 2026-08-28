@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.237...v0.2.238)
+
+## ✨ Features
+
+- export the authoring surface from the package root ([eee23c3](https://github.com/stacksjs/stx/commit/eee23c3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: commit the visual snapshots, which asserted nothing without them ([f0b60bd](https://github.com/stacksjs/stx/commit/f0b60bd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **test**: the package's own test script could not run its own tests ([1b04b5e](https://github.com/stacksjs/stx/commit/1b04b5e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **test**: the export-surface build hook could never finish ([0837747](https://github.com/stacksjs/stx/commit/0837747)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.238 ([83bbf90](https://github.com/stacksjs/stx/commit/83bbf90)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.236...v0.2.237)
 
 ## 💚 Continuous Integration
