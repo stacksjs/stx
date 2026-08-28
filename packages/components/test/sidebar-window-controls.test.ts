@@ -84,10 +84,10 @@ describe('the template honours the mode', () => {
     expect(source).toContain('display: var(--craft-window-controls-replicas, flex)')
   })
 
-  it('reserves what the host says the buttons need', () => {
-    // 62px is the measurement `native` assumes; `auto` cannot assume there are
-    // any buttons, so with no host publishing a width it reserves nothing.
-    expect(source).toContain("var(--craft-window-controls-width, ${autoWindowControls ? '0px' : '62px'})")
+  it('reserves what the host says the buttons need, and nothing otherwise', () => {
+    // Not even under `native`: a browser has no window buttons, and a Craft
+    // window with a titlebar keeps them above the page. Only the host knows.
+    expect(source).toContain("const controlsWidth = 'var(--craft-window-controls-width, 0px)'")
   })
 
   it('draws a replica and reserves room together only under auto', () => {

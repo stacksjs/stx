@@ -134,7 +134,10 @@ export interface SidebarHeaderProps {
    * `--craft-window-controls-replicas` and `--craft-window-controls-width`,
    * which Craft publishes before the document is parsed.
    *
-   * `--stx-native-controls-width` overrides the reserved width for a host that
+   * The reserved width comes from the host in every mode, `native` included:
+   * a browser has no window buttons and a titlebar window keeps them above the
+   * page, so an unpublished width means nothing to reserve.
+   * `--stx-native-controls-width` covers a host that draws its own controls and
    * publishes nothing; it is the room after this header's own left padding.
    */
   windowControls?: 'auto' | 'draw' | 'native' | 'none'

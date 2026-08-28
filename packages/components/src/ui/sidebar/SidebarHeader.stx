@@ -83,11 +83,14 @@ export const replicaStyle = autoWindowControls
   : ''
 
 // The room to leave, measured from the window's left edge and reduced by the
-// padding this header already has. `native` was asked for explicitly, so it
-// assumes controls exist and falls back to the measured 62px; `auto` cannot
-// assume, so with no host publishing a width it reserves nothing and lets the
-// replicas stand.
-const controlsWidth = `var(--craft-window-controls-width, ${autoWindowControls ? '0px' : '62px'})`
+// padding this header already has. The host is the only thing that knows: a
+// browser has no window buttons, a Craft window with a titlebar keeps them
+// above the page, and only a titlebar-hidden one puts them over this row. So
+// with nothing published there is nothing to leave room for — including under
+// `native`, which asserts the platform drew them, not that this page is inside
+// a window at all. `--stx-native-controls-width` covers a host that draws its
+// own and publishes nothing.
+const controlsWidth = 'var(--craft-window-controls-width, 0px)'
 export const macosControlsReserve = `var(--stx-native-controls-width, max(0px, calc(${controlsWidth} - 21px)))`
 export const arcControlsReserve = `var(--stx-native-controls-width, max(0px, calc(${controlsWidth} - 12px)))`
 
