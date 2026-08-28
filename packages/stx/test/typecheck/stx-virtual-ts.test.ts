@@ -364,3 +364,40 @@ describe('the names stx auto-imports into a client script are declared', () => {
       expect(BROWSER_CORE_IMPORTS).toContain(name)
   })
 })
+
+describe('a @foreach head is read to its balanced close', () => {
+  /*
+   * `@foreach(filterItems(listItems, query) as item)` lost its loop variable
+   * entirely. The head was matched with a non-greedy `\)`, which stops at the
+   * FIRST close paren - so the capture was `filterItems(listItems, query`, it
+   * contained no ` as `, and the directive was skipped. `item` was then
+   * declared nowhere and every use of it in the body read "Cannot find name".
+   */
+  it('keeps the binding when the iterable is a call', () => {
+    expect(collectTemplateBindings('@foreach(filterItems(listItems, query) as item)').map(b => b.name))
+      .toEqual(['item'])
+  })
+
+  it('keeps it through a nested arrow', () => {
+    expect(collectTemplateBindings('@foreach(rows.filter(r => r.on) as row)').map(b => b.name))
+      .toEqual(['row'])
+  })
+
+  it('still handles the plain and destructured forms', () => {
+    expect(collectTemplateBindings('@foreach(listItems as item)').map(b => b.name)).toEqual(['item'])
+    expect(collectTemplateBindings('@foreach(items as key => value)').map(b => b.name)).toEqual(['key', 'value'])
+  })
+
+  it('gives up rather than scanning the file when a paren never closes', () => {
+    /*
+     * The bound matters: an unbalanced `(` in ordinary markup would otherwise
+     * send the scan to end-of-file once per directive, which is quadratic on
+     * the largest views. Unbounded, this cost 55 test timeouts.
+     */
+    const runaway = `@foreach(broken as item)${'x'.repeat(5000)}`
+    expect(collectTemplateBindings(runaway).map(b => b.name)).toEqual(['item'])
+
+    const unclosed = `@foreach(oops${'y'.repeat(5000)}`
+    expect(collectTemplateBindings(unclosed)).toEqual([])
+  })
+})

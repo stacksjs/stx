@@ -595,6 +595,37 @@ export interface TemplateBinding {
   iterable?: string
 }
 
+/**
+ * The text inside the parentheses that open at `openIndex`, or null when they
+ * never close. Parenthesis-aware, so a call or a nested group inside the group
+ * does not end it early.
+ *
+ * Bounded, and the bound is not cosmetic. A directive head is a few dozen
+ * characters; an unbalanced `(` anywhere in the markup - which is ordinary in
+ * HTML text - would otherwise send this scanning to the end of the file, once
+ * per directive, and a large view has hundreds. That is quadratic on exactly
+ * the files that are already the slowest to check.
+ */
+const MAX_DIRECTIVE_HEAD = 2000
+
+function balancedGroup(source: string, openIndex: number): string | null {
+  let depth = 0
+  const limit = Math.min(source.length, openIndex + MAX_DIRECTIVE_HEAD)
+
+  for (let index = openIndex; index < limit; index++) {
+    const char = source[index]
+    if (char === '(')
+      depth++
+    else if (char === ')') {
+      depth--
+      if (depth === 0)
+        return source.slice(openIndex + 1, index)
+    }
+  }
+
+  return null
+}
+
 export function collectTemplateBindings(source: string): TemplateBinding[] {
   const bindings = new Map<string, TemplateBinding>()
   const add = (raw: string, iterable?: string): void => {
@@ -620,9 +651,21 @@ export function collectTemplateBindings(source: string): TemplateBinding[] {
     return IDENTIFIER.test(trimmed) ? trimmed : undefined
   }
 
-  // @foreach(items as item) / @foreach(items as key => value)
-  for (const m of source.matchAll(/@for(?:each|else)\s*\(([\s\S]*?)\)/g)) {
-    const asMatch = m[1].match(/^([\s\S]*?)\bas\b([\s\S]*)$/)
+  /*
+   * @foreach(items as item) / @foreach(items as key => value)
+   *
+   * The head is read to its BALANCED closing paren, not to the first one. A
+   * non-greedy `\)` stops inside the iterable the moment it contains a call -
+   * `@foreach(filterItems(listItems, query) as item)` captured
+   * `filterItems(listItems, query`, found no ` as `, and skipped the directive
+   * entirely. The loop variable was then declared nowhere and every use of it
+   * in the body came back "Cannot find name 'item'".
+   */
+  for (const m of source.matchAll(/@for(?:each|else)\s*\(/g)) {
+    const head = balancedGroup(source, m.index + m[0].length - 1)
+    if (head === null)
+      continue
+    const asMatch = head.match(/^([\s\S]*?)\bas\b([\s\S]*)$/)
     if (!asMatch)
       continue
     add(asMatch[2].replace(/=>/g, ' '), iterableOf(asMatch[1]))
