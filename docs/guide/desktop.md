@@ -141,6 +141,38 @@ interface WindowOptions {
 }
 ```
 
+### Window Controls (Traffic Lights)
+
+The close, minimise and zoom buttons belong to the platform. macOS draws real
+ones on every window except a `frameless` one — including `titlebarHidden` and
+`nativeSidebar` windows, where they float over the top-left of your page — so a
+page that draws its own puts six circles in the corner, three of them dead.
+
+`SidebarHeader` handles this for you. Its default, `windowControls="auto"`,
+draws mock lights in a browser and steps aside inside a desktop window, reading
+the two variables Craft publishes before the document is parsed:
+
+| Variable | In a Craft window | In a browser |
+| --- | --- | --- |
+| `--craft-window-controls-replicas` | `none` where real buttons exist | unset |
+| `--craft-window-controls-width` | room they need, from the window's left edge | unset |
+
+Your own chrome can read them the same way, with no JavaScript:
+
+```css
+.my-traffic-lights {
+  display: var(--craft-window-controls-replicas, flex);
+}
+
+.my-header {
+  padding-left: var(--craft-window-controls-width, 0px);
+}
+```
+
+Pass `windowControls="draw"` to force replicas everywhere (a marketing page
+imitating macOS), `"native"` to always reserve the room and draw nothing, or
+`"none"` for a bare strip.
+
 ### Checking Webview Availability
 
 ```typescript
