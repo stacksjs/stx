@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.242...v0.2.243)
+
+## 🐛 Bug Fixes
+
+- **typecheck**: an @else after an @elseif rules out every branch ([1cb8b75](https://github.com/stacksjs/stx/commit/1cb8b75)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.243 ([bdf9702](https://github.com/stacksjs/stx/commit/bdf9702)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.241...v0.2.242)
 
 ## 🐛 Bug Fixes
