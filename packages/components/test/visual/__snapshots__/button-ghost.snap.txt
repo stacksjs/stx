@@ -1,0 +1,5 @@
+Variant: ghost
+Props: {
+  "variant": "ghost"
+}
+Slot: Ghost Button

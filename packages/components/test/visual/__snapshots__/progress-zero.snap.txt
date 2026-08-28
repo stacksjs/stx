@@ -1,0 +1,5 @@
+Variant: zero
+Props: {
+  "value": 0
+}
+Slot: (none)

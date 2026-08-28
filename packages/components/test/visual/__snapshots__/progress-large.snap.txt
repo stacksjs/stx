@@ -1,0 +1,6 @@
+Variant: large
+Props: {
+  "value": 75,
+  "size": "lg"
+}
+Slot: (none)

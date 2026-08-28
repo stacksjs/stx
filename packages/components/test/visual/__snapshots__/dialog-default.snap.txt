@@ -1,0 +1,5 @@
+Variant: default
+Props: {
+  "open": true
+}
+Slot: <p>Dialog content</p>

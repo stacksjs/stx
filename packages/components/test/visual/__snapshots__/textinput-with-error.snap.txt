@@ -1,0 +1,5 @@
+Variant: with-error
+Props: {
+  "error": "This field is required"
+}
+Slot: (none)

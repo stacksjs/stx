@@ -1,0 +1,5 @@
+Variant: disabled
+Props: {
+  "disabled": true
+}
+Slot: (none)

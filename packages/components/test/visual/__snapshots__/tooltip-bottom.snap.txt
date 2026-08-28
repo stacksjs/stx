@@ -1,0 +1,6 @@
+Variant: bottom
+Props: {
+  "content": "Bottom tooltip",
+  "position": "bottom"
+}
+Slot: Hover me

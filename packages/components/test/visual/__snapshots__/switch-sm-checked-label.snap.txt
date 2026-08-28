@@ -1,0 +1,7 @@
+Variant: sm-checked-label
+Props: {
+  "size": "sm",
+  "checked": true,
+  "label": "Small on"
+}
+Slot: (none)

@@ -1,0 +1,5 @@
+Variant: primary
+Props: {
+  "variant": "primary"
+}
+Slot: Primary Button

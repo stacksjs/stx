@@ -1,0 +1,138 @@
+=== Component: checkbox ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  export const checked = $props.checked || false
+export const disabled = $props.disabled || false
+export const indeterminate = $props.indeterminate || false
+export const size = $props.size || 'md'
+export const label = $props.label || ''
+export const description = $props.description || ''
+export const error = $props.error || false
+export const required = $props.required || false
+export const value = $props.value || ''
+export const name = $props.name || ''
+export const className = $props.className || ''
+
+const sizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
+const baseClasses = 'rounded border-line-strong text-accent focus:ring-accent focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-colors'
+const stateClasses = error ? 'border-red-300 dark:border-red-600 text-danger focus:ring-red-500 dark:focus:ring-red-400' : ''
+const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+
+export const checkboxClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses}`.trim()
+export const labelClasses = `text-sm font-medium ${error ? 'text-danger' : 'text-fg'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`.trim()
+export const descriptionClasses = `text-sm ${error ? 'text-red-500 dark:text-red-400' : 'text-fg-soft'}`.trim()
+export const inputId = `checkbox-${value || label}`
+</script>
+<script client>
+  const emit = defineEmits()
+const isDisabled = {{ disabled }}
+const isIndeterminate = {{ indeterminate }}
+// Reactive prop binding so the parent can drive `checked` via signals.
+// See stacksjs/stx#1704.
+const isChecked = useReactiveProp('checked', {{ checked }})
+
+function onInputChange(event) {
+  if (isDisabled) {
+    event.target.checked = isChecked()
+    return
+  }
+  isChecked.set(event.target.checked)
+  emit('change', isChecked())
+}
+
+onMount(() => {
+  if (isIndeterminate) {
+    const el = document.getElementById({{ inputId }})
+    if (el) el.indeterminate = true
+  }
+})
+
+defineExpose({ isChecked })
+</script>
+<div class="relative flex items-start {{ className }}">
+  <div class="flex h-6 items-center">
+    <input
+      id="{{ inputId }}"
+      type="checkbox"
+      name="{{ name }}"
+      value="{{ value }}"
+      :checked="isChecked()"
+      @if(disabled)disabled@endif
+      @if(required)required@endif
+      class="{{ checkboxClasses }}"
+      @change="onInputChange($event)"
+      :aria-invalid="{{ error ? 'true' : 'false' }}"
+      @if(description)aria-describedby="checkbox-description"@endif
+    />
+  </div>
+  @if(label || description)
+  <div class="ml-3 text-sm leading-6">
+    @if(label)
+    <label for="{{ inputId }}" class="{{ labelClasses }}">
+      {{ label }}
+          @if(required)
+      <span class="text-red-500 ml-1">
+        *
+      </span>
+      @endif
+    </label>
+    @endif
+      @if(description)
+    <p id="checkbox-description" class="{{ descriptionClasses }}">
+      {{ description }}
+    </p>
+    @endif
+  </div>
+  @endif
+</div>
+
+=== Extracted Classes ===
+border-line-strong
+border-red-300
+change
+checkboxClasses
+checked
+className
+cursor-not-allowed
+cursor-pointer
+dark:border-red-600
+dark:focus:ring-offset-gray-900
+dark:focus:ring-red-400
+dark:text-red-400
+descriptionClasses
+false
+flex
+focus:ring-2
+focus:ring-accent
+focus:ring-offset-2
+focus:ring-red-500
+font-medium
+h-4
+h-5
+h-6
+items-center
+items-start
+labelClasses
+leading-6
+ml-1
+ml-3
+opacity-50
+relative
+rounded
+text-accent
+text-danger
+text-fg
+text-fg-soft
+text-red-500
+text-sm
+transition-colors
+true
+w-4
+w-5
+w-6
+{{
+}}

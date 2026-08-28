@@ -1,0 +1,6 @@
+Variant: right
+Props: {
+  "position": "right",
+  "open": true
+}
+Slot: <p>Right drawer</p>

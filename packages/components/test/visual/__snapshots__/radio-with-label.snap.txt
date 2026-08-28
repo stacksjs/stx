@@ -1,0 +1,7 @@
+Variant: with-label
+Props: {
+  "name": "option",
+  "value": "a",
+  "label": "Option A"
+}
+Slot: (none)

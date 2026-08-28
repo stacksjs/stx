@@ -1,0 +1,5 @@
+Variant: with-src
+Props: {
+  "src": "https://example.com/avatar.jpg"
+}
+Slot: (none)

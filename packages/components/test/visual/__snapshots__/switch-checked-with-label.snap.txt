@@ -1,0 +1,6 @@
+Variant: checked-with-label
+Props: {
+  "checked": true,
+  "label": "Enabled"
+}
+Slot: (none)

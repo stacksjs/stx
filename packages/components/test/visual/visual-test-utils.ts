@@ -160,6 +160,27 @@ export function matchSnapshot(testName: string, content: string): { matches: boo
   const existing = readSnapshot(testName)
 
   if (existing === null) {
+    /*
+     * A missing snapshot is written locally and FAILS in CI.
+     *
+     * Writing unconditionally is what made this suite assert nothing where it
+     * mattered. The snapshots were gitignored, so a clean checkout had none,
+     * so every test wrote one and passed - 128 comparisons against files
+     * created seconds earlier. The only place they ever compared anything was a
+     * developer's machine, where they compared against whatever that machine
+     * last generated and failed on any deliberate component change.
+     *
+     * Committed now, so CI compares against a reviewed baseline and a template
+     * change arrives as a diff somebody reads.
+     */
+    if (process.env.CI) {
+      return {
+        matches: false,
+        expected: `(no committed snapshot for "${testName}")`,
+        actual: content,
+      }
+    }
+
     writeSnapshot(testName, content)
     return { matches: true, actual: content }
   }
@@ -180,7 +201,11 @@ export function expectSnapshotMatch(result: { matches: boolean, expected?: strin
     const diff = result.expected
       ? `\nExpected:\n${result.expected}\n\nActual:\n${result.actual}`
       : ''
-    throw new Error(`Snapshot does not match${diff}`)
+    throw new Error(
+      `Snapshot does not match${diff}\n\n`
+      + 'If the component changed on purpose, delete the file under '
+      + 'test/visual/__snapshots__/ and re-run to regenerate it, then commit the diff.',
+    )
   }
 }
 

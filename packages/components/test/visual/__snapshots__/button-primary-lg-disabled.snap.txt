@@ -1,0 +1,7 @@
+Variant: primary-lg-disabled
+Props: {
+  "variant": "primary",
+  "size": "lg",
+  "disabled": true
+}
+Slot: Disabled Large

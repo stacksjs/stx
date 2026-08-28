@@ -1,0 +1,5 @@
+Variant: with-placeholder
+Props: {
+  "placeholder": "Select an option"
+}
+Slot: (none)

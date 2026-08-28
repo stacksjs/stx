@@ -1,0 +1,5 @@
+Variant: default
+Props: {
+  "value": 50
+}
+Slot: (none)

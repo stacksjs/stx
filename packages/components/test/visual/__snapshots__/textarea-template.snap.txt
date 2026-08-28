@@ -1,0 +1,178 @@
+=== Component: textarea ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  export const value = $props.value || ''
+export const placeholder = $props.placeholder || ''
+export const disabled = $props.disabled || false
+export const readonly = $props.readonly || false
+export const rows = $props.rows || 4
+export const autoResize = $props.autoResize || false
+export const maxRows = $props.maxRows || 10
+export const error = $props.error || false
+export const label = $props.label || ''
+export const helperText = $props.helperText || ''
+export const required = $props.required || false
+export const maxLength = $props.maxLength
+export const showCount = $props.showCount || false
+export const resize = $props.resize || 'vertical'
+export const className = $props.className || ''
+
+const resizeClasses = { none: 'resize-none', vertical: 'resize-y', horizontal: 'resize-x', both: 'resize' }
+const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset px-4 py-2 text-base dark:bg-blue-gray-700 dark:text-gray-100'
+const stateClasses = error
+  ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
+  : 'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'
+const disabledClasses = disabled
+  ? 'opacity-50 cursor-not-allowed bg-surface'
+  : readonly
+    ? 'bg-surface cursor-default'
+    : 'bg-white dark:bg-blue-gray-700'
+
+export const textareaClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${resizeClasses[resize]} ${className}`.trim()
+export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-danger' : 'text-fg'}`.trim()
+export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
+</script>
+<script client>
+  const emit = defineEmits()
+const autoResize = {{ autoResize }}
+const maxRows = {{ maxRows }}
+// Reactive prop binding — parent can drive `value` via signals. See #1704.
+const inputValue = useReactiveProp('value', {{ value }}, { parse: (v) => v == null ? '' : String(v) })
+
+function resizeTextarea(el) {
+  if (!autoResize) return
+  el.style.height = 'auto'
+  const scrollHeight = el.scrollHeight
+  const lineHeight = Number.parseInt(window.getComputedStyle(el).lineHeight) || 20
+  const maxHeight = lineHeight * maxRows
+  el.style.height = `${Math.min(scrollHeight, maxHeight)}px`
+  el.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden'
+}
+
+function onInput(event) {
+  inputValue.set(event.target.value)
+  resizeTextarea(event.target)
+  emit('input', inputValue())
+}
+
+onMount(() => {
+  if (autoResize) {
+    const el = document.getElementById('textarea-input')
+    if (el) resizeTextarea(el)
+  }
+})
+
+const charCount = derived(() => `${inputValue().length} / {{ maxLength || 0 }}`)
+
+defineExpose({ value: inputValue })
+</script>
+<div class="w-full">
+  @if(label)
+  <label for="textarea-input" class="{{ labelClasses }}">
+    {{ label }}
+      @if(required)
+    <span class="text-red-500 ml-1">
+      *
+    </span>
+    @endif
+  </label>
+  @endif
+  <textarea
+    id="textarea-input"
+    class="{{ textareaClasses }}"
+    rows="{{ rows }}"
+    placeholder="{{ placeholder }}"
+    @if(disabled)disabled@endif
+    @if(readonly)readonly@endif
+    @if(required)required@endif
+    @if(maxLength)maxlength="{{ maxLength }}"@endif
+    @input="onInput($event)"
+    :aria-invalid="{{ error ? 'true' : 'false' }}"
+    @if(helperText)aria-describedby="helper-text"@endif
+  >
+    {{ value }}
+  </textarea>
+  @if(helperText || (showCount && maxLength))
+  <div class="flex items-center justify-between mt-2">
+    @if(helperText)
+    <p id="helper-text" class="{{ helperClasses }}">
+      {{ helperText }}
+    </p>
+    @else
+    <span>
+    </span>
+    @endif
+
+      @if(showCount && maxLength)
+    <p class="text-sm text-fg-soft" x-text="charCount()">
+    </p>
+    @endif
+  </div>
+  @endif
+</div>
+
+=== Extracted Classes ===
+auto
+bg-surface
+bg-white
+block
+border-0
+cursor-default
+cursor-not-allowed
+dark:bg-blue-gray-700
+dark:focus:ring-red-400
+dark:placeholder-red-500
+dark:ring-red-600
+dark:text-gray-100
+dark:text-red-300
+duration-200
+false
+flex
+focus:ring-2
+focus:ring-accent
+focus:ring-inset
+focus:ring-red-500
+font-medium
+helperClasses
+hidden
+input
+items-center
+justify-between
+labelClasses
+leading-6
+mb-2
+ml-1
+mt-2
+opacity-50
+placeholder-fg-subtle
+placeholder-red-300
+px-4
+py-2
+resize
+resize-none
+resize-x
+resize-y
+ring-1
+ring-inset
+ring-line-strong
+ring-red-300
+rounded-md
+shadow-sm
+text-base
+text-danger
+text-fg
+text-fg-soft
+text-red-500
+text-red-900
+text-sm
+textareaClasses
+transition-colors
+true
+value
+w-full
+{{
+}}

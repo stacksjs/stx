@@ -1,0 +1,51 @@
+=== Component: dialog ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  export const open = $props.open || false
+export const className = $props.className || ''
+
+const baseClasses = 'relative z-50'
+export const dialogClasses = `${baseClasses} ${className}`.trim()
+</script>
+<script client>
+  const emit = defineEmits()
+// useReactiveProp wires `:open="parentSignal()"` from the parent into our
+// local `isOpen` signal — when the parent's signal changes, bindAttr
+// updates the root's `open` attribute, our MutationObserver picks it up,
+// and isOpen flips. See stacksjs/stx#1704.
+const isOpen = useReactiveProp('open', {{ open }})
+
+function close() {
+  isOpen.set(false)
+  emit('close')
+}
+
+function onBackdropKey(event) {
+  if (event.key === 'Escape') close()
+}
+
+defineExpose({
+  open: () => isOpen.set(true),
+  close,
+  isOpen,
+})
+</script>
+<div
+  :show="isOpen()"
+  class="{{ dialogClasses }}"
+  role="dialog"
+  aria-modal="true"
+  @keydown="onBackdropKey($event)"
+>
+  <slot />
+</div>
+
+=== Extracted Classes ===
+dialogClasses
+open
+{{
+}}

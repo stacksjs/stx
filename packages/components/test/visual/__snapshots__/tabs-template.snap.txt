@@ -1,0 +1,277 @@
+=== Component: tabs ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  // Two modes (see stacksjs/stx#1703):
+//   1. Legacy prop API — pass `tabs={[{label, content, icon}, …]}` for
+//      simple string-content tabs (kept for backward compatibility with
+//      existing visual snapshots and consumers).
+//   2. Slot API — drop `
+  <TabPanel label="…">
+    ` children for arbitrary
+//      content (components, forms, tables, etc.). The parent enumerates
+//      [data-stx-tab-panel] descendants on mount and builds the tab list
+//      dynamically.
+export const tabs = $props.tabs || []
+export const defaultTab = $props.defaultTab || 0
+export const orientation = $props.orientation || 'horizontal'
+export const variant = $props.variant || 'line'
+export const className = $props.className || ''
+
+const orientationClasses = {
+  horizontal: 'flex-col',
+  vertical: 'flex-row',
+}
+
+const tabListOrientationClasses = {
+  horizontal: 'flex-row border-b',
+  vertical: 'flex-col border-r',
+}
+
+const variantClasses = {
+  line: 'border-line',
+  pills: 'gap-2 border-0 bg-surface-raised p-1 rounded-lg',
+  enclosed: 'border-line',
+}
+
+export const containerClasses = `flex ${orientationClasses[orientation]} ${className}`.trim()
+export const tabListClasses = `flex ${tabListOrientationClasses[orientation]} ${variantClasses[variant]}`.trim()
+export const tabPanelClasses = `p-4 focus:outline-none`.trim()
+// True when the parent passes a non-empty `tabs` array — switches to the
+// legacy render path so existing snapshots stay byte-identical.
+export const hasPropTabs = Array.isArray(tabs) && tabs.length > 0
+  </script>
+  <script client>
+    const emit = defineEmits()
+const tabs = {{ tabs }}
+const variant = {{ variant }}
+const orientation = {{ orientation }}
+const hasPropTabs = {{ hasPropTabs }}
+const containerRef = useRef()
+// In slot mode, `discoveredTabs` is populated from child
+    <TabPanel>
+      data
+// attributes on mount. In prop mode, it mirrors the `tabs` prop so the
+// rendering loop works the same in both modes.
+const discoveredTabs = state(hasPropTabs ? tabs : [])
+const activeTab = state({{ defaultTab }})
+
+// Walk only direct descendants of THIS container (not nested Tabs').
+function findOwnPanels() {
+  const root = containerRef.value
+  if (!root) return []
+  // Closest ancestor with data-stx-tabs must be this container's root —
+  // protects against nested
+      <Tabs>
+        contamination.
+  return Array.from(root.querySelectorAll('[data-stx-tab-panel]'))
+    .filter(p => p.closest('[data-stx-tabs]') === root)
+}
+
+onMount(() => {
+  if (hasPropTabs) return  // legacy mode: prop array already in discoveredTabs
+  const panels = findOwnPanels()
+  const list = panels.map(p => ({
+    label: p.dataset.label || '',
+    icon: p.dataset.icon || '',
+  }))
+  discoveredTabs.set(list)
+})
+
+// In slot mode, toggle each panel's `hidden` attribute as activeTab changes.
+// Prop mode is handled inline by the @foreach loop's :show binding below.
+effect(() => {
+  if (hasPropTabs) return
+  const panels = findOwnPanels()
+  const idx = activeTab()
+  panels.forEach((p, i) => {
+    if (i === idx) p.removeAttribute('hidden')
+    else p.setAttribute('hidden', '')
+  })
+})
+
+function selectTab(index) {
+  activeTab.set(index)
+  const list = discoveredTabs()
+  emit('change', { index, tab: list[index] })
+}
+
+function isActive(index) {
+  return activeTab() === index
+}
+
+function getTabClasses(index) {
+  const isActiveTab = isActive(index)
+  const base = 'px-4 py-2 font-medium text-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
+  if (variant === 'line') {
+    const border = orientation === 'horizontal' ? 'border-b-2' : 'border-r-2'
+    return `${base} ${border} ${isActiveTab ? 'border-blue-500 text-info' : 'border-transparent text-fg-muted hover:text-fg hover:border-line-strong'}`
+  }
+  if (variant === 'pills') {
+    return `${base} rounded-md ${isActiveTab ? 'bg-white dark:bg-gray-700 text-fg shadow-sm' : 'text-fg-muted hover:text-fg'}`
+  }
+  if (variant === 'enclosed') {
+    const borders = orientation === 'horizontal' ? 'border-t border-l border-r rounded-t-md' : 'border-t border-l border-b rounded-l-md'
+    return `${base} ${borders} ${isActiveTab ? 'bg-white dark:bg-gray-800 border-line -mb-px' : 'bg-surface border-transparent hover:border-line'}`
+  }
+  return base
+}
+
+function onTabKey(event, index) {
+  const tabCount = discoveredTabs().length
+  let next = index
+  if (orientation === 'horizontal') {
+    if (event.key === 'ArrowRight') { event.preventDefault(); next = (index + 1) % tabCount }
+    else if (event.key === 'ArrowLeft') { event.preventDefault(); next = (index - 1 + tabCount) % tabCount }
+  }
+  else {
+    if (event.key === 'ArrowDown') { event.preventDefault(); next = (index + 1) % tabCount }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); next = (index - 1 + tabCount) % tabCount }
+  }
+  if (event.key === 'Home') { event.preventDefault(); next = 0 }
+  else if (event.key === 'End') { event.preventDefault(); next = tabCount - 1 }
+  if (next !== index) {
+    selectTab(next)
+    document.getElementById(`tab-${next}`)?.focus()
+  }
+}
+
+defineExpose({ activeTab, selectTab })
+      </script>
+      <div x-ref="containerRef" data-stx-tabs class="{{ containerClasses }}">
+        <div
+    class="{{ tabListClasses }}"
+    role="tablist"
+    aria-orientation="{{ orientation }}"
+  >
+          @if(hasPropTabs)
+      {{-- Legacy mode: server-side iterate the prop tabs array. Buttons --}}
+      {{-- get static class names so existing visual snapshots stay      --}}
+      {{-- byte-identical.                                                 --}}
+      @foreach(tab in tabs)
+          <button
+          type="button"
+          :class="getTabClasses({{ $loop.index }})"
+          role="tab"
+          :aria-selected="isActive({{ $loop.index }}) ? 'true' : 'false'"
+          aria-controls="tab-panel-{{ $loop.index }}"
+          id="tab-{{ $loop.index }}"
+          :tabindex="isActive({{ $loop.index }}) ? '0' : '-1'"
+          @click="selectTab({{ $loop.index }})"
+          @keydown="onTabKey($event, {{ $loop.index }})"
+        >
+            @if(tab.icon)
+            <span class="inline-flex items-center gap-2">
+              <span x-html="{!! JSON.stringify(tab.icon) !!}">
+              </span>
+              <span>
+                {{ tab.label }}
+              </span>
+            </span>
+            @else
+            {{ tab.label }}
+          @endif
+          </button>
+          @endforeach
+    @else
+      {{-- Slot mode: render the tab list dynamically from --}}
+      {{-- discoveredTabs() which is populated in onMount. --}}
+          <button
+        :for="(tab, idx) in discoveredTabs()"
+        :key="idx"
+        type="button"
+        x-class="getTabClasses(idx)"
+        role="tab"
+        :aria-selected="isActive(idx) ? 'true' : 'false'"
+        :tabindex="isActive(idx) ? 0 : -1"
+        @click="selectTab(idx)"
+        @keydown="onTabKey($event, idx)"
+      >
+            <span :if="tab.icon" class="inline-flex items-center gap-2" x-html="tab.icon">
+            </span>
+            <span :text="tab.label">
+            </span>
+          </button>
+          @endif
+        </div>
+        @if(hasPropTabs)
+    @foreach(tab in tabs)
+        <div
+        :show="isActive({{ $loop.index }})"
+        id="tab-panel-{{ $loop.index }}"
+        class="{{ tabPanelClasses }}"
+        role="tabpanel"
+        aria-labelledby="tab-{{ $loop.index }}"
+        tabindex="0"
+      >
+          {!! tab.content !!}
+        </div>
+        @endforeach
+  @else
+        <slot />
+        @endif
+      </div>
+
+=== Extracted Classes ===
+$loop.index
+-mb-px
+bg-surface
+bg-surface-raised
+bg-white
+border-0
+border-b
+border-b-2
+border-blue-500
+border-l
+border-line
+border-r
+border-r-2
+border-t
+border-transparent
+button
+change
+containerClasses
+dark:bg-gray-700
+dark:bg-gray-800
+dark:focus:ring-offset-gray-900
+duration-150
+flex
+flex-col
+flex-row
+focus:outline-none
+focus:ring-2
+focus:ring-blue-500
+focus:ring-offset-2
+font-medium
+gap-2
+getTabClasses(idx)
+getTabClasses({{
+hidden
+hover:border-line
+hover:border-line-strong
+hover:text-fg
+inline-flex
+items-center
+p-1
+p-4
+px-4
+py-2
+rounded-l-md
+rounded-lg
+rounded-t-md
+shadow-sm
+tab
+tabListClasses
+tabPanelClasses
+text-fg
+text-fg-muted
+text-info
+text-sm
+transition-colors
+true
+{{
+}}
+}})

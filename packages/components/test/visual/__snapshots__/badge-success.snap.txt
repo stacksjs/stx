@@ -1,0 +1,5 @@
+Variant: success
+Props: {
+  "variant": "success"
+}
+Slot: Success

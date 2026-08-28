@@ -1,0 +1,207 @@
+=== Component: progress ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  export const value = $props.value || 0
+export const max = $props.max || 100
+export const variant = $props.variant || 'linear'
+export const size = $props.size || 'md'
+export const color = $props.color || 'primary'
+export const showLabel = $props.showLabel ?? false
+export const indeterminate = $props.indeterminate || false
+export const className = $props.className || ''
+
+const linearSizeClasses = { sm: 'h-1', md: 'h-2', lg: 'h-3' }
+const circularSizeClasses = { sm: 'w-12 h-12', md: 'w-16 h-16', lg: 'w-24 h-24' }
+const colorClasses = {
+  primary: 'bg-info-solid',
+  secondary: 'bg-purple-600 dark:bg-purple-500',
+  success: 'bg-success-solid',
+  warning: 'bg-yellow-600 dark:bg-yellow-500',
+  danger: 'bg-danger-solid',
+  info: 'bg-cyan-600 dark:bg-cyan-500',
+}
+
+export const circularSize = size === 'sm' ? 48 : size === 'md' ? 64 : 96
+export const strokeWidth = size === 'sm' ? 4 : size === 'md' ? 6 : 8
+export const radius = (circularSize - strokeWidth) / 2
+export const circumference = 2 * Math.PI * radius
+
+export const containerClasses = variant === 'linear'
+  ? `w-full ${className}`.trim()
+  : `inline-flex items-center justify-center ${className}`.trim()
+
+export const linearTrackClasses = `w-full ${linearSizeClasses[size]} bg-surface-sunken rounded-full overflow-hidden`.trim()
+export const linearBarClasses = `h-full ${colorClasses[color]} transition-all duration-300 ease-in-out ${indeterminate ? 'animate-progress-indeterminate' : ''}`.trim()
+export const circularSizeClass = circularSizeClasses[size]
+export const labelClasses = `text-sm font-medium text-fg-strong mb-2`.trim()
+export const circularTrackColor = 'stroke-gray-200 dark:stroke-gray-700'
+export const circularBarColor = color === 'primary' ? 'stroke-info'
+  : color === 'secondary' ? 'stroke-purple-600 dark:stroke-purple-500'
+  : color === 'success' ? 'stroke-success'
+  : color === 'warning' ? 'stroke-yellow-600 dark:stroke-yellow-500'
+  : color === 'danger' ? 'stroke-danger'
+  : 'stroke-cyan-600 dark:stroke-cyan-500'
+</script>
+<script client>
+  const max = {{ max }}
+const indeterminate = {{ indeterminate }}
+const circumference = {{ circumference }}
+// Reactive prop binding — parent can drive `value` via signals. See #1704.
+const value = useReactiveProp('value', {{ value }})
+
+const percentage = derived(() => Math.min(Math.max((value() / max) * 100, 0), 100))
+const percentLabel = derived(() => `${Math.round(percentage())}%`)
+const linearWidth = derived(() => indeterminate ? '30%' : `${percentage()}%`)
+const dashOffset = derived(() => indeterminate ? 0 : circumference - (percentage() / 100) * circumference)
+
+defineExpose({ value, setValue: (v) => value.set(v) })
+</script>
+@if(variant === 'linear')
+<div class="{{ containerClasses }}">
+  @if(showLabel)
+  <div class="flex items-center justify-between mb-2">
+    <span class="{{ labelClasses }}" x-text="percentLabel()">
+    </span>
+  </div>
+  @endif
+  <div
+      class="{{ linearTrackClasses }}"
+      role="progressbar"
+      :aria-valuenow="value()"
+      aria-valuemin="0"
+      aria-valuemax="{{ max }}"
+    >
+    <div
+        class="{{ linearBarClasses }}"
+        :style="`width: ${linearWidth()}`"
+      >
+    </div>
+  </div>
+</div>
+@else
+<div class="{{ containerClasses }}">
+  <div class="{{ circularSizeClass }} relative">
+    <svg
+        class="transform -rotate-90"
+        width="{{ circularSize }}"
+        height="{{ circularSize }}"
+        role="progressbar"
+        :aria-valuenow="value()"
+        aria-valuemin="0"
+        aria-valuemax="{{ max }}"
+      >
+      <circle
+          class="{{ circularTrackColor }}"
+          cx="{{ circularSize / 2 }}"
+          cy="{{ circularSize / 2 }}"
+          r="{{ radius }}"
+          stroke-width="{{ strokeWidth }}"
+          fill="none"
+        />
+      <circle
+          class="{{ circularBarColor }} transition-all duration-300 ease-in-out {{ indeterminate ? 'animate-spin' : '' }}"
+          cx="{{ circularSize / 2 }}"
+          cy="{{ circularSize / 2 }}"
+          r="{{ radius }}"
+          stroke-width="{{ strokeWidth }}"
+          fill="none"
+          stroke-dasharray="{{ circumference }}"
+          :stroke-dashoffset="dashOffset()"
+          stroke-linecap="round"
+        />
+    </svg>
+    @if(showLabel)
+    <div class="absolute inset-0 flex items-center justify-center">
+      <span class="text-sm font-semibold text-fg-strong" x-text="percentLabel()">
+      </span>
+    </div>
+    @endif
+  </div>
+</div>
+@endif
+<style>
+  @keyframes progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.animate-progress-indeterminate {
+  animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+</style>
+
+=== Extracted Classes ===
+''
+'animate-spin'
+-rotate-90
+:
+?
+absolute
+animate-progress-indeterminate
+animate-spin
+bg-cyan-600
+bg-danger-solid
+bg-info-solid
+bg-purple-600
+bg-success-solid
+bg-surface-sunken
+bg-yellow-600
+circularBarColor
+circularSizeClass
+circularTrackColor
+containerClasses
+dark:bg-cyan-500
+dark:bg-purple-500
+dark:bg-yellow-500
+dark:stroke-cyan-500
+dark:stroke-gray-700
+dark:stroke-purple-500
+dark:stroke-yellow-500
+duration-300
+ease-in-out
+flex
+font-medium
+font-semibold
+h-1
+h-12
+h-16
+h-2
+h-24
+h-3
+h-full
+indeterminate
+inline-flex
+inset-0
+items-center
+justify-between
+justify-center
+labelClasses
+linearBarClasses
+linearTrackClasses
+mb-2
+overflow-hidden
+progressbar
+relative
+rounded-full
+stroke-cyan-600
+stroke-danger
+stroke-gray-200
+stroke-info
+stroke-purple-600
+stroke-success
+stroke-yellow-600
+text-fg-strong
+text-sm
+transform
+transition-all
+value
+w-12
+w-16
+w-24
+w-full
+{{
+}}

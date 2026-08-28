@@ -1,0 +1,5 @@
+Variant: secondary
+Props: {
+  "variant": "secondary"
+}
+Slot: Secondary Button

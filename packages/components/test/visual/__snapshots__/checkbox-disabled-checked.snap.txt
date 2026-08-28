@@ -1,0 +1,6 @@
+Variant: disabled-checked
+Props: {
+  "disabled": true,
+  "checked": true
+}
+Slot: (none)

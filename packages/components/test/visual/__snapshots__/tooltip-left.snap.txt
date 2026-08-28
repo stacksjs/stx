@@ -1,0 +1,6 @@
+Variant: left
+Props: {
+  "content": "Left tooltip",
+  "position": "left"
+}
+Slot: Hover me

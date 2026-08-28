@@ -1,0 +1,6 @@
+Variant: first-page
+Props: {
+  "currentPage": 1,
+  "totalPages": 5
+}
+Slot: (none)

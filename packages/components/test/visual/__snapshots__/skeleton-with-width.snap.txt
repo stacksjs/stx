@@ -1,0 +1,5 @@
+Variant: with-width
+Props: {
+  "width": "200px"
+}
+Slot: (none)

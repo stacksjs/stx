@@ -1,0 +1,7 @@
+Variant: disabled
+Props: {
+  "name": "option",
+  "value": "a",
+  "disabled": true
+}
+Slot: (none)

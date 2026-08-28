@@ -1,0 +1,5 @@
+Variant: size-lg
+Props: {
+  "size": "lg"
+}
+Slot: LG

@@ -1,0 +1,187 @@
+=== Component: notification ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  // Initial defaults captured at render time. The client script wraps these
+// in signals so consumers can mutate them after mount (fetch-then-toast,
+// auto-dismiss, etc.). See stacksjs/stx#1692.
+export const initialShow = $props.show !== false
+export const initialTitle = $props.title || ''
+export const initialMessage = $props.message || ''
+export const initialType = $props.type || 'info'
+export const initialPosition = $props.position || 'top-right'
+export const initialDuration = Number($props.duration ?? 5000)
+export const className = $props.className || ''
+</script>
+<script client>
+  const emit = defineEmits()
+
+const isVisible = state({{ initialShow }})
+const title = state({{ initialTitle }})
+const message = state({{ initialMessage }})
+const type = state({{ initialType }})
+const position = state({{ initialPosition }})
+const duration = state({{ initialDuration }})
+
+const typeColors = {
+  info: 'bg-blue-50 text-blue-900 dark:bg-blue-900 dark:text-blue-100',
+  success: 'bg-green-50 text-green-900 dark:bg-green-900 dark:text-green-100',
+  warning: 'bg-yellow-50 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-100',
+  error: 'bg-red-50 text-red-900 dark:bg-red-900 dark:text-red-100',
+}
+
+const positions = {
+  'top-left': 'top-0 left-0',
+  'top-right': 'top-0 right-0',
+  'top-center': 'top-0 left-1/2 -translate-x-1/2',
+  'bottom-left': 'bottom-0 left-0',
+  'bottom-right': 'bottom-0 right-0',
+  'bottom-center': 'bottom-0 left-1/2 -translate-x-1/2',
+}
+
+const baseClasses = 'fixed z-50 m-4 max-w-md w-full pointer-events-auto rounded-lg p-4 shadow-lg ring-1 ring-black ring-opacity-5 transition-all'
+const extraClassName = {{ JSON.stringify(className) }}
+
+const notificationClasses = derived(() => {
+  const color = typeColors[type()] || typeColors.info
+  const pos = positions[position()] || positions['top-right']
+  return `${baseClasses} ${color} ${pos} ${extraClassName}`.trim()
+})
+
+let autoHideTimer = null
+function clearAutoHide() {
+  if (autoHideTimer) {
+    clearTimeout(autoHideTimer)
+    autoHideTimer = null
+  }
+}
+function scheduleAutoHide() {
+  clearAutoHide()
+  const d = duration()
+  if (d > 0 && isVisible()) {
+    autoHideTimer = setTimeout(() => close(), d)
+  }
+}
+
+function close() {
+  isVisible.set(false)
+  clearAutoHide()
+  emit('close')
+}
+
+function open(opts) {
+  if (opts && typeof opts === 'object') {
+    if (opts.title !== undefined) title.set(opts.title)
+    if (opts.message !== undefined) message.set(opts.message)
+    if (opts.type !== undefined) type.set(opts.type)
+    if (opts.position !== undefined) position.set(opts.position)
+    if (opts.duration !== undefined) duration.set(Number(opts.duration))
+  }
+  isVisible.set(true)
+  scheduleAutoHide()
+}
+
+onMount(() => {
+  if (isVisible()) scheduleAutoHide()
+})
+
+defineExpose({
+  open,
+  close,
+  isVisible,
+  title,
+  message,
+  type,
+  position,
+  duration,
+})
+</script>
+<div :if="isVisible()" :class="notificationClasses()" role="alert">
+  <div class="flex items-start">
+    <div class="flex-1">
+      <p :if="title()" class="text-sm font-medium" :text="title()">
+      </p>
+      <p :if="message()" class="mt-1 text-sm" :class="title() ? 'opacity-90' : ''" :text="message()">
+      </p>
+      <slot :if="!title() && !message()" />
+    </div>
+    <button
+      type="button"
+      @click="close()"
+      class="ml-4 inline-flex rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+    >
+      <span class="sr-only">
+        Close
+      </span>
+      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+      </svg>
+    </button>
+  </div>
+</div>
+
+=== Extracted Classes ===
+''
+'opacity-90'
+:
+?
+bg-blue-50
+bg-green-50
+bg-red-50
+bg-yellow-50
+bottom-0
+bottom-center
+bottom-left
+bottom-right
+dark:bg-blue-900
+dark:bg-green-900
+dark:bg-red-900
+dark:bg-yellow-900
+dark:text-blue-100
+dark:text-green-100
+dark:text-red-100
+dark:text-yellow-100
+fixed
+flex
+flex-1
+focus:outline-none
+focus:ring-2
+focus:ring-offset-2
+font-medium
+h-5
+inline-flex
+items-start
+left-0
+m-4
+max-w-md
+ml-4
+mt-1
+notificationClasses()
+opacity-90
+p-4
+pointer-events-auto
+right-0
+ring-1
+ring-black
+ring-opacity-5
+rounded-lg
+rounded-md
+shadow-lg
+sr-only
+text-blue-900
+text-green-900
+text-red-900
+text-sm
+text-yellow-900
+title()
+top-0
+top-center
+top-left
+top-right
+transition-all
+w-5
+w-full
+z-50

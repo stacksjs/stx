@@ -1,0 +1,5 @@
+Variant: bordered
+Props: {
+  "bordered": true
+}
+Slot: <p>Bordered card</p>

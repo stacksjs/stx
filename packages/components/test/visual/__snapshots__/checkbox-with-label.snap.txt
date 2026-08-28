@@ -1,0 +1,5 @@
+Variant: with-label
+Props: {
+  "label": "Accept terms"
+}
+Slot: (none)

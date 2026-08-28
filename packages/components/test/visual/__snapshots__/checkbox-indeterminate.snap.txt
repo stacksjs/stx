@@ -1,0 +1,5 @@
+Variant: indeterminate
+Props: {
+  "indeterminate": true
+}
+Slot: (none)

@@ -1,0 +1,7 @@
+Variant: checked
+Props: {
+  "name": "option",
+  "value": "a",
+  "checked": true
+}
+Slot: (none)

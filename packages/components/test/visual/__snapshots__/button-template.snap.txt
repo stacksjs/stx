@@ -1,0 +1,164 @@
+=== Component: button ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  export const variant = $props.variant || 'primary'
+export const size = $props.size || 'md'
+export const disabled = $props.disabled || false
+export const loading = $props.loading || false
+export const type = $props.type || 'button'
+export const fullWidth = $props.fullWidth || false
+export const leftIcon = $props.leftIcon || ''
+export const rightIcon = $props.rightIcon || ''
+export const className = $props.className || ''
+
+const variantClasses = {
+  primary: 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg dark:bg-blue-600 dark:hover:bg-blue-700',
+  secondary: 'bg-surface-sunken hover:bg-neutral-300 text-neutral-900 dark:hover:bg-neutral-600 dark:text-white',
+  outline: 'border-2 border-blue-500 text-blue-500 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-950',
+  ghost: 'hover:bg-surface-raised text-fg-strong',
+  danger: 'bg-red-500 hover:bg-red-600 text-white shadow-md hover:shadow-lg dark:bg-red-600 dark:hover:bg-red-700',
+}
+
+const sizeClasses = {
+  xs: 'px-2.5 py-1 text-xs h-7 gap-1',
+  sm: 'px-3 py-1.5 text-sm h-8 gap-1.5',
+  md: 'px-4 py-2 text-base h-10 gap-2',
+  lg: 'px-6 py-3 text-lg h-12 gap-2.5',
+  xl: 'px-8 py-4 text-xl h-14 gap-3',
+}
+
+const iconSizeClasses = { xs: 'h-3 w-3', sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6', xl: 'h-7 w-7' }
+const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
+const widthClasses = fullWidth ? 'w-full' : ''
+export const isDisabled = disabled || loading
+
+export const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${widthClasses} ${className}`.trim()
+export const iconClasses = iconSizeClasses[size]
+export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
+</script>
+<script client>
+  const emit = defineEmits()
+const disabledNow = {{ isDisabled }}
+
+function onClick(event) {
+  if (disabledNow) {
+    event.preventDefault()
+    return
+  }
+  emit('click', event)
+}
+</script>
+<button
+  type="{{ type }}"
+  class="{{ buttonClasses }}"
+  @if(isDisabled)disabled@endif
+  @click="onClick($event)"
+  aria-busy="{{ loading ? 'true' : 'false' }}"
+>
+  @if(loading)
+  <svg class="{{ spinnerClasses }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+    </circle>
+    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+    </path>
+  </svg>
+  @else
+    @if(leftIcon)
+  <span class="{{ iconClasses }}">
+    {!! leftIcon !!}
+  </span>
+  @endif
+  @endif
+  <slot />
+  @if(!loading && rightIcon)
+  <span class="{{ iconClasses }}">
+    {!! rightIcon !!}
+  </span>
+  @endif
+</button>
+
+=== Extracted Classes ===
+bg-blue-500
+bg-red-500
+bg-surface-sunken
+border-2
+border-blue-500
+buttonClasses
+click
+dark:bg-blue-600
+dark:bg-red-600
+dark:border-blue-400
+dark:hover:bg-blue-700
+dark:hover:bg-blue-950
+dark:hover:bg-neutral-600
+dark:hover:bg-red-700
+dark:text-blue-400
+dark:text-white
+disabled:cursor-not-allowed
+disabled:opacity-50
+disabled:pointer-events-none
+duration-200
+false
+focus:outline-none
+focus:ring-2
+focus:ring-blue-500
+focus:ring-offset-2
+font-semibold
+gap-1
+gap-2
+gap-3
+h-10
+h-12
+h-14
+h-3
+h-4
+h-5
+h-6
+h-7
+h-8
+hover:bg-blue-50
+hover:bg-blue-600
+hover:bg-neutral-300
+hover:bg-red-600
+hover:bg-surface-raised
+hover:shadow-lg
+iconClasses
+inline-flex
+items-center
+justify-center
+opacity-25
+opacity-75
+px-3
+px-4
+px-6
+px-8
+py-1
+py-2
+py-3
+py-4
+rounded-md
+shadow-md
+spinnerClasses
+text-base
+text-blue-500
+text-fg-strong
+text-lg
+text-neutral-900
+text-sm
+text-white
+text-xl
+text-xs
+transition-all
+true
+w-3
+w-4
+w-5
+w-6
+w-7
+w-full
+{{
+}}

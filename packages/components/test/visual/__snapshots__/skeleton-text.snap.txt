@@ -1,0 +1,5 @@
+Variant: text
+Props: {
+  "variant": "text"
+}
+Slot: (none)

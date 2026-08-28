@@ -1,0 +1,6 @@
+Variant: disabled-with-label
+Props: {
+  "disabled": true,
+  "label": "Disabled option"
+}
+Slot: (none)

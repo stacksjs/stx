@@ -1,0 +1,5 @@
+Variant: size-sm
+Props: {
+  "size": "sm"
+}
+Slot: (none)

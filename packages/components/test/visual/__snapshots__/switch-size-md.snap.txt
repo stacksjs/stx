@@ -1,0 +1,5 @@
+Variant: size-md
+Props: {
+  "size": "md"
+}
+Slot: (none)

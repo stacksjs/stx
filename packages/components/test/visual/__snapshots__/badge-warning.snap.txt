@@ -1,0 +1,5 @@
+Variant: warning
+Props: {
+  "variant": "warning"
+}
+Slot: Warning

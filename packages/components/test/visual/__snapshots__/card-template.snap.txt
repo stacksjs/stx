@@ -1,0 +1,104 @@
+=== Component: card ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  export const variant = $props.variant || 'default'
+export const padding = $props.padding || 'default'
+export const hover = $props.hover || false
+export const clickable = $props.clickable || false
+export const image = $props.image || ''
+export const imageAlt = $props.imageAlt || ''
+export const className = $props.className || ''
+
+const variantClasses = {
+  default: 'bg-white dark:bg-gray-800 border border-line',
+  outlined: 'bg-transparent border-2 border-line-strong',
+  elevated: 'bg-white dark:bg-gray-800 shadow-lg border-0',
+  flat: 'bg-surface border-0',
+}
+
+const paddingClasses = { none: 'p-0', sm: 'p-3', default: 'p-6', lg: 'p-8' }
+const hoverClasses = hover ? 'transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5' : ''
+const clickableClasses = clickable ? 'cursor-pointer' : ''
+
+export const cardClasses = `rounded-lg overflow-hidden ${variantClasses[variant]} ${paddingClasses[image ? 'none' : padding]} ${hoverClasses} ${clickableClasses} ${className}`.trim()
+export const imageClasses = `w-full h-48 object-cover`.trim()
+export const contentClasses = `${image ? paddingClasses[padding] : ''}`.trim()
+</script>
+<script client>
+  const emit = defineEmits()
+const isClickable = {{ clickable }}
+
+function onClick(event) {
+  if (!isClickable) return
+  emit('click', event)
+}
+
+function onKey(event) {
+  if (!isClickable) return
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    emit('click', event)
+  }
+}
+</script>
+@if(clickable)
+<div
+    class="{{ cardClasses }}"
+    @click="onClick($event)"
+    @keydown="onKey($event)"
+    role="button"
+    tabindex="0"
+  >
+  @if(image)
+  <img src="{{ image }}" alt="{{ imageAlt }}" class="{{ imageClasses }}" />
+  @endif
+  <div class="{{ contentClasses }}">
+    <slot />
+  </div>
+</div>
+@else
+<div class="{{ cardClasses }}">
+  @if(image)
+  <img src="{{ image }}" alt="{{ imageAlt }}" class="{{ imageClasses }}" />
+  @endif
+  <div class="{{ contentClasses }}">
+    <slot />
+  </div>
+</div>
+@endif
+
+=== Extracted Classes ===
+bg-surface
+bg-transparent
+bg-white
+border
+border-0
+border-2
+border-line
+border-line-strong
+cardClasses
+click
+contentClasses
+cursor-pointer
+dark:bg-gray-800
+duration-200
+h-48
+hover:shadow-lg
+imageClasses
+none
+object-cover
+overflow-hidden
+p-0
+p-3
+p-6
+p-8
+rounded-lg
+shadow-lg
+transition-all
+w-full
+{{
+}}

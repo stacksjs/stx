@@ -1,0 +1,6 @@
+Variant: size-lg-checked
+Props: {
+  "size": "lg",
+  "checked": true
+}
+Slot: (none)

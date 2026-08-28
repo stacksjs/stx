@@ -1,0 +1,7 @@
+Variant: lg-disabled-label
+Props: {
+  "size": "lg",
+  "disabled": true,
+  "label": "Large disabled"
+}
+Slot: (none)

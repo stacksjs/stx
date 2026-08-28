@@ -48,8 +48,17 @@ packages/desktop/.stx/
 
 packages/desktop/.stx/output/
 
-# Test snapshots (auto-generated)
-packages/components/test/visual/__snapshots__/
+# Visual-regression snapshots are COMMITTED, deliberately.
+#
+# They were ignored as "auto-generated", which made the suite assert nothing
+# where it counted: a clean checkout has no snapshots, so every test wrote one
+# and passed - 128 comparisons against files created seconds earlier. The only
+# machine they ever compared anything on was a developer's, against whatever it
+# last generated, so they failed on every deliberate component change and
+# succeeded in CI regardless.
+#
+# A baseline is generated once and then reviewed. Regenerate by deleting the
+# file and re-running; the diff is the point.
 /__snapshots__
 /packages/stx/test/integration/temp-integration
 /examples/unified-chat/.stx

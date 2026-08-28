@@ -1,0 +1,5 @@
+Variant: with-label
+Props: {
+  "label": "Enable feature"
+}
+Slot: (none)

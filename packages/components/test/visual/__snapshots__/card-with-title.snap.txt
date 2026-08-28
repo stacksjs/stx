@@ -1,0 +1,5 @@
+Variant: with-title
+Props: {
+  "title": "Card Title"
+}
+Slot: <p>Card content</p>

@@ -1,0 +1,5 @@
+Variant: checked
+Props: {
+  "checked": true
+}
+Slot: (none)

@@ -1,0 +1,6 @@
+Variant: outline-full-width
+Props: {
+  "variant": "outline",
+  "fullWidth": true
+}
+Slot: Full Width Outline

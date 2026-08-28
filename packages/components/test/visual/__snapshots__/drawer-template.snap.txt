@@ -1,0 +1,192 @@
+=== Component: drawer ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  export const open = $props.open ?? false
+export const position = $props.position || 'right'
+export const title = $props.title || ''
+export const className = $props.className || ''
+
+const positionClasses = {
+  right: 'inset-y-0 right-0 pl-10 sm:pl-16',
+  left: 'inset-y-0 left-0 pr-10 sm:pr-16',
+  top: 'inset-x-0 top-0 pb-10',
+  bottom: 'inset-x-0 bottom-0 pt-10',
+}
+
+const sizeClasses = {
+  right: 'max-w-md w-screen',
+  left: 'max-w-md w-screen',
+  top: 'max-h-[90vh] w-full',
+  bottom: 'max-h-[90vh] w-full',
+}
+
+const closeButtonPosition = {
+  right: 'left-0 -ml-8 sm:-ml-10',
+  left: 'right-0 -mr-8 sm:-mr-10',
+  top: 'right-0 -mr-8',
+  bottom: 'right-0 -mr-8',
+}
+
+export const containerClasses = `pointer-events-none fixed ${positionClasses[position]} flex max-w-full`.trim()
+export const panelClasses = `pointer-events-auto relative ${sizeClasses[position]} ${className}`.trim()
+export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position]} flex pt-4 pr-2 sm:pr-4`.trim()
+</script>
+<script client>
+  const emit = defineEmits()
+// useReactiveProp lets the parent drive `open` via signals
+// (`:open="drawerOpen()"`) instead of the prop being captured once.
+// See stacksjs/stx#1704.
+const isOpen = useReactiveProp('open', {{ open }})
+
+function close() {
+  isOpen.set(false)
+  emit('close')
+}
+
+function onBackdropClick() {
+  close()
+}
+
+function onPanelKey(event) {
+  if (event.key === 'Escape') close()
+}
+
+defineExpose({
+  open: () => isOpen.set(true),
+  close,
+  isOpen,
+})
+</script>
+<div :show="isOpen()">
+  <div
+    class="fixed inset-0 z-50 bg-gray-500/75 dark:bg-gray-900/75 transition-opacity duration-500"
+    style="animation: fadeIn 0.5s ease-in-out"
+    @click="onBackdropClick()"
+  >
+  </div>
+  <div class="fixed inset-0 z-50 overflow-hidden" @keydown="onPanelKey($event)">
+    <div class="absolute inset-0 overflow-hidden">
+      <div class="{{ containerClasses }}">
+        <div
+          class="{{ panelClasses }}"
+          style="animation: slideIn 0.5s ease-in-out"
+        >
+          <div class="{{ closeButtonClasses }}">
+            <button
+              type="button"
+              class="relative rounded-md text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              @click="close()"
+            >
+              <span class="absolute -inset-2.5">
+              </span>
+              <span class="sr-only">
+                Close panel
+              </span>
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="relative flex h-full flex-col overflow-y-auto bg-white dark:bg-blue-gray-800 py-6 shadow-xl">
+            @if(title)
+            <div class="px-4 sm:px-6">
+              <h2 class="text-base font-semibold text-fg">
+                {{ title }}
+              </h2>
+            </div>
+            @endif
+            <div class="relative mt-6 flex-1 px-4 sm:px-6">
+              <slot />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  @keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    transform: {{ position === 'right' ? 'translateX(100%)' : position === 'left' ? 'translateX(-100%)' : position === 'top' ? 'translateY(-100%)' : 'translateY(100%)' }};
+  }
+  to {
+    transform: translate(0, 0);
+  }
+}
+</style>
+
+=== Extracted Classes ===
+-inset-2.5
+absolute
+bg-gray-500/75
+bg-white
+bottom-0
+closeButtonClasses
+containerClasses
+dark:bg-blue-gray-800
+dark:bg-gray-900/75
+dark:hover:text-white
+dark:text-gray-400
+duration-500
+fixed
+flex
+flex-1
+flex-col
+focus-visible:outline-2
+focus-visible:outline-indigo-600
+focus-visible:outline-offset-2
+font-semibold
+h-6
+h-full
+hover:text-white
+inset-0
+inset-x-0
+inset-y-0
+left-0
+max-w-full
+max-w-md
+mt-6
+open
+overflow-hidden
+overflow-y-auto
+panelClasses
+pb-10
+pl-10
+pointer-events-none
+pr-10
+pr-2
+pt-10
+pt-4
+px-4
+py-6
+relative
+right-0
+rounded-md
+shadow-xl
+sm:-ml-10
+sm:-mr-10
+sm:pl-16
+sm:pr-16
+sm:pr-4
+sm:px-6
+sr-only
+text-base
+text-fg
+text-gray-300
+top-0
+transition-opacity
+w-6
+w-full
+w-screen
+z-50
+{{
+}}

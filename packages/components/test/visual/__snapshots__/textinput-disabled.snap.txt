@@ -1,0 +1,6 @@
+Variant: disabled
+Props: {
+  "disabled": true,
+  "value": "Disabled input"
+}
+Slot: (none)

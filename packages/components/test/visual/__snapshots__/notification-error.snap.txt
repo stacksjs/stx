@@ -1,0 +1,6 @@
+Variant: error
+Props: {
+  "type": "error",
+  "message": "Error occurred"
+}
+Slot: (none)

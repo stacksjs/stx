@@ -1,0 +1,6 @@
+Variant: middle-page
+Props: {
+  "currentPage": 5,
+  "totalPages": 10
+}
+Slot: (none)

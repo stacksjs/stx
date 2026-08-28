@@ -1,0 +1,125 @@
+=== Component: tooltip ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  export const content = $props.content || ''
+export const position = $props.position || 'top'
+export const delay = $props.delay || 0
+export const className = $props.className || ''
+export const show = $props.show || false
+export const disabled = $props.disabled || false
+
+const positionClasses = {
+  top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
+  bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
+  left: 'right-full top-1/2 -translate-y-1/2 mr-2',
+  right: 'left-full top-1/2 -translate-y-1/2 ml-2',
+}
+
+const arrowClasses = {
+  top: 'top-full left-1/2 -translate-x-1/2 border-t-gray-900 dark:border-t-gray-700',
+  bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-gray-900 dark:border-b-gray-700',
+  left: 'left-full top-1/2 -translate-y-1/2 border-l-gray-900 dark:border-l-gray-700',
+  right: 'right-full top-1/2 -translate-y-1/2 border-r-gray-900 dark:border-r-gray-700',
+}
+
+export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-lg shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-200 ${positionClasses[position]} ${className}`.trim()
+export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position]}`.trim()
+</script>
+<script client>
+  const delay = {{ delay }}
+const isDisabled = {{ disabled }}
+// Reactive prop binding — parent can drive `show` via signals. See #1704.
+const isVisible = useReactiveProp('show', {{ show }})
+let timeoutId = null
+
+function showTooltip() {
+  if (isDisabled) return
+  if (delay > 0) {
+    timeoutId = setTimeout(() => isVisible.set(true), delay)
+  }
+  else {
+    isVisible.set(true)
+  }
+}
+
+function hideTooltip() {
+  if (timeoutId) {
+    clearTimeout(timeoutId)
+    timeoutId = null
+  }
+  isVisible.set(false)
+}
+</script>
+<div class="relative inline-block {{ disabled ? 'cursor-not-allowed' : '' }}">
+  <div
+    @mouseenter="showTooltip()"
+    @mouseleave="hideTooltip()"
+    @focusin="showTooltip()"
+    @focusout="hideTooltip()"
+  >
+    <slot />
+  </div>
+  <div
+    :show="isVisible() && !{{ disabled }}"
+    class="{{ tooltipClasses }}"
+    role="tooltip"
+  >
+    {{ content }}
+    <div class="{{ arrowClass }}">
+    </div>
+  </div>
+</div>
+
+=== Extracted Classes ===
+''
+'cursor-not-allowed'
+:
+?
+absolute
+arrowClass
+bg-gray-900
+border-4
+border-b-gray-900
+border-l-gray-900
+border-r-gray-900
+border-t-gray-900
+border-transparent
+bottom-full
+cursor-not-allowed
+dark:bg-gray-700
+dark:border-b-gray-700
+dark:border-l-gray-700
+dark:border-r-gray-700
+dark:border-t-gray-700
+disabled
+duration-200
+font-medium
+h-0
+inline-block
+left-full
+mb-2
+ml-2
+mr-2
+mt-2
+pointer-events-none
+px-3
+py-2
+relative
+right-full
+rounded-lg
+shadow-lg
+show
+text-sm
+text-white
+tooltipClasses
+top-full
+transition-opacity
+w-0
+whitespace-nowrap
+z-50
+{{
+}}

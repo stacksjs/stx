@@ -1,0 +1,5 @@
+Variant: elevated
+Props: {
+  "elevated": true
+}
+Slot: <p>Elevated card</p>

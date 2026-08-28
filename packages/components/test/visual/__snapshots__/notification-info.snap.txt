@@ -1,0 +1,6 @@
+Variant: info
+Props: {
+  "type": "info",
+  "message": "Information"
+}
+Slot: (none)

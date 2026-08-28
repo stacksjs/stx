@@ -1,0 +1,7 @@
+Variant: md-checked-disabled
+Props: {
+  "size": "md",
+  "checked": true,
+  "disabled": true
+}
+Slot: (none)

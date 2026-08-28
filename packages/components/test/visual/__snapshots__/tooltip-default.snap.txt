@@ -1,0 +1,5 @@
+Variant: default
+Props: {
+  "content": "Tooltip text"
+}
+Slot: Hover me

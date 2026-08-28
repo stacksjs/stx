@@ -1,0 +1,5 @@
+Variant: rectangular
+Props: {
+  "variant": "rectangular"
+}
+Slot: (none)

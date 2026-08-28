@@ -1,0 +1,5 @@
+Variant: danger
+Props: {
+  "variant": "danger"
+}
+Slot: Danger Button

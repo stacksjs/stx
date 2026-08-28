@@ -1,0 +1,7 @@
+Variant: danger-sm-loading
+Props: {
+  "variant": "danger",
+  "size": "sm",
+  "loading": true
+}
+Slot: Loading Small Danger

@@ -1,0 +1,5 @@
+Variant: with-initials
+Props: {
+  "initials": "JD"
+}
+Slot: (none)

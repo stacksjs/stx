@@ -1,0 +1,5 @@
+Variant: with-value
+Props: {
+  "value": "Hello World"
+}
+Slot: (none)

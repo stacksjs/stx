@@ -1,0 +1,5 @@
+Variant: full-width
+Props: {
+  "fullWidth": true
+}
+Slot: Full Width

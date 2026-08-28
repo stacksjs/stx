@@ -1,0 +1,5 @@
+Variant: loading
+Props: {
+  "loading": true
+}
+Slot: Loading

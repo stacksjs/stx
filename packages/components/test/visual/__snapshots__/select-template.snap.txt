@@ -1,0 +1,155 @@
+=== Component: select ===
+
+=== Script Block ===
+(none)
+
+=== Template ===
+<script server>
+  export const value = $props.value || ''
+export const options = $props.options || []
+export const placeholder = $props.placeholder || 'Select an option'
+export const disabled = $props.disabled || false
+export const size = $props.size || 'md'
+export const error = $props.error || false
+export const label = $props.label || ''
+export const helperText = $props.helperText || ''
+export const required = $props.required || false
+export const className = $props.className || ''
+
+const sizeClasses = { sm: 'px-3 py-1.5 text-sm h-8', md: 'px-4 py-2 text-base h-10', lg: 'px-5 py-3 text-lg h-12' }
+const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-blue-gray-700 dark:text-gray-100'
+const stateClasses = error
+  ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
+  : 'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'
+const disabledClasses = disabled
+  ? 'opacity-50 cursor-not-allowed bg-surface'
+  : 'bg-white dark:bg-blue-gray-700 cursor-pointer hover:ring-gray-400 dark:hover:ring-gray-500'
+
+export const selectClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses} ${className}`.trim()
+export const labelClasses = `block text-sm font-medium leading-6 ${error ? 'text-danger' : 'text-fg'}`.trim()
+export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
+export const selectId = `select-${value}`
+</script>
+<script client>
+  const emit = defineEmits()
+// Reactive prop binding — parent can drive `value` via signals. See #1704.
+const selectedValue = useReactiveProp('value', {{ value }}, { parse: (v) => v == null ? '' : String(v) })
+
+function onChange(event) {
+  selectedValue.set(event.target.value)
+  emit('change', selectedValue())
+}
+
+defineExpose({ value: selectedValue })
+</script>
+<div class="w-full">
+  @if(label)
+  <label for="{{ selectId }}" class="{{ labelClasses }}">
+    {{ label }}
+      @if(required)
+    <span class="text-red-500 ml-1">
+      *
+    </span>
+    @endif
+  </label>
+  @endif
+  <div class="{{ label ? 'mt-2' : '' }}">
+    <select
+      id="{{ selectId }}"
+      class="{{ selectClasses }}"
+      :value="selectedValue()"
+      @if(disabled)disabled@endif
+      @if(required)required@endif
+      @change="onChange($event)"
+      :aria-invalid="{{ error ? 'true' : 'false' }}"
+      aria-describedby="{{ helperText ? 'helper-text' : '' }}"
+    >
+      @if(placeholder)
+      <option value="" disabled>
+        {{ placeholder }}
+      </option>
+      @endif
+
+      @foreach(option in options)
+      <option
+          value="{{ option.value }}"
+          @if(option.disabled)disabled@endif
+        >
+        {{ option.label }}
+      </option>
+      @endforeach
+    </select>
+  </div>
+  @if(helperText)
+  <p id="helper-text" class="{{ helperClasses }}">
+    {{ helperText }}
+  </p>
+  @endif
+</div>
+
+=== Extracted Classes ===
+''
+'mt-2'
+:
+?
+bg-surface
+bg-white
+block
+border-0
+change
+cursor-not-allowed
+cursor-pointer
+dark:bg-blue-gray-700
+dark:focus:ring-red-400
+dark:hover:ring-gray-500
+dark:placeholder-red-500
+dark:ring-red-600
+dark:text-gray-100
+dark:text-red-300
+duration-200
+false
+focus:ring-2
+focus:ring-accent
+focus:ring-inset
+focus:ring-red-500
+font-medium
+h-10
+h-12
+h-8
+helper-text
+helperClasses
+hover:ring-gray-400
+label
+labelClasses
+leading-6
+ml-1
+mt-2
+opacity-50
+placeholder-fg-subtle
+placeholder-red-300
+px-3
+px-4
+px-5
+py-2
+py-3
+ring-1
+ring-inset
+ring-line-strong
+ring-red-300
+rounded-md
+selectClasses
+shadow-sm
+text-base
+text-danger
+text-fg
+text-fg-soft
+text-lg
+text-red-500
+text-red-900
+text-sm
+transition-colors
+true
+value
+w-full
+{{
+}}

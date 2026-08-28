@@ -1,0 +1,5 @@
+Variant: circular
+Props: {
+  "variant": "circular"
+}
+Slot: (none)

@@ -1,0 +1,6 @@
+Variant: warning
+Props: {
+  "type": "warning",
+  "message": "Warning!"
+}
+Slot: (none)

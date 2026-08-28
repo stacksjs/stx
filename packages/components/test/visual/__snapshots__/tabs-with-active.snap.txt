@@ -1,0 +1,5 @@
+Variant: with-active
+Props: {
+  "activeTab": 0
+}
+Slot: (none)

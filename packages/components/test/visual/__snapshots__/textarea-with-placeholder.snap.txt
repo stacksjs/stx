@@ -1,0 +1,5 @@
+Variant: with-placeholder
+Props: {
+  "placeholder": "Enter your message..."
+}
+Slot: (none)

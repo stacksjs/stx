@@ -1,0 +1,6 @@
+Variant: size-sm-checked
+Props: {
+  "size": "sm",
+  "checked": true
+}
+Slot: (none)

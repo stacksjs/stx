@@ -1,0 +1,6 @@
+Variant: top
+Props: {
+  "content": "Top tooltip",
+  "position": "top"
+}
+Slot: Hover me

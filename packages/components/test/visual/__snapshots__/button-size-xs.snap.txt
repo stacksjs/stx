@@ -1,0 +1,5 @@
+Variant: size-xs
+Props: {
+  "size": "xs"
+}
+Slot: XS

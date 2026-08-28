@@ -1,0 +1,6 @@
+Variant: success
+Props: {
+  "type": "success",
+  "message": "Success!"
+}
+Slot: (none)

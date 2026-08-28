@@ -1,0 +1,6 @@
+Variant: default
+Props: {
+  "name": "option",
+  "value": "a"
+}
+Slot: (none)

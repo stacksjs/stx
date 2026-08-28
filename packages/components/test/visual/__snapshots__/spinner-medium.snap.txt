@@ -1,0 +1,5 @@
+Variant: medium
+Props: {
+  "size": "md"
+}
+Slot: (none)

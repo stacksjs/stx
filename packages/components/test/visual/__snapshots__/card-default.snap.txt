@@ -1,0 +1,3 @@
+Variant: default
+Props: {}
+Slot: <p>Card content</p>
